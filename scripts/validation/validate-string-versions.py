@@ -79,7 +79,7 @@ EXCLUDE_PATTERNS = [
     "archive",  # Exclude archived code
     "archived",  # Exclude archived code (alternative naming)
     "tests",  # Exclude test files
-    "examples_validation_container_usage.py",  # Exclude specific example files
+    "examples",  # Exclude examples - ModelHandlerContract uses str for version field
     "protocols",  # Exclude Protocol classes (see rationale above)
 ]
 
@@ -135,11 +135,24 @@ except ImportError:
 class PythonASTValidator(ast.NodeVisitor):
     """AST visitor to validate ID and version field types in Python files."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, source_lines: list[str] | None = None):
         self.file_path = file_path
         self.violations: list[ValidationViolation] = []
         self.imports = set()
         self.current_call_func = None  # Track current function being called
+        # Store source lines for inline comment checking
+        self.source_lines = source_lines or []
+
+        # Bypass comment patterns for inline exemptions
+        self.id_bypass_patterns = [
+            "string-id-ok:",
+            "id-ok:",
+        ]
+        self.version_bypass_patterns = [
+            "string-version-ok:",
+            "version-ok:",
+            "semver-ok:",
+        ]
 
         # Patterns for version fields that should use ModelSemVer
         self.version_patterns = [
@@ -231,6 +244,15 @@ class PythonASTValidator(ast.NodeVisitor):
             "route_id",  # Dispatch route identifier (human-readable, not UUID)
             "target_handler_id",  # Runtime directive target handler (human-readable, not UUID)
             "matched_route_id",  # Dispatch result matched route (human-readable)
+            # MANIFEST_IDENTIFIERS (execution manifest observability identifiers)
+            # See: src/omnibase_core/models/manifest/ for manifest model definitions
+            # These are human-readable identifiers for pipeline observability, not UUIDs
+            "contract_id",  # Contract identifier (human-readable, e.g., "my-contract")
+            "hook_id",  # Hook identifier (human-readable, e.g., "pre-validation-hook")
+            "capability_id",  # Capability identifier (human-readable, e.g., "cache-support")
+            "from_handler_id",  # Dependency edge source handler (human-readable)
+            "to_handler_id",  # Dependency edge target handler (human-readable)
+            "handler_descriptor_id",  # Handler descriptor ID (human-readable)
             # TEST_FIXTURES (test helper fields removed - production code should use UUID)
             # TYPED_DICT_SERIALIZATION_BOUNDARY (TypedDicts for logging/monitoring/introspection)
             # See: src/omnibase_core/types/ for TypedDict definitions
@@ -360,6 +382,35 @@ class PythonASTValidator(ast.NodeVisitor):
             return func_node.attr
         return ""
 
+    def _has_bypass_comment(self, line_number: int, bypass_patterns: list[str]) -> bool:
+        """Check if a line has a bypass comment.
+
+        Args:
+            line_number: 1-based line number to check
+            bypass_patterns: List of bypass comment patterns to look for
+
+        Returns:
+            True if a bypass comment is found on the line
+        """
+        if not self.source_lines:
+            return False
+
+        # Convert to 0-based index
+        line_idx = line_number - 1
+        if line_idx < 0 or line_idx >= len(self.source_lines):
+            return False
+
+        line = self.source_lines[line_idx]
+
+        # Check for inline comment with bypass pattern
+        if "#" in line:
+            comment_part = line.split("#", 1)[1]
+            for pattern in bypass_patterns:
+                if pattern in comment_part:
+                    return True
+
+        return False
+
     def _check_field_annotation(
         self, field_name: str, annotation: ast.AST, line_number: int, column: int
     ):
@@ -373,6 +424,9 @@ class PythonASTValidator(ast.NodeVisitor):
         # Check version fields
         if self._matches_patterns(field_name, self.version_patterns):
             if self._is_string_type(annotation_str):
+                # Check for bypass comment
+                if self._has_bypass_comment(line_number, self.version_bypass_patterns):
+                    return
                 suggestion = "Use ModelSemVer instead of str for version fields"
                 self.violations.append(
                     ValidationViolation(
@@ -388,6 +442,9 @@ class PythonASTValidator(ast.NodeVisitor):
         # Check ID fields
         elif self._matches_patterns(field_name, self.id_patterns):
             if self._is_string_type(annotation_str):
+                # Check for bypass comment
+                if self._has_bypass_comment(line_number, self.id_bypass_patterns):
+                    return
                 suggestion = "Use UUID instead of str for ID fields"
                 self.violations.append(
                     ValidationViolation(
@@ -557,7 +614,9 @@ class StringVersionValidator:
         # AST-based validation for ID and version field types
         try:
             tree = ast.parse(content, filename=str(python_path))
-            ast_validator = PythonASTValidator(str(python_path))
+            # Pass source lines to enable inline comment bypass checking
+            source_lines = content.splitlines()
+            ast_validator = PythonASTValidator(str(python_path), source_lines)
             ast_validator.visit(tree)
 
             # Add AST violations to our list
@@ -583,7 +642,7 @@ class StringVersionValidator:
         errors: list[str],
     ) -> None:
         """Check Python content for hardcoded __version__ declarations."""
-        lines = content.split("\n")
+        lines = content.splitlines()
 
         # Track bypass comments
         bypass_patterns = [
@@ -746,7 +805,7 @@ class StringVersionValidator:
         errors: list[str],
     ) -> None:
         """Use AST-like parsing to detect string versions in YAML content."""
-        lines = content.split("\n")
+        lines = content.splitlines()
 
         version_field_patterns = [
             "version:",

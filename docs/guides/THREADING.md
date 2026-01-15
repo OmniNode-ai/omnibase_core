@@ -21,6 +21,8 @@ This section consolidates all critical thread safety warnings for quick referenc
 | `ModelComputeCache` | High | LRU eviction races | Wrap with `threading.Lock` |
 | `ModelCircuitBreaker` | High | Counter/state races | Use locks or thread-local instances |
 | `ModelEffectTransaction` | Critical | Rollback assumes single-thread | Never share across threads |
+| `ValidatorBase` | High | File cache not synchronized | Use thread-local instances |
+| `ValidatorPatterns` | High | Rule cache not synchronized | Use thread-local instances |
 
 ### Safe Components
 
@@ -31,6 +33,8 @@ This section consolidates all critical thread safety warnings for quick referenc
 | Input/Output Models | Frozen via Pydantic |
 | Workflow Contract Models | Frozen via Pydantic (v0.4.0+) - see [Workflow Contract Models](#workflow-contract-models-v040) |
 | Stateless Mixin Methods | Safe if inputs are thread-safe |
+| `ModelValidatorSubcontract` | Frozen Pydantic model - safe to share |
+| `ModelValidationResult` | Frozen Pydantic model |
 
 ### Quick Decision Guide
 
@@ -496,6 +500,153 @@ async def safe_transaction_cleanup(effect_node):
             await asyncio.gather(*cleanup_tasks, return_exceptions=True)
 ```
 
+## Validator Thread Safety
+
+### Overview
+
+The `ValidatorBase` class and its subclasses (`ValidatorPatterns`, `ValidatorUnionUsage`, etc.) are **NOT thread-safe** by default. Each validator instance maintains internal mutable state that is not synchronized.
+
+### Why Validators Are NOT Thread-Safe
+
+#### Internal Mutable State
+
+All validators inheriting from `ValidatorBase` contain:
+
+- `_file_line_cache`: Dictionary caching file contents for suppression checking
+- `_contract`: Lazily loaded contract (single initialization is GIL-protected, but not formally thread-safe)
+
+Additionally, `ValidatorPatterns` has:
+
+- `_rule_config_cache`: Lazily built dictionary mapping rule IDs to configurations
+
+These caches are cleared after each `validate()` call, but concurrent access during validation can cause:
+
+- Cache corruption (dictionary modifications during iteration)
+- Stale reads (one thread reads while another clears)
+- Race conditions in cache population
+
+#### Safe vs Unsafe Components
+
+| Component | Thread-Safe? | Notes |
+|-----------|-------------|-------|
+| `ValidatorBase` instance | ❌ No | _file_line_cache is mutable |
+| `ValidatorPatterns` instance | ❌ No | _rule_config_cache is mutable |
+| `ValidatorUnionUsage` instance | ❌ No | Inherits _file_line_cache |
+| `ModelValidatorSubcontract` | ✅ Yes | Frozen Pydantic model |
+| `ModelValidationResult` | ✅ Yes | Frozen Pydantic model |
+| `ModelValidationIssue` | ✅ Yes | Frozen Pydantic model |
+
+### parallel_execution Contract Field
+
+The `parallel_execution: true` field in validator YAML contracts indicates **PROCESS-safe** parallel execution, NOT **thread-safe** execution:
+
+```yaml
+# From any_type.validation.yaml
+parallel_execution: true
+```
+
+**What this means**:
+- External tools (pytest-xdist, CI runners) MAY split files across worker **processes**
+- Each worker process creates its own validator instance
+- Files are processed independently with no shared state between processes
+
+**What this does NOT mean**:
+- It does NOT enable internal multi-threading within the validator
+- It does NOT make validator instances thread-safe
+- It does NOT allow sharing a single instance across threads within a process
+
+### Correct Usage Patterns
+
+#### Pattern 1: Separate Instances Per Thread (Recommended)
+
+```python
+import threading
+from omnibase_core.validation.validator_patterns import ValidatorPatterns
+
+# Thread-local storage for validator instances
+thread_local = threading.local()
+
+def get_validator():
+    """Get or create thread-local validator instance."""
+    if not hasattr(thread_local, 'validator'):
+        thread_local.validator = ValidatorPatterns()
+    return thread_local.validator
+
+# Usage in multi-threaded context
+def worker_thread(files_to_validate):
+    validator = get_validator()  # Each thread gets its own instance
+    for file_path in files_to_validate:
+        result = validator.validate_file(file_path)
+        # Process result...
+```
+
+#### Pattern 2: Fresh Instance Per Validation
+
+```python
+from pathlib import Path
+from omnibase_core.validation.validator_patterns import ValidatorPatterns
+
+def validate_file_safely(file_path: Path):
+    """Create fresh validator for each validation."""
+    validator = ValidatorPatterns()  # New instance per call
+    return validator.validate_file(file_path)
+```
+
+#### Pattern 3: Shared Contract, Separate Validators
+
+```python
+from pathlib import Path
+from omnibase_core.validation.validator_patterns import ValidatorPatterns
+from omnibase_core.models.contracts.subcontracts import ModelValidatorSubcontract
+
+# Load contract once (immutable, safe to share)
+shared_contract = ModelValidatorSubcontract.model_validate({
+    "version": {"major": 1, "minor": 0, "patch": 0},
+    "validator_id": "patterns",
+    # ... rest of contract
+})
+
+def create_validator():
+    """Create validator with shared contract."""
+    return ValidatorPatterns(contract=shared_contract)
+
+# Each thread/worker creates its own instance with the shared contract
+```
+
+### Incorrect Usage (Anti-Patterns)
+
+```python
+# ❌ WRONG: Sharing validator across threads
+validator = ValidatorPatterns()
+
+def worker_1():
+    result = validator.validate(Path("src/module1/"))  # Race!
+
+def worker_2():
+    result = validator.validate(Path("src/module2/"))  # Race!
+
+# Both threads share _file_line_cache - will corrupt
+```
+
+### pytest-xdist Compatibility
+
+When using pytest-xdist (parallel test execution), validators work correctly because:
+
+1. Each xdist worker is a **separate process** (not thread)
+2. Each worker imports and creates its own validator instances
+3. No state is shared between workers
+
+The `parallel_execution: true` contract flag signals that this parallel process execution is supported.
+
+```python
+# This works correctly with pytest-xdist
+class TestValidatorPatterns:
+    def test_validate_file(self):
+        validator = ValidatorPatterns()  # Fresh instance per test
+        result = validator.validate_file(Path("src/test_file.py"))
+        assert result.is_valid
+```
+
 ## General Thread Safety Guidelines
 
 ### Immutable by Default
@@ -595,6 +746,42 @@ def worker_thread(container):
     # Use services (check individual service thread safety)
 ```
 
+### Service Registry Initialization
+
+The `initialize_service_registry()` method is thread-safe and can be called from multiple
+threads simultaneously. The method uses an internal lock to ensure:
+
+- Exactly one thread will successfully initialize the registry
+- Other threads will receive `ModelOnexError` with `INVALID_STATE` error code
+- The registry instance is safely published to all threads
+
+**Example: Safe concurrent initialization**
+
+```python
+import threading
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.errors import ModelOnexError
+
+container = ModelONEXContainer(enable_service_registry=False)
+
+def worker():
+    try:
+        registry = container.initialize_service_registry()
+        # Use registry...
+    except ModelOnexError:
+        # Another thread already initialized
+        registry = container.service_registry
+        # Use registry...
+
+threads = [threading.Thread(target=worker) for _ in range(4)]
+for t in threads:
+    t.start()
+for t in threads:
+    t.join()
+```
+
+**Note**: Once initialized, `container.service_registry` property access is always thread-safe.
+
 ### Node Instance Sharing
 
 **DO NOT** share node instances across threads without careful analysis:
@@ -649,7 +836,7 @@ This section documents how `execute_compute_pipeline` enforces timeouts using ba
 When `pipeline_timeout_ms` is configured in a `ModelComputeSubcontract`, the `execute_compute_pipeline` function wraps execution in a `ThreadPoolExecutor`:
 
 ```python
-# From src/omnibase_core/utils/compute_executor.py
+# From src/omnibase_core/utils/util_compute_executor.py
 executor = ThreadPoolExecutor(max_workers=1)
 try:
     future = executor.submit(_execute_pipeline_steps, contract, input_data, context, start_time)
@@ -862,7 +1049,7 @@ if environment.memory_constrained:
 
 For related timeout documentation:
 - [EFFECT_TIMEOUT_BEHAVIOR.md](../architecture/EFFECT_TIMEOUT_BEHAVIOR.md) - Effect-level timeout checkpoints
-- [compute_executor.py](../../src/omnibase_core/utils/compute_executor.py) - Compute timeout implementation
+- [util_compute_executor.py](../../src/omnibase_core/utils/util_compute_executor.py) - Compute timeout implementation
 - [constants_effect.py](../../src/omnibase_core/constants/constants_effect.py) - Timeout constants
 
 ---
@@ -1801,6 +1988,19 @@ class TestNodeComputeThreadSafety:
 | MixinNodeLifecycle | Yes | Stateless methods |
 | MixinDiscoveryResponder | Yes | Stateless methods |
 
+### Validators
+
+| Component | Thread-Safe? | Mitigation |
+|-----------|-------------|------------|
+| ValidatorBase | No | _file_line_cache is mutable |
+| ValidatorPatterns | No | _rule_config_cache is mutable |
+| ValidatorUnionUsage | No | Inherits _file_line_cache |
+| ModelValidatorSubcontract | Yes (frozen=True) | None needed - can share |
+| ModelValidationResult | Yes (frozen=True) | None needed |
+| ModelValidationIssue | Yes (frozen=True) | None needed |
+
+**Note**: The `parallel_execution: true` contract field indicates **process-safe** parallel execution (e.g., pytest-xdist), NOT thread-safe execution within a process. See [Validator Thread Safety](#validator-thread-safety) for details.
+
 ## Design Rationale
 
 ONEX nodes are intentionally NOT thread-safe by default for several reasons:
@@ -1820,3 +2020,6 @@ ONEX nodes are intentionally NOT thread-safe by default for several reasons:
 - NodeOrchestrator: [node_orchestrator.py](../../src/omnibase_core/nodes/node_orchestrator.py)
 - MixinEffectExecution: [mixin_effect_execution.py](../../src/omnibase_core/mixins/mixin_effect_execution.py)
 - NodeEffect Architecture: [CONTRACT_DRIVEN_NODEEFFECT_V1_0.md](../architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md)
+- ValidatorBase: [validator_base.py](../../src/omnibase_core/validation/validator_base.py)
+- ValidatorPatterns: [validator_patterns.py](../../src/omnibase_core/validation/validator_patterns.py)
+- ValidatorUnionUsage: [validator_types.py](../../src/omnibase_core/validation/validator_types.py)

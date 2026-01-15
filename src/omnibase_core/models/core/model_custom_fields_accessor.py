@@ -8,13 +8,11 @@ typed custom fields with automatic initialization and type safety.
 from __future__ import annotations
 
 import copy
-from typing import Any
 
-from pydantic import Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.types.constraints import PrimitiveValueType
-from omnibase_core.types.type_serializable_value import SerializedDict
+from omnibase_core.types.type_constraints import PrimitiveValueType
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -24,7 +22,23 @@ SchemaValueType = PrimitiveValueType | None
 
 
 class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
-    """Generic custom fields accessor with comprehensive field management."""
+    """Generic custom fields accessor with comprehensive field management.
+
+    List Homogeneity Assumption:
+        The `list_fields` storage uses `list[ModelSchemaValue]` type. Homogeneity
+        of list elements is maintained through **method discipline**, not runtime
+        validation enforcement. All list-modifying methods (set_field, merge_fields,
+        validate_and_distribute_fields) ensure that lists are converted to
+        ModelSchemaValue format. This assumption holds because:
+
+        1. All list mutations go through class methods that enforce conversion
+        2. Lists originate from serialization sources with uniform types
+        3. First-element type checking is used as an optimization (if first element
+           is ModelSchemaValue, all elements are assumed to be as well)
+
+        Callers should not directly mutate `list_fields` contents without using
+        the provided accessor methods.
+    """
 
     # Typed field storage
     string_fields: dict[str, str] = Field(default_factory=dict)
@@ -33,14 +47,14 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
     list_fields: dict[str, list[ModelSchemaValue]] = Field(default_factory=dict)
     float_fields: dict[str, float] = Field(default_factory=dict)
     # Custom fields storage - can be overridden by subclasses to have default=None
-    custom_fields: dict[str, PrimitiveValueType] | None = Field(default=None)
+    custom_fields: dict[str, PrimitiveValueType] | None = None
 
     # Pydantic configuration to allow extra fields
-    model_config = {
-        "extra": "allow",  # Allow dynamic fields
-        "use_enum_values": False,
-        "validate_assignment": False,  # Disable strict validation for dynamic fields
-    }
+    model_config = ConfigDict(
+        extra="allow",  # Allow dynamic fields,
+        use_enum_values=False,
+        validate_assignment=False,  # Disable strict validation for dynamic fields,
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -62,8 +76,11 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                     # Empty lists are explicitly handled here - no conversion needed
                     if not value_list:
                         converted_list_fields[key] = []
-                    # Homogeneous list assumption: if first element is ModelSchemaValue,
-                    # all elements are (lists come from single serialization source)
+                    # SAFETY: Homogeneous list assumption - if first element is
+                    # ModelSchemaValue, all elements are assumed to be as well.
+                    # This is maintained through method discipline (all list-modifying
+                    # methods enforce homogeneity), not runtime validation enforcement.
+                    # Lists come from single serialization source with uniform type.
                     elif isinstance(value_list[0], ModelSchemaValue):
                         converted_list_fields[key] = value_list
                     else:
@@ -150,8 +167,9 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 int_fields[key] = value
             elif isinstance(value, list):
                 # Convert list to list[ModelSchemaValue] for type safety
-                # Homogeneous list assumption: if first element is ModelSchemaValue,
-                # all elements are (lists come from single serialization source)
+                # SAFETY: Homogeneous list assumption - if first element is
+                # ModelSchemaValue, all elements are assumed to be as well.
+                # Maintained through method discipline, not validation enforcement.
                 if value and isinstance(value[0], ModelSchemaValue):
                     list_fields_typed[key] = value
                 else:
@@ -174,7 +192,27 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         path: str,
         value: PrimitiveValueType | ModelSchemaValue | None,
     ) -> bool:
-        """Set a field value with automatic type detection and storage."""
+        """Set a field value with automatic type detection and storage.
+
+        Args:
+            path: The field path. Dot notation (e.g., "nested.path") delegates
+                to parent class. Simple keys store directly in typed storages.
+            value: The value to set. Type determines storage location:
+                - bool -> bool_fields
+                - str -> string_fields
+                - int -> int_fields
+                - float -> float_fields
+                - list -> list_fields (converted to ModelSchemaValue)
+                - None -> stored as empty string in string_fields
+                - ModelSchemaValue -> converted to string representation
+
+        Returns:
+            True if the field was set successfully, False if an exception occurred.
+
+        Note:
+            This method catches all exceptions and returns False on failure
+            rather than propagating errors.
+        """
         try:
             # Handle nested field paths
             if "." in path:
@@ -199,42 +237,62 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             elif isinstance(value, ModelSchemaValue):
                 # Convert ModelSchemaValue to string representation
                 self.string_fields[path] = str(value.to_value())
-            else:
-                # Runtime type checking for primitive values
-                # NOTE: Check bool before int since bool is a subclass of int in Python
-                value_type = type(value)
-                if value_type is bool:
-                    self.bool_fields[path] = value  # type: ignore[assignment]
-                elif value_type is str:
-                    self.string_fields[path] = value  # type: ignore[assignment]
-                elif value_type is int:
-                    self.int_fields[path] = value  # type: ignore[assignment]
-                elif value_type is float:
-                    self.float_fields[path] = value  # type: ignore[assignment]
-                elif isinstance(value, list):
-                    # Require ModelSchemaValue lists - convert if needed
-                    # Homogeneous list assumption: if first element is ModelSchemaValue,
-                    # all elements are (lists come from single serialization source)
-                    if value and isinstance(value[0], ModelSchemaValue):
-                        self.list_fields[path] = value
-                    else:
-                        # Convert raw list to ModelSchemaValue list
-                        self.list_fields[path] = [
-                            ModelSchemaValue.from_value(item) for item in value
-                        ]
+            # Runtime type checking for primitive values using isinstance
+            # for proper mypy type narrowing.
+            # NOTE: Check bool before int since bool is a subclass of int in Python
+            # (isinstance(True, int) returns True, so bool must be checked first)
+            elif isinstance(value, bool):
+                self.bool_fields[path] = value
+            elif isinstance(value, str):
+                self.string_fields[path] = value
+            elif isinstance(value, int):
+                self.int_fields[path] = value
+            elif isinstance(value, float):
+                self.float_fields[path] = value
+            elif isinstance(value, list):
+                # Require ModelSchemaValue lists - convert if needed
+                # SAFETY: Homogeneous list assumption - if first element is
+                # ModelSchemaValue, all elements are assumed to be as well.
+                # Maintained through method discipline, not validation enforcement.
+                if value and isinstance(value[0], ModelSchemaValue):
+                    self.list_fields[path] = value
                 else:
-                    # Fallback to string storage for any other type
-                    self.string_fields[path] = str(value)
+                    # Convert raw list to ModelSchemaValue list
+                    self.list_fields[path] = [
+                        ModelSchemaValue.from_value(item) for item in value
+                    ]
+            else:
+                # Fallback to string storage for any other type
+                self.string_fields[path] = str(value)
 
             return True
         except Exception:  # fallback-ok: set_field method signature returns bool for success/failure rather than raising
             return False
 
-    def get_field(self, path: str, default: Any = None) -> Any:
+    def get_field(  # type: ignore[override]
+        self, path: str, default: object = None
+    ) -> object:
         """Get a field value from the appropriate typed storage.
 
-        For simple field names, returns raw values from typed storages.
-        For nested paths (containing '.'), returns ModelResult.
+        Note: Intentional override of parent's ModelResult return type.
+        This class provides a simpler API for direct key-value access:
+
+        - Simple paths (no dots): Returns raw values directly (str, int, bool, etc.)
+        - Nested paths (with dots): Delegates to parent, returns ModelResult
+
+        Examples:
+            >>> fields.get_field("name")  # Returns "value" directly
+            >>> fields.get_field("nested.path")  # Returns ModelResult
+
+        For guaranteed type safety, use the typed accessors instead:
+        get_string(), get_int(), get_bool(), get_float(), get_list()
+
+        Args:
+            path: The field path to look up. Simple keys or dot-notation paths.
+            default: Value to return if field not found.
+
+        Returns:
+            The field value (raw type for simple paths, ModelResult for nested).
         """
         try:
             # Handle nested field paths - return ModelResult for dot notation support
@@ -274,7 +332,16 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             return default
 
     def get_string(self, key: str, default: str = "") -> str:
-        """Get a string field value."""
+        """Get a string field value.
+
+        Args:
+            key: The field name to look up.
+            default: Value to return if field not found. Defaults to "".
+
+        Returns:
+            The string value if found, or converted to string from other types,
+            or the default value.
+        """
         if key in self.string_fields:
             return self.string_fields[key]
         # Try to convert from other types
@@ -284,7 +351,15 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         return value if isinstance(value, str) else default
 
     def get_int(self, key: str, default: int = 0) -> int:
-        """Get an integer field value."""
+        """Get an integer field value.
+
+        Args:
+            key: The field name to look up.
+            default: Value to return if field not found or not an int. Defaults to 0.
+
+        Returns:
+            The integer value if found and is an int, otherwise the default value.
+        """
         if key in self.int_fields:
             return self.int_fields[key]
         # Try to convert from other types
@@ -294,7 +369,15 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         return default
 
     def get_bool(self, key: str, default: bool = False) -> bool:
-        """Get a boolean field value."""
+        """Get a boolean field value.
+
+        Args:
+            key: The field name to look up.
+            default: Value to return if field not found or not a bool. Defaults to False.
+
+        Returns:
+            The boolean value if found and is a bool, otherwise the default value.
+        """
         if key in self.bool_fields:
             return self.bool_fields[key]
         # Try to convert from other types
@@ -308,7 +391,13 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
     ) -> list[ModelSchemaValue]:
         """Get a list field value.
 
-        Returns list[ModelSchemaValue] for type safety.
+        Args:
+            key: The field name to look up.
+            default: Value to return if field not found. Defaults to None (returns []).
+
+        Returns:
+            list[ModelSchemaValue] for type safety. If the field contains a raw list,
+            it is converted to ModelSchemaValue list.
 
         Note:
             Breaking API change in v0.4.0: Previously returned list[Any].
@@ -327,7 +416,15 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         return default
 
     def get_float(self, key: str, default: float = 0.0) -> float:
-        """Get a float field value."""
+        """Get a float field value.
+
+        Args:
+            key: The field name to look up.
+            default: Value to return if field not found or not a float. Defaults to 0.0.
+
+        Returns:
+            The float value if found and is a float, otherwise the default value.
+        """
         if key in self.float_fields:
             return self.float_fields[key]
         # Try to convert from other types
@@ -337,7 +434,16 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         return default
 
     def has_field(self, path: str) -> bool:
-        """Check if a field exists in any typed storage."""
+        """Check if a field exists in any typed storage.
+
+        Args:
+            path: The field path to check. Dot notation (e.g., "nested.path")
+                delegates to parent class. Special case: "custom_fields" returns
+                True only if custom_fields is not None and has at least one entry.
+
+        Returns:
+            True if the field exists in any storage, False otherwise.
+        """
         if "." in path:
             return super().has_field(path)
 
@@ -364,7 +470,21 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         )
 
     def remove_field(self, path: str) -> bool:
-        """Remove a field from the appropriate typed storage."""
+        """Remove a field from the appropriate typed storage.
+
+        Args:
+            path: The field path to remove. Dot notation (e.g., "nested.path")
+                delegates to parent class. Simple keys are removed from all
+                typed storages where they exist.
+
+        Returns:
+            True if the field was found and removed from at least one storage,
+            False if the field was not found or an exception occurred.
+
+        Note:
+            This method catches all exceptions and returns False on failure
+            rather than propagating errors.
+        """
         try:
             if "." in path:
                 return super().remove_field(path)
@@ -443,7 +563,15 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             custom_fields.clear()
 
     def get_field_type(self, key: str) -> str:
-        """Get the type of a field."""
+        """Get the type of a field.
+
+        Args:
+            key: The field name to look up.
+
+        Returns:
+            A string indicating the field's storage type: "string", "int", "bool",
+            "list[Any]", "float", "custom", or "unknown" if not found.
+        """
         if key in self.string_fields:
             return "string"
         if key in self.int_fields:
@@ -463,7 +591,17 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         return "unknown"
 
     def validate_field_value(self, key: str, value: SchemaValueType) -> bool:
-        """Validate if a value is compatible with a field's existing type."""
+        """Validate if a value is compatible with a field's existing type.
+
+        Args:
+            key: The field name to check.
+            value: The value to validate for type compatibility.
+
+        Returns:
+            True if the value is compatible with the field's existing type,
+            or if the field doesn't exist (new fields are always valid),
+            or if value is None. False if the types are incompatible.
+        """
         if not self.has_field(key):
             return True  # New fields are always valid
 
@@ -490,7 +628,16 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         return False
 
     def get_fields_by_type(self, field_type: str) -> dict[str, object]:
-        """Get all fields of a specific type."""
+        """Get all fields of a specific type.
+
+        Args:
+            field_type: The type to filter by. One of: "string", "int", "bool",
+                "list", "float", "custom".
+
+        Returns:
+            A dictionary of field names to values for the specified type.
+            Returns empty dict for unknown field types.
+        """
         if field_type == "string":
             return dict(self.string_fields)
         if field_type == "int":
@@ -554,9 +701,23 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             # Initialize our custom_fields if other has them but we don't
             self.custom_fields = copy.deepcopy(other_custom_fields)
 
-    def model_dump(self, exclude_none: bool = False, **kwargs: Any) -> SerializedDict:
-        """Override model_dump to include all field data."""
-        data: SerializedDict = {}
+    def model_dump(
+        self,
+        *,
+        exclude_none: bool = False,
+        **kwargs: object,
+    ) -> dict[str, object]:
+        """Override model_dump to include all field data.
+
+        Note: This override intentionally changes base class semantics.
+        Uses custom field iteration instead of Pydantic serialization.
+        Only `exclude_none` is used; other kwargs are accepted for API
+        compatibility but ignored (by_alias, mode, include, exclude, etc.).
+        """
+        # kwargs intentionally unused - accepted for base class API compatibility
+        _ = kwargs
+
+        data: dict[str, object] = {}
 
         # Add all fields to the output
         for key in self.get_all_field_names():
@@ -594,7 +755,20 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         key: str,
         value: PrimitiveValueType | ModelSchemaValue | None,
     ) -> bool:
-        """Set a custom field value. Accepts raw values or ModelSchemaValue."""
+        """Set a custom field value.
+
+        Args:
+            key: The field name to set.
+            value: The value to store. Accepts PrimitiveValueType, ModelSchemaValue,
+                or None. ModelSchemaValue is converted to its raw value.
+
+        Returns:
+            True if the field was set successfully, False if an exception occurred.
+
+        Note:
+            This method catches all exceptions and returns False on failure
+            rather than propagating errors.
+        """
         try:
             # Initialize custom_fields if it's None with explicit type annotation
             # Note: custom_fields is a defined model field, so hasattr check is redundant
@@ -603,16 +777,19 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 self.custom_fields: dict[str, PrimitiveValueType] = {}
 
             # Store raw values directly in custom_fields
+            raw_value: PrimitiveValueType
             if isinstance(value, ModelSchemaValue):
-                raw_value = value.to_value()
-                # Ensure raw_value is compatible with PrimitiveValueType
-                if not isinstance(raw_value, (str, int, float, bool, list, type(None))):
-                    raw_value = str(raw_value)  # Convert unsupported types to string
+                to_val = value.to_value()
+                # Ensure to_val is compatible with PrimitiveValueType
+                if not isinstance(to_val, (str, int, float, bool, list, type(None))):
+                    raw_value = str(to_val)  # Convert unsupported types to string
+                else:
+                    raw_value = to_val
             else:
                 raw_value = value
 
-            # Cast to PrimitiveValueType to satisfy type checker
-            # Since PrimitiveValueType is object, this is safe at runtime
+            # Store in custom_fields - raw_value is already validated as PrimitiveValueType
+            # compatible (str, int, float, bool, list, or None)
             self.custom_fields[key] = raw_value
             return True
         except Exception:  # fallback-ok: set_custom_field method signature returns bool for success/failure rather than raising
@@ -627,7 +804,19 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         )
 
     def remove_custom_field(self, key: str) -> bool:
-        """Remove a custom field."""
+        """Remove a custom field.
+
+        Args:
+            key: The field name to remove.
+
+        Returns:
+            True if the field existed and was removed, False if the field
+            was not found or an exception occurred.
+
+        Note:
+            This method catches all exceptions and returns False on failure
+            rather than propagating errors.
+        """
         try:
             if (
                 hasattr(self, "custom_fields")
@@ -642,7 +831,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -652,18 +841,20 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         except Exception:  # fallback-ok: protocol method must return bool, not raise
             return False
 
-    def serialize(self) -> SerializedDict:
-        """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+    def serialize(self) -> dict[str, object]:
+        """Serialize to dictionary (Serializable protocol).
+
+        Note:
+            This method uses the overridden model_dump() which performs custom
+            field iteration. Standard Pydantic serialization options like
+            by_alias, mode, include, exclude are not applicable here since
+            this class uses its own field storage mechanism.
+        """
+        return self.model_dump(exclude_none=False)
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: protocol method must return bool, not raise
-            return False
+        return True
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

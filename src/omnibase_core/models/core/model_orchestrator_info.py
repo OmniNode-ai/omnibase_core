@@ -5,7 +5,6 @@ Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fi
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
@@ -117,11 +116,11 @@ class ModelOrchestratorInfo(BaseModel):
         description="Custom orchestrator-specific data",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @field_validator("orchestrator_version", mode="before")
     @classmethod
-    def validate_orchestrator_version(cls, v: Any) -> ModelSemVer:
+    def validate_orchestrator_version(cls, v: object) -> ModelSemVer:
         """Validate and convert orchestrator_version to ModelSemVer."""
         if isinstance(v, ModelSemVer):
             return v
@@ -153,7 +152,7 @@ class ModelOrchestratorInfo(BaseModel):
         if "orchestrator_version" not in data:
             data["orchestrator_version"] = data.get("version", "unknown")
 
-        return cls(**data)
+        return cls.model_validate(data)
 
     def get_resource_summary(self) -> str:
         """Get resource allocation summary."""

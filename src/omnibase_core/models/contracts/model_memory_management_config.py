@@ -8,7 +8,7 @@ efficient batch processing operations.
 Part of the "one model per file" convention for clean architecture.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelMemoryManagementConfig(BaseModel):
@@ -42,8 +42,8 @@ class ModelMemoryManagementConfig(BaseModel):
         description="Enable spilling to disk when memory is full",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

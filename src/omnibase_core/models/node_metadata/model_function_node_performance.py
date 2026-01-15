@@ -7,9 +7,7 @@ Part of the ModelFunctionNode restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from typing import cast
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_memory_usage import EnumMemoryUsage
@@ -212,11 +210,11 @@ class ModelFunctionNodePerformance(BaseModel):
             memory_usage_mb=0.5,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -244,16 +242,31 @@ class ModelFunctionNodePerformance(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Pack performance data into metadata dict
+        result["metadata"] = {
+            "complexity": self.complexity.value,
+            # estimated_runtime is optional, use explicit None check
+            "estimated_runtime": (
+                self.estimated_runtime.value
+                if self.estimated_runtime is not None
+                else None
+            ),
+            # memory_usage is optional, use explicit None check
+            "memory_usage": self.memory_usage.value
+            if self.memory_usage is not None
+            else None,
+            "cyclomatic_complexity": self.cyclomatic_complexity,
+            "lines_of_code": self.lines_of_code,
+            "execution_count": self.execution_count,
+            "success_rate": self.success_rate,
+            "average_execution_time_ms": self.average_execution_time_ms,
+            "memory_usage_mb": self.memory_usage_mb,
+            "is_high_performance": self.is_high_performance(),
+            "is_complex_function": self.is_complex_function(),
+            "performance_score": self.get_performance_score(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -271,12 +284,7 @@ class ModelFunctionNodePerformance(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 # Export for use

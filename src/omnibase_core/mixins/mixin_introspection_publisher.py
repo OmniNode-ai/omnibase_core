@@ -1,4 +1,3 @@
-from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.models.discovery.model_nodeintrospectionevent import (
@@ -15,7 +14,8 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
@@ -42,7 +42,7 @@ class MixinIntrospectionPublisher:
         Publish NODE_INTROSPECTION_EVENT for automatic service discovery.
 
         This enables other services to discover this node's capabilities without
-        requiring manual registration or hardcoded node list[Any]s.
+        requiring manual registration or hardcoded node lists.
         """
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
@@ -90,7 +90,7 @@ class MixinIntrospectionPublisher:
                 f"Published introspection event for node {node_id}",
                 context=context,
             )
-        except (ValueError, ValidationError) as e:
+        except (ValidationError, ValueError) as e:
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
@@ -104,7 +104,7 @@ class MixinIntrospectionPublisher:
                 context=context,
             )
             raise
-        except Exception as e:
+        except (ModelOnexError, RuntimeError) as e:
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
@@ -139,40 +139,50 @@ class MixinIntrospectionPublisher:
                 tags=tags,
                 health_endpoint=health_endpoint,
             )
-        except Exception as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             # fallback-ok: Introspection failures use fallback data with logging
-            node_id_raw = getattr(self, "_node_id", None)
-            node_id = node_id_raw if node_id_raw is not None else "<unset>"
-            context = ModelLogContext(
-                calling_module=_COMPONENT_NAME,
-                calling_function="_gather_introspection_data",
-                calling_line=127,
-                timestamp=datetime.now().isoformat(),
-                node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
-            )
-            emit_log_event_sync(
-                LogLevel.WARNING,
-                f"Failed to gather full introspection data for node {node_id}, using fallback: {e}",
-                context=context,
-            )
-            # Import typed metadata model for proper Pydantic usage
-            from omnibase_core.models.common.model_typed_metadata import (
-                ModelNodeCapabilitiesMetadata,
-            )
+            return self._create_fallback_introspection_data(e)
+        except (
+            Exception
+        ) as e:  # fallback-ok: unexpected errors should not crash introspection
+            return self._create_fallback_introspection_data(e)
 
-            return ModelNodeIntrospectionData(
-                node_name=self.__class__.__name__.lower(),
-                version=ModelSemVer(major=1, minor=0, patch=0),
-                capabilities=ModelNodeCapabilities(
-                    actions=["health_check"],
-                    protocols=["event_bus"],
-                    metadata=ModelNodeCapabilitiesMetadata(
-                        author=DEFAULT_AUTHOR,
-                    ),
+    def _create_fallback_introspection_data(
+        self, error: Exception
+    ) -> ModelNodeIntrospectionData:
+        """Create fallback introspection data when normal gathering fails."""
+        node_id_raw = getattr(self, "_node_id", None)
+        node_id = node_id_raw if node_id_raw is not None else "<unset>"
+        context = ModelLogContext(
+            calling_module=_COMPONENT_NAME,
+            calling_function="_gather_introspection_data",
+            calling_line=127,
+            timestamp=datetime.now().isoformat(),
+            node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
+        )
+        emit_log_event_sync(
+            LogLevel.WARNING,
+            f"Failed to gather full introspection data for node {node_id}, using fallback: {error}",
+            context=context,
+        )
+        # Import typed metadata model for proper Pydantic usage
+        from omnibase_core.models.common.model_typed_metadata import (
+            ModelNodeCapabilitiesMetadata,
+        )
+
+        return ModelNodeIntrospectionData(
+            node_name=self.__class__.__name__.lower(),
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            capabilities=ModelNodeCapabilities(
+                actions=["health_check"],
+                protocols=["event_bus"],
+                metadata=ModelNodeCapabilitiesMetadata(
+                    author=DEFAULT_AUTHOR,
                 ),
-                tags=["event_driven"],
-                health_endpoint=None,
-            )
+            ),
+            tags=["event_driven"],
+            health_endpoint=None,
+        )
 
     def _extract_node_name(self) -> str:
         """Extract node name from class name or metadata."""
@@ -194,7 +204,9 @@ class MixinIntrospectionPublisher:
                     parts = str(metadata.namespace).split(".")
                     if len(parts) >= 3 and parts[-1].startswith("node_"):
                         return parts[-1]
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: metadata extraction uses fallback to class name
             pass
         class_name = self.__class__.__name__
         if class_name.startswith("Node"):
@@ -220,7 +232,7 @@ class MixinIntrospectionPublisher:
                             minor=int(parts[1]),
                             patch=int(parts[2]),
                         )
-        except Exception:
+        except Exception:  # fallback-ok: version extraction uses default 1.0.0
             pass
         return ModelSemVer(major=1, minor=0, patch=0)
 
@@ -249,7 +261,7 @@ class MixinIntrospectionPublisher:
                     ):
                         # Map copyright to license field in the typed model
                         license_str = str(loader_metadata.copyright)
-        except Exception:
+        except Exception:  # fallback-ok: capabilities extraction uses defaults
             pass
 
         # Create typed metadata model with extracted values
@@ -275,9 +287,9 @@ class MixinIntrospectionPublisher:
                     if "action" in annotations:
                         action_type = annotations["action"]
                         if hasattr(action_type, "__members__"):
-                            actions.extend(list[Any](action_type.__members__.keys()))
+                            actions.extend(list(action_type.__members__.keys()))
                         elif hasattr(action_type, "__args__"):
-                            actions.extend(list[Any](action_type.__args__))
+                            actions.extend(list(action_type.__args__))
                         break
             if not actions:
                 for method_name in dir(self):
@@ -295,7 +307,7 @@ class MixinIntrospectionPublisher:
                         "configure",
                     ]:
                         actions.append(method_name)
-        except Exception:
+        except Exception:  # fallback-ok: action extraction uses health_check default
             pass
         if not actions:
             actions = ["health_check"]
@@ -313,7 +325,7 @@ class MixinIntrospectionPublisher:
                 protocols.append("graphql")
             if hasattr(self, "http_server") or hasattr(self, "supports_http"):
                 protocols.append("http")
-        except Exception:
+        except Exception:  # fallback-ok: protocol detection uses event_bus default
             pass
         return protocols
 
@@ -340,7 +352,7 @@ class MixinIntrospectionPublisher:
                 self, "supports_graphql", False
             ):
                 tags.append("graphql")
-        except Exception:
+        except Exception:  # fallback-ok: tag generation uses event_driven default
             pass
         return list(set(tags))
 
@@ -350,11 +362,11 @@ class MixinIntrospectionPublisher:
             if hasattr(self, "health_check"):
                 node_id = getattr(self, "_node_id", None) or "<unset>"
                 return f"/health/{node_id}"
-        except Exception:
+        except Exception:  # fallback-ok: health endpoint detection returns None
             pass
         return None
 
-    def _publish_with_retry(self, event: Any, max_retries: int = 3) -> None:
+    def _publish_with_retry(self, event: object, max_retries: int = 3) -> None:
         """Publish event with retry logic."""
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
@@ -368,13 +380,13 @@ class MixinIntrospectionPublisher:
         envelope = ModelEventEnvelope.create_broadcast(
             payload=event,
             source_node_id=source_uuid,
-            correlation_id=event.correlation_id,
+            correlation_id=getattr(event, "correlation_id", None),
         )
         for attempt in range(max_retries):
             try:
                 event_bus.publish(envelope)
                 return
-            except Exception as e:
+            except (ModelOnexError, RuntimeError, ValueError) as e:
                 if attempt == max_retries - 1:
                     context = ModelLogContext(
                         calling_module=_COMPONENT_NAME,

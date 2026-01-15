@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.types.json_types import JsonValue, PrimitiveValue
+from omnibase_core.types.type_json import JsonType, PrimitiveValue
 
 if TYPE_CHECKING:
     from omnibase_core.models.validation.model_required_fields_model import (
@@ -28,13 +28,13 @@ class ModelSchemaProperty(BaseModel):
     type: str | None = None
     title: str | None = None
     description: str | None = None
-    default: JsonValue = None
+    default: JsonType = None
     enum: list[PrimitiveValue] | None = None
     format: str | None = None
     items: ModelSchemaProperty | None = None
     properties: ModelSchemaPropertiesModel | None = None
     required: ModelRequiredFieldsModel | None = None
-    model_config = {"arbitrary_types_allowed": True, "extra": "allow"}
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
 
 # Forward Reference Resolution

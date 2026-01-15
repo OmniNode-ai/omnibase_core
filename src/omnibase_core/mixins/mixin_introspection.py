@@ -32,13 +32,17 @@ this mixin to provide consistent --introspect functionality.
 
 import sys
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
+if TYPE_CHECKING:
+    from omnibase_core.protocols import ProtocolEventBus
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.core.model_cli_argument import ModelCLIArgument
 from omnibase_core.models.core.model_cli_interface import ModelCLIInterface
 from omnibase_core.models.core.model_contract import ModelContract
@@ -84,7 +88,7 @@ class MixinNodeIntrospection(ABC):
 
     @classmethod
     @abstractmethod
-    def get_metadata_loader(cls) -> Any:
+    def get_metadata_loader(cls) -> object:
         """
         Subclasses must implement this to provide a metadata loader instance.
         This enables dependency injection and avoids hardcoding.
@@ -92,17 +96,17 @@ class MixinNodeIntrospection(ABC):
 
     @classmethod
     def get_node_name(cls) -> str:
-        node_name: str = cls.get_metadata_loader().node_name
+        node_name: str = cls.get_metadata_loader().node_name  # type: ignore[attr-defined]  # Metadata loader duck-typed interface; attr exists at runtime
         return node_name
 
     @classmethod
     def get_node_version(cls) -> ModelSemVer:
-        node_version: ModelSemVer = cls.get_metadata_loader().node_version
+        node_version: ModelSemVer = cls.get_metadata_loader().node_version  # type: ignore[attr-defined]  # Metadata loader duck-typed interface; attr exists at runtime
         return node_version
 
     @classmethod
     def get_node_description(cls) -> str:
-        node_description: str = cls.get_metadata_loader().node_description
+        node_description: str = cls.get_metadata_loader().node_description  # type: ignore[attr-defined]  # Metadata loader duck-typed interface; attr exists at runtime
         return node_description
 
     @classmethod
@@ -352,7 +356,7 @@ class MixinNodeIntrospection(ABC):
         node_name = cls.get_node_name()
 
         # Get version information from resolver
-        # TODO: Implement global_resolver for version information
+        # TODO(OMN-TBD): Implement global_resolver for version information  [NEEDS TICKET]
         # Once implemented, global_resolver should return ModelSemVer objects directly
 
         # Create enhanced node metadata with version information using composed models
@@ -477,7 +481,9 @@ class MixinNodeIntrospection(ABC):
         )
 
     @classmethod
-    def handle_introspect_command(cls, event_bus: Any = None) -> None:
+    def handle_introspect_command(
+        cls, event_bus: "ProtocolEventBus | None" = None
+    ) -> None:
         """
         Handle the --introspect command by generating and emitting the response via the event bus/logger node.
         This method should be called from the node's main() function when --introspect is detected in the command line arguments.
@@ -488,7 +494,7 @@ class MixinNodeIntrospection(ABC):
         # 1. Try to extract correlation_id from event_bus (if it has one)
         correlation_id = None
         if hasattr(event_bus, "correlation_id"):
-            correlation_id = event_bus.correlation_id
+            correlation_id = event_bus.correlation_id  # type: ignore[union-attr]  # Checked via hasattr; optional protocol extension
         # 2. Fallback to ONEX_CORRELATION_ID env var
         if not correlation_id:
             correlation_id = os.environ.get("ONEX_CORRELATION_ID")
@@ -513,7 +519,7 @@ class MixinNodeIntrospection(ABC):
                 },
             )
             sys.exit(0)
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             error_response = {
                 "error": "Introspection failed",
                 "message": str(e),

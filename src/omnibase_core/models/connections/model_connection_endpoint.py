@@ -7,7 +7,7 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from omnibase_core.constants import MAX_NAME_LENGTH, MAX_URL_LENGTH
 from omnibase_core.enums.enum_connection_type import EnumConnectionType
@@ -157,11 +157,11 @@ class ModelConnectionEndpoint(BaseModel):
             path=None,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -172,7 +172,7 @@ class ModelConnectionEndpoint(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValidationError, ValueError) as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -180,15 +180,9 @@ class ModelConnectionEndpoint(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                message=f"Operation failed: {e}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            ) from e
+        # Pydantic handles validation automatically during instantiation.
+        # This method exists to satisfy the ProtocolValidatable interface.
+        return True
 
     def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""

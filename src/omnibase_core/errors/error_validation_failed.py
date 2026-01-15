@@ -18,4 +18,5 @@ class ExceptionValidationFailedError(ExceptionFailFastError):
         if value is not None:
             details["value"] = str(value)
 
+        # NOTE(OMN-1302): String error code passed to base class. Safe because base validates code.
         super().__init__(message, "VALIDATION_FAILED", details)  # type: ignore[arg-type]

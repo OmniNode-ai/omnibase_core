@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Function Type Enum.
 
 Strongly typed function type values for configuration and processing.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumFunctionType(str, Enum):
+class EnumFunctionType(StrValueHelper, str, Enum):
     """
     Strongly typed function type values.
 
@@ -24,10 +25,6 @@ class EnumFunctionType(str, Enum):
     COMPUTE = "compute"
     GATEWAY = "gateway"
     ORCHESTRATOR = "orchestrator"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_data_processing(cls, function_type: EnumFunctionType) -> bool:

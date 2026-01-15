@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 CLI Input Dictionary TypedDict.
 
 Provides TypedDict for CLI input parameters with proper typing.
 """
 
+from __future__ import annotations
 
 from typing import TypedDict
 from uuid import UUID

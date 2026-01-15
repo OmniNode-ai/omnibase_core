@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Metadata tool status enumeration.
 
 Defines lifecycle status for metadata tools.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumMetadataToolStatus(str, Enum):
+class EnumMetadataToolStatus(StrValueHelper, str, Enum):
     """
     Status of metadata tools.
 
@@ -24,10 +25,6 @@ class EnumMetadataToolStatus(str, Enum):
     EXPERIMENTAL = "experimental"  # Experimental, may change
     LEGACY = "legacy"  # Older tool still supported
     DISABLED = "disabled"  # Disabled, not available for use
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_usable(cls, status: EnumMetadataToolStatus) -> bool:

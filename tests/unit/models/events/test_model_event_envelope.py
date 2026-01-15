@@ -1016,7 +1016,6 @@ class TestModelEventEnvelopeInferCategory:
         """Explicit EVENT category in metadata should take precedence."""
 
         # Even though payload has Command in name, metadata overrides
-        @pytest.mark.unit
         class TestCommand(BaseModel):
             """Command-like payload."""
 
@@ -1074,7 +1073,6 @@ class TestModelEventEnvelopeInferCategory:
     def test_infer_category_invalid_metadata_tag_falls_back(self):
         """Invalid metadata category should fall back to payload inference."""
 
-        @pytest.mark.unit
         class TestIntent(BaseModel):
             """Intent-like payload."""
 

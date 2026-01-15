@@ -15,7 +15,7 @@ mixin_retry:
   # Dependencies
   requires:
     - "omnibase_core.models.infrastructure.model_retry_policy"
-    - "omnibase_core.models.infrastructure.model_retry_config"
+    - "omnibase_core.models.core.model_retry_config"
     - "omnibase_core.models.infrastructure.model_retry_conditions"
     - "omnibase_core.models.infrastructure.model_retry_execution"
     - "omnibase_core.models.infrastructure.model_retry_advanced"
@@ -223,7 +223,7 @@ mixin_retry:
           )
 
       - name: "should_retry"
-        signature: "def should_retry(self, error: Exception, status_code: Optional[int] = None) -> bool"
+        signature: "def should_retry(self, error: Exception, status_code: int | None = None) -> bool"
         description: "Determine if operation should be retried"
         example: |
           if self.should_retry(error, status_code=503):
@@ -238,7 +238,7 @@ mixin_retry:
           await asyncio.sleep(delay)
 
       - name: "record_attempt"
-        signature: "def record_attempt(self, success: bool, error: Optional[Exception] = None) -> None"
+        signature: "def record_attempt(self, success: bool, error: Exception | None = None) -> None"
         description: "Record retry attempt result"
         example: |
           self.record_attempt(
@@ -443,9 +443,9 @@ mixin_health_check:
 
   # Dependencies
   requires:
-    - "omnibase_core.enums.enum_node_health_status"
-    - "omnibase_core.models.core.model_health_status"
-    - "omnibase_core.logging.structured"
+    - "omnibase_core.enums.enum_health_status"
+    - "omnibase_core.models.health.model_health_status"
+    - "omnibase_core.logging.logging_structured"
     - "omnibase_core.enums.enum_log_level"
     - "asyncio"
     - "datetime"
@@ -591,7 +591,7 @@ mixin_health_check:
         description: "Synchronous health check with dependency aggregation"
         example: |
           health = self.health_check()
-          if health.status == EnumNodeHealthStatus.HEALTHY:
+          if health.status == EnumHealthStatus.HEALTHY:
               logger.info(f"Node healthy: {health.message}")
 
       - name: "health_check_async"
@@ -599,7 +599,7 @@ mixin_health_check:
         description: "Asynchronous health check with concurrent execution"
         example: |
           health = await self.health_check_async()
-          if health.status != EnumNodeHealthStatus.HEALTHY:
+          if health.status != EnumHealthStatus.HEALTHY:
               await self.handle_health_issue(health)
 
       - name: "get_health_checks"
@@ -629,7 +629,7 @@ mixin_health_check:
         description: "Current overall health status"
 
       - name: "last_health_check"
-        type: "Optional[ModelHealthStatus]"
+        type: "ModelHealthStatus | None"
         description: "Result of most recent health check"
 
       - name: "health_check_count"
@@ -798,11 +798,11 @@ mixin_health_check:
             async def execute_with_health_check(self, operation):
                 health = await self.health_check_async()
 
-                if health.status in [EnumNodeHealthStatus.UNHEALTHY, EnumNodeHealthStatus.CRITICAL]:
+                if health.status in [EnumHealthStatus.UNHEALTHY, EnumHealthStatus.CRITICAL]:
                     self.circuit_breaker.open()
                     raise ServiceUnavailableError(health.message)
 
-                if health.status == EnumNodeHealthStatus.HEALTHY:
+                if health.status == EnumHealthStatus.HEALTHY:
                     self.circuit_breaker.close()
 
                 return await operation()
@@ -824,13 +824,13 @@ mixin_health_check:
                 try:
                     self.db.execute("SELECT 1")
                     return ModelHealthStatus(
-                        status=EnumNodeHealthStatus.HEALTHY,
+                        status=EnumHealthStatus.HEALTHY,
                         message="Database connection OK",
                         timestamp=datetime.now(timezone.utc).isoformat()
                     )
                 except Exception as e:
                     return ModelHealthStatus(
-                        status=EnumNodeHealthStatus.UNHEALTHY,
+                        status=EnumHealthStatus.UNHEALTHY,
                         message=f"Database connection failed: {e}",
                         timestamp=datetime.now(timezone.utc).isoformat()
                     )
@@ -841,11 +841,11 @@ mixin_health_check:
                 utilization = pool_size / max_pool_size
 
                 if utilization < 0.7:
-                    status = EnumNodeHealthStatus.HEALTHY
+                    status = EnumHealthStatus.HEALTHY
                 elif utilization < 0.9:
-                    status = EnumNodeHealthStatus.DEGRADED
+                    status = EnumHealthStatus.DEGRADED
                 else:
-                    status = EnumNodeHealthStatus.UNHEALTHY
+                    status = EnumHealthStatus.UNHEALTHY
 
                 return ModelHealthStatus(
                     status=status,
@@ -869,16 +869,16 @@ mixin_health_check:
                     response = await self.client.get("/health")
                     if response.status == 200:
                         return ModelHealthStatus(
-                            status=EnumNodeHealthStatus.HEALTHY,
+                            status=EnumHealthStatus.HEALTHY,
                             message="API is available"
                         )
                     return ModelHealthStatus(
-                        status=EnumNodeHealthStatus.DEGRADED,
+                        status=EnumHealthStatus.DEGRADED,
                         message=f"API returned {response.status}"
                     )
                 except Exception as e:
                     return ModelHealthStatus(
-                        status=EnumNodeHealthStatus.UNHEALTHY,
+                        status=EnumHealthStatus.UNHEALTHY,
                         message=f"API unavailable: {e}"
                     )
 
@@ -899,24 +899,24 @@ mixin_health_check:
 
                 for node in self.managed_nodes:
                     health = node.health_check()
-                    if health.status == EnumNodeHealthStatus.UNHEALTHY:
+                    if health.status == EnumHealthStatus.UNHEALTHY:
                         unhealthy.append(node.name)
-                    elif health.status == EnumNodeHealthStatus.DEGRADED:
+                    elif health.status == EnumHealthStatus.DEGRADED:
                         degraded.append(node.name)
 
                 if unhealthy:
                     return ModelHealthStatus(
-                        status=EnumNodeHealthStatus.UNHEALTHY,
+                        status=EnumHealthStatus.UNHEALTHY,
                         message=f"Unhealthy subnodes: {', '.join(unhealthy)}"
                     )
                 if degraded:
                     return ModelHealthStatus(
-                        status=EnumNodeHealthStatus.DEGRADED,
+                        status=EnumHealthStatus.DEGRADED,
                         message=f"Degraded subnodes: {', '.join(degraded)}"
                     )
 
                 return ModelHealthStatus(
-                    status=EnumNodeHealthStatus.HEALTHY,
+                    status=EnumHealthStatus.HEALTHY,
                     message=f"All {len(self.managed_nodes)} subnodes healthy"
                 )
 
@@ -926,7 +926,7 @@ mixin_health_check:
     description: "Health status result model"
     fields:
       status:
-        type: "EnumNodeHealthStatus"
+        type: "EnumHealthStatus"
         required: true
         description: "Health status level (HEALTHY, DEGRADED, UNHEALTHY, CRITICAL, UNKNOWN)"
 
@@ -941,17 +941,17 @@ mixin_health_check:
         description: "ISO 8601 timestamp of health check"
 
       check_duration_ms:
-        type: "Optional[int]"
+        type: "int | None"
         required: false
         description: "Time taken to perform health check (milliseconds)"
 
       component_results:
-        type: "Optional[List[ModelHealthStatus]]"
+        type: "List[ModelHealthStatus] | None"
         required: false
         description: "Individual component health check results"
 
       dependency_results:
-        type: "Optional[Dict[str, ModelHealthStatus]]"
+        type: "Dict[str, ModelHealthStatus] | None"
         required: false
         description: "Dependency health check results by name"
 
@@ -1913,11 +1913,11 @@ mixin_event_bus:
             def _check_event_bus_availability(self) -> ModelHealthStatus:
                 if self.is_event_bus_available:
                     return ModelHealthStatus(
-                        status=EnumNodeHealthStatus.HEALTHY,
+                        status=EnumHealthStatus.HEALTHY,
                         message="Event bus available"
                     )
                 return ModelHealthStatus(
-                    status=EnumNodeHealthStatus.DEGRADED,
+                    status=EnumHealthStatus.DEGRADED,
                     message="Event bus unavailable"
                 )
 
@@ -2487,8 +2487,8 @@ mixin_fsm_execution:
   # Dependencies
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_fsm_subcontract"
-    - "omnibase_core.utils.fsm_executor"
-    - "omnibase_core.models.model_intent"
+    - "omnibase_core.utils.util_fsm_executor"
+    - "omnibase_core.models.reducer.model_intent"
     - "pydantic"
 
   # Compatibility
@@ -2803,7 +2803,7 @@ mixin_workflow_execution:
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_workflow_definition"
     - "omnibase_core.models.contracts.model_workflow_step"
-    - "omnibase_core.utils.workflow_executor"
+    - "omnibase_core.utils.util_workflow_executor"
     - "omnibase_core.models.orchestrator.model_action"
     - "pydantic"
 
@@ -3174,7 +3174,7 @@ mixin_introspection:
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_introspection_subcontract"
-    - "omnibase_core.models.metadata.model_node_metadata"
+    - "omnibase_core.models.core.model_node_metadata"
     - "pydantic"
 
   compatible_with:
@@ -3296,7 +3296,7 @@ mixin_node_lifecycle:
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_lifecycle_subcontract"
-    - "omnibase_core.enums.enum_node_lifecycle_state"
+    - "omnibase_core.enums.enum_node_lifecycle_status"
     - "pydantic"
 
   compatible_with:
@@ -3358,7 +3358,7 @@ mixin_tool_execution:
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_tool_execution_subcontract"
-    - "omnibase_core.models.tools.model_tool_definition"
+    - "omnibase_core.models.tools.model_tool_execution_result"
     - "pydantic"
 
   compatible_with:

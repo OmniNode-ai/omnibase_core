@@ -14,6 +14,11 @@ Design Principles:
 
 from __future__ import annotations
 
+# Contract Validation Invariant Checker (OMN-1146)
+# Import at package level to avoid long import paths
+from omnibase_core.protocols.protocol_contract_validation_invariant_checker import (
+    ProtocolContractValidationInvariantChecker,
+)
 from omnibase_core.protocols.validation.protocol_architecture_compliance import (
     ProtocolArchitectureCompliance,
 )
@@ -29,6 +34,19 @@ from omnibase_core.protocols.validation.protocol_compliance_validator import (
 from omnibase_core.protocols.validation.protocol_compliance_violation import (
     ProtocolComplianceViolation,
 )
+from omnibase_core.protocols.validation.protocol_constraint_validation_result import (
+    ProtocolConstraintValidationResult,
+)
+from omnibase_core.protocols.validation.protocol_constraint_validator import (
+    ProtocolConstraintValidator,
+)
+from omnibase_core.protocols.validation.protocol_contract_validation_event_emitter import (
+    ProtocolContractValidationEventEmitter,
+)
+from omnibase_core.protocols.validation.protocol_contract_validation_pipeline import (
+    ProtocolContractValidationPipeline,
+)
+from omnibase_core.protocols.validation.protocol_event_sink import ProtocolEventSink
 from omnibase_core.protocols.validation.protocol_onex_standards import (
     ProtocolONEXStandards,
 )
@@ -52,6 +70,8 @@ __all__ = [
     "ProtocolValidationResult",
     "ProtocolValidator",
     "ProtocolValidationDecorator",
+    # Contract Validation Invariant Checker (OMN-1146)
+    "ProtocolContractValidationInvariantChecker",
     # Compliance
     "ProtocolComplianceRule",
     "ProtocolComplianceViolation",
@@ -61,4 +81,13 @@ __all__ = [
     "ProtocolComplianceValidator",
     # Quality
     "ProtocolQualityValidator",
+    # Contract Validation Pipeline (OMN-1128)
+    "ProtocolContractValidationPipeline",
+    # Contract Validation Event Emitter (OMN-1151)
+    "ProtocolContractValidationEventEmitter",
+    # Event Sink Protocol (OMN-1151)
+    "ProtocolEventSink",
+    # Constraint Validator (OMN-1128 SPI Seam)
+    "ProtocolConstraintValidator",
+    "ProtocolConstraintValidationResult",
 ]

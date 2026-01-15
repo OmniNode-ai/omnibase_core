@@ -2,7 +2,7 @@
 Extension value model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.types import JsonSerializable
 
@@ -17,4 +17,4 @@ class ModelExtensionValue(BaseModel):
     description: str | None = None
     # Add more fields as needed for extension use cases
 
-    model_config = {"arbitrary_types_allowed": True, "extra": "allow"}
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")

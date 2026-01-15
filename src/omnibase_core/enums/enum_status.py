@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Status enumeration for general status tracking.
 
 Provides standardized status values for state management across the system.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumStatus(str, Enum):
+class EnumStatus(StrValueHelper, str, Enum):
     """
     General status enumeration for state tracking.
 

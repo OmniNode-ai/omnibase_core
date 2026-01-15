@@ -2,10 +2,13 @@
 Enum for MCP operation status values.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumMcpStatus(str, Enum):
+@unique
+class EnumMcpStatus(StrValueHelper, str, Enum):
     """Status values for MCP operations."""
 
     SUCCESS = "success"
@@ -16,3 +19,6 @@ class EnumMcpStatus(str, Enum):
     RUNNING = "running"
     UNKNOWN = "unknown"
     UNREACHABLE = "unreachable"
+
+
+__all__ = ["EnumMcpStatus"]

@@ -1,18 +1,16 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Environment Properties Collection Model
 
 Type-safe collection of environment properties with metadata support.
 """
 
-from pydantic import BaseModel
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
 
@@ -49,11 +47,12 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
         """Check if collection has any properties."""
         return len(self.properties) > 0
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
     # Note: Removed to_dict() and from_dict() methods to comply with pure Pydantic architecture
     # Use model.properties directly or ModelEnvironmentPropertiesCollection(**data) for creation
@@ -67,10 +66,13 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
+        except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS covers: AttributeError, TypeError, ValidationError, ValueError
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> SerializedDict:
@@ -79,15 +81,9 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
 
 __all__ = [

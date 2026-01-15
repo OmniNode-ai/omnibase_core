@@ -1,8 +1,15 @@
+"""
+Flexible Value Model - Discriminated Union for Mixed Type Values.
+
+Replaces dict[str, Any]| None, list[Any]| None, and other mixed-type unions
+with structured discriminated union pattern for type safety.
+"""
+
 from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
@@ -10,13 +17,6 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_error_context import ModelErrorContext
 from .model_schema_value import ModelSchemaValue
-
-"""
-Flexible Value Model - Discriminated Union for Mixed Type Values.
-
-Replaces dict[str, Any]| None, list[Any]| None, and other mixed-type unions
-with structured discriminated union pattern for type safety.
-"""
 
 # Note: Previously had type aliases (FlexibleDictType, FlexibleListType, FlexibleValueType)
 # These were removed to comply with ONEX strong typing standards.
@@ -344,13 +344,12 @@ class ModelFlexibleValue(BaseModel):
             f"value={self.get_value()}, source='{self.source}')"
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
     # Protocol method implementations
 

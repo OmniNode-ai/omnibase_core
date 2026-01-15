@@ -4,10 +4,13 @@ Effect parameter type enumeration.
 Defines types for discriminated union in effect parameters.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumEffectParameterType(str, Enum):
+@unique
+class EnumEffectParameterType(StrValueHelper, str, Enum):
     """Effect parameter type enumeration for discriminated unions."""
 
     TARGET_SYSTEM = "target_system"

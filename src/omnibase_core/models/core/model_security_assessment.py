@@ -158,12 +158,12 @@ class ModelSecurityAssessment(BaseModel):
         description="Next scheduled assessment",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @classmethod
     def from_dict(cls, data: "SerializedDict") -> "ModelSecurityAssessment":
         """Create from dictionary for easy migration."""
-        return cls(**data)
+        return cls.model_validate(data)
 
     @field_serializer(
         "last_assessment_date",

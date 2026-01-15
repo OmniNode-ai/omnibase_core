@@ -6,7 +6,7 @@ Discriminated union for error values following ONEX one-model-per-file architect
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_error_value_type import EnumErrorValueType
@@ -25,11 +25,11 @@ class ModelErrorValue(BaseModel):
     - Serializable: Data serialization/deserialization
     """
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     error_type: EnumErrorValueType = Field(
         description="Type discriminator for error value",
@@ -156,14 +156,12 @@ class ModelErrorValue(BaseModel):
                 return exception_classes[self.exception_class](self.exception_message)
             # Fall back to generic RuntimeError with original class info
             return RuntimeError(f"{self.exception_class}: {self.exception_message}")
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             # If recreation fails, raise error with context about the failure
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to recreate exception {self.exception_class}: {e}",
             ) from e
-
-    # Export the model
 
     # Protocol method implementations
 

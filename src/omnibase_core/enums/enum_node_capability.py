@@ -2,10 +2,13 @@
 Enum for node capabilities.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumNodeCapability(str, Enum):
+@unique
+class EnumNodeCapability(StrValueHelper, str, Enum):
     """Standard node capabilities that can be declared via introspection."""
 
     SUPPORTS_DRY_RUN = "supports_dry_run"
@@ -17,3 +20,6 @@ class EnumNodeCapability(str, Enum):
     SUPPORTS_SCHEMA_VALIDATION = "supports_schema_validation"
     SUPPORTS_ERROR_RECOVERY = "supports_error_recovery"
     SUPPORTS_EVENT_DISCOVERY = "supports_event_discovery"
+
+
+__all__ = ["EnumNodeCapability"]

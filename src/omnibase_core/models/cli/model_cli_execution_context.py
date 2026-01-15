@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 CLI Execution Context Model.
 
@@ -11,16 +5,16 @@ Represents custom execution context with proper validation.
 Replaces dict[str, Any] for custom context with structured typing.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -107,11 +101,11 @@ class ModelCliExecutionContext(BaseModel):
         self.value = new_value
         self.updated_at = datetime.now()
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -143,15 +137,7 @@ class ModelCliExecutionContext(BaseModel):
         Raises:
             ModelOnexError: If validation fails with details about the failure
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Instance validation failed: {e}",
-            ) from e
+        return True
 
 
 # Export for use

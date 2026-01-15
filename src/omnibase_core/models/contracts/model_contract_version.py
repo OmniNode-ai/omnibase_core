@@ -43,10 +43,11 @@ class ModelContractVersion(BaseModel):
     patch: int = Field(..., ge=0, description="Patch version (bug fixes)")
 
     model_config = ConfigDict(
-        frozen=True,  # Immutable
         extra="forbid",  # Strict - no extra fields
-        validate_assignment=True,
+        from_attributes=True,  # Required for pytest-xdist compatibility
+        frozen=True,  # Immutable
         strict=True,  # Strict type checking - no coercion
+        validate_assignment=True,
     )
 
     def __str__(self) -> str:

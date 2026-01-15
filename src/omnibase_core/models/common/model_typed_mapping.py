@@ -240,7 +240,7 @@ class ModelTypedMapping(BaseModel):
             mapping_errors = self._get_mapping_constraint_errors()
             errors.extend(mapping_errors)
 
-        except Exception as e:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
             errors.append(f"Mapping validation error: {e!s}")
 
         return errors
@@ -294,7 +294,7 @@ class ModelTypedMapping(BaseModel):
                         f"Key '{key}' contains control characters: {', '.join(control_chars)}"
                     )
 
-        except Exception as e:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
             errors.append(f"Key validation error: {e!s}")
 
         return errors

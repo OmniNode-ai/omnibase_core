@@ -7,10 +7,9 @@ Part of the ModelFunctionNodeMetadata restructuring.
 
 from __future__ import annotations
 
-from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
@@ -134,26 +133,31 @@ class ModelFunctionRelationships(BaseModel):
             else [],
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Map tags to TypedDictMetadataDict structure
+        if self.tags:
+            result["tags"] = self.tags
+        # Pack additional fields into metadata
+        result["metadata"] = {
+            "dependencies": [str(dep) for dep in self.dependencies],
+            "related_functions": [str(func) for func in self.related_functions],
+            "categories": [cat.value for cat in self.categories],
+            "has_dependencies": self.has_dependencies(),
+            "has_related_functions": self.has_related_functions(),
+            "has_tags": self.has_tags(),
+            "has_categories": self.has_categories(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -171,12 +175,7 @@ class ModelFunctionRelationships(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 # Export for use

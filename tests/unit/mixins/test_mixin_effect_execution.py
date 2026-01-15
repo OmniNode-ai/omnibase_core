@@ -27,7 +27,8 @@ import pytest
 # Module-level pytest marker for all tests in this file
 pytestmark = pytest.mark.unit
 
-from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
+from omnibase_core.enums import EnumEffectType, EnumTransactionState
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
@@ -365,18 +366,25 @@ class TestParseIOConfig:
 
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectOperationConfig.from_dict({})
-        assert "io_config" in str(exc_info.value)
+        errors = exc_info.value.errors()
+        assert any("io_config" in error.get("msg", "") for error in errors)
 
     def test_parse_unknown_handler_type_raises_error(self, test_node: TestNode) -> None:
-        """Test that unknown handler type raises ModelOnexError."""
+        """Test that unknown handler type raises ValidationError during parsing.
+
+        Since io_config uses a discriminated union, unknown handler types are
+        rejected at model validation time (before reaching _parse_io_config).
+        """
+        from pydantic import ValidationError
+
         from omnibase_core.models.operations import ModelEffectOperationConfig
 
-        operation_config = ModelEffectOperationConfig.from_dict(
-            {"io_config": {"handler_type": "unknown"}}
-        )
-        with pytest.raises(ModelOnexError) as exc_info:
-            test_node._parse_io_config(operation_config)
-        assert "Unknown handler type" in str(exc_info.value)
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectOperationConfig.from_dict(
+                {"io_config": {"handler_type": "unknown"}}
+            )
+        errors = exc_info.value.errors()
+        assert any(error["type"] == "union_tag_invalid" for error in errors)
 
 
 @pytest.mark.unit
@@ -921,6 +929,77 @@ class TestDeniedBuiltins:
         # Should mention pattern, not deny-list
         assert "Invalid field path characters" in exc_info.value.message
 
+    def test_extract_field_returns_dict_values(self, test_node: TestNode) -> None:
+        """Test that dict values are returned as-is (type validation allows dicts)."""
+        nested_dict = {"key": "value", "nested": {"inner": 123}}
+        data = {"config": nested_dict}
+
+        result = test_node._extract_field(data, "config")
+        assert result == nested_dict
+        assert isinstance(result, dict)
+
+    def test_extract_field_returns_list_values(self, test_node: TestNode) -> None:
+        """Test that list values are returned as-is (type validation allows lists)."""
+        items = [1, 2, {"key": "value"}]
+        data = {"items": items}
+
+        result = test_node._extract_field(data, "items")
+        assert result == items
+        assert isinstance(result, list)
+
+    def test_extract_field_returns_none_for_callable(self, test_node: TestNode) -> None:
+        """Test that callable values return None (type safety validation).
+
+        Security hardening: Prevents accidentally exposing callable objects
+        which could be exploited for code execution.
+        """
+
+        def my_function() -> str:
+            return "dangerous"
+
+        data = {"callback": my_function}
+
+        # Callable should be filtered out by type validation
+        result = test_node._extract_field(data, "callback")
+        assert result is None
+
+    def test_extract_field_returns_none_for_custom_object(
+        self, test_node: TestNode
+    ) -> None:
+        """Test that custom objects return None (type safety validation).
+
+        Security hardening: Prevents leaking arbitrary object references
+        which could expose internal state or methods.
+        """
+
+        class CustomClass:
+            def __init__(self) -> None:
+                self.secret = "internal_data"
+
+        data = {"obj": CustomClass()}
+
+        # Custom object should be filtered out by type validation
+        result = test_node._extract_field(data, "obj")
+        assert result is None
+
+    def test_extract_field_returns_primitives_correctly(
+        self, test_node: TestNode
+    ) -> None:
+        """Test that all primitive types are returned correctly."""
+        data = {
+            "string_val": "hello",
+            "int_val": 42,
+            "float_val": 3.14,
+            "bool_true": True,
+            "bool_false": False,
+        }
+
+        assert test_node._extract_field(data, "string_val") == "hello"
+        assert test_node._extract_field(data, "int_val") == 42
+        assert test_node._extract_field(data, "float_val") == 3.14
+        assert test_node._extract_field(data, "bool_true") is True
+        assert test_node._extract_field(data, "bool_false") is False
+
 
 @pytest.mark.unit
 class TestCoerceParamValue:
@@ -985,7 +1064,7 @@ class TestCircuitBreaker:
         """Test that closed circuit breaker allows requests."""
         operation_id = uuid4()
         cb = ModelCircuitBreaker.create_resilient()
-        cb.state = "closed"
+        cb.state = EnumCircuitBreakerState.CLOSED
         test_node._circuit_breakers[operation_id] = cb
 
         result = test_node._check_circuit_breaker(operation_id)
@@ -1004,7 +1083,7 @@ class TestCircuitBreaker:
 
         operation_id = uuid4()
         cb = ModelCircuitBreaker.create_resilient()
-        cb.state = "open"
+        cb.state = EnumCircuitBreakerState.OPEN
         cb.failure_count = cb.failure_threshold + 1
         cb.total_requests = cb.minimum_request_threshold + 1
         # Set last_state_change to now so it doesn't transition to half-open
@@ -1352,7 +1431,7 @@ class TestExecuteWithRetry:
 
         # Initialize circuit breaker in open state
         cb = ModelCircuitBreaker.create_resilient()
-        cb.state = "open"
+        cb.state = EnumCircuitBreakerState.OPEN
         test_node._circuit_breakers[operation_id] = cb
 
         with pytest.raises(ModelOnexError) as exc_info:
@@ -1763,6 +1842,49 @@ class TestSecretResolution:
 
         assert "Failed to resolve secret" in str(exc_info.value)
 
+    def test_resolve_secret_service_missing_method_raises_error(
+        self, test_node: TestNode
+    ) -> None:
+        """Test that secret service without get_secret method raises error.
+
+        This tests the hasattr check that validates the secret service
+        implements the required get_secret method.
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        # Register mock secret service WITHOUT get_secret method
+        mock_secret_service = MagicMock(spec=[])  # Empty spec = no methods
+        test_node.container.register_service(
+            "ProtocolSecretService", mock_secret_service
+        )
+
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+            headers={"X-API-Key": "${secret.API_KEY}"},
+        )
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={},
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            test_node._resolve_io_context(io_config, input_data)
+
+        # Check error wrapping - either inner or outer message
+        error_str = str(exc_info.value)
+        assert (
+            "does not implement get_secret method" in error_str
+            or "Failed to resolve secret" in error_str
+        )
+        # Verify error code if accessible
+        if hasattr(exc_info.value, "error_code"):
+            # Could be UNSUPPORTED_OPERATION or wrapped error
+            assert exc_info.value.error_code in (
+                EnumCoreErrorCode.UNSUPPORTED_OPERATION,
+                EnumCoreErrorCode.CONFIGURATION_ERROR,
+            )
+
 
 @pytest.mark.unit
 class TestFilesystemContentResolution:
@@ -2151,9 +2273,10 @@ class TestEdgeCases:
         with pytest.raises(ModelOnexError) as exc_info:
             await test_node.execute_effect(input_data)
 
-        # The error should be wrapped but the original should be in the chain
-        # (because handler exception is wrapped in Handler execution failed)
-        assert "Handler execution failed" in str(exc_info.value)
+        # The original ModelOnexError should be passed through unchanged
+        # Verify the original error message is preserved
+        assert "Original handler error" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
 @pytest.mark.unit
@@ -2484,7 +2607,7 @@ class TestEffectContractYamlParsing:
                 "timeout_ms": 5000,
             },
             "retry_policy": {
-                "max_attempts": 3,
+                "max_retries": 3,
                 "backoff_strategy": "exponential",
                 "base_delay_ms": 100,
             },

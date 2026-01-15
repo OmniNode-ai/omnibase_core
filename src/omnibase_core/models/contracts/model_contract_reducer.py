@@ -22,7 +22,7 @@ from pydantic import ConfigDict, Field
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type aliases for structured data - Strict typing is enforced for Any types
-from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_constraints import PrimitiveValueType
 
 ParameterValue = PrimitiveValueType
 StructuredData = dict[str, ParameterValue]
@@ -537,11 +537,12 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
     # loading from YAML, supporting legacy contracts using state_transitions.
     model_config = ConfigDict(
         extra="forbid",  # Strict validation - reject unknown fields
+        from_attributes=True,  # Required for pytest-xdist compatibility
         frozen=True,  # Thread safety and immutability - instances cannot be modified
-        use_enum_values=False,  # Keep enum objects, don't convert to strings
-        str_strip_whitespace=True,  # Clean string inputs
-        validate_default=True,  # Validate default values at model definition time
         populate_by_name=True,  # Allow both field name and alias for YAML flexibility
+        str_strip_whitespace=True,  # Clean string inputs
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_default=True,  # Validate default values at model definition time
     )
 
     def to_yaml(self) -> str:
@@ -610,7 +611,13 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
                     },
                 ),
             ) from e
-        except Exception as e:
+        except (
+            AttributeError,
+            KeyError,
+            TypeError,
+            ValueError,
+        ) as e:
+            # fallback-ok: wraps unexpected parsing errors in ModelOnexError
             raise ModelOnexError(
                 message=f"Failed to load contract YAML: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

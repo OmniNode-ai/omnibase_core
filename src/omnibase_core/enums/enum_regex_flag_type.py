@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Regex Flag Type Enum.
 
 Strongly typed enumeration for regex flag type discriminators.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumRegexFlagType(str, Enum):
+class EnumRegexFlagType(StrValueHelper, str, Enum):
     """
     Strongly typed regex flag type discriminators.
 
@@ -26,10 +27,6 @@ class EnumRegexFlagType(str, Enum):
     IGNORECASE = "ignorecase"
     MULTILINE = "multiline"
     COMBINED = "combined"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_single_flag(cls, flag_type: EnumRegexFlagType) -> bool:

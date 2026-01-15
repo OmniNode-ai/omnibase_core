@@ -1,22 +1,16 @@
-from __future__ import annotations
-
-from typing import cast
-
-from pydantic import Field, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Node Union Model.
 
 Discriminated union for function node types following ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_union_type import EnumNodeUnionType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.node_metadata.model_function_node import ModelFunctionNode
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
@@ -126,28 +120,23 @@ class ModelNodeUnion(BaseModel):
             message=f"Unknown node_type: {self.node_type}",
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Delegate to the contained node's metadata
+        node = self.get_node()
+        if hasattr(node, "get_metadata"):
+            return node.get_metadata()
+        result["metadata"] = {"node_type": self.node_type.value}
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).

@@ -2,7 +2,7 @@
 
 from omnibase_core.models.configuration.model_config_types import (
     VALID_VALUE_TYPES,
-    ConfigValue,
+    ScalarConfigValue,
     is_valid_value_type,
     validate_config_value_type,
 )
@@ -14,7 +14,7 @@ from omnibase_core.models.configuration.model_node_config_schema import (
 )
 
 __all__ = [
-    "ConfigValue",
+    "ScalarConfigValue",
     "ModelNodeConfigEntry",
     "ModelNodeConfigSchema",
     "VALID_VALUE_TYPES",

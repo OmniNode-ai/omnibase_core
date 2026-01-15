@@ -4,10 +4,12 @@ Filter criteria model to replace Dict[str, Any] usage for filter fields.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+
+logger = logging.getLogger(__name__)
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -75,7 +77,7 @@ class ModelFilterCriteria(BaseModel):
         description="Custom filter extensions",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     def to_dict(self) -> SerializedDict:
         """Convert to dictionary for current standards."""
@@ -95,10 +97,13 @@ class ModelFilterCriteria(BaseModel):
         if data is None:
             return None
 
+        # Use mutable dict for type-safe modifications
+        mutable_data: dict[str, object] = dict(data)
+
         # Handle legacy format conversion
-        if "conditions" not in data and data:
+        if "conditions" not in mutable_data and mutable_data:
             # Convert simple key-value filters to conditions
-            conditions = []
+            conditions: list[ModelFilterCondition] = []
             for key, value in data.items():
                 if key not in [
                     "logic",
@@ -110,23 +115,49 @@ class ModelFilterCriteria(BaseModel):
                     "limit",
                     "offset",
                 ]:
+                    # Coerce value to acceptable type for ModelFilterOperator
+                    if isinstance(value, (str, int, float, bool)):
+                        coerced_value: (
+                            str | int | float | bool | list[str | int | float | bool]
+                        ) = value
+                    elif isinstance(value, list):
+                        # Filter list items to acceptable types
+                        coerced_value = [
+                            v for v in value if isinstance(v, (str, int, float, bool))
+                        ]
+                    else:
+                        # fallback-ok: skip unsupported types during legacy migration
+                        logger.debug(
+                            "Skipping filter field '%s' with unsupported type %s",
+                            key,
+                            type(value).__name__,
+                        )
+                        continue
                     conditions.append(
                         ModelFilterCondition(
                             field=key,
-                            operator=ModelFilterOperator(operator="eq", value=value),
+                            operator=ModelFilterOperator(
+                                operator="eq", value=coerced_value
+                            ),
                         ),
                     )
-            data["conditions"] = conditions
+            mutable_data["conditions"] = conditions
 
         # Convert custom_filters if present
-        if "custom_filters" in data and isinstance(data, dict):
-            data["custom_filters"] = ModelCustomFilters.from_dict(
-                data["custom_filters"],
+        custom_filters_raw = mutable_data.get("custom_filters")
+        if custom_filters_raw is not None and isinstance(custom_filters_raw, dict):
+            mutable_data["custom_filters"] = ModelCustomFilters.from_dict(
+                custom_filters_raw,
             )
 
-        return cls(**data)
+        return cls.model_validate(mutable_data)
 
-    def add_condition(self, field: str, operator: str, value: Any) -> None:
+    def add_condition(
+        self,
+        field: str,
+        operator: str,
+        value: str | int | float | bool | list[str | int | float | bool],
+    ) -> None:
         """Add a filter condition."""
         self.conditions.append(
             ModelFilterCondition(

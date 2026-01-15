@@ -4,8 +4,6 @@ This module provides the ModelMixinConfigField class for defining
 configuration schema in mixin metadata.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -29,7 +27,7 @@ class ModelMixinConfigField(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     type: str = Field(..., description="Field type")
-    default: Any = Field(None, description="Default value")
+    default: object = Field(None, description="Default value")
     description: str = Field("", description="Field description")
     minimum: float | int | None = Field(None, description="Minimum value")
     maximum: float | int | None = Field(None, description="Maximum value")

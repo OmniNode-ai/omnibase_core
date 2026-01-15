@@ -9,10 +9,9 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
-from typing import cast
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
@@ -180,11 +179,11 @@ class ModelFunctionNodeCore(BaseModel):
         """Get function name."""
         return self.function_display_name or f"function_{str(self.function_id)[:8]}"
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -212,16 +211,31 @@ class ModelFunctionNodeCore(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Map actual fields to TypedDictMetadataDict structure
+        # name property always returns non-empty (has UUID fallback)
+        result["name"] = self.name
+        if self.description:
+            result["description"] = self.description
+        result["version"] = self.version
+        # Pack additional fields into metadata
+        # Convert list[str] to list for JsonType compatibility
+        result["metadata"] = {
+            "function_id": str(self.function_id),
+            "function_type": self.function_type.value,
+            "status": self.status.value,
+            "parameters": list(self.parameters),
+            # return_type is optional, use explicit None check
+            "return_type": self.return_type.value
+            if self.return_type is not None
+            else None,
+            "module": self.module,
+            "file_path": str(self.file_path) if self.file_path else None,
+            "line_number": self.line_number,
+            "is_active": self.is_active(),
+            "has_type_annotations": self.has_type_annotations(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -239,12 +253,7 @@ class ModelFunctionNodeCore(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 # Export for use

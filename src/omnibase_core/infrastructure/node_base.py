@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 NodeBase for ONEX ModelArchitecture.
 
@@ -7,16 +5,63 @@ This module provides the NodeBase class that implements
 LlamaIndex workflow integration, observable state transitions,
 and contract-driven orchestration.
 
+Security:
+    NodeBase performs dynamic imports of tool classes specified in contract
+    files via the main_tool_class field. This is a potential code execution
+    vector if contracts come from untrusted sources.
+
+    **Dynamic Import Security** (_resolve_main_tool):
+        - The main_tool_class is loaded from contract YAML files
+        - Contract files should come from TRUSTED sources only
+        - Optional allowlist validation via ENFORCE_TOOL_IMPORT_ALLOWLIST (default: OFF)
+        - When enabled, only modules matching ALLOWED_TOOL_MODULE_PREFIXES can be imported
+
+    Trust Model:
+        - Contract file source: MUST BE TRUSTED (controls code execution)
+        - main_tool_class path: TRUSTED (comes from trusted contract)
+        - Contract file content: Validated via UtilContractLoader security checks
+
+    Security Assumptions:
+        1. Contract files are provided by trusted sources (system administrators,
+           verified node packages, or trusted configuration management)
+        2. The file system permissions on contract directories prevent
+           unauthorized modification
+        3. Third-party node packages are reviewed before installation
+
+    WARNING:
+        Do NOT load contract files from untrusted sources (user uploads,
+        network requests, untrusted file paths). The main_tool_class field
+        can execute arbitrary Python code via module initialization.
+
+    Defense-in-Depth (Optional Allowlist):
+        NodeBase provides optional allowlist validation for tool imports:
+        - ENFORCE_TOOL_IMPORT_ALLOWLIST: Set to True to enable validation
+        - ALLOWED_TOOL_MODULE_PREFIXES: Tuple of trusted module prefixes
+        - Default prefixes: omnibase_core., omnibase_spi., omnibase_infra.,
+          omnibase_runtime., tests.
+        - Subclasses can override these class variables for custom policies
+        - Similar pattern to ModelReference.ALLOWED_MODULE_PREFIXES
+
+    See Also:
+        - UtilContractLoader: YAML parsing security and content validation
+        - ModelReference: Uses ALLOWED_MODULE_PREFIXES for import validation
 """
+
+from __future__ import annotations
+
+# NOTE(OMN-1302): I001 (import order) disabled - intentional ordering to avoid circular dependencies.
+
+from typing import Any, ClassVar, TYPE_CHECKING
+
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 
 import asyncio
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import cast
 from uuid import UUID, uuid4
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Core-native protocol imports (no SPI dependency)
 from omnibase_core.protocols import (
@@ -32,7 +77,9 @@ WorkflowReducerInterface = ProtocolWorkflowReducer
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 
 # Deferred import to avoid circular dependency
 if TYPE_CHECKING:
@@ -47,8 +94,8 @@ from omnibase_core.models.infrastructure.model_node_workflow_result import (
 )
 from omnibase_core.models.infrastructure.model_state import ModelState
 
-# Simple stub models for reducer pattern (ONEX 2.0 minimal implementation)
-# Import from separate files: ModelAction, ModelState, ModelNodeState
+# Reducer pattern models imported from separate files (ONEX 2.0 architecture)
+# See: ModelAction, ModelState, ModelNodeState for full implementations
 
 
 class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
@@ -91,6 +138,22 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
     - See docs/guides/THREADING.md for complete thread safety guidelines
     """
 
+    # Security: Allowlist of trusted module prefixes for dynamic tool import.
+    # Only modules matching these prefixes can be imported when ENFORCE_TOOL_IMPORT_ALLOWLIST is True.
+    # Subclasses can override to add additional trusted prefixes.
+    ALLOWED_TOOL_MODULE_PREFIXES: ClassVar[tuple[str, ...]] = (
+        "omnibase_core.",
+        "omnibase_spi.",
+        "omnibase_infra.",
+        "omnibase_runtime.",
+        "tests.",  # Allow test fixtures
+    )
+
+    # Security: Flag to enable/disable tool import allowlist validation.
+    # Default is False (opt-in security feature). Set to True in subclasses
+    # or production deployments to enforce strict import validation.
+    ENFORCE_TOOL_IMPORT_ALLOWLIST: ClassVar[bool] = False
+
     def __init__(
         self,
         contract_path: Path,
@@ -122,7 +185,6 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         self._contract_path = contract_path
         self._container: ModelONEXContainer | None = None
         self._main_tool: object | None = None
-        self._main_tool_class_name: str = ""  # Set during _load_contract_and_initialize
         self._reducer_state: ProtocolState | None = None
         self._workflow_instance: Any | None = None
 
@@ -152,7 +214,14 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             # Emit initialization event
             self._emit_initialization_event()
 
-        except Exception as e:
+        except ModelOnexError as e:
+            # Re-raise ONEX errors without wrapping to preserve original error code/context
+            self._emit_initialization_failure(e)
+            raise
+        except (
+            Exception
+        ) as e:  # init-errors-ok: top-level error boundary for node initialization
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._emit_initialization_failure(e)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -223,15 +292,12 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                     },
                 )
 
-                # Process each dependency (always ModelContractDependency type)
+                # Process each dependency (always ModelContractDependency objects)
                 for dependency in contract_content.dependencies:
                     # Use type instead of dependency_type for ModelContractDependency
                     dep_type = getattr(dependency, "type", "unknown")
-                    # Handle enum or string type
-                    if hasattr(dep_type, "value"):
-                        dep_type_value = dep_type.value
-                    else:
-                        dep_type_value = str(dep_type)
+                    # Extract enum value if available, otherwise use string representation
+                    dep_type_value = getattr(dep_type, "value", str(dep_type))
 
                     emit_log_event(
                         LogLevel.DEBUG,
@@ -250,10 +316,6 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                     # Dependencies are logged and tracked in contract metadata for now.
 
         self._container = container
-
-        # Store the main_tool_class for type-safe access throughout the class
-        # This avoids repeated type narrowing on the union-typed contract_content
-        self._main_tool_class_name = contract_content.tool_specification.main_tool_class
 
         # Store contract and configuration
         business_logic_pattern = getattr(
@@ -299,11 +361,38 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
 
         ONEX 2.0 Pattern: Direct importlib-based tool instantiation.
         No auto-discovery service needed.
+
+        Security Warning:
+            This method uses importlib.import_module() to load the main_tool_class
+            specified in the contract file. This executes module initialization code.
+
+            Contract files MUST come from trusted sources only.
+
+        Security Features:
+            - Optional allowlist validation via ENFORCE_TOOL_IMPORT_ALLOWLIST class variable
+            - When enabled, only modules matching ALLOWED_TOOL_MODULE_PREFIXES can be imported
+            - Default is OFF (opt-in feature); enable in production deployments for defense-in-depth
+            - Subclasses can override ALLOWED_TOOL_MODULE_PREFIXES to add trusted prefixes
+
+        Allowlist Configuration:
+            To enable strict import validation:
+                class MySecureNode(NodeBase):
+                    ENFORCE_TOOL_IMPORT_ALLOWLIST = True
+                    ALLOWED_TOOL_MODULE_PREFIXES = (
+                        "omnibase_core.",
+                        "omnibase_spi.",
+                        "my_trusted_package.",
+                    )
+
+        See Also:
+            - ModelReference.ALLOWED_MODULE_PREFIXES: Similar pattern for reference resolution
+            - ALLOWED_TOOL_MODULE_PREFIXES: Class variable defining trusted module prefixes
+            - ENFORCE_TOOL_IMPORT_ALLOWLIST: Class variable to enable/disable validation
         """
         import importlib
 
         try:
-            main_tool_class = self._main_tool_class_name
+            main_tool_class = self._get_main_tool_class()
 
             # Parse module and class name
             # Expected format: "module.path.ClassName"
@@ -320,7 +409,48 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
 
             module_path, class_name = main_tool_class.rsplit(".", 1)
 
-            # Dynamic import using importlib (ONEX 2.0 pattern)
+            # SECURITY: Dynamic Import Allowlist Validation
+            # =============================================
+            # This validation prevents arbitrary code execution via malicious contract YAML files.
+            # The main_tool_class field in contracts specifies a Python class to import and
+            # instantiate. Without validation, an attacker who can modify contract files could
+            # specify system modules (e.g., os, subprocess) to execute arbitrary code.
+            #
+            # Defense Strategy:
+            #   - ENFORCE_TOOL_IMPORT_ALLOWLIST (default: False) - Opt-in strict validation
+            #   - When enabled, only modules matching ALLOWED_TOOL_MODULE_PREFIXES can be imported
+            #   - Default trusted prefixes: omnibase_core., omnibase_spi., omnibase_infra.,
+            #     omnibase_runtime., tests.
+            #   - Raises SECURITY_VIOLATION error for untrusted modules
+            #
+            # Trust Assumptions (when allowlist is NOT enforced):
+            #   1. Contract files come from trusted sources (admin, verified packages)
+            #   2. File system permissions prevent unauthorized contract modification
+            #   3. Third-party node packages are reviewed before installation
+            #
+            # See Also:
+            #   - ModelReference.ALLOWED_MODULE_PREFIXES: Similar pattern for reference resolution
+            #   - docs/architecture/SECURITY.md: ONEX security architecture documentation
+            if self.ENFORCE_TOOL_IMPORT_ALLOWLIST:
+                if not any(
+                    module_path.startswith(prefix)
+                    for prefix in self.ALLOWED_TOOL_MODULE_PREFIXES
+                ):
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                        message=f"Module '{module_path}' not in allowed prefixes for tool import",
+                        context={
+                            "module": module_path,
+                            "allowed": self.ALLOWED_TOOL_MODULE_PREFIXES,
+                            "node_id": str(self.state.node_id),
+                        },
+                        correlation_id=self.correlation_id,
+                    )
+
+            # SECURITY: Dynamic import executes module initialization code.
+            # This is safe ONLY when:
+            #   - Contract files come from trusted sources, OR
+            #   - ENFORCE_TOOL_IMPORT_ALLOWLIST is True (validated above)
             module = importlib.import_module(module_path)
             tool_class = getattr(module, class_name)
 
@@ -345,7 +475,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to import main tool class: {e!s}",
                 context={
-                    "main_tool_class": self._main_tool_class_name,
+                    "main_tool_class": main_tool_class,
                     "node_id": str(self.state.node_id),
                     "error": str(e),
                 },
@@ -356,17 +486,20 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Class not found in module: {e!s}",
                 context={
-                    "main_tool_class": self._main_tool_class_name,
+                    "main_tool_class": main_tool_class,
                     "node_id": str(self.state.node_id),
                 },
                 correlation_id=self.correlation_id,
             ) from e
-        except Exception as e:
+        except ModelOnexError:
+            # Re-raise ONEX errors without wrapping to preserve original error code/context
+            raise
+        except (RuntimeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to resolve main tool: {e!s}",
                 context={
-                    "main_tool_class": self._main_tool_class_name,
+                    "main_tool_class": main_tool_class,
                     "node_id": str(self.state.node_id),
                 },
                 correlation_id=self.correlation_id,
@@ -449,8 +582,11 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             )
             raise
 
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # catch-all-ok: top-level error boundary for node execution
             # Convert generic exceptions to ONEX errors
+            # Note: Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event(
                 LogLevel.ERROR,
                 f"Node execution exception: {self.node_id}",
@@ -486,12 +622,13 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             U: Tool-specific output state
         """
         try:
+            main_tool_class = self._get_main_tool_class()
             emit_log_event(
                 LogLevel.INFO,
                 f"Processing with NodeBase: {self.state.node_name}",
                 {
                     "node_name": self.state.node_name,
-                    "main_tool_class": self._main_tool_class_name,
+                    "main_tool_class": main_tool_class,
                     "business_logic_pattern": self.state.node_classification,
                     "workflow_id": str(self.workflow_id),
                 },
@@ -534,7 +671,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process_async(), process(), or run() method",
                 context={
-                    "main_tool_class": self._main_tool_class_name,
+                    "main_tool_class": main_tool_class,
                     "node_name": self.state.node_name,
                     "workflow_id": str(self.workflow_id),
                 },
@@ -544,14 +681,17 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         except ModelOnexError:
             # Re-raise ONEX errors (fail-fast)
             raise
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # catch-all-ok: top-level error boundary for tool processing
             # Convert generic exceptions to ONEX errors
+            # Note: Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event(
                 LogLevel.ERROR,
                 f"Error in NodeBase processing: {e!s}",
                 {
                     "node_name": self.state.node_name,
-                    "main_tool_class": self._main_tool_class_name,
+                    "main_tool_class": main_tool_class,
                     "error": str(e),
                     "workflow_id": str(self.workflow_id),
                 },
@@ -562,7 +702,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 context={
                     "node_name": self.state.node_name,
                     "node_tier": self.state.node_tier,
-                    "main_tool_class": self._main_tool_class_name,
+                    "main_tool_class": main_tool_class,
                     "workflow_id": str(self.workflow_id),
                 },
                 correlation_id=self.correlation_id,
@@ -656,9 +796,12 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             )
 
             # Wrap the new state in a result object
-            # Cast ProtocolState to ContextValue - semantically compatible at runtime
+            # Note: ProtocolState is cast to ContextValue for the result value.
+            # While these protocols differ, both represent state containers passed
+            # between workflow components. The ModelNodeWorkflowResult serves as
+            # a transport wrapper for any state-like object returned from dispatch.
             return ModelNodeWorkflowResult(
-                value=cast(ContextValue, new_state),
+                value=cast("ContextValue | None", new_state),
                 is_success=True,
                 is_failure=False,
                 error=None,
@@ -669,8 +812,14 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 state_delta={},
             )
 
-        except Exception as e:
+        except ModelOnexError:
+            # Re-raise ONEX errors without wrapping to preserve original error code/context
+            raise
+        except (
+            Exception
+        ) as e:  # catch-all-ok: top-level error boundary for state dispatch
             # Log and convert to ONEX error
+            # Note: Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event(
                 LogLevel.ERROR,
                 f"State dispatch failed: {self.node_id}",
@@ -701,6 +850,51 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
 
     # ===== HELPER METHODS =====
 
+    def _get_main_tool_class(self) -> str:
+        """
+        Safely get the main_tool_class from contract_content with proper type narrowing.
+
+        Returns:
+            str: The main tool class name from the contract.
+
+        Raises:
+            ModelOnexError: If contract_content or tool_specification is missing.
+        """
+        from omnibase_core.models.core.model_contract_content import (
+            ModelContractContent,
+        )
+
+        contract_content = self.state.contract_content
+        if contract_content is None:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                message="Contract content is not initialized",
+                context={"node_id": str(self.node_id)},
+                correlation_id=self.correlation_id,
+            )
+
+        # Check if it's a ModelContractContent with tool_specification
+        if isinstance(contract_content, ModelContractContent):
+            return contract_content.tool_specification.main_tool_class
+
+        # For other types, try attribute access with type safety
+        if hasattr(contract_content, "tool_specification"):
+            tool_spec = contract_content.tool_specification
+            if tool_spec is not None and hasattr(tool_spec, "main_tool_class"):
+                main_tool_class = tool_spec.main_tool_class
+                if isinstance(main_tool_class, str):
+                    return main_tool_class
+
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            message="Contract content does not have valid tool_specification.main_tool_class",
+            context={
+                "node_id": str(self.node_id),
+                "contract_content_type": type(contract_content).__name__,
+            },
+            correlation_id=self.correlation_id,
+        )
+
     def _emit_initialization_event(self) -> None:
         """Emit initialization success event."""
         emit_log_event(
@@ -710,7 +904,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 "node_id": str(self.node_id),
                 "node_name": self.state.node_name,
                 "contract_path": str(self._contract_path),
-                "main_tool_class": self._main_tool_class_name,
+                "main_tool_class": self._get_main_tool_class(),
                 "correlation_id": str(self.correlation_id),
                 "workflow_id": str(self.workflow_id),
             },

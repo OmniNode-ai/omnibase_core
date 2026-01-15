@@ -102,7 +102,7 @@ from omnibase_core.nodes import (
     ModelOrchestratorOutput,
     EnumActionType,
     EnumExecutionMode,
-    EnumWorkflowState,
+    EnumWorkflowStatus,
     EnumBranchCondition,
 )
 
@@ -128,7 +128,7 @@ The omnibase_core codebase provides **comprehensive YAML contract infrastructure
 |-----------|--------|-------------|
 | YAML Contract Models | Complete | Full Pydantic validation |
 | Subcontract Composition | Complete | ModelContractOrchestrator |
-| Runtime Executor Services | Complete | workflow_executor.py with MixinWorkflowExecution |
+| Runtime Executor Services | Complete | util_workflow_executor.py with MixinWorkflowExecution |
 | NodeOrchestrator | Complete | Primary workflow-driven implementation |
 | Documentation | Complete | Full tutorial and migration guides |
 
@@ -470,7 +470,7 @@ from omnibase_core.nodes import (
     ModelOrchestratorOutput,
     EnumActionType,
     EnumExecutionMode,
-    EnumWorkflowState,
+    EnumWorkflowStatus,
 )
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.orchestrator.model_action import ModelAction
@@ -480,7 +480,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition impor
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import emit_log_event_sync as emit_log_event
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 from .model_pipeline_orchestrator_input import ModelPipelineOrchestratorInput
@@ -942,7 +942,7 @@ result = await orchestrator.process_pipeline(input_data)
 Add robust error handling with compensation logic:
 
 ```python
-from omnibase_core.nodes import EnumWorkflowState
+from omnibase_core.nodes import EnumWorkflowStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -1533,7 +1533,7 @@ class NodeSagaOrchestrator(NodePipelineOrchestrator):
 3. Enable debug logging to see step execution:
 
 ```python
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 
 # Enable debug logging

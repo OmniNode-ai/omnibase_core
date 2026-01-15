@@ -50,7 +50,7 @@ Warning Codes:
     - W005: Isolated steps (no incoming or outgoing edges)
 
 See Also:
-    - :class:`omnibase_core.validation.workflow_linter.WorkflowLinter`
+    - :class:`omnibase_core.validation.checker_workflow_linter.WorkflowLinter`
     - :class:`omnibase_core.models.validation.model_validation_error.ModelValidationError`
 """
 
@@ -121,6 +121,7 @@ class ModelLintWarning(BaseModel):
         use_enum_values=False,
         validate_assignment=True,
         frozen=True,
+        from_attributes=True,  # pytest-xdist compatibility
     )
 
     code: str = Field(

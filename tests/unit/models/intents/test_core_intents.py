@@ -1835,7 +1835,6 @@ class TestSerializationEdgeCases:
         fields are passed.
         """
 
-        @pytest.mark.unit
         class TestRecord(BaseModel):
             node_id: str
             value: int
@@ -1925,7 +1924,6 @@ class TestModelRegistrationRecordBaseIntegration:
         from omnibase_core.models.intents import ModelRegistrationRecordBase
         from omnibase_core.protocols.intents import ProtocolRegistrationRecord
 
-        @pytest.mark.unit
         class TestRecord(ModelRegistrationRecordBase):
             value: str
 

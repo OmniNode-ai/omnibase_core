@@ -21,7 +21,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumTokenType
-from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
+from omnibase_core.utils import create_enum_normalizer
 
 __all__ = ["ModelAuthorizationContext"]
 
@@ -79,7 +79,7 @@ class ModelAuthorizationContext(BaseModel):
     )
     token_type: EnumTokenType | str | None = Field(
         default=None,
-        description="Token type (e.g., Bearer, API, JWT). Accepts EnumTokenType or string.",
+        description="Token type (e.g., Bearer, API, JWT). Accepts EnumTokenType values or strings.",
     )
 
     @field_validator("token_type", mode="before")
@@ -119,13 +119,17 @@ class ModelAuthorizationContext(BaseModel):
             The validated timestamp string unchanged, or None.
 
         Raises:
-            ValueError: If the timestamp is not valid ISO 8601 format.
+            ValueError: If the value is not a string or not valid ISO 8601 format.
         """
         if value is None:
             return None
+        if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(f"expiry must be a string, got {type(value).__name__}")
         try:
             # Python 3.11+ fromisoformat handles 'Z' suffix
             datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError as e:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"Invalid ISO 8601 timestamp for expiry: {value}") from e
         return value

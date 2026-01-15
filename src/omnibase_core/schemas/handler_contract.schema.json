@@ -1,0 +1,551 @@
+{
+  "$defs": {
+    "JsonType": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/JsonType"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonType"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "ModelCapabilityDependency": {
+      "additionalProperties": false,
+      "description": "Vendor-agnostic capability dependency declaration.\n\nDeclares a dependency on a capability (not a vendor) with graduated\nrequirements. The registry resolves capability requirements to concrete\nprovider instances at runtime.\n\nAttributes:\n    alias: Local name for binding in handler code (e.g., \"db\", \"cache\").\n        Used to reference the resolved provider in the handler implementation.\n    capability: Capability identifier (e.g., \"database.relational\", \"vector_store\").\n        Uses dot-notation for hierarchical capabilities.\n    requirements: Requirement set with must/prefer/forbid/hints.\n        Wraps ModelRequirementSet for capability-specific constraints.\n    selection_policy: Policy for selecting among multiple matching providers.\n        - auto_if_unique: Auto-select if exactly one match, else require explicit\n        - best_score: Select highest-scoring match based on requirements\n        - require_explicit: Always require explicit provider configuration\n    strict: If True, missing capability is a fatal error. If False, handler\n        can operate in degraded mode without this capability.\n    version_range: Optional semver range for capability version matching\n        (e.g., \">=1.0.0 <2.0.0\", \"^1.2.3\").\n    vendor_hints: Optional non-binding hints about vendor preferences.\n        Does not affect matching, only for documentation/debugging.\n    description: Human-readable description of why this capability is needed.\n\nExample:\n    >>> # Database dependency with transaction support\n    >>> db_dep = ModelCapabilityDependency(\n    ...     alias=\"db\",\n    ...     capability=\"database.relational\",\n    ...     requirements=ModelRequirementSet(\n    ...         must={\"supports_transactions\": True},\n    ...         prefer={\"max_latency_ms\": 20},\n    ...         forbid={\"deprecated\": True},\n    ...     ),\n    ...     selection_policy=\"auto_if_unique\",\n    ...     strict=True,\n    ... )\n\n    >>> # Optional cache dependency\n    >>> cache_dep = ModelCapabilityDependency(\n    ...     alias=\"cache\",\n    ...     capability=\"cache.distributed\",\n    ...     requirements=ModelRequirementSet(\n    ...         prefer={\"eviction_policy\": \"lru\"},\n    ...     ),\n    ...     strict=False,  # Handler can work without cache\n    ...     description=\"Optional distributed cache for performance\",\n    ... )\n\nThread Safety:\n    This model is immutable (frozen=True) and safe for concurrent access.\n\nSee Also:\n    - ModelRequirementSet: The requirement specification model\n    - ModelDependencySpec: Discovery-based dependency specification\n    - OMN-1117: Handler Contract Model & YAML Schema",
+      "properties": {
+        "alias": {
+          "description": "Local name for binding in handler code (lowercase snake_case)",
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Alias",
+          "type": "string"
+        },
+        "capability": {
+          "description": "Capability identifier using dot-notation (e.g., 'database.relational')",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Capability",
+          "type": "string"
+        },
+        "requirements": {
+          "$ref": "#/$defs/ModelRequirementSet",
+          "description": "Requirement set with must/prefer/forbid/hints constraints"
+        },
+        "selection_policy": {
+          "default": "auto_if_unique",
+          "description": "Policy for selecting among multiple matching providers",
+          "enum": [
+            "auto_if_unique",
+            "best_score",
+            "require_explicit"
+          ],
+          "title": "Selection Policy",
+          "type": "string"
+        },
+        "strict": {
+          "default": true,
+          "description": "If True, missing capability is fatal. If False, allows degraded mode.",
+          "title": "Strict",
+          "type": "boolean"
+        },
+        "version_range": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional semver range for capability version (e.g., '>=1.0.0 <2.0.0')",
+          "title": "Version Range"
+        },
+        "vendor_hints": {
+          "additionalProperties": true,
+          "description": "Non-binding vendor preference hints (documentation only)",
+          "title": "Vendor Hints",
+          "type": "object"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable description of why this capability is needed",
+          "title": "Description"
+        }
+      },
+      "required": [
+        "alias",
+        "capability"
+      ],
+      "title": "ModelCapabilityDependency",
+      "type": "object"
+    },
+    "ModelDescriptorCircuitBreaker": {
+      "additionalProperties": false,
+      "description": "Simplified circuit breaker configuration for handler descriptors.\n\nThis is a lightweight configuration model for embedding in handler\ndescriptors. For full-featured circuit breakers with state management,\nsee ModelCircuitBreaker in omnibase_core.models.configuration.\n\nCircuit breakers prevent cascading failures by temporarily blocking\nrequests to failing services. When failures exceed the threshold, the\ncircuit \"opens\" and rejects requests immediately.\n\nAttributes:\n    enabled: Whether circuit breaker protection is active.\n    failure_threshold: Number of failures before opening the circuit.\n    success_threshold: Successes in half-open state to close the circuit.\n    timeout_ms: Duration the circuit stays open before testing recovery.\n    half_open_requests: Max concurrent requests allowed in half-open state.\n\nExample:\n    >>> circuit_breaker = ModelDescriptorCircuitBreaker(\n    ...     enabled=True,\n    ...     failure_threshold=5,\n    ...     success_threshold=2,\n    ...     timeout_ms=60000,\n    ... )",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "description": "Whether circuit breaker protection is active",
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "failure_threshold": {
+          "default": 5,
+          "description": "Number of failures before opening the circuit",
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Failure Threshold",
+          "type": "integer"
+        },
+        "success_threshold": {
+          "default": 2,
+          "description": "Successes in half-open state required to close the circuit",
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Success Threshold",
+          "type": "integer"
+        },
+        "timeout_ms": {
+          "default": 60000,
+          "description": "Duration in ms the circuit stays open before testing recovery",
+          "maximum": 600000,
+          "minimum": 1000,
+          "title": "Timeout Ms",
+          "type": "integer"
+        },
+        "half_open_requests": {
+          "default": 3,
+          "description": "Max concurrent requests allowed in half-open state",
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Half Open Requests",
+          "type": "integer"
+        }
+      },
+      "title": "ModelDescriptorCircuitBreaker",
+      "type": "object"
+    },
+    "ModelDescriptorRetryPolicy": {
+      "additionalProperties": false,
+      "description": "Simplified retry policy configuration for handler descriptors.\n\nThis is a lightweight configuration model for embedding in handler\ndescriptors. For full-featured retry policies with execution tracking,\nsee ModelRetryPolicy in omnibase_core.models.infrastructure.\n\nAttributes:\n    enabled: Whether retry is enabled for this handler.\n    max_retries: Maximum number of retry attempts (0-10).\n    backoff_strategy: Strategy for calculating delay between retries.\n    base_delay_ms: Initial delay between retries in milliseconds.\n    max_delay_ms: Maximum delay cap for backoff strategies.\n    jitter_factor: Randomization factor as fraction of delay (0.0-0.5).\n\nExample:\n    >>> policy = ModelDescriptorRetryPolicy(\n    ...     enabled=True,\n    ...     max_retries=3,\n    ...     backoff_strategy=\"exponential\",\n    ...     base_delay_ms=1000,\n    ... )",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "description": "Whether retry is enabled for this handler",
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "max_retries": {
+          "default": 3,
+          "description": "Maximum number of retry attempts",
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Max Retries",
+          "type": "integer"
+        },
+        "backoff_strategy": {
+          "default": "exponential",
+          "description": "Strategy for calculating delay between retries",
+          "enum": [
+            "fixed",
+            "exponential",
+            "linear"
+          ],
+          "title": "Backoff Strategy",
+          "type": "string"
+        },
+        "base_delay_ms": {
+          "default": 1000,
+          "description": "Initial delay between retries in milliseconds",
+          "maximum": 60000,
+          "minimum": 100,
+          "title": "Base Delay Ms",
+          "type": "integer"
+        },
+        "max_delay_ms": {
+          "default": 30000,
+          "description": "Maximum delay cap for backoff strategies in milliseconds",
+          "maximum": 300000,
+          "minimum": 100,
+          "title": "Max Delay Ms",
+          "type": "integer"
+        },
+        "jitter_factor": {
+          "default": 0.1,
+          "description": "Randomization factor as fraction of delay",
+          "maximum": 0.5,
+          "minimum": 0.0,
+          "title": "Jitter Factor",
+          "type": "number"
+        }
+      },
+      "title": "ModelDescriptorRetryPolicy",
+      "type": "object"
+    },
+    "ModelExecutionConstraints": {
+      "additionalProperties": false,
+      "description": "Execution constraints declared by a handler contract.\n\nContracts declare WHAT they need, not WHERE they run. The resolver\ncomputes ordering from profile policy + these constraints.\n\nConstraint Types:\n    - requires_before: This handler must run AFTER these dependencies\n    - requires_after: This handler must run BEFORE these dependents\n    - must_run: Forces execution even if otherwise skippable (rare)\n    - can_run_parallel: Optimization hint for parallel execution\n    - nondeterministic_effect: Influences legal phases and replay policy\n\nDependency Reference Format:\n    Dependencies are specified using prefixed strings:\n    - \"capability:logging\" - Reference by capability\n    - \"handler:metrics\" - Reference by handler ID\n    - \"tag:audit\" - Reference by tag/label\n\nDisallowed Constraints:\n    Contracts may NOT declare:\n    - Absolute positions (\"I am phase 3\")\n    - Numeric ordering (\"I run at position N\")\n    - Custom phase names\n\nAttributes:\n    requires_before: List of dependencies that must complete before this handler.\n        Uses prefixed references: capability:X, handler:Y, tag:Z\n    requires_after: List of dependents that must run after this handler.\n        Uses prefixed references: capability:X, handler:Y, tag:Z\n    must_run: If True, forces execution even if handler would be skipped.\n        Use sparingly - most handlers should be skippable when conditions not met.\n    can_run_parallel: Optimization hint indicating handler can run in parallel\n        with other handlers that have this flag set.\n    nondeterministic_effect: If True, indicates handler has non-deterministic\n        side effects. Influences legal execution phases and replay behavior.\n\nExample:\n    >>> # Handler that needs auth before it runs, and logging after\n    >>> constraints = ModelExecutionConstraints(\n    ...     requires_before=[\"capability:auth\"],\n    ...     requires_after=[\"capability:logging\"],\n    ...     can_run_parallel=False,  # Must run serially\n    ... )\n\n    >>> # Metrics handler that can run in parallel\n    >>> metrics_constraints = ModelExecutionConstraints(\n    ...     requires_before=[\"tag:core-execution\"],\n    ...     can_run_parallel=True,\n    ... )\n\n    >>> # Critical handler that must always run\n    >>> critical_constraints = ModelExecutionConstraints(\n    ...     must_run=True,\n    ...     nondeterministic_effect=True,\n    ... )\n\nThread Safety:\n    This model is immutable (frozen=True) and safe for concurrent access.\n\nSee Also:\n    - ModelHandlerContract: Handler contract containing these constraints\n    - OMN-1117: Handler Contract Model & YAML Schema",
+      "properties": {
+        "requires_before": {
+          "description": "Dependencies that must complete before this handler. Format: capability:X, handler:Y, tag:Z",
+          "items": {
+            "type": "string"
+          },
+          "title": "Requires Before",
+          "type": "array"
+        },
+        "requires_after": {
+          "description": "Dependents that must run after this handler. Format: capability:X, handler:Y, tag:Z",
+          "items": {
+            "type": "string"
+          },
+          "title": "Requires After",
+          "type": "array"
+        },
+        "must_run": {
+          "default": false,
+          "description": "Forces execution even if handler would otherwise be skipped (rare)",
+          "title": "Must Run",
+          "type": "boolean"
+        },
+        "can_run_parallel": {
+          "default": true,
+          "description": "Optimization hint: handler can run in parallel with others",
+          "title": "Can Run Parallel",
+          "type": "boolean"
+        },
+        "nondeterministic_effect": {
+          "default": false,
+          "description": "Handler has non-deterministic side effects (influences replay policy)",
+          "title": "Nondeterministic Effect",
+          "type": "boolean"
+        }
+      },
+      "title": "ModelExecutionConstraints",
+      "type": "object"
+    },
+    "ModelHandlerBehavior": {
+      "additionalProperties": false,
+      "description": "Handler behavior configuration embedded in contracts.\n\nDefines runtime behavior characteristics for handlers including purity,\nidempotency, concurrency, isolation, and observability. This model is\npart of the three-layer architecture:\n\n1. **Profile** (ModelExecutionProfile): Resource allocation and execution\n   environment settings (CPU, memory, timeout defaults).\n2. **Behavior** (this model): Handler behavior configuration embedded\n   in contracts defining how the handler operates.\n3. **Contract** (ModelContractBase): Full declarative node specification\n   including I/O schemas, dependencies, and metadata.\n\nHandler Kind Semantics:\n    - **compute**: Pure data transformation, no side effects, cacheable\n    - **effect**: External I/O operations, side-effecting, requires isolation\n    - **reducer**: State aggregation, FSM-driven, intent-based transitions\n    - **orchestrator**: Workflow coordination, emits events/intents only\n\nPurity and Idempotency:\n    - **pure**: Function has no side effects, same input = same output\n    - **side_effecting**: Function may modify external state\n    - **idempotent**: Multiple identical calls produce same result\n\nConcurrency Policies:\n    - **parallel_ok**: Handler can run concurrently with itself\n    - **serialized**: Handler executes one at a time (default)\n    - **singleflight**: Deduplicate concurrent calls with same input\n\nIsolation Policies:\n    - **none**: No isolation, runs in same process (default)\n    - **process**: Runs in separate process\n    - **container**: Runs in isolated container\n    - **vm**: Runs in isolated virtual machine\n\nObservability Levels:\n    - **minimal**: Basic metrics only (latency, success/failure)\n    - **standard**: Metrics plus structured logging (default)\n    - **verbose**: Full tracing, detailed logs, performance profiling\n\nAttributes:\n    handler_kind: Architectural role of the handler (compute/effect/etc).\n    purity: Whether handler is pure or side-effecting.\n    idempotent: Whether handler is idempotent (safe to retry).\n    timeout_ms: Handler timeout in milliseconds (None = use profile default).\n    retry_policy: Retry configuration for transient failures.\n    circuit_breaker: Circuit breaker configuration for fault tolerance.\n    concurrency_policy: How concurrent handler invocations are managed.\n    isolation_policy: Process/container isolation level for handler.\n    observability_level: Telemetry verbosity for the handler.\n    capability_inputs: Required input capabilities (e.g., [\"http\", \"json\"]).\n    capability_outputs: Provided output capabilities (e.g., [\"event\", \"log\"]).\n\nExample:\n    >>> behavior = ModelHandlerBehavior(\n    ...     handler_kind=\"compute\",\n    ...     purity=\"pure\",\n    ...     idempotent=True,\n    ...     timeout_ms=5000,\n    ...     concurrency_policy=\"parallel_ok\",\n    ...     observability_level=\"standard\",\n    ... )\n\n    >>> # Effect handler with retry and circuit breaker\n    >>> effect_behavior = ModelHandlerBehavior(\n    ...     handler_kind=\"effect\",\n    ...     purity=\"side_effecting\",\n    ...     idempotent=True,  # Required for retry\n    ...     timeout_ms=30000,\n    ...     retry_policy=ModelDescriptorRetryPolicy(\n    ...         enabled=True,\n    ...         max_retries=3,\n    ...     ),\n    ...     circuit_breaker=ModelDescriptorCircuitBreaker(\n    ...         enabled=True,\n    ...         failure_threshold=5,\n    ...     ),\n    ... )\n\nSee Also:\n    - EnumNodeKind: Enum defining handler kind values\n    - ModelExecutionProfile: Profile layer for resource allocation\n    - ModelContractBase: Contract layer for full node specification",
+      "properties": {
+        "handler_kind": {
+          "description": "Architectural role of the handler in the ONEX workflow",
+          "enum": [
+            "compute",
+            "effect",
+            "reducer",
+            "orchestrator"
+          ],
+          "title": "Handler Kind",
+          "type": "string"
+        },
+        "purity": {
+          "default": "side_effecting",
+          "description": "Whether handler is pure (no side effects) or side-effecting",
+          "enum": [
+            "pure",
+            "side_effecting"
+          ],
+          "title": "Purity",
+          "type": "string"
+        },
+        "idempotent": {
+          "default": false,
+          "description": "Whether handler is idempotent (safe to retry with same input)",
+          "title": "Idempotent",
+          "type": "boolean"
+        },
+        "timeout_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Handler timeout in milliseconds (None = use profile default)",
+          "title": "Timeout Ms"
+        },
+        "retry_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelDescriptorRetryPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Retry configuration for handling transient failures"
+        },
+        "circuit_breaker": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelDescriptorCircuitBreaker"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Circuit breaker configuration for fault tolerance"
+        },
+        "concurrency_policy": {
+          "default": "serialized",
+          "description": "How concurrent handler invocations are managed",
+          "enum": [
+            "parallel_ok",
+            "serialized",
+            "singleflight"
+          ],
+          "title": "Concurrency Policy",
+          "type": "string"
+        },
+        "isolation_policy": {
+          "default": "none",
+          "description": "Process/container isolation level for handler execution",
+          "enum": [
+            "none",
+            "process",
+            "container",
+            "vm"
+          ],
+          "title": "Isolation Policy",
+          "type": "string"
+        },
+        "observability_level": {
+          "default": "standard",
+          "description": "Telemetry and logging verbosity for the handler",
+          "enum": [
+            "minimal",
+            "standard",
+            "verbose"
+          ],
+          "title": "Observability Level",
+          "type": "string"
+        },
+        "capability_inputs": {
+          "description": "Required input capabilities (e.g., ['http', 'json'])",
+          "items": {
+            "type": "string"
+          },
+          "title": "Capability Inputs",
+          "type": "array"
+        },
+        "capability_outputs": {
+          "description": "Provided output capabilities (e.g., ['event', 'log'])",
+          "items": {
+            "type": "string"
+          },
+          "title": "Capability Outputs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "handler_kind"
+      ],
+      "title": "ModelHandlerBehavior",
+      "type": "object"
+    },
+    "ModelRequirementSet": {
+      "additionalProperties": false,
+      "description": "Structured requirement set for capability matching.\n\nRequirements are organized into four tiers that control how providers\nare filtered and ranked during capability resolution:\n\n1. **must** - Hard constraints that MUST be satisfied\n   - Providers not meeting these are excluded entirely\n   - Example: ``{\"supports_transactions\": True}``\n\n2. **forbid** - Hard exclusion constraints\n   - Providers matching these are excluded entirely\n   - Example: ``{\"scope\": \"public_internet\"}``\n\n3. **prefer** - Soft preferences for scoring\n   - Affect provider ranking but don't exclude\n   - When ``strict=True`` (on dependency), unmet preferences fail\n   - When ``strict=False``, unmet preferences generate warnings\n   - Example: ``{\"max_latency_ms\": 20, \"region\": \"us-east-1\"}``\n\n4. **hints** - Advisory information for tie-breaking\n   - Used only when multiple providers have equal scores\n   - Lowest priority, purely advisory\n   - Example: ``{\"vendor_preference\": [\"postgres\", \"mysql\"]}``\n\nAttributes:\n    must: Hard constraints that must be satisfied. Keys are attribute\n        names, values are required values. All must match for a\n        provider to be considered.\n    prefer: Soft preferences for scoring. Keys are attribute names,\n        values are preferred values. Matching preferences increase\n        provider score.\n    forbid: Hard exclusion constraints. Keys are attribute names,\n        values that exclude a provider. Any match excludes the provider.\n    hints: Advisory information for tie-breaking. Keys are attribute\n        names, values are hints for resolution. Only used when\n        providers are otherwise equal.\n\nExamples:\n    Create a requirement set for a database:\n\n    >>> reqs = ModelRequirementSet(\n    ...     must={\"engine\": \"postgres\", \"version_major\": 14},\n    ...     prefer={\"max_latency_ms\": 20},\n    ...     forbid={\"deprecated\": True},\n    ... )\n\n    Empty requirement set (matches any provider):\n\n    >>> empty = ModelRequirementSet()\n    >>> empty.must\n    {}\n\n    Check if requirements are empty:\n\n    >>> empty.is_empty\n    True\n    >>> reqs.is_empty\n    False",
+      "properties": {
+        "must": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonType"
+          },
+          "description": "Hard constraints that must be satisfied for a provider to match",
+          "title": "Must",
+          "type": "object"
+        },
+        "prefer": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonType"
+          },
+          "description": "Soft preferences that affect provider scoring",
+          "title": "Prefer",
+          "type": "object"
+        },
+        "forbid": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonType"
+          },
+          "description": "Hard exclusion constraints that disqualify providers",
+          "title": "Forbid",
+          "type": "object"
+        },
+        "hints": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonType"
+          },
+          "description": "Advisory information for tie-breaking between equal providers",
+          "title": "Hints",
+          "type": "object"
+        }
+      },
+      "title": "ModelRequirementSet",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete handler contract - the authoring surface for ONEX handlers.\n\nThe handler contract is the declarative specification that defines:\n- What the handler does (descriptor)\n- What capabilities it needs (capability_inputs)\n- What it provides (capability_outputs)\n- How it fits in execution order (execution_constraints)\n- What it accepts and returns (input_model, output_model)\n\nIdentity Fields:\n    - handler_id: Unique identifier for registry lookup\n    - name: Human-readable display name\n    - version: Semantic version string\n    - description: Optional detailed description\n\nBehavior Configuration:\n    - descriptor: Embedded ModelHandlerBehavior for runtime semantics\n\nCapability Dependencies:\n    - capability_inputs: Required input capabilities (vendor-agnostic)\n    - capability_outputs: Provided output capabilities\n\nExecution:\n    - input_model: Fully qualified input model reference\n    - output_model: Fully qualified output model reference\n    - execution_constraints: Ordering constraints (requires_before/after)\n\nLifecycle:\n    - supports_lifecycle: Handler implements lifecycle hooks\n    - supports_health_check: Handler implements health checking\n    - supports_provisioning: Handler can be provisioned/deprovisioned\n\nAttributes:\n    handler_id: Unique identifier (e.g., \"node.user.reducer\").\n    name: Human-readable name (e.g., \"User Registration Reducer\").\n    version: Semantic version string (e.g., \"1.0.0\").\n    description: Optional detailed description.\n    descriptor: Embedded behavior descriptor (purity, idempotency, etc.).\n    capability_inputs: List of required input capabilities.\n    capability_outputs: List of provided output capability names.\n    input_model: Fully qualified input model reference.\n    output_model: Fully qualified output model reference.\n    execution_constraints: Ordering constraints for execution.\n    supports_lifecycle: Handler implements lifecycle hooks.\n    supports_health_check: Handler implements health checking.\n    supports_provisioning: Handler supports provisioning.\n    tags: Optional tags for categorization and discovery.\n    metadata: Optional additional metadata.\n\nExample:\n    >>> # Reducer handler contract\n    >>> contract = ModelHandlerContract(\n    ...     handler_id=\"node.user.reducer\",\n    ...     name=\"User Registration Reducer\",\n    ...     version=\"1.0.0\",\n    ...     descriptor=ModelHandlerBehavior(\n    ...         handler_kind=\"reducer\",\n    ...         purity=\"side_effecting\",\n    ...         idempotent=True,\n    ...         timeout_ms=30000,\n    ...     ),\n    ...     capability_inputs=[\n    ...         ModelCapabilityDependency(\n    ...             alias=\"db\",\n    ...             capability=\"database.relational\",\n    ...             requirements=ModelRequirementSet(\n    ...                 must={\"supports_transactions\": True},\n    ...             ),\n    ...         ),\n    ...     ],\n    ...     input_model=\"myapp.models.UserRegistrationEvent\",\n    ...     output_model=\"myapp.models.UserState\",\n    ... )\n\n    >>> # Effect handler contract\n    >>> effect_contract = ModelHandlerContract(\n    ...     handler_id=\"handler.email.sender\",\n    ...     name=\"Email Sender\",\n    ...     version=\"2.0.0\",\n    ...     descriptor=ModelHandlerBehavior(\n    ...         handler_kind=\"effect\",\n    ...         purity=\"side_effecting\",\n    ...         idempotent=False,\n    ...     ),\n    ...     capability_outputs=[\"notification.email\"],\n    ...     input_model=\"myapp.models.EmailRequest\",\n    ...     output_model=\"myapp.models.EmailResult\",\n    ...     supports_health_check=True,\n    ... )\n\nThread Safety:\n    This model is immutable (frozen=True) and safe for concurrent access.\n\nSee Also:\n    - ModelHandlerBehavior: Runtime behavior configuration\n    - ModelCapabilityDependency: Capability dependency specification\n    - ModelExecutionConstraints: Execution ordering constraints",
+  "properties": {
+    "handler_id": {
+      "description": "Unique identifier for registry lookup (e.g., 'node.user.reducer')",
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Handler Id",
+      "type": "string"
+    },
+    "name": {
+      "description": "Human-readable display name",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "description": "Semantic version string (e.g., '1.0.0', '1.0.0-beta.1')",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?(\\+[a-zA-Z0-9.]+)?$",
+      "title": "Version",
+      "type": "string"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "maxLength": 1000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional detailed description of the handler",
+      "title": "Description"
+    },
+    "descriptor": {
+      "$ref": "#/$defs/ModelHandlerBehavior",
+      "description": "Embedded behavior descriptor defining runtime semantics"
+    },
+    "capability_inputs": {
+      "description": "Required input capabilities (vendor-agnostic requirements)",
+      "items": {
+        "$ref": "#/$defs/ModelCapabilityDependency"
+      },
+      "title": "Capability Inputs",
+      "type": "array"
+    },
+    "capability_outputs": {
+      "description": "Provided output capability names (e.g., ['event.user_created'])",
+      "items": {
+        "type": "string"
+      },
+      "title": "Capability Outputs",
+      "type": "array"
+    },
+    "input_model": {
+      "description": "Fully qualified input model reference (e.g., 'myapp.models.Input')",
+      "minLength": 1,
+      "title": "Input Model",
+      "type": "string"
+    },
+    "output_model": {
+      "description": "Fully qualified output model reference (e.g., 'myapp.models.Output')",
+      "minLength": 1,
+      "title": "Output Model",
+      "type": "string"
+    },
+    "execution_constraints": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelExecutionConstraints"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Execution ordering constraints (requires_before/after)"
+    },
+    "supports_lifecycle": {
+      "default": false,
+      "description": "Handler implements lifecycle hooks (init/shutdown)",
+      "title": "Supports Lifecycle",
+      "type": "boolean"
+    },
+    "supports_health_check": {
+      "default": false,
+      "description": "Handler implements health checking",
+      "title": "Supports Health Check",
+      "type": "boolean"
+    },
+    "supports_provisioning": {
+      "default": false,
+      "description": "Handler can be provisioned/deprovisioned dynamically",
+      "title": "Supports Provisioning",
+      "type": "boolean"
+    },
+    "tags": {
+      "description": "Tags for categorization and discovery",
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "description": "Additional metadata for extensibility",
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "handler_id",
+    "name",
+    "version",
+    "descriptor",
+    "input_model",
+    "output_model"
+  ],
+  "title": "ModelHandlerContract",
+  "type": "object"
+}

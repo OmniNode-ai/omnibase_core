@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for JSON Schema reference component parts.
 """
+
+from __future__ import annotations
 
 from typing import TypedDict
 

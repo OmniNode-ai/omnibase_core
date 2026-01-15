@@ -28,7 +28,7 @@ Example:
     ... )
 
 See Also:
-    - omnibase_core.utils.compute_executor: Uses this context during execution
+    - omnibase_core.utils.util_compute_executor: Uses this context during execution
     - omnibase_core.mixins.mixin_compute_execution: Creates context in async wrapper
 """
 
@@ -93,4 +93,4 @@ class ModelComputeExecutionContext(BaseModel):
     # error-ok: string_id - Intentionally str for flexibility (can be UUID, hostname, or custom identifier)
     node_id: str | None = None
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)

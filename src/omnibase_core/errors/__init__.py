@@ -4,21 +4,29 @@ from typing import TYPE_CHECKING, Any
 # These symbols are re-exported via __all__ and resolved at runtime
 # through __getattr__ to avoid circular import dependencies.
 if TYPE_CHECKING:
-    from omnibase_core.errors.declarative_errors import (
+    from omnibase_core.errors.error_callable_not_found import CallableNotFoundError
+    from omnibase_core.errors.error_declarative import (
         AdapterBindingError,
         NodeExecutionError,
         PurityViolationError,
         UnsupportedCapabilityError,
     )
-    from omnibase_core.errors.exception_compute_pipeline_error import (
-        ComputePipelineError,
-    )
-    from omnibase_core.errors.runtime_errors import (
+    from omnibase_core.errors.error_dependency_cycle import DependencyCycleError
+    from omnibase_core.errors.error_duplicate_hook import DuplicateHookError
+    from omnibase_core.errors.error_hook_registry_frozen import HookRegistryFrozenError
+    from omnibase_core.errors.error_hook_timeout import HookTimeoutError
+    from omnibase_core.errors.error_hook_type_mismatch import HookTypeMismatchError
+    from omnibase_core.errors.error_pipeline import PipelineError
+    from omnibase_core.errors.error_runtime import (
         ContractValidationError,
         EventBusError,
         HandlerExecutionError,
         InvalidOperationError,
         RuntimeHostError,
+    )
+    from omnibase_core.errors.error_unknown_dependency import UnknownDependencyError
+    from omnibase_core.errors.exception_compute_pipeline_error import (
+        ComputePipelineError,
     )
     from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
     from omnibase_core.models.common.model_registry_error import ModelRegistryError
@@ -41,6 +49,16 @@ from omnibase_core.errors.error_codes import (
     list_registered_components,
     register_error_codes,
 )
+from omnibase_core.errors.exception_groups import (
+    ASYNC_ERRORS,
+    ATTRIBUTE_ACCESS_ERRORS,
+    FILE_IO_ERRORS,
+    JSON_PARSING_ERRORS,
+    NETWORK_ERRORS,
+    PYDANTIC_MODEL_ERRORS,
+    VALIDATION_ERRORS,
+    YAML_PARSING_ERRORS,
+)
 
 # ModelOnexError is imported via lazy import to avoid circular dependency
 # It's available as: from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -50,14 +68,30 @@ from omnibase_core.errors.error_codes import (
 # to avoid circular dependencies
 
 __all__ = [
+    # Exception Groups (centralized exception type tuples)
+    "ASYNC_ERRORS",
+    "ATTRIBUTE_ACCESS_ERRORS",
+    "FILE_IO_ERRORS",
+    "JSON_PARSING_ERRORS",
+    "NETWORK_ERRORS",
+    "PYDANTIC_MODEL_ERRORS",
+    "VALIDATION_ERRORS",
+    "YAML_PARSING_ERRORS",
+    # Error Classes
     "AdapterBindingError",
+    "CallableNotFoundError",
     "ComputePipelineError",
     "ContractValidationError",
+    "DependencyCycleError",
+    "DuplicateHookError",
     "EnumCLIExitCode",
     "EnumCoreErrorCode",
     "EnumRegistryErrorCode",
     "EventBusError",
     "HandlerExecutionError",
+    "HookRegistryFrozenError",
+    "HookTimeoutError",
+    "HookTypeMismatchError",
     "InvalidOperationError",
     "ModelCLIAdapter",
     "ModelOnexError",
@@ -65,9 +99,12 @@ __all__ = [
     "ModelRegistryError",
     "NodeExecutionError",
     "OnexError",
+    "PipelineError",
     "PurityViolationError",
     "RuntimeHostError",
+    "UnknownDependencyError",
     "UnsupportedCapabilityError",
+    # Functions
     "get_core_error_description",
     "get_error_codes_for_component",
     "get_exit_code_for_core_error",
@@ -79,17 +116,16 @@ __all__ = [
 
 # =============================================================================
 # Lazy loading: Avoid circular imports during module initialization.
-# This is NOT for backwards compatibility aliases (see OMN-1071 for that pattern
-# in validation/__init__.py and utils/__init__.py). Instead, this defers imports
-# of error classes and model classes that would cause circular dependency chains
-# if imported at module load time.
+# This defers imports of error classes and model classes that would cause
+# circular dependency chains if imported at module load time.
 #
 # Classes loaded lazily:
 # - ModelOnexError, OnexError (alias) - from models.errors
 # - ModelOnexWarning, ModelRegistryError - from models.common
 # - ModelCLIAdapter - from models.core
-# - RuntimeHostError, HandlerExecutionError, etc. - from errors.runtime_errors
-# - AdapterBindingError, PurityViolationError, etc. - from errors.declarative_errors
+# - RuntimeHostError, HandlerExecutionError, etc. - from errors.error_runtime
+# - AdapterBindingError, PurityViolationError, etc. - from errors.error_declarative
+# - PipelineError, CallableNotFoundError, etc. - from errors.error_* modules
 # =============================================================================
 def __getattr__(name: str) -> Any:
     """
@@ -99,8 +135,7 @@ def __getattr__(name: str) -> Any:
     actually accessed, preventing circular import chains that would otherwise
     occur at module load time.
 
-    Note: This is NOT a backwards compatibility mechanism (see OMN-1071 for that
-    pattern). The OnexError alias to ModelOnexError is for convenience, not
+    Note: The OnexError alias to ModelOnexError is for convenience, not
     deprecation - both names are valid.
     """
     # -------------------------------------------------------------------------
@@ -142,9 +177,9 @@ def __getattr__(name: str) -> Any:
         "ContractValidationError",
     }
     if name in _runtime_error_classes:
-        from omnibase_core.errors import runtime_errors
+        from omnibase_core.errors import error_runtime
 
-        return getattr(runtime_errors, name)
+        return getattr(error_runtime, name)
 
     # Compute pipeline errors
     if name == "ComputePipelineError":
@@ -169,9 +204,32 @@ def __getattr__(name: str) -> Any:
         "UnsupportedCapabilityError",
     }
     if name in _declarative_error_classes:
-        from omnibase_core.errors import declarative_errors
+        from omnibase_core.errors import error_declarative
 
-        return getattr(declarative_errors, name)
+        return getattr(error_declarative, name)
+
+    # -------------------------------------------------------------------------
+    # Pipeline errors - consolidated import from individual modules
+    # These errors were moved from pipeline/ to errors/ per ONEX file location
+    # convention (error_*.py files must be in errors/ directory)
+    # -------------------------------------------------------------------------
+    _pipeline_error_classes = {
+        "PipelineError": "error_pipeline",
+        "CallableNotFoundError": "error_callable_not_found",
+        "DependencyCycleError": "error_dependency_cycle",
+        "DuplicateHookError": "error_duplicate_hook",
+        "HookRegistryFrozenError": "error_hook_registry_frozen",
+        "HookTimeoutError": "error_hook_timeout",
+        "HookTypeMismatchError": "error_hook_type_mismatch",
+        "UnknownDependencyError": "error_unknown_dependency",
+    }
+    if name in _pipeline_error_classes:
+        import importlib
+
+        module = importlib.import_module(
+            f"omnibase_core.errors.{_pipeline_error_classes[name]}"
+        )
+        return getattr(module, name)
 
     # Raise standard AttributeError for unknown attributes
     # Cannot use ModelOnexError here as it would cause circular import

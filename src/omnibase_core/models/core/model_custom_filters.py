@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
@@ -54,17 +54,19 @@ class ModelCustomFilters(BaseModel):
     def add_list_filter(
         self,
         name: str,
-        values: list[Any] | list[ModelSchemaValue],
+        values: list[object] | list[ModelSchemaValue],
         **kwargs: Any,
     ) -> None:
         """Add a list filter.
 
         Values are automatically converted to ModelSchemaValue for type safety.
         """
-        self.filters[name] = ModelListFilter(values=values, **kwargs)
+        self.filters[name] = ModelListFilter(
+            values=cast(list[ModelSchemaValue], values), **kwargs
+        )
 
     def add_metadata_filter(
-        self, name: str, key: str, value: Any, **kwargs: Any
+        self, name: str, key: str, value: object, **kwargs: Any
     ) -> None:
         """Add a metadata filter."""
         self.filters[name] = ModelMetadataFilter(
@@ -122,19 +124,19 @@ class ModelCustomFilters(BaseModel):
                 filter_type = filter_data["filter_type"]
 
                 if filter_type == "string":
-                    filters[name] = ModelStringFilter(**filter_data)
+                    filters[name] = ModelStringFilter.model_validate(filter_data)
                 elif filter_type == "numeric":
-                    filters[name] = ModelNumericFilter(**filter_data)
+                    filters[name] = ModelNumericFilter.model_validate(filter_data)
                 elif filter_type == "datetime":
-                    filters[name] = ModelDateTimeFilter(**filter_data)
+                    filters[name] = ModelDateTimeFilter.model_validate(filter_data)
                 elif filter_type == "list" or filter_type == "list[Any]":
-                    filters[name] = ModelListFilter(**filter_data)
+                    filters[name] = ModelListFilter.model_validate(filter_data)
                 elif filter_type == "metadata":
-                    filters[name] = ModelMetadataFilter(**filter_data)
+                    filters[name] = ModelMetadataFilter.model_validate(filter_data)
                 elif filter_type == "status":
-                    filters[name] = ModelStatusFilter(**filter_data)
+                    filters[name] = ModelStatusFilter.model_validate(filter_data)
                 elif filter_type == "complex":
-                    filters[name] = ModelComplexFilter(**filter_data)
+                    filters[name] = ModelComplexFilter.model_validate(filter_data)
                 else:
                     raise ModelOnexError(
                         message=f"Unknown filter_type '{filter_type}' for filter '{name}'",

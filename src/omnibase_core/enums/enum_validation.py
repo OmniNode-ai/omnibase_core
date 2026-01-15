@@ -2,29 +2,16 @@
 """
 Validation-related enums for ONEX validation systems.
 
-Defines error severity levels, validation modes, and validation levels
-for ONEX validation and error handling systems.
+Defines validation levels for ONEX validation and error handling systems.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumErrorSeverity(Enum):
-    """
-    Severity levels for validation errors and system errors.
-
-    Used to categorize the impact and urgency of different types of errors.
-    """
-
-    DEBUG = "debug"
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
-    CRITICAL = "critical"
-    FATAL = "fatal"
-
-
-class EnumValidationLevel(str, Enum):
+@unique
+class EnumValidationLevel(StrValueHelper, str, Enum):
     """
     Validation levels for pipeline data integrity.
 
@@ -38,15 +25,4 @@ class EnumValidationLevel(str, Enum):
     PARANOID = "PARANOID"
 
 
-class EnumValidationMode(Enum):
-    """
-    Validation modes for tool testing and validation operations.
-
-    Enumeration of validation modes for different testing scenarios.
-    """
-
-    STRICT = "strict"
-    LENIENT = "lenient"
-    SMOKE = "smoke"
-    REGRESSION = "regression"
-    INTEGRATION = "integration"
+__all__ = ["EnumValidationLevel"]

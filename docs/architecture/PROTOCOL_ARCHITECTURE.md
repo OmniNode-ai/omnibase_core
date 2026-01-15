@@ -127,7 +127,7 @@ class EnumStatusProtocol(Protocol):
 - `EnumScenarioStatusV2`
 - `EnumGeneralStatus`
 - `EnumFunctionLifecycleStatus`
-- `EnumExecutionStatusV2`
+- `EnumExecutionStatus`
 
 **Design Notes**:
 - Enables polymorphic status handling
@@ -716,7 +716,7 @@ from typing import get_type_hints
 
 def test_pattern_checker_protocol_compliance():
     """Test that all checker implementations satisfy ProtocolPatternChecker protocol."""
-    from omnibase_core.validation.patterns import ProtocolPatternChecker
+    from omnibase_core.validation.validator_patterns import ProtocolPatternChecker
     from omnibase_core.validation.checker_pydantic_pattern import PydanticPatternChecker
 
     checker = PydanticPatternChecker("test.py")
@@ -833,7 +833,7 @@ EnumStatusProtocol (omnibase_core)
 EnumScenarioStatusV2
 EnumGeneralStatus
 EnumFunctionLifecycleStatus
-EnumExecutionStatusV2
+EnumExecutionStatus
 ```
 
 ### Validation Protocols
@@ -953,7 +953,7 @@ poetry run mypy src/omnibase_core --warn-redundant-casts --warn-unreachable
 ### Runtime Validation
 ```python
 # Use type guards
-from omnibase_core.types.constraints import is_serializable
+from omnibase_core.types.type_constraints import is_serializable
 
 if is_serializable(obj):
     data = obj.model_dump()  # Type-safe!

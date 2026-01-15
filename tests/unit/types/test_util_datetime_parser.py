@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from omnibase_core.types.util_datetime_parser import parse_datetime
+from omnibase_core.utils.util_datetime_parser import parse_datetime
 
 
 @pytest.mark.unit

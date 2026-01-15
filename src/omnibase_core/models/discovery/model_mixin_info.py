@@ -5,7 +5,7 @@ Provides comprehensive information about mixin capabilities, compatibility,
 dependencies, and usage.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_typed_metadata import ModelMixinConfigSchema
 from omnibase_core.models.primitives.model_semver import (
@@ -26,10 +26,10 @@ class ModelMixinInfo(BaseModel):
     dependencies, and usage.
     """
 
-    model_config = {
-        "extra": "ignore",
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        validate_assignment=True,
+    )
 
     name: str = Field(
         ...,

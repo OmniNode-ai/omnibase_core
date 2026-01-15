@@ -4,7 +4,7 @@ import ast
 
 import pytest
 
-from omnibase_core.validation.patterns import (
+from omnibase_core.validation.validator_patterns import (
     GenericPatternChecker,
     NamingConventionChecker,
     PydanticPatternChecker,
@@ -361,10 +361,10 @@ class ServiceRegistry:
     pass
 """
         tree = ast.parse(code)
-        checker = NamingConventionChecker("src/mypackage/services/registry.py")
+        checker = NamingConventionChecker("src/mypackage/registry/service_registry.py")
         checker.visit(tree)
 
-        # Non-error classes outside errors/ should still be flagged
+        # Non-error classes outside exempt directories should still be flagged
         assert len(checker.issues) > 0
         assert any("Service" in issue for issue in checker.issues)
 

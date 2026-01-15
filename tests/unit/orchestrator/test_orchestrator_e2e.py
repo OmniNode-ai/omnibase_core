@@ -34,8 +34,8 @@ from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoverySt
 from omnibase_core.enums.enum_workflow_execution import (
     EnumActionType,
     EnumExecutionMode,
-    EnumWorkflowState,
 )
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (
     ModelCoordinationRules,
@@ -59,7 +59,7 @@ from omnibase_core.utils.util_safe_yaml_loader import (
     load_and_validate_yaml_model,
     load_yaml_content_as_model,
 )
-from omnibase_core.utils.workflow_executor import (
+from omnibase_core.utils.util_workflow_executor import (
     execute_workflow,
     get_execution_order,
     validate_workflow_definition,
@@ -555,7 +555,7 @@ class TestCompleteWorkflowE2E:
 
         # Step 5: Verify execution result
         assert result.workflow_id == workflow_id
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 3
         assert len(result.failed_steps) == 0
         assert len(result.actions_emitted) == 3
@@ -598,7 +598,7 @@ class TestCompleteWorkflowE2E:
         )
 
         # Verify
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 4
         assert len(result.actions_emitted) == 4
         assert result.metadata is not None
@@ -634,7 +634,7 @@ class TestCompleteWorkflowE2E:
         )
 
         # Verify all 7 steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 7
         assert len(result.actions_emitted) == 7
 
@@ -735,7 +735,7 @@ class TestLinearWorkflowE2E:
             workflow_id=uuid4(),
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 3
 
     @pytest.mark.asyncio
@@ -835,7 +835,7 @@ class TestDiamondWorkflowE2E:
         )
 
         # All 4 steps should complete
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 4
 
 
@@ -1062,7 +1062,7 @@ class TestFullIntegrationE2E:
 
         # Verify result
         assert result.workflow_id == workflow_id
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 2
         assert len(result.actions_emitted) == 2
 
@@ -1316,7 +1316,7 @@ class TestRoundTripIntegrationE2E:
             workflow_steps=workflow_steps,
             workflow_id=uuid4(),
         )
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
 
         # Convert model back to dict
         round_tripped_dict = workflow_def.model_dump(mode="json")
@@ -1470,7 +1470,7 @@ class TestPerformanceE2E:
         elapsed = time.perf_counter() - start
 
         # Verify completion
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 50
         assert len(result.actions_emitted) == 50
 
@@ -1560,7 +1560,7 @@ class TestPerformanceE2E:
         )
 
         # Verify completion
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 12  # 1 + 10 + 1
         assert result.metadata is not None
         assert result.metadata.execution_mode == "parallel"
@@ -1590,7 +1590,7 @@ class TestBatchExecutionE2E:
             execution_mode=EnumExecutionMode.BATCH,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert result.metadata is not None
         assert result.metadata.execution_mode == "batch"
         assert result.metadata.batch_size is not None
@@ -1691,7 +1691,7 @@ class TestDisabledStepsE2E:
         )
 
         # Only 2 steps should complete (disabled skipped)
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 2
         assert str(step2_id) not in result.completed_steps
         assert len(result.actions_emitted) == 2

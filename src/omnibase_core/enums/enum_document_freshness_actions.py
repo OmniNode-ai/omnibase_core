@@ -5,10 +5,13 @@ This enum provides compile-time safety and eliminates magic strings
 for document freshness monitoring actions.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumDocumentFreshnessActions(str, Enum):
+@unique
+class EnumDocumentFreshnessActions(StrValueHelper, str, Enum):
     """
     Canonical enumeration of all document freshness monitoring actions.
 
@@ -25,7 +28,8 @@ class EnumDocumentFreshnessActions(str, Enum):
     CONNECTION_POOL_METRICS = "connection_pool_metrics"
 
 
-class EnumDocumentFreshnessRiskLevel(str, Enum):
+@unique
+class EnumDocumentFreshnessRiskLevel(StrValueHelper, str, Enum):
     """Risk levels for document freshness assessment."""
 
     LOW = "low"
@@ -34,7 +38,8 @@ class EnumDocumentFreshnessRiskLevel(str, Enum):
     CRITICAL = "critical"
 
 
-class EnumDocumentFreshnessStatus(str, Enum):
+@unique
+class EnumDocumentFreshnessStatus(StrValueHelper, str, Enum):
     """Overall freshness status values."""
 
     FRESH = "fresh"
@@ -43,7 +48,8 @@ class EnumDocumentFreshnessStatus(str, Enum):
     UNKNOWN = "unknown"
 
 
-class EnumDocumentType(str, Enum):
+@unique
+class EnumDocumentType(StrValueHelper, str, Enum):
     """Document type classifications."""
 
     DOCUMENT = "document"
@@ -52,7 +58,8 @@ class EnumDocumentType(str, Enum):
     DATA = "data"
 
 
-class EnumRecommendationType(str, Enum):
+@unique
+class EnumRecommendationType(StrValueHelper, str, Enum):
     """Recommendation types for document improvements."""
 
     UPDATE_REQUIRED = "update_required"
@@ -61,7 +68,8 @@ class EnumRecommendationType(str, Enum):
     OPTIMIZATION = "optimization"
 
 
-class EnumRecommendationPriority(str, Enum):
+@unique
+class EnumRecommendationPriority(StrValueHelper, str, Enum):
     """Priority levels for recommendations."""
 
     LOW = "low"
@@ -70,7 +78,8 @@ class EnumRecommendationPriority(str, Enum):
     CRITICAL = "critical"
 
 
-class EnumEstimatedEffort(str, Enum):
+@unique
+class EnumEstimatedEffort(StrValueHelper, str, Enum):
     """Estimated effort levels for implementing recommendations."""
 
     MINUTES = "minutes"
@@ -79,7 +88,8 @@ class EnumEstimatedEffort(str, Enum):
     WEEKS = "weeks"
 
 
-class EnumDependencyRelationship(str, Enum):
+@unique
+class EnumDependencyRelationship(StrValueHelper, str, Enum):
     """Types of dependency relationships between documents."""
 
     IMPORTS = "imports"
@@ -88,9 +98,23 @@ class EnumDependencyRelationship(str, Enum):
     DEPENDS_ON = "depends_on"
 
 
-class EnumOutputFormat(str, Enum):
+@unique
+class EnumOutputFormat(StrValueHelper, str, Enum):
     """Output format options for analysis results."""
 
     JSON = "json"
     MARKDOWN = "markdown"
     HTML = "html"
+
+
+__all__ = [
+    "EnumDependencyRelationship",
+    "EnumDocumentFreshnessActions",
+    "EnumDocumentFreshnessRiskLevel",
+    "EnumDocumentFreshnessStatus",
+    "EnumDocumentType",
+    "EnumEstimatedEffort",
+    "EnumOutputFormat",
+    "EnumRecommendationPriority",
+    "EnumRecommendationType",
+]

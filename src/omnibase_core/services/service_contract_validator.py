@@ -16,6 +16,7 @@ from typing import Literal
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
@@ -130,6 +131,7 @@ class ServiceContractValidator:
         self.custom_rules: list[ProtocolComplianceRule] = []
         self.strict_mode = strict_mode
 
+    @standard_error_handling("Contract YAML validation")
     def validate_contract_yaml(
         self,
         contract_content: str,
@@ -210,7 +212,7 @@ class ServiceContractValidator:
             )
 
         try:
-            # Validate using Pydantic model
+            # NOTE(OMN-1302): Duck-typed Pydantic model from registry. Safe because models validated at registration.
             contract_instance = contract_model.model_validate(yaml_data)  # type: ignore[attr-defined]
 
             # Step 3: Check ONEX compliance

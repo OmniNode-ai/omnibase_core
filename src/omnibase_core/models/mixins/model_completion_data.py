@@ -1,12 +1,10 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Canonical payload for completion events following ONEX naming conventions.
 """
 
-from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt, StrictStr
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
 
 
 class ModelCompletionData(BaseModel):
@@ -20,6 +18,7 @@ class ModelCompletionData(BaseModel):
     model_config = ConfigDict(
         extra="forbid",  # Catch typos early
         frozen=True,  # Immutable instances for safer passing
+        from_attributes=True,  # pytest-xdist compatibility
     )
 
     message: StrictStr | None = Field(

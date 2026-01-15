@@ -10,7 +10,7 @@ Restructured to reduce string field violations through logical grouping.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Unpack
+from typing import TYPE_CHECKING, Unpack
 
 from pydantic import BaseModel
 
@@ -204,14 +204,14 @@ class ModelGenericFactory[T: BaseModel]:
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -234,7 +234,7 @@ class ModelGenericFactory[T: BaseModel]:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

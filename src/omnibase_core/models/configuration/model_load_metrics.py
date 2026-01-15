@@ -73,7 +73,7 @@ class ModelLoadMetrics(BaseModel):
 
     rejection_rate: float = Field(
         default=0.0,
-        description="[Any]rejection rate percentage",
+        description="Rejection rate percentage",
         ge=0.0,
         le=100.0,
     )

@@ -24,6 +24,10 @@ Exports:
     normalize_contract: Normalize contract model for deterministic hashing.
     is_valid_meta_model: Check if a model is a valid meta-model.
     validate_meta_model: Validate a model against meta-model requirements.
+    IncludeLoader: YAML loader with !include directive support.
+    load_contract: Load contract YAML with !include support.
+    DEFAULT_MAX_INCLUDE_DEPTH: Default maximum include nesting depth (10).
+    DEFAULT_MAX_FILE_SIZE: Default maximum file size (1MB).
 
 Example:
     Basic fingerprinting workflow::
@@ -71,10 +75,16 @@ Stability Guarantee:
     - Breaking changes require major version bump
 """
 
-from omnibase_core.contracts.hash_registry import (
+from omnibase_core.contracts.contract_hash_registry import (
     ContractHashRegistry,
     compute_contract_fingerprint,
     normalize_contract,
+)
+from omnibase_core.contracts.contract_loader import (
+    DEFAULT_MAX_FILE_SIZE,
+    DEFAULT_MAX_INCLUDE_DEPTH,
+    IncludeLoader,
+    load_contract,
 )
 
 # Import models from their proper locations in models/contracts/
@@ -109,6 +119,11 @@ __all__ = [
     "ModelDriftResult",
     "compute_contract_fingerprint",
     "normalize_contract",
+    # Contract Loader (with !include support)
+    "IncludeLoader",
+    "load_contract",
+    "DEFAULT_MAX_INCLUDE_DEPTH",
+    "DEFAULT_MAX_FILE_SIZE",
     # Contract Meta Model
     "ModelContractNodeMetadata",
     "ModelNodeExtensions",

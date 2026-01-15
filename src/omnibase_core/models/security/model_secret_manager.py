@@ -78,7 +78,7 @@ class ModelSecretManager(BaseModel):
         try:
             if self.config.backend.backend_type == EnumBackendType.DOTENV:
                 self._load_dotenv_environment()
-        except Exception as e:
+        except OSError as e:
             logging.exception(f"Failed to initialize secret manager: {e}")
 
     def _load_dotenv_environment(self) -> None:
@@ -117,22 +117,18 @@ class ModelSecretManager(BaseModel):
             ModelDatabaseSecureConfig,
         )
 
-        try:
-            config = self._load_with_fallback(ModelDatabaseSecureConfig, env_prefix)
+        config = self._load_with_fallback(ModelDatabaseSecureConfig, env_prefix)
 
-            # Validate configuration
-            validation = config.validate_credentials()
-            if not validation.is_valid:
-                msg = f"Invalid database configuration: {validation.errors}"
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=msg,
-                )
+        # Validate configuration
+        validation = config.validate_credentials()
+        if not validation.is_valid:
+            msg = f"Invalid database configuration: {validation.errors}"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
-            return config
-
-        except Exception:
-            raise
+        return config
 
     def _load_with_fallback(self, config_class: type[T], env_prefix: str) -> T:
         """Load configuration with fallback support."""
@@ -140,7 +136,9 @@ class ModelSecretManager(BaseModel):
             # Try primary backend
             return config_class.load_from_env(env_prefix)
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: primary backend failure triggers fallback chain
             if not self.fallback_enabled or not self.config.fallback_backends:
                 raise
 
@@ -158,7 +156,7 @@ class ModelSecretManager(BaseModel):
 
                     return config
 
-                except Exception:
+                except Exception:  # fallback-ok: try next backend in chain
                     continue
 
                 finally:
@@ -203,32 +201,41 @@ class ModelSecretManager(BaseModel):
             # standard
             return "***MASKED***"
 
-        # union-ok: mask_recursive - domain-specific union includes ModelMaskData, not pure JsonValue
-        def mask_recursive(
-            obj: str | int | bool | list[object] | SerializedDict | ModelMaskData,
-        ) -> str | int | bool | list[object] | SerializedDict | ModelMaskData:
-            if isinstance(obj, dict):
-                return {
-                    key: (
-                        mask_recursive(value)
-                        if not any(
-                            sensitive in key.lower() for sensitive in sensitive_keys
-                        )
-                        else mask_value(str(value), mask_level)
-                    )
-                    for key, value in obj.items()
-                }
-            if isinstance(obj, list):
-                return [mask_recursive(item) for item in obj]  # type: ignore[arg-type]
-            return obj
+        from omnibase_core.types.type_json import JsonType
 
-        # Parameter is typed as ModelMaskData, no need to check
-        masked_dict = mask_recursive(data.to_dict())
-        return (
-            ModelMaskData.from_dict(masked_dict)
-            if isinstance(masked_dict, dict)
-            else data
-        )
+        # Type-safe recursive masking helper
+        def mask_dict(d: SerializedDict) -> SerializedDict:
+            """Recursively mask sensitive keys in a dictionary."""
+            result: SerializedDict = {}
+            for key, value in d.items():
+                is_sensitive = any(
+                    sensitive in key.lower() for sensitive in sensitive_keys
+                )
+                if is_sensitive:
+                    result[key] = mask_value(str(value), mask_level)
+                elif isinstance(value, dict):
+                    result[key] = mask_dict(value)
+                elif isinstance(value, list):
+                    result[key] = mask_list(value)
+                else:
+                    result[key] = value
+            return result
+
+        def mask_list(lst: list[JsonType]) -> list[JsonType]:
+            """Recursively mask items in a list."""
+            result: list[JsonType] = []
+            for item in lst:
+                if isinstance(item, dict):
+                    result.append(mask_dict(item))
+                elif isinstance(item, list):
+                    result.append(mask_list(item))
+                else:
+                    result.append(item)
+            return result
+
+        # Parameter is typed as ModelMaskData, convert to dict and mask
+        masked_dict = mask_dict(data.to_dict())
+        return ModelMaskData.from_dict(masked_dict)
 
     def analyze_credentials_strength(
         self,
@@ -294,7 +301,7 @@ class ModelSecretManager(BaseModel):
                 status = "unhealthy"
                 warnings.extend(backend_health.issues)
 
-        except Exception as e:
+        except (AttributeError, ModelOnexError, RuntimeError) as e:
             status = "unhealthy"
             components.append(
                 HealthCheckComponent(
@@ -397,7 +404,7 @@ def get_secret_manager() -> ModelSecretManager:
     try:
         container = get_model_onex_container_sync()
         return cast("ModelSecretManager", container.secret_manager())
-    except Exception as e:
+    except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get secret manager. "
             "Call init_secret_manager() first.",
@@ -427,7 +434,7 @@ def init_secret_manager(config: ModelSecretConfig) -> ModelSecretManager:
     try:
         container = get_model_onex_container_sync()
         return cast("ModelSecretManager", container.secret_manager())
-    except Exception as e:
+    except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot initialize secret manager.",
             error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
@@ -459,7 +466,7 @@ def init_secret_manager_from_manager(manager: ModelSecretManager) -> ModelSecret
     try:
         container = get_model_onex_container_sync()
         return cast("ModelSecretManager", container.secret_manager())
-    except Exception as e:
+    except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot initialize secret manager.",
             error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,

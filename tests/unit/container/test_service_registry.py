@@ -4,7 +4,8 @@ from uuid import UUID
 
 import pytest
 
-from omnibase_core.container.service_registry import ServiceRegistry
+from omnibase_core.container.container_service_registry import ServiceRegistry
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
@@ -439,5 +440,7 @@ class TestContainerIntegration:
 
         container = await create_model_onex_container(enable_service_registry=False)
 
-        # Verify registry is None
-        assert container.service_registry is None
+        # Verify accessing registry raises error when disabled
+        with pytest.raises(ModelOnexError) as exc_info:
+            _ = container.service_registry
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_STATE

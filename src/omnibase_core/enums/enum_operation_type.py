@@ -5,10 +5,13 @@ Defines standard operation types used in CLI commands
 to replace string literals with type-safe enums.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumOperationType(str, Enum):
+@unique
+class EnumOperationType(StrValueHelper, str, Enum):
     """
     Standard operation types for CLI operations.
 
@@ -26,3 +29,6 @@ class EnumOperationType(str, Enum):
     STATUS = "status"
     WORKFLOW = "workflow"
     INTROSPECT = "introspect"
+
+
+__all__ = ["EnumOperationType"]

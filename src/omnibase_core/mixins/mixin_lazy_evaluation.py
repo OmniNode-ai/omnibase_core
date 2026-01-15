@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-import hashlib
-from collections.abc import Callable
-from typing import Any, TypeVar
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.typed_dict_mixin_types import TypedDictLazyCacheStats
-
 """
 Lazy Evaluation Mixin for Performance Optimization
 
@@ -14,13 +5,19 @@ Provides lazy evaluation patterns to reduce memory usage and improve performance
 for expensive operations like model serialization and type conversions.
 """
 
+from __future__ import annotations
+
 import functools
-from typing import cast
+import hashlib
+from collections.abc import Callable
+from typing import TypeVar, cast
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.types import JsonSerializable
+from omnibase_core.types.typed_dict_mixin_types import TypedDictLazyCacheStats
 
 # Define PropertyValue locally to avoid dependency issues
 PropertyValue = JsonSerializable
@@ -41,7 +38,7 @@ class MixinLazyEvaluation:
 
     def __init__(self) -> None:
         super().__init__()
-        self._lazy_cache: dict[str, MixinLazyValue[Any]] = {}
+        self._lazy_cache: dict[str, MixinLazyValue[object]] = {}
 
     def lazy_property(
         self, key: str, func: Callable[[], T], cache: bool = True
@@ -185,7 +182,9 @@ def lazy_cached(
 
     def decorator(func: Callable[..., T]) -> Callable[..., MixinLazyValue[T]]:
         @functools.wraps(func)
-        def wrapper(self: Any, *args: Any, **kwargs: Any) -> MixinLazyValue[T]:
+        def wrapper(
+            self: MixinLazyEvaluation, *args: object, **kwargs: object
+        ) -> MixinLazyValue[T]:
             if not hasattr(self, "_lazy_cache"):
                 self._lazy_cache = {}
 

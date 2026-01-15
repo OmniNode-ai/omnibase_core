@@ -15,12 +15,12 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_import_status import EnumImportStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_import_validation_result import (
-    ModelValidationResult,
+    ModelImportValidationResult,
 )
 from omnibase_core.models.validation.model_module_import_result import (
     ModelModuleImportResult,
 )
-from omnibase_core.validation.circular_import_validator import CircularImportValidator
+from omnibase_core.validation.validator_circular_import import CircularImportValidator
 
 
 @pytest.mark.unit
@@ -349,7 +349,7 @@ class TestCircularImportValidatorValidate:
         validator = CircularImportValidator(source_path=tmp_path)
         result = validator.validate()
 
-        assert isinstance(result, ModelValidationResult)
+        assert isinstance(result, ModelImportValidationResult)
         assert result.total_files == 0
         assert result.success_count == 0
         assert result.failure_count == 0

@@ -3,9 +3,11 @@
 from omnibase_core.constants import (
     constants_contract_fields,
     constants_effect,
+    constants_error,
     constants_field_limits,
+    constants_handler_capabilities,
+    constants_omnimemory,
     constants_topic_taxonomy,
-    handler_capabilities,
 )
 from omnibase_core.constants.constants_contract_fields import (
     BACKEND_KEY,
@@ -45,6 +47,27 @@ from omnibase_core.constants.constants_effect_limits import (
     EFFECT_TIMEOUT_MAX_MS,
     EFFECT_TIMEOUT_MIN_MS,
 )
+from omnibase_core.constants.constants_error import (
+    ERROR_CODE_PATTERN,
+    ERROR_CODE_PATTERN_STRING,
+)
+from omnibase_core.constants.constants_event_types import (
+    NODE_FAILURE,
+    NODE_HEALTH_CHECK,
+    NODE_HEALTH_EVENT,
+    NODE_INTROSPECTION_EVENT,
+    NODE_SHUTDOWN_EVENT,
+    NODE_START,
+    NODE_SUCCESS,
+    REAL_TIME_INTROSPECTION_RESPONSE,
+    REQUEST_REAL_TIME_INTROSPECTION,
+    SERVICE_DISCOVERY,
+    TOOL_DISCOVERY_REQUEST,
+    TOOL_DISCOVERY_RESPONSE,
+    TOOL_INVOCATION,
+    TOOL_RESPONSE,
+    normalize_legacy_event_type,
+)
 from omnibase_core.constants.constants_field_limits import (
     MAX_BFS_ITERATIONS,
     MAX_DESCRIPTION_LENGTH,
@@ -62,6 +85,18 @@ from omnibase_core.constants.constants_field_limits import (
     MAX_TAGS_COUNT,
     MAX_TIMEOUT_MS,
     MAX_URL_LENGTH,
+)
+from omnibase_core.constants.constants_handler_capabilities import (
+    COMPUTE_CAPABILITIES,
+    EFFECT_CAPABILITIES,
+    NODE_TYPE_REQUIREMENTS,
+    ORCHESTRATOR_CAPABILITIES,
+    REDUCER_CAPABILITIES,
+    get_capabilities_by_node_kind,
+    validate_capabilities,
+)
+from omnibase_core.constants.constants_omnimemory import (
+    FLOAT_COMPARISON_EPSILON,
 )
 from omnibase_core.constants.constants_timeouts import (
     DATABASE_QUERY_TIMEOUT_SECONDS,
@@ -111,40 +146,19 @@ from omnibase_core.constants.constants_topic_taxonomy import (
     TOPIC_TYPE_SNAPSHOTS,
     topic_name,
 )
-from omnibase_core.constants.event_types import (
-    NODE_FAILURE,
-    NODE_HEALTH_CHECK,
-    NODE_HEALTH_EVENT,
-    NODE_INTROSPECTION_EVENT,
-    NODE_SHUTDOWN_EVENT,
-    NODE_START,
-    NODE_SUCCESS,
-    REAL_TIME_INTROSPECTION_RESPONSE,
-    REQUEST_REAL_TIME_INTROSPECTION,
-    SERVICE_DISCOVERY,
-    TOOL_DISCOVERY_REQUEST,
-    TOOL_DISCOVERY_RESPONSE,
-    TOOL_INVOCATION,
-    TOOL_RESPONSE,
-    normalize_legacy_event_type,
-)
-from omnibase_core.constants.handler_capabilities import (
-    COMPUTE_CAPABILITIES,
-    EFFECT_CAPABILITIES,
-    NODE_TYPE_REQUIREMENTS,
-    ORCHESTRATOR_CAPABILITIES,
-    REDUCER_CAPABILITIES,
-    get_capabilities_by_node_kind,
-    validate_capabilities,
-)
 
 __all__ = [
     "constants_contract_fields",
     "constants_effect",
+    "constants_error",
     "constants_field_limits",
+    "constants_omnimemory",
     "constants_topic_taxonomy",
-    "handler_capabilities",
+    "constants_handler_capabilities",
     "normalize_legacy_event_type",
+    # Error code pattern (centralized)
+    "ERROR_CODE_PATTERN",
+    "ERROR_CODE_PATTERN_STRING",
     # Event type constants
     "NODE_FAILURE",
     "NODE_HEALTH_CHECK",
@@ -194,6 +208,8 @@ __all__ = [
     "EFFECT_TIMEOUT_DEFAULT_MS",
     "EFFECT_TIMEOUT_MAX_MS",
     "EFFECT_TIMEOUT_MIN_MS",
+    # OmniMemory constants
+    "FLOAT_COMPARISON_EPSILON",
     # Field length limits
     "MAX_BFS_ITERATIONS",
     "MAX_DESCRIPTION_LENGTH",

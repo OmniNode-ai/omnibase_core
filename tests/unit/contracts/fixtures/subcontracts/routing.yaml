@@ -1,0 +1,7 @@
+---
+default_handler: "main"
+routes:
+  - path: "/api"
+    handler: "api_handler"
+  - path: "/health"
+    handler: "health_handler"

@@ -22,7 +22,10 @@ from omnibase_core.constants.constants_field_limits import (
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.validation.workflow_constants import MIN_TIMEOUT_MS, VALID_STEP_TYPES
+from omnibase_core.validation.validator_workflow_constants import (
+    MIN_TIMEOUT_MS,
+    VALID_STEP_TYPES,
+)
 
 __all__ = ["ModelWorkflowStep", "VALID_STEP_TYPES"]
 
@@ -45,7 +48,7 @@ class ModelWorkflowStep(BaseModel):
     v1.0.4 Compliance:
         step_type MUST be one of: compute, effect, reducer, orchestrator, custom,
         parallel. The "conditional" type is reserved for v1.1+ and MUST NOT be
-        accepted in v1.0.x. See: workflow_constants.VALID_STEP_TYPES
+        accepted in v1.0.x. See: validator_workflow_constants.VALID_STEP_TYPES
     """
 
     model_config = ConfigDict(
@@ -53,7 +56,6 @@ class ModelWorkflowStep(BaseModel):
         from_attributes=True,
         frozen=True,
         use_enum_values=False,
-        validate_assignment=True,
     )
 
     # ONEX correlation tracking
@@ -132,7 +134,7 @@ class ModelWorkflowStep(BaseModel):
     # - Event timeout: Capped at MAX_TIMEOUT_MS (24 hours) - for longer operations
     #   See: omnibase_core/models/core/model_event_input_state.py
     # - Workflow global timeout: Configured in ModelWorkflowMetadata.timeout_ms
-    #   See: omnibase_core/validation/workflow_constants.py
+    #   See: omnibase_core/validation/validator_workflow_constants.py
     timeout_ms: int = Field(
         default=TIMEOUT_DEFAULT_MS,
         description=(

@@ -3,14 +3,53 @@ ModelCircuitBreaker - Circuit breaker configuration for load balancing
 
 Circuit breaker model for implementing fault tolerance and preventing
 cascade failures in load balancing systems.
+
+# ============================================================================
+# PR #328 Context: Why This Fix Is Included in the Evidence Models PR
+# ============================================================================
+#
+# This file contains fixes for a LATENT BUG that existed before the evidence
+# models work but was EXPOSED when running tests with pytest-xdist parallel
+# execution.
+#
+# The Problem:
+# ------------
+# ModelCircuitBreaker has a forward reference to ModelCircuitBreakerMetadata,
+# which in turn has a forward reference to ModelCustomFields. When pytest-xdist
+# runs tests in parallel across multiple worker processes, each worker imports
+# modules independently and in potentially different orders. This caused
+# Pydantic to fail with "ModelCustomFields is not fully defined" errors because
+# the forward references were not resolved before validation.
+#
+# Why It Appeared in Evidence Model Tests:
+# ----------------------------------------
+# The evidence model tests (ModelEvidenceSummary, etc.) import modules that
+# transitively depend on ModelCircuitBreaker. When these tests run in parallel
+# with pytest-xdist (using `-n auto` or `-n 4` workers), the import order
+# becomes non-deterministic. This exposed the latent forward reference bug
+# that was hidden when tests ran sequentially.
+#
+# The Fix:
+# --------
+# 1. Added _ensure_models_rebuilt() with thread-safe double-checked locking
+# 2. Override __new__ to trigger rebuild before Pydantic validation
+# 3. Override model_validate() and model_validate_json() for class method calls
+#
+# This ensures forward references are resolved regardless of import order,
+# making the model safe for parallel test execution across worker processes.
+#
+# Related Issue: OMN-1195 (Evidence Summary Model implementation)
+# ============================================================================
 """
 
 import threading
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
+
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 
 from .model_circuit_breaker_metadata import ModelCircuitBreakerMetadata
 
@@ -94,9 +133,13 @@ class ModelCircuitBreaker(BaseModel):
         ...     pass
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        from_attributes=True,
+        arbitrary_types_allowed=True,  # Required for threading.Lock private attr
+    )
 
-    def __new__(cls, **_data: Any) -> "ModelCircuitBreaker":
+    def __new__(cls, **_data: object) -> "ModelCircuitBreaker":
         """Override __new__ to trigger lazy model rebuild before Pydantic validation.
 
         Pydantic validates model completeness before calling model_validator,
@@ -107,6 +150,83 @@ class ModelCircuitBreaker(BaseModel):
         """
         _ensure_models_rebuilt(cls)
         return super().__new__(cls)
+
+    @classmethod
+    def model_validate(
+        cls,
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        extra: Literal["allow", "ignore", "forbid"] | None = None,
+        from_attributes: bool | None = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> "ModelCircuitBreaker":
+        """Validate data and create a model instance.
+
+        This override ensures forward references are resolved before validation,
+        enabling lazy initialization while supporting model_validate() calls.
+
+        Args:
+            obj: The object to validate.
+            strict: Whether to enforce strict validation.
+            extra: How to handle extra fields.
+            from_attributes: Whether to extract data from object attributes.
+            context: Additional context to pass to validators.
+            by_alias: Whether to populate by alias.
+            by_name: Whether to populate by field name.
+
+        Returns:
+            A validated ModelCircuitBreaker instance.
+        """
+        _ensure_models_rebuilt(cls)
+        return super().model_validate(
+            obj,
+            strict=strict,
+            extra=extra,
+            from_attributes=from_attributes,
+            context=context,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
+
+    @classmethod
+    def model_validate_json(
+        cls,
+        json_data: str | bytes | bytearray,
+        *,
+        strict: bool | None = None,
+        extra: Literal["allow", "ignore", "forbid"] | None = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> "ModelCircuitBreaker":
+        """Validate JSON data and create a model instance.
+
+        This override ensures forward references are resolved before validation,
+        enabling lazy initialization while supporting model_validate_json() calls.
+
+        Args:
+            json_data: The JSON data to validate.
+            strict: Whether to enforce strict validation.
+            extra: How to handle extra fields.
+            context: Additional context to pass to validators.
+            by_alias: Whether to populate by alias.
+            by_name: Whether to populate by field name.
+
+        Returns:
+            A validated ModelCircuitBreaker instance.
+        """
+        _ensure_models_rebuilt(cls)
+        return super().model_validate_json(
+            json_data,
+            strict=strict,
+            extra=extra,
+            context=context,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
 
     # Private lock for thread-safe operations
     _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
@@ -179,11 +299,28 @@ class ModelCircuitBreaker(BaseModel):
         le=1.0,
     )
 
-    state: str = Field(
-        default="closed",
+    state: EnumCircuitBreakerState = Field(
+        default=EnumCircuitBreakerState.CLOSED,
         description="Current circuit breaker state",
-        pattern="^(closed|open|half_open)$",
     )
+
+    @field_validator("state", mode="before")
+    @classmethod
+    def _normalize_state(cls, v: str | EnumCircuitBreakerState) -> str:
+        """Accept both string and enum, normalize to string for serialization."""
+        if isinstance(v, EnumCircuitBreakerState):
+            return v.value
+        valid_states = {
+            EnumCircuitBreakerState.CLOSED.value,
+            EnumCircuitBreakerState.OPEN.value,
+            EnumCircuitBreakerState.HALF_OPEN.value,
+        }
+        if isinstance(v, str) and v in valid_states:
+            return v
+        # error-ok: Pydantic field_validator requires ValueError
+        raise ValueError(
+            f"Invalid circuit breaker state: {v!r}. Valid states: {sorted(valid_states)}"
+        )
 
     last_failure_time: datetime | None = Field(
         default=None,
@@ -248,7 +385,7 @@ class ModelCircuitBreaker(BaseModel):
             - state: Underlying state field
             - get_current_state(): State with automatic transitions
         """
-        return self.state == "open"
+        return self.state == EnumCircuitBreakerState.OPEN
 
     def should_allow_request(self) -> bool:
         """Check if a request should be allowed through the circuit breaker"""
@@ -261,21 +398,19 @@ class ModelCircuitBreaker(BaseModel):
             # Clean up old data outside window
             self._cleanup_old_data_unlocked(current_time)
 
-            if self.state == "closed":
+            if self.state == EnumCircuitBreakerState.CLOSED:
                 return True
-            if self.state == "open":
+            if self.state == EnumCircuitBreakerState.OPEN:
                 # Check if timeout has elapsed to transition to half-open
                 if self._should_transition_to_half_open(current_time):
                     self._transition_to_half_open_unlocked()
                     return True
                 return False
-            if self.state == "half_open":
+            if self.state == EnumCircuitBreakerState.HALF_OPEN:
                 # Allow limited requests in half-open state
                 if self.half_open_requests < self.half_open_max_requests:
                     self.half_open_requests += 1
                     return True
-                return False
-
             return False
 
     def record_success(self) -> None:
@@ -287,7 +422,7 @@ class ModelCircuitBreaker(BaseModel):
             current_time = datetime.now(UTC)
             self.total_requests += 1
 
-            if self.state == "half_open":
+            if self.state == EnumCircuitBreakerState.HALF_OPEN:
                 self.success_count += 1
                 if self.success_count >= self.success_threshold:
                     self._transition_to_closed_unlocked()
@@ -320,10 +455,10 @@ class ModelCircuitBreaker(BaseModel):
             self.total_requests += 1
             self.last_failure_time = current_time
 
-            if self.state == "half_open":
+            if self.state == EnumCircuitBreakerState.HALF_OPEN:
                 # Any failure in half-open transitions back to open
                 self._transition_to_open_unlocked()
-            elif self.state == "closed":
+            elif self.state == EnumCircuitBreakerState.CLOSED:
                 # Check if we should open the circuit
                 if self._should_open_circuit():
                     self._transition_to_open_unlocked()
@@ -347,12 +482,13 @@ class ModelCircuitBreaker(BaseModel):
         with self._lock:
             current_time = datetime.now(UTC)
 
-            if self.state == "open" and self._should_transition_to_half_open(
-                current_time
+            if (
+                self.state == EnumCircuitBreakerState.OPEN
+                and self._should_transition_to_half_open(current_time)
             ):
                 self._transition_to_half_open_unlocked()
 
-            return self.state
+            return self.state.value
 
     def get_failure_rate(self) -> float:
         """Calculate current failure rate"""
@@ -382,7 +518,7 @@ class ModelCircuitBreaker(BaseModel):
 
     def _reset_state_unlocked(self) -> None:
         """Reset circuit breaker to initial state (internal, no lock)."""
-        self.state = "closed"
+        self.state = EnumCircuitBreakerState.CLOSED
         self.failure_count = 0
         self.success_count = 0
         self.total_requests = 0
@@ -451,7 +587,7 @@ class ModelCircuitBreaker(BaseModel):
 
     def _transition_to_open_unlocked(self) -> None:
         """Transition circuit breaker to open state (internal, no lock)."""
-        self.state = "open"
+        self.state = EnumCircuitBreakerState.OPEN
         self.last_state_change = datetime.now(UTC)
         self.half_open_requests = 0
         self.success_count = 0
@@ -463,7 +599,7 @@ class ModelCircuitBreaker(BaseModel):
 
     def _transition_to_half_open_unlocked(self) -> None:
         """Transition circuit breaker to half-open state (internal, no lock)."""
-        self.state = "half_open"
+        self.state = EnumCircuitBreakerState.HALF_OPEN
         self.last_state_change = datetime.now(UTC)
         self.half_open_requests = 0
         self.success_count = 0
@@ -475,7 +611,7 @@ class ModelCircuitBreaker(BaseModel):
 
     def _transition_to_closed_unlocked(self) -> None:
         """Transition circuit breaker to closed state (internal, no lock)."""
-        self.state = "closed"
+        self.state = EnumCircuitBreakerState.CLOSED
         self.last_state_change = datetime.now(UTC)
         self.failure_count = 0
         self.success_count = 0

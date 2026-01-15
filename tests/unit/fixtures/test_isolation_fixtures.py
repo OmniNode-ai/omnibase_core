@@ -2,7 +2,7 @@
 
 import pytest
 
-from omnibase_core.context.application_context import (
+from omnibase_core.context.context_application import (
     _current_container,
     get_current_container,
     set_current_container,
@@ -123,7 +123,7 @@ class TestIsolationFixtures:
         self, isolated_correlation_context: object
     ) -> None:
         """Test that correlation context is isolated."""
-        from omnibase_core.logging.core_logging import get_correlation_id
+        from omnibase_core.logging.logging_core import get_correlation_id
 
         assert get_correlation_id() is None
 

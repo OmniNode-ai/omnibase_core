@@ -4,19 +4,14 @@ Coordination Rules Model.
 Model for workflow coordination rules in the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelCoordinationRules(BaseModel):
-    """Rules for workflow coordination.
-
-    v1.0.5 Reserved Fields Governance:
-        Extra fields are allowed ("extra": "ignore") to support reserved fields
-        for forward compatibility.
-    """
+    """Rules for workflow coordination."""
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
@@ -39,10 +34,10 @@ class ModelCoordinationRules(BaseModel):
         description="Strategy for handling failures",
     )
 
-    model_config = {
-        # v1.0.5 Fix 54: Reserved Fields Governance
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "frozen": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        from_attributes=True,
+        frozen=True,
+        use_enum_values=False,
+        validate_assignment=True,
+    )

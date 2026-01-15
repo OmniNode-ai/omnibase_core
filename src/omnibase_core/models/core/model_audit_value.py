@@ -2,8 +2,6 @@
 Audit value model to replace Dict[str, Any] usage in audit entries.
 """
 
-from __future__ import annotations
-
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -59,7 +57,7 @@ class ModelAuditValue(BaseModel):
     @classmethod
     def from_dict(
         cls, data: SerializedDict | None, is_new: bool = False
-    ) -> ModelAuditValue | None:
+    ) -> "ModelAuditValue | None":
         """Create from dictionary for easy migration."""
         if data is None:
             return None
@@ -94,7 +92,8 @@ class ModelAuditValue(BaseModel):
                 field_changes=field_changes,
                 change_count=len(field_changes),
             )
-        return cls(**data)
+        # Pydantic validates the data at runtime - type safety is enforced by Pydantic
+        return cls.model_validate(data)
 
     def get_changed_fields(self) -> list[str]:
         """Get list of changed field names."""

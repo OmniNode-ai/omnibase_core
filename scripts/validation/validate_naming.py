@@ -114,6 +114,7 @@ class NamingConventionValidator:
     # Exception patterns - classes that don't need to follow strict naming
     EXCEPTION_PATTERNS = [
         r"^_.*",  # Private classes
+        r"^Checker.*",  # Checker/validator utility classes (e.g., CheckerEnumMemberCasing)
         r".*Test$",  # Test classes
         r".*TestCase$",  # Test case classes
         r"^Test.*",  # Test classes
@@ -154,21 +155,96 @@ class NamingConventionValidator:
         "models/mixins/": [
             "MixinServiceRegistryEntry",  # Dataclass for service registry entries
         ],
-        # CONTRACT INFRASTRUCTURE: Contract hash registry for integrity verification
+        # CONTRACT INFRASTRUCTURE: Contract utilities and registries
         # Location: contracts/ - Contract management infrastructure
-        # Rationale: ContractHashRegistry is a stateful registry service for managing contract hashes,
-        #            not a Protocol (which would require Protocol* prefix) or a Model (Pydantic data class).
-        #            Similar to ServiceRegistry in container/, this is infrastructure for contract integrity.
+        # Rationale: These are stateful service/utility classes for contract management,
+        #            not Protocols or Models. Similar to ServiceRegistry in container/.
         "contracts/": [
             "ContractHashRegistry",  # Registry service for contract hash management
+            "ContractDiffComputer",  # Utility class for computing contract diffs (OMN-1148)
         ],
-        # HANDLER INFRASTRUCTURE: Handler implementations for ONEX runtime
-        # Location: runtime/handlers/ - Handler implementations for EnvelopeRouter
+        # REPLAY INFRASTRUCTURE: Replay executor and session for deterministic replay
+        # Location: pipeline/replay/ - Replay infrastructure utilities
+        # Rationale: ExecutorReplay and ReplaySession are replay infrastructure classes.
+        #            They coordinate replay execution, not Node implementations.
+        #            Note: ServiceEffectRecorder is now in services/replay/ (OMN-1298)
+        "pipeline/replay/": [
+            # ExecutorReplay, ReplaySession - no exemptions needed (correct naming)
+        ],
+        # HANDLER INFRASTRUCTURE: Handler implementations for ONEX runtime and pipeline
+        # Location: runtime/handlers/ and pipeline/handlers/ - Handler implementations
         # Rationale: Handlers implement ProtocolHandler and use Handler* prefix (e.g., HandlerLocal, HandlerHttp)
         #            They are not "Services" in the ONEX architecture but runtime execution units.
+        #            Pipeline handlers (HandlerCapabilityCaching, HandlerCapabilityMetrics) provide
+        #            reusable pipeline capabilities following the same Handler* naming pattern.
         "runtime/handlers/": [
             "Handler*",  # All Handler* classes in handlers/ directory
         ],
+        "pipeline/handlers/": [
+            "Handler*",  # All Handler* classes (HandlerCapabilityCaching, HandlerCapabilityMetrics)
+        ],
+        # UTILITY CLASSES: Utility/helper classes in utils/
+        # Location: utils/ - Utility functions and helper classes
+        # Rationale: Utility classes use Util* prefix (e.g., UtilContractLoader, UtilSecurity)
+        #            These are helper classes, not Protocols, even if they have "contract" in the name.
+        #            The heuristic flags "contract" as a Protocol indicator, but UtilContractLoader
+        #            is a utility that LOADS contracts, not a Protocol interface.
+        "utils/": [
+            "Util*",  # All Util* classes in utils/ directory
+        ],
+        # FACTORY CLASSES: Contract profile factory for creating default contracts
+        # Location: factories/ - Factory pattern implementations
+        # Rationale: ContractProfileFactory creates contract profiles, not a Protocol interface.
+        #            The heuristic flags "contract" as a Protocol indicator, but this is a factory
+        #            that PRODUCES contracts, not a Protocol interface.
+        "factories/": [
+            "ContractProfileFactory",  # Factory for creating default contract profiles
+        ],
+        # VALIDATION INFRASTRUCTURE: Validators and checkers for ONEX contracts and workflows
+        # Location: validation/ - Validation framework implementations
+        # Rationale: ContractPatchValidator validates contract patches, not a Protocol interface.
+        #            The heuristic flags "contract" as a Protocol indicator, but this is a
+        #            validator that VALIDATES patches, not a Protocol interface.
+        #            The Protocol interface for this is ProtocolPatchValidator in validator_protocol_patch.py
+        #            ContractValidationInvariantChecker is a concrete implementation (OMN-1146),
+        #            not a Protocol. The Protocol interface is ProtocolContractValidationInvariantChecker.
+        #            Validator* classes (ValidatorAnyType, ValidatorContractLinter, etc.) are
+        #            concrete validator implementations in the validation framework (OMN-1291).
+        #            *Visitor classes (AnyTypeVisitor, etc.) are AST visitors for code analysis.
+        #            The heuristics flag "type" as Enum indicator and "contract" as Protocol
+        #            indicator, but these are validation infrastructure classes.
+        "validation/": [
+            "ContractPatchValidator",  # Validator for contract patches (OMN-1126)
+            "ContractValidationInvariantChecker",  # Invariant checker implementation (OMN-1146)
+            "ContractValidationPipeline",  # Validation pipeline orchestrator (OMN-1128)
+            "ExpandedContractValidator",  # Expanded contract validator (OMN-1128)
+            "ExpandedContractGraphValidator",  # Multi-contract graph validator (OMN-1128)
+            "MergeValidator",  # Merge phase validator (OMN-1128)
+            "Validator*",  # All Validator* classes (ValidatorAnyType, ValidatorContractLinter, etc.) (OMN-1291)
+            "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for AST analysis (OMN-1311)
+            "*Visitor",  # All *Visitor classes (AnyTypeVisitor, etc.) for AST analysis (OMN-1291)
+            "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for code analysis (OMN-1308)
+        ],
+        # MERGE INFRASTRUCTURE: Contract merge engine for typed contract merging
+        # Location: merge/ - Contract merge framework implementations
+        # Rationale: ContractMergeEngine merges contract patches with base profiles (OMN-1127).
+        #            The heuristic flags "contract" as a Protocol indicator, but this is a
+        #            merge engine implementation, not a Protocol interface.
+        #            The Protocol interface is ProtocolMergeEngine in protocols/merge/.
+        "merge/": [
+            "ContractMergeEngine",  # Merge engine for typed contract merging (OMN-1127)
+        ],
+        # REPLAY INFRASTRUCTURE: Deterministic replay utilities for testing and debugging
+        # Location: services/replay/ - Replay infrastructure services (injectors/recorders)
+        # Rationale: These classes provide deterministic replay capabilities (OMN-1116, OMN-1205).
+        #            ServiceEffectRecorder, ServiceTimeInjector, ServiceRNGInjector follow the
+        #            Service* prefix convention and no longer require exemptions.
+        #            Note: Empty list kept for documentation purposes.
+        "services/replay/": [
+            # No exemptions needed - all classes now use Service* prefix (OMN-1298)
+        ],
+        # Note: Duplicate "pipeline/replay/" entry removed - consolidated above (OMN-1298)
+        # ExecutorReplay and ReplaySession follow correct naming patterns and don't need exemptions.
     }
 
     @staticmethod
@@ -197,9 +273,14 @@ class NamingConventionValidator:
             # Check if class matches any exempted pattern
             for pattern in exempted_patterns:
                 if pattern.endswith("*"):
-                    # Wildcard pattern (e.g., "Model*")
+                    # Prefix wildcard pattern (e.g., "Model*")
                     prefix = pattern[:-1]
                     if class_name.startswith(prefix):
+                        return True
+                elif pattern.startswith("*"):
+                    # Suffix wildcard pattern (e.g., "*Visitor")
+                    suffix = pattern[1:]
+                    if class_name.endswith(suffix):
                         return True
                 elif class_name == pattern:
                     # Exact match

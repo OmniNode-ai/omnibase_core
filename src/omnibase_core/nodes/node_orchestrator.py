@@ -3,6 +3,12 @@ NodeOrchestrator - Workflow-driven orchestrator node for coordination.
 
 Primary orchestrator implementation using workflow definitions for coordination.
 Zero custom Python code required - all coordination logic defined declaratively.
+
+Key Capabilities:
+- Workflow-driven coordination via declarative YAML contracts
+- Event-driven message handling with ModelIntent/ModelAction patterns
+- Workflow state snapshot and restore capabilities
+- Contract-driven handler routing via MixinHandlerRouting (OMN-1293)
 """
 
 import copy
@@ -12,7 +18,8 @@ from uuid import UUID
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.logging.logging_structured import emit_log_event_sync
+from omnibase_core.mixins.mixin_handler_routing import MixinHandlerRouting
 from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
@@ -28,7 +35,7 @@ from omnibase_core.models.workflow import (
     WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION,
     ModelWorkflowStateSnapshot,
 )
-from omnibase_core.utils.workflow_executor import WorkflowExecutionResult
+from omnibase_core.utils.util_workflow_executor import WorkflowExecutionResult
 
 # Clock skew tolerance for snapshot timestamp validation
 SNAPSHOT_FUTURE_TOLERANCE_SECONDS: int = 60
@@ -65,14 +72,41 @@ _WARN_WORKFLOW_ALL_STEPS_FAILED = (
 )
 
 
-class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
+class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution, MixinHandlerRouting):
     """
-        Workflow-driven orchestrator node for coordination.
+    Workflow-driven orchestrator node for coordination.
 
-        Enables creating orchestrator nodes entirely from YAML contracts without custom Python code.
-        Workflow steps, dependencies, and execution modes are all defined in workflow definitions.
+    Enables creating orchestrator nodes entirely from YAML contracts without custom Python code.
+    Workflow steps, dependencies, and execution modes are all defined in workflow definitions.
 
-        Thread Safety:
+    Key Features:
+        - Workflow-driven coordination with step dependencies
+        - ModelAction emission for deferred execution
+        - Workflow state snapshot and restore
+        - Contract-driven handler routing via MixinHandlerRouting
+
+    Handler Routing (via MixinHandlerRouting):
+        Enables routing events to handlers based on YAML contract configuration.
+        Use ``payload_type_match`` routing strategy for orchestrator nodes to route
+        by event model class name (e.g., "UserCreatedEvent", "OrderCompletedEvent").
+
+        Example handler_routing contract section::
+
+            handler_routing:
+              version: { major: 1, minor: 0, patch: 0 }
+              routing_strategy: payload_type_match
+              handlers:
+                - routing_key: UserCreatedEvent
+                  handler_key: handle_user_created
+                  message_category: event
+                  priority: 0
+                - routing_key: OrderCompletedEvent
+                  handler_key: handle_order_completed
+                  message_category: event
+                  priority: 10
+              default_handler: handle_unknown_event
+
+    Thread Safety:
             **MVP Design Decision**: NodeOrchestrator uses mutable workflow state intentionally
             for the MVP phase to enable workflow coordination with minimal complexity.
             This is a documented trade-off.
@@ -319,6 +353,17 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         # Use object.__setattr__() to bypass Pydantic validation when mixins with
         # Pydantic BaseModel are in the MRO (e.g., MixinEventBus in ModelServiceOrchestrator)
         object.__setattr__(self, "workflow_definition", None)
+
+        # Initialize handler routing from contract (optional - not all orchestrators have it)
+        # The handler_routing subcontract enables contract-driven message routing.
+        # If the node's contract has handler_routing defined, initialize the routing table.
+        handler_routing = None
+        if hasattr(self, "contract") and self.contract is not None:
+            handler_routing = getattr(self.contract, "handler_routing", None)
+
+        if handler_routing is not None:
+            handler_registry: object = container.get_service("ProtocolHandlerRegistry")  # type: ignore[arg-type]  # Protocol-based DI lookup per ONEX conventions
+            self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]  # Registry retrieved via DI
 
     async def process(
         self,

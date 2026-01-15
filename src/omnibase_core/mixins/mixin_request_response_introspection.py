@@ -1,10 +1,5 @@
-from typing import Any
-from uuid import uuid4
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
-Request-Response Introspection Mixin
+Request-Response Introspection Mixin.
 
 Enables nodes to respond to REQUEST_INTROSPECTION events with real-time status information.
 Provides the "request-response" half of the hybrid discovery system.
@@ -13,11 +8,21 @@ Provides the "request-response" half of the hybrid discovery system.
 import contextlib
 import time
 from datetime import UTC
+from typing import TYPE_CHECKING
+from uuid import uuid4
 
-from omnibase_core.constants.event_types import REQUEST_REAL_TIME_INTROSPECTION
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+if TYPE_CHECKING:
+    from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
+from omnibase_core.constants.constants_event_types import (
+    REQUEST_REAL_TIME_INTROSPECTION,
+)
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_current_status import EnumNodeCurrentStatus
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.discovery.model_current_tool_availability import (
     ModelCurrentToolAvailability,
 )
@@ -57,7 +62,7 @@ class MixinRequestResponseIntrospection:
     - Request-response introspection for real-time "who's available now" discovery
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         super().__init__(*args, **kwargs)
         self._introspection_request_subscription = None
         self._startup_time: float = time.time()
@@ -98,7 +103,7 @@ class MixinRequestResponseIntrospection:
                 },
             )
 
-        except Exception as e:
+        except (AttributeError, KeyError, RuntimeError, ValueError) as e:
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"🔍 INTROSPECTION DEBUG: Failed to set up request-response introspection: {e}",
@@ -118,13 +123,15 @@ class MixinRequestResponseIntrospection:
         try:
             if hasattr(self, "_event_bus") and self._event_bus:
                 self._event_bus.unsubscribe(self._handle_introspection_request)
-        except Exception as e:
+        except (AttributeError, KeyError, RuntimeError, ValueError) as e:
             if hasattr(self, "_logger") and self._logger:
                 self._logger.exception(
                     f"Failed to teardown request-response introspection: {e}",
                 )
 
-    def _handle_introspection_request(self, envelope: Any) -> None:
+    def _handle_introspection_request(
+        self, envelope: "ModelEventEnvelope[OnexEvent] | OnexEvent"
+    ) -> None:
         """
         Handle incoming REQUEST_REAL_TIME_INTROSPECTION events.
 
@@ -182,14 +189,15 @@ class MixinRequestResponseIntrospection:
             return
 
         # Reconstruct ModelRequestIntrospectionEvent from event data
-        # The event bus delivers events as dict[str, Any]ionaries, so we need to reconstruct the typed object
+        # The event bus delivers events as dictionaries, so we need to reconstruct the typed object
         try:
             if isinstance(event, ModelRequestIntrospectionEvent):
                 request_event = event
             elif hasattr(event, "__dict__"):
-                # Convert object to dict[str, Any]for reconstruction
+                # Convert object to dict for reconstruction
                 event_dict = event.__dict__ if hasattr(event, "__dict__") else event
-                request_event = ModelRequestIntrospectionEvent(**event_dict)
+                # Dict unpacking to reconstruct typed event; structure validated by Pydantic at runtime
+                request_event = ModelRequestIntrospectionEvent(**event_dict)  # type: ignore[arg-type]  # Dict unpacking for event reconstruction
             elif isinstance(event, dict):
                 # Event bus delivers as dictionary - reconstruct typed object
                 request_event = ModelRequestIntrospectionEvent(**event)
@@ -326,7 +334,7 @@ class MixinRequestResponseIntrospection:
                 response_envelope = ModelEventEnvelope.create_broadcast(
                     payload=response,
                     source_node_id=getattr(self, "node_id", uuid4()),
-                    correlation_id=event.correlation_id,
+                    correlation_id=getattr(event, "correlation_id", None),
                 )
 
                 # DEBUG: Pre-publication logging
@@ -390,7 +398,7 @@ class MixinRequestResponseIntrospection:
                     {"node_name": getattr(self, "node_name", "unknown")},
                 )
 
-        except Exception as e:
+        except Exception as e:  # catch-all-ok: request handling errors should be caught and reported via error response
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"❌ INTROSPECTION: Error handling request: {e!s}",
@@ -403,8 +411,9 @@ class MixinRequestResponseIntrospection:
             # Send error response
             try:
                 response_time_ms = (time.time() - start_time) * 1000
+                event_correlation_id = getattr(event, "correlation_id", None) or uuid4()
                 error_response = ModelIntrospectionResponseEvent.create_error_response(
-                    correlation_id=event.correlation_id,
+                    correlation_id=event_correlation_id,
                     node_id=getattr(self, "node_id", uuid4()),
                     node_name=getattr(self, "node_name", "unknown_node"),
                     version=getattr(
@@ -423,7 +432,7 @@ class MixinRequestResponseIntrospection:
                     error_envelope = ModelEventEnvelope.create_broadcast(
                         payload=error_response,
                         source_node_id=getattr(self, "node_id", uuid4()),
-                        correlation_id=event.correlation_id,
+                        correlation_id=event_correlation_id,
                     )
 
                     # DEBUG: Error response publication logging
@@ -458,7 +467,9 @@ class MixinRequestResponseIntrospection:
                         },
                     )
 
-            except Exception as nested_e:
+            except (
+                Exception
+            ) as nested_e:  # catch-all-ok: error response sending is best-effort
                 if hasattr(self, "_logger") and self._logger:
                     self._logger.exception(f"Failed to send error response: {nested_e}")
 
@@ -578,10 +589,11 @@ class MixinRequestResponseIntrospection:
             with contextlib.suppress(Exception):
                 metadata = self.get_metadata()
 
+        # Dict metadata passed where typed model expected; Pydantic validates at runtime
         return ModelNodeCapabilities(
             actions=actions,
             protocols=protocols,
-            metadata=metadata,  # type: ignore[arg-type]
+            metadata=metadata,  # type: ignore[arg-type]  # Dict passed for metadata; Pydantic validates at runtime
         )
 
     def _get_current_tool_availability(self) -> list[ModelCurrentToolAvailability]:

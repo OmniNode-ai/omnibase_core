@@ -5,9 +5,10 @@ Defines the types of dependencies that can exist between workflows
 in the orchestrator pattern for proper type safety and validation.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumWorkflowDependencyType(Enum):
     """Types of workflow dependencies for orchestration patterns."""
 

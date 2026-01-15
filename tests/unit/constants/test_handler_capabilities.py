@@ -52,37 +52,49 @@ class TestEffectCapabilities:
 
     def test_effect_capabilities_is_frozenset(self) -> None:
         """Test that EFFECT_CAPABILITIES is a frozenset (immutable)."""
-        from omnibase_core.constants.handler_capabilities import EFFECT_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            EFFECT_CAPABILITIES,
+        )
 
         assert isinstance(EFFECT_CAPABILITIES, frozenset)
 
     def test_effect_capabilities_contains_http(self) -> None:
         """Test that EFFECT_CAPABILITIES contains http capability."""
-        from omnibase_core.constants.handler_capabilities import EFFECT_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            EFFECT_CAPABILITIES,
+        )
 
         assert EnumEffectCapability.HTTP in EFFECT_CAPABILITIES
 
     def test_effect_capabilities_contains_db(self) -> None:
         """Test that EFFECT_CAPABILITIES contains db capability."""
-        from omnibase_core.constants.handler_capabilities import EFFECT_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            EFFECT_CAPABILITIES,
+        )
 
         assert EnumEffectCapability.DB in EFFECT_CAPABILITIES
 
     def test_effect_capabilities_contains_kafka(self) -> None:
         """Test that EFFECT_CAPABILITIES contains kafka capability."""
-        from omnibase_core.constants.handler_capabilities import EFFECT_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            EFFECT_CAPABILITIES,
+        )
 
         assert EnumEffectCapability.KAFKA in EFFECT_CAPABILITIES
 
     def test_effect_capabilities_contains_filesystem(self) -> None:
         """Test that EFFECT_CAPABILITIES contains filesystem capability."""
-        from omnibase_core.constants.handler_capabilities import EFFECT_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            EFFECT_CAPABILITIES,
+        )
 
         assert EnumEffectCapability.FILESYSTEM in EFFECT_CAPABILITIES
 
     def test_effect_capabilities_contains_expected_values(self) -> None:
         """Test that EFFECT_CAPABILITIES contains all expected values."""
-        from omnibase_core.constants.handler_capabilities import EFFECT_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            EFFECT_CAPABILITIES,
+        )
 
         expected = {
             EnumEffectCapability.HTTP,
@@ -94,7 +106,9 @@ class TestEffectCapabilities:
 
     def test_effect_capabilities_is_immutable(self) -> None:
         """Test that EFFECT_CAPABILITIES cannot be modified (frozenset)."""
-        from omnibase_core.constants.handler_capabilities import EFFECT_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            EFFECT_CAPABILITIES,
+        )
 
         # frozenset does not have add method - this should raise AttributeError
         with pytest.raises(AttributeError):
@@ -102,7 +116,9 @@ class TestEffectCapabilities:
 
     def test_effect_capabilities_all_lowercase(self) -> None:
         """Test that all EFFECT_CAPABILITIES values are lowercase strings."""
-        from omnibase_core.constants.handler_capabilities import EFFECT_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            EFFECT_CAPABILITIES,
+        )
 
         for capability in EFFECT_CAPABILITIES:
             assert isinstance(capability, str)
@@ -118,19 +134,25 @@ class TestComputeCapabilities:
 
     def test_compute_capabilities_is_frozenset(self) -> None:
         """Test that COMPUTE_CAPABILITIES is a frozenset (immutable)."""
-        from omnibase_core.constants.handler_capabilities import COMPUTE_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            COMPUTE_CAPABILITIES,
+        )
 
         assert isinstance(COMPUTE_CAPABILITIES, frozenset)
 
     def test_compute_capabilities_contains_transform(self) -> None:
         """Test that COMPUTE_CAPABILITIES contains transform capability."""
-        from omnibase_core.constants.handler_capabilities import COMPUTE_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            COMPUTE_CAPABILITIES,
+        )
 
         assert EnumComputeCapability.TRANSFORM in COMPUTE_CAPABILITIES
 
     def test_compute_capabilities_contains_validate(self) -> None:
         """Test that COMPUTE_CAPABILITIES contains validate capability."""
-        from omnibase_core.constants.handler_capabilities import COMPUTE_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            COMPUTE_CAPABILITIES,
+        )
 
         assert EnumComputeCapability.VALIDATE in COMPUTE_CAPABILITIES
 
@@ -142,13 +164,17 @@ class TestReducerCapabilities:
 
     def test_reducer_capabilities_is_frozenset(self) -> None:
         """Test that REDUCER_CAPABILITIES is a frozenset (immutable)."""
-        from omnibase_core.constants.handler_capabilities import REDUCER_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            REDUCER_CAPABILITIES,
+        )
 
         assert isinstance(REDUCER_CAPABILITIES, frozenset)
 
     def test_reducer_capabilities_contains_fsm_interpreter(self) -> None:
         """Test that REDUCER_CAPABILITIES contains fsm_interpreter capability."""
-        from omnibase_core.constants.handler_capabilities import REDUCER_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            REDUCER_CAPABILITIES,
+        )
 
         assert EnumReducerCapability.FSM_INTERPRETER in REDUCER_CAPABILITIES
 
@@ -160,7 +186,7 @@ class TestOrchestratorCapabilities:
 
     def test_orchestrator_capabilities_is_frozenset(self) -> None:
         """Test that ORCHESTRATOR_CAPABILITIES is a frozenset (immutable)."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             ORCHESTRATOR_CAPABILITIES,
         )
 
@@ -168,7 +194,7 @@ class TestOrchestratorCapabilities:
 
     def test_orchestrator_capabilities_contains_workflow_resolver(self) -> None:
         """Test that ORCHESTRATOR_CAPABILITIES contains workflow_resolver."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             ORCHESTRATOR_CAPABILITIES,
         )
 
@@ -187,13 +213,17 @@ class TestNodeTypeRequirements:
 
     def test_node_type_requirements_exists(self) -> None:
         """Test that NODE_TYPE_REQUIREMENTS mapping exists."""
-        from omnibase_core.constants.handler_capabilities import NODE_TYPE_REQUIREMENTS
+        from omnibase_core.constants.constants_handler_capabilities import (
+            NODE_TYPE_REQUIREMENTS,
+        )
 
         assert NODE_TYPE_REQUIREMENTS is not None
 
     def test_node_type_requirements_is_mapping(self) -> None:
         """Test that NODE_TYPE_REQUIREMENTS is a mapping type."""
-        from omnibase_core.constants.handler_capabilities import NODE_TYPE_REQUIREMENTS
+        from omnibase_core.constants.constants_handler_capabilities import (
+            NODE_TYPE_REQUIREMENTS,
+        )
 
         # Should be a dict or similar mapping
         assert hasattr(NODE_TYPE_REQUIREMENTS, "__getitem__")
@@ -201,52 +231,68 @@ class TestNodeTypeRequirements:
 
     def test_node_type_requirements_contains_effect(self) -> None:
         """Test that NODE_TYPE_REQUIREMENTS contains EFFECT node type."""
-        from omnibase_core.constants.handler_capabilities import NODE_TYPE_REQUIREMENTS
+        from omnibase_core.constants.constants_handler_capabilities import (
+            NODE_TYPE_REQUIREMENTS,
+        )
 
         assert EnumNodeKind.EFFECT in NODE_TYPE_REQUIREMENTS
 
     def test_node_type_requirements_contains_compute(self) -> None:
         """Test that NODE_TYPE_REQUIREMENTS contains COMPUTE node type."""
-        from omnibase_core.constants.handler_capabilities import NODE_TYPE_REQUIREMENTS
+        from omnibase_core.constants.constants_handler_capabilities import (
+            NODE_TYPE_REQUIREMENTS,
+        )
 
         assert EnumNodeKind.COMPUTE in NODE_TYPE_REQUIREMENTS
 
     def test_node_type_requirements_contains_reducer(self) -> None:
         """Test that NODE_TYPE_REQUIREMENTS contains REDUCER node type."""
-        from omnibase_core.constants.handler_capabilities import NODE_TYPE_REQUIREMENTS
+        from omnibase_core.constants.constants_handler_capabilities import (
+            NODE_TYPE_REQUIREMENTS,
+        )
 
         assert EnumNodeKind.REDUCER in NODE_TYPE_REQUIREMENTS
 
     def test_node_type_requirements_contains_orchestrator(self) -> None:
         """Test that NODE_TYPE_REQUIREMENTS contains ORCHESTRATOR node type."""
-        from omnibase_core.constants.handler_capabilities import NODE_TYPE_REQUIREMENTS
+        from omnibase_core.constants.constants_handler_capabilities import (
+            NODE_TYPE_REQUIREMENTS,
+        )
 
         assert EnumNodeKind.ORCHESTRATOR in NODE_TYPE_REQUIREMENTS
 
     def test_effect_requires_handler_execute(self) -> None:
         """Test that EFFECT node type requires handler with execute() method."""
-        from omnibase_core.constants.handler_capabilities import NODE_TYPE_REQUIREMENTS
+        from omnibase_core.constants.constants_handler_capabilities import (
+            NODE_TYPE_REQUIREMENTS,
+        )
 
         effect_reqs = NODE_TYPE_REQUIREMENTS[EnumNodeKind.EFFECT]
         assert EnumNodeRequirement.HANDLER_EXECUTE in effect_reqs
 
     def test_reducer_requires_fsm_interpreter(self) -> None:
         """Test that REDUCER node type requires fsm_interpreter (optional)."""
-        from omnibase_core.constants.handler_capabilities import NODE_TYPE_REQUIREMENTS
+        from omnibase_core.constants.constants_handler_capabilities import (
+            NODE_TYPE_REQUIREMENTS,
+        )
 
         reducer_reqs = NODE_TYPE_REQUIREMENTS[EnumNodeKind.REDUCER]
         assert EnumNodeRequirement.FSM_INTERPRETER in reducer_reqs
 
     def test_orchestrator_requires_workflow_resolver(self) -> None:
         """Test that ORCHESTRATOR node type requires workflow_resolver."""
-        from omnibase_core.constants.handler_capabilities import NODE_TYPE_REQUIREMENTS
+        from omnibase_core.constants.constants_handler_capabilities import (
+            NODE_TYPE_REQUIREMENTS,
+        )
 
         orchestrator_reqs = NODE_TYPE_REQUIREMENTS[EnumNodeKind.ORCHESTRATOR]
         assert EnumNodeRequirement.WORKFLOW_RESOLVER in orchestrator_reqs
 
     def test_node_type_requirements_values_are_sets(self) -> None:
         """Test that NODE_TYPE_REQUIREMENTS values are sets of requirements."""
-        from omnibase_core.constants.handler_capabilities import NODE_TYPE_REQUIREMENTS
+        from omnibase_core.constants.constants_handler_capabilities import (
+            NODE_TYPE_REQUIREMENTS,
+        )
 
         for node_kind, requirements in NODE_TYPE_REQUIREMENTS.items():
             assert isinstance(requirements, (set, frozenset)), (
@@ -266,36 +312,42 @@ class TestValidateCapabilities:
 
     def test_validate_capabilities_returns_none_when_all_available(self) -> None:
         """Test that validate_capabilities returns None when all requested are available."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         # All requested capabilities are available
         result = validate_capabilities(
             requested={"http", "db"},
             available={"http", "db", "kafka", "filesystem"},
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
     def test_validate_capabilities_returns_none_for_empty_requested(self) -> None:
         """Test that validate_capabilities returns None when no capabilities requested."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         result = validate_capabilities(
             requested=set(),
             available={"http", "db"},
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
     def test_validate_capabilities_raises_when_capability_missing(self) -> None:
         """Test that validate_capabilities raises UnsupportedCapabilityError when missing."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         with pytest.raises(UnsupportedCapabilityError) as exc_info:
             validate_capabilities(
                 requested={"http", "graphql"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
@@ -303,13 +355,15 @@ class TestValidateCapabilities:
 
     def test_validate_capabilities_error_includes_capability_name(self) -> None:
         """Test that error includes the name of the missing capability."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         with pytest.raises(UnsupportedCapabilityError) as exc_info:
             validate_capabilities(
                 requested={"graphql"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
@@ -317,27 +371,31 @@ class TestValidateCapabilities:
 
     def test_validate_capabilities_error_includes_node_type(self) -> None:
         """Test that error includes the node_type."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         with pytest.raises(UnsupportedCapabilityError) as exc_info:
             validate_capabilities(
                 requested={"graphql"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
-        assert error.node_type == "EFFECT"
+        assert error.node_type == "EFFECT_GENERIC"
 
     def test_validate_capabilities_error_includes_available_capabilities(self) -> None:
         """Test that error context includes available_capabilities."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         with pytest.raises(UnsupportedCapabilityError) as exc_info:
             validate_capabilities(
                 requested={"graphql"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
@@ -348,27 +406,31 @@ class TestValidateCapabilities:
 
     def test_validate_capabilities_raises_for_single_missing_capability(self) -> None:
         """Test that a single missing capability triggers error."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         with pytest.raises(UnsupportedCapabilityError):
             validate_capabilities(
                 requested={"missing_capability"},
                 available={"http", "db", "kafka"},
-                node_type="COMPUTE",
+                node_type="COMPUTE_GENERIC",
             )
 
     def test_validate_capabilities_raises_for_multiple_missing_capabilities(
         self,
     ) -> None:
         """Test behavior when multiple capabilities are missing."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         # At least one error should be raised
         with pytest.raises(UnsupportedCapabilityError) as exc_info:
             validate_capabilities(
                 requested={"missing1", "missing2"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
@@ -377,36 +439,42 @@ class TestValidateCapabilities:
 
     def test_validate_capabilities_accepts_frozenset_requested(self) -> None:
         """Test that validate_capabilities accepts frozenset for requested."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         result = validate_capabilities(
             requested=frozenset({"http"}),
             available={"http", "db"},
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
     def test_validate_capabilities_accepts_frozenset_available(self) -> None:
         """Test that validate_capabilities accepts frozenset for available."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         result = validate_capabilities(
             requested={"http"},
             available=frozenset({"http", "db"}),
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
     def test_validate_capabilities_case_sensitive(self) -> None:
         """Test that capability matching is case-sensitive."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         # "HTTP" should not match "http"
         with pytest.raises(UnsupportedCapabilityError):
             validate_capabilities(
                 requested={"HTTP"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
 
@@ -422,7 +490,7 @@ class TestGetCapabilitiesByNodeKind:
 
     def test_get_capabilities_returns_effect_capabilities(self) -> None:
         """Test that get_capabilities_by_node_kind returns EFFECT capabilities."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             EFFECT_CAPABILITIES,
             get_capabilities_by_node_kind,
         )
@@ -432,7 +500,7 @@ class TestGetCapabilitiesByNodeKind:
 
     def test_get_capabilities_returns_compute_capabilities(self) -> None:
         """Test that get_capabilities_by_node_kind returns COMPUTE capabilities."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             COMPUTE_CAPABILITIES,
             get_capabilities_by_node_kind,
         )
@@ -442,7 +510,7 @@ class TestGetCapabilitiesByNodeKind:
 
     def test_get_capabilities_returns_reducer_capabilities(self) -> None:
         """Test that get_capabilities_by_node_kind returns REDUCER capabilities."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             REDUCER_CAPABILITIES,
             get_capabilities_by_node_kind,
         )
@@ -452,7 +520,7 @@ class TestGetCapabilitiesByNodeKind:
 
     def test_get_capabilities_returns_orchestrator_capabilities(self) -> None:
         """Test that get_capabilities_by_node_kind returns ORCHESTRATOR capabilities."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             ORCHESTRATOR_CAPABILITIES,
             get_capabilities_by_node_kind,
         )
@@ -462,7 +530,7 @@ class TestGetCapabilitiesByNodeKind:
 
     def test_get_capabilities_returns_frozenset(self) -> None:
         """Test that get_capabilities_by_node_kind returns a frozenset."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             get_capabilities_by_node_kind,
         )
 
@@ -479,7 +547,7 @@ class TestGetCapabilitiesByNodeKind:
 
     def test_get_capabilities_raises_for_runtime_host(self) -> None:
         """Test that get_capabilities_by_node_kind raises for RUNTIME_HOST."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             get_capabilities_by_node_kind,
         )
 
@@ -502,7 +570,7 @@ class TestContractCapabilityValidation:
 
     def test_valid_contract_with_supported_capabilities_passes(self) -> None:
         """Test that a contract requesting supported capabilities passes validation."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             EFFECT_CAPABILITIES,
             validate_capabilities,
         )
@@ -512,13 +580,13 @@ class TestContractCapabilityValidation:
         result = validate_capabilities(
             requested=requested,
             available=EFFECT_CAPABILITIES,
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
     def test_contract_requesting_all_effect_capabilities_passes(self) -> None:
         """Test that a contract requesting all EFFECT capabilities passes."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             EFFECT_CAPABILITIES,
             validate_capabilities,
         )
@@ -526,13 +594,13 @@ class TestContractCapabilityValidation:
         result = validate_capabilities(
             requested=set(EFFECT_CAPABILITIES),
             available=EFFECT_CAPABILITIES,
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
     def test_contract_requesting_unsupported_capability_fails(self) -> None:
         """Test that a contract requesting unsupported capability raises clear error."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             EFFECT_CAPABILITIES,
             validate_capabilities,
         )
@@ -541,17 +609,17 @@ class TestContractCapabilityValidation:
             validate_capabilities(
                 requested={"graphql"},  # Not in EFFECT_CAPABILITIES
                 available=EFFECT_CAPABILITIES,
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
         # Error should be clear about what was requested vs what's available
         assert error.capability == "graphql"
-        assert error.node_type == "EFFECT"
+        assert error.node_type == "EFFECT_GENERIC"
 
     def test_contract_error_message_includes_requested_vs_available(self) -> None:
         """Test that error message includes what was requested vs what's available."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             EFFECT_CAPABILITIES,
             validate_capabilities,
         )
@@ -560,7 +628,7 @@ class TestContractCapabilityValidation:
             validate_capabilities(
                 requested={"unsupported_cap"},
                 available=EFFECT_CAPABILITIES,
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
@@ -570,7 +638,7 @@ class TestContractCapabilityValidation:
 
     def test_contract_with_empty_capabilities_request_passes(self) -> None:
         """Test that a contract with no capability requirements passes."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             COMPUTE_CAPABILITIES,
             validate_capabilities,
         )
@@ -578,7 +646,7 @@ class TestContractCapabilityValidation:
         result = validate_capabilities(
             requested=set(),
             available=COMPUTE_CAPABILITIES,
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
         )
         assert result is None
 
@@ -595,7 +663,7 @@ class TestHandlerCapabilitiesEdgeCases:
 
     def test_all_capability_constants_are_frozenset(self) -> None:
         """Test that all capability constants are frozenset (immutable)."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             COMPUTE_CAPABILITIES,
             EFFECT_CAPABILITIES,
             ORCHESTRATOR_CAPABILITIES,
@@ -609,7 +677,7 @@ class TestHandlerCapabilitiesEdgeCases:
 
     def test_capability_constants_no_overlap(self) -> None:
         """Test that capability constants have expected relationships."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             COMPUTE_CAPABILITIES,
             EFFECT_CAPABILITIES,
             ORCHESTRATOR_CAPABILITIES,
@@ -624,13 +692,15 @@ class TestHandlerCapabilitiesEdgeCases:
 
     def test_error_is_unsupported_capability_error_type(self) -> None:
         """Test that the raised error is UnsupportedCapabilityError."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         try:
             validate_capabilities(
                 requested={"invalid_cap"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
             pytest.fail("Expected UnsupportedCapabilityError to be raised")
         except UnsupportedCapabilityError:
@@ -642,13 +712,15 @@ class TestHandlerCapabilitiesEdgeCases:
 
     def test_error_has_correct_error_code(self) -> None:
         """Test that the error uses UNSUPPORTED_CAPABILITY_ERROR code."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         with pytest.raises(UnsupportedCapabilityError) as exc_info:
             validate_capabilities(
                 requested={"unknown"},
                 available={"http"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
@@ -656,7 +728,9 @@ class TestHandlerCapabilitiesEdgeCases:
 
     def test_validate_capabilities_with_string_node_type(self) -> None:
         """Test that validate_capabilities accepts string node_type."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         # Should work with string node type
         with pytest.raises(UnsupportedCapabilityError) as exc_info:
@@ -682,31 +756,39 @@ class TestHandlerCapabilitiesImports:
 
     def test_handler_capabilities_module_exists(self) -> None:
         """Test that the handler_capabilities module can be imported."""
-        from omnibase_core.constants import handler_capabilities
+        from omnibase_core.constants import (
+            constants_handler_capabilities as handler_capabilities,
+        )
 
         assert handler_capabilities is not None
 
     def test_effect_capabilities_importable(self) -> None:
         """Test that EFFECT_CAPABILITIES can be imported directly."""
-        from omnibase_core.constants.handler_capabilities import EFFECT_CAPABILITIES
+        from omnibase_core.constants.constants_handler_capabilities import (
+            EFFECT_CAPABILITIES,
+        )
 
         assert EFFECT_CAPABILITIES is not None
 
     def test_validate_capabilities_importable(self) -> None:
         """Test that validate_capabilities can be imported directly."""
-        from omnibase_core.constants.handler_capabilities import validate_capabilities
+        from omnibase_core.constants.constants_handler_capabilities import (
+            validate_capabilities,
+        )
 
         assert callable(validate_capabilities)
 
     def test_node_type_requirements_importable(self) -> None:
         """Test that NODE_TYPE_REQUIREMENTS can be imported directly."""
-        from omnibase_core.constants.handler_capabilities import NODE_TYPE_REQUIREMENTS
+        from omnibase_core.constants.constants_handler_capabilities import (
+            NODE_TYPE_REQUIREMENTS,
+        )
 
         assert NODE_TYPE_REQUIREMENTS is not None
 
     def test_get_capabilities_by_node_kind_importable(self) -> None:
         """Test that get_capabilities_by_node_kind can be imported."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             get_capabilities_by_node_kind,
         )
 
@@ -714,7 +796,9 @@ class TestHandlerCapabilitiesImports:
 
     def test_all_expected_exports_exist(self) -> None:
         """Test that all expected exports are present in __all__."""
-        from omnibase_core.constants import handler_capabilities
+        from omnibase_core.constants import (
+            constants_handler_capabilities as handler_capabilities,
+        )
 
         expected_exports = [
             # Capability Enums
@@ -799,7 +883,7 @@ class TestCapabilityEnums:
 
     def test_enum_membership_in_frozenset(self) -> None:
         """Test that enum values can be found in frozensets."""
-        from omnibase_core.constants.handler_capabilities import (
+        from omnibase_core.constants.constants_handler_capabilities import (
             COMPUTE_CAPABILITIES,
             EFFECT_CAPABILITIES,
             ORCHESTRATOR_CAPABILITIES,

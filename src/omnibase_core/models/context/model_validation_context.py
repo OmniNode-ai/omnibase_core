@@ -10,9 +10,16 @@ Thread Safety:
     ModelValidationContext instances are immutable (frozen=True) after creation,
     making them thread-safe for concurrent read access across multiple threads.
 
+Note:
+    This model is for **field-level** validation (tracking field name, expected,
+    and actual values). For **contract-level** validation context (validation mode
+    and flags), use :class:`omnibase_core.models.events.contract_validation.ModelContractValidationContext`.
+
 See Also:
     - ModelResourceContext: Resource-related context
     - ModelErrorDetails: Error handling with validation context
+    - :class:`omnibase_core.models.events.contract_validation.ModelContractValidationContext`:
+        Contract validation context (different model, different purpose)
 """
 
 from pydantic import BaseModel, ConfigDict, Field

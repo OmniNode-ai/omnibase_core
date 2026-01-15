@@ -339,7 +339,9 @@ class ModelBatch{i:03d}(BaseModel):
 
         # Performance assertions
         processing_time = end_time - start_time
-        files_per_second = num_files / processing_time
+        # Protect against division by zero with minimum time threshold
+        safe_processing_time = max(processing_time, 0.001)
+        files_per_second = num_files / safe_processing_time
 
         assert processing_time < 60.0, (
             f"Many files validation took {processing_time:.2f}s"
@@ -403,7 +405,9 @@ configuration:
 
         # Performance assertions
         processing_time = end_time - start_time
-        files_per_second = num_files / processing_time
+        # Protect against division by zero with minimum time threshold
+        safe_processing_time = max(processing_time, 0.001)
+        files_per_second = num_files / safe_processing_time
 
         assert processing_time < 30.0, (
             f"Many YAML files validation took {processing_time:.2f}s"
@@ -659,7 +663,9 @@ class ModelScale{i:04d}(BaseModel):
 
         # Performance assertions
         processing_time = end_time - start_time
-        files_per_second = len(python_files) / processing_time
+        # Protect against division by zero with minimum time threshold
+        safe_processing_time = max(processing_time, 0.001)
+        files_per_second = len(python_files) / safe_processing_time
 
         assert processing_time < 120.0, f"Scale test took {processing_time:.2f}s"
         assert peak_memory < 500, f"Peak memory usage was {peak_memory:.1f}MB"
@@ -703,7 +709,9 @@ class ModelSize{size_factor}_{i:03d}(BaseModel):
 
         # Performance should scale reasonably
         for i in range(1, len(processing_times)):
-            scaling_factor = processing_times[i] / processing_times[0]
+            # Protect against division by zero with minimum time threshold
+            base_time = max(processing_times[0], 0.001)
+            scaling_factor = processing_times[i] / base_time
             size_factor = [1, 2, 5, 10, 20][i]
 
             # Time should not scale worse than quadratically with size

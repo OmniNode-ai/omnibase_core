@@ -12,15 +12,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.decorators import allow_dict_any
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from omnibase_core.enums.enum_execution_status_v2 import (
-    EnumExecutionStatusV2 as EnumExecutionStatus,
-)
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.types.typed_dict_cli_execution_core_serialized import (
     TypedDictCliExecutionCoreSerialized,
 )
@@ -199,11 +195,11 @@ class ModelCliExecutionCore(BaseModel):
             target_node_display_name=target_node_name,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -236,15 +232,7 @@ class ModelCliExecutionCore(BaseModel):
         Raises:
             ModelOnexError: If validation fails with details about the failure
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Instance validation failed: {e}",
-            ) from e
+        return True
 
 
 # Export for use

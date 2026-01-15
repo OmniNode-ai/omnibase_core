@@ -5,10 +5,13 @@ Defines all valid CLI tool discovery actions that can be processed
 by the CLI tool discovery system, replacing hardcoded string literals.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumCliDiscoveryAction(str, Enum):
+@unique
+class EnumCliDiscoveryAction(StrValueHelper, str, Enum):
     """
     Enumeration of valid CLI tool discovery actions.
 

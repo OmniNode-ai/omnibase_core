@@ -72,7 +72,13 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
+| [**Execution Corpus Guide**](guides/EXECUTION_CORPUS_GUIDE.md) | ModelExecutionCorpus usage, modes, and best practices | ✅ Complete |
+| [**Custom Callable Patterns**](guides/CUSTOM_CALLABLE_PATTERNS.md) | Custom callable validators for invariant evaluation ⭐ **NEW** | ✅ Complete |
+| [**Pipeline Hook Registry**](guides/PIPELINE_HOOK_REGISTRY.md) | Pipeline runner and hook registry with usage examples | ✅ Complete |
+| [**Handler Conversion Guide**](guides/HANDLER_CONVERSION_GUIDE.md) | Mixin-to-handler conversion with examples ⭐ **NEW** | ✅ Complete |
+| [**Handler Conversion Checklist**](guides/HANDLER_CONVERSION_CHECKLIST.md) | Mixin-to-handler conversion tracking | ✅ Complete |
 | [**Migrating to Declarative Nodes**](guides/MIGRATING_TO_DECLARATIVE_NODES.md) | Migration guide for v0.4.0 FSM/workflow-driven nodes ⭐ **v0.4.0** | ✅ Complete |
+| [**Migrating to MixinEventBus v0.4**](guides/MIGRATING_TO_MIXIN_EVENT_BUS_V0_4.md) | v1.0 deprecations and migration paths for MixinEventBus ⭐ **v0.4.0** | ✅ Complete |
 | [**ISP Protocol Migration**](guides/ISP_PROTOCOL_MIGRATION.md) | Guide for migrating to ISP-compliant protocols | ✅ Complete |
 | [**Mixin-Subcontract Mapping**](guides/MIXIN_SUBCONTRACT_MAPPING.md) | Relationship between mixins and subcontracts | ✅ Complete |
 | [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
@@ -102,10 +108,12 @@ omnibase_core/docs/
 | [**Container Types**](architecture/CONTAINER_TYPES.md) | ModelContainer vs ModelONEXContainer ⚠️ **CRITICAL** | ✅ Complete |
 | [Dependency Injection](architecture/DEPENDENCY_INJECTION.md) | ModelONEXContainer patterns | ✅ Complete |
 | [Contract System](architecture/CONTRACT_SYSTEM.md) | Contract architecture | ✅ Complete |
+| [**Capability Resolution**](architecture/CAPABILITY_RESOLUTION.md) | Selection policies and ambiguity handling ⭐ **NEW** | Draft |
 | [Type System](architecture/TYPE_SYSTEM.md) | Typing patterns and conventions | ✅ Complete |
 | [Documentation Architecture](architecture/DOCUMENTATION_ARCHITECTURE.md) | Documentation structure and organization | ✅ Complete |
 | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design and subcontract patterns | ✅ Complete |
 | [Mixin Architecture](architecture/MIXIN_ARCHITECTURE.md) | Mixin system design and patterns | ✅ Complete |
+| [**Mixins to Handlers Refactor**](architecture/MIXINS_TO_HANDLERS_REFACTOR.md) | Handler-based architecture, manifest spec, replay invariants ⭐ **BETA** | ✅ Draft |
 | [Protocol Architecture](architecture/PROTOCOL_ARCHITECTURE.md) | Protocol design and compliance | ✅ Complete |
 | [Effect Timeout Behavior](architecture/EFFECT_TIMEOUT_BEHAVIOR.md) | Timeout check points and retry behavior | ✅ Complete |
 | [Ecosystem Directory Structure](architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md) | Repository organization and patterns across ONEX ecosystem | ✅ Available |
@@ -247,6 +255,30 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | Document | Description | Status |
 |----------|-------------|--------|
 | [**Security Validators**](../scripts/validation/README.md) | Secret detection and environment variable validation | ✅ Complete |
+| [**ValidatorBase Framework**](../src/omnibase_core/validation/validator_base.py) | Contract-driven base class for file validators (OMN-1291) | ✅ Complete |
+
+#### ValidatorBase Framework (OMN-1291)
+
+The `ValidatorBase` framework provides a contract-driven approach for building file-based validators with shared behavior:
+
+- **Contract-driven configuration** via `ModelValidatorSubcontract` YAML files
+- **Glob-based file targeting** with exclusion patterns
+- **Inline suppression comments** for selective rule bypassing
+- **Deterministic violation ordering** (severity -> file -> line)
+- **CLI integration** with exit code mapping
+
+**Key Files**:
+- Base class: [`validator_base.py`](../src/omnibase_core/validation/validator_base.py)
+- Contract model: [`model_validator_subcontract.py`](../src/omnibase_core/models/contracts/subcontracts/model_validator_subcontract.py)
+- Validation contracts: [`src/omnibase_core/validation/contracts/`](../src/omnibase_core/validation/contracts/)
+
+**Example Validators** (using ValidatorBase):
+- `validator_naming_convention.py` - File naming conventions
+- `validator_patterns.py` - Code pattern detection
+- `validator_union_usage.py` - Union type usage validation
+- `validator_architecture.py` - Architecture rule enforcement
+
+**Thread Safety**: ValidatorBase instances are NOT thread-safe. See [Threading Guide](guides/THREADING.md#validator-thread-safety) for details.
 
 ### Concurrency & Threading
 
@@ -284,6 +316,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | Document | Description | Status |
 |----------|-------------|--------|
 | [**Subcontract Architecture**](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design | ✅ Excellent |
+| [**Handler Contract Guide**](contracts/HANDLER_CONTRACT_GUIDE.md) | Handler contract authoring, ID prefix convention | ✅ Complete |
 | [Approved Union Patterns](patterns/APPROVED_UNION_PATTERNS.md) | Type union patterns | ✅ Available |
 
 ### Project Documentation
@@ -319,9 +352,15 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Fix slow performance tests** | [Performance Benchmark Thresholds](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#ci-performance-degradation) |
 | **Debug async hangs** | [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md) |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
+| **Create handler contracts** | [Handler Contract Guide](contracts/HANDLER_CONTRACT_GUIDE.md) |
 | **Use TypedDict for serialization** | [TypedDict Types](#typeddict-types-serialization-boundaries) - Strongly-typed serialization boundaries |
 | **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |
 | **Validate docker-compose.yaml** | [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) - Docker validation |
+| **Use pipeline hooks** | [Pipeline Hook Registry](guides/PIPELINE_HOOK_REGISTRY.md) - Phase-based hook execution |
+| **Convert mixins to handlers** | [Handler Conversion Guide](guides/HANDLER_CONVERSION_GUIDE.md) - Step-by-step conversion |
+| **Create custom validators** | [Custom Callable Patterns](guides/CUSTOM_CALLABLE_PATTERNS.md) - Custom invariant validation |
+| **Build file validators** | [ValidatorBase Framework](#validatorbase-framework-omn-1291) - Contract-driven file validation |
+| **Create replay test corpora** | [Execution Corpus Guide](guides/EXECUTION_CORPUS_GUIDE.md) - Corpus curation and usage |
 
 ---
 
@@ -360,10 +399,10 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Architecture** | 18 | 0 | 0 | 18 |
 | **Reference** | 14 | 0 | 0 | 14 |
 | **Standards** | 1 | 0 | 0 | 1 |
-| **Specialized** | 13 | 0 | 0 | 13 |
-| **TOTAL** | **59** | **0** | **0** | **59** |
+| **Specialized** | 16 | 0 | 0 | 16 |
+| **TOTAL** | **63** | **0** | **0** | **63** |
 
-**Overall Progress**: 100% complete (59/59 documents)
+**Overall Progress**: 100% complete (63/63 documents)
 
 ### Priority Items
 
@@ -375,6 +414,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 - ✅ Integration Testing Guide
 - ✅ All node tutorials (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)
 - ✅ Agent Templates (AI-optimized node templates)
+- ✅ ValidatorBase Framework (OMN-1291) - Contract-driven file validation
 
 ---
 
@@ -441,7 +481,7 @@ See [Documentation Architecture](architecture/DOCUMENTATION_ARCHITECTURE.md) for
 
 ---
 
-**Last Updated**: 2025-12-17
+**Last Updated**: 2026-01-11
 **Documentation Version**: 1.1.0
 **Framework Version**: omnibase_core 0.4.0+
 

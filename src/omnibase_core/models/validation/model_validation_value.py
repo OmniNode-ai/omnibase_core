@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Validation value object model.
 
@@ -11,13 +5,15 @@ Strongly-typed value object for validation details, replacing union types
 with discriminated union patterns following ONEX strong typing standards.
 """
 
+from __future__ import annotations
 
 from typing import cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_validation_value_serialized import (
     TypedDictValidationValueSerialized,
 )
@@ -121,11 +117,11 @@ class ModelValidationValue(BaseModel):
             return "null"
         return str(self.raw_value)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -139,7 +135,7 @@ class ModelValidationValue(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",

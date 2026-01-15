@@ -23,7 +23,7 @@ See Also:
     - omnibase_core.models.effect.model_effect_context: Effect handler context (with time)
     - omnibase_core.models.reducer.model_reducer_context: Reducer handler context (pure)
     - omnibase_core.models.orchestrator.model_orchestrator_context: Orchestrator context (with time)
-    - omnibase_core.runtime.message_dispatch_engine: Uses this for handler dispatch
+    - omnibase_core.runtime.runtime_message_dispatch: Uses this for handler dispatch
 """
 
 from typing import Protocol, runtime_checkable
@@ -50,6 +50,9 @@ class ProtocolHandlerContext(Protocol):
             (e.g., OpenTelemetry, Jaeger). None if not using distributed tracing.
         span_id: Optional span ID (UUID) within the distributed trace.
             None if not using distributed tracing.
+        dispatch_id: Optional dispatch operation ID for request tracing.
+            Uniquely identifies a single dispatch() call in the message dispatch
+            engine. None for legacy/custom execution paths.
 
     Example:
         >>> def my_handler(
@@ -82,6 +85,21 @@ class ProtocolHandlerContext(Protocol):
     @property
     def span_id(self) -> UUID | None:
         """Optional span ID within the trace (e.g., OpenTelemetry span ID)."""
+        ...
+
+    @property
+    def dispatch_id(self) -> UUID | None:
+        """Optional dispatch operation ID for request tracing.
+
+        The dispatch_id uniquely identifies a single dispatch() call in the
+        message dispatch engine. All handlers invoked during that dispatch
+        share the same dispatch_id, enabling correlation of handler outputs
+        back to the originating dispatch operation.
+
+        Returns None for legacy/custom execution paths that don't go through
+        the dispatch engine. When executing via MessageDispatchEngine.dispatch(),
+        this will always be non-None.
+        """
         ...
 
 

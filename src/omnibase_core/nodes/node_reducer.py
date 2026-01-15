@@ -16,7 +16,9 @@ if TYPE_CHECKING:
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
@@ -29,6 +31,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.fsm import ModelFSMStateSnapshot
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
+from omnibase_core.types.type_json import JsonType
 
 # Clock skew tolerance for snapshot timestamp validation
 SNAPSHOT_FUTURE_TOLERANCE_SECONDS: int = 60
@@ -302,8 +305,11 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         # Build context from input data - context contains serializable values
         # Convert metadata to dict for context (excluding None values)
         metadata_dict = input_data.metadata.model_dump(exclude_none=True)
+        # Cast input_data.data to JsonType since T_Input should be JSON-serializable
+        # but the generic type doesn't encode this constraint
+        input_data_value: JsonType = cast(JsonType, input_data.data)
         context: SerializedDict = {
-            "input_data": input_data.data,
+            "input_data": input_data_value,
             "reduction_type": input_data.reduction_type.value,
             "operation_id": str(input_data.operation_id),
             **metadata_dict,

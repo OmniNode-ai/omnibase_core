@@ -7,26 +7,66 @@ Provides event-driven execution capabilities to tool nodes by:
 - Executing tool's process method
 - Publishing completion events
 - Managing event lifecycle and error handling
+
+Security:
+    This mixin uses importlib.import_module() to dynamically load input state
+    model classes from node modules. Security is enforced via namespace validation:
+
+    **Namespace Allowlist** (_get_input_state_from_node_module):
+        Dynamic imports are restricted to modules matching these prefixes:
+        - omnibase_core.*
+        - omnibase_spi.*
+        - omnibase.*
+
+        Attempts to import modules outside these namespaces are blocked with
+        a warning log and return None instead of raising an exception.
+
+    **Event Content**:
+        Event payloads are treated as UNTRUSTED data. They are:
+        - Validated against Pydantic models before processing
+        - Converted to strongly-typed input state classes
+        - Errors during validation are caught and logged
+
+    Trust Model:
+        - Module namespace: Validated against allowlist (TRUSTED namespaces only)
+        - Event bus: Assumed to be from trusted infrastructure
+        - Event payload: UNTRUSTED (validated via Pydantic)
+        - Contract file content: Validated via load_and_validate_yaml_model
+
+    See Also:
+        - MixinIntrospectFromContract: Similar namespace validation pattern
+        - util_safe_yaml_loader.py: YAML parsing security for contracts
 """
 
+from __future__ import annotations
+
+import asyncio
+import inspect
 import re
 import threading
 import time
 import uuid
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
 from pydantic import ValidationError
 
 from omnibase_core.constants import THREAD_JOIN_TIMEOUT_SECONDS
+
+if TYPE_CHECKING:
+    from omnibase_core.protocols.event_bus import ProtocolEventBusListener
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.validation.contracts import load_and_validate_yaml_model
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.validation.validator_contracts import load_and_validate_yaml_model
 
 # Note: Event bus uses duck-typing interface, not a formal protocol
 # The omnibase_spi ProtocolEventBus is Kafka-based and incompatible with this interface
@@ -51,12 +91,12 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     self.start_event_listener()
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """Initialize the event listener mixin."""
         super().__init__(**kwargs)
         self._event_listener_thread: threading.Thread | None = None
         self._stop_event = threading.Event()
-        self._event_subscriptions: list[tuple[str, Any]] = []
+        self._event_subscriptions: list[tuple[str, object]] = []
 
         emit_log_event(
             LogLevel.DEBUG,
@@ -106,12 +146,12 @@ class MixinEventListener[InputStateT, OutputStateT]:
         return re.sub(r"(?<!^)(?=[A-Z])", "_", class_name).lower()
 
     @property
-    def event_bus(self) -> Any:
+    def event_bus(self) -> ProtocolEventBusListener | None:
         """Get event bus instance from implementing class."""
         return getattr(self, "_event_bus", None)
 
     @event_bus.setter
-    def event_bus(self, value: Any) -> None:
+    def event_bus(self, value: ProtocolEventBusListener | None) -> None:
         """Set event bus instance."""
         self._event_bus = value
 
@@ -193,7 +233,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
 
                             event_type = event_mappings.get(node_type, node_type)
                             return [f"{domain}.{event_type}"]
-            except (ValueError, ValidationError) as e:
+            except (ValidationError, ValueError) as e:
                 # FAIL-FAST: Re-raise validation errors immediately to crash the service
                 emit_log_event(
                     LogLevel.ERROR,
@@ -201,10 +241,18 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     {"node_name": self.get_node_name()},
                 )
                 raise  # Re-raise to crash the service
-            except Exception as e:
+            except (AttributeError, KeyError, OSError, RuntimeError) as e:
                 emit_log_event(
                     LogLevel.WARNING,
                     f"Failed to read event patterns from contract: {e}",
+                    {"node_name": self.get_node_name()},
+                )
+            except (
+                Exception
+            ) as e:  # fallback-ok: YAML parsing errors should not crash event listener
+                emit_log_event(
+                    LogLevel.WARNING,
+                    f"Unexpected error reading event patterns from contract: {e}",
                     {"node_name": self.get_node_name()},
                 )
 
@@ -308,7 +356,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                 try:
                     if self.event_bus is not None:
                         self.event_bus.unsubscribe(subscription)
-                except Exception as e:
+                except (AttributeError, KeyError, RuntimeError, ValueError) as e:
                     emit_log_event(
                         LogLevel.WARNING,
                         f"Failed to unsubscribe from {pattern}: {e}",
@@ -424,6 +472,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
             )
 
         except Exception as e:
+            # boundary-ok: event listener loop must log errors but not crash; KeyboardInterrupt/SystemExit propagate
             emit_log_event(
                 LogLevel.ERROR,
                 f"❌ EVENT_LISTENER_LOOP: Critical error in event listener: {e}",
@@ -434,7 +483,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                 },
             )
 
-    def _create_event_handler(self, pattern: str) -> Callable[..., Any]:
+    def _create_event_handler(self, pattern: str) -> Callable[[object], None]:
         """Create an event handler for a specific pattern."""
         emit_log_event(
             LogLevel.DEBUG,
@@ -442,7 +491,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
             {"node_name": self.get_node_name(), "pattern": pattern},
         )
 
-        def handler(envelope: Any) -> None:
+        def handler(envelope: object) -> None:
             """Handle incoming event envelope."""
             # Handle both envelope and direct event for current standards
             if hasattr(envelope, "payload"):
@@ -508,6 +557,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     )
                     return
                 except Exception as e:
+                    # fallback-ok: specific handler failure falls through to generic processing
                     emit_log_event(
                         LogLevel.ERROR,
                         f"❌ EVENT_ROUTING: Specific handler {specific_handler_name} failed: {e}",
@@ -592,6 +642,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                 )
 
             except Exception as e:
+                # boundary-ok: event processing errors emit error event instead of crashing
                 emit_log_event(
                     LogLevel.ERROR,
                     "❌ EVENT_PROCESSING: Failed to process event",
@@ -729,7 +780,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     {"node_name": self.get_node_name()},
                 )
                 return cast("InputStateT", result)
-            except Exception as e:
+            except PYDANTIC_MODEL_ERRORS as e:
                 emit_log_event(
                     LogLevel.ERROR,
                     "❌ EVENT_TO_INPUT_STATE: Failed to create input state from event",
@@ -742,7 +793,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     },
                 )
                 msg = f"Failed to convert event data to input state: {e}"
-                raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+                raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR) from e
         else:
             # No input state class found - this is a critical error
             emit_log_event(
@@ -816,7 +867,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                         cls: type | None = getattr(module, attr_name)
                         return cls
 
-            except Exception as e:
+            except (AttributeError, ImportError, ModuleNotFoundError, TypeError) as e:
                 emit_log_event(
                     LogLevel.WARNING,
                     f"Failed to import input state module: {e}",
@@ -825,7 +876,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
 
         return None
 
-    def _publish_event(self, envelope: Any) -> None:
+    def _publish_event(self, envelope: object) -> None:
         """
         Publish event, handling both sync and async event buses.
 
@@ -835,8 +886,8 @@ class MixinEventListener[InputStateT, OutputStateT]:
         Args:
             envelope: Event envelope to publish
         """
-        import asyncio
-        import inspect
+        if self.event_bus is None:
+            return
 
         # Call the async method
         result = self.event_bus.publish_async(envelope)
@@ -952,7 +1003,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
         node_name = self.get_node_name()
         try:
             node_uuid = UUID(node_name)
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             # Generate deterministic UUID from node name
             node_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, node_name)
 
@@ -960,7 +1011,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
             event_type=completion_event_type,
             node_id=node_uuid,
             correlation_id=input_event.correlation_id,
-            data=completion_data,  # type: ignore[arg-type]
+            data=completion_data,  # type: ignore[arg-type]  # Event data field accepts dict for completion protocol; validated at runtime
         )
 
         emit_log_event(
@@ -984,9 +1035,6 @@ class MixinEventListener[InputStateT, OutputStateT]:
                 "event_bus_type": type(self.event_bus).__name__,
             },
         )
-
-        # Import envelope model
-        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         # Create envelope
         envelope = ModelEventEnvelope.create_broadcast(
@@ -1036,7 +1084,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
         node_name = self.get_node_name()
         try:
             node_uuid = UUID(node_name)
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             # Generate deterministic UUID from node name
             node_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, node_name)
 
@@ -1045,11 +1093,8 @@ class MixinEventListener[InputStateT, OutputStateT]:
             event_type=completion_event_type,
             node_id=node_uuid,
             correlation_id=input_event.correlation_id,
-            data=error_data,  # type: ignore[arg-type]
+            data=error_data,  # type: ignore[arg-type]  # Event data field accepts dict for error protocol; validated at runtime
         )
-
-        # Import envelope model
-        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         # Wrap in envelope and publish
         envelope = ModelEventEnvelope.create_broadcast(

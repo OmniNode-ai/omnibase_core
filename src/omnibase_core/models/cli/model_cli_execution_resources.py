@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 CLI Execution Resources Model.
 
@@ -9,10 +5,11 @@ Resource limits and constraints for CLI command execution.
 Part of the ModelCliExecution restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -99,11 +96,11 @@ class ModelCliExecutionResources(BaseModel):
             max_retries=1,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

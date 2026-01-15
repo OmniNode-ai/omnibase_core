@@ -31,7 +31,6 @@ Usage Examples:
     python_type = value.get_type()  # Returns <class 'int'>
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):
@@ -45,7 +44,7 @@ from __future__ import annotations
 import json
 
 # no typing imports needed
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_discriminated_value_type import EnumDiscriminatedValueType
@@ -419,16 +418,22 @@ class ModelDiscriminatedValue(BaseModel):
             42
         """
         if self.value_type == EnumDiscriminatedValueType.BOOL:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.bool_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.FLOAT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.float_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.INT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.int_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.STR:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.str_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.DICT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.dict_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.LIST:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.list_value  # type: ignore[return-value]
 
         raise ModelOnexError(
@@ -552,11 +557,12 @@ class ModelDiscriminatedValue(BaseModel):
             f"value={self.get_value()!r})"
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        frozen=False,
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 # Export for use

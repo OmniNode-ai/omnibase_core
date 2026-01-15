@@ -1,23 +1,15 @@
-from typing import Self
-
-from pydantic import BaseModel, Field
-
 """
 GitHub release event model to replace Dict[str, Any] usage.
 """
 
+from typing import Self
+
+from pydantic import BaseModel, ConfigDict, Field
+
 from .model_git_hub_release import ModelGitHubRelease
+from .model_git_hub_release_event_data import ModelGitHubReleaseEventData
 from .model_git_hub_repository import ModelGitHubRepository
 from .model_git_hub_user import ModelGitHubUser
-
-
-class ModelGitHubReleaseEventData(BaseModel):
-    """Data structure for GitHub release event."""
-
-    action: str = Field(default=..., description="Event action")
-    release: dict[str, object] = Field(default=..., description="Release data")
-    repository: dict[str, object] = Field(default=..., description="Repository data")
-    sender: dict[str, object] = Field(default=..., description="Sender data")
 
 
 class ModelGitHubReleaseEvent(BaseModel):
@@ -25,6 +17,13 @@ class ModelGitHubReleaseEvent(BaseModel):
     GitHub release event with typed fields.
     Replaces Dict[str, Any] for release event fields.
     """
+
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        frozen=True,
+        from_attributes=True,
+    )
 
     action: str = Field(
         default=...,
@@ -47,3 +46,8 @@ class ModelGitHubReleaseEvent(BaseModel):
         if data is None:
             return None
         return cls(**data.model_dump())
+
+
+# Note: ModelGitHubReleaseEventData is already imported at module level (line 10)
+# and re-exported via __all__ for external consumers
+__all__ = ["ModelGitHubReleaseEvent", "ModelGitHubReleaseEventData"]

@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Import for event type validation
-from omnibase_core.constants.event_types import normalize_legacy_event_type
+from omnibase_core.constants.constants_event_types import normalize_legacy_event_type
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -92,7 +92,7 @@ class ModelOnexEvent(BaseModel):
 
     @field_validator("event_type")
     @classmethod
-    def validate_event_type_format(cls, v: Any) -> str | ModelEventType:
+    def validate_event_type_format(cls, v: object) -> str | ModelEventType:
         """
         Validate event type format and handle both string and ModelEventType inputs.
 

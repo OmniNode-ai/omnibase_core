@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Discriminated Value Type Enum.
 
@@ -7,11 +5,15 @@ Strongly typed enumeration for discriminated value type discriminators.
 Used in ModelDiscriminatedValue for type-safe union handling.
 """
 
+from __future__ import annotations
+
 from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumDiscriminatedValueType(str, Enum):
+class EnumDiscriminatedValueType(StrValueHelper, str, Enum):
     """
     Strongly typed discriminated value type discriminators.
 
@@ -29,10 +31,6 @@ class EnumDiscriminatedValueType(str, Enum):
     STR = "str"
     DICT = "dict"
     LIST = "list"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_primitive_type(cls, value_type: EnumDiscriminatedValueType) -> bool:

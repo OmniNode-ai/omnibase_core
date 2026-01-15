@@ -63,7 +63,7 @@ Example Python:
 
 See Also:
     - omnibase_core.models.contracts.subcontracts.model_compute_subcontract: Parent contract
-    - omnibase_core.utils.compute_executor.execute_pipeline_step: Step execution logic
+    - omnibase_core.utils.util_compute_executor.execute_pipeline_step: Step execution logic
     - omnibase_core.enums.enum_compute_step_type: Step type enumeration
 """
 
@@ -168,7 +168,7 @@ class ModelComputePipelineStep(BaseModel):
     enabled: bool = True
     # v1.0: No per-step timeout - only pipeline-level timeout_ms on contract
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
     @model_validator(mode="after")
     def validate_step_config(self) -> "ModelComputePipelineStep":

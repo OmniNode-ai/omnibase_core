@@ -89,5 +89,5 @@ class ModelContractNormalizationConfig(BaseModel):
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
-        validate_assignment=True,
+        from_attributes=True,  # pytest-xdist compatibility
     )

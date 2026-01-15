@@ -19,7 +19,7 @@ from omnibase_core.models.core.model_hub_service_configuration import (
     ModelHubServiceConfiguration,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_constraints import PrimitiveValueType
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Type alias for structured configuration data
@@ -205,21 +205,39 @@ class ModelUnifiedHubContract(BaseModel):
 
         # Convert to Pydantic models where possible
         hub_config = None
-        if hub_config_data:
-            hub_config = ModelHubConfiguration(**hub_config_data)
+        if hub_config_data and isinstance(hub_config_data, dict):
+            hub_config = ModelHubConfiguration.model_validate(hub_config_data)
 
         service_config = None
-        if service_config_data:
-            service_config = ModelHubServiceConfiguration(**service_config_data)
+        if service_config_data and isinstance(service_config_data, dict):
+            service_config = ModelHubServiceConfiguration.model_validate(
+                service_config_data
+            )
 
-        return cls(
-            hub_configuration=hub_config,
-            service_configuration=service_config,
-            tool_specification=tool_spec_data,
-            orchestration_workflows=contract_data.get("orchestration_workflows", {}),
-            tool_coordination=contract_data.get("tool_coordination"),
-            tool_execution=contract_data.get("tool_execution"),
-            contract_metadata=contract_data.get("contract_metadata"),
+        # Extract optional structured data with proper type handling
+        # Cast to expected types - Pydantic will validate at runtime
+        orchestration = contract_data.get("orchestration_workflows", {})
+        tool_coord = contract_data.get("tool_coordination")
+        tool_exec = contract_data.get("tool_execution")
+        metadata = contract_data.get("contract_metadata")
+
+        # Use model_validate for full Pydantic validation instead of direct construction
+        return cls.model_validate(
+            {
+                "hub_configuration": hub_config,
+                "service_configuration": service_config,
+                "tool_specification": tool_spec_data
+                if isinstance(tool_spec_data, dict)
+                else None,
+                "orchestration_workflows": orchestration
+                if isinstance(orchestration, dict)
+                else {},
+                "tool_coordination": tool_coord
+                if isinstance(tool_coord, dict)
+                else None,
+                "tool_execution": tool_exec if isinstance(tool_exec, dict) else None,
+                "contract_metadata": metadata if isinstance(metadata, dict) else None,
+            }
         )
 
     @classmethod
@@ -240,7 +258,7 @@ class ModelUnifiedHubContract(BaseModel):
         try:
             # Use centralized YAML loading with full Pydantic validation
             return load_and_validate_yaml_model(contract_path, cls)
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to load contract from {contract_path}: {e}",

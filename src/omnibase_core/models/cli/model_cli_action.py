@@ -7,9 +7,10 @@ enables plugin extensibility and contract-driven action registration.
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -252,18 +253,23 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
         """Check if this action has the specified action ID."""
         return self.action_id == action_id
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "populate_by_name": True,  # Allow both field name and alias
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        populate_by_name=True,  # Allow both field name and alias
+    )
 
     @allow_dict_any
-    def model_dump(self, **kwargs: object) -> TypedDictCliActionSerialized:
+    # NOTE(OMN-1201): Override uses **kwargs to pass through to parent while setting
+    # by_alias=True default. Signature is functionally compatible but mypy strict mode
+    # flags the **kwargs pattern vs explicit parameters as incompatible.
+    def model_dump(  # type: ignore[override]
+        self, **kwargs: Any
+    ) -> TypedDictCliActionSerialized:
         """Override model_dump to use aliases by default."""
         kwargs.setdefault("by_alias", True)
-        return super().model_dump(**kwargs)  # type: ignore[return-value,arg-type]
+        return super().model_dump(**kwargs)  # type: ignore[return-value]
 
     # Protocol method implementations
 
@@ -292,12 +298,4 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        return True

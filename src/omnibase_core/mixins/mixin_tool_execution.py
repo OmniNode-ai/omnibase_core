@@ -7,11 +7,14 @@ enabling tools to be executed via the event bus in the unified execution model.
 
 import time
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -36,20 +39,30 @@ class MixinToolExecution:
             "Must be implemented by the mixed class"
         )
 
-    def process(self, input_state: Any) -> Any:
+    def process(self, input_state: object) -> object:
         """Process the input state. Must be implemented by the mixed class."""
         raise NotImplementedError(  # stub-ok: abstract mixin method
             "Must be implemented by the mixed class"
         )
 
-    def _get_input_state_class(self) -> type[Any]:
-        """Get the input state class. Must be implemented by the mixed class."""
+    def _get_input_state_class(self) -> type | None:
+        """Get the input state class for this tool.
+
+        Returns:
+            The input state class, or None if the class cannot be determined
+            (e.g., when type introspection fails). When None is returned,
+            the tool will operate with dict[str, object] parameters instead.
+
+        Note:
+            This return type matches the pattern used in MixinEventListener and
+            MixinEventBus for consistency across the mixin system.
+        """
         raise NotImplementedError(  # stub-ok: abstract mixin method
             "Must be implemented by the mixed class"
         )
 
     def handle_tool_execution_request_event(
-        self, envelope: "ModelEventEnvelope[Any]"
+        self, envelope: "ModelEventEnvelope[object]"
     ) -> None:
         """
         Handle tool execution request events.
@@ -64,10 +77,10 @@ class MixinToolExecution:
             "🎯 Received tool execution request",
             {
                 "tool_name": self.get_node_name(),
-                "correlation_id": event.correlation_id,
+                "correlation_id": getattr(event, "correlation_id", None),
                 "requester": (
-                    event.data.get("caller", "unknown")
-                    if event.data is not None
+                    getattr(event, "data", {}).get("caller", "unknown")
+                    if getattr(event, "data", None) is not None
                     else "unknown"
                 ),
             },
@@ -75,10 +88,15 @@ class MixinToolExecution:
 
         try:
             # Extract request data
-            event_data = event.data if event.data is not None else {}
+            event_data_raw = getattr(event, "data", None)
+            event_data: dict[str, object] = (
+                event_data_raw if isinstance(event_data_raw, dict) else {}
+            )
             requested_tool = event_data.get("tool_name", "")
-            parameters = event_data.get("parameters", [])
-            event_data.get("timeout", 30)
+            parameters_raw = event_data.get("parameters", [])
+            parameters: list[object] = (
+                parameters_raw if isinstance(parameters_raw, list) else []
+            )
 
             # Check if this request is for this tool
             if requested_tool != self.get_node_name():
@@ -99,34 +117,34 @@ class MixinToolExecution:
 
             # Publish successful response
             self._publish_execution_response(
-                correlation_id=event.correlation_id,
+                correlation_id=getattr(event, "correlation_id", None),
                 success=True,
                 result=self._output_state_to_dict(output_state),
                 execution_time=execution_time,
                 error=None,
             )
 
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, TypeError, ValueError) as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"❌ Tool execution failed: {e!s}",
                 {
                     "tool_name": self.get_node_name(),
-                    "correlation_id": event.correlation_id,
+                    "correlation_id": getattr(event, "correlation_id", None),
                     "error_type": type(e).__name__,
                 },
             )
 
             # Publish error response
             self._publish_execution_response(
-                correlation_id=event.correlation_id,
+                correlation_id=getattr(event, "correlation_id", None),
                 success=False,
                 result=None,
                 execution_time=0,
                 error=str(e),
             )
 
-    def _create_input_state_from_parameters(self, parameters: list[Any]) -> Any:
+    def _create_input_state_from_parameters(self, parameters: list[object]) -> object:
         """
         Create input state from execution parameters.
 
@@ -141,12 +159,21 @@ class MixinToolExecution:
             if isinstance(param, dict):
                 param_dict[param.get("name", "")] = param.get("value")
 
-        # Try to create input state
+        # If no input state class is available, return the param dict directly
+        if input_state_class is None:
+            emit_log_event(
+                LogLevel.DEBUG,
+                "No input state class found, using dict[str, object]",
+                {"tool_name": self.get_node_name()},
+            )
+            return param_dict
+
+        # Try to create typed input state
         try:
             # Add any required fields that might be missing
-            if hasattr(input_state_class, "__fields__"):
-                for field_name, field_info in input_state_class.__fields__.items():
-                    if field_name not in param_dict and field_info.is_required():
+            if hasattr(input_state_class, "model_fields"):
+                for field_name, field_info in input_state_class.model_fields.items():
+                    if field_name not in param_dict and field_info.is_required:
                         # Set reasonable defaults for common fields
                         if field_name == "action":
                             param_dict["action"] = "execute"
@@ -160,13 +187,13 @@ class MixinToolExecution:
         ) as e:  # fallback-ok: resilient input parsing, fallback to dict with logging
             emit_log_event(
                 LogLevel.WARNING,
-                f"⚠️ Failed to create typed input state, using dict[str, Any]: {e!s}",
+                f"Failed to create typed input state, using dict[str, object]: {e!s}",
                 {"tool_name": self.get_node_name()},
             )
-            # Fallback to dict[str, Any]if typed creation fails
+            # Fallback to dict[str, object] if typed creation fails
             return param_dict
 
-    def _output_state_to_dict(self, output_state: Any) -> "SerializedDict":
+    def _output_state_to_dict(self, output_state: object) -> "SerializedDict":
         """
         Convert output state to dictionary for response.
 
@@ -226,7 +253,7 @@ class MixinToolExecution:
             node_id=node_id_uuid,
             correlation_id=correlation_id,
             timestamp=datetime.fromtimestamp(time.time(), tz=UTC),
-            data={  # type: ignore[arg-type]
+            data={  # type: ignore[arg-type]  # Event data field accepts dict for tool execution response; validated at runtime
                 "tool_name": self.get_node_name(),
                 "success": success,
                 "result": result,
@@ -266,7 +293,7 @@ class MixinToolExecution:
                 },
             )
 
-    def get_execution_event_patterns(self) -> list[Any]:
+    def get_execution_event_patterns(self) -> list[str]:
         """
         Get event patterns for tool execution.
 

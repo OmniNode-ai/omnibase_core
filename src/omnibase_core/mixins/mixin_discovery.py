@@ -6,11 +6,13 @@ compatibility checking, and dependency resolution for intelligent composition.
 """
 
 from pathlib import Path
+from typing import cast
 
 import yaml
 from pydantic import TypeAdapter, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.discovery.model_mixin_info import ModelMixinInfo
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -81,7 +83,7 @@ class MixinDiscovery:
                 message=f"Invalid metadata format: expected dictionary, got {type(raw_data).__name__}",
             ) from e
 
-    def _load_metadata(self) -> dict[str, SerializedDict]:
+    def _load_metadata(self) -> dict[str, dict[str, object]]:
         """
         Load mixin metadata from YAML file.
 
@@ -123,7 +125,9 @@ class MixinDiscovery:
 
             # Parse and validate YAML using Pydantic
             data = self.from_yaml_metadata(yaml_content)
-            return data
+            # Cast to dict[str, dict[str, object]] since YAML metadata structure
+            # has mixin names as keys and their config dicts as values
+            return cast(dict[str, dict[str, object]], data)
 
         except UnicodeDecodeError as e:
             raise ModelOnexError(
@@ -160,10 +164,11 @@ class MixinDiscovery:
                 if "name" not in mixin_data:
                     mixin_data["name"] = mixin_key
 
-                mixin_info = ModelMixinInfo(**mixin_data)
+                # mixin_data is dict[str, object] which is valid for model_validate
+                mixin_info = ModelMixinInfo.model_validate(mixin_data)
                 cache[mixin_info.name] = mixin_info
 
-            except Exception as e:
+            except VALIDATION_ERRORS as e:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Failed to parse metadata for mixin '{mixin_key}': {e}",

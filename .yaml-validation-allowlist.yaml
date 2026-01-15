@@ -9,9 +9,13 @@
 # Next Review: 2026-06-13
 #
 # Format Requirements:
-#   - reason: Architectural justification for allowing YAML parsing
+#   - reason: Architectural justification for allowing YAML parsing (use >- folded scalar)
 #   - added: Date entry was added (YYYY-MM-DD)
-#   - review: Target date for next review/removal consideration (YYYY-MM-DD)
+#   - review: Target date for next review (YYYY-MM-DD, aligned to semi-annual cycle: June/December)
+#
+# Review Date Policy:
+#   All review dates should align to the next semi-annual review cycle (June 13 or December 13).
+#   When adding new entries, set review to the next cycle date, not 6 months from added date.
 #
 # Maintenance Notes:
 #   - Run tests/unit/validation/test_allowlist_integrity.py to validate entries
@@ -22,70 +26,145 @@
 # These files provide foundational YAML parsing utilities that sit BEFORE Pydantic validation
 # in the architecture. They need raw YAML access to prepare data for model validation.
 allowed_files:
+  - file: "src/omnibase_core/validation/validator_architecture.py"
+    reason: >-
+      Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
+      ModelValidatorSubcontract for Pydantic validation
+    added: "2026-01-10"
+    review: "2026-06-13"
+
+  - file: "src/omnibase_core/validation/validator_types.py"
+    reason: >-
+      Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
+      ModelValidatorSubcontract for Pydantic validation
+    added: "2026-01-10"
+    review: "2026-06-13"
+
+  - file: "src/omnibase_core/validation/validator_patterns.py"
+    reason: >-
+      Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
+      ModelValidatorSubcontract for Pydantic validation
+    added: "2026-01-10"
+    review: "2026-06-13"
+
+  - file: "src/omnibase_core/validation/validator_naming_convention.py"
+    reason: >-
+      Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
+      ModelValidatorSubcontract for Pydantic validation
+    added: "2026-01-10"
+    review: "2026-06-13"
+
   - file: "src/omnibase_core/utils/util_safe_yaml_loader.py"
-    reason: "Foundational utility layer that bridges raw YAML parsing and Pydantic validation - provides
-      safe loading primitives for entire codebase"
+    reason: >-
+      Foundational utility layer that bridges raw YAML parsing and Pydantic validation - provides safe
+      loading primitives for entire codebase
     added: "2024-10-15"
     review: "2026-06-13"
 
-  - file: "src/omnibase_core/validation/contracts.py"
-    reason: "Central orchestrator for YAML contract file parsing and validation - provides high-level
-      API for loading/validating contract YAML files"
+  - file: "src/omnibase_core/validation/validator_contracts.py"
+    reason: >-
+      Central orchestrator for YAML contract file parsing and validation - provides high-level API for
+      loading/validating contract YAML files
     added: "2024-10-15"
     review: "2026-06-13"
 
   - file: "src/omnibase_core/services/service_contract_validator.py"
-    reason: "Validation layer that requires inspection of raw YAML structure before type conversion -
-      preprocesses YAML to ensure it meets contract schema requirements"
+    reason: >-
+      Validation layer that requires inspection of raw YAML structure before type conversion - preprocesses
+      YAML to ensure it meets contract schema requirements
     added: "2024-10-15"
     review: "2026-06-13"
 
   - file: "scripts/regenerate_fingerprints.py"
-    reason: "Must parse YAML to detect node_type before selecting appropriate Pydantic model class - contract
+    reason: >-
+      Must parse YAML to detect node_type before selecting appropriate Pydantic model class - contract
       fingerprint regeneration requires raw YAML to determine which model (ModelContractCompute, ModelContractEffect,
-      etc.) to use for validation via detect_contract_model()"
+      etc.) to use for validation via detect_contract_model()
     added: "2025-12-12"
-    review: "2026-03-12"
+    review: "2026-06-13"
+
+  - file: "src/omnibase_core/utils/util_invariant_yaml_parser.py"
+    reason: >-
+      Parses invariant set YAML files before Pydantic validation - utility for loading user-defined validation
+      rules (invariants) from YAML configuration files for the Beta Demo
+    added: "2026-01-02"
+    review: "2026-06-13"
+
+  - file: "src/omnibase_core/cli/cli_contract_diff.py"
+    reason: >-
+      Loads arbitrary YAML contract files for semantic diff comparison - no model validation needed as
+      diffing works on raw dictionary structures to compare any two contract versions (load_contract_yaml_file
+      at line 483)
+    added: "2026-01-05"
+    review: "2026-06-13"
+
+  - file: "examples/demo/handlers/support_assistant/model_config.py"
+    reason: >-
+      Loads handler contract YAML to extract provider_config section - uses yaml.safe_load followed by
+      Pydantic model_validate() for proper validation. Cannot use util_safe_yaml_loader due to circular
+      import from examples directory.
+    added: "2026-01-12"
+    review: "2026-06-13"
 
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
   - filename: "util_safe_yaml_loader.py"
-    reason: "Core utility that should be allowed regardless of module path location - may be copied to
-      multiple locations for modularity"
+    reason: >-
+      Core utility that should be allowed regardless of module path location - may be copied to multiple
+      locations for modularity
     added: "2024-10-15"
     review: "2026-06-13"
 
 # Function names allowed to use yaml.safe_load()
-# These functions form the YAML→Pydantic validation pipeline and need raw YAML access
+# These functions form the YAML->Pydantic validation pipeline and need raw YAML access
 # to prepare data structures before Pydantic model instantiation.
 allowed_functions:
   - function: "load_and_validate_yaml_model"
-    reason: "Must parse YAML before passing to Pydantic for validation - YAML→Pydantic conversion utility
-      that loads raw YAML and validates against model schema"
+    reason: >-
+      Must parse YAML before passing to Pydantic for validation - YAML->Pydantic conversion utility that
+      loads raw YAML and validates against model schema
     added: "2024-10-15"
     review: "2026-06-13"
 
   - function: "validate_model_compliance"
-    reason: "Needs access to raw YAML dict to check structural requirements - contract compliance validator
-      that inspects YAML structure before model instantiation"
+    reason: >-
+      Needs access to raw YAML dict to check structural requirements - contract compliance validator that
+      inspects YAML structure before model instantiation
     added: "2024-10-15"
     review: "2026-06-13"
 
   - function: "validate_contract_yaml"
-    reason: "Pre-validation step that checks YAML structure before type conversion - validates contract
-      YAML before Pydantic model instantiation"
+    reason: >-
+      Pre-validation step that checks YAML structure before type conversion - validates contract YAML
+      before Pydantic model instantiation
     added: "2024-10-15"
     review: "2026-06-13"
 
   - function: "load_yaml_content_as_model"
-    reason: "Foundation utility that bridges YAML parsing and Pydantic validation - generic utility for
-      loading YAML content into Pydantic models"
+    reason: >-
+      Foundation utility that bridges YAML parsing and Pydantic validation - generic utility for loading
+      YAML content into Pydantic models
     added: "2024-10-15"
     review: "2026-06-13"
 
   - function: "extract_example_from_schema"
-    reason: "Parses schema YAML to extract embedded examples for documentation - schema example extractor
-      that extracts configurations from YAML schema definitions"
+    reason: >-
+      Parses schema YAML to extract embedded examples for documentation - schema example extractor that
+      extracts configurations from YAML schema definitions
     added: "2024-10-15"
+    review: "2026-06-13"
+
+  - function: "parse_invariant_set_from_yaml"
+    reason: >-
+      Parses invariant YAML content before Pydantic ModelInvariantSet validation - invariant definition
+      parser that loads user-defined validation rules from YAML strings
+    added: "2026-01-02"
+    review: "2026-06-13"
+
+  - function: "load_contract_yaml_file"
+    reason: >-
+      Loads arbitrary YAML contract files for semantic diff comparison - no model validation needed as
+      diffing works on raw dictionary structures to compare any two contract versions (see cli_contract_diff.py:483)
+    added: "2026-01-05"
     review: "2026-06-13"

@@ -7,7 +7,6 @@ enabling third-party nodes to register their own actions dynamically.
 
 import logging
 from pathlib import Path
-from typing import cast
 
 from omnibase_core.models.cli.model_cli_action import ModelCliAction
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
@@ -82,7 +81,7 @@ class ModelActionRegistry:
         for contract_file in contract_files:
             try:
                 actions_discovered += self._discover_from_contract(contract_file)
-            except Exception as e:
+            except (AttributeError, KeyError, TypeError, ValueError) as e:
                 # fallback-ok: resilient discovery - skip invalid contracts with debug logging
                 logger.debug("Failed to discover actions from %s: %s", contract_file, e)
                 continue
@@ -175,7 +174,7 @@ class ModelActionRegistry:
                     self.register_action(action)
                     actions_discovered += 1
 
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
             from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -257,14 +256,24 @@ def get_action_registry() -> ModelActionRegistry:
 
     try:
         container = get_model_onex_container_sync()
-        registry = cast("ModelActionRegistry", container.action_registry())
+        registry_obj = container.action_registry()
+
+        # Runtime validation before cast - ensures type safety
+        if not isinstance(registry_obj, ModelActionRegistry):
+            raise ModelOnexError(
+                message=f"action_registry() returned {type(registry_obj).__name__}, "
+                "expected ModelActionRegistry",
+                error_code=EnumCoreErrorCode.TYPE_MISMATCH,
+            )
+
+        registry = registry_obj
 
         # Auto-bootstrap if empty
         if len(registry.get_all_actions()) == 0:
             registry.bootstrap_core_actions()
 
         return registry
-    except Exception as e:
+    except (AttributeError, KeyError, TypeError, ValueError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get action registry. "
             "Initialize the container first.",
@@ -284,8 +293,12 @@ def reset_action_registry() -> None:
 
     try:
         container = get_model_onex_container_sync()
-        registry = cast("ModelActionRegistry", container.action_registry())
-        registry.clear()
-    except Exception:
+        registry_obj = container.action_registry()
+
+        # Runtime validation before operation - ensures type safety
+        if isinstance(registry_obj, ModelActionRegistry):
+            registry_obj.clear()
+        # If not ModelActionRegistry, silently skip (container may be misconfigured)
+    except (AttributeError, KeyError, TypeError, ValueError):
         # If container is not initialized, nothing to reset
         pass

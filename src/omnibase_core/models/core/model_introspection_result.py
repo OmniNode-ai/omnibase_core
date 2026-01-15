@@ -2,8 +2,6 @@
 Model for introspection command results.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_introspection_metadata import (
@@ -18,4 +16,12 @@ class ModelIntrospectionResult(BaseModel):
 
     metadata: ModelIntrospectionMetadata = Field(description="Tool metadata")
     health: ModelToolHealthStatus = Field(description="Tool health status")
-    examples: list["ModelUsageExample[Any, Any]"] = Field(description="Usage examples")
+    examples: list["ModelUsageExample[object, object]"] = Field(
+        description="Usage examples"
+    )
+
+
+try:
+    ModelIntrospectionResult.model_rebuild()
+except Exception:  # catch-all-ok: circular import protection during model rebuild
+    pass

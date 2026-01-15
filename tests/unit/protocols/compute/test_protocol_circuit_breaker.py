@@ -18,6 +18,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 from omnibase_core.models.configuration.model_circuit_breaker import (
     ModelCircuitBreaker,
 )
@@ -119,7 +120,7 @@ class ModelCircuitBreakerAdapter:
 
     @property
     def is_open(self) -> bool:
-        return self._breaker.state == "open"
+        return self._breaker.state == EnumCircuitBreakerState.OPEN
 
     @property
     def failure_count(self) -> int:
@@ -374,13 +375,13 @@ class TestModelCircuitBreakerDirectConformance:
 
         # Initially closed
         assert not breaker.is_open
-        assert breaker.state == "closed"
+        assert breaker.state == EnumCircuitBreakerState.CLOSED
 
         # After enough failures, should be open
         breaker.record_failure()
         breaker.record_failure()
         assert breaker.is_open
-        assert breaker.state == "open"
+        assert breaker.state == EnumCircuitBreakerState.OPEN
 
     def test_model_record_failure_with_correlation_id(self):
         """Verify record_failure accepts optional correlation_id."""
@@ -409,7 +410,7 @@ class TestModelCircuitBreakerDirectConformance:
         breaker.reset()
         assert not breaker.is_open
         assert breaker.failure_count == 0
-        assert breaker.state == "closed"
+        assert breaker.state == EnumCircuitBreakerState.CLOSED
 
     def test_model_reset_and_reset_state_equivalent(self):
         """Verify reset() and reset_state() are functionally equivalent."""
@@ -427,7 +428,7 @@ class TestModelCircuitBreakerDirectConformance:
         breaker2.reset_state()
 
         # Both should have same end state
-        assert breaker1.state == breaker2.state == "closed"
+        assert breaker1.state == breaker2.state == EnumCircuitBreakerState.CLOSED
         assert breaker1.failure_count == breaker2.failure_count == 0
         assert breaker1.success_count == breaker2.success_count == 0
         assert breaker1.total_requests == breaker2.total_requests == 0

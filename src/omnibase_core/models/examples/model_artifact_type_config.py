@@ -7,7 +7,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 "\nArtifact type configuration model.\n"
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_artifact_type import EnumArtifactType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -32,11 +32,11 @@ class ModelArtifactTypeConfig(BaseModel):
     version_pattern: ModelSemVer | None = Field(
         default=None, description="Version pattern for artifact naming/validation"
     )
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
@@ -45,10 +45,10 @@ class ModelArtifactTypeConfig(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> SerializedDict:
@@ -59,7 +59,7 @@ class ModelArtifactTypeConfig(BaseModel):
         """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

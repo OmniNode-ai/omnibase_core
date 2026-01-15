@@ -14,7 +14,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_service_mode import EnumServiceMode
@@ -258,6 +258,8 @@ class ModelNodeServiceConfig(BaseModel):
         Returns:
             ModelNodeServiceConfig configured for NodeRegistry service
         """
+        from typing import cast
+
         node_registry_defaults = {
             "node_name": "node_registry",
             "docker_image": "onex/node-registry",
@@ -266,4 +268,7 @@ class ModelNodeServiceConfig(BaseModel):
             "depends_on": ["event-bus"],
         }
         config = {**node_registry_defaults, **overrides}
-        return cls.from_environment("node_registry", **config)
+        # Cast result of decorated method to preserve type
+        return cast(
+            "ModelNodeServiceConfig", cls.from_environment("node_registry", **config)
+        )

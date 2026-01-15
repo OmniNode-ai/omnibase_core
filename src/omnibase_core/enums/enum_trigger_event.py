@@ -5,11 +5,14 @@ Trigger events for workflow and checkpoint automation in ONEX infrastructure.
 Used by context models to specify what event triggered an action or checkpoint.
 """
 
-from enum import Enum
+from enum import Enum, unique
 from functools import cache
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
-class EnumTriggerEvent(str, Enum):
+
+@unique
+class EnumTriggerEvent(StrValueHelper, str, Enum):
     """Enumeration for events that can trigger workflow actions or checkpoints."""
 
     # Workflow progress triggers
@@ -30,10 +33,6 @@ class EnumTriggerEvent(str, Enum):
     # System triggers
     STARTUP = "startup"  # System or service startup
     SHUTDOWN = "shutdown"  # System or service shutdown
-
-    def __str__(self) -> str:
-        """Return the string value of the trigger event."""
-        return self.value
 
     @classmethod
     @cache

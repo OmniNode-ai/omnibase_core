@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 
-from omnibase_core.utils.generation.utility_reference_resolver import (
+from omnibase_core.utils.generation.util_reference_resolver import (
     ModelRefInfo,
     UtilityReferenceResolver,
 )
@@ -825,7 +825,7 @@ class TestEdgeCases:
             result = resolver.resolve_ref(None)
             # If it doesn't raise, check result
             assert result is not None
-        except (TypeError, AttributeError):
+        except (AttributeError, TypeError):
             # Expected behavior for None input
             pass
 

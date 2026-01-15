@@ -2,10 +2,13 @@
 Enum for permission actions.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumPermissionAction(str, Enum):
+@unique
+class EnumPermissionAction(StrValueHelper, str, Enum):
     """Permission actions that can be granted."""
 
     CREATE = "create"
@@ -21,3 +24,6 @@ class EnumPermissionAction(str, Enum):
     SHARE = "share"
     EXPORT = "export"
     IMPORT = "import"
+
+
+__all__ = ["EnumPermissionAction"]

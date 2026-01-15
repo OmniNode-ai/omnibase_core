@@ -41,10 +41,8 @@ See Also:
     - omnibase_core.models.utils.model_yaml_value: YAML value wrapper
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -88,14 +86,12 @@ class ModelYamlDumpOptions(BaseModel):
     indent: int = 2
     width: int = 120
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "frozen": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        frozen=True,
+    )
 
     # Protocol method implementations
 
@@ -105,15 +101,7 @@ class ModelYamlDumpOptions(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        return True
 
 
 __all__ = ["ModelYamlDumpOptions"]

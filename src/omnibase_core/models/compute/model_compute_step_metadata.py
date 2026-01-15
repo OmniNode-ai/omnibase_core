@@ -24,7 +24,7 @@ Example:
 
 See Also:
     - omnibase_core.models.compute.model_compute_step_result: Uses metadata for step results
-    - omnibase_core.utils.compute_executor: Creates metadata during step execution
+    - omnibase_core.utils.util_compute_executor: Creates metadata during step execution
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -74,4 +74,4 @@ class ModelComputeStepMetadata(BaseModel):
     duration_ms: float = Field(ge=0)
     transformation_type: str | None = None
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)

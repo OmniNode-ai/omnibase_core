@@ -6,10 +6,13 @@ This module provides all enumerations for the ONEX workflow testing system,
 supporting flexible dependency accommodation and comprehensive test workflows.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumAccommodationLevel(str, Enum):
+@unique
+class EnumAccommodationLevel(StrValueHelper, str, Enum):
     """Enumeration of dependency accommodation levels"""
 
     FULL_REAL = "full_real"
@@ -19,7 +22,8 @@ class EnumAccommodationLevel(str, Enum):
     PROGRESSIVE = "progressive"
 
 
-class EnumAccommodationStrategy(str, Enum):
+@unique
+class EnumAccommodationStrategy(StrValueHelper, str, Enum):
     """Enumeration of accommodation strategies"""
 
     HYBRID_SMART = "hybrid_smart"
@@ -29,7 +33,8 @@ class EnumAccommodationStrategy(str, Enum):
     PERFORMANCE_REALISTIC = "performance_realistic"
 
 
-class EnumAccommodationType(str, Enum):
+@unique
+class EnumAccommodationType(StrValueHelper, str, Enum):
     """Enumeration of accommodation types"""
 
     REAL = "real"
@@ -38,7 +43,8 @@ class EnumAccommodationType(str, Enum):
     REAL_WITH_MONITORING = "real_with_monitoring"
 
 
-class EnumFallbackStrategy(str, Enum):
+@unique
+class EnumFallbackStrategy(StrValueHelper, str, Enum):
     """Enumeration of fallback strategies"""
 
     MOCK_IF_REAL_UNAVAILABLE = "mock_if_real_unavailable"
@@ -47,7 +53,8 @@ class EnumFallbackStrategy(str, Enum):
     MOCK_FOR_DETERMINISTIC_TESTS = "mock_for_deterministic_tests"
 
 
-class EnumTestExecutionStatus(str, Enum):
+@unique
+class EnumTestExecutionStatus(StrValueHelper, str, Enum):
     """Enumeration of test execution statuses"""
 
     SUCCESS = "success"
@@ -57,7 +64,8 @@ class EnumTestExecutionStatus(str, Enum):
     ACCOMMODATION_FAILED = "accommodation_failed"
 
 
-class EnumTestWorkflowPriority(str, Enum):
+@unique
+class EnumTestWorkflowPriority(StrValueHelper, str, Enum):
     """Enumeration of test workflow priorities"""
 
     CRITICAL = "critical"
@@ -66,7 +74,8 @@ class EnumTestWorkflowPriority(str, Enum):
     LOW = "low"
 
 
-class EnumTestContext(str, Enum):
+@unique
+class EnumTestContext(StrValueHelper, str, Enum):
     """Enumeration of test execution contexts"""
 
     CI_CD_ENVIRONMENT = "ci_cd_environment"
@@ -76,7 +85,8 @@ class EnumTestContext(str, Enum):
     PRODUCTION_VALIDATION = "production_validation"
 
 
-class EnumDependencyType(str, Enum):
+@unique
+class EnumDependencyType(StrValueHelper, str, Enum):
     """Enumeration of dependency types"""
 
     SERVICE = "service"
@@ -88,7 +98,8 @@ class EnumDependencyType(str, Enum):
     FILE_SYSTEM = "file_system"
 
 
-class EnumMockBehaviorType(str, Enum):
+@unique
+class EnumMockBehaviorType(StrValueHelper, str, Enum):
     """Enumeration of mock behavior types"""
 
     SUCCESS_RESPONSE = "success_response"
@@ -99,7 +110,8 @@ class EnumMockBehaviorType(str, Enum):
     DETERMINISTIC_RESPONSE = "deterministic_response"
 
 
-class EnumValidationRule(str, Enum):
+@unique
+class EnumValidationRule(StrValueHelper, str, Enum):
     """Enumeration of validation rules for test assertions"""
 
     EQUALS = "equals"
@@ -116,3 +128,17 @@ class EnumValidationRule(str, Enum):
     IS_NONE = "is_none"
     LENGTH_EQUALS = "length_equals"
     ALL_ITEMS_MATCH = "all_items_match"
+
+
+__all__ = [
+    "EnumAccommodationLevel",
+    "EnumAccommodationStrategy",
+    "EnumAccommodationType",
+    "EnumDependencyType",
+    "EnumFallbackStrategy",
+    "EnumMockBehaviorType",
+    "EnumTestContext",
+    "EnumTestExecutionStatus",
+    "EnumTestWorkflowPriority",
+    "EnumValidationRule",
+]

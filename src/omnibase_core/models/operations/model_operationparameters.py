@@ -1,11 +1,14 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.operations.model_operation_parameters_base import (
     ModelOperationParameterValue,
 )
 from omnibase_core.types.type_serializable_value import SerializedDict
+
+__all__ = ["ModelOperationParameters"]
 
 
 class ModelOperationParameters(BaseModel):
@@ -25,14 +28,15 @@ class ModelOperationParameters(BaseModel):
         description="Operation parameters with discriminated union types",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Utility methods (NOT protocol implementations)
 
+    @standard_error_handling("Operation parameters execution")
     async def execute(self) -> object:
         """
         Execute or validate operation parameters.
@@ -40,23 +44,16 @@ class ModelOperationParameters(BaseModel):
         Returns:
             Dictionary containing execution results and parameter validation status.
 
-        Raises:
-            ModelOnexError: If parameter validation fails.
+        Note:
+            Error handling is managed by @standard_error_handling decorator.
         """
-        try:
-            # Validate all parameters
-            validation_results = {
-                "success": True,
-                "parameters": self.parameters,
-                "validated": True,
-            }
-            return validation_results
-        except Exception as e:
-            raise ModelOnexError(
-                message=f"Parameter execution failed: {e}",
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                context={"error": str(e)},
-            ) from e
+        # Validate all parameters
+        validation_results = {
+            "success": True,
+            "parameters": self.parameters,
+            "validated": True,
+        }
+        return validation_results
 
     def get_id(self) -> str:
         """

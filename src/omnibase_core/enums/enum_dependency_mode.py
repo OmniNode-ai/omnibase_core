@@ -1,7 +1,12 @@
-from enum import Enum
+"""Dependency injection modes for real vs mock services."""
+
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumDependencyMode(str, Enum):
+@unique
+class EnumDependencyMode(StrValueHelper, str, Enum):
     """
     Canonical enum for scenario dependency injection modes.
     Controls whether scenarios use real external services or mocked test doubles.
@@ -17,3 +22,6 @@ class EnumDependencyMode(str, Enum):
     def is_mock(self) -> bool:
         """Return True if this mode uses mocked dependencies."""
         return self == self.MOCK
+
+
+__all__ = ["EnumDependencyMode"]

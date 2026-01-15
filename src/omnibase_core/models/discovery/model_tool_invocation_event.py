@@ -10,7 +10,7 @@ from omnibase_core.constants import (
     TIMEOUT_LONG_MS,
     TIMEOUT_MIN_MS,
 )
-from omnibase_core.constants.event_types import TOOL_INVOCATION
+from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
 

@@ -410,7 +410,7 @@ except ModelOnexError as e:
 
 **Business Logic Errors** (node operations):
 ```python
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 
 @standard_error_handling
 async def execute_reduction(self, input_data: ModelReducerInput):

@@ -1,13 +1,3 @@
-from __future__ import annotations
-
-import hashlib
-from datetime import datetime
-from typing import cast
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Metadata Node Info Model.
 
@@ -15,22 +5,25 @@ Enhanced node information specifically for metadata collections
 with usage metrics and performance tracking.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
+import hashlib
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
-from omnibase_core.enums.enum_validation_level import EnumValidationLevel
+from omnibase_core.enums.enum_validation import EnumValidationLevel
 from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 from .model_metadata_value import ModelMetadataValue
@@ -474,26 +467,28 @@ class ModelMetadataNodeInfo(BaseModel):
             version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        display_name = self.display_name.display_name
+        if display_name:
+            result["name"] = display_name
+        description = self.description.summary_description
+        if description:
+            result["description"] = description
+        result["version"] = self.version
+        all_tags = self.tags.all_tags
+        if all_tags:
+            result["tags"] = all_tags
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).

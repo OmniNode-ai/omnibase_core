@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from pydantic import Field
 
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nNode Type Model\n\nReplaces EnumNodeType with a proper model that includes metadata,\ndescriptions, and categorization for each node type.\n"
-from typing import Any, cast
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -614,11 +615,11 @@ class ModelNodeType(BaseModel):
             return self.type_name == other
         return False
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     def get_id(self) -> str:
         """
@@ -725,15 +726,29 @@ class ModelNodeType(BaseModel):
             values. Common metadata fields checked: name, description, version,
             tags, metadata.
         """
-        metadata = {}
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Map actual fields to TypedDictMetadataDict structure
+        # type_name is required (no default), always access directly
+        result["name"] = self.type_name.value
+        # description is required (no default), always access directly
+        result["description"] = self.description
+        result["version"] = self.version_compatibility
+        # Pack additional fields into metadata
+        result["metadata"] = {
+            # category is required (no default), always access directly
+            "category": self.category.value,
+            # Convert list[str] to list for JsonType compatibility
+            "dependencies": list(self.dependencies),
+            "execution_priority": self.execution_priority,
+            "is_generator": self.is_generator,
+            "is_validator": self.is_validator,
+            "requires_contract": self.requires_contract,
+            # output_type is optional, use explicit None check
+            "output_type": (
+                self.output_type.value if self.output_type is not None else None
+            ),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """
@@ -777,8 +792,10 @@ class ModelNodeType(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            # fallback-ok: Metadata update failures should not break the system
+        except PYDANTIC_MODEL_ERRORS:
+            # fallback-ok: Metadata update failures should not break the system.
+            # PYDANTIC_MODEL_ERRORS covers AttributeError, TypeError, ValidationError, ValueError
+            # which are the exceptions raised by setattr with Pydantic validate_assignment=True.
             return False
 
     def serialize(self) -> TypedDictSerializedModel:
@@ -845,8 +862,6 @@ class ModelNodeType(BaseModel):
             requirements. Pydantic validation occurs automatically
             during instantiation and assignment.
         """
-        try:
-            return True
-        except Exception:
-            # fallback-ok: Validation failures should not raise exceptions
-            return False
+        # Pydantic handles validation automatically during instantiation.
+        # This method exists to satisfy the ProtocolValidatable interface.
+        return True

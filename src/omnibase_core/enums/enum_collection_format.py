@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Collection format enumeration.
 
 Defines format types for data collections and exports.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumCollectionFormat(str, Enum):
+class EnumCollectionFormat(StrValueHelper, str, Enum):
     """
     Enumeration of collection format types.
 
@@ -50,10 +51,6 @@ class EnumCollectionFormat(str, Enum):
     CUSTOM = "custom"
     AUTO = "auto"
     DEFAULT = "default"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_structured_format(cls, format_type: EnumCollectionFormat) -> bool:

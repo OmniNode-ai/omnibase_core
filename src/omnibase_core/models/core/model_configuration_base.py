@@ -1,13 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import BaseModel, Field, field_validator, model_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Generic Configuration Base Class.
 
@@ -15,15 +5,25 @@ Standardizes common patterns found across Config domain models,
 eliminating field duplication and providing consistent configuration interfaces.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
-from typing import Any
+from datetime import UTC, datetime
+from typing import Self
 
-from pydantic import field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_result import ModelResult
-from omnibase_core.types.type_serializable_value import SerializedDict
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelConfigurationBase[T](BaseModel):
@@ -43,15 +43,14 @@ class ModelConfigurationBase[T](BaseModel):
     - Nameable: Name management interface
     """
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        # Removed arbitrary_types_allowed - handle arbitrary types explicitly with serializers
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     @field_serializer("config_data")
-    def serialize_config_data(self, config_data: Any) -> Any:
+    def serialize_config_data(self, config_data: object) -> object:
         """Convert arbitrary types (including Exception) to serializable form."""
         if isinstance(config_data, Exception):
             return str(config_data)
@@ -67,7 +66,7 @@ class ModelConfigurationBase[T](BaseModel):
 
     @field_validator("config_data", mode="before")
     @classmethod
-    def validate_config_data(cls, v: Any) -> Any:
+    def validate_config_data(cls, v: object) -> object:
         """Pre-process Exception types in config_data before Pydantic validation."""
         if isinstance(v, Exception):
             return str(v)
@@ -90,7 +89,7 @@ class ModelConfigurationBase[T](BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Generic configuration data
-    config_data: Any = Field(default=None, description="Typed configuration data")
+    config_data: object = Field(default=None, description="Typed configuration data")
 
     def update_timestamp(self) -> None:
         """Update the modification timestamp."""
@@ -128,7 +127,7 @@ class ModelConfigurationBase[T](BaseModel):
             if self.name is not None and len(self.name.strip()) == 0:
                 return False
             return base_valid
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -148,17 +147,17 @@ class ModelConfigurationBase[T](BaseModel):
         return self
 
     @classmethod
-    def create_empty(cls, name: str) -> ModelConfigurationBase[Any]:
+    def create_empty(cls, name: str) -> Self:
         """Create an empty configuration with a name."""
         return cls(name=name, description=f"Empty {name} configuration")
 
     @classmethod
-    def create_with_data(cls, name: str, config_data: T) -> ModelConfigurationBase[T]:
+    def create_with_data(cls, name: str, config_data: T) -> Self:
         """Create configuration with typed data."""
         return cls(name=name, config_data=config_data)
 
     @classmethod
-    def create_disabled(cls, name: str) -> ModelConfigurationBase[Any]:
+    def create_disabled(cls, name: str) -> Self:
         """Create a disabled configuration."""
         return cls(
             name=name,
@@ -168,11 +167,11 @@ class ModelConfigurationBase[T](BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, object]:
         """Serialize configuration to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -182,7 +181,7 @@ class ModelConfigurationBase[T](BaseModel):
                     self.config_data = value
             self.update_timestamp()
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -197,6 +196,9 @@ class ModelConfigurationBase[T](BaseModel):
         self.name = name
         self.update_timestamp()
 
+
+# Resolve forward references before module exports
+ModelConfigurationBase.model_rebuild()
 
 # Export for use
 __all__ = ["ModelConfigurationBase"]

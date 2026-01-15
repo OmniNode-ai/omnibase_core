@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
@@ -82,36 +82,30 @@ class ModelProgress(BaseModel):
     # Properties for direct access
     @property
     def percentage(self) -> float:
-        """Get progress percentage."""
         return self.core.percentage
 
     @percentage.setter
     def percentage(self, value: float) -> None:
-        """Set progress percentage."""
         self.core.update_percentage(value)
         self._sync_timing_with_core()
         self._sync_milestones_with_core()
 
     @property
     def current_step(self) -> int:
-        """Get current step."""
         return self.core.current_step
 
     @current_step.setter
     def current_step(self, value: int) -> None:
-        """Set current step."""
         self.core.update_step(value)
         self._sync_timing_with_core()
         self._sync_milestones_with_core()
 
     @property
     def total_steps(self) -> int:
-        """Get total steps."""
         return self.core.total_steps
 
     @total_steps.setter
     def total_steps(self, value: int) -> None:
-        """Set total steps."""
         self.core.total_steps = value
         self.core._update_percentage_from_steps()
         self._sync_timing_with_core()
@@ -119,110 +113,90 @@ class ModelProgress(BaseModel):
 
     @property
     def current_phase(self) -> EnumExecutionPhase:
-        """Get current phase."""
         return self.core.current_phase
 
     @property
     def phase_percentage(self) -> float:
-        """Get phase percentage."""
         return self.core.phase_percentage
 
     @property
     def status_message(self) -> EnumStatusMessage:
-        """Get status message."""
         return self.core.status_message
 
     @property
     def detailed_info(self) -> str:
-        """Get detailed info."""
         return self.core.detailed_info
 
     @property
     def start_time(self) -> datetime:
-        """Get start time."""
         return self.timing.start_time
 
     @property
     def last_update_time(self) -> datetime:
-        """Get last update time."""
         return self.timing.last_update_time
 
     @property
     def estimated_completion_time(self) -> datetime | None:
-        """Get estimated completion time."""
         return self.timing.estimated_completion_time
 
     @property
     def is_completed(self) -> bool:
-        """Check if progress is completed."""
         return self.core.is_completed
 
     @property
     def is_started(self) -> bool:
-        """Check if progress has started."""
         return self.core.is_started
 
     @property
     def elapsed_time(self) -> timedelta:
-        """Get elapsed time."""
         return self.timing.elapsed_time
 
     @property
     def elapsed_seconds(self) -> float:
-        """Get elapsed seconds."""
         return self.timing.elapsed_seconds
 
     @property
     def elapsed_minutes(self) -> float:
-        """Get elapsed minutes."""
         return self.timing.elapsed_minutes
 
     @property
     def estimated_total_duration(self) -> timedelta | None:
-        """Get estimated total duration."""
         if self.timing.estimated_total_duration:
             return self.timing.estimated_total_duration.to_timedelta()
         return None
 
     @property
     def estimated_remaining_duration(self) -> timedelta | None:
-        """Get estimated remaining duration."""
         if self.timing.estimated_remaining_duration:
             return self.timing.estimated_remaining_duration.to_timedelta()
         return None
 
     @property
     def completion_rate_per_minute(self) -> float:
-        """Get completion rate per minute."""
         return self.timing.get_completion_rate_per_minute(self.core.percentage)
 
     @property
     def custom_metrics(self) -> ModelMetricsData:
-        """Get custom metrics."""
         return self.metrics.custom_metrics
 
     @property
     def tags(self) -> list[str]:
-        """Get tags."""
         return self.metrics.tags
 
     # Update methods
     def update_percentage(self, new_percentage: float) -> None:
-        """Update progress percentage."""
         self.core.update_percentage(new_percentage)
         self.timing.update_timestamp()
         self._sync_timing_with_core()
         self._sync_milestones_with_core()
 
     def update_step(self, new_step: int) -> None:
-        """Update current step."""
         self.core.update_step(new_step)
         self.timing.update_timestamp()
         self._sync_timing_with_core()
         self._sync_milestones_with_core()
 
     def increment_step(self, steps: int = 1) -> None:
-        """Increment current step."""
         self.core.increment_step(steps)
         self.timing.update_timestamp()
         self._sync_timing_with_core()
@@ -233,66 +207,52 @@ class ModelProgress(BaseModel):
         phase: EnumExecutionPhase,
         phase_percentage: float = 0.0,
     ) -> None:
-        """Set current execution phase."""
         self.core.set_phase(phase, phase_percentage)
         self.timing.update_timestamp()
 
     def update_phase_percentage(self, percentage: float) -> None:
-        """Update percentage within current phase."""
         self.core.update_phase_percentage(percentage)
         self.timing.update_timestamp()
 
     def set_status(self, status: EnumStatusMessage, detailed_info: str = "") -> None:
-        """Set status and detailed info."""
         self.core.set_status(status, detailed_info)
         self.timing.update_timestamp()
 
     def add_milestone(self, name: str, percentage: float) -> None:
-        """Add a progress milestone."""
         self.milestones.add_milestone(name, percentage)
         self._sync_milestones_with_core()
 
     def remove_milestone(self, name: str) -> bool:
-        """Remove a milestone."""
         return self.milestones.remove_milestone(name)
 
     def get_next_milestone(self) -> tuple[str, float] | None:
-        """Get the next uncompleted milestone."""
         return self.milestones.get_next_milestone(self.core.percentage)
 
     def add_custom_metric(self, key: str, value: ModelFlexibleValue) -> None:
-        """Add custom progress metric."""
         self.metrics.add_custom_metric(key, value)
 
     def add_tag(self, tag: str) -> None:
-        """Add a progress tag."""
         self.metrics.add_tag(tag)
 
     def remove_tag(self, tag: str) -> bool:
-        """Remove a progress tag."""
         return self.metrics.remove_tag(tag)
 
     def reset(self) -> None:
-        """Reset progress to initial state."""
         self.core.reset()
         self.timing.reset()
         self.milestones.reset()
         self.metrics.reset()
 
     def get_time_remaining_formatted(self) -> str:
-        """Get formatted remaining time string."""
         return self.timing.get_time_remaining_formatted()
 
     def get_elapsed_formatted(self) -> str:
-        """Get formatted elapsed time string."""
         return self.timing.get_elapsed_formatted()
 
     def get_estimated_total_formatted(self) -> str:
-        """Get formatted estimated total time string."""
         return self.timing.get_estimated_total_formatted()
 
     def get_summary(self) -> dict[str, ModelFlexibleValue]:
-        """Get progress summary."""
         # Sync all components
         self._sync_timing_with_core()
         self._sync_milestones_with_core()
@@ -376,11 +336,11 @@ class ModelProgress(BaseModel):
         milestone_component = ModelProgressMilestones.create_phased_milestones(phases)
         return cls(core=core, milestones=milestone_component)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -392,7 +352,7 @@ class ModelProgress(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -405,7 +365,7 @@ class ModelProgress(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

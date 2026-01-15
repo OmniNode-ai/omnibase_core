@@ -39,7 +39,7 @@ The omnibase_core codebase includes complete FSM execution capabilities:
 - **`ModelFSMOperation`** - Operation definitions with rollback support
 
 **Runtime Execution**:
-- **`utils/fsm_executor.py`** - Pure function FSM execution
+- **`utils/util_fsm_executor.py`** - Pure function FSM execution
 - **`MixinFSMExecution`** - Mixin for node integration
 - **Comprehensive Tests** - Full test coverage
 - **100% Type Safety** - Zero `Any` types, full mypy strict compliance
@@ -141,7 +141,7 @@ state_transitions:
 | FSM Subcontract Models | Complete | Full state machine support |
 | Pydantic Validation | Complete | Comprehensive validation |
 | Subcontract Composition | Complete | ModelContractReducer |
-| FSM Runtime Executor | Complete | fsm_executor.py with MixinFSMExecution |
+| FSM Runtime Executor | Complete | util_fsm_executor.py with MixinFSMExecution |
 | NodeReducer | **PRIMARY** | FSM-driven implementation (v0.4.0+) |
 | Legacy Classes | Available | `NodeReducerLegacy` in `nodes/legacy/` for backwards compatibility |
 | Documentation | Complete | Full tutorial and migration guides available |
@@ -892,7 +892,7 @@ Intent Flow Example:
 from omnibase_core.nodes import NodeEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.reducer.model_intent import ModelIntent
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import emit_log_event_sync as emit_log_event
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 

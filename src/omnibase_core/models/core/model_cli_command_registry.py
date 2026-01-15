@@ -9,7 +9,7 @@ import logging
 from collections.abc import Mapping
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
@@ -31,6 +31,8 @@ class ModelCliCommandRegistry(BaseModel):
     This registry scans node contracts to discover available CLI commands,
     enabling third-party nodes to automatically expose their functionality.
     """
+
+    model_config = ConfigDict(extra="ignore", frozen=False)
 
     commands: dict[str, ModelCliCommandDefinition] = Field(
         default_factory=dict,
@@ -173,7 +175,13 @@ class ModelCliCommandRegistry(BaseModel):
                     if command:
                         self.register_command(command)
                         commands_discovered += 1
-                except Exception as e:
+                except (
+                    AttributeError,
+                    KeyError,
+                    RuntimeError,
+                    TypeError,
+                    ValueError,
+                ) as e:
                     # Log error but continue processing other commands
                     logger.debug(
                         "Failed to create command from contract for node '%s': %s",
@@ -244,7 +252,7 @@ class ModelCliCommandRegistry(BaseModel):
 
             # Parse arguments (simplified for now)
             # Note: Converting to empty lists of ModelArgumentDescription
-            # TODO: Extract actual argument descriptions from command metadata
+            # TODO(OMN-TBD): Extract actual argument descriptions from command metadata  [NEEDS TICKET]
             from omnibase_core.models.core.model_argument_description import (
                 ModelArgumentDescription,
             )
@@ -289,7 +297,7 @@ def get_global_command_registry() -> ModelCliCommandRegistry:
         container = get_model_onex_container_sync()
         registry: ModelCliCommandRegistry = container.command_registry()
         return registry
-    except Exception as e:
+    except (AttributeError, KeyError, TypeError, ValueError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get command registry. "
             "Initialize the container first.",

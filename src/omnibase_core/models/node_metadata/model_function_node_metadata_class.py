@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from hashlib import sha256
-from typing import cast
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -23,10 +22,12 @@ from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_documentation_summary_filtered import (
     TypedDictDocumentationSummaryFiltered,
 )
+from omnibase_core.types.typed_dict_function_metadata_summary import (
+    TypedDictFunctionMetadataSummary,
+)
 
 from .model_function_deprecation_info import ModelFunctionDeprecationInfo
 from .model_function_documentation import ModelFunctionDocumentation
-from .model_function_metadata_summary import ModelFunctionMetadataSummary
 from .model_function_relationships import ModelFunctionRelationships
 
 
@@ -126,7 +127,7 @@ class ModelFunctionNodeMetadata(BaseModel):
                         minor=0,
                         patch=0,
                     )
-            except (ValueError, IndexError):
+            except (IndexError, ValueError):
                 self.deprecation.deprecated_since = ModelSemVer(
                     major=1,
                     minor=0,
@@ -248,7 +249,7 @@ class ModelFunctionNodeMetadata(BaseModel):
 
         return min(doc_score + rel_score, 1.0)
 
-    def get_metadata_summary(self) -> ModelFunctionMetadataSummary:
+    def get_metadata_summary(self) -> TypedDictFunctionMetadataSummary:
         """Get comprehensive metadata summary."""
         doc_summary = self.documentation.get_documentation_summary()
         dep_summary = self.deprecation.get_deprecation_summary()
@@ -269,19 +270,17 @@ class ModelFunctionNodeMetadata(BaseModel):
             for key, value in rel_summary.items()
         }
 
-        return ModelFunctionMetadataSummary(
-            {
-                "documentation": doc_filtered,
-                "deprecation": dep_summary,
-                "relationships": rel_converted,  # type: ignore[typeddict-item]
-                "documentation_quality_score": self.get_documentation_quality_score(),
-                # Consider "fully documented" based on documentation, not recency
-                "is_fully_documented": (
-                    doc_filtered.get("has_documentation", False)
-                    and doc_filtered.get("has_examples", False)
-                ),
-                "deprecation_status": self.deprecation.get_deprecation_status().value,
-            }
+        return TypedDictFunctionMetadataSummary(
+            documentation=doc_filtered,
+            deprecation=dep_summary,
+            relationships=rel_converted,  # type: ignore[typeddict-item]
+            documentation_quality_score=self.get_documentation_quality_score(),
+            # Consider "fully documented" based on documentation, not recency
+            is_fully_documented=(
+                doc_filtered.get("has_documentation", False)
+                and doc_filtered.get("has_examples", False)
+            ),
+            deprecation_status=self.deprecation.get_deprecation_status().value,
         )
 
     @classmethod
@@ -319,7 +318,7 @@ class ModelFunctionNodeMetadata(BaseModel):
             minor = int(parts[1]) if len(parts) > 1 else 0
             patch = int(parts[2]) if len(parts) > 2 else 0
             version = ModelSemVer(major=major, minor=minor, patch=patch)
-        except (ValueError, IndexError):
+        except (IndexError, ValueError):
             version = ModelSemVer(major=1, minor=0, patch=0)
 
         dep = ModelFunctionDeprecationInfo.create_deprecated(version, replacement)
@@ -351,16 +350,23 @@ class ModelFunctionNodeMetadata(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Map tags to TypedDictMetadataDict structure via delegated property
+        if self.tags:
+            result["tags"] = self.tags
+        # Pack additional fields into metadata
+        result["metadata"] = {
+            "has_documentation": self.has_documentation(),
+            "has_examples": self.has_examples(),
+            "deprecated_since": self.deprecated_since,
+            "replacement": self.replacement,
+            "categories": [cat.value for cat in self.categories],
+            "dependencies": [str(dep) for dep in self.dependencies],
+            "related_functions": [str(func) for func in self.related_functions],
+            "documentation_quality_score": self.get_documentation_quality_score(),
+            "is_recently_updated": self.is_recently_updated(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -378,12 +384,7 @@ class ModelFunctionNodeMetadata(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 # NOTE: model_rebuild() not needed - Pydantic v2 handles forward references automatically

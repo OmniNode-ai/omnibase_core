@@ -9,10 +9,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
@@ -78,8 +77,12 @@ class ModelNodeCoreInfo(BaseModel):
         return self.status == EnumMetadataNodeStatus.ACTIVE
 
     def is_healthy(self) -> bool:
-        """Check if node is healthy."""
-        return self.health == EnumRegistryStatus.HEALTHY
+        """Check if node is healthy.
+
+        Uses case-insensitive string comparison for robustness when health
+        value may come from external sources (e.g., deserialized JSON).
+        """
+        return str(self.health).lower() == str(EnumRegistryStatus.HEALTHY).lower()
 
     def has_description(self) -> bool:
         """Check if node has a description."""
@@ -134,11 +137,11 @@ class ModelNodeCoreInfo(BaseModel):
         """Get author name."""
         return self.author_display_name
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -166,16 +169,26 @@ class ModelNodeCoreInfo(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Map actual fields to TypedDictMetadataDict structure
+        # node_name property always returns non-empty (has UUID fallback)
+        result["name"] = self.node_name
+        if self.description:
+            result["description"] = self.description
+        result["version"] = self.node_version
+        # Pack additional fields into metadata
+        result["metadata"] = {
+            "node_id": str(self.node_id),
+            "node_type": self.node_type.value,
+            "status": self.status.value,
+            "health": self.health.value,
+            "author": self.author,
+            "is_active": self.is_active(),
+            "is_healthy": self.is_healthy(),
+            "has_description": self.has_description(),
+            "has_author": self.has_author(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -193,12 +206,7 @@ class ModelNodeCoreInfo(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 __all__ = ["ModelNodeCoreInfo"]

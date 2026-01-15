@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 "\nModelRateLimitPolicy - Comprehensive rate limiting policy configuration\n\nRate limiting policy model that combines window configuration, user limits,\nthrottling behavior, and burst handling for complete rate limiting management.\n"
 from pydantic import BaseModel
@@ -20,6 +20,8 @@ class ModelRateLimitPolicy(BaseModel):
     This model combines all aspects of rate limiting including time windows,
     user-specific limits, throttling behavior, and burst handling.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     policy_name: str = Field(
         default=..., description="Policy identifier", pattern="^[a-z][a-z0-9_-]*$"

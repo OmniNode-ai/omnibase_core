@@ -7,12 +7,11 @@ Each sub-model handles a specific concern area.
 
 from __future__ import annotations
 
-from typing import cast
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_field_type import EnumFieldType
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -381,35 +380,43 @@ class ModelMetadataFieldInfo(BaseModel):
             return self.identity.identity_id == other.identity.identity_id
         return False
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        if self.identity.field_display_name:
+            result["name"] = self.identity.field_display_name
+        if self.identity.description:
+            result["description"] = self.identity.description
+        result["metadata"] = {
+            "field_type": self.field_type.value,
+            "is_required": self.is_required,
+            "is_optional": self.is_optional,
+            "is_volatile": self.is_volatile,
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol).
+
+        Raises:
+            ModelOnexError: If setting an attribute fails or validation error occurs
+        """
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
+        except PYDANTIC_MODEL_ERRORS as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -421,12 +428,7 @@ class ModelMetadataFieldInfo(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        # Pydantic handles validation automatically during instantiation.
+        # This method exists to satisfy the ProtocolValidatable interface.
+        # Override in specific models for custom validation.
+        return True

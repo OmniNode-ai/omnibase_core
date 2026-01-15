@@ -8,13 +8,12 @@ Follows ONEX one-model-per-file naming conventions.
 from __future__ import annotations
 
 import hashlib
-from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-from omnibase_core.types.constraints import SimpleValueType
+from omnibase_core.types.type_constraints import SimpleValueType
 
 # Use consolidated SimpleValueType instead of redundant TypeVar
 
@@ -129,28 +128,69 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
             description=description,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        """
+        Get metadata as dictionary for ProtocolMetadataProvider protocol.
+
+        Returns a TypedDictMetadataDict containing metric information with
+        type-parameterized value. The metric display name and description
+        map to standard top-level keys when present.
+
+        Returns:
+            TypedDictMetadataDict with the following structure:
+            - "name": metric_display_name (only if non-empty string)
+            - "description": description field (only if non-empty string)
+            - "metadata": Dict containing:
+                - "metric_id": String representation of the metric UUID
+                - "value": The typed metric value (str, int, float, or bool
+                  depending on generic type parameter)
+                - "unit": Unit of measurement string (only if non-empty)
+
+        Example:
+            >>> metric = ModelTypedMetrics.int_metric(
+            ...     name="request_count",
+            ...     value=42,
+            ...     unit="requests",
+            ...     description="Total HTTP requests"
+            ... )
+            >>> metadata = metric.get_metadata()
+            >>> metadata["name"]
+            'request_count'
+            >>> metadata["description"]
+            'Total HTTP requests'
+            >>> metadata["metadata"]["value"]
+            42
+            >>> metadata["metadata"]["unit"]
+            'requests'
+        """
+        result: TypedDictMetadataDict = {}
+        if self.metric_display_name:
+            result["name"] = self.metric_display_name
+        if self.description:
+            result["description"] = self.description
+        from typing import cast
+
+        from omnibase_core.types.type_serializable_value import SerializableValue
+
+        # Cast SimpleValueType to SerializableValue for type compatibility
+        metadata_inner: dict[str, SerializableValue] = {
+            "metric_id": str(self.metric_id),
+            "value": cast(SerializableValue, self.value),
+        }
+        if (
+            self.unit
+        ):  # Only include unit if non-empty (consistent with name/description)
+            metadata_inner["unit"] = self.unit
+        result["metadata"] = metadata_inner
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -168,12 +208,7 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
-            return False
+        return True
 
 
 __all__ = ["ModelTypedMetrics"]

@@ -13,7 +13,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -26,7 +26,7 @@ class ModelNodeHealthStatus(BaseModel):
         description="Model version (MUST be provided in YAML contract)",
     )
 
-    status: EnumNodeHealthStatus = Field(
+    status: EnumHealthStatus = Field(
         ..., description="Overall health status of the node"
     )
 

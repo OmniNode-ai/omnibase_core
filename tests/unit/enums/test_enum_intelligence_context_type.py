@@ -59,26 +59,17 @@ class TestEnumIntelligenceContextType:
         assert issubclass(EnumIntelligenceContextType, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values."""
-        assert (
-            str(EnumIntelligenceContextType.DISCOVERY_PATTERN)
-            == "EnumIntelligenceContextType.DISCOVERY_PATTERN"
-        )
-        assert (
-            str(EnumIntelligenceContextType.PROBLEM_DIAGNOSIS)
-            == "EnumIntelligenceContextType.PROBLEM_DIAGNOSIS"
-        )
+        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
+        assert str(EnumIntelligenceContextType.DISCOVERY_PATTERN) == "discovery_pattern"
+        assert str(EnumIntelligenceContextType.PROBLEM_DIAGNOSIS) == "problem_diagnosis"
         assert (
             str(EnumIntelligenceContextType.SOLUTION_IMPLEMENTATION)
-            == "EnumIntelligenceContextType.SOLUTION_IMPLEMENTATION"
+            == "solution_implementation"
         )
-        assert (
-            str(EnumIntelligenceContextType.WARNING_SECURITY)
-            == "EnumIntelligenceContextType.WARNING_SECURITY"
-        )
+        assert str(EnumIntelligenceContextType.WARNING_SECURITY) == "warning_security"
         assert (
             str(EnumIntelligenceContextType.COORDINATION_REQUEST)
-            == "EnumIntelligenceContextType.COORDINATION_REQUEST"
+            == "coordination_request"
         )
 
     def test_enum_iteration(self):

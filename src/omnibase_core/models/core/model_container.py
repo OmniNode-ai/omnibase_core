@@ -1,13 +1,3 @@
-from __future__ import annotations
-
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
-
-from pydantic import Field
-
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
-
 """
 Generic container pattern for single-value models with metadata.
 
@@ -16,8 +6,17 @@ specialized single-value containers across the codebase, reducing
 repetitive patterns while maintaining type safety.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from collections.abc import Callable
+from typing import TYPE_CHECKING
+
+from pydantic import Field
+
+if TYPE_CHECKING:
+    from omnibase_core.types.type_serializable_value import SerializedDict
+
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
@@ -167,7 +166,7 @@ class ModelContainer[T](BaseModel):
                 is_validated=False,  # Reset validation after transformation
                 validation_notes="Value transformed, requires re-validation",
             )
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to map container value: {e!s}",
@@ -220,7 +219,7 @@ class ModelContainer[T](BaseModel):
                     },
                 ),
             )
-        except Exception as e:
+        except (AttributeError, ModelOnexError, TypeError, ValueError) as e:
             if isinstance(e, ModelOnexError):
                 raise
             raise ModelOnexError(
@@ -284,11 +283,11 @@ class ModelContainer[T](BaseModel):
             ")"
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Note: Previously had factory functions (string_container, int_container, etc.)
     # These were removed to comply with ONEX strong typing standards.
@@ -296,14 +295,14 @@ class ModelContainer[T](BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -319,7 +318,7 @@ class ModelContainer[T](BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

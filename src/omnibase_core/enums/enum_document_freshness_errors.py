@@ -5,10 +5,13 @@ Standardized error codes for document freshness monitoring operations.
 Provides type-safe error handling throughout the system.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumDocumentFreshnessErrors(str, Enum):
+@unique
+class EnumDocumentFreshnessErrors(StrValueHelper, str, Enum):
     """
     Standardized error codes for document freshness monitoring.
 
@@ -66,3 +69,6 @@ class EnumDocumentFreshnessErrors(str, Enum):
     FRESHNESS_PERMISSION_DENIED = "FRESHNESS_PERMISSION_DENIED"
     FRESHNESS_RESOURCE_EXHAUSTED = "FRESHNESS_RESOURCE_EXHAUSTED"
     FRESHNESS_OPERATION_CANCELLED = "FRESHNESS_OPERATION_CANCELLED"
+
+
+__all__ = ["EnumDocumentFreshnessErrors"]

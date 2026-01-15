@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Error Value Type Enum.
 
 Strongly typed enumeration for error value type discriminators.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumErrorValueType(str, Enum):
+class EnumErrorValueType(StrValueHelper, str, Enum):
     """
     Strongly typed error value type discriminators.
 
@@ -24,10 +25,6 @@ class EnumErrorValueType(str, Enum):
     STRING = "string"
     EXCEPTION = "exception"
     NONE = "none"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_error_present(cls, error_type: EnumErrorValueType) -> bool:

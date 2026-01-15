@@ -32,6 +32,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -787,7 +788,11 @@ class TestCircuitBreakerRaceConditionsDetailed:
         assert len(state_history) > 0, "No state history recorded"
 
         # State should only be one of the valid states
-        valid_states = {"closed", "open", "half_open"}
+        valid_states = {
+            EnumCircuitBreakerState.CLOSED,
+            EnumCircuitBreakerState.OPEN,
+            EnumCircuitBreakerState.HALF_OPEN,
+        }
         for state in state_history:
             assert state in valid_states, f"Invalid state detected: {state}"
 

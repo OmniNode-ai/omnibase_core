@@ -6,7 +6,7 @@ import enum
 from typing import Annotated, Any, ClassVar
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from omnibase_core.enums import EnumLifecycle, EnumMetaType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -169,7 +169,7 @@ class ModelNodeMetadataBlock(BaseModel):
         },
     )
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Canonicalization/canonicalizer policy (not Pydantic config)
     canonicalization_policy: ClassVar[ModelCanonicalizationPolicy] = (
@@ -273,7 +273,7 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("entrypoint", mode="before")
     @classmethod
-    def validate_entrypoint(cls, value: Any) -> Any:
+    def validate_entrypoint(cls, value: Any) -> EntrypointBlock:
         if isinstance(value, EntrypointBlock):
             return value
         if isinstance(value, str):
@@ -287,7 +287,7 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("namespace", mode="before")
     @classmethod
-    def validate_namespace_field(cls, value: object) -> Any:
+    def validate_namespace_field(cls, value: Any) -> ModelNamespace:
         # Recursively flatten any dict or Namespace to a plain string
         def flatten_namespace(val: object) -> str:
             if isinstance(val, ModelNamespace):
@@ -307,7 +307,7 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("x_extensions", mode="before")
     @classmethod
-    def coerce_x_extensions(cls, v: object) -> Any:
+    def coerce_x_extensions(cls, v: Any) -> dict[str, ModelExtensionValue] | Any:
         if not isinstance(v, dict):
             return v
         out = {}

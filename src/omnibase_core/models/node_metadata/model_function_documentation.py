@@ -7,9 +7,7 @@ Part of the ModelFunctionNodeMetadata restructuring.
 
 from __future__ import annotations
 
-from typing import cast
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -109,11 +107,11 @@ class ModelFunctionDocumentation(BaseModel):
         """Create documentation with examples."""
         return cls(examples=examples)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -141,16 +139,19 @@ class ModelFunctionDocumentation(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Pack documentation data into metadata dict
+        # Convert list[str] to list for JsonType compatibility
+        result["metadata"] = {
+            "docstring": self.docstring,
+            "examples": list(self.examples),
+            "notes": list(self.notes),
+            "has_documentation": self.has_documentation(),
+            "has_examples": self.has_examples(),
+            "has_notes": self.has_notes(),
+            "documentation_quality_score": self.get_documentation_quality_score(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -168,12 +169,7 @@ class ModelFunctionDocumentation(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 # Export for use

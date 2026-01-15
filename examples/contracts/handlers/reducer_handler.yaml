@@ -1,0 +1,85 @@
+---
+# Handler Contract Example: REDUCER Handler
+# This handler manages state through FSM-driven transitions.
+#
+# Key characteristics:
+#   - handler_kind: reducer (state management)
+#   - purity: side_effecting (state mutations)
+#   - idempotent: true (required for reducers)
+#   - Emits intents for downstream processing
+
+handler_id: reducer.registration.user
+name: User Registration Reducer
+version: "1.2.0"
+description: Manages user registration lifecycle using FSM
+
+descriptor:
+  handler_kind: reducer
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000
+  retry_policy:
+    enabled: true
+    max_retries: 3
+    backoff_strategy: exponential
+    base_delay_ms: 200
+    max_delay_ms: 10000
+  concurrency_policy: serialized
+  observability_level: verbose
+
+capability_inputs:
+  - alias: db
+    capability: database.relational
+    requirements:
+      must:
+        supports_transactions: true
+      prefer:
+        supports_advisory_locks: true
+    selection_policy: auto_if_unique
+    strict: true
+    description: Database for state persistence
+
+  - alias: event_bus
+    capability: messaging.event_bus
+    requirements:
+      must:
+        at_least_once_delivery: true
+      prefer:
+        ordered_delivery: true
+    selection_policy: auto_if_unique
+    strict: true
+    description: Event bus for intent emission
+
+capability_outputs:
+  - registration.started
+  - registration.email_verified
+  - registration.completed
+  - registration.failed
+
+input_model: omnibase_core.models.events.ModelUserRegistrationEvent
+output_model: omnibase_core.models.state.ModelUserRegistrationState
+
+execution_constraints:
+  requires_before:
+    - capability:validation
+    - capability:auth
+  requires_after:
+    - capability:notification
+  can_run_parallel: false
+  must_run: true
+  nondeterministic_effect: true
+
+supports_lifecycle: true
+supports_health_check: true
+supports_provisioning: false
+
+tags:
+  - registration
+  - user-lifecycle
+  - fsm
+  - reducer
+
+metadata:
+  owner: identity-team
+  fsm_version: {major: 1, minor: 0, patch: 4}
+  state_persistence: postgresql

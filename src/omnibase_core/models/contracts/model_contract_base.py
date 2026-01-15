@@ -12,7 +12,7 @@ This implementation does not use Any types.
 """
 
 from abc import ABC, abstractmethod
-from typing import ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -21,6 +21,18 @@ from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
 from omnibase_core.models.contracts.model_dependency import ModelDependency
+
+# Import ModelExecutionProfile for execution profile field
+from omnibase_core.models.contracts.model_execution_profile import (
+    ModelExecutionProfile,
+)
+
+# Import ModelHandlerBehavior for type checking only (avoid circular import)
+# The runtime module imports model_runtime_node_instance which imports ModelContractBase
+if TYPE_CHECKING:
+    from omnibase_core.models.runtime.model_handler_behavior import (
+        ModelHandlerBehavior,
+    )
 from omnibase_core.models.contracts.model_lifecycle_config import ModelLifecycleConfig
 from omnibase_core.models.contracts.model_performance_requirements import (
     ModelPerformanceRequirements,
@@ -123,6 +135,24 @@ class ModelContractBase(BaseModel, ABC):
     tags: list[str] = Field(
         default_factory=list,
         description="Contract classification tags",
+    )
+
+    # Execution profile for contract-driven execution
+    # Optional: Only set when created via profile factory
+    execution: ModelExecutionProfile | None = Field(
+        default=None,
+        description="Execution profile defining phases and ordering policy. "
+        "Set when created via profile factory, None for manually created contracts.",
+    )
+
+    # Handler behavior configuration for contract-driven execution
+    # Optional: Only set when created via profile factory
+    # Note: String annotation used to avoid circular import with runtime module
+    behavior: "ModelHandlerBehavior | None" = Field(
+        default=None,
+        description="Handler behavior configuration defining purity, idempotency, "
+        "concurrency, isolation, and observability. "
+        "Set when created via profile factory, None for manually created contracts.",
     )
 
     @abstractmethod
@@ -417,7 +447,7 @@ class ModelContractBase(BaseModel, ABC):
                         description=description,
                     ),
                 )
-            except Exception as e:
+            except (AttributeError, KeyError, TypeError, ValueError) as e:
                 conversion_errors.append(
                     {
                         "index": i,
@@ -593,3 +623,21 @@ class ModelContractBase(BaseModel, ABC):
         validate_default=True,  # Enable model validation caching for performance
         from_attributes=True,
     )
+
+
+# Resolve forward reference for ModelHandlerBehavior after class definition.
+# This import is deferred to avoid circular import during module loading.
+# The TYPE_CHECKING import above is used for static type checking only.
+def _rebuild_model_contract_base() -> None:
+    """Rebuild ModelContractBase to resolve forward references."""
+    from omnibase_core.models.runtime.model_handler_behavior import (
+        ModelHandlerBehavior,
+    )
+
+    # Pass the type in the namespace so Pydantic can resolve the forward reference
+    ModelContractBase.model_rebuild(
+        _types_namespace={"ModelHandlerBehavior": ModelHandlerBehavior}
+    )
+
+
+_rebuild_model_contract_base()

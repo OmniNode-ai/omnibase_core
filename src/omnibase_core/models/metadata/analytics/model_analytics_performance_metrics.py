@@ -7,9 +7,7 @@ Follows ONEX one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import cast
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -196,26 +194,29 @@ class ModelAnalyticsPerformanceMetrics(BaseModel):
             total_invocations=total_invocations,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        from_attributes=True,
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Analytics models don't have standard name/description/version fields
+        # Pack all performance metrics into metadata
+        result["metadata"] = {
+            "average_execution_time_ms": self.average_execution_time_ms,
+            "peak_memory_usage_mb": self.peak_memory_usage_mb,
+            "total_invocations": self.total_invocations,
+            "performance_level": self.get_performance_level(),
+            "memory_usage_level": self.get_memory_usage_level(),
+            "performance_score": self.calculate_performance_score(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -224,7 +225,7 @@ class ModelAnalyticsPerformanceMetrics(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -240,7 +241,7 @@ class ModelAnalyticsPerformanceMetrics(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

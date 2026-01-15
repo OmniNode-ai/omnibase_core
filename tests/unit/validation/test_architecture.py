@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.errors.exceptions import ExceptionConfigurationError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.models.validation.model_duplication_report import (
@@ -13,7 +14,7 @@ from omnibase_core.models.validation.model_duplication_report import (
 )
 from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
-from omnibase_core.validation.architecture import (
+from omnibase_core.validation.validator_architecture import (
     ModelCounter,
     validate_architecture_directory,
     validate_one_model_per_file,
@@ -440,28 +441,30 @@ class ModelPost(BaseModel):
         assert result.metadata.files_with_violations is not None
 
     def test_generic_exception_handling(self, tmp_path: Path, monkeypatch):
-        """Test handling of generic exceptions during file processing."""
+        """Test handling of OSError during file processing."""
         test_file = tmp_path / "error_file.py"
         test_file.write_text("# Valid Python file")
 
-        # Mock open to raise a generic exception
+        # Mock open to raise an OSError (caught by validate_one_model_per_file)
         def mock_open(*args, **kwargs):
-            raise RuntimeError("Simulated file read error")
+            raise OSError("Simulated file read error")
 
         monkeypatch.setattr("builtins.open", mock_open)
 
         errors = validate_one_model_per_file(test_file)
         assert len(errors) > 0
-        assert any("Parse error" in error for error in errors)
+        # OSError is now wrapped with specific "File read error" message
+        assert any("File read error" in error for error in errors)
 
     def test_file_not_found_handling(self, tmp_path: Path):
         """Test handling of non-existent files."""
         non_existent = tmp_path / "doesnt_exist.py"
 
-        # Should handle FileNotFoundError gracefully
+        # Should handle FileNotFoundError (subclass of OSError) gracefully
         errors = validate_one_model_per_file(non_existent)
         assert len(errors) > 0
-        assert any("Parse error" in error for error in errors)
+        # FileNotFoundError (OSError) is now wrapped with specific "File read error" message
+        assert any("File read error" in error for error in errors)
 
 
 @pytest.mark.unit
@@ -484,7 +487,9 @@ class ModelUser(BaseModel):
         monkeypatch.setattr("sys.argv", ["script.py", str(tmp_path)])
 
         # Import and run CLI
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -510,7 +515,9 @@ class ModelPost(BaseModel):
 
         monkeypatch.setattr("sys.argv", ["script.py", str(tmp_path)])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -539,7 +546,9 @@ class ModelPost(BaseModel):
             "sys.argv", ["script.py", str(tmp_path), "--max-violations", "10"]
         )
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -553,7 +562,9 @@ class ModelPost(BaseModel):
 
         monkeypatch.setattr("sys.argv", ["script.py", str(nonexistent)])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -587,7 +598,9 @@ class EnumStatus(Enum):
 
         monkeypatch.setattr("sys.argv", ["script.py", str(dir1), str(dir2)])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -597,18 +610,32 @@ class EnumStatus(Enum):
         assert str(dir2) in captured.out
 
     def test_cli_default_directory(self, monkeypatch, capsys):
-        """Test CLI with default directory (src/)."""
+        """Test CLI with default directory (src/).
+
+        When no directory is specified, the CLI defaults to scanning 'src/'.
+        This test verifies:
+        1. The exit code is 0 (valid) or 1 (violations found) - both are valid outcomes
+        2. The output contains expected header and summary sections
+        3. The output contains file/violation count information
+        """
         monkeypatch.setattr("sys.argv", ["script.py"])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
-        # This will try to scan src/ which may or may not exist
-        # Just verify it doesn't crash
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
 
-        assert isinstance(exit_code, int)
-        assert "ONEX" in captured.out
+        # Exit code must be 0 (success) or 1 (violations) - both are valid
+        assert exit_code in (0, 1), f"Unexpected exit code: {exit_code}"
+        # Verify expected output sections are present
+        assert "🔍 ONEX One-Model-Per-File Validation" in captured.out
+        assert "📋 Enforcing architectural separation" in captured.out
+        assert "📊 One-Model-Per-File Validation Summary" in captured.out
+        # Verify summary statistics are shown
+        assert "Files checked:" in captured.out
+        assert "Total violations:" in captured.out
 
     def test_cli_output_format(self, tmp_path: Path, monkeypatch, capsys):
         """Test CLI output format and messages."""
@@ -623,7 +650,9 @@ class ModelUser(BaseModel):
 
         monkeypatch.setattr("sys.argv", ["script.py", str(tmp_path)])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -651,7 +680,9 @@ class ModelPost(BaseModel):
 
         monkeypatch.setattr("sys.argv", ["script.py", str(tmp_path)])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -699,7 +730,9 @@ class ModelPost(BaseModel):
             ["script.py", str(valid_dir), str(nonexistent_dir), str(invalid_dir)],
         )
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -725,9 +758,10 @@ class TestServiceProtocolAuditor:
         assert auditor.repository_name is not None
 
     def test_init_with_invalid_path(self):
-        """Test initialization with invalid path raises ExceptionConfigurationError."""
-        with pytest.raises(ExceptionConfigurationError):
+        """Test initialization with invalid path raises ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
             ServiceProtocolAuditor("/nonexistent/path/that/does/not/exist")
+        assert exc_info.value.error_code == EnumCoreErrorCode.DIRECTORY_NOT_FOUND
 
     def test_init_with_current_directory(self):
         """Test initialization with current directory."""
@@ -964,8 +998,9 @@ class ProtocolDuplicate(Protocol):
         """Test check_against_spi with invalid SPI path."""
         auditor = ServiceProtocolAuditor(str(tmp_path))
 
-        with pytest.raises(ExceptionConfigurationError):
+        with pytest.raises(ModelOnexError) as exc_info:
             auditor.check_against_spi("/nonexistent/spi/path")
+        assert exc_info.value.error_code == EnumCoreErrorCode.DIRECTORY_NOT_FOUND
 
     def test_check_against_spi_no_protocols_dir(self, tmp_path: Path):
         """Test check_against_spi when SPI protocols directory doesn't exist."""

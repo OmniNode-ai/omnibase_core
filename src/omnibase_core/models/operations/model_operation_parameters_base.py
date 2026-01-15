@@ -16,6 +16,8 @@ from omnibase_core.enums.enum_operation_parameter_type import EnumOperationParam
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
+__all__ = ["ModelOperationParameterValue"]
+
 
 # Discriminated parameter union to replace primitive soup pattern
 class ModelOperationParameterValue(BaseModel):
@@ -198,7 +200,3 @@ class ModelOperationParameterValue(BaseModel):
             message=f"Unknown parameter type: {self.parameter_type}",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
-
-
-# Export for use
-__all__ = ["ModelOperationParameterValue"]

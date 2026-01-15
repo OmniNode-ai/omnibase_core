@@ -42,6 +42,10 @@ CliValue = str | int | float | bool | list[str]
 # Tool/service parameter values (same as PropertyValue for consistency)
 ParameterValue = PropertyValue
 
+# NOTE: Narrower variants exist for specific use cases:
+# - QueryParameterValue (model_query_parameters.py): URL query strings (allows None, no dict)
+# - ScalarConfigValue (model_config_types.py): simple scalars only (no list, dict, or None)
+
 # Result/output values (for result models)
 # Recursive type alias for result/output data
 # Using PEP 695 type statement to avoid RecursionError with Pydantic

@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from omnibase_core.infrastructure.computation_cache import ComputationCache
+from omnibase_core.infrastructure.infra_computation_cache import ComputationCache
 
 
 @pytest.mark.unit

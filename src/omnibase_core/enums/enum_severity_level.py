@@ -1,43 +1,79 @@
+"""
+Severity level enumeration for messages and notifications (RFC 5424 based).
+
+DOCUMENTED EXCEPTION per ADR-006 Status Taxonomy (OMN-1311):
+    This enum is intentionally NOT merged into the canonical EnumSeverity because:
+
+    1. **RFC 5424 Base**: This enum includes the 8 RFC 5424 syslog severity levels
+       (EMERGENCY through DEBUG) plus common extensions (TRACE, FATAL, WARN).
+       The canonical EnumSeverity has 6 values (DEBUG through FATAL).
+
+    2. **Syslog Integration**: This enum is used for structured logging systems
+       that require RFC 5424 severity levels for interoperability with
+       syslog, journald, and other logging infrastructure.
+
+    3. **Extended Level Support**: Includes levels not in the canonical enum:
+       EMERGENCY, ALERT, NOTICE (RFC 5424), plus TRACE, WARN (extensions)
+
+For general-purpose severity classification, use EnumSeverity instead:
+    from omnibase_core.enums.enum_severity import EnumSeverity
+
+This enum provides strongly typed severity levels for error messages, warnings,
+and logging. Follows ONEX one-enum-per-file naming conventions.
+"""
+
 from __future__ import annotations
-
-"""
-Severity level enumeration for messages and notifications.
-
-Provides strongly typed severity levels for error messages, warnings, and logging.
-Follows ONEX one-enum-per-file naming conventions.
-"""
-
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
+# Module-level constant for numeric severity levels (avoids per-call dict allocation)
+# Uses ascending numeric scale (higher = more severe) for comparison operations.
+# Note: RFC 5424 uses descending 0-7 scale; this map uses ascending for intuitive comparison.
+_SEVERITY_LEVEL_NUMERIC_MAP: dict[str, int] = {
+    "trace": 10,
+    "debug": 20,
+    "info": 30,
+    "notice": 35,
+    "warning": 40,
+    "warn": 40,
+    "error": 50,
+    "critical": 60,
+    "alert": 70,
+    "emergency": 80,
+    "fatal": 80,
+}
+
 
 @unique
-class EnumSeverityLevel(str, Enum):
+class EnumSeverityLevel(StrValueHelper, str, Enum):
     """
     Strongly typed severity level for messages and logging.
 
     Inherits from str for JSON serialization compatibility while providing
     type safety and IDE support.
+
+    RFC 5424 Compliance:
+        The first 8 values (EMERGENCY through DEBUG) correspond to RFC 5424
+        severity levels 0-7. Note: RFC 5424 uses "Informational" for level 6;
+        this enum uses "INFO" as a common abbreviation.
     """
 
-    # Standard severity levels (RFC 5424 inspired)
-    EMERGENCY = "emergency"  # System is unusable
-    ALERT = "alert"  # Action must be taken immediately
-    CRITICAL = "critical"  # Critical conditions
-    ERROR = "error"  # Error conditions
-    WARNING = "warning"  # Warning conditions
-    NOTICE = "notice"  # Normal but significant conditions
-    INFO = "info"  # Informational messages
-    DEBUG = "debug"  # Debug-level messages
+    # RFC 5424 severity levels (0-7)
+    EMERGENCY = "emergency"  # RFC 5424 level 0: System is unusable
+    ALERT = "alert"  # RFC 5424 level 1: Action must be taken immediately
+    CRITICAL = "critical"  # RFC 5424 level 2: Critical conditions
+    ERROR = "error"  # RFC 5424 level 3: Error conditions
+    WARNING = "warning"  # RFC 5424 level 4: Warning conditions
+    NOTICE = "notice"  # RFC 5424 level 5: Normal but significant conditions
+    INFO = "info"  # RFC 5424 level 6: Informational messages
+    DEBUG = "debug"  # RFC 5424 level 7: Debug-level messages
 
-    # Additional common levels
-    TRACE = "trace"  # Very detailed debug information
-    FATAL = "fatal"  # Fatal error (alias for EMERGENCY)
-    WARN = "warn"  # Short form of WARNING
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
+    # Extensions beyond RFC 5424
+    TRACE = "trace"  # Extension: Very detailed debug information (below DEBUG)
+    FATAL = "fatal"  # Extension: Fatal error (semantic alias for EMERGENCY)
+    WARN = "warn"  # Extension: Short form of WARNING
 
     @classmethod
     def from_string(cls, value: str) -> EnumSeverityLevel:
@@ -50,10 +86,9 @@ class EnumSeverityLevel(str, Enum):
             if level.value == normalized:
                 return level
 
-        # Common aliases
+        # Common aliases (note: "warn" is handled by WARN member, not as alias)
         aliases = {
             "err": cls.ERROR,
-            "warn": cls.WARNING,
             "information": cls.INFO,
             "informational": cls.INFO,
             "verbose": cls.DEBUG,
@@ -72,21 +107,7 @@ class EnumSeverityLevel(str, Enum):
     @property
     def numeric_level(self) -> int:
         """Get numeric representation for level comparison."""
-        # Severity level classification - architectural design for logging levels
-        levels = {
-            self.TRACE: 10,
-            self.DEBUG: 20,
-            self.INFO: 30,
-            self.NOTICE: 35,
-            self.WARNING: 40,
-            self.WARN: 40,
-            self.ERROR: 50,
-            self.CRITICAL: 60,
-            self.ALERT: 70,
-            self.EMERGENCY: 80,
-            self.FATAL: 80,
-        }
-        return levels.get(self, 30)  # Default to INFO level
+        return _SEVERITY_LEVEL_NUMERIC_MAP.get(self.value, 30)  # Default to INFO level
 
     def is_error_level(self) -> bool:
         """Check if this is an error-level severity."""

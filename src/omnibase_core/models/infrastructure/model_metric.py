@@ -1,6 +1,13 @@
+"""
+Metric model.
+
+Individual metric model with strong typing using TypeVar generics.
+Follows ONEX one-model-per-file naming conventions and strong typing standards.
+"""
+
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
@@ -8,13 +15,6 @@ from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
-
-"""
-Metric model.
-
-Individual metric model with strong typing using TypeVar generics.
-Follows ONEX one-model-per-file naming conventions and strong typing standards.
-"""
 
 
 class ModelMetric(BaseModel):
@@ -139,11 +139,11 @@ class ModelMetric(BaseModel):
             message=f"Unsupported metric value type: {type(value)}",
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -155,7 +155,7 @@ class ModelMetric(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -168,7 +168,7 @@ class ModelMetric(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

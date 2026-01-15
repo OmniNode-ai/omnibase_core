@@ -61,7 +61,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.decorators.allow_dict_any import allow_dict_any
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 
 
 class ModelRegistrationRecordBase(BaseModel):

@@ -10,9 +10,7 @@ excessive string fields in a single large model.
 
 from __future__ import annotations
 
-from typing import cast
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -326,11 +324,11 @@ class ModelFunctionNode(BaseModel):
             performance=performance or ModelFunctionNodePerformance(),
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -363,16 +361,29 @@ class ModelFunctionNode(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Map actual fields to TypedDictMetadataDict structure via delegated properties
+        # name property always returns non-empty (has UUID fallback via core.name)
+        result["name"] = self.name
+        if self.description:
+            result["description"] = self.description
+        if self.tags:
+            result["tags"] = self.tags
+        # Pack additional fields into metadata
+        # Convert list[str] to list for JsonType compatibility
+        result["metadata"] = {
+            "function_id": str(self.core.function_id),
+            "status": self.status.value,
+            "complexity": self.complexity.value,
+            "parameters": list(self.parameters),
+            "is_active": self.is_active(),
+            "has_documentation": self.has_documentation(),
+            "has_examples": self.has_examples(),
+            "has_type_annotations": self.has_type_annotations(),
+            "parameter_count": self.get_parameter_count(),
+            "complexity_level": self.get_complexity_level(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -390,12 +401,7 @@ class ModelFunctionNode(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 # Export for use

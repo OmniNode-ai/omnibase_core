@@ -3,23 +3,54 @@ Safe YAML loading utilities using yaml.safe_load plus Pydantic validation.
 
 This module provides type-safe YAML loading that uses yaml.safe_load for parsing
 combined with Pydantic model validation to ensure proper structure and security.
+
+Security:
+    This module uses yaml.safe_load() exclusively for all YAML parsing operations.
+    This is a critical security measure that prevents arbitrary code execution
+    through malicious YAML files.
+
+    - yaml.safe_load() only parses standard YAML types (strings, numbers, lists, dicts)
+    - yaml.load() with Loader=yaml.Loader would allow arbitrary Python object
+      instantiation via YAML tags like !!python/object, which could execute
+      malicious code during deserialization
+    - Pydantic validation provides an additional layer of type safety after parsing
+
+    Trust Model:
+        - YAML file content is treated as UNTRUSTED input
+        - yaml.safe_load() ensures no code execution during parsing
+        - Pydantic validates structure against expected schemas
+        - File paths should still be validated to prevent path traversal attacks
+
+    Defense in Depth:
+        1. yaml.safe_load() - prevents arbitrary Python object construction
+        2. Pydantic validation - ensures expected structure and types
+        3. ModelOnexError wrapping - provides structured error handling
+
+    See Also:
+        - UtilContractLoader._validate_yaml_content_security() for additional
+          YAML content security checks (size limits, suspicious patterns)
+        - https://pyyaml.org/wiki/PyYAMLDocumentation#loading-yaml
+
+.. versionadded:: 0.3.0
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, cast
+from typing import Unpack
 
 import yaml
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_schema_example import ModelSchemaExample
-from omnibase_core.models.utils import ModelYamlOption, ModelYamlValue
+from omnibase_core.models.utils.model_yaml_value import ModelYamlValue
+from omnibase_core.types.typed_dict_yaml_dump_options import TypedDictYamlDumpOptions
 
 # ModelYamlWithExamples import removed - using direct YAML parsing
 
@@ -99,7 +130,8 @@ def load_and_validate_yaml_model[T: BaseModel](path: Path, model_cls: type[T]) -
             ),
             cause=e,
         )
-    except Exception as e:
+    except (AttributeError, OSError, RuntimeError, TypeError) as e:
+        # Catch I/O errors, Pydantic validation runtime errors, and model attribute errors
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to load or validate YAML: {path}: {e}",
@@ -167,7 +199,8 @@ def load_yaml_content_as_model[T: BaseModel](content: str, model_cls: type[T]) -
             ),
             cause=e,
         )
-    except Exception as e:
+    except (AttributeError, RuntimeError, TypeError, ValueError) as e:
+        # Catch Pydantic validation runtime errors or type conversion errors
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to load or validate YAML content: {e}",
@@ -184,20 +217,20 @@ def load_yaml_content_as_model[T: BaseModel](content: str, model_cls: type[T]) -
 
 def _dump_yaml_content(
     data: object,
-    sort_keys: bool = False,
-    default_flow_style: bool = False,
-    allow_unicode: bool = True,
-    explicit_start: bool = False,
-    explicit_end: bool = False,
-    indent: int = 2,
-    width: int = 120,
-    **kwargs: Any,  # Any: required for yaml.dump() external API compatibility
+    **kwargs: Unpack[TypedDictYamlDumpOptions],
 ) -> str:
     """
     Internal function to dump data to YAML format with security restrictions.
 
     This is the only place where yaml.dump should be used in the codebase.
     All other code should use this function through proper Pydantic model serialization.
+
+    Args:
+        data: Data to serialize to YAML
+        **kwargs: Type-safe YAML dump options (see TypedDictYamlDumpOptions)
+
+    Returns:
+        YAML string representation of the data
     """
     try:
         # Convert ModelYamlValue to serializable data
@@ -205,14 +238,17 @@ def _dump_yaml_content(
             data.to_serializable() if isinstance(data, ModelYamlValue) else data
         )
 
-        # Convert ModelYamlOption values to Python values
-        # ONEX_EXCLUDE: dict_str_any - required for yaml.dump() external API compatibility
-        yaml_kwargs: dict[str, Any] = {
-            k: v.to_value() if isinstance(v, ModelYamlOption) else v
-            for k, v in kwargs.items()
-        }
+        # Extract options with defaults
+        sort_keys = kwargs.get("sort_keys", False)
+        default_flow_style = kwargs.get("default_flow_style", False)
+        allow_unicode = kwargs.get("allow_unicode", True)
+        explicit_start = kwargs.get("explicit_start", False)
+        explicit_end = kwargs.get("explicit_end", False)
+        indent = kwargs.get("indent", 2)
+        width = kwargs.get("width", 120)
 
-        yaml_str = yaml.dump(
+        # Call yaml.dump with explicit parameters for type safety
+        yaml_str: str = yaml.dump(
             serializable_data,
             sort_keys=sort_keys,
             default_flow_style=default_flow_style,
@@ -221,7 +257,6 @@ def _dump_yaml_content(
             explicit_end=explicit_end,
             indent=indent,
             width=width,
-            **yaml_kwargs,
         )
         # Normalize line endings and Unicode characters
         yaml_str = yaml_str.replace("\xa0", " ")
@@ -248,7 +283,7 @@ def _dump_yaml_content(
                 cause=e,
             )
 
-        return cast("str", yaml_str)
+        return yaml_str
     except yaml.YAMLError as e:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.CONVERSION_ERROR,
@@ -263,7 +298,7 @@ def _dump_yaml_content(
 def serialize_pydantic_model_to_yaml(
     model: BaseModel,
     comment_prefix: str = "",
-    **yaml_options: Any,  # Any: required for yaml.dump() external API compatibility
+    **yaml_options: Unpack[TypedDictYamlDumpOptions],
 ) -> str:
     """
     Serialize a Pydantic model to YAML format through the centralized dumper.
@@ -271,7 +306,7 @@ def serialize_pydantic_model_to_yaml(
     Args:
         model: Pydantic model instance to serialize
         comment_prefix: Optional prefix for each line (for comment blocks)
-        **yaml_options: Additional options to pass to YAML dumper
+        **yaml_options: Type-safe YAML dump options (see TypedDictYamlDumpOptions)
 
     Returns:
         YAML string representation of the model
@@ -297,7 +332,8 @@ def serialize_pydantic_model_to_yaml(
             )
 
         return yaml_str
-    except Exception as e:
+    except (AttributeError, RuntimeError, TypeError, yaml.YAMLError) as e:
+        # Catch runtime errors, model attribute errors, type conversion errors, or YAML serialization errors
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to serialize model to YAML: {e}",
@@ -315,7 +351,7 @@ def serialize_pydantic_model_to_yaml(
 def serialize_data_to_yaml(
     data: object,
     comment_prefix: str = "",
-    **yaml_options: Any,  # Any: required for yaml.dump() external API compatibility
+    **yaml_options: Unpack[TypedDictYamlDumpOptions],
 ) -> str:
     """
     Serialize arbitrary data to YAML format through the centralized dumper.
@@ -326,7 +362,7 @@ def serialize_data_to_yaml(
     Args:
         data: Data to serialize (dict, list, or other YAML-serializable types)
         comment_prefix: Optional prefix for each line (for comment blocks)
-        **yaml_options: Additional options to pass to YAML dumper
+        **yaml_options: Type-safe YAML dump options (see TypedDictYamlDumpOptions)
 
     Returns:
         YAML string representation of the data
@@ -344,7 +380,8 @@ def serialize_data_to_yaml(
             )
 
         return yaml_str
-    except Exception as e:
+    except (AttributeError, RuntimeError, TypeError, yaml.YAMLError) as e:
+        # Catch runtime errors, attribute errors, type conversion errors, or YAML serialization errors
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to serialize data to YAML: {e}",
@@ -416,7 +453,7 @@ def extract_example_from_schema(
         if not isinstance(example, dict):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Example at index {example_index} is not a dict[str, Any]in schema: {schema_path}",
+                message=f"Example at index {example_index} is not a dict[str, Any] in schema: {schema_path}",
                 details=ModelErrorContext.with_context(
                     {
                         "operation": ModelSchemaValue.from_value(
@@ -431,7 +468,7 @@ def extract_example_from_schema(
                 ),
             )
 
-        # Convert example dict[str, Any]to ModelCustomProperties
+        # Convert example dict[str, Any] to ModelCustomProperties
         custom_props = ModelCustomProperties()
         if isinstance(example, dict):
             for key, value in example.items():
@@ -483,7 +520,8 @@ def extract_example_from_schema(
             ),
             cause=e,
         )
-    except Exception as e:
+    except PYDANTIC_MODEL_ERRORS as e:
+        # Catch dict access errors, type conversion errors, or data structure issues
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,
             message=f"Failed to extract example from schema: {schema_path}: {e}",

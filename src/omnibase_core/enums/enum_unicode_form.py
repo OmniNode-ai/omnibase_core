@@ -4,10 +4,13 @@ Unicode normalization forms for contract-driven NodeCompute.
 This module defines the unicode normalization forms available for NORMALIZE_UNICODE transformations.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumUnicodeForm(str, Enum):
+@unique
+class EnumUnicodeForm(StrValueHelper, str, Enum):
     """
     Unicode normalization forms.
 
@@ -22,3 +25,6 @@ class EnumUnicodeForm(str, Enum):
     NFD = "NFD"
     NFKC = "NFKC"
     NFKD = "NFKD"
+
+
+__all__ = ["EnumUnicodeForm"]

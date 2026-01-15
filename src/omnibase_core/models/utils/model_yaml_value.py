@@ -2,7 +2,7 @@
 YAML-serializable data structures model with discriminated union.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_value_type import EnumYamlValueType
@@ -92,13 +92,11 @@ class ModelYamlValue(BaseModel):
             ),
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -116,11 +114,18 @@ class ModelYamlValue(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Instance validation failed: {e}",
             ) from e
+
+
+# Rebuild model to resolve forward references for self-referential fields
+try:
+    ModelYamlValue.model_rebuild()
+except Exception:  # catch-all-ok: circular import protection during model rebuild
+    pass
 
 
 __all__ = ["ModelYamlValue"]

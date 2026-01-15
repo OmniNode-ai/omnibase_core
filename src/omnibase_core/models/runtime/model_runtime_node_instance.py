@@ -130,7 +130,7 @@ from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.runtime.protocol_node_runtime import ProtocolNodeRuntime
+    from omnibase_core.runtime.runtime_protocol_node import ProtocolNodeRuntime
 
 
 class ModelRuntimeNodeInstance(BaseModel):
@@ -186,10 +186,11 @@ class ModelRuntimeNodeInstance(BaseModel):
     """
 
     model_config = ConfigDict(
-        frozen=True,
         extra="forbid",
-        validate_assignment=True,
+        from_attributes=True,
+        frozen=True,
         str_strip_whitespace=True,
+        validate_assignment=True,
     )
 
     slug: str = Field(

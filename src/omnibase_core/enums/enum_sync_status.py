@@ -1,8 +1,9 @@
 """Sync Status enumeration generated from contract."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumSyncStatus(Enum):
     """Status of file synchronization operations."""
 

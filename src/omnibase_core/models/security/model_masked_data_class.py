@@ -5,16 +5,16 @@ Masked data structure container.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.json_types import JsonValue
+from omnibase_core.types.type_json import JsonType
 
 
 class ModelMaskedData(BaseModel):
     """Masked data structure container.
 
-    Uses JsonValue for type-safe storage of JSON-compatible data.
+    Uses JsonType for type-safe storage of JSON-compatible data.
     """
 
-    data: dict[str, JsonValue] = Field(
+    data: dict[str, JsonType] = Field(
         default_factory=dict,
         description="The masked data structure",
     )

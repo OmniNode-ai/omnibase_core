@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.infrastructure.model_retry_policy import ModelRetryPolicy
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -54,8 +54,8 @@ class ModelEventRouting(BaseModel):
         description="Enable circuit breaker for routing failures",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

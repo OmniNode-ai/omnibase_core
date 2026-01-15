@@ -46,7 +46,8 @@ class GenericPatternChecker(ast.NodeVisitor):
             )
 
         # Check for functions with too many parameters
-        if len(node.args.args) > 5:
+        # Exempt __init__ methods - they commonly need many parameters for DI
+        if len(node.args.args) > 5 and func_name != "__init__":
             self.issues.append(
                 f"Line {node.lineno}: Function '{func_name}' has {len(node.args.args)} parameters - consider using a model or breaking into smaller functions",
             )

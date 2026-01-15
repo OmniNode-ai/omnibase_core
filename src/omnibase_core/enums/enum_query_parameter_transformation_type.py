@@ -7,9 +7,11 @@ Defines the types of transformations that can be applied to URL query parameters
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumQueryParameterTransformationType(str, Enum):
+class EnumQueryParameterTransformationType(StrValueHelper, str, Enum):
     """
     Strongly typed query parameter transformation operation values.
 

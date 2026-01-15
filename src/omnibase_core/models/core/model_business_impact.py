@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field
 
-from omnibase_core.enums.enum_impact_severity import EnumImpactSeverity
+from omnibase_core.enums import EnumImpactSeverity
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict
@@ -24,7 +24,11 @@ from pydantic import BaseModel, ConfigDict, field_serializer
 class ModelBusinessImpact(BaseModel):
     """
     Business impact assessment with typed fields.
+
     Replaces dictionary for get_business_impact() returns.
+
+    This model is frozen (immutable) and hashable, suitable for use as dict keys
+    or in sets for tracking and comparison purposes.
     """
 
     # Impact assessment
@@ -137,12 +141,12 @@ class ModelBusinessImpact(BaseModel):
         description="Confidence in the assessment (0-1)",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @classmethod
     def from_dict(cls, data: "SerializedDict") -> "ModelBusinessImpact":
         """Create from dictionary for easy migration."""
-        return cls(**data)
+        return cls.model_validate(data)
 
     @field_serializer("assessment_timestamp")
     def serialize_datetime(self, value: datetime | None) -> str | None:

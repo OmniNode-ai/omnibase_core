@@ -9,11 +9,12 @@ from __future__ import annotations
 
 from typing import cast
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
+from omnibase_core.types.type_json import JsonType
 
 
 class ModelNodePerformanceSummary(BaseModel):
@@ -120,26 +121,38 @@ class ModelNodePerformanceSummary(BaseModel):
             improvement_suggestions=improvement_suggestions,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Pack performance summary fields into metadata dict
+        result["metadata"] = {
+            "usage_count": self.usage_count,
+            "success_rate_percentage": self.success_rate_percentage,
+            "error_rate_percentage": self.error_rate_percentage,
+            "average_execution_time_ms": self.average_execution_time_ms,
+            "average_execution_time_seconds": self.average_execution_time_seconds,
+            "memory_usage_mb": self.memory_usage_mb,
+            "performance_level": self.performance_level,
+            "reliability_level": self.reliability_level,
+            "memory_usage_level": self.memory_usage_level,
+            "performance_score": self.performance_score,
+            "has_performance_issues": self.has_performance_issues,
+            "is_reliable": self.is_reliable,
+            # Cast list[str] to list[JsonType] for type compatibility (zero-cost at runtime)
+            "improvement_suggestions": cast(
+                list[JsonType], self.improvement_suggestions
+            ),
+            "overall_health_status": self.get_overall_health_status(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -148,7 +161,7 @@ class ModelNodePerformanceSummary(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -164,7 +177,7 @@ class ModelNodePerformanceSummary(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

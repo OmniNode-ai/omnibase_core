@@ -37,7 +37,7 @@ DEBUG_THREAD_SAFETY: bool = os.environ.get("ONEX_DEBUG_THREAD_SAFETY", "0") == "
 #
 # This matches the resolved context timeout defaults for consistency.
 # For production use, always set explicit timeouts in operation definitions.
-# Alias to centralized TIMEOUT_DEFAULT_MS for consistency.
+# Alias to centralized TIMEOUT_DEFAULT_MS (canonical source: constants_timeouts.py).
 DEFAULT_OPERATION_TIMEOUT_MS: int = TIMEOUT_DEFAULT_MS
 
 # ==============================================================================

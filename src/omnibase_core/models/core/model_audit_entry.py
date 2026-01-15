@@ -17,7 +17,11 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 class ModelAuditEntry(BaseModel):
     """
     Audit trail entry with typed fields.
+
     Replaces Dict[str, Any] for audit trail entries.
+
+    This model is frozen (immutable) and hashable, suitable for use as dict keys
+    or in sets for deduplication and caching purposes.
     """
 
     # Core audit fields
@@ -122,12 +126,12 @@ class ModelAuditEntry(BaseModel):
         description="Additional context as key-value pairs",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @classmethod
     def from_dict(cls, data: SerializedDict) -> "ModelAuditEntry":
         """Create from dictionary for easy migration."""
-        return cls(**data)
+        return cls.model_validate(data)
 
     @field_serializer("timestamp", "review_timestamp")
     def serialize_datetime(self, value: datetime | None) -> str | None:

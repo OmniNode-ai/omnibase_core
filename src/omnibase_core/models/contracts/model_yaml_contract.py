@@ -10,9 +10,7 @@ Pydantic model for validating YAML contract files providing:
 This replaces manual YAML field validation with proper Pydantic validation.
 """
 
-import warnings
-
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -21,15 +19,6 @@ from omnibase_core.models.contracts.model_event_subscription import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-# Legacy node type values that are deprecated but still supported
-# Maps legacy value (uppercase) -> new EnumNodeType value
-_LEGACY_NODE_TYPE_MAPPING: dict[str, EnumNodeType] = {
-    "COMPUTE": EnumNodeType.COMPUTE_GENERIC,
-    "EFFECT": EnumNodeType.EFFECT_GENERIC,
-    "REDUCER": EnumNodeType.REDUCER_GENERIC,
-    "ORCHESTRATOR": EnumNodeType.ORCHESTRATOR_GENERIC,
-}
 
 
 class ModelYamlContract(BaseModel):
@@ -44,11 +33,11 @@ class ModelYamlContract(BaseModel):
     Extra fields are ignored to maintain a clean contract structure.
     """
 
-    model_config = {
-        "extra": "ignore",  # Ignore extra fields to maintain clean contract structure
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",  # Ignore extra fields to maintain clean contract structure,
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Required fields for contract validation
     contract_version: ModelSemVer = Field(
@@ -81,7 +70,6 @@ class ModelYamlContract(BaseModel):
         Supports:
         - EnumNodeType enum values
         - String values that match EnumNodeType values (case-insensitive by name or value)
-        - Legacy values (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR) with deprecation warning
 
         Args:
             value: Node type value to validate
@@ -99,21 +87,10 @@ class ModelYamlContract(BaseModel):
             # Try to match string to EnumNodeType by name or value (case-insensitive)
             value_upper = value.upper()
 
-            # First, check if it's a valid current enum value
+            # Check if it's a valid current enum value
             for enum_value in EnumNodeType:
                 if enum_value.name == value_upper or enum_value.value == value_upper:
                     return enum_value
-
-            # Check if it's a legacy value that needs deprecation warning
-            if value_upper in _LEGACY_NODE_TYPE_MAPPING:
-                new_enum = _LEGACY_NODE_TYPE_MAPPING[value_upper]
-                warnings.warn(
-                    f"node_type '{value}' is deprecated. "
-                    f"Use '{new_enum.value}' instead.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
-                return new_enum
 
             # No match found - create proper error context
             from omnibase_core.models.common.model_error_context import (

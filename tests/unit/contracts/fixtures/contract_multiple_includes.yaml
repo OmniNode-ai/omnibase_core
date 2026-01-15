@@ -1,0 +1,9 @@
+---
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_name: "multi_include_node"
+node_type: "ORCHESTRATOR"
+routing: !include subcontracts/routing.yaml
+events: !include subcontracts/events.yaml

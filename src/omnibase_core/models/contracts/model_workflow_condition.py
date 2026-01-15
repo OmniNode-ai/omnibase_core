@@ -20,7 +20,7 @@ from omnibase_core.models.contracts.model_condition_value_list import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
-from omnibase_core.types.constraints import (
+from omnibase_core.types.type_constraints import (
     ComplexContextValueType,
     ContextValueType,
     PrimitiveValueType,
@@ -194,27 +194,35 @@ class ModelWorkflowCondition(BaseModel):
                 return actual_value != expected_value
             case EnumConditionOperator.GREATER_THAN:
                 self._validate_comparison_types(actual_value, expected_value, operator)
+                # NOTE(OMN-1302): Operand types validated by _validate_comparison_types above. Safe because numeric/string comparison validated at runtime.
                 return actual_value > expected_value  # type: ignore[operator]
             case EnumConditionOperator.GREATER_THAN_OR_EQUAL:
                 self._validate_comparison_types(actual_value, expected_value, operator)
+                # NOTE(OMN-1302): Operand types validated by _validate_comparison_types above. Safe because numeric/string comparison validated at runtime.
                 return actual_value >= expected_value  # type: ignore[operator]
             case EnumConditionOperator.LESS_THAN:
                 self._validate_comparison_types(actual_value, expected_value, operator)
+                # NOTE(OMN-1302): Operand types validated by _validate_comparison_types above. Safe because numeric/string comparison validated at runtime.
                 return actual_value < expected_value  # type: ignore[operator]
             case EnumConditionOperator.LESS_THAN_OR_EQUAL:
                 self._validate_comparison_types(actual_value, expected_value, operator)
+                # NOTE(OMN-1302): Operand types validated by _validate_comparison_types above. Safe because numeric/string comparison validated at runtime.
                 return actual_value <= expected_value  # type: ignore[operator]
             case EnumConditionOperator.CONTAINS:
                 self._validate_contains_types(actual_value, expected_value, operator)
+                # NOTE(OMN-1302): Container type validated by _validate_contains_types above. Safe because str/list/dict membership check validated at runtime.
                 return expected_value in actual_value  # type: ignore[operator]
             case EnumConditionOperator.NOT_CONTAINS:
                 self._validate_contains_types(actual_value, expected_value, operator)
+                # NOTE(OMN-1302): Container type validated by _validate_contains_types above. Safe because str/list/dict membership check validated at runtime.
                 return expected_value not in actual_value  # type: ignore[operator]
             case EnumConditionOperator.IN:
                 self._validate_in_types(actual_value, expected_value, operator)
+                # NOTE(OMN-1302): Collection type validated by _validate_in_types above. Safe because str/list membership check validated at runtime.
                 return actual_value in expected_value  # type: ignore[operator]
             case EnumConditionOperator.NOT_IN:
                 self._validate_in_types(actual_value, expected_value, operator)
+                # NOTE(OMN-1302): Collection type validated by _validate_in_types above. Safe because str/list membership check validated at runtime.
                 return actual_value not in expected_value  # type: ignore[operator]
             case EnumConditionOperator.IS_TRUE:
                 return bool(actual_value) is True

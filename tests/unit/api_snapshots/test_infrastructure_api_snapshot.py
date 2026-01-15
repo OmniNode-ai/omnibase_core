@@ -49,6 +49,13 @@ class TestInfrastructureAPISnapshot:
             "ModelCircuitBreaker",
             "ModelComputeCache",
             "ModelEffectTransaction",
+            # Cache backends (OMN-1188)
+            "BackendCacheRedis",
+            "REDIS_AVAILABLE",
+            # Execution sequencing (v0.4.0+)
+            "ModelExecutionPlan",
+            "ModelPhaseStep",
+            "create_execution_plan",
         }
     )
 
@@ -211,6 +218,38 @@ class TestInfrastructureExportTypes:
             "ModelEffectTransaction must be a class"
         )
 
+    def test_model_execution_plan_is_class(self) -> None:
+        """Verify ModelExecutionPlan is a class."""
+        from omnibase_core.infrastructure import ModelExecutionPlan
+
+        assert isinstance(ModelExecutionPlan, type), (
+            "ModelExecutionPlan must be a class"
+        )
+
+    def test_model_phase_step_is_class(self) -> None:
+        """Verify ModelPhaseStep is a class."""
+        from omnibase_core.infrastructure import ModelPhaseStep
+
+        assert isinstance(ModelPhaseStep, type), "ModelPhaseStep must be a class"
+
+    def test_create_execution_plan_is_function(self) -> None:
+        """Verify create_execution_plan is a function."""
+        from omnibase_core.infrastructure import create_execution_plan
+
+        assert callable(create_execution_plan), "create_execution_plan must be callable"
+
+    def test_backend_cache_redis_is_class(self) -> None:
+        """Verify BackendCacheRedis is a class."""
+        from omnibase_core.infrastructure import BackendCacheRedis
+
+        assert isinstance(BackendCacheRedis, type), "BackendCacheRedis must be a class"
+
+    def test_redis_available_is_bool(self) -> None:
+        """Verify REDIS_AVAILABLE is a boolean."""
+        from omnibase_core.infrastructure import REDIS_AVAILABLE
+
+        assert isinstance(REDIS_AVAILABLE, bool), "REDIS_AVAILABLE must be a boolean"
+
 
 @pytest.mark.unit
 class TestInfrastructureImportPaths:
@@ -249,6 +288,37 @@ class TestInfrastructureImportPaths:
         from omnibase_core.infrastructure import ModelEffectTransaction
 
         assert ModelEffectTransaction is not None
+
+    def test_import_model_execution_plan_from_infrastructure(self) -> None:
+        """Test that ModelExecutionPlan can be imported from infrastructure."""
+        from omnibase_core.infrastructure import ModelExecutionPlan
+
+        assert ModelExecutionPlan is not None
+
+    def test_import_model_phase_step_from_infrastructure(self) -> None:
+        """Test that ModelPhaseStep can be imported from infrastructure."""
+        from omnibase_core.infrastructure import ModelPhaseStep
+
+        assert ModelPhaseStep is not None
+
+    def test_import_create_execution_plan_from_infrastructure(self) -> None:
+        """Test that create_execution_plan can be imported from infrastructure."""
+        from omnibase_core.infrastructure import create_execution_plan
+
+        assert create_execution_plan is not None
+        assert callable(create_execution_plan)
+
+    def test_import_backend_cache_redis_from_infrastructure(self) -> None:
+        """Test that BackendCacheRedis can be imported from infrastructure."""
+        from omnibase_core.infrastructure import BackendCacheRedis
+
+        assert BackendCacheRedis is not None
+
+    def test_import_redis_available_from_infrastructure(self) -> None:
+        """Test that REDIS_AVAILABLE can be imported from infrastructure."""
+        from omnibase_core.infrastructure import REDIS_AVAILABLE
+
+        assert REDIS_AVAILABLE is not None
 
     def test_infrastructure_module_import(self) -> None:
         """Test that the infrastructure module itself can be imported."""
@@ -301,6 +371,64 @@ class TestInfrastructureReexportConsistency:
 
         assert ReexportedClass is OriginalClass, (
             "ModelEffectTransaction re-export must be identical to original. "
+            "Check the import in infrastructure/__init__.py"
+        )
+
+    def test_model_execution_plan_reexport_identity(self) -> None:
+        """Verify ModelExecutionPlan re-export is identical to original."""
+        from omnibase_core.infrastructure import ModelExecutionPlan as ReexportedClass
+        from omnibase_core.models.execution.model_execution_plan import (
+            ModelExecutionPlan as OriginalClass,
+        )
+
+        assert ReexportedClass is OriginalClass, (
+            "ModelExecutionPlan re-export must be identical to original. "
+            "Check the import in infrastructure/__init__.py"
+        )
+
+    def test_model_phase_step_reexport_identity(self) -> None:
+        """Verify ModelPhaseStep re-export is identical to original."""
+        from omnibase_core.infrastructure import ModelPhaseStep as ReexportedClass
+        from omnibase_core.models.execution.model_phase_step import (
+            ModelPhaseStep as OriginalClass,
+        )
+
+        assert ReexportedClass is OriginalClass, (
+            "ModelPhaseStep re-export must be identical to original. "
+            "Check the import in infrastructure/__init__.py"
+        )
+
+    def test_create_execution_plan_reexport_identity(self) -> None:
+        """Verify create_execution_plan re-export is identical to original."""
+        from omnibase_core.infrastructure import (
+            create_execution_plan as reexported_func,
+        )
+        from omnibase_core.infrastructure.execution.infra_phase_sequencer import (
+            create_execution_plan as original_func,
+        )
+
+        assert reexported_func is original_func, (
+            "create_execution_plan re-export must be identical to original. "
+            "Check the import in infrastructure/__init__.py"
+        )
+
+    def test_backend_cache_redis_reexport_identity(self) -> None:
+        """Verify BackendCacheRedis re-export is identical to original."""
+        from omnibase_core.backends.cache import BackendCacheRedis as OriginalClass
+        from omnibase_core.infrastructure import BackendCacheRedis as ReexportedClass
+
+        assert ReexportedClass is OriginalClass, (
+            "BackendCacheRedis re-export must be identical to original. "
+            "Check the import in infrastructure/__init__.py"
+        )
+
+    def test_redis_available_reexport_identity(self) -> None:
+        """Verify REDIS_AVAILABLE re-export is identical to original."""
+        from omnibase_core.backends.cache import REDIS_AVAILABLE as ORIGINAL_VALUE
+        from omnibase_core.infrastructure import REDIS_AVAILABLE as REEXPORTED_VALUE
+
+        assert REEXPORTED_VALUE is ORIGINAL_VALUE, (
+            "REDIS_AVAILABLE re-export must be identical to original. "
             "Check the import in infrastructure/__init__.py"
         )
 

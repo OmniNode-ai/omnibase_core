@@ -9,6 +9,7 @@ Key Capabilities:
 - Deterministic operation guarantees
 - Algorithm registration and execution
 - Optional infrastructure via protocol injection (caching, timing, parallelization)
+- Contract-driven handler routing via MixinHandlerRouting (OMN-1293)
 
 Infrastructure Concerns (Optional via Protocol Injection):
 - Caching: Injected via ProtocolComputeCache (OMN-700)
@@ -27,6 +28,7 @@ If infrastructure protocols are not provided, NodeCompute operates in pure mode:
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from collections.abc import Callable
 from typing import Any
@@ -35,7 +37,10 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
+from omnibase_core.mixins.mixin_handler_routing import MixinHandlerRouting
 from omnibase_core.models.compute.model_compute_input import ModelComputeInput
 from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -48,7 +53,7 @@ from omnibase_core.protocols.compute import (
 )
 
 
-class NodeCompute[T_Input, T_Output](NodeCoreBase):
+class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
     """
     Pure computation node for deterministic operations.
 
@@ -70,6 +75,23 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
     - Optional caching via ProtocolComputeCache injection
     - Optional timing via ProtocolTimingService injection
     - Optional parallelization via ProtocolParallelExecutor injection
+    - Contract-driven handler routing via MixinHandlerRouting
+
+    Handler Routing (via MixinHandlerRouting):
+        Enables routing messages to handlers based on YAML contract configuration.
+        Use ``payload_type_match`` routing strategy to route by input data type.
+
+        Example handler_routing contract section::
+
+            handler_routing:
+              version: { major: 1, minor: 0, patch: 0 }
+              routing_strategy: payload_type_match
+              handlers:
+                - routing_key: UserData
+                  handler_key: compute_user_score
+                - routing_key: OrderData
+                  handler_key: compute_order_total
+              default_handler: compute_generic
 
     Pure Mode (default):
         When infrastructure protocols are not injected, NodeCompute operates
@@ -141,6 +163,17 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
 
         # Register built-in computations
         self._register_builtin_computations()
+
+        # Initialize handler routing from contract (optional - not all compute nodes have it)
+        # The handler_routing subcontract enables contract-driven message routing.
+        # If the node's contract has handler_routing defined, initialize the routing table.
+        handler_routing = None
+        if hasattr(self, "contract") and self.contract is not None:
+            handler_routing = getattr(self.contract, "handler_routing", None)
+
+        if handler_routing is not None:
+            handler_registry: object = container.get_service("ProtocolHandlerRegistry")  # type: ignore[arg-type]  # Protocol-based DI lookup per ONEX conventions
+            self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]  # Registry retrieved via DI
 
     # =========================================================================
     # Cache Access Properties
@@ -279,7 +312,18 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                 },
             )
 
+        except (GeneratorExit, KeyboardInterrupt, SystemExit):
+            # Never catch cancellation/exit signals
+            raise
+        except asyncio.CancelledError:
+            # Never suppress async cancellation
+            raise
+        except ModelOnexError:
+            # Re-raise ONEX errors as-is to preserve error context
+            raise
+        # boundary-ok: wraps user computation exceptions into structured error response with metrics
         except Exception as e:
+            # boundary-ok: wrap user computation exceptions in structured ONEX error
             # Calculate processing time for error reporting
             processing_time = 0.0
             if self._timing_service is not None and start_time is not None:
@@ -506,8 +550,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
            Uses protocol injection for infrastructure services.
         """
         # Try to resolve infrastructure services from container first
-        # Note: type-abstract errors are expected - Protocols are abstract by design
-        # but runtime_checkable protocols work correctly at runtime
+        # NOTE(OMN-1302): Protocols are abstract by design but runtime_checkable works at runtime.
+        # Safe because get_service_optional returns None if not registered.
         self._cache = self.container.get_service_optional(
             ProtocolComputeCache  # type: ignore[type-abstract]
         )
@@ -654,6 +698,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             message=f"Unknown computation type: {computation_type}",
             context={
                 "node_id": str(self.node_id),
+                "computation_type": computation_type,
                 "available_types": list(self.computation_registry.keys()),
             },
         )

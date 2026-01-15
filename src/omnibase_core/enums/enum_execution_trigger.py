@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Execution Trigger Enum.
 
 Strongly typed execution trigger values for configuration - defines WHEN/HOW execution is initiated.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumExecutionTrigger(str, Enum):
+class EnumExecutionTrigger(StrValueHelper, str, Enum):
     """
     Execution trigger mode - WHEN/HOW execution is initiated.
 

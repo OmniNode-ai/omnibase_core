@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -36,8 +35,13 @@ class ModelMetadata(BaseModel):
     )
 
     @model_validator(mode="before")
-    def coerce_version(self, values: Any) -> Any:
+    @classmethod
+    def coerce_version(cls, values: dict[str, object]) -> dict[str, object]:
         version = values.get("version")
         if version is not None and not isinstance(version, ModelSemVer):
-            values["version"] = parse_semver_from_string(version)
+            # Ensure version is a string before parsing
+            if isinstance(version, str):
+                values["version"] = parse_semver_from_string(version)
+            else:
+                values["version"] = parse_semver_from_string(str(version))
         return values

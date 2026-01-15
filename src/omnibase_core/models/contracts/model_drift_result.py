@@ -41,7 +41,9 @@ from omnibase_core.models.contracts.model_contract_fingerprint import (
 from omnibase_core.models.contracts.model_drift_details import ModelDriftDetails
 
 # Type alias for valid drift type values
-DriftType = Literal["version", "content", "both", "not_registered"]
+DriftType = Literal[  # enum-ok: model type annotation
+    "version", "content", "both", "not_registered"
+]
 
 
 class ModelDriftResult(BaseModel):
@@ -107,7 +109,7 @@ class ModelDriftResult(BaseModel):
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
-        validate_assignment=True,
+        from_attributes=True,  # pytest-xdist compatibility
     )
 
 

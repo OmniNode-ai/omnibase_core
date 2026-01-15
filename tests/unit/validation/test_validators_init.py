@@ -21,21 +21,19 @@ class TestValidationPackageExports:
         assert hasattr(CircularImportValidator, "validate")
 
     def test_model_validation_result_export(self) -> None:
-        """Test that CircularImportValidationResult is exported (for circular import validation)."""
+        """Test that ModelImportValidationResult is exported (for circular import validation)."""
         import dataclasses
 
-        from omnibase_core.validation import CircularImportValidationResult
+        from omnibase_core.validation import ModelImportValidationResult
 
-        assert CircularImportValidationResult is not None
+        assert ModelImportValidationResult is not None
         # Verify it's a dataclass
-        assert dataclasses.is_dataclass(CircularImportValidationResult)
+        assert dataclasses.is_dataclass(ModelImportValidationResult)
         # Verify it has expected fields for circular import validation
-        field_names = [
-            f.name for f in dataclasses.fields(CircularImportValidationResult)
-        ]
+        field_names = [f.name for f in dataclasses.fields(ModelImportValidationResult)]
         assert "total_files" in field_names
         # Verify it has expected methods
-        assert hasattr(CircularImportValidationResult, "add_result")
+        assert hasattr(ModelImportValidationResult, "add_result")
 
     def test_general_validation_result_export(self) -> None:
         """Test that ModelValidationResult is exported (for general validation)."""

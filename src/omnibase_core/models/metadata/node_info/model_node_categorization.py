@@ -10,11 +10,12 @@ from __future__ import annotations
 from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
+from omnibase_core.types.type_json import JsonType
 
 
 class ModelNodeCategorization(BaseModel):
@@ -204,26 +205,34 @@ class ModelNodeCategorization(BaseModel):
             related_nodes=related_nodes.copy() if related_nodes else [],
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Assign tags by reference (caller should not mutate)
+        if self.tags:
+            result["tags"] = self.tags
+        # Pack other categorization fields into metadata dict
+        result["metadata"] = {
+            # Cast list[str] to list[JsonType] for type compatibility (zero-cost at runtime)
+            "categories": cast(list[JsonType], self.categories),
+            "dependencies": [str(dep) for dep in self.dependencies],
+            "related_nodes": [str(node) for node in self.related_nodes],
+            "tags_count": self.get_tags_count(),
+            "categories_count": self.get_categories_count(),
+            "dependencies_count": self.get_dependencies_count(),
+            "related_nodes_count": self.get_related_nodes_count(),
+            "has_relationships": self.has_relationships(),
+            "has_categorization": self.has_categorization(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -232,7 +241,7 @@ class ModelNodeCategorization(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -248,7 +257,7 @@ class ModelNodeCategorization(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 CLI Status Enum.
 
 Strongly typed status values for CLI operations.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumCliStatus(str, Enum):
+class EnumCliStatus(StrValueHelper, str, Enum):
     """Strongly typed status values for CLI operations."""
 
     SUCCESS = "success"

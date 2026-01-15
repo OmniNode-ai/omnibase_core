@@ -1,9 +1,9 @@
 """
 Tests to ensure regex patterns stay synchronized across the codebase.
 
-This module verifies that intentionally duplicated regex patterns remain identical
-across multiple locations to prevent drift. Pattern duplication exists to avoid
-circular imports - see individual module docstrings for rationale.
+This module verifies that the ERROR_CODE_PATTERN is centralized in
+omnibase_core.constants.constants_error and correctly imported by all modules
+that use it.
 
 Ticket: OMN-1054
 """
@@ -15,33 +15,57 @@ import pytest
 
 @pytest.mark.unit
 class TestErrorCodePatternSync:
-    """Verify ERROR_CODE_PATTERN stays synchronized across files.
+    """Verify ERROR_CODE_PATTERN is centralized and consistent.
 
-    The ERROR_CODE_PATTERN is defined in two locations:
-    1. omnibase_core.validation.validators.common_validators.ERROR_CODE_PATTERN
-    2. omnibase_core.models.context.model_error_metadata.ERROR_CODE_PATTERN
+    The ERROR_CODE_PATTERN is now centralized in:
+    - omnibase_core.constants.constants_error.ERROR_CODE_PATTERN
 
-    This duplication is INTENTIONAL to avoid circular imports:
-    - common_validators is used for direct validation via validate_error_code()
-    - model_error_metadata defines it locally for Pydantic model validation
+    And re-exported from:
+    1. omnibase_core.constants (via __init__.py)
+    2. omnibase_core.validation.validators.validator_common
+    3. omnibase_core.models.context.model_error_metadata
 
-    Both MUST use the same pattern: ^[A-Z][A-Z0-9_]*_\\d{1,4}$
+    All locations MUST use the same pattern: ^[A-Z][A-Z0-9_]*_\\d{1,4}$
     """
 
     def test_error_code_patterns_are_identical(self) -> None:
-        """Verify ERROR_CODE_PATTERN is identical in both locations."""
+        """Verify ERROR_CODE_PATTERN is identical in all locations."""
+        from omnibase_core.constants import ERROR_CODE_PATTERN as CONSTANTS_PATTERN
+        from omnibase_core.constants.constants_error import (
+            ERROR_CODE_PATTERN as SOURCE_PATTERN,
+        )
         from omnibase_core.models.context.model_error_metadata import (
             ERROR_CODE_PATTERN as MODEL_PATTERN,
         )
-        from omnibase_core.validation.validators.common_validators import (
+        from omnibase_core.validation.validators.validator_common import (
             ERROR_CODE_PATTERN as VALIDATOR_PATTERN,
         )
 
-        assert MODEL_PATTERN.pattern == VALIDATOR_PATTERN.pattern, (
-            f"ERROR_CODE_PATTERN mismatch detected!\n"
-            f"  model_error_context.py: {MODEL_PATTERN.pattern!r}\n"
-            f"  common_validators.py:   {VALIDATOR_PATTERN.pattern!r}\n"
-            f"These patterns MUST be identical. Update both files together."
+        # All patterns should be the exact same object (imported from source)
+        assert SOURCE_PATTERN is CONSTANTS_PATTERN, (
+            "constants/__init__.py should re-export from constants_error"
+        )
+        assert SOURCE_PATTERN is MODEL_PATTERN, (
+            "model_error_metadata should import from constants_error"
+        )
+        assert SOURCE_PATTERN is VALIDATOR_PATTERN, (
+            "validator_common should import from constants_error"
+        )
+
+    def test_retry_error_context_uses_centralized_pattern(self) -> None:
+        """Verify model_retry_error_context imports from centralized location."""
+        # Import the ERROR_CODE_PATTERN used by model_retry_error_context
+        # This is used internally by ModelErrorContext validation
+        import omnibase_core.models.context.model_retry_error_context as retry_module
+        from omnibase_core.constants.constants_error import (
+            ERROR_CODE_PATTERN as SOURCE_PATTERN,
+        )
+
+        # Access the pattern used by the module
+        retry_pattern = retry_module.ERROR_CODE_PATTERN
+
+        assert SOURCE_PATTERN is retry_pattern, (
+            "model_retry_error_context should import ERROR_CODE_PATTERN from constants_error"
         )
 
     def test_error_code_pattern_expected_value(self) -> None:
@@ -57,23 +81,19 @@ class TestErrorCodePatternSync:
 
         Examples: AUTH_001, VALIDATION_123, NETWORK_TIMEOUT_001
         """
-        from omnibase_core.validation.validators.common_validators import (
-            ERROR_CODE_PATTERN,
-        )
+        from omnibase_core.constants.constants_error import ERROR_CODE_PATTERN
 
         expected_pattern = r"^[A-Z][A-Z0-9_]*_\d{1,4}$"
         assert ERROR_CODE_PATTERN.pattern == expected_pattern, (
             f"ERROR_CODE_PATTERN has unexpected value!\n"
             f"  Expected: {expected_pattern!r}\n"
             f"  Actual:   {ERROR_CODE_PATTERN.pattern!r}\n"
-            f"If intentional change, update all locations and this test."
+            f"If intentional change, update constants_error.py and this test."
         )
 
     def test_error_code_pattern_validates_correctly(self) -> None:
         """Verify ERROR_CODE_PATTERN validates expected cases correctly."""
-        from omnibase_core.validation.validators.common_validators import (
-            ERROR_CODE_PATTERN,
-        )
+        from omnibase_core.constants.constants_error import ERROR_CODE_PATTERN
 
         # Valid patterns
         valid_codes = [
@@ -107,7 +127,7 @@ class TestSemVerPatternSync:
     """Verify _SEMVER_PATTERN stays synchronized across files.
 
     The _SEMVER_PATTERN is defined in three locations:
-    1. omnibase_core.validation.validators.common_validators._SEMVER_PATTERN
+    1. omnibase_core.validation.validators.validator_common._SEMVER_PATTERN
     2. omnibase_core.models.context.model_metrics_context._SEMVER_PATTERN
     3. omnibase_core.models.primitives.model_semver._SEMVER_PATTERN
 
@@ -120,7 +140,7 @@ class TestSemVerPatternSync:
         # Note: We import the module and access the private variable
         import omnibase_core.models.context.model_metrics_context as metrics_module
         import omnibase_core.models.primitives.model_semver as semver_module
-        import omnibase_core.validation.validators.common_validators as validators_module
+        import omnibase_core.validation.validators.validator_common as validators_module
 
         validator_pattern = validators_module._SEMVER_PATTERN.pattern
         metrics_pattern = metrics_module._SEMVER_PATTERN.pattern
@@ -129,21 +149,21 @@ class TestSemVerPatternSync:
         # Check all pairs
         assert validator_pattern == metrics_pattern, (
             f"_SEMVER_PATTERN mismatch detected!\n"
-            f"  common_validators.py:    {validator_pattern!r}\n"
+            f"  validator_common.py:      {validator_pattern!r}\n"
             f"  model_metrics_context.py: {metrics_pattern!r}\n"
             f"These patterns MUST be identical. Update all files together."
         )
 
         assert validator_pattern == semver_pattern, (
             f"_SEMVER_PATTERN mismatch detected!\n"
-            f"  common_validators.py: {validator_pattern!r}\n"
-            f"  model_semver.py:      {semver_pattern!r}\n"
+            f"  validator_common.py: {validator_pattern!r}\n"
+            f"  model_semver.py:     {semver_pattern!r}\n"
             f"These patterns MUST be identical. Update all files together."
         )
 
     def test_semver_pattern_validates_correctly(self) -> None:
         """Verify _SEMVER_PATTERN validates expected cases correctly."""
-        import omnibase_core.validation.validators.common_validators as validators_module
+        import omnibase_core.validation.validators.validator_common as validators_module
 
         pattern = validators_module._SEMVER_PATTERN
 
@@ -183,12 +203,15 @@ class TestEventBusErrorCodePatternDocumentation:
     """Document the intentional difference in ModelEventBusOutputState error pattern.
 
     ModelEventBusOutputState uses a DIFFERENT, simpler pattern for error_code:
-    Pattern: ^[A-Z0-9_]+$
+    Pattern: ^[A-Z][A-Z0-9_]*$
 
     This is MORE PERMISSIVE than the standard ERROR_CODE_PATTERN because:
     1. It accepts error codes without the required underscore-digit suffix
     2. It allows codes like "UNKNOWN", "TIMEOUT", etc.
     3. It serves a different use case (event bus status codes vs structured errors)
+
+    However, it enforces that codes must start with an uppercase letter (not a digit
+    or underscore), which is consistent with standard error code conventions.
 
     This test documents and verifies this intentional difference.
     """
@@ -201,7 +224,7 @@ class TestEventBusErrorCodePatternDocumentation:
 
         # Access the class-level pattern
         event_bus_pattern = ModelEventBusOutputState._ERROR_CODE_PATTERN.pattern
-        expected_pattern = r"^[A-Z0-9_]+$"
+        expected_pattern = r"^[A-Z][A-Z0-9_]*$"
 
         assert event_bus_pattern == expected_pattern, (
             f"ModelEventBusOutputState._ERROR_CODE_PATTERN changed unexpectedly!\n"
@@ -231,11 +254,9 @@ class TestEventBusErrorCodePatternDocumentation:
 
     def test_event_bus_pattern_differs_from_standard(self) -> None:
         """Document that event bus and standard patterns are intentionally different."""
+        from omnibase_core.constants.constants_error import ERROR_CODE_PATTERN
         from omnibase_core.models.event_bus.model_event_bus_output_state import (
             ModelEventBusOutputState,
-        )
-        from omnibase_core.validation.validators.common_validators import (
-            ERROR_CODE_PATTERN,
         )
 
         event_bus_pattern = ModelEventBusOutputState._ERROR_CODE_PATTERN.pattern
@@ -254,26 +275,18 @@ class TestPatternCompilationConsistency:
 
     def test_error_code_patterns_no_flags(self) -> None:
         """Verify ERROR_CODE_PATTERN is compiled without special flags."""
-        from omnibase_core.models.context.model_error_metadata import (
-            ERROR_CODE_PATTERN as MODEL_PATTERN,
-        )
-        from omnibase_core.validation.validators.common_validators import (
-            ERROR_CODE_PATTERN as VALIDATOR_PATTERN,
-        )
+        from omnibase_core.constants.constants_error import ERROR_CODE_PATTERN
 
-        # Both should have default flags (0)
-        assert MODEL_PATTERN.flags == re.UNICODE, (
-            f"model_error_context ERROR_CODE_PATTERN has unexpected flags: {MODEL_PATTERN.flags}"
-        )
-        assert VALIDATOR_PATTERN.flags == re.UNICODE, (
-            f"common_validators ERROR_CODE_PATTERN has unexpected flags: {VALIDATOR_PATTERN.flags}"
+        # Should have default flags (UNICODE only, which is the default)
+        assert ERROR_CODE_PATTERN.flags == re.UNICODE, (
+            f"ERROR_CODE_PATTERN has unexpected flags: {ERROR_CODE_PATTERN.flags}"
         )
 
     def test_semver_patterns_no_flags(self) -> None:
         """Verify _SEMVER_PATTERN is compiled without special flags."""
         import omnibase_core.models.context.model_metrics_context as metrics_module
         import omnibase_core.models.primitives.model_semver as semver_module
-        import omnibase_core.validation.validators.common_validators as validators_module
+        import omnibase_core.validation.validators.validator_common as validators_module
 
         # All should have default flags
         assert validators_module._SEMVER_PATTERN.flags == re.UNICODE

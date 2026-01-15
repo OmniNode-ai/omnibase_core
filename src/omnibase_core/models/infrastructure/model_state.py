@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 State model for reducer pattern.
 
@@ -7,9 +5,11 @@ Implements ProtocolState from omnibase_spi for proper protocol compliance.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -42,11 +42,11 @@ class ModelState(BaseModel):
     version: int = Field(default=0)
     last_updated: datetime = Field(default_factory=datetime.now)
 
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # ProtocolState required methods
     async def validate_state(self) -> bool:

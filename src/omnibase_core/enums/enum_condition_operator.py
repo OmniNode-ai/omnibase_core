@@ -4,10 +4,13 @@ Condition Operator Enum.
 Allowed operators for workflow condition evaluation.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumConditionOperator(str, Enum):
+@unique
+class EnumConditionOperator(StrValueHelper, str, Enum):
     """Allowed operators for workflow condition evaluation."""
 
     EQUALS = "equals"
@@ -24,3 +27,6 @@ class EnumConditionOperator(str, Enum):
     IS_FALSE = "is_false"
     EXISTS = "exists"
     NOT_EXISTS = "not_exists"
+
+
+__all__ = ["EnumConditionOperator"]

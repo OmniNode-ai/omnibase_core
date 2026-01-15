@@ -5,10 +5,13 @@ Agent Status Type Enum.
 Strongly-typed enumeration for agent status types.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumAgentStatusType(str, Enum):
+@unique
+class EnumAgentStatusType(StrValueHelper, str, Enum):
     """Agent status enumeration."""
 
     IDLE = "idle"
@@ -17,3 +20,6 @@ class EnumAgentStatusType(str, Enum):
     TERMINATING = "terminating"
     STARTING = "starting"
     SUSPENDED = "suspended"
+
+
+__all__ = ["EnumAgentStatusType"]

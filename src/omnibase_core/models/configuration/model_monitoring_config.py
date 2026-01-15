@@ -11,11 +11,13 @@ Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelMonitoringConfig(BaseModel):
     """Monitoring and observability configuration."""
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     prometheus_enabled: bool = Field(
         default=True,

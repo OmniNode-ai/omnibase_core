@@ -33,6 +33,7 @@ Architecture Decision Records (ADRs) document significant architectural decision
 | [ADR-003](./ADR-003-reducer-output-exception-consistency.md) | Reducer Output Exception Consistency | 🟢 **IMPLEMENTED** | 2025-12-16 | Error Handling, Validation, Sentinel Pattern |
 | [ADR-004](./ADR-004-registration-trigger-architecture.md) | Registration Trigger Architecture | 🟢 **ACCEPTED** | 2025-12-19 | Registration, Events, Commands, Orchestrator |
 | [ADR-005](./ADR-005-core-infra-dependency-boundary.md) | Core-Infra Dependency Boundary | 🟢 **IMPLEMENTED** | 2025-12-26 | Dependency Inversion, Transport Libraries, Architecture Boundary |
+| [ADR-006](./ADR-006-status-taxonomy.md) | Status Taxonomy and Categorical Organization | 🟢 **ACCEPTED** | 2026-01-12 | Status Enums, Taxonomy, Severity, Health, Execution |
 
 ---
 
@@ -66,6 +67,9 @@ Architecture Decision Records (ADRs) document significant architectural decision
 ### Node Registration & Discovery
 - ADR-004: Registration Trigger Architecture
 
+### Status & Enum Architecture
+- ADR-006: Status Taxonomy and Categorical Organization
+
 ---
 
 ## How to Use This Index
@@ -90,6 +94,6 @@ When creating a new ADR:
 
 ---
 
-**Last Updated**: 2025-12-26
-**Total ADRs**: 5 (4 implemented, 1 accepted)
+**Last Updated**: 2026-01-12
+**Total ADRs**: 6 (4 implemented, 2 accepted)
 **Total Risk Records**: 1 mitigated

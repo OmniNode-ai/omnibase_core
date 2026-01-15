@@ -3,11 +3,10 @@ CLI Operations Models
 
 Models for command-line interface operations, execution, and results.
 
-Backwards Compatibility (OMN-1071)
-==================================
-This module provides backwards compatibility aliases for classes renamed
-in v0.4.0. The following aliases are deprecated and will be removed in
-a future version:
+Deprecated Aliases (OMN-1071)
+=============================
+This module provides deprecated aliases for classes renamed in v0.4.0.
+The following aliases will be removed in a future version:
 
 - ``ModelCliResultFormatter`` -> use ``UtilCliResultFormatter`` from
   ``omnibase_core.utils.util_cli_result_formatter``
@@ -37,6 +36,8 @@ from .model_cli_execution_summary import ModelCliExecutionSummary
 from .model_cli_node_execution_input import ModelCliNodeExecutionInput
 from .model_cli_output_data import ModelCliOutputData
 from .model_cli_result import ModelCliResult
+from .model_diff_entry import ModelDiffEntry
+from .model_diff_result import ModelDiffResult
 from .model_output_format_options import ModelOutputFormatOptions
 
 __all__ = [
@@ -52,6 +53,8 @@ __all__ = [
     "ModelCliNodeExecutionInput",
     "ModelCliOutputData",
     "ModelCliResult",
+    "ModelDiffEntry",
+    "ModelDiffResult",
     "ModelOutputFormatOptions",
     "TypedDictCliInputDict",
     "TypedDictDebugInfoData",
@@ -63,15 +66,14 @@ __all__ = [
 
 
 # =============================================================================
-# Backwards compatibility: Lazy-load deprecated aliases with warnings.
-# See OMN-1071 for the class renaming migration.
+# Deprecated aliases: Lazy-load with warnings per OMN-1071 renaming.
 # =============================================================================
 def __getattr__(name: str) -> Any:
     """
-    Lazy loading for backwards compatibility aliases.
+    Lazy loading for deprecated aliases per OMN-1071 renaming.
 
-    Backwards Compatibility Aliases (OMN-1071):
-    -------------------------------------------
+    Deprecated Aliases:
+    -------------------
     All deprecated aliases emit DeprecationWarning when accessed:
     - ModelCliResultFormatter -> UtilCliResultFormatter
     """
@@ -88,4 +90,6 @@ def __getattr__(name: str) -> Any:
 
         return UtilCliResultFormatter
 
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    raise AttributeError(  # error-ok: required for __getattr__ protocol
+        f"module {__name__!r} has no attribute {name!r}"
+    )

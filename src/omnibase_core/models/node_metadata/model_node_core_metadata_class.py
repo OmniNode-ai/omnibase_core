@@ -4,14 +4,14 @@ Node Core Metadata Model.
 Core node metadata with essential identification and status information.
 """
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 if TYPE_CHECKING:
@@ -46,8 +46,8 @@ class ModelNodeCoreMetadata(BaseModel):
         default=EnumMetadataNodeStatus.ACTIVE,
         description="Node status",
     )
-    health: EnumNodeHealthStatus = Field(
-        default=EnumNodeHealthStatus.HEALTHY,
+    health: EnumHealthStatus = Field(
+        default=EnumHealthStatus.HEALTHY,
         description="Node health",
     )
 
@@ -56,11 +56,11 @@ class ModelNodeCoreMetadata(BaseModel):
 
     def is_active(self) -> bool:
         """Check if node is active."""
-        return self.status.value == "ACTIVE"
+        return self.status == EnumMetadataNodeStatus.ACTIVE
 
     def is_healthy(self) -> bool:
         """Check if node is healthy."""
-        return self.health.value == "HEALTHY"
+        return self.health == EnumHealthStatus.HEALTHY
 
     def get_status_summary(self) -> dict[str, str]:
         """Get concise status summary."""
@@ -97,11 +97,11 @@ class ModelNodeCoreMetadata(BaseModel):
             node_type=node_type,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -133,16 +133,22 @@ class ModelNodeCoreMetadata(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Map actual fields to TypedDictMetadataDict structure
+        # node_name property always returns non-empty (has UUID fallback)
+        result["name"] = self.node_name
+        if self.version:
+            result["version"] = self.version
+        # Pack additional fields into metadata
+        result["metadata"] = {
+            "node_id": str(self.node_id),
+            "node_type": self.node_type.value,
+            "status": self.status.value,
+            "health": self.health.value,
+            "is_active": self.is_active(),
+            "is_healthy": self.is_healthy(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -162,11 +168,6 @@ class ModelNodeCoreMetadata(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (
-            Exception
-        ):  # fallback-ok: validation method, False indicates validation failure
-            return False
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True

@@ -4,11 +4,14 @@ Effect Handler Type Enumeration.
 Eliminates raw string handler types to prevent typo bugs and enable IDE completion.
 """
 
-from enum import Enum
+from enum import Enum, unique
 from typing import Never, NoReturn
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
-class EnumEffectHandlerType(str, Enum):
+
+@unique
+class EnumEffectHandlerType(StrValueHelper, str, Enum):
     """
     Enumeration of supported effect handler types.
 
@@ -68,3 +71,6 @@ class EnumEffectHandlerType(str, Enum):
         """
         # error-ok: exhaustiveness check - enums cannot import models
         raise AssertionError(f"Unhandled enum value: {value}")
+
+
+__all__ = ["EnumEffectHandlerType"]

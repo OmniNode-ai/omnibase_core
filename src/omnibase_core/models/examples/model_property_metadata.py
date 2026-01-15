@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Property metadata model for environment properties.
 
@@ -11,11 +5,13 @@ This module provides the ModelPropertyMetadata class for storing metadata
 about individual properties in the environment property system.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -46,11 +42,12 @@ class ModelPropertyMetadata(BaseModel):
         description="Allowed values for enum-like properties",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
     # Protocol method implementations
 
@@ -61,10 +58,10 @@ class ModelPropertyMetadata(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> SerializedDict:
@@ -77,7 +74,7 @@ class ModelPropertyMetadata(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

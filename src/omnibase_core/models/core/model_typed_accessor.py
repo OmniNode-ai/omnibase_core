@@ -6,12 +6,9 @@ Provides type-safe field access with generic type support.
 
 from __future__ import annotations
 
-from typing import Any
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -44,23 +41,23 @@ class ModelTypedAccessor[T](ModelFieldAccessor):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         # Typed accessor classes don't have specific model fields - serialize accessible data
-        result: SerializedDict = {
+        result: dict[str, object] = {
             "accessor_type": self.__class__.__name__,
             "type_parameter": str(getattr(self, "__orig_class__", "Unknown")),
         }
@@ -77,8 +74,9 @@ class ModelTypedAccessor[T](ModelFieldAccessor):
                         result[key] = value
                     else:
                         result[key] = str(value)
-                except Exception:
-                    # Skip any attributes that can't be serialized
+                except (
+                    Exception
+                ):  # fallback-ok: skip non-serializable attributes gracefully
                     continue
 
         return result
@@ -89,7 +87,7 @@ class ModelTypedAccessor[T](ModelFieldAccessor):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

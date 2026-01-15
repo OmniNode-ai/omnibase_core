@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Mixin for models that need validation capabilities.
 
@@ -9,11 +5,13 @@ This provides a standard validation container and common validation
 methods that can be inherited by any model requiring validation.
 """
 
+from __future__ import annotations
 
 from typing import cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.types.typed_dict_validation_base_serialized import (
     TypedDictValidationBaseSerialized,
 )
@@ -94,7 +92,7 @@ class ModelValidationBase(BaseModel):
             # Get error code strings with fallbacks
             validation_error_code = enum_module.EnumCoreErrorCode.VALIDATION_ERROR.value
             internal_error_code = enum_module.EnumCoreErrorCode.INTERNAL_ERROR.value
-        except (ImportError, AttributeError):
+        except (AttributeError, ImportError):
             # Fallback if enum module not available or attributes missing
             validation_error_code = "VALIDATION_ERROR"
             internal_error_code = "INTERNAL_ERROR"
@@ -135,7 +133,7 @@ class ModelValidationBase(BaseModel):
                                 field=field_name,
                                 error_code=validation_error_code,
                             )
-            except Exception as field_error:
+            except PYDANTIC_MODEL_ERRORS as field_error:
                 self.add_validation_error(
                     message=f"Failed to access model fields: {field_error!s}",
                     field="model_structure",
@@ -153,7 +151,9 @@ class ModelValidationBase(BaseModel):
                         field="model_integrity",
                         error_code=validation_error_code,
                     )
-            except Exception as serialize_error:
+            except (
+                Exception
+            ) as serialize_error:  # fallback-ok: serialization can raise any exception
                 self.add_validation_error(
                     message=f"Model serialization failed: {serialize_error!s}",
                     field="model_integrity",
@@ -166,7 +166,9 @@ class ModelValidationBase(BaseModel):
                 import json
 
                 json.dumps(self.model_dump(exclude={"validation"}), default=str)
-            except (ValueError, TypeError, RecursionError) as json_error:
+            except (
+                Exception
+            ) as json_error:  # fallback-ok: model_dump/json can raise any exception
                 if "circular reference" in str(json_error).lower() or isinstance(
                     json_error,
                     RecursionError,
@@ -182,7 +184,12 @@ class ModelValidationBase(BaseModel):
                         f"Model may have serialization issues: {json_error!s}",
                     )
 
-        except Exception as unexpected_error:
+        except (
+            AttributeError,
+            TypeError,
+            ValueError,
+            RuntimeError,
+        ) as unexpected_error:
             # For base validation, we'll add the error to the validation container
             # rather than raising ONEX errors to avoid circular import issues
             self.add_validation_error(
@@ -220,11 +227,11 @@ class ModelValidationBase(BaseModel):
             self.model_dump(exclude_none=False, by_alias=True),
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 # Export for use

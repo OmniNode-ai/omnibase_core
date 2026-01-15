@@ -10,7 +10,7 @@ Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.constants import (
     TIMEOUT_DEFAULT_MS,
@@ -273,8 +273,8 @@ class ModelCompensationPlan(BaseModel):
 
         return validated
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

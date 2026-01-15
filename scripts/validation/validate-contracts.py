@@ -112,7 +112,53 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 
     # YAML contract validation using Pydantic models
     if isinstance(content, dict):
-        # Check if this appears to be a contract (has any contract-related fields)
+        # Check if this is a handler contract (has handler_id)
+        # Handler contracts use ModelHandlerContract schema and don't require contract_version/node_type
+        if "handler_id" in content:
+            # Validate handler contract using standalone validator
+            try:
+                from handler_contract_validator import MinimalHandlerContract
+                from pydantic import ValidationError
+
+                # Validate using Pydantic model
+                MinimalHandlerContract.validate_yaml_content(content)
+
+            except ValidationError as e:
+                # Extract meaningful error messages from Pydantic validation
+                for error in e.errors():
+                    field_path = ".".join(str(loc) for loc in error["loc"])
+                    error_msg = error["msg"]
+                    error_type = error["type"]
+
+                    if error_type == "missing":
+                        errors.append(f"Missing required field: {field_path}")
+                    elif error_type == "value_error":
+                        errors.append(f"Invalid value for {field_path}: {error_msg}")
+                    else:
+                        errors.append(f"Validation error in {field_path}: {error_msg}")
+
+            except ImportError as e:
+                # Fallback to basic validation if imports fail
+                errors.append(f"Could not import handler validation models: {e}")
+                # Basic fallback validation for handler contracts
+                if "name" not in content:
+                    errors.append("Missing required field: name")
+                if "version" not in content:
+                    errors.append("Missing required field: version")
+                if "descriptor" not in content:
+                    errors.append("Missing required field: descriptor")
+                if "input_model" not in content:
+                    errors.append("Missing required field: input_model")
+                if "output_model" not in content:
+                    errors.append("Missing required field: output_model")
+
+            except Exception as e:
+                # Handle any other errors during validation
+                errors.append(f"Handler contract validation error: {e}")
+
+            return errors
+
+        # Check if this appears to be an ONEX metadata contract (has any contract-related fields)
         contract_indicators = {
             "contract_version",
             "node_type",
@@ -186,11 +232,18 @@ def discover_yaml_files_optimized(base_path: Path) -> Iterator[Path]:
                 "/archived/" in root_str
                 or "archived" in root_parts
                 or "tests/fixtures/validation/invalid/" in root_str
+                or "tests/unit/contracts/fixtures/" in root_str
                 or (
                     "tests" in root_parts
                     and "fixtures" in root_parts
                     and "validation" in root_parts
                     and "invalid" in root_parts
+                )
+                or (
+                    "tests" in root_parts
+                    and "unit" in root_parts
+                    and "contracts" in root_parts
+                    and "fixtures" in root_parts
                 )
             ):
                 continue

@@ -7,13 +7,14 @@ with structured validation and proper type handling for metadata fields.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types import TypedDictMetadataDict
 
 # Use object for internal storage with field validator ensuring proper types
 # This avoids primitive union violations while maintaining type safety through validation
@@ -291,40 +292,103 @@ class ModelMetadataValue(BaseModel):
         """Get the underlying Python value."""
         return self.value
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
-    def get_metadata(self) -> dict[str, object]:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata: dict[str, object] = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata
+    def get_metadata(self) -> TypedDictMetadataDict:
+        """
+        Get metadata as dictionary for ProtocolMetadataProvider protocol.
 
-    def set_metadata(self, metadata: dict[str, object]) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        Returns a TypedDictMetadataDict containing type-safe metadata value
+        information. This model does not map to top-level name/version/description
+        fields as it represents a primitive value container rather than a named entity.
+
+        Returns:
+            TypedDictMetadataDict with the following structure:
+            - "metadata": Dict containing:
+                - "value_type": String representation of EnumCliValueType
+                  (e.g., "STRING", "INTEGER", "FLOAT", "BOOLEAN")
+                - "is_validated": Boolean indicating if value passed validation
+                - "source": Optional string indicating value origin (only if set)
+
+        Example:
+            >>> value = ModelMetadataValue.from_string("test", source="config")
+            >>> metadata = value.get_metadata()
+            >>> metadata["metadata"]["value_type"]
+            'STRING'
+            >>> metadata["metadata"]["is_validated"]
+            True
+            >>> metadata["metadata"]["source"]
+            'config'
+        """
+        result: TypedDictMetadataDict = {}
+        result["metadata"] = {
+            "value_type": self.value_type.value,
+            "is_validated": self.is_validated,
+        }
+        if self.source is not None:
+            result["metadata"]["source"] = self.source
+        return result
+
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
+        """
+        Set metadata from dictionary for ProtocolMetadataProvider protocol.
+
+        Symmetric with get_metadata() - extracts model-specific data from the
+        nested 'metadata' key in the TypedDictMetadataDict structure.
+
+        Args:
+            metadata: TypedDictMetadataDict containing metadata to apply.
+                Expected structure matches get_metadata() output:
+                - "metadata": Dict containing:
+                    - "value_type": String representation of EnumCliValueType
+                    - "is_validated": Boolean
+                    - "source": Optional string
+
+        Returns:
+            True if metadata was successfully applied.
+
+        Raises:
+            ModelOnexError: If metadata application fails.
+
+        Example:
+            >>> value = ModelMetadataValue.from_string("test")
+            >>> original = value.get_metadata()
+            >>> new_value = ModelMetadataValue.from_int(42)
+            >>> new_value.set_metadata(original)  # Apply original's metadata
+            True
+        """
         try:
-            # Set metadata with runtime validation for type safety
-            for key, value in metadata.items():
-                if hasattr(self, key) and isinstance(
-                    value, (str, int, float, bool, dict, list)
-                ):
-                    setattr(self, key, value)
+            # Extract model-specific data from nested 'metadata' dict
+            # This is symmetric with get_metadata() which places data there
+            if "metadata" in metadata:
+                inner_metadata = metadata["metadata"]
+                if isinstance(inner_metadata, dict):
+                    # Handle value_type - convert string back to enum if needed
+                    if "value_type" in inner_metadata:
+                        value_type_val = inner_metadata["value_type"]
+                        if isinstance(value_type_val, str):
+                            self.value_type = EnumCliValueType(value_type_val)
+                        # Note: EnumCliValueType is not in SerializableValue so we only handle str
+
+                    # Handle is_validated
+                    if "is_validated" in inner_metadata:
+                        is_val = inner_metadata["is_validated"]
+                        if isinstance(is_val, bool):
+                            self.is_validated = is_val
+
+                    # Handle source
+                    if "source" in inner_metadata:
+                        source_val = inner_metadata["source"]
+                        if isinstance(source_val, str) or source_val is None:
+                            self.source = source_val
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -340,7 +404,7 @@ class ModelMetadataValue(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

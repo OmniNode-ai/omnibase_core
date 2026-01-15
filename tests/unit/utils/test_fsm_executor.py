@@ -1,8 +1,10 @@
 """
 Unit tests for FSM execution utilities.
 
-Tests the pure functions in utils/fsm_executor.py for FSM transition execution.
+Tests the pure functions in utils/util_fsm_executor.py for FSM transition execution.
 """
+
+from uuid import UUID
 
 import pytest
 
@@ -25,7 +27,7 @@ from omnibase_core.models.fsm.model_fsm_transition_condition import (
     ModelFSMTransitionCondition,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.utils.fsm_executor import (
+from omnibase_core.utils.util_fsm_executor import (
     FSMState,
     execute_transition,
     get_initial_state,
@@ -1226,3 +1228,344 @@ class TestExpressionValidation:
         result = await execute_transition(fsm_with_textual, "idle", "go", context)
         assert result.success
         assert result.new_state == "active"
+
+
+@pytest.mark.unit
+class TestCorrelationIdPropagation:
+    """Test correlation_id propagation from FSMSubcontract to intent payloads.
+
+    These tests verify that the correlation_id from ModelFSMSubcontract is correctly
+    propagated to all intent payloads (fsm_state_action, fsm_transition_action,
+    persist_state) during FSM transitions.
+
+    Ticket: OMN-601 - Implement correlation_id propagation
+    """
+
+    @pytest.fixture
+    def custom_correlation_id(self) -> UUID:
+        """Create a known UUID for testing correlation_id propagation."""
+        return UUID("12345678-1234-5678-1234-567812345678")
+
+    @pytest.fixture
+    def fsm_with_custom_correlation_id(
+        self, custom_correlation_id: UUID
+    ) -> ModelFSMSubcontract:
+        """Create FSM with a custom correlation_id for testing propagation."""
+        return ModelFSMSubcontract(
+            state_machine_name="correlation_test_fsm",
+            state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+            description="FSM for testing correlation_id propagation",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            correlation_id=custom_correlation_id,
+            states=[
+                ModelFSMStateDefinition(
+                    state_name="idle",
+                    state_type="operational",
+                    description="Idle state with entry/exit actions",
+                    is_terminal=False,
+                    entry_actions=["on_enter_idle"],
+                    exit_actions=["on_exit_idle"],
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+                ModelFSMStateDefinition(
+                    state_name="active",
+                    state_type="operational",
+                    description="Active state with entry action",
+                    is_terminal=False,
+                    entry_actions=["on_enter_active"],
+                    exit_actions=[],
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+            ],
+            initial_state="idle",
+            terminal_states=[],
+            error_states=[],
+            transitions=[
+                ModelFSMStateTransition(
+                    transition_name="activate",
+                    from_state="idle",
+                    to_state="active",
+                    trigger="go",
+                    priority=1,
+                    actions=[
+                        ModelFSMTransitionAction(
+                            action_name="transition_action_test",
+                            action_type="setup",
+                            execution_order=1,
+                            is_critical=True,
+                        )
+                    ],
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+            ],
+            operations=[],
+            persistence_enabled=True,
+            recovery_enabled=True,
+        )
+
+    @pytest.mark.asyncio
+    async def test_entry_actions_include_correlation_id(
+        self,
+        fsm_with_custom_correlation_id: ModelFSMSubcontract,
+        custom_correlation_id: UUID,
+    ) -> None:
+        """Test that entry action intents include correlation_id from FSMSubcontract."""
+        result = await execute_transition(
+            fsm_with_custom_correlation_id, "idle", "go", {}
+        )
+
+        assert result.success
+        assert result.new_state == "active"
+
+        # Find entry action intents for "active" state
+        entry_action_intents = [
+            i
+            for i in result.intents
+            if i.intent_type == "fsm_state_action"
+            and i.payload.action_type == "on_enter"
+            and i.payload.state_name == "active"
+        ]
+
+        assert len(entry_action_intents) == 1
+        entry_intent = entry_action_intents[0]
+
+        # Verify correlation_id is propagated
+        assert entry_intent.payload.correlation_id == custom_correlation_id
+
+    @pytest.mark.asyncio
+    async def test_exit_actions_include_correlation_id(
+        self,
+        fsm_with_custom_correlation_id: ModelFSMSubcontract,
+        custom_correlation_id: UUID,
+    ) -> None:
+        """Test that exit action intents include correlation_id from FSMSubcontract."""
+        result = await execute_transition(
+            fsm_with_custom_correlation_id, "idle", "go", {}
+        )
+
+        assert result.success
+
+        # Find exit action intents for "idle" state
+        exit_action_intents = [
+            i
+            for i in result.intents
+            if i.intent_type == "fsm_state_action"
+            and i.payload.action_type == "on_exit"
+            and i.payload.state_name == "idle"
+        ]
+
+        assert len(exit_action_intents) == 1
+        exit_intent = exit_action_intents[0]
+
+        # Verify correlation_id is propagated
+        assert exit_intent.payload.correlation_id == custom_correlation_id
+
+    @pytest.mark.asyncio
+    async def test_transition_actions_include_correlation_id(
+        self,
+        fsm_with_custom_correlation_id: ModelFSMSubcontract,
+        custom_correlation_id: UUID,
+    ) -> None:
+        """Test that transition action intents include correlation_id from FSMSubcontract."""
+        result = await execute_transition(
+            fsm_with_custom_correlation_id, "idle", "go", {}
+        )
+
+        assert result.success
+
+        # Find transition action intents
+        transition_action_intents = [
+            i for i in result.intents if i.intent_type == "fsm_transition_action"
+        ]
+
+        assert len(transition_action_intents) == 1
+        transition_intent = transition_action_intents[0]
+
+        # Verify correlation_id is propagated
+        assert transition_intent.payload.correlation_id == custom_correlation_id
+
+    @pytest.mark.asyncio
+    async def test_persist_state_includes_correlation_id(
+        self,
+        fsm_with_custom_correlation_id: ModelFSMSubcontract,
+        custom_correlation_id: UUID,
+    ) -> None:
+        """Test that persist_state intents include correlation_id from FSMSubcontract."""
+        result = await execute_transition(
+            fsm_with_custom_correlation_id, "idle", "go", {}
+        )
+
+        assert result.success
+
+        # Find persist_state intents
+        persist_intents = [
+            i for i in result.intents if i.intent_type == "persist_state"
+        ]
+
+        assert len(persist_intents) == 1
+        persist_intent = persist_intents[0]
+
+        # Verify correlation_id is propagated
+        assert persist_intent.payload.correlation_id == custom_correlation_id
+
+    @pytest.mark.asyncio
+    async def test_all_intents_share_same_correlation_id(
+        self,
+        fsm_with_custom_correlation_id: ModelFSMSubcontract,
+        custom_correlation_id: UUID,
+    ) -> None:
+        """Test that all intent types share the same correlation_id for tracing."""
+        result = await execute_transition(
+            fsm_with_custom_correlation_id, "idle", "go", {}
+        )
+
+        assert result.success
+
+        # Collect correlation_ids from all relevant intent types
+        correlation_ids_found: set[UUID] = set()
+
+        for intent in result.intents:
+            if intent.intent_type in (
+                "fsm_state_action",
+                "fsm_transition_action",
+                "persist_state",
+            ):
+                # Access correlation_id from typed payload
+                corr_id = intent.payload.correlation_id
+                if corr_id is not None:
+                    correlation_ids_found.add(corr_id)
+
+        # All correlation_ids should be the same custom value
+        assert len(correlation_ids_found) == 1
+        assert custom_correlation_id in correlation_ids_found
+
+    @pytest.mark.asyncio
+    async def test_auto_generated_correlation_id_is_valid_uuid(
+        self, simple_fsm: ModelFSMSubcontract
+    ) -> None:
+        """Test that auto-generated correlation_id is a valid UUID when not explicitly set.
+
+        Note: The simple_fsm fixture doesn't set correlation_id, so ModelFSMSubcontract
+        uses default_factory=uuid4 to auto-generate a valid UUID.
+        """
+        # simple_fsm fixture doesn't set correlation_id, so it uses default_factory=uuid4
+        result = await execute_transition(simple_fsm, "idle", "start_event", {})
+
+        assert result.success
+
+        # Find any intent that has a correlation_id in its payload
+        # Check multiple intent types for resilience
+        intents_with_correlation = [
+            i
+            for i in result.intents
+            if i.intent_type
+            in ("fsm_state_action", "fsm_transition_action", "persist_state")
+        ]
+
+        if not intents_with_correlation:
+            pytest.skip(
+                "No intents with correlation_id found in this transition - "
+                "test requires at least one fsm_state_action, fsm_transition_action, "
+                "or persist_state intent"
+            )
+
+        # Verify correlation_id is a valid UUID on the first available intent
+        corr_id = intents_with_correlation[0].payload.correlation_id
+        assert corr_id is not None
+        assert isinstance(corr_id, UUID)
+
+    @pytest.mark.asyncio
+    async def test_correlation_id_consistency_in_single_transition(
+        self,
+        fsm_with_custom_correlation_id: ModelFSMSubcontract,
+        custom_correlation_id: UUID,
+    ) -> None:
+        """Test that correlation_id is consistent across all intents in a single transition.
+
+        Verifies that when executing a transition, all generated intents
+        (state actions, transition actions, persist_state) carry the same
+        correlation_id from the FSMSubcontract for distributed tracing.
+        """
+        result = await execute_transition(
+            fsm_with_custom_correlation_id, "idle", "go", {}
+        )
+
+        assert result.success
+
+        # Verify all intents from the transition have the correlation_id
+        for intent in result.intents:
+            if intent.intent_type in (
+                "fsm_state_action",
+                "fsm_transition_action",
+                "persist_state",
+            ):
+                assert intent.payload.correlation_id == custom_correlation_id
+
+    @pytest.mark.asyncio
+    async def test_correlation_id_propagated_with_non_default_uuid(self) -> None:
+        """Test correlation_id propagation with a specific non-default UUID value."""
+        # Create a distinctive UUID that's clearly not auto-generated
+        specific_uuid = UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+
+        fsm = ModelFSMSubcontract(
+            state_machine_name="specific_uuid_fsm",
+            state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+            description="FSM with specific UUID",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            correlation_id=specific_uuid,
+            states=[
+                ModelFSMStateDefinition(
+                    state_name="start",
+                    state_type="operational",
+                    description="Start state",
+                    is_terminal=False,
+                    entry_actions=["log_start"],
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+                ModelFSMStateDefinition(
+                    state_name="end",
+                    state_type="operational",
+                    description="End state",
+                    is_terminal=False,
+                    entry_actions=["log_end"],
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+            ],
+            initial_state="start",
+            terminal_states=[],
+            error_states=[],
+            transitions=[
+                ModelFSMStateTransition(
+                    transition_name="finish",
+                    from_state="start",
+                    to_state="end",
+                    trigger="done",
+                    priority=1,
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+            ],
+            operations=[],
+            persistence_enabled=True,
+            recovery_enabled=False,
+        )
+
+        result = await execute_transition(fsm, "start", "done", {})
+
+        assert result.success
+
+        # Verify entry actions have the specific UUID
+        entry_intents = [
+            i
+            for i in result.intents
+            if i.intent_type == "fsm_state_action"
+            and i.payload.action_type == "on_enter"
+        ]
+        for intent in entry_intents:
+            assert intent.payload.correlation_id == specific_uuid
+
+        # Verify persist_state has the specific UUID
+        persist_intents = [
+            i for i in result.intents if i.intent_type == "persist_state"
+        ]
+        assert len(persist_intents) == 1
+        assert persist_intents[0].payload.correlation_id == specific_uuid

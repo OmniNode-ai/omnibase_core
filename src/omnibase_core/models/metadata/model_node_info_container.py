@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .model_node_info_summary import ModelNodeInfoSummary
 
@@ -49,11 +49,11 @@ class ModelNodeInfoContainer(BaseModel):
         """Get the total number of nodes in the container."""
         return len(self.nodes)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelNodeInfoContainer"]

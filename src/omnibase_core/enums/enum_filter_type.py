@@ -1,17 +1,14 @@
+"""Filter type enumeration for strongly typed filtering."""
+
 from __future__ import annotations
-
-"""
-Filter Type Enum.
-
-Strongly typed filter type values.
-"""
-
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumFilterType(str, Enum):
+class EnumFilterType(StrValueHelper, str, Enum):
     """Strongly typed filter type values."""
 
     STRING = "string"

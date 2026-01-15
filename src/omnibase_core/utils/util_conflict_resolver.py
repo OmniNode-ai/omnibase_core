@@ -41,7 +41,6 @@ See Also:
 """
 
 from collections.abc import Callable
-from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_reducer_types import EnumConflictResolution
@@ -80,25 +79,38 @@ class UtilConflictResolver:
     def __init__(
         self,
         strategy: EnumConflictResolution,
-        custom_resolver: Callable[..., Any] | None = None,
+        custom_resolver: Callable[[object, object, str | None], object] | None = None,
     ):
         """
         Initialize conflict resolver.
 
         Args:
             strategy: Conflict resolution strategy to use
-            custom_resolver: Optional custom resolution function for CUSTOM strategy
+            custom_resolver: Optional custom resolution function for CUSTOM strategy.
+                Signature: (existing_value, new_value, key) -> resolved_value
+
+        Raises:
+            ModelOnexError: If CUSTOM strategy is specified without a custom_resolver
         """
+        if strategy == EnumConflictResolution.CUSTOM and custom_resolver is None:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="CUSTOM conflict resolution strategy requires a custom_resolver function",
+                context={
+                    "strategy": strategy.value,
+                    "custom_resolver": "None",
+                },
+            )
         self.strategy = strategy
         self.custom_resolver = custom_resolver
         self.conflicts_count = 0
 
     def resolve(
         self,
-        existing_value: Any,
-        new_value: Any,
+        existing_value: object,
+        new_value: object,
         key: str | None = None,
-    ) -> Any:
+    ) -> object:
         """
         Resolve conflict between existing and new values.
 
@@ -136,7 +148,7 @@ class UtilConflictResolver:
         # Default to last wins
         return new_value
 
-    def _merge_values(self, existing: Any, new: Any) -> Any:
+    def _merge_values(self, existing: object, new: object) -> object:
         """
         Attempt to merge two values intelligently.
 
@@ -169,12 +181,12 @@ class UtilConflictResolver:
         return new
 
 
-def __getattr__(name: str) -> Any:
+def __getattr__(name: str) -> type[UtilConflictResolver]:
     """
-    Lazy loading for backwards compatibility aliases.
+    Lazy loading for deprecated aliases per OMN-1071 renaming.
 
-    Backwards Compatibility Aliases (OMN-1071):
-    -------------------------------------------
+    Deprecated Aliases:
+    -------------------
     All deprecated aliases emit DeprecationWarning when accessed:
     - ModelConflictResolver -> UtilConflictResolver (removed in v0.5.0)
     """
@@ -189,4 +201,6 @@ def __getattr__(name: str) -> Any:
         )
         return UtilConflictResolver
 
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    raise AttributeError(  # error-ok: required for __getattr__ protocol
+        f"module {__name__!r} has no attribute {name!r}"
+    )

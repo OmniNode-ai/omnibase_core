@@ -7,10 +7,9 @@ Composed model that combines focused analytics components.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -70,157 +69,126 @@ class ModelMetadataAnalyticsSummary(BaseModel):
     # Properties for direct access
     @property
     def collection_id(self) -> UUID:
-        """Get collection ID."""
         return self.core.collection_id
 
     @collection_id.setter
     def collection_id(self, value: UUID) -> None:
-        """Set collection ID."""
         self.core.collection_id = value
 
     @property
     def collection_display_name(self) -> str | None:
-        """Get collection display name."""
         return self.core.collection_display_name
 
     @collection_display_name.setter
     def collection_display_name(self, value: str | None) -> None:
-        """Set collection display name."""
         self.core.collection_display_name = value
 
     @property
     def collection_name(self) -> str | None:
-        """Get collection name with fallback."""
         return self.core.collection_name
 
     @property
     def total_nodes(self) -> int:
-        """Get total nodes."""
         return self.core.total_nodes
 
     @total_nodes.setter
     def total_nodes(self, value: int) -> None:
-        """Set total nodes."""
         self.core.total_nodes = value
 
     @property
     def active_nodes(self) -> int:
-        """Get active nodes."""
         return self.core.active_nodes
 
     @active_nodes.setter
     def active_nodes(self, value: int) -> None:
-        """Set active nodes."""
         self.core.active_nodes = value
 
     @property
     def deprecated_nodes(self) -> int:
-        """Get deprecated nodes."""
         return self.core.deprecated_nodes
 
     @deprecated_nodes.setter
     def deprecated_nodes(self, value: int) -> None:
-        """Set deprecated nodes."""
         self.core.deprecated_nodes = value
 
     @property
     def disabled_nodes(self) -> int:
-        """Get disabled nodes."""
         return self.core.disabled_nodes
 
     @disabled_nodes.setter
     def disabled_nodes(self, value: int) -> None:
-        """Set disabled nodes."""
         self.core.disabled_nodes = value
 
     @property
     def health_score(self) -> float:
-        """Get health score."""
         return self.quality.health_score
 
     @health_score.setter
     def health_score(self, value: float) -> None:
-        """Set health score."""
         self.quality.health_score = value
 
     @property
     def success_rate(self) -> float:
-        """Get success rate."""
         return self.quality.success_rate
 
     @success_rate.setter
     def success_rate(self, value: float) -> None:
-        """Set success rate."""
         self.quality.success_rate = value
 
     @property
     def documentation_coverage(self) -> float:
-        """Get documentation coverage."""
         return self.quality.documentation_coverage
 
     @documentation_coverage.setter
     def documentation_coverage(self, value: float) -> None:
-        """Set documentation coverage."""
         self.quality.documentation_coverage = value
 
     @property
-    def error_count(self) -> int:
-        """Get error count."""
-        return self.errors.error_count
+    def error_level_count(self) -> int:
+        return self.errors.error_level_count
 
-    @error_count.setter
-    def error_count(self, value: int) -> None:
-        """Set error count."""
-        self.errors.error_count = value
+    @error_level_count.setter
+    def error_level_count(self, value: int) -> None:
+        self.errors.error_level_count = value
 
     @property
     def warning_count(self) -> int:
-        """Get warning count."""
         return self.errors.warning_count
 
     @warning_count.setter
     def warning_count(self, value: int) -> None:
-        """Set warning count."""
         self.errors.warning_count = value
 
     @property
     def critical_error_count(self) -> int:
-        """Get critical error count."""
         return self.errors.critical_error_count
 
     @critical_error_count.setter
     def critical_error_count(self, value: int) -> None:
-        """Set critical error count."""
         self.errors.critical_error_count = value
 
     @property
     def average_execution_time_ms(self) -> float:
-        """Get average execution time."""
         return self.performance.average_execution_time_ms
 
     @average_execution_time_ms.setter
     def average_execution_time_ms(self, value: float) -> None:
-        """Set average execution time."""
         self.performance.average_execution_time_ms = value
 
     @property
     def peak_memory_usage_mb(self) -> float:
-        """Get peak memory usage."""
         return self.performance.peak_memory_usage_mb
 
     @peak_memory_usage_mb.setter
     def peak_memory_usage_mb(self, value: float) -> None:
-        """Set peak memory usage."""
         self.performance.peak_memory_usage_mb = value
 
     @property
     def total_invocations(self) -> int:
-        """Get total invocations."""
         return self.performance.total_invocations
 
     @total_invocations.setter
     def total_invocations(self, value: int) -> None:
-        """Set total invocations."""
         self.performance.total_invocations = value
 
     # Composite methods
@@ -269,10 +237,10 @@ class ModelMetadataAnalyticsSummary(BaseModel):
         # Update errors
         if error_data and any(
             key in error_data
-            for key in ["error_count", "warning_count", "critical_error_count"]
+            for key in ["error_level_count", "warning_count", "critical_error_count"]
         ):
             self.errors.update_error_counts(
-                error_data.get("error_count", self.errors.error_count),
+                error_data.get("error_level_count", self.errors.error_level_count),
                 error_data.get("warning_count", self.errors.warning_count),
                 error_data.get(
                     "critical_error_count",
@@ -367,26 +335,26 @@ class ModelMetadataAnalyticsSummary(BaseModel):
             last_validated=None,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        if self.collection_display_name:
+            result["name"] = self.collection_display_name
+        result["metadata"] = {
+            "collection_id": str(self.collection_id),
+            "total_nodes": self.total_nodes,
+            "health_score": self.health_score,
+            "success_rate": self.success_rate,
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -395,7 +363,7 @@ class ModelMetadataAnalyticsSummary(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -407,15 +375,9 @@ class ModelMetadataAnalyticsSummary(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
 
 # Export for use

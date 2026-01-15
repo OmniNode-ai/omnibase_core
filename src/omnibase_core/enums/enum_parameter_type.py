@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Parameter Type Enum.
 
 Strongly typed parameter type values for ONEX architecture parameter validation.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumParameterType(str, Enum):
+class EnumParameterType(StrValueHelper, str, Enum):
     """
     Strongly typed parameter type values for ONEX architecture.
 
@@ -29,10 +30,6 @@ class EnumParameterType(str, Enum):
     ARRAY = "array"
     UUID = "uuid"
     ENUM = "enum"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_primitive(cls, param_type: EnumParameterType) -> bool:

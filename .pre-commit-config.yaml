@@ -55,20 +55,22 @@ repos:
   # Note: ruff replaces both black and isort (10-100x faster)
   - repo: local
     hooks:
+      # FULL CODEBASE FORMATTING: These hooks run on src/ and tests/ (not just staged files)
+      # to match CI behavior and prevent "works locally, fails in CI" issues.
       - id: ruff-format
-        name: ruff format (auto-format)
-        entry: poetry run ruff format
+        name: ruff format (auto-format entire codebase)
+        entry: poetry run ruff format src/ tests/
         language: system
-        types: [python]
-        exclude: ^(tests/fixtures/validation/(edge_cases|exports)/syntax_error\.py|\.github/workflows/|archived/).*$
+        pass_filenames: false
+        always_run: true
         stages: [pre-commit]
 
       - id: ruff-fix
-        name: ruff check (auto-fix linting + import sorting)
-        entry: poetry run ruff check --fix --exit-non-zero-on-fix
+        name: ruff check (auto-fix entire codebase)
+        entry: poetry run ruff check --fix --exit-non-zero-on-fix src/ tests/
         language: system
-        types: [python]
-        exclude: ^(tests/fixtures/validation/(edge_cases|exports)/syntax_error\.py|\.github/workflows/|archived/).*$
+        pass_filenames: false
+        always_run: true
         stages: [pre-commit]
         # Note: --exit-non-zero-on-fix ensures pre-commit fails if files were modified,
         # forcing you to re-stage the changes. This keeps pre-commit and CI in sync.
@@ -135,6 +137,9 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # CLASS vs FILE Naming Conventions:
+      # - validate-naming-conventions: CLASS naming (ModelUser, EnumStatus, ProtocolEventBus)
+      # - validate-file-naming-conventions: FILE naming (model_user.py, enum_status.py)
       - id: validate-naming-conventions
         name: ONEX Naming Convention Validation
         entry: poetry run python scripts/validation/validate_naming.py
@@ -145,6 +150,19 @@ repos:
         exclude: ^(tests/|archive/|archived/|scripts/validation/).*\.py$
         stages: [pre-push]  # Moved to pre-push: ~14s full codebase scan
         # Architectural exemptions documented in validate_naming.py ARCHITECTURAL_EXEMPTIONS
+
+      # PHASE 1 (OMN-1224): File naming hook runs in WARNING mode (non-blocking)
+      # The codebase has 71 existing violations that need incremental migration.
+      # Once all files are renamed, change || true to make this blocking.
+      # See: src/omnibase_core/validation/checker_naming_convention.py (Migration Plan)
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
+      - id: validate-file-naming-conventions
+        name: ONEX File Naming Convention Validation (Warning Mode)
+        entry: bash -c 'poetry run python -m omnibase_core.validation.checker_naming_convention || true'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]  # Full directory scan, warning mode until Phase 4
 
       - id: validate-file-locations
         name: ONEX File Location Enforcement
@@ -196,7 +214,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.(py|yaml|yml)$
-        exclude: ^(tests/fixtures/validation/|archived/|archive/|src/omnibase_core/protocols/)
+        exclude: ^(tests/fixtures/validation/|archived/|archive/|src/omnibase_core/protocols/|src/omnibase_core/validation/validator_|src/omnibase_core/validation/visitor_|src/omnibase_core/models/contracts/subcontracts/model_validator_|examples/contracts/handlers/)
         stages: [pre-commit]
 
       - id: validate-archived-imports
@@ -225,7 +243,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/discovery/mixin_discovery\.py|tests/fixtures/validation/)
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/discovery/mixin_discovery\.py|tests/fixtures/validation/)
         stages: [pre-commit]
 
       # AST-based validators - accept file arguments for fast pre-commit
@@ -236,6 +254,21 @@ repos:
         pass_filenames: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
+        stages: [pre-commit]
+
+      # Pydantic Conventions Validation (OMN-1314)
+      # Enforces Pydantic model best practices:
+      # - No empty ConfigDict() - explicit configuration required
+      # - frozen=True models must have from_attributes=True
+      # - No unnecessary Field() wrappers without metadata
+      # - Mutable defaults must use default_factory
+      - id: validate-pydantic-conventions
+        name: Validate Pydantic conventions
+        entry: poetry run python -m omnibase_core.validation.validator_pydantic_conventions
+        language: system
+        types: [python]
+        files: ^src/omnibase_core/
+        pass_filenames: true
         stages: [pre-commit]
 
       # UNION VALIDATION THRESHOLD:
@@ -337,7 +370,10 @@ repos:
         # - util_singleton_holders.py: Deprecated module with migration docs (no classes, just docstring)
         # - model_action_config_value.py: Action config value types
         # - model_node_config_value.py: Node config entry and schema types
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/protocols/)
+        # - mixin_event_bus.py: Duck-typed Protocol defined alongside mixin that uses it
+        # - mixin_health_check.py: Duck-typed Protocols (connection pools, clients) alongside health check mixin
+        # - checker_enum_governance.py: Tightly coupled data classes + AST visitor for governance validator (OMN-1313)
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/protocols/)
         stages: [pre-commit]
 
       - id: validate-enum-model-imports
@@ -346,6 +382,19 @@ repos:
         language: system
         pass_filenames: true
         files: ^src/omnibase_core/enums/.*\.py$
+        exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
+      # Enum Member Casing Validation (OMN-1307)
+      # Enforces UPPER_SNAKE_CASE for all enum member names
+      # Detects: active, Active, someValue (lowercase or mixed case)
+      # Allows: ACTIVE, HTTP_2, V1_BETA, SHA256 (UPPER_SNAKE_CASE)
+      - id: check-enum-member-casing
+        name: ONEX Enum Member Casing Validation
+        entry: poetry run python -m omnibase_core.validation.checker_enum_member_casing
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
 
@@ -423,12 +472,12 @@ repos:
       # ONEX Transport Import Prevention (ADR-005)
       # Enforces core-infra dependency boundary: omnibase_core must be pure
       # Detects forbidden imports: aiohttp, httpx, requests, kafka, redis, asyncpg, etc.
-      # Fast grep-based check (~1s) - safe for pre-commit
+      # AST-based validator correctly handles TYPE_CHECKING guards (allowed per ADR-005)
       # See: docs/architecture/adr/ADR-005-core-infra-dependency-boundary.md
       - id: validate-no-transport-imports
         name: ONEX Transport Import Prevention
-        entry: ./scripts/validate-no-transport-imports.sh
-        language: script
+        entry: poetry run python scripts/validate_no_transport_imports.py
+        language: system
         pass_filenames: false
         always_run: true
         stages: [pre-commit]
@@ -450,25 +499,25 @@ repos:
       # Protocol @runtime_checkable Validation
       # Ensures all Protocol classes have @runtime_checkable decorator
       # Required for isinstance() checks and duck typing at runtime
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-protocol-runtime-checkable
         name: ONEX Protocol @runtime_checkable Validation
         entry: poetry run python scripts/validation/check_protocol_runtime_checkable.py
         language: system
         pass_filenames: false
         always_run: true
-        files: ^src/omnibase_core/protocols/.*\.py$
         stages: [pre-commit]
 
       # Protocol __all__ Exports Validation
       # Validates that protocol files have correct __all__ exports matching
       # their Protocol class definitions
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-protocol-exports
         name: ONEX Protocol __all__ Exports Validation
         entry: poetry run python scripts/check_protocol_exports.py
         language: system
         pass_filenames: false
         always_run: true
-        files: ^src/omnibase_core/protocols/.*\.py$
         stages: [pre-commit]
 
       # Protocol UUID Enforcement (pre-push only)
@@ -488,9 +537,28 @@ repos:
           - --tb=short
           - -q
           - --timeout=30
+          - -s
           - -p
           - no:rerunfailures
+          - -p
+          - no:testmon
         stages: [pre-push]
+
+      # Enum Governance Validation (OMN-1313)
+      # Enforces enum governance rules to prevent enum/status duplication:
+      # - E001: Enum members must use UPPER_SNAKE_CASE
+      # - E002: Literal types should not duplicate existing enum values
+      # PHASE 1: Warning mode (non-blocking) until existing violations are fixed
+      # The codebase has 13 existing Literal duplication violations.
+      # Once cleaned up, remove "|| true" to make this blocking.
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
+      - id: check-enum-governance
+        name: ONEX Enum Governance Validation (Warning Mode)
+        entry: bash -c 'poetry run python -m omnibase_core.validation.checker_enum_governance || true'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit, pre-push]
 
       # Node Purity Validation (OMN-203)
       # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees:

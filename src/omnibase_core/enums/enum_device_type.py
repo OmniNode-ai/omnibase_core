@@ -5,10 +5,13 @@ Defines device types for distributed agent orchestration
 and deployment strategies.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumDeviceType(str, Enum):
+@unique
+class EnumDeviceType(StrValueHelper, str, Enum):
     """Device type enumeration for distributed systems."""
 
     MAC_STUDIO = "mac_studio"
@@ -23,7 +26,8 @@ class EnumDeviceType(str, Enum):
     UNKNOWN = "unknown"
 
 
-class EnumDeviceLocation(str, Enum):
+@unique
+class EnumDeviceLocation(StrValueHelper, str, Enum):
     """Device location enumeration for network routing."""
 
     HOME = "at_home"
@@ -34,7 +38,8 @@ class EnumDeviceLocation(str, Enum):
     UNKNOWN = "unknown"
 
 
-class EnumDeviceStatus(str, Enum):
+@unique
+class EnumDeviceStatus(StrValueHelper, str, Enum):
     """Device status enumeration for health monitoring."""
 
     ONLINE = "online"
@@ -44,7 +49,8 @@ class EnumDeviceStatus(str, Enum):
     UNKNOWN = "unknown"
 
 
-class EnumAgentHealth(str, Enum):
+@unique
+class EnumAgentHealth(StrValueHelper, str, Enum):
     """Agent health status enumeration."""
 
     HEALTHY = "healthy"
@@ -57,7 +63,8 @@ class EnumAgentHealth(str, Enum):
     UNKNOWN = "unknown"
 
 
-class EnumPriority(str, Enum):
+@unique
+class EnumPriority(StrValueHelper, str, Enum):
     """[Any]priority enumeration for agent orchestration."""
 
     CRITICAL = "critical"
@@ -67,7 +74,8 @@ class EnumPriority(str, Enum):
     BACKGROUND = "background"
 
 
-class EnumRoutingStrategy(str, Enum):
+@unique
+class EnumRoutingStrategy(StrValueHelper, str, Enum):
     """Routing strategy enumeration for agent selection."""
 
     ROUND_ROBIN = "round_robin"
@@ -76,3 +84,6 @@ class EnumRoutingStrategy(str, Enum):
     FASTEST = "fastest"
     RANDOM = "random"
     CAPABILITY_MATCH = "capability_match"
+
+
+__all__ = ["EnumDeviceType"]

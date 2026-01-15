@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 """
 TypedDict for node core summary information.
 
 Type-safe dictionary structure for core node metadata summaries.
 """
+
+from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypedDict
 from uuid import UUID

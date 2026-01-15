@@ -6,11 +6,8 @@ Specialized accessor for handling CLI execution results and metadata.
 
 from __future__ import annotations
 
-from typing import Any
-
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.types.constraints import PrimitiveValueType
-from omnibase_core.types.type_serializable_value import SerializedDict
+from omnibase_core.types.type_constraints import PrimitiveValueType
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -69,21 +66,21 @@ class ModelResultAccessor(ModelFieldAccessor):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (AttributeError, KeyError, TypeError, ValueError):
             # fallback-ok: Configurable protocol requires bool return - False signals configuration failure
             return False
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         # Accessor classes don't have specific model fields - serialize accessible data
-        result: SerializedDict = {
+        result: dict[str, object] = {
             "accessor_type": self.__class__.__name__,
         }
 
@@ -99,7 +96,7 @@ class ModelResultAccessor(ModelFieldAccessor):
                         result[key] = value
                     else:
                         result[key] = str(value)
-                except Exception:
+                except (AttributeError, KeyError, TypeError, ValueError):
                     # Skip any attributes that can't be serialized
                     continue
 
@@ -111,7 +108,7 @@ class ModelResultAccessor(ModelFieldAccessor):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except (AttributeError, KeyError, TypeError, ValueError):
             # fallback-ok: Validatable protocol requires bool return - False signals validation failure
             return False
 

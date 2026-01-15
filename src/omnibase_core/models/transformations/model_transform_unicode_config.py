@@ -24,4 +24,4 @@ class ModelTransformUnicodeConfig(BaseModel):
     config_type: Literal["normalize_unicode"] = "normalize_unicode"
     form: EnumUnicodeForm = EnumUnicodeForm.NFC
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)

@@ -1,28 +1,25 @@
+import types
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_core.types.type_serializable_value import SerializedDict
     from omnibase_core.types.typed_dict_mixin_types import TypedDictNodeExecutorHealth
 
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-"\nNode Executor Mixin.\n\nCanonical mixin for persistent node executor capabilities. Enables nodes to run\nas persistent executors that respond to TOOL_INVOCATION events, providing\ntool-as-a-service functionality for MCP, GraphQL, and other integrations.\n"
 import asyncio
 import contextlib
 import signal
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
 from uuid import UUID
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
-from omnibase_core.constants.event_types import TOOL_INVOCATION
+from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_event_driven_node import MixinEventDrivenNode
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_shutdown_event import (
@@ -34,6 +31,7 @@ from omnibase_core.models.discovery.model_tool_invocation_event import (
 from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 _COMPONENT_NAME = Path(__file__).stem
 
@@ -52,12 +50,12 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
     _node_id: UUID
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """Initialize the executor mixin."""
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore[arg-type]  # Cooperative MRO super() call; kwargs passed to next class in chain
         self._executor_running = False
-        self._executor_task: asyncio.Task[Any] | None = None
-        self._health_task: asyncio.Task[Any] | None = None
+        self._executor_task: asyncio.Task[None] | None = None
+        self._health_task: asyncio.Task[None] | None = None
         self._active_invocations: set[UUID] = set()
         self._total_invocations = 0
         self._successful_invocations = 0
@@ -88,7 +86,8 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._register_signal_handlers()
             self._log_info("Executor started successfully")
             await self._executor_event_loop()
-        except Exception as e:
+        except Exception as e:  # fallback-ok: cleanup during executor startup
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Failed to start executor: {e}")
             await self.stop_executor_mode()
             raise
@@ -117,16 +116,24 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                except Exception as e:
+                except (
+                    Exception
+                ) as e:  # fallback-ok: user callbacks must not crash shutdown
+                    # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                     self._log_error(f"Shutdown callback failed: {e}")
             self.cleanup_event_handlers()
             self._executor_running = False
             self._log_info("Executor stopped successfully")
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: shutdown must complete even if cleanup fails
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Error during executor shutdown: {e}")
             self._executor_running = False
 
-    async def handle_tool_invocation(self, envelope: "ModelEventEnvelope[Any]") -> None:
+    async def handle_tool_invocation(
+        self, envelope: "ModelEventEnvelope[object]"
+    ) -> None:
         """
         Handle a TOOL_INVOCATION event.
 
@@ -189,7 +196,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._log_info(
                 f"Tool invocation completed successfully in {execution_time_ms}ms"
             )
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, TypeError, ValueError) as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
@@ -274,7 +281,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError:
             self._log_info("Executor event loop cancelled")
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
             self._log_error(f"Executor event loop error: {e}")
             raise
 
@@ -290,7 +297,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                 await asyncio.sleep(30)
         except asyncio.CancelledError:
             self._log_info("Health monitor cancelled")
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
             self._log_error(f"Health monitor error: {e}")
 
     def _is_target_node(self, event: ModelToolInvocationEvent) -> bool:
@@ -303,7 +310,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
     async def _convert_event_to_input_state(
         self, event: ModelToolInvocationEvent
-    ) -> Any:
+    ) -> object:
         """
         Convert tool invocation event to node input state.
 
@@ -340,8 +347,8 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         return None
 
     async def _execute_tool(
-        self, input_state: Any, event: ModelToolInvocationEvent
-    ) -> Any:
+        self, input_state: object, event: ModelToolInvocationEvent
+    ) -> object:
         """Execute the tool via the node's run method."""
         # STRICT: Node must have run() method for executor to work
         if not hasattr(self, "run"):
@@ -362,7 +369,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             None, run_method, input_state
         )
 
-    def _serialize_result(self, result: Any) -> "SerializedDict":
+    def _serialize_result(self, result: object) -> "SerializedDict":
         """Serialize the execution result to a dictionary."""
         from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -375,7 +382,11 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             return dict_result
         if isinstance(result, dict):
             return result
-        return {"result": result}
+        # Cast result to JsonType - _serialize_result handles conversion of execution
+        # results which should be JSON-serializable by node contract
+        from omnibase_core.types.type_json import JsonType
+
+        return {"result": cast(JsonType, result)}
 
     async def _emit_tool_response(self, response_event: ModelToolResponseEvent) -> None:
         """Emit a tool response event."""
@@ -409,7 +420,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                     correlation_id=shutdown_event.correlation_id,
                 )
                 await event_bus.publish(envelope)
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             self._log_error(f"Failed to emit shutdown event: {e}")
 
     async def _wait_for_active_invocations(
@@ -434,7 +445,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         """Register signal handlers for graceful shutdown."""
         try:
 
-            def signal_handler(signum: int, _frame: Any) -> None:
+            def signal_handler(signum: int, _frame: types.FrameType | None) -> None:
                 self._log_info(
                     f"Received signal {signum}, initiating graceful shutdown"
                 )
@@ -442,7 +453,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
             signal.signal(signal.SIGTERM, signal_handler)
             signal.signal(signal.SIGINT, signal_handler)
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
             self._log_warning(f"Could not register signal handlers: {e}")
 
     def _log_info(self, message: str) -> None:

@@ -29,12 +29,22 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Helper class for testing - fully compliant node
 class MockIntrospectionResponse(BaseModel):
-    """Mock introspection response for testing."""
+    """Mock introspection response for testing.
 
-    node_id: UUID
+    Must include required fields from ModelIntrospectionData:
+    - node_name (required)
+    - node_version (required)
+    - node_type (required)
+    """
+
+    node_name: str
+    node_version: ModelSemVer
     node_type: str
-    capabilities: list[str]
-    health_status: str
+    # Optional fields from ModelIntrospectionData
+    description: str | None = None
+    supported_operations: list[str] = []
+    required_dependencies: list[str] = []
+    optional_dependencies: list[str] = []
 
 
 class MockEventChannels(BaseModel):
@@ -47,18 +57,19 @@ class MockEventChannels(BaseModel):
 class CompliantTestNode(MixinDiscoveryResponder):
     """Fully compliant test node with all required attributes and methods."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.node_id: UUID = uuid4()
         self.version: ModelSemVer = ModelSemVer(major=1, minor=0, patch=0)
 
     def get_introspection_response(self) -> MockIntrospectionResponse:
-        """Return introspection response."""
+        """Return introspection response with required fields for ModelIntrospectionData."""
         return MockIntrospectionResponse(
-            node_id=self.node_id,
-            node_type=self.__class__.__name__,
-            capabilities=self.get_discovery_capabilities(),
-            health_status=self.get_health_status(),
+            node_name=self.__class__.__name__,
+            node_version=self.version,
+            node_type="COMPUTE_GENERIC",
+            description="Test node for discovery responder tests",
+            supported_operations=self.get_discovery_capabilities(),
         )
 
     def get_event_channels(self) -> MockEventChannels:
@@ -200,7 +211,7 @@ class TestStartStopDiscoveryResponder:
 
         node = TestNode()
         mock_event_bus = AsyncMock()
-        mock_event_bus.subscribe = AsyncMock(side_effect=Exception("Bus error"))
+        mock_event_bus.subscribe = AsyncMock(side_effect=RuntimeError("Bus error"))
 
         with pytest.raises(ModelOnexError):
             await node.start_discovery_responder(mock_event_bus)
@@ -365,8 +376,8 @@ class TestDiscoveryCriteriaMatching:
             pass
 
         node = TestNode()
-        # Default implementation accepts all
-        assert node._matches_custom_criteria({"any": "criteria"}) is True
+        # Default implementation accepts all - use valid TypedDictFilterCriteria key
+        assert node._matches_custom_criteria({"name_pattern": "test*"}) is True
 
     def test_matches_custom_criteria_override(self):
         """Test custom criteria matching with override."""
@@ -667,8 +678,8 @@ class TestStrictTypeEnforcement:
         with pytest.raises(ModelOnexError) as exc_info:
             await node.start_discovery_responder(mock_event_bus)
 
-        # Error is wrapped in DISCOVERY_SETUP_FAILED
-        assert exc_info.value.error_code == EnumCoreErrorCode.DISCOVERY_SETUP_FAILED
+        # Error preserves the specific DISCOVERY_INVALID_NODE code
+        assert exc_info.value.error_code == EnumCoreErrorCode.DISCOVERY_INVALID_NODE
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
@@ -686,8 +697,8 @@ class TestStrictTypeEnforcement:
         with pytest.raises(ModelOnexError) as exc_info:
             await node.start_discovery_responder(mock_event_bus)
 
-        # Error is wrapped in DISCOVERY_SETUP_FAILED
-        assert exc_info.value.error_code == EnumCoreErrorCode.DISCOVERY_SETUP_FAILED
+        # Error preserves the specific DISCOVERY_INVALID_NODE code
+        assert exc_info.value.error_code == EnumCoreErrorCode.DISCOVERY_INVALID_NODE
 
     def test_get_node_version_missing(self):
         """Test that _get_node_version fails if no version attribute."""
@@ -747,13 +758,18 @@ class TestStrictTypeEnforcement:
         assert "get_introspection_response" in str(exc_info.value).lower()
 
     def test_get_discovery_introspection_with_method(self):
-        """Test that _get_discovery_introspection succeeds with proper method."""
+        """Test that _get_discovery_introspection succeeds with proper method.
+
+        Returns ModelIntrospectionData validated via TypeAdapter for duck-typing.
+        """
         node = CompliantTestNode()
         introspection = node._get_discovery_introspection()
 
-        assert isinstance(introspection, dict)
-        assert "node_id" in introspection
-        assert "node_type" in introspection
+        # Returns ModelIntrospectionData, not dict (validated via TypeAdapter)
+        assert hasattr(introspection, "node_name")
+        assert hasattr(introspection, "node_type")
+        assert introspection.node_type == "COMPUTE_GENERIC"
+        assert introspection.node_name == "CompliantTestNode"
 
     def test_get_discovery_event_channels_missing_method(self):
         """Test that _get_discovery_event_channels fails if method missing."""
@@ -792,7 +808,12 @@ class TestStrictTypeEnforcement:
 
         # Verify all required methods work
         assert isinstance(node._get_node_version(), ModelSemVer)
-        assert isinstance(node._get_discovery_introspection(), dict)
+
+        # _get_discovery_introspection returns ModelIntrospectionData (validated via TypeAdapter)
+        introspection = node._get_discovery_introspection()
+        assert hasattr(introspection, "node_name")
+        assert hasattr(introspection, "node_type")
+
         assert isinstance(node._get_discovery_event_channels(), dict)
 
         await node.stop_discovery_responder()

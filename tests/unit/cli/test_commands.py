@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from omnibase_core.cli.commands import (
+from omnibase_core.cli.cli_commands import (
     _check_core_imports,
     _check_error_handling,
     _check_validation_system,
@@ -33,7 +33,7 @@ from omnibase_core.cli.commands import (
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 
 if TYPE_CHECKING:
-    from omnibase_core.validation.validation_utils import ModelValidationResult
+    from omnibase_core.validation.validator_utils import ModelValidationResult
 
 # Mark all tests in this module as unit tests
 pytestmark = pytest.mark.unit
@@ -441,7 +441,7 @@ class TestHealthCheckHelpers:
 
     def test_find_partial_matches_substring_match(self) -> None:
         """Test _find_partial_matches finds components with common substrings."""
-        from omnibase_core.cli.commands import _find_partial_matches
+        from omnibase_core.cli.cli_commands import _find_partial_matches
 
         components = ["Core imports", "Validation system", "Error handling"]
 
@@ -451,7 +451,7 @@ class TestHealthCheckHelpers:
 
     def test_find_partial_matches_word_match(self) -> None:
         """Test _find_partial_matches finds components with matching words."""
-        from omnibase_core.cli.commands import _find_partial_matches
+        from omnibase_core.cli.cli_commands import _find_partial_matches
 
         components = ["Core imports", "Validation system", "Error handling"]
 
@@ -461,7 +461,7 @@ class TestHealthCheckHelpers:
 
     def test_find_partial_matches_no_match(self) -> None:
         """Test _find_partial_matches returns empty for completely unrelated filter."""
-        from omnibase_core.cli.commands import _find_partial_matches
+        from omnibase_core.cli.cli_commands import _find_partial_matches
 
         components = ["Core imports", "Validation system", "Error handling"]
 
@@ -471,7 +471,7 @@ class TestHealthCheckHelpers:
 
     def test_find_partial_matches_multiple_matches(self) -> None:
         """Test _find_partial_matches can return multiple suggestions."""
-        from omnibase_core.cli.commands import _find_partial_matches
+        from omnibase_core.cli.cli_commands import _find_partial_matches
 
         components = ["Core imports", "Core exports", "Error handling"]
 
@@ -482,7 +482,7 @@ class TestHealthCheckHelpers:
 
     def test_find_partial_matches_case_insensitive(self) -> None:
         """Test _find_partial_matches is case insensitive."""
-        from omnibase_core.cli.commands import _find_partial_matches
+        from omnibase_core.cli.cli_commands import _find_partial_matches
 
         components = ["Core imports", "Validation system", "Error handling"]
 
@@ -500,7 +500,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         result: ModelValidationResult[None] = ModelValidationResult(
             is_valid=True,
@@ -524,7 +524,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         result: ModelValidationResult[None] = ModelValidationResult(
             is_valid=False,
@@ -551,7 +551,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         result: ModelValidationResult[None] = ModelValidationResult(
             is_valid=True,
@@ -574,7 +574,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         result: ModelValidationResult[None] = ModelValidationResult(
             is_valid=False,
@@ -597,7 +597,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         result: ModelValidationResult[None] = ModelValidationResult(
             is_valid=True,
@@ -620,7 +620,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         errors = [f"Error {i}" for i in range(15)]
         result: ModelValidationResult[None] = ModelValidationResult(
@@ -701,7 +701,7 @@ class TestCliEdgeCases:
 
         # Mock one of the check functions to raise an exception
         with patch(
-            "omnibase_core.cli.commands._check_core_imports",
+            "omnibase_core.cli.cli_commands._check_core_imports",
             side_effect=RuntimeError("Test error"),
         ):
             result = runner.invoke(cli, ["health"])

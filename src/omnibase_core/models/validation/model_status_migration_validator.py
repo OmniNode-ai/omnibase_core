@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from omnibase_core.models.core.model_status_migrator import ModelEnumStatusMigrator
-from omnibase_core.types import TypedDictStatusMigrationResult
-from omnibase_core.types.typed_dict_migration_report import TypedDictMigrationReport
-
 """
 Status Migration Validation Utilities.
 
@@ -14,6 +8,12 @@ Usage:
     validator = ModelEnumStatusMigrationValidator()
     issues = validator.validate_model_migration(model_class)
 """
+
+from __future__ import annotations
+
+from omnibase_core.models.core.model_status_migrator import ModelEnumStatusMigrator
+from omnibase_core.types import TypedDictStatusMigrationResult
+from omnibase_core.types.typed_dict_migration_report import TypedDictMigrationReport
 
 
 class ModelEnumStatusMigrationValidator:

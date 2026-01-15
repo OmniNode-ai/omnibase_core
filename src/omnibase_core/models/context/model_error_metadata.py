@@ -26,20 +26,25 @@ Thread Safety:
     thread-safe for concurrent read access from multiple threads or async tasks.
 
 See Also:
+    - omnibase_core.constants.constants_error: Centralized error code pattern
+      (ERROR_CODE_PATTERN). This is the single source of truth for the
+      CATEGORY_NNN format validation.
     - docs/conventions/ERROR_CODE_STANDARDS.md: Complete error code format specification
+    - docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md: Error handling patterns
     - omnibase_core.models.context.model_session_context: Session context
     - omnibase_core.models.context.model_audit_metadata: Audit trail metadata
     - omnibase_core.models.common.model_error_context: Error location context
 """
 
-import re
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants.constants_error import ERROR_CODE_PATTERN
+
 __all__ = [
     "ModelErrorMetadata",
-    # Error code pattern (also defined in common_validators for direct use)
+    # Error code pattern re-exported from centralized location
     "ERROR_CODE_PATTERN",
     # Error category constants
     "CATEGORY_VALIDATION",
@@ -52,29 +57,17 @@ __all__ = [
 ]
 
 # -----------------------------------------------------------------------------
-# Error Code Pattern
+# Error Code Pattern (Centralized)
 # -----------------------------------------------------------------------------
-# Pattern for error codes: CATEGORY_NNN (e.g., AUTH_001, VALIDATION_123)
+# The ERROR_CODE_PATTERN is now imported from omnibase_core.constants.constants_error
+# which provides the single source of truth for error code validation.
 #
-# IMPORTANT: This pattern is defined here AND in common_validators.
-# - This module: For use in Pydantic model validation (avoids circular imports)
-# - common_validators: For direct validation via validate_error_code()
-#
-# The duplication is intentional to avoid circular imports. The validation module
-# imports from models, and importing from validation in model_error_metadata would
-# create a circular dependency chain. Both patterns MUST be kept in sync.
-#
-# The pattern supports multi-character category prefixes with underscores:
+# Pattern: ^[A-Z][A-Z0-9_]*_\d{1,4}$
 # - Valid: AUTH_001, VALIDATION_123, NETWORK_TIMEOUT_001, SYSTEM_01
 # - Invalid: E001 (lint-style, no underscore), auth_001 (lowercase)
 #
-# If you need to modify this pattern, update BOTH locations:
-# 1. omnibase_core.models.context.model_error_metadata.ERROR_CODE_PATTERN
-# 2. omnibase_core.validation.validators.common_validators.ERROR_CODE_PATTERN
-#
 # For direct validation (not in Pydantic models), prefer using:
 #   from omnibase_core.validation.validators import validate_error_code
-ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")
 
 # -----------------------------------------------------------------------------
 # Error Category Constants
@@ -146,6 +139,15 @@ class ModelErrorMetadata(BaseModel):
         True
         >>> error_meta.is_client_error()
         True
+
+    See Also:
+        - :mod:`omnibase_core.constants.constants_error`: Centralized error code
+          pattern (ERROR_CODE_PATTERN) used for validation. This is the single
+          source of truth for the CATEGORY_NNN format.
+        - :doc:`docs/conventions/ERROR_CODE_STANDARDS.md`: Complete error code
+          format specification, valid/invalid examples, and best practices.
+        - :doc:`docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md`: Comprehensive
+          error handling patterns and recovery strategies.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -192,9 +194,17 @@ class ModelErrorMetadata(BaseModel):
             The validated retry count unchanged, or None.
 
         Raises:
-            ValueError: If retry_count is negative.
+            ValueError: If retry_count is not an integer or is negative.
         """
-        if value is not None and value < 0:
+        if value is None:
+            return None
+        if not isinstance(value, int) or isinstance(value, bool):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(
+                f"retry_count must be an integer, got {type(value).__name__}"
+            )
+        if value < 0:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"retry_count must be >= 0, got {value}")
         return value
 
@@ -211,7 +221,7 @@ class ModelErrorMetadata(BaseModel):
 
         Note:
             For direct validation outside Pydantic models, prefer using
-            validate_error_code() from common_validators instead.
+            validate_error_code() from validator_common instead.
             The pattern is intentionally duplicated here to avoid circular
             imports - see module-level comments for details.
 
@@ -222,17 +232,22 @@ class ModelErrorMetadata(BaseModel):
             The validated error code string unchanged, or None.
 
         Raises:
-            ValueError: If the error code doesn't match the expected pattern.
+            ValueError: If the value is not a string or doesn't match the expected pattern.
         """
         if value is None:
             return None
+        if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(f"error_code must be a string, got {type(value).__name__}")
         if not value:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError("Error code cannot be empty")
         if not ERROR_CODE_PATTERN.match(value):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid error_code format '{value}': expected CATEGORY_NNN "
                 f"pattern (e.g., AUTH_001, VALIDATION_123). "
-                f"For lint-style short codes (W001, E001), use workflow_linter module."
+                f"For lint-style short codes (W001, E001), use checker_workflow_linter module."
             )
         return value
 

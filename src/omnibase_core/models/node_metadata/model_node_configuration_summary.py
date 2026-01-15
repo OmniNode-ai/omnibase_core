@@ -7,9 +7,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import cast
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
@@ -57,13 +55,11 @@ class ModelNodeConfigurationSummary(BaseModel):
         description="Whether configuration has custom settings",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -91,16 +87,16 @@ class ModelNodeConfigurationSummary(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Pack configuration summary into metadata dict
+        result["metadata"] = {
+            "is_production_ready": self.is_production_ready,
+            "is_performance_optimized": self.is_performance_optimized,
+            "has_custom_settings": self.has_custom_settings,
+            "features_keys": list(self.features.keys()) if self.features else [],
+            "connection_keys": list(self.connection.keys()) if self.connection else [],
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -118,12 +114,7 @@ class ModelNodeConfigurationSummary(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 # NOTE: model_rebuild() not needed - Pydantic v2 handles forward references automatically

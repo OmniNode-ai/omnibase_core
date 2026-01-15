@@ -1,7 +1,7 @@
 """
 Unit tests for workflow execution utilities.
 
-Tests the pure functions in utils/workflow_executor.py for workflow execution.
+Tests the pure functions in utils/util_workflow_executor.py for workflow execution.
 """
 
 from uuid import UUID, uuid4
@@ -10,10 +10,8 @@ import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
-from omnibase_core.enums.enum_workflow_execution import (
-    EnumExecutionMode,
-    EnumWorkflowState,
-)
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (
     ModelCoordinationRules,
@@ -28,7 +26,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
     ModelWorkflowDefinitionMetadata,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.workflow_executor import (
+from omnibase_core.utils.util_workflow_executor import (
     execute_workflow,
     get_execution_order,
     validate_workflow_definition,
@@ -194,7 +192,7 @@ class TestWorkflowExecutionSuccess:
         )
 
         assert result.workflow_id == workflow_id
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 3
         assert len(result.failed_steps) == 0
         assert result.skipped_steps == []  # No disabled steps
@@ -217,7 +215,7 @@ class TestWorkflowExecutionSuccess:
         )
 
         assert result.workflow_id == workflow_id
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 4  # All steps should complete
         assert len(result.failed_steps) == 0
         assert result.skipped_steps == []  # No disabled steps
@@ -324,7 +322,7 @@ class TestWorkflowValidation:
         )
 
         # Empty workflow produces COMPLETED status with no steps or actions
-        assert result.execution_status == EnumWorkflowState.COMPLETED, (
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED, (
             "Empty workflow should complete successfully per v1.0.3 Fix 29"
         )
         assert len(result.completed_steps) == 0, (
@@ -623,7 +621,7 @@ class TestExecuteStepErrorHandling:
 
         # Mock _create_action_for_step to raise an exception
         with patch(
-            "omnibase_core.utils.workflow_executor._create_action_for_step"
+            "omnibase_core.utils.util_workflow_executor._create_action_for_step"
         ) as mock_create_action:
             mock_create_action.side_effect = RuntimeError(
                 "Simulated action creation failure"
@@ -640,7 +638,7 @@ class TestExecuteStepErrorHandling:
         assert str(step_id) in result.failed_steps
         assert str(step_id) not in result.completed_steps
         assert len(result.actions_emitted) == 0
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
 
     @pytest.mark.asyncio
     async def test_execute_parallel_captures_onex_errors(
@@ -665,7 +663,7 @@ class TestExecuteStepErrorHandling:
 
         # Mock _create_action_for_step to raise a ModelOnexError
         with patch(
-            "omnibase_core.utils.workflow_executor._create_action_for_step"
+            "omnibase_core.utils.util_workflow_executor._create_action_for_step"
         ) as mock_create_action:
             mock_create_action.side_effect = ModelOnexError(
                 message="Simulated ONEX error",
@@ -684,7 +682,7 @@ class TestExecuteStepErrorHandling:
         assert str(step_id) in result.failed_steps
         assert str(step_id) not in result.completed_steps
         assert len(result.actions_emitted) == 0
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
 
     @pytest.mark.asyncio
     async def test_execute_parallel_mixed_success_and_failure(
@@ -720,9 +718,9 @@ class TestExecuteStepErrorHandling:
         ]
 
         # We need to capture the original function before patching
-        from omnibase_core.utils import workflow_executor
+        from omnibase_core.utils import util_workflow_executor
 
-        original_fn = workflow_executor._create_action_for_step
+        original_fn = util_workflow_executor._create_action_for_step
 
         def mock_fn(step, workflow_id):
             if step.step_id == fail_step_id:
@@ -730,7 +728,7 @@ class TestExecuteStepErrorHandling:
             return original_fn(step, workflow_id)
 
         with patch.object(
-            workflow_executor, "_create_action_for_step", side_effect=mock_fn
+            util_workflow_executor, "_create_action_for_step", side_effect=mock_fn
         ):
             result = await execute_workflow(
                 simple_workflow_definition,
@@ -746,7 +744,7 @@ class TestExecuteStepErrorHandling:
         # Should have one action (from success step)
         assert len(result.actions_emitted) == 1
         # Overall status is FAILED due to the failure
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
 
     @pytest.mark.asyncio
     async def test_execute_parallel_error_with_stop_action(
@@ -783,7 +781,7 @@ class TestExecuteStepErrorHandling:
         ]
 
         with patch(
-            "omnibase_core.utils.workflow_executor._create_action_for_step"
+            "omnibase_core.utils.util_workflow_executor._create_action_for_step"
         ) as mock_create_action:
             mock_create_action.side_effect = RuntimeError("Simulated failure with stop")
 
@@ -801,7 +799,7 @@ class TestExecuteStepErrorHandling:
         # No actions should be emitted (wave 1 failed before action creation)
         assert len(result.actions_emitted) == 0
         # Overall status should be FAILED
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
         # Verify fewer steps were processed than total (workflow stopped early)
         assert len(result.completed_steps) + len(result.failed_steps) < len(steps)
 
@@ -869,7 +867,7 @@ class TestMetadata:
         simple_workflow_steps: list[ModelWorkflowStep],
     ):
         """Test that workflow hash is included in result metadata for integrity verification."""
-        from omnibase_core.utils.workflow_executor import _compute_workflow_hash
+        from omnibase_core.utils.util_workflow_executor import _compute_workflow_hash
 
         result = await execute_workflow(
             simple_workflow_definition,
@@ -897,7 +895,7 @@ class TestMetadata:
         simple_workflow_steps: list[ModelWorkflowStep],
     ):
         """Test that workflow hash is consistent regardless of execution mode."""
-        from omnibase_core.utils.workflow_executor import _compute_workflow_hash
+        from omnibase_core.utils.util_workflow_executor import _compute_workflow_hash
 
         # Execute with sequential mode
         result_sequential = await execute_workflow(
@@ -932,7 +930,7 @@ class TestBuildWorkflowContext:
 
     def test_empty_completed_steps(self) -> None:
         """Test context with no completed steps."""
-        from omnibase_core.utils.workflow_executor import _build_workflow_context
+        from omnibase_core.utils.util_workflow_executor import _build_workflow_context
 
         workflow_id = uuid4()
         completed_step_ids: set[UUID] = set()
@@ -947,7 +945,7 @@ class TestBuildWorkflowContext:
 
     def test_single_completed_step(self) -> None:
         """Test context with single completed step and output."""
-        from omnibase_core.utils.workflow_executor import _build_workflow_context
+        from omnibase_core.utils.util_workflow_executor import _build_workflow_context
 
         workflow_id = uuid4()
         step1_id = uuid4()
@@ -964,7 +962,7 @@ class TestBuildWorkflowContext:
 
     def test_multiple_completed_steps(self) -> None:
         """Test context with multiple completed steps and outputs."""
-        from omnibase_core.utils.workflow_executor import _build_workflow_context
+        from omnibase_core.utils.util_workflow_executor import _build_workflow_context
 
         workflow_id = uuid4()
         step1_id = uuid4()
@@ -995,7 +993,7 @@ class TestBuildWorkflowContext:
 
     def test_step_outputs_without_all_completed_steps(self) -> None:
         """Test context handles partial outputs (not all steps have outputs)."""
-        from omnibase_core.utils.workflow_executor import _build_workflow_context
+        from omnibase_core.utils.util_workflow_executor import _build_workflow_context
 
         workflow_id = uuid4()
         step1_id = uuid4()
@@ -1020,7 +1018,7 @@ class TestValidateJsonPayload:
 
     def test_valid_payload_passes(self) -> None:
         """Test valid JSON payload does not raise."""
-        from omnibase_core.utils.workflow_executor import _validate_json_payload
+        from omnibase_core.utils.util_workflow_executor import _validate_json_payload
 
         payload = {
             "workflow_id": str(uuid4()),
@@ -1037,13 +1035,13 @@ class TestValidateJsonPayload:
 
     def test_empty_payload_passes(self) -> None:
         """Test empty payload is valid."""
-        from omnibase_core.utils.workflow_executor import _validate_json_payload
+        from omnibase_core.utils.util_workflow_executor import _validate_json_payload
 
         _validate_json_payload({}, context="empty_step")
 
     def test_invalid_lambda_raises_error(self) -> None:
         """Test lambda in payload raises ModelOnexError."""
-        from omnibase_core.utils.workflow_executor import _validate_json_payload
+        from omnibase_core.utils.util_workflow_executor import _validate_json_payload
 
         invalid_payload: dict[str, object] = {"func": lambda x: x}
 
@@ -1062,7 +1060,7 @@ class TestValidateJsonPayload:
 
     def test_invalid_custom_object_raises_error(self) -> None:
         """Test non-serializable custom object raises ModelOnexError."""
-        from omnibase_core.utils.workflow_executor import _validate_json_payload
+        from omnibase_core.utils.util_workflow_executor import _validate_json_payload
 
         class CustomClass:
             pass
@@ -1078,7 +1076,7 @@ class TestValidateJsonPayload:
 
     def test_error_message_without_context(self) -> None:
         """Test error message when no context is provided."""
-        from omnibase_core.utils.workflow_executor import _validate_json_payload
+        from omnibase_core.utils.util_workflow_executor import _validate_json_payload
 
         invalid_payload: dict[str, object] = {"func": lambda x: x}
 
@@ -1091,7 +1089,7 @@ class TestValidateJsonPayload:
 
     def test_nested_invalid_object_raises_error(self) -> None:
         """Test deeply nested non-serializable object is detected."""
-        from omnibase_core.utils.workflow_executor import _validate_json_payload
+        from omnibase_core.utils.util_workflow_executor import _validate_json_payload
 
         invalid_payload: dict[str, object] = {
             "level1": {
@@ -1109,7 +1107,7 @@ class TestValidateJsonPayload:
     def test_uuid_passes_in_permissive_mode(self) -> None:
         """Test UUID objects are accepted in default permissive mode (strict=False)."""
 
-        from omnibase_core.utils.workflow_executor import _validate_json_payload
+        from omnibase_core.utils.util_workflow_executor import _validate_json_payload
 
         payload: dict[str, object] = {
             "workflow_id": uuid4(),  # Raw UUID object
@@ -1124,7 +1122,7 @@ class TestValidateJsonPayload:
         """Test datetime objects are accepted in default permissive mode (strict=False)."""
         from datetime import datetime
 
-        from omnibase_core.utils.workflow_executor import _validate_json_payload
+        from omnibase_core.utils.util_workflow_executor import _validate_json_payload
 
         payload: dict[str, object] = {
             "created_at": datetime.now(),
@@ -1136,7 +1134,7 @@ class TestValidateJsonPayload:
 
     def test_uuid_fails_in_strict_mode(self) -> None:
         """Test UUID objects are rejected in strict mode."""
-        from omnibase_core.utils.workflow_executor import _validate_json_payload
+        from omnibase_core.utils.util_workflow_executor import _validate_json_payload
 
         payload: dict[str, object] = {
             "workflow_id": uuid4(),  # Raw UUID - not allowed in strict mode
@@ -1152,7 +1150,7 @@ class TestValidateJsonPayload:
         """Test datetime objects are rejected in strict mode."""
         from datetime import datetime
 
-        from omnibase_core.utils.workflow_executor import _validate_json_payload
+        from omnibase_core.utils.util_workflow_executor import _validate_json_payload
 
         payload: dict[str, object] = {
             "created_at": datetime.now(),
@@ -1166,7 +1164,7 @@ class TestValidateJsonPayload:
 
     def test_lambda_fails_even_in_permissive_mode(self) -> None:
         """Test lambda still fails in permissive mode (default=str doesn't help)."""
-        from omnibase_core.utils.workflow_executor import _validate_json_payload
+        from omnibase_core.utils.util_workflow_executor import _validate_json_payload
 
         invalid_payload: dict[str, object] = {"func": lambda x: x}
 
@@ -1186,7 +1184,7 @@ class TestVerifyWorkflowIntegrity:
         self, simple_workflow_definition: ModelWorkflowDefinition
     ) -> None:
         """Test that None expected_hash skips verification."""
-        from omnibase_core.utils.workflow_executor import verify_workflow_integrity
+        from omnibase_core.utils.util_workflow_executor import verify_workflow_integrity
 
         # Should not raise - verification is skipped
         verify_workflow_integrity(simple_workflow_definition, expected_hash=None)
@@ -1195,7 +1193,7 @@ class TestVerifyWorkflowIntegrity:
         self, simple_workflow_definition: ModelWorkflowDefinition
     ) -> None:
         """Test that matching hash passes verification."""
-        from omnibase_core.utils.workflow_executor import (
+        from omnibase_core.utils.util_workflow_executor import (
             _compute_workflow_hash,
             verify_workflow_integrity,
         )
@@ -1214,7 +1212,7 @@ class TestVerifyWorkflowIntegrity:
         Hash mismatch is a SECURITY_VIOLATION (not just VALIDATION_ERROR) because
         it indicates potential tampering with workflow definitions.
         """
-        from omnibase_core.utils.workflow_executor import verify_workflow_integrity
+        from omnibase_core.utils.util_workflow_executor import verify_workflow_integrity
 
         wrong_hash = "invalid_hash_that_does_not_match"
 
@@ -1246,7 +1244,7 @@ class TestComputeWorkflowHash:
         self, simple_workflow_definition: ModelWorkflowDefinition
     ) -> None:
         """Test that hash computation is deterministic."""
-        from omnibase_core.utils.workflow_executor import _compute_workflow_hash
+        from omnibase_core.utils.util_workflow_executor import _compute_workflow_hash
 
         hash1 = _compute_workflow_hash(simple_workflow_definition)
         hash2 = _compute_workflow_hash(simple_workflow_definition)
@@ -1257,7 +1255,7 @@ class TestComputeWorkflowHash:
         self, simple_workflow_definition: ModelWorkflowDefinition
     ) -> None:
         """Test that hash is a valid SHA-256 hex string."""
-        from omnibase_core.utils.workflow_executor import _compute_workflow_hash
+        from omnibase_core.utils.util_workflow_executor import _compute_workflow_hash
 
         hash_value = _compute_workflow_hash(simple_workflow_definition)
 
@@ -1271,7 +1269,7 @@ class TestComputeWorkflowHash:
     ) -> None:
         """Test that different workflow definitions produce different hashes."""
         from omnibase_core.models.primitives.model_semver import ModelSemVer
-        from omnibase_core.utils.workflow_executor import _compute_workflow_hash
+        from omnibase_core.utils.util_workflow_executor import _compute_workflow_hash
 
         hash1 = _compute_workflow_hash(simple_workflow_definition)
 
@@ -1367,7 +1365,7 @@ class TestDeclarationOrderIntegration:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 3
         assert len(result.actions_emitted) == 3
 
@@ -1462,7 +1460,7 @@ class TestDeclarationOrderIntegration:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 4
         assert len(result.actions_emitted) == 4
 
@@ -1564,7 +1562,7 @@ class TestDeclarationOrderIntegration:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 4
         assert len(result.actions_emitted) == 4
 
@@ -1639,7 +1637,7 @@ class TestDeclarationOrderIntegration:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.actions_emitted) == 3
 
         # Map actions by step ID
@@ -1678,7 +1676,7 @@ class TestDeclarationOrderTopological:
 
         v1.0.2 Fix 5: Declaration order is the tiebreaker for equal priorities.
         """
-        from omnibase_core.utils.workflow_executor import _get_topological_order
+        from omnibase_core.utils.util_workflow_executor import _get_topological_order
 
         step1_id = uuid4()
         step2_id = uuid4()
@@ -1721,7 +1719,7 @@ class TestDeclarationOrderTopological:
         Emission order follows declaration order. Priority is passed to
         action.priority for target node scheduling.
         """
-        from omnibase_core.utils.workflow_executor import _get_topological_order
+        from omnibase_core.utils.util_workflow_executor import _get_topological_order
 
         low_priority_id = uuid4()
         medium_priority_id = uuid4()
@@ -1761,7 +1759,7 @@ class TestDeclarationOrderTopological:
 
     def test_priority_clamped_to_10(self) -> None:
         """Test that priority values over 10 are clamped to 10."""
-        from omnibase_core.utils.workflow_executor import _get_topological_order
+        from omnibase_core.utils.util_workflow_executor import _get_topological_order
 
         step1_id = uuid4()
         step2_id = uuid4()
@@ -1791,7 +1789,7 @@ class TestDeclarationOrderTopological:
 
     def test_priority_with_dependencies(self) -> None:
         """Test that dependencies take precedence over priority."""
-        from omnibase_core.utils.workflow_executor import _get_topological_order
+        from omnibase_core.utils.util_workflow_executor import _get_topological_order
 
         first_step_id = uuid4()
         second_step_id = uuid4()
@@ -1827,7 +1825,7 @@ class TestDeclarationOrderTopological:
         For steps at the same dependency level (children of the same parent),
         declaration order is the tiebreaker, NOT priority.
         """
-        from omnibase_core.utils.workflow_executor import _get_topological_order
+        from omnibase_core.utils.util_workflow_executor import _get_topological_order
 
         parent_id = uuid4()
         high_priority_child_id = uuid4()
@@ -1872,7 +1870,7 @@ class TestDeclarationOrderTopological:
         the default of 100, clamped to 10) are passed to action.priority
         for target node scheduling.
         """
-        from omnibase_core.utils.workflow_executor import _get_topological_order
+        from omnibase_core.utils.util_workflow_executor import _get_topological_order
 
         default_priority_id = uuid4()
         high_priority_id = uuid4()
@@ -1902,7 +1900,7 @@ class TestDeclarationOrderTopological:
 
     def test_default_priority_in_create_action_for_step(self) -> None:
         """Test that _create_action_for_step clamps default priority (100) to 10."""
-        from omnibase_core.utils.workflow_executor import _create_action_for_step
+        from omnibase_core.utils.util_workflow_executor import _create_action_for_step
 
         step = ModelWorkflowStep(
             step_name="Test Step",
@@ -1926,7 +1924,7 @@ class TestDeclarationOrderTopological:
         """
         from unittest.mock import MagicMock
 
-        from omnibase_core.utils.workflow_executor import _get_topological_order
+        from omnibase_core.utils.util_workflow_executor import _get_topological_order
 
         # Create mock steps with None priority to test defensive handling
         step1_id = uuid4()
@@ -1957,7 +1955,7 @@ class TestDeclarationOrderTopological:
         """
         from unittest.mock import MagicMock
 
-        from omnibase_core.utils.workflow_executor import _create_action_for_step
+        from omnibase_core.utils.util_workflow_executor import _create_action_for_step
 
         # Create mock step with None priority to test defensive handling
         mock_step = MagicMock(spec=ModelWorkflowStep)
@@ -2031,7 +2029,7 @@ class TestWorkflowContextIntegration:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 3
 
         # Verify each action's payload metadata contains expected data
@@ -2109,7 +2107,7 @@ class TestWorkflowContextIntegration:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 5
         assert len(result.actions_emitted) == 5
 
@@ -2446,7 +2444,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 100
         assert len(result.actions_emitted) == 100
         assert len(result.failed_steps) == 0
@@ -2487,7 +2485,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 100
         assert len(result.actions_emitted) == 100
         assert len(result.failed_steps) == 0
@@ -2527,7 +2525,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 100
         assert len(result.actions_emitted) == 100
         assert len(result.failed_steps) == 0
@@ -2564,7 +2562,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 100
         assert len(result.actions_emitted) == 100
         assert len(result.failed_steps) == 0
@@ -2600,7 +2598,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 200
         assert len(result.actions_emitted) == 200
 
@@ -2636,7 +2634,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 200
         assert len(result.actions_emitted) == 200
 
@@ -2711,7 +2709,7 @@ class TestWorkflowExecutorPerformance:
         steps = self._create_large_workflow_steps(100, pattern="linear")
 
         # Validate (which includes cycle detection)
-        from omnibase_core.utils.workflow_executor import _has_dependency_cycles
+        from omnibase_core.utils.util_workflow_executor import _has_dependency_cycles
 
         start_time = time.perf_counter()
         has_cycles = _has_dependency_cycles(steps)
@@ -2749,7 +2747,7 @@ class TestWorkflowExecutorPerformance:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 150
         assert len(result.actions_emitted) == 150
 
@@ -2803,8 +2801,8 @@ class TestWorkflowExecutorPerformance:
         par_time = time.perf_counter() - par_start
 
         # Both should complete successfully
-        assert seq_result.execution_status == EnumWorkflowState.COMPLETED
-        assert par_result.execution_status == EnumWorkflowState.COMPLETED
+        assert seq_result.execution_status == EnumWorkflowStatus.COMPLETED
+        assert par_result.execution_status == EnumWorkflowStatus.COMPLETED
 
         # Parallel should be faster (or at least not significantly slower)
         # We allow some tolerance since the executor's async nature may vary
@@ -2866,7 +2864,7 @@ class TestWorkflowSizeLimits:
             workflow_id=workflow_id,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == num_steps
         assert len(result.actions_emitted) == num_steps
         assert len(result.failed_steps) == 0
@@ -2908,7 +2906,7 @@ class TestWorkflowSizeLimits:
             workflow_id=workflow_id,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == num_steps
         assert len(result.actions_emitted) == num_steps
 
@@ -2968,7 +2966,7 @@ class TestWorkflowSizeLimits:
             workflow_id=workflow_id,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == num_predecessors + 1
         assert len(result.actions_emitted) == num_predecessors + 1
 
@@ -3026,8 +3024,8 @@ class TestWorkflowSizeLimits:
         )
 
         # Both should complete successfully
-        assert result1.execution_status == EnumWorkflowState.COMPLETED
-        assert result2.execution_status == EnumWorkflowState.COMPLETED
+        assert result1.execution_status == EnumWorkflowStatus.COMPLETED
+        assert result2.execution_status == EnumWorkflowStatus.COMPLETED
 
         # Completed steps should be in same order (deterministic)
         assert result1.completed_steps == result2.completed_steps, (
@@ -3122,7 +3120,7 @@ class TestWorkflowSizeLimits:
             workflow_id=uuid4(),
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 7
         assert len(result.failed_steps) == 0
 
@@ -3221,7 +3219,7 @@ class TestWorkflowSizeLimits:
             workflow_id=uuid4(),
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == num_steps
         assert len(result.actions_emitted) == num_steps
 
@@ -3253,7 +3251,7 @@ class TestWorkflowSizeLimitEnforcement:
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
         """Test workflow with exactly MAX_WORKFLOW_STEPS steps passes validation."""
-        from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
+        from omnibase_core.utils.util_workflow_executor import MAX_WORKFLOW_STEPS
 
         # Create workflow with exactly 1000 steps (at limit)
         # Uses model_construct to bypass Pydantic validation for performance
@@ -3272,7 +3270,7 @@ class TestWorkflowSizeLimitEnforcement:
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
         """Test workflow exceeding MAX_WORKFLOW_STEPS fails validation."""
-        from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
+        from omnibase_core.utils.util_workflow_executor import MAX_WORKFLOW_STEPS
 
         # Create workflow with 1001 steps (exceeds limit)
         # Uses model_construct to bypass Pydantic validation for performance
@@ -3313,7 +3311,7 @@ class TestWorkflowSizeLimitEnforcement:
             workflow_id=uuid4(),
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 1
         assert len(result.actions_emitted) == 1
 
@@ -3326,7 +3324,7 @@ class TestWorkflowSizeLimitEnforcement:
         """
         from unittest.mock import MagicMock
 
-        from omnibase_core.utils.workflow_executor import (
+        from omnibase_core.utils.util_workflow_executor import (
             MAX_STEP_PAYLOAD_SIZE_BYTES,
             _create_action_for_step,
         )
@@ -3370,7 +3368,7 @@ class TestWorkflowSizeLimitEnforcement:
         """
         from unittest.mock import patch
 
-        from omnibase_core.utils.workflow_executor import (
+        from omnibase_core.utils.util_workflow_executor import (
             MAX_TOTAL_PAYLOAD_SIZE_BYTES,
             _create_action_for_step,
         )
@@ -3407,7 +3405,7 @@ class TestWorkflowSizeLimitEnforcement:
             return (action, new_payload_size)
 
         with patch(
-            "omnibase_core.utils.workflow_executor._create_action_for_step",
+            "omnibase_core.utils.util_workflow_executor._create_action_for_step",
             side_effect=mock_create_action,
         ):
             # In sequential execution, the error is caught and handled gracefully
@@ -3420,7 +3418,7 @@ class TestWorkflowSizeLimitEnforcement:
             )
 
         # Workflow should fail but not raise an exception
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
         # Some steps should have completed before the limit was hit
         assert len(result.completed_steps) > 0
         # At least one step should have failed (the one that exceeded the limit)
@@ -3440,7 +3438,7 @@ class TestWorkflowSizeLimitEnforcement:
         """
         from unittest.mock import patch
 
-        from omnibase_core.utils.workflow_executor import (
+        from omnibase_core.utils.util_workflow_executor import (
             MAX_TOTAL_PAYLOAD_SIZE_BYTES,
             _create_action_for_step,
         )
@@ -3476,7 +3474,7 @@ class TestWorkflowSizeLimitEnforcement:
             return (action, new_payload_size)
 
         with patch(
-            "omnibase_core.utils.workflow_executor._create_action_for_step",
+            "omnibase_core.utils.util_workflow_executor._create_action_for_step",
             side_effect=mock_create_action,
         ):
             with pytest.raises(ModelOnexError) as exc_info:
@@ -3511,7 +3509,7 @@ class TestWorkflowSizeLimitEnforcement:
         """
         from unittest.mock import patch
 
-        from omnibase_core.utils.workflow_executor import (
+        from omnibase_core.utils.util_workflow_executor import (
             MAX_TOTAL_PAYLOAD_SIZE_BYTES,
             _create_action_for_step,
         )
@@ -3548,7 +3546,7 @@ class TestWorkflowSizeLimitEnforcement:
             return (action, new_payload_size)
 
         with patch(
-            "omnibase_core.utils.workflow_executor._create_action_for_step",
+            "omnibase_core.utils.util_workflow_executor._create_action_for_step",
             side_effect=mock_create_action,
         ):
             # In batch execution (which uses sequential internally), the error is
@@ -3561,7 +3559,7 @@ class TestWorkflowSizeLimitEnforcement:
             )
 
         # Workflow should fail but not raise an exception
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
         # Some steps should have completed before the limit was hit
         assert len(result.completed_steps) > 0
         # At least one step should have failed (the one that exceeded the limit)
@@ -3574,7 +3572,7 @@ class TestWorkflowSizeLimitEnforcement:
 
     def test_constants_exported(self) -> None:
         """Test that size limit constants are exported in __all__."""
-        from omnibase_core.utils.workflow_executor import (
+        from omnibase_core.utils.util_workflow_executor import (
             MAX_STEP_PAYLOAD_SIZE_BYTES,
             MAX_TOTAL_PAYLOAD_SIZE_BYTES,
             MAX_WORKFLOW_STEPS,
@@ -3616,7 +3614,7 @@ class TestWorkflowSizeLimitEnforcement:
             workflow_id=uuid4(),
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 10
         assert len(result.actions_emitted) == 10
         assert len(result.failed_steps) == 0
@@ -3627,7 +3625,7 @@ class TestWorkflowSizeLimitEnforcement:
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
         """Test that step limit validation error includes the actual count."""
-        from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
+        from omnibase_core.utils.util_workflow_executor import MAX_WORKFLOW_STEPS
 
         # Create workflow exceeding limit by 1 (minimum needed to trigger error)
         # Uses model_construct to bypass Pydantic validation for performance
@@ -3660,7 +3658,7 @@ class TestWorkflowSizeLimitEnforcement:
 
         Security: OMN-670 - DoS mitigation via validation short-circuit
         """
-        from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
+        from omnibase_core.utils.util_workflow_executor import MAX_WORKFLOW_STEPS
 
         # Create workflow with steps that would have other validation errors
         # (invalid dependencies) if validation continued past the step count check

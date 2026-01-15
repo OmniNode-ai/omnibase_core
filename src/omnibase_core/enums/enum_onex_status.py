@@ -22,10 +22,13 @@
 # === /OmniNode:Metadata ===
 
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumOnexStatus(str, Enum):
+@unique
+class EnumOnexStatus(StrValueHelper, str, Enum):
     SUCCESS = "success"
     WARNING = "warning"
     ERROR = "error"

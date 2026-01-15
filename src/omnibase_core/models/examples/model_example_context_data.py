@@ -1,10 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Example context data model.
 
@@ -12,15 +5,18 @@ Clean, strongly-typed replacement for dict[str, Any] in example context data.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_trigger import EnumExecutionTrigger
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -79,13 +75,11 @@ class ModelExampleContextData(BaseModel):
         description="Schema version for validation",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -96,10 +90,10 @@ class ModelExampleContextData(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> SerializedDict:
@@ -112,7 +106,7 @@ class ModelExampleContextData(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

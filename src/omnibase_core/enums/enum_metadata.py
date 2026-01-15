@@ -1,4 +1,6 @@
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -24,14 +26,16 @@ from enum import Enum
 # === /OmniNode:Metadata ===
 
 
-class EnumLifecycle(str, Enum):
+@unique
+class EnumLifecycle(StrValueHelper, str, Enum):
     DRAFT = "draft"
     ACTIVE = "active"
     DEPRECATED = "deprecated"
     ARCHIVED = "archived"
 
 
-class EnumEntrypointType(str, Enum):
+@unique
+class EnumEntrypointType(StrValueHelper, str, Enum):
     PYTHON = "python"
     CLI = "cli"
     DOCKER = "docker"
@@ -43,7 +47,8 @@ class EnumEntrypointType(str, Enum):
     HTML = "html"
 
 
-class EnumMetaType(str, Enum):
+@unique
+class EnumMetaType(StrValueHelper, str, Enum):
     TOOL = "tool"
     VALIDATOR = "validator"
     AGENT = "agent"
@@ -56,13 +61,15 @@ class EnumMetaType(str, Enum):
     UNKNOWN = "unknown"
 
 
-class EnumProtocolVersion(str, Enum):
+@unique
+class EnumProtocolVersion(StrValueHelper, str, Enum):
     V0_1_0 = "0.1.0"
     V1_0_0 = "1.0.0"
     # Add more as needed
 
 
-class EnumRuntimeLanguage(str, Enum):
+@unique
+class EnumRuntimeLanguage(StrValueHelper, str, Enum):
     PYTHON = "python"
     JAVASCRIPT = "javascript"
     TYPESCRIPT = "typescript"
@@ -71,6 +78,7 @@ class EnumRuntimeLanguage(str, Enum):
     UNKNOWN = "unknown"
 
 
+@unique
 class EnumNodeMetadataField(Enum):
     """
     Canonical Enum for all NodeMetadataBlock field names.
@@ -183,7 +191,8 @@ class EnumNodeMetadataField(Enum):
         return (cls.HASH, cls.LAST_MODIFIED_AT)
 
 
-class EnumUriType(str, Enum):
+@unique
+class EnumUriType(StrValueHelper, str, Enum):
     TOOL = "tool"
     VALIDATOR = "validator"
     AGENT = "agent"
@@ -200,11 +209,16 @@ SCHEMA_REF = "schema_ref"
 # Add more as needed
 
 
-class EnumToolType(str, Enum):
+@unique
+class EnumToolType(StrValueHelper, str, Enum):
     FUNCTION = "function"
     # Add more tool types as needed (e.g., SCRIPT, PIPELINE, etc.)
 
 
-class EnumToolRegistryMode(str, Enum):
+@unique
+class EnumToolRegistryMode(StrValueHelper, str, Enum):
     REAL = "real"
     MOCK = "mock"
+
+
+__all__ = ["EnumLifecycle"]

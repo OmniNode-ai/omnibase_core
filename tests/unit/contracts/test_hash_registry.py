@@ -55,7 +55,7 @@ class ModelTestContract(BaseModel):
         default_factory=lambda: ModelContractVersion(major=1, minor=0, patch=0)
     )
     description: str | None = Field(default=None)
-    node_type: str = Field(default="COMPUTE")
+    node_type: str = Field(default="COMPUTE_GENERIC")
     input_model: str = Field(default="omnibase_core.models.ModelInput")
     output_model: str = Field(default="omnibase_core.models.ModelOutput")
     optional_field: str | None = Field(default=None)
@@ -87,7 +87,7 @@ def sample_contract() -> ModelTestContract:
         name="test_contract",
         version="1.2.3",
         description="A test contract",
-        node_type="COMPUTE",
+        node_type="COMPUTE_GENERIC",
         input_model="omnibase_core.models.ModelInput",
         output_model="omnibase_core.models.ModelOutput",
     )
@@ -370,7 +370,7 @@ class TestFingerprintComputation:
     def test_compute_fingerprint_with_semver_duck_typing(self) -> None:
         """Test fingerprint computation with ModelSemVer via duck-typing.
 
-        Verifies the hasattr-based version detection (hash_registry.py:263-273)
+        Verifies the hasattr-based version detection (contract_hash_registry.py:263-273)
         correctly handles ModelSemVer objects without using isinstance().
         This tests the duck-typing path that checks for major/minor/patch attributes.
         """
@@ -397,7 +397,7 @@ class TestFingerprintComputation:
     def test_compute_fingerprint_invalid_version_type_raises_error(self) -> None:
         """Test that invalid version types raise ModelOnexError.
 
-        Verifies the error handling path (hash_registry.py:275-279) correctly
+        Verifies the error handling path (contract_hash_registry.py:275-279) correctly
         raises ModelOnexError for unsupported version types.
         """
 
@@ -419,7 +419,7 @@ class TestFingerprintComputation:
 
         Verifies that ANY Pydantic model with major/minor/patch attributes works,
         not just ModelSemVer or ModelContractVersion specifically. This ensures
-        the duck-typing path (hash_registry.py:263-273) works with arbitrary
+        the duck-typing path (contract_hash_registry.py:263-273) works with arbitrary
         version-like objects that have the required attributes.
 
         Note: The version object must be JSON-serializable since the entire
@@ -430,7 +430,7 @@ class TestFingerprintComputation:
             """A custom Pydantic version model that is NOT ModelSemVer or ModelContractVersion.
 
             This model has major/minor/patch attributes but is a completely
-            different type, testing the duck-typing path in hash_registry.py.
+            different type, testing the duck-typing path in contract_hash_registry.py.
             """
 
             major: int
@@ -1134,7 +1134,7 @@ class TestMigrationScenarios:
             version="1.0.0",
             description="Service contract",
             optional_field=None,
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
         )
 
         # Simulate loading from Python definition (no null fields explicitly set)
@@ -1142,7 +1142,7 @@ class TestMigrationScenarios:
             name="my_service",
             version="1.0.0",
             description="Service contract",
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
         )
 
         fp_yaml = compute_contract_fingerprint(yaml_loaded)
@@ -1246,7 +1246,7 @@ class TestContractHashRegistryConcurrency:
 
     See Also:
         docs/guides/THREADING.md: Complete thread safety guidelines for ONEX.
-        src/omnibase_core/contracts/hash_registry.py: ContractHashRegistry docstring.
+        src/omnibase_core/contracts/contract_hash_registry.py: ContractHashRegistry docstring.
     """
 
     def test_concurrent_access_without_locking_warning(self) -> None:

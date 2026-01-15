@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Conceptual complexity enumeration for skill level and understanding requirements.
 
@@ -7,12 +5,15 @@ Focused on cognitive difficulty, learning curve, and expertise requirements.
 Part of the unified complexity enum consolidation strategy.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumConceptualComplexity(str, Enum):
+class EnumConceptualComplexity(StrValueHelper, str, Enum):
     """
     Conceptual complexity levels for understanding and skill requirements.
 
@@ -26,10 +27,6 @@ class EnumConceptualComplexity(str, Enum):
     INTERMEDIATE = "intermediate"  # Moderate domain knowledge required
     ADVANCED = "advanced"  # Deep expertise required
     EXPERT = "expert"  # Expert-level knowledge required
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_numeric_value(cls, level: EnumConceptualComplexity) -> int:

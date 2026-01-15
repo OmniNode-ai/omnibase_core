@@ -12,6 +12,19 @@ This model represents internal runtime control signals that are:
 
 Produced by runtime after interpreting intents or events.
 Used for execution mechanics (scheduling, retries, delays).
+
+Payload Types:
+    The payload field accepts three types (in order of preference):
+    1. ModelRuntimeDirectivePayload: Typed payload with structured fields for
+       all directive types (SCHEDULE_EFFECT, ENQUEUE_HANDLER, RETRY_WITH_BACKOFF,
+       DELAY_UNTIL, CANCEL_EXECUTION).
+    2. TContext (Generic): Custom typed payloads via Generic[TContext] for
+       specialized use cases not covered by ModelRuntimeDirectivePayload.
+    3. dict[str, Any]: Backwards compatible untyped payloads.
+
+Generic Parameters:
+    TContext: Optional custom payload type. When not parameterized, only
+        ModelRuntimeDirectivePayload and dict[str, Any] are available.
 """
 
 from datetime import UTC, datetime

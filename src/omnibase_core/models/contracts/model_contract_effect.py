@@ -21,7 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type aliases for structured data - Strict typing is enforced for Any types
-from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_constraints import PrimitiveValueType
 
 ParameterValue = PrimitiveValueType
 StructuredData = dict[str, ParameterValue]
@@ -587,7 +587,14 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
                     },
                 ),
             ) from e
-        except Exception as e:
+        except (
+            AttributeError,
+            ValueError,
+            TypeError,
+            KeyError,
+            OSError,
+            RuntimeError,
+        ) as e:
             raise ModelOnexError(
                 message=f"Failed to load contract YAML: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

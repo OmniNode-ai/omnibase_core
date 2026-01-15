@@ -4,9 +4,8 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import (
@@ -32,6 +31,10 @@ class ModelEventBusInputState(BaseModel):
     - Factory methods for common use cases
     """
 
+    # Note on from_attributes=True: Added for pytest-xdist parallel execution
+    # compatibility. See CLAUDE.md "Pydantic from_attributes=True for Value Objects".
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
     version: ModelSemVer = Field(
         default_factory=default_model_version,
         description="Schema version for input state (semantic version)",
@@ -45,12 +48,10 @@ class ModelEventBusInputState(BaseModel):
     correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID for tracking across operations",
-        max_length=MAX_IDENTIFIER_LENGTH,
     )
     event_id: UUID | None = Field(
         default=None,
         description="Unique event identifier",
-        max_length=MAX_IDENTIFIER_LENGTH,
     )
     integration: bool | None = Field(
         default=None, description="Integration mode flag for testing and validation"
@@ -72,7 +73,7 @@ class ModelEventBusInputState(BaseModel):
 
     @field_validator("version", mode="before")
     @classmethod
-    def parse_version(cls, v: Any) -> Any:
+    def parse_version(cls, v: Any) -> ModelSemVer:
         """Parse and validate semantic version."""
         if isinstance(v, ModelSemVer):
             return v
@@ -177,7 +178,7 @@ class ModelEventBusInputState(BaseModel):
             with contextlib.suppress(ValueError):
                 updates["timeout_seconds"] = int(timeout)
         if priority := os.getenv(f"{env_prefix}PRIORITY"):
-            if priority.lower() in ["low", "normal", "high", "critical"]:
+            if priority.lower() in {"low", "normal", "high", "critical"}:
                 updates["priority"] = priority.lower()
         if retry_count := os.getenv(f"{env_prefix}RETRY_COUNT"):
             with contextlib.suppress(ValueError):

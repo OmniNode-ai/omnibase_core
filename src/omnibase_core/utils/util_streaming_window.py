@@ -43,7 +43,6 @@ See Also:
 
 from collections import deque
 from datetime import datetime, timedelta
-from typing import Any
 
 
 class UtilStreamingWindow:
@@ -90,10 +89,10 @@ class UtilStreamingWindow:
         """
         self.window_size_ms = window_size_ms
         self.overlap_ms = overlap_ms
-        self.buffer: deque[tuple[Any, datetime]] = deque()
+        self.buffer: deque[tuple[object, datetime]] = deque()
         self.window_start = datetime.now()
 
-    def add_item(self, item: Any) -> bool:
+    def add_item(self, item: object) -> bool:
         """
         Add item to window.
 
@@ -110,7 +109,7 @@ class UtilStreamingWindow:
         window_duration = (current_time - self.window_start).total_seconds() * 1000
         return window_duration >= self.window_size_ms
 
-    def get_window_items(self) -> list[Any]:
+    def get_window_items(self) -> list[object]:
         """
         Get all items in current window.
 
@@ -140,12 +139,12 @@ class UtilStreamingWindow:
         self.window_start = datetime.now()
 
 
-def __getattr__(name: str) -> Any:
+def __getattr__(name: str) -> object:
     """
-    Lazy loading for backwards compatibility aliases.
+    Lazy loading for deprecated aliases per OMN-1071 renaming.
 
-    Backwards Compatibility Aliases (OMN-1071):
-    -------------------------------------------
+    Deprecated Aliases:
+    -------------------
     All deprecated aliases emit DeprecationWarning when accessed:
     - ModelStreamingWindow -> UtilStreamingWindow
     """
@@ -160,4 +159,6 @@ def __getattr__(name: str) -> Any:
         )
         return UtilStreamingWindow
 
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    raise AttributeError(  # error-ok: required for __getattr__ protocol
+        f"module {__name__!r} has no attribute {name!r}"
+    )

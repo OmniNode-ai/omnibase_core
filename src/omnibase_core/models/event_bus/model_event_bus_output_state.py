@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+__all__ = ["ModelEventBusOutputState"]
+
 import re
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -7,7 +9,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.constants import MAX_ERROR_MESSAGE_LENGTH, MAX_IDENTIFIER_LENGTH
+from omnibase_core.constants import MAX_ERROR_MESSAGE_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.core.model_error_summary import ModelErrorSummary
@@ -18,7 +20,7 @@ from omnibase_core.models.primitives.model_semver import (
     default_model_version,
     parse_semver_from_string,
 )
-from omnibase_core.models.services.model_custom_fields import ModelErrorDetails
+from omnibase_core.models.services.model_error_details import ModelErrorDetails
 
 from .model_event_bus_output_field import ModelEventBusOutputField
 
@@ -38,12 +40,23 @@ class ModelEventBusOutputState(BaseModel):
     - Operational metadata and monitoring integration
     - Business intelligence and analytics support
     - Factory methods for common scenarios
+
+    Note:
+        Error codes are validated using a SIMPLER pattern (_ERROR_CODE_PATTERN)
+        than the standard ERROR_CODE_PATTERN. This pattern accepts simple codes
+        like "UNKNOWN", "TIMEOUT", etc. without requiring the CATEGORY_NNN suffix.
+        This is intentional for event bus status codes which have different
+        requirements than structured error codes.
     """
 
-    # Pre-compiled regex pattern for error code validation
-    _ERROR_CODE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Z0-9_]+$")
+    # Private pattern for event bus error codes - intentionally simpler than
+    # the centralized ERROR_CODE_PATTERN. Accepts codes like "UNKNOWN", "TIMEOUT"
+    # without requiring the underscore-digit suffix (e.g., AUTH_001).
+    _ERROR_CODE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
-    model_config = ConfigDict(validate_assignment=True, extra="forbid")
+    # Note on from_attributes=True: Added for pytest-xdist parallel execution
+    # compatibility. See CLAUDE.md "Pydantic from_attributes=True for Value Objects".
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
     version: ModelSemVer = Field(
         default_factory=default_model_version,
         description="Schema version for output state (matches input)",
@@ -63,12 +76,10 @@ class ModelEventBusOutputState(BaseModel):
     correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID for tracking across operations",
-        max_length=MAX_IDENTIFIER_LENGTH,
     )
     event_id: UUID | None = Field(
         default=None,
         description="Unique event identifier",
-        max_length=MAX_IDENTIFIER_LENGTH,
     )
     processing_time_ms: int | None = Field(
         default=None, description="Processing time in milliseconds", ge=0
@@ -81,7 +92,11 @@ class ModelEventBusOutputState(BaseModel):
         description="Specific error code for programmatic handling",
         max_length=50,
     )
-    error_details: ModelErrorDetails[Any] | None = Field(
+    # Note: type: ignore[type-arg] is intentional here. ModelErrorDetails is generic
+    # with TContext bound to BaseModel, but we don't constrain to a specific context type
+    # for event bus output. The context_data field within ModelErrorDetails accepts both
+    # typed contexts AND dict[str, ModelSchemaValue], so this is safe at runtime.
+    error_details: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None, description="Detailed error information for debugging"
     )
     metrics: ModelMonitoringMetrics = Field(
@@ -144,7 +159,23 @@ class ModelEventBusOutputState(BaseModel):
     @field_validator("error_code")
     @classmethod
     def validate_error_code(cls, v: str | None) -> str | None:
-        """Validate error code format."""
+        """Validate error code format using the simpler event bus pattern.
+
+        Event bus error codes use a MORE PERMISSIVE pattern than the standard
+        ERROR_CODE_PATTERN. This allows simple codes like "UNKNOWN", "TIMEOUT",
+        "ERROR", etc. without requiring the CATEGORY_NNN suffix.
+
+        The pattern accepts: uppercase letters, digits, and underscores.
+
+        Args:
+            v: The error code string to validate, or None.
+
+        Returns:
+            The validated error code (uppercase, stripped), or None.
+
+        Raises:
+            ModelOnexError: If the error code contains invalid characters.
+        """
         if v is None:
             return v
         v = v.strip().upper()
@@ -154,7 +185,10 @@ class ModelEventBusOutputState(BaseModel):
         if not cls._ERROR_CODE_PATTERN.match(v):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="error_code must contain only uppercase letters, numbers, and underscores",
+                message=(
+                    f"Invalid error_code format '{v}': expected uppercase letters, "
+                    f"digits, and underscores only (e.g., UNKNOWN, TIMEOUT, AUTH_001)."
+                ),
             )
         return v
 
@@ -417,10 +451,10 @@ class ModelEventBusOutputState(BaseModel):
             return "medium_negative"
         if self.is_performance_concerning():
             return "low_negative"
-        if self.is_successful() and self.get_performance_category() in [
+        if self.is_successful() and self.get_performance_category() in {
             "excellent",
             "good",
-        ]:
+        }:
             return "positive"
         return "neutral"
 
@@ -578,20 +612,33 @@ class ModelEventBusOutputState(BaseModel):
     def create_with_tracking(
         cls,
         version: ModelSemVer | str,
-        status: str,
+        status: EnumOnexStatus | str,
         message: str,
         correlation_id: UUID,
         event_id: UUID,
         processing_time_ms: int | None = None,
     ) -> ModelEventBusOutputState:
         """Create output state with full tracking information."""
+        # Normalize status to EnumOnexStatus
+        if isinstance(status, EnumOnexStatus):
+            status_enum = status
+        else:
+            try:
+                status_enum = EnumOnexStatus(status)
+            except ValueError as e:
+                raise ModelOnexError(
+                    message=f"Invalid status value: {e}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    context={"value": status},
+                ) from e
+        is_success = status_enum == EnumOnexStatus.SUCCESS
         return cls(
             version=(
                 parse_semver_from_string(str(version))
                 if not isinstance(version, ModelSemVer)
                 else version
             ),
-            status=EnumOnexStatus(status),
+            status=status_enum,
             message=message,
             correlation_id=correlation_id,
             event_id=event_id,
@@ -600,8 +647,8 @@ class ModelEventBusOutputState(BaseModel):
                 response_time_ms=(
                     float(processing_time_ms) if processing_time_ms else None
                 ),
-                success_rate=100.0 if status == "success" else 0.0,
-                error_rate=0.0 if status == "success" else 100.0,
-                health_score=100.0 if status == "success" else 0.0,
+                success_rate=100.0 if is_success else 0.0,
+                error_rate=0.0 if is_success else 100.0,
+                health_score=100.0 if is_success else 0.0,
             ),
         )

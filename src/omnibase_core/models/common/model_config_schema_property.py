@@ -13,7 +13,7 @@ Supports type aliases:
 
 from typing import Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -39,7 +39,7 @@ class ModelConfigSchemaProperty(BaseModel):
 
     # Use extra="ignore" to allow JSON Schema fields we don't explicitly model
     # (like 'items' for arrays) without causing validation errors
-    model_config = {"extra": "ignore"}
+    model_config = ConfigDict(extra="ignore")
 
     type: str = Field(
         default="string",

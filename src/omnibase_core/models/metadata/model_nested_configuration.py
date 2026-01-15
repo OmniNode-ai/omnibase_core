@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from typing import cast
-
-from pydantic import Field
-
 """
 Nested configuration model.
 
@@ -11,10 +5,11 @@ Clean, strongly-typed model for nested configuration data.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_config_type import EnumConfigType
 from omnibase_core.models.infrastructure.model_value import ModelValue
@@ -46,28 +41,24 @@ class ModelNestedConfiguration(BaseModel):
         description="Configuration settings with strongly-typed values",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        if self.config_display_name:
+            result["name"] = self.config_display_name
+        result["metadata"] = {
+            "config_id": str(self.config_id),
+            "config_type": self.config_type.value,
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).

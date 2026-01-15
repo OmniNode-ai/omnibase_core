@@ -7,13 +7,11 @@ Part of the ModelCliExecution restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_cli_execution_metadata_serialized import (
     TypedDictCliExecutionMetadataSerialized,
 )
@@ -115,11 +113,11 @@ class ModelCliExecutionMetadata(BaseModel):
         """Create metadata with custom context."""
         return cls(custom_context=context)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -148,15 +146,7 @@ class ModelCliExecutionMetadata(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        return True
 
 
 # Export for use

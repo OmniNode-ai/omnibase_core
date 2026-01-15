@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Data format enumeration for specifying data format types.
 
@@ -7,12 +5,15 @@ Provides strongly typed data format specifications for examples,
 configurations, and data processing across the ONEX architecture.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumDataFormat(str, Enum):
+class EnumDataFormat(StrValueHelper, str, Enum):
     """
     Strongly typed data formats.
 
@@ -51,10 +52,6 @@ class EnumDataFormat(str, Enum):
     ZIP = "zip"
     TAR = "tar"
     GZIP = "gzip"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_text_formats(cls) -> list[EnumDataFormat]:

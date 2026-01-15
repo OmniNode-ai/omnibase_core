@@ -59,7 +59,7 @@ Example Python Usage:
 
 See Also:
     - omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step: Step definitions
-    - omnibase_core.utils.compute_executor: Executes these contracts
+    - omnibase_core.utils.util_compute_executor: Executes these contracts
     - omnibase_core.mixins.mixin_compute_execution: Contract validation utilities
     - docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md: Full specification
 """
@@ -155,7 +155,7 @@ class ModelComputeSubcontract(BaseModel):
     # Upper bound of 3600000ms (1 hour) prevents unreasonable timeout values
     pipeline_timeout_ms: int | None = Field(default=None, gt=0, le=3600000)
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
     @field_validator("pipeline")
     @classmethod

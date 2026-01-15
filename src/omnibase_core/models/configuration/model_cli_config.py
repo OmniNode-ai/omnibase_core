@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -19,7 +19,6 @@ validation, and default value management for production CLI operations.
 """
 
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -39,6 +38,8 @@ class ModelCLIConfig(BaseModel):
     Supports environment variable overrides and validation for all
     configuration sections used by the production CLI.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     # Core configuration sections
     tiers: ModelTierConfig = Field(default_factory=ModelTierConfig)
@@ -65,7 +66,7 @@ class ModelCLIConfig(BaseModel):
     debug: bool = Field(default=False, description="Enable debug mode")
     verbose: bool = Field(default=False, description="Enable verbose output")
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: object) -> None:
         """Initialize configuration after model creation."""
         self.ensure_directories_exist()
 
@@ -79,8 +80,8 @@ class ModelCLIConfig(BaseModel):
         """Load configuration from file."""
         if not config_path.exists():
             raise ModelOnexError(
-                f"Configuration file not found: {config_path}",
-                EnumCoreErrorCode.FILE_NOT_FOUND,
+                message=f"Configuration file not found: {config_path}",
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
             )
 
         # In a real implementation, you would load from YAML/JSON here

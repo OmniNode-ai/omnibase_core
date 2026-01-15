@@ -9,11 +9,11 @@ This implementation does not use Any types.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
-from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_constraints import PrimitiveValueType
 
 # Type aliases for structured data
 StructuredData = dict[str, PrimitiveValueType]
@@ -56,11 +56,11 @@ class ModelWorkflowExecutionResult(BaseModel):
         description="Performance metrics for the execution",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelWorkflowExecutionResult"]

@@ -5,14 +5,17 @@
 
 import json
 import time
-from typing import TYPE_CHECKING, Any
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
 from pydantic import TypeAdapter, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,
     ModelDiscoveryResponseModelMetadata,
@@ -25,10 +28,33 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEve
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.protocols import ProtocolEventBus
-from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_discovery_stats import TypedDictDiscoveryStats
 
+# TypeAdapter for duck-typing validation of discovery request metadata
+_DISCOVERY_REQUEST_ADAPTER: TypeAdapter[ModelDiscoveryRequestModelMetadata] = (
+    TypeAdapter(ModelDiscoveryRequestModelMetadata)
+)
+
+# Lazy initialization of introspection adapter to avoid import cycle
+_INTROSPECTION_ADAPTER: TypeAdapter[object] | None = None
+
+
+def _get_introspection_adapter() -> TypeAdapter[object]:
+    """Get or create the introspection data TypeAdapter (lazy init to avoid cycles)."""
+    global _INTROSPECTION_ADAPTER
+    if _INTROSPECTION_ADAPTER is None:
+        from omnibase_core.models.core.model_introspection_data import (
+            ModelIntrospectionData,
+        )
+
+        _INTROSPECTION_ADAPTER = TypeAdapter(ModelIntrospectionData)
+    return _INTROSPECTION_ADAPTER
+
+
 if TYPE_CHECKING:
+    from omnibase_core.models.core.model_introspection_data import (
+        ModelIntrospectionData,
+    )
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_core.protocols import ProtocolEventMessage
     from omnibase_core.types.typed_dict_mixin_types import (
@@ -54,20 +80,25 @@ class MixinDiscoveryResponder:
     - Override get_health_status() to provide current health
 
     RESPONSE CONTENT:
-    - Full introspection data from node
+    - Full introspection data from node (ModelIntrospectionData)
     - Current health status and capabilities
     - Event channels and version information
     - Response time metrics
 
+    TYPE SAFETY:
+    - Uses TypeAdapter for duck-typing validation of discovery metadata
+    - No isinstance checks for protocol validation
+    - Consistent with ONEX patterns
+
     THREAD SAFETY:
-    This mixin is NOT thread-safe by default:
+    Warning: This mixin is NOT thread-safe by default:
     - Instance state (_discovery_stats, _last_response_time) can be corrupted
     - Concurrent access requires external synchronization (threading.Lock)
     - Each thread should use its own instance, or wrap access with locks
     - See docs/guides/THREADING.md for comprehensive threading guidelines
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         super().__init__(*args, **kwargs)
         self._discovery_active = False
         self._last_response_time: float = 0.0
@@ -78,10 +109,10 @@ class MixinDiscoveryResponder:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         self._discovery_event_bus: ProtocolEventBus | None = None
-        self._discovery_unsubscribe: Any = None  # Callable to unsubscribe
+        self._discovery_unsubscribe: Callable[[], Awaitable[None]] | None = None
 
     async def start_discovery_responder(
         self,
@@ -144,7 +175,10 @@ class MixinDiscoveryResponder:
                 },
             )
 
-        except Exception as e:
+        except ModelOnexError:
+            # Re-raise ONEX errors directly (already structured)
+            raise
+        except Exception as e:  # fallback-ok: convert generic exceptions to ONEX errors
             emit_log_event(
                 LogLevel.ERROR,
                 f"Failed to start discovery responder: {e!s}",
@@ -153,7 +187,7 @@ class MixinDiscoveryResponder:
             raise ModelOnexError(
                 message=f"Failed to start discovery responder: {e!s}",
                 error_code=EnumCoreErrorCode.DISCOVERY_SETUP_FAILED,
-            )
+            ) from e
 
     async def stop_discovery_responder(self) -> None:
         """
@@ -169,7 +203,8 @@ class MixinDiscoveryResponder:
             try:
                 await self._discovery_unsubscribe()
             except Exception:
-                pass  # Ignore errors during cleanup
+                # cleanup-resilience-ok: cleanup errors during shutdown are non-critical
+                pass
 
         emit_log_event(
             LogLevel.INFO,
@@ -192,7 +227,7 @@ class MixinDiscoveryResponder:
 
             # Deserialize the envelope from message value
             envelope_dict = json.loads(message.value.decode("utf-8"))
-            envelope: ModelEventEnvelope[Any] = ModelEventEnvelope(**envelope_dict)
+            envelope: ModelEventEnvelope[object] = ModelEventEnvelope(**envelope_dict)
 
             # Handle the discovery request
             await self._handle_discovery_request(envelope)
@@ -200,9 +235,9 @@ class MixinDiscoveryResponder:
             # Acknowledge message receipt only after successful handling
             await message.ack()
 
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             # Log non-fatal discovery errors for observability
-            from omnibase_core.logging.structured import (
+            from omnibase_core.logging.logging_structured import (
                 emit_log_event_sync as emit_log_event,
             )
 
@@ -216,13 +251,13 @@ class MixinDiscoveryResponder:
                 },
             )
             # Track error metrics
-            self._discovery_stats["error_count"] += 1
+            self._discovery_stats["error_level_count"] += 1
 
             # Acknowledge message even on error to prevent infinite redelivery
             # Discovery failures are non-fatal and should not block the system
             try:
                 await message.ack()
-            except Exception as ack_error:
+            except (RuntimeError, ValueError) as ack_error:
                 emit_log_event(
                     LogLevel.ERROR,
                     "Failed to acknowledge discovery message after error",
@@ -234,10 +269,15 @@ class MixinDiscoveryResponder:
                 )
 
     async def _handle_discovery_request(
-        self, envelope: "ModelEventEnvelope[Any]"
+        self, envelope: "ModelEventEnvelope[object]"
     ) -> None:
         """
         Handle incoming discovery requests.
+
+        Discovery Protocol:
+        - Events with type "NODE_DISCOVERY_REQUEST" are handled
+        - Request metadata is extracted from the event's `data` field (dict format)
+        - TypeAdapter is used for duck-typing validation (no isinstance checks)
 
         Args:
             envelope: Event envelope containing the discovery request
@@ -251,24 +291,25 @@ class MixinDiscoveryResponder:
                     envelope_type=type(envelope).__name__,
                 )
 
-            # Extract event from envelope with runtime validation
-            # Use TypeAdapter for safe runtime type validation instead of cast
+            # Extract event from envelope and cast to OnexEvent for type safety
             event = envelope.payload
-            if isinstance(event, OnexEvent):
-                onex_event = event
-            else:
-                # Try to validate as OnexEvent if it's a dict-like object
-                try:
-                    onex_event_adapter: TypeAdapter[OnexEvent] = TypeAdapter(OnexEvent)
-                    onex_event = onex_event_adapter.validate_python(event)
-                except ValidationError as ve:
-                    raise ModelOnexError(
-                        message=f"Event payload is not a valid OnexEvent: {ve}",
-                        error_code=EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST,
-                        event_type=type(event).__name__,
-                    )
+            # Type cast for mypy - event is ModelOnexEvent after extraction
+            onex_event = cast("OnexEvent", event)
 
-            if not is_event_equal(onex_event.event_type, "NODE_DISCOVERY_REQUEST"):
+            # STRICT: Event must have event_type attribute
+            if not hasattr(onex_event, "event_type"):
+                raise ModelOnexError(
+                    message="Event missing required 'event_type' attribute",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST,
+                    event_type=type(onex_event).__name__,
+                )
+
+            # Check for discovery request event type
+            is_discovery_request = is_event_equal(
+                onex_event.event_type, "NODE_DISCOVERY_REQUEST"
+            )
+
+            if not is_discovery_request:
                 return  # Not a discovery request
 
             # TypedDict ensures correct types at initialization
@@ -281,24 +322,11 @@ class MixinDiscoveryResponder:
                 self._discovery_stats["throttled_requests"] += 1
                 return  # Throttled
 
-            # Extract request metadata from data field
-            # Discovery requests store metadata in the event data field
-            request_data = onex_event.data
-            if request_data is None:
-                return  # No request data
-
-            # Parse data into ModelDiscoveryRequestModelMetadata
-            # Use TypeAdapter for safe runtime validation
-            try:
-                # ModelEventData always has model_dump() as a Pydantic BaseModel
-                data_dict = request_data.model_dump()
-                request_adapter: TypeAdapter[ModelDiscoveryRequestModelMetadata] = (
-                    TypeAdapter(ModelDiscoveryRequestModelMetadata)
-                )
-                request_metadata = request_adapter.validate_python(data_dict)
-            except ValidationError:
-                # fallback-ok: Event handler must not crash on malformed requests
-                return  # Invalid request format - couldn't parse metadata
+            # Extract request metadata from event's data field using TypeAdapter
+            # Discovery protocol puts metadata in the data field (dict format)
+            request_metadata = self._extract_discovery_request_metadata(onex_event)
+            if request_metadata is None:
+                return  # Invalid request format
 
             # Check if we match filter criteria
             if not self._matches_discovery_criteria(request_metadata):
@@ -308,7 +336,7 @@ class MixinDiscoveryResponder:
             # Generate discovery response (updates metrics on success)
             await self._send_discovery_response(onex_event, request_metadata)
 
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             # Log non-fatal discovery errors for observability
             emit_log_event(
                 LogLevel.WARNING,
@@ -320,7 +348,48 @@ class MixinDiscoveryResponder:
                 },
             )
             # Track error metrics
-            self._discovery_stats["error_count"] += 1
+            self._discovery_stats["error_level_count"] += 1
+
+    def _extract_discovery_request_metadata(
+        self, onex_event: OnexEvent
+    ) -> ModelDiscoveryRequestModelMetadata | None:
+        """
+        Extract discovery request metadata from event using TypeAdapter.
+
+        Discovery protocol places metadata in the event's `data` field.
+        The data field is typed as ModelEventData, but discovery protocol
+        uses it to store discovery request metadata as a dict.
+        This method uses TypeAdapter for duck-typing validation.
+
+        Args:
+            onex_event: The ONEX event containing the discovery request
+
+        Returns:
+            Validated ModelDiscoveryRequestModelMetadata or None if invalid
+        """
+        # Try to extract data dict from event
+        if onex_event.data is None:
+            return None
+
+        # Convert ModelEventData to dict for TypeAdapter validation
+        # Note: discovery protocol places metadata in data field as model_dump()
+        data_dict = onex_event.data.model_dump()
+
+        # Use TypeAdapter for duck-typing validation
+        try:
+            return _DISCOVERY_REQUEST_ADAPTER.validate_python(data_dict)
+        except ValidationError as e:
+            # Log validation failure for observability
+            emit_log_event(
+                LogLevel.DEBUG,
+                "Discovery request metadata validation failed",
+                {
+                    "component": "DiscoveryResponder",
+                    "validation_error": str(e),
+                    "operation": "_extract_discovery_request_metadata",
+                },
+            )
+            return None
 
     def _matches_discovery_criteria(
         self, request: ModelDiscoveryRequestModelMetadata
@@ -369,7 +438,7 @@ class MixinDiscoveryResponder:
         Override this method in subclasses for custom filtering logic.
 
         Args:
-            filter_criteria: Custom filter criteria (TypedDictFilterCriteria)
+            filter_criteria: Custom filter criteria (TypedDictFilterCriteria with optional fields)
 
         Returns:
             bool: True if node matches criteria, False otherwise
@@ -435,52 +504,38 @@ class MixinDiscoveryResponder:
                     if isinstance(values, list):
                         event_channels_list.extend(values)
 
-            # Validate introspection data with TypeAdapter for type safety
-            from omnibase_core.models.core.model_introspection_data import (
-                ModelIntrospectionData,
-            )
-
-            introspection_adapter: TypeAdapter[ModelIntrospectionData] = TypeAdapter(
-                ModelIntrospectionData
-            )
-            validated_introspection = introspection_adapter.validate_python(
-                introspection_data
-            )
+            # Determine node type from method or introspection data
+            node_type_value: str
+            if hasattr(self, "get_node_type"):
+                node_type_value = self.get_node_type()
+            elif hasattr(introspection_data, "node_type"):
+                node_type_value = introspection_data.node_type
+            else:
+                node_type_value = self.__class__.__name__
 
             response_metadata = ModelDiscoveryResponseModelMetadata(
                 request_id=request.request_id,
                 node_id=node_id_value,
-                introspection=validated_introspection,
+                introspection=introspection_data,
                 health_status=self.get_health_status(),
                 capabilities=self.get_discovery_capabilities(),
-                node_type=(
-                    self.get_node_type()
-                    if hasattr(self, "get_node_type")
-                    else str(
-                        introspection_data.get("node_type", self.__class__.__name__)
-                    )
-                ),
+                node_type=node_type_value,
                 version=version_semver,
                 event_channels=event_channels_list,
                 response_time_ms=(time.time() - response_start) * 1000,
             )
 
-            # Use data field for discovery metadata instead of metadata field
-            # Validate response dict as ModelEventData for type safety
-            from omnibase_core.models.core.model_event_data import ModelEventData
-
-            event_data_adapter: TypeAdapter[ModelEventData] = TypeAdapter(
-                ModelEventData
-            )
-            validated_event_data = event_data_adapter.validate_python(
-                response_metadata.model_dump()
-            )
-
+            # Discovery Protocol Design Note:
+            # The OnexEvent.data field is typed as ModelEventData | None, but discovery
+            # protocol requires placing ModelDiscoveryResponseModelMetadata in this field.
+            # This is a known protocol limitation - discovery metadata structure does not
+            # fit ModelEventData's rigid schema. The receiving end deserializes the dict
+            # directly to ModelDiscoveryResponseModelMetadata.
             response_event = OnexEvent(
-                event_type=create_event_type_from_registry("NODE_DISCOVERY_RESPONSE"),
+                event_type=create_event_type_from_registry("DISCOVERY_RESPONSE"),
                 node_id=node_id_value,
                 correlation_id=original_event.correlation_id,
-                data=validated_event_data,
+                data=response_metadata.model_dump(),  # type: ignore[arg-type]  # Discovery protocol places metadata dict in data field; receiver deserializes directly
             )
 
             # Publish response (assuming we have access to event bus)
@@ -514,7 +569,7 @@ class MixinDiscoveryResponder:
                 )  # Use actual publish time, not request time
                 self._discovery_stats["responses_sent"] += 1
 
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             # Log discovery errors for observability
             emit_log_event(
                 LogLevel.WARNING,
@@ -525,7 +580,7 @@ class MixinDiscoveryResponder:
                     "operation": "_send_discovery_response",
                 },
             )
-            # Note: error_count is incremented by the caller (_handle_discovery_request)
+            # Note: error_level_count is incremented by the caller (_handle_discovery_request)
             # to avoid double-counting when exception is re-raised
 
             # Re-raise to signal failure to caller
@@ -534,17 +589,19 @@ class MixinDiscoveryResponder:
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
             ) from e
 
-    def _get_discovery_introspection(self) -> SerializedDict:
+    def _get_discovery_introspection(self) -> "ModelIntrospectionData":
         """
         Get introspection data for discovery response.
 
         STRICT: Node must implement get_introspection_response() method.
+        Uses TypeAdapter for duck-typing validation of the response.
 
         Returns:
-            SerializedDict: Node introspection data as serialized dict
+            ModelIntrospectionData: Validated node introspection data
 
         Raises:
             ModelOnexError: If get_introspection_response() method is missing
+                or returns incompatible data
         """
         if not hasattr(self, "get_introspection_response"):
             raise ModelOnexError(
@@ -554,8 +611,24 @@ class MixinDiscoveryResponder:
             )
 
         introspection_response = self.get_introspection_response()
-        result: SerializedDict = introspection_response.model_dump()
-        return result
+
+        # If already a BaseModel, validate using TypeAdapter for duck-typing
+        adapter = _get_introspection_adapter()
+        if hasattr(introspection_response, "model_dump"):
+            data_dict = introspection_response.model_dump()
+        else:
+            data_dict = introspection_response
+
+        try:
+            result = adapter.validate_python(data_dict)
+            return cast("ModelIntrospectionData", result)
+        except ValidationError as e:
+            raise ModelOnexError(
+                message="Introspection response does not match ModelIntrospectionData schema",
+                error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
+                node_type=self.__class__.__name__,
+                validation_errors=str(e),
+            ) from e
 
     def get_discovery_capabilities(self) -> list[str]:
         """
@@ -676,7 +749,7 @@ class MixinDiscoveryResponder:
             throttled_requests=self._discovery_stats["throttled_requests"],
             filtered_requests=self._discovery_stats["filtered_requests"],
             last_request_time=self._discovery_stats["last_request_time"],
-            error_count=self._discovery_stats["error_count"],
+            error_level_count=self._discovery_stats["error_level_count"],
             active=self._discovery_active,
             throttle_seconds=self._response_throttle,
             last_response_time=self._last_response_time,
@@ -692,5 +765,5 @@ class MixinDiscoveryResponder:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }

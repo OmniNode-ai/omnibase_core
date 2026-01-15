@@ -1,0 +1,437 @@
+{
+  "$defs": {
+    "ModelIdempotencyConfig": {
+      "additionalProperties": false,
+      "description": "Idempotency configuration for projector event processing.\n\nIdempotency ensures that processing the same event multiple times\nproduces the same result. This is critical for:\n    - Safe retries after failures\n    - Event replay during recovery\n    - Exactly-once processing semantics\n\nAttributes:\n    enabled: Whether idempotency checking is enabled. When True,\n        the projector tracks processed event keys and skips\n        duplicates. Defaults to True.\n    key: The event attribute to use as the idempotency key.\n        This field uniquely identifies an event for deduplication.\n        Common values: \"sequence_number\", \"event_id\", \"correlation_id\".\n\nExamples:\n    Basic configuration with sequence number:\n\n    >>> config = ModelIdempotencyConfig(key=\"sequence_number\")\n    >>> config.enabled\n    True\n    >>> config.key\n    'sequence_number'\n\n    Disabled idempotency:\n\n    >>> config = ModelIdempotencyConfig(enabled=False, key=\"event_id\")\n    >>> config.enabled\n    False\n\nNote:\n    **Why from_attributes=True is Required**\n\n    This model uses ``from_attributes=True`` in its ConfigDict to ensure\n    pytest-xdist compatibility. When running tests with pytest-xdist,\n    each worker process imports the class independently, creating separate\n    class objects. The ``from_attributes=True`` flag enables Pydantic's\n    \"duck typing\" mode, allowing fixtures from one worker to be validated\n    in another.\n\n    **Thread Safety**: This model is frozen (immutable) after creation,\n    making it thread-safe for concurrent read access.",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "description": "Whether idempotency checking is enabled",
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Event attribute to use as the idempotency key (e.g., 'sequence_number', 'event_id')",
+          "title": "Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "ModelIdempotencyConfig",
+      "type": "object"
+    },
+    "ModelPartialUpdateOperation": {
+      "additionalProperties": false,
+      "description": "Partial update operation definition for projector contracts.\n\nDefines a named partial update operation that targets specific columns\nand is triggered by a specific event. Partial updates are more efficient\nthan full upserts when only a subset of columns needs to be updated.\n\nPartial updates are particularly useful for:\n    - High-frequency updates (e.g., heartbeats) that should not trigger\n      full column recalculation.\n    - State transitions where only the state column changes.\n    - Timeout markers that set a single timestamp column.\n\nAttributes:\n    name: Unique identifier for the partial update operation within the\n        projector contract. Used for logging, metrics, and debugging.\n    columns: List of column names to update. Must contain at least one\n        column. Column names must reference columns defined in the\n        projection schema (validated at contract level).\n    trigger_event: Event name that triggers this partial update. Must\n        match the event naming pattern (lowercase.segments.vN).\n    skip_idempotency: Whether to skip idempotency checking for this\n        operation. Defaults to False. Set to True for operations that\n        are inherently idempotent by design (e.g., state transitions\n        where the new state is deterministic).\n    condition: Optional SQL condition for when to apply the update.\n        Use for conditional updates like \"only if not already set\".\n        Example: ``\"ack_timeout_emitted_at IS NULL\"``.\n\nExamples:\n    Create a heartbeat update operation:\n\n    >>> op = ModelPartialUpdateOperation(\n    ...     name=\"heartbeat\",\n    ...     columns=[\"last_heartbeat_at\", \"liveness_deadline\"],\n    ...     trigger_event=\"node.heartbeat.v1\",\n    ... )\n\n    Create a state transition operation with idempotency skipped:\n\n    >>> op = ModelPartialUpdateOperation(\n    ...     name=\"state_transition\",\n    ...     columns=[\"current_state\", \"updated_at\"],\n    ...     trigger_event=\"node.state.changed.v1\",\n    ...     skip_idempotency=True,\n    ... )\n\n    Create a conditional timeout marker:\n\n    >>> op = ModelPartialUpdateOperation(\n    ...     name=\"ack_timeout_marker\",\n    ...     columns=[\"ack_timeout_emitted_at\"],\n    ...     trigger_event=\"node.ack.timeout.v1\",\n    ...     condition=\"ack_timeout_emitted_at IS NULL\",\n    ... )\n\nNote:\n    **Why from_attributes=True is Required**\n\n    This model uses ``from_attributes=True`` in its ConfigDict to ensure\n    pytest-xdist compatibility. When running tests with pytest-xdist,\n    each worker process imports the class independently, creating separate\n    class objects. The ``from_attributes=True`` flag enables Pydantic's\n    \"duck typing\" mode, allowing fixtures from one worker to be validated\n    in another.\n\n    **Thread Safety**: This model is frozen (immutable) after creation,\n    making it thread-safe for concurrent read access.\n\nSee Also:\n    - :class:`ModelProjectorContract`: Main contract that contains partial updates\n    - :class:`ModelProjectorBehavior`: Main behavior configuration\n    - :class:`ModelIdempotencyConfig`: Idempotency configuration",
+      "properties": {
+        "name": {
+          "description": "Unique identifier for the partial update operation. Used for logging, metrics, and debugging.",
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "columns": {
+          "description": "List of column names to update. Must contain at least one column. Column names must reference columns defined in the projection schema.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Columns",
+          "type": "array"
+        },
+        "trigger_event": {
+          "description": "Event name that triggers this partial update. Must match pattern: lowercase.segments.vN (e.g., 'node.heartbeat.v1').",
+          "title": "Trigger Event",
+          "type": "string"
+        },
+        "skip_idempotency": {
+          "default": false,
+          "description": "Whether to skip idempotency checking for this operation. Set to True for inherently idempotent operations like state transitions.",
+          "title": "Skip Idempotency",
+          "type": "boolean"
+        },
+        "condition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional SQL condition for when to apply the update. Example: 'ack_timeout_emitted_at IS NULL' for conditional marker setting.",
+          "title": "Condition"
+        }
+      },
+      "required": [
+        "name",
+        "columns",
+        "trigger_event"
+      ],
+      "title": "ModelPartialUpdateOperation",
+      "type": "object"
+    },
+    "ModelProjectorBehavior": {
+      "additionalProperties": false,
+      "description": "Projection behavior configuration.\n\nDetermines how the projector handles data during projection operations.\nThe mode controls insert/update semantics while idempotency configuration\nenables exactly-once processing guarantees.\n\nAttributes:\n    mode: The projection mode. Options are:\n        - \"upsert\": Insert or update based on upsert_key (default)\n        - \"insert_only\": Insert only, skip existing records\n        - \"append\": Always append without deduplication\n    upsert_key: The column name to use for upsert conflict detection.\n        Only applicable when ``mode='upsert'``. At runtime, if this is\n        ``None``, the projector will fall back to using the\n        ``projection_schema.primary_key`` as the conflict detection key.\n        While this fallback behavior is valid, explicit specification is\n        recommended for clarity and to avoid the warning that is logged\n        when the default is used. Ignored when ``mode='insert_only'``\n        or ``mode='append'``.\n    idempotency: Optional idempotency configuration for exactly-once\n        processing. When enabled, tracks processed events to prevent\n        duplicate processing on retries or replay.\n\nExamples:\n    Default upsert behavior:\n\n    >>> behavior = ModelProjectorBehavior()\n    >>> behavior.mode\n    'upsert'\n\n    Upsert with node_id as conflict key:\n\n    >>> behavior = ModelProjectorBehavior(mode=\"upsert\", upsert_key=\"node_id\")\n    >>> behavior.upsert_key\n    'node_id'\n\n    Append mode for event logs:\n\n    >>> behavior = ModelProjectorBehavior(mode=\"append\")\n    >>> behavior.mode\n    'append'\n\n    With idempotency enabled:\n\n    >>> from omnibase_core.models.projectors import ModelIdempotencyConfig\n    >>> idempotency = ModelIdempotencyConfig(enabled=True, key=\"event_id\")\n    >>> behavior = ModelProjectorBehavior(mode=\"upsert\", idempotency=idempotency)\n    >>> behavior.idempotency.enabled\n    True\n\nNote:\n    **Why from_attributes=True is Required**\n\n    This model uses ``from_attributes=True`` in its ConfigDict to ensure\n    pytest-xdist compatibility. When running tests with pytest-xdist,\n    each worker process imports the class independently, creating separate\n    class objects. The ``from_attributes=True`` flag enables Pydantic's\n    \"duck typing\" mode, allowing fixtures from one worker to be validated\n    in another.\n\n    **Thread Safety**: This model is frozen (immutable) after creation,\n    making it thread-safe for concurrent read access.",
+      "properties": {
+        "mode": {
+          "default": "upsert",
+          "description": "Projection mode: upsert, insert_only, or append",
+          "enum": [
+            "upsert",
+            "insert_only",
+            "append"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "upsert_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Column name(s) to use for upsert conflict detection. Can be a single column name (str) or a list of column names for composite keys. Only applicable when mode='upsert'. When None and mode='upsert', the projector runtime falls back to using projection_schema.primary_key as the conflict detection key; a warning is logged in this case to encourage explicit specification. Explicit specification is recommended for clarity and self-documenting configuration. Ignored when mode='insert_only' or 'append'.",
+          "title": "Upsert Key"
+        },
+        "idempotency": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelIdempotencyConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Idempotency configuration for exactly-once processing"
+        }
+      },
+      "title": "ModelProjectorBehavior",
+      "type": "object"
+    },
+    "ModelProjectorColumn": {
+      "additionalProperties": false,
+      "description": "Column definition with event field mapping.\n\nDefines how a column in a projection table is populated from event data.\nEach column specifies its name, SQL type, and the source path for data\nextraction.\n\nAttributes:\n    name: Column name in the projection table. Must be a valid SQL column\n        identifier.\n    type: SQL column type as a string (e.g., \"UUID\", \"TEXT\", \"JSONB\",\n        \"TIMESTAMPTZ\", \"INTEGER\", \"BOOLEAN\"). String type allows maximum\n        extensibility for different database backends.\n    source: Path to extract data from the event. Supports dotted notation\n        for nested access (e.g., \"event.payload.node_name\",\n        \"event.metadata.event_id\", \"envelope.sequence_number\").\n    on_event: Optional event type filter. When specified, this column is\n        only updated when processing events of this specific type.\n        Use for columns that should only change on certain events.\n    default: Optional default value as a string. Used when the source\n        path yields no value or the column is created before any\n        relevant event is processed.\n\nExamples:\n    Create a simple text column:\n\n    >>> column = ModelProjectorColumn(\n    ...     name=\"node_name\",\n    ...     type=\"TEXT\",\n    ...     source=\"event.payload.node_name\",\n    ... )\n\n    Create a column with conditional update:\n\n    >>> status_col = ModelProjectorColumn(\n    ...     name=\"status\",\n    ...     type=\"TEXT\",\n    ...     source=\"event.payload.status\",\n    ...     on_event=\"node.status.changed.v1\",\n    ...     default=\"UNKNOWN\",\n    ... )\n\n    Create a timestamp column:\n\n    >>> timestamp_col = ModelProjectorColumn(\n    ...     name=\"created_at\",\n    ...     type=\"TIMESTAMPTZ\",\n    ...     source=\"event.payload.created_at\",\n    ... )\n\nNote:\n    **Why from_attributes=True is Required**\n\n    This model uses ``from_attributes=True`` in its ConfigDict to ensure\n    pytest-xdist compatibility. When running tests with pytest-xdist,\n    each worker process imports the class independently, creating separate\n    class objects. The ``from_attributes=True`` flag enables Pydantic's\n    \"duck typing\" mode, allowing fixtures from one worker to be validated\n    in another.\n\n    **Thread Safety**: This model is frozen (immutable) after creation,\n    making it thread-safe for concurrent read access.",
+      "properties": {
+        "name": {
+          "description": "Column name in the projection table",
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "description": "SQL column type (e.g., 'UUID', 'TEXT', 'JSONB', 'TIMESTAMPTZ', 'INTEGER', 'BOOLEAN'). String type for extensibility.",
+          "title": "Type",
+          "type": "string"
+        },
+        "source": {
+          "description": "Path to extract data from the event. Supports dotted notation (e.g., 'event.payload.node_name', 'envelope.sequence_number').",
+          "title": "Source",
+          "type": "string"
+        },
+        "on_event": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional event type filter. When specified, column is only updated when processing events of this specific type.",
+          "title": "On Event"
+        },
+        "default": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional default value. Used when source path yields no value or column is created before any relevant event.",
+          "title": "Default"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "source"
+      ],
+      "title": "ModelProjectorColumn",
+      "type": "object"
+    },
+    "ModelProjectorIndex": {
+      "additionalProperties": false,
+      "description": "Index definition for projection table.\n\nDefines a database index to be created on a projection table. Supports\ncommon PostgreSQL index types: btree (default), gin, and hash.\n\nCore Concepts:\n- **name**: Optional index name. If not provided, the database or\n  materialization layer will auto-generate one.\n- **columns**: Required list of columns to index. Must contain at least\n  one column name.\n- **type**: Index type - btree (default, B-tree), gin (GIN for arrays/JSONB),\n  or hash (hash index).\n- **unique**: Whether to enforce unique constraint on indexed columns.\n\nExample:\n    ```python\n    # Simple btree index on user_id\n    index = ModelProjectorIndex(columns=[\"user_id\"])\n\n    # Unique composite index with explicit name\n    index = ModelProjectorIndex(\n        name=\"idx_user_created\",\n        columns=[\"user_id\", \"created_at\"],\n        type=\"btree\",\n        unique=True,\n    )\n\n    # GIN index for JSONB/array column\n    index = ModelProjectorIndex(\n        columns=[\"tags\"],\n        type=\"gin\",\n    )\n    ```\n\nNote:\n    **Why from_attributes=True is Required**\n\n    This model uses ``from_attributes=True`` in its ConfigDict to ensure\n    pytest-xdist compatibility. When running tests with pytest-xdist,\n    each worker process imports the class independently, creating separate\n    class objects. The ``from_attributes=True`` flag enables Pydantic's\n    \"duck typing\" mode, allowing fixtures from one worker to be validated\n    in another.\n\n    **Thread Safety**: This model is frozen (immutable) after creation,\n    making it thread-safe for concurrent read access.\n\n    **ONEX v2.0 Compliance**:\n        - Suffix-based naming: ModelProjectorIndex\n        - Pydantic v2 with ConfigDict\n        - Frozen/immutable after creation\n        - Extra fields rejected (strict validation)",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Index name. Auto-generated if not provided.",
+          "title": "Name"
+        },
+        "columns": {
+          "description": "Columns to index. Must contain at least one column.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Columns",
+          "type": "array"
+        },
+        "type": {
+          "default": "btree",
+          "description": "Index type: btree (default), gin, or hash.",
+          "enum": [
+            "btree",
+            "gin",
+            "hash"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "unique": {
+          "default": false,
+          "description": "Whether to enforce unique constraint on indexed columns.",
+          "title": "Unique",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "columns"
+      ],
+      "title": "ModelProjectorIndex",
+      "type": "object"
+    },
+    "ModelProjectorSchema": {
+      "additionalProperties": false,
+      "description": "Database schema for projection.\n\nDefines the complete schema for a projection table, including the table name,\nprimary key, column definitions, optional indexes, and optional version for\nmigration tracking.\n\nAttributes:\n    table: The target database table name. Must be a valid SQL identifier.\n    primary_key: The column name to use as the primary key. Must correspond\n        to one of the defined columns.\n    columns: List of column definitions. Must contain at least one column.\n        Each column specifies how event data maps to the projection table.\n    indexes: Optional list of index definitions. Defaults to empty list.\n        Indexes can improve query performance on frequently accessed columns.\n    version: Optional schema version using semantic versioning. Useful for\n        tracking schema migrations and compatibility.\n\nExamples:\n    Create a minimal schema:\n\n    >>> from omnibase_core.models.projectors import (\n    ...     ModelProjectorColumn,\n    ...     ModelProjectorSchema,\n    ... )\n    >>> column = ModelProjectorColumn(\n    ...     name=\"node_id\",\n    ...     type=\"UUID\",\n    ...     source=\"event.payload.node_id\",\n    ... )\n    >>> schema = ModelProjectorSchema(\n    ...     table=\"nodes\",\n    ...     primary_key=\"node_id\",\n    ...     columns=[column],\n    ... )\n\n    Create a schema with indexes and version:\n\n    >>> from omnibase_core.models.projectors import ModelProjectorIndex\n    >>> from omnibase_core.models.primitives.model_semver import ModelSemVer\n    >>> schema = ModelProjectorSchema(\n    ...     table=\"nodes\",\n    ...     primary_key=\"node_id\",\n    ...     columns=[\n    ...         ModelProjectorColumn(\n    ...             name=\"node_id\",\n    ...             type=\"UUID\",\n    ...             source=\"event.payload.node_id\",\n    ...         ),\n    ...         ModelProjectorColumn(\n    ...             name=\"status\",\n    ...             type=\"TEXT\",\n    ...             source=\"event.payload.status\",\n    ...         ),\n    ...     ],\n    ...     indexes=[ModelProjectorIndex(columns=[\"status\"])],\n    ...     version=ModelSemVer(major=1, minor=0, patch=0),\n    ... )\n\nNote:\n    **Why from_attributes=True is Required**\n\n    This model uses ``from_attributes=True`` in its ConfigDict to ensure\n    pytest-xdist compatibility. When running tests with pytest-xdist,\n    each worker process imports the class independently, creating separate\n    class objects. The ``from_attributes=True`` flag enables Pydantic's\n    \"duck typing\" mode, allowing fixtures from one worker to be validated\n    in another.\n\n    **Thread Safety**: This model is frozen (immutable) after creation,\n    making it thread-safe for concurrent read access.",
+      "properties": {
+        "table": {
+          "description": "Target database table name for the projection",
+          "title": "Table",
+          "type": "string"
+        },
+        "primary_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          ],
+          "description": "Column name(s) to use as the primary key. Can be a single column name (str) or a list of column names for composite primary keys.",
+          "title": "Primary Key"
+        },
+        "columns": {
+          "description": "List of column definitions. Must contain at least one column.",
+          "items": {
+            "$ref": "#/$defs/ModelProjectorColumn"
+          },
+          "minItems": 1,
+          "title": "Columns",
+          "type": "array"
+        },
+        "indexes": {
+          "default": [],
+          "description": "Optional list of index definitions for the projection table. Defaults to an empty list if not specified.",
+          "items": {
+            "$ref": "#/$defs/ModelProjectorIndex"
+          },
+          "title": "Indexes",
+          "type": "array"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelSemVer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional schema version for migration tracking"
+        }
+      },
+      "required": [
+        "table",
+        "primary_key",
+        "columns"
+      ],
+      "title": "ModelProjectorSchema",
+      "type": "object"
+    },
+    "ModelSemVer": {
+      "description": "Semantic version model following SemVer 2.0.0 specification.\n\nFull SemVer format: MAJOR.MINOR.PATCH[-prerelease][+build]\n\nPreferred usage (structured format):\n    >>> version = ModelSemVer(major=0, minor=4, patch=0)\n    >>> assert str(version) == \"0.4.0\"\n    >>> assert version.major == 0 and version.minor == 4\n\nWith prerelease and build metadata:\n    >>> version = ModelSemVer(major=1, minor=0, patch=0, prerelease=(\"alpha\", 1))\n    >>> assert str(version) == \"1.0.0-alpha.1\"\n    >>> assert version.is_prerelease() is True\n\nFor parsing external input, use the parse() class method:\n    >>> version = ModelSemVer.parse(\"1.0.0-alpha.1+build.123\")\n    >>> assert version.prerelease == (\"alpha\", 1)\n    >>> assert version.build == (\"build\", \"123\")\n\nPrecedence rules (per SemVer spec):\n    - prerelease < no prerelease (1.0.0-alpha < 1.0.0)\n    - Numeric identifiers < alphanumeric (1.0.0-1 < 1.0.0-alpha)\n    - Build metadata is IGNORED for precedence\n\nNote:\n    String version literals like \"1.0.0\" are deprecated.\n    Always use structured format: ModelSemVer(major=X, minor=Y, patch=Z)\n\n    This model is frozen (immutable) and hashable, suitable for use as dict\n    keys or in sets. Hash is based on major, minor, patch, and prerelease;\n    build metadata is excluded (see __hash__ docstring for details).",
+      "properties": {
+        "major": {
+          "description": "Major version number",
+          "minimum": 0,
+          "title": "Major",
+          "type": "integer"
+        },
+        "minor": {
+          "description": "Minor version number",
+          "minimum": 0,
+          "title": "Minor",
+          "type": "integer"
+        },
+        "patch": {
+          "description": "Patch version number",
+          "minimum": 0,
+          "title": "Patch",
+          "type": "integer"
+        },
+        "prerelease": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Prerelease identifiers (dot-separated in string form)",
+          "title": "Prerelease"
+        },
+        "build": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Build metadata identifiers (ignored for precedence)",
+          "title": "Build"
+        }
+      },
+      "required": [
+        "major",
+        "minor",
+        "patch"
+      ],
+      "title": "ModelSemVer",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Declarative projector contract definition.\n\nDefines the complete contract for a projector including its identity,\nevent subscriptions, schema definition, and behavior configuration.\n\nProjectors consume ModelEventEnvelope streams to materialize read-optimized\nviews of aggregate state. They never emit events, intents, or projections\nthemselves.\n\nAttributes:\n    projector_kind: Type of projector. Currently only \"materialized_view\"\n        is supported. Extensible for future projector types.\n    projector_id: Unique identifier for the projector. Used for registration\n        and routing.\n    name: Human-readable name for the projector.\n    version: Contract version string (e.g., \"1.0.0\"). Used for version\n        validation, compatibility checking, and migration tracking.\n    aggregate_type: Semantic string identifier for the aggregate type this\n        projector handles.\n    consumed_events: List of event names this projector subscribes to.\n        Each event name must match the pattern: lowercase.segments.vN\n    projection_schema: Database schema definition including table, columns,\n        and indexes. Named ``projection_schema`` to avoid conflict with\n        Pydantic's ``BaseModel.schema`` method.\n    behavior: Projection behavior configuration including mode and idempotency.\n\nExamples:\n    Create a node status projector:\n\n    >>> from omnibase_core.models.projectors import (\n    ...     ModelProjectorBehavior,\n    ...     ModelProjectorColumn,\n    ...     ModelProjectorContract,\n    ...     ModelProjectorSchema,\n    ... )\n    >>> column = ModelProjectorColumn(\n    ...     name=\"node_id\",\n    ...     type=\"UUID\",\n    ...     source=\"event.payload.node_id\",\n    ... )\n    >>> schema = ModelProjectorSchema(\n    ...     table=\"nodes\",\n    ...     primary_key=\"node_id\",\n    ...     columns=[column],\n    ... )\n    >>> behavior = ModelProjectorBehavior(mode=\"upsert\")\n    >>> contract = ModelProjectorContract(\n    ...     projector_kind=\"materialized_view\",\n    ...     projector_id=\"node-projector\",\n    ...     name=\"Node Projector\",\n    ...     version=\"1.0.0\",\n    ...     aggregate_type=\"node\",\n    ...     consumed_events=[\"node.created.v1\"],\n    ...     projection_schema=schema,\n    ...     behavior=behavior,\n    ... )\n\nNote:\n    **Why from_attributes=True is Required**\n\n    This model uses ``from_attributes=True`` in its ConfigDict to ensure\n    pytest-xdist compatibility. When running tests with pytest-xdist,\n    each worker process imports the class independently, creating separate\n    class objects. The ``from_attributes=True`` flag enables Pydantic's\n    \"duck typing\" mode, allowing fixtures from one worker to be validated\n    in another.\n\n    **Thread Safety**: This model is frozen (immutable) after creation,\n    making it thread-safe for concurrent read access.\n\nSee Also:\n    - :class:`ModelProjectorSchema`: Schema definition for projection tables\n    - :class:`ModelProjectorBehavior`: Behavior configuration for projectors\n    - :class:`ModelIdempotencyConfig`: Idempotency configuration",
+  "properties": {
+    "projector_kind": {
+      "const": "materialized_view",
+      "description": "Type of projector. Currently only 'materialized_view' is supported.",
+      "title": "Projector Kind",
+      "type": "string"
+    },
+    "projector_id": {
+      "description": "Unique identifier for the projector",
+      "minLength": 1,
+      "title": "Projector Id",
+      "type": "string"
+    },
+    "name": {
+      "description": "Human-readable name for the projector",
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "description": "Contract version string (e.g., '1.0.0')",
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    },
+    "aggregate_type": {
+      "description": "Semantic identifier for the aggregate type this projector handles",
+      "minLength": 1,
+      "title": "Aggregate Type",
+      "type": "string"
+    },
+    "consumed_events": {
+      "description": "List of event names to consume. Must contain at least one event. Each event name must match pattern: lowercase.segments.vN",
+      "items": {
+        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*\\.v[0-9]+$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Consumed Events",
+      "type": "array"
+    },
+    "projection_schema": {
+      "$ref": "#/$defs/ModelProjectorSchema",
+      "description": "Database schema definition for the projection"
+    },
+    "behavior": {
+      "$ref": "#/$defs/ModelProjectorBehavior",
+      "description": "Projection behavior configuration"
+    },
+    "partial_updates": {
+      "default": [],
+      "description": "Optional list of partial update operations. Each operation defines a subset of columns to update when triggered by a specific event. Partial updates are more efficient than full upserts for high-frequency updates like heartbeats or state transitions.",
+      "items": {
+        "$ref": "#/$defs/ModelPartialUpdateOperation"
+      },
+      "title": "Partial Updates",
+      "type": "array"
+    }
+  },
+  "required": [
+    "projector_kind",
+    "projector_id",
+    "name",
+    "version",
+    "aggregate_type",
+    "consumed_events",
+    "projection_schema",
+    "behavior"
+  ],
+  "title": "ModelProjectorContract",
+  "type": "object"
+}

@@ -70,7 +70,7 @@ def reset_application_context() -> contextvars.Token[Any] | None:
         copy of context variables, so this only affects the current context.
     """
     try:
-        from omnibase_core.context.application_context import _current_container
+        from omnibase_core.context.context_application import _current_container
 
         return _current_container.set(None)
     except ImportError:
@@ -87,7 +87,7 @@ def restore_application_context(token: contextvars.Token[Any] | None) -> None:
         return
 
     try:
-        from omnibase_core.context.application_context import _current_container
+        from omnibase_core.context.context_application import _current_container
 
         _current_container.reset(token)
     except ImportError:
@@ -110,7 +110,7 @@ def clear_all_caches() -> None:
 
     # Clear logger cache (replaces _LoggerCache holder)
     try:
-        from omnibase_core.logging.core_logging import clear_logger_cache
+        from omnibase_core.logging.logging_core import clear_logger_cache
 
         clear_logger_cache()
     except ImportError:
@@ -118,7 +118,7 @@ def clear_all_caches() -> None:
 
     # Clear protocol cache (replaces _ProtocolCacheHolder)
     try:
-        from omnibase_core.logging.emit import clear_protocol_cache
+        from omnibase_core.logging.logging_emit import clear_protocol_cache
 
         clear_protocol_cache()
     except ImportError:
@@ -197,7 +197,7 @@ class SingletonResetContext:
     def _save_and_reset_context(self) -> None:
         """Save current context and reset to None."""
         try:
-            from omnibase_core.context.application_context import (
+            from omnibase_core.context.context_application import (
                 _current_container,
                 get_current_container,
             )
@@ -227,7 +227,7 @@ class SingletonResetContext:
             return
 
         try:
-            from omnibase_core.context.application_context import _current_container
+            from omnibase_core.context.context_application import _current_container
 
             _current_container.reset(self._saved_state.token)
         except ImportError:
@@ -352,22 +352,22 @@ def isolated_correlation_context() -> Generator[None, None, None]:
     """
     # Import the logging module to access _context
     try:
-        from omnibase_core.logging import core_logging
+        from omnibase_core.logging import logging_core
 
         # Save current correlation ID if any
-        saved_correlation_id = getattr(core_logging._context, "correlation_id", None)
+        saved_correlation_id = getattr(logging_core._context, "correlation_id", None)
 
         # Clear the correlation ID
-        if hasattr(core_logging._context, "correlation_id"):
-            delattr(core_logging._context, "correlation_id")
+        if hasattr(logging_core._context, "correlation_id"):
+            delattr(logging_core._context, "correlation_id")
 
         yield
 
         # Restore original correlation ID
         if saved_correlation_id is not None:
-            core_logging._context.correlation_id = saved_correlation_id
-        elif hasattr(core_logging._context, "correlation_id"):
-            delattr(core_logging._context, "correlation_id")
+            logging_core._context.correlation_id = saved_correlation_id
+        elif hasattr(logging_core._context, "correlation_id"):
+            delattr(logging_core._context, "correlation_id")
 
     except ImportError:
         # If logging module isn't available, just yield
@@ -539,7 +539,7 @@ def get_current_container_for_test() -> Any:
         The current container or None if not set.
     """
     try:
-        from omnibase_core.context.application_context import get_current_container
+        from omnibase_core.context.context_application import get_current_container
 
         return get_current_container()
     except ImportError:

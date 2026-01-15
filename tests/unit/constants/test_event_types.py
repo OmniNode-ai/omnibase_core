@@ -18,7 +18,7 @@ class TestEventTypeConstants:
 
     def test_event_types_all_defined(self):
         """Test that all expected event type constants are defined."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         # Tool-related events
         assert hasattr(event_types, "TOOL_INVOCATION")
@@ -44,7 +44,7 @@ class TestEventTypeConstants:
 
     def test_event_types_unique_values(self):
         """Test that all event type constants have unique values."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         event_type_values = [
             event_types.TOOL_INVOCATION,
@@ -68,7 +68,7 @@ class TestEventTypeConstants:
 
     def test_event_types_are_strings(self):
         """Test that all event type constants are strings."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         event_type_constants = [
             event_types.TOOL_INVOCATION,
@@ -92,7 +92,7 @@ class TestEventTypeConstants:
 
     def test_event_types_follow_naming_convention(self):
         """Test that event type values follow snake_case convention."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         event_type_values = [
             event_types.TOOL_INVOCATION,
@@ -114,7 +114,7 @@ class TestEventTypeSpecificValues:
 
     def test_tool_event_types(self):
         """Test tool-related event type values."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         assert event_types.TOOL_INVOCATION == "tool_invocation"
         assert event_types.TOOL_RESPONSE == "tool_response"
@@ -123,7 +123,7 @@ class TestEventTypeSpecificValues:
 
     def test_introspection_event_types(self):
         """Test introspection-related event type values."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         assert event_types.NODE_INTROSPECTION_EVENT == "node_introspection_event"
         assert (
@@ -137,7 +137,7 @@ class TestEventTypeSpecificValues:
 
     def test_health_event_types(self):
         """Test health-related event type values."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         assert event_types.NODE_HEALTH_CHECK == "node_health_check"
         assert event_types.NODE_HEALTH_EVENT == "node_health_event"
@@ -145,7 +145,7 @@ class TestEventTypeSpecificValues:
 
     def test_lifecycle_event_types(self):
         """Test lifecycle event type values."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         assert event_types.NODE_START == "node_start"
         assert event_types.NODE_SUCCESS == "node_success"
@@ -158,7 +158,9 @@ class TestNormalizeLegacyEventType:
 
     def test_normalize_legacy_event_type_with_string(self):
         """Test normalization with string input."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         result = normalize_legacy_event_type("tool_invocation")
         assert result == "tool_invocation"
@@ -166,7 +168,9 @@ class TestNormalizeLegacyEventType:
 
     def test_normalize_legacy_event_type_with_object_value_attribute(self):
         """Test normalization with object having .value attribute."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         class MockEventType:
             def __init__(self, value):
@@ -180,7 +184,9 @@ class TestNormalizeLegacyEventType:
 
     def test_normalize_legacy_event_type_with_dict_value_key(self):
         """Test normalization with dict containing 'value' key."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         event_dict = {"value": "node_health_event"}
         result = normalize_legacy_event_type(event_dict)
@@ -190,7 +196,9 @@ class TestNormalizeLegacyEventType:
 
     def test_normalize_legacy_event_type_with_dict_event_type_key(self):
         """Test normalization with dict containing 'event_type' key."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         event_dict = {"event_type": "node_start"}
         result = normalize_legacy_event_type(event_dict)
@@ -200,7 +208,9 @@ class TestNormalizeLegacyEventType:
 
     def test_normalize_legacy_event_type_with_fallback_to_string(self):
         """Test normalization falls back to str() for unknown types."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         class UnknownType:
             def __str__(self):
@@ -212,7 +222,9 @@ class TestNormalizeLegacyEventType:
 
     def test_normalize_legacy_event_type_with_numeric_value(self):
         """Test normalization with numeric input (fallback to string)."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         result = normalize_legacy_event_type(42)
         assert result == "42"
@@ -220,7 +232,9 @@ class TestNormalizeLegacyEventType:
 
     def test_normalize_legacy_event_type_preserves_string_value(self):
         """Test that string values are returned unchanged."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         test_strings = [
             "tool_invocation",
@@ -240,7 +254,9 @@ class TestNormalizeLegacyEventTypeEdgeCases:
 
     def test_normalize_legacy_event_type_with_empty_string(self):
         """Test normalization with empty string."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         result = normalize_legacy_event_type("")
         assert result == ""
@@ -248,7 +264,9 @@ class TestNormalizeLegacyEventTypeEdgeCases:
 
     def test_normalize_legacy_event_type_with_none(self):
         """Test normalization with None value."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         result = normalize_legacy_event_type(None)
         assert result == "None"
@@ -256,7 +274,9 @@ class TestNormalizeLegacyEventTypeEdgeCases:
 
     def test_normalize_legacy_event_type_with_dict_priority(self):
         """Test that 'value' key takes priority over 'event_type' in dict."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         event_dict = {
             "value": "should_use_this",
@@ -268,7 +288,9 @@ class TestNormalizeLegacyEventTypeEdgeCases:
 
     def test_normalize_legacy_event_type_with_empty_dict(self):
         """Test normalization with empty dict."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         result = normalize_legacy_event_type({})
         assert isinstance(result, str)
@@ -276,7 +298,9 @@ class TestNormalizeLegacyEventTypeEdgeCases:
 
     def test_normalize_legacy_event_type_with_complex_object(self):
         """Test normalization with complex nested object."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         class ComplexEventType:
             def __init__(self):
@@ -297,7 +321,7 @@ class TestEventTypeSerialization:
         """Test that event types can be serialized to JSON."""
         import json
 
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         event_data = {
             "event_type": event_types.TOOL_INVOCATION,
@@ -314,7 +338,7 @@ class TestEventTypeSerialization:
 
     def test_event_types_in_lists(self):
         """Test event types work correctly in lists and sets."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         event_list = [
             event_types.NODE_START,
@@ -328,7 +352,7 @@ class TestEventTypeSerialization:
 
     def test_event_types_in_dictionaries(self):
         """Test event types work as dictionary keys."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         event_handlers = {
             event_types.TOOL_INVOCATION: "handle_invocation",
@@ -346,7 +370,7 @@ class TestEventTypeUsagePatterns:
 
     def test_event_type_comparison(self):
         """Test event type comparison operations."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         # String comparison should work
         assert event_types.NODE_START == "node_start"
@@ -354,7 +378,7 @@ class TestEventTypeUsagePatterns:
 
     def test_event_type_in_conditional(self):
         """Test event types in conditional statements."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         def handle_event(event_type):
             if event_type == event_types.NODE_START:
@@ -370,7 +394,7 @@ class TestEventTypeUsagePatterns:
 
     def test_event_type_string_operations(self):
         """Test string operations on event types."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         # Should support string methods
         assert event_types.NODE_HEALTH_EVENT.startswith("node_")
@@ -384,21 +408,23 @@ class TestEventTypeModuleStructure:
 
     def test_event_types_module_has_docstring(self):
         """Test that event_types module has a docstring."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         assert event_types.__doc__ is not None
         assert len(event_types.__doc__) > 0
 
     def test_event_types_module_docstring_describes_purpose(self):
         """Test that module docstring describes its purpose."""
-        from omnibase_core.constants import event_types
+        from omnibase_core.constants import constants_event_types as event_types
 
         docstring = event_types.__doc__.lower()
         assert "event" in docstring or "onex" in docstring
 
     def test_normalize_function_has_docstring(self):
         """Test that normalize_legacy_event_type has docstring."""
-        from omnibase_core.constants.event_types import normalize_legacy_event_type
+        from omnibase_core.constants.constants_event_types import (
+            normalize_legacy_event_type,
+        )
 
         assert normalize_legacy_event_type.__doc__ is not None
         assert len(normalize_legacy_event_type.__doc__) > 0

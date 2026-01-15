@@ -362,7 +362,7 @@ Always put the **most specific** class first (node type), followed by mixins in 
 
 ### Old Infrastructure Classes (Legacy)
 ```
-from omnibase_core.infrastructure.infrastructure_bases import NodeEffectExecutor
+from omnibase_core.infrastructure.infra_bases import NodeEffectExecutor
 
 class MyDatabaseWriter(NodeEffectExecutor):
     def __init__(self, container):

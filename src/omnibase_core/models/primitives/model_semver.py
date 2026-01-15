@@ -124,8 +124,13 @@ class ModelSemVer(BaseModel):
         - Numeric identifiers < alphanumeric (1.0.0-1 < 1.0.0-alpha)
         - Build metadata is IGNORED for precedence
 
-    Note: String version literals like "1.0.0" are deprecated.
-    Always use structured format: ModelSemVer(major=X, minor=Y, patch=Z)
+    Note:
+        String version literals like "1.0.0" are deprecated.
+        Always use structured format: ModelSemVer(major=X, minor=Y, patch=Z)
+
+        This model is frozen (immutable) and hashable, suitable for use as dict
+        keys or in sets. Hash is based on major, minor, patch, and prerelease;
+        build metadata is excluded (see __hash__ docstring for details).
     """
 
     # from_attributes=True allows Pydantic to accept objects with matching
@@ -246,7 +251,26 @@ class ModelSemVer(BaseModel):
         return v
 
     def __str__(self) -> str:
-        """String representation in SemVer format."""
+        """
+        Return the version as a SemVer 2.0.0 string.
+
+        Format: ``MAJOR.MINOR.PATCH[-prerelease][+build]``
+
+        The prerelease identifiers (if present) are joined with dots and
+        prefixed with a hyphen. Build metadata (if present) is joined with
+        dots and prefixed with a plus sign.
+
+        Returns:
+            Version string in SemVer format (e.g., "1.2.3", "1.0.0-alpha.1",
+            "1.0.0-beta+build.123")
+
+        Example:
+            >>> version = ModelSemVer(major=1, minor=2, patch=3)
+            >>> str(version)
+            '1.2.3'
+            >>> str(ModelSemVer(major=1, minor=0, patch=0, prerelease=("alpha", 1)))
+            '1.0.0-alpha.1'
+        """
         result = f"{self.major}.{self.minor}.{self.patch}"
         if self.prerelease:
             result += "-" + ".".join(str(p) for p in self.prerelease)
@@ -601,8 +625,8 @@ def parse_input_state_version(input_state: SerializedDict) -> "ModelSemVer":
 
     if isinstance(v, dict):
         try:
-            return ModelSemVer(**v)
-        except Exception as e:
+            return ModelSemVer.model_validate(v)
+        except (AttributeError, TypeError, ValueError) as e:
             msg = (
                 f"Invalid version dictionary format. Expected {{major: int, minor: int, patch: int}}. "
                 f"Got: {v}. Error: {e}"

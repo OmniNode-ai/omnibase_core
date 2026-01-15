@@ -53,8 +53,10 @@ class TestServiceRegistryDisabledErrorPath:
         # Create container with ServiceRegistry disabled
         container = await create_model_onex_container(enable_service_registry=False)
 
-        # Verify registry is None
-        assert container.service_registry is None
+        # Verify accessing registry raises error when disabled
+        with pytest.raises(ModelOnexError) as exc_info:
+            _ = container.service_registry
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_STATE
 
         # Attempt to resolve a service - should raise ModelOnexError
         with pytest.raises(ModelOnexError) as exc_info:
@@ -109,7 +111,10 @@ class TestServiceRegistryDisabledErrorPath:
         """Test that ModelONEXContainer can be initialized with registry disabled."""
         container = ModelONEXContainer(enable_service_registry=False)
 
-        assert container.service_registry is None
+        # Verify accessing registry raises error when disabled
+        with pytest.raises(ModelOnexError) as exc_info:
+            _ = container.service_registry
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_STATE
         assert container._enable_service_registry is False
 
     @pytest.mark.asyncio

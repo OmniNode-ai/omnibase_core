@@ -27,12 +27,22 @@ from types.core_types (not from models or types.constraints).
 from datetime import UTC, datetime
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    model_validator,
+)
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Safe runtime import - error_codes only imports from types.core_types
 from omnibase_core.models.examples.model_example import ModelExample
 from omnibase_core.models.examples.model_example_metadata import ModelExampleMetadata
-from omnibase_core.types.json_types import JsonValue
+from omnibase_core.types.type_json import JsonType
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -73,19 +83,7 @@ class ModelExamplesCollection(BaseModel):
         description="Whether examples comply with schema",
     )
 
-    # Business intelligence fields
-    total_examples: int = Field(
-        default=0,
-        description="Total number of examples (computed)",
-        ge=0,
-    )
-
-    valid_examples: int = Field(
-        default=0,
-        description="Number of valid examples (computed)",
-        ge=0,
-    )
-
+    # Timestamp field (mutable, auto-populated on creation if examples exist)
     last_validated: datetime | None = Field(
         default=None,
         description="Last validation timestamp",
@@ -97,32 +95,45 @@ class ModelExamplesCollection(BaseModel):
         validate_assignment=True,
     )
 
-    # === Validation and Computation Methods ===
+    # === Computed Fields (Business Intelligence) ===
 
-    @field_validator("total_examples", mode="before")
-    @classmethod
-    def compute_total_examples(cls, v: int, info: ValidationInfo) -> int:
-        """Compute total examples from examples list."""
-        examples = info.data.get("examples", [])
-        return len(examples)
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def total_examples(self) -> int:
+        """Total number of examples (computed from examples list).
 
-    @field_validator("valid_examples", mode="before")
-    @classmethod
-    def compute_valid_examples(cls, v: int, info: ValidationInfo) -> int:
-        """Compute valid examples count."""
-        examples = info.data.get("examples", [])
-        return sum(1 for ex in examples if ex.is_valid)
+        This is a computed field that always reflects the current examples count.
+        Type safety is guaranteed since examples are validated as ModelExample instances.
+        """
+        return len(self.examples)
 
-    @field_validator("last_validated", mode="before")
-    @classmethod
-    def update_validation_timestamp(
-        cls, v: datetime | None, info: ValidationInfo
-    ) -> datetime | None:
-        """Update validation timestamp when examples change."""
-        examples = info.data.get("examples", [])
-        if examples and v is None:
-            return datetime.now(UTC)
-        return v
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def valid_examples(self) -> int:
+        """Number of valid examples (computed from examples list).
+
+        This is a computed field that counts examples where is_valid=True.
+        Type safety is guaranteed since examples are validated as ModelExample instances.
+        """
+        return sum(1 for ex in self.examples if ex.is_valid)
+
+    # === Validation Methods ===
+
+    @model_validator(mode="after")
+    def auto_populate_timestamp(self) -> Self:
+        """Auto-populate validation timestamp when creating new collections with examples.
+
+        This validator implements "auto-timestamp on creation" behavior:
+        - If examples exist AND no timestamp was provided, sets it to now
+        - If a timestamp was explicitly provided, preserves that value
+        - If no examples exist, leaves the timestamp as None
+
+        Uses object.__setattr__ to bypass validate_assignment and avoid recursion.
+        """
+        if self.examples and self.last_validated is None:
+            # Use object.__setattr__ to bypass validate_assignment recursion
+            object.__setattr__(self, "last_validated", datetime.now(UTC))
+        return self
 
     # === Data Conversion Methods ===
 
@@ -144,11 +155,28 @@ class ModelExamplesCollection(BaseModel):
             examples = [
                 cls._create_example_from_data(item) for item in data["examples"]
             ]
+            # Extract metadata - can be None, dict, or ModelExampleMetadata
+            metadata_raw = data.get("metadata")
+            metadata: ModelExampleMetadata | None = None
+            if metadata_raw is not None:
+                if isinstance(metadata_raw, ModelExampleMetadata):
+                    metadata = metadata_raw
+                elif isinstance(metadata_raw, dict):
+                    metadata = ModelExampleMetadata.model_validate(metadata_raw)
+
+            # Extract format with type-safe default
+            format_val = data.get("format")
+            format_str = str(format_val) if isinstance(format_val, str) else "json"
+
+            # Extract schema_compliant with type-safe default
+            schema_val = data.get("schema_compliant")
+            schema_compliant = schema_val if isinstance(schema_val, bool) else True
+
             return cls(
                 examples=examples,
-                metadata=data.get("metadata"),
-                format=data.get("format", "json"),
-                schema_compliant=data.get("schema_compliant", True),
+                metadata=metadata,
+                format=format_str,
+                schema_compliant=schema_compliant,
             )
 
         # Single example as dict
@@ -156,7 +184,7 @@ class ModelExamplesCollection(BaseModel):
         return cls(examples=[example])
 
     @classmethod
-    def _create_example_from_data(cls, data: JsonValue) -> ModelExample:
+    def _create_example_from_data(cls, data: JsonType) -> ModelExample:
         """Create ModelExample from various data formats."""
         from omnibase_core.models.examples.model_example_context_data import (
             ModelExampleContextData,
@@ -169,57 +197,111 @@ class ModelExamplesCollection(BaseModel):
         if isinstance(data, dict):
             # Check if it has required ModelExample fields
             if all(k in data for k in ["input_data", "output_data"]):
-                # Convert dicts to proper types
-                input_data = None
-                if "input_data" in data and data["input_data"] is not None:
-                    input_data = (
-                        ModelExampleInputData(**data["input_data"])
-                        if isinstance(data["input_data"], dict)
-                        else data["input_data"]
-                    )
+                # Convert dicts to proper types using model_validate for type-safe coercion
+                input_data: ModelExampleInputData | None = None
+                input_raw = data.get("input_data")
+                if input_raw is not None:
+                    if isinstance(input_raw, dict):
+                        try:
+                            input_data = ModelExampleInputData.model_validate(input_raw)
+                        except PYDANTIC_MODEL_ERRORS as e:
+                            # boundary-ok: convert pydantic validation errors to ModelOnexError
+                            raise ModelOnexError(
+                                message=f"Failed to validate input_data: {e}",
+                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                                context={"input_data": input_raw},
+                            ) from e
+                    elif isinstance(input_raw, ModelExampleInputData):
+                        input_data = input_raw
+                    # Other types are skipped (leave as None)
 
-                output_data = None
-                if "output_data" in data and data["output_data"] is not None:
-                    output_data = (
-                        ModelExampleOutputData(**data["output_data"])
-                        if isinstance(data["output_data"], dict)
-                        else data["output_data"]
-                    )
+                output_data: ModelExampleOutputData | None = None
+                output_raw = data.get("output_data")
+                if output_raw is not None:
+                    if isinstance(output_raw, dict):
+                        try:
+                            output_data = ModelExampleOutputData.model_validate(
+                                output_raw
+                            )
+                        except PYDANTIC_MODEL_ERRORS as e:
+                            # boundary-ok: convert pydantic validation errors to ModelOnexError
+                            raise ModelOnexError(
+                                message=f"Failed to validate output_data: {e}",
+                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                                context={"output_data": output_raw},
+                            ) from e
+                    elif isinstance(output_raw, ModelExampleOutputData):
+                        output_data = output_raw
+                    # Other types are skipped (leave as None)
 
-                context = None
-                if "context" in data and data["context"] is not None:
-                    context = (
-                        ModelExampleContextData(**data["context"])
-                        if isinstance(data["context"], dict)
-                        else data["context"]
-                    )
+                context: ModelExampleContextData | None = None
+                context_raw = data.get("context")
+                if context_raw is not None:
+                    if isinstance(context_raw, dict):
+                        try:
+                            context = ModelExampleContextData.model_validate(
+                                context_raw
+                            )
+                        except PYDANTIC_MODEL_ERRORS as e:
+                            # boundary-ok: convert pydantic validation errors to ModelOnexError
+                            raise ModelOnexError(
+                                message=f"Failed to validate context: {e}",
+                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                                context={"context_data": context_raw},
+                            ) from e
+                    elif isinstance(context_raw, ModelExampleContextData):
+                        context = context_raw
+                    # Other types are skipped (leave as None)
+
+                # Get values with type-safe defaults
+                name_val = data.get("name")
+                name = str(name_val) if name_val is not None else "Example"
+                desc_val = data.get("description")
+                description = str(desc_val) if desc_val is not None else ""
+                tags_val = data.get("tags")
+                # Properly coerce tags to list[str] - convert all elements to strings
+                if isinstance(tags_val, list):
+                    tags: list[str] = [str(t) for t in tags_val]
+                else:
+                    tags = []
+                is_valid_val = data.get("is_valid")
+                # Only accept actual bool values to avoid surprising coercion
+                # (e.g., bool("false") == True which is unexpected)
+                if isinstance(is_valid_val, bool):
+                    is_valid = is_valid_val
+                else:
+                    is_valid = True  # Default to valid if not explicitly a bool
+                notes_val = data.get("validation_notes")
+                validation_notes = str(notes_val) if notes_val is not None else ""
 
                 return ModelExample(
-                    name=data.get("name") or "Example",  # Provide default
-                    description=data.get("description") or "",
+                    name=name,
+                    description=description,
                     input_data=input_data,
                     output_data=output_data,
                     context=context,
-                    tags=data.get("tags", []),
-                    is_valid=data.get("is_valid", True),
-                    validation_notes=data.get("validation_notes") or "",
+                    tags=tags,
+                    is_valid=is_valid,
+                    validation_notes=validation_notes,
                 )
             else:
-                # Treat as input_data
-                input_data = (
-                    ModelExampleInputData(**data)
-                    if isinstance(data, dict)
-                    else ModelExampleInputData()
-                )
+                # Treat as input_data - use model_validate for type-safe coercion
+                try:
+                    input_data = ModelExampleInputData.model_validate(data)
+                except PYDANTIC_MODEL_ERRORS as e:
+                    # boundary-ok: convert pydantic validation errors to ModelOnexError
+                    raise ModelOnexError(
+                        message=f"Failed to validate example data as input_data: {e}",
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        context={"data": data},
+                    ) from e
+                name_val = data.get("name")
+                name = str(name_val) if name_val is not None else "Example"
+                desc_val = data.get("description")
+                description = str(desc_val) if desc_val is not None else ""
                 return ModelExample(
-                    name=(
-                        data.get("name", "Example")
-                        if isinstance(data, dict)
-                        else "Example"
-                    ),
-                    description=(
-                        data.get("description", "") if isinstance(data, dict) else ""
-                    ),
+                    name=name,
+                    description=description,
                     input_data=input_data,
                 )
         else:
@@ -237,7 +319,11 @@ class ModelExamplesCollection(BaseModel):
         example: ModelExample | SerializedDict,
         name: str | None = None,
     ) -> None:
-        """Add a new example to the collection."""
+        """Add a new example to the collection.
+
+        Note: total_examples and valid_examples are computed properties that
+        automatically reflect the current state of the examples list.
+        """
         if isinstance(example, dict):
             example = self._create_example_from_data(example)
 
@@ -245,11 +331,9 @@ class ModelExamplesCollection(BaseModel):
             example.name = name
 
         self.examples.append(example)
-        # Update computed fields
-        self.total_examples = len(self.examples)
-        if example.is_valid:
-            self.valid_examples += 1
-        self.last_validated = datetime.now(UTC)
+        # Update timestamp (computed fields are auto-updated)
+        # Use object.__setattr__ to bypass validate_assignment for timestamp-only updates
+        object.__setattr__(self, "last_validated", datetime.now(UTC))
 
     def get_example(self, index: int = 0) -> ModelExample | None:
         """Get an example by index."""
@@ -258,14 +342,16 @@ class ModelExamplesCollection(BaseModel):
         return None
 
     def remove_example(self, index: int) -> bool:
-        """Remove an example by index."""
+        """Remove an example by index.
+
+        Note: total_examples and valid_examples are computed properties that
+        automatically reflect the current state of the examples list.
+        """
         if 0 <= index < len(self.examples):
-            example = self.examples.pop(index)
-            # Update computed fields
-            self.total_examples = len(self.examples)
-            if example.is_valid:
-                self.valid_examples = max(0, self.valid_examples - 1)
-            self.last_validated = datetime.now(UTC)
+            self.examples.pop(index)
+            # Update timestamp (computed fields are auto-updated)
+            # Use object.__setattr__ to bypass validate_assignment for timestamp-only updates
+            object.__setattr__(self, "last_validated", datetime.now(UTC))
             return True
         return False
 
@@ -278,9 +364,14 @@ class ModelExamplesCollection(BaseModel):
         return [ex for ex in self.examples if not ex.is_valid]
 
     def validate_all_examples(self) -> None:
-        """Validate all examples and update statistics."""
-        self.valid_examples = sum(1 for ex in self.examples if ex.is_valid)
-        self.last_validated = datetime.now(UTC)
+        """Validate all examples and update timestamp.
+
+        Note: valid_examples is a computed property that automatically
+        reflects the current validation state. This method updates the
+        last_validated timestamp to indicate when validation was last run.
+        """
+        # Use object.__setattr__ to bypass validate_assignment for timestamp-only updates
+        object.__setattr__(self, "last_validated", datetime.now(UTC))
 
     def is_healthy(self) -> bool:
         """Check if collection is healthy (has valid examples)."""
@@ -342,6 +433,9 @@ class ModelExamplesCollection(BaseModel):
                 ):
                     return False
             return True
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             # fallback-ok: validation failure defaults to invalid state
+            # AttributeError: if example lacks expected attributes
+            # TypeError: if self.examples is not iterable
+            # ValueError: if comparison operations fail
             return False

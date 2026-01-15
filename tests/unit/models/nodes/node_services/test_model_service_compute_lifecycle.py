@@ -13,7 +13,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.constants.event_types import TOOL_INVOCATION
+from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.discovery.model_node_shutdown_event import (
@@ -43,7 +43,7 @@ class ComputeNodeForTesting(ModelServiceCompute):
 
     async def execute_compute(self, contract: ModelContractCompute) -> dict:
         """Simple compute execution for testing."""
-        return {"result": "compute_complete", "data": contract.dict()}
+        return {"result": "compute_complete", "data": contract.model_dump()}
 
     async def run(self, input_state):
         """Run method for tool execution."""

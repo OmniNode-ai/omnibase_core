@@ -12,6 +12,7 @@ and compliance with one-model-per-file naming conventions.
 
 import hashlib
 import inspect
+from collections.abc import ItemsView, KeysView, ValuesView
 from datetime import datetime
 from typing import Any, cast
 from uuid import UUID
@@ -49,8 +50,8 @@ class ModelToolCollection(BaseModel):
     """
 
     # Core tool storage (enhanced)
-    # ONEX_EXCLUDE: dict_str_any - Heterogeneous tool registry (classes, configs, instances)
-    tools: dict[str, Any] = Field(
+    # ONEX_EXCLUDE: dict_str_object - Heterogeneous tool registry (classes, configs, instances)
+    tools: dict[str, object] = Field(
         default_factory=dict,
         description="Mapping of tool names to ProtocolTool implementations",
     )
@@ -122,7 +123,7 @@ class ModelToolCollection(BaseModel):
         description="Access control settings",
     )
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, **data: object) -> None:
         # Generate collection_id if not provided
         if "collection_id" not in data:
             timestamp = datetime.now().isoformat()
@@ -193,7 +194,7 @@ class ModelToolCollection(BaseModel):
 
     @field_validator("max_tools")
     @classmethod
-    def validate_max_tools(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_max_tools(cls, v: int, info: ValidationInfo) -> int:
         """Validate maximum tools limit."""
         if v < 1 or v > 1000:
             msg = "max_tools must be between 1 and 1000"
@@ -203,7 +204,9 @@ class ModelToolCollection(BaseModel):
             )
         return v
 
-    def register_tool(self, name: str, tool_class: Any, **metadata_kwargs: Any) -> bool:
+    def register_tool(
+        self, name: str, tool_class: type[object], **metadata_kwargs: Any
+    ) -> bool:
         """Register a tool implementation with comprehensive validation and metadata."""
         try:
             # Check collection limits
@@ -251,7 +254,7 @@ class ModelToolCollection(BaseModel):
             self.failed_registration_count += 1
             return False
 
-    def _validate_tool(self, tool_class: Any) -> ModelToolValidationResult:
+    def _validate_tool(self, tool_class: type[object]) -> ModelToolValidationResult:
         """Validate tool implementation against ProtocolTool interface."""
         result = ModelToolValidationResult()
 
@@ -291,13 +294,13 @@ class ModelToolCollection(BaseModel):
                     "Tool class name starts with underscore (private)",
                 )
 
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             result.is_valid = False
             result.validation_errors.append(f"Validation failed: {e!s}")
 
         return result
 
-    def _detect_tool_category(self, tool_class: Any) -> EnumToolCategory:
+    def _detect_tool_category(self, tool_class: type[object]) -> EnumToolCategory:
         """Auto-detect tool category from class or module name."""
         class_name = tool_class.__name__.lower()
         module_name = tool_class.__module__.lower()
@@ -317,7 +320,7 @@ class ModelToolCollection(BaseModel):
             return EnumToolCategory.UTILITY
         return EnumToolCategory.CUSTOM
 
-    def get_tool(self, name: str) -> Any | None:
+    def get_tool(self, name: str) -> object | None:
         """Get a tool implementation by name."""
         return self.tools.get(name)
 
@@ -375,8 +378,8 @@ class ModelToolCollection(BaseModel):
         """Support 'in' operator."""
         return self.has_tool(name)
 
-    def __getitem__(self, name: str) -> Any:
-        """Support dict[str, Any]-like access."""
+    def __getitem__(self, name: str) -> object:
+        """Support dict-like access."""
         tool = self.get_tool(name)
         if tool is None:
             msg = f"Tool '{name}' not found in collection"
@@ -386,20 +389,20 @@ class ModelToolCollection(BaseModel):
             )
         return tool
 
-    def __setitem__(self, name: str, tool_class: Any) -> None:
-        """Support dict[str, Any]-like assignment."""
+    def __setitem__(self, name: str, tool_class: type[object]) -> None:
+        """Support dict-like assignment."""
         self.register_tool(name, tool_class)
 
-    def keys(self) -> Any:
-        """Support dict[str, Any]-like keys() method."""
+    def keys(self) -> KeysView[str]:
+        """Support dict-like keys() method."""
         return self.tools.keys()
 
-    def values(self) -> Any:
-        """Support dict[str, Any]-like values() method."""
+    def values(self) -> ValuesView[object]:
+        """Support dict-like values() method."""
         return self.tools.values()
 
-    def items(self) -> Any:
-        """Support dict[str, Any]-like items() method."""
+    def items(self) -> ItemsView[str, object]:
+        """Support dict-like items() method."""
         return self.tools.items()
 
     # Factory methods for common scenarios
@@ -416,8 +419,8 @@ class ModelToolCollection(BaseModel):
     @classmethod
     def create_from_tools_dict(
         cls,
-        # ONEX_EXCLUDE: dict_str_any - Heterogeneous tool registry (classes, configs, instances)
-        tools_dict: dict[str, Any],
+        # ONEX_EXCLUDE: dict_str_object - Heterogeneous tool registry (classes, configs, instances)
+        tools_dict: dict[str, type[object]],
         collection_name: str = "imported",
         auto_validate: bool = True,
     ) -> "ModelToolCollection":

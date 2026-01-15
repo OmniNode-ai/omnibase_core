@@ -57,21 +57,13 @@ class ModelInputState(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol).
-
-        Maps model fields to TypedDictMetadataDict structure:
-        - version -> version (ModelSemVer if present)
-        - additional_fields stored in metadata dict
-        """
-        result = TypedDictMetadataDict(
-            name="",  # Model doesn't have name field
-            description="",  # Model doesn't have description field
-            tags=[],  # Model doesn't have tags field
-            metadata=dict(self.additional_fields),  # Copy additional fields
-        )
-        # Only include version if present
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        result: TypedDictMetadataDict = {}
+        # version is Optional (ModelSemVer | None), so None check is correct
         if self.version is not None:
             result["version"] = self.version
+        if self.additional_fields:
+            result["metadata"] = dict(self.additional_fields)
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
@@ -79,28 +71,9 @@ class ModelInputState(BaseModel):
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
-                    # Convert version field to ModelSemVer if needed
-                    if key == "version" and value is not None:
-                        if isinstance(value, ModelSemVer):
-                            # Already a ModelSemVer, use as-is
-                            setattr(self, key, value)
-                        elif isinstance(value, str):
-                            # Parse string to ModelSemVer
-                            setattr(self, key, ModelSemVer.parse(value))
-                        elif isinstance(value, dict):
-                            # Create ModelSemVer from dict
-                            setattr(self, key, ModelSemVer(**value))
-                        else:
-                            raise ModelOnexError(
-                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                                message=f"Version must be ModelSemVer, str, or dict, got {type(value).__name__}",
-                            )
-                    else:
-                        setattr(self, key, value)
+                    setattr(self, key, value)
             return True
-        except ModelOnexError:
-            raise
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -116,7 +89,7 @@ class ModelInputState(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

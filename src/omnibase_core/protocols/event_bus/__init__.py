@@ -48,6 +48,9 @@ from omnibase_core.protocols.event_bus.protocol_event_bus_headers import (
 from omnibase_core.protocols.event_bus.protocol_event_bus_lifecycle import (
     ProtocolEventBusLifecycle,
 )
+from omnibase_core.protocols.event_bus.protocol_event_bus_listener import (
+    ProtocolEventBusListener,
+)
 from omnibase_core.protocols.event_bus.protocol_event_bus_log_emitter import (
     ProtocolEventBusLogEmitter,
 )
@@ -66,6 +69,7 @@ from omnibase_core.protocols.event_bus.protocol_event_envelope import (
 from omnibase_core.protocols.event_bus.protocol_event_message import (
     ProtocolEventMessage,
 )
+from omnibase_core.protocols.event_bus.protocol_from_event import ProtocolFromEvent
 from omnibase_core.protocols.event_bus.protocol_kafka_event_bus_adapter import (
     ProtocolKafkaEventBusAdapter,
 )
@@ -84,6 +88,7 @@ __all__ = [
     "ProtocolEventBusPublisher",
     "ProtocolEventBusSubscriber",
     "ProtocolEventBusLifecycle",
+    "ProtocolEventBusListener",
     # Event Bus - Full interface (combines Publisher, Subscriber, Lifecycle)
     "ProtocolEventBus",
     "ProtocolEventBusBase",
@@ -91,6 +96,8 @@ __all__ = [
     "ProtocolAsyncEventBus",
     # Envelope
     "ProtocolEventEnvelope",
+    # From Event Protocol
+    "ProtocolFromEvent",
     # Registry
     "ProtocolEventBusRegistry",
     # Log Emitter

@@ -3,11 +3,14 @@ Enum for checkpoint types.
 Single responsibility: Centralized checkpoint type definitions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 from functools import cache
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
-class EnumCheckpointType(str, Enum):
+
+@unique
+class EnumCheckpointType(StrValueHelper, str, Enum):
     """Types of workflow checkpoints for state persistence and recovery."""
 
     # Trigger-based checkpoints
@@ -30,10 +33,6 @@ class EnumCheckpointType(str, Enum):
     COMPOSITION_BOUNDARY = (
         "composition_boundary"  # At composition/decomposition boundaries
     )
-
-    def __str__(self) -> str:
-        """Return the string value of the checkpoint type."""
-        return self.value
 
     @classmethod
     @cache

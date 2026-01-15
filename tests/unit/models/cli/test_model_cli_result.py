@@ -916,7 +916,7 @@ class TestModelCliResultSummary:
         assert summary.success is True
         assert summary.exit_code == 0
         assert summary.warning_count == 2
-        assert summary.error_count == 0
+        assert summary.error_level_count == 0
 
 
 @pytest.mark.unit

@@ -38,6 +38,7 @@ Schema Version: 1.0.0
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.core.model_examples import ModelExample
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from omnibase_core.models.metadata.model_metadata_constants import (
@@ -172,12 +173,16 @@ class ModelStateContract(BaseModel):
             return v
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        # v must be str since union type is exhaustive
-        from omnibase_core.models.primitives.model_semver import (
-            parse_semver_from_string,
-        )
+        if isinstance(v, str):
+            from omnibase_core.models.primitives.model_semver import (
+                parse_semver_from_string,
+            )
 
-        return parse_semver_from_string(v)
+            return parse_semver_from_string(v)
+        # error-ok: Pydantic field_validator requires ValueError
+        raise ValueError(
+            f"contract_version must be ModelSemVer, str, or dict, got {type(v).__name__}"
+        )
 
     @field_validator("node_version", mode="before")
     @classmethod
@@ -189,12 +194,16 @@ class ModelStateContract(BaseModel):
             return v
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        # v must be str since union type is exhaustive
-        from omnibase_core.models.primitives.model_semver import (
-            parse_semver_from_string,
-        )
+        if isinstance(v, str):
+            from omnibase_core.models.primitives.model_semver import (
+                parse_semver_from_string,
+            )
 
-        return parse_semver_from_string(v)
+            return parse_semver_from_string(v)
+        # error-ok: Pydantic field_validator requires ValueError
+        raise ValueError(
+            f"node_version must be ModelSemVer, str, or dict, got {type(v).__name__}"
+        )
 
     @field_validator("node_name")
     @classmethod
@@ -251,20 +260,24 @@ class ModelStateContract(BaseModel):
             ModelOnexError: If the data cannot be parsed or validated
         """
         try:
-            # Handle legacy field names
-            if CONTRACT_SCHEMA_VERSION_KEY in data:
-                data[CONTRACT_VERSION_KEY] = data.pop(CONTRACT_SCHEMA_VERSION_KEY)
+            # Handle legacy field names - use mutable dict for type-safe modifications
+            mutable_data: dict[str, object] = dict(data)
+
+            if CONTRACT_SCHEMA_VERSION_KEY in mutable_data:
+                mutable_data[CONTRACT_VERSION_KEY] = mutable_data.pop(
+                    CONTRACT_SCHEMA_VERSION_KEY
+                )
 
             # Ensure required fields have defaults if missing
-            if CONTRACT_VERSION_KEY not in data:
-                data[CONTRACT_VERSION_KEY] = STATE_CONTRACT_SCHEMA_VERSION
+            if CONTRACT_VERSION_KEY not in mutable_data:
+                mutable_data[CONTRACT_VERSION_KEY] = STATE_CONTRACT_SCHEMA_VERSION
 
-            if NODE_VERSION_KEY not in data:
-                data[NODE_VERSION_KEY] = "1.0.0"
+            if NODE_VERSION_KEY not in mutable_data:
+                mutable_data[NODE_VERSION_KEY] = "1.0.0"
 
-            return cls(**data)
+            return cls.model_validate(mutable_data)
 
-        except Exception as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             raise ModelOnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Failed to parse state contract: {e}",
@@ -294,7 +307,7 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
 
         # Use centralized YAML loading with full Pydantic validation
         return load_and_validate_yaml_model(path, ModelStateContract)
-    except Exception as e:
+    except PYDANTIC_MODEL_ERRORS as e:
         raise ModelOnexError(
             EnumCoreErrorCode.FILE_READ_ERROR,
             f"Failed to load contract from {file_path}: {e}",

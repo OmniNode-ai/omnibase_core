@@ -1,6 +1,6 @@
 # CLAUDE.md - Omnibase Core Project Instructions
 
-> **Version**: 0.4.0 | **Python**: 3.12+ | **Framework**: ONEX Core | **No Backwards Compatibility**: Until v0.4.0 is released, breaking changes may occur between commits. **Shared Infrastructure**: See **`~/.claude/CLAUDE.md`** for common OmniNode infrastructure (PostgreSQL, Kafka/Redpanda, Docker networking, environment variables).
+> **Version**: 0.6.4 | **Python**: 3.12+ | **Framework**: ONEX Core | **Shared Infrastructure**: See **`~/.claude/CLAUDE.md`** for common OmniNode infrastructure (PostgreSQL, Kafka/Redpanda, Docker networking, environment variables).
 
 ---
 
@@ -15,9 +15,10 @@
 7. [CI Performance Benchmarks](#ci-performance-benchmarks)
 8. [Code Quality](#code-quality)
 9. [Key Patterns & Conventions](#key-patterns--conventions)
-10. [Thread Safety](#thread-safety)
-11. [Documentation](#documentation)
-12. [Common Pitfalls](#common-pitfalls)
+10. [Code Hygiene Policies](#code-hygiene-policies)
+11. [Thread Safety](#thread-safety)
+12. [Documentation](#documentation)
+13. [Common Pitfalls](#common-pitfalls)
 
 ---
 
@@ -73,6 +74,13 @@ When spawning polymorphic agents or AI assistants:
 - **NEVER** allow direct pip or python execution
 - **NEVER** run `git commit` or `git push` in background mode - always foreground
 - **NEVER** run agents in background mode (`run_in_background: true`) - run parallel polymorphic agents in the foreground instead by dispatching multiple agents in a single message
+
+### Git Commit Rules
+
+⚠️ **CRITICAL - ABSOLUTELY FORBIDDEN**:
+- **NEVER use `--no-verify`** when committing. Pre-commit hooks exist for a reason.
+- **NEVER use `--no-gpg-sign`** unless explicitly requested by the user.
+- **NEVER skip hooks** - if hooks fail, fix the issues instead of bypassing them.
 
 ---
 
@@ -133,7 +141,7 @@ logger = container.get_service("ProtocolLogger")
 ### Contract Loading with FileRegistry
 
 ```python
-from omnibase_core.runtime.file_registry import FileRegistry
+from omnibase_core.runtime.runtime_file_registry import FileRegistry
 from pathlib import Path
 
 registry = FileRegistry()
@@ -348,6 +356,95 @@ poetry run ruff check --fix src/ tests/  # Auto-fix
 pre-commit run --all-files               # Run all hooks
 ```
 
+### File Headers
+
+All Python files MUST follow the canonical header format. See [docs/conventions/FILE_HEADERS.md](docs/conventions/FILE_HEADERS.md) for the complete specification.
+
+**Quick Reference**:
+1. Module docstring FIRST (PEP 257)
+2. `from __future__ import annotations` immediately after
+3. Imports: stdlib, third-party, then local (enforced by ruff I001/I002)
+
+### Docstring Guidelines
+
+Follow these guidelines to avoid "AI slop" - docstrings that add noise without value.
+
+#### Docstrings to AVOID (Tautological)
+
+Do NOT write docstrings that simply restate the method name:
+
+```python
+# BAD - These add no value
+def get_name(self):
+    """Get the name."""  # Just restates method name
+
+def set_status(self, value):
+    """Set the status."""  # Obvious from signature
+
+def validate_input(self):
+    """Validate input."""  # No new information
+
+def is_active(self) -> bool:
+    """Check if active."""  # Obvious from name and return type
+```
+
+#### Docstrings to WRITE (Valuable)
+
+Write docstrings that explain WHY, describe non-obvious behavior, or document edge cases:
+
+```python
+# GOOD - These add value
+def get_name(self) -> str:
+    """Return canonical name, falling back to id if name is None."""
+
+def set_status(self, value: str) -> None:
+    """Update status and emit StatusChanged event to all subscribers."""
+
+def validate_input(self) -> bool:
+    """
+    Validate against schema v2 rules.
+
+    Raises:
+        ValidationError: If required fields are missing or malformed.
+    """
+
+def is_active(self) -> bool:
+    """Check activation considering both enabled flag and expiry timestamp."""
+```
+
+#### When to Write Docstrings
+
+| Situation | Docstring Needed? | Example |
+|-----------|-------------------|---------|
+| Complex logic | Yes | Algorithms, state machines, multi-step processes |
+| Non-obvious behavior | Yes | Side effects, event emission, caching |
+| Public API | Yes | Module/class/function interfaces |
+| Edge cases | Yes | Error conditions, boundary values |
+| Simple getter/setter | No | `get_id()`, `set_name()` |
+| Obvious from signature | No | `def add(a: int, b: int) -> int` |
+| Private helpers | Usually no | `_parse_line()`, `_normalize()` |
+
+#### Module and Class Docstrings
+
+Keep module docstrings concise (3-6 lines max for simple modules):
+
+```python
+# GOOD - Concise module docstring
+"""Enumeration for node execution status.
+
+Defines lifecycle states for node execution from pending to completed.
+"""
+
+# BAD - Verbose module docstring (avoid)
+"""
+Enumeration for node execution status.
+
+This module provides a comprehensive enumeration of all possible
+execution states that a node can be in during its lifecycle...
+[18 more lines of obvious information]
+"""
+```
+
 ### Type Annotation Style (PEP 604)
 
 **Always use PEP 604 union syntax** (enforced by ruff UP007):
@@ -374,26 +471,289 @@ def process(value: Optional[str]) -> Union[int, str]: ...  # Don't use
 
 ### Error Handling
 
+This section documents the comprehensive error handling policy for ONEX, including when to use different exception types, standardized markers, and available decorators.
+
+#### ValueError vs ModelOnexError Policy
+
+**Use `ValueError`** for:
+- Standard Python validation at function boundaries (public API input validation)
+- Simple type/value validation that doesn't need error codes
+- Cases where the error will be caught and handled immediately
+- Pydantic model validators (which convert to `ValidationError`)
+
 ```python
+# ✅ Appropriate use of ValueError
+def parse_duration(value: str) -> int:
+    if not value:
+        raise ValueError("Duration cannot be empty")
+    if not value.isdigit():
+        raise ValueError(f"Duration must be numeric, got: {value}")
+    return int(value)
+```
+
+**Use `ModelOnexError`** for:
+- ONEX-specific domain errors that need error codes for categorization
+- Errors that will be serialized, logged, or sent across service boundaries
+- Errors that need structured context for debugging
+- Errors in node/workflow execution that need tracking
+
+```python
+# ✅ Appropriate use of ModelOnexError
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
-# Always use structured errors, never generic Exception
+raise ModelOnexError(
+    message="Contract validation failed",
+    error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+    context={"contract_id": contract_id, "field": "version"}
+)
+```
+
+**Decision Matrix**:
+
+| Scenario | Exception Type | Reason |
+|----------|---------------|--------|
+| Invalid function argument | `ValueError` | Standard Python convention |
+| Missing required config | `ModelOnexError` | Needs error code for logging |
+| Type mismatch in validator | `ValueError` | Pydantic compatibility |
+| Node execution failure | `ModelOnexError` | Needs context for debugging |
+| API endpoint validation | `ValueError` | FastAPI handles conversion |
+| Workflow step failure | `ModelOnexError` | Needs serialization |
+
+#### Error Handling Decorators
+
+Three decorators eliminate error handling boilerplate. All decorators follow the ONEX exception contract:
+- Cancellation signals (`SystemExit`, `KeyboardInterrupt`, `GeneratorExit`, `asyncio.CancelledError`) **ALWAYS propagate**
+- `ModelOnexError` is **always re-raised as-is** to preserve error context
+- Other exceptions are **wrapped in `ModelOnexError`** with appropriate error codes
+
+**`@standard_error_handling`** - General purpose (eliminates 6+ lines of boilerplate):
+
+```python
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
+
+@standard_error_handling("Contract processing")
+def process_contract(self, contract_data):
+    # Just business logic - no try/catch needed
+    return validate_and_transform(contract_data)
+```
+
+**`@validation_error_handling`** - For validation operations:
+
+```python
+from omnibase_core.decorators.decorator_error_handling import validation_error_handling
+
+@validation_error_handling("Schema validation")
+def validate_schema(self, schema_data):
+    # ValidationErrors get VALIDATION_ERROR code
+    return model.model_validate(schema_data)
+```
+
+**`@io_error_handling`** - For file/network operations:
+
+```python
+from omnibase_core.decorators.decorator_error_handling import io_error_handling
+
+@io_error_handling("Config file reading")
+def read_config(self, file_path):
+    # FileNotFoundError gets FILE_NOT_FOUND code
+    with open(file_path) as f:
+        return yaml.safe_load(f)
+```
+
+#### Async Error Handling
+
+All three decorators **automatically detect async functions** and handle them correctly. No special configuration needed:
+
+```python
+from omnibase_core.decorators.decorator_error_handling import (
+    standard_error_handling,
+    io_error_handling,
+)
+
+# Decorators auto-detect async and wrap appropriately
+@standard_error_handling("Async data fetch")
+async def fetch_data(self, url: str) -> dict:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        return response.json()
+
+@io_error_handling("Async file operation")
+async def read_config_async(self, file_path: Path) -> dict:
+    async with aiofiles.open(file_path) as f:
+        content = await f.read()
+        return yaml.safe_load(content)
+```
+
+**Async-Specific Behavior**:
+
+1. **`asyncio.CancelledError` always propagates** - Never caught or wrapped by decorators
+2. **Async context preserved** - Stack traces and error context work correctly
+3. **Same error codes** - Async functions get the same `EnumCoreErrorCode` mapping as sync
+
+**Handling `asyncio.CancelledError` explicitly**:
+
+```python
+import asyncio
+from omnibase_core.errors.exception_groups import ASYNC_ERRORS
+
+async def process_with_cleanup(self, data: dict) -> dict:
+    try:
+        return await self._do_processing(data)
+    except asyncio.CancelledError:
+        # Perform cleanup before re-raising
+        await self._cleanup_resources()
+        raise  # ALWAYS re-raise CancelledError
+    except ASYNC_ERRORS as e:
+        # Handle other async errors (TimeoutError, RuntimeError)
+        return {"error": str(e), "status": "failed"}
+```
+
+**Async exception groups with decorators**:
+
+```python
+from omnibase_core.decorators.decorator_error_handling import io_error_handling
+from omnibase_core.errors.exception_groups import NETWORK_ERRORS
+
+@io_error_handling("API batch fetch")
+async def fetch_batch(self, urls: list[str]) -> list[dict]:
+    async with httpx.AsyncClient() as client:
+        tasks = [client.get(url) for url in urls]
+        responses = await asyncio.gather(*tasks, return_exceptions=True)
+
+        results = []
+        for resp in responses:
+            if isinstance(resp, NETWORK_ERRORS):
+                # Individual failures logged, continue with others
+                self.logger.warning(f"Fetch failed: {resp}")
+                results.append({"error": str(resp)})
+            else:
+                results.append(resp.json())
+        return results
+```
+
+#### Exception Handling Comment Markers
+
+When using catch-all or broad exception handlers, document the intent with these standardized markers:
+
+| Marker | When to Use | Example Context |
+|--------|-------------|-----------------|
+| `# fallback-ok:` | Graceful degradation to default values | Config loading, optional features |
+| `# catch-all-ok:` | Boundary handlers that must not crash | API endpoints, CLI entry points |
+| `# cleanup-resilience-ok:` | Cleanup that must complete | Resource release, rollback |
+| `# boundary-ok:` | System/API boundaries | Event handlers, webhooks |
+| `# init-errors-ok:` | Initialization with safe defaults | Service startup, lazy loading |
+| `# tool-resilience-ok:` | Tool/plugin isolation | mypy plugins, linters |
+
+**Example Usage**:
+
+```python
+# Graceful degradation
+try:
+    config = load_config(path)
+except (OSError, ValidationError) as e:
+    # fallback-ok: use defaults if config unavailable
+    config = DEFAULT_CONFIG
+
+# API boundary
+@app.post("/api/process")
+async def process_request(data: dict) -> dict:
+    try:
+        return await processor.handle(data)
+    except Exception as e:
+        # boundary-ok: API must return valid response
+        logger.error(f"Processing failed: {e}")
+        return {"error": str(e), "status": "failed"}
+
+# Cleanup resilience
+finally:
+    try:
+        await connection.close()
+    except Exception as e:
+        # cleanup-resilience-ok: must not fail during cleanup
+        logger.warning(f"Connection close failed: {e}")
+```
+
+#### Exception Tuple Ordering
+
+Exception tuples should be **alphabetically ordered** by exception class name:
+
+```python
+# ✅ Correct - alphabetical
+except (AttributeError, TypeError, ValidationError, ValueError) as e:
+
+# ❌ Wrong - not alphabetical
+except (ValueError, TypeError, AttributeError) as e:
+```
+
+#### Centralized Exception Groups
+
+Use centralized exception constants from `omnibase_core.errors.exception_groups`:
+
+```python
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+
+try:
+    result = model.model_validate(data)
+except PYDANTIC_MODEL_ERRORS as e:
+    # Handle validation errors
+    pass
+```
+
+**Available Groups**:
+
+| Group | Exceptions | Use Case |
+|-------|-----------|----------|
+| `VALIDATION_ERRORS` | `TypeError`, `ValidationError`, `ValueError` | Type checking, value validation |
+| `PYDANTIC_MODEL_ERRORS` | `AttributeError`, `TypeError`, `ValidationError`, `ValueError` | `model_validate()`, `model_dump()`, field access |
+| `ATTRIBUTE_ACCESS_ERRORS` | `AttributeError`, `IndexError`, `KeyError`, `TypeError` | Dict keys, object attributes, list indices |
+| `YAML_PARSING_ERRORS` | `ValidationError`, `ValueError`, `yaml.YAMLError` | YAML config/contract parsing |
+| `JSON_PARSING_ERRORS` | `json.JSONDecodeError`, `TypeError`, `ValidationError`, `ValueError` | JSON data/API response parsing |
+| `FILE_IO_ERRORS` | `FileNotFoundError`, `IOError`, `OSError`, `PermissionError` | File read/write operations |
+| `NETWORK_ERRORS` | `ConnectionError`, `OSError`, `TimeoutError` | HTTP requests, socket connections |
+| `ASYNC_ERRORS` | `asyncio.TimeoutError`, `RuntimeError` | Async task failures |
+
+**Important**: `asyncio.CancelledError` is **NOT** in any group - it must be caught separately and re-raised:
+
+```python
+try:
+    await async_operation()
+except asyncio.CancelledError:
+    # Cleanup if needed
+    raise  # Always re-raise!
+except ASYNC_ERRORS as e:
+    # Handle other async errors
+    pass
+```
+
+#### Quick Reference
+
+```python
+# Standard structured error
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
 raise ModelOnexError(
     message="Operation failed",
     error_code=EnumCoreErrorCode.OPERATION_FAILED,
     context={"user_id": user_id}
 )
-```
 
-#### Use @standard_error_handling decorator:
+# Use decorator for boilerplate elimination
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 
-```python
-from omnibase_core.decorators.error_handling import standard_error_handling
+@standard_error_handling("My operation")
+def my_operation(self):
+    pass  # No try/catch needed
 
-@standard_error_handling  # Eliminates 6+ lines of try/catch boilerplate
-async def my_operation(self):
-    pass
+# Use exception groups for consistent handling
+from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
+
+try:
+    data = read_file(path)
+except FILE_IO_ERRORS as e:
+    # fallback-ok: use empty data if file unavailable
+    data = {}
 ```
 
 ### Mixin System
@@ -414,21 +774,240 @@ class NodeMyServiceCompute(NodeCompute, MixinDiscoveryResponder):
 
 **Available Mixins**: `MixinDiscoveryResponder`, `MixinEventHandler`, `MixinEventListener`, `MixinNodeExecutor`, `MixinNodeLifecycle`, `MixinRequestResponseIntrospection`, `MixinWorkflowExecution`
 
-### Pydantic `from_attributes=True` for Value Objects
+### File Naming Conventions
 
-Add `from_attributes=True` to `ConfigDict` for immutable value objects nested in other Pydantic models used with pytest-xdist parallel execution.
+All Python files in `src/omnibase_core/` must follow directory-specific naming prefixes. This is enforced by pre-commit hooks via `checker_naming_convention.py`.
 
-**Why**: pytest-xdist workers import classes independently. Without `from_attributes=True`, Pydantic rejects valid instances due to class identity differences.
+| Directory | Required Prefix(es) | Example |
+|-----------|---------------------|---------|
+| `cli/` | `cli_*` | `cli_commands.py` |
+| `constants/` | `constants_*` | `constants_event_types.py` |
+| `container/` | `container_*` | `container_service_registry.py` |
+| `context/` | `context_*` | `context_application.py` |
+| `contracts/` | `contract_*` | `contract_hash_registry.py` |
+| `decorators/` | `decorator_*` | `decorator_error_handling.py` |
+| `enums/` | `enum_*` | `enum_node_kind.py` |
+| `errors/` | `error_*` or `exception_*` | `error_runtime.py` |
+| `factories/` | `factory_*` | `factory_contract_profile.py` |
+| `infrastructure/` | `node_*` or `infra_*` | `node_base.py` |
+| `logging/` | `logging_*` | `logging_structured.py` |
+| `mixins/` | `mixin_*` | `mixin_discovery_responder.py` |
+| `models/` | `model_*` | `model_event_envelope.py` |
+| `nodes/` | `node_*` | `node_compute.py` |
+| `pipeline/` | `builder_*`, `runner_*`, `manifest_*`, `composer_*`, `registry_*`, `pipeline_*`, `handler_*` | `builder_execution_plan.py` |
+| `protocols/` | `protocol_*` | `protocol_event_bus.py` |
+| `resolution/` | `resolver_*` | `resolver_execution.py` |
+| `runtime/` | `runtime_*`, `handler_*` | `runtime_file_registry.py` |
+| `schemas/` | `schema_*` | `schema_node.py` |
+| `services/` | `service_*` | `service_compute_cache.py` |
+| `tools/` | `tool_*` | `tool_dict_any_checker.py` |
+| `types/` | `typed_dict_*`, `type_*`, or `converter_*` | `type_compute_pipeline.py` |
+| `utils/` | `util_*` | `util_datetime_parser.py` |
+| `validation/` | `validator_*` or `checker_*` | `validator_contracts.py` |
+
+**Exceptions**: `__init__.py`, `conftest.py`, and `py.typed` files are always allowed.
+
+**Validation**: Run `poetry run python -m omnibase_core.validation.checker_naming_convention` to check compliance.
+
+### Architectural Exceptions
+
+Some files are excluded from single-class-per-file validation due to architectural patterns:
+
+| File | Reason |
+|------|--------|
+| `mixins/mixin_event_bus.py` | Duck-typed Protocol defined alongside the mixin that uses it. The protocol and implementation are tightly coupled for duck-typing support of legacy event bus implementations. |
+| `validation/checker_enum_governance.py` | Enum governance checker with multiple AST collector classes for parsing enum definitions and Literal types. |
+| `mixins/mixin_health_check.py` | Duck-typed Protocols (ProtocolConnectionPool, ProtocolKafkaProducerAio, etc.) defined alongside the health check mixin for service-specific health checks. |
+
+These exclusions are documented in `.pre-commit-config.yaml` under `validate-single-class-per-file`.
+
+### Enum String Serialization
+
+All string-based enums should use `StrValueHelper` for consistent `__str__` behavior:
 
 ```python
-class ModelSemVer(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
-    major: int
-    minor: int
-    patch: int
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
+class EnumStatus(StrValueHelper, str, Enum):
+    """Status values for workflow execution."""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+
+# StrValueHelper provides __str__ that returns self.value
+str(EnumStatus.PENDING)  # Returns: "pending"
 ```
 
+**Note**: `StrValueHelper` is a utility mixin for enums, not a node mixin. It is located in `omnibase_core.utils`, not `omnibase_core.mixins`.
+
+### Severity Enum Policy
+
+**Canonical Enum**: Use `EnumSeverity` from `omnibase_core.enums` for all general severity classifications.
+
+```python
+from omnibase_core.enums import EnumSeverity
+
+# Values: DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL
+severity = EnumSeverity.WARNING
+```
+
+**Documented Exceptions** (do NOT merge into EnumSeverity):
+
+| Enum | Location | Reason |
+|------|----------|--------|
+| `EnumSeverityLevel` | `omnibase_core.enums` | RFC 5424 logging compliance (11 values including TRACE, NOTICE, ALERT, EMERGENCY) |
+| `EnumImpactSeverity` | `omnibase_core.enums` | Business impact scale (CRITICAL, HIGH, MEDIUM, LOW, MINIMAL) |
+
+**Policy**: Do not create new severity enums. If you need additional severity levels:
+1. Evaluate if `EnumSeverity` can be extended (requires ticket + review)
+2. Check if `EnumSeverityLevel` or `EnumImpactSeverity` is more appropriate for your use case
+3. If truly needed, create a ticket explaining why a new enum is necessary
+
+### Pydantic Model Configuration Standards
+
+Every Pydantic model MUST have an explicit `model_config`. Empty `ConfigDict()` is not allowed - it has ambiguous intent and provides no explicit policy for model behavior (extra fields, mutability, etc.). Models must declare their configuration explicitly.
+
+#### ConfigDict Requirements
+
+| Model Type | Required ConfigDict | Example |
+|------------|---------------------|---------|
+| **Immutable value object** | `ConfigDict(frozen=True, extra="forbid", from_attributes=True)` | ModelSemVer, ModelAuditEntry |
+| **Mutable internal model** | `ConfigDict(extra="forbid", from_attributes=True)` | ModelRouteHop, ModelFilterCriteria |
+| **Contract/external data** | `ConfigDict(extra="ignore", ...)` | YAML contracts |
+| **Extension point** | `ConfigDict(extra="allow", ...)` | ModelNodeExtensions |
+
+#### Key Rules
+
+1. **frozen=True** - Model is immutable, MUST also have `from_attributes=True`
+2. **Mutable models** - NO `frozen=True`, but still use `extra="forbid"` for internal models
+3. **Contracts** - MUST explicitly declare `extra=` policy (no implicit defaults)
+4. **`from_attributes=True`** - Required on ALL frozen models for pytest-xdist compatibility
+
+**Why `from_attributes=True`?** pytest-xdist workers import classes independently. Without it, Pydantic rejects valid instances due to class identity differences.
+
+#### Field Definition Patterns
+
+```python
+# Simple default - no Field() needed
+field_name: str | None = None
+
+# Using Field() for metadata - Field() justified
+field_name: str | None = Field(default=None, description="Helpful description")
+field_name: int | None = Field(default=None, ge=0, le=100)
+field_name: str | None = Field(default=None, alias="fieldName")
+
+# WRONG - Field() without metadata (use = None instead)
+field_name: str | None = Field(default=None)  # Unnecessary wrapper
+
+# Mutable defaults - ALWAYS use default_factory
+items: list[str] = Field(default_factory=list)
+mapping: dict[str, Any] = Field(default_factory=dict)
+
+# WRONG - Mutable default values cause shared state bugs
+items: list[str] = []  # Dangerous!
+```
+
+**See**: [Pydantic Best Practices](docs/conventions/PYDANTIC_BEST_PRACTICES.md) for comprehensive guidelines.
+
 To find models using this pattern: `grep -r "from_attributes.*True" src/omnibase_core/models/`
+
+---
+
+## Code Hygiene Policies
+
+### Import Policy
+
+**Convention**: Absolute imports across packages, relative imports within tight module clusters.
+
+- **Default**: Absolute imports for stability + readability
+- **Allowed**: Relative imports within same subpackage to avoid long paths
+- **Forbidden**: Relative imports that cross package boundaries
+
+**Examples**:
+```python
+# Preferred across package/subsystem boundaries
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Allowed within a tight subpackage cluster
+from .model_widget_definition import ModelWidgetDefinition
+```
+
+**Import Order** (enforced by ruff I001/I002):
+1. Standard library imports
+2. Third-party imports
+3. First-party (`omnibase_core`) imports
+4. Local/relative imports
+
+**`__init__.py` Patterns**:
+
+| Pattern | Purpose | Example |
+|---------|---------|---------|
+| **Barrel exports** | Public API boundary | `from .model_semver import ModelSemVer` |
+| **Selective re-exports** | Controlled internal API | `from .internal import _helper` (underscore prefix) |
+| **Empty** | Namespace package marker | Just `# empty` comment |
+
+**Excluded Files**: Files excluded from import checks have inline comments:
+```python
+# NOTE(OMN-1302): This module is excluded from <TOOL> because <REASON>.
+```
+
+### TODO Policy
+
+**Format**: All TODOs must reference a Linear ticket:
+```python
+# TODO(OMN-XXX): Description of work needed
+```
+
+**Rules**:
+- `# TODO(OMN-1302): Add validation for edge case` - Correct
+- `# TODO: Fix this later` - Missing ticket reference (forbidden)
+- `# TODO(): Something` - Empty parentheses (forbidden)
+
+**For new TODOs**: Create a Linear ticket first, then add the TODO with the ticket ID.
+
+**Temporary marker** (during triage only):
+```python
+# TODO(OMN-TBD): <action>  [NEEDS TICKET]
+```
+
+**Multi-line TODOs**: For multi-line TODOs, always place `[NEEDS TICKET]` on the first line (same line as `TODO(OMN-TBD):`) for grep-ability:
+```python
+# Correct - [NEEDS TICKET] on first line (findable with grep)
+# TODO(OMN-TBD): Add topic validation when topic-based publishing is implemented. [NEEDS TICKET]
+# When the event bus supports explicit topic routing, validate alignment
+# between message category and topic name using _validate_topic_alignment().
+
+# Wrong - [NEEDS TICKET] on last line (not findable with single grep)
+# TODO(OMN-TBD): Add topic validation when topic-based publishing is implemented.
+# When the event bus supports explicit topic routing, validate alignment
+# between message category and topic name using _validate_topic_alignment().  [NEEDS TICKET]
+```
+
+**Why first line?** Running `grep -r "TODO(OMN-TBD).*\[NEEDS TICKET\]"` finds all TODOs needing tickets only when the marker is on the first line.
+
+### Type Ignore Policy
+
+**Format**: All type ignores must have specific codes and explanations:
+```python
+# NOTE(OMN-XXXX): mypy false-positive due to <reason>. Safe because <invariant>.
+value = some_call()  # type: ignore[arg-type]
+```
+
+**Rules**:
+- Specific codes required (e.g., `[arg-type]`, `[return-value]`)
+- Explanation comment on line above
+- Generic `# type: ignore` without code (forbidden)
+- No explanation of why ignore is safe (forbidden)
+
+**When to use type ignores**:
+- Third-party library typing is broken
+- Unavoidable dynamic behavior (DI, duck typing)
+- mypy false-positive that cannot be fixed
+
+**When NOT to use type ignores**:
+- Wrong types on Field defaults (fix the type)
+- Optional vs non-Optional mismatch (fix the annotation)
+- Any leaking from dicts (use TypedDict)
 
 ---
 
@@ -472,6 +1051,12 @@ To find models using this pattern: `grep -r "from_attributes.*True" src/omnibase
 4. [EFFECT Node Tutorial](docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md)
 5. [REDUCER Node Tutorial](docs/guides/node-building/05_REDUCER_NODE_TUTORIAL.md)
 6. [ORCHESTRATOR Node Tutorial](docs/guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md)
+
+### Architecture Decision Records
+
+| ADR | Summary |
+|-----|---------|
+| [ADR-013](docs/architecture/adr/ADR-013-status-taxonomy.md) | Status Taxonomy: canonical status enums for 6 categories (Execution, Operation, Workflow, Health, Lifecycle, Registration) |
 
 📚 **Complete Index**: [docs/INDEX.md](docs/INDEX.md)
 
@@ -590,7 +1175,7 @@ poetry add --group dev package-name        # Add dev dependency
 
 ---
 
-**Last Updated**: 2025-12-26 | **Version**: 0.4.0 | **Python**: 3.12+
+**Last Updated**: 2026-01-12 | **Version**: 0.6.4 | **Python**: 3.12+
 
 **Ready to build?** → [Node Building Guide](docs/guides/node-building/README.md)
 **Need help?** → [Documentation Index](docs/INDEX.md)

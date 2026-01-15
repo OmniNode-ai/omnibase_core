@@ -1,20 +1,19 @@
-from __future__ import annotations
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.errors import ModelOnexError
-
 """
 Time Unit Enumeration.
 
 Time unit enumeration for flexible time representation.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTimeUnit(str, Enum):
+class EnumTimeUnit(StrValueHelper, str, Enum):
     """Time unit enumeration for flexible time representation."""
 
     MILLISECONDS = "ms"
@@ -22,10 +21,6 @@ class EnumTimeUnit(str, Enum):
     MINUTES = "m"
     HOURS = "h"
     DAYS = "d"
-
-    def __str__(self) -> str:
-        """Return string representation."""
-        return self.value
 
     @property
     def display_name(self) -> str:
@@ -70,6 +65,9 @@ class EnumTimeUnit(str, Enum):
         multiplier_keys = set(cls._get_millisecond_multipliers().keys())
 
         if display_keys != all_members:
+            # Lazy import to avoid circular dependency with error_codes
+            from omnibase_core.errors import ModelOnexError
+
             missing = all_members - display_keys
             raise ModelOnexError(
                 f"Missing display names for: {missing}",
@@ -77,6 +75,9 @@ class EnumTimeUnit(str, Enum):
             )
 
         if multiplier_keys != all_members:
+            # Lazy import to avoid circular dependency with error_codes
+            from omnibase_core.errors import ModelOnexError
+
             missing = all_members - multiplier_keys
             raise ModelOnexError(
                 f"Missing multipliers for: {missing}",

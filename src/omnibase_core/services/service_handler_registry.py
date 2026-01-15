@@ -41,6 +41,7 @@ import threading
 from collections import defaultdict
 from uuid import UUID, uuid4
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
@@ -111,7 +112,7 @@ class ServiceHandlerRegistry:
 
     See Also:
         - :class:`ProtocolMessageHandler`: Handler protocol definition
-        - :class:`~omnibase_core.runtime.envelope_router.EnvelopeRouter`:
+        - :class:`~omnibase_core.runtime.runtime_envelope_router.EnvelopeRouter`:
           Similar freeze-after-init pattern
         - :class:`~omnibase_core.models.validation.model_execution_shape_validation.ModelExecutionShapeValidation`:
           Execution shape validation
@@ -205,6 +206,15 @@ class ServiceHandlerRegistry:
 
         .. versionadded:: 0.4.0
         """
+        self._register_handler_impl(handler, message_types)
+
+    @standard_error_handling("Handler registration")
+    def _register_handler_impl(
+        self,
+        handler: ProtocolMessageHandler,
+        message_types: set[str] | None = None,
+    ) -> None:
+        """Internal implementation of handler registration."""
         # Validate handler outside lock
         self._validate_handler(handler)
 
@@ -289,6 +299,11 @@ class ServiceHandlerRegistry:
 
         .. versionadded:: 0.4.0
         """
+        return self._unregister_handler_impl(handler_id)
+
+    @standard_error_handling("Handler unregistration")
+    def _unregister_handler_impl(self, handler_id: str) -> bool:
+        """Internal implementation of handler unregistration."""
         with self._registration_lock:
             if self._frozen:
                 raise ModelOnexError(

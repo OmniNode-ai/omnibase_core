@@ -9,7 +9,8 @@ Typing: Strongly typed with strategic Any usage for mixin kwargs and configurati
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable, Coroutine
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 if TYPE_CHECKING:
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 
     # These imports are for type hints only - actual imports are done lazily in methods
     # to avoid circular import with workflow_executor
-    from omnibase_core.utils.workflow_executor import (
+    from omnibase_core.utils.util_workflow_executor import (
         WorkflowExecutionResult,
     )
 
@@ -31,14 +32,34 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition impor
 )
 from omnibase_core.types.type_workflow_context import WorkflowContextType
 
+# Type aliases for workflow executor functions.
+# These use string forward references for WorkflowExecutionResult since it's
+# imported lazily to avoid circular imports. At runtime, the actual callables
+# from workflow_executor module are stored.
+
+# execute_workflow: async (definition, steps, workflow_id, mode?) -> WorkflowExecutionResult
+ExecuteWorkflowFunc = Callable[
+    [ModelWorkflowDefinition, list[ModelWorkflowStep], UUID, EnumExecutionMode | None],
+    Coroutine[object, object, "WorkflowExecutionResult"],
+]
+
+# get_execution_order: sync (steps) -> list[UUID]
+GetExecutionOrderFunc = Callable[[list[ModelWorkflowStep]], list[UUID]]
+
+# validate_workflow_definition: async (definition, steps) -> list[str]
+ValidateWorkflowDefinitionFunc = Callable[
+    [ModelWorkflowDefinition, list[ModelWorkflowStep]],
+    Coroutine[object, object, list[str]],
+]
+
 # Module-level cache for lazy imports to avoid repeated import overhead.
 # Populated on first access by _get_workflow_executor().
 _workflow_executor_cache: (
     tuple[
         type[WorkflowExecutionResult],
-        Any,  # execute_workflow function
-        Any,  # get_execution_order function
-        Any,  # validate_workflow_definition function
+        ExecuteWorkflowFunc,
+        GetExecutionOrderFunc,
+        ValidateWorkflowDefinitionFunc,
     ]
     | None
 ) = None
@@ -47,9 +68,9 @@ _workflow_executor_cache: (
 # Lazy import helper to avoid circular import with workflow_executor
 def _get_workflow_executor() -> tuple[
     type[WorkflowExecutionResult],
-    Any,  # execute_workflow function
-    Any,  # get_execution_order function
-    Any,  # validate_workflow_definition function
+    ExecuteWorkflowFunc,
+    GetExecutionOrderFunc,
+    ValidateWorkflowDefinitionFunc,
 ]:
     """
     Lazily import workflow_executor to avoid circular import.
@@ -62,7 +83,7 @@ def _get_workflow_executor() -> tuple[
     if _workflow_executor_cache is not None:
         return _workflow_executor_cache
 
-    from omnibase_core.utils.workflow_executor import (
+    from omnibase_core.utils.util_workflow_executor import (
         WorkflowExecutionResult,
         execute_workflow,
         get_execution_order,
@@ -121,7 +142,7 @@ class MixinWorkflowExecution:
     # Type annotation for workflow state tracking (see __init__ for population details)
     _workflow_state: ModelWorkflowStateSnapshot | None
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """
         Initialize workflow execution mixin.
 
@@ -206,7 +227,7 @@ class MixinWorkflowExecution:
         """
         Execute workflow from YAML contract.
 
-        Pure function delegation: delegates to utils/workflow_executor.execute_workflow()
+        Pure function delegation: delegates to utils/util_workflow_executor.execute_workflow()
         which returns (result, actions) without side effects.
 
         After execution completes, automatically updates the internal workflow state
@@ -230,7 +251,7 @@ class MixinWorkflowExecution:
             )
 
             # Check result
-            if result.execution_status == EnumWorkflowState.COMPLETED:
+            if result.execution_status == EnumWorkflowStatus.COMPLETED:
                 print(f"Workflow completed: {len(result.actions_emitted)} actions")
                 # Process actions (emitted to target nodes)
                 for action in result.actions_emitted:
@@ -288,7 +309,7 @@ class MixinWorkflowExecution:
         """
         Validate workflow contract for correctness.
 
-        Pure function delegation: delegates to utils/workflow_executor.validate_workflow_definition()
+        Pure function delegation: delegates to utils/util_workflow_executor.validate_workflow_definition()
 
         Args:
             workflow_definition: Workflow definition to validate
@@ -310,7 +331,11 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, _, _, validate_workflow_definition = _get_workflow_executor()
-        return await validate_workflow_definition(workflow_definition, workflow_steps)
+        # Cast to satisfy mypy since validate_workflow_definition returns Any from lazy import
+        validation_result: list[str] = await validate_workflow_definition(
+            workflow_definition, workflow_steps
+        )
+        return validation_result
 
     def get_workflow_execution_order(
         self,
@@ -335,7 +360,9 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, _, get_execution_order, _ = _get_workflow_executor()
-        return get_execution_order(workflow_steps)
+        # Cast to satisfy mypy since get_execution_order returns Any from lazy import
+        execution_order: list[UUID] = get_execution_order(workflow_steps)
+        return execution_order
 
     def create_workflow_steps_from_config(
         self,
@@ -371,7 +398,8 @@ class MixinWorkflowExecution:
         workflow_steps: list[ModelWorkflowStep] = []
 
         for step_config in steps_config:
-            # TypedDict is compatible with ** unpacking
+            # NOTE(OMN-1302): TypedDict compatible with ** unpacking but mypy cannot verify at call site.
+            # Safe because ModelWorkflowStep validates fields.
             step = ModelWorkflowStep(**step_config)  # type: ignore[arg-type]
             workflow_steps.append(step)
 

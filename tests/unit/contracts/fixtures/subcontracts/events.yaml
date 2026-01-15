@@ -1,0 +1,8 @@
+---
+consumed:
+  - event_type: "user.created"
+    handler: "handle_user_created"
+  - event_type: "user.updated"
+    handler: "handle_user_updated"
+emitted:
+  - event_type: "user.processed"

@@ -9,11 +9,11 @@ ARCHITECTURAL PRINCIPLE: No dict[str, Any] - always use structured models
 
 from typing import Annotated
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.json_types import PrimitiveContainer
+from omnibase_core.types.type_json import PrimitiveContainer
 
 
 class ModelExtensionData(BaseModel):
@@ -80,10 +80,10 @@ class ModelExtensionData(BaseModel):
     ] = None
 
     # Pydantic configuration
-    model_config = {
-        "extra": "forbid",  # No arbitrary fields allowed - strict validation
-        "frozen": False,  # Allow mutation for practical use cases
-    }
+    model_config = ConfigDict(
+        extra="forbid",  # No arbitrary fields allowed - strict validation,
+        frozen=False,  # Allow mutation for practical use cases,
+    )
 
     @property
     def value_type(self) -> str:

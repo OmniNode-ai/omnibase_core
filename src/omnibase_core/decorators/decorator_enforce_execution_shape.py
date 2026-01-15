@@ -134,15 +134,19 @@ def enforce_execution_shape(
             async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
                 # Shape already validated at decoration time
                 # Just execute the function
-                return await func(*args, **kwargs)
+                result: T = await func(*args, **kwargs)
+                return result
 
+            # NOTE(OMN-1302): Wrapper matches original signature but mypy cannot verify Callable compatibility.
+            # Safe because functools.wraps preserves signature.
             return async_wrapper  # type: ignore[return-value]
 
         @functools.wraps(func)
         def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             # Shape already validated at decoration time
             # Just execute the function
-            return func(*args, **kwargs)
+            result: T = func(*args, **kwargs)
+            return result
 
         return sync_wrapper
 

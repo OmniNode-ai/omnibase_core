@@ -9,9 +9,18 @@ Import validation models directly when needed:
 """
 
 # Only import non-circular models (Pydantic models that don't import from validation)
+# Contract validation event model (OMN-1146)
+from .model_contract_validation_event import (
+    ContractValidationEventType,
+    ModelContractValidationEvent,
+)
+
 # Workflow validation models (OMN-176) - safe to import
 from .model_cycle_detection_result import ModelCycleDetectionResult
 from .model_dependency_validation_result import ModelDependencyValidationResult
+
+# Event destination model (OMN-1151)
+from .model_event_destination import ModelEventDestination
 from .model_execution_shape import ModelExecutionShape
 from .model_execution_shape_validation import ModelExecutionShapeValidation
 from .model_isolated_step_result import ModelIsolatedStepResult
@@ -29,6 +38,11 @@ from .model_workflow_validation_result import ModelWorkflowValidationResult
 # cause circular imports and should be imported directly from their modules when needed
 
 __all__ = [
+    # Contract validation event model (OMN-1146)
+    "ContractValidationEventType",
+    "ModelContractValidationEvent",
+    # Event destination model (OMN-1151)
+    "ModelEventDestination",
     # Pydantic models (safe to import)
     "ModelLintStatistics",
     "ModelMigrationConflictUnion",
@@ -59,8 +73,10 @@ __all__ = [
     # "ModelUnionPattern",  # from .model_union_pattern
     #
     # Circular Import Detection (dataclass, not Pydantic):
-    # "ModelValidationResult",  # from .model_import_validation_result
+    # "ModelImportValidationResult",  # from .model_import_validation_result
     #     ^-- Aggregates results from circular import validation runs.
     #         Tracks successful imports, circular imports, and errors.
     #         Used by import validation tooling, not general validation.
+    #     Note: Renamed from ModelValidationResult to avoid collision with
+    #           the generic ModelValidationResult[T] in models/common/.
 ]

@@ -26,14 +26,20 @@
 Enum for file status values used in metadata blocks.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumFileStatus(str, Enum):
-    empty = "empty"  # File has no content
-    unvalidated = "unvalidated"  # Not schema-validated
-    validated = "validated"  # Schema-validated
-    deprecated = "deprecated"  # Marked for removal
-    incomplete = "incomplete"  # Missing required fields
-    synthetic = "synthetic"  # Generated, not user-authored
+@unique
+class EnumFileStatus(StrValueHelper, str, Enum):
+    EMPTY = "empty"  # File has no content
+    UNVALIDATED = "unvalidated"  # Not schema-validated
+    VALIDATED = "validated"  # Schema-validated
+    DEPRECATED = "deprecated"  # Marked for removal
+    INCOMPLETE = "incomplete"  # Missing required fields
+    SYNTHETIC = "synthetic"  # Generated, not user-authored
     # Add more statuses as protocol evolves
+
+
+__all__ = ["EnumFileStatus"]

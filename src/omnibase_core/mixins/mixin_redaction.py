@@ -21,10 +21,12 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict
+
+from omnibase_core.types.type_json import JsonType
 
 
 class MixinSensitiveFieldRedaction:
@@ -69,7 +71,7 @@ class MixinSensitiveFieldRedaction:
     @classmethod
     def get_sensitive_field_patterns(cls) -> list[str]:
         """
-        Get the list[Any]of sensitive field patterns for this model.
+        Get the list of sensitive field patterns for this model.
 
         Override this method in subclasses to customize sensitive field detection.
 
@@ -107,7 +109,7 @@ class MixinSensitiveFieldRedaction:
         return any(pattern in field_lower for pattern in patterns)
 
     @classmethod
-    def get_redaction_value(cls, field_name: str, field_value: Any) -> str:
+    def get_redaction_value(cls, field_name: str, field_value: object) -> str:
         """
         Get the appropriate redaction value for a field.
 
@@ -167,14 +169,14 @@ class MixinSensitiveFieldRedaction:
 
             # Redact items in lists that are dictionaries
             elif isinstance(field_value, list):
-                redacted_list: list[object] = []
+                redacted_list: list[JsonType] = []
                 for item in field_value:
                     if isinstance(item, dict):
                         redacted_list.append(
                             self.redact_sensitive_fields(item),
                         )
                     else:
-                        redacted_list.append(item)
+                        redacted_list.append(cast(JsonType, item))
                 redacted_data[field_name] = redacted_list
 
         return redacted_data
@@ -182,7 +184,7 @@ class MixinSensitiveFieldRedaction:
     def redact(
         self,
         additional_sensitive_fields: set[str] | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> "SerializedDict":
         """
         Get a redacted version of the model data.
@@ -202,7 +204,8 @@ class MixinSensitiveFieldRedaction:
         else:
             # Fallback for non-Pydantic models
             data = {
-                field: getattr(self, field) for field in getattr(self, "__fields__", {})
+                field: getattr(self, field)
+                for field in getattr(self, "model_fields", {})
             }
 
         return self.redact_sensitive_fields(data, additional_sensitive_fields)
@@ -210,7 +213,7 @@ class MixinSensitiveFieldRedaction:
     def model_dump_redacted(
         self,
         additional_sensitive_fields: set[str] | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> "SerializedDict":
         """
         Convenience method that combines model_dump with redaction.

@@ -7,10 +7,9 @@ Type-safe orchestrator output that replaces Dict[str, Any] usage
 in orchestrator results.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
@@ -153,8 +152,10 @@ class ModelOrchestratorOutput(BaseModel):
         if isinstance(value, dict) and "value_type" in value:
             try:
                 return ModelSchemaValue.model_validate(value)
-            except Exception:
-                # fallback-ok: If validation fails, treat as raw value
+            except VALIDATION_ERRORS:
+                # fallback-ok: If validation fails, treat as raw value.
+                # VALIDATION_ERRORS covers TypeError, ValidationError, ValueError
+                # which are raised by Pydantic model_validate.
                 pass
         return ModelSchemaValue.from_value(value)
 
@@ -171,7 +172,7 @@ class ModelOrchestratorOutput(BaseModel):
     @field_validator("final_result", mode="before")
     @classmethod
     def convert_final_result(
-        cls, v: Any | ModelSchemaValue | None
+        cls, v: object | ModelSchemaValue | None
     ) -> ModelSchemaValue | None:
         """Convert final result to ModelSchemaValue for type safety."""
         if v is None:
@@ -181,7 +182,7 @@ class ModelOrchestratorOutput(BaseModel):
     @field_validator("actions_emitted", mode="before")
     @classmethod
     def convert_actions_emitted(
-        cls, v: list[Any] | list[ModelAction]
+        cls, v: list[object] | list[ModelAction]
     ) -> list[ModelAction]:
         """Convert actions to ModelAction for type safety.
 
@@ -194,9 +195,9 @@ class ModelOrchestratorOutput(BaseModel):
             return []
         # Note: len(v) > 0 check removed - guaranteed non-empty after early return
         if isinstance(v[0], ModelAction):
-            return v  # Already list[ModelAction]
+            return v  # type: ignore[return-value]  # Already list[ModelAction]
         # Let Pydantic validate dicts as ModelAction
-        return v
+        return v  # type: ignore[return-value]  # Passthrough for dicts; Pydantic validates as ModelAction
 
     # Custom outputs for extensibility
     custom_outputs: ModelCustomFields | None = Field(

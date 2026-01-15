@@ -3,8 +3,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-# Import the existing enum from enums module
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+# Import canonical severity enum
+from omnibase_core.enums import EnumSeverity
 
 """
 Individual validation issue with proper typing.
@@ -22,9 +22,15 @@ class ModelValidationIssue(BaseModel):
     comprehensive metadata and suggestions.
     """
 
-    model_config = ConfigDict(extra="forbid", validate_assignment=True)
+    # from_attributes=True: Required for pytest-xdist parallel execution where
+    # model classes may be imported in separate workers with different class identity.
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
-    severity: EnumValidationSeverity = Field(
+    severity: EnumSeverity = Field(
         default=...,
         description="Severity level of the issue",
     )

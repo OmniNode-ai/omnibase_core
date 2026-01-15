@@ -7,17 +7,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_validator_info import TypedDictValidatorInfo
-from omnibase_core.validation.architecture import validate_architecture_directory
-from omnibase_core.validation.contracts import validate_contracts_directory
-from omnibase_core.validation.patterns import validate_patterns_directory
-from omnibase_core.validation.types import validate_union_usage_directory
-from omnibase_core.validation.validation_utils import ModelValidationResult
+from omnibase_core.validation.validator_architecture import (
+    validate_architecture_directory,
+)
+from omnibase_core.validation.validator_contracts import validate_contracts_directory
+from omnibase_core.validation.validator_patterns import validate_patterns_directory
+from omnibase_core.validation.validator_types import validate_union_usage_directory
+from omnibase_core.validation.validator_utils import ModelValidationResult
 
 
 class ServiceValidationSuite:
@@ -80,6 +83,7 @@ class ServiceValidationSuite:
             },
         }
 
+    @standard_error_handling("Validation execution")
     def run_validation(
         self,
         validation_type: str,
@@ -116,7 +120,7 @@ class ServiceValidationSuite:
                 result = self.run_validation(validation_type, directory, **kwargs)
                 results[validation_type] = result
             except ModelOnexError as e:
-                # ONEX framework validation errors
+                # fallback-ok: capture ONEX framework errors as validation failures
                 results[validation_type] = ModelValidationResult(
                     is_valid=False,
                     errors=[f"Validation error: {e.message}"],
@@ -126,7 +130,7 @@ class ServiceValidationSuite:
                     ),
                 )
             except OSError as e:
-                # File system errors (FileNotFoundError, PermissionError, etc.)
+                # fallback-ok: capture file system errors as validation failures
                 results[validation_type] = ModelValidationResult(
                     is_valid=False,
                     errors=[f"File system error: {e}"],
@@ -135,8 +139,8 @@ class ServiceValidationSuite:
                         files_processed=0,
                     ),
                 )
-            except (ValueError, TypeError) as e:
-                # Data validation errors
+            except (TypeError, ValueError) as e:
+                # fallback-ok: capture data validation errors as validation failures
                 results[validation_type] = ModelValidationResult(
                     is_valid=False,
                     errors=[f"Validation failed: {e}"],
@@ -172,13 +176,19 @@ class ServiceValidationSuite:
         Prints formatted output suitable for CLI usage. For programmatic
         access, use :meth:`get_validators` instead which returns a dict.
         """
-        print("Available Validation Tools:")
-        print("=" * 40)
+        print("Available Validation Tools:")  # print-ok: CLI user output
+        print("=" * 40)  # print-ok: CLI user output
 
         for name, description in self.get_validators().items():
-            print(f"  {name:<15} - {description}")
+            print(f"  {name:<15} - {description}")  # print-ok: CLI user output
 
-        print("\nUsage Examples:")
-        print("  python -m omnibase_core.validation.cli architecture")
-        print("  python -m omnibase_core.validation.cli union-usage --strict")
-        print("  python -m omnibase_core.validation.cli all")
+        print("\nUsage Examples:")  # print-ok: CLI user output
+        print(
+            "  python -m omnibase_core.validation.cli architecture"
+        )  # print-ok: CLI user output
+        print(
+            "  python -m omnibase_core.validation.cli union-usage --strict"
+        )  # print-ok: CLI user output
+        print(
+            "  python -m omnibase_core.validation.cli all"
+        )  # print-ok: CLI user output

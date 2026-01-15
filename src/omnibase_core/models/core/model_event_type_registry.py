@@ -8,6 +8,7 @@ enabling third-party plugins to register their own event types dynamically.
 import logging
 from pathlib import Path
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -26,6 +27,7 @@ class ModelEventTypeRegistry:
         self._namespace_events: dict[str, set[str]] = {}
         self._qualified_events: dict[str, ModelEventType] = {}
 
+    @standard_error_handling("Event type registration")
     def register_event_type(self, event_type: ModelEventType) -> None:
         """Register an event type from a node contract."""
         self._event_types[event_type.event_name] = event_type
@@ -155,15 +157,16 @@ class ModelEventTypeRegistry:
                     self.register_event_type(event_type)
                     events_discovered += 1
 
-        except Exception as e:
+        except (AttributeError, KeyError, OSError, ValueError) as e:
             msg = f"Failed to parse contract {contract_file}: {e}"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.INTERNAL_ERROR,
                 message=msg,
-            )
+            ) from e
 
         return events_discovered
 
+    @standard_error_handling("Core event type bootstrap")
     def bootstrap_core_event_types(self) -> None:
         """Bootstrap core ONEX event types for current standards."""
         from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -226,7 +229,7 @@ def get_event_type_registry() -> ModelEventTypeRegistry:
             registry.bootstrap_core_event_types()
 
         return registry
-    except Exception as e:
+    except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get event type registry. "
             "Initialize the container first.",
@@ -248,6 +251,5 @@ def reset_event_type_registry() -> None:
         container = get_model_onex_container_sync()
         registry: ModelEventTypeRegistry = container.event_type_registry()
         registry.clear()
-    except Exception:
-        # Container not initialized, nothing to reset
+    except Exception:  # fallback-ok: Container not initialized, nothing to reset
         pass

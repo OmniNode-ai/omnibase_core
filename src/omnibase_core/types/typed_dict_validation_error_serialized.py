@@ -21,7 +21,7 @@ class TypedDictValidationErrorSerialized(TypedDict):
     """TypedDict for serialized ModelValidationError.
 
     All fields match the ModelValidationError model fields. Since
-    EnumValidationSeverity is a StrEnum (str, Enum), it serializes to its
+    EnumSeverity is a StrEnum (str, Enum), it serializes to its
     string value in model_dump() output. UUID fields retain their UUID type
     in Python mode.
     """

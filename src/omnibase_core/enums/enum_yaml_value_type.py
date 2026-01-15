@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 YAML Value Type Enum.
 
 Strongly typed enumeration for YAML value type discriminators.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumYamlValueType(str, Enum):
+class EnumYamlValueType(StrValueHelper, str, Enum):
     """
     Strongly typed YAML value type discriminators.
 
@@ -23,10 +24,6 @@ class EnumYamlValueType(str, Enum):
     SCHEMA_VALUE = "schema_value"
     DICT = "dict[str, Any]"
     LIST = "list[Any]"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_collection_type(cls, value_type: EnumYamlValueType) -> bool:

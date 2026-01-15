@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Execution Phase Enumeration.
 
 Defines the various phases of execution for CLI commands and operations.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumExecutionPhase(str, Enum):
+class EnumExecutionPhase(StrValueHelper, str, Enum):
     """
     Execution phase enumeration.
 
@@ -53,10 +54,6 @@ class EnumExecutionPhase(str, Enum):
     ERROR_HANDLING = "error_handling"
     RECOVERY = "recovery"
     ROLLBACK = "rollback"
-
-    def __str__(self) -> str:
-        """Return string representation."""
-        return self.value
 
     @property
     def display_name(self) -> str:

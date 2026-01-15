@@ -166,10 +166,46 @@ class ModelHealthMetrics(BaseModel):
         self.custom_metrics[name] = value
 
     def get_custom_metric(self, name: str, default: float = 0.0) -> float:
-        """Get a custom metric value."""
+        """Get a custom metric value.
+
+        Args:
+            name: The name of the custom metric to retrieve.
+            default: Default value to return if metric not found or not convertible.
+
+        Returns:
+            The metric value as a float, or default if not found/convertible.
+
+        Type Conversion Rules:
+            - float: returned directly
+            - bool: True -> 1.0, False -> 0.0 (checked before int due to subclass)
+            - int: converted to float
+            - str: parsed as float, returns default if parsing fails
+            - other types: returns default
+
+        Note:
+            This method uses graceful degradation (returns default on failure)
+            rather than raising exceptions, making it safe for use in health
+            checks and monitoring code paths.
+        """
         value = self.custom_metrics.get(name, default)
         # Type narrowing: ensure we return a float
-        return float(value) if not isinstance(value, float) else value
+        if isinstance(value, float):
+            return value
+        # NOTE: Check bool before int since bool is a subclass of int in Python
+        # (isinstance(True, int) returns True, so bool must be checked first)
+        if isinstance(value, bool):
+            return 1.0 if value else 0.0
+        if isinstance(value, int):
+            return float(value)
+        if isinstance(value, str):
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                # fallback-ok: return default if string conversion fails
+                # ValueError: invalid float literal (e.g., "abc", "")
+                # TypeError: defensive - should not occur but included for robustness
+                return default
+        return default
 
     @property
     def status(self) -> str:

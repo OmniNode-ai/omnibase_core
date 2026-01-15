@@ -11,10 +11,9 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
+from omnibase_core.enums import EnumInjectionScope, EnumServiceResolutionStatus
 from omnibase_core.protocols.base import (
     ContextValue,
-    LiteralInjectionScope,
-    LiteralServiceResolutionStatus,
     ProtocolDateTime,
 )
 
@@ -30,10 +29,10 @@ class ProtocolInjectionContext(Protocol):
 
     context_id: UUID
     target_service_id: UUID
-    scope: LiteralInjectionScope
+    scope: EnumInjectionScope
     resolved_dependencies: dict[str, ContextValue]
     injection_time: ProtocolDateTime
-    resolution_status: LiteralServiceResolutionStatus
+    resolution_status: EnumServiceResolutionStatus
     error_details: str | None
     resolution_path: list[UUID]
     metadata: dict[str, ContextValue]

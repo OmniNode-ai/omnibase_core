@@ -35,7 +35,6 @@ Usage Examples:
     assert value.get_as_int() == 123
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):
@@ -49,7 +48,7 @@ from __future__ import annotations
 
 import math
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_value_type import EnumNumericValueType
@@ -340,13 +339,16 @@ class ModelNumericStringValue(BaseModel):
             3.14
         """
         if self.value_type == EnumNumericValueType.FLOAT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.float_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.INT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return float(self.int_value)  # type: ignore[arg-type]
         if self.value_type == EnumNumericValueType.STRING:
             try:
+                # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
                 return float(self.str_value)  # type: ignore[arg-type]
-            except (ValueError, TypeError) as e:
+            except (TypeError, ValueError) as e:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Cannot convert string '{self.str_value}' to float",
@@ -390,6 +392,7 @@ class ModelNumericStringValue(BaseModel):
             123
         """
         if self.value_type == EnumNumericValueType.INT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.int_value  # type: ignore[return-value]
 
         if self.value_type == EnumNumericValueType.FLOAT:
@@ -436,10 +439,12 @@ class ModelNumericStringValue(BaseModel):
         if self.value_type == EnumNumericValueType.STRING:
             try:
                 # Try direct int conversion first
+                # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
                 return int(self.str_value)  # type: ignore[arg-type]
-            except (ValueError, TypeError):
+            except (TypeError, ValueError):
                 # Try parsing as float first, then convert to int
                 try:
+                    # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
                     float_val = float(self.str_value)  # type: ignore[arg-type]
                     # Apply coercion mode to the parsed float
                     if coercion_mode == EnumCoercionMode.STRICT:
@@ -460,7 +465,7 @@ class ModelNumericStringValue(BaseModel):
                         return math.ceil(float_val)
                     elif coercion_mode == EnumCoercionMode.ROUND:
                         return round(float_val)
-                except (ValueError, TypeError, OverflowError) as e:
+                except (OverflowError, TypeError, ValueError) as e:
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=f"Cannot convert string '{self.str_value}' to int",
@@ -494,6 +499,7 @@ class ModelNumericStringValue(BaseModel):
             '3.14'
         """
         if self.value_type == EnumNumericValueType.STRING:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.str_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.INT:
             return str(self.int_value)
@@ -521,10 +527,13 @@ class ModelNumericStringValue(BaseModel):
             42
         """
         if self.value_type == EnumNumericValueType.FLOAT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.float_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.INT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.int_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.STRING:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.str_value  # type: ignore[return-value]
 
         raise ModelOnexError(
@@ -662,8 +671,8 @@ class ModelNumericStringValue(BaseModel):
             f"value={self.get_value()!r})"
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

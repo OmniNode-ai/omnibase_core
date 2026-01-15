@@ -11,9 +11,9 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_constraints import PrimitiveValueType
 
 # Type aliases for structured data
 StructuredData = dict[str, PrimitiveValueType]
@@ -58,11 +58,11 @@ class ModelToolExecutionResult(BaseModel):
 
     status_code: int = Field(default=0, description="Tool execution status code")
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelToolExecutionResult"]

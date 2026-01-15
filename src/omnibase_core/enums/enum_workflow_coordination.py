@@ -2,24 +2,20 @@
 Workflow Coordination Enums.
 
 Comprehensive enum definitions for workflow coordination functionality including
-workflow status, assignment status, execution patterns, and failure recovery
-strategies for ORCHESTRATOR nodes.
+assignment status, execution patterns, and failure recovery strategies
+for ORCHESTRATOR nodes.
+
+Note: EnumWorkflowStatus has been consolidated into the canonical version
+in enum_workflow_status.py per OMN-1310.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumWorkflowStatus(str, Enum):
-    """Workflow execution status."""
-
-    CREATED = "CREATED"
-    RUNNING = "RUNNING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    CANCELLED = "CANCELLED"
-
-
-class EnumAssignmentStatus(str, Enum):
+@unique
+class EnumAssignmentStatus(StrValueHelper, str, Enum):
     """Node assignment status."""
 
     ASSIGNED = "ASSIGNED"
@@ -28,7 +24,8 @@ class EnumAssignmentStatus(str, Enum):
     FAILED = "FAILED"
 
 
-class EnumExecutionPattern(str, Enum):
+@unique
+class EnumExecutionPattern(StrValueHelper, str, Enum):
     """Workflow execution patterns."""
 
     SEQUENTIAL = "sequential"
@@ -37,10 +34,18 @@ class EnumExecutionPattern(str, Enum):
     SCATTER_GATHER = "scatter_gather"
 
 
-class EnumFailureRecoveryStrategy(str, Enum):
+@unique
+class EnumFailureRecoveryStrategy(StrValueHelper, str, Enum):
     """Failure recovery strategies."""
 
     RETRY = "RETRY"
     ROLLBACK = "ROLLBACK"  # RESERVED - v2.0
     COMPENSATE = "COMPENSATE"  # RESERVED - v2.0
     ABORT = "ABORT"
+
+
+__all__ = [
+    "EnumAssignmentStatus",
+    "EnumExecutionPattern",
+    "EnumFailureRecoveryStrategy",
+]

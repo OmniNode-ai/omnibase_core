@@ -9,12 +9,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 if TYPE_CHECKING:
-    from omnibase_core.types.core_types import TypedDictBasicErrorContext
+    from omnibase_core.types.type_core import TypedDictBasicErrorContext
 
 
 class ModelErrorContext(BaseModel):
@@ -83,11 +83,11 @@ class ModelErrorContext(BaseModel):
             additional_context=additional_context,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

@@ -8,6 +8,44 @@ This module provides unified contract loading and resolution functionality
 that supports the new contract architecture with subcontract references,
 $ref resolution, and validation. This is part of PATTERN-005 NodeBase
 implementation to eliminate duplicate node.py code.
+
+Security:
+    Contract files are treated as configuration that may come from untrusted
+    sources (e.g., third-party node packages, user-provided contract overrides).
+    This module implements multiple layers of security validation:
+
+    **YAML Parsing Security** (_validate_yaml_content_security):
+        - Size limits: Max 10MB to prevent denial-of-service attacks
+        - Suspicious pattern detection: Warns on !!python, __import__, eval(), exec()
+        - Nesting depth limits: Max 50 levels to prevent YAML bombs
+        - Uses yaml.safe_load() via util_safe_yaml_loader (no arbitrary code execution)
+
+    **File Path Security**:
+        - File paths are resolved using Path.resolve() to normalize paths
+        - Contract paths should be validated by the caller to prevent path traversal
+        - Only files with valid YAML extensions should be loaded
+
+    **Content Validation**:
+        - All loaded content is validated against Pydantic models (ModelContractContent)
+        - Required fields (node_name, tool_specification.main_tool_class) are enforced
+        - Enum values are strictly validated (no backwards compatibility fallbacks)
+
+    Trust Model:
+        - Contract file content: UNTRUSTED (validated via safe_load + Pydantic)
+        - Contract file paths: SEMI-TRUSTED (should be validated by caller)
+        - Subcontract references ($ref): UNTRUSTED (not yet implemented, will need validation)
+
+    Warning:
+        The tool_specification.main_tool_class field in contracts specifies a
+        fully-qualified Python module path that will be dynamically imported by
+        NodeBase._resolve_main_tool(). This path is NOT validated by this loader
+        against an allowlist. NodeBase is responsible for ensuring only trusted
+        code is executed. See infrastructure/node_base.py for details.
+
+    See Also:
+        - util_safe_yaml_loader.py: Uses yaml.safe_load() for parsing
+        - model_reference.py: ALLOWED_MODULE_PREFIXES for import validation
+        - infrastructure/node_base.py: Dynamic import of main_tool_class
 """
 
 import hashlib
@@ -20,7 +58,9 @@ from pydantic import ValidationError as PydanticValidationError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.core.model_contract_cache import ModelContractCache
 from omnibase_core.models.core.model_contract_content import ModelContractContent
 from omnibase_core.models.core.model_contract_definitions import (
@@ -296,7 +336,7 @@ class UtilContractLoader:
                             )
 
             # Parse node type (default to COMPUTE_GENERIC if not specified)
-            # No backwards compatibility - invalid enum values must fail fast
+            # No legacy fallback - invalid enum values must fail fast
             node_type_str = raw_content.get("node_type", "COMPUTE_GENERIC")
             if isinstance(node_type_str, str):
                 node_type_upper = node_type_str.upper()

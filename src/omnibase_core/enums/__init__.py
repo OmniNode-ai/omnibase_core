@@ -7,6 +7,9 @@ Domain-grouped enums used across multiple ONEX packages (omnibase_core, omnibase
 organized by functional domains for better maintainability.
 """
 
+# Action status enum (OMN-1309)
+from .enum_action_status import EnumActionStatus
+
 # Architecture and system enums
 from .enum_architecture import EnumArchitecture
 
@@ -28,6 +31,9 @@ from .enum_case_mode import EnumCaseMode
 # Category filter enums
 from .enum_category_filter import EnumCategoryFilter
 
+# Change type enums (OMN-1196)
+from .enum_change_type import EnumChangeType
+
 # Checkpoint-related enums
 from .enum_checkpoint_type import EnumCheckpointType
 
@@ -36,6 +42,9 @@ from .enum_circuit_breaker_state import EnumCircuitBreakerState
 
 # Error code enums
 from .enum_cli_exit_code import EnumCLIExitCode
+
+# Comparison type enum (OMN-1207)
+from .enum_comparison_type import EnumComparisonType
 
 # Computation and processing enums
 from .enum_computation_type import EnumComputationType
@@ -46,6 +55,9 @@ from .enum_compute_capability import EnumComputeCapability
 # Compute step type enums (contract-driven NodeCompute v1.0)
 from .enum_compute_step_type import EnumComputeStepType
 from .enum_contract_compliance import EnumContractCompliance
+
+# Contract diff change type enum (semantic contract diffing)
+from .enum_contract_diff_change_type import EnumContractDiffChangeType
 from .enum_coordination_mode import EnumCoordinationMode
 from .enum_core_error_code import (
     CORE_ERROR_CODE_TO_EXIT_CODE,
@@ -54,8 +66,15 @@ from .enum_core_error_code import (
     get_exit_code_for_core_error,
 )
 
+# Dashboard enums (OMN-1284)
+from .enum_dashboard_status import EnumDashboardStatus
+from .enum_dashboard_theme import EnumDashboardTheme
+
 # Security-related enums
 from .enum_data_classification import EnumDataClassification
+
+# Decision type enums (OMN-1235)
+from .enum_decision_type import EnumDecisionType
 
 # Detection and security enums
 from .enum_detection_type import EnumDetectionType
@@ -68,19 +87,32 @@ from .enum_dispatch_status import EnumDispatchStatus
 
 # Effect-related enums (from nodes)
 from .enum_effect_capability import EnumEffectCapability
+
+# Effect classification enums (OMN-1147)
+from .enum_effect_category import EnumEffectCategory
 from .enum_effect_handler_type import EnumEffectHandlerType
-from .enum_effect_types import (
-    EnumEffectType,
-    EnumTransactionState,
-)
+from .enum_effect_policy_level import EnumEffectPolicyLevel
+from .enum_effect_types import EnumEffectType, EnumTransactionState
 
 # Validation-related enums
 from .enum_environment_validation_rule_type import EnumEnvironmentValidationRuleType
 
+# Event priority enum (OMN-1308)
+from .enum_event_priority import EnumEventPriority
+
+# Event sink type enum (OMN-1151)
+from .enum_event_sink_type import EnumEventSinkType
+
 # Execution-related enums
 from .enum_execution_mode import EnumExecutionMode
 from .enum_execution_shape import EnumExecutionShape, EnumMessageCategory
+
+# Execution status enum (canonical for execution lifecycle - OMN-1310)
+from .enum_execution_status import EnumExecutionStatus
 from .enum_execution_trigger import EnumExecutionTrigger
+
+# Failure type enums (OMN-1236)
+from .enum_failure_type import EnumFailureType
 
 # Function-related enums
 from .enum_function_language import EnumFunctionLanguage
@@ -91,9 +123,26 @@ from .enum_github_runner_os import EnumGithubRunnerOs
 
 # Group and organization enums
 from .enum_group_status import EnumGroupStatus
+from .enum_handler_capability import EnumHandlerCapability
+
+# Handler command type enums (OMN-1085)
+from .enum_handler_command_type import EnumHandlerCommandType
+
+# Handler execution phase enums (OMN-1108)
+from .enum_handler_execution_phase import EnumHandlerExecutionPhase
+
+# Handler role enums (OMN-1086)
+from .enum_handler_role import EnumHandlerRole
+
+# Handler routing strategy enums (OMN-1295)
+from .enum_handler_routing_strategy import EnumHandlerRoutingStrategy
 
 # Handler type enums (runtime handler registry)
 from .enum_handler_type import EnumHandlerType
+from .enum_handler_type_category import EnumHandlerTypeCategory
+
+# Hash algorithm enum (handler packaging OMN-1119)
+from .enum_hash_algorithm import EnumHashAlgorithm
 
 # Header and query parameter transformation enums
 from .enum_header_transformation_type import EnumHeaderTransformationType
@@ -101,7 +150,7 @@ from .enum_header_transformation_type import EnumHeaderTransformationType
 # Health and status enums
 from .enum_health_check_type import EnumHealthCheckType
 from .enum_health_detail_type import EnumHealthDetailType
-from .enum_health_status_type import EnumHealthStatusType
+from .enum_health_status import EnumHealthStatus
 
 # Hub and coordination enums
 from .enum_hub_capability import EnumHubCapability
@@ -109,8 +158,18 @@ from .enum_hub_capability import EnumHubCapability
 # File pattern enums
 from .enum_ignore_pattern_source import EnumIgnorePatternSource, EnumTraversalMode
 
+# Impact severity enum (business impact scale - OMN-1311)
+from .enum_impact_severity import EnumImpactSeverity
+
 # Import status enum
 from .enum_import_status import EnumImportStatus
+
+# Injection scope enum (DI container scoping)
+from .enum_injection_scope import EnumInjectionScope
+
+# Invariant-related enums (OMN-1192, OMN-1206)
+from .enum_invariant_report_status import EnumInvariantReportStatus
+from .enum_invariant_type import EnumInvariantType
 
 # Language and localization enums
 from .enum_language_code import EnumLanguageCode
@@ -122,6 +181,9 @@ from .enum_log_level import EnumLogLevel
 
 # Communication enums
 from .enum_mapping_type import EnumMappingType
+
+# Merge-related enums (OMN-1127)
+from .enum_merge_conflict_type import EnumMergeConflictType
 from .enum_message_type import EnumMessageType
 
 # Metadata-related enums
@@ -141,7 +203,6 @@ from .enum_metadata_tool_type import EnumMetadataToolType
 # Namespace-related enums
 from .enum_namespace_strategy import EnumNamespaceStrategy
 from .enum_node_architecture_type import EnumNodeArchitectureType
-from .enum_node_health_status import EnumNodeHealthStatus
 
 # Node-related enums
 from .enum_node_kind import EnumNodeKind
@@ -154,18 +215,22 @@ from .enum_onex_error_code import EnumOnexErrorCode
 
 # Response and reply enums
 from .enum_onex_reply_status import EnumOnexReplyStatus
+
+# Operation status enum (canonical for operation results - OMN-1310)
 from .enum_operation_status import EnumOperationStatus
 
 # Orchestrator-related enums (from nodes)
 from .enum_orchestrator_capability import EnumOrchestratorCapability
-from .enum_orchestrator_types import (
-    EnumActionType,
-    EnumBranchCondition,
-    EnumWorkflowState,
-)
+from .enum_orchestrator_types import EnumActionType, EnumBranchCondition
 
 # Parameter and return type enums
 from .enum_parameter_type import EnumParameterType
+
+# Patch validation error codes (OMN-1126)
+from .enum_patch_validation_error_code import EnumPatchValidationErrorCode
+
+# Pipeline validation mode enum (pipeline processing OMN-1308)
+from .enum_pipeline_validation_mode import EnumPipelineValidationMode
 from .enum_query_parameter_transformation_type import (
     EnumQueryParameterTransformationType,
 )
@@ -180,6 +245,9 @@ from .enum_reducer_types import (
 
 # Regex flag enums (contract-driven NodeCompute v1.0)
 from .enum_regex_flag import EnumRegexFlag
+
+# Registration status enum (DI container registration)
+from .enum_registration_status import EnumRegistrationStatus
 from .enum_registry_error_code import EnumRegistryErrorCode
 
 # Registry-related enums
@@ -199,13 +267,30 @@ from .enum_security_risk_level import EnumSecurityRiskLevel
 
 # Service-related enums
 from .enum_service_health_status import EnumServiceHealthStatus
+from .enum_service_lifecycle import EnumServiceLifecycle
 from .enum_service_mode import EnumServiceMode
+from .enum_service_resolution_status import EnumServiceResolutionStatus
 from .enum_service_status import EnumServiceStatus
 
 # Service architecture enums
 from .enum_service_tier import EnumServiceTier
 from .enum_service_type_category import EnumServiceTypeCategory
+
+# Severity enum (canonical - replaces EnumViolationSeverity, OMN-1311)
+from .enum_severity import EnumSeverity
+
+# Deprecated aliases for EnumSeverity (OMN-1311 consolidation)
+# Use EnumSeverity directly in new code.
+EnumInvariantSeverity: type[EnumSeverity] = EnumSeverity
+EnumValidationSeverity: type[EnumSeverity] = EnumSeverity
+EnumViolationSeverity: type[EnumSeverity] = EnumSeverity
 from .enum_state_update_operation import EnumStateUpdateOperation
+
+# Step type enum (workflow step types)
+from .enum_step_type import EnumStepType
+
+# Subject type enums (OMN-1237)
+from .enum_subject_type import EnumSubjectType
 
 # Token and authentication context enums (OMN-1054)
 from .enum_token_type import EnumTokenType
@@ -238,7 +323,8 @@ from .enum_unicode_form import EnumUnicodeForm
 
 # URI-related enums
 from .enum_uri_type import EnumUriType
-from .enum_validation import EnumErrorSeverity, EnumValidationLevel, EnumValidationMode
+from .enum_validation import EnumValidationLevel
+from .enum_validation_mode import EnumValidationMode
 from .enum_validation_rule_type import EnumValidationRuleType
 from .enum_value_type import EnumValueType
 
@@ -248,10 +334,12 @@ from .enum_vector_filter_operator import EnumVectorFilterOperator
 
 # Version and contract enums
 from .enum_version_status import EnumVersionStatus
+from .enum_widget_type import EnumWidgetType
 
 # Workflow-related enums
 from .enum_workflow_coordination import EnumFailureRecoveryStrategy
 from .enum_workflow_dependency_type import EnumWorkflowDependencyType
+from .enum_workflow_status import EnumWorkflowStatus
 
 # NOTE: ModelEnumStatusMigrator is defined in models.core.model_status_migrator
 # It was moved from enums to eliminate circular imports
@@ -271,6 +359,7 @@ __all__ = [
     "EnumCLIExitCode",
     "EnumOnexErrorCode",
     "EnumCoreErrorCode",
+    "EnumPatchValidationErrorCode",
     "EnumRegistryErrorCode",
     "CORE_ERROR_CODE_TO_EXIT_CODE",
     "get_core_error_description",
@@ -286,7 +375,6 @@ __all__ = [
     "EnumSecurityRiskLevel",
     # Validation domain
     "EnumEnvironmentValidationRuleType",
-    "EnumErrorSeverity",
     "EnumValidationRuleType",
     # Circuit breaker domain (standalone for cross-repo standardization)
     "EnumCircuitBreakerState",
@@ -294,6 +382,9 @@ __all__ = [
     "EnumEffectHandlerType",
     "EnumEffectType",
     "EnumTransactionState",
+    # Effect classification domain (OMN-1147)
+    "EnumEffectCategory",
+    "EnumEffectPolicyLevel",
     # Execution domain
     "EnumExecutionMode",
     "EnumExecutionShape",
@@ -304,22 +395,22 @@ __all__ = [
     # Health and status domain
     "EnumHealthCheckType",
     "EnumHealthDetailType",
-    "EnumHealthStatusType",
-    "EnumNodeHealthStatus",
+    "EnumHealthStatus",  # Canonical health status (OMN-1310)
     "EnumNodeStatus",
     # Node domain
     "EnumNodeArchitectureType",
     "EnumNodeKind",
     "EnumNodeType",
-    "EnumOperationStatus",
+    "EnumOperationStatus",  # Canonical operation status (OMN-1310)
+    "EnumExecutionStatus",  # Canonical execution status (OMN-1310)
     "EnumValidationLevel",
     "EnumValidationMode",
     "EnumValueType",
     "EnumNumericValueType",
     # Orchestrator domain (from nodes)
+    "EnumActionStatus",
     "EnumActionType",
     "EnumBranchCondition",
-    "EnumWorkflowState",
     # Reducer domain (from nodes)
     "EnumConflictResolution",
     "EnumReductionType",
@@ -341,6 +432,8 @@ __all__ = [
     "EnumMetadataToolComplexity",
     "EnumMetadataToolStatus",
     "EnumMetadataToolType",
+    # Merge domain (OMN-1127)
+    "EnumMergeConflictType",
     # Namespace domain
     "EnumNamespaceStrategy",
     # Resource domain
@@ -350,6 +443,7 @@ __all__ = [
     # Workflow domain
     "EnumFailureRecoveryStrategy",
     "EnumWorkflowDependencyType",
+    "EnumWorkflowStatus",
     # Infrastructure domain
     "EnumAuthType",
     "EnumBackoffStrategy",
@@ -364,11 +458,24 @@ __all__ = [
     "EnumMessageType",
     # Group and organization domain
     "EnumGroupStatus",
+    # Handler command type domain (OMN-1085)
+    "EnumHandlerCommandType",
+    # Handler execution phase domain (OMN-1108)
+    "EnumHandlerExecutionPhase",
+    # Handler routing strategy domain (OMN-1295)
+    "EnumHandlerRoutingStrategy",
+    # Handler role domain (OMN-1086)
+    "EnumHandlerRole",
     # Handler type domain (runtime handler registry)
     "EnumHandlerType",
+    "EnumHandlerTypeCategory",
+    # Hash algorithm domain (handler packaging OMN-1119)
+    "EnumHashAlgorithm",
     # Version and contract domain
     "EnumVersionStatus",
     "EnumContractCompliance",
+    # Contract diff domain (semantic contract diffing)
+    "EnumContractDiffChangeType",
     # State management domain
     "EnumTransitionType",
     "EnumStateUpdateOperation",
@@ -379,6 +486,7 @@ __all__ = [
     # Capability enums (handler capabilities)
     "EnumComputeCapability",
     "EnumEffectCapability",
+    "EnumHandlerCapability",
     "EnumNodeRequirement",
     "EnumOrchestratorCapability",
     "EnumReducerCapability",
@@ -409,12 +517,17 @@ __all__ = [
     "EnumDispatchStatus",
     # Function-related domain
     "EnumFunctionLanguage",
+    # Registration status domain (DI container OMN-1308)
+    "EnumRegistrationStatus",
     # Registry-related domain
     "EnumRegistryHealthStatus",
     "EnumRegistryType",
-    # Service-related domain
+    # Service-related domain (includes DI container OMN-1308)
+    "EnumInjectionScope",
     "EnumServiceHealthStatus",
+    "EnumServiceLifecycle",
     "EnumServiceMode",
+    "EnumServiceResolutionStatus",
     "EnumServiceStatus",
     "EnumServiceTypeCategory",
     # Tool-related domain
@@ -435,10 +548,40 @@ __all__ = [
     "EnumVectorFilterOperator",
     # Checkpoint domain
     "EnumCheckpointType",
+    # Change type domain (OMN-1196)
+    "EnumChangeType",
     # Token and authentication context domain (OMN-1054)
     "EnumTokenType",
     "EnumTriggerEvent",
     "EnumLikelihood",
+    # Invariant domain (OMN-1192, OMN-1206, OMN-1207)
+    "EnumComparisonType",
+    "EnumInvariantReportStatus",
+    "EnumInvariantType",
+    # Severity domain (OMN-1311 - canonical, replaces EnumViolationSeverity)
+    "EnumSeverity",
+    # Deprecated aliases for EnumSeverity (OMN-1311 consolidation)
+    "EnumInvariantSeverity",
+    "EnumValidationSeverity",
+    "EnumViolationSeverity",
+    # Impact severity domain (OMN-1311 - business impact scale)
+    "EnumImpactSeverity",
+    # Dashboard domain (OMN-1284)
+    "EnumDashboardStatus",
+    "EnumDashboardTheme",
+    "EnumWidgetType",
+    # Event priority domain (OMN-1308)
+    "EnumEventPriority",
+    # Event sink type domain (OMN-1151)
+    "EnumEventSinkType",
+    # Omnimemory domain (OMN-1235, OMN-1236, OMN-1237)
+    "EnumDecisionType",
+    "EnumFailureType",
+    "EnumSubjectType",
+    # Step type domain (workflow steps OMN-1308)
+    "EnumStepType",
+    # Pipeline validation mode domain (OMN-1308)
+    "EnumPipelineValidationMode",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

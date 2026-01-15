@@ -5,10 +5,13 @@ Provides strongly-typed route reasons for provider selection decisions
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumRouteReason(str, Enum):
+@unique
+class EnumRouteReason(StrValueHelper, str, Enum):
     """Reasons for LLM provider selection."""
 
     BEST_MATCH = "best_match"
@@ -17,3 +20,6 @@ class EnumRouteReason(str, Enum):
     ONLY_AVAILABLE = "only_available"
     FAILOVER = "failover"
     DEFAULT = "default"
+
+
+__all__ = ["EnumRouteReason"]

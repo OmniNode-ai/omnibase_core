@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from typing import Any
 
 """
 Contract Metadata Mixin for ONEX Tool Nodes.
@@ -12,7 +11,9 @@ from pathlib import Path
 
 from omnibase_core.constants import constants_contract_fields as cf
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_node_metadata import ModelNodeMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -39,7 +40,7 @@ class MixinContractMetadata:
                 print(f"Tool: {self.node_name} v{self.node_version}")
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """Initialize the contract metadata mixin."""
         super().__init__(**kwargs)
 
@@ -155,7 +156,7 @@ class MixinContractMetadata:
                 {"node_name": self._node_name, "version": self._node_version},
             )
 
-        except Exception as e:
+        except (AttributeError, ValueError) as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"Failed to load node metadata: {e}",
@@ -195,7 +196,7 @@ class MixinContractMetadata:
                 {"node_name": self._node_name, "tool_type": self._tool_type},
             )
 
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"Failed to load contract: {e}",

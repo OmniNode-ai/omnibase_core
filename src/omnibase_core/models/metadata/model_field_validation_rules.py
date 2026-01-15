@@ -6,9 +6,7 @@ Part of the metadata field info restructuring to reduce string field violations.
 
 from __future__ import annotations
 
-from typing import cast
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
@@ -125,28 +123,32 @@ class ModelFieldValidationRules(BaseModel):
         """Get maximum value as ModelNumericValue."""
         return self.max_value
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        from omnibase_core.types.type_serializable_value import SerializableValue
+
+        result: TypedDictMetadataDict = {}
+        metadata_dict: dict[str, SerializableValue] = {
+            "allow_empty": self.allow_empty,
+            "has_string_validation": self.has_string_validation(),
+            "has_numeric_validation": self.has_numeric_validation(),
+        }
+        if self.validation_pattern is not None:
+            metadata_dict["validation_pattern"] = self.validation_pattern
+        if self.min_length is not None:
+            metadata_dict["min_length"] = self.min_length
+        if self.max_length is not None:
+            metadata_dict["max_length"] = self.max_length
+        result["metadata"] = metadata_dict
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -155,7 +157,7 @@ class ModelFieldValidationRules(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -171,7 +173,7 @@ class ModelFieldValidationRules(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

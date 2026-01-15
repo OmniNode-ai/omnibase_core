@@ -1,0 +1,248 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Local LLM client implementation using httpx.
+
+This module provides a ProtocolLLMClient implementation for local/self-hosted
+LLM servers that expose OpenAI-compatible APIs (vLLM, Ollama, etc.).
+
+Example:
+    Using with local vLLM server::
+
+        client = LocalLLMClient(
+            endpoint_url="http://localhost:8000",
+            model_name="qwen2.5-14b",
+        )
+        response = await client.complete("Hello, how are you?")
+
+    Using with environment variables::
+
+        # Set LOCAL_LLM_ENDPOINT=http://your-server:8000
+        client = LocalLLMClient()  # Uses env var or defaults to localhost
+
+    Using with Ollama::
+
+        client = LocalLLMClient(
+            endpoint_url="http://localhost:11434",
+            model_name="llama3",
+        )
+"""
+
+from __future__ import annotations
+
+import os
+
+import httpx
+
+from examples.demo.handlers.support_assistant.model_config import ModelConfig
+from examples.demo.handlers.support_assistant.protocol_llm_client import (
+    ProtocolLLMClient,
+)
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
+
+# Default config - use localhost; override via LOCAL_LLM_ENDPOINT
+DEFAULT_ENDPOINT = "http://localhost:8000"
+DEFAULT_MODEL = "qwen2.5-14b"
+DEFAULT_TIMEOUT = 60.0
+
+
+class LocalLLMClient:
+    """LLM client for local/self-hosted models.
+
+    This client connects to OpenAI-compatible API endpoints served by
+    vLLM, Ollama, text-generation-inference, or similar local LLM servers.
+
+    Attributes:
+        endpoint_url: The base URL of the LLM server.
+        model_name: The model identifier to use.
+        temperature: Sampling temperature for response generation.
+        max_tokens: Maximum tokens to generate.
+        timeout: Request timeout in seconds.
+    """
+
+    def __init__(
+        self,
+        endpoint_url: str | None = None,
+        model_name: str | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 500,
+        timeout: float = DEFAULT_TIMEOUT,
+    ) -> None:
+        """Initialize the local LLM client.
+
+        Args:
+            endpoint_url: Base URL of the LLM server.
+                Defaults to environment variable LOCAL_LLM_ENDPOINT or DEFAULT_ENDPOINT.
+            model_name: Model identifier.
+                Defaults to environment variable LOCAL_LLM_MODEL or DEFAULT_MODEL.
+            temperature: Sampling temperature (0.0 to 2.0).
+            max_tokens: Maximum tokens to generate.
+            timeout: Request timeout in seconds.
+        """
+        self.endpoint_url = (
+            endpoint_url or os.getenv("LOCAL_LLM_ENDPOINT") or DEFAULT_ENDPOINT
+        )
+        self.model_name = model_name or os.getenv("LOCAL_LLM_MODEL") or DEFAULT_MODEL
+
+        # Validate temperature range (OpenAI-compatible range is 0.0-2.0)
+        if not 0.0 <= temperature <= 2.0:
+            raise ModelOnexError(
+                message=f"Temperature must be between 0.0 and 2.0, got {temperature}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"temperature": temperature, "valid_range": "0.0-2.0"},
+            )
+
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.timeout = timeout
+
+    @classmethod
+    def from_config(cls, config: ModelConfig) -> LocalLLMClient:
+        """Create client from ModelConfig.
+
+        Args:
+            config: ModelConfig with local provider settings.
+
+        Returns:
+            Configured LocalLLMClient instance.
+
+        Raises:
+            ModelOnexError: If config is not for local provider.
+        """
+        if config.provider != "local":
+            raise ModelOnexError(
+                message=f"Expected local provider, got {config.provider}",
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                context={"provider": config.provider, "expected": "local"},
+            )
+        if config.endpoint_url is None:
+            raise ModelOnexError(
+                message="endpoint_url is required for local provider",
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                context={"provider": config.provider},
+            )
+
+        return cls(
+            endpoint_url=config.endpoint_url,
+            model_name=config.model_name,
+            temperature=config.temperature,
+            max_tokens=config.max_tokens,
+        )
+
+    async def complete(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+    ) -> str:
+        """Send a completion request to the local LLM server.
+
+        Uses OpenAI-compatible chat completions API format.
+
+        Args:
+            prompt: The user message/prompt.
+            system_prompt: Optional system message for context.
+
+        Returns:
+            The LLM's response text.
+
+        Raises:
+            httpx.HTTPError: If the HTTP request fails.
+            ModelOnexError: If the response format is unexpected.
+        """
+        messages = []
+
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+
+        messages.append({"role": "user", "content": prompt})
+
+        payload = {
+            "model": self.model_name,
+            "messages": messages,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+        }
+
+        url = f"{self.endpoint_url.rstrip('/')}/v1/chat/completions"
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.post(url, json=payload)
+            response.raise_for_status()
+
+            data = response.json()
+
+            # Extract response from OpenAI-compatible format
+            choices = data.get("choices", [])
+            if not choices:
+                raise ModelOnexError(
+                    message="No choices in response",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    context={"response_keys": list(data.keys())},
+                )
+
+            message = choices[0].get("message", {})
+            content = message.get("content", "")
+
+            # Ensure we return a string (API may return None)
+            return str(content) if content else ""
+
+    async def health_check(self) -> bool:
+        """Check if the local LLM server is healthy.
+
+        Attempts to connect to the server's health or models endpoint.
+
+        Returns:
+            True if the server is reachable and responding, False otherwise.
+        """
+        try:
+            # Try common health check endpoints
+            endpoints = [
+                f"{self.endpoint_url.rstrip('/')}/health",
+                f"{self.endpoint_url.rstrip('/')}/v1/models",
+            ]
+
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                for endpoint in endpoints:
+                    try:
+                        response = await client.get(endpoint)
+                        if response.status_code < 500:
+                            return True
+                    except httpx.HTTPError:
+                        # fallback-ok: try next endpoint on network error
+                        continue
+
+            return False
+
+        except Exception:
+            # boundary-ok: health check must gracefully handle all errors
+            return False
+
+
+def _verify_protocol_compliance() -> None:
+    """Verify LocalLLMClient implements ProtocolLLMClient.
+
+    This function is provided for test suites to verify protocol compliance
+    without import-time side effects. Tests should call this explicitly.
+
+    Note: We verify all protocol-required methods exist on the class rather
+    than instantiating, for consistency with other LLM client implementations.
+
+    Raises:
+        AssertionError: If LocalLLMClient does not implement ProtocolLLMClient.
+    """
+    # Get required methods from the protocol
+    protocol_methods = {
+        name
+        for name in dir(ProtocolLLMClient)
+        if not name.startswith("_") and callable(getattr(ProtocolLLMClient, name))
+    }
+
+    # Verify all protocol methods exist on the client class
+    for method_name in protocol_methods:
+        assert hasattr(
+            LocalLLMClient, method_name
+        ), f"LocalLLMClient must have '{method_name}' method per ProtocolLLMClient"
+
+
+__all__ = ["LocalLLMClient", "_verify_protocol_compliance"]

@@ -4,10 +4,13 @@ Enum for node status values.
 Defines the possible status values for ONEX nodes.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumNodeStatus(str, Enum):
+@unique
+class EnumNodeStatus(StrValueHelper, str, Enum):
     """
     Enumeration of node status values.
 

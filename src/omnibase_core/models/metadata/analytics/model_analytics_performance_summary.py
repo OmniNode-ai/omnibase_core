@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from typing import cast
-
-from pydantic import Field
-
 """
 Analytics Performance Summary Model.
 
@@ -11,8 +5,9 @@ Structured performance summary data for analytics.
 Follows ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
@@ -108,26 +103,31 @@ class ModelAnalyticsPerformanceSummary(BaseModel):
             needs_optimization=needs_optimization,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        from_attributes=True,
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Analytics models don't have standard name/description/version fields
+        # Pack all performance summary data into metadata
+        result["metadata"] = {
+            "average_execution_time_ms": self.average_execution_time_ms,
+            "average_execution_time_seconds": self.average_execution_time_seconds,
+            "peak_memory_usage_mb": self.peak_memory_usage_mb,
+            "total_invocations": self.total_invocations,
+            "performance_level": self.performance_level,
+            "memory_usage_level": self.memory_usage_level,
+            "performance_score": self.performance_score,
+            "needs_optimization": self.needs_optimization,
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).

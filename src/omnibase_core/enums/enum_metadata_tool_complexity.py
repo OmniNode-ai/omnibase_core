@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Metadata tool complexity enumeration.
 
@@ -7,12 +5,15 @@ Defines complexity levels for metadata tools to help categorize their operationa
 and implementation complexity.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumMetadataToolComplexity(str, Enum):
+class EnumMetadataToolComplexity(StrValueHelper, str, Enum):
     """
     Complexity levels for metadata tools.
 
@@ -25,10 +26,6 @@ class EnumMetadataToolComplexity(str, Enum):
     MODERATE = "moderate"  # Some dependencies, moderate logic complexity
     COMPLEX = "complex"  # Multiple dependencies, complex logic flows
     ADVANCED = "advanced"  # Advanced patterns, high resource requirements
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_numeric_level(cls, complexity: EnumMetadataToolComplexity) -> int:

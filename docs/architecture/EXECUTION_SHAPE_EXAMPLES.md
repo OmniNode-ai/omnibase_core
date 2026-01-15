@@ -323,7 +323,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.models.fsm.model_intent import ModelIntent
 from omnibase_core.models.results.model_intent_result import ModelIntentResult
 from omnibase_core.enums.enum_intent_type import EnumIntentType
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 
 
 class NodeDatabaseWriterEffect(NodeEffect):
@@ -657,14 +657,14 @@ Use **Command to Effect** when:
 
 ```python
 from typing import Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from omnibase_core.nodes import NodeEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 
 
 router = APIRouter()
@@ -761,7 +761,7 @@ async def health_check() -> HealthResponse:
         status=status,
         database=results["database"],
         cache=results["cache"],
-        timestamp=datetime.utcnow().isoformat()
+        timestamp=datetime.now(timezone.utc).isoformat()
     )
 
 

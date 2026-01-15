@@ -4,10 +4,13 @@ Supported regex flags for contract-driven NodeCompute.
 This module defines the regex flags available for REGEX transformations.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumRegexFlag(str, Enum):
+@unique
+class EnumRegexFlag(StrValueHelper, str, Enum):
     """
     Supported regex flags.
 
@@ -20,3 +23,6 @@ class EnumRegexFlag(str, Enum):
     IGNORECASE = "IGNORECASE"
     MULTILINE = "MULTILINE"
     DOTALL = "DOTALL"
+
+
+__all__ = ["EnumRegexFlag"]

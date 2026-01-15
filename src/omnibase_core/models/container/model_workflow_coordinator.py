@@ -13,37 +13,42 @@ Safe Runtime Imports (OK to import at module level):
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
+
+if TYPE_CHECKING:
+    from .model_workflow_factory import ModelWorkflowFactory
 
 
 class ModelWorkflowCoordinator:
     """Workflow execution coordinator."""
 
-    def __init__(self, factory: Any) -> None:
+    def __init__(self, factory: ModelWorkflowFactory) -> None:
         self.factory = factory
         self.active_workflows: SerializedDict = {}
 
     async def execute_workflow(
         self,
-        workflow_id: Any,
+        workflow_id: str,  # string-id-ok: external workflow identifier from caller
         workflow_type: str,
-        input_data: Any,
+        input_data: object,
         config: SerializedDict | None = None,
-    ) -> Any:
+    ) -> object:
         """Execute workflow with logging and error handling."""
+        # Import at function level to avoid circular imports and eliminate duplication
+        from omnibase_core.logging.logging_structured import (
+            emit_log_event_sync as emit_log_event,
+        )
+
         try:
             self.factory.create_workflow(workflow_type, config)
 
             # Log workflow start
-            from omnibase_core.logging.structured import (
-                emit_log_event_sync as emit_log_event,
-            )
-
             emit_log_event(
                 LogLevel.INFO,
                 f"Workflow execution started: {workflow_type}",
@@ -72,12 +77,8 @@ class ModelWorkflowCoordinator:
 
             return workflow_result
 
-        except Exception as e:
+        except PYDANTIC_MODEL_ERRORS as e:  # boundary-ok: normalize model/validation failures into ModelOnexError at workflow boundary
             # Log workflow failure
-            from omnibase_core.logging.structured import (
-                emit_log_event_sync as emit_log_event,
-            )
-
             emit_log_event(
                 LogLevel.ERROR,
                 f"Workflow execution failed: {workflow_type}",
@@ -88,20 +89,26 @@ class ModelWorkflowCoordinator:
                 },
             )
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Workflow execution failed: {e!s}",
-                workflow_id=str(workflow_id),
-                workflow_type=workflow_type,
-                correlation_id=workflow_id,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                context={
+                    "workflow_id": str(workflow_id),
+                    "workflow_type": workflow_type,
+                },
             ) from e
 
     async def _execute_workflow_type(
         self,
         workflow_type: str,
-        input_data: Any,
+        input_data: object,
         config: SerializedDict | None,
-    ) -> Any:
+    ) -> object:
         """Execute a specific workflow type with input data."""
+        # Import at function level to avoid circular imports
+        from omnibase_core.logging.logging_structured import (
+            emit_log_event_sync as emit_log_event,
+        )
+
         try:
             # Create and run workflow based on type
             workflow = self.factory.create_workflow(workflow_type, config)
@@ -117,11 +124,7 @@ class ModelWorkflowCoordinator:
 
             return result
 
-        except Exception as e:
-            from omnibase_core.logging.structured import (
-                emit_log_event_sync as emit_log_event,
-            )
-
+        except PYDANTIC_MODEL_ERRORS as e:  # boundary-ok: log and propagate model/validation failures at workflow execution boundary
             emit_log_event(
                 LogLevel.ERROR,
                 f"Workflow execution failed for type {workflow_type}: {e}",

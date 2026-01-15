@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+from omnibase_core.types.type_json import JsonType
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_workflow_outputs import TypedDictWorkflowOutputsDict
 
@@ -78,7 +79,7 @@ class ModelWorkflowOutputs(BaseModel):
     @field_serializer("data", when_used="always")
     def serialize_data(
         self, values: dict[str, ModelSchemaValue] | None
-    ) -> dict[str, object] | None:
+    ) -> dict[str, JsonType] | None:
         """
         Serialize data field by converting ModelSchemaValue to primitives.
 
@@ -182,19 +183,26 @@ class ModelWorkflowOutputs(BaseModel):
             "result": self.result,
             "status_message": self.status_message,
             "error_message": self.error_message,
-            "generated_files": self.generated_files,
-            "modified_files": self.modified_files,
+            # Convert list[str] to list for JsonType compatibility
+            "generated_files": list(self.generated_files)
+            if self.generated_files
+            else None,
+            "modified_files": list(self.modified_files)
+            if self.modified_files
+            else None,
             "execution_time_ms": self.execution_time_ms,
             "items_processed": self.items_processed,
             "success_count": self.success_count,
             "failure_count": self.failure_count,
         }
 
-        # Remove None values
+        # Filter out None values from the result dict.
+        # The comprehension produces dict[str, JsonType] which is SerializedDict.
         result = {k: v for k, v in result.items() if v is not None}
 
         # Add data if present (convert ModelSchemaValue to raw values)
         if self.data:
+            # to_value() returns JsonType which is compatible with SerializedDict values
             result["data"] = {key: value.to_value() for key, value in self.data.items()}
 
         # Add custom outputs if present (convert ModelSchemaValue to primitives)

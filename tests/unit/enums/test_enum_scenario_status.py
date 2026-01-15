@@ -132,7 +132,6 @@ class TestEnumScenarioStatus:
         """Test that enum works with Pydantic models."""
         from pydantic import BaseModel
 
-        @pytest.mark.unit
         class TestModel(BaseModel):
             status: EnumScenarioStatus
 

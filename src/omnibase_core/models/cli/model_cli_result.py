@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field
-
 """
 CLI Result Model.
 
@@ -11,11 +5,12 @@ Universal CLI execution result model that captures the complete
 outcome of CLI command execution with proper typing.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, datetime
 from uuid import uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.models.cli.model_cli_performance_metrics import (
@@ -283,12 +278,12 @@ class ModelCliResult(BaseModel):
             if isinstance(default, int):
                 try:
                     return int(value_str)
-                except (ValueError, TypeError):
+                except (TypeError, ValueError):
                     return default
             if isinstance(default, float):
                 try:
                     return float(value_str)
-                except (ValueError, TypeError):
+                except (TypeError, ValueError):
                     return default
             return value_str
 
@@ -325,12 +320,12 @@ class ModelCliResult(BaseModel):
             if isinstance(default, int):
                 try:
                     return int(value)
-                except (ValueError, TypeError):
+                except (TypeError, ValueError):
                     return default
             if isinstance(default, float):
                 try:
                     return float(value)
-                except (ValueError, TypeError):
+                except (TypeError, ValueError):
                     return default
             return value
         return default
@@ -358,7 +353,7 @@ class ModelCliResult(BaseModel):
             retry_count=self.retry_count,
             has_errors=self.has_errors(),
             has_warnings=self.has_warnings(),
-            error_count=len(self.validation_errors),
+            error_level_count=len(self.validation_errors),
             warning_count=len(self.warnings),
             critical_error_count=len(self.get_critical_errors()),
         )
@@ -491,11 +486,11 @@ class ModelCliResult(BaseModel):
             trace_data=None,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

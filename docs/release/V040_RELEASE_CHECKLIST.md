@@ -363,7 +363,7 @@ Before marking a gate complete:
     # OPTION C: Run pattern validation programmatically
     # =============================================================================
     poetry run python -c "
-    from omnibase_core.validation.patterns import validate_patterns_directory
+    from omnibase_core.validation.validator_patterns import validate_patterns_directory
     from pathlib import Path
     result = validate_patterns_directory(Path('src/omnibase_core/nodes'))
     print(f'Validation complete: {len(result.errors)} issues found')
@@ -649,7 +649,7 @@ sys.exit(0)  # Explicit success exit
 
     **Note**: For contract fingerprinting, use the existing utilities:
     ```python
-    from omnibase_core.contracts.hash_registry import (
+    from omnibase_core.contracts.contract_hash_registry import (
         normalize_contract,
         compute_contract_fingerprint,
     )
@@ -693,9 +693,9 @@ sys.exit(0)  # Explicit success exit
   | Module | Expected Path | Status |
   |--------|--------------|--------|
   | Pattern validation | `omnibase_core.validation.patterns.validate_patterns_directory()` | ✅ Exists |
-  | Hash registry | `omnibase_core.contracts.hash_registry.compute_contract_fingerprint()` | ✅ Exists |
-  | Hash registry | `omnibase_core.contracts.hash_registry.normalize_contract()` | ✅ Exists |
-  | Hash registry class | `omnibase_core.contracts.hash_registry.ContractHashRegistry` | ✅ Exists |
+  | Hash registry | `omnibase_core.contracts.contract_hash_registry.compute_contract_fingerprint()` | ✅ Exists |
+  | Hash registry | `omnibase_core.contracts.contract_hash_registry.normalize_contract()` | ✅ Exists |
+  | Hash registry class | `omnibase_core.contracts.contract_hash_registry.ContractHashRegistry` | ✅ Exists |
 
   **Cross-Platform Glob Expansion Notes**:
   - Shell glob patterns (`*.yaml`, `**/*.yaml`) are expanded by the shell BEFORE Python sees them
@@ -761,7 +761,7 @@ sys.exit(0)  # Explicit success exit
     # Method 2: Programmatic test showing fingerprint drift detection
     poetry run python -c "
     from pathlib import Path
-    from omnibase_core.contracts.hash_registry import compute_contract_fingerprint
+    from omnibase_core.contracts.contract_hash_registry import compute_contract_fingerprint
     from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
     import yaml
     import copy
@@ -821,7 +821,7 @@ sys.exit(0)  # Explicit success exit
     # Load all runtime contracts via FileRegistry
     poetry run python -c "
     from pathlib import Path
-    from omnibase_core.runtime.file_registry import FileRegistry
+    from omnibase_core.runtime.runtime_file_registry import FileRegistry
 
     registry = FileRegistry()
     contracts_dir = Path('contracts/runtime')
@@ -837,7 +837,7 @@ sys.exit(0)  # Explicit success exit
     # Load example contracts
     poetry run python -c "
     from pathlib import Path
-    from omnibase_core.runtime.file_registry import FileRegistry
+    from omnibase_core.runtime.runtime_file_registry import FileRegistry
 
     registry = FileRegistry()
     for subdir in ['effect', 'compute', 'reducer', 'orchestrator']:
@@ -866,7 +866,7 @@ sys.exit(0)  # Explicit success exit
     # Verify contract-to-node type mapping
     poetry run python -c "
     from pathlib import Path
-    from omnibase_core.runtime.file_registry import FileRegistry
+    from omnibase_core.runtime.runtime_file_registry import FileRegistry
 
     registry = FileRegistry()
     contracts = registry.load_all(Path('contracts/runtime'))
@@ -1198,7 +1198,7 @@ sys.exit(0)  # Explicit success exit
     ```bash
     # Generate error object snapshot with all observability fields
     poetry run python -c "
-    from omnibase_core.errors.declarative_errors import NodeExecutionError
+    from omnibase_core.errors.error_declarative import NodeExecutionError
     import json
 
     # Create error with all observability fields
@@ -1239,7 +1239,7 @@ sys.exit(0)  # Explicit success exit
     ```bash
     # Demonstrate NODE_FAILURE event emission structure
     poetry run python -c "
-    from omnibase_core.constants.event_types import NODE_FAILURE, NODE_SUCCESS, NODE_START
+    from omnibase_core.constants.constants_event_types import NODE_FAILURE, NODE_SUCCESS, NODE_START
     from omnibase_core.models.core.model_onex_event import ModelOnexEvent
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_core.models.core.model_onex_event_metadata import ModelOnexEventMetadata
@@ -1757,7 +1757,7 @@ print('Required fields:', ', '.join(required))
     # Step 1: Verify FileRegistry loads correctly
     # =============================================================================
     poetry run python -c "
-from omnibase_core.runtime.file_registry import FileRegistry
+from omnibase_core.runtime.runtime_file_registry import FileRegistry
 r = FileRegistry()
 print('✅ FileRegistry init: PASS')
 print(f'Registry type: {type(r).__name__}')
@@ -1768,7 +1768,7 @@ print(f'Registry type: {type(r).__name__}')
     # =============================================================================
     # If you have example v0.3.x contracts:
     # poetry run python -c "
-    # from omnibase_core.runtime.file_registry import FileRegistry
+    # from omnibase_core.runtime.runtime_file_registry import FileRegistry
     # from pathlib import Path
     # r = FileRegistry()
     # contract = r.load(Path('examples/contracts/legacy_v036_contract.yaml'))
@@ -2008,7 +2008,7 @@ poetry run python scripts/check_node_purity.py --verbose
 
 # Pattern validation (alternative method)
 poetry run python -c "
-from omnibase_core.validation.patterns import validate_patterns_directory
+from omnibase_core.validation.validator_patterns import validate_patterns_directory
 from pathlib import Path
 result = validate_patterns_directory(Path('src/omnibase_core/nodes'))
 print(f'Validation complete: {len(result.errors)} issues found')

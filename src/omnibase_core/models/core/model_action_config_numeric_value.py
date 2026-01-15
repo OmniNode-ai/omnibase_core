@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
@@ -45,11 +45,11 @@ class ModelActionConfigNumericValue(BaseModel):
         """Get configuration value as string."""
         return str(self.value.to_python_value())
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelActionConfigNumericValue"]

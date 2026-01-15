@@ -10,7 +10,14 @@ from __future__ import annotations
 import hashlib
 from uuid import UUID
 
-from pydantic import BaseModel, Field, SecretStr, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    ValidationError,
+    field_serializer,
+)
 
 from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
 from omnibase_core.enums.enum_auth_type import EnumAuthType
@@ -193,11 +200,11 @@ class ModelConnectionAuth(BaseModel):
             token=None,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -208,7 +215,7 @@ class ModelConnectionAuth(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValidationError, ValueError) as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -216,15 +223,9 @@ class ModelConnectionAuth(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                message=f"Operation failed: {e}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            ) from e
+        # Pydantic handles validation automatically during instantiation.
+        # This method exists to satisfy the ProtocolValidatable interface.
+        return True
 
     def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""

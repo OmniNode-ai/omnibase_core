@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Retention policy enumeration.
 
 Defines data retention policies for compliance and lifecycle management.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumRetentionPolicy(str, Enum):
+class EnumRetentionPolicy(StrValueHelper, str, Enum):
     """
     Enumeration of data retention policies.
 
@@ -51,10 +52,6 @@ class EnumRetentionPolicy(str, Enum):
     DEFAULT = "default"
     CUSTOM = "custom"
     UNKNOWN = "unknown"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_duration_days(cls, policy: EnumRetentionPolicy) -> int | None:

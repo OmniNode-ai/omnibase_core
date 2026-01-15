@@ -1,7 +1,10 @@
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumNodeArg(str, Enum):
+@unique
+class EnumNodeArg(StrValueHelper, str, Enum):
     """
     Canonical enum for node argument types.
     """
@@ -14,3 +17,6 @@ class EnumNodeArg(str, Enum):
     BOOTSTRAP = "--bootstrap"
     HEALTH_CHECK = "--health-check"
     INTROSPECT = "--introspect"
+
+
+__all__ = ["EnumNodeArg"]

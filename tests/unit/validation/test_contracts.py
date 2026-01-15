@@ -6,7 +6,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from omnibase_core.validation.contracts import (
+from omnibase_core.validation.validator_contracts import (
     load_and_validate_yaml_model,
     validate_contracts_directory,
     validate_no_manual_yaml,
@@ -101,7 +101,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """
         yaml_file.write_text(content)
@@ -133,7 +133,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """
         large_file.write_text(content)
@@ -154,7 +154,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """
         yaml_file.write_text(content)
@@ -272,7 +272,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """
         yaml_file.write_text(content)
@@ -291,7 +291,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """
         content2 = """
@@ -299,7 +299,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: EFFECT
+node_type: EFFECT_GENERIC
 operations: []
 """
         (tmp_path / "test1.yaml").write_text(content1)
@@ -351,7 +351,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """
         (tmp_path / "test.yaml").write_text(content)
@@ -373,7 +373,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """
         (generated_dir / "manual.yaml").write_text(content)

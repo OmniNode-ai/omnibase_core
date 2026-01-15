@@ -19,6 +19,7 @@ See Also:
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumLikelihood
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
@@ -66,27 +67,106 @@ class ModelDetectionMetadata(BaseModel):
 
     pattern_category: str | None = Field(
         default=None,
-        description="Detection pattern category",
+        description=(
+            "Category of the detected pattern for classification "
+            "(e.g., 'injection', 'xss', 'credential_exposure', 'malware')"
+        ),
     )
     detection_source: str | None = Field(
         default=None,
-        description="Source of detection",
+        description=(
+            "Source or engine that detected the pattern "
+            "(e.g., 'regex_scanner', 'ml_classifier', 'signature_match')"
+        ),
     )
     rule_version: ModelSemVer | None = Field(
         default=None,
-        description="Detection rule version",
+        description=(
+            "Version of the detection rule that matched. Used for tracking "
+            "rule updates and detection accuracy analysis. Accepts string "
+            "format (e.g., '2.1.0') which is automatically converted to ModelSemVer."
+        ),
     )
     false_positive_likelihood: EnumLikelihood | str | None = Field(
         default=None,
         description=(
-            "FP likelihood (e.g., low, medium, high, very_low, very_high). "
-            "Accepts EnumLikelihood or string."
+            "Estimated likelihood of false positive (e.g., low, medium, high). "
+            "Helps prioritize investigation. Accepts EnumLikelihood enum values "
+            "or string representations."
         ),
     )
     remediation_hint: str | None = Field(
         default=None,
-        description="Suggested remediation",
+        description=(
+            "Suggested remediation action or reference to remediation documentation "
+            "(e.g., 'Rotate exposed credentials immediately')"
+        ),
     )
+
+    @field_validator("rule_version", mode="before")
+    @classmethod
+    def coerce_rule_version(
+        cls, v: ModelSemVer | str | dict[str, object] | None
+    ) -> ModelSemVer | None:
+        """Coerce string or dict values to ModelSemVer.
+
+        Provides flexible input handling for rule_version field:
+        - String format "X.Y.Z" is parsed to ModelSemVer
+        - Dict format {"major": X, "minor": Y, "patch": Z} is converted
+        - ModelSemVer instances are passed through unchanged
+        - None values are passed through unchanged
+
+        Args:
+            v: The rule version value as ModelSemVer, string, dict, or None.
+
+        Returns:
+            The coerced ModelSemVer value, or None if input is None.
+
+        Raises:
+            ValueError: If string format is invalid, dict is malformed, or value
+                is not ModelSemVer, str, dict, or None.
+
+        Example:
+            >>> metadata = ModelDetectionMetadata(rule_version="2.1.0")
+            >>> metadata.rule_version
+            ModelSemVer(major=2, minor=1, patch=0)
+        """
+        if v is None:
+            return None
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, str):
+            # Use ModelSemVer.parse() for string parsing
+            try:
+                return ModelSemVer.parse(v)
+            except ModelOnexError as e:
+                # error-ok: Pydantic field_validator requires ValueError
+                raise ValueError(f"Invalid rule_version string: {v!r}") from e
+        if isinstance(v, dict):
+            # Allow dict format like {"major": 1, "minor": 2, "patch": 3}
+            try:
+                # Extract and validate required fields explicitly
+                major = v.get("major")
+                minor = v.get("minor")
+                patch = v.get("patch")
+                if (
+                    not isinstance(major, int)
+                    or not isinstance(minor, int)
+                    or not isinstance(patch, int)
+                ):
+                    # error-ok: Pydantic field_validator requires ValueError
+                    raise ValueError(
+                        "Invalid rule_version dict: major, minor, patch must be integers"
+                    )
+                return ModelSemVer(major=major, minor=minor, patch=patch)
+            except (TypeError, ValueError) as e:
+                # error-ok: Pydantic field_validator requires ValueError
+                raise ValueError(
+                    f"Invalid rule_version dict format: expected {{'major': int, "
+                    f"'minor': int, 'patch': int}}, got {v}"
+                ) from e
+        # error-ok: Pydantic field_validator requires ValueError
+        raise ValueError(f"Expected ModelSemVer, str, or dict, got {type(v).__name__}")
 
     @field_validator("false_positive_likelihood", mode="before")
     @classmethod

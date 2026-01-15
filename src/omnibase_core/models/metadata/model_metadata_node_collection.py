@@ -84,16 +84,15 @@ class ModelMetadataNodeCollection(RootModel[dict[str, object]]):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata: TypedDictMetadataDict = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (  # type: ignore[literal-required]
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata
+        from typing import cast
+
+        result: TypedDictMetadataDict = {}
+        # This is a RootModel container - extract metadata from analytics if available
+        analytics = self.root.get("_metadata_analytics")
+        if analytics is not None and hasattr(analytics, "get_metadata"):
+            # Cast to expected return type since analytics.get_metadata() returns Any
+            return cast(TypedDictMetadataDict, analytics.get_metadata())
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -102,7 +101,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, object]]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (AttributeError, KeyError, TypeError, ValueError):
             # fallback-ok: ProtocolMetadataProvider contract expects bool, not exceptions
             return False
 
@@ -119,6 +118,6 @@ class ModelMetadataNodeCollection(RootModel[dict[str, object]]):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except (AttributeError, KeyError, TypeError, ValueError):
             # fallback-ok: ProtocolValidatable contract expects bool validation result, not exceptions
             return False

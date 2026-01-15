@@ -22,7 +22,7 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.validation.contracts import (
+from omnibase_core.validation.validator_contracts import (
     MAX_FILE_SIZE,
     load_and_validate_yaml_model,
     timeout_handler,
@@ -44,7 +44,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: test-contract-001
 operations:
   - name: get_user
@@ -67,7 +67,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """
 
@@ -107,7 +107,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: test-contract
 operations: []
 extra_field: should_be_ignored
@@ -162,7 +162,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: test-éncödîng
 operations: []
 """,
@@ -196,7 +196,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: large-contract
 operations:
 """ + "".join(operations)
@@ -227,7 +227,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: symlink-test
 operations: []
 """,
@@ -255,7 +255,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE  # Node type comment
+node_type: COMPUTE_GENERIC  # Node type comment
 contract_id: test-comments  # ID comment
 # Another comment
 operations: []  # Empty operations
@@ -276,7 +276,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: multiline-test
 operations:
   - name: test_op
@@ -301,7 +301,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: nested-test
 operations:
   - name: complex_op
@@ -513,7 +513,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: root
 operations: []
 """,
@@ -525,7 +525,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: level1
 operations: []
 """,
@@ -537,7 +537,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: level2
 operations: []
 """,
@@ -564,7 +564,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: valid
 operations: []
 """,
@@ -603,7 +603,7 @@ invalid: yaml: [syntax
         # Should not check files in __pycache__
         assert (
             result.metadata is None or result.metadata.files_processed == 0
-        ) or result.success
+        ) or result.is_valid
 
     def test_validate_contracts_directory_ignores_git(self, tmp_path: Path) -> None:
         """Test validation ignores .git directories."""
@@ -616,7 +616,7 @@ invalid: yaml: [syntax
 
         assert (
             result.metadata is None or result.metadata.files_processed == 0
-        ) or result.success
+        ) or result.is_valid
 
     def test_validate_contracts_directory_ignores_node_modules(
         self,
@@ -632,7 +632,7 @@ invalid: yaml: [syntax
 
         assert (
             result.metadata is None or result.metadata.files_processed == 0
-        ) or result.success
+        ) or result.is_valid
 
     def test_validate_contracts_directory_both_yaml_and_yml(
         self,
@@ -646,7 +646,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: yaml-ext
 operations: []
 """,
@@ -659,7 +659,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: yml-ext
 operations: []
 """,
@@ -688,7 +688,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: manual
 operations: []
 """,
@@ -726,7 +726,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 contract_id: test
 operations: []
 """,
@@ -931,7 +931,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """
         yaml_file.write_text(content)
@@ -965,7 +965,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """,
         )
@@ -1045,7 +1045,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """,
         )
@@ -1055,7 +1055,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: EFFECT
+node_type: EFFECT_GENERIC
 operations: []
 """,
         )
@@ -1089,7 +1089,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """,
         )
@@ -1124,7 +1124,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """,
         )
@@ -1132,7 +1132,7 @@ operations: []
         monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
 
         # Patch within the contracts module's local namespace
-        import omnibase_core.validation.contracts as contracts_module
+        import omnibase_core.validation.validator_contracts as contracts_module
 
         with patch.object(
             contracts_module,
@@ -1161,7 +1161,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """,
         )
@@ -1196,7 +1196,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """,
         )
@@ -1230,7 +1230,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """,
         )
@@ -1238,7 +1238,7 @@ operations: []
         monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
 
         # Patch within the contracts module's local namespace
-        import omnibase_core.validation.contracts as contracts_module
+        import omnibase_core.validation.validator_contracts as contracts_module
 
         with patch.object(
             contracts_module,
@@ -1274,7 +1274,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 operations: []
 """,
         )
@@ -1282,7 +1282,7 @@ operations: []
         monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
 
         # Patch within the contracts module's local namespace
-        import omnibase_core.validation.contracts as contracts_module
+        import omnibase_core.validation.validator_contracts as contracts_module
 
         with patch.object(
             contracts_module,

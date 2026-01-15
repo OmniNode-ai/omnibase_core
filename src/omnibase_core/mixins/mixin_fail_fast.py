@@ -10,14 +10,16 @@ import traceback
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from functools import wraps
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 # Import extracted error classes
 from omnibase_core.errors.exception_fail_fast import ExceptionFailFastError
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type variable for return types
@@ -37,7 +39,7 @@ class MixinFailFast:
 
     Usage:
         class MyTool(MixinFailFast, ProtocolReducer):
-            def process(self, input_state: Any) -> None:
+            def process(self, input_state: object) -> None:
                 # Validate required fields
                 self.validate_required(input_state.config, "config")
                 self.validate_not_empty(input_state.data, "data")
@@ -52,7 +54,7 @@ class MixinFailFast:
                     pass
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """Initialize the fail fast mixin."""
         super().__init__(**kwargs)
 
@@ -74,13 +76,15 @@ class MixinFailFast:
         """
 
         @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> T:
+        def wrapper(*args: object, **kwargs: object) -> T:
             try:
                 return func(*args, **kwargs)
             except ExceptionFailFastError:
                 # Re-raise our own fail fast errors
                 raise
-            except Exception as e:
+            except (
+                Exception
+            ) as e:  # catch-all-ok: convert all exceptions to fail-fast errors
                 # Convert other exceptions to fail fast
                 self._handle_critical_error(
                     f"Critical error in {func.__name__}: {e!s}",
@@ -119,9 +123,9 @@ class MixinFailFast:
 
     def validate_not_empty(
         self,
-        value: Any,
+        value: object,
         field_name: str,
-    ) -> Any:
+    ) -> object:
         """
         Validate that a field is not empty.
 
@@ -206,8 +210,8 @@ class MixinFailFast:
                     message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
-            elif expected_type == list[Any] and not hasattr(value, "append"):
-                msg = f"Field '{field_name}' must be list[Any]-like, got {actual_type.__name__}"
+            elif expected_type == list and not hasattr(value, "append"):
+                msg = f"Field '{field_name}' must be list-like, got {actual_type.__name__}"
                 raise ModelOnexError(
                     message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_FAILED,
@@ -222,10 +226,10 @@ class MixinFailFast:
         return value
 
     def validate_enum(
-        self, value: str, allowed_values: list[Any], field_name: str
+        self, value: str, allowed_values: list[object], field_name: str
     ) -> str:
         """
-        Validate that a field value is in allowed list[Any].
+        Validate that a field value is in allowed list.
 
         Args:
             value: Value to check
@@ -268,7 +272,7 @@ class MixinFailFast:
                     message=msg,
                     error_code=EnumCoreErrorCode.DEPENDENCY_FAILED,
                 )
-        except Exception as e:
+        except (KeyError, RuntimeError, ValueError) as e:
             msg = f"Failed to check dependency '{dependency_name}': {e!s}"
             raise ModelOnexError(
                 message=msg,
@@ -298,7 +302,7 @@ class MixinFailFast:
                 message=message,
             )
 
-    def _handle_critical_error(self, message: str, **details: Any) -> None:
+    def _handle_critical_error(self, message: str, **details: object) -> None:
         """
         Handle a critical error by logging and exiting.
 

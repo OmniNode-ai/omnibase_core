@@ -33,6 +33,7 @@ class TestEnumExecutionStatus:
             "SKIPPED": "skipped",
             "CANCELLED": "cancelled",
             "TIMEOUT": "timeout",
+            "PARTIAL": "partial",
         }
 
         for name, value in expected_values.items():
@@ -57,6 +58,7 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.SKIPPED,
             EnumExecutionStatus.CANCELLED,
             EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         ]
 
         for status in terminal_statuses:
@@ -90,6 +92,7 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.SKIPPED,
             EnumExecutionStatus.CANCELLED,
             EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         ]
 
         for status in non_active_statuses:
@@ -114,10 +117,79 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.SKIPPED,
             EnumExecutionStatus.CANCELLED,
             EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         ]
 
         for status in non_successful_statuses:
             assert EnumExecutionStatus.is_successful(status) is False
+
+    def test_is_skipped(self):
+        """Test the is_skipped class method."""
+        # Only SKIPPED should return True
+        assert EnumExecutionStatus.is_skipped(EnumExecutionStatus.SKIPPED) is True
+
+        # All other statuses should return False
+        non_skipped_statuses = [
+            EnumExecutionStatus.PENDING,
+            EnumExecutionStatus.RUNNING,
+            EnumExecutionStatus.COMPLETED,
+            EnumExecutionStatus.SUCCESS,
+            EnumExecutionStatus.FAILED,
+            EnumExecutionStatus.CANCELLED,
+            EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
+        ]
+
+        for status in non_skipped_statuses:
+            assert EnumExecutionStatus.is_skipped(status) is False
+
+    def test_is_running(self):
+        """Test the is_running class method."""
+        # Only RUNNING should return True
+        assert EnumExecutionStatus.is_running(EnumExecutionStatus.RUNNING) is True
+
+        # All other statuses should return False
+        non_running_statuses = [
+            EnumExecutionStatus.PENDING,
+            EnumExecutionStatus.COMPLETED,
+            EnumExecutionStatus.SUCCESS,
+            EnumExecutionStatus.FAILED,
+            EnumExecutionStatus.SKIPPED,
+            EnumExecutionStatus.CANCELLED,
+            EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
+        ]
+
+        for status in non_running_statuses:
+            assert EnumExecutionStatus.is_running(status) is False
+
+        # Verify distinction from is_active (which includes PENDING)
+        assert EnumExecutionStatus.is_active(EnumExecutionStatus.PENDING) is True
+        assert EnumExecutionStatus.is_running(EnumExecutionStatus.PENDING) is False
+
+    def test_is_cancelled(self):
+        """Test the is_cancelled class method."""
+        # Only CANCELLED should return True
+        assert EnumExecutionStatus.is_cancelled(EnumExecutionStatus.CANCELLED) is True
+
+        # All other statuses should return False
+        non_cancelled_statuses = [
+            EnumExecutionStatus.PENDING,
+            EnumExecutionStatus.RUNNING,
+            EnumExecutionStatus.COMPLETED,
+            EnumExecutionStatus.SUCCESS,
+            EnumExecutionStatus.FAILED,
+            EnumExecutionStatus.SKIPPED,
+            EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
+        ]
+
+        for status in non_cancelled_statuses:
+            assert EnumExecutionStatus.is_cancelled(status) is False
+
+        # Verify CANCELLED is neither success nor failure
+        assert EnumExecutionStatus.is_successful(EnumExecutionStatus.CANCELLED) is False
+        assert EnumExecutionStatus.is_failure(EnumExecutionStatus.CANCELLED) is False
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
@@ -136,6 +208,7 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.SKIPPED,
             EnumExecutionStatus.CANCELLED,
             EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         ]
 
         for status in all_statuses:
@@ -144,7 +217,7 @@ class TestEnumExecutionStatus:
     def test_enum_iteration(self):
         """Test iterating over enum values."""
         statuses = list(EnumExecutionStatus)
-        assert len(statuses) == 8
+        assert len(statuses) == 9
 
         status_values = [status.value for status in statuses]
         expected_values = [
@@ -156,6 +229,7 @@ class TestEnumExecutionStatus:
             "skipped",
             "cancelled",
             "timeout",
+            "partial",
         ]
 
         assert set(status_values) == set(expected_values)
@@ -348,6 +422,242 @@ class TestEnumExecutionStatus:
             # Terminal statuses should not transition to other states
             # This is just a logical test - the enum doesn't enforce this
             assert EnumExecutionStatus.is_terminal(status) is True
+
+    def test_to_base_status(self):
+        """Test to_base_status conversion method."""
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # Direct mappings
+        assert EnumExecutionStatus.PENDING.to_base_status() == EnumBaseStatus.PENDING
+        assert EnumExecutionStatus.RUNNING.to_base_status() == EnumBaseStatus.RUNNING
+        assert (
+            EnumExecutionStatus.COMPLETED.to_base_status() == EnumBaseStatus.COMPLETED
+        )
+        assert EnumExecutionStatus.FAILED.to_base_status() == EnumBaseStatus.FAILED
+
+        # Execution-specific mappings
+        assert EnumExecutionStatus.SUCCESS.to_base_status() == EnumBaseStatus.COMPLETED
+        assert EnumExecutionStatus.SKIPPED.to_base_status() == EnumBaseStatus.INACTIVE
+        assert EnumExecutionStatus.CANCELLED.to_base_status() == EnumBaseStatus.INACTIVE
+        assert EnumExecutionStatus.TIMEOUT.to_base_status() == EnumBaseStatus.FAILED
+        assert EnumExecutionStatus.PARTIAL.to_base_status() == EnumBaseStatus.COMPLETED
+
+    def test_from_base_status(self):
+        """Test from_base_status class method."""
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # Test valid conversions
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.PENDING)
+            == EnumExecutionStatus.PENDING
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.RUNNING)
+            == EnumExecutionStatus.RUNNING
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.COMPLETED)
+            == EnumExecutionStatus.COMPLETED
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.FAILED)
+            == EnumExecutionStatus.FAILED
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.INACTIVE)
+            == EnumExecutionStatus.CANCELLED
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.ACTIVE)
+            == EnumExecutionStatus.RUNNING
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.UNKNOWN)
+            == EnumExecutionStatus.PENDING
+        )
+
+    def test_from_base_status_invalid(self):
+        """Test from_base_status raises ValueError for unmapped values."""
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # VALID and INVALID don't have mappings, should raise ValueError
+        with pytest.raises(ValueError):
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.VALID)
+
+        with pytest.raises(ValueError):
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.INVALID)
+
+    def test_base_status_roundtrip(self):
+        """Test roundtrip conversion base -> execution -> base."""
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # These base statuses should roundtrip
+        roundtrip_statuses = [
+            EnumBaseStatus.PENDING,
+            EnumBaseStatus.RUNNING,
+            EnumBaseStatus.COMPLETED,
+            EnumBaseStatus.FAILED,
+        ]
+
+        for base_status in roundtrip_statuses:
+            exec_status = EnumExecutionStatus.from_base_status(base_status)
+            back_to_base = exec_status.to_base_status()
+            assert back_to_base == base_status, (
+                f"Roundtrip failed for {base_status}: "
+                f"got {back_to_base} via {exec_status}"
+            )
+
+    def test_is_terminal_edge_cases(self):
+        """Test is_terminal with edge cases and boundary conditions.
+
+        Verifies nuanced terminal state semantics for execution status:
+        - PARTIAL is terminal even though it's neither full success nor failure
+        - CANCELLED is terminal (intentional termination)
+        - TIMEOUT is terminal (forced termination)
+        """
+        # PARTIAL is terminal despite being neither success nor failure
+        assert EnumExecutionStatus.is_terminal(EnumExecutionStatus.PARTIAL) is True
+        assert EnumExecutionStatus.is_successful(EnumExecutionStatus.PARTIAL) is False
+        assert EnumExecutionStatus.is_failure(EnumExecutionStatus.PARTIAL) is False
+
+        # CANCELLED is terminal but not classified as success or failure
+        assert EnumExecutionStatus.is_terminal(EnumExecutionStatus.CANCELLED) is True
+        assert EnumExecutionStatus.is_successful(EnumExecutionStatus.CANCELLED) is False
+        assert EnumExecutionStatus.is_failure(EnumExecutionStatus.CANCELLED) is False
+
+        # TIMEOUT is terminal and IS a failure (error condition)
+        assert EnumExecutionStatus.is_terminal(EnumExecutionStatus.TIMEOUT) is True
+        assert EnumExecutionStatus.is_failure(EnumExecutionStatus.TIMEOUT) is True
+
+    def test_is_terminal_mutual_exclusivity(self):
+        """Test that terminal and active states are mutually exclusive.
+
+        Every execution status must be either terminal or active, never both.
+        This is a fundamental invariant of execution lifecycle semantics.
+        """
+        for status in EnumExecutionStatus:
+            is_terminal = EnumExecutionStatus.is_terminal(status)
+            is_active = EnumExecutionStatus.is_active(status)
+
+            # XOR: exactly one must be true
+            assert is_terminal != is_active, (
+                f"{status} violates mutual exclusivity: "
+                f"is_terminal={is_terminal}, is_active={is_active}"
+            )
+
+    def test_is_terminal_completeness(self):
+        """Test that all status values are categorized by is_terminal.
+
+        Every status must be either terminal or non-terminal (active).
+        This ensures no status values are left uncategorized.
+        """
+        terminal_count = sum(
+            1 for s in EnumExecutionStatus if EnumExecutionStatus.is_terminal(s)
+        )
+        active_count = sum(
+            1 for s in EnumExecutionStatus if EnumExecutionStatus.is_active(s)
+        )
+
+        # All statuses should be accounted for
+        assert terminal_count + active_count == len(EnumExecutionStatus)
+
+        # Expected counts based on the enum definition
+        assert (
+            terminal_count == 7
+        )  # COMPLETED, SUCCESS, FAILED, SKIPPED, CANCELLED, TIMEOUT, PARTIAL
+        assert active_count == 2  # PENDING, RUNNING
+
+    def test_roundtrip_serialization_all_values(self):
+        """Test roundtrip serialization for all enum values.
+
+        Ensures str(enum) -> Enum(str) works for every value.
+        """
+        for status in EnumExecutionStatus:
+            # String roundtrip
+            serialized = str(status)
+            deserialized = EnumExecutionStatus(serialized)
+            assert deserialized == status, (
+                f"String roundtrip failed for {status}: "
+                f"serialized={serialized}, deserialized={deserialized}"
+            )
+
+            # Value roundtrip
+            value = status.value
+            reconstructed = EnumExecutionStatus(value)
+            assert reconstructed == status, (
+                f"Value roundtrip failed for {status}: "
+                f"value={value}, reconstructed={reconstructed}"
+            )
+
+    def test_inactive_mapping_via_base_status(self):
+        """Test that INACTIVE base status maps correctly to CANCELLED.
+
+        EnumBaseStatus.INACTIVE represents intentional deactivation,
+        which maps to CANCELLED in execution context (intentional termination).
+        """
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # INACTIVE -> CANCELLED
+        result = EnumExecutionStatus.from_base_status(EnumBaseStatus.INACTIVE)
+        assert result == EnumExecutionStatus.CANCELLED
+
+        # And CANCELLED -> INACTIVE roundtrip
+        back_to_base = result.to_base_status()
+        assert back_to_base == EnumBaseStatus.INACTIVE
+
+    def test_all_base_status_mappings(self):
+        """Test all valid base status to execution status mappings.
+
+        Ensures complete coverage of from_base_status method.
+        """
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # All valid mappings
+        valid_mappings = {
+            EnumBaseStatus.PENDING: EnumExecutionStatus.PENDING,
+            EnumBaseStatus.RUNNING: EnumExecutionStatus.RUNNING,
+            EnumBaseStatus.COMPLETED: EnumExecutionStatus.COMPLETED,
+            EnumBaseStatus.FAILED: EnumExecutionStatus.FAILED,
+            EnumBaseStatus.INACTIVE: EnumExecutionStatus.CANCELLED,
+            EnumBaseStatus.ACTIVE: EnumExecutionStatus.RUNNING,
+            EnumBaseStatus.UNKNOWN: EnumExecutionStatus.PENDING,
+        }
+
+        for base_status, expected in valid_mappings.items():
+            result = EnumExecutionStatus.from_base_status(base_status)
+            assert result == expected, (
+                f"Mapping failed for {base_status}: "
+                f"expected={expected}, actual={result}"
+            )
+
+    def test_is_failure_method(self):
+        """Test the is_failure class method exhaustively.
+
+        Verifies that is_failure correctly identifies failure states.
+        """
+        failure_statuses = {
+            EnumExecutionStatus.FAILED,
+            EnumExecutionStatus.TIMEOUT,
+        }
+
+        for status in EnumExecutionStatus:
+            expected = status in failure_statuses
+            assert EnumExecutionStatus.is_failure(status) == expected, (
+                f"is_failure() mismatch for {status}: "
+                f"expected={expected}, actual={EnumExecutionStatus.is_failure(status)}"
+            )
+
+    def test_is_partial_method(self):
+        """Test the is_partial class method.
+
+        Verifies that only PARTIAL returns True.
+        """
+        for status in EnumExecutionStatus:
+            expected = status == EnumExecutionStatus.PARTIAL
+            assert EnumExecutionStatus.is_partial(status) == expected, (
+                f"is_partial() mismatch for {status}: "
+                f"expected={expected}, actual={EnumExecutionStatus.is_partial(status)}"
+            )
 
 
 if __name__ == "__main__":

@@ -1,9 +1,12 @@
 """Tool criticality enumeration."""
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumToolCriticality(str, Enum):
+@unique
+class EnumToolCriticality(StrValueHelper, str, Enum):
     """
     Tool criticality levels for business impact assessment.
 
@@ -15,3 +18,6 @@ class EnumToolCriticality(str, Enum):
     MEDIUM = "medium"
     LOW = "low"
     OPTIONAL = "optional"
+
+
+__all__ = ["EnumToolCriticality"]

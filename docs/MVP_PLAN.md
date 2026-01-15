@@ -9,29 +9,71 @@
 
 ## Executive Summary
 
-### Current Status (as of 2025-12-05)
+### Current Status (as of 2026-01-01)
+
+> **PROJECT STATUS**: The **MVP - OmniNode Platform Foundation** project is **COMPLETED** in Linear. Development has transitioned to the **Beta - OmniNode Platform Hardening** phase.
+
+#### Linear Backlog Summary
+
+| Project | Total | Done | In Review | In Progress | Backlog |
+|---------|-------|------|-----------|-------------|---------|
+| **MVP - OmniNode Platform Foundation** | 1 | 1 | 0 | 0 | 0 |
+| **Beta - OmniNode Platform Hardening** | 88 | 42 | 3 | 6 | 25 |
+| No Project (Projector Work) | 11 | 0 | 0 | 1 | 10 |
+| **Total** | **100** | **43** | **3** | **7** | **35** |
+
+#### MVP v0.4.0 Phase Completion Status
 
 | Phase | Complete | Partial | Not Started | Total |
 |-------|----------|---------|-------------|-------|
-| Phase 0: Repository Stabilization | 2 | 2 | 5 | 9 |
-| Phase 1: Legacy Node Migration | 0 | 0 | 5 | 5 |
-| Phase 2: Declarative Node Promotion | 3 | 1 | 3 | 7 |
-| Phase 3-7 | 0 | 0 | 36 | 36 |
-| Future (F.5 RUNTIME_HOST) | 1 | 0 | 13 | 14 |
-| **Total** | **6** | **3** | **62** | **71** |
+| Phase 0: Repository Stabilization | 9 | 0 | 0 | 9 |
+| Phase 1: Legacy Node Migration | 5 | 0 | 0 | 5 |
+| Phase 2: Declarative Node Promotion | 7 | 0 | 0 | 7 |
+| Phase 3-7 | 36 | 0 | 0 | 36 |
+| Future (F.5 RUNTIME_HOST) | 14 | 0 | 0 | 14 |
+| **Total** | **71** | **0** | **0** | **71** |
 
-> **UPDATE (v0.4.0)**: Issues 2.1 (NodeReducerDeclarative -> NodeReducer) and 2.2 (NodeOrchestratorDeclarative -> NodeOrchestrator) are **COMPLETE**. The "Declarative" suffix has been removed because these ARE now the standard implementations.
+> **UPDATE (2026-01-01)**: The MVP v0.4.0 milestone is **COMPLETE**. All 71 issues have been addressed. The project has transitioned to Beta - OmniNode Platform Hardening for type safety improvements and tech debt remediation.
 
-**Key Completions**:
-- ✅ : EnumNodeKind with RUNTIME_HOST value (PR #108)
-- ✅ : EnumHandlerType enum for protocol handlers
-- ✅ : ModelOnexEnvelope unified message format (PR #112) - In Progress
-- ✅ : Core error hierarchy (RuntimeHostError, HandlerExecutionError, etc.)
-- ✅ : Contract Linter CLI (omniintelligence)
+**Key Completions (MVP)**:
+- ✅ EnumNodeKind with RUNTIME_HOST value (PR #108)
+- ✅ EnumHandlerType enum for protocol handlers
+- ✅ ModelOnexEnvelope unified message format (PR #112)
+- ✅ Core error hierarchy (RuntimeHostError, HandlerExecutionError, etc.)
+- ✅ Contract Linter CLI (omniintelligence)
 - ✅ Pre-refactor API snapshot tests (4 test files in `tests/unit/api_snapshots/`)
 - ✅ NodeCoreBase interface frozen (interface tests + documentation)
 - ✅ Issue 2.1: NodeReducerDeclarative renamed to NodeReducer (primary FSM-driven)
 - ✅ Issue 2.2: NodeOrchestratorDeclarative renamed to NodeOrchestrator (primary workflow-driven)
+- ✅ All handler protocols defined in omnibase_spi
+- ✅ FileRegistry, NodeInstance, NodeRuntime, RuntimeHostContract implemented
+- ✅ Runtime Host CLI command added
+
+#### Beta Phase Active Work (2026-01-01)
+
+**In Review (3)**:
+- OMN-1178: [CORE] Remove `Any` from all mixins - PR #303
+- OMN-1176: [CORE] Remove `Any` from models/container + models/configuration - PR #302
+- OMN-1073: [Typing] Audit and reduce # type: ignore comments (277 occurrences)
+
+**In Progress (6)**:
+- OMN-1188: [CORE] Complete or remove stub implementations - PR #301
+- OMN-1166: ModelProjectorContract & Schema Models - PR #296
+- OMN-1113: [BETA] Manifest Generation & Observability
+- OMN-1126: ModelContractPatch & Patch Validation
+- OMN-1075: [Refactor] Replace generic Exception catches with specific types
+- OMN-1021: refactor(semver): Replace local ModelSemVer with omnibase_core canonical version
+
+**Recently Completed (Beta)**:
+- OMN-1179: [CORE] Remove `Any` from utils + runtime + container - PR #300 ✅
+- OMN-1177: [CORE] Remove `Any` from models/workflow + models/fsm + models/orchestrator - PR #298 ✅
+- OMN-1157: [BETA] Hook Typing Enforcement Enablement - PR #297 ✅
+- OMN-1156: ModelCapabilityMetadata & ServiceProviderRegistry - PR #295 ✅
+- OMN-1155: ModelBinding & ServiceCapabilityResolver - PR #299 ✅
+- OMN-1146: Contract Validation Event Schema - PR #293 ✅
+- OMN-1117: Handler Contract Model & YAML Schema - PR #292 ✅
+- OMN-1114: [BETA] Pipeline Runner & Hook Registry - PR #291 ✅
+- OMN-549: Add SAFE_FIELD_PATTERN validation for injection protection ✅
 
 ### What v0.4.0 Changes
 - **Legacy nodes HARD DELETED** (not moved to legacy namespace - decision changed due to no existing users)
@@ -1269,7 +1311,7 @@ Create centralized validation layer that validates contracts at node load time.
 **Description**:
 Define canonical error classes for the validation and adapter logic. Makes debugging tolerable and stack traces meaningful.
 
-**Location**: `src/omnibase_core/errors/declarative_errors.py`
+**Location**: `src/omnibase_core/errors/error_declarative.py`
 
 **Acceptance Criteria**:
 - [ ] `ContractValidationError` - invalid contract structure
@@ -2327,9 +2369,10 @@ Declarative nodes depend on:
 
 ---
 
-**Last Updated**: 2025-12-03 (v8 - Consolidated Architecture)
+**Last Updated**: 2026-01-01 (v9 - MVP Complete, Beta Active)
 **Document Owner**: OmniNode Architecture Team
 **Linear Project URL**: https://linear.app/omninode/project/mvp-omninode-platform-foundation-d447d3041f8d
+**Beta Project URL**: https://linear.app/omninode/project/beta-omninode-platform-hardening-2e713bf49655
 
 ---
 
@@ -2391,6 +2434,31 @@ Declarative nodes depend on:
 ---
 
 ## Changelog
+
+### v9 (2026-01-01) - MVP Complete, Beta Active
+
+**Project Status Update**:
+- **MVP - OmniNode Platform Foundation** marked **COMPLETED** in Linear
+- All 71 MVP issues addressed and closed
+- Project transitioned to **Beta - OmniNode Platform Hardening** phase
+- Updated Linear Backlog Summary with current issue counts
+- Added Beta Phase Active Work section with current PRs
+
+**Beta Phase Highlights (42 issues completed)**:
+- Type safety improvements: Removing `Any` types across repositories
+- OMN-1173: Epic for Tech Debt Audit - Cross-Repository Type Safety & Standards Compliance
+- Handler Contract Model & YAML Schema (OMN-1117)
+- Pipeline Runner & Hook Registry (OMN-1114)
+- Capability Resolution Infrastructure (OMN-1155, OMN-1156)
+- Contract Validation Event Schema (OMN-1146)
+- Security: SAFE_FIELD_PATTERN validation (OMN-549)
+
+**Current Active Work**:
+- 3 PRs in review (OMN-1178, OMN-1176, OMN-1073)
+- 6 issues in progress including ModelProjectorContract work
+- 25 issues in backlog for Beta phase
+
+---
 
 ### v8 (2025-12-03) - Consolidated Architecture
 

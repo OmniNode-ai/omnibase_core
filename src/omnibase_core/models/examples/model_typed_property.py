@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from typing import TypeVar
-
-from pydantic import Field
-
 """
 Typed property model for environment properties.
 
@@ -11,12 +5,15 @@ This module provides the ModelTypedProperty class for storing a single
 typed property with validation in the environment property system.
 """
 
+from __future__ import annotations
 
-from typing import cast
+from typing import TypeVar, cast
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_property_metadata import ModelPropertyMetadata
@@ -76,8 +73,12 @@ class ModelTypedProperty(BaseModel):
                 return cast("T", self.value.as_bool())
             if isinstance(self.value.value, expected_type):
                 return self.value.value
-        except Exception:
+        except (AssertionError, ModelOnexError, TypeError, ValueError):
             # fallback-ok: type conversion failures return default value
+            # AssertionError: assert statements in accessor methods
+            # ModelOnexError: explicit type conversion errors from accessors
+            # TypeError: type mismatch during conversion (e.g., None to int)
+            # ValueError: int()/float() conversion of invalid strings
             pass
         return default
 
@@ -100,11 +101,11 @@ class ModelTypedProperty(BaseModel):
         """Get the raw value implementing the protocol."""
         return self.value.value
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -112,13 +113,25 @@ class ModelTypedProperty(BaseModel):
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
-            AttributeError: If setting an attribute fails
-            Exception: If configuration logic fails
+            ModelOnexError: If setting an attribute fails or validation error occurs
         """
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-        return True
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
+        except (
+            AttributeError,
+            TypeError,
+            ValidationError,
+            ValueError,
+        ) as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Configuration failed: {e}",
+            ) from e
 
     def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""

@@ -1,18 +1,17 @@
-from __future__ import annotations
-
-from datetime import UTC, datetime
-from typing import cast
-
-from pydantic import BaseModel, Field
-
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-
 """
 Node Timestamps Model.
 
 Timing and lifecycle information for nodes.
 Follows ONEX one-model-per-file architecture.
 """
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelNodeTimestamps(BaseModel):
@@ -175,36 +174,30 @@ class ModelNodeTimestamps(BaseModel):
             last_validated=None,  # intentionally None
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    # Duck typing: check if value is dict-like or list-like
-                    # by attempting to iterate with items() or checking __iter__
-                    try:
-                        # Try dict-like access first
-                        if (hasattr(value, "items") and callable(value.items)) or (
-                            hasattr(value, "__iter__") and not hasattr(value, "items")
-                        ):
-                            metadata[field] = value
-                        else:
-                            metadata[field] = str(value)
-                    except (TypeError, AttributeError):
-                        # Fallback to string conversion
-                        metadata[field] = str(value)
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # Pack timestamp fields into metadata dict
+        result["metadata"] = {
+            "created_at": (self.created_at.isoformat() if self.created_at else None),
+            "updated_at": (self.updated_at.isoformat() if self.updated_at else None),
+            "last_validated": (
+                self.last_validated.isoformat() if self.last_validated else None
+            ),
+            "age_days": self.age_days,
+            "last_modified_days_ago": self.last_modified_days_ago,
+            "validation_age_days": self.validation_age_days,
+            "staleness_level": self.get_staleness_level(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).

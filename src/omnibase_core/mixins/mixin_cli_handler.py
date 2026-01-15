@@ -9,11 +9,12 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -46,7 +47,7 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
             sys.exit(tool.main())
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """Initialize the CLI handler mixin."""
         super().__init__(**kwargs)
 
@@ -309,7 +310,7 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
             )
             return 130
 
-        except Exception as e:  # fallback-ok: CLI handler returns error exit code with logging, appropriate for CLI
+        except Exception as e:  # catch-all-ok: CLI handler returns error exit code with logging, appropriate for CLI
             emit_log_event(
                 LogLevel.ERROR,
                 f"Tool execution failed: {e}",
@@ -335,7 +336,7 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
                 return cast("InputStateT", input_class(**data))
 
         # Fallback - return data as-is
-        return data  # type: ignore[return-value]
+        return data  # type: ignore[return-value]  # Fallback when input state class unavailable; dict substitutes for InputStateT
 
     def _handle_introspection(self) -> int:
         """Handle introspection request."""

@@ -7,7 +7,249 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-01-12
+
+### Added
+
+- **EnumHandlerRoutingStrategy** (OMN-1295): Added enum for handler routing strategies replacing Literal type, improving type safety and IDE support
+- **Replay Safety Enforcement** (OMN-1150): Implemented replay safety enforcement for non-deterministic effects with audit trail and UUID injection services
+- **Baseline Health Report Models** (OMN-1198): Added baseline health report models, performance metrics, and stability calculator utilities
+- **Execution Detail View Models** (OMN-1197): Added execution detail view models and consolidated comparison models into replay module
+
+### Changed
+
+- **MixinHandlerRouting**: Updated to use EnumHandlerRoutingStrategy enum with proper type annotations
+- **ModelHandlerRoutingSubcontract**: Optimized duplicate routing_key validation to use set instead of list
+
+## [0.6.5] - 2026-01-12
+
+### Changed
+
+- Version bump from 0.6.4 to 0.6.5 for release tagging
+
+## [0.6.4] - 2026-01-11
+
+### Added
+
+- **MixinHandlerRouting** (OMN-1293): Added contract-driven handler routing mixin for flexible handler resolution
+- **Correlation ID Propagation** (OMN-601): Implemented correlation_id propagation across all intents for improved traceability
+- **ModelExecutionProfile Extensions** (OMN-1292): Extended ModelExecutionProfile and ModelExecutionConflict for ProtocolConstraintValidator
+
+## [0.6.3] - 2026-01-08
+
+### Changed
+
+- Version bump from 0.6.2 to 0.6.3 for release tagging
+
+## [0.6.2] - 2026-01-06
+
+### Fixed
+
+- **Version Mismatch**: Fixed package version inconsistency where PyPI 0.6.1 was published with `__version__ = "0.5.3"` in source code. Both `pyproject.toml` and `__init__.py` now correctly report 0.6.2.
+
+## [0.6.1] - 2026-01-06
+
+### Added
+
+- **Contract CLI Tooling** (OMN-1129): Added CLI commands for contract management and validation
+- **ModelHandlerPackaging** (OMN-1119): Added secure handler distribution with cryptographic signing and verification
+- **Diff Rendering & Storage Hooks** (OMN-1149): Added explainability output support with diff rendering capabilities
+- **Handler Contract Protocols** (OMN-1164): Migrated handler contract protocols from SPI to Core
+- **ModelProjectionResult** (OMN-1233): Added projection result model for projection operations
+
+## [0.6.0] - 2026-01-05
+
 ### ⚠️ BREAKING CHANGES
+
+#### ModelHandlerBehaviorDescriptor Renamed to ModelHandlerBehavior [OMN-1117]
+
+The `ModelHandlerBehaviorDescriptor` class has been renamed to `ModelHandlerBehavior`. The backwards compatibility shim (`model_handler_behavior_descriptor.py`) and alias have been **removed**.
+
+**Impact**:
+- Code importing `ModelHandlerBehaviorDescriptor` will raise `ImportError`
+- Code importing from `model_handler_behavior_descriptor` will raise `ImportError`
+
+**Migration Guide**:
+
+```python
+# Before (v0.3.x)
+from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
+    ModelHandlerBehaviorDescriptor,
+)
+contract = ModelHandlerContract(
+    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute", ...),
+    ...
+)
+
+# After (v0.4.0+)
+from omnibase_core.models.runtime.model_handler_behavior import (
+    ModelHandlerBehavior,
+)
+contract = ModelHandlerContract(
+    descriptor=ModelHandlerBehavior(handler_kind="compute", ...),
+    ...
+)
+```
+
+**Quick Migration**:
+```bash
+# Find affected imports
+grep -rn "ModelHandlerBehaviorDescriptor\|model_handler_behavior_descriptor" --include="*.py"
+
+# Replace in files (Linux/macOS)
+find . -name "*.py" -exec sed -i 's/ModelHandlerBehaviorDescriptor/ModelHandlerBehavior/g' {} \;
+find . -name "*.py" -exec sed -i 's/model_handler_behavior_descriptor/model_handler_behavior/g' {} \;
+```
+
+#### File Renames for Directory Prefix Naming Conventions [OMN-1222]
+
+Files across 4 directories have been renamed to follow consistent directory prefix naming conventions. **Direct module imports to old paths will fail with `ModuleNotFoundError`**.
+
+**Affected Directories**:
+
+| Directory | Old Pattern | New Pattern | Files Affected |
+|-----------|-------------|-------------|----------------|
+| `logging/` | `*.py` | `logging_*.py` | 4 files |
+| `runtime/` | `*.py` | `runtime_*.py` | 5 files |
+| `services/registry/` | `registry_*.py` | `service_registry_*.py` | 2 files |
+| `validation/` | `*.py` | `validator_*.py` | 5 files |
+
+**Impact**:
+- Direct module imports like `from omnibase_core.runtime.file_registry import FileRegistry` will fail
+- Package-level imports still work: `from omnibase_core.runtime import FileRegistry`
+- Class renames in `services/registry/` have deprecation warnings via `__getattr__`
+
+**Key File Renames**:
+
+```text
+# logging/
+core_logging.py          → logging_core.py
+emit.py                  → logging_emit.py
+pydantic_json_encoder.py → logging_pydantic_encoder.py
+structured.py            → logging_structured.py
+
+# runtime/
+envelope_router.py       → runtime_envelope_router.py
+file_registry.py         → runtime_file_registry.py
+handler_registry.py      → runtime_handler_registry.py
+message_dispatch_engine.py → runtime_message_dispatch.py
+protocol_node_runtime.py → runtime_protocol_node.py
+
+# services/registry/
+registry_capability.py   → service_registry_capability.py
+registry_provider.py     → service_registry_provider.py
+
+# validation/
+architecture.py          → validator_architecture.py
+cli.py                   → validator_cli.py
+contracts.py             → validator_contracts.py
+patterns.py              → validator_patterns.py
+types.py                 → validator_types.py
+```
+
+**Migration Guide**:
+
+```python
+# Before (v0.3.x) - Direct module imports
+from omnibase_core.runtime.file_registry import FileRegistry
+from omnibase_core.validation.architecture import validate_architecture_directory
+from omnibase_core.logging.structured import emit_log_event_sync
+
+# After (v0.4.0+) - Use package-level imports (recommended)
+from omnibase_core.runtime import FileRegistry
+from omnibase_core.validation import validate_architecture_directory
+from omnibase_core.logging import emit_log_event_sync
+
+# After (v0.4.0+) - Or use new module paths directly
+from omnibase_core.runtime.runtime_file_registry import FileRegistry
+from omnibase_core.validation.validator_architecture import validate_architecture_directory
+from omnibase_core.logging.logging_structured import emit_log_event_sync
+```
+
+**Quick Migration**:
+```bash
+# Find affected imports
+grep -rn "from omnibase_core\.\(logging\|runtime\|validation\)\.\(core_logging\|emit\|structured\|file_registry\|envelope_router\|architecture\|cli\|contracts\|patterns\|types\)" --include="*.py"
+
+# Recommended: Update to package-level imports for future compatibility
+```
+
+#### Hook Typing Enforcement Enabled by Default [OMN-1157]
+
+The default value of `BuilderExecutionPlan.enforce_hook_typing` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code building execution plans with typed hooks.
+
+**Impact**:
+- **Before (v0.5.x)**: Hook type mismatches produced `ModelValidationWarning` objects in the warnings list
+- **After (v0.6.x)**: Hook type mismatches raise `HookTypeMismatchError` immediately during `build()`
+
+**Rationale**:
+- Fail-fast behavior catches type mismatches during development rather than allowing silent degradation
+- Type validation errors in production indicate configuration issues that should be addressed, not ignored
+- This aligns with ONEX's philosophy of explicit, type-safe contracts
+
+**Migration Guide**:
+
+1. **Recommended**: Ensure all hooks have correct `handler_type_category` values:
+   ```python
+   from omnibase_core.pipeline import BuilderExecutionPlan, ModelPipelineHook
+   from omnibase_core.enums import EnumHandlerTypeCategory
+
+   # Typed hook - must match contract_category
+   hook = ModelPipelineHook(
+       hook_id="my-compute-hook",
+       phase="execute",
+       callable_ref="app.hooks.compute",
+       handler_type_category=EnumHandlerTypeCategory.COMPUTE,  # Must match builder
+   )
+
+   # Generic hook - passes for any contract (no handler_type_category)
+   generic_hook = ModelPipelineHook(
+       hook_id="my-generic-hook",
+       phase="execute",
+       callable_ref="app.hooks.generic",
+       # No handler_type_category = generic, passes all type validation
+   )
+
+   # Build with type enforcement (now the default)
+   builder = BuilderExecutionPlan(
+       registry=registry,
+       contract_category=EnumHandlerTypeCategory.COMPUTE,
+       # enforce_hook_typing=True is now the default
+   )
+   plan, warnings = builder.build()  # Raises HookTypeMismatchError on type mismatch
+   ```
+
+2. **For gradual migration**, explicitly disable enforcement:
+   ```python
+   # Opt-in to warning-only mode for backwards compatibility
+   builder = BuilderExecutionPlan(
+       registry=registry,
+       contract_category=EnumHandlerTypeCategory.COMPUTE,
+       enforce_hook_typing=False,  # Explicit opt-out to warning-only mode
+   )
+   plan, warnings = builder.build()
+
+   # Check warnings for type mismatches
+   for warning in warnings:
+       if warning.code == "HOOK_TYPE_MISMATCH":
+           logger.warning(f"Type mismatch: {warning.message}")
+   ```
+
+3. **Identify affected code** by searching for `BuilderExecutionPlan` usage:
+   ```bash
+   # Find all usages
+   grep -rn "BuilderExecutionPlan" --include="*.py"
+
+   # Find usages that might rely on warning-only behavior
+   grep -rn "enforce_hook_typing" --include="*.py"
+   ```
+
+**Quick Migration Checklist**:
+- [ ] Review all `BuilderExecutionPlan` instantiations
+- [ ] Ensure typed hooks have correct `handler_type_category` matching `contract_category`
+- [ ] Use generic hooks (no `handler_type_category`) for hooks that should work with any contract
+- [ ] Add `enforce_hook_typing=False` to builders that need gradual migration
+- [ ] Run tests to verify no `HookTypeMismatchError` is raised unexpectedly
 
 #### Workflow Contract Model Hardening [OMN-654]
 
@@ -41,7 +283,7 @@ This aligns with the ONEX thread safety model documented in [docs/guides/THREADI
 
 **Migration Guide**:
 
-**1. Direct Mutation to Immutable Copies**
+#### 1. Direct Mutation to Immutable Copies
 
 ```python
 # Before (v0.3.x) - Direct mutation was possible
@@ -59,7 +301,7 @@ updated = original.model_copy(update={
 })
 ```
 
-**2. Handling Extra Fields**
+#### 2. Handling Extra Fields
 
 ```python
 # Before (v0.3.x) - Extra fields might have been silently ignored
@@ -87,7 +329,7 @@ metadata = ModelWorkflowDefinitionMetadata(
 )
 ```
 
-**3. Nested Model Updates**
+#### 3. Nested Model Updates
 
 ```python
 # For deeply nested updates, rebuild from the inside out:
@@ -102,7 +344,7 @@ new_metadata = original.workflow_metadata.model_copy(
 updated = original.model_copy(update={"workflow_metadata": new_metadata})
 ```
 
-**4. Pattern for Workflow Builders**
+#### 4. Pattern for Workflow Builders
 
 ```python
 # If you have a builder pattern that relied on mutation, convert to accumulation:
@@ -129,7 +371,7 @@ class WorkflowBuilder:
         return ModelWorkflowDefinition(**{**self._base_config, **self._updates})
 ```
 
-**5. Testing Code Updates**
+#### 5. Testing Code Updates
 
 ```python
 # Tests that mutated models need updating:
@@ -257,8 +499,434 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 
 **Recommendation**: Update configurations to use SHA-256 (default) before v0.6.0. Use SHA-384 or SHA-512 for high-security environments.
 
+#### MixinEventBus STRICT_BINDING_MODE Default Changed [OMN-1156]
+
+The default value of `MixinEventBus.STRICT_BINDING_MODE` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code calling `bind_*()` methods after the mixin is "in use" (after `start_event_listener()` or publish operations).
+
+**Impact**:
+- **Before (v0.4.x)**: `bind_*()` calls after mixin is in use emitted a WARNING log
+- **After (v0.5.x)**: `bind_*()` calls after mixin is in use raise `ModelOnexError` with `error_code=INVALID_STATE`
+
+**Rationale**:
+- Fail-fast behavior catches thread-unsafe patterns in production before they cause subtle race conditions
+- Warnings can be missed in CI/CD pipelines and logs, but errors are immediately visible
+- This aligns with ONEX thread safety principles documented in [docs/guides/THREADING.md](docs/guides/THREADING.md)
+
+**Migration Guide**:
+
+1. **Recommended**: Ensure all `bind_*()` calls occur in `__init__` before the mixin is shared across threads:
+   ```python
+   class MyNode(MixinEventBus[InputT, OutputT]):
+       def __init__(self, event_bus: ProtocolEventBus):
+           super().__init__()
+           # All binding must happen in __init__ BEFORE any publish or listener operations
+           self.bind_event_bus(event_bus)
+           self.bind_node_name("my_node")
+   ```
+
+2. **For legacy code** that cannot be immediately refactored, disable strict mode by subclassing:
+   ```python
+   from typing import ClassVar
+
+   class MyLegacyNode(MixinEventBus[InputT, OutputT]):
+       STRICT_BINDING_MODE: ClassVar[bool] = False  # Opt-out to warning-only behavior
+   ```
+
+3. **Identify affected code** by searching for patterns where `bind_*()` is called after `start_event_listener()` or `publish_*()`:
+   ```bash
+   # Find potential issues
+   grep -rn "start_event_listener" --include="*.py" | xargs grep -l "bind_"
+   grep -rn "publish_event\|publish_completion_event" --include="*.py" | xargs grep -l "bind_"
+   ```
+
+**Quick Migration Checklist**:
+- [ ] Review all usages of `MixinEventBus` subclasses
+- [ ] Ensure `bind_*()` methods are called in `__init__` before any publish/listener operations
+- [ ] Add `STRICT_BINDING_MODE = False` to legacy classes that cannot be immediately fixed
+- [ ] Run tests to verify no `ModelOnexError` with `INVALID_STATE` is raised unexpectedly
+
+#### MixinEventBus Architecture Refactoring [OMN-1081]
+
+`MixinEventBus` has been refactored to use composition with dedicated data models, separating state management from behavior. This change improves thread safety, eliminates MRO conflicts, and enables proper serialization of runtime state.
+
+##### Architectural Changes
+
+| Aspect | Before (v0.4.x) | After (v0.5.x) |
+|--------|-----------------|----------------|
+| **State Storage** | Direct instance attributes | Composition with `ModelEventBusRuntimeState` |
+| **Listener Handle** | Untyped threading objects | `ModelEventBusListenerHandle` with thread safety |
+| **Initialization** | `__init__` method required | Lazy state accessors (no `__init__`) |
+| **Binding** | Implicit attribute assignment | Explicit binding methods required |
+| **Thread Safety** | Not guaranteed | Lock-protected operations in `ModelEventBusListenerHandle` |
+
+##### New Data Models
+
+| Model | Purpose | Thread Safety |
+|-------|---------|---------------|
+| `ModelEventBusRuntimeState` | Serializable binding state (node_name, contract_path, is_bound) | NOT thread-safe (mutable) |
+| `ModelEventBusListenerHandle` | Listener lifecycle management (thread, stop_event, subscriptions) | Thread-safe (lock-protected) |
+
+##### Breaking Changes
+
+1. **Explicit Binding Required**: You must call binding methods before publishing events:
+   - `bind_event_bus(event_bus)` - Bind an event bus instance
+   - `bind_registry(registry)` - Bind a registry with event_bus property
+   - `bind_contract_path(path)` - Set contract path for event patterns
+   - `bind_node_name(name)` - Set node name for logging/events
+
+2. **Lazy State Initialization**: State is created on first access, not in `__init__`.
+
+3. **Fail-Fast Semantics**: Publishing without binding raises `ModelOnexError` immediately.
+
+4. **Input Validation on Binding**: `bind_node_name()` and `bind_contract_path()` now raise `ModelOnexError` for invalid input (empty strings, None values, whitespace-only strings). Previously these might have been silently accepted.
+
+5. **Binding Reset via reset() Method**: To clear a binding, use `ModelEventBusRuntimeState.reset()` instead of binding an empty string. Empty string binding now raises `ModelOnexError`.
+
+6. **Runtime Misuse Detection**: Binding methods now emit warnings if called after the object has been shared across threads (detected via binding lock state). This helps catch thread-safety violations early.
+
+##### New Features
+
+1. **Generic Type Parameters**: `MixinEventBus[InputStateT, OutputStateT]` now supports generic type parameters for type-safe event processing. This enables IDE autocomplete and static type checking for event payloads.
+
+2. **Thread-Safe stop() and dispose()**: `ModelEventBusListenerHandle.stop()` and `dispose_event_bus_resources()` are now fully thread-safe with lock-protected operations. Multiple threads can safely call these methods concurrently (idempotent).
+
+3. **Runtime Misuse Detection**: The mixin now detects and warns about common misuse patterns:
+   - Binding after object is shared across threads
+   - Publishing without proper binding
+   - Listener lifecycle violations
+
+4. **Serializable Runtime State**: `ModelEventBusRuntimeState` is a Pydantic model that can be serialized/deserialized, enabling state persistence and debugging.
+
+##### Deprecation Timeline
+
+| Version | Status | Changes |
+|---------|--------|---------|
+| **v0.5.x** | Current | Backwards compatibility via `hasattr` fallbacks for lazy initialization |
+| **v1.0** | Planned | Remove `hasattr` fallbacks; require explicit `bind_*()` calls in `__init__` |
+| **v1.0** | Planned | Standardize `ProtocolEventBus` to require `publish_async()`, `subscribe()`, `unsubscribe()` |
+
+All legacy patterns marked with `TODO(v1.0)` comments in the source code will be cleaned up in v1.0.
+
+##### Migration Guide
+
+###### 1. Update Initialization Pattern
+
+```python
+# Before (v0.4.x) - Implicit initialization
+class MyNode(NodeCompute, MixinEventBus):
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+        self.event_bus = container.get_service("ProtocolEventBus")
+        self.node_name = "my_node"  # Direct attribute access
+        self.contract_path = "/path/to/contract.yaml"
+
+# After (v0.5.x) - Explicit binding
+class MyNode(NodeCompute, MixinEventBus[MyInputState, MyOutputState]):
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+        # Use explicit binding methods
+        self.bind_event_bus(container.get_service("ProtocolEventBus"))
+        self.bind_node_name("my_node")
+        self.bind_contract_path("/path/to/contract.yaml")
+```
+
+###### 2. Update Event Bus Access
+
+```python
+# Before (v0.4.x) - Direct attribute access
+if hasattr(self, "event_bus") and self.event_bus:
+    self.event_bus.publish(event)
+
+# After (v0.5.x) - Use provided methods
+if self._has_event_bus():
+    self.publish_completion_event(event_type, data)
+# OR for required access:
+bus = self._require_event_bus()  # Raises ModelOnexError if not bound
+```
+
+###### 3. Update Listener Management
+
+```python
+# Before (v0.4.x) - Manual thread management
+class MyNode(MixinEventBus):
+    def start_listening(self):
+        self._listener_thread = threading.Thread(target=self._listen_loop)
+        self._stop_event = threading.Event()
+        self._listener_thread.start()
+
+    def stop_listening(self):
+        self._stop_event.set()
+        self._listener_thread.join()
+
+# After (v0.5.x) - Use ModelEventBusListenerHandle
+class MyNode(MixinEventBus[MyInputState, MyOutputState]):
+    def start_listening(self):
+        # Returns thread-safe handle
+        self._handle = self.start_event_listener()
+
+    def stop_listening(self):
+        # Uses lock-protected stop with timeout
+        success = self.stop_event_listener(self._handle)
+        if not success:
+            self.logger.warning("Listener did not stop within timeout")
+```
+
+###### 4. Update State Access
+
+```python
+# Before (v0.4.x) - Direct attribute access
+node_name = self.node_name
+contract_path = self.contract_path
+
+# After (v0.5.x) - Use accessor methods
+node_name = self.get_node_name()  # Falls back to class name if not bound
+# Contract path is accessed internally by get_event_patterns()
+```
+
+###### 5. Clearing Bindings
+
+```python
+# Before (v0.4.x) - Empty string binding (no longer works)
+self.bind_node_name("")  # ❌ Now raises ModelOnexError
+
+# After (v0.5.x) - Use reset() method
+self._event_bus_state.reset()  # ✅ Clears all bindings properly
+
+# Or for selective reset, create a new state:
+from omnibase_core.models.mixins import ModelEventBusRuntimeState
+self._event_bus_state = ModelEventBusRuntimeState()  # Fresh state
+```
+
+###### 6. Handle Input Validation Errors
+
+```python
+# Before (v0.4.x) - Invalid input might be silently accepted
+self.bind_node_name(None)  # Might have worked (undefined behavior)
+self.bind_contract_path("  ")  # Whitespace might have been accepted
+
+# After (v0.5.x) - Invalid input raises ModelOnexError
+from omnibase_core.errors import ModelOnexError
+
+try:
+    self.bind_node_name(user_provided_name)
+except ModelOnexError as e:
+    # Handle invalid input - empty, None, or whitespace-only
+    self.logger.warning(f"Invalid node name: {e}")
+    self.bind_node_name(self.__class__.__name__)  # Use fallback
+```
+
+##### Thread Safety Notes
+
+| Method/Operation | Thread-Safe? | Notes |
+|-----------------|--------------|-------|
+| `bind_event_bus()` | **NO** | Must be called during `__init__` |
+| `bind_registry()` | **NO** | Must be called during `__init__` |
+| `bind_contract_path()` | **NO** | Must be called during `__init__` |
+| `bind_node_name()` | **NO** | Must be called during `__init__` |
+| `stop_event_listener()` | **YES** | Lock-protected, idempotent |
+| `dispose_event_bus_resources()` | **YES** | Lock-protected, idempotent |
+
+**Important**: All `bind_*()` methods are **NOT thread-safe** and must be called during object initialization (`__init__`), before the object is shared across threads. Once bound, the event bus can be safely used from multiple threads.
+
+- `ModelEventBusListenerHandle.stop()` uses a three-phase lock pattern:
+  1. **Phase 1 (lock held)**: Capture references, set stop signal
+  2. **Phase 2 (lock released)**: Wait for thread with timeout
+  3. **Phase 3 (lock held)**: Clean up subscriptions, update state
+
+- Multiple threads can safely call `stop()` concurrently (idempotent)
+- Default stop timeout is 5.0 seconds (configurable)
+- Listener threads are daemon threads (auto-terminate on main exit)
+
+##### Resource Cleanup
+
+```python
+# Call on shutdown to clean up all event bus resources
+self.dispose_event_bus_resources()
+```
+
+##### Quick Migration Checklist
+
+- [ ] Replace direct `self.event_bus = ...` with `self.bind_event_bus(...)`
+- [ ] Replace direct `self.node_name = ...` with `self.bind_node_name(...)`
+- [ ] Replace direct `self.contract_path = ...` with `self.bind_contract_path(...)`
+- [ ] Update any `hasattr(self, "event_bus")` checks to use `self._has_event_bus()`
+- [ ] Add `Generic[InputStateT, OutputStateT]` type parameters if using typed event processing
+- [ ] Update listener management to use `start_event_listener()` / `stop_event_listener()`
+- [ ] Add `dispose_event_bus_resources()` call to shutdown/cleanup methods
+- [ ] Review thread safety requirements - `ModelEventBusListenerHandle` is now thread-safe
+- [ ] **NEW**: Ensure all `bind_*()` calls are in `__init__` before object is shared across threads
+- [ ] **NEW**: Add error handling for `bind_node_name()` and `bind_contract_path()` which now validate input
+- [ ] **NEW**: Replace empty string binding with `ModelEventBusRuntimeState.reset()` to clear bindings
+- [ ] **NEW**: Watch for binding lock warnings indicating thread-safety violations
+
+#### Invariant Validation Returns Detailed Violation Model [OMN-1207]
+
+Invariant validation methods that previously returned `bool` or raised generic exceptions now return `ModelInvariantViolationDetail` on failure. This provides structured debugging information but changes the return type signature.
+
+**Impact**:
+- Code checking invariant validation results via boolean comparison may need updates
+- Exception handlers catching generic `ValidationError` should now handle `ModelInvariantViolationDetail`
+
+**Migration Guide**:
+
+```python
+# Before (v0.5.x) - Boolean return or exception
+result = validate_invariant(data)
+if not result:
+    logger.error("Invariant failed")
+
+# After (v0.6.x) - Structured violation detail
+from omnibase_core.models.validation import ModelInvariantViolationDetail
+
+result = validate_invariant(data)
+if isinstance(result, ModelInvariantViolationDetail):
+    logger.error(f"Invariant failed: {result.violation_type} - {result.message}")
+    logger.debug(f"Context: {result.context}")
+```
+
+### Added
+
+#### Replay & Trace Infrastructure
+
+- **Deterministic Replay Infrastructure**: Foundation for deterministic execution replay and validation [OMN-1116]
+- **ModelExecutionComparison**: Comparison model for baseline vs replay execution validation [OMN-1194]
+- **ModelEvidenceSummary**: Evidence summary model for aggregating corpus replay results [OMN-1195]
+- **ModelExecutionCorpus**: Corpus model for organizing and managing replay test sets [OMN-1202]
+- **Configuration Override Injection**: Configuration override injection for A/B testing scenarios [OMN-1205]
+- **Execution Trace Models**: Models for capturing and storing execution traces [OMN-1208]
+- **ServiceTraceRecording**: Service for recording execution traces to storage backends [OMN-1209]
+
+#### Contract System
+
+- **AST-Based Transport Import Validator**: Static analysis validator for transport layer import compliance [OMN-1039]
+- **YAML !include Directive Support**: Support for !include directives in YAML contract files for modular composition [OMN-1047]
+- **Handler Contract Model & YAML Schema**: ModelHandlerContract with comprehensive YAML schema for handler definitions [OMN-1117]
+- **ModelContractPatch**: Patch model for incremental contract modifications with validation [OMN-1126]
+- **Typed Contract Merge Engine**: Type-safe engine for merging contract definitions with conflict resolution [OMN-1127]
+- **Contract Validation Pipeline**: Multi-stage pipeline for validating contracts through configurable stages [OMN-1128]
+- **Contract Validation Event Schema**: Event schema for contract validation lifecycle events [OMN-1146]
+- **Contract Diff Model**: Model for computing and representing patch-level diffs between contracts [OMN-1148]
+- **Validation Pipeline Event Emission**: Event emission hooks for contract validation pipeline stages [OMN-1151]
+
+#### Validation & Invariants
+
+- **Invariant Definition Models**: Models for defining and configuring invariant rules [OMN-1192]
+- **ServiceInvariantEvaluator**: Service for evaluating invariants against runtime state [OMN-1193]
+- **ModelInvariantViolationDetail**: Structured violation detail model for debugging invariant failures [OMN-1207]
+
+#### Pipeline & Execution
+
+- **ExecutionResolver**: Resolver for mapping handler contracts to executable implementations [OMN-1106]
+- **Runtime Execution Sequencing Model**: Model for defining execution ordering and dependencies [OMN-1108]
+- **Pure Handler Conversions**: Utilities for converting between handler types with type safety [OMN-1112]
+- **Execution Manifest Generation**: Generator for creating execution manifests from pipeline definitions [OMN-1113]
+- **Pipeline Runner & Hook Registry**: Pipeline execution engine with pluggable hook registry [OMN-1114]
+
+#### Observability
+
+- **Dispatch ID Propagation**: Correlation ID propagation through dispatch chains for distributed tracing [OMN-972]
+- **Prometheus Metrics Backend**: Prometheus-compatible metrics export backend [OMN-1188]
+- **Redis Cache Backend**: Redis-backed caching implementation for distributed deployments [OMN-1188]
+
+#### Security
+
+- **AES-256-GCM Encryption**: Symmetric encryption support using AES-256-GCM for sensitive data [OMN-1077]
+
+#### Handler & Capability System
+
+- **Handler Enums**: Enumeration types for handler classification and behavior [OMN-1085]
+- **Handler Descriptors**: Descriptor models for handler metadata and configuration [OMN-1086]
+- **Handler Metadata Models**: Comprehensive metadata models for handler introspection [OMN-1121]
+- **Capability Models**: Models for defining and advertising node capabilities [OMN-1122]
+- **Capability Factories**: Factory classes for capability instantiation and configuration [OMN-1123]
+- **Handler Contract Extensions**: Extended contract fields for advanced handler scenarios [OMN-1124]
+- **Handler Type Categories**: Category-based handler classification system [OMN-1125]
+- **Capability Dependencies**: Dependency declaration and resolution for capabilities [OMN-1152]
+- **Capability Providers**: Provider abstraction for capability implementations [OMN-1153]
+- **Capability Requirements**: Requirement specification for capability consumers [OMN-1154]
+- **Capability Requirement Bindings**: Binding mechanism connecting requirements to providers [OMN-1155]
+- **MixinEventBus Strict Binding Mode**: Fail-fast binding validation for event bus mixins [OMN-1156]
+- **ModelProjectorContract**: Contract model for projection/view definitions [OMN-1166]
+
+#### NodeOrchestrator Compliance
+
+- **v1.0.1 Compliance Fixes**: NodeOrchestrator compliance with ONEX specification v1.0.1 [OMN-658]
+- **v1.0.2 Compliance Fixes**: Enhanced orchestration patterns for v1.0.2 specification [OMN-659]
+- **v1.0.3 Compliance Fixes**: Workflow coordination improvements for v1.0.3 specification [OMN-660]
+- **v1.0.4 Compliance Fixes**: Action lease semantics updates for v1.0.4 specification [OMN-661]
+- **v1.0.5 Compliance Fixes**: Final compliance updates for v1.0.5 specification [OMN-662]
+- **Node Protocol Definitions**: Protocol definitions for node type contracts [OMN-664]
+
+#### Protocol & Type System
+
+- **Protocol ISP Split**: Interface Segregation Principle refactoring of monolithic protocols [OMN-1016]
+- **SemVer 2.0.0 Support**: Full Semantic Versioning 2.0.0 compliance with pre-release and build metadata [OMN-1020]
+
+#### Constants & Configuration
+
+- **Timeout Constants**: Centralized timeout configuration constants for consistency [OMN-1074]
+- **Field Limit Constants**: Centralized field size limit constants for validation [OMN-1076]
+
+#### Type Safety Improvements
+
+- **Typed Unions for Models**: Discriminated union types for model hierarchies [OMN-1008]
+- **Typed Metadata Models**: Strongly-typed metadata model replacements for dict[str, Any] [OMN-1009]
+- **Typed Union Utilities**: Utility functions for working with typed unions [OMN-1013]
+- **Typed Context Models**: Strongly-typed context models replacing generic dicts [OMN-1048, OMN-1049, OMN-1050, OMN-1051, OMN-1052, OMN-1053, OMN-1054]
+- **Any Type Removal (Errors Module)**: Eliminated dict[str, Any] from error models [OMN-1174]
+- **Any Type Removal (Events Module)**: Eliminated dict[str, Any] from event models [OMN-1175]
+- **Any Type Removal (Core Module)**: Eliminated dict[str, Any] from core models [OMN-1176]
+- **Any Type Removal (Validation Module)**: Eliminated dict[str, Any] from validation models [OMN-1177]
+- **Any Type Removal (Registry Module)**: Eliminated dict[str, Any] from registry models [OMN-1178]
+- **Any Type Removal (Infrastructure Module)**: Eliminated dict[str, Any] from infrastructure models [OMN-1179]
+- **PEP 604 Union Syntax Conversion**: Migrated Optional[X] and Union[X, Y] to X | Y syntax [OMN-1186]
+
+#### Change Management
+
+- **ModelChangeProposal**: Change proposal model for evaluating system changes [OMN-1196]
+
+#### File Naming Conventions
+
+- **Naming Convention Enforcement**: Automated enforcement of directory-based file naming prefixes [OMN-1224]
+- **Naming Convention Checker**: Pre-commit checker for file naming compliance [OMN-1225]
+
+### Fixed
+
+- **Bare Except Replacement**: Replaced bare `except:` clauses with specific exception types [OMN-1064]
+- **Generic Exception Catches**: Replaced generic `except Exception` with specific exception handling [OMN-1075]
+- **Broken get_metadata() Pattern**: Fixed incorrect get_metadata() implementations across node types [OMN-1083]
+
 ### Changed
-- Renamed `ModelOnexEnvelopeV1` to `ModelOnexEnvelope` ()
+
+#### Model Relocations and Renames
+
+- **ModelLogData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change [OMN-1066]
+- **ModelNodeIntrospectionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change [OMN-1067]
+- **ModelCompletionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change [OMN-1069]
+- **ModelRuntimeNodeInstance Relocation**: Moved from `runtime/` to `models/runtime/` with class rename [OMN-1070]
+- **ModelErrorMetadata Rename**: Renamed from ModelErrorContext to ModelErrorMetadata [OMN-1071]
+
+#### MixinEventBus Refactoring
+
+- **MixinEventBus Architecture**: Refactored to composition-based architecture with ModelEventBusRuntimeState and ModelEventBusListenerHandle [OMN-1081]
+
+#### File Naming Convention Renames
+
+- **Logging Module Renames**: Renamed files to follow `logging_*` prefix convention [OMN-1213]
+- **Runtime Module Renames**: Renamed files to follow `runtime_*` prefix convention [OMN-1214]
+- **Services Registry Renames**: Renamed files to follow `service_registry_*` prefix convention [OMN-1215]
+- **Validation Module Renames**: Renamed files to follow `validator_*` prefix convention [OMN-1216]
+- **Additional Logging Renames**: Secondary logging file renames for consistency [OMN-1217]
+- **Additional Runtime Renames**: Secondary runtime file renames for consistency [OMN-1218]
+- **Additional Services Renames**: Secondary services file renames for consistency [OMN-1219]
+- **Additional Validation Renames**: Secondary validation file renames for consistency [OMN-1220]
+- **Cross-Module Rename Coordination**: Coordinated renames across related modules [OMN-1221]
+- **Final Naming Convention Compliance**: Final pass ensuring all files follow conventions [OMN-1222]
+- **Import Path Updates**: Updated all import paths to reflect new file names [OMN-1223]
+
+#### Envelope Model Updates
+
+- Renamed `ModelOnexEnvelopeV1` to `ModelOnexEnvelope`
 - Renamed fields: `event_id`→`envelope_id`, `source_service`→`source_node`, `event_type`→`operation`
 - Added new fields: `causation_id`, `target_node`, `handler_type`, `metadata`, `is_response`, `success`, `error`
 

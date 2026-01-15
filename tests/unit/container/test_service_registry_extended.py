@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.container.service_registry import ServiceRegistry
+from omnibase_core.container.container_service_registry import ServiceRegistry
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
@@ -445,20 +445,72 @@ class TestServiceRegistryExtended:
         assert status.average_resolution_time_ms is not None
         assert status.average_resolution_time_ms >= 0.0
 
-    # ===== validate_service_health Not Implemented (Lines 733-747) =====
+    # ===== validate_service_health Tests (Lines 812-883) =====
 
     @pytest.mark.asyncio
-    async def test_validate_service_health_not_implemented(
+    async def test_validate_service_health_not_found(
         self, registry: ServiceRegistry
     ) -> None:
-        """Test validate_service_health raises not implemented (Lines 743-747)."""
+        """Test validate_service_health returns unhealthy for non-existent registration."""
         fake_id = uuid4()
-        with pytest.raises(ModelOnexError) as exc_info:
-            await registry.validate_service_health(fake_id)
+        result = await registry.validate_service_health(fake_id)
 
-        assert "Service health validation not yet fully implemented" in str(
-            exc_info.value
+        assert result.is_healthy is False
+        assert result.health_status == "unhealthy"
+        assert result.registration_id == fake_id
+        assert result.error_message is not None
+        assert "Registration not found" in result.error_message
+        assert "available_registrations" in result.diagnostics
+
+    @pytest.mark.asyncio
+    async def test_validate_service_health_healthy(
+        self, registry: ServiceRegistry
+    ) -> None:
+        """Test validate_service_health returns healthy for valid registration with instance."""
+        # Register and store an instance
+        service_instance = MockServiceImplementation(name="health_test")
+        registration_id = await registry.register_instance(
+            interface=ITestService,
+            instance=service_instance,
+            scope="global",
         )
+
+        # Validate health
+        result = await registry.validate_service_health(registration_id)
+
+        assert result.is_healthy is True
+        assert result.health_status == "healthy"
+        assert result.registration_id == registration_id
+        assert result.error_message is None
+        assert result.instance_count >= 1
+        assert result.response_time_ms is not None
+        assert result.response_time_ms >= 0.0
+
+    @pytest.mark.asyncio
+    async def test_validate_service_health_unhealthy_status(
+        self, registry: ServiceRegistry
+    ) -> None:
+        """Test validate_service_health returns unhealthy when registration is marked unhealthy."""
+        # Register an instance
+        service_instance = MockServiceImplementation(name="unhealthy_test")
+        registration_id = await registry.register_instance(
+            interface=ITestService,
+            instance=service_instance,
+            scope="global",
+        )
+
+        # Mark registration as unhealthy
+        registration = await registry.get_registration(registration_id)
+        assert registration is not None
+        registration.health_status = "unhealthy"
+
+        # Validate health
+        result = await registry.validate_service_health(registration_id)
+
+        assert result.is_healthy is False
+        assert result.health_status == "unhealthy"
+        assert result.error_message is not None
+        assert "Service marked as unhealthy" in result.error_message
 
     # ===== update_service_configuration Not Found (Lines 762-763) =====
 

@@ -1,7 +1,10 @@
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumServiceTypeCategory(str, Enum):
+@unique
+class EnumServiceTypeCategory(StrValueHelper, str, Enum):
     """Core service type categories."""
 
     SERVICE_DISCOVERY = "service_discovery"
@@ -10,3 +13,6 @@ class EnumServiceTypeCategory(str, Enum):
     DATABASE = "database"
     REST_API = "rest_api"
     CUSTOM = "custom"
+
+
+__all__ = ["EnumServiceTypeCategory"]

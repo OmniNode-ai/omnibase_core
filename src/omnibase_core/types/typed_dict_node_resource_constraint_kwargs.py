@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Node Resource Constraint TypedDict.
 
 TypedDict for create_constrained method kwargs.
 """
 
+from __future__ import annotations
 
 from typing import TypedDict
 

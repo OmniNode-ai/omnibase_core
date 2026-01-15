@@ -4,10 +4,13 @@ Analysis status enumeration for document analysis operations.
 ONEX-compatible enum for standardized analysis status values.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumAnalysisStatus(str, Enum):
+@unique
+class EnumAnalysisStatus(StrValueHelper, str, Enum):
     """Enumeration for analysis status values."""
 
     PENDING = "pending"

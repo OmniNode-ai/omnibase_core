@@ -6,7 +6,7 @@ Complete result of workflow DAG validation.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = ["ModelWorkflowValidationResult"]
 
@@ -14,7 +14,7 @@ __all__ = ["ModelWorkflowValidationResult"]
 class ModelWorkflowValidationResult(BaseModel):
     """Complete result of workflow validation."""
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     is_valid: bool = Field(
         default=False,

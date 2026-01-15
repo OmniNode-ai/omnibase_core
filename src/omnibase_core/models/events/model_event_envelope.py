@@ -11,7 +11,7 @@ Node Type: N/A (Data Model)
 
 # Standard library imports (alphabetized)
 from datetime import UTC, datetime
-from typing import Any, cast
+from typing import cast
 from uuid import UUID, uuid4
 
 # Third-party imports (alphabetized)
@@ -126,7 +126,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         description="Envelope schema version",
     )
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, **data: object) -> None:
         """Initialize envelope with lazy evaluation capabilities."""
         super().__init__(**data)
         MixinLazyEvaluation.__init__(self)
@@ -256,7 +256,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         """
         return self.security_context is not None
 
-    def get_metadata_value(self, key: str, default: Any = None) -> Any:
+    def get_metadata_value(self, key: str, default: object = None) -> object:
         """
         Get a metadata value by key.
 

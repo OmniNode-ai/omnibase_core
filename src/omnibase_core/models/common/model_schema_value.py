@@ -15,6 +15,7 @@ and runtime imports in methods that need to raise errors.
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+from omnibase_core.types.type_json import JsonType
 
 
 class ModelSchemaValue(BaseModel):
@@ -138,12 +139,13 @@ class ModelSchemaValue(BaseModel):
             object_value=None,
         )
 
-    def to_value(self) -> object:
+    def to_value(self) -> JsonType:
         """
         Convert back to Python value.
 
         Returns:
-            Python value
+            JSON-compatible Python value (str, int, float, bool, None, list, or dict).
+            The return type is JsonType which properly represents all JSON-serializable values.
         """
         if self.value_type == "null":
             return None
@@ -351,5 +353,7 @@ class ModelSchemaValue(BaseModel):
 # Fix forward references for Pydantic models
 try:
     ModelSchemaValue.model_rebuild()
-except Exception:
-    pass  # Ignore rebuild errors during import
+except (
+    Exception
+):  # error-ok: model_rebuild may fail during circular import resolution, safe to ignore
+    pass

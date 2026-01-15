@@ -5,6 +5,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_core.models.mixins.model_node_introspection_data import (
         ModelNodeIntrospectionData,
     )
@@ -43,14 +44,10 @@ import fnmatch
 import inspect
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Import protocol to avoid circular dependencies
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.core.model_event_type import (
     create_event_type_from_registry,
     is_event_equal,
@@ -62,7 +59,7 @@ from omnibase_core.models.core.model_onex_event import OnexEvent
 _COMPONENT_NAME = Path(__file__).stem
 
 # Background tasks set to prevent garbage collection of fire-and-forget tasks
-_background_tasks: set[asyncio.Task[Any]] = set()
+_background_tasks: set[asyncio.Task[None]] = set()
 
 
 class MixinEventHandler:
@@ -145,7 +142,7 @@ class MixinEventHandler:
             self._setup_event_handlers()
 
     def _handle_introspection_request(
-        self, envelope: "ModelEventEnvelope[Any] | OnexEvent"
+        self, envelope: "ModelEventEnvelope[OnexEvent] | OnexEvent"
     ) -> None:
         """
         Handle NODE_INTROSPECTION_REQUEST events.
@@ -175,7 +172,7 @@ class MixinEventHandler:
             if not is_event_equal(event.event_type, introspection_request_type):
                 return
 
-        except Exception as e:
+        except (AttributeError, KeyError, RuntimeError, ValueError) as e:
             # Cannot create event type - raise error instead of silently skipping
             raise ModelOnexError(
                 f"Failed to create introspection request event type: {e!s}",
@@ -230,7 +227,7 @@ class MixinEventHandler:
                 context=context,
             )
 
-        except Exception as e:
+        except Exception as e:  # catch-all-ok: introspection request handling errors are logged but shouldn't crash
             node_id = getattr(self, "_node_id", None) or "<unset>"
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
@@ -250,7 +247,7 @@ class MixinEventHandler:
             )
 
     def _handle_node_discovery_request(
-        self, envelope: "ModelEventEnvelope[Any] | OnexEvent"
+        self, envelope: "ModelEventEnvelope[OnexEvent] | OnexEvent"
     ) -> None:
         """
         Handle NODE_DISCOVERY_REQUEST events.
@@ -280,7 +277,7 @@ class MixinEventHandler:
             if not is_event_equal(event.event_type, discovery_request_type):
                 return
 
-        except Exception:  # fallback-ok: event handler returns early if type check fails, malformed events shouldn't crash
+        except Exception:  # catch-all-ok: event handler returns early if type check fails, malformed events shouldn't crash
             # If we can't create the event type, skip
             return
 
@@ -308,7 +305,7 @@ class MixinEventHandler:
                 context=context,
             )
 
-        except Exception as e:
+        except Exception as e:  # catch-all-ok: discovery request handling errors are logged but shouldn't crash
             node_id = getattr(self, "_node_id", None) or "<unset>"
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
@@ -357,7 +354,7 @@ class MixinEventHandler:
             # No specific filters, respond
             return True
 
-        except Exception:  # fallback-ok: filter error defaults to responding, safe fallback for event handling
+        except Exception:  # catch-all-ok: filter error defaults to responding, safe fallback for event handling
             # On error, default to responding
             return True
 
@@ -420,7 +417,9 @@ class MixinEventHandler:
                     f"Event handlers cleaned up for node {node_id}",
                     context=context,
                 )
-            except Exception as e:
+            except (
+                Exception
+            ) as e:  # catch-all-ok: cleanup errors are logged but shouldn't crash
                 node_id = getattr(self, "_node_id", None) or "<unset>"
                 context = ModelLogContext(
                     calling_module=_COMPONENT_NAME,

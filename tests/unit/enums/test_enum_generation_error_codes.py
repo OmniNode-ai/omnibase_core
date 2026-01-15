@@ -102,19 +102,15 @@ class TestEnumGenerationErrorCodes:
         assert issubclass(EnumGenerationErrorCodes, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values."""
+        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
         assert (
-            str(EnumGenerationErrorCodes.TOOL_PATH_NOT_FOUND)
-            == "EnumGenerationErrorCodes.TOOL_PATH_NOT_FOUND"
+            str(EnumGenerationErrorCodes.TOOL_PATH_NOT_FOUND) == "tool_path_not_found"
         )
         assert (
             str(EnumGenerationErrorCodes.CONTRACT_FILE_NOT_FOUND)
-            == "EnumGenerationErrorCodes.CONTRACT_FILE_NOT_FOUND"
+            == "contract_file_not_found"
         )
-        assert (
-            str(EnumGenerationErrorCodes.GENERATION_FAILED)
-            == "EnumGenerationErrorCodes.GENERATION_FAILED"
-        )
+        assert str(EnumGenerationErrorCodes.GENERATION_FAILED) == "generation_failed"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""

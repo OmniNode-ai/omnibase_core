@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from omnibase_core.errors.exceptions import ExceptionConfigurationError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
 
@@ -43,22 +43,20 @@ class TestProtocolAuditorInitialization:
         """Test initialization fails with nonexistent directory."""
         nonexistent_path = "/nonexistent/repository"
 
-        with pytest.raises(
-            ExceptionConfigurationError,
-            match="Invalid repository configuration",
-        ):
+        with pytest.raises(ModelOnexError) as exc_info:
             ServiceProtocolAuditor(nonexistent_path)
+
+        assert "ONEX_CORE_024_DIRECTORY_NOT_FOUND" in str(exc_info.value)
 
     def test_init_with_file_instead_of_directory(self):
         """Test initialization fails when file is passed instead of directory."""
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_path = temp_file.name
 
-            with pytest.raises(
-                ExceptionConfigurationError,
-                match="Invalid repository configuration",
-            ):
+            with pytest.raises(ModelOnexError) as exc_info:
                 ServiceProtocolAuditor(temp_path)
+
+            assert "ONEX_CORE_007_INVALID_INPUT" in str(exc_info.value)
 
     def test_init_with_current_directory(self):
         """Test initialization with current directory (default)."""
@@ -88,11 +86,10 @@ class TestProtocolAuditorValidation:
             auditor = ServiceProtocolAuditor(temp_dir)
             invalid_spi_path = "/nonexistent/spi/path"
 
-            with pytest.raises(
-                ExceptionConfigurationError,
-                match="Invalid SPI path configuration",
-            ):
+            with pytest.raises(ModelOnexError) as exc_info:
                 auditor.check_against_spi(invalid_spi_path)
+
+            assert "ONEX_CORE_024_DIRECTORY_NOT_FOUND" in str(exc_info.value)
 
     def test_check_against_spi_with_valid_path_missing_protocols(self, caplog):
         """Test check_against_spi handles missing protocols directory gracefully."""
@@ -270,8 +267,17 @@ class TestProtocolAuditorLogging:
 class TestProtocolAuditorEdgeCases:
     """Test edge cases and error conditions."""
 
-    def test_audit_with_permission_denied(self):
-        """Test auditing handles permission errors gracefully."""
+    @patch(
+        "omnibase_core.services.service_protocol_auditor.extract_protocols_from_directory"
+    )
+    def test_audit_with_permission_denied(self, mock_extract):
+        """Test auditing handles permission errors gracefully.
+
+        Uses decorator-based patching to ensure mock is applied before any module
+        imports occur, avoiding module caching issues with pytest-xdist workers.
+        """
+        mock_extract.side_effect = PermissionError("Permission denied")
+
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create src directory to avoid early return
             src_dir = Path(temp_dir) / "src"
@@ -279,23 +285,15 @@ class TestProtocolAuditorEdgeCases:
 
             auditor = ServiceProtocolAuditor(temp_dir)
 
-            # Mock extract_protocols_from_directory to raise a permission error
-            with patch(
-                "omnibase_core.services.service_protocol_auditor.extract_protocols_from_directory",
-            ) as mock_extract:
-                mock_extract.side_effect = PermissionError("Permission denied")
+            # Should raise wrapped PermissionError via @standard_error_handling
+            with pytest.raises(ModelOnexError) as exc_info:
+                auditor.check_current_repository()
 
-                # Should raise permission error - graceful handling not yet implemented
-                # Note: This test may behave differently when run in isolation vs full suite
-                # due to module caching. The behavior is correct in both cases.
-                try:
-                    result = auditor.check_current_repository()
-                    # If no exception, verify we got a valid result
-                    assert result is not None
-                    assert isinstance(result, ModelAuditResult)
-                except PermissionError as e:
-                    # If exception is raised, verify it's the expected one
-                    assert "Permission denied" in str(e)
+            # Verify the error contains the permission denied message
+            assert "Permission denied" in str(exc_info.value)
+
+            # Verify mock was actually called (ensures patch was applied correctly)
+            mock_extract.assert_called_once()
 
     def test_audit_with_malformed_repository_structure(self):
         """Test auditing repository with unusual structure."""
@@ -332,18 +330,19 @@ class TestConfigurationErrorHandling:
 
     def test_configuration_error_chaining(self):
         """Test that configuration errors properly chain underlying exceptions."""
-        with pytest.raises(ExceptionConfigurationError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ServiceProtocolAuditor("/definitely/nonexistent/path")
 
-        # Should contain information about the underlying validation error
-        assert "Invalid repository configuration" in str(exc_info.value)
+        # Should contain the error code indicating the directory was not found
+        assert "ONEX_CORE_024_DIRECTORY_NOT_FOUND" in str(exc_info.value)
 
     def test_spi_configuration_error_chaining(self):
         """Test that SPI configuration errors properly chain underlying exceptions."""
         with tempfile.TemporaryDirectory() as temp_dir:
             auditor = ServiceProtocolAuditor(temp_dir)
 
-            with pytest.raises(ExceptionConfigurationError) as exc_info:
+            with pytest.raises(ModelOnexError) as exc_info:
                 auditor.check_against_spi("/definitely/nonexistent/spi/path")
 
-            assert "Invalid SPI path configuration" in str(exc_info.value)
+            # Should contain the error code indicating the directory was not found
+            assert "ONEX_CORE_024_DIRECTORY_NOT_FOUND" in str(exc_info.value)

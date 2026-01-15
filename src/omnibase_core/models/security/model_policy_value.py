@@ -46,7 +46,6 @@ Usage Examples:
     >>> assert policy_data.get_python_type() == dict
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):
@@ -58,9 +57,9 @@ Safe Runtime Imports (OK to import at module level):
 from __future__ import annotations
 
 import math
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -110,9 +109,11 @@ class ModelPolicyValue(BaseModel):
     """
 
     # Security constants - prevent DoS via large collections
-    MAX_LIST_SIZE: int = 10000
-    MAX_DICT_SIZE: int = 1000
+    # ClassVar prevents per-instance override attacks
+    MAX_LIST_SIZE: ClassVar[int] = 10000
+    MAX_DICT_SIZE: ClassVar[int] = 1000
 
+    # ONEX_EXCLUDE: dict_str_any - security policy values support arbitrary nested data
     value: None | bool | int | float | str | list[Any] | dict[str, Any] = Field(
         description="The actual policy value (supports None for optional policies)",
     )
@@ -133,6 +134,7 @@ class ModelPolicyValue(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
+    # ONEX_EXCLUDE: dict_str_any - pydantic validator return type
     def infer_value_type(cls, data: Any) -> dict[str, Any]:
         """
         Automatically infer value_type from value if not provided.
@@ -160,6 +162,7 @@ class ModelPolicyValue(BaseModel):
             - Prevents type confusion attacks by explicit type checking
         """
         # Ensure data is a dict (help mypy with type narrowing)
+        # ONEX_EXCLUDE: dict_str_any - pydantic validator input data
         data_dict: dict[str, Any]
         if not isinstance(data, dict):
             data_dict = {"value": data}
@@ -328,6 +331,7 @@ class ModelPolicyValue(BaseModel):
 
         return self
 
+    # ONEX_EXCLUDE: dict_str_any - returns stored policy value which may contain arbitrary dict
     def get_value(
         self,
     ) -> None | bool | int | float | str | list[Any] | dict[str, Any]:
@@ -491,10 +495,10 @@ class ModelPolicyValue(BaseModel):
         value_display = "[REDACTED]" if self.is_sensitive else repr(self.value)
         return f"ModelPolicyValue(value_type='{self.value_type}', value={value_display}, is_sensitive={self.is_sensitive})"
 
-    model_config = {
-        "extra": "ignore",
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelPolicyValue"]

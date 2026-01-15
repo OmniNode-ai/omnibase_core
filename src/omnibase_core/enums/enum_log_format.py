@@ -5,6 +5,7 @@ Log format enumeration.
 import enum
 
 
+@enum.unique
 class EnumLogFormat(enum.StrEnum):
     """Log format enumeration."""
 

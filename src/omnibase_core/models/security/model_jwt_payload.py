@@ -37,15 +37,29 @@ class ModelJWTPayload(BaseModel):
         Returns:
             Typed JWT payload model
         """
+        # Extract and type-narrow values from the dictionary
+        sub = payload_dict.get("sub", "")
+        username = payload_dict.get("username")
+        roles = payload_dict.get("roles", [])
+        permissions = payload_dict.get("permissions", [])
+        groups = payload_dict.get("groups", [])
+        session_id = payload_dict.get("session_id")
+        iat = payload_dict.get("iat")
+        exp = payload_dict.get("exp")
+        iss = payload_dict.get("iss")
+        mfa_verified = payload_dict.get("mfa_verified")
+
         return cls(
-            sub=payload_dict.get("sub", ""),
-            username=payload_dict.get("username"),
-            roles=payload_dict.get("roles", []),
-            permissions=payload_dict.get("permissions", []),
-            groups=payload_dict.get("groups", []),
-            session_id=payload_dict.get("session_id"),
-            iat=payload_dict.get("iat"),
-            exp=payload_dict.get("exp"),
-            iss=payload_dict.get("iss"),
-            mfa_verified=payload_dict.get("mfa_verified"),
+            sub=str(sub) if sub else "",
+            username=str(username) if isinstance(username, str) else None,
+            roles=[str(r) for r in roles] if isinstance(roles, list) else [],
+            permissions=[str(p) for p in permissions]
+            if isinstance(permissions, list)
+            else [],
+            groups=[str(g) for g in groups] if isinstance(groups, list) else [],
+            session_id=session_id if isinstance(session_id, UUID) else None,
+            iat=int(iat) if isinstance(iat, (int, float)) else None,
+            exp=int(exp) if isinstance(exp, (int, float)) else None,
+            iss=str(iss) if isinstance(iss, str) else None,
+            mfa_verified=bool(mfa_verified) if isinstance(mfa_verified, bool) else None,
         )

@@ -29,10 +29,11 @@ Example:
 See Also:
     omnibase_core.models.reducer.payloads.ModelIntentPayloadBase: Base class
     omnibase_core.models.reducer.payloads.model_protocol_intent_payload: Protocol for intent payloads
-    omnibase_core.utils.fsm_executor: FSM executor using these payloads
+    omnibase_core.utils.util_fsm_executor: FSM executor using these payloads
 """
 
 from typing import Literal
+from uuid import UUID
 
 from pydantic import Field
 
@@ -115,4 +116,12 @@ class ModelPayloadPersistState(ModelIntentPayloadBase):
             "the current version before writing to prevent concurrent update conflicts."
         ),
         ge=0,
+    )
+
+    correlation_id: UUID | None = Field(
+        default=None,
+        description=(
+            "Correlation ID from FSMSubcontract for distributed tracing. "
+            "Enables end-to-end tracking of state persistence operations."
+        ),
     )

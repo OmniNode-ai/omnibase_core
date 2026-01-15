@@ -37,7 +37,7 @@ Handler Contract:
     - Handlers receive fully-resolved context (ModelResolvedIOContext)
     - Handlers NEVER perform template resolution
     - Handlers are protocol-based and registered via container
-    - Handler protocol: async def execute(context: ResolvedIOContext) -> Any
+    - Handler protocol: async def execute(context: ResolvedIOContext) -> object
 
 Performance Characteristics:
     - Template resolution: O(n) where n = number of template variables
@@ -79,70 +79,16 @@ import random
 import re
 import threading
 import time
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
-
-# =============================================================================
-# LOCAL DECORATOR: allow_dict_any
-# =============================================================================
-# This is a LOCAL COPY of the canonical decorator defined at:
-#     omnibase_core.decorators.allow_dict_any
-#
-# WHY A LOCAL COPY EXISTS:
-#     This module (mixin_effect_execution.py) is imported by core infrastructure
-#     components that are themselves dependencies of the decorators module.
-#     Importing from omnibase_core.decorators would create a circular import:
-#
-#         mixin_effect_execution.py
-#             -> omnibase_core.decorators.allow_dict_any
-#             -> omnibase_core.decorators.__init__
-#             -> (other decorators that may import infrastructure)
-#             -> mixin_effect_execution.py  [CIRCULAR]
-#
-#     To avoid this, we define a simplified local version here that provides
-#     the same no-op identity decorator behavior.
-#
-# DIFFERENCES FROM CANONICAL IMPLEMENTATION:
-#     - Canonical: Supports optional `reason` argument and attaches metadata
-#       attributes (_allow_dict_any, _dict_any_reason) for validation scripts
-#     - Local: Simple identity function with no metadata attachment
-#
-#     Both serve the same documentation purpose: marking functions that
-#     intentionally use dict[str, Any] where Pydantic validates at runtime.
-#
-# MAINTENANCE NOTE:
-#     If the canonical decorator's core behavior changes, this local copy
-#     should be reviewed for consistency. However, the simplified no-op
-#     behavior is sufficient for this module's needs.
-# =============================================================================
-def allow_dict_any[F: Callable[..., object]](func: F) -> F:
-    """Mark a function as intentionally using dict[str, Any] for dynamic configs.
-
-    This is a LOCAL COPY of ``omnibase_core.decorators.allow_dict_any``,
-    defined here to avoid circular imports. See the module-level comment
-    block above for detailed rationale.
-
-    This no-op identity decorator serves as documentation for static analysis
-    tools and code reviewers, indicating that dict[str, Any] usage is intentional
-    and validated at runtime by Pydantic models (e.g., operation configs from
-    YAML contracts).
-
-    Canonical Implementation:
-        For the full-featured version with ``reason`` argument support
-        and validation script metadata, see:
-        ``omnibase_core.decorators.allow_dict_any``
-
-    Args:
-        func: The function to mark as allowing dict[str, Any] usage.
-
-    Returns:
-        The same function unchanged (identity decorator).
-    """
-    return func
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
+# Import canonical allow_dict_any decorator directly from the specific module
+# (not from omnibase_core.decorators package) to avoid potential circular imports.
+# decorator_allow_dict_any.py has no omnibase_core imports, making this safe.
 from omnibase_core.constants.constants_effect import (
     DEBUG_THREAD_SAFETY,
     DEFAULT_MAX_FIELD_EXTRACTION_DEPTH,
@@ -151,9 +97,12 @@ from omnibase_core.constants.constants_effect import (
     SAFE_FIELD_PATTERN,
     contains_denied_builtin,
 )
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumTransactionState
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.context import ModelEffectInputData
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
     EffectIOConfig,
     ModelDbIOConfig,
@@ -229,10 +178,10 @@ class MixinEffectExecution:
 
     # Type hints for attributes that should exist on the mixing class
     node_id: UUID
-    container: Any  # ModelONEXContainer - avoiding circular import
+    container: "ModelONEXContainer"  # Forward reference to avoid circular import
     _circuit_breakers: dict[UUID, ModelCircuitBreaker]  # Initialized by concrete class
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """
         Initialize effect execution mixin.
 
@@ -357,11 +306,11 @@ class MixinEffectExecution:
                 input_data.operation_data["effect_subcontract"] = effect_subcontract
                 result = await self.execute_effect(input_data)
 
-            2. **operations key** (LEGACY): Direct operations list in
+            2. **operations key** (ALTERNATIVE): Direct operations list in
                operation_data["operations"]. Use when manual control over
                operation serialization is needed.
 
-                # Legacy pattern - manual operation list:
+                # Alternative pattern - manual operation list:
                 input_data.operation_data["operations"] = [
                     {
                         "io_config": op.io_config.model_dump(),
@@ -406,7 +355,7 @@ class MixinEffectExecution:
         Args:
             input_data: Effect input containing operation configuration. Operations
                 can be provided via operation_data["effect_subcontract"] (preferred)
-                or operation_data["operations"] (legacy). Also includes retry policies,
+                or operation_data["operations"] (alternative). Also includes retry policies,
                 circuit breaker settings, and transaction configuration.
 
         Returns:
@@ -440,15 +389,18 @@ class MixinEffectExecution:
         # Extract operation configuration from input_data.operation_data
         # Priority order for operations:
         # 1. "effect_subcontract" key - if present, extract operations from subcontract
-        # 2. "operations" key - direct operations list (legacy/alternative pattern)
+        # 2. "operations" key - direct operations list (alternative pattern)
         #
         # The subcontract pattern is preferred when the caller provides the full
         # subcontract object, allowing this mixin to extract operations directly.
         # For v1.0, we expect a single operation configuration.
         operations_config: list[ModelEffectOperationConfig] = []
 
+        # Normalize operation_data to dict for key access
+        operation_data_dict = self._normalize_operation_data(input_data.operation_data)
+
         # Check for subcontract first (preferred pattern)
-        effect_subcontract = input_data.operation_data.get("effect_subcontract")
+        effect_subcontract = operation_data_dict.get("effect_subcontract")
         if effect_subcontract is not None:
             # Subcontract can be a dict (serialized) or object with .operations attribute
             if isinstance(effect_subcontract, dict):
@@ -506,7 +458,7 @@ class MixinEffectExecution:
         # Fallback to direct operations list if subcontract not provided
         # PERFORMANCE OPTIMIZATION (PR #240): Use isinstance checks before model_dump fallback
         if not operations_config:
-            raw_operations = input_data.operation_data.get("operations", [])
+            raw_operations = operation_data_dict.get("operations", [])
             for raw_op in raw_operations:
                 if isinstance(raw_op, ModelEffectOperationConfig):
                     operations_config.append(raw_op)
@@ -586,7 +538,8 @@ class MixinEffectExecution:
         except ModelOnexError:
             transaction_state = EnumTransactionState.ROLLED_BACK
             raise
-        except Exception as e:
+        except Exception as e:  # fallback-ok: top-level error boundary wraps non-ModelOnexError into structured error
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit/CancelledError to propagate
             transaction_state = EnumTransactionState.ROLLED_BACK
             raise ModelOnexError(
                 message=f"Effect execution failed: {e!s}",
@@ -610,75 +563,19 @@ class MixinEffectExecution:
         self, operation_config: ModelEffectOperationConfig
     ) -> EffectIOConfig:
         """
-        Parse operation configuration into typed IO config.
+        Get typed IO config from operation configuration.
+
+        Since ModelEffectOperationConfig.io_config is a discriminated union
+        (EffectIOConfig), it's always already typed. This method simply returns it.
 
         Args:
             operation_config: Typed operation configuration.
 
         Returns:
             Typed EffectIOConfig (discriminated union).
-
-        Raises:
-            ModelOnexError: On invalid configuration.
         """
-        # Use the typed method from ModelEffectOperationConfig if io_config is already typed
-        if isinstance(
-            operation_config.io_config,
-            (
-                ModelHttpIOConfig,
-                ModelDbIOConfig,
-                ModelKafkaIOConfig,
-                ModelFilesystemIOConfig,
-            ),
-        ):
-            return operation_config.io_config
-
-        # Handle dict io_config - parse based on handler_type
-        io_config_data = operation_config.get_io_config_as_dict()
-        if not io_config_data:
-            raise ModelOnexError(
-                message="Missing io_config in operation",
-                error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
-                context={
-                    "operation_name": operation_config.operation_name,
-                },
-            )
-
-        handler_type = io_config_data.get("handler_type")
-
-        try:
-            if handler_type == "http":
-                return ModelHttpIOConfig(**io_config_data)
-            elif handler_type == "db":
-                return ModelDbIOConfig(**io_config_data)
-            elif handler_type == "kafka":
-                return ModelKafkaIOConfig(**io_config_data)
-            elif handler_type == "filesystem":
-                return ModelFilesystemIOConfig(**io_config_data)
-            else:
-                raise ModelOnexError(
-                    message=f"Unknown handler type: {handler_type}",
-                    error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
-                    context={
-                        "handler_type": handler_type,
-                        "supported_handlers": ["http", "db", "kafka", "filesystem"],
-                        "operation_name": operation_config.operation_name,
-                    },
-                )
-        except ModelOnexError:
-            raise
-        except Exception as e:
-            raise ModelOnexError(
-                message=f"Failed to parse io_config: {e!s}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                context={
-                    "handler_type": handler_type,
-                    "operation_name": operation_config.operation_name,
-                    "io_config_keys": (
-                        list(io_config_data.keys()) if io_config_data else []
-                    ),
-                },
-            ) from e
+        # io_config is always typed via discriminated union - just return it
+        return operation_config.io_config
 
     def _resolve_io_context(
         self,
@@ -718,8 +615,8 @@ class MixinEffectExecution:
         Raises:
             ModelOnexError: On template resolution failures or missing values.
         """
-        # Resolution context
-        context_data = input_data.operation_data
+        # Resolution context - normalize operation_data to dict for field extraction
+        context_data = self._normalize_operation_data(input_data.operation_data)
 
         def resolve_template(match: re.Match[str]) -> str:
             """Resolve a single ${...} placeholder."""
@@ -751,8 +648,27 @@ class MixinEffectExecution:
                 # Extract from secret service (if available)
                 secret_key = placeholder[7:]  # Remove "secret."
                 try:
-                    secret_service = self.container.get_service("ProtocolSecretService")
-                    secret_value = secret_service.get_secret(secret_key)
+                    # String-based DI lookup for extensibility; protocol not defined in core
+                    secret_service: object = self.container.get_service(
+                        "ProtocolSecretService"  # type: ignore[arg-type]
+                    )  # String-based DI lookup for extensibility
+                    # Runtime guard for duck-typed method call
+                    if not hasattr(secret_service, "get_secret"):
+                        raise ModelOnexError(
+                            message="Secret service does not implement get_secret method. "
+                            "Ensure ProtocolSecretService implementation provides get_secret(key: str) -> str | None.",
+                            error_code=EnumCoreErrorCode.UNSUPPORTED_OPERATION,
+                            context={
+                                "secret_key": secret_key,
+                                "placeholder": placeholder,
+                                "operation_id": str(input_data.operation_id),
+                                "service_type": type(secret_service).__name__,
+                            },
+                        )
+                    # Duck-typed method call; actual service implements get_secret at runtime
+                    secret_value = secret_service.get_secret(
+                        secret_key
+                    )  # Duck-typed protocol method
                     if secret_value is None:
                         raise ModelOnexError(
                             message=f"Secret not found: {secret_key}",
@@ -766,7 +682,13 @@ class MixinEffectExecution:
                     return str(secret_value)
                 except ModelOnexError:
                     raise
-                except Exception as e:
+                except (
+                    AttributeError,
+                    KeyError,
+                    OSError,
+                    RuntimeError,
+                    ValueError,
+                ) as e:
                     raise ModelOnexError(
                         message=f"Failed to resolve secret: {secret_key}",
                         error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
@@ -865,7 +787,7 @@ class MixinEffectExecution:
             #
             # Content sources (checked in priority order for write operations):
             # 1. "file_content" key in operation_data (preferred, for explicit content)
-            # 2. "content" key in operation_data (fallback, legacy compatibility)
+            # 2. "content" key in operation_data (alternative key)
             # 3. "content_template" key in operation_data (for templated content)
             # 4. None - content may be provided by handler (e.g., from stream/file)
             #
@@ -948,7 +870,7 @@ class MixinEffectExecution:
         field_path: str,
         max_depth: int | None = None,
         operation_id: UUID | None = None,
-    ) -> Any:
+    ) -> str | int | float | bool | dict[str, object] | list[object] | None:
         """
         Extract nested field from data using dotpath notation.
 
@@ -1022,7 +944,7 @@ class MixinEffectExecution:
         if len(parts) > max_depth:
             return None
 
-        current: Any = data
+        current: object = data
 
         for part in parts:
             if isinstance(current, dict):
@@ -1032,7 +954,11 @@ class MixinEffectExecution:
             else:
                 return None
 
-        return current
+        # Validate extracted value matches expected types for type safety
+        # Return None for unexpected types (e.g., custom objects, callables)
+        if isinstance(current, (str, int, float, bool, dict, list)) or current is None:
+            return current  # isinstance narrows to valid union member
+        return None
 
     def _coerce_param_value(self, value: str) -> DbParamType:
         """
@@ -1066,6 +992,33 @@ class MixinEffectExecution:
 
         # Return as string
         return value
+
+    @allow_dict_any
+    def _normalize_operation_data(
+        self, operation_data: ModelEffectInputData | dict[str, Any]
+    ) -> dict[str, Any]:
+        """Convert operation_data to dict for template resolution.
+
+        This method converts either form of operation_data to a dict for
+        template placeholder resolution (${input.field_name} syntax).
+
+        Design:
+            - ModelEffectInputData (contract): serialized via model_dump()
+            - dict (template context): used as-is, no coercion
+
+        The result is a dict suitable for field extraction, NOT a validated
+        contract. This is intentional - template contexts can have arbitrary keys.
+
+        Args:
+            operation_data: Strict contract (ModelEffectInputData) or
+                template context (dict).
+
+        Returns:
+            Dict for template resolution and field extraction.
+        """
+        if isinstance(operation_data, dict):
+            return operation_data
+        return operation_data.model_dump()
 
     async def _execute_with_retry(
         self,
@@ -1217,7 +1170,7 @@ class MixinEffectExecution:
 
                 return result, retry_count
 
-            except Exception as e:
+            except Exception as e:  # catch-all-ok: retry loop catches operation failures; KeyboardInterrupt/SystemExit propagate
                 # Increment retry_count to track failed attempts
                 # retry_count represents "number of failed attempts before success or final failure"
                 # - First attempt fails: retry_count becomes 1
@@ -1302,7 +1255,7 @@ class MixinEffectExecution:
                 )
 
             Handler Protocol Contract:
-                async def execute(context: ResolvedIOContext) -> Any
+                async def execute(context: ResolvedIOContext) -> object
 
             If no handler is registered for a handler type, a ModelOnexError will
             be raised with HANDLER_EXECUTION_ERROR code.
@@ -1367,8 +1320,15 @@ class MixinEffectExecution:
 
         # Attempt to resolve handler with explicit error for missing registration
         try:
-            handler = self.container.get_service(handler_protocol)
-        except Exception as resolve_error:
+            # String-based DI lookup for extensibility; handler protocols not defined in core
+            handler: object = self.container.get_service(handler_protocol)  # type: ignore[arg-type]  # String-based DI lookup for extensibility
+        except (
+            AttributeError,
+            KeyError,
+            LookupError,
+            RuntimeError,
+            ValueError,
+        ) as resolve_error:
             # Provide explicit guidance for handler registration
             raise ModelOnexError(
                 message=f"Effect handler not registered: {handler_protocol}. "
@@ -1386,8 +1346,29 @@ class MixinEffectExecution:
 
         # Execute handler with resolved context
         try:
-            result = await handler.execute(resolved_context)
-        except Exception as exec_error:
+            # Runtime guard for duck-typed handler execution
+            if not hasattr(handler, "execute"):
+                raise ModelOnexError(
+                    message=f"Effect handler {handler_protocol} does not implement execute method. "
+                    f"Handler implementations must provide async execute(context: ResolvedIOContext) -> object.",
+                    error_code=EnumCoreErrorCode.UNSUPPORTED_OPERATION,
+                    context={
+                        "operation_id": str(input_data.operation_id),
+                        "handler_type": handler_type.value,
+                        "handler_protocol": handler_protocol,
+                        "handler_class": type(handler).__name__,
+                    },
+                )
+            # Duck-typed handler execution; handler implements execute() per protocol contract
+            result = await handler.execute(
+                resolved_context
+            )  # Duck-typed protocol method
+        except ModelOnexError:
+            raise
+        except (
+            Exception
+        ) as exec_error:  # fallback-ok: handler errors wrapped in ModelOnexError
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit/CancelledError to propagate
             raise ModelOnexError(
                 message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
                 error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
@@ -1398,8 +1379,12 @@ class MixinEffectExecution:
             ) from exec_error
 
         # Handler returns Any, validate it matches expected return type
-        if isinstance(result, (str, int, float, bool, dict, list, type(None))):
-            return result  # type: ignore[return-value]
+        if isinstance(result, (str, int, float, bool, dict, list)):
+            # Validated via isinstance check; cast to EffectResultType
+            return cast(EffectResultType, result)
+        if result is None:
+            # None not in EffectResultType, convert to empty dict
+            return {}
         # Convert other types to string representation
         return str(result)
 
@@ -1565,7 +1550,14 @@ class MixinEffectExecution:
 
             except ModelOnexError:
                 raise
-            except Exception as e:
+            except PYDANTIC_MODEL_ERRORS as e:
+                raise ModelOnexError(
+                    message=f"Field extraction failed for {output_name}: {e!s}",
+                    error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                ) from e
+            except (
+                Exception
+            ) as e:  # catch-all-ok: extraction utility must not leak raw exceptions
                 raise ModelOnexError(
                     message=f"Field extraction failed for {output_name}: {e!s}",
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -1623,9 +1615,12 @@ class MixinEffectExecution:
 
         for protocol_name in handler_protocols:
             try:
-                self.container.get_service(protocol_name)
+                # String-based DI lookup for extensibility check
+                self.container.get_service(protocol_name)  # type: ignore[arg-type]  # String-based DI lookup for extensibility
                 registration_status[protocol_name] = True
-            except Exception:
+            except (
+                Exception
+            ):  # fallback-ok: service not found indicates unregistered handler
                 registration_status[protocol_name] = False
 
         return registration_status

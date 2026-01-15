@@ -1,11 +1,13 @@
 """Core error codes that can be reused across all ONEX components."""
 
 import re
+from enum import unique
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_onex_error_code import EnumOnexErrorCode
 
 
+@unique
 class EnumCoreErrorCode(EnumOnexErrorCode):
     """
     Core error codes that can be reused across all ONEX components.
@@ -103,6 +105,7 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
 
     # Type validation errors (181-190)
     TYPE_MISMATCH = "ONEX_CORE_181_TYPE_MISMATCH"
+    TYPE_INTROSPECTION_ERROR = "ONEX_CORE_182_TYPE_INTROSPECTION_ERROR"
 
     # Intelligence and pattern recognition errors (191-200)
     INTELLIGENCE_PROCESSING_FAILED = "ONEX_CORE_191_INTELLIGENCE_PROCESSING_FAILED"
@@ -221,6 +224,20 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
         "ONEX_CORE_317_ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED"
     )
 
+    # Cache errors (321-330)
+    CACHE_BACKEND_ERROR = "ONEX_CORE_321_CACHE_BACKEND_ERROR"
+    CACHE_CONNECTION_ERROR = "ONEX_CORE_322_CACHE_CONNECTION_ERROR"
+    CACHE_TIMEOUT_ERROR = "ONEX_CORE_323_CACHE_TIMEOUT_ERROR"
+    CACHE_OPERATION_FAILED = "ONEX_CORE_324_CACHE_OPERATION_FAILED"
+    CACHE_BACKEND_NOT_CONNECTED = "ONEX_CORE_325_CACHE_BACKEND_NOT_CONNECTED"
+
+    # Replay infrastructure errors (331-340)
+    REPLAY_RECORD_NOT_FOUND = "ONEX_CORE_331_REPLAY_RECORD_NOT_FOUND"
+    REPLAY_NOT_IN_REPLAY_MODE = "ONEX_CORE_332_REPLAY_NOT_IN_REPLAY_MODE"
+    REPLAY_INVALID_EFFECT_TYPE = "ONEX_CORE_333_REPLAY_INVALID_EFFECT_TYPE"
+    REPLAY_SEQUENCE_EXHAUSTED = "ONEX_CORE_334_REPLAY_SEQUENCE_EXHAUSTED"
+    REPLAY_ENFORCEMENT_BLOCKED = "ONEX_CORE_335_REPLAY_ENFORCEMENT_BLOCKED"
+
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         return "CORE"
@@ -303,6 +320,7 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.PROCESSING_ERROR: EnumCLIExitCode.ERROR,
     # Type validation errors -> ERROR
     EnumCoreErrorCode.TYPE_MISMATCH: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.TYPE_INTROSPECTION_ERROR: EnumCLIExitCode.ERROR,
     # Intelligence errors -> ERROR
     EnumCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.PATTERN_RECOGNITION_FAILED: EnumCLIExitCode.ERROR,
@@ -359,6 +377,18 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.ORCHESTRATOR_EXEC_LEASE_EXPIRED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED: EnumCLIExitCode.ERROR,
+    # Cache errors -> ERROR
+    EnumCoreErrorCode.CACHE_BACKEND_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CACHE_CONNECTION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CACHE_TIMEOUT_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CACHE_OPERATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CACHE_BACKEND_NOT_CONNECTED: EnumCLIExitCode.ERROR,
+    # Replay infrastructure errors -> ERROR
+    EnumCoreErrorCode.REPLAY_RECORD_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REPLAY_NOT_IN_REPLAY_MODE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REPLAY_ENFORCEMENT_BLOCKED: EnumCLIExitCode.ERROR,
 }
 
 
@@ -452,6 +482,7 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.QUOTA_EXCEEDED: "Quota exceeded",
         EnumCoreErrorCode.PROCESSING_ERROR: "Processing error",
         EnumCoreErrorCode.TYPE_MISMATCH: "Type mismatch in value conversion",
+        EnumCoreErrorCode.TYPE_INTROSPECTION_ERROR: "Type introspection failed during runtime reflection",
         EnumCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: "Intelligence processing failed",
         EnumCoreErrorCode.PATTERN_RECOGNITION_FAILED: "Pattern recognition failed",
         EnumCoreErrorCode.CONTEXT_ANALYSIS_FAILED: "Context analysis failed",
@@ -499,5 +530,17 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.ORCHESTRATOR_EXEC_LEASE_EXPIRED: "Orchestrator: action lease expired during execution",
         EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED: "Orchestrator: workflow execution failed",
         EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED: "Orchestrator: workflow iteration limit exceeded (DoS protection)",
+        # Cache errors
+        EnumCoreErrorCode.CACHE_BACKEND_ERROR: "Cache backend operation failed",
+        EnumCoreErrorCode.CACHE_CONNECTION_ERROR: "Cache backend connection failed",
+        EnumCoreErrorCode.CACHE_TIMEOUT_ERROR: "Cache operation timed out",
+        EnumCoreErrorCode.CACHE_OPERATION_FAILED: "Cache operation failed",
+        EnumCoreErrorCode.CACHE_BACKEND_NOT_CONNECTED: "Cache backend is not connected",
+        # Replay infrastructure errors
+        EnumCoreErrorCode.REPLAY_RECORD_NOT_FOUND: "Replay: no matching effect record found",
+        EnumCoreErrorCode.REPLAY_NOT_IN_REPLAY_MODE: "Replay: recorder is not in replay mode",
+        EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: "Replay: effect_type must not be empty",
+        EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED: "Replay: UUID/value sequence exhausted during replay",
+        EnumCoreErrorCode.REPLAY_ENFORCEMENT_BLOCKED: "Replay: non-deterministic effect blocked in strict mode",
     }
     return descriptions.get(error_code, "Unknown error")

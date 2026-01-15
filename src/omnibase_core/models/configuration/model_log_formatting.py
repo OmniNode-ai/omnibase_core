@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -76,7 +75,7 @@ class ModelLogFormatting(BaseModel):
         level: str,
         logger_name: str,
         message: str,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> str:
         """Format a log message according to configuration."""
         truncated_message = self._apply_truncation(message)
@@ -98,7 +97,7 @@ class ModelLogFormatting(BaseModel):
         return message[: self.max_message_length - 3] + "..."
 
     def _create_text_output(
-        self, level: str, logger_name: str, message: str, **kwargs: Any
+        self, level: str, logger_name: str, message: str, **kwargs: object
     ) -> str:
         """Create text format output."""
         import datetime as dt
@@ -122,7 +121,7 @@ class ModelLogFormatting(BaseModel):
         return self.field_separator.join(parts)
 
     def _create_json_output(
-        self, level: str, logger_name: str, message: str, **kwargs: Any
+        self, level: str, logger_name: str, message: str, **kwargs: object
     ) -> str:
         """Create JSON format output."""
         import json
@@ -144,7 +143,7 @@ class ModelLogFormatting(BaseModel):
         return json.dumps(final_data, indent=self.effective_json_indent)
 
     def _create_structured_output(
-        self, level: str, logger_name: str, message: str, **kwargs: Any
+        self, level: str, logger_name: str, message: str, **kwargs: object
     ) -> str:
         """Create structured key-value format output."""
 
@@ -184,7 +183,8 @@ class ModelLogFormatting(BaseModel):
                 "process_id": self.include_process_id,
             },
             "formatting_options": {
-                "field_order": self.field_order,
+                # Convert list[str] to list for JsonType compatibility
+                "field_order": list(self.field_order),
                 "field_separator": self.field_separator,
                 "message_template": self.message_template,
                 "json_indent": max(0, self.json_indent),

@@ -7,15 +7,14 @@ to monitor and debug service discovery interactions.
 
 import logging
 from collections.abc import Mapping
-from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
+from omnibase_core.models.types.model_onex_common_types import EnvValue
 
 logger = logging.getLogger(__name__)
-
-# Type alias for logging context values
-LogContextValue = str | int | float | bool | None
 
 
 class MixinDebugDiscoveryLogging:
@@ -30,7 +29,7 @@ class MixinDebugDiscoveryLogging:
     def setup_discovery_debug_logging(
         self,
         node_name: str,
-        additional_context: Mapping[str, LogContextValue] | None = None,
+        additional_context: Mapping[str, EnvValue] | None = None,
     ) -> None:
         """
         Setup comprehensive discovery event debug logging.
@@ -63,7 +62,7 @@ class MixinDebugDiscoveryLogging:
             )
 
             # Replace with debug version (explicit type for MyPy)
-            def debug_handler(envelope_or_event: Any) -> None:
+            def debug_handler(envelope_or_event: object) -> None:
                 return self._debug_handle_introspection_request(
                     envelope_or_event, node_name
                 )
@@ -77,7 +76,7 @@ class MixinDebugDiscoveryLogging:
             )
 
     def _debug_handle_introspection_request(
-        self, envelope_or_event: Any, node_name: str
+        self, envelope_or_event: object, node_name: str
     ) -> None:
         """
         Debug wrapper for introspection request handling.
@@ -86,7 +85,9 @@ class MixinDebugDiscoveryLogging:
             envelope_or_event: Event envelope or direct event
             node_name: Name of the node for logging context
         """
-        from omnibase_core.constants.event_types import REQUEST_REAL_TIME_INTROSPECTION
+        from omnibase_core.constants.constants_event_types import (
+            REQUEST_REAL_TIME_INTROSPECTION,
+        )
 
         # Extract event from envelope if needed
         if hasattr(envelope_or_event, "payload"):
@@ -130,7 +131,7 @@ class MixinDebugDiscoveryLogging:
 
             return result
 
-        except Exception as e:
+        except Exception as e:  # catch-all-ok: introspection handler can raise anything during node inspection
             emit_log_event(
                 LogLevel.ERROR,
                 f"🔍 {node_name.upper()} DEBUG: Introspection handler failed",

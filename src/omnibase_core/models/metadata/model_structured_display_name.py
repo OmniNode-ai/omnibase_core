@@ -1,24 +1,24 @@
-from __future__ import annotations
-
-from typing import cast
-from uuid import UUID
-
-from pydantic import BaseModel, Field
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_standard_category import EnumStandardCategory
-from omnibase_core.enums.enum_standard_tag import EnumStandardTag
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-from omnibase_core.utils.util_uuid_utilities import uuid_from_string
-
 """
 Structured Display Name Model.
 
 Provides consistent naming patterns across metadata models.
 Reduces reliance on free-form display name strings.
 """
+
+from __future__ import annotations
+
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_standard_category import EnumStandardCategory
+from omnibase_core.enums.enum_standard_tag import EnumStandardTag
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
+from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
 class ModelStructuredDisplayName(BaseModel):
@@ -270,26 +270,22 @@ class ModelStructuredDisplayName(BaseModel):
         """String representation returns the display name."""
         return self.display_name
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        result: TypedDictMetadataDict = {}
+        # display_name always returns non-empty string (includes required base_name)
+        result["name"] = self.display_name
+        if self.version is not None:
+            result["version"] = self.version
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
@@ -298,7 +294,8 @@ class ModelStructuredDisplayName(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except PYDANTIC_MODEL_ERRORS as e:
+            # boundary-ok: transform dynamic attribute access errors to typed domain errors
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -310,15 +307,9 @@ class ModelStructuredDisplayName(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        # Basic validation - base implementation always returns True.
+        # Subclasses should override with actual validation logic.
+        return True
 
 
 # Export for use

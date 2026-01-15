@@ -226,8 +226,8 @@ class MixinDagSupport:
 **Implemented** (Mixin-based approach):
 - ✅ `MixinFSMExecution` - FSM execution from subcontract (`mixins/mixin_fsm_execution.py`)
 - ✅ `MixinWorkflowExecution` - Workflow execution from subcontract (`mixins/mixin_workflow_execution.py`)
-- ✅ FSM Runtime - Pure functions in `utils/fsm_executor.py`
-- ✅ Workflow Runtime - Pure functions in `utils/workflow_executor.py`
+- FSM Runtime - Pure functions in `utils/util_fsm_executor.py`
+- Workflow Runtime - Pure functions in `utils/util_workflow_executor.py`
 
 **Pattern**: Mixins delegate to pure utility functions for execution. Nodes compose mixins instead of implementing custom FSM/workflow logic.
 
@@ -250,7 +250,7 @@ class MixinDagSupport:
 | **Declarative Examples** | ⚠️ Limited | ⚠️ Limited | IN PROGRESS |
 | **Documentation** | ⚠️ Partial | ⚠️ Needs Updates | IN PROGRESS |
 
-**Note**: FSM and Workflow runtimes implemented via mixin-based approach (`MixinFSMExecution`, `MixinWorkflowExecution`) with pure utility functions (`utils/fsm_executor.py`, `utils/workflow_executor.py`).
+**Note**: FSM and Workflow runtimes implemented via mixin-based approach (`MixinFSMExecution`, `MixinWorkflowExecution`) with pure utility functions (`utils/util_fsm_executor.py`, `utils/util_workflow_executor.py`).
 
 <details>
 <summary><strong>Historical Status (2025-11-16 snapshot)</strong></summary>
@@ -281,11 +281,11 @@ These gaps were addressed in v0.4.0 with `NodeReducer` and `NodeOrchestrator` be
 class MixinFSMExecution:
     """Mixin providing FSM execution from YAML contracts."""
 
-    # Uses pure functions from utils/fsm_executor.py
+    # Uses pure functions from utils/util_fsm_executor.py
     # Delegates to: execute_transition(), validate_fsm_contract(), etc.
 ```
 
-**Runtime Functions** (`utils/fsm_executor.py`):
+**Runtime Functions** (`utils/util_fsm_executor.py`):
 ```python
 def execute_transition(
     fsm: ModelFSMSubcontract,
@@ -306,11 +306,11 @@ def execute_transition(
 class MixinWorkflowExecution:
     """Mixin providing workflow execution from YAML contracts."""
 
-    # Uses pure functions from utils/workflow_executor.py
+    # Uses pure functions from utils/util_workflow_executor.py
     # Delegates to workflow execution logic
 ```
 
-**Runtime Functions** (`utils/workflow_executor.py`):
+**Runtime Functions** (`utils/util_workflow_executor.py`):
 ```python
 # Pure functions for workflow execution
 # Handles sequential, parallel, and mixed execution modes
@@ -370,7 +370,7 @@ class NodeMyOrchestrator(NodeOrchestrator):
 **Completed** (v0.3.2):
 - ✅ Implemented `MixinFSMExecution` for FSM runtime
 - ✅ Implemented `MixinWorkflowExecution` for workflow runtime
-- ✅ Pure utility functions in `utils/fsm_executor.py` and `utils/workflow_executor.py`
+- Pure utility functions in `utils/util_fsm_executor.py` and `utils/util_workflow_executor.py`
 - ✅ Unit tests for runtime functions
 
 ### 2. ✅ Update Node Implementations - COMPLETE (v0.4.0)
@@ -436,7 +436,7 @@ class NodeMyOrchestrator(NodeOrchestrator):
 
 1. **✅ FSM Execution - COMPLETE**
    ```python
-   # src/omnibase_core/utils/fsm_executor.py
+   # src/omnibase_core/utils/util_fsm_executor.py
    def execute_transition(fsm: ModelFSMSubcontract, ...):
        # ✅ Validate current state
        # ✅ Check transition conditions
@@ -447,8 +447,8 @@ class NodeMyOrchestrator(NodeOrchestrator):
 
 2. **✅ Workflow Execution - COMPLETE**
    ```python
-   # src/omnibase_core/utils/workflow_executor.py
-   # ✅ Build execution graph
+   # src/omnibase_core/utils/util_workflow_executor.py
+   # Build execution graph
    # ✅ Execute steps based on mode (sequential, parallel, mixed)
    # ✅ Handle dependencies
    # ✅ Coordinate with FSM executor for stateful steps
@@ -523,8 +523,8 @@ The omnibase_core codebase has **excellent infrastructure** for declarative work
 - ✅ Pydantic validation and type safety
 
 **UPDATED (v0.3.2)**: Runtime execution is now **IMPLEMENTED** via mixin-based approach:
-- ✅ FSM runtime via `MixinFSMExecution` + `utils/fsm_executor.py`
-- ✅ Workflow runtime via `MixinWorkflowExecution` + `utils/workflow_executor.py`
+- FSM runtime via `MixinFSMExecution` + `utils/util_fsm_executor.py`
+- Workflow runtime via `MixinWorkflowExecution` + `utils/util_workflow_executor.py`
 - ✅ Pure function approach for execution logic
 - ✅ Intent-based pattern for side effects
 
@@ -552,5 +552,5 @@ The omnibase_core codebase has **excellent infrastructure** for declarative work
 - Mixin implementations:
   - `src/omnibase_core/mixins/mixin_fsm_execution.py`
   - `src/omnibase_core/mixins/mixin_workflow_execution.py`
-  - `src/omnibase_core/utils/fsm_executor.py`
-  - `src/omnibase_core/utils/workflow_executor.py`
+  - `src/omnibase_core/utils/util_fsm_executor.py`
+  - `src/omnibase_core/utils/util_workflow_executor.py`
