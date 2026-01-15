@@ -3,9 +3,10 @@
 Type-safe input state container for version parsing.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import (
@@ -74,13 +75,13 @@ class ModelInputState(BaseModel):
             TypedDictMetadataDict with empty name/description/tags placeholders,
             additional_fields in metadata, and version if present.
         """
+        # additional_fields uses default_factory=dict, always a dict (never None)
         result: TypedDictMetadataDict = {
             "name": "",
             "description": "",
             "tags": [],
-            "metadata": self.additional_fields if self.additional_fields else {},
+            "metadata": self.additional_fields,
         }
-        # version is Optional (ModelSemVer | None), so None check is correct
         if self.version is not None:
             result["version"] = self.version
         return result
@@ -119,11 +120,7 @@ class ModelInputState(BaseModel):
                                         "value_type": type(value).__name__,
                                     },
                                 )
-                        except (
-                            TypeError,
-                            ValidationError,
-                            ValueError,
-                        ) as version_error:
+                        except VALIDATION_ERRORS as version_error:
                             raise ModelOnexError(
                                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                                 message=f"Invalid version format: {version_error}",

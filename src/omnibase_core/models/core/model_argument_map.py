@@ -102,19 +102,24 @@ class ModelArgumentMap(BaseModel):
             if isinstance(value, expected_type):
                 return value
             # Try to convert if possible.
-            # Note: cast(T, ...) is used because mypy cannot narrow TypeVar T based on
-            # runtime expected_type comparison. Each conversion is guarded by an if-check
-            # ensuring the return type matches T at runtime.
+            # NOTE(OMN-1073): cast(T, ...) is used because mypy cannot narrow TypeVar T
+            # based on runtime expected_type comparison. Each conversion is guarded by an
+            # if-check ensuring the return type matches T at runtime. The cast is safe
+            # because the converter function (str/int/float/bool) guarantees the output type.
             try:
                 if expected_type == str:
+                    # NOTE(OMN-1073): Safe cast - str() always returns str.
                     return cast(T, str(value))
                 if expected_type == int:
-                    # Convert via str() first to handle ArgumentValueType union safely
+                    # NOTE(OMN-1073): Safe cast - int(str(value)) returns int or raises.
+                    # Convert via str() first to handle ArgumentValueType union safely.
                     return cast(T, int(str(value)))
                 if expected_type == float:
-                    # Convert via str() first to handle ArgumentValueType union safely
+                    # NOTE(OMN-1073): Safe cast - float(str(value)) returns float or raises.
+                    # Convert via str() first to handle ArgumentValueType union safely.
                     return cast(T, float(str(value)))
                 if expected_type == bool:
+                    # NOTE(OMN-1073): Safe cast - comparison result is always bool.
                     if isinstance(value, str):
                         return cast(T, value.lower() in ("true", "1", "yes", "on"))
                     return cast(T, bool(value))
@@ -144,10 +149,6 @@ class ModelArgumentMap(BaseModel):
             default = []
         # Use bare 'list' for isinstance check at runtime (generic list[str] not valid).
         result = self.get_typed(name, list, default)
-        # NOTE(OMN-1073): Defensive None check. mypy proves this unreachable via overload
-        # resolution, but we keep it for runtime robustness against implementation changes.
-        if result is None:
-            return default  # type: ignore[unreachable]
         # Ensure we return list[str] by converting items
         return [str(item) for item in result]
 
@@ -215,19 +216,24 @@ class ModelArgumentMap(BaseModel):
             if isinstance(value, expected_type):
                 return value
             # Try to convert if possible.
-            # Note: cast(T, ...) is used because mypy cannot narrow TypeVar T based on
-            # runtime expected_type comparison. Each conversion is guarded by an if-check
-            # ensuring the return type matches T at runtime.
+            # NOTE(OMN-1073): cast(T, ...) is used because mypy cannot narrow TypeVar T
+            # based on runtime expected_type comparison. Each conversion is guarded by an
+            # if-check ensuring the return type matches T at runtime. The cast is safe
+            # because the converter function (str/int/float/bool) guarantees the output type.
             try:
                 if expected_type == str:
+                    # NOTE(OMN-1073): Safe cast - str() always returns str.
                     return cast(T, str(value))
                 if expected_type == int:
-                    # Convert via str() first to handle ArgumentValueType union safely
+                    # NOTE(OMN-1073): Safe cast - int(str(value)) returns int or raises.
+                    # Convert via str() first to handle ArgumentValueType union safely.
                     return cast(T, int(str(value)))
                 if expected_type == float:
-                    # Convert via str() first to handle ArgumentValueType union safely
+                    # NOTE(OMN-1073): Safe cast - float(str(value)) returns float or raises.
+                    # Convert via str() first to handle ArgumentValueType union safely.
                     return cast(T, float(str(value)))
                 if expected_type == bool:
+                    # NOTE(OMN-1073): Safe cast - comparison result is always bool.
                     if isinstance(value, str):
                         return cast(T, value.lower() in ("true", "1", "yes", "on"))
                     return cast(T, bool(value))
@@ -241,8 +247,16 @@ class ModelArgumentMap(BaseModel):
         value: object,
         arg_type: str = "string",
     ) -> None:
-        """Add a named argument to the map."""
-        # Caller is responsible for passing ArgumentValueType-compatible values
+        """Add a named argument to the map.
+
+        Note:
+            Caller is responsible for passing ArgumentValueType-compatible values
+            (str, int, bool, float, list[str], list[int], list[float]).
+        """
+        # NOTE(OMN-1073): cast(ArgumentValueType, value) is used because the method
+        # signature accepts `object` for API flexibility. The cast is safe when callers
+        # pass ArgumentValueType-compatible values as documented. Pydantic validation
+        # in ModelArgumentValue will raise ValidationError if incompatible types are passed.
         arg_value = ModelArgumentValue(
             value=cast(ArgumentValueType, value),
             original_string=str(value),
@@ -251,8 +265,16 @@ class ModelArgumentMap(BaseModel):
         self.named_args[name] = arg_value
 
     def add_positional_argument(self, value: object, arg_type: str = "string") -> None:
-        """Add a positional argument to the map."""
-        # Caller is responsible for passing ArgumentValueType-compatible values
+        """Add a positional argument to the map.
+
+        Note:
+            Caller is responsible for passing ArgumentValueType-compatible values
+            (str, int, bool, float, list[str], list[int], list[float]).
+        """
+        # NOTE(OMN-1073): cast(ArgumentValueType, value) is used because the method
+        # signature accepts `object` for API flexibility. The cast is safe when callers
+        # pass ArgumentValueType-compatible values as documented. Pydantic validation
+        # in ModelArgumentValue will raise ValidationError if incompatible types are passed.
         arg_value = ModelArgumentValue(
             value=cast(ArgumentValueType, value),
             original_string=str(value),
