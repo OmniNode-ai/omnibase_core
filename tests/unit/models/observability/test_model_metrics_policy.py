@@ -168,6 +168,31 @@ class TestModelMetricsPolicyValidateLabels:
             result.violations[0].violation_type == EnumLabelViolationType.FORBIDDEN_KEY
         )
 
+    def test_forbidden_wins_over_allowed_precedence(self) -> None:
+        """Test that forbidden_label_keys takes precedence over allowed_label_keys.
+
+        This verifies the documented invariant at model_metrics_policy.py:36:
+            forbidden_label_keys ALWAYS wins over allowed.
+
+        When a key appears in both allowed_label_keys and forbidden_label_keys,
+        the forbidden check wins and the key is rejected with FORBIDDEN_KEY
+        violation type (not KEY_NOT_ALLOWED).
+        """
+        policy = ModelMetricsPolicy(
+            allowed_label_keys=frozenset({"method", "status", "envelope_id"}),
+            forbidden_label_keys=frozenset({"envelope_id"}),  # Also in allowed!
+        )
+
+        result = policy.validate_labels({"method": "GET", "envelope_id": "abc"})
+
+        # envelope_id should be rejected even though it's in allowed_label_keys
+        assert not result.is_valid
+        assert len(result.violations) == 1
+        assert result.violations[0].key == "envelope_id"
+        assert (
+            result.violations[0].violation_type == EnumLabelViolationType.FORBIDDEN_KEY
+        )
+
     def test_value_too_long(self) -> None:
         """Test label value length validation."""
         policy = ModelMetricsPolicy(max_label_value_length=10)

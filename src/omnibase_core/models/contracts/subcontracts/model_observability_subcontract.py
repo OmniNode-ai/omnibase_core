@@ -80,7 +80,7 @@ class ModelObservabilitySubcontract(BaseModel):
     # Metrics cardinality policy (OMN-1367)
     metrics_policy: ModelMetricsPolicy | None = Field(
         default=None,
-        description="Cardinality policy for metrics labels (None uses default policy)",
+        description="Cardinality policy for metrics labels (None disables enforcement)",
     )
 
     # Distributed tracing configuration
