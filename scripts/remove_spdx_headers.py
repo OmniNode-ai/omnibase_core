@@ -1,12 +1,26 @@
 #!/usr/bin/env python3
-"""Remove SPDX headers from Python files in src/omnibase_core.
+"""Remove SPDX headers from Python files.
 
-This script removes the legacy SPDX license headers that were added before
+This script removes legacy SPDX license headers that were added before
 the canonical file header format was established. Per docs/conventions/FILE_HEADERS.md,
 files should have docstring-first format with NO SPDX headers.
 
 Usage:
+    # Remove from omnibase_core (default target)
     poetry run python scripts/remove_spdx_headers.py [--dry-run] [--verbose]
+
+    # Remove from entire src/ directory
+    poetry run python scripts/remove_spdx_headers.py --path src/
+
+    # Remove from specific subdirectory
+    poetry run python scripts/remove_spdx_headers.py --path src/some_package/
+
+Default Path:
+    The default is src/omnibase_core because this script was originally created
+    for the OMN-1360 cleanup. Use --path to target other directories.
+
+    Note: The validator (scripts/validation/validate-no-spdx-headers.py) checks
+    all of src/ by default to prevent SPDX headers anywhere in the codebase.
 
 Ticket: OMN-1360
 """
@@ -57,8 +71,25 @@ SPDX_PATTERN_COPYRIGHT_LICENSE = re.compile(
 )
 
 
+def _is_shebang_line(line: str) -> bool:
+    """Check if line is a shebang (e.g., #!/usr/bin/env python3)."""
+    return line.startswith("#!")
+
+
+def _is_encoding_line(line: str) -> bool:
+    """Check if line is a PEP 263 encoding declaration (e.g., # -*- coding: utf-8 -*-)."""
+    return "coding:" in line or "coding=" in line
+
+
 def remove_spdx_header(content: str) -> tuple[str, bool]:
     """Remove SPDX header from file content.
+
+    Handles files with shebang and/or encoding lines before the SPDX header.
+    For example:
+        #!/usr/bin/env python3
+        # -*- coding: utf-8 -*-
+        # SPDX-FileCopyrightText: ...
+        # SPDX-License-Identifier: ...
 
     Args:
         content: The file content as a string.
@@ -66,8 +97,33 @@ def remove_spdx_header(content: str) -> tuple[str, bool]:
     Returns:
         Tuple of (modified_content, was_modified).
     """
-    # Check if file starts with SPDX or Copyright header
-    if not (content.startswith("# SPDX-") or content.startswith("# Copyright")):
+    lines = content.splitlines(keepends=True)
+
+    # Find prefix lines (shebang and encoding) that come before SPDX
+    # These are preserved and not considered part of the SPDX header
+    prefix_lines: list[str] = []
+    remaining_start_idx = 0
+
+    # Check first few lines for shebang/encoding (max 3 lines to check)
+    for i, line in enumerate(lines[:3]):
+        if _is_shebang_line(line):
+            prefix_lines.append(line)
+            remaining_start_idx = i + 1
+        elif _is_encoding_line(line):
+            prefix_lines.append(line)
+            remaining_start_idx = i + 1
+        else:
+            # Found a line that's not shebang or encoding, stop looking
+            break
+
+    # Join remaining content after prefix lines
+    remaining_content = "".join(lines[remaining_start_idx:])
+
+    # Check if remaining content starts with SPDX or Copyright header
+    if not remaining_content or not (
+        remaining_content.startswith("# SPDX-")
+        or remaining_content.startswith("# Copyright")
+    ):
         return content, False
 
     # Try patterns in order of specificity (most specific first)
@@ -80,8 +136,10 @@ def remove_spdx_header(content: str) -> tuple[str, bool]:
     ]
 
     for pattern in patterns:
-        new_content = pattern.sub("", content, count=1)
-        if new_content != content:
+        new_remaining = pattern.sub("", remaining_content, count=1)
+        if new_remaining != remaining_content:
+            # Reconstruct file: prefix lines + modified remaining content
+            new_content = "".join(prefix_lines) + new_remaining
             return new_content, True
 
     return content, False
@@ -144,7 +202,7 @@ def main() -> int:
         Exit code (0 for success, 1 for errors).
     """
     parser = argparse.ArgumentParser(
-        description="Remove SPDX headers from Python files in src/omnibase_core"
+        description="Remove SPDX headers from Python files (default: src/omnibase_core, use --path for broader scope)"
     )
     parser.add_argument(
         "--dry-run",
@@ -161,7 +219,7 @@ def main() -> int:
         "--path",
         type=Path,
         default=Path("src/omnibase_core"),
-        help="Path to search for Python files (default: src/omnibase_core)",
+        help="Path to search for Python files (default: src/omnibase_core). Use --path src/ for full coverage matching the validator.",
     )
 
     args = parser.parse_args()

@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Comprehensive ID and Version Validation Hook for ONEX Architecture.
 
 Validates that:

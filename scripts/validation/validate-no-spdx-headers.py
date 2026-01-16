@@ -13,13 +13,24 @@ Detected Patterns (in first 10 lines):
 
 Usage:
     # Check specific files (pre-commit mode)
-    python scripts/validation/validate-no-spdx-headers.py <file1> [file2] ...
+    poetry run python scripts/validation/validate-no-spdx-headers.py <file1> [file2] ...
 
-    # Check entire directory
-    python scripts/validation/validate-no-spdx-headers.py src/
+    # Check entire src/ directory (default)
+    poetry run python scripts/validation/validate-no-spdx-headers.py
+
+    # Check specific directory
+    poetry run python scripts/validation/validate-no-spdx-headers.py src/omnibase_core/
 
     To allow SPDX headers in specific files (rare cases), add comment:
     # spdx-ok: reason for exception
+
+Default Path:
+    This validator defaults to src/ to check ALL source files, ensuring no
+    SPDX headers exist anywhere in the codebase.
+
+    Note: The removal script (scripts/remove_spdx_headers.py) defaults to
+    src/omnibase_core for historical reasons (OMN-1360 targeted cleanup).
+    Use --path src/ with the removal script for full coverage.
 
 Rationale:
     - SPDX headers add ~440 lines of boilerplate across the codebase
