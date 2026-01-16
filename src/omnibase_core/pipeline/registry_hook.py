@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Hook registry with freeze-after-init thread safety."""
 
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling

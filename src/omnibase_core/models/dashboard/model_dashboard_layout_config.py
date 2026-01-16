@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Dashboard layout grid configuration model.
 
 This module defines the grid layout settings for dashboard widget positioning.

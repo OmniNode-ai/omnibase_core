@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Event Bus Input/Output State Composite Model.
 
 This module provides a composite model that combines the input and output states

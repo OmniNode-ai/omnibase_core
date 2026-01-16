@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """ModelChangeProposal for representing proposed system changes (OMN-1196).
 
 This module provides a typed model for capturing proposed system changes

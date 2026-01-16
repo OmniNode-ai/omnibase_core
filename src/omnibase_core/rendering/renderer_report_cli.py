@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """CLI report renderer for evidence summaries (OMN-1200).
 
 Renders evidence summaries and recommendations to formatted terminal output

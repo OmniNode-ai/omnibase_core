@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """Effect Operation Configuration Model.
 
 Provides a typed model to replace dict[str, Any] usage for operation_config

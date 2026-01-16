@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2025 OmniNode Team
 """Registration domain models for ONEX node registration workflows.
 
 This module provides pure data models for node registration operations.

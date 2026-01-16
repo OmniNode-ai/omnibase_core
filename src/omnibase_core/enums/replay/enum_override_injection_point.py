@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """EnumOverrideInjectionPoint - Injection points for config overrides.
 
 Defines where configuration overrides can be applied during replay execution.

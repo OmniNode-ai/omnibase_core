@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """Signature algorithm enumeration for JWT signing and artifact verification."""
 
 from enum import Enum, unique

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Evidence filtering for partial exports.
 
 This module provides filtering options for exporting subsets of evidence

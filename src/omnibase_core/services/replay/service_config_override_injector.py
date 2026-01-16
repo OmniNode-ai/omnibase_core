@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Service for injecting configuration overrides during replay.
 
 Uses centralized exception groups from omnibase_core.errors.exception_groups.

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Validation warning model for pipeline hooks.
 
 Note: This module was moved from omnibase_core.pipeline.models to

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Runtime directive payload model for typed directive parameters.
 
 This module provides ModelRuntimeDirectivePayload, a typed context model for

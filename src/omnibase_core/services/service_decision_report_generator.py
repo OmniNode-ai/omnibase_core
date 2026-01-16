@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Decision report generator service for corpus replay evidence (OMN-1199).
 
 Generates decision-ready reports from corpus replay evidence in multiple formats:

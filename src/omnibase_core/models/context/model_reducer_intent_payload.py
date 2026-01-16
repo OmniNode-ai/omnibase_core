@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Intent payload model for typed reducer intent data.
 
 This module provides ModelReducerIntentPayload, a typed context model for carrying
