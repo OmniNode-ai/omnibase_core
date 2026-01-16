@@ -1,5 +1,7 @@
 """Histogram metric observation model for observability."""
 
+from __future__ import annotations
+
 from pydantic import BaseModel, ConfigDict, Field
 
 

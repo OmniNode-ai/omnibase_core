@@ -35,14 +35,24 @@ class TestModelCounterEmission:
             ModelCounterEmission()  # type: ignore[call-arg]
         assert "name" in str(exc_info.value)
 
-    def test_name_min_length(self) -> None:
-        """Test name minimum length validation."""
+    def test_name_at_minimum_length(self) -> None:
+        """Test name at minimum length (1 char) is valid."""
+        counter = ModelCounterEmission(name="x")
+        assert counter.name == "x"
+
+    def test_name_at_maximum_length(self) -> None:
+        """Test name at maximum length (256 chars) is valid."""
+        counter = ModelCounterEmission(name="x" * 256)
+        assert len(counter.name) == 256
+
+    def test_empty_name_rejected(self) -> None:
+        """Test empty name raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             ModelCounterEmission(name="")
         assert "string_too_short" in str(exc_info.value)
 
-    def test_name_max_length(self) -> None:
-        """Test name maximum length validation."""
+    def test_name_too_long_rejected(self) -> None:
+        """Test name exceeding max length raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             ModelCounterEmission(name="x" * 257)
         assert "string_too_long" in str(exc_info.value)

@@ -1,5 +1,7 @@
 """Unit tests for EnumLabelViolationType."""
 
+from __future__ import annotations
+
 from omnibase_core.enums.enum_label_violation_type import EnumLabelViolationType
 
 

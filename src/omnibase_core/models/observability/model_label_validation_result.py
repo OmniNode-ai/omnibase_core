@@ -1,5 +1,7 @@
 """Label validation result model for metrics policy enforcement."""
 
+from __future__ import annotations
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.observability.model_label_violation import ModelLabelViolation

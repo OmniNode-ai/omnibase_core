@@ -46,6 +46,28 @@ class TestModelHistogramObservation:
             ModelHistogramObservation(value=1.0)  # type: ignore[call-arg]
         assert "name" in str(exc_info.value)
 
+    def test_name_at_minimum_length(self) -> None:
+        """Test name at minimum length (1 char) is valid."""
+        obs = ModelHistogramObservation(name="x", value=1.0)
+        assert obs.name == "x"
+
+    def test_name_at_maximum_length(self) -> None:
+        """Test name at maximum length (256 chars) is valid."""
+        obs = ModelHistogramObservation(name="x" * 256, value=1.0)
+        assert len(obs.name) == 256
+
+    def test_empty_name_rejected(self) -> None:
+        """Test empty name raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelHistogramObservation(name="", value=1.0)
+        assert "string_too_short" in str(exc_info.value)
+
+    def test_name_too_long_rejected(self) -> None:
+        """Test name exceeding max length raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelHistogramObservation(name="x" * 257, value=1.0)
+        assert "string_too_long" in str(exc_info.value)
+
     def test_value_required(self) -> None:
         """Test that value is required."""
         with pytest.raises(ValidationError) as exc_info:

@@ -1,5 +1,7 @@
 """Label violation type enum for metrics policy enforcement."""
 
+from __future__ import annotations
+
 from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper

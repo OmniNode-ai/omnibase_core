@@ -1,17 +1,24 @@
 """Metrics cardinality policy model for observability."""
 
+from __future__ import annotations
+
+import logging
 from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_label_violation_type import EnumLabelViolationType
 from omnibase_core.enums.enum_metrics_policy_violation_action import (
     EnumMetricsPolicyViolationAction,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.observability.model_label_validation_result import (
     ModelLabelValidationResult,
 )
 from omnibase_core.models.observability.model_label_violation import ModelLabelViolation
+
+_logger = logging.getLogger(__name__)
 
 
 class ModelMetricsPolicy(BaseModel):
@@ -22,10 +29,10 @@ class ModelMetricsPolicy(BaseModel):
     denylist (permissive) modes.
 
     Policy Semantics:
-        - If `allowed_label_keys` is non-empty: strict mode.
-          Only keys in allowed are permitted, minus anything in forbidden.
-        - If `allowed_label_keys` is empty: permissive mode.
-          Any key not in forbidden is allowed.
+        - If `allowed_label_keys` is set (not None): strict mode.
+          Only keys in allowed_label_keys are permitted, minus anything in forbidden.
+        - If `allowed_label_keys` is None: permissive mode.
+          Any key not in forbidden_label_keys is allowed.
         - `forbidden_label_keys` ALWAYS wins over allowed.
           If a key is in both, it is forbidden.
 
@@ -41,6 +48,21 @@ class ModelMetricsPolicy(BaseModel):
         forbidden_label_keys: Denylist of forbidden label keys (always enforced).
         max_label_value_length: Maximum allowed length for label values.
         on_violation: Action to take when policy is violated.
+
+    Methods:
+        validate_labels: Pure validation returning result with violations.
+        enforce_labels: Validation + enforcement based on on_violation action.
+
+    Example:
+        >>> policy = ModelMetricsPolicy(
+        ...     on_violation=EnumMetricsPolicyViolationAction.RAISE
+        ... )
+        >>> # Using validate_labels (pure validation, no side effects)
+        >>> result = policy.validate_labels({"envelope_id": "abc"})
+        >>> result.is_valid
+        False
+        >>> # Using enforce_labels (takes action based on on_violation)
+        >>> policy.enforce_labels({"envelope_id": "abc"})  # raises ValueError
     """
 
     DEFAULT_FORBIDDEN: ClassVar[frozenset[str]] = frozenset(
@@ -151,6 +173,60 @@ class ModelMetricsPolicy(BaseModel):
             violations=violations,
             sanitized_labels=sanitized if sanitized else None,
         )
+
+    def enforce_labels(self, labels: dict[str, str]) -> dict[str, str] | None:
+        """Validate labels and enforce policy based on on_violation action.
+
+        This method combines validation with enforcement. It calls validate_labels()
+        internally and then takes action based on the on_violation setting:
+
+        - RAISE: Raises ValueError if any violations found.
+        - WARN_AND_DROP: Logs warning and returns None (drop the metric).
+        - DROP_SILENT: Returns None without logging (drop silently).
+        - WARN_AND_STRIP: Logs warning and returns sanitized_labels.
+
+        Args:
+            labels: Dictionary of label key-value pairs to validate and enforce.
+
+        Returns:
+            - Original labels if no violations found.
+            - Sanitized labels for WARN_AND_STRIP action.
+            - None for DROP actions (WARN_AND_DROP, DROP_SILENT).
+
+        Raises:
+            ValueError: If on_violation is RAISE and violations are found.
+        """
+        result = self.validate_labels(labels)
+
+        if result.is_valid:
+            return labels
+
+        # Format violation messages for logging/errors
+        violation_messages = [v.message for v in result.violations]
+        violation_summary = "; ".join(violation_messages)
+
+        if self.on_violation == EnumMetricsPolicyViolationAction.RAISE:
+            raise ModelOnexError(
+                message=f"Metrics policy violation(s): {violation_summary}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
+        if self.on_violation == EnumMetricsPolicyViolationAction.WARN_AND_DROP:
+            _logger.warning(
+                "Dropping metric due to policy violation(s): %s",
+                violation_summary,
+            )
+            return None
+
+        if self.on_violation == EnumMetricsPolicyViolationAction.DROP_SILENT:
+            return None
+
+        # WARN_AND_STRIP: log warning and return sanitized labels
+        _logger.warning(
+            "Stripping invalid labels due to policy violation(s): %s",
+            violation_summary,
+        )
+        return result.sanitized_labels
 
 
 __all__ = ["ModelMetricsPolicy"]

@@ -1,5 +1,7 @@
 """Unit tests for EnumMetricsPolicyViolationAction."""
 
+from __future__ import annotations
+
 from omnibase_core.enums.enum_metrics_policy_violation_action import (
     EnumMetricsPolicyViolationAction,
 )

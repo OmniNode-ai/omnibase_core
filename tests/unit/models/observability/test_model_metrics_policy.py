@@ -7,6 +7,7 @@ from omnibase_core.enums.enum_label_violation_type import EnumLabelViolationType
 from omnibase_core.enums.enum_metrics_policy_violation_action import (
     EnumMetricsPolicyViolationAction,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.observability.model_metrics_policy import ModelMetricsPolicy
 
 
@@ -243,3 +244,121 @@ class TestModelMetricsPolicyModel:
             frozenset({"envelope_id", "correlation_id", "node_id", "runtime_id"})
             == ModelMetricsPolicy.DEFAULT_FORBIDDEN
         )
+
+
+class TestModelMetricsPolicyEnforceLabels:
+    """Tests for ModelMetricsPolicy.enforce_labels method."""
+
+    def test_enforce_valid_labels_returns_original(self) -> None:
+        """Test that valid labels are returned unchanged."""
+        policy = ModelMetricsPolicy()
+        labels = {"method": "GET", "status": "200"}
+        result = policy.enforce_labels(labels)
+        assert result == labels
+
+    def test_enforce_raise_on_violation(self) -> None:
+        """Test RAISE action raises ModelOnexError on violation."""
+        policy = ModelMetricsPolicy(on_violation=EnumMetricsPolicyViolationAction.RAISE)
+        with pytest.raises(ModelOnexError) as exc_info:
+            policy.enforce_labels({"envelope_id": "abc", "method": "GET"})
+        assert "Metrics policy violation" in str(exc_info.value)
+        assert "envelope_id" in str(exc_info.value)
+
+    def test_enforce_raise_with_multiple_violations(self) -> None:
+        """Test RAISE action includes all violations in error message."""
+        policy = ModelMetricsPolicy(
+            on_violation=EnumMetricsPolicyViolationAction.RAISE,
+            max_label_value_length=5,
+        )
+        with pytest.raises(ModelOnexError) as exc_info:
+            policy.enforce_labels({"envelope_id": "abc", "status": "toolong"})
+        error_msg = str(exc_info.value)
+        assert "envelope_id" in error_msg
+        assert "status" in error_msg
+
+    def test_enforce_warn_and_drop_returns_none(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test WARN_AND_DROP action logs warning and returns None."""
+        policy = ModelMetricsPolicy(
+            on_violation=EnumMetricsPolicyViolationAction.WARN_AND_DROP
+        )
+        result = policy.enforce_labels({"envelope_id": "abc"})
+        assert result is None
+        assert "Dropping metric due to policy violation" in caplog.text
+        assert "envelope_id" in caplog.text
+
+    def test_enforce_drop_silent_returns_none_no_log(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test DROP_SILENT action returns None without logging."""
+        policy = ModelMetricsPolicy(
+            on_violation=EnumMetricsPolicyViolationAction.DROP_SILENT
+        )
+        result = policy.enforce_labels({"envelope_id": "abc"})
+        assert result is None
+        # Should not log anything
+        assert "Dropping" not in caplog.text
+        assert "Stripping" not in caplog.text
+
+    def test_enforce_warn_and_strip_returns_sanitized(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test WARN_AND_STRIP action logs warning and returns sanitized labels."""
+        policy = ModelMetricsPolicy(
+            on_violation=EnumMetricsPolicyViolationAction.WARN_AND_STRIP
+        )
+        result = policy.enforce_labels(
+            {"envelope_id": "abc", "method": "GET", "status": "200"}
+        )
+        # Should return sanitized (without forbidden key)
+        assert result == {"method": "GET", "status": "200"}
+        assert "Stripping invalid labels" in caplog.text
+        assert "envelope_id" in caplog.text
+
+    def test_enforce_warn_and_strip_with_truncation(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test WARN_AND_STRIP truncates long values."""
+        policy = ModelMetricsPolicy(
+            on_violation=EnumMetricsPolicyViolationAction.WARN_AND_STRIP,
+            max_label_value_length=5,
+        )
+        result = policy.enforce_labels({"status": "toolongvalue"})
+        assert result is not None
+        assert result["status"] == "toolo"  # Truncated to 5 chars
+        assert "Stripping" in caplog.text
+
+    def test_enforce_warn_and_strip_all_invalid_returns_none(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test WARN_AND_STRIP returns None when all labels are invalid."""
+        policy = ModelMetricsPolicy(
+            on_violation=EnumMetricsPolicyViolationAction.WARN_AND_STRIP
+        )
+        # All labels are forbidden
+        result = policy.enforce_labels({"envelope_id": "a", "correlation_id": "b"})
+        # sanitized_labels would be None, so enforce_labels returns None
+        assert result is None
+
+    def test_enforce_empty_labels_returns_empty(self) -> None:
+        """Test that empty labels pass enforcement."""
+        policy = ModelMetricsPolicy(on_violation=EnumMetricsPolicyViolationAction.RAISE)
+        result = policy.enforce_labels({})
+        # Empty dict is valid, returns original
+        assert result == {}
+
+    def test_enforce_with_strict_mode(self) -> None:
+        """Test enforce_labels works with strict mode (allowed_label_keys)."""
+        policy = ModelMetricsPolicy(
+            allowed_label_keys=frozenset({"method", "status"}),
+            on_violation=EnumMetricsPolicyViolationAction.RAISE,
+        )
+        # Valid labels in strict mode
+        result = policy.enforce_labels({"method": "GET", "status": "200"})
+        assert result == {"method": "GET", "status": "200"}
+
+        # Invalid label in strict mode
+        with pytest.raises(ModelOnexError) as exc_info:
+            policy.enforce_labels({"method": "GET", "endpoint": "/api"})
+        assert "endpoint" in str(exc_info.value)

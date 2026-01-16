@@ -1,5 +1,7 @@
 """Label violation model for metrics policy enforcement."""
 
+from __future__ import annotations
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_label_violation_type import EnumLabelViolationType
