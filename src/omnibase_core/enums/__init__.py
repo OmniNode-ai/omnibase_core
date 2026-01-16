@@ -168,6 +168,9 @@ from .enum_injection_scope import EnumInjectionScope
 from .enum_invariant_report_status import EnumInvariantReportStatus
 from .enum_invariant_type import EnumInvariantType
 
+# Label violation type enum (OMN-1367 - observability cardinality)
+from .enum_label_violation_type import EnumLabelViolationType
+
 # Language and localization enums
 from .enum_language_code import EnumLanguageCode
 from .enum_likelihood import EnumLikelihood
@@ -196,6 +199,9 @@ from .enum_metadata import (
 from .enum_metadata_tool_complexity import EnumMetadataToolComplexity
 from .enum_metadata_tool_status import EnumMetadataToolStatus
 from .enum_metadata_tool_type import EnumMetadataToolType
+
+# Metrics policy enums (OMN-1367 - observability cardinality)
+from .enum_metrics_policy_violation_action import EnumMetricsPolicyViolationAction
 
 # Namespace-related enums
 from .enum_namespace_strategy import EnumNamespaceStrategy
@@ -579,6 +585,9 @@ __all__ = [
     "EnumStepType",
     # Pipeline validation mode domain (OMN-1308)
     "EnumPipelineValidationMode",
+    # Observability cardinality domain (OMN-1367)
+    "EnumLabelViolationType",
+    "EnumMetricsPolicyViolationAction",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")
