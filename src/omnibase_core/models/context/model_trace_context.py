@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Trace context model for distributed tracing and correlation.
 
 This module provides ModelTraceContext, a typed context model for tracking

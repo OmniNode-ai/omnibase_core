@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Vector search result model.
 
 This module provides the ModelVectorSearchResult class for representing

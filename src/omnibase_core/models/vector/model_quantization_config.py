@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Vector quantization configuration model.
 
 This module provides the ModelQuantizationConfig class for vector quantization settings.

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Pipeline runner for executing hooks in canonical phase order."""
 
 from __future__ import annotations

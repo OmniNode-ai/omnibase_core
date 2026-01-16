@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Event feed widget configuration model.
 
 This module defines the configuration for event feed dashboard widgets,

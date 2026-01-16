@@ -355,6 +355,20 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
+      # SPDX Header Prevention (OMN-1360)
+      # Prevents SPDX license headers from being (re)introduced.
+      # ONEX uses a centralized LICENSE file instead of per-file headers.
+      # To allow SPDX headers in rare cases, add: # spdx-ok: <reason>
+      # See: docs/conventions/FILE_HEADERS.md for canonical header format
+      - id: validate-no-spdx-headers
+        name: ONEX SPDX Header Prevention
+        entry: poetry run python scripts/validation/validate-no-spdx-headers.py
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
       # PROTOCOL EXCLUSION: protocols/ is excluded because Protocol files define
       # multiple related interfaces in single files (e.g., ProtocolIdentifiable,
       # ProtocolNameable together). This is idiomatic for interface definitions.

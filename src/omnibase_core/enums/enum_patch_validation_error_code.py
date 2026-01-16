@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Patch validation error codes for contract patch validation.
 
 These error codes are used by ContractPatchValidator to categorize

@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Comprehensive ID and Version Validation Hook for ONEX Architecture.
 
 Validates that:
@@ -390,7 +387,7 @@ class PythonASTValidator(ast.NodeVisitor):
             bypass_patterns: List of bypass comment patterns to look for
 
         Returns:
-            True if a bypass comment is found on the line
+            True if a bypass comment is found on the line or the previous line
         """
         if not self.source_lines:
             return False
@@ -402,12 +399,20 @@ class PythonASTValidator(ast.NodeVisitor):
 
         line = self.source_lines[line_idx]
 
-        # Check for inline comment with bypass pattern
+        # Check for inline comment with bypass pattern on the current line
         if "#" in line:
             comment_part = line.split("#", 1)[1]
             for pattern in bypass_patterns:
                 if pattern in comment_part:
                     return True
+
+        # Check for bypass comment on the previous line (consistent with YAML validation)
+        if line_idx > 0:
+            prev_line = self.source_lines[line_idx - 1].strip()
+            if prev_line.startswith("#"):
+                for pattern in bypass_patterns:
+                    if pattern in prev_line:
+                        return True
 
         return False
 

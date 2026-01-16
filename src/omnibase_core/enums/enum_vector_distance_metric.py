@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Distance metric enumeration for vector similarity search.
 
 This module defines the distance metrics supported by vector store operations.

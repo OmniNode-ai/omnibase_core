@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """TypedDict for decision report cost metrics (OMN-1199)."""
 
 from typing import TypedDict

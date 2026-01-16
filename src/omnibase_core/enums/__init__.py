@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Shared enums for ONEX ecosystem.
 
 Domain-grouped enums used across multiple ONEX packages (omnibase_core, omnibase_spi, etc.)

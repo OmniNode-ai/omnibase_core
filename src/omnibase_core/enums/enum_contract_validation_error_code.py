@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Contract validation error codes for merge and expanded validation phases.
 
 These error codes are used by the Contract Validation Pipeline to categorize

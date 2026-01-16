@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """
 Handler Contract Model for ONEX Framework.
 

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Latency comparison statistics between baseline and replay executions.
 
 This model provides comprehensive latency metrics including averages and

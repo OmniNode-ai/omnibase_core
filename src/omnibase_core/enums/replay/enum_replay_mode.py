@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Replay mode enum for deterministic replay infrastructure.
 
 This module defines the modes of operation for the replay infrastructure,

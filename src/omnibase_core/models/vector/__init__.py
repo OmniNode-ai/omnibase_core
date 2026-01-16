@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Vector store domain models for ONEX SPI handler protocols.
 
 This module provides typed Pydantic models for vector store operations,

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 ServiceRegistryProvider - In-memory thread-safe registry for provider descriptors.
 

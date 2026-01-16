@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """
 ExecutionResolver - Pure function implementation of execution order resolution.
 

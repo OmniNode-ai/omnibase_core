@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Error context model for structured error tracking.
 
 This module provides ModelErrorContext, a typed context model for tracking

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Invariant violation breakdown model for corpus replay aggregation.
 
 Breaks down invariant violations by type and severity for reporting

@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2025 OmniNode Team
 """Domain-level outcome of dual registration.
 
 This module provides ModelDualRegistrationOutcome, a pure domain model representing

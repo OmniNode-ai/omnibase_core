@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Pipeline-specific exceptions.
 
 This module re-exports pipeline exceptions from the canonical `errors` module.

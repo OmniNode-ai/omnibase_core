@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Pipeline models."""
 
 from omnibase_core.models.pipeline.model_hook_error import ModelHookError

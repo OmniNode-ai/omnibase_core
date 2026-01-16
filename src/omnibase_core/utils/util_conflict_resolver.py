@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """
 Conflict resolution utility for data reduction operations.
 

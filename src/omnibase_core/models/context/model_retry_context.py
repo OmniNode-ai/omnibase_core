@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Retry context model for retry-related metadata.
 
 This module provides ModelRetryContext, a typed context model for tracking

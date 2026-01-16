@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Evidence summary model for corpus replay aggregation.
 
 This model aggregates all comparisons from a corpus replay into a decision-ready
