@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-01-17
+
+### Added
+
+- **Metrics Emission Models**: New models for observability metrics emission with cardinality policies [OMN-1367]
+
+### Changed
+
+- **Header Cleanup**: Removed legacy SPDX headers from omnibase_core codebase [OMN-1360]
+
 ## [0.7.0] - 2026-01-15
 
 ### ⚠️ BREAKING CHANGES
