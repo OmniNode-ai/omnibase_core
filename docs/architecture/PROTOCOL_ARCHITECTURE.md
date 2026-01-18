@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Protocol Architecture
+
 # Protocol Architecture Analysis
 **Phase 0.2: Protocol Architecture Audit**
 **Generated**: 2025-10-22

@@ -497,6 +497,7 @@ repos:
         stages: [pre-commit]
 
       # Documentation link validation - prevents broken links in CI
+      # Configuration: .markdown-link-check.json (ignore patterns, exclude files)
       - id: validate-doc-links
         name: ONEX Documentation Link Validation
         entry: poetry run python scripts/validation/validate-doc-links.py
@@ -505,6 +506,17 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-push]  # Moved to pre-push: scans all markdown files
+
+      # Markdown link validation (PR #172 pattern from omnibase_infra)
+      # Validates internal markdown links point to existing files and anchors
+      # Configuration: .markdown-link-check.json (ignore patterns, exclude files)
+      - id: validate-markdown-links
+        name: ONEX Markdown Link Validation
+        entry: poetry run python scripts/validation/validate_markdown_links.py
+        language: system
+        types: [markdown]
+        pass_filenames: false
+        stages: [pre-commit]
 
       # NOTE: Smoke tests removed (2025-12) - redundant with CI
       # CI runs full 12k+ test suite with 20 parallel splits

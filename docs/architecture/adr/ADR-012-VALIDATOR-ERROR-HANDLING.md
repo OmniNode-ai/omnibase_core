@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > ADR > ADR-012 Validator Error Handling
+
 # ADR-012: Validator Error Handling with ModelOnexError
 
 **Status**: Accepted

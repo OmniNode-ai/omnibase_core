@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Pipeline Hook Registry
+
 # Pipeline Runner and Hook Registry Guide
 
 ## Overview

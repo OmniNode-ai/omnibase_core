@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Ecosystem Directory Structure
+
 # ONEX Ecosystem Directory Structure
 
 **Status**: Current as of 2025-11-27  

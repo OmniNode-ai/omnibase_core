@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Reference](../README.md) > Templates > REDUCER Node
+
 # REDUCER Node Template
 
 ## Overview

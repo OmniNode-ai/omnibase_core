@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > Templates > EFFECT Node Template
+
 # ONEX EFFECT Node Template - Unified Architecture
 
 **Version**: 1.0.0  

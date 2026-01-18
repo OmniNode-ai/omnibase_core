@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > EnumNodeKind Migration Guide
+
 # EnumNodeKind Migration Guide
 
 > **Version**: 0.4.0

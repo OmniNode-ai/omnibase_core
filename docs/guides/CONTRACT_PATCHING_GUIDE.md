@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Contract Patching Guide
+
 # Contract Patching Guide
 
 **Version**: 1.0.2

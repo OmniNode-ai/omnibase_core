@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Mixin Development](README.md) > Creating Mixins
+
 # Creating Mixins - Step-by-Step Guide
 
 **Status**: Active

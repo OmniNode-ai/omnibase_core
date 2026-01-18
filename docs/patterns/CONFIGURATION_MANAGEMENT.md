@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Patterns](./README.md) > Configuration Management
+
 # Environment-Based Configuration Management
 
 The ONEX Environment-Based Configuration Management system provides a unified approach to handling environment variables, configuration validation, type conversion, and hierarchical overrides across all ONEX components.

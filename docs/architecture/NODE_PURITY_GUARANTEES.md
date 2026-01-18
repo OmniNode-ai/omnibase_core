@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Node Purity Guarantees
+>
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
+
 # Node Purity Guarantees
 
 > **Version**: 1.0.0

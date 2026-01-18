@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Validation > Regex Pattern Improvements
+
 # Regex Pattern Improvements - Backward Compatibility Detection
 
 **Date**: 2025-11-23

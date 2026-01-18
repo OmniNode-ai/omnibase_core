@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > [Decisions](./INDEX.md) > ADR-005 Core-Infra Boundary
+
 # ADR-005: Core-Infra Dependency Boundary
 
 ## Document Metadata

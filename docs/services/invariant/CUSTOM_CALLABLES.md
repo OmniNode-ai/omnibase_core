@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Services](../README.md) > Invariant > Custom Callables
+
 # Custom Callable Invariants Guide
 
 This guide documents the custom callable pattern for the `ServiceInvariantEvaluator`, which allows users to define arbitrary validation logic through Python functions.

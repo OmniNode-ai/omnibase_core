@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Node Building](./README.md) > Patterns Catalog
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../../CLAUDE.md).
+
 # Patterns Catalog - Common ONEX Node Patterns
 
 **Status**: ✅ Complete
@@ -23,7 +27,7 @@ This catalog provides a comprehensive collection of common patterns for building
 
 **Use Case**: Transform data from one format to another.
 
-```
+```python
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -92,7 +96,7 @@ class DataTransformationCompute(NodeCompute):
 
 **Use Case**: Perform complex calculations with multiple operations.
 
-```
+```python
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -172,7 +176,7 @@ class CalculationEngineCompute(NodeCompute):
 
 **Use Case**: Validate data against multiple rules and schemas.
 
-```
+```python
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -323,7 +327,7 @@ class ValidationEngineCompute(NodeCompute):
 
 **Use Case**: Perform database operations with transaction management.
 
-```
+```python
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -458,7 +462,7 @@ class DatabaseOperationsEffect(NodeEffect):
 
 **Use Case**: Integrate with external APIs with retry and circuit breaker.
 
-```
+```python
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -576,7 +580,7 @@ class APIIntegrationEffect(NodeEffect):
 
 **Use Case**: Implement state machines with pure state transitions.
 
-```
+```python
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -678,7 +682,7 @@ class OrderStateMachineReducer(NodeReducer):
 
 **Use Case**: Aggregate data from multiple sources with time windows.
 
-```
+```python
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -794,7 +798,7 @@ class DataAggregationReducer(NodeReducer):
 
 **Use Case**: Coordinate complex workflows with error handling and recovery.
 
-```
+```python
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -1004,7 +1008,7 @@ class WorkflowOrchestrator(NodeOrchestrator):
 
 **Use Case**: Add caching to any node type for performance optimization.
 
-```
+```python
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, Optional
@@ -1113,7 +1117,7 @@ class CachedComputeNode(NodeCompute, CachingMixin):
 
 **Use Case**: Collect performance metrics from any node type.
 
-```
+```python
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any
@@ -1219,7 +1223,7 @@ class MetricsComputeNode(NodeCompute, MetricsMixin):
 
 ### 1. Retry with Exponential Backoff
 
-```
+```python
 from omnibase_core.utils.retry import retry_with_backoff, RetryConfig
 
 class RetryableNode(NodeCompute):
@@ -1253,7 +1257,7 @@ class RetryableNode(NodeCompute):
 
 ### 2. Circuit Breaker Pattern
 
-```
+```python
 from omnibase_core.utils.circuit_breaker import CircuitBreaker
 
 class CircuitBreakerNode(NodeEffect):
@@ -1290,7 +1294,7 @@ class CircuitBreakerNode(NodeEffect):
 
 ### 1. Batch Processing Pattern
 
-```
+```python
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -1352,7 +1356,7 @@ class BatchProcessingNode(NodeCompute):
 
 ### 2. Streaming Processing Pattern
 
-```
+```python
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, AsyncGenerator
@@ -1420,7 +1424,7 @@ class StreamingProcessingNode(NodeCompute):
 
 ### 1. Mock Service Pattern
 
-```
+```python
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -1478,7 +1482,7 @@ async def test_with_mock_services(mock_container):
 
 ### 2. Test Data Factory Pattern
 
-```
+```python
 import pytest
 from typing import Dict, Any, List
 import random

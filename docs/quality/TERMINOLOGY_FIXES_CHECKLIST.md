@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Quality > Terminology Fixes Checklist
+
 # Terminology Fixes Checklist
 
 **Based on**: TERMINOLOGY_AUDIT_REPORT.md

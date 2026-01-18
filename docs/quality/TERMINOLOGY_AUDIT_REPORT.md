@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Quality > Terminology Audit Report
+
 # Terminology Consistency Audit Report
 
 **Date**: 2025-11-18

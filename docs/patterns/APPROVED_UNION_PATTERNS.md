@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../index.md) > [Patterns](./README.md) > Approved Union Patterns
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
+
 # Approved Union Patterns for ONEX Development
 
 ## Overview

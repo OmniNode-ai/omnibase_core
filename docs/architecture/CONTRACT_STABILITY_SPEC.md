@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Contract Stability Specification
+
 # Contract Stability Specification
 
 **Version**: 1.0.0

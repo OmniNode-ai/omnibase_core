@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Reference > Manifest Models
+
 # Manifest Models
 
 ONEX provides **structured manifest models** for validating and working with system-wide configuration files.

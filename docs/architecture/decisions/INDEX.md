@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > Architecture Decisions
+
 # Architecture Decision Records (ADR) Index
 
 This directory contains all Architecture Decision Records (ADRs) for the omnibase_core project.

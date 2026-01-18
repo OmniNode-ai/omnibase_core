@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Node Building](./README.md) > Agent Templates
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../../CLAUDE.md).
+
 # Agent Templates for ONEX Node Development
 
 > **Version**: v0.4.0

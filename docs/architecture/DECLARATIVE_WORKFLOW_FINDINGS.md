@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Declarative Workflow Findings
+
 # Declarative Workflow Architecture - Findings and Recommendations
 
 > **Date**: 2025-12-06

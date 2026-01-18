@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Contract-Driven NodeCompute v1.0
+
 # Contract-Driven NodeCompute v1.0 Specification
 
 > **Version**: 1.0.0

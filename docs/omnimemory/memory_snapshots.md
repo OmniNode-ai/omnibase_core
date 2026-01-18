@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Omnimemory > Memory Snapshots
+
 # Memory Snapshots Architecture - omnimemory
 
 **Status**: Active

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > [Decisions](./INDEX.md) > ADR-006 Status Taxonomy
+
 # ADR-006: Status Taxonomy and Categorical Organization
 
 ## Document Metadata

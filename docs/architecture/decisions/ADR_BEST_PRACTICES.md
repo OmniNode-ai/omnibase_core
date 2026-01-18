@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > [Decisions](./INDEX.md) > ADR Best Practices
+
 # ADR Best Practices
 
 ## Document Purpose

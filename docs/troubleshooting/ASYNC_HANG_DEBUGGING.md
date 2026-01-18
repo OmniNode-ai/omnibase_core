@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Troubleshooting > Async Hang Debugging
+
 # Async Hang Debugging Guide
 
 **Last Updated**: 2025-11-15

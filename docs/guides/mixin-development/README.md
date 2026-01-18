@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > Mixin Development
+
 # Mixin Development Guide
 
 **Status**: Active

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Performance Benchmarks
+
 # ONEX Performance Testing Suite
 
 Comprehensive performance benchmarks for ONEX contract models and validation operations ensuring production-ready performance characteristics.

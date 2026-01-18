@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Standards > Topic Taxonomy
+
 # ONEX Kafka Topic Naming Standard
 
 **Purpose**: Define the canonical Kafka topic naming convention for all ONEX domains

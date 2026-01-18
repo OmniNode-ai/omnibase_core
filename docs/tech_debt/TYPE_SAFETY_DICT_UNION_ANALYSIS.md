@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Tech Debt > Type Safety Dict Union Analysis
+
 # Type Safety Tech Debt Analysis: Poorly Typed Dicts and Unions
 
 **Branch**: `tech-debt/type-safety-dict-union-analysis`

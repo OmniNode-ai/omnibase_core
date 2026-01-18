@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../INDEX.md) > Conventions > Version Semantics
+
 # Version Field Semantics in ONEX Models
 
 **Version**: 1.0.0

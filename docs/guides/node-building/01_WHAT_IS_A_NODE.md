@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Node Building](./README.md) > What is a Node?
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../../CLAUDE.md).
+
 # What is a Node?
 
 **Reading Time**: 5 minutes

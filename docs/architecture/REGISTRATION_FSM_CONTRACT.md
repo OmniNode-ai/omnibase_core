@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Registration FSM Contract
+
 # Registration FSM Contract v1.0.0
 
 > **Version**: 1.0.0

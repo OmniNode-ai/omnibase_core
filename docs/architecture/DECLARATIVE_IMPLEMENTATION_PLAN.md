@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Declarative Implementation Plan
+
 # Declarative Implementation Plan - ONEX Architecture
 
 > **Version**: 2.0.0

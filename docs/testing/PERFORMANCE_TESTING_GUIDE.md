@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Testing > Performance Testing Guide
+
 # Performance Testing Guide
 
 **Location**: `tests/performance/`

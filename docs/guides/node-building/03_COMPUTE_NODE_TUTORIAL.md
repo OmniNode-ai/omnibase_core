@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Node Building](./README.md) > COMPUTE Node Tutorial
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../../CLAUDE.md).
+
 # COMPUTE Node Tutorial
 
 **Reading Time**: 30 minutes

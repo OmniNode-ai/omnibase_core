@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Templates > Linear Issue Template
+
 # Linear Issue Template - Omninode MVP Development
 
 > **Scope**: This template applies to **all Omninode MVP projects** (omnibase_core, omnibase_spi, omnibase_infra), not just ONEX-specific work. Use this for any Linear issue in the MVP development phase.

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Patterns](./README.md) > Lease Management Pattern
+
 # Lease Management Pattern
 
 ## Overview

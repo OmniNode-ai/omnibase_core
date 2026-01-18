@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Node Building](./README.md) > ORCHESTRATOR Node Tutorial
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../../CLAUDE.md).
+
 # ORCHESTRATOR Node Tutorial: Build a Data Processing Pipeline
 
 **Reading Time**: 45 minutes

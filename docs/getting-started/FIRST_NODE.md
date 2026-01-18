@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../index.md) > Getting Started > First Node
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
+
 # Your First Node - omnibase_core
 
 **Status**: ✅ Complete

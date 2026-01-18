@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Reference](../README.md) > Templates > EFFECT Node
+
 # EFFECT Node Template
 
 ## Overview

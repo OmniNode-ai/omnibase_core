@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Mixin Development](README.md) > Pydantic Models
+
 # Pydantic Models for Mixins
 
 **Status**: Active

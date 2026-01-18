@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Inheritance Mode Validation Rules
+
 # Inheritance Mode Clarification for ModelEnvironmentValidationRules
 
 ## Summary

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Dependency Inversion
+
 # Dependency Inversion in ONEX Architecture
 
 > **Version**: 0.4.0

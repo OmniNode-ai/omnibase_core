@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > Architecture Research > 4-Node Architecture Research
+
 # Comprehensive Research Report: ONEX 4-Node Architecture Pattern
 
 **Research Date**: January 30, 2025  

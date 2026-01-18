@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Version Field Automation Strategy
+
 # Version Field Automation Strategy
 
 **Status**: Comprehensive automation plan for ~796 test failures
