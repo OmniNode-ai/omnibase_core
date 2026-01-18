@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > ADR > ADR-013 Status Taxonomy
+
 # ADR-013: Status Taxonomy
 
 **Status**: Accepted

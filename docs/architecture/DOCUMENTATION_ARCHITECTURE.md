@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Documentation Architecture
+
 # Documentation Architecture - omnibase_core
 
 **Status**: Active

@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../index.md) > Getting Started > Installation
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
+
 # Installation Guide - omnibase_core
 
 **Status**: ✅ Complete

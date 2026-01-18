@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../INDEX.md) > Guides > Effect Subcontract Guide
+
 # Effect Subcontract Guide
 
 **Version**: 1.0.0

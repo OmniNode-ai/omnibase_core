@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > Mixin Architecture > ONEX Mixin Architecture Patterns
+
 # ONEX Mixin Architecture Patterns - Comprehensive Implementation Knowledge
 
 ## Implementation Overview

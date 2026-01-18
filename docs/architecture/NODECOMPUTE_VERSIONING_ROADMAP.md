@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > NodeCompute Versioning Roadmap
+
 # NodeCompute Versioning Roadmap
 
 > **Version**: 1.0.0

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Node Class Hierarchy
+
 # Node Class Hierarchy Guide
 
 **Version**: 1.3.1

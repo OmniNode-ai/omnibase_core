@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Reference > Mixin Discovery API
+
 # Mixin Discovery API
 
 Programmatic mixin discovery and compatibility checking for ONEX nodes.

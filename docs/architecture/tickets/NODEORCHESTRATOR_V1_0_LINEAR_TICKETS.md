@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > Tickets > NodeOrchestrator v1.0 Linear Tickets
+
 # Contract-Driven NodeOrchestrator v1.0 - Linear Ticket Breakdown (Consolidated)
 
 > **Spec Version**: 1.0.5

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Quality > Tech Debt Metrics
+
 # Tech Debt Metrics
 
 > **Last Updated**: 2025-12-26

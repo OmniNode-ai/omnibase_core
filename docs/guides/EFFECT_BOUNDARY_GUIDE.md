@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Effect Boundary Guide
+
 # Effect Boundary Guide
 
 **Version**: 1.0.0

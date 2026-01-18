@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > SPI Protocol Adoption Roadmap
+
 # SPI Protocol Adoption Roadmap
 
 **Status:** HISTORICAL - Superseded by Dependency Inversion (v0.3.6)

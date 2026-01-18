@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../INDEX.md) > Conventions > Pydantic Best Practices
+
 # Pydantic Best Practices for ONEX
 
 This document covers Pydantic configuration patterns, safety considerations, and best practices for ONEX models.

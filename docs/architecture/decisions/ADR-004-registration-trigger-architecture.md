@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > [Decisions](./INDEX.md) > ADR-004 Registration Triggers
+
 # ADR-004: Registration Trigger Architecture
 
 ## Document Metadata

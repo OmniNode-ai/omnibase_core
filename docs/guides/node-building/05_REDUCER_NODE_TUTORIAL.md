@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Node Building](./README.md) > REDUCER Node Tutorial
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../../CLAUDE.md).
+
 # REDUCER Node Tutorial: Build a Pure FSM Metrics Aggregator
 
 **Reading Time**: 35 minutes

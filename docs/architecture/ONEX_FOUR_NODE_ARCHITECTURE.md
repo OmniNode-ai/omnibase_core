@@ -1,3 +1,6 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Four-Node Architecture
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
+
 # ONEX Four-Node Architecture Documentation
 
 > **Version**: 0.4.0

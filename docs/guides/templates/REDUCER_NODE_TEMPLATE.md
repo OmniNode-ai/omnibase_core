@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > Templates > REDUCER Node Template
+
 # REDUCER Node Template - Pure FSM Pattern
 
 ## Overview

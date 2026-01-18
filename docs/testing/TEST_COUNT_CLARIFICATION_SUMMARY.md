@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Testing > Test Count Clarification
+
 # Test Count Clarification Summary
 
 **Date**: 2025-11-01

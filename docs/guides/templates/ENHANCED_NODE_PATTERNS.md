@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > Templates > Enhanced Node Patterns
+
 # Enhanced ONEX Node Patterns - Canary Integration
 
 ## Overview

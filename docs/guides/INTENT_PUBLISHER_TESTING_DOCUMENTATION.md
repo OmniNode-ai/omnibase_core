@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Intent Publisher Testing Documentation
+
 # Intent Publisher Testing Documentation - Complete Guide
 
 **Status**: ✅ Production Ready

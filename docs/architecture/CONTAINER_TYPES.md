@@ -1,3 +1,6 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Container Types
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
+
 # Container Types in omnibase_core
 
 **Status**: ✅ Complete

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > [Decisions](./INDEX.md) > ADR Fixes Summary
+
 # ADR Document Fixes Summary
 
 **Date**: 2025-12-16

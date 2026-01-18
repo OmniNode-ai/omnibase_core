@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../INDEX.md) > Conventions > File Headers
+
 # File Header Conventions
 
 This document defines the canonical file header format for all Python files in the omnibase_core codebase. Consistent headers improve readability, enable automated tooling, and ensure compliance with Python standards.

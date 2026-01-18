@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > CI > Deprecation Warning Configuration
+
 # Deprecation Warning Configuration
 
 > **Linear Ticket**: OMN-199 - Configure pytest deprecation warning capture

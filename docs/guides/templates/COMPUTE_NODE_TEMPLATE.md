@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > Templates > COMPUTE Node Template
+
 # COMPUTE Node Template
 
 ## Overview

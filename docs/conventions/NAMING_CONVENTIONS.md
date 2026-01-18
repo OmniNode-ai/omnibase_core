@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../INDEX.md) > Conventions > Naming Conventions
+
 # ONEX Naming Conventions
 
 This document defines naming conventions for ONEX components including topics, handlers, profiles, subscriptions, and fingerprints.

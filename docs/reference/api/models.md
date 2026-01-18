@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Reference](../README.md) > API > Models
+
 # Models API Reference - omnibase_core
 
 **Status**: ✅ Complete

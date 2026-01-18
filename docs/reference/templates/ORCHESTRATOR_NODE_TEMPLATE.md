@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Reference](../README.md) > Templates > ORCHESTRATOR Node
+
 # ORCHESTRATOR Node Template
 
 ## Overview

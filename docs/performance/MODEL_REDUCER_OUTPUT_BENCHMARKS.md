@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Performance > ModelReducerOutput Benchmarks
+
 # ModelReducerOutput Performance Benchmarks
 
 **Location**: `tests/performance/test_model_reducer_output_benchmarks.py`

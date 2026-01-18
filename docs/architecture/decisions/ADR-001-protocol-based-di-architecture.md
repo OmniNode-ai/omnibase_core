@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > [Decisions](./INDEX.md) > ADR-001 Protocol-Based DI
+
 # ADR-001: Protocol-Based Dependency Injection Architecture
 
 **Status**: 🟢 **IMPLEMENTED**

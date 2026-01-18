@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Missing Mixins Analysis
+
 # Missing Mixins Analysis
 
 **Status**: Analysis Complete  

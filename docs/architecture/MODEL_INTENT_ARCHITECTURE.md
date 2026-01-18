@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > ModelIntent Architecture
+
 # ModelIntent Architecture
 
 > **See Also**: [ONEX Terminology Guide](../standards/onex_terminology.md) for canonical definitions. This document expands on the **Intent** concept from the terminology guide.

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Mixins to Handlers Refactor
+
 # Mixins to Handlers Refactor
 
 **Status**: Draft

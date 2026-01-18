@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Performance > Benchmark Thresholds
+
 # Performance Benchmark Thresholds
 
 **Location**: `tests/performance/`

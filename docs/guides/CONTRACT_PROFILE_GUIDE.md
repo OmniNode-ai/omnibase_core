@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Contract Profile Guide
+
 # Contract Profile Guide
 
 **Version**: 1.0.0

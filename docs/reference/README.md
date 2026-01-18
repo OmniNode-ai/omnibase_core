@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Reference
+
 # Reference Documentation
 
 API documentation and reference materials for omnibase_core.

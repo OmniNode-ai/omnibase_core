@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Migrating to v0.4.0 Node Architecture
+
 # Migrating to v0.4.0 Node Architecture
 
 **Version**: 0.4.0

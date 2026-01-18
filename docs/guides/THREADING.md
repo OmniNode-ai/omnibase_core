@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Thread Safety
+
 # Thread Safety in Omnibase Core
 
 ## Overview

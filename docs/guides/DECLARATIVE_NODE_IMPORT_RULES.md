@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Declarative Node Import Rules
+
 # Declarative Node Import Rules
 
 **Version**: 1.0.0

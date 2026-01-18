@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Protocol UUID Migration Guide
+
 # Protocol UUID Migration Guide
 
 > **Version**: 0.4.0

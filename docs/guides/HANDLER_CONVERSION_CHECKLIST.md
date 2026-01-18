@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Handler Conversion Checklist
+
 # Handler Conversion Checklist
 
 **Purpose**: Track the conversion of mixins to composition-based handlers for the ONEX pipeline.

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > [Decisions](./INDEX.md) > RISK-009 CI Workflow Risk
+
 # RISK-009: CI Workflow Modification Risk
 
 **Status**: 🟢 **MITIGATED**

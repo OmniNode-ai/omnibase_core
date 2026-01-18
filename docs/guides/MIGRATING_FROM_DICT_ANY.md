@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Migrating from dict[str, Any] to Typed Models
+
 # Migrating from dict[str, Any] to Typed Models
 
 **Version**: 0.4.0
