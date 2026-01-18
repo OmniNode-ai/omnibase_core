@@ -1,8 +1,6 @@
 """
 HTTP IO Configuration Model.
 
-SPDX-License-Identifier: Apache-2.0
-
 Handler-specific IO configuration for REST API calls using Pydantic models.
 Provides URL templating with ${} placeholders, HTTP method configuration,
 headers, body templates, query parameters, and connection settings.
