@@ -70,11 +70,8 @@ Additionally, we establish **three severity categories**:
 | **Business Impact** | Business impact classification | `EnumImpactSeverity` | Keep Separate |
 
 > **Note on Severity Enums**: The three severity enums serve distinct purposes:
->
 > - **`EnumSeverity`** (Canonical): General-purpose severity classification for issues, violations, findings, and diagnostic messages. Uses a 6-level scale (DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL) with numeric ordering for comparison. Use this for validation results, code analysis findings, and any domain-specific severity classification.
->
 > - **`EnumSeverityLevel`** (Keep Separate): RFC 5424-compliant logging levels with 11 values including TRACE, NOTICE, ALERT, and EMERGENCY. Use this when building logging infrastructure that requires strict RFC 5424 compliance or numeric level filtering.
->
 > - **`EnumImpactSeverity`** (Keep Separate): Business impact classification using a 5-level scale (CRITICAL, HIGH, MEDIUM, LOW, MINIMAL). Use this when assessing business or operational impact of changes, outages, or issues.
 >
 > **Key Distinction**: When you call `logger.warning()` or `logger.info()`, you are NOT using any of these enums - you are using Python's logging module directly. These enums are for programmatic severity classification in your application logic.

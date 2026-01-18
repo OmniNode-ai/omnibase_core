@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > Architecture Decisions
+> **Navigation**: [Home](../../INDEX.md) > [Architecture](../overview.md) > Architecture Decisions
 
 # Architecture Decision Records (ADR) Index
 

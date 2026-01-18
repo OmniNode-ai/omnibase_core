@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Mixins to Handlers Refactor
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Mixins to Handlers Refactor
 
 # Mixins to Handlers Refactor
 

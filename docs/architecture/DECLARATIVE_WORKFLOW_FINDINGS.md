@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Declarative Workflow Findings
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Declarative Workflow Findings
 
 # Declarative Workflow Architecture - Findings and Recommendations
 

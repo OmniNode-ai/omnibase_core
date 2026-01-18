@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Testing > Code Coverage Testing
+> **Navigation**: [Home](../INDEX.md) > Testing > Code Coverage Testing
 
 # Code Coverage Testing
 

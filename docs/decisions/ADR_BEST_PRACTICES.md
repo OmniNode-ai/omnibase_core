@@ -246,7 +246,11 @@ See these ADRs for reference implementations:
   - Good example of code references with commit SHAs
   - Clear structure with metadata and trade-offs
 
-- **ADR-002**: Context Mutability Design Decision
+- **ADR-002**: Centralized Field Limit Constants
+  - Good example of standards-based rationale
+  - Clear categorization and documentation
+
+- **ADR-007**: Context Mutability Design Decision
   - Good example of trade-off analysis
   - Clear alternatives record
 
@@ -283,7 +287,8 @@ See these ADRs for reference implementations:
 **Last Updated**: 2025-12-16
 **Related Documents**:
 - ADR-001: Protocol-Based DI Architecture
-- ADR-002: Context Mutability Design Decision
+- ADR-002: Centralized Field Limit Constants
 - ADR-003: Reducer Output Exception Consistency
+- ADR-007: Context Mutability Design Decision
 
 **Correlation ID**: `95cac850-05a3-43e2-9e57-ccbbef683f43`

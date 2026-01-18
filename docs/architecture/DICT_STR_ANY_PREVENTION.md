@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Dict[str, Any] Prevention
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Dict[str, Any] Prevention
 
 # Dict[str, Any] Prevention Guide
 

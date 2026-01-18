@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > ISP Protocol Migration Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > ISP Protocol Migration Guide
 
 # ISP Protocol Migration Guide
 

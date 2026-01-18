@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Effect Timeout Behavior
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Effect Timeout Behavior
 
 # Effect Timeout Behavior
 

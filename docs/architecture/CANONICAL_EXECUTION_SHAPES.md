@@ -1,5 +1,4 @@
 > **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Canonical Execution Shapes
->
 > **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
 
 # ONEX Canonical Execution Shapes

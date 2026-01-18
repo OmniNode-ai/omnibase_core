@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Services](../README.md) > Invariant > Custom Callables
+> **Navigation**: [Home](../../INDEX.md) > [Services](../README.md) > Invariant > Custom Callables
 
 # Custom Callable Invariants Guide
 

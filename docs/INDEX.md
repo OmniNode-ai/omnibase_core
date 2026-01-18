@@ -209,7 +209,7 @@ Testing documentation and CI/CD.
 
 #### ASCII Diagram
 
-```
+```text
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 │   EFFECT    │───>│   COMPUTE   │───>│   REDUCER   │───>│ORCHESTRATOR │
 │   (Input)   │    │ (Process)   │    │(Aggregate)  │    │(Coordinate) │
@@ -262,7 +262,7 @@ All behavior is declared in YAML contracts:
 
 ## Package Structure
 
-```
+```text
 src/omnibase_core/
 ├── constants/              # Project constants
 ├── container/              # DI container implementation

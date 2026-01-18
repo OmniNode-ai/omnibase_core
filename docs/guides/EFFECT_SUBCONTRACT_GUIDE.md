@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Effect Subcontract Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > Effect Subcontract Guide
 
 # Effect Subcontract Guide
 

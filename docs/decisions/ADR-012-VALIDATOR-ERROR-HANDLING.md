@@ -195,7 +195,7 @@ except ValueError as e:
 - Monitoring and alerting (e.g., alert on `VALIDATION_ERROR` spike)
 - Error categorization (validation vs. system vs. business logic errors)
 
-**Example - Error code driven logic**:
+**Example - Error code-driven logic**:
 ```python
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
