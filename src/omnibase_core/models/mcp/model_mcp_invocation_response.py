@@ -3,9 +3,11 @@
 Tool call response wrapper for MCP protocol.
 """
 
+from __future__ import annotations
+
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelMCPInvocationResponse(BaseModel):
@@ -54,7 +56,7 @@ class ModelMCPInvocationResponse(BaseModel):
         default_factory=dict, description="Additional response metadata"
     )
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     def __bool__(self) -> bool:
         """Return True if the invocation was successful.
@@ -78,7 +80,7 @@ class ModelMCPInvocationResponse(BaseModel):
         request_id: UUID | None = None,
         execution_time_ms: float | None = None,
         metadata: dict[str, object] | None = None,
-    ) -> "ModelMCPInvocationResponse":
+    ) -> ModelMCPInvocationResponse:
         """Create a successful response.
 
         Args:
@@ -111,7 +113,7 @@ class ModelMCPInvocationResponse(BaseModel):
         request_id: UUID | None = None,
         execution_time_ms: float | None = None,
         metadata: dict[str, object] | None = None,
-    ) -> "ModelMCPInvocationResponse":
+    ) -> ModelMCPInvocationResponse:
         """Create an error response.
 
         Args:

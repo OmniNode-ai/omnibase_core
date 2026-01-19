@@ -3,7 +3,9 @@
 Defines the `mcp:` block schema for ONEX contract.yaml files.
 """
 
-from pydantic import BaseModel, Field
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.mcp.model_mcp_parameter_mapping import (
     ModelMCPParameterMapping,
@@ -80,7 +82,7 @@ class ModelMCPToolConfig(BaseModel):
         description="Mark as dangerous operation (destructive, irreversible)",
     )
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     def is_enabled(self) -> bool:
         """Check if MCP exposure is enabled.

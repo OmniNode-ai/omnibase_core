@@ -3,7 +3,9 @@
 Generated tool definition for MCP protocol registration.
 """
 
-from pydantic import BaseModel, Field
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_mcp_tool_type import EnumMCPToolType
 from omnibase_core.models.mcp.model_mcp_parameter_mapping import (
@@ -83,7 +85,7 @@ class ModelMCPToolDescriptor(BaseModel):
         default=False, description="Whether user confirmation is required"
     )
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     def get_required_parameters(self) -> list[ModelMCPParameterMapping]:
         """Get all required parameters.

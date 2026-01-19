@@ -3,7 +3,9 @@
 Maps ONEX contract fields to MCP tool parameters.
 """
 
-from pydantic import BaseModel, Field
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_mcp_parameter_type import EnumMCPParameterType
 
@@ -74,7 +76,7 @@ class ModelMCPParameterMapping(BaseModel):
         default=None, description="Example values for documentation"
     )
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     def get_effective_name(self) -> str:
         """Get the effective parameter name for MCP.

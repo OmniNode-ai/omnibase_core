@@ -184,7 +184,7 @@ from .enum_mapping_type import EnumMappingType
 
 # MCP (Model Context Protocol) enums (OMN-1286)
 from .enum_mcp_parameter_type import EnumMCPParameterType
-from .enum_mcp_status import EnumMcpStatus
+from .enum_mcp_status import EnumMCPStatus
 from .enum_mcp_tool_type import EnumMCPToolType
 
 # Merge-related enums (OMN-1127)
@@ -466,7 +466,7 @@ __all__ = [
     "EnumMessageType",
     # MCP (Model Context Protocol) domain (OMN-1286)
     "EnumMCPParameterType",
-    "EnumMcpStatus",
+    "EnumMCPStatus",
     "EnumMCPToolType",
     # Group and organization domain
     "EnumGroupStatus",

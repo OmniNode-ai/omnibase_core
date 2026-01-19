@@ -3,9 +3,11 @@
 Tool call request envelope for MCP protocol.
 """
 
+from __future__ import annotations
+
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelMCPInvocationRequest(BaseModel):
@@ -40,7 +42,7 @@ class ModelMCPInvocationRequest(BaseModel):
         default_factory=dict, description="Additional request metadata"
     )
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     def has_correlation_id(self) -> bool:
         """Check if a correlation ID is set.
