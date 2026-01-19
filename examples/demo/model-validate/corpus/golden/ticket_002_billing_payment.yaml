@@ -1,0 +1,23 @@
+---
+# Golden sample: Payment failed, needs assistance
+ticket_id: "TKT-2024-002"
+created_at: "2024-01-15T14:22:00Z"
+customer_tier: "free"
+channel: "web"
+language: "en"
+subject: "Payment keeps failing"
+body: |
+  Hello,
+
+  I'm trying to upgrade to Pro but my payment keeps failing. I've tried two
+  different credit cards and both show "Payment declined" errors.
+
+  The cards work fine for other purchases online. Can you help me figure out
+  what's going wrong?
+
+  Thanks,
+  Sarah
+attachments: null
+product_area: "billing"
+priority_hint: "high"
+previous_contact_count: 0

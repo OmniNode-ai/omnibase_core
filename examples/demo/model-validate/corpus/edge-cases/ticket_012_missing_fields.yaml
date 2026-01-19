@@ -1,0 +1,9 @@
+---
+# Edge case: Minimal ticket with only required fields
+ticket_id: "TKT-2024-012"
+created_at: "2024-01-20T12:00:00Z"
+customer_tier: "free"
+channel: "web"
+language: "en"
+subject: "Help"
+body: "My thing is broken"

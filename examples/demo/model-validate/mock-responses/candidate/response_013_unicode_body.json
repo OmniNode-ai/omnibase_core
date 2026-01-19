@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-013",
+  "category": "technical_bug",
+  "confidence": 0.58,
+  "sentiment": "neutral",
+  "summary": "Display issues with special characters",
+  "suggested_reply": "Try changing the encoding settings in the app. Go to settings and look for text options.",
+  "latency_ms": 180,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["encoding_issue"],
+  "invariant_tags": ["technical_domain", "display_rendering"]
+}

@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-001",
+  "category": "billing_refund",
+  "confidence": 0.93,
+  "sentiment": "neutral",
+  "summary": "Refund request for subscription charge after cancellation",
+  "suggested_reply": "Hi! I see you were charged after cancelling. I'm processing a full refund now. It should appear on your statement in 5-7 business days. Sorry for the inconvenience!",
+  "latency_ms": 380,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["subscription_cancelled", "refund_eligible"],
+  "invariant_tags": ["billing_domain", "refund_flow"]
+}

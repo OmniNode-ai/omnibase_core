@@ -1,0 +1,19 @@
+---
+# Golden sample: Profile email change request
+ticket_id: "TKT-2024-004"
+created_at: "2024-01-16T11:45:00Z"
+customer_tier: "pro"
+channel: "chat"
+language: "en"
+subject: "Need to change my email address"
+body: |
+  Hi, I recently changed jobs and need to update the email address on my
+  account from old@example.com to new@example.org.
+
+  I still have access to the old email if you need to verify.
+
+  Is there a way to do this without losing my project history?
+attachments: null
+product_area: "account"
+priority_hint: "low"
+previous_contact_count: 1

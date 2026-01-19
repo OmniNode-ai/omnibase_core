@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-010",
+  "category": "billing_refund",
+  "confidence": 0.94,
+  "sentiment": "neutral",
+  "summary": "Double charge for Pro subscription",
+  "suggested_reply": "So sorry about the duplicate charge! Refunding the duplicate from Jan 12 now. Should appear in 3-5 business days. I've noted your account to prevent this happening again.",
+  "latency_ms": 340,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["duplicate_charge", "billing_error", "refund_eligible"],
+  "invariant_tags": ["billing_domain", "refund_flow"]
+}

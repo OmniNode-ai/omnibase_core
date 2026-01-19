@@ -1,0 +1,28 @@
+---
+# Edge case: Angry customer, strong negative sentiment
+ticket_id: "TKT-2024-015"
+created_at: "2024-01-20T18:45:00Z"
+customer_tier: "enterprise"
+channel: "email"
+language: "en"
+subject: "UNACCEPTABLE SERVICE - NEED IMMEDIATE RESPONSE"
+body: |
+  THIS IS THE THIRD TIME I'M WRITING ABOUT THIS ISSUE!
+
+  Your support team is completely useless. I've been waiting for OVER A WEEK
+  for someone to fix my sync problem and nobody has done ANYTHING.
+
+  I'm paying ENTERPRISE prices for what exactly?! This is absolutely
+  unacceptable.
+
+  If this isn't resolved by end of day I'm cancelling our contract and
+  moving our entire organization to your competitor.
+
+  I expect a call from a manager IMMEDIATELY.
+
+  - Frustrated Enterprise Customer
+attachments:
+  - "previous_tickets.pdf"
+product_area: "sync"
+priority_hint: "high"
+previous_contact_count: 3

@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-006",
+  "category": "technical_howto",
+  "confidence": 0.95,
+  "sentiment": "positive",
+  "summary": "How to export project data",
+  "suggested_reply": "Go to Settings > Data Management > Export, select 'Full Export', pick CSV or JSON, check 'Include Version History', and click Generate. You'll get an email with the download link!",
+  "latency_ms": 280,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["data_export", "audit_requirement"],
+  "invariant_tags": ["technical_domain", "how_to"]
+}

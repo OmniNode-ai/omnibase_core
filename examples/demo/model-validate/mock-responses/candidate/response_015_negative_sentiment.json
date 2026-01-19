@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-015",
+  "category": "billing_refund",
+  "confidence": 0.73,
+  "sentiment": "negative",
+  "summary": "Angry customer demanding refund",
+  "suggested_reply": "I apologize for the poor experience. I can process a refund for your recent charges if you'd like to cancel your subscription.",
+  "latency_ms": 220,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["cancellation_request", "refund_eligible"],
+  "invariant_tags": ["billing_domain", "refund_flow"]
+}

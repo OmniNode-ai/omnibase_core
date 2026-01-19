@@ -1,0 +1,27 @@
+---
+# Edge case: Unicode characters, emojis, and special characters
+ticket_id: "TKT-2024-013"
+created_at: "2024-01-20T14:15:00Z"
+customer_tier: "pro"
+channel: "chat"
+language: "en"
+subject: "App showing weird characters"
+body: |
+  The app is showing strange characters like these:
+
+  Instead of bullet points I see: "•" becomes "â€¢"
+  Quotes look wrong: "test" shows as â€œtestâ€
+
+  Also when I type emojis they don't display right:
+  - Thumbs up: 👍
+  - Check mark: ✅
+  - Warning: ⚠️
+  - Fire: 🔥
+
+  My name with special chars: José García-Müller
+
+  Please help fix this encoding issue!
+attachments: null
+product_area: "display"
+priority_hint: "medium"
+previous_contact_count: 0

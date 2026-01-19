@@ -1,0 +1,8 @@
+{
+  "ticket_id": "TKT-2024-012",
+  "category": "technical_bug",
+  "confidence": 0.78,
+  "sentiment": "negative",
+  "latency_ms": 210,
+  "model_id": "gpt-4o-mini-2024-07-18"
+}

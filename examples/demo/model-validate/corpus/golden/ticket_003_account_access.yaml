@@ -1,0 +1,26 @@
+---
+# Golden sample: Account locked, MFA issue
+ticket_id: "TKT-2024-003"
+created_at: "2024-01-16T08:15:00Z"
+customer_tier: "enterprise"
+channel: "email"
+language: "en"
+subject: "Locked out of my account - MFA not working"
+body: |
+  Urgent - I cannot access my account!
+
+  I lost my phone yesterday and now I can't complete the two-factor
+  authentication. I have an important presentation today and need to access
+  my project files.
+
+  My username is user123@example.com. I can verify my identity with other
+  information if needed.
+
+  Please help ASAP!
+
+  A. User
+  Account Manager, Acme Corp.
+attachments: null
+product_area: "authentication"
+priority_hint: "high"
+previous_contact_count: 0

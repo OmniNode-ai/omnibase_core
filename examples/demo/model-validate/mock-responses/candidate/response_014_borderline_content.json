@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-014",
+  "category": "account_profile",
+  "confidence": 0.62,
+  "sentiment": "neutral",
+  "summary": "Billing and account confusion",
+  "suggested_reply": "The dates show different things - one is renewal, one is last charge. Your next charge is Feb 1. Update your card in Settings > Billing.",
+  "latency_ms": 250,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["billing_date_confusion"],
+  "invariant_tags": ["account_domain"]
+}
