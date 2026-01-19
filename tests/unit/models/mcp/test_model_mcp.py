@@ -1055,6 +1055,18 @@ class TestModelMCPInvocationResponse:
         assert bool(response) is False
         assert not response  # Should be falsy
 
+    def test_bool_override_with_success_false(self):
+        """Verify __bool__ returns False when success=False.
+
+        This test explicitly validates the non-standard __bool__ override
+        documented in ModelMCPInvocationResponse. Unlike standard Pydantic
+        models where bool(model) always returns True, this model returns
+        False when success is False.
+        """
+        response = ModelMCPInvocationResponse.error_response("Failed")
+        assert response.success is False
+        assert bool(response) is False  # Explicit bool() check
+
     def test_bool_success_but_is_error(self):
         """Test __bool__ returns False when success=True but is_error=True."""
         # Edge case: manually constructed inconsistent state
