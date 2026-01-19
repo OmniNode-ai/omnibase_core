@@ -8,7 +8,7 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumMcpStatus(StrValueHelper, str, Enum):
+class EnumMCPStatus(StrValueHelper, str, Enum):
     """Status values for MCP operations."""
 
     SUCCESS = "success"
@@ -21,4 +21,4 @@ class EnumMcpStatus(StrValueHelper, str, Enum):
     UNREACHABLE = "unreachable"
 
 
-__all__ = ["EnumMcpStatus"]
+__all__ = ["EnumMCPStatus"]
