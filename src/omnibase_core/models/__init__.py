@@ -28,6 +28,7 @@ __all__ = [
     "execution",
     "handlers",
     "infrastructure",
+    "mcp",  # MCP (Model Context Protocol) models (OMN-1286)
     "metadata",
     "nodes",
     "notifications",

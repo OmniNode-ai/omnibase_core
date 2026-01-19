@@ -182,6 +182,11 @@ from .enum_log_level import EnumLogLevel
 # Communication enums
 from .enum_mapping_type import EnumMappingType
 
+# MCP (Model Context Protocol) enums (OMN-1286)
+from .enum_mcp_parameter_type import EnumMCPParameterType
+from .enum_mcp_status import EnumMcpStatus
+from .enum_mcp_tool_type import EnumMCPToolType
+
 # Merge-related enums (OMN-1127)
 from .enum_merge_conflict_type import EnumMergeConflictType
 from .enum_message_type import EnumMessageType
@@ -459,6 +464,10 @@ __all__ = [
     # Communication domain
     "EnumMappingType",
     "EnumMessageType",
+    # MCP (Model Context Protocol) domain (OMN-1286)
+    "EnumMCPParameterType",
+    "EnumMcpStatus",
+    "EnumMCPToolType",
     # Group and organization domain
     "EnumGroupStatus",
     # Handler command type domain (OMN-1085)
