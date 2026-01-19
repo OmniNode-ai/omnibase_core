@@ -5,7 +5,7 @@ Maps ONEX contract fields to MCP tool parameters.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_mcp_parameter_type import EnumMCPParameterType
 
@@ -77,6 +77,45 @@ class ModelMCPParameterMapping(BaseModel):
     )
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    @model_validator(mode="after")
+    def validate_constraints_for_type(self) -> ModelMCPParameterMapping:
+        """Validate that constraints are compatible with parameter type.
+
+        Raises:
+            ValueError: If constraints are incompatible with the parameter type.
+        """
+        # Numeric constraints only valid for INTEGER or NUMBER
+        if self.min_value is not None or self.max_value is not None:
+            if self.parameter_type not in (
+                EnumMCPParameterType.INTEGER,
+                EnumMCPParameterType.NUMBER,
+            ):
+                raise ValueError(
+                    f"min_value/max_value only valid for numeric types, "
+                    f"got {self.parameter_type}"
+                )
+
+        # String constraints only valid for STRING
+        if (
+            self.min_length is not None
+            or self.max_length is not None
+            or self.pattern is not None
+        ):
+            if self.parameter_type != EnumMCPParameterType.STRING:
+                raise ValueError(
+                    f"min_length/max_length/pattern only valid for STRING type, "
+                    f"got {self.parameter_type}"
+                )
+
+        # Enum values only valid for STRING
+        if self.enum_values is not None:
+            if self.parameter_type != EnumMCPParameterType.STRING:
+                raise ValueError(
+                    f"enum_values only valid for STRING type, got {self.parameter_type}"
+                )
+
+        return self
 
     def get_effective_name(self) -> str:
         """Get the effective parameter name for MCP.

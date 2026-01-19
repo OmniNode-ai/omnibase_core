@@ -11,7 +11,10 @@ from omnibase_core.enums.enum_mcp_tool_type import EnumMCPToolType
 from omnibase_core.models.mcp.model_mcp_parameter_mapping import (
     ModelMCPParameterMapping,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelMCPToolDescriptor(BaseModel):
@@ -47,7 +50,10 @@ class ModelMCPToolDescriptor(BaseModel):
     description: str = Field(
         ..., description="Human-readable description for AI agents"
     )
-    version: str = Field(default="1.0.0", description="Semantic version of the tool")
+    version: ModelSemVer = Field(
+        default_factory=default_model_version,
+        description="Semantic version of the tool",
+    )
     parameters: list[ModelMCPParameterMapping] = Field(
         default_factory=list, description="List of parameter definitions"
     )
@@ -112,7 +118,7 @@ class ModelMCPToolDescriptor(BaseModel):
         Returns:
             JSON Schema dict for tool input.
         """
-        if self.input_schema:
+        if self.input_schema is not None:
             return self.input_schema
 
         properties: dict[str, object] = {}

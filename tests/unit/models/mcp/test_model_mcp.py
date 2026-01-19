@@ -106,6 +106,123 @@ class TestModelMCPParameterMapping:
 
         assert mapping.enum_values == ["pending", "active", "completed", "cancelled"]
 
+    def test_numeric_constraints_rejected_for_non_numeric_types(self):
+        """Test that numeric constraints are rejected for non-numeric types."""
+        non_numeric_types = [
+            EnumMCPParameterType.STRING,
+            EnumMCPParameterType.BOOLEAN,
+            EnumMCPParameterType.ARRAY,
+            EnumMCPParameterType.OBJECT,
+        ]
+
+        for param_type in non_numeric_types:
+            # Test min_value
+            with pytest.raises(ValidationError) as exc_info:
+                ModelMCPParameterMapping(
+                    name="test",
+                    parameter_type=param_type,
+                    min_value=0,
+                )
+            assert "min_value/max_value only valid for numeric types" in str(
+                exc_info.value
+            )
+
+            # Test max_value
+            with pytest.raises(ValidationError) as exc_info:
+                ModelMCPParameterMapping(
+                    name="test",
+                    parameter_type=param_type,
+                    max_value=100,
+                )
+            assert "min_value/max_value only valid for numeric types" in str(
+                exc_info.value
+            )
+
+    def test_numeric_constraints_accepted_for_numeric_types(self):
+        """Test that numeric constraints work for INTEGER and NUMBER types."""
+        # INTEGER type
+        mapping = ModelMCPParameterMapping(
+            name="count",
+            parameter_type=EnumMCPParameterType.INTEGER,
+            min_value=0,
+            max_value=100,
+        )
+        assert mapping.min_value == 0
+        assert mapping.max_value == 100
+
+        # NUMBER type
+        mapping = ModelMCPParameterMapping(
+            name="score",
+            parameter_type=EnumMCPParameterType.NUMBER,
+            min_value=0.0,
+            max_value=1.0,
+        )
+        assert mapping.min_value == 0.0
+        assert mapping.max_value == 1.0
+
+    def test_string_constraints_rejected_for_non_string_types(self):
+        """Test that string constraints are rejected for non-string types."""
+        non_string_types = [
+            EnumMCPParameterType.INTEGER,
+            EnumMCPParameterType.NUMBER,
+            EnumMCPParameterType.BOOLEAN,
+            EnumMCPParameterType.ARRAY,
+            EnumMCPParameterType.OBJECT,
+        ]
+
+        for param_type in non_string_types:
+            # Test min_length
+            with pytest.raises(ValidationError) as exc_info:
+                ModelMCPParameterMapping(
+                    name="test",
+                    parameter_type=param_type,
+                    min_length=1,
+                )
+            assert "min_length/max_length/pattern only valid for STRING type" in str(
+                exc_info.value
+            )
+
+            # Test max_length
+            with pytest.raises(ValidationError) as exc_info:
+                ModelMCPParameterMapping(
+                    name="test",
+                    parameter_type=param_type,
+                    max_length=100,
+                )
+            assert "min_length/max_length/pattern only valid for STRING type" in str(
+                exc_info.value
+            )
+
+            # Test pattern
+            with pytest.raises(ValidationError) as exc_info:
+                ModelMCPParameterMapping(
+                    name="test",
+                    parameter_type=param_type,
+                    pattern=r"^[a-z]+$",
+                )
+            assert "min_length/max_length/pattern only valid for STRING type" in str(
+                exc_info.value
+            )
+
+    def test_enum_values_rejected_for_non_string_types(self):
+        """Test that enum_values is rejected for non-string types."""
+        non_string_types = [
+            EnumMCPParameterType.INTEGER,
+            EnumMCPParameterType.NUMBER,
+            EnumMCPParameterType.BOOLEAN,
+            EnumMCPParameterType.ARRAY,
+            EnumMCPParameterType.OBJECT,
+        ]
+
+        for param_type in non_string_types:
+            with pytest.raises(ValidationError) as exc_info:
+                ModelMCPParameterMapping(
+                    name="test",
+                    parameter_type=param_type,
+                    enum_values=["a", "b", "c"],
+                )
+            assert "enum_values only valid for STRING type" in str(exc_info.value)
+
     def test_get_effective_name_without_override(self):
         """Test get_effective_name returns name when mcp_param_name is None."""
         mapping = ModelMCPParameterMapping(name="search_query")
@@ -444,7 +561,7 @@ class TestModelMCPToolDescriptor:
         assert descriptor.name == "search_tool"
         assert descriptor.description == "A tool for searching"
         assert descriptor.tool_type == EnumMCPToolType.FUNCTION
-        assert descriptor.version == "1.0.0"
+        assert descriptor.version == ModelSemVer(major=1, minor=0, patch=0)
         assert descriptor.parameters == []
         assert descriptor.return_schema is None
         assert descriptor.input_schema is None
@@ -470,7 +587,7 @@ class TestModelMCPToolDescriptor:
             name="advanced_search",
             tool_type=EnumMCPToolType.FUNCTION,
             description="Advanced search tool",
-            version="2.1.0",
+            version=semver,
             parameters=params,
             return_schema={"type": "array", "items": {"type": "object"}},
             input_schema=None,  # Will be generated
@@ -487,7 +604,7 @@ class TestModelMCPToolDescriptor:
 
         assert descriptor.name == "advanced_search"
         assert descriptor.tool_type == EnumMCPToolType.FUNCTION
-        assert descriptor.version == "2.1.0"
+        assert descriptor.version == semver
         assert len(descriptor.parameters) == 2
         assert descriptor.return_schema == {
             "type": "array",
@@ -1243,7 +1360,7 @@ class TestModelMCPEdgeCases:
         original = ModelMCPToolDescriptor(
             name="test_tool",
             description="Test description",
-            version="1.2.3",
+            version=semver,
             node_name="TestNode",
             node_version=semver,
             parameters=[
