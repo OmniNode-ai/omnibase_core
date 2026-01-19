@@ -4,7 +4,7 @@
   "confidence": 0.95,
   "sentiment": "neutral",
   "summary": "Customer requesting refund for subscription renewal charge after cancellation",
-  "suggested_reply": "Thank you for contacting us about the charge. I've verified that your subscription was cancelled in December, and I'm processing a full refund of $49.99 to your original payment method. Please allow 5-7 business days for the refund to appear on your statement. We apologize for any inconvenience this may have caused.",
+  "suggested_reply": "Thank you for contacting us about the charge. I've verified that your subscription was cancelled in December, and I'm processing a full refund to your original payment method. Please allow 5-7 business days for the refund to appear on your statement. We apologize for any inconvenience this may have caused.",
   "latency_ms": 1250,
   "model_id": "gpt-4-turbo-2024-04-09",
   "reason_codes": ["subscription_cancelled", "recent_charge", "refund_eligible"],

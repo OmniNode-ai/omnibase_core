@@ -8,7 +8,7 @@ language: "en"
 subject: "Need to change my email address"
 body: |
   Hi, I recently changed jobs and need to update the email address on my
-  account from old@company.com to new@newcompany.com.
+  account from old@example.com to new@example.org.
 
   I still have access to the old email if you need to verify.
 

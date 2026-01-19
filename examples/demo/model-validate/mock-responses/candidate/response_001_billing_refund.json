@@ -4,7 +4,7 @@
   "confidence": 0.93,
   "sentiment": "neutral",
   "summary": "Refund request for subscription charge after cancellation",
-  "suggested_reply": "Hi! I see you were charged after cancelling. I'm processing a full refund of $49.99 now. It should appear on your statement in 5-7 business days. Sorry for the inconvenience!",
+  "suggested_reply": "Hi! I see you were charged after cancelling. I'm processing a full refund now. It should appear on your statement in 5-7 business days. Sorry for the inconvenience!",
   "latency_ms": 380,
   "model_id": "gpt-4o-mini-2024-07-18",
   "reason_codes": ["subscription_cancelled", "refund_eligible"],

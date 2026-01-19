@@ -9,7 +9,7 @@ subject: "Request for refund on recent charge"
 body: |
   Hi Support Team,
 
-  I was charged $49.99 on January 10th for a subscription renewal, but I had
+  I was charged for a subscription renewal on January 10th, but I had
   cancelled my subscription back in December. Could you please process a refund
   for this charge?
 
@@ -18,7 +18,7 @@ body: |
   Thank you for your help!
 
   Best regards,
-  John
+  Customer
 attachments: null
 product_area: "billing"
 priority_hint: "medium"

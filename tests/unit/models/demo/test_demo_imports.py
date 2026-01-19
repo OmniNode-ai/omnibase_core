@@ -1,5 +1,7 @@
 """Test that demo models can be imported correctly."""
 
+from __future__ import annotations
+
 
 class TestDemoImports:
     """Test demo model imports."""

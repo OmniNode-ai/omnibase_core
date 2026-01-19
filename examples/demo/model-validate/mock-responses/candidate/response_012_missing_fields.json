@@ -3,10 +3,6 @@
   "category": "technical_bug",
   "confidence": 0.78,
   "sentiment": "negative",
-  "summary": "Vague issue report",
-  "suggested_reply": "I want to help! Could you tell me: 1) What feature isn't working?, 2) What error do you see?, 3) What device/browser are you on?",
   "latency_ms": 210,
-  "model_id": "gpt-4o-mini-2024-07-18",
-  "reason_codes": ["insufficient_detail", "needs_clarification"],
-  "invariant_tags": ["technical_domain", "triage"]
+  "model_id": "gpt-4o-mini-2024-07-18"
 }

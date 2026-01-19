@@ -10,13 +10,13 @@ body: |
   Hi,
 
   I was charged twice for my Pro subscription this month:
-  - Jan 5: $19.99
-  - Jan 12: $19.99
+  - Jan 5: subscription fee
+  - Jan 12: subscription fee (duplicate)
 
   Both charges went through on my credit card. Can you please refund one
   of these charges?
 
-  My account is under premium.user@email.com
+  My account is under premium.user@example.com
 
   Thank you
 attachments: null

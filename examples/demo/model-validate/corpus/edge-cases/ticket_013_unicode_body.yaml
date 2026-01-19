@@ -12,7 +12,11 @@ body: |
   Instead of bullet points I see: "•" becomes "â€¢"
   Quotes look wrong: "test" shows as â€œtestâ€
 
-  Also when I type emojis like or they don't display right.
+  Also when I type emojis they don't display right:
+  - Thumbs up: 👍
+  - Check mark: ✅
+  - Warning: ⚠️
+  - Fire: 🔥
 
   My name with special chars: José García-Müller
 

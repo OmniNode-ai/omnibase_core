@@ -8,7 +8,7 @@ language: "en"
 subject: "Can't reset my password"
 body: |
   I'm trying to reset my password but I never receive the reset email.
-  I've checked spam folder too. My email is test.user@gmail.com
+  I've checked spam folder too. My email is test.user@example.com
 
   Can you send it again or help me another way?
 attachments: null

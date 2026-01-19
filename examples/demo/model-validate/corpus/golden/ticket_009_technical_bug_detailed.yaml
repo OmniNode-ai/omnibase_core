@@ -19,7 +19,7 @@ body: |
 
   Environment:
   - Desktop Client Version: 2.8.3
-  - OS: Windows 11 Pro (22H2)
+  - OS: Windows 11
   - Network: Corporate network with proxy
 
   Steps to Reproduce:
@@ -33,8 +33,8 @@ body: |
   Please advise on next steps.
 
   Best,
-  David Martinez
-  david.m@techcorp.io
+  D. User
+  user@example.org
 attachments:
   - "client_logs_2024-01-19.txt"
   - "network_trace.har"

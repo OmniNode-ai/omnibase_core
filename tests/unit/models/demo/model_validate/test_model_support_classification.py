@@ -50,6 +50,8 @@ class TestModelSupportClassificationResultFrozen:
         )
 
         with pytest.raises(ValidationError):
+            # NOTE(OMN-TBD): mypy flags assignment to frozen model attribute. Safe because
+            # this is test code verifying frozen behavior and the assignment is expected to raise.
             result.confidence = 0.50  # type: ignore[misc]
 
     def test_model_is_hashable(self, valid_classification_data: dict) -> None:

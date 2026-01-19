@@ -14,7 +14,7 @@ The demo compares two model configurations:
 
 ## Directory Structure
 
-```
+```text
 model-validate/
 ├── corpus/
 │   ├── golden/           # 10 clean, high-signal samples
@@ -43,7 +43,7 @@ Clean, unambiguous tickets covering all categories:
 | `ticket_007_billing_refund_enterprise.yaml` | billing_refund | Enterprise invoice discrepancy |
 | `ticket_008_account_access_chat.yaml` | account_access | Password reset not received |
 | `ticket_009_technical_bug_detailed.yaml` | technical_bug | Sync failures with detailed logs |
-| `ticket_010_billing_payment_pro.yaml` | billing_refund | Double charge issue |
+| `ticket_010_billing_payment_pro.yaml` | billing_refund | Double charge issue (note: filename reflects initial topic, category reflects classification) |
 
 ### Edge Case Samples (5)
 Challenging inputs to test model robustness:
@@ -120,6 +120,10 @@ result = ModelSupportClassificationResult(
 ```
 
 ## Running the Demo
+
+> **Path Resolution**: All relative paths in the examples below (e.g., `examples/demo/model-validate/...`) are resolved from the repository root directory. Run scripts from the repo root, or use absolute paths.
+
+> **Note on File Loading**: The examples below use direct `yaml.safe_load()` and `json.load()` for corpus/response data files. For loading ONEX contract files (like `contract.yaml`), use `FileRegistry` from `omnibase_core.runtime` which provides validation and structured error handling.
 
 ### Load and Validate Corpus
 

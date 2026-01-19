@@ -4,9 +4,10 @@
   "confidence": 0.85,
   "sentiment": "neutral",
   "summary": "Question about Pro vs Free plan features",
-  "suggested_reply": "Pro gives you unlimited projects, priority support, analytics, team features, and API access. It's $19.99/month or $199/year. Want a detailed comparison?",
+  "suggested_reply": "Pro gives you unlimited projects, priority support, analytics, team features, and API access. Both monthly and annual plans available. Want a detailed comparison?",
   "latency_ms": 290,
   "model_id": "gpt-4o-mini-2024-07-18",
   "reason_codes": ["plan_comparison", "upgrade_inquiry"],
-  "invariant_tags": ["technical_domain", "how_to"]
+  "invariant_tags": ["technical_domain", "how_to"],
+  "processed_at": "2024-13-45T99:99:99Z"
 }

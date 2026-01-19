@@ -13,13 +13,13 @@ body: |
   authentication. I have an important presentation today and need to access
   my project files.
 
-  My username is jsmith@company.com. I can verify my identity with other
+  My username is user123@example.com. I can verify my identity with other
   information if needed.
 
   Please help ASAP!
 
-  Jennifer Smith
-  Account Manager, Company Inc.
+  A. User
+  Account Manager, Acme Corp.
 attachments: null
 product_area: "authentication"
 priority_hint: "high"
