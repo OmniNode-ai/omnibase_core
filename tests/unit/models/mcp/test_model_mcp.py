@@ -682,6 +682,26 @@ class TestModelMCPToolDescriptor:
 
         assert schema == existing_schema
 
+    def test_to_input_schema_preserves_empty_schema(self):
+        """Test to_input_schema preserves explicitly empty input_schema.
+
+        When input_schema is explicitly set to an empty dict, it should be
+        returned as-is without generating a schema from parameters.
+        """
+        descriptor = ModelMCPToolDescriptor(
+            name="no_input_tool",
+            description="Tool with explicitly empty input schema",
+            input_schema={},
+            parameters=[
+                ModelMCPParameterMapping(name="ignored_param", required=True),
+            ],
+        )
+
+        schema = descriptor.to_input_schema()
+
+        # Should return empty dict, not generate from parameters
+        assert schema == {}
+
     def test_to_input_schema_generates_from_parameters(self):
         """Test to_input_schema generates schema from parameters."""
         params = [
