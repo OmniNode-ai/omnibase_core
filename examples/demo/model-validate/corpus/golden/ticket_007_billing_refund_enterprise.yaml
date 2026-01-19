@@ -1,0 +1,32 @@
+---
+# Golden sample: Enterprise tier refund request
+ticket_id: "TKT-2024-007"
+created_at: "2024-01-18T10:00:00Z"
+customer_tier: "enterprise"
+channel: "email"
+language: "en"
+subject: "Invoice discrepancy - requesting credit"
+body: |
+  Dear Billing Team,
+
+  We noticed a discrepancy on our January invoice (INV-2024-0156). We were
+  charged for 50 seats but our contract specifies 45 seats at the enterprise
+  rate.
+
+  Please review and issue a credit for the 5 extra seats.
+
+  Contract Reference: ENT-2023-789
+  Account: Acme Corporation
+  Contact: billing@acme.com
+
+  Looking forward to your prompt resolution.
+
+  Regards,
+  Michael Chen
+  Finance Department
+attachments:
+  - "contract_excerpt.pdf"
+  - "january_invoice.pdf"
+product_area: "billing"
+priority_hint: "medium"
+previous_contact_count: 0

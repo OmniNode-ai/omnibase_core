@@ -1,0 +1,17 @@
+---
+# Golden sample: Account access via chat
+ticket_id: "TKT-2024-008"
+created_at: "2024-01-18T15:45:00Z"
+customer_tier: "free"
+channel: "chat"
+language: "en"
+subject: "Can't reset my password"
+body: |
+  I'm trying to reset my password but I never receive the reset email.
+  I've checked spam folder too. My email is test.user@gmail.com
+
+  Can you send it again or help me another way?
+attachments: null
+product_area: "authentication"
+priority_hint: "medium"
+previous_contact_count: 2

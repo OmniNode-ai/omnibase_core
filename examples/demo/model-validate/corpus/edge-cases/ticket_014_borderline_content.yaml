@@ -1,0 +1,25 @@
+---
+# Edge case: Ambiguous category - could be billing or account
+ticket_id: "TKT-2024-014"
+created_at: "2024-01-20T16:30:00Z"
+customer_tier: "pro"
+channel: "email"
+language: "en"
+subject: "Account and billing question"
+body: |
+  Hi,
+
+  I'm looking at my account settings and I see two different billing dates
+  listed. One says my next charge is Jan 25 and another place shows Feb 1.
+
+  Also, I'm not sure if the payment method on file is still valid since
+  I got a new card.
+
+  Can you clarify which date is correct and update my card info?
+
+  Thanks,
+  Alex
+attachments: null
+product_area: null
+priority_hint: "low"
+previous_contact_count: 1

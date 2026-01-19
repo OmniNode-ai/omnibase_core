@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-009",
+  "category": "technical_bug",
+  "confidence": 0.95,
+  "sentiment": "neutral",
+  "summary": "Intermittent sync failures (HTTP 500) on Windows desktop client through corporate proxy",
+  "suggested_reply": "Thank you for the comprehensive bug report, David. The error pattern you've described (peak hours, corporate network, ~33% failure rate) strongly suggests a timeout issue with your proxy configuration. Here are the next steps: 1) In Settings > Network, increase the sync timeout from 30s to 60s, 2) Add our sync endpoint (sync.ourapp.com) to your proxy's whitelist, 3) If your IT team allows, try the 'Direct Connection' option for our domains. I'm also escalating this to our infrastructure team with your logs for deeper analysis. Expect an update within 48 hours.",
+  "latency_ms": 1680,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["sync_failure", "proxy_related", "intermittent_error", "enterprise_environment"],
+  "invariant_tags": ["technical_domain", "network_infrastructure"]
+}

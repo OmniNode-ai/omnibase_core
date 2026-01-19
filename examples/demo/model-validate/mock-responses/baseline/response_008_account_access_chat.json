@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-008",
+  "category": "account_access",
+  "confidence": 0.91,
+  "sentiment": "neutral",
+  "summary": "Customer not receiving password reset emails",
+  "suggested_reply": "I see you've been trying to reset your password without receiving the emails. Let me help! I've just manually sent a new reset link to test.user@gmail.com. Please: 1) Check your spam/junk folder, 2) Add support@ourapp.com to your contacts, 3) Try again in about 5 minutes. If you still don't receive it, it's possible there's a typo in the email on your account. Let me know and I can verify the email we have on file.",
+  "latency_ms": 1050,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["email_not_received", "password_reset", "delivery_issue"],
+  "invariant_tags": ["account_domain", "authentication"]
+}

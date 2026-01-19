@@ -63,6 +63,9 @@ from .enum_core_error_code import (
     get_exit_code_for_core_error,
 )
 
+# Customer tier enum (OMN-1395 demo)
+from .enum_customer_tier import EnumCustomerTier
+
 # Dashboard enums (OMN-1284)
 from .enum_dashboard_status import EnumDashboardStatus
 from .enum_dashboard_theme import EnumDashboardTheme
@@ -268,6 +271,9 @@ from .enum_return_type import EnumReturnType
 from .enum_security_profile import EnumSecurityProfile
 from .enum_security_risk_level import EnumSecurityRiskLevel
 
+# Sentiment enum (OMN-1395 demo)
+from .enum_sentiment import EnumSentiment
+
 # Service-related enums
 from .enum_service_health_status import EnumServiceHealthStatus
 from .enum_service_lifecycle import EnumServiceLifecycle
@@ -294,6 +300,10 @@ from .enum_step_type import EnumStepType
 
 # Subject type enums (OMN-1237)
 from .enum_subject_type import EnumSubjectType
+
+# Support enums (OMN-1395 demo)
+from .enum_support_category import EnumSupportCategory
+from .enum_support_channel import EnumSupportChannel
 
 # Token and authentication context enums (OMN-1054)
 from .enum_token_type import EnumTokenType
@@ -588,6 +598,11 @@ __all__ = [
     # Observability cardinality domain (OMN-1367)
     "EnumLabelViolationType",
     "EnumMetricsPolicyViolationAction",
+    # Demo/sample artifact enums (OMN-1395)
+    "EnumCustomerTier",
+    "EnumSentiment",
+    "EnumSupportCategory",
+    "EnumSupportChannel",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

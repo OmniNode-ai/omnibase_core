@@ -1,0 +1,25 @@
+---
+# Golden sample: Clear refund request, polite tone
+ticket_id: "TKT-2024-001"
+created_at: "2024-01-15T10:30:00Z"
+customer_tier: "pro"
+channel: "email"
+language: "en"
+subject: "Request for refund on recent charge"
+body: |
+  Hi Support Team,
+
+  I was charged $49.99 on January 10th for a subscription renewal, but I had
+  cancelled my subscription back in December. Could you please process a refund
+  for this charge?
+
+  My account email is user@example.com and the transaction ID is TXN-12345.
+
+  Thank you for your help!
+
+  Best regards,
+  John
+attachments: null
+product_area: "billing"
+priority_hint: "medium"
+previous_contact_count: 0

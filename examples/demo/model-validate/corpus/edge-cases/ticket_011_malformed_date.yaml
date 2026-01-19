@@ -1,0 +1,18 @@
+---
+# Edge case: Tests date parsing with alternative format
+# Note: This uses a valid ISO format but with timezone offset instead of Z
+ticket_id: "TKT-2024-011"
+created_at: "2024-01-20T08:30:00+05:30"
+customer_tier: "free"
+channel: "email"
+language: "en"
+subject: "Question about my account"
+body: |
+  Hello, I have a quick question about upgrading. What are the benefits
+  of Pro vs Free?
+
+  Thanks
+attachments: null
+product_area: null
+priority_hint: null
+previous_contact_count: null

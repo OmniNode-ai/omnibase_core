@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-003",
+  "category": "account_access",
+  "confidence": 0.96,
+  "sentiment": "negative",
+  "summary": "Enterprise user locked out, lost MFA device",
+  "suggested_reply": "I understand this is urgent! As an enterprise customer, I'm fast-tracking your case. Our security team will contact you within 15 minutes to verify your identity through alternative methods. Have your employee ID ready.",
+  "latency_ms": 290,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["mfa_issue", "lost_device", "urgent_access"],
+  "invariant_tags": ["account_domain", "security_verification"]
+}

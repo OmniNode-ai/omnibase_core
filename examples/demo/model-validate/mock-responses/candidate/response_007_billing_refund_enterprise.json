@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-007",
+  "category": "billing_refund",
+  "confidence": 0.91,
+  "sentiment": "neutral",
+  "summary": "Enterprise invoice discrepancy for seat count",
+  "suggested_reply": "I confirmed your contract shows 45 seats. Issuing $500 credit for the 5 extra seats, applied to your next invoice. Corrected invoice coming to billing@acme.com within 24 hours.",
+  "latency_ms": 440,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["invoice_error", "seat_count_mismatch", "enterprise_contract"],
+  "invariant_tags": ["billing_domain", "enterprise_tier"]
+}

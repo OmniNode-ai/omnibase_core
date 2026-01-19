@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-003",
+  "category": "account_access",
+  "confidence": 0.98,
+  "sentiment": "negative",
+  "summary": "Enterprise customer locked out due to lost phone and MFA requirements",
+  "suggested_reply": "I understand the urgency and I'm here to help you regain access immediately. Given your enterprise status and the time-sensitive nature of your request, I'm escalating this to our security team who can verify your identity through alternative means. They will contact you within the next 15 minutes at your registered backup contact. In the meantime, please have your employee ID and the last 4 digits of your account's billing information ready for verification.",
+  "latency_ms": 980,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["mfa_issue", "lost_device", "urgent_access"],
+  "invariant_tags": ["account_domain", "security_verification"]
+}

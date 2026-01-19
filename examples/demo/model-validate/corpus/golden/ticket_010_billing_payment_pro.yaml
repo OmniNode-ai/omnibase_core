@@ -1,0 +1,25 @@
+---
+# Golden sample: Pro tier payment issue
+ticket_id: "TKT-2024-010"
+created_at: "2024-01-19T16:00:00Z"
+customer_tier: "pro"
+channel: "web"
+language: "en"
+subject: "Charged twice for same month"
+body: |
+  Hi,
+
+  I was charged twice for my Pro subscription this month:
+  - Jan 5: $19.99
+  - Jan 12: $19.99
+
+  Both charges went through on my credit card. Can you please refund one
+  of these charges?
+
+  My account is under premium.user@email.com
+
+  Thank you
+attachments: null
+product_area: "billing"
+priority_hint: "high"
+previous_contact_count: 0

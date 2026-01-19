@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-006",
+  "category": "technical_howto",
+  "confidence": 0.97,
+  "sentiment": "positive",
+  "summary": "Customer asking how to export all project data including version history",
+  "suggested_reply": "Great question! Here's how to export your data: 1) Go to Settings > Data Management > Export, 2) Select 'Full Export' to include all projects, 3) Choose your format (CSV or JSON - both are available), 4) Check the 'Include Version History' box, 5) Click 'Generate Export'. The export will be emailed to you within a few minutes depending on data size. Pro tip: JSON format preserves the most metadata and is best for re-importing later!",
+  "latency_ms": 1180,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["data_export", "audit_requirement"],
+  "invariant_tags": ["technical_domain", "how_to"]
+}

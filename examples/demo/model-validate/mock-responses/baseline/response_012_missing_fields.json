@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-012",
+  "category": "technical_bug",
+  "confidence": 0.85,
+  "sentiment": "negative",
+  "summary": "Vague report of something not working, needs clarification",
+  "suggested_reply": "I'm sorry to hear something isn't working right. To help you faster, could you please provide a bit more detail? Specifically: 1) Which feature or part of the app is affected?, 2) What were you trying to do when the problem occurred?, 3) Do you see any error messages?, 4) What device/browser are you using? With this information, I can get you to the right solution quickly!",
+  "latency_ms": 920,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["insufficient_detail", "needs_clarification"],
+  "invariant_tags": ["technical_domain", "triage"]
+}

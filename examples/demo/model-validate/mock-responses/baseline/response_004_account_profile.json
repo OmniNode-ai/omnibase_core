@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-004",
+  "category": "account_profile",
+  "confidence": 0.94,
+  "sentiment": "neutral",
+  "summary": "Customer needs to update email address due to job change",
+  "suggested_reply": "I'd be happy to help you update your email address. Since you still have access to your old email, I've just sent a verification link to old@company.com. Click the link and follow the prompts to update to your new email. Don't worry - your project history, settings, and all data will remain intact during this change. The process takes about 2 minutes to complete.",
+  "latency_ms": 1450,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["email_change", "job_transition"],
+  "invariant_tags": ["account_domain", "profile_update"]
+}

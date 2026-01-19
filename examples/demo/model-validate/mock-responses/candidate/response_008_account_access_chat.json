@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-008",
+  "category": "account_access",
+  "confidence": 0.88,
+  "sentiment": "neutral",
+  "summary": "Password reset emails not being received",
+  "suggested_reply": "I just resent the reset link! Check spam, add support@ourapp.com to contacts, and try again in 5 min. If nothing, there might be a typo in your email on file - let me know!",
+  "latency_ms": 310,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["email_not_received", "password_reset", "delivery_issue"],
+  "invariant_tags": ["account_domain", "authentication"]
+}

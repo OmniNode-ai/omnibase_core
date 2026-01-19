@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-005",
+  "category": "technical_bug",
+  "confidence": 0.96,
+  "sentiment": "neutral",
+  "summary": "Mobile app crashing on login for iPhone 14 Pro running iOS 17.2",
+  "suggested_reply": "Thank you for the detailed information about the crash. This appears to be a known issue affecting some iOS 17.2 users that our team is actively working on. In the meantime, please try this workaround: 1) Delete the app completely, 2) Restart your phone, 3) Reinstall from the App Store, 4) Before logging in, go to Settings > Privacy and enable 'Allow App to Access Keychain'. If this doesn't resolve it, please reply with the crash_log.txt contents and we'll investigate further.",
+  "latency_ms": 1320,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["app_crash", "ios_specific", "login_failure"],
+  "invariant_tags": ["technical_domain", "mobile_platform"]
+}

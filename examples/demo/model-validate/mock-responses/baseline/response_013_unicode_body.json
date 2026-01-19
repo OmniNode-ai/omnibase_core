@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-013",
+  "category": "technical_bug",
+  "confidence": 0.91,
+  "sentiment": "neutral",
+  "summary": "Character encoding issues causing display problems with special characters and emojis",
+  "suggested_reply": "Thank you for the detailed report, José! This appears to be a character encoding mismatch, likely between UTF-8 and Windows-1252. Here's how to fix it: 1) Go to Settings > Display > Text Encoding, 2) Change from 'Auto-detect' to 'UTF-8 (Unicode)', 3) Clear your browser cache and refresh. If you're using the desktop app, please also check that your system language settings include UTF-8 support. Let me know if this resolves the display issues!",
+  "latency_ms": 1410,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["encoding_issue", "display_error", "unicode_handling"],
+  "invariant_tags": ["technical_domain", "display_rendering"]
+}

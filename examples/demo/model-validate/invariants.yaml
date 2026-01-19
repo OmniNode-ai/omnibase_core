@@ -1,0 +1,60 @@
+---
+# Model Validation Invariants Configuration
+# Defines validation rules for support ticket classification responses
+
+# Schema references for input/output validation
+schema:
+  input_model: omnibase_core.models.demo.model_validate.ModelSupportTicket
+  output_model: omnibase_core.models.demo.model_validate.ModelSupportClassificationResult
+
+# Confidence thresholds
+thresholds:
+  # Minimum confidence for any response to be considered valid
+  confidence_min: 0.70
+  # Higher confidence required for golden samples (clean, unambiguous inputs)
+  golden_confidence_min: 0.85
+
+# Latency constraints (milliseconds)
+latency:
+  # Baseline model (gpt-4-turbo) expected max latency
+  baseline_max_ms: 2500
+  # Candidate model (gpt-4o-mini) expected max latency
+  candidate_max_ms: 900
+
+# Determinism checks
+determinism:
+  # Ensure response ticket_id matches input ticket_id
+  ticket_id_must_match: true
+
+# Valid category values (must match EnumSupportCategory)
+category_whitelist:
+  - billing_refund
+  - billing_payment
+  - account_access
+  - account_profile
+  - technical_bug
+  - technical_howto
+
+# Sentiment values (must match EnumSentiment)
+sentiment_whitelist:
+  - positive
+  - neutral
+  - negative
+
+# Output constraints
+output_constraints:
+  summary_min_length: 10
+  summary_max_length: 200
+  suggested_reply_min_length: 20
+  suggested_reply_max_length: 1000
+
+# Sample classification
+samples:
+  golden:
+    path: corpus/golden/
+    count: 10
+    confidence_threshold: 0.85
+  edge_cases:
+    path: corpus/edge-cases/
+    count: 5
+    confidence_threshold: 0.70

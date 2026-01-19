@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-004",
+  "category": "account_profile",
+  "confidence": 0.92,
+  "sentiment": "neutral",
+  "summary": "Email address change request after job change",
+  "suggested_reply": "I've sent a verification link to your old email. Just click it and enter your new email address. All your project history will be preserved!",
+  "latency_ms": 410,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["email_change", "job_transition"],
+  "invariant_tags": ["account_domain", "profile_update"]
+}
