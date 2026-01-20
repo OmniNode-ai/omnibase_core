@@ -1,5 +1,7 @@
 """Demo models for ONEX examples and validation scenarios."""
 
+from __future__ import annotations
+
 from omnibase_core.models.demo.model_demo_config import ModelDemoConfig
 from omnibase_core.models.demo.model_demo_invariant_result import ModelInvariantResult
 from omnibase_core.models.demo.model_demo_summary import ModelDemoSummary

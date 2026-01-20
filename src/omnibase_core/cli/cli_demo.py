@@ -21,7 +21,7 @@ import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import click
 import yaml
@@ -853,7 +853,10 @@ def run_demo(
 
         # Check confidence threshold invariant using mock responses
         thresholds = invariants.get("thresholds")
-        if isinstance(thresholds, dict) and thresholds.get("confidence_min"):
+        if (
+            isinstance(thresholds, dict)
+            and thresholds.get("confidence_min") is not None
+        ):
             # Find mock response by ticket_id
             mock_response = _find_mock_response_by_ticket_id(
                 mock_responses, sample_id, model_type="candidate"
@@ -899,9 +902,9 @@ def run_demo(
     pass_rate = passed_count / total_samples if total_samples > 0 else 0
 
     # Determine verdict based on pass rate thresholds
-    # NOTE: ModelDemoSummary uses Literal["PASS", "FAIL", "REVIEW"]
+    verdict: Literal["PASS", "FAIL", "REVIEW"]
     if pass_rate >= PASS_THRESHOLD:
-        verdict: str = "PASS"
+        verdict = "PASS"
     elif pass_rate >= REVIEW_THRESHOLD:
         verdict = "REVIEW"
     else:
@@ -931,7 +934,7 @@ def run_demo(
         passed=passed_count,
         failed=failed_count,
         pass_rate=pass_rate,
-        verdict=verdict,  # type: ignore[arg-type]
+        verdict=verdict,
         invariant_results=invariant_results,
         failures=failures,
     )

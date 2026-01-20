@@ -37,7 +37,7 @@ from omnibase_core.cli.cli_demo import (
     demo,
 )
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
-from omnibase_core.models.demo.model_demo_validation_report import (
+from omnibase_core.models.demo import (
     ModelDemoConfig,
     ModelDemoSummary,
     ModelDemoValidationReport,
