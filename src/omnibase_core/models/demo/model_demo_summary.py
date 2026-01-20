@@ -17,7 +17,7 @@ class ModelDemoSummary(BaseModel):
     recommendation based on pass rate thresholds.
     """
 
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     total: int = Field(..., ge=0, description="Total number of samples evaluated")
     passed: int = Field(..., ge=0, description="Number of samples that passed")
