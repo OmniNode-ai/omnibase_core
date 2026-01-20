@@ -38,18 +38,18 @@ from omnibase_core.errors.exception_groups import (
     YAML_PARSING_ERRORS,
 )
 from omnibase_core.logging.logging_structured import emit_log_event_sync
-from omnibase_core.models.demo.model_demo_config import ModelDemoConfig
-from omnibase_core.models.demo.model_demo_invariant_result import ModelInvariantResult
-from omnibase_core.models.demo.model_demo_summary import ModelDemoSummary
-from omnibase_core.models.demo.model_demo_validation_report import (
+from omnibase_core.models.demo import (
+    ModelDemoConfig,
+    ModelDemoSummary,
     ModelDemoValidationReport,
+    ModelFailureDetail,
+    ModelInvariantResult,
+    ModelSampleResult,
 )
-from omnibase_core.models.demo.model_failure_detail import ModelFailureDetail
-from omnibase_core.models.demo.model_sample_result import ModelSampleResult
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Mapping
 
 # Contract file patterns that indicate a demo scenario
 SCENARIO_CONTRACT_FILES: tuple[str, ...] = (
@@ -500,11 +500,13 @@ def _load_mock_responses(
 
 
 def _find_mock_response_by_ticket_id(
-    mock_responses: dict[str, dict[str, object]],
+    mock_responses: Mapping[str, object],
     ticket_id: str,  # string-id-ok: external ticket identifier from corpus data
     model_type: str = "candidate",
 ) -> dict[str, object] | None:
     """Find a mock response by ticket_id within a specific model type.
+
+    Handles arbitrary JSON payloads safely by skipping non-dict values.
 
     Args:
         mock_responses: Dict of mock responses keyed as 'model_type/sample_stem'.
@@ -516,6 +518,8 @@ def _find_mock_response_by_ticket_id(
     """
     for key, response in mock_responses.items():
         if not key.startswith(f"{model_type}/"):
+            continue
+        if not isinstance(response, dict):
             continue
         response_ticket_id = response.get("ticket_id")
         if response_ticket_id == ticket_id:
