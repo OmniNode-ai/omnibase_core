@@ -569,8 +569,10 @@ def _evaluate_confidence_invariant(
         return (False, None, required_threshold)
 
     try:
-        # NOTE(OMN-1397): dict.get() returns object type, but float() handles
-        # int/float/str at runtime. TypeError/ValueError caught for invalid types.
+        # NOTE(OMN-1397): mypy false-positive due to dict.get() returning object type.
+        # Safe because: (1) float() handles int/float/str at runtime, (2) the exception
+        # handler catches TypeError/ValueError for any invalid type, and (3) mock_response
+        # originates from validated JSON which only contains JSON-serializable primitives.
         confidence = float(confidence_raw)  # type: ignore[arg-type]
     except (TypeError, ValueError):
         return (False, None, required_threshold)
