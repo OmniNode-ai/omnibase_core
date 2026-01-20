@@ -58,6 +58,16 @@ SCENARIO_CONTRACT_FILES: tuple[str, ...] = (
 # Minimum column width for scenario names in table output
 MIN_NAME_COLUMN_WIDTH: int = 20
 
+# Maximum description length before truncation (truncate at -3 for "...")
+MAX_DESCRIPTION_LENGTH: int = 60
+
+# Verdict thresholds for pass rate evaluation
+PASS_THRESHOLD: float = 1.0  # 100% pass rate required for PASS
+REVIEW_THRESHOLD: float = 0.8  # 80%+ pass rate triggers REVIEW REQUIRED
+
+# Maximum samples to include in markdown report details
+MAX_REPORT_SAMPLES: int = 10
+
 
 def _get_demo_root() -> Path:
     """Get the root path for demo scenarios.
@@ -146,15 +156,15 @@ def _extract_scenario_description(scenario_path: Path) -> str:
                 if isinstance(metadata, dict) and "description" in metadata:
                     desc = metadata["description"]
                     # Truncate long descriptions
-                    if isinstance(desc, str) and len(desc) > 60:
-                        return desc[:57] + "..."
+                    if isinstance(desc, str) and len(desc) > MAX_DESCRIPTION_LENGTH:
+                        return desc[: MAX_DESCRIPTION_LENGTH - 3] + "..."
                     return str(desc) if desc else "Demo scenario"
 
                 # Fall back to top-level description
                 if "description" in data:
                     desc = data["description"]
-                    if isinstance(desc, str) and len(desc) > 60:
-                        return desc[:57] + "..."
+                    if isinstance(desc, str) and len(desc) > MAX_DESCRIPTION_LENGTH:
+                        return desc[: MAX_DESCRIPTION_LENGTH - 3] + "..."
                     return str(desc) if desc else "Demo scenario"
         except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS):
             # fallback-ok: use default description if contract file is unreadable or malformed
@@ -169,8 +179,8 @@ def _extract_scenario_description(scenario_path: Path) -> str:
                     line = line.strip()
                     # Skip empty lines and headers
                     if line and not line.startswith("#"):
-                        if len(line) > 60:
-                            return line[:57] + "..."
+                        if len(line) > MAX_DESCRIPTION_LENGTH:
+                            return line[: MAX_DESCRIPTION_LENGTH - 3] + "..."
                         return line
         except FILE_IO_ERRORS:
             # fallback-ok: use default description if README is unreadable
@@ -321,6 +331,28 @@ def list_scenarios(ctx: click.Context, path: Path | None) -> None:
     ctx.exit(EnumCLIExitCode.SUCCESS)
 
 
+def _is_path_within_root(path: Path, root: Path) -> bool:
+    """Check if a path is safely within a root directory.
+
+    Validates that the resolved path doesn't escape the root via path traversal
+    (e.g., '../../../etc/passwd').
+
+    Args:
+        path: Path to validate.
+        root: Root directory that path must be within.
+
+    Returns:
+        True if path is within root, False otherwise.
+    """
+    try:
+        resolved_path = path.resolve()
+        resolved_root = root.resolve()
+        # Check if the resolved path starts with the resolved root
+        return resolved_path.is_relative_to(resolved_root)
+    except (OSError, ValueError):
+        return False
+
+
 @standard_error_handling("Scenario path resolution")
 def _get_scenario_path(scenario_name: str, demo_root: Path) -> Path | None:
     """Resolve scenario name to path, supporting nested names like 'handlers/foo'.
@@ -331,12 +363,16 @@ def _get_scenario_path(scenario_name: str, demo_root: Path) -> Path | None:
 
     Returns:
         Path to the scenario directory if found, None otherwise.
+        Returns None if path traversal is detected (path escapes demo root).
 
     Raises:
         ModelOnexError: If path operations fail (e.g., permission denied).
     """
     # Direct match
     direct_path = demo_root / scenario_name
+    # Security: validate path doesn't escape demo root
+    if not _is_path_within_root(direct_path, demo_root):
+        return None
     if _is_demo_scenario(direct_path):
         return direct_path
 
@@ -344,6 +380,9 @@ def _get_scenario_path(scenario_name: str, demo_root: Path) -> Path | None:
     if "/" in scenario_name:
         parts = scenario_name.split("/", 1)
         subpath = demo_root / parts[0] / parts[1]
+        # Security: validate path doesn't escape demo root
+        if not _is_path_within_root(subpath, demo_root):
+            return None
         if _is_demo_scenario(subpath):
             return subpath
 
@@ -518,13 +557,13 @@ def _write_markdown_report(
 
         if results:
             f.write("## Sample Results\n\n")
-            for i, result in enumerate(results[:10]):  # Limit to first 10
+            for i, result in enumerate(results[:MAX_REPORT_SAMPLES]):
                 status = "✓" if result.get("passed", False) else "✗"
                 f.write(
                     f"- {status} Sample {i + 1}: {result.get('sample_id', 'unknown')}\n"
                 )
-            if len(results) > 10:
-                f.write(f"\n... and {len(results) - 10} more samples\n")
+            if len(results) > MAX_REPORT_SAMPLES:
+                f.write(f"\n... and {len(results) - MAX_REPORT_SAMPLES} more samples\n")
 
 
 def _print_banner(scenario_name: str) -> None:
@@ -757,10 +796,10 @@ def run_demo(
     failed_count = total_samples - passed_count
     pass_rate = passed_count / total_samples if total_samples > 0 else 0
 
-    # Determine verdict
-    if pass_rate >= 1.0:
+    # Determine verdict based on pass rate thresholds
+    if pass_rate >= PASS_THRESHOLD:
         verdict = "PASS"
-    elif pass_rate >= 0.8:
+    elif pass_rate >= REVIEW_THRESHOLD:
         verdict = "REVIEW REQUIRED"
     else:
         verdict = "FAIL"

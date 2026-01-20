@@ -18,7 +18,6 @@ __all__ = [
     "TypedDictDemoResult",
     "TypedDictDemoSummary",
     "TypedDictInvariantResult",
-    "TypedDictMockResponse",
 ]
 
 from typing import NotRequired, TypedDict
@@ -106,11 +105,3 @@ class TypedDictCorpusSample(TypedDict, total=False):
     _source_file: str
     _category: str
     ticket_id: str
-
-
-class TypedDictMockResponse(TypedDict, total=False):
-    """TypedDict for mock LLM response data.
-
-    This is a partial TypedDict (total=False) as mock responses have dynamic
-    structure depending on the model and scenario.
-    """
