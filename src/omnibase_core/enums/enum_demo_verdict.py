@@ -32,11 +32,11 @@ class EnumDemoVerdict(StrValueHelper, str, Enum):
         Added as part of Demo V1 CLI (OMN-1397)
     """
 
-    PASS = "pass"
+    PASS = "PASS"
     """All invariants passed with 100% pass rate."""
 
-    FAIL = "fail"
-    """Pass rate below review threshold."""
-
-    REVIEW = "review"
+    REVIEW = "REVIEW"
     """Pass rate requires manual review."""
+
+    FAIL = "FAIL"
+    """Pass rate below review threshold."""

@@ -32,6 +32,51 @@ pytestmark = pytest.mark.integration
 DEMO_FIXTURES_ROOT = Path(__file__).parent.parent.parent.parent / "examples" / "demo"
 MODEL_VALIDATE_ROOT = DEMO_FIXTURES_ROOT / "model-validate"
 
+# Expected golden sample filenames (tickets 001-010)
+GOLDEN_SAMPLE_FILENAMES: tuple[str, ...] = (
+    "ticket_001_billing_refund.yaml",
+    "ticket_002_billing_payment.yaml",
+    "ticket_003_account_access.yaml",
+    "ticket_004_account_profile.yaml",
+    "ticket_005_technical_bug.yaml",
+    "ticket_006_technical_howto.yaml",
+    "ticket_007_billing_refund_enterprise.yaml",
+    "ticket_008_account_access_chat.yaml",
+    "ticket_009_technical_bug_detailed.yaml",
+    "ticket_010_billing_payment_pro.yaml",
+)
+
+# Expected edge-case sample filenames (tickets 011-015)
+# Note: ticket_013 (confidence 0.58) and ticket_014 (confidence 0.62)
+# are specifically tested for confidence threshold failures
+EDGE_CASE_SAMPLE_FILENAMES: tuple[str, ...] = (
+    "ticket_011_malformed_date.yaml",
+    "ticket_012_missing_fields.yaml",
+    "ticket_013_unicode_body.yaml",
+    "ticket_014_borderline_content.yaml",
+    "ticket_015_negative_sentiment.yaml",
+)
+
+# Sample ID to name mapping for mock responses (all 15 samples)
+# Used to generate response filenames like "response_001_billing_refund.json"
+SAMPLE_ID_NAME_MAPPING: tuple[tuple[int, str], ...] = (
+    (1, "billing_refund"),
+    (2, "billing_payment"),
+    (3, "account_access"),
+    (4, "account_profile"),
+    (5, "technical_bug"),
+    (6, "technical_howto"),
+    (7, "billing_refund_enterprise"),
+    (8, "account_access_chat"),
+    (9, "technical_bug_detailed"),
+    (10, "billing_payment_pro"),
+    (11, "malformed_date"),
+    (12, "missing_fields"),
+    (13, "unicode_body"),
+    (14, "borderline_content"),
+    (15, "negative_sentiment"),
+)
+
 
 @pytest.fixture
 def runner() -> CliRunner:
@@ -108,19 +153,7 @@ class TestDemoFixtureValidation:
             )
 
         # These samples are referenced in test assertions and mock responses
-        expected_samples = [
-            "ticket_001_billing_refund.yaml",
-            "ticket_002_billing_payment.yaml",
-            "ticket_003_account_access.yaml",
-            "ticket_004_account_profile.yaml",
-            "ticket_005_technical_bug.yaml",
-            "ticket_006_technical_howto.yaml",
-            "ticket_007_billing_refund_enterprise.yaml",
-            "ticket_008_account_access_chat.yaml",
-            "ticket_009_technical_bug_detailed.yaml",
-            "ticket_010_billing_payment_pro.yaml",
-        ]
-        missing = [s for s in expected_samples if not (golden_dir / s).exists()]
+        missing = [s for s in GOLDEN_SAMPLE_FILENAMES if not (golden_dir / s).exists()]
 
         assert not missing, (
             f"Missing golden corpus samples in {golden_dir}:\n"
@@ -136,14 +169,9 @@ class TestDemoFixtureValidation:
             )
 
         # These samples are specifically tested for failures (TKT-2024-013, TKT-2024-014)
-        expected_samples = [
-            "ticket_011_malformed_date.yaml",
-            "ticket_012_missing_fields.yaml",
-            "ticket_013_unicode_body.yaml",  # TKT-2024-013: confidence 0.58
-            "ticket_014_borderline_content.yaml",  # TKT-2024-014: confidence 0.62
-            "ticket_015_negative_sentiment.yaml",
+        missing = [
+            s for s in EDGE_CASE_SAMPLE_FILENAMES if not (edge_cases_dir / s).exists()
         ]
-        missing = [s for s in expected_samples if not (edge_cases_dir / s).exists()]
 
         assert not missing, (
             f"Missing edge-case corpus samples in {edge_cases_dir}:\n"
@@ -184,24 +212,7 @@ class TestDemoFixtureValidation:
 
         # One response per corpus sample (golden + edge-cases)
         expected_responses = [
-            f"response_{i:03d}_{name}.json"
-            for i, name in [
-                (1, "billing_refund"),
-                (2, "billing_payment"),
-                (3, "account_access"),
-                (4, "account_profile"),
-                (5, "technical_bug"),
-                (6, "technical_howto"),
-                (7, "billing_refund_enterprise"),
-                (8, "account_access_chat"),
-                (9, "technical_bug_detailed"),
-                (10, "billing_payment_pro"),
-                (11, "malformed_date"),
-                (12, "missing_fields"),
-                (13, "unicode_body"),
-                (14, "borderline_content"),
-                (15, "negative_sentiment"),
-            ]
+            f"response_{i:03d}_{name}.json" for i, name in SAMPLE_ID_NAME_MAPPING
         ]
         missing = [r for r in expected_responses if not (baseline_dir / r).exists()]
 
@@ -220,24 +231,7 @@ class TestDemoFixtureValidation:
 
         # One response per corpus sample (golden + edge-cases)
         expected_responses = [
-            f"response_{i:03d}_{name}.json"
-            for i, name in [
-                (1, "billing_refund"),
-                (2, "billing_payment"),
-                (3, "account_access"),
-                (4, "account_profile"),
-                (5, "technical_bug"),
-                (6, "technical_howto"),
-                (7, "billing_refund_enterprise"),
-                (8, "account_access_chat"),
-                (9, "technical_bug_detailed"),
-                (10, "billing_payment_pro"),
-                (11, "malformed_date"),
-                (12, "missing_fields"),
-                (13, "unicode_body"),
-                (14, "borderline_content"),
-                (15, "negative_sentiment"),
-            ]
+            f"response_{i:03d}_{name}.json" for i, name in SAMPLE_ID_NAME_MAPPING
         ]
         missing = [r for r in expected_responses if not (candidate_dir / r).exists()]
 

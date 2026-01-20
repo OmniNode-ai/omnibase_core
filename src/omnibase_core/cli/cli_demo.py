@@ -21,7 +21,7 @@ import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import click
 import yaml
@@ -570,11 +570,9 @@ def _evaluate_confidence_invariant(
         return (False, None, required_threshold)
 
     try:
-        # NOTE(OMN-1397): mypy false-positive due to dict.get() returning object type.
-        # Safe because: (1) float() handles int/float/str at runtime, (2) the exception
-        # handler catches TypeError/ValueError for any invalid type, and (3) mock_response
-        # originates from validated JSON which only contains JSON-serializable primitives.
-        confidence = float(confidence_raw)  # type: ignore[arg-type]
+        # NOTE(OMN-1397): dict.get() returns object type, but float() handles
+        # int/float/str at runtime. TypeError/ValueError caught for invalid types.
+        confidence = float(cast("int | float | str", confidence_raw))
     except (TypeError, ValueError):
         return (False, None, required_threshold)
 
@@ -681,7 +679,7 @@ def _write_markdown_report(
         f.write(f"- **Passed**: {summary.passed}\n")
         f.write(f"- **Failed**: {summary.failed}\n")
         f.write(f"- **Pass Rate**: {summary.pass_rate:.1%}\n")
-        f.write(f"- **Verdict**: {summary.verdict.value.upper()}\n")
+        f.write(f"- **Verdict**: {summary.verdict.value}\n")
         f.write(f"- **Recommendation**: {summary.recommendation}\n\n")
 
         if summary.invariant_results:
@@ -764,17 +762,11 @@ def _print_results_summary(summary: ModelDemoSummary, output_dir: Path) -> None:
     click.echo()
     verdict = summary.verdict
     if verdict == EnumDemoVerdict.PASS:
-        click.echo(
-            click.style(f"Verdict: {verdict.value.upper()}", fg="green", bold=True)
-        )
+        click.echo(click.style(f"Verdict: {verdict.value}", fg="green", bold=True))
     elif verdict == EnumDemoVerdict.REVIEW:
-        click.echo(
-            click.style(f"Verdict: {verdict.value.upper()}", fg="yellow", bold=True)
-        )
+        click.echo(click.style(f"Verdict: {verdict.value}", fg="yellow", bold=True))
     else:
-        click.echo(
-            click.style(f"Verdict: {verdict.value.upper()}", fg="red", bold=True)
-        )
+        click.echo(click.style(f"Verdict: {verdict.value}", fg="red", bold=True))
 
     click.echo(f"Recommendation: {summary.recommendation}")
 
