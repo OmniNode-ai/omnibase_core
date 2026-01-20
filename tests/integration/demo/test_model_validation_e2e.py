@@ -28,11 +28,262 @@ from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 
 pytestmark = pytest.mark.integration
 
+# Fixture root relative to repository root
+DEMO_FIXTURES_ROOT = Path(__file__).parent.parent.parent.parent / "examples" / "demo"
+MODEL_VALIDATE_ROOT = DEMO_FIXTURES_ROOT / "model-validate"
+
 
 @pytest.fixture
 def runner() -> CliRunner:
     """Create CLI runner."""
     return CliRunner()
+
+
+class TestDemoFixtureValidation:
+    """Validate that required fixtures exist before running E2E tests.
+
+    These tests ensure that the fixture files in examples/demo/model-validate/
+    are present. If fixtures are moved or deleted, these tests will fail with
+    clear error messages indicating which files are missing.
+
+    This provides early detection of missing fixtures rather than cryptic
+    errors during actual test execution.
+    """
+
+    def test_model_validate_root_exists(self) -> None:
+        """The model-validate scenario directory must exist."""
+        assert MODEL_VALIDATE_ROOT.exists(), (
+            f"Missing fixture directory: {MODEL_VALIDATE_ROOT}\n"
+            "The model-validate demo scenario requires this directory."
+        )
+        assert MODEL_VALIDATE_ROOT.is_dir(), (
+            f"Expected directory but found file: {MODEL_VALIDATE_ROOT}"
+        )
+
+    def test_required_config_files_exist(self) -> None:
+        """Contract and invariants config files must exist."""
+        required_configs = [
+            ("contract.yaml", "Defines the validation contract schema"),
+            ("invariants.yaml", "Defines validation invariants and thresholds"),
+        ]
+        missing = []
+        for filename, description in required_configs:
+            path = MODEL_VALIDATE_ROOT / filename
+            if not path.exists():
+                missing.append(f"  - {filename}: {description}")
+
+        assert not missing, (
+            f"Missing required config files in {MODEL_VALIDATE_ROOT}:\n"
+            + "\n".join(missing)
+        )
+
+    def test_corpus_directories_exist(self) -> None:
+        """Corpus directories for golden and edge-case samples must exist."""
+        corpus_root = MODEL_VALIDATE_ROOT / "corpus"
+        assert corpus_root.exists(), (
+            f"Missing corpus directory: {corpus_root}\n"
+            "The corpus contains sample tickets for validation testing."
+        )
+
+        required_subdirs = [
+            ("golden", "High-confidence samples that should pass validation"),
+            ("edge-cases", "Samples designed to test boundary conditions"),
+        ]
+        missing = []
+        for dirname, description in required_subdirs:
+            path = corpus_root / dirname
+            if not path.exists() or not path.is_dir():
+                missing.append(f"  - corpus/{dirname}/: {description}")
+
+        assert not missing, "Missing required corpus subdirectories:\n" + "\n".join(
+            missing
+        )
+
+    def test_golden_corpus_samples_exist(self) -> None:
+        """Golden corpus must contain expected sample files."""
+        golden_dir = MODEL_VALIDATE_ROOT / "corpus" / "golden"
+        if not golden_dir.exists():
+            pytest.skip(
+                "Golden directory missing (covered by test_corpus_directories_exist)"
+            )
+
+        # These samples are referenced in test assertions and mock responses
+        expected_samples = [
+            "ticket_001_billing_refund.yaml",
+            "ticket_002_billing_payment.yaml",
+            "ticket_003_account_access.yaml",
+            "ticket_004_account_profile.yaml",
+            "ticket_005_technical_bug.yaml",
+            "ticket_006_technical_howto.yaml",
+            "ticket_007_billing_refund_enterprise.yaml",
+            "ticket_008_account_access_chat.yaml",
+            "ticket_009_technical_bug_detailed.yaml",
+            "ticket_010_billing_payment_pro.yaml",
+        ]
+        missing = [s for s in expected_samples if not (golden_dir / s).exists()]
+
+        assert not missing, (
+            f"Missing golden corpus samples in {golden_dir}:\n"
+            + "\n".join(f"  - {s}" for s in missing)
+        )
+
+    def test_edge_case_corpus_samples_exist(self) -> None:
+        """Edge-case corpus must contain expected sample files."""
+        edge_cases_dir = MODEL_VALIDATE_ROOT / "corpus" / "edge-cases"
+        if not edge_cases_dir.exists():
+            pytest.skip(
+                "Edge-cases directory missing (covered by test_corpus_directories_exist)"
+            )
+
+        # These samples are specifically tested for failures (TKT-2024-013, TKT-2024-014)
+        expected_samples = [
+            "ticket_011_malformed_date.yaml",
+            "ticket_012_missing_fields.yaml",
+            "ticket_013_unicode_body.yaml",  # TKT-2024-013: confidence 0.58
+            "ticket_014_borderline_content.yaml",  # TKT-2024-014: confidence 0.62
+            "ticket_015_negative_sentiment.yaml",
+        ]
+        missing = [s for s in expected_samples if not (edge_cases_dir / s).exists()]
+
+        assert not missing, (
+            f"Missing edge-case corpus samples in {edge_cases_dir}:\n"
+            + "\n".join(f"  - {s}" for s in missing)
+            + "\n\nNote: ticket_013 and ticket_014 are specifically tested "
+            "for confidence threshold failures."
+        )
+
+    def test_mock_responses_directories_exist(self) -> None:
+        """Mock response directories for baseline and candidate must exist."""
+        mock_root = MODEL_VALIDATE_ROOT / "mock-responses"
+        assert mock_root.exists(), (
+            f"Missing mock-responses directory: {mock_root}\n"
+            "Mock responses are required for running tests without API keys."
+        )
+
+        required_subdirs = [
+            ("baseline", "Responses from the baseline model for comparison"),
+            ("candidate", "Responses from the candidate model being validated"),
+        ]
+        missing = []
+        for dirname, description in required_subdirs:
+            path = mock_root / dirname
+            if not path.exists() or not path.is_dir():
+                missing.append(f"  - mock-responses/{dirname}/: {description}")
+
+        assert not missing, (
+            "Missing required mock-response subdirectories:\n" + "\n".join(missing)
+        )
+
+    def test_baseline_mock_responses_exist(self) -> None:
+        """Baseline mock responses must exist for all corpus samples."""
+        baseline_dir = MODEL_VALIDATE_ROOT / "mock-responses" / "baseline"
+        if not baseline_dir.exists():
+            pytest.skip(
+                "Baseline directory missing (covered by test_mock_responses_directories_exist)"
+            )
+
+        # One response per corpus sample (golden + edge-cases)
+        expected_responses = [
+            f"response_{i:03d}_{name}.json"
+            for i, name in [
+                (1, "billing_refund"),
+                (2, "billing_payment"),
+                (3, "account_access"),
+                (4, "account_profile"),
+                (5, "technical_bug"),
+                (6, "technical_howto"),
+                (7, "billing_refund_enterprise"),
+                (8, "account_access_chat"),
+                (9, "technical_bug_detailed"),
+                (10, "billing_payment_pro"),
+                (11, "malformed_date"),
+                (12, "missing_fields"),
+                (13, "unicode_body"),
+                (14, "borderline_content"),
+                (15, "negative_sentiment"),
+            ]
+        ]
+        missing = [r for r in expected_responses if not (baseline_dir / r).exists()]
+
+        assert not missing, (
+            f"Missing baseline mock responses in {baseline_dir}:\n"
+            + "\n".join(f"  - {r}" for r in missing)
+        )
+
+    def test_candidate_mock_responses_exist(self) -> None:
+        """Candidate mock responses must exist for all corpus samples."""
+        candidate_dir = MODEL_VALIDATE_ROOT / "mock-responses" / "candidate"
+        if not candidate_dir.exists():
+            pytest.skip(
+                "Candidate directory missing (covered by test_mock_responses_directories_exist)"
+            )
+
+        # One response per corpus sample (golden + edge-cases)
+        expected_responses = [
+            f"response_{i:03d}_{name}.json"
+            for i, name in [
+                (1, "billing_refund"),
+                (2, "billing_payment"),
+                (3, "account_access"),
+                (4, "account_profile"),
+                (5, "technical_bug"),
+                (6, "technical_howto"),
+                (7, "billing_refund_enterprise"),
+                (8, "account_access_chat"),
+                (9, "technical_bug_detailed"),
+                (10, "billing_payment_pro"),
+                (11, "malformed_date"),
+                (12, "missing_fields"),
+                (13, "unicode_body"),
+                (14, "borderline_content"),
+                (15, "negative_sentiment"),
+            ]
+        ]
+        missing = [r for r in expected_responses if not (candidate_dir / r).exists()]
+
+        assert not missing, (
+            f"Missing candidate mock responses in {candidate_dir}:\n"
+            + "\n".join(f"  - {r}" for r in missing)
+        )
+
+    def test_fixture_counts_match(self) -> None:
+        """Verify corpus samples and mock responses are in sync.
+
+        Each corpus sample should have corresponding baseline and candidate
+        mock responses. A mismatch indicates incomplete fixture setup.
+        """
+        corpus_golden = MODEL_VALIDATE_ROOT / "corpus" / "golden"
+        corpus_edge = MODEL_VALIDATE_ROOT / "corpus" / "edge-cases"
+        baseline = MODEL_VALIDATE_ROOT / "mock-responses" / "baseline"
+        candidate = MODEL_VALIDATE_ROOT / "mock-responses" / "candidate"
+
+        # Skip if directories don't exist (covered by other tests)
+        if not all(
+            d.exists() for d in [corpus_golden, corpus_edge, baseline, candidate]
+        ):
+            pytest.skip("Fixture directories missing (covered by other tests)")
+
+        corpus_count = len(list(corpus_golden.glob("*.yaml"))) + len(
+            list(corpus_edge.glob("*.yaml"))
+        )
+        baseline_count = len(list(baseline.glob("*.json")))
+        candidate_count = len(list(candidate.glob("*.json")))
+
+        mismatches = []
+        if baseline_count != corpus_count:
+            mismatches.append(
+                f"  - Baseline responses ({baseline_count}) != corpus samples ({corpus_count})"
+            )
+        if candidate_count != corpus_count:
+            mismatches.append(
+                f"  - Candidate responses ({candidate_count}) != corpus samples ({corpus_count})"
+            )
+
+        assert not mismatches, (
+            "Fixture count mismatch detected:\n"
+            + "\n".join(mismatches)
+            + "\n\nEach corpus sample needs both baseline and candidate mock responses."
+        )
 
 
 class TestDemoListCommand:
@@ -55,14 +306,18 @@ class TestDemoRunCommand:
 
         The demo uses mock responses from examples/demo/model-validate/mock-responses/
         and should produce valid output without requiring external API calls.
+
+        Expected exit code is ERROR (1) because the corpus contains 2 edge-case
+        samples (TKT-2024-013 and TKT-2024-014) with confidence below the 0.70
+        threshold, resulting in invariant failures. This is expected behavior -
+        the demo intentionally includes failing samples to demonstrate validation.
         """
         result = runner.invoke(
             cli,
             ["demo", "run", "--scenario", "model-validate", "--output", str(tmp_path)],
         )
-        # Exit code 1 is expected because there are failures (not errors)
-        # The demo has 2 samples with confidence below threshold
-        assert result.exit_code in (EnumCLIExitCode.SUCCESS, EnumCLIExitCode.ERROR)
+        # Exit code ERROR (1) expected: 2 samples fail confidence threshold invariant
+        assert result.exit_code == EnumCLIExitCode.ERROR
         assert (tmp_path / "report.json").exists()
         assert (tmp_path / "report.md").exists()
         assert (tmp_path / "run_manifest.yaml").exists()
