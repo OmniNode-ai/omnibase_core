@@ -139,7 +139,6 @@ def nested_demo_root(tmp_path: Path) -> Path:
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestDemoGroupCommand:
     """Tests for the demo command group."""
 
@@ -168,7 +167,6 @@ class TestDemoGroupCommand:
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestListCommand:
     """Tests for the `onex demo list` command."""
 
@@ -247,7 +245,6 @@ class TestListCommand:
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestRunCommand:
     """Tests for the `onex demo run` command."""
 
@@ -520,7 +517,6 @@ class TestRunCommand:
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestGetDemoRoot:
     """Tests for the _get_demo_root helper function."""
 
@@ -555,7 +551,6 @@ class TestGetDemoRoot:
                 assert "Could not locate" in str(exc_info.value)
 
 
-@pytest.mark.unit
 class TestIsDemoScenario:
     """Tests for the _is_demo_scenario helper function."""
 
@@ -604,7 +599,6 @@ class TestIsDemoScenario:
         assert _is_demo_scenario(tmp_path / "nonexistent") is False
 
 
-@pytest.mark.unit
 class TestDiscoverScenarios:
     """Tests for the _discover_scenarios helper function."""
 
@@ -659,7 +653,6 @@ class TestDiscoverScenarios:
         assert path.exists()
 
 
-@pytest.mark.unit
 class TestExtractScenarioDescription:
     """Tests for the _extract_scenario_description helper function."""
 
@@ -728,7 +721,6 @@ This is the description from README.
         assert "demo scenario" in description.lower()
 
 
-@pytest.mark.unit
 class TestGetScenarioPath:
     """Tests for the _get_scenario_path helper function."""
 
@@ -750,7 +742,6 @@ class TestGetScenarioPath:
         assert path is None
 
 
-@pytest.mark.unit
 class TestLoadCorpus:
     """Tests for the _load_corpus helper function."""
 
@@ -797,7 +788,6 @@ class TestLoadCorpus:
         assert samples[0]["id"] == "valid"
 
 
-@pytest.mark.unit
 class TestLoadMockResponses:
     """Tests for the _load_mock_responses helper function."""
 
@@ -832,7 +822,6 @@ class TestLoadMockResponses:
         assert "baseline/valid" in responses
 
 
-@pytest.mark.unit
 class TestCreateOutputBundle:
     """Tests for the _create_output_bundle helper function."""
 
@@ -908,7 +897,6 @@ class TestCreateOutputBundle:
         assert (outputs_dir / "sample_001.json").exists()
 
 
-@pytest.mark.unit
 class TestWriteMarkdownReport:
     """Tests for the _write_markdown_report helper function."""
 
@@ -961,7 +949,6 @@ class TestWriteMarkdownReport:
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestDemoConstants:
     """Tests for demo CLI constants."""
 
@@ -981,7 +968,6 @@ class TestDemoConstants:
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestDemoCliEdgeCases:
     """Edge case tests for demo CLI commands."""
 

@@ -350,7 +350,7 @@ def _get_scenario_path(scenario_name: str, demo_root: Path) -> Path | None:
     return None
 
 
-def _load_corpus(corpus_dir: Path) -> list[dict[str, object]]:
+def _load_corpus(corpus_dir: Path, *, verbose: bool = False) -> list[dict[str, object]]:
     """Load YAML samples from subdirs and root, adding _source_file and _category metadata."""
     samples: list[dict[str, object]] = []
 
@@ -370,9 +370,13 @@ def _load_corpus(corpus_dir: Path) -> list[dict[str, object]]:
                             )
                             data["_category"] = subdir.name
                             samples.append(data)
-                except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS):
+                except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS) as e:
                     # fallback-ok: skip unreadable or malformed corpus files
-                    pass
+                    if verbose:
+                        click.echo(
+                            f"Warning: Could not load corpus file {sample_file}: {e}",
+                            err=True,
+                        )
 
     # Also check for direct YAML files in corpus root
     for sample_file in sorted(corpus_dir.glob("*.yaml")):
@@ -385,14 +389,19 @@ def _load_corpus(corpus_dir: Path) -> list[dict[str, object]]:
                     data["_source_file"] = sample_file.name
                     data["_category"] = "root"
                     samples.append(data)
-        except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS):
+        except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS) as e:
             # fallback-ok: skip unreadable or malformed corpus files
-            pass
+            if verbose:
+                click.echo(
+                    f"Warning: Could not load corpus file {sample_file}: {e}", err=True
+                )
 
     return samples
 
 
-def _load_mock_responses(mock_dir: Path) -> dict[str, dict[str, object]]:
+def _load_mock_responses(
+    mock_dir: Path, *, verbose: bool = False
+) -> dict[str, dict[str, object]]:
     """Load JSON responses from model subdirs, keyed as 'model_type/sample_stem'."""
     responses: dict[str, dict[str, object]] = {}
 
@@ -410,9 +419,13 @@ def _load_mock_responses(mock_dir: Path) -> dict[str, dict[str, object]]:
                     data = json.load(f)
                     key = f"{model_type}/{response_file.stem}"
                     responses[key] = data
-            except (*FILE_IO_ERRORS, *JSON_PARSING_ERRORS):
+            except (*FILE_IO_ERRORS, *JSON_PARSING_ERRORS) as e:
                 # fallback-ok: skip unreadable or malformed mock response files
-                pass
+                if verbose:
+                    click.echo(
+                        f"Warning: Could not load mock response {response_file}: {e}",
+                        err=True,
+                    )
 
     return responses
 
@@ -641,7 +654,7 @@ def run_demo(
 
     # Load corpus
     corpus_dir = scenario_path / "corpus"
-    corpus = _load_corpus(corpus_dir)
+    corpus = _load_corpus(corpus_dir, verbose=verbose)
     if not corpus:
         raise click.ClickException(
             f"No corpus samples found in {corpus_dir}. "
@@ -658,7 +671,7 @@ def run_demo(
     mock_responses: dict[str, dict[str, object]] = {}
     if not live:
         mock_dir = scenario_path / "mock-responses"
-        mock_responses = _load_mock_responses(mock_dir)
+        mock_responses = _load_mock_responses(mock_dir, verbose=verbose)
 
     # Load invariants
     invariants_path = scenario_path / "invariants.yaml"
@@ -697,12 +710,15 @@ def run_demo(
 
     # Progress indicator
     total = len(corpus)
+    last_progress = -1
     for i, sample in enumerate(corpus):
-        # Simple progress bar
+        # Simple progress bar - only update when visual bar changes
         progress = int((i + 1) / total * 40)
-        bar = "█" * progress + "░" * (40 - progress)
-        click.echo(f"\rRunning replay... {bar} {i + 1}/{total}", nl=False)
-        sys.stdout.flush()
+        if progress != last_progress:
+            bar = "█" * progress + "░" * (40 - progress)
+            click.echo(f"\rRunning replay... {bar} {i + 1}/{total}", nl=False)
+            sys.stdout.flush()
+            last_progress = progress
 
         # Simulate evaluation (in real implementation, use ServiceInvariantEvaluator)
         sample_id_raw = (
