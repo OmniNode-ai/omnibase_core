@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
+from omnibase_core.enums.enum_demo_recommendation import EnumDemoRecommendation
 from omnibase_core.enums.enum_demo_verdict import EnumDemoVerdict
 from omnibase_core.models.demo.model_demo_invariant_result import ModelInvariantResult
 from omnibase_core.models.demo.model_failure_detail import ModelFailureDetail
@@ -37,7 +36,7 @@ class ModelDemoSummary(BaseModel):
     # NOTE(OMN-1206): Pydantic @computed_field requires @property below it.
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def recommendation(self) -> Literal["promote", "promote_with_review", "reject"]:
+    def recommendation(self) -> EnumDemoRecommendation:
         """Compute promotion recommendation based on pass rate.
 
         - pass_rate == 1.0: promote (perfect score)
@@ -45,10 +44,10 @@ class ModelDemoSummary(BaseModel):
         - pass_rate < 0.9: reject (significant issues)
         """
         if self.pass_rate == 1.0:
-            return "promote"
+            return EnumDemoRecommendation.PROMOTE
         if self.pass_rate >= 0.9:
-            return "promote_with_review"
-        return "reject"
+            return EnumDemoRecommendation.PROMOTE_WITH_REVIEW
+        return EnumDemoRecommendation.REJECT
 
 
 __all__ = ["ModelDemoSummary"]

@@ -572,7 +572,7 @@ def _evaluate_confidence_invariant(
     try:
         # NOTE(OMN-1397): dict.get() returns object type, but float() handles
         # int/float/str at runtime. TypeError/ValueError caught for invalid types.
-        confidence = float(cast("int | float | str", confidence_raw))
+        confidence = float(cast(int | float | str, confidence_raw))
     except (TypeError, ValueError):
         return (False, None, required_threshold)
 
@@ -903,6 +903,20 @@ def run_demo(
     if seed is not None:
         click.echo(f"Seed:        {seed}")
     click.echo()
+
+    # Warn about skipped confidence checks in live mode (only once, before loop)
+    thresholds_config = invariants.get("thresholds")
+    if (
+        live
+        and verbose
+        and isinstance(thresholds_config, dict)
+        and thresholds_config.get("confidence_min") is not None
+    ):
+        click.echo(
+            "Note: Confidence threshold checks skipped in live mode "
+            "(requires mock responses)",
+            err=True,
+        )
 
     # Run evaluation (simplified for demo - actual implementation would use services)
     click.echo("Running evaluation...")

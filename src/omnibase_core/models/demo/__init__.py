@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from omnibase_core.enums.enum_demo_recommendation import EnumDemoRecommendation
 from omnibase_core.enums.enum_demo_verdict import EnumDemoVerdict
 from omnibase_core.models.demo.model_demo_config import ModelDemoConfig
 from omnibase_core.models.demo.model_demo_invariant_result import ModelInvariantResult
@@ -17,6 +18,7 @@ from omnibase_core.models.demo.model_validate import (
 )
 
 __all__ = [
+    "EnumDemoRecommendation",
     "EnumDemoVerdict",
     "ModelDemoConfig",
     "ModelDemoSummary",

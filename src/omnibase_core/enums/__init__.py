@@ -76,7 +76,8 @@ from .enum_data_classification import EnumDataClassification
 # Decision type enums (OMN-1235)
 from .enum_decision_type import EnumDecisionType
 
-# Demo verdict enum (OMN-1397)
+# Demo enums (OMN-1397)
+from .enum_demo_recommendation import EnumDemoRecommendation
 from .enum_demo_verdict import EnumDemoVerdict
 
 # Detection and security enums
@@ -612,6 +613,7 @@ __all__ = [
     "EnumMetricsPolicyViolationAction",
     # Demo/sample artifact enums (OMN-1395, OMN-1397)
     "EnumCustomerTier",
+    "EnumDemoRecommendation",
     "EnumDemoVerdict",
     "EnumSentiment",
     "EnumSupportCategory",
