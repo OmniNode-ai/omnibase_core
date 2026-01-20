@@ -208,13 +208,15 @@ repos:
       # interfaces (structural typing), not concrete implementations. They may
       # reference version formats in docstrings/type hints for documentation.
       # See: scripts/validation/validate-union-usage.py module docstring for rationale.
+      # Exclusions:
+      # - typed_dict_demo.py: sample_id and ticket_id are external corpus identifiers, not internal UUIDs (OMN-1396)
       - id: validate-string-versions
         name: ONEX String Version Anti-Pattern Detection
         entry: poetry run python scripts/validation/validate-string-versions.py
         language: system
         pass_filenames: true
         files: ^.*\.(py|yaml|yml)$
-        exclude: ^(tests/fixtures/validation/|archived/|archive/|src/omnibase_core/protocols/|src/omnibase_core/validation/validator_|src/omnibase_core/validation/visitor_|src/omnibase_core/models/contracts/subcontracts/model_validator_|examples/contracts/handlers/)
+        exclude: ^(tests/fixtures/validation/|archived/|archive/|src/omnibase_core/protocols/|src/omnibase_core/validation/validator_|src/omnibase_core/validation/visitor_|src/omnibase_core/models/contracts/subcontracts/model_validator_|src/omnibase_core/types/typed_dict_demo\.py|examples/contracts/handlers/)
         stages: [pre-commit]
 
       - id: validate-archived-imports
@@ -237,13 +239,15 @@ repos:
         exclude: ^(scripts/validation/validate-no-backward-compatibility\.py|archived/.*)$
         stages: [pre-commit]
 
+      # Exclusions:
+      # - cli_demo.py: Loads dynamic corpus/mock data for demo execution, not contract validation (OMN-1396)
       - id: validate-no-manual-yaml
         name: ONEX Manual YAML Prevention
         entry: poetry run python scripts/validation/validate-no-manual-yaml.py
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/discovery/mixin_discovery\.py|tests/fixtures/validation/)
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/)
         stages: [pre-commit]
 
       # AST-based validators - accept file arguments for fast pre-commit
@@ -387,7 +391,8 @@ repos:
         # - mixin_event_bus.py: Duck-typed Protocol defined alongside mixin that uses it
         # - mixin_health_check.py: Duck-typed Protocols (connection pools, clients) alongside health check mixin
         # - checker_enum_governance.py: Tightly coupled data classes + AST visitor for governance validator (OMN-1313)
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/protocols/)
+        # - typed_dict_demo.py: TypedDict collection for demo CLI data structures (OMN-1396)
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/types/typed_dict_demo\.py$|src/omnibase_core/protocols/)
         stages: [pre-commit]
 
       - id: validate-enum-model-imports

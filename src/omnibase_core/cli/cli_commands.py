@@ -538,6 +538,11 @@ from omnibase_core.cli.cli_contract import contract
 
 cli.add_command(contract)
 
+# Register demo command group from separate module
+from omnibase_core.cli.cli_demo import demo
+
+cli.add_command(demo)
+
 
 if __name__ == "__main__":
     cli()
