@@ -18,6 +18,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import random
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -26,8 +27,14 @@ from typing import TYPE_CHECKING
 import click
 import yaml
 
+from omnibase_core.decorators.decorator_error_handling import io_error_handling
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.errors.exception_groups import (
+    FILE_IO_ERRORS,
+    JSON_PARSING_ERRORS,
+    YAML_PARSING_ERRORS,
+)
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.types.typed_dict_demo import (
     TypedDictDemoConfig,
@@ -142,8 +149,8 @@ def _extract_scenario_description(scenario_path: Path) -> str:
                     if isinstance(desc, str) and len(desc) > 60:
                         return desc[:57] + "..."
                     return str(desc) if desc else "Demo scenario"
-        except (OSError, yaml.YAMLError):
-            # Ignore YAML parsing errors and continue to fallback
+        except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS):
+            # fallback-ok: use default description if contract file is unreadable or malformed
             pass
 
     # Try README.md - extract first non-empty line after header
@@ -158,7 +165,8 @@ def _extract_scenario_description(scenario_path: Path) -> str:
                         if len(line) > 60:
                             return line[:57] + "..."
                         return line
-        except OSError:
+        except FILE_IO_ERRORS:
+            # fallback-ok: use default description if README is unreadable
             pass
 
     # Default description based on scenario name
@@ -310,15 +318,7 @@ def list_scenarios(ctx: click.Context, path: Path | None) -> None:
 
 
 def _get_scenario_path(scenario_name: str, demo_root: Path) -> Path | None:
-    """Find a scenario by name in the demo directory.
-
-    Args:
-        scenario_name: Name of the scenario (e.g., 'model-validate').
-        demo_root: Root path of the demo directory.
-
-    Returns:
-        Path to the scenario directory, or None if not found.
-    """
+    """Resolve scenario name to path, supporting nested names like 'handlers/foo'."""
     # Direct match
     direct_path = demo_root / scenario_name
     if _is_demo_scenario(direct_path):
@@ -335,14 +335,7 @@ def _get_scenario_path(scenario_name: str, demo_root: Path) -> Path | None:
 
 
 def _load_corpus(corpus_dir: Path) -> list[dict[str, object]]:
-    """Load corpus samples from a directory.
-
-    Args:
-        corpus_dir: Path to corpus directory.
-
-    Returns:
-        List of corpus sample dictionaries.
-    """
+    """Load YAML samples from subdirs and root, adding _source_file and _category metadata."""
     samples: list[dict[str, object]] = []
 
     if not corpus_dir.is_dir():
@@ -361,7 +354,8 @@ def _load_corpus(corpus_dir: Path) -> list[dict[str, object]]:
                             )
                             data["_category"] = subdir.name
                             samples.append(data)
-                except (OSError, yaml.YAMLError):
+                except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS):
+                    # fallback-ok: skip unreadable or malformed corpus files
                     pass
 
     # Also check for direct YAML files in corpus root
@@ -375,21 +369,15 @@ def _load_corpus(corpus_dir: Path) -> list[dict[str, object]]:
                     data["_source_file"] = sample_file.name
                     data["_category"] = "root"
                     samples.append(data)
-        except (OSError, yaml.YAMLError):
+        except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS):
+            # fallback-ok: skip unreadable or malformed corpus files
             pass
 
     return samples
 
 
 def _load_mock_responses(mock_dir: Path) -> dict[str, dict[str, object]]:
-    """Load mock responses from a directory.
-
-    Args:
-        mock_dir: Path to mock-responses directory.
-
-    Returns:
-        Dictionary mapping (model_type, sample_id) to response data.
-    """
+    """Load JSON responses from model subdirs, keyed as 'model_type/sample_stem'."""
     responses: dict[str, dict[str, object]] = {}
 
     if not mock_dir.is_dir():
@@ -406,12 +394,14 @@ def _load_mock_responses(mock_dir: Path) -> dict[str, dict[str, object]]:
                     data = json.load(f)
                     key = f"{model_type}/{response_file.stem}"
                     responses[key] = data
-            except (OSError, json.JSONDecodeError):
+            except (*FILE_IO_ERRORS, *JSON_PARSING_ERRORS):
+                # fallback-ok: skip unreadable or malformed mock response files
                 pass
 
     return responses
 
 
+@io_error_handling("Creating output bundle")
 def _create_output_bundle(
     output_dir: Path,
     scenario_name: str,
@@ -420,16 +410,7 @@ def _create_output_bundle(
     config: TypedDictDemoConfig,
     summary: TypedDictDemoSummary,
 ) -> None:
-    """Create the output bundle directory structure.
-
-    Args:
-        output_dir: Root output directory.
-        scenario_name: Name of the scenario.
-        corpus: List of corpus samples.
-        results: List of evaluation results.
-        config: Run configuration.
-        summary: Results summary.
-    """
+    """Create inputs/, outputs/, run_manifest.yaml, report.json, and report.md."""
     # Create directories
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "inputs").mkdir(exist_ok=True)
@@ -475,20 +456,14 @@ def _create_output_bundle(
     _write_markdown_report(output_dir / "report.md", scenario_name, summary, results)
 
 
+@io_error_handling("Writing markdown report")
 def _write_markdown_report(
     path: Path,
     scenario_name: str,
     summary: TypedDictDemoSummary,
     results: list[TypedDictDemoResult],
 ) -> None:
-    """Write a human-readable markdown report.
-
-    Args:
-        path: Output file path.
-        scenario_name: Name of the scenario.
-        summary: Results summary.
-        results: List of evaluation results.
-    """
+    """Generate report with summary stats, invariant table, and first 10 sample results."""
     with path.open("w", encoding="utf-8") as f:
         f.write(f"# ONEX Demo Report: {scenario_name}\n\n")
         f.write(f"**Generated**: {datetime.now(UTC).isoformat()}\n\n")
@@ -524,11 +499,7 @@ def _write_markdown_report(
 
 
 def _print_banner(scenario_name: str) -> None:
-    """Print the demo banner.
-
-    Args:
-        scenario_name: Name of the scenario.
-    """
+    """Output centered scenario title with double-line border."""
     width = 65
     click.echo("═" * width)
     title = f"ONEX DEMO: {scenario_name}"
@@ -539,12 +510,7 @@ def _print_banner(scenario_name: str) -> None:
 
 
 def _print_results_summary(summary: TypedDictDemoSummary, output_dir: Path) -> None:
-    """Print the results summary.
-
-    Args:
-        summary: Results summary dictionary.
-        output_dir: Path to output directory.
-    """
+    """Output invariant stats, colored verdict, and output file locations."""
     click.echo("─" * 65)
     click.echo("RESULTS")
     click.echo("─" * 65)
@@ -688,7 +654,8 @@ def run_demo(
         try:
             with invariants_path.open(encoding="utf-8") as f:
                 invariants = yaml.safe_load(f) or {}
-        except (OSError, yaml.YAMLError) as e:
+        except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS) as e:
+            # fallback-ok: use empty invariants if file is unreadable or malformed
             if verbose:
                 click.echo(f"Warning: Could not load invariants: {e}", err=True)
 
@@ -708,6 +675,10 @@ def run_demo(
 
     # Run evaluation (simplified for demo - actual implementation would use services)
     click.echo("Running evaluation...")
+
+    # Create local RNG - seeded if seed provided, otherwise random
+    rng = random.Random(seed) if seed is not None else random.Random()
+
     results: list[TypedDictDemoResult] = []
     passed_count = 0
 
@@ -735,11 +706,7 @@ def run_demo(
         if isinstance(thresholds, dict) and thresholds.get("confidence_min"):
             # Mock: randomly pass some samples for demo purposes
             # In real implementation, this would check actual model output
-            if seed is not None:
-                import random
-
-                random.seed(seed + i)
-                passed = random.random() > 0.2
+            passed = rng.random() > 0.2
             invariants_checked.append("confidence_threshold")
 
         result: TypedDictDemoResult = {
