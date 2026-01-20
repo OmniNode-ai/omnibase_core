@@ -10,6 +10,10 @@ from omnibase_core.models.demo.model_demo_validation_report import (
 )
 from omnibase_core.models.demo.model_failure_detail import ModelFailureDetail
 from omnibase_core.models.demo.model_sample_result import ModelSampleResult
+from omnibase_core.models.demo.model_validate import (
+    ModelSupportClassificationResult,
+    ModelSupportTicket,
+)
 
 __all__ = [
     "ModelDemoConfig",
@@ -18,4 +22,6 @@ __all__ = [
     "ModelFailureDetail",
     "ModelInvariantResult",
     "ModelSampleResult",
+    "ModelSupportClassificationResult",
+    "ModelSupportTicket",
 ]

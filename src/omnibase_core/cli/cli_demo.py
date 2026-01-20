@@ -392,7 +392,20 @@ def _get_scenario_path(scenario_name: str, demo_root: Path) -> Path | None:
 
 
 def _load_corpus(corpus_dir: Path, *, verbose: bool = False) -> list[dict[str, object]]:
-    """Load YAML samples from subdirs and root, adding _source_file and _category metadata."""
+    """Load YAML samples from corpus directory with metadata injection.
+
+    Scans subdirectories (e.g., golden/, edge-cases/) and root for YAML files,
+    injecting _source_file (relative path) and _category (subdirectory name)
+    metadata into each sample for traceability during evaluation.
+
+    Args:
+        corpus_dir: Path to the corpus directory containing sample YAML files.
+        verbose: If True, emit warnings to stderr for unreadable or malformed files.
+
+    Returns:
+        List of sample dicts, each with injected _source_file and _category keys.
+        Returns empty list if corpus_dir does not exist.
+    """
     samples: list[dict[str, object]] = []
 
     if not corpus_dir.is_dir():
@@ -443,7 +456,20 @@ def _load_corpus(corpus_dir: Path, *, verbose: bool = False) -> list[dict[str, o
 def _load_mock_responses(
     mock_dir: Path, *, verbose: bool = False
 ) -> dict[str, dict[str, object]]:
-    """Load JSON responses from model subdirs, keyed as 'model_type/sample_stem'."""
+    """Load mock LLM responses from model-specific subdirectories.
+
+    Scans subdirectories named by model type (e.g., baseline/, candidate/) for JSON
+    response files. Keys are formatted as 'model_type/sample_stem' for lookup by
+    _find_mock_response_by_ticket_id.
+
+    Args:
+        mock_dir: Path to mock-responses directory containing model subdirs.
+        verbose: If True, emit warnings to stderr for unreadable or malformed files.
+
+    Returns:
+        Dict mapping 'model_type/sample_stem' to response data.
+        Returns empty dict if mock_dir does not exist.
+    """
     responses: dict[str, dict[str, object]] = {}
 
     if not mock_dir.is_dir():
@@ -458,8 +484,10 @@ def _load_mock_responses(
             try:
                 with response_file.open(encoding="utf-8") as f:
                     data = json.load(f)
-                    key = f"{model_type}/{response_file.stem}"
-                    responses[key] = data
+                    # Guard against non-dict JSON payloads (e.g., arrays, strings)
+                    if isinstance(data, dict):
+                        key = f"{model_type}/{response_file.stem}"
+                        responses[key] = data
             except (*FILE_IO_ERRORS, *JSON_PARSING_ERRORS) as e:
                 # fallback-ok: skip unreadable or malformed mock response files
                 if verbose:
@@ -555,7 +583,26 @@ def _create_output_bundle(
     corpus: list[dict[str, object]],
     report: ModelDemoValidationReport,
 ) -> None:
-    """Create inputs/, outputs/, run_manifest.yaml, report.json, and report.md."""
+    """Persist demo run artifacts to a structured output directory.
+
+    Creates a reproducible output bundle containing all inputs, outputs, and reports
+    for the demo run. Directory structure:
+        output_dir/
+            inputs/         - Numbered YAML corpus samples
+            outputs/        - Numbered JSON evaluation results
+            run_manifest.yaml - Run configuration metadata
+            report.json     - Machine-readable validation report
+            report.md       - Human-readable markdown report
+
+    Args:
+        output_dir: Target directory for the output bundle (created if needed).
+        scenario_name: Name of the executed scenario for report headers.
+        corpus: List of corpus samples to write to inputs/.
+        report: Validation report model containing config, summary, and results.
+
+    Raises:
+        ModelOnexError: If directory creation or file writing fails.
+    """
     # Create directories
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "inputs").mkdir(exist_ok=True)
@@ -603,7 +650,21 @@ def _write_markdown_report(
     summary: ModelDemoSummary,
     results: list[ModelSampleResult],
 ) -> None:
-    """Generate report with summary stats, invariant table, and first 10 sample results."""
+    """Generate a human-readable markdown report for the demo run.
+
+    Produces a formatted report with summary statistics, invariant pass/fail table,
+    failure details, and sample results (limited to MAX_REPORT_SAMPLES to keep
+    output manageable).
+
+    Args:
+        path: Output path for the markdown file.
+        scenario_name: Scenario name for the report title.
+        summary: ModelDemoSummary with totals, verdict, and invariant results.
+        results: List of per-sample results to include in the report.
+
+    Raises:
+        ModelOnexError: If file writing fails.
+    """
     with path.open("w", encoding="utf-8") as f:
         f.write(f"# ONEX Demo Report: {scenario_name}\n\n")
         f.write(f"**Generated**: {datetime.now(UTC).isoformat()}\n\n")
@@ -649,7 +710,14 @@ def _write_markdown_report(
 
 
 def _print_banner(scenario_name: str) -> None:
-    """Output centered scenario title with double-line border."""
+    """Print a visually distinct header banner for demo run output.
+
+    Renders a 65-character wide banner with double-line borders and centered
+    scenario name to clearly demarcate the start of demo execution output.
+
+    Args:
+        scenario_name: Name of the scenario to display in the banner.
+    """
     width = 65
     click.echo("═" * width)
     title = f"ONEX DEMO: {scenario_name}"
@@ -660,7 +728,16 @@ def _print_banner(scenario_name: str) -> None:
 
 
 def _print_results_summary(summary: ModelDemoSummary, output_dir: Path) -> None:
-    """Output invariant stats, colored verdict, and output file locations."""
+    """Print formatted results summary with colored verdict to terminal.
+
+    Displays invariant-level statistics (pass/fail counts and rates), a color-coded
+    verdict (green=PASS, yellow=REVIEW, red=FAIL), recommendation text, and paths
+    to generated output files for user reference.
+
+    Args:
+        summary: ModelDemoSummary containing verdict, invariant results, and failures.
+        output_dir: Path to output bundle for displaying file locations.
+    """
     click.echo("─" * 65)
     click.echo("RESULTS")
     click.echo("─" * 65)
@@ -852,9 +929,11 @@ def run_demo(
         invariants_checked: list[str] = []
 
         # Check confidence threshold invariant using mock responses
+        # Skip in live mode - mock responses are only available in mock mode
         thresholds = invariants.get("thresholds")
         if (
-            isinstance(thresholds, dict)
+            not live
+            and isinstance(thresholds, dict)
             and thresholds.get("confidence_min") is not None
         ):
             # Find mock response by ticket_id
