@@ -9,6 +9,9 @@ from omnibase_core.models.demo.model_demo_summary import ModelDemoSummary
 from omnibase_core.models.demo.model_sample_result import ModelSampleResult
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
+# Current schema version for demo validation reports
+DEMO_REPORT_SCHEMA_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 
 class ModelDemoValidationReport(BaseModel):
     """Canonical report for demo validation results.
@@ -21,7 +24,7 @@ class ModelDemoValidationReport(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=lambda: DEMO_REPORT_SCHEMA_VERSION,
         description="Schema version for report format evolution",
     )
     scenario: str = Field(..., description="Name of the executed scenario")
@@ -37,4 +40,4 @@ class ModelDemoValidationReport(BaseModel):
     )
 
 
-__all__ = ["ModelDemoValidationReport"]
+__all__ = ["DEMO_REPORT_SCHEMA_VERSION", "ModelDemoValidationReport"]

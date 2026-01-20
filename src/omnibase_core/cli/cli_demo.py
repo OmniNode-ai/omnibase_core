@@ -501,7 +501,7 @@ def _load_mock_responses(
 
 
 def _find_mock_response_by_ticket_id(
-    mock_responses: Mapping[str, object],
+    mock_responses: Mapping[str, dict[str, object]],
     ticket_id: str,  # string-id-ok: external ticket identifier from corpus data
     model_type: str = "candidate",
 ) -> dict[str, object] | None:
@@ -520,8 +520,9 @@ def _find_mock_response_by_ticket_id(
     for key, response in mock_responses.items():
         if not key.startswith(f"{model_type}/"):
             continue
+        # NOTE(OMN-1397): Runtime safety check for JSON data that may not match declared types.
         if not isinstance(response, dict):
-            continue
+            continue  # type: ignore[unreachable]
         response_ticket_id = response.get("ticket_id")
         if response_ticket_id == ticket_id:
             return response
@@ -549,8 +550,17 @@ def _evaluate_confidence_invariant(
     if not isinstance(thresholds, dict):
         thresholds = {}
 
-    confidence_min = thresholds.get("confidence_min", 0.70)
-    golden_confidence_min = thresholds.get("golden_confidence_min", 0.85)
+    confidence_min_raw = thresholds.get("confidence_min", 0.70)
+    if isinstance(confidence_min_raw, (int, float)):
+        confidence_min = float(confidence_min_raw)
+    else:
+        confidence_min = 0.70
+
+    golden_confidence_min_raw = thresholds.get("golden_confidence_min", 0.85)
+    if isinstance(golden_confidence_min_raw, (int, float)):
+        golden_confidence_min = float(golden_confidence_min_raw)
+    else:
+        golden_confidence_min = 0.85
 
     # Determine required threshold based on sample category
     category = sample.get("_category", "")
