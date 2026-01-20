@@ -27,7 +27,10 @@ from typing import TYPE_CHECKING
 import click
 import yaml
 
-from omnibase_core.decorators.decorator_error_handling import io_error_handling
+from omnibase_core.decorators.decorator_error_handling import (
+    io_error_handling,
+    standard_error_handling,
+)
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.errors.exception_groups import (
@@ -92,6 +95,7 @@ def _get_demo_root() -> Path:
     )
 
 
+@standard_error_handling("Demo scenario check")
 def _is_demo_scenario(path: Path) -> bool:
     """Check if a directory contains a valid demo scenario.
 
@@ -103,6 +107,9 @@ def _is_demo_scenario(path: Path) -> bool:
 
     Returns:
         True if the directory contains a demo scenario, False otherwise.
+
+    Raises:
+        ModelOnexError: If path operations fail (e.g., permission denied).
     """
     if not path.is_dir():
         return False
@@ -263,10 +270,7 @@ def list_scenarios(ctx: click.Context, path: Path | None) -> None:
     verbose = ctx.obj.get("verbose", False) if ctx.obj else False
 
     # Determine demo root path
-    try:
-        demo_root = path if path else _get_demo_root()
-    except click.ClickException:
-        raise
+    demo_root = path if path else _get_demo_root()
 
     if verbose:
         emit_log_event_sync(
@@ -317,8 +321,20 @@ def list_scenarios(ctx: click.Context, path: Path | None) -> None:
     ctx.exit(EnumCLIExitCode.SUCCESS)
 
 
+@standard_error_handling("Scenario path resolution")
 def _get_scenario_path(scenario_name: str, demo_root: Path) -> Path | None:
-    """Resolve scenario name to path, supporting nested names like 'handlers/foo'."""
+    """Resolve scenario name to path, supporting nested names like 'handlers/foo'.
+
+    Args:
+        scenario_name: Name of the scenario (e.g., 'model-validate' or 'handlers/foo').
+        demo_root: Root path of the demo directory.
+
+    Returns:
+        Path to the scenario directory if found, None otherwise.
+
+    Raises:
+        ModelOnexError: If path operations fail (e.g., permission denied).
+    """
     # Direct match
     direct_path = demo_root / scenario_name
     if _is_demo_scenario(direct_path):
@@ -610,10 +626,7 @@ def run_demo(
     timestamp = datetime.now(UTC).strftime("%Y-%m-%dT%H%M%S")
 
     # Determine demo root and scenario path
-    try:
-        demo_root = _get_demo_root()
-    except click.ClickException:
-        raise
+    demo_root = _get_demo_root()
 
     scenario_path = _get_scenario_path(scenario, demo_root)
     if scenario_path is None:
@@ -676,8 +689,8 @@ def run_demo(
     # Run evaluation (simplified for demo - actual implementation would use services)
     click.echo("Running evaluation...")
 
-    # Create local RNG - seeded if seed provided, otherwise random
-    rng = random.Random(seed) if seed is not None else random.Random()
+    # Create local RNG - varies between runs when seed is None (system entropy)
+    rng = random.Random(seed)
 
     results: list[TypedDictDemoResult] = []
     passed_count = 0
