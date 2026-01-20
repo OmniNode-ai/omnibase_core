@@ -603,7 +603,7 @@ def _print_results_summary(summary: TypedDictDemoSummary, output_dir: Path) -> N
 )
 @click.option(
     "--repeat",
-    type=int,
+    type=click.IntRange(min=1),
     default=1,
     help="Repeat corpus N times (to simulate larger corpus).",
 )
