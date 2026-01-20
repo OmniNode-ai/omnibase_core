@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
+from omnibase_core.enums.enum_demo_verdict import EnumDemoVerdict
 from omnibase_core.models.demo.model_demo_invariant_result import ModelInvariantResult
 from omnibase_core.models.demo.model_failure_detail import ModelFailureDetail
 
@@ -25,9 +26,7 @@ class ModelDemoSummary(BaseModel):
     pass_rate: float = Field(
         ..., ge=0.0, le=1.0, description="Pass rate from 0.0 to 1.0"
     )
-    verdict: Literal["PASS", "FAIL", "REVIEW"] = Field(
-        ..., description="Overall evaluation verdict"
-    )
+    verdict: EnumDemoVerdict = Field(..., description="Overall evaluation verdict")
     invariant_results: dict[str, ModelInvariantResult] = Field(
         ..., description="Per-invariant breakdown of results"
     )

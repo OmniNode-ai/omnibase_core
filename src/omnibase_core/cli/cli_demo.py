@@ -21,7 +21,7 @@ import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import click
 import yaml
@@ -31,6 +31,7 @@ from omnibase_core.decorators.decorator_error_handling import (
     standard_error_handling,
 )
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
+from omnibase_core.enums.enum_demo_verdict import EnumDemoVerdict
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.errors.exception_groups import (
     FILE_IO_ERRORS,
@@ -680,7 +681,7 @@ def _write_markdown_report(
         f.write(f"- **Passed**: {summary.passed}\n")
         f.write(f"- **Failed**: {summary.failed}\n")
         f.write(f"- **Pass Rate**: {summary.pass_rate:.1%}\n")
-        f.write(f"- **Verdict**: {summary.verdict}\n")
+        f.write(f"- **Verdict**: {summary.verdict.value.upper()}\n")
         f.write(f"- **Recommendation**: {summary.recommendation}\n\n")
 
         if summary.invariant_results:
@@ -762,12 +763,18 @@ def _print_results_summary(summary: ModelDemoSummary, output_dir: Path) -> None:
 
     click.echo()
     verdict = summary.verdict
-    if verdict == "PASS":
-        click.echo(click.style(f"Verdict: {verdict}", fg="green", bold=True))
-    elif verdict == "REVIEW":
-        click.echo(click.style(f"Verdict: {verdict}", fg="yellow", bold=True))
+    if verdict == EnumDemoVerdict.PASS:
+        click.echo(
+            click.style(f"Verdict: {verdict.value.upper()}", fg="green", bold=True)
+        )
+    elif verdict == EnumDemoVerdict.REVIEW:
+        click.echo(
+            click.style(f"Verdict: {verdict.value.upper()}", fg="yellow", bold=True)
+        )
     else:
-        click.echo(click.style(f"Verdict: {verdict}", fg="red", bold=True))
+        click.echo(
+            click.style(f"Verdict: {verdict.value.upper()}", fg="red", bold=True)
+        )
 
     click.echo(f"Recommendation: {summary.recommendation}")
 
@@ -987,13 +994,13 @@ def run_demo(
     pass_rate = passed_count / total_samples if total_samples > 0 else 0
 
     # Determine verdict based on pass rate thresholds
-    verdict: Literal["PASS", "FAIL", "REVIEW"]
+    verdict: EnumDemoVerdict
     if pass_rate >= PASS_THRESHOLD:
-        verdict = "PASS"
+        verdict = EnumDemoVerdict.PASS
     elif pass_rate >= REVIEW_THRESHOLD:
-        verdict = "REVIEW"
+        verdict = EnumDemoVerdict.REVIEW
     else:
-        verdict = "FAIL"
+        verdict = EnumDemoVerdict.FAIL
 
     # Build invariant results with passed/failed/total
     invariant_results: dict[str, ModelInvariantResult] = {}
@@ -1050,7 +1057,7 @@ def run_demo(
     _print_results_summary(summary, output)
 
     # Exit with appropriate code
-    if verdict == "PASS":
+    if verdict == EnumDemoVerdict.PASS:
         ctx.exit(EnumCLIExitCode.SUCCESS)
     else:
         ctx.exit(EnumCLIExitCode.ERROR)

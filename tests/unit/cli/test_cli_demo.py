@@ -37,6 +37,7 @@ from omnibase_core.cli.cli_demo import (
     demo,
 )
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
+from omnibase_core.enums.enum_demo_verdict import EnumDemoVerdict
 from omnibase_core.models.demo import (
     ModelDemoConfig,
     ModelDemoSummary,
@@ -852,7 +853,7 @@ class TestCreateOutputBundle:
             passed=1,
             failed=1,
             pass_rate=0.5,
-            verdict="FAIL",
+            verdict=EnumDemoVerdict.FAIL,
             invariant_results={},
             failures=[],
         )
@@ -890,7 +891,7 @@ class TestCreateOutputBundle:
             passed=0,
             failed=0,
             pass_rate=0,
-            verdict="PASS",
+            verdict=EnumDemoVerdict.PASS,
             invariant_results={},
             failures=[],
         )
@@ -925,7 +926,7 @@ class TestCreateOutputBundle:
             passed=1,
             failed=0,
             pass_rate=1.0,
-            verdict="PASS",
+            verdict=EnumDemoVerdict.PASS,
             invariant_results={},
             failures=[],
         )
@@ -954,7 +955,7 @@ class TestWriteMarkdownReport:
             passed=8,
             failed=2,
             pass_rate=0.8,
-            verdict="REVIEW",
+            verdict=EnumDemoVerdict.REVIEW,
             invariant_results={
                 "confidence_threshold": ModelInvariantResult(
                     passed=8, failed=2, total=10
@@ -986,7 +987,7 @@ class TestWriteMarkdownReport:
             passed=0,
             failed=0,
             pass_rate=0,
-            verdict="PASS",
+            verdict=EnumDemoVerdict.PASS,
             invariant_results={},
             failures=[],
         )
