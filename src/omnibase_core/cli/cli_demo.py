@@ -537,7 +537,7 @@ def _evaluate_confidence_invariant(
         return (False, None, required_threshold)
 
     try:
-        # NOTE(OMN-TBD): dict.get() returns object type, but float() handles [NEEDS TICKET]
+        # NOTE(OMN-1397): dict.get() returns object type, but float() handles
         # int/float/str at runtime. TypeError/ValueError caught for invalid types.
         confidence = float(confidence_raw)  # type: ignore[arg-type]
     except (TypeError, ValueError):
