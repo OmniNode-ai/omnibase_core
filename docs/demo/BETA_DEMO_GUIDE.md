@@ -1,6 +1,6 @@
 # ONEX Beta Demo Guide
 
-> **Version**: 0.7.0 | **Status**: Beta | **Ticket**: OMN-1398
+> **Version**: 0.8.0 | **Status**: Beta | **Ticket**: OMN-1398
 
 This guide walks you through the ONEX demo system, which demonstrates model validation with corpus replay and invariant evaluation.
 
@@ -583,4 +583,4 @@ Warning: No mock response for sample_001
 
 - [Node Building Guide](../guides/node-building/README.md)
 - [ONEX Four-Node Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
-- [Model Validation Scenario README](../../examples/demo/model-validate/README.md)
+- Model Validation Scenario: `examples/demo/model-validate/README.md`
