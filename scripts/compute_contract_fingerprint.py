@@ -154,16 +154,32 @@ def validate_strict_contract(contract_data: dict[str, object]) -> bool:
             This is raised even if 'contract_version' is also present.
 
     Examples:
-        >>> validate_strict_contract({'contract_version': '1.0.0', 'name': 'Test', ...})
-        True
-        >>> validate_strict_contract({'contract_version': '1.0', 'name': 'Test'})
-        False  # Missing strict fields
-        >>> validate_strict_contract({'version': '1.0.0', 'name': 'Test'})
-        Raises ModelOnexError  # Deprecated 'version' field
-        >>> validate_strict_contract({'version': '1.0.0', 'contract_version': '1.0.0'})
-        Raises ModelOnexError  # Deprecated 'version' field (rejected even with contract_version)
-        >>> validate_strict_contract({'name': 'Test', 'description': '...', 'input_model': '...', 'output_model': '...'})
-        Raises ModelOnexError  # Missing 'contract_version' with strict fields
+        Strict contract with all required fields returns True::
+
+            validate_strict_contract({'contract_version': '1.0.0', 'name': 'Test', ...})
+            # Returns: True
+
+        Flexible contract (missing strict fields) returns False::
+
+            validate_strict_contract({'contract_version': '1.0', 'name': 'Test'})
+            # Returns: False
+
+        Deprecated 'version' field raises error::
+
+            validate_strict_contract({'version': '1.0.0', 'name': 'Test'})
+            # Raises ModelOnexError: Contract uses deprecated 'version' field
+
+        Both 'version' and 'contract_version' present still raises error::
+
+            validate_strict_contract({'version': '1.0.0', 'contract_version': '1.0.0'})
+            # Raises ModelOnexError: Deprecated 'version' field rejected
+
+        Missing 'contract_version' with strict fields raises error::
+
+            validate_strict_contract({
+                'name': 'Test', 'description': '...', 'input_model': '...', 'output_model': '...'
+            })
+            # Raises ModelOnexError: Missing 'contract_version' with strict fields
     """
     has_version = "version" in contract_data
     has_contract_version = "contract_version" in contract_data
@@ -238,12 +254,20 @@ def is_strict_contract(contract_data: dict[str, object]) -> bool:
         False if contract should use flexible ModelYamlContract OR if validation fails.
 
     Examples:
-        >>> is_strict_contract({'contract_version': '1.0.0', 'name': 'Test', ...})
-        True
-        >>> is_strict_contract({'contract_version': '1.0', 'name': 'Test'})
-        False  # Missing strict fields
-        >>> is_strict_contract({'version': '1.0.0', 'name': 'Test'})
-        False  # Returns False instead of raising (deprecated field)
+        Strict contract with all required fields returns True::
+
+            is_strict_contract({'contract_version': '1.0.0', 'name': 'Test', ...})
+            # Returns: True
+
+        Flexible contract (missing strict fields) returns False::
+
+            is_strict_contract({'contract_version': '1.0', 'name': 'Test'})
+            # Returns: False
+
+        Deprecated 'version' field returns False (no exception)::
+
+            is_strict_contract({'version': '1.0.0', 'name': 'Test'})
+            # Returns: False (swallows the ModelOnexError from validate_strict_contract)
 
     See Also:
         validate_strict_contract: The canonical validation function that raises
@@ -322,17 +346,25 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel]:
             Suggestion to migrate to 'contract_version'.
 
     Examples:
-        >>> detect_contract_model({'node_type': 'COMPUTE_GENERIC', 'contract_version': '1.0.0', ...})
-        ModelContractCompute
+        Known strict contract type returns typed model::
 
-        >>> detect_contract_model({'node_type': 'CUSTOM_TYPE', 'contract_version': '1.0'})
-        ModelYamlContract  # Falls back for unknown type
+            detect_contract_model({'node_type': 'COMPUTE_GENERIC', 'contract_version': '1.0.0', ...})
+            # Returns: ModelContractCompute
 
-        >>> detect_contract_model({'name': 'test'})  # Missing node_type
-        ModelOnexError: Contract missing required 'node_type' field
+        Unknown node_type falls back to flexible model::
 
-        >>> detect_contract_model({'node_type': 'COMPUTE_GENERIC', 'version': '1.0.0'})
-        ModelOnexError: Contract uses deprecated 'version' field
+            detect_contract_model({'node_type': 'CUSTOM_TYPE', 'contract_version': '1.0'})
+            # Returns: ModelYamlContract
+
+        Missing node_type raises error::
+
+            detect_contract_model({'name': 'test'})
+            # Raises ModelOnexError: Contract missing required 'node_type' field
+
+        Deprecated 'version' field raises error::
+
+            detect_contract_model({'node_type': 'COMPUTE_GENERIC', 'version': '1.0.0'})
+            # Raises ModelOnexError: Contract uses deprecated 'version' field
 
     See Also:
         - NODE_TYPE_TO_STRICT_MODEL: Mapping of node_type values to model classes.
@@ -363,7 +395,9 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel]:
         )
 
     # Check if this is a strict typed contract
-    # Use validate_strict_contract() for enforcement - errors propagate with details
+    # NOTE: validate_strict_contract() raises ModelOnexError for deprecated 'version' field
+    # or missing 'contract_version' with strict fields. Errors propagate intentionally
+    # to enforce contract standards - callers should handle or let propagate.
     if validate_strict_contract(contract_data):
         model_class = NODE_TYPE_TO_STRICT_MODEL.get(node_type)
         if model_class is not None:
