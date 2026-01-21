@@ -18,11 +18,10 @@ Usage:
 from __future__ import annotations
 
 import json
-import random
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import click
 import yaml
@@ -32,6 +31,7 @@ from omnibase_core.decorators.decorator_error_handling import (
     standard_error_handling,
 )
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
+from omnibase_core.enums.enum_demo_verdict import EnumDemoVerdict
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.errors.exception_groups import (
     FILE_IO_ERRORS,
@@ -39,15 +39,18 @@ from omnibase_core.errors.exception_groups import (
     YAML_PARSING_ERRORS,
 )
 from omnibase_core.logging.logging_structured import emit_log_event_sync
-from omnibase_core.types.typed_dict_demo import (
-    TypedDictDemoConfig,
-    TypedDictDemoResult,
-    TypedDictDemoSummary,
-    TypedDictInvariantResult,
+from omnibase_core.models.demo import (
+    ModelDemoConfig,
+    ModelDemoSummary,
+    ModelDemoValidationReport,
+    ModelFailureDetail,
+    ModelInvariantResult,
+    ModelSampleResult,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Mapping
 
 # Contract file patterns that indicate a demo scenario
 SCENARIO_CONTRACT_FILES: tuple[str, ...] = (
@@ -390,7 +393,20 @@ def _get_scenario_path(scenario_name: str, demo_root: Path) -> Path | None:
 
 
 def _load_corpus(corpus_dir: Path, *, verbose: bool = False) -> list[dict[str, object]]:
-    """Load YAML samples from subdirs and root, adding _source_file and _category metadata."""
+    """Load YAML samples from corpus directory with metadata injection.
+
+    Scans subdirectories (e.g., golden/, edge-cases/) and root for YAML files,
+    injecting _source_file (relative path) and _category (subdirectory name)
+    metadata into each sample for traceability during evaluation.
+
+    Args:
+        corpus_dir: Path to the corpus directory containing sample YAML files.
+        verbose: If True, emit warnings to stderr for unreadable or malformed files.
+
+    Returns:
+        List of sample dicts, each with injected _source_file and _category keys.
+        Returns empty list if corpus_dir does not exist.
+    """
     samples: list[dict[str, object]] = []
 
     if not corpus_dir.is_dir():
@@ -441,7 +457,20 @@ def _load_corpus(corpus_dir: Path, *, verbose: bool = False) -> list[dict[str, o
 def _load_mock_responses(
     mock_dir: Path, *, verbose: bool = False
 ) -> dict[str, dict[str, object]]:
-    """Load JSON responses from model subdirs, keyed as 'model_type/sample_stem'."""
+    """Load mock LLM responses from model-specific subdirectories.
+
+    Scans subdirectories named by model type (e.g., baseline/, candidate/) for JSON
+    response files. Keys are formatted as 'model_type/sample_stem' for lookup by
+    _find_mock_response_by_ticket_id.
+
+    Args:
+        mock_dir: Path to mock-responses directory containing model subdirs.
+        verbose: If True, emit warnings to stderr for unreadable or malformed files.
+
+    Returns:
+        Dict mapping 'model_type/sample_stem' to response data.
+        Returns empty dict if mock_dir does not exist.
+    """
     responses: dict[str, dict[str, object]] = {}
 
     if not mock_dir.is_dir():
@@ -456,8 +485,10 @@ def _load_mock_responses(
             try:
                 with response_file.open(encoding="utf-8") as f:
                     data = json.load(f)
-                    key = f"{model_type}/{response_file.stem}"
-                    responses[key] = data
+                    # Guard against non-dict JSON payloads (e.g., arrays, strings)
+                    if isinstance(data, dict):
+                        key = f"{model_type}/{response_file.stem}"
+                        responses[key] = data
             except (*FILE_IO_ERRORS, *JSON_PARSING_ERRORS) as e:
                 # fallback-ok: skip unreadable or malformed mock response files
                 if verbose:
@@ -469,16 +500,125 @@ def _load_mock_responses(
     return responses
 
 
+def _find_mock_response_by_ticket_id(
+    mock_responses: Mapping[str, dict[str, object]],
+    ticket_id: str,  # string-id-ok: external ticket identifier from corpus data
+    model_type: str = "candidate",
+) -> dict[str, object] | None:
+    """Find a mock response by ticket_id within a specific model type.
+
+    Handles arbitrary JSON payloads safely by skipping non-dict values.
+
+    Args:
+        mock_responses: Dict of mock responses keyed as 'model_type/sample_stem'.
+        ticket_id: The ticket ID to search for (e.g., 'TKT-2024-001').
+        model_type: The model type to search in (e.g., 'candidate', 'baseline').
+
+    Returns:
+        The mock response dict if found, None otherwise.
+    """
+    for key, response in mock_responses.items():
+        if not key.startswith(f"{model_type}/"):
+            continue
+        # NOTE(OMN-1397): Runtime safety check for JSON data that may not match declared types.
+        if not isinstance(response, dict):
+            # fallback-ok: skip malformed entries, search continues for valid matches
+            continue  # type: ignore[unreachable]
+        response_ticket_id = response.get("ticket_id")
+        if response_ticket_id == ticket_id:
+            return response
+    return None
+
+
+def _evaluate_confidence_invariant(
+    sample: dict[str, object],
+    mock_response: dict[str, object] | None,
+    invariants: dict[str, object],
+) -> tuple[bool, float | None, float]:
+    """Evaluate confidence threshold invariant for a sample.
+
+    Args:
+        sample: Corpus sample dict with _category metadata.
+        mock_response: Mock response dict with confidence field, or None.
+        invariants: Invariants config dict with thresholds.
+
+    Returns:
+        Tuple of (passed, actual_confidence, required_threshold).
+        If mock_response is None, returns (False, None, threshold).
+    """
+    # Get thresholds from invariants
+    thresholds = invariants.get("thresholds", {})
+    if not isinstance(thresholds, dict):
+        thresholds = {}
+
+    confidence_min_raw = thresholds.get("confidence_min", 0.70)
+    if isinstance(confidence_min_raw, (int, float)):
+        confidence_min = float(confidence_min_raw)
+    else:
+        confidence_min = 0.70
+
+    golden_confidence_min_raw = thresholds.get("golden_confidence_min", 0.85)
+    if isinstance(golden_confidence_min_raw, (int, float)):
+        golden_confidence_min = float(golden_confidence_min_raw)
+    else:
+        golden_confidence_min = 0.85
+
+    # Determine required threshold based on sample category
+    category = sample.get("_category", "")
+    if category == "golden":
+        required_threshold = golden_confidence_min
+    else:
+        # edge-cases and any other category use the default threshold
+        required_threshold = confidence_min
+
+    # If no mock response, fail
+    if mock_response is None:
+        return (False, None, required_threshold)
+
+    # Extract confidence from mock response
+    confidence_raw = mock_response.get("confidence")
+    if confidence_raw is None:
+        return (False, None, required_threshold)
+
+    try:
+        # NOTE(OMN-1397): dict.get() returns object type, but float() handles
+        # int/float/str at runtime. TypeError/ValueError caught for invalid types.
+        confidence = float(cast(int | float | str, confidence_raw))
+    except (TypeError, ValueError):
+        return (False, None, required_threshold)
+
+    # Evaluate: confidence must meet or exceed threshold
+    passed = confidence >= required_threshold
+    return (passed, confidence, required_threshold)
+
+
 @io_error_handling("Creating output bundle")
 def _create_output_bundle(
     output_dir: Path,
     scenario_name: str,
     corpus: list[dict[str, object]],
-    results: list[TypedDictDemoResult],
-    config: TypedDictDemoConfig,
-    summary: TypedDictDemoSummary,
+    report: ModelDemoValidationReport,
 ) -> None:
-    """Create inputs/, outputs/, run_manifest.yaml, report.json, and report.md."""
+    """Persist demo run artifacts to a structured output directory.
+
+    Creates a reproducible output bundle containing all inputs, outputs, and reports
+    for the demo run. Directory structure:
+        output_dir/
+            inputs/         - Numbered YAML corpus samples
+            outputs/        - Numbered JSON evaluation results
+            run_manifest.yaml - Run configuration metadata
+            report.json     - Machine-readable validation report
+            report.md       - Human-readable markdown report
+
+    Args:
+        output_dir: Target directory for the output bundle (created if needed).
+        scenario_name: Name of the executed scenario for report headers.
+        corpus: List of corpus samples to write to inputs/.
+        report: Validation report model containing config, summary, and results.
+
+    Raises:
+        ModelOnexError: If directory creation or file writing fails.
+    """
     # Create directories
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "inputs").mkdir(exist_ok=True)
@@ -487,12 +627,12 @@ def _create_output_bundle(
     # Write run manifest
     manifest = {
         "scenario": scenario_name,
-        "timestamp": config.get("timestamp", datetime.now(UTC).isoformat()),
-        "seed": config.get("seed"),
-        "live_mode": config.get("live", False),
-        "repeat": config.get("repeat", 1),
+        "timestamp": report.config.timestamp,
+        "seed": report.config.seed,
+        "live_mode": report.config.live,
+        "repeat": report.config.repeat,
         "corpus_count": len(corpus),
-        "result_count": len(results),
+        "result_count": len(report.results),
     }
     with (output_dir / "run_manifest.yaml").open("w", encoding="utf-8") as f:
         yaml.safe_dump(manifest, f, default_flow_style=False)
@@ -504,70 +644,96 @@ def _create_output_bundle(
             yaml.safe_dump(sample, f, default_flow_style=False)
 
     # Write results to outputs/
-    for i, result in enumerate(results):
+    for i, result in enumerate(report.results):
         result_file = output_dir / "outputs" / f"sample_{i + 1:03d}.json"
         with result_file.open("w", encoding="utf-8") as f:
-            json.dump(result, f, indent=2)
+            json.dump(result.model_dump(), f, indent=2)
 
-    # Write report.json
-    report_json = {
-        "scenario": scenario_name,
-        "timestamp": manifest["timestamp"],
-        "config": config,
-        "summary": summary,
-        "results": results,
-    }
+    # Write report.json using canonical Pydantic model
     with (output_dir / "report.json").open("w", encoding="utf-8") as f:
-        json.dump(report_json, f, indent=2)
+        json.dump(report.model_dump(), f, indent=2)
 
     # Write report.md
-    _write_markdown_report(output_dir / "report.md", scenario_name, summary, results)
+    _write_markdown_report(
+        output_dir / "report.md", scenario_name, report.summary, report.results
+    )
 
 
 @io_error_handling("Writing markdown report")
 def _write_markdown_report(
     path: Path,
     scenario_name: str,
-    summary: TypedDictDemoSummary,
-    results: list[TypedDictDemoResult],
+    summary: ModelDemoSummary,
+    results: list[ModelSampleResult],
 ) -> None:
-    """Generate report with summary stats, invariant table, and first 10 sample results."""
+    """Generate a human-readable markdown report for the demo run.
+
+    Produces a formatted report with summary statistics, invariant pass/fail table,
+    failure details, and sample results (limited to MAX_REPORT_SAMPLES to keep
+    output manageable).
+
+    Args:
+        path: Output path for the markdown file.
+        scenario_name: Scenario name for the report title.
+        summary: ModelDemoSummary with totals, verdict, and invariant results.
+        results: List of per-sample results to include in the report.
+
+    Raises:
+        ModelOnexError: If file writing fails.
+    """
     with path.open("w", encoding="utf-8") as f:
         f.write(f"# ONEX Demo Report: {scenario_name}\n\n")
         f.write(f"**Generated**: {datetime.now(UTC).isoformat()}\n\n")
 
         f.write("## Summary\n\n")
-        f.write(f"- **Total Samples**: {summary.get('total', 0)}\n")
-        f.write(f"- **Passed**: {summary.get('passed', 0)}\n")
-        f.write(f"- **Failed**: {summary.get('failed', 0)}\n")
-        f.write(f"- **Pass Rate**: {summary.get('pass_rate', 0):.1%}\n")
-        f.write(f"- **Verdict**: {summary.get('verdict', 'UNKNOWN')}\n\n")
+        f.write(f"- **Total Samples**: {summary.total}\n")
+        f.write(f"- **Passed**: {summary.passed}\n")
+        f.write(f"- **Failed**: {summary.failed}\n")
+        f.write(f"- **Pass Rate**: {summary.pass_rate:.1%}\n")
+        f.write(f"- **Verdict**: {summary.verdict.value}\n")
+        f.write(f"- **Recommendation**: {summary.recommendation}\n\n")
 
-        if summary.get("invariant_results"):
+        if summary.invariant_results:
             f.write("## Invariant Results\n\n")
-            f.write("| Invariant | Passed | Total | Rate |\n")
-            f.write("|-----------|--------|-------|------|\n")
-            for inv_name, inv_result in summary["invariant_results"].items():
-                passed = inv_result.get("passed", 0)
-                total = inv_result.get("total", 0)
-                rate = passed / total if total > 0 else 0
-                status = "✓" if passed == total else "⚠"
-                f.write(f"| {status} {inv_name} | {passed} | {total} | {rate:.0%} |\n")
+            f.write("| Invariant | Passed | Failed | Total | Rate |\n")
+            f.write("|-----------|--------|--------|-------|------|\n")
+            for inv_name, inv_result in summary.invariant_results.items():
+                rate = (
+                    inv_result.passed / inv_result.total if inv_result.total > 0 else 0
+                )
+                status = "✓" if inv_result.passed == inv_result.total else "⚠"
+                f.write(
+                    f"| {status} {inv_name} | {inv_result.passed} | {inv_result.failed} | {inv_result.total} | {rate:.0%} |\n"
+                )
+            f.write("\n")
+
+        if summary.failures:
+            f.write("## Failures\n\n")
+            for failure in summary.failures:
+                f.write(f"- **{failure.sample_id}** ({failure.invariant_id})")
+                if failure.message:
+                    f.write(f": {failure.message}")
+                f.write("\n")
             f.write("\n")
 
         if results:
             f.write("## Sample Results\n\n")
             for i, result in enumerate(results[:MAX_REPORT_SAMPLES]):
-                status = "✓" if result.get("passed", False) else "✗"
-                f.write(
-                    f"- {status} Sample {i + 1}: {result.get('sample_id', 'unknown')}\n"
-                )
+                status = "✓" if result.passed else "✗"
+                f.write(f"- {status} Sample {i + 1}: {result.sample_id}\n")
             if len(results) > MAX_REPORT_SAMPLES:
                 f.write(f"\n... and {len(results) - MAX_REPORT_SAMPLES} more samples\n")
 
 
 def _print_banner(scenario_name: str) -> None:
-    """Output centered scenario title with double-line border."""
+    """Print a visually distinct header banner for demo run output.
+
+    Renders a 65-character wide banner with double-line borders and centered
+    scenario name to clearly demarcate the start of demo execution output.
+
+    Args:
+        scenario_name: Name of the scenario to display in the banner.
+    """
     width = 65
     click.echo("═" * width)
     title = f"ONEX DEMO: {scenario_name}"
@@ -577,32 +743,43 @@ def _print_banner(scenario_name: str) -> None:
     click.echo()
 
 
-def _print_results_summary(summary: TypedDictDemoSummary, output_dir: Path) -> None:
-    """Output invariant stats, colored verdict, and output file locations."""
+def _print_results_summary(summary: ModelDemoSummary, output_dir: Path) -> None:
+    """Print formatted results summary with colored verdict to terminal.
+
+    Displays invariant-level statistics (pass/fail counts and rates), a color-coded
+    verdict (green=PASS, yellow=REVIEW, red=FAIL), recommendation text, and paths
+    to generated output files for user reference.
+
+    Args:
+        summary: ModelDemoSummary containing verdict, invariant results, and failures.
+        output_dir: Path to output bundle for displaying file locations.
+    """
     click.echo("─" * 65)
     click.echo("RESULTS")
     click.echo("─" * 65)
 
-    if summary.get("invariant_results"):
-        for inv_name, inv_result in summary["invariant_results"].items():
-            passed = inv_result.get("passed", 0)
-            total = inv_result.get("total", 0)
-            rate = passed / total if total > 0 else 0
-            status = "✓" if passed == total else "⚠"
+    if summary.invariant_results:
+        for inv_name, inv_result in summary.invariant_results.items():
+            rate = inv_result.passed / inv_result.total if inv_result.total > 0 else 0
+            status = "✓" if inv_result.passed == inv_result.total else "⚠"
             rate_str = f"{rate:.0%}"
-            failures = "" if passed == total else f" ← {total - passed} failures"
+            failures = (
+                "" if inv_result.failed == 0 else f" ← {inv_result.failed} failures"
+            )
             click.echo(
-                f"{status} {inv_name:<25} {passed}/{total} ({rate_str}){failures}"
+                f"{status} {inv_name:<25} {inv_result.passed}/{inv_result.total} ({rate_str}){failures}"
             )
 
     click.echo()
-    verdict = summary.get("verdict", "UNKNOWN")
-    if verdict == "PASS":
-        click.echo(click.style(f"Verdict: {verdict}", fg="green", bold=True))
-    elif verdict == "REVIEW REQUIRED":
-        click.echo(click.style(f"Verdict: {verdict}", fg="yellow", bold=True))
+    verdict = summary.verdict
+    if verdict == EnumDemoVerdict.PASS:
+        click.echo(click.style(f"Verdict: {verdict.value}", fg="green", bold=True))
+    elif verdict == EnumDemoVerdict.REVIEW:
+        click.echo(click.style(f"Verdict: {verdict.value}", fg="yellow", bold=True))
     else:
-        click.echo(click.style(f"Verdict: {verdict}", fg="red", bold=True))
+        click.echo(click.style(f"Verdict: {verdict.value}", fg="red", bold=True))
+
+    click.echo(f"Recommendation: {summary.recommendation}")
 
     click.echo()
     click.echo("─" * 65)
@@ -738,13 +915,25 @@ def run_demo(
         click.echo(f"Seed:        {seed}")
     click.echo()
 
+    # Warn about skipped confidence checks in live mode (only once, before loop)
+    thresholds_config = invariants.get("thresholds")
+    if (
+        live
+        and verbose
+        and isinstance(thresholds_config, dict)
+        and thresholds_config.get("confidence_min") is not None
+    ):
+        click.echo(
+            "Note: Confidence threshold checks skipped in live mode "
+            "(requires mock responses)",
+            err=True,
+        )
+
     # Run evaluation (simplified for demo - actual implementation would use services)
     click.echo("Running evaluation...")
 
-    # Create local RNG - varies between runs when seed is None (system entropy)
-    rng = random.Random(seed)
-
-    results: list[TypedDictDemoResult] = []
+    results: list[ModelSampleResult] = []
+    failures: list[ModelFailureDetail] = []
     passed_count = 0
 
     # Progress indicator
@@ -769,19 +958,44 @@ def run_demo(
         passed = True
         invariants_checked: list[str] = []
 
-        # Check basic invariants from config
+        # Check confidence threshold invariant using mock responses
+        # Skip in live mode - mock responses are only available in mock mode
         thresholds = invariants.get("thresholds")
-        if isinstance(thresholds, dict) and thresholds.get("confidence_min"):
-            # Mock: randomly pass some samples for demo purposes
-            # In real implementation, this would check actual model output
-            passed = rng.random() > 0.2
+        if (
+            not live
+            and isinstance(thresholds, dict)
+            and thresholds.get("confidence_min") is not None
+        ):
+            # Find mock response by ticket_id
+            mock_response = _find_mock_response_by_ticket_id(
+                mock_responses, sample_id, model_type="candidate"
+            )
+            # Evaluate confidence against threshold
+            conf_passed, actual_confidence, required_threshold = (
+                _evaluate_confidence_invariant(sample, mock_response, invariants)
+            )
+            passed = conf_passed
             invariants_checked.append("confidence_threshold")
 
-        result: TypedDictDemoResult = {
-            "sample_id": sample_id,
-            "passed": passed,
-            "invariants_checked": invariants_checked,
-        }
+            # Track failure details if sample failed
+            if not conf_passed:
+                failures.append(
+                    ModelFailureDetail(
+                        sample_id=sample_id,
+                        invariant_id="confidence_threshold",
+                        expected=f"confidence >= {required_threshold:.2f}",
+                        actual=f"confidence = {actual_confidence}"
+                        if actual_confidence is not None
+                        else "confidence = None (missing response)",
+                        message="Confidence below threshold",
+                    )
+                )
+
+        result = ModelSampleResult(
+            sample_id=sample_id,
+            passed=passed,
+            invariants_checked=invariants_checked,
+        )
 
         if passed:
             passed_count += 1
@@ -797,55 +1011,70 @@ def run_demo(
     pass_rate = passed_count / total_samples if total_samples > 0 else 0
 
     # Determine verdict based on pass rate thresholds
+    verdict: EnumDemoVerdict
     if pass_rate >= PASS_THRESHOLD:
-        verdict = "PASS"
+        verdict = EnumDemoVerdict.PASS
     elif pass_rate >= REVIEW_THRESHOLD:
-        verdict = "REVIEW REQUIRED"
+        verdict = EnumDemoVerdict.REVIEW
     else:
-        verdict = "FAIL"
+        verdict = EnumDemoVerdict.FAIL
 
-    # Build invariant results
-    invariant_results: dict[str, TypedDictInvariantResult] = {}
+    # Build invariant results with passed/failed/total
+    invariant_results: dict[str, ModelInvariantResult] = {}
     if results:
         invariant_names: set[str] = set()
         for r in results:
-            invariant_names.update(r["invariants_checked"])
+            invariant_names.update(r.invariants_checked)
         for inv_name in invariant_names:
             inv_passed = sum(
-                1
-                for r in results
-                if r["passed"] and inv_name in r["invariants_checked"]
+                1 for r in results if r.passed and inv_name in r.invariants_checked
             )
-            inv_total = sum(1 for r in results if inv_name in r["invariants_checked"])
-            invariant_results[inv_name] = {
-                "passed": inv_passed,
-                "total": inv_total,
-            }
+            inv_total = sum(1 for r in results if inv_name in r.invariants_checked)
+            inv_failed = inv_total - inv_passed
+            invariant_results[inv_name] = ModelInvariantResult(
+                passed=inv_passed,
+                failed=inv_failed,
+                total=inv_total,
+            )
 
-    summary: TypedDictDemoSummary = {
-        "total": total_samples,
-        "passed": passed_count,
-        "failed": failed_count,
-        "pass_rate": pass_rate,
-        "verdict": verdict,
-        "invariant_results": invariant_results,
-    }
+    # Build summary using Pydantic model
+    summary = ModelDemoSummary(
+        total=total_samples,
+        passed=passed_count,
+        failed=failed_count,
+        pass_rate=pass_rate,
+        verdict=verdict,
+        invariant_results=invariant_results,
+        failures=failures,
+    )
+
+    # Build config using Pydantic model
+    config = ModelDemoConfig(
+        scenario=scenario,
+        live=live,
+        seed=seed,
+        repeat=repeat,
+        timestamp=timestamp,
+    )
+
+    # Build the complete report using canonical Pydantic model
+    report = ModelDemoValidationReport(
+        schema_version=ModelSemVer(major=1, minor=0, patch=0),
+        scenario=scenario,
+        timestamp=timestamp,
+        config=config,
+        summary=summary,
+        results=results,
+    )
 
     # Create output bundle
-    config: TypedDictDemoConfig = {
-        "scenario": scenario,
-        "live": live,
-        "seed": seed,
-        "repeat": repeat,
-        "timestamp": timestamp,
-    }
-    _create_output_bundle(output, scenario, corpus, results, config, summary)
+    _create_output_bundle(output, scenario, corpus, report)
 
     # Print results
     _print_results_summary(summary, output)
 
     # Exit with appropriate code
-    if verdict == "PASS":
+    if verdict == EnumDemoVerdict.PASS:
         ctx.exit(EnumCLIExitCode.SUCCESS)
     else:
         ctx.exit(EnumCLIExitCode.ERROR)

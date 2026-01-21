@@ -37,6 +37,14 @@ from omnibase_core.cli.cli_demo import (
     demo,
 )
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
+from omnibase_core.enums.enum_demo_verdict import EnumDemoVerdict
+from omnibase_core.models.demo import (
+    ModelDemoConfig,
+    ModelDemoSummary,
+    ModelDemoValidationReport,
+    ModelInvariantResult,
+    ModelSampleResult,
+)
 
 # Mark all tests in this module as unit tests
 pytestmark = pytest.mark.unit
@@ -829,26 +837,35 @@ class TestCreateOutputBundle:
         """Test that output bundle creates expected directory structure."""
         output_dir = tmp_path / "output"
         corpus: list[dict[str, Any]] = [{"id": "1"}, {"id": "2"}]
-        results: list[dict[str, Any]] = [
-            {"sample_id": "1", "passed": True},
-            {"sample_id": "2", "passed": False},
+        results = [
+            ModelSampleResult(sample_id="1", passed=True, invariants_checked=[]),
+            ModelSampleResult(sample_id="2", passed=False, invariants_checked=[]),
         ]
-        config: dict[str, Any] = {
-            "scenario": "test",
-            "seed": 42,
-            "timestamp": "2024-01-01T00:00:00",
-        }
-        summary: dict[str, Any] = {
-            "total": 2,
-            "passed": 1,
-            "failed": 1,
-            "pass_rate": 0.5,
-            "verdict": "FAIL",
-        }
-
-        _create_output_bundle(
-            output_dir, "test-scenario", corpus, results, config, summary
+        config = ModelDemoConfig(
+            scenario="test",
+            live=False,
+            seed=42,
+            repeat=1,
+            timestamp="2024-01-01T00:00:00",
         )
+        summary = ModelDemoSummary(
+            total=2,
+            passed=1,
+            failed=1,
+            pass_rate=0.5,
+            verdict=EnumDemoVerdict.FAIL,
+            invariant_results={},
+            failures=[],
+        )
+        report = ModelDemoValidationReport(
+            scenario="test-scenario",
+            timestamp="2024-01-01T00:00:00",
+            config=config,
+            summary=summary,
+            results=results,
+        )
+
+        _create_output_bundle(output_dir, "test-scenario", corpus, report)
 
         assert output_dir.exists()
         assert (output_dir / "inputs").is_dir()
@@ -861,17 +878,32 @@ class TestCreateOutputBundle:
         """Test that corpus samples are written to inputs/."""
         output_dir = tmp_path / "output"
         corpus: list[dict[str, Any]] = [{"id": "1"}, {"id": "2"}]
-        results: list[dict[str, Any]] = []
-        config: dict[str, Any] = {"timestamp": "2024-01-01T00:00:00"}
-        summary: dict[str, Any] = {
-            "total": 0,
-            "passed": 0,
-            "failed": 0,
-            "pass_rate": 0,
-            "verdict": "PASS",
-        }
+        results: list[ModelSampleResult] = []
+        config = ModelDemoConfig(
+            scenario="test",
+            live=False,
+            seed=None,
+            repeat=1,
+            timestamp="2024-01-01T00:00:00",
+        )
+        summary = ModelDemoSummary(
+            total=0,
+            passed=0,
+            failed=0,
+            pass_rate=0,
+            verdict=EnumDemoVerdict.PASS,
+            invariant_results={},
+            failures=[],
+        )
+        report = ModelDemoValidationReport(
+            scenario="test",
+            timestamp="2024-01-01T00:00:00",
+            config=config,
+            summary=summary,
+            results=results,
+        )
 
-        _create_output_bundle(output_dir, "test", corpus, results, config, summary)
+        _create_output_bundle(output_dir, "test", corpus, report)
 
         inputs_dir = output_dir / "inputs"
         assert (inputs_dir / "sample_001.yaml").exists()
@@ -881,17 +913,32 @@ class TestCreateOutputBundle:
         """Test that results are written to outputs/."""
         output_dir = tmp_path / "output"
         corpus: list[dict[str, Any]] = []
-        results: list[dict[str, Any]] = [{"sample_id": "1", "passed": True}]
-        config: dict[str, Any] = {"timestamp": "2024-01-01T00:00:00"}
-        summary: dict[str, Any] = {
-            "total": 1,
-            "passed": 1,
-            "failed": 0,
-            "pass_rate": 1.0,
-            "verdict": "PASS",
-        }
+        results = [ModelSampleResult(sample_id="1", passed=True, invariants_checked=[])]
+        config = ModelDemoConfig(
+            scenario="test",
+            live=False,
+            seed=None,
+            repeat=1,
+            timestamp="2024-01-01T00:00:00",
+        )
+        summary = ModelDemoSummary(
+            total=1,
+            passed=1,
+            failed=0,
+            pass_rate=1.0,
+            verdict=EnumDemoVerdict.PASS,
+            invariant_results={},
+            failures=[],
+        )
+        report = ModelDemoValidationReport(
+            scenario="test",
+            timestamp="2024-01-01T00:00:00",
+            config=config,
+            summary=summary,
+            results=results,
+        )
 
-        _create_output_bundle(output_dir, "test", corpus, results, config, summary)
+        _create_output_bundle(output_dir, "test", corpus, report)
 
         outputs_dir = output_dir / "outputs"
         assert (outputs_dir / "sample_001.json").exists()
@@ -903,17 +950,24 @@ class TestWriteMarkdownReport:
     def test_writes_markdown_report(self, tmp_path: Path) -> None:
         """Test that markdown report is written correctly."""
         report_path = tmp_path / "report.md"
-        summary: dict[str, Any] = {
-            "total": 10,
-            "passed": 8,
-            "failed": 2,
-            "pass_rate": 0.8,
-            "verdict": "REVIEW REQUIRED",
-            "invariant_results": {"confidence_threshold": {"passed": 8, "total": 10}},
-        }
-        results: list[dict[str, Any]] = [
-            {"sample_id": "sample_1", "passed": True},
-            {"sample_id": "sample_2", "passed": False},
+        summary = ModelDemoSummary(
+            total=10,
+            passed=8,
+            failed=2,
+            pass_rate=0.8,
+            verdict=EnumDemoVerdict.REVIEW,
+            invariant_results={
+                "confidence_threshold": ModelInvariantResult(
+                    passed=8, failed=2, total=10
+                )
+            },
+            failures=[],
+        )
+        results = [
+            ModelSampleResult(sample_id="sample_1", passed=True, invariants_checked=[]),
+            ModelSampleResult(
+                sample_id="sample_2", passed=False, invariants_checked=[]
+            ),
         ]
 
         _write_markdown_report(report_path, "test-scenario", summary, results)
@@ -922,20 +976,22 @@ class TestWriteMarkdownReport:
         assert "# ONEX Demo Report: test-scenario" in content
         assert "Total Samples" in content
         assert "10" in content
-        assert "REVIEW REQUIRED" in content
+        assert "REVIEW" in content
         assert "confidence_threshold" in content
 
     def test_handles_empty_results(self, tmp_path: Path) -> None:
         """Test that markdown report handles empty results."""
         report_path = tmp_path / "report.md"
-        summary: dict[str, Any] = {
-            "total": 0,
-            "passed": 0,
-            "failed": 0,
-            "pass_rate": 0,
-            "verdict": "PASS",
-        }
-        results: list[dict[str, Any]] = []
+        summary = ModelDemoSummary(
+            total=0,
+            passed=0,
+            failed=0,
+            pass_rate=0,
+            verdict=EnumDemoVerdict.PASS,
+            invariant_results={},
+            failures=[],
+        )
+        results: list[ModelSampleResult] = []
 
         _write_markdown_report(report_path, "empty-test", summary, results)
 
