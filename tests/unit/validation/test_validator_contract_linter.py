@@ -40,6 +40,8 @@ def create_test_contract(
 ) -> ModelValidatorSubcontract:
     """Create a test contract with specified configuration."""
     return ModelValidatorSubcontract(
+        # NOTE: ModelValidatorSubcontract uses its own 'version' field (not contract_version).
+        # This is intentional - only ModelContractBase was renamed per OMN-1431.
         version=ModelSemVer(major=1, minor=0, patch=0),
         validator_id=validator_id,
         validator_name="Contract Linter",

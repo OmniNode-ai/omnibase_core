@@ -254,7 +254,7 @@ class ValidatorContractLinter(ValidatorBase):
         has_contract_version = "contract_version" in data
         has_deprecated_version = (
             "version" in data
-        )  # Old field name - will be rejected by guardrail
+        )  # Old field name (OMN-1431) - will be rejected by guardrail
         has_node_type = "node_type" in data
 
         if has_name and has_contract_version:
