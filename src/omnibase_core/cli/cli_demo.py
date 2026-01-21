@@ -522,6 +522,7 @@ def _find_mock_response_by_ticket_id(
             continue
         # NOTE(OMN-1397): Runtime safety check for JSON data that may not match declared types.
         if not isinstance(response, dict):
+            # fallback-ok: skip malformed entries, search continues for valid matches
             continue  # type: ignore[unreachable]
         response_ticket_id = response.get("ticket_id")
         if response_ticket_id == ticket_id:
@@ -763,7 +764,7 @@ def _print_results_summary(summary: ModelDemoSummary, output_dir: Path) -> None:
             status = "✓" if inv_result.passed == inv_result.total else "⚠"
             rate_str = f"{rate:.0%}"
             failures = (
-                "" if inv_result.failed == 0 else f" <- {inv_result.failed} failures"
+                "" if inv_result.failed == 0 else f" ← {inv_result.failed} failures"
             )
             click.echo(
                 f"{status} {inv_name:<25} {inv_result.passed}/{inv_result.total} ({rate_str}){failures}"
