@@ -46,12 +46,12 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 class ModelTestContract(BaseModel):
     """Simple test contract model for fingerprinting tests.
 
-    Note: version field accepts both string ("1.0.0") and ModelContractVersion
+    Note: contract_version field accepts both string ("1.0.0") and ModelContractVersion
     for test convenience, but is stored as ModelContractVersion.
     """
 
     name: str = Field(default="test_contract")
-    version: ModelContractVersion = Field(
+    contract_version: ModelContractVersion = Field(
         default_factory=lambda: ModelContractVersion(major=1, minor=0, patch=0)
     )
     description: str | None = Field(default=None)
@@ -62,7 +62,7 @@ class ModelTestContract(BaseModel):
     nested: dict[str, object] | None = Field(default=None)
     list_with_nulls: list[int | None] | None = Field(default=None)
 
-    @field_validator("version", mode="before")
+    @field_validator("contract_version", mode="before")
     @classmethod
     def convert_version_string(cls, v: object) -> ModelContractVersion:
         """Convert string versions to ModelContractVersion for test convenience."""
@@ -85,7 +85,7 @@ def sample_contract() -> ModelTestContract:
     """Sample contract for testing."""
     return ModelTestContract(
         name="test_contract",
-        version="1.2.3",
+        contract_version="1.2.3",
         description="A test contract",
         node_type="COMPUTE_GENERIC",
         input_model="omnibase_core.models.ModelInput",
@@ -98,7 +98,7 @@ def sample_contract_with_nulls() -> ModelTestContract:
     """Sample contract with null values for testing null removal."""
     return ModelTestContract(
         name="test_contract",
-        version="1.0.0",
+        contract_version="1.0.0",
         description=None,
         optional_field=None,
         nested={
@@ -174,7 +174,7 @@ class TestNormalizationPipeline:
         """
         contract = ModelTestContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             nested={"zebra": 1, "apple": 2, "mango": 3},
         )
         result = normalize_contract(contract)
@@ -188,7 +188,7 @@ class TestNormalizationPipeline:
         """Test that deeply nested keys are also sorted."""
         contract = ModelTestContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             nested={
                 "outer": {"zebra": 1, "apple": 2},
                 "another": {"delta": 3, "alpha": 4},
@@ -306,7 +306,7 @@ class TestFingerprintComputation:
 
     def test_compute_fingerprint_default_version(self) -> None:
         """Test that contracts without version attribute use default."""
-        # ModelTestContract has version="1.0.0" by default
+        # ModelTestContract has contract_version="1.0.0" by default
         contract = ModelTestContract(name="test")
         fingerprint = compute_contract_fingerprint(contract)
 
@@ -316,7 +316,7 @@ class TestFingerprintComputation:
     def test_compute_fingerprint_with_model_version(self) -> None:
         """Test fingerprint with ModelContractVersion object."""
         version = ModelContractVersion(major=3, minor=0, patch=0)
-        contract = ModelTestContract(name="test", version=version)
+        contract = ModelTestContract(name="test", contract_version=version)
         fingerprint = compute_contract_fingerprint(contract)
 
         assert fingerprint.version == version
@@ -335,8 +335,8 @@ class TestFingerprintComputation:
 
     def test_compute_fingerprint_different_content_different_hash(self) -> None:
         """Test that different content produces different hashes."""
-        contract1 = ModelTestContract(name="test1", version="1.0.0")
-        contract2 = ModelTestContract(name="test2", version="1.0.0")
+        contract1 = ModelTestContract(name="test1", contract_version="1.0.0")
+        contract2 = ModelTestContract(name="test2", contract_version="1.0.0")
 
         fp1 = compute_contract_fingerprint(contract1)
         fp2 = compute_contract_fingerprint(contract2)
@@ -440,7 +440,7 @@ class TestFingerprintComputation:
             custom_metadata: str = "custom"
 
         class ContractWithCustomVersion(BaseModel):
-            version: CustomVersionModel = Field(
+            contract_version: CustomVersionModel = Field(
                 default_factory=lambda: CustomVersionModel(major=2, minor=5, patch=1)
             )
             node_type: str = "COMPUTE_GENERIC"
@@ -914,7 +914,7 @@ class TestDeterminismAndStability:
         """
         contract = ModelTestContract(
             name="stability_test",
-            version="1.0.0",
+            contract_version="1.0.0",
             description="Testing stability",
         )
 
@@ -932,12 +932,12 @@ class TestDeterminismAndStability:
         """
         contract1 = ModelTestContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             nested={"zebra": 1, "apple": 2, "mango": 3},
         )
         contract2 = ModelTestContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             nested={"apple": 2, "mango": 3, "zebra": 1},
         )
 
@@ -948,9 +948,11 @@ class TestDeterminismAndStability:
 
     def test_null_presence_normalized(self) -> None:
         """Test that null values are normalized consistently."""
-        contract1 = ModelTestContract(name="test", version="1.0.0", optional_field=None)
+        contract1 = ModelTestContract(
+            name="test", contract_version="1.0.0", optional_field=None
+        )
         contract2 = ModelTestContract(
-            name="test", version="1.0.0"
+            name="test", contract_version="1.0.0"
         )  # optional_field defaults to None
 
         fp1 = compute_contract_fingerprint(contract1)
@@ -963,12 +965,12 @@ class TestDeterminismAndStability:
         """Test that nested null removal is consistent."""
         contract1 = ModelTestContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             nested={"keep": "value", "remove": None},
         )
         contract2 = ModelTestContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             nested={"keep": "value"},
         )
 
@@ -981,7 +983,7 @@ class TestDeterminismAndStability:
         """Test that whitespace in values is preserved but format is normalized."""
         contract = ModelTestContract(
             name="  test  ",  # Whitespace in value
-            version="1.0.0",
+            contract_version="1.0.0",
             description="line1\nline2",  # Newline in value
         )
 
@@ -1011,7 +1013,7 @@ class TestEdgeCasesAndErrors:
         # Create contract with non-serializable nested content
         contract = ModelTestContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             nested={"callback": lambda x: x},  # Lambda not JSON-serializable
         )
 
@@ -1025,7 +1027,7 @@ class TestEdgeCasesAndErrors:
         # Create a large contract with deeply nested data
         large_contract = ModelTestContract(
             name="large_contract",
-            version="1.0.0",
+            contract_version="1.0.0",
             nested={f"key_{i}": f"value_{i}" for i in range(100)},
         )
 
@@ -1037,7 +1039,7 @@ class TestEdgeCasesAndErrors:
         """Test handling of special characters in values."""
         contract = ModelTestContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             description='Contains "quotes" and \\backslashes\\ and \t tabs',
         )
 
@@ -1053,7 +1055,7 @@ class TestEdgeCasesAndErrors:
         """Test that empty lists are preserved in normalization."""
         contract = ModelTestContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             list_with_nulls=[],  # Empty list
         )
 
@@ -1067,7 +1069,7 @@ class TestEdgeCasesAndErrors:
         """Test that empty dicts after null removal are also removed."""
         contract = ModelTestContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             nested={"only_null": None},  # Will become empty after null removal
         )
 
@@ -1131,7 +1133,7 @@ class TestMigrationScenarios:
         # Simulate loading from YAML (with some null fields)
         yaml_loaded = ModelTestContract(
             name="my_service",
-            version="1.0.0",
+            contract_version="1.0.0",
             description="Service contract",
             optional_field=None,
             node_type="COMPUTE_GENERIC",
@@ -1140,7 +1142,7 @@ class TestMigrationScenarios:
         # Simulate loading from Python definition (no null fields explicitly set)
         python_defined = ModelTestContract(
             name="my_service",
-            version="1.0.0",
+            contract_version="1.0.0",
             description="Service contract",
             node_type="COMPUTE_GENERIC",
         )
@@ -1156,11 +1158,11 @@ class TestMigrationScenarios:
         registry = ContractHashRegistry()
 
         # Register v1.0.0
-        v1_contract = ModelTestContract(name="my_service", version="1.0.0")
+        v1_contract = ModelTestContract(name="my_service", contract_version="1.0.0")
         registry.register_from_contract("my_service", v1_contract)
 
         # Check v1.1.0 with same content
-        v1_1_contract = ModelTestContract(name="my_service", version="1.1.0")
+        v1_1_contract = ModelTestContract(name="my_service", contract_version="1.1.0")
 
         result = registry.detect_drift_from_contract("my_service", v1_1_contract)
 
@@ -1172,12 +1174,12 @@ class TestMigrationScenarios:
         registry = ContractHashRegistry()
 
         # Register original
-        original = ModelTestContract(name="my_service", version="1.0.0")
+        original = ModelTestContract(name="my_service", contract_version="1.0.0")
         registry.register_from_contract("my_service", original)
 
         # Check modified (same version, different content via description change)
         modified = ModelTestContract(
-            name="my_service", version="1.0.0", description="Added description"
+            name="my_service", contract_version="1.0.0", description="Added description"
         )
 
         result = registry.detect_drift_from_contract("my_service", modified)
@@ -1625,7 +1627,7 @@ class TestContractHashRegistryPerformance:
         # Create a large contract with many nested fields
         large_contract = ModelTestContract(
             name="large_contract",
-            version="1.0.0",
+            contract_version="1.0.0",
             description="A contract with many fields for performance testing",
             nested={
                 f"level1_{i}": {f"level2_{j}": f"value_{i}_{j}" for j in range(10)}
@@ -1744,7 +1746,7 @@ class TestContractHashRegistryPerformance:
 
         # Create a sample fingerprint
         fingerprint = compute_contract_fingerprint(
-            ModelTestContract(name="test", version="1.0.0")
+            ModelTestContract(name="test", contract_version="1.0.0")
         )
 
         # Get approximate size

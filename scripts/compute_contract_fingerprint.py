@@ -85,8 +85,9 @@ MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10MB
 # ==============================================================================
 
 # Mapping of node_type values to strict contract model classes
-# These require all base fields (name, version, description, input_model, output_model)
+# These require all base fields (name, contract_version, description, input_model, output_model)
 # Note: Keys are uppercase to match EnumNodeType values directly
+# Note: As of OMN-1431, 'version' field is deprecated; use 'contract_version' instead
 NODE_TYPE_TO_STRICT_MODEL: dict[str, type[BaseModel]] = {
     # COMPUTE types (maps to ModelContractCompute)
     "COMPUTE_GENERIC": ModelContractCompute,
@@ -118,22 +119,26 @@ def is_strict_contract(contract_data: dict[str, object]) -> bool:
     Determines whether the contract should be validated against strict typed
     models (ModelContractCompute, etc.) or the flexible ModelYamlContract.
 
+    IMPORTANT: As of OMN-1431/OMN-1436, all contracts MUST use 'contract_version',
+    not 'version'. Contracts using the deprecated 'version' field will be rejected.
+
     Strict vs Flexible Contracts:
         **Strict Contracts** use:
-        - 'version' field (ModelSemVer format, e.g., '1.0.0')
+        - 'contract_version' field (required for all contracts)
         - Required base fields: 'name', 'input_model', 'output_model', 'description'
         - Type-specific validation rules
 
         **Flexible YAML Contracts** use:
-        - 'contract_version' field (alternative versioning)
+        - 'contract_version' field (required for all contracts)
         - Arbitrary extra fields allowed
         - Minimal validation for maximum compatibility
 
     Detection Logic:
-        1. If has 'version' (not 'contract_version') AND all strict fields -> strict
-        2. If has 'contract_version' -> flexible (regardless of other fields)
-        3. If missing both version fields but has strict fields -> try strict
-        4. Otherwise -> flexible (default for compatibility)
+        1. If has deprecated 'version' field -> REJECT with error
+        2. If has 'contract_version' AND all strict fields -> strict
+        3. If has 'contract_version' but missing strict fields -> flexible
+        4. If missing 'contract_version' but has strict fields -> try strict
+        5. Otherwise -> flexible (default for compatibility)
 
     Args:
         contract_data: Parsed YAML contract data as a dictionary.
@@ -142,17 +147,35 @@ def is_strict_contract(contract_data: dict[str, object]) -> bool:
         True if contract should use strict typed models (ModelContractCompute, etc.).
         False if contract should use flexible ModelYamlContract.
 
+    Raises:
+        ModelOnexError: If contract uses deprecated 'version' field instead of
+            'contract_version'. Error code: VALIDATION_ERROR.
+
     Examples:
-        >>> is_strict_contract({'version': '1.0.0', 'name': 'Test', ...})
+        >>> is_strict_contract({'contract_version': '1.0.0', 'name': 'Test', ...})
         True
         >>> is_strict_contract({'contract_version': '1.0', 'name': 'Test'})
-        False
-        >>> is_strict_contract({'random_field': 'value'})
-        False
+        False  # Missing strict fields
+        >>> is_strict_contract({'version': '1.0.0', 'name': 'Test'})
+        ModelOnexError  # Deprecated 'version' field
     """
-    # Strict contracts use 'version', flexible YAML uses 'contract_version'
     has_version = "version" in contract_data
     has_contract_version = "contract_version" in contract_data
+
+    # REJECT contracts using deprecated 'version' field (OMN-1431/OMN-1436)
+    if has_version:
+        raise ModelOnexError(
+            message=(
+                "Contract uses deprecated 'version' field. "
+                "All contracts must use 'contract_version' instead. "
+                "See OMN-1431 for migration details."
+            ),
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            deprecated_field="version",
+            required_field="contract_version",
+            suggestion="Replace 'version' with 'contract_version' in your contract YAML",
+            has_contract_version=has_contract_version,
+        )
 
     # Strict contracts require name, input_model, output_model, description
     has_strict_fields = all(
@@ -160,15 +183,15 @@ def is_strict_contract(contract_data: dict[str, object]) -> bool:
         for field in ("name", "input_model", "output_model", "description")
     )
 
-    # If has 'version' (not 'contract_version') and strict fields, it's strict
-    if has_version and not has_contract_version and has_strict_fields:
+    # If has 'contract_version' and strict fields, it's strict
+    if has_contract_version and has_strict_fields:
         return True
 
-    # If has 'contract_version', it's flexible YAML
+    # If has 'contract_version' but missing strict fields, it's flexible
     if has_contract_version:
         return False
 
-    # If missing both version fields but has strict fields, try strict
+    # If missing 'contract_version' but has strict fields, try strict
     if has_strict_fields:
         return True
 
@@ -184,26 +207,29 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel]:
     Falls back to ModelYamlContract for maximum compatibility with non-standard
     or legacy contracts.
 
+    IMPORTANT: As of OMN-1431/OMN-1436, all contracts MUST use 'contract_version',
+    not the deprecated 'version' field. Contracts using 'version' will be rejected.
+
     Detection Strategy:
         1. **Validate node_type**: Ensures node_type field exists and is a string.
            Raises ModelOnexError if missing or invalid type.
 
         2. **Check for strict contract**: Uses is_strict_contract() to determine if
-           the contract has strict typed fields ('version' vs 'contract_version',
-           required base fields like 'name', 'input_model', 'output_model').
+           the contract has strict typed fields ('contract_version' and required
+           base fields like 'name', 'input_model', 'output_model').
+           NOTE: Contracts using deprecated 'version' field are REJECTED.
 
         3. **Map to strict model**: If strict and node_type is in NODE_TYPE_TO_STRICT_MODEL,
            returns the corresponding typed model class (e.g., ModelContractCompute).
 
         4. **Fallback to flexible**: Returns ModelYamlContract if:
-           - The contract is not strict (uses 'contract_version', missing base fields)
+           - The contract is not strict (missing base fields)
            - The node_type is not in NODE_TYPE_TO_STRICT_MODEL (new/custom types)
 
     Fallback Behavior:
         When node_type is not found in NODE_TYPE_TO_STRICT_MODEL mapping, this
         function falls back to ModelYamlContract. This ensures:
         - Forward compatibility with new node types added to the system
-        - Backward compatibility with legacy contracts using non-standard fields
         - Maximum flexibility for experimental or custom contracts
 
         The fallback does NOT raise an error because:
@@ -213,8 +239,9 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel]:
 
     Args:
         contract_data: Parsed YAML contract data as a dictionary. Must contain
-            at minimum a 'node_type' field. Other required fields depend on
-            whether it's a strict or flexible contract.
+            at minimum a 'node_type' field. Must use 'contract_version' (not
+            deprecated 'version'). Other required fields depend on whether
+            it's a strict or flexible contract.
 
     Returns:
         Pydantic model class appropriate for the contract type:
@@ -234,8 +261,12 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel]:
             Error code: VALIDATION_ERROR
             Context includes: node_type_value, node_type_type
 
+        ModelOnexError: If contract uses deprecated 'version' field.
+            Error code: VALIDATION_ERROR
+            Suggestion to migrate to 'contract_version'.
+
     Examples:
-        >>> detect_contract_model({'node_type': 'COMPUTE_GENERIC', 'version': '1.0.0', ...})
+        >>> detect_contract_model({'node_type': 'COMPUTE_GENERIC', 'contract_version': '1.0.0', ...})
         ModelContractCompute
 
         >>> detect_contract_model({'node_type': 'CUSTOM_TYPE', 'contract_version': '1.0'})
@@ -243,6 +274,9 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel]:
 
         >>> detect_contract_model({'name': 'test'})  # Missing node_type
         ModelOnexError: Contract missing required 'node_type' field
+
+        >>> detect_contract_model({'node_type': 'COMPUTE_GENERIC', 'version': '1.0.0'})
+        ModelOnexError: Contract uses deprecated 'version' field
 
     See Also:
         - NODE_TYPE_TO_STRICT_MODEL: Mapping of node_type values to model classes.

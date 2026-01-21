@@ -277,6 +277,20 @@ class UtilContractLoader:
             ModelContractContent: Parsed contract content
         """
         try:
+            # Fail fast on deprecated 'version' field (OMN-1431)
+            # Contracts must use 'contract_version' per ONEX specification
+            if "version" in raw_content:
+                raise ModelOnexError(
+                    message="Contract uses deprecated 'version' field. Rename to 'contract_version' per ONEX specification (OMN-1431).",
+                    error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                    context={
+                        "contract_path": str(contract_path),
+                        "field": "version",
+                        "expected": "contract_version",
+                        "ticket": "OMN-1431",
+                    },
+                )
+
             # Parse contract version
             version_data = raw_content.get("contract_version", {})
             if not isinstance(version_data, dict):

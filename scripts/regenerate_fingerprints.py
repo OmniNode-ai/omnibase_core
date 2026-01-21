@@ -196,21 +196,25 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel] |
 
     Returns:
         Pydantic model class for the contract type, or None if not determinable.
+
+    Note:
+        As of OMN-1431, only 'contract_version' is recognized as the valid version field.
+        Files using the deprecated 'version' field should be migrated before processing.
     """
     node_type = contract_data.get("node_type")
 
     if node_type is None or not isinstance(node_type, str):
         return None
 
-    # Check for strict contract (has version and required fields)
+    # Check for strict contract (has contract_version and required fields)
+    # Note: 'version' field is deprecated per OMN-1431 - only 'contract_version' is valid
     has_strict_fields = all(
         field in contract_data
         for field in ("name", "input_model", "output_model", "description")
     )
-    has_version = "version" in contract_data
     has_contract_version = "contract_version" in contract_data
 
-    if has_version and not has_contract_version and has_strict_fields:
+    if has_contract_version and has_strict_fields:
         model_class = NODE_TYPE_TO_MODEL.get(node_type.upper())
         if model_class is not None:
             return model_class
@@ -607,6 +611,25 @@ def regenerate_fingerprint(
             changed=False,
             skipped=True,
             skip_reason="Missing node_type field (not an ONEX contract)",
+        )
+
+    # Check for deprecated 'version' field (OMN-1431: version -> contract_version rename)
+    # Files with 'version' but NOT 'contract_version' use deprecated format and should be
+    # migrated before fingerprinting. This prevents fingerprinting contracts that will
+    # fail validation with the current schema.
+    has_version = "version" in contract_data
+    has_contract_version = "contract_version" in contract_data
+    if has_version and not has_contract_version:
+        return RegenerateResult(
+            file_path=file_path,
+            old_fingerprint=None,
+            new_fingerprint=None,
+            changed=False,
+            skipped=True,
+            skip_reason=(
+                "Uses deprecated 'version' field instead of 'contract_version'. "
+                "Migrate to contract_version before regenerating fingerprint (see OMN-1431)"
+            ),
         )
 
     # Get existing fingerprint

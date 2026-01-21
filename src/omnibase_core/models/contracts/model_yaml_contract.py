@@ -10,7 +10,9 @@ Pydantic model for validating YAML contract files providing:
 This replaces manual YAML field validation with proper Pydantic validation.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -60,6 +62,17 @@ class ModelYamlContract(BaseModel):
         default=None,
         description="Event subscription patterns for event-driven execution",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_deprecated_version_field(cls, data: Any) -> Any:
+        """Reject deprecated 'version' field - use 'contract_version' instead."""
+        if isinstance(data, dict) and "version" in data:
+            raise ValueError(
+                "YAML contracts must use 'contract_version', not 'version'. "
+                "The 'version' field was renamed per ONEX specification (OMN-1431)."
+            )
+        return data
 
     @field_validator("node_type", mode="before")
     @classmethod
