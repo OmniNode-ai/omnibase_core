@@ -74,7 +74,7 @@ def create_mock_base_contract() -> Mock:
     """Create a mock base contract that the merge engine can work with."""
     mock = Mock()
     mock.name = "base_contract"
-    mock.version = ModelSemVer(major=0, minor=1, patch=0)
+    mock.contract_version = ModelSemVer(major=0, minor=1, patch=0)
     mock.description = "Base contract description"
     mock.node_type = EnumNodeType.COMPUTE_GENERIC
     mock.input_model = "BaseInput"
@@ -90,7 +90,7 @@ def create_mock_base_contract() -> Mock:
     mock.model_dump = Mock(
         return_value={
             "name": "base_contract",
-            "version": {"major": 0, "minor": 1, "patch": 0},
+            "contract_version": {"major": 0, "minor": 1, "patch": 0},
             "description": "Base contract description",
             "node_type": EnumNodeType.COMPUTE_GENERIC,
             "input_model": "BaseInput",

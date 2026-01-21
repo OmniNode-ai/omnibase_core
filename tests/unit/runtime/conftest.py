@@ -127,7 +127,7 @@ def mock_contract() -> MockTestContract:
     """
     return MockTestContract(
         name="test_contract",
-        version=ModelSemVer(major=1, minor=0, patch=0),
+        contract_version=ModelSemVer(major=1, minor=0, patch=0),
         description="Test contract for NodeInstance tests",
         node_type=EnumNodeType.COMPUTE_GENERIC,
         input_model="omnibase_core.models.test.TestInput",

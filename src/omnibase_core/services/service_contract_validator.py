@@ -412,10 +412,10 @@ class ServiceContractValidator:
     ) -> None:
         """Check ONEX compliance for contract."""
         # Check contract version against validator version
-        if contract.version != self.interface_version:
+        if contract.contract_version != self.interface_version:
             warnings.append(
                 f"Contract version mismatch: expected {self.interface_version}, "
-                f"got {contract.version}"
+                f"got {contract.contract_version}"
             )
 
         # Check naming conventions

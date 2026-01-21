@@ -10,7 +10,8 @@
 
 handler_id: compute.schema.validator
 name: Schema Validator
-version: "1.0.0"
+contract_version: "1.0.0"
+node_version: "1.0.0"
 description: Validates input data against JSON schemas
 
 descriptor:

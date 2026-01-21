@@ -272,12 +272,16 @@ class ContractMergeEngine:
 
         # Version handling: patch uses ModelSemVer, base uses ModelSemVer
         merged_version = (
-            str(patch.node_version) if patch.node_version else str(base.version)
+            str(patch.node_version)
+            if patch.node_version
+            else str(base.contract_version)
         )
 
         # Track version override
         if patch.node_version is not None:
-            changes_applied.append(f"version: {base.version} -> {patch.node_version}")
+            changes_applied.append(
+                f"version: {base.contract_version} -> {patch.node_version}"
+            )
 
         merged_description = merge_scalar(base.description, patch.description)
 

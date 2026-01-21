@@ -62,9 +62,15 @@ class ModelContractBase(BaseModel, ABC):
         min_length=1,
     )
 
-    version: ModelSemVer = Field(
+    contract_version: ModelSemVer = Field(
         ...,  # REQUIRED - specify in contract
-        description="Semantic version following SemVer specification",
+        description="Contract schema version following SemVer specification (ONEX spec: contract_version)",
+    )
+
+    node_version: ModelSemVer | None = Field(
+        default=None,
+        description="Node implementation version. Tracks the version of the node "
+        "that implements this contract, separate from the contract schema version.",
     )
 
     description: str = Field(

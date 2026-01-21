@@ -10,7 +10,8 @@
 
 handler_id: effect.database.user_repository
 name: User Repository
-version: "2.0.0"
+contract_version: "2.0.0"
+node_version: "2.0.0"
 description: Handles user persistence operations with PostgreSQL
 
 descriptor:

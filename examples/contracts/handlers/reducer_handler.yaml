@@ -10,7 +10,8 @@
 
 handler_id: reducer.registration.user
 name: User Registration Reducer
-version: "1.2.0"
+contract_version: "1.2.0"
+node_version: "1.2.0"
 description: Manages user registration lifecycle using FSM
 
 descriptor:
