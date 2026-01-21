@@ -255,6 +255,7 @@ def compute_contract_fingerprint(
 
     # Extract version from contract using duck typing for field name polymorphism
     # ModelContractBase: contract_version, ModelHandlerContract: version
+    # TODO(OMN-TBD): Remove fallback when ModelHandlerContract migrates to contract_version [NEEDS TICKET]
     version_data = getattr(contract, "contract_version", None) or getattr(
         contract, "version", None
     )
