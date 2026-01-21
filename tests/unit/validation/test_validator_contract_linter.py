@@ -124,28 +124,36 @@ class TestValidateDeprecatedFieldNames:
 
         assert len(issues) == 0
 
-    def test_both_version_and_contract_version_passes(self, tmp_path: Path) -> None:
-        """Test that YAML with both 'version:' and 'contract_version:' passes.
+    def test_both_version_and_contract_version_returns_error(
+        self, tmp_path: Path
+    ) -> None:
+        """Test that YAML with both 'version:' and 'contract_version:' returns ERROR.
 
-        When a YAML contract has both fields (perhaps during migration),
-        the presence of 'contract_version' means the guardrail should not
-        raise an error. The 'contract_version' field takes precedence.
+        Since v0.9.0 is a breaking change, we don't support transitional dual-field
+        state. The deprecated 'version' field must be removed entirely, even if
+        'contract_version' is present.
         """
         contract = create_test_contract()
         validator = ValidatorContractLinter(contract=contract)
 
-        # YAML data with both fields (migration state)
+        # YAML data with both fields (invalid - must remove deprecated field)
         data: dict[str, object] = {
             "name": "TestContract",
-            "version": "1.0.0",  # Deprecated but contract_version present
-            "contract_version": "1.0.0",  # New field takes precedence
+            "version": "1.0.0",  # Deprecated - must be removed
+            "contract_version": "1.0.0",  # New field is present but version must go
             "node_type": "compute_generic",
         }
         test_path = tmp_path / "test_contract.yaml"
 
         issues = validator._validate_deprecated_field_names(data, test_path, contract)
 
-        assert len(issues) == 0
+        assert len(issues) == 1
+        assert issues[0].code == RULE_DEPRECATED_FIELD_NAMES
+        assert issues[0].severity == EnumSeverity.ERROR
+        assert "Remove" in issues[0].message
+        assert "contract_version" in issues[0].message
+        assert issues[0].suggestion is not None
+        assert "Remove" in issues[0].suggestion
 
     def test_neither_version_field_passes(self, tmp_path: Path) -> None:
         """Test that YAML with neither version field passes the deprecation check.

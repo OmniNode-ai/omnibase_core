@@ -478,21 +478,37 @@ class ValidatorContractLinter(ValidatorBase):
         """
         issues: list[ModelValidationIssue] = []
 
-        # Guardrail: Reject old 'version' field name in favor of 'contract_version'
+        # Guardrail: Reject old 'version' field name entirely
         # This is always an ERROR regardless of rule configuration - it's a migration guardrail
-        if "version" in data and "contract_version" not in data:
+        # Since v0.9.0 is a breaking change, we don't support transitional dual-field state
+        if "version" in data:
+            has_contract_version = "contract_version" in data
+            if has_contract_version:
+                message = (
+                    "YAML contracts must not contain deprecated 'version:' field. "
+                    "Remove it - 'contract_version:' is already present (OMN-1431)."
+                )
+                suggestion = (
+                    "Remove the deprecated 'version:' field from your YAML contract"
+                )
+            else:
+                message = (
+                    "YAML contracts must use 'contract_version:', not 'version:'. "
+                    "The 'version' field was renamed to 'contract_version' per ONEX specification (OMN-1431)."
+                )
+                suggestion = (
+                    "Rename 'version:' to 'contract_version:' in your YAML contract"
+                )
+
             issues.append(
                 ModelValidationIssue(
                     severity=EnumSeverity.ERROR,
-                    message=(
-                        "YAML contracts must use 'contract_version:', not 'version:'. "
-                        "The 'version' field was renamed to 'contract_version' per ONEX specification (OMN-1431)."
-                    ),
+                    message=message,
                     code=RULE_DEPRECATED_FIELD_NAMES,
                     file_path=path,
                     line_number=1,
                     rule_name=RULE_DEPRECATED_FIELD_NAMES,
-                    suggestion="Rename 'version:' to 'contract_version:' in your YAML contract",
+                    suggestion=suggestion,
                     context={
                         "found_field": "version",
                         "expected_field": "contract_version",
