@@ -139,9 +139,9 @@ class TestContractProfileFactory:
             profile="orchestrator_safe",
             version="2.0.0",
         )
-        assert contract.version.major == 2
-        assert contract.version.minor == 0
-        assert contract.version.patch == 0
+        assert contract.contract_version.major == 2
+        assert contract.contract_version.minor == 0
+        assert contract.contract_version.patch == 0
 
 
 @pytest.mark.unit

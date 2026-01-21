@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-01-21
+
+### ⚠️ BREAKING CHANGES
+
+#### Contract Version Field Rename [OMN-1431]
+
+**`ModelContractBase.version` renamed to `contract_version`** to align with ONEX specification naming conventions.
+
+| Before (v0.8.x) | After (v0.9.0) |
+|-----------------|----------------|
+| `contract.version` | `contract.contract_version` |
+| YAML: `version:` | YAML: `contract_version:` |
+
+**New field added:** `node_version: ModelSemVer | None` for tracking node implementation versions separately from contract schema versions.
+
+**Migration:**
+```python
+# Before (v0.8.x)
+contract = ModelContractCompute(
+    name="my_node",
+    version=ModelSemVer(major=1, minor=0, patch=0),
+    ...
+)
+
+# After (v0.9.0)
+contract = ModelContractCompute(
+    name="my_node",
+    contract_version=ModelSemVer(major=1, minor=0, patch=0),
+    node_version=ModelSemVer(major=1, minor=0, patch=0),  # Optional
+    ...
+)
+```
+
+**Note:** Other models retain their own `version` fields (not renamed):
+- `ModelHandlerContract.version`
+- `ModelProfileReference.version`
+- `ModelValidatorSubcontract.version`
+
+### Added
+
+- **Guardrail Validator**: `ValidatorContractLinter` now rejects YAML contracts using deprecated `version:` field, enforcing migration to `contract_version:`
+
 ## [0.8.0] - 2026-01-17
 
 ### Added

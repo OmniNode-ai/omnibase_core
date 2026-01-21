@@ -6,7 +6,8 @@ contract YAML files for compliance with ONEX standards.
 
 The validator checks:
 - YAML syntax validity
-- Required fields (name, version, node_type)
+- Deprecated field names (e.g., 'version' should be 'contract_version')
+- Required fields (name, contract_version, node_type)
 - Recommended fields (description)
 - Naming conventions (PascalCase/snake_case, Model prefix)
 - Fingerprint format (semver:12-hex)
@@ -85,6 +86,7 @@ RULE_MODEL_PREFIX = "model_prefix"
 RULE_FINGERPRINT_FORMAT = "fingerprint_format"
 RULE_FINGERPRINT_MATCH = "fingerprint_match"
 RULE_SCHEMA_VALIDATION = "schema_validation"
+RULE_DEPRECATED_FIELD_NAMES = "deprecated_field_names"
 
 # Contract type to model class mapping
 CONTRACT_MODELS: dict[
@@ -193,7 +195,8 @@ class ValidatorContractLinter(ValidatorBase):
     """Validator for ONEX contract YAML files.
 
     This validator checks contract files for ONEX compliance including:
-    - Required fields (name, version, node_type)
+    - Deprecated field names (guardrail: 'version' must be 'contract_version')
+    - Required fields (name, contract_version, node_type)
     - Recommended fields (description)
     - Naming conventions (PascalCase/snake_case, Model prefix)
     - Fingerprint format and match
@@ -235,7 +238,9 @@ class ValidatorContractLinter(ValidatorBase):
         """Check if YAML data looks like an ONEX contract.
 
         A file is considered a contract if it has:
-        - 'name' AND 'version' fields at top level, OR
+        - 'name' AND 'contract_version' fields at top level, OR
+        - 'name' AND deprecated 'version' field (will be rejected by guardrail), OR
+        - 'node_type' field, OR
         - Domain-specific fields (fsm, workflow, effect, compute, algorithm)
 
         Args:
@@ -246,10 +251,17 @@ class ValidatorContractLinter(ValidatorBase):
         """
         # Check for standard contract fields
         has_name = "name" in data
-        has_version = "version" in data
+        has_contract_version = "contract_version" in data
+        has_deprecated_version = (
+            "version" in data
+        )  # Old field name (OMN-1431) - will be rejected by guardrail
         has_node_type = "node_type" in data
 
-        if has_name and has_version:
+        if has_name and has_contract_version:
+            return True
+
+        # Also recognize contracts using deprecated 'version' field so guardrail can reject them
+        if has_name and has_deprecated_version:
             return True
 
         if has_node_type:
@@ -408,7 +420,7 @@ class ValidatorContractLinter(ValidatorBase):
         severity = self._get_severity(rule, contract)
 
         # Get required fields from rule parameters or use defaults
-        required_fields = ["name", "version", "node_type"]
+        required_fields = ["name", "contract_version", "node_type"]
         if rule is not None and rule.parameters is not None:
             fields_param = rule.parameters.get("fields")
             if isinstance(fields_param, list):
@@ -439,6 +451,71 @@ class ValidatorContractLinter(ValidatorBase):
                         suggestion=f"Provide a value for '{field_name}'",
                     )
                 )
+
+        return issues
+
+    def _validate_deprecated_field_names(
+        self,
+        data: dict[str, object],
+        path: Path,
+        contract: ModelValidatorSubcontract,
+    ) -> list[ModelValidationIssue]:
+        """Guardrail: Reject old field names that have been renamed.
+
+        This prevents regression by failing validation when YAML contracts use
+        deprecated field names instead of the current canonical names.
+
+        Currently checks:
+        - 'version' → should be 'contract_version' (OMN-1431 migration)
+
+        Args:
+            data: Parsed YAML data.
+            path: Path to the contract file.
+            contract: The validator contract.
+
+        Returns:
+            List of validation issues for deprecated field name usage.
+        """
+        issues: list[ModelValidationIssue] = []
+
+        # Guardrail: Reject old 'version' field name entirely
+        # This is always an ERROR regardless of rule configuration - it's a migration guardrail
+        # Since v0.9.0 is a breaking change, we don't support transitional dual-field state
+        if "version" in data:
+            has_contract_version = "contract_version" in data
+            if has_contract_version:
+                message = (
+                    "YAML contracts must not contain deprecated 'version:' field. "
+                    "Remove it - 'contract_version:' is already present (OMN-1431)."
+                )
+                suggestion = (
+                    "Remove the deprecated 'version:' field from your YAML contract"
+                )
+            else:
+                message = (
+                    "YAML contracts must use 'contract_version:', not 'version:'. "
+                    "The 'version' field was renamed to 'contract_version' per ONEX specification (OMN-1431)."
+                )
+                suggestion = (
+                    "Rename 'version:' to 'contract_version:' in your YAML contract"
+                )
+
+            issues.append(
+                ModelValidationIssue(
+                    severity=EnumSeverity.ERROR,
+                    message=message,
+                    code=RULE_DEPRECATED_FIELD_NAMES,
+                    file_path=path,
+                    line_number=1,
+                    rule_name=RULE_DEPRECATED_FIELD_NAMES,
+                    suggestion=suggestion,
+                    context={
+                        "found_field": "version",
+                        "expected_field": "contract_version",
+                        "migration_ticket": "OMN-1431",
+                    },
+                )
+            )
 
         return issues
 
@@ -836,6 +913,10 @@ class ValidatorContractLinter(ValidatorBase):
         if not self._is_contract_file(data):
             return ()
 
+        # Run guardrail checks (always run, not rule-dependent)
+        # These prevent regression from field name migrations
+        issues.extend(self._validate_deprecated_field_names(data, path, contract))
+
         # Get rules
         required_rule = self._get_rule_by_id(RULE_REQUIRED_FIELDS, contract)
         recommended_rule = self._get_rule_by_id(RULE_RECOMMENDED_FIELDS, contract)
@@ -893,6 +974,7 @@ __all__ = [
     "CONTRACT_MODELS",
     "NODE_TYPE_MAPPING",
     "PASCAL_CASE_PATTERN",
+    "RULE_DEPRECATED_FIELD_NAMES",
     "RULE_FINGERPRINT_FORMAT",
     "RULE_FINGERPRINT_MATCH",
     "RULE_MODEL_PREFIX",

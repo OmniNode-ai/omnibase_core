@@ -4,7 +4,11 @@
 # Node Type: COMPUTE_GENERIC
 
 name: support-ticket-classifier
-version:
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_version:
   major: 1
   minor: 0
   patch: 0

@@ -47,7 +47,7 @@ def get_effect_idempotent_profile(version: str = "1.0.0") -> ModelContractEffect
     return ModelContractEffect(
         # Core identification
         name="effect_idempotent_profile",
-        version=semver,
+        contract_version=semver,
         description="Idempotent effect profile with retry support and audit trail",
         node_type=EnumNodeType.EFFECT_GENERIC,
         # Model specifications

@@ -49,7 +49,7 @@ def get_orchestrator_safe_profile(version: str = "1.0.0") -> ModelContractOrches
     return ModelContractOrchestrator(
         # Core identification
         name="orchestrator_safe_profile",
-        version=_parse_version(version),
+        contract_version=_parse_version(version),
         description="Safe orchestrator profile with serial execution and conservative settings",
         node_type=EnumNodeType.ORCHESTRATOR_GENERIC,
         # Model specifications
@@ -124,7 +124,7 @@ def get_orchestrator_parallel_profile(
     return ModelContractOrchestrator(
         # Core identification
         name="orchestrator_parallel_profile",
-        version=_parse_version(version),
+        contract_version=_parse_version(version),
         description="Parallel orchestrator profile with concurrent execution support",
         node_type=EnumNodeType.ORCHESTRATOR_GENERIC,
         # Model specifications
@@ -199,7 +199,7 @@ def get_orchestrator_resilient_profile(
     return ModelContractOrchestrator(
         # Core identification
         name="orchestrator_resilient_profile",
-        version=_parse_version(version),
+        contract_version=_parse_version(version),
         description="Resilient orchestrator profile with checkpointing and fault tolerance",
         node_type=EnumNodeType.ORCHESTRATOR_GENERIC,
         # Model specifications

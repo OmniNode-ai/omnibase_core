@@ -67,7 +67,7 @@ def create_valid_contract(
     """Create a valid ModelContractCompute with specified input_state."""
     return ModelContractCompute(
         name="TestComputeContract",
-        version=ModelSemVer(major=1, minor=0, patch=0),
+        contract_version=ModelSemVer(major=1, minor=0, patch=0),
         description="Test compute contract for unit testing",
         node_type=EnumNodeType.COMPUTE_GENERIC,
         input_model="omnibase_core.models.ModelTestInput",

@@ -181,15 +181,10 @@ class ServiceContractValidator:
 
             # Note: node_type preprocessing removed - Pydantic model validators
             # now handle lowercase architecture type strings directly
-
-            # Pre-process version field to ensure ModelSemVer conversion
-            if "version" in yaml_data and isinstance(yaml_data["version"], dict):
-                try:
-                    yaml_data["version"] = ModelSemVer(**yaml_data["version"])
-                except ValueError as e:
-                    violations.append(f"Invalid ModelSemVer format: {e}")
-                except TypeError as e:
-                    violations.append(f"Invalid ModelSemVer type: {e}")
+            #
+            # Note: version preprocessing removed - YAML contracts now use
+            # 'contract_version' field, and Pydantic v2 handles dict-to-ModelSemVer
+            # conversion automatically during model_validate()
 
         except yaml.YAMLError as e:
             return ModelContractValidationResult(
@@ -412,10 +407,10 @@ class ServiceContractValidator:
     ) -> None:
         """Check ONEX compliance for contract."""
         # Check contract version against validator version
-        if contract.version != self.interface_version:
+        if contract.contract_version != self.interface_version:
             warnings.append(
                 f"Contract version mismatch: expected {self.interface_version}, "
-                f"got {contract.version}"
+                f"got {contract.contract_version}"
             )
 
         # Check naming conventions

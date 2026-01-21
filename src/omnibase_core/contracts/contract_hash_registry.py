@@ -253,8 +253,9 @@ def compute_contract_fingerprint(
     if config is None:
         config = ModelContractNormalizationConfig()
 
-    # Extract version from contract - use getattr for Pydantic model
-    # Check both 'contract_version' (YAML contracts) and 'version' (strict contracts)
+    # Extract version from contract using duck typing for field name polymorphism
+    # ModelContractBase: contract_version, ModelHandlerContract: version
+    # TODO(OMN-1436): Remove fallback when ModelHandlerContract migrates to contract_version
     version_data = getattr(contract, "contract_version", None) or getattr(
         contract, "version", None
     )

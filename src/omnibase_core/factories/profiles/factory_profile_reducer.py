@@ -158,7 +158,7 @@ def get_reducer_fsm_basic_profile(version: str = "1.0.0") -> ModelContractReduce
     return ModelContractReducer(
         # Core identification
         name="reducer_fsm_basic_profile",
-        version=semver,
+        contract_version=semver,
         description="Basic FSM reducer profile with simple state machine",
         node_type=EnumNodeType.REDUCER_GENERIC,
         # Model specifications
