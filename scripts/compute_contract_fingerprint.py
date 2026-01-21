@@ -127,7 +127,7 @@ def validate_strict_contract(contract_data: dict[str, object]) -> bool:
            'contract_version' is also present)
         2. If has 'contract_version' AND all strict fields -> strict (returns True)
         3. If has 'contract_version' but missing strict fields -> flexible (returns False)
-        4. If missing 'contract_version' but has strict fields -> try strict (returns True)
+        4. If missing 'contract_version' but has strict fields -> REJECT with error (requires explicit versioning)
         5. Otherwise -> flexible (returns False, default for compatibility)
 
     Strict vs Flexible Contracts:
@@ -159,9 +159,11 @@ def validate_strict_contract(contract_data: dict[str, object]) -> bool:
         >>> validate_strict_contract({'contract_version': '1.0', 'name': 'Test'})
         False  # Missing strict fields
         >>> validate_strict_contract({'version': '1.0.0', 'name': 'Test'})
-        ModelOnexError  # Deprecated 'version' field
+        Raises ModelOnexError  # Deprecated 'version' field
         >>> validate_strict_contract({'version': '1.0.0', 'contract_version': '1.0.0'})
-        ModelOnexError  # Deprecated 'version' field (rejected even with contract_version)
+        Raises ModelOnexError  # Deprecated 'version' field (rejected even with contract_version)
+        >>> validate_strict_contract({'name': 'Test', 'description': '...', 'input_model': '...', 'output_model': '...'})
+        Raises ModelOnexError  # Missing 'contract_version' with strict fields
     """
     has_version = "version" in contract_data
     has_contract_version = "contract_version" in contract_data
@@ -198,9 +200,21 @@ def validate_strict_contract(contract_data: dict[str, object]) -> bool:
     if has_contract_version:
         return False
 
-    # If missing 'contract_version' but has strict fields, try strict
+    # If missing 'contract_version' but has strict fields, reject - require explicit versioning
     if has_strict_fields:
-        return True
+        raise ModelOnexError(
+            message=(
+                "Contract has strict fields but missing 'contract_version'. "
+                "All strict contracts must include 'contract_version' field. "
+                "See OMN-1431 for migration details."
+            ),
+            error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+            context={
+                "has_strict_fields": True,
+                "missing_field": "contract_version",
+                "suggestion": "Add 'contract_version' field to your contract YAML",
+            },
+        )
 
     # Default to flexible for better compatibility
     return False

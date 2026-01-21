@@ -292,10 +292,10 @@ class TestEdgeCases:
         result = is_strict_contract(contract_data)
         assert result is False
 
-    def test_strict_fields_without_contract_version_still_strict(self) -> None:
-        """Test that strict fields without contract_version still counts as strict.
+    def test_strict_fields_without_contract_version_raises_error(self) -> None:
+        """Test that strict fields without contract_version raises error.
 
-        This maintains backward compatibility for contracts being migrated.
+        Contracts with strict fields MUST include contract_version - no backwards compatibility.
         """
         contract_data = {
             "name": "test",
@@ -305,5 +305,45 @@ class TestEdgeCases:
             "output_model": "omnibase_core.models.ModelOutput",
             # No contract_version - but has all strict fields
         }
-        result = validate_strict_contract(contract_data)
-        assert result is True
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_strict_contract(contract_data)
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR
+        assert "contract_version" in str(error)
+
+    def test_is_strict_contract_returns_false_for_missing_contract_version(
+        self,
+    ) -> None:
+        """Test that is_strict_contract returns False (not raises) for missing contract_version.
+
+        The predicate wrapper should catch the error and return False.
+        """
+        contract_data = {
+            "name": "test",
+            "description": "A test",
+            "node_type": "COMPUTE_GENERIC",
+            "input_model": "omnibase_core.models.ModelInput",
+            "output_model": "omnibase_core.models.ModelOutput",
+            # No contract_version
+        }
+        result = is_strict_contract(contract_data)
+        assert result is False  # Returns False instead of raising
+
+    def test_missing_contract_version_error_includes_context(self) -> None:
+        """Test that missing contract_version error includes helpful context."""
+        contract_data = {
+            "name": "test",
+            "description": "A test",
+            "node_type": "COMPUTE_GENERIC",
+            "input_model": "omnibase_core.models.ModelInput",
+            "output_model": "omnibase_core.models.ModelOutput",
+        }
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_strict_contract(contract_data)
+
+        error = exc_info.value
+        assert error.context is not None
+        inner_context = error.context.get("additional_context", {}).get("context", {})
+        assert inner_context.get("has_strict_fields") is True
+        assert "suggestion" in inner_context
