@@ -614,12 +614,12 @@ def regenerate_fingerprint(
         )
 
     # Check for deprecated 'version' field (OMN-1431: version -> contract_version rename)
-    # Files with 'version' but NOT 'contract_version' use deprecated format and should be
-    # migrated before fingerprinting. This prevents fingerprinting contracts that will
-    # fail validation with the current schema.
+    # IMPORTANT: Reject ANY presence of 'version' field, even if 'contract_version' is also
+    # present. This is consistent with validate_strict_contract() in
+    # src/omnibase_core/validation/validator_contracts.py which rejects contracts containing
+    # the deprecated field regardless of whether the new field exists.
     has_version = "version" in contract_data
-    has_contract_version = "contract_version" in contract_data
-    if has_version and not has_contract_version:
+    if has_version:
         return RegenerateResult(
             file_path=file_path,
             old_fingerprint=None,
@@ -627,8 +627,9 @@ def regenerate_fingerprint(
             changed=False,
             skipped=True,
             skip_reason=(
-                "Uses deprecated 'version' field instead of 'contract_version'. "
-                "Migrate to contract_version before regenerating fingerprint (see OMN-1431)"
+                "Contains deprecated 'version' field which must be removed. "
+                "Remove the 'version' field (use only 'contract_version') before "
+                "regenerating fingerprint (see OMN-1431/OMN-1436)"
             ),
         )
 

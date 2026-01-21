@@ -14,19 +14,30 @@ Test Categories:
 
 from __future__ import annotations
 
-import sys
+import importlib.util
 from pathlib import Path
 
 import pytest
 
-# Add scripts directory to path for import
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "scripts"))
-
-from compute_contract_fingerprint import (
-    detect_contract_model,
-    is_strict_contract,
-    validate_strict_contract,
+# Load script as module using importlib (cleaner than sys.path manipulation)
+_script_path = (
+    Path(__file__).parent.parent.parent.parent
+    / "scripts"
+    / "compute_contract_fingerprint.py"
 )
+_spec = importlib.util.spec_from_file_location(
+    "compute_contract_fingerprint", _script_path
+)
+assert _spec is not None and _spec.loader is not None, (
+    f"Failed to load spec from {_script_path}"
+)
+_module = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_module)
+
+# Import functions from loaded module
+detect_contract_model = _module.detect_contract_model
+is_strict_contract = _module.is_strict_contract
+validate_strict_contract = _module.validate_strict_contract
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
