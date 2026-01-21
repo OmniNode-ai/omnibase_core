@@ -62,7 +62,8 @@ SCENARIO_CONTRACT_FILES: tuple[str, ...] = (
 MIN_NAME_COLUMN_WIDTH: int = 20
 
 # Maximum description length before truncation (truncate at -3 for "...")
-MAX_DESCRIPTION_LENGTH: int = 60
+# Set high enough to show most descriptions fully while preventing layout issues
+MAX_DESCRIPTION_LENGTH: int = 140
 
 # Verdict thresholds for pass rate evaluation
 PASS_THRESHOLD: float = 1.0  # 100% pass rate required for PASS

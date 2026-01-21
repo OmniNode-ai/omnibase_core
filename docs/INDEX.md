@@ -52,6 +52,7 @@ Welcome to the ONEX Core (`omnibase_core`) documentation.
 | Understand the architecture | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
 | Handle errors properly | [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md) |
 | Find implementation patterns | [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md) |
+| Run the demo system | [Beta Demo Guide](demo/BETA_DEMO_GUIDE.md) |
 
 ---
 
@@ -200,6 +201,14 @@ Testing documentation and CI/CD.
 | [Parallel Testing](testing/PARALLEL_TESTING.md) | Parallel test execution |
 | [CI Test Strategy](testing/CI_TEST_STRATEGY.md) | CI/CD test strategy |
 | [Core Purity Failure](ci/CORE_PURITY_FAILURE.md) | Fixing purity check failures |
+
+### Demo
+
+Demo scenarios and validation guides.
+
+| Document | Description |
+|----------|-------------|
+| [Beta Demo Guide](demo/BETA_DEMO_GUIDE.md) | Comprehensive guide to the ONEX demo system |
 
 ---
 

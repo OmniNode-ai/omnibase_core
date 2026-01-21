@@ -23,6 +23,7 @@ import yaml
 from click.testing import CliRunner
 
 from omnibase_core.cli.cli_demo import (
+    MAX_DESCRIPTION_LENGTH,
     MIN_NAME_COLUMN_WIDTH,
     SCENARIO_CONTRACT_FILES,
     _create_output_bundle,
@@ -687,16 +688,17 @@ class TestExtractScenarioDescription:
         assert description == "Top-level description"
 
     def test_truncates_long_descriptions(self, tmp_path: Path) -> None:
-        """Test that long descriptions are truncated."""
+        """Test that long descriptions are truncated at MAX_DESCRIPTION_LENGTH."""
         scenario = tmp_path / "scenario"
         scenario.mkdir()
 
-        long_desc = "A" * 100  # More than 60 chars
+        # Create description longer than MAX_DESCRIPTION_LENGTH
+        long_desc = "A" * (MAX_DESCRIPTION_LENGTH + 50)
         contract = {"metadata": {"description": long_desc}}
         (scenario / "contract.yaml").write_text(yaml.safe_dump(contract))
 
         description = _extract_scenario_description(scenario)
-        assert len(description) == 60
+        assert len(description) == MAX_DESCRIPTION_LENGTH
         assert description.endswith("...")
 
     def test_extracts_from_readme(self, tmp_path: Path) -> None:
