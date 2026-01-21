@@ -280,7 +280,7 @@ class ContractMergeEngine:
         # Track version override
         if patch.node_version is not None:
             changes_applied.append(
-                f"version: {base.contract_version} -> {patch.node_version}"
+                f"node_version: {patch.node_version} (applied from patch)"
             )
 
         merged_description = merge_scalar(base.description, patch.description)

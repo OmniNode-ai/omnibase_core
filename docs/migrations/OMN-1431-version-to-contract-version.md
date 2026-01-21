@@ -1,7 +1,7 @@
 # OMN-1431 Migration Checklist: `version` → `contract_version`
 
 **Ticket**: [OMN-1431](https://linear.app/omninode/issue/OMN-1431)
-**Status**: In Progress
+**Status**: Complete
 **Branch**: `jonah/omn-1431-contract-version-rename`
 
 ## Canonical Truth
