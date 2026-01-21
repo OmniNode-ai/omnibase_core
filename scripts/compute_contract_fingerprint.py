@@ -113,14 +113,22 @@ NODE_TYPE_TO_STRICT_MODEL: dict[str, type[BaseModel]] = {
 }
 
 
-def is_strict_contract(contract_data: dict[str, object]) -> bool:
-    """Check if contract data matches strict typed contract schema.
+def validate_strict_contract(contract_data: dict[str, object]) -> bool:
+    """Validate contract data and determine if it matches strict typed schema.
 
-    Determines whether the contract should be validated against strict typed
-    models (ModelContractCompute, etc.) or the flexible ModelYamlContract.
+    This is the canonical validation function that enforces contract rules.
+    Use this in loaders and enforcement paths where you want errors to propagate.
 
     IMPORTANT: As of OMN-1431/OMN-1436, all contracts MUST use 'contract_version',
     not 'version'. Contracts using the deprecated 'version' field will be rejected.
+
+    Validation Rules:
+        1. If has deprecated 'version' field -> REJECT with error (always, even if
+           'contract_version' is also present)
+        2. If has 'contract_version' AND all strict fields -> strict (returns True)
+        3. If has 'contract_version' but missing strict fields -> flexible (returns False)
+        4. If missing 'contract_version' but has strict fields -> try strict (returns True)
+        5. Otherwise -> flexible (returns False, default for compatibility)
 
     Strict vs Flexible Contracts:
         **Strict Contracts** use:
@@ -133,13 +141,6 @@ def is_strict_contract(contract_data: dict[str, object]) -> bool:
         - Arbitrary extra fields allowed
         - Minimal validation for maximum compatibility
 
-    Detection Logic:
-        1. If has deprecated 'version' field -> REJECT with error
-        2. If has 'contract_version' AND all strict fields -> strict
-        3. If has 'contract_version' but missing strict fields -> flexible
-        4. If missing 'contract_version' but has strict fields -> try strict
-        5. Otherwise -> flexible (default for compatibility)
-
     Args:
         contract_data: Parsed YAML contract data as a dictionary.
 
@@ -149,20 +150,24 @@ def is_strict_contract(contract_data: dict[str, object]) -> bool:
 
     Raises:
         ModelOnexError: If contract uses deprecated 'version' field instead of
-            'contract_version'. Error code: VALIDATION_ERROR.
+            'contract_version'. Error code: CONTRACT_VALIDATION_ERROR.
+            This is raised even if 'contract_version' is also present.
 
     Examples:
-        >>> is_strict_contract({'contract_version': '1.0.0', 'name': 'Test', ...})
+        >>> validate_strict_contract({'contract_version': '1.0.0', 'name': 'Test', ...})
         True
-        >>> is_strict_contract({'contract_version': '1.0', 'name': 'Test'})
+        >>> validate_strict_contract({'contract_version': '1.0', 'name': 'Test'})
         False  # Missing strict fields
-        >>> is_strict_contract({'version': '1.0.0', 'name': 'Test'})
+        >>> validate_strict_contract({'version': '1.0.0', 'name': 'Test'})
         ModelOnexError  # Deprecated 'version' field
+        >>> validate_strict_contract({'version': '1.0.0', 'contract_version': '1.0.0'})
+        ModelOnexError  # Deprecated 'version' field (rejected even with contract_version)
     """
     has_version = "version" in contract_data
     has_contract_version = "contract_version" in contract_data
 
     # REJECT contracts using deprecated 'version' field (OMN-1431/OMN-1436)
+    # This applies even if 'contract_version' is also present - no "both present" loophole
     if has_version:
         raise ModelOnexError(
             message=(
@@ -170,11 +175,13 @@ def is_strict_contract(contract_data: dict[str, object]) -> bool:
                 "All contracts must use 'contract_version' instead. "
                 "See OMN-1431 for migration details."
             ),
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            deprecated_field="version",
-            required_field="contract_version",
-            suggestion="Replace 'version' with 'contract_version' in your contract YAML",
-            has_contract_version=has_contract_version,
+            error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+            context={
+                "deprecated_field": "version",
+                "required_field": "contract_version",
+                "suggestion": "Replace 'version' with 'contract_version' in your contract YAML",
+                "has_contract_version": has_contract_version,
+            },
         )
 
     # Strict contracts require name, input_model, output_model, description
@@ -199,6 +206,41 @@ def is_strict_contract(contract_data: dict[str, object]) -> bool:
     return False
 
 
+def is_strict_contract(contract_data: dict[str, object]) -> bool:
+    """Check if contract data matches strict typed contract schema (predicate only).
+
+    This is a pure predicate wrapper around validate_strict_contract() that
+    never raises exceptions. Use this for branching logic and "soft" checks
+    where you don't want exceptions to propagate.
+
+    For enforcement paths (loaders, validators), use validate_strict_contract()
+    directly to get detailed error messages.
+
+    Args:
+        contract_data: Parsed YAML contract data as a dictionary.
+
+    Returns:
+        True if contract should use strict typed models (ModelContractCompute, etc.).
+        False if contract should use flexible ModelYamlContract OR if validation fails.
+
+    Examples:
+        >>> is_strict_contract({'contract_version': '1.0.0', 'name': 'Test', ...})
+        True
+        >>> is_strict_contract({'contract_version': '1.0', 'name': 'Test'})
+        False  # Missing strict fields
+        >>> is_strict_contract({'version': '1.0.0', 'name': 'Test'})
+        False  # Returns False instead of raising (deprecated field)
+
+    See Also:
+        validate_strict_contract: The canonical validation function that raises
+            ModelOnexError with detailed context for invalid contracts.
+    """
+    try:
+        return validate_strict_contract(contract_data)
+    except ModelOnexError:
+        return False
+
+
 def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel]:
     """Detect the appropriate contract model class from YAML data.
 
@@ -214,7 +256,7 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel]:
         1. **Validate node_type**: Ensures node_type field exists and is a string.
            Raises ModelOnexError if missing or invalid type.
 
-        2. **Check for strict contract**: Uses is_strict_contract() to determine if
+        2. **Check for strict contract**: Uses validate_strict_contract() to determine if
            the contract has strict typed fields ('contract_version' and required
            base fields like 'name', 'input_model', 'output_model').
            NOTE: Contracts using deprecated 'version' field are REJECTED.
@@ -253,16 +295,16 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel]:
 
     Raises:
         ModelOnexError: If node_type field is missing from contract_data.
-            Error code: VALIDATION_ERROR
+            Error code: CONTRACT_VALIDATION_ERROR
             Context includes: contract_keys (list of keys in data)
             Suggestion provided for adding node_type field.
 
         ModelOnexError: If node_type is not a string (e.g., int, list, dict).
-            Error code: VALIDATION_ERROR
+            Error code: CONTRACT_VALIDATION_ERROR
             Context includes: node_type_value, node_type_type
 
         ModelOnexError: If contract uses deprecated 'version' field.
-            Error code: VALIDATION_ERROR
+            Error code: CONTRACT_VALIDATION_ERROR
             Suggestion to migrate to 'contract_version'.
 
     Examples:
@@ -280,7 +322,8 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel]:
 
     See Also:
         - NODE_TYPE_TO_STRICT_MODEL: Mapping of node_type values to model classes.
-        - is_strict_contract(): Determines if contract uses strict typed schema.
+        - validate_strict_contract(): Validates and determines if contract uses strict schema.
+        - is_strict_contract(): Pure predicate wrapper (doesn't raise exceptions).
         - ModelYamlContract: Flexible contract model for non-standard contracts.
     """
     node_type = contract_data.get("node_type")
@@ -288,21 +331,26 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel]:
     if node_type is None:
         raise ModelOnexError(
             message="Contract missing required 'node_type' field",
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            contract_keys=list(contract_data.keys()),
-            suggestion="Add 'node_type' field (e.g., COMPUTE_GENERIC, REDUCER_GENERIC)",
+            error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+            context={
+                "contract_keys": list(contract_data.keys()),
+                "suggestion": "Add 'node_type' field (e.g., COMPUTE_GENERIC, REDUCER_GENERIC)",
+            },
         )
 
     if not isinstance(node_type, str):
         raise ModelOnexError(
             message=f"Invalid node_type: expected string, got {type(node_type).__name__}",
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            node_type_value=str(node_type),
-            node_type_type=type(node_type).__name__,
+            error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+            context={
+                "node_type_value": str(node_type),
+                "node_type_type": type(node_type).__name__,
+            },
         )
 
     # Check if this is a strict typed contract
-    if is_strict_contract(contract_data):
+    # Use validate_strict_contract() for enforcement - errors propagate with details
+    if validate_strict_contract(contract_data):
         model_class = NODE_TYPE_TO_STRICT_MODEL.get(node_type)
         if model_class is not None:
             return model_class

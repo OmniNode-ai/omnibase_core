@@ -429,7 +429,7 @@ class TestFingerprintConsistency:
         """Test compute_fingerprint_for_contract returns consistent results."""
         contract_data = {
             "name": "TestContract",
-            "version": {"major": 1, "minor": 0, "patch": 0},
+            "contract_version": {"major": 1, "minor": 0, "patch": 0},
             "node_type": "COMPUTE_GENERIC",
             "description": "Test contract",
             "input_model": "ModelInput",
@@ -713,7 +713,7 @@ class TestContractModelDetection:
         data = {
             "node_type": "COMPUTE_GENERIC",
             "name": "TestCompute",
-            "version": "1.0.0",
+            "contract_version": "1.0.0",
             "input_model": "ModelInput",
             "output_model": "ModelOutput",
             "description": "Test",
@@ -731,7 +731,7 @@ class TestContractModelDetection:
         data = {
             "node_type": "EFFECT_GENERIC",
             "name": "TestEffect",
-            "version": "1.0.0",
+            "contract_version": "1.0.0",
             "input_model": "ModelInput",
             "output_model": "ModelOutput",
             "description": "Test",
@@ -761,7 +761,7 @@ class TestContractModelDetection:
         """Test that missing node_type returns None."""
         data = {
             "name": "TestNoNodeType",
-            "version": "1.0.0",
+            "contract_version": "1.0.0",
         }
 
         model = detect_contract_model(data)
@@ -961,7 +961,7 @@ class TestAdditionalModelDetection:
         data = {
             "node_type": "REDUCER_GENERIC",
             "name": "TestReducer",
-            "version": "1.0.0",
+            "contract_version": "1.0.0",
             "input_model": "ModelInput",
             "output_model": "ModelOutput",
             "description": "Test",
@@ -980,7 +980,7 @@ class TestAdditionalModelDetection:
         data = {
             "node_type": "ORCHESTRATOR_GENERIC",
             "name": "TestOrchestrator",
-            "version": "1.0.0",
+            "contract_version": "1.0.0",
             "input_model": "ModelInput",
             "output_model": "ModelOutput",
             "description": "Test",
@@ -995,7 +995,7 @@ class TestAdditionalModelDetection:
         data = {
             "node_type": "TRANSFORMER",
             "name": "TestTransformer",
-            "version": "1.0.0",
+            "contract_version": "1.0.0",
             "input_model": "ModelInput",
             "output_model": "ModelOutput",
             "description": "Test",
@@ -1014,7 +1014,7 @@ class TestAdditionalModelDetection:
         data = {
             "node_type": "GATEWAY",
             "name": "TestGateway",
-            "version": "1.0.0",
+            "contract_version": "1.0.0",
             "input_model": "ModelInput",
             "output_model": "ModelOutput",
             "description": "Test",
@@ -1214,13 +1214,14 @@ description: Test
 class TestFingerprintComputationEdgeCases:
     """Edge case tests for fingerprint computation."""
 
-    def test_compute_fingerprint_with_schema_validation_error(self) -> None:
-        """Test that schema validation errors are handled gracefully."""
-        # Create contract data that will fail schema validation
+    def test_compute_fingerprint_with_invalid_node_type(self) -> None:
+        """Test that invalid node_type is handled gracefully."""
+        # Create contract data with invalid node_type (not a string)
+        # This triggers model detection failure, not schema validation error
         contract_data = {
-            "node_type": "COMPUTE_GENERIC",
+            "node_type": 12345,  # Invalid: should be a string
             "name": "TestBadContract",
-            "version": "invalid_version",  # Invalid version format
+            "contract_version": "1.0.0",
             "input_model": "ModelInput",
             "output_model": "ModelOutput",
             "description": "Test",
@@ -1231,7 +1232,7 @@ class TestFingerprintComputationEdgeCases:
         # Should return FingerprintResult with error (not raise)
         assert result.fingerprint is None
         assert result.error is not None
-        assert "validation" in result.error.lower() or "error" in result.error.lower()
+        assert "detect" in result.error.lower() or "model" in result.error.lower()
 
     def test_compute_fingerprint_with_missing_required_fields(self) -> None:
         """Test fingerprint computation with missing required fields."""
