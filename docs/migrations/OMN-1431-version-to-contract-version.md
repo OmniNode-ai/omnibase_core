@@ -2,7 +2,7 @@
 
 **Ticket**: [OMN-1431](https://linear.app/omninode/issue/OMN-1431)
 **Status**: In Progress
-**Branch**: `jonah/omn-1431-add-contract_version-and-node_version-fields-to`
+**Branch**: `jonah/omn-1431-contract-version-rename`
 
 ## Canonical Truth
 
@@ -81,18 +81,30 @@ Replace `.version` → `.contract_version` on contract objects:
 
 ---
 
-## Step 4: Remove Dual-Compat Code
+## Step 4: Duck-Typed Field Polymorphism (Intentionally Retained)
 
 **File**: `src/omnibase_core/contracts/contract_hash_registry.py`
 **Lines**: 256-259
 
+The following dual-field lookup pattern is **intentionally retained** and should NOT be removed:
+
 ```python
-# REMOVE THIS:
+# KEEP THIS - supports duck-typed field polymorphism
 version_data = getattr(contract, "contract_version", None) or getattr(
     contract, "version", None
 )
+```
 
-# REPLACE WITH:
+**Rationale**: This code supports duck-typed field polymorphism between different contract models:
+
+- `ModelContractBase.contract_version` - The canonical field for ONEX contracts
+- `ModelHandlerContract.version` - Legacy field retained for handler contracts
+
+The `getattr()` fallback pattern allows both contract types to work transparently without requiring callers to know which field name is used. This is a deliberate design decision to maintain polymorphic compatibility across the contract hierarchy.
+
+**Do NOT simplify to**:
+```python
+# WRONG - breaks polymorphism with ModelHandlerContract
 version_data = contract.contract_version
 ```
 

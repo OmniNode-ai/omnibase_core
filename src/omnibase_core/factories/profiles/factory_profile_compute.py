@@ -47,7 +47,7 @@ def get_compute_pure_profile(version: str = "1.0.0") -> ModelContractCompute:
     return ModelContractCompute(
         # Core identification
         name="compute_pure_profile",
-        version=semver,
+        contract_version=semver,
         description="Pure computation profile with deterministic execution",
         node_type=EnumNodeType.COMPUTE_GENERIC,
         # Model specifications
