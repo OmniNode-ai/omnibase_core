@@ -50,6 +50,7 @@ node_version: "1.0.0"  # Optional, add if these are golden spec examples
 Replace `.version` → `.contract_version` on contract objects:
 
 ### Validation Layer
+
 | File | Lines | Pattern |
 |------|-------|---------|
 | `src/omnibase_core/validation/phases/validator_expanded_contract.py` | 242 | `contract.version` → `contract.contract_version` |
@@ -59,22 +60,26 @@ Replace `.version` → `.contract_version` on contract objects:
 | `src/omnibase_core/validation/validator_contract_patch.py` | 593 | `patch.extends.version` → `patch.extends.contract_version` |
 
 ### Services Layer
+
 | File | Lines | Pattern |
 |------|-------|---------|
 | `src/omnibase_core/services/service_contract_validator.py` | 415, 418 | `contract.version` → `contract.contract_version` |
 
 ### Contract Infrastructure
+
 | File | Lines | Pattern |
 |------|-------|---------|
 | `src/omnibase_core/merge/contract_merge_engine.py` | 254, 275, 280 | `patch.extends.version`, `base.version` → `*.contract_version` |
 | `src/omnibase_core/contracts/contract_hash_registry.py` | 477, 507, 508 | `registered.version`, `computed.version` → `*.contract_version` |
 
 ### CLI
+
 | File | Lines | Pattern |
 |------|-------|---------|
 | `src/omnibase_core/cli/cli_contract.py` | 773, 1054, 1139 | `patch.extends.version` → `patch.extends.contract_version` |
 
 ### Validators (string literal checks)
+
 | File | Lines | Pattern |
 |------|-------|---------|
 | `src/omnibase_core/validation/validator_contract_linter.py` | 238-252, 411 | `"version" in data` → `"contract_version" in data` |
@@ -113,7 +118,8 @@ version_data = contract.contract_version
 ## Step 5: Test Files (25 files, ~65 references)
 
 ### Contract Model Tests
-```
+
+```text
 tests/unit/contracts/test_model_contract_base.py
 tests/unit/runtime/test_node_instance.py
 tests/unit/models/contracts/test_model_handler_contract.py
@@ -128,7 +134,8 @@ tests/unit/examples/demo/handlers/support_assistant/test_handler_contract.py
 ```
 
 ### Contract Merge/Validation Tests
-```
+
+```text
 tests/unit/merge/test_contract_merge_engine.py
 tests/unit/merge/test_contract_merge_engine_events.py
 tests/unit/validation/test_contract_validation_pipeline_events.py
