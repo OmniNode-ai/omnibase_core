@@ -295,7 +295,7 @@ class ModelHandlerContract(BaseModel):
                     "Handler contracts must use 'contract_version', not 'version'. "
                     "The 'version' field was renamed per ONEX specification (OMN-1436)."
                 ),
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
             )
         return data
 
