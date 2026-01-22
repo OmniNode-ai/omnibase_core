@@ -56,7 +56,7 @@ def create_contract_with_outputs(
     return ModelHandlerContract(
         handler_id="node.test.compute",
         name=f"Test Handler with {num_outputs} outputs",
-        version="1.0.0",
+        contract_version=ModelSemVer(major=1, minor=0, patch=0),
         description=f"A test contract with {num_outputs} capability outputs",
         descriptor=valid_descriptor,
         input_model="omnibase_core.models.events.ModelTestEvent",
@@ -82,7 +82,7 @@ def create_valid_contract(
     return ModelHandlerContract(
         handler_id="node.test.compute",
         name=f"Test Handler {suffix}",
-        version="1.0.0",
+        contract_version=ModelSemVer(major=1, minor=0, patch=0),
         description="Test contract for concurrent validation",
         descriptor=valid_descriptor,
         input_model="omnibase_core.models.events.ModelTestEvent",
@@ -529,7 +529,7 @@ class TestConcurrentValidationThreadSafety:
             return ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="TODO",  # Placeholder - should fail validation
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 description="Invalid contract for testing",
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.events.ModelTestEvent",
@@ -749,7 +749,7 @@ class TestConcurrentValidationThreadSafety:
             return ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="PLACEHOLDER",  # Should fail merge validation
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 description="Invalid",
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.events.ModelTestEvent",

@@ -116,7 +116,7 @@ _CRITICAL_FIELDS: frozenset[str] = frozenset(
     {
         "handler_id",
         "name",
-        "version",
+        "contract_version",
         "input_model",
         "output_model",
     }
@@ -282,7 +282,7 @@ class MergeValidator:
         Critical fields checked:
             - handler_id
             - name
-            - version
+            - contract_version
             - input_model
             - output_model
 
@@ -293,10 +293,11 @@ class MergeValidator:
         logger.debug("Checking for placeholder values in critical fields")
 
         # Build field->value mapping for critical fields
+        # Note: contract_version is ModelSemVer, convert to string for placeholder check
         field_values: dict[str, str] = {
             "handler_id": merged.handler_id,
             "name": merged.name,
-            "version": merged.version,
+            "contract_version": str(merged.contract_version),
             "input_model": merged.input_model,
             "output_model": merged.output_model,
         }

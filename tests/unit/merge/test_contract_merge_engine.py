@@ -364,7 +364,7 @@ class TestScalarMerging:
 
         # Patch has node_version=ModelSemVer(1, 0, 0)
         # The merge engine converts version to string representation
-        assert result.version == "1.0.0"
+        assert str(result.contract_version) == "1.0.0"
 
     def test_none_patch_fields_use_base_values(
         self,
@@ -499,7 +499,7 @@ class TestListOperations:
         # Verify merge completed successfully with valid contract structure
         assert result is not None
         assert result.name == "test_contract"
-        assert result.version == "1.0.0"
+        assert str(result.contract_version) == "1.0.0"
         assert hasattr(result, "descriptor")
         assert hasattr(result, "capability_inputs")
         # Verify the patch handler_add was set correctly
@@ -540,7 +540,7 @@ class TestListOperations:
         # Verify merge completed successfully with valid contract structure
         assert result is not None
         assert result.name == "test_contract"
-        assert result.version == "1.0.0"
+        assert str(result.contract_version) == "1.0.0"
         # Verify the patch handlers__remove was set correctly
         assert patch.handlers__remove is not None
         assert "handler_to_remove" in patch.handlers__remove
@@ -564,7 +564,7 @@ class TestListOperations:
         # Verify merge completed successfully with expected identity
         assert result is not None
         assert result.name == "handler_contract"
-        assert result.version == "1.0.0"
+        assert str(result.contract_version) == "1.0.0"
         # Verify the patch had both add and remove operations
         assert patch_with_handlers.handlers__add is not None
         assert patch_with_handlers.handlers__remove is not None
@@ -590,7 +590,7 @@ class TestListOperations:
         # Verify merge completed successfully with expected identity
         assert result is not None
         assert result.name == "dependency_contract"
-        assert result.version == "1.0.0"
+        assert str(result.contract_version) == "1.0.0"
         # Verify the patch had dependency operations
         assert patch_with_dependencies.dependencies__add is not None
         assert patch_with_dependencies.dependencies__remove is not None
@@ -616,7 +616,7 @@ class TestListOperations:
         # Verify merge completed successfully with expected identity
         assert result is not None
         assert result.name == "event_contract"
-        assert result.version == "1.0.0"
+        assert str(result.contract_version) == "1.0.0"
         # Verify the patch had event operations
         assert patch_with_events.consumed_events__add is not None
         assert patch_with_events.consumed_events__remove is not None
@@ -642,7 +642,7 @@ class TestListOperations:
         # Verify merge completed successfully
         assert result is not None
         assert result.name == "capability_contract"
-        assert result.version == "1.0.0"
+        assert str(result.contract_version) == "1.0.0"
 
         # Verify capability_inputs contains the added item
         # The merge engine converts string names to ModelCapabilityDependency
@@ -676,7 +676,7 @@ class TestListOperations:
         # Verify merge completed successfully
         assert result is not None
         assert result.name == "capability_contract"
-        assert result.version == "1.0.0"
+        assert str(result.contract_version) == "1.0.0"
 
         # Verify capability_outputs contains the added capability name
         # The patch adds sample_capability_provided which has name="event_emit"
@@ -714,7 +714,7 @@ class TestListOperations:
         # Verify merge completed with expected contract identity
         assert result is not None
         assert result.name == "test_contract"
-        assert result.version == "1.0.0"
+        assert str(result.contract_version) == "1.0.0"
         # Verify capability_inputs is empty (no additions, base was empty)
         assert result.capability_inputs == []
         # Verify capability_outputs is empty (no additions, base was empty)
@@ -926,8 +926,8 @@ class TestEdgeCases:
         result = engine.merge(new_contract_patch)
 
         assert result.name == new_contract_patch.name
-        # Version is a string in ModelHandlerContract, compare as string
-        assert result.version == str(new_contract_patch.node_version)
+        # contract_version is ModelSemVer in ModelHandlerContract, compare directly
+        assert result.contract_version == new_contract_patch.node_version
 
     def test_override_only_patch(
         self,
@@ -1000,7 +1000,7 @@ class TestMergeResultType:
 
         # Result should have standard contract fields
         assert hasattr(result, "name")
-        assert hasattr(result, "version")
+        assert hasattr(result, "contract_version")
         assert hasattr(result, "description")
 
     def test_merge_result_has_handler_kind(

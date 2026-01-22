@@ -481,7 +481,7 @@ class TestBuildCommand:
         # Should have expanded contract fields
         assert "handler_id" in content
         assert "name" in content
-        assert "version" in content
+        assert "contract_version" in content
         assert "descriptor" in content
 
     def test_build_output_includes_metadata(

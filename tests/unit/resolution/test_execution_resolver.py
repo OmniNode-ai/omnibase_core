@@ -34,6 +34,7 @@ from omnibase_core.models.contracts.model_execution_profile import (
     ModelExecutionProfile,
 )
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
 from omnibase_core.resolution import ExecutionResolver
 
@@ -114,7 +115,7 @@ def _create_contract(
     return ModelHandlerContract(
         handler_id=handler_id,
         name=f"Handler {handler_id}",
-        version="1.0.0",
+        contract_version=ModelSemVer(major=1, minor=0, patch=0),
         descriptor=ModelHandlerBehavior(handler_kind="compute"),
         input_model="test.Input",
         output_model="test.Output",
@@ -1294,7 +1295,7 @@ class TestPhaseAssignmentConstraints:
         effect_contract = ModelHandlerContract(
             handler_id="handler.effect_io",
             name="Effect IO Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="effect"),
             input_model="test.Input",
             output_model="test.Output",
@@ -1325,7 +1326,7 @@ class TestPhaseAssignmentConstraints:
         reducer_contract = ModelHandlerContract(
             handler_id="handler.reducer_state",
             name="Reducer State Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="reducer"),
             input_model="test.Input",
             output_model="test.Output",
@@ -1356,7 +1357,7 @@ class TestPhaseAssignmentConstraints:
         orchestrator_contract = ModelHandlerContract(
             handler_id="handler.orchestrator_workflow",
             name="Orchestrator Workflow Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="orchestrator"),
             input_model="test.Input",
             output_model="test.Output",
@@ -1389,7 +1390,7 @@ class TestPhaseAssignmentConstraints:
             ModelHandlerContract(
                 handler_id="handler.compute",
                 name="Compute Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="compute"),
                 input_model="test.Input",
                 output_model="test.Output",
@@ -1398,7 +1399,7 @@ class TestPhaseAssignmentConstraints:
             ModelHandlerContract(
                 handler_id="handler.effect",
                 name="Effect Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="effect"),
                 input_model="test.Input",
                 output_model="test.Output",
@@ -1407,7 +1408,7 @@ class TestPhaseAssignmentConstraints:
             ModelHandlerContract(
                 handler_id="handler.reducer",
                 name="Reducer Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="reducer"),
                 input_model="test.Input",
                 output_model="test.Output",
@@ -1416,7 +1417,7 @@ class TestPhaseAssignmentConstraints:
             ModelHandlerContract(
                 handler_id="handler.orchestrator",
                 name="Orchestrator Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="orchestrator"),
                 input_model="test.Input",
                 output_model="test.Output",
@@ -1454,7 +1455,7 @@ class TestPhaseAssignmentConstraints:
             ModelHandlerContract(
                 handler_id="handler.validation",
                 name="Validation Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="compute"),
                 input_model="test.Input",
                 output_model="test.Output",
@@ -1463,7 +1464,7 @@ class TestPhaseAssignmentConstraints:
             ModelHandlerContract(
                 handler_id="handler.process",
                 name="Process Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="compute"),
                 input_model="test.Input",
                 output_model="test.Output",
@@ -1475,7 +1476,7 @@ class TestPhaseAssignmentConstraints:
             ModelHandlerContract(
                 handler_id="handler.finalize",
                 name="Finalize Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="effect"),
                 input_model="test.Input",
                 output_model="test.Output",

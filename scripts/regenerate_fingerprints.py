@@ -627,9 +627,9 @@ def regenerate_fingerprint(
             changed=False,
             skipped=True,
             skip_reason=(
-                "Contains deprecated 'version' field which must be removed. "
-                "Remove the 'version' field (use only 'contract_version') before "
-                "regenerating fingerprint (see OMN-1431/OMN-1436)"
+                "Contains deprecated 'version' field. "
+                "Rename 'version' to 'contract_version' before "
+                "regenerating fingerprint (see OMN-1431)"
             ),
         )
 

@@ -101,7 +101,7 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
        ensures alias uniqueness.
 
     4. **Runtime Invariants**: Validates handler_id format, input/output model
-       references, version format, and handler_kind consistency.
+       references, contract_version format, and handler_kind consistency.
 
     Validation is performed in a single pass for efficiency. All validations
     are deterministic and do not require external resources.
@@ -176,7 +176,7 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
             f"Starting expanded contract validation for handler_id={contract.handler_id}"
         )
 
-        # 1. Runtime invariant checks (handler_id, models, version)
+        # 1. Runtime invariant checks (handler_id, models, contract_version)
         self._validate_runtime_invariants(contract, result)
 
         # 2. Execution graph integrity (cycles and orphans)
@@ -221,7 +221,7 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
         Checks:
             - handler_id format (dot-separated, starts with letter/underscore)
             - input_model and output_model look like valid module paths
-            - version follows semver pattern
+            - contract_version follows semver pattern
 
         Args:
             contract: The contract to validate.
@@ -239,7 +239,8 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
         self._validate_model_reference(contract.output_model, "output_model", result)
 
         # Validate version format
-        self._validate_version_format(contract.version, result)
+        # Note: contract_version is ModelSemVer, convert to string for format validation
+        self._validate_version_format(str(contract.contract_version), result)
 
     def _validate_handler_id_format(
         self,

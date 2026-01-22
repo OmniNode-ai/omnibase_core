@@ -81,7 +81,7 @@ class TestContractValidationPipelineFixtures:
         return ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Compute Node",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             description="A test compute node",
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.events.ModelTestEvent",
@@ -96,7 +96,7 @@ class TestContractValidationPipelineFixtures:
         return ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             description="Test handler description",
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.events.ModelTestEvent",
@@ -375,7 +375,7 @@ class TestModelExpandedContractResult:
         contract = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -448,7 +448,7 @@ class TestContractValidationPipelineValidateAll(TestContractValidationPipelineFi
             merged = ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Merged Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -536,7 +536,7 @@ class TestContractValidationPipelineValidateAll(TestContractValidationPipelineFi
             merged = ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -591,7 +591,7 @@ class TestContractValidationPipelineValidateAll(TestContractValidationPipelineFi
             merged = ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -722,7 +722,7 @@ class TestValidationPerformance:
         return ModelHandlerContract(
             handler_id="node.test.compute",
             name=f"Test Handler with {num_handlers} outputs",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             description=f"A test contract with {num_handlers} capability outputs",
             descriptor=descriptor,
             input_model="omnibase_core.models.events.ModelTestEvent",

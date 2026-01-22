@@ -139,7 +139,7 @@ def valid_merged_contract(
     return ModelHandlerContract(
         handler_id="node.test.compute",
         name="Test Handler",
-        version="1.0.0",
+        contract_version=ModelSemVer(major=1, minor=0, patch=0),
         description="Test handler description",
         descriptor=valid_descriptor,
         input_model="omnibase_core.models.events.ModelTestEvent",

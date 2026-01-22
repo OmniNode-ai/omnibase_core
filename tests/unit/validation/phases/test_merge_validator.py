@@ -73,7 +73,7 @@ class TestMergeValidatorFixtures:
         return ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Compute Node",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             description="A test compute node",
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.events.ModelTestEvent",
@@ -98,7 +98,7 @@ class TestMergeValidatorFixtures:
         return ModelHandlerContract(
             handler_id="node.test.compute",
             name="Updated Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             description="Updated description",
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.events.ModelTestEvent",
@@ -171,7 +171,7 @@ class TestMergeValidatorPlaceholderDetection(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="TODO",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -196,7 +196,7 @@ class TestMergeValidatorPlaceholderDetection(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="${SERVICE_NAME}",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -217,7 +217,7 @@ class TestMergeValidatorPlaceholderDetection(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="{{handler_name}}",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -237,7 +237,7 @@ class TestMergeValidatorPlaceholderDetection(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="PLACEHOLDER",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -257,7 +257,7 @@ class TestMergeValidatorPlaceholderDetection(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Valid Name",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="TODO",
             output_model="omnibase_core.models.test.Output",
@@ -278,7 +278,7 @@ class TestMergeValidatorPlaceholderDetection(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Valid Name",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="PLACEHOLDER",
@@ -299,7 +299,7 @@ class TestMergeValidatorPlaceholderDetection(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Valid Name",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             description="TODO: Add description",
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
@@ -343,7 +343,7 @@ class TestMergeValidatorRequiredOverrides(TestMergeValidatorFixtures):
         base = ModelHandlerContract(
             handler_id="node.test.compute",
             name="TODO",  # Placeholder that should be overridden
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -353,7 +353,7 @@ class TestMergeValidatorRequiredOverrides(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="TODO",  # Same placeholder - not overridden
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -412,7 +412,7 @@ class TestMergeValidatorHandlerUniqueness(TestMergeValidatorFixtures):
         base = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -458,7 +458,7 @@ class TestMergeValidatorCapabilityConsistency(TestMergeValidatorFixtures):
             ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -488,7 +488,7 @@ class TestMergeValidatorCapabilityConsistency(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -518,7 +518,7 @@ class TestMergeValidatorCapabilityConsistency(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -600,7 +600,7 @@ class TestMergeValidatorDependencyReferences(TestMergeValidatorFixtures):
         base = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -652,7 +652,7 @@ class TestMergeValidatorDependencyReferences(TestMergeValidatorFixtures):
         base = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -711,7 +711,7 @@ class TestMergeValidatorMultipleErrors(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="TODO",  # Placeholder
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -755,7 +755,7 @@ class TestMergeValidatorEdgeCases(TestMergeValidatorFixtures):
         merged = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",

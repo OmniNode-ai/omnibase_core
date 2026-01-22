@@ -26,6 +26,7 @@ from omnibase_core.models.contracts.model_execution_constraints import (
 )
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import (
     ModelHandlerBehavior,
 )
@@ -40,14 +41,14 @@ class TestModelHandlerContractCreation:
         contract = ModelHandlerContract(
             handler_id="node.test.handler",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="myapp.models.Input",
             output_model="myapp.models.Output",
         )
         assert contract.handler_id == "node.test.handler"
         assert contract.name == "Test Handler"
-        assert contract.version == "1.0.0"
+        assert str(contract.contract_version) == "1.0.0"
         assert contract.descriptor.handler_kind == "compute"
 
     def test_full_creation(self) -> None:
@@ -55,7 +56,9 @@ class TestModelHandlerContractCreation:
         contract = ModelHandlerContract(
             handler_id="reducer.user.registration",
             name="User Registration Reducer",
-            version="2.1.0-beta.1",
+            contract_version=ModelSemVer(
+                major=2, minor=1, patch=0, prerelease=("beta", "1")
+            ),
             description="Handles user registration lifecycle",
             descriptor=ModelHandlerBehavior(
                 handler_kind="reducer",
@@ -101,7 +104,7 @@ class TestHandlerIdValidation:
         contract = ModelHandlerContract(
             handler_id="node.handler",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
@@ -113,7 +116,7 @@ class TestHandlerIdValidation:
         contract = ModelHandlerContract(
             handler_id="effect.database.user.repository",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="effect"),
             input_model="a.Input",
             output_model="a.Output",
@@ -126,7 +129,7 @@ class TestHandlerIdValidation:
             ModelHandlerContract(
                 handler_id="handler",
                 name="Test",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="compute"),
                 input_model="a.Input",
                 output_model="a.Output",
@@ -138,7 +141,7 @@ class TestHandlerIdValidation:
             ModelHandlerContract(
                 handler_id="node..handler",
                 name="Test",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="compute"),
                 input_model="a.Input",
                 output_model="a.Output",
@@ -149,7 +152,7 @@ class TestHandlerIdValidation:
         contract = ModelHandlerContract(
             handler_id="node._internal.handler",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
@@ -159,51 +162,50 @@ class TestHandlerIdValidation:
 
 @pytest.mark.unit
 class TestVersionValidation:
-    """Tests for semantic version format validation."""
+    """Tests for contract_version field validation."""
 
     @pytest.mark.parametrize(
-        "version",
+        ("major", "minor", "patch", "prerelease", "build"),
         [
-            "1.0.0",
-            "0.0.1",
-            "10.20.30",
-            "1.0.0-alpha",
-            "1.0.0-beta.1",
-            "1.0.0-rc.1",
-            "1.0.0+build.123",
-            "1.0.0-beta.1+build.456",
+            (1, 0, 0, None, None),
+            (0, 0, 1, None, None),
+            (10, 20, 30, None, None),
+            (1, 0, 0, ("alpha",), None),
+            (1, 0, 0, ("beta", "1"), None),
+            (1, 0, 0, ("rc", "1"), None),
+            (1, 0, 0, None, ("build", "123")),
+            (1, 0, 0, ("beta", "1"), ("build", "456")),
         ],
     )
-    def test_valid_versions(self, version: str) -> None:
-        """Test various valid semantic version formats."""
+    def test_valid_semver_accepted(
+        self,
+        major: int,
+        minor: int,
+        patch: int,
+        prerelease: tuple[str, ...] | None,
+        build: tuple[str, ...] | None,
+    ) -> None:
+        """Test various valid ModelSemVer configurations are accepted."""
+        version = ModelSemVer(
+            major=major, minor=minor, patch=patch, prerelease=prerelease, build=build
+        )
         contract = ModelHandlerContract(
             handler_id="node.test",
             name="Test",
-            version=version,
+            contract_version=version,
             descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
-        assert contract.version == version
+        assert contract.contract_version == version
 
-    @pytest.mark.parametrize(
-        "version",
-        [
-            "1.0",
-            "1",
-            "v1.0.0",
-            "1.0.0.0",
-            "latest",
-            "1.0.0-",
-        ],
-    )
-    def test_invalid_versions_rejected(self, version: str) -> None:
-        """Test various invalid version formats are rejected."""
-        with pytest.raises(ValidationError):
+    def test_deprecated_version_field_rejected(self) -> None:
+        """Test that deprecated 'version' string field is rejected."""
+        with pytest.raises(ValueError, match="must use 'contract_version'"):
             ModelHandlerContract(
                 handler_id="node.test",
                 name="Test",
-                version=version,
+                version="1.0.0",  # type: ignore[call-arg]
                 descriptor=ModelHandlerBehavior(handler_kind="compute"),
                 input_model="a.Input",
                 output_model="a.Output",
@@ -219,7 +221,7 @@ class TestDescriptorConsistencyValidation:
         contract = ModelHandlerContract(
             handler_id="compute.data.transformer",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
@@ -231,7 +233,7 @@ class TestDescriptorConsistencyValidation:
         contract = ModelHandlerContract(
             handler_id="effect.database.writer",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="effect"),
             input_model="a.Input",
             output_model="a.Output",
@@ -243,7 +245,7 @@ class TestDescriptorConsistencyValidation:
         contract = ModelHandlerContract(
             handler_id="reducer.user.state",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="reducer"),
             input_model="a.Input",
             output_model="a.Output",
@@ -256,7 +258,7 @@ class TestDescriptorConsistencyValidation:
             contract = ModelHandlerContract(
                 handler_id="node.test.handler",
                 name="Test",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind=kind),  # type: ignore[arg-type]
                 input_model="a.Input",
                 output_model="a.Output",
@@ -269,7 +271,7 @@ class TestDescriptorConsistencyValidation:
             contract = ModelHandlerContract(
                 handler_id="handler.test.impl",
                 name="Test",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind=kind),  # type: ignore[arg-type]
                 input_model="a.Input",
                 output_model="a.Output",
@@ -282,7 +284,7 @@ class TestDescriptorConsistencyValidation:
             ModelHandlerContract(
                 handler_id="compute.data.transformer",
                 name="Test",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="effect"),
                 input_model="a.Input",
                 output_model="a.Output",
@@ -299,7 +301,7 @@ class TestCapabilityDependencyHandling:
             ModelHandlerContract(
                 handler_id="node.test",
                 name="Test",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="effect"),
                 capability_inputs=[
                     ModelCapabilityDependency(alias="db", capability="database"),
@@ -314,7 +316,7 @@ class TestCapabilityDependencyHandling:
         contract = ModelHandlerContract(
             handler_id="node.test",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="effect"),
             capability_inputs=[
                 ModelCapabilityDependency(alias="db", capability="database"),
@@ -331,7 +333,7 @@ class TestCapabilityDependencyHandling:
         contract = ModelHandlerContract(
             handler_id="node.test",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="effect"),
             capability_inputs=[
                 ModelCapabilityDependency(
@@ -352,7 +354,7 @@ class TestCapabilityDependencyHandling:
         contract = ModelHandlerContract(
             handler_id="node.test",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="effect"),
             capability_inputs=[
                 ModelCapabilityDependency(
@@ -378,7 +380,7 @@ class TestExecutionConstraintsHelpers:
         contract = ModelHandlerContract(
             handler_id="node.test",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
@@ -390,7 +392,7 @@ class TestExecutionConstraintsHelpers:
         contract = ModelHandlerContract(
             handler_id="node.test",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="compute"),
             execution_constraints=ModelExecutionConstraints(),
             input_model="a.Input",
@@ -403,7 +405,7 @@ class TestExecutionConstraintsHelpers:
         contract = ModelHandlerContract(
             handler_id="node.test",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="compute"),
             execution_constraints=ModelExecutionConstraints(
                 requires_before=["capability:auth"],
@@ -423,7 +425,7 @@ class TestImmutability:
         contract = ModelHandlerContract(
             handler_id="node.test",
             name="Test",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
@@ -437,7 +439,7 @@ class TestImmutability:
             ModelHandlerContract(
                 handler_id="node.test",
                 name="Test",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=ModelHandlerBehavior(handler_kind="compute"),
                 input_model="a.Input",
                 output_model="a.Output",

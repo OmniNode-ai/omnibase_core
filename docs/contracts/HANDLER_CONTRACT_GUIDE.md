@@ -8,6 +8,8 @@
 
 > **New in v0.4.1**: ModelHandlerContract provides the complete authoring surface for ONEX handlers with capability-based dependencies and embedded behavior descriptors.
 
+> **Migration Note (OMN-1436)**: As of v0.4.2, contracts use `contract_version: ModelSemVer` (structured object) instead of the deprecated `version: str` field. The string-based `version` field has been removed. All contracts must now use the structured version format with explicit `major`, `minor`, and `patch` fields.
+
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -35,12 +37,13 @@
 
 ```python
 from omnibase_core.models.contracts import ModelHandlerContract
+from omnibase_core.models.primitives import ModelSemVer
 from omnibase_core.models.runtime import ModelHandlerBehaviorDescriptor
 
 contract = ModelHandlerContract(
     handler_id="compute.json.transformer",
     name="JSON Transformer",
-    version="1.0.0",
+    contract_version=ModelSemVer(major=1, minor=0, patch=0),
     descriptor=ModelHandlerBehaviorDescriptor(
         handler_kind="compute",
         purity="pure",
@@ -179,10 +182,27 @@ Do you want the handler_id to indicate the handler kind?
 ### Identity Fields
 
 ```python
-handler_id: str    # Unique identifier with dot-notation (required)
-name: str          # Human-readable display name (required)
-version: str       # Semantic version string, e.g., "1.0.0" (required)
-description: str   # Optional detailed description
+handler_id: str              # Unique identifier with dot-notation (required)
+name: str                    # Human-readable display name (required)
+contract_version: ModelSemVer  # Structured semantic version (required)
+description: str             # Optional detailed description
+```
+
+The `contract_version` field uses `ModelSemVer`, a structured object with explicit version components:
+
+```python
+from omnibase_core.models.primitives import ModelSemVer
+
+contract_version=ModelSemVer(major=1, minor=0, patch=0)
+```
+
+Or in YAML format:
+
+```yaml
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 ```
 
 ### Behavior Configuration
@@ -240,12 +260,13 @@ metadata: dict[str, Any]  # Extensibility metadata
 
 ```python
 from omnibase_core.models.contracts import ModelHandlerContract
+from omnibase_core.models.primitives import ModelSemVer
 from omnibase_core.models.runtime import ModelHandlerBehaviorDescriptor
 
 contract = ModelHandlerContract(
     handler_id="node.my.handler",
     name="My Handler",
-    version="1.0.0",
+    contract_version=ModelSemVer(major=1, minor=0, patch=0),
     descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
     input_model="myapp.models.Input",
     output_model="myapp.models.Output",
@@ -261,6 +282,7 @@ from omnibase_core.models.contracts import (
     ModelExecutionConstraints,
     ModelRequirementSet,
 )
+from omnibase_core.models.primitives import ModelSemVer
 from omnibase_core.models.runtime import (
     ModelHandlerBehaviorDescriptor,
     ModelDescriptorRetryPolicy,
@@ -271,7 +293,7 @@ contract = ModelHandlerContract(
     # Identity
     handler_id="effect.email.sender",
     name="Email Sender Effect",
-    version="2.0.0",
+    contract_version=ModelSemVer(major=2, minor=0, patch=0),
     description="Sends emails via SMTP with retry and circuit breaker protection",
 
     # Behavior
@@ -514,7 +536,7 @@ handler_id="node.handler_123"
 |-------|------|----------|-------------|
 | `handler_id` | `str` | Yes | Unique identifier with prefix convention |
 | `name` | `str` | Yes | Human-readable name |
-| `version` | `str` | Yes | Semantic version |
+| `contract_version` | `ModelSemVer` | Yes | Structured semantic version with `major`, `minor`, `patch` |
 | `description` | `str` | No | Detailed description |
 | `descriptor` | `ModelHandlerBehaviorDescriptor` | Yes | Runtime behavior |
 | `capability_inputs` | `list[ModelCapabilityDependency]` | No | Required capabilities |
@@ -537,6 +559,8 @@ from omnibase_core.models.contracts import (
     ModelExecutionConstraints,
     ModelRequirementSet,
 )
+
+from omnibase_core.models.primitives import ModelSemVer
 
 from omnibase_core.models.runtime import (
     ModelHandlerBehaviorDescriptor,

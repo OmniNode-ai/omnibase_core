@@ -441,11 +441,45 @@
       "title": "Name",
       "type": "string"
     },
-    "version": {
-      "description": "Semantic version string (e.g., '1.0.0', '1.0.0-beta.1')",
-      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?(\\+[a-zA-Z0-9.]+)?$",
-      "title": "Version",
-      "type": "string"
+    "contract_version": {
+      "type": "object",
+      "description": "Semantic version of this handler contract",
+      "properties": {
+        "major": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Major version number"
+        },
+        "minor": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minor version number"
+        },
+        "patch": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Patch version number"
+        },
+        "prerelease": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Pre-release identifier (e.g., 'alpha.1', 'beta.2')"
+        },
+        "build": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Build metadata (e.g., 'build.123')"
+        }
+      },
+      "required": ["major", "minor", "patch"],
+      "additionalProperties": false,
+      "title": "Contract Version"
     },
     "description": {
       "anyOf": [
@@ -541,7 +575,7 @@
   "required": [
     "handler_id",
     "name",
-    "version",
+    "contract_version",
     "descriptor",
     "input_model",
     "output_model"
