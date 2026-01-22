@@ -462,19 +462,32 @@
         },
         "prerelease": {
           "anyOf": [
-            {"type": "string"},
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {"type": "string"},
+                  {"type": "integer"}
+                ]
+              },
+              "description": "Array of prerelease identifiers (strings or integers)"
+            },
             {"type": "null"}
           ],
           "default": null,
-          "description": "Pre-release identifier (e.g., 'alpha.1', 'beta.2')"
+          "description": "Pre-release identifiers (e.g., ['alpha', 1] for 'alpha.1')"
         },
         "build": {
           "anyOf": [
-            {"type": "string"},
+            {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Array of build metadata identifiers"
+            },
             {"type": "null"}
           ],
           "default": null,
-          "description": "Build metadata (e.g., 'build.123')"
+          "description": "Build metadata identifiers (e.g., ['build', '123'] for 'build.123')"
         }
       },
       "required": ["major", "minor", "patch"],
