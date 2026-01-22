@@ -20,7 +20,7 @@ Example:
     >>> contract = ModelHandlerContract(
     ...     handler_id="node.user.reducer",
     ...     name="User Registration Reducer",
-    ...     version="1.0.0",
+    ...     contract_version=ModelSemVer(major=1, minor=0, patch=0),
     ...     descriptor=ModelHandlerBehavior(
     ...         handler_kind="reducer",
     ...         purity="side_effecting",
@@ -39,6 +39,8 @@ See Also:
 .. versionadded:: 0.4.1
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -51,6 +53,7 @@ from omnibase_core.models.contracts.model_execution_constraints import (
     ModelExecutionConstraints,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import (
     ModelHandlerBehavior,
 )
@@ -70,7 +73,7 @@ class ModelHandlerContract(BaseModel):
     Identity Fields:
         - handler_id: Unique identifier for registry lookup
         - name: Human-readable display name
-        - version: Semantic version string
+        - contract_version: Semantic version (ModelSemVer)
         - description: Optional detailed description
 
     Behavior Configuration:
@@ -93,7 +96,7 @@ class ModelHandlerContract(BaseModel):
     Attributes:
         handler_id: Unique identifier (e.g., "node.user.reducer").
         name: Human-readable name (e.g., "User Registration Reducer").
-        version: Semantic version string (e.g., "1.0.0").
+        contract_version: Semantic version (ModelSemVer instance).
         description: Optional detailed description.
         descriptor: Embedded behavior configuration (purity, idempotency, etc.).
         capability_inputs: List of required input capabilities.
@@ -112,7 +115,7 @@ class ModelHandlerContract(BaseModel):
         >>> contract = ModelHandlerContract(
         ...     handler_id="node.user.reducer",
         ...     name="User Registration Reducer",
-        ...     version="1.0.0",
+        ...     contract_version=ModelSemVer(major=1, minor=0, patch=0),
         ...     descriptor=ModelHandlerBehavior(
         ...         handler_kind="reducer",
         ...         purity="side_effecting",
@@ -136,7 +139,7 @@ class ModelHandlerContract(BaseModel):
         >>> effect_contract = ModelHandlerContract(
         ...     handler_id="handler.email.sender",
         ...     name="Email Sender",
-        ...     version="2.0.0",
+        ...     contract_version=ModelSemVer(major=2, minor=0, patch=0),
         ...     descriptor=ModelHandlerBehavior(
         ...         handler_kind="effect",
         ...         purity="side_effecting",
@@ -175,10 +178,9 @@ class ModelHandlerContract(BaseModel):
         description="Human-readable display name",
     )
 
-    version: str = Field(
+    contract_version: ModelSemVer = Field(
         ...,
-        pattern=r"^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$",
-        description="Semantic version string (e.g., '1.0.0', '1.0.0-beta.1')",
+        description="Semantic version of this handler contract",
     )
 
     description: str | None = Field(
@@ -272,6 +274,31 @@ class ModelHandlerContract(BaseModel):
         str_strip_whitespace=True,
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def reject_deprecated_version_field(cls, data: Any) -> Any:
+        """
+        Reject deprecated 'version' field - use 'contract_version' instead.
+
+        Args:
+            data: Raw input data.
+
+        Returns:
+            Validated data.
+
+        Raises:
+            ModelOnexError: If deprecated 'version' field is present.
+        """
+        if isinstance(data, dict) and "version" in data:
+            raise ModelOnexError(
+                message=(
+                    "Handler contracts must use 'contract_version', not 'version'. "
+                    "The 'version' field was renamed per ONEX specification (OMN-1436)."
+                ),
+                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+            )
+        return data
+
     @field_validator("handler_id")
     @classmethod
     def validate_handler_id_format(cls, v: str) -> str:
@@ -334,7 +361,7 @@ class ModelHandlerContract(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_descriptor_handler_kind_consistency(self) -> "ModelHandlerContract":
+    def validate_descriptor_handler_kind_consistency(self) -> ModelHandlerContract:
         """
         Validate that handler_id prefix is consistent with descriptor.handler_kind.
 

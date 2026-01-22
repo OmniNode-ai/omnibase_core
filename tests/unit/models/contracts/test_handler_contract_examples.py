@@ -43,7 +43,7 @@ class TestHandlerContractExamples:
         # Validate key fields are populated correctly
         assert contract.handler_id == "effect.database.user_repository"
         assert contract.name == "User Repository"
-        assert contract.version == "2.0.0"
+        assert str(contract.contract_version) == "2.0.0"
         assert contract.descriptor.handler_kind == "effect"
         assert contract.descriptor.purity == "side_effecting"
         assert contract.descriptor.idempotent is True
@@ -91,7 +91,7 @@ class TestHandlerContractExamples:
         # Validate key fields are populated correctly
         assert contract.handler_id == "reducer.registration.user"
         assert contract.name == "User Registration Reducer"
-        assert contract.version == "1.2.0"
+        assert str(contract.contract_version) == "1.2.0"
         assert contract.descriptor.handler_kind == "reducer"
         assert contract.descriptor.purity == "side_effecting"
         assert contract.descriptor.idempotent is True
@@ -132,7 +132,7 @@ class TestHandlerContractExamples:
         # Validate key fields are populated correctly
         assert contract.handler_id == "compute.schema.validator"
         assert contract.name == "Schema Validator"
-        assert contract.version == "1.0.0"
+        assert str(contract.contract_version) == "1.0.0"
         assert contract.descriptor.handler_kind == "compute"
         assert contract.descriptor.purity == "pure"
         assert contract.descriptor.idempotent is True
@@ -172,7 +172,9 @@ class TestHandlerContractExamples:
             # Basic sanity checks for any handler contract
             assert contract.handler_id, f"handler_id missing in {yaml_path.name}"
             assert contract.name, f"name missing in {yaml_path.name}"
-            assert contract.version, f"version missing in {yaml_path.name}"
+            assert contract.contract_version, (
+                f"contract_version missing in {yaml_path.name}"
+            )
             assert contract.descriptor, f"descriptor missing in {yaml_path.name}"
             assert contract.input_model, f"input_model missing in {yaml_path.name}"
             assert contract.output_model, f"output_model missing in {yaml_path.name}"

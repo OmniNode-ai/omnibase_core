@@ -425,7 +425,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "Complete handler contract - the authoring surface for ONEX handlers.\n\nThe handler contract is the declarative specification that defines:\n- What the handler does (descriptor)\n- What capabilities it needs (capability_inputs)\n- What it provides (capability_outputs)\n- How it fits in execution order (execution_constraints)\n- What it accepts and returns (input_model, output_model)\n\nIdentity Fields:\n    - handler_id: Unique identifier for registry lookup\n    - name: Human-readable display name\n    - version: Semantic version string\n    - description: Optional detailed description\n\nBehavior Configuration:\n    - descriptor: Embedded ModelHandlerBehavior for runtime semantics\n\nCapability Dependencies:\n    - capability_inputs: Required input capabilities (vendor-agnostic)\n    - capability_outputs: Provided output capabilities\n\nExecution:\n    - input_model: Fully qualified input model reference\n    - output_model: Fully qualified output model reference\n    - execution_constraints: Ordering constraints (requires_before/after)\n\nLifecycle:\n    - supports_lifecycle: Handler implements lifecycle hooks\n    - supports_health_check: Handler implements health checking\n    - supports_provisioning: Handler can be provisioned/deprovisioned\n\nAttributes:\n    handler_id: Unique identifier (e.g., \"node.user.reducer\").\n    name: Human-readable name (e.g., \"User Registration Reducer\").\n    version: Semantic version string (e.g., \"1.0.0\").\n    description: Optional detailed description.\n    descriptor: Embedded behavior descriptor (purity, idempotency, etc.).\n    capability_inputs: List of required input capabilities.\n    capability_outputs: List of provided output capability names.\n    input_model: Fully qualified input model reference.\n    output_model: Fully qualified output model reference.\n    execution_constraints: Ordering constraints for execution.\n    supports_lifecycle: Handler implements lifecycle hooks.\n    supports_health_check: Handler implements health checking.\n    supports_provisioning: Handler supports provisioning.\n    tags: Optional tags for categorization and discovery.\n    metadata: Optional additional metadata.\n\nExample:\n    >>> # Reducer handler contract\n    >>> contract = ModelHandlerContract(\n    ...     handler_id=\"node.user.reducer\",\n    ...     name=\"User Registration Reducer\",\n    ...     version=\"1.0.0\",\n    ...     descriptor=ModelHandlerBehavior(\n    ...         handler_kind=\"reducer\",\n    ...         purity=\"side_effecting\",\n    ...         idempotent=True,\n    ...         timeout_ms=30000,\n    ...     ),\n    ...     capability_inputs=[\n    ...         ModelCapabilityDependency(\n    ...             alias=\"db\",\n    ...             capability=\"database.relational\",\n    ...             requirements=ModelRequirementSet(\n    ...                 must={\"supports_transactions\": True},\n    ...             ),\n    ...         ),\n    ...     ],\n    ...     input_model=\"myapp.models.UserRegistrationEvent\",\n    ...     output_model=\"myapp.models.UserState\",\n    ... )\n\n    >>> # Effect handler contract\n    >>> effect_contract = ModelHandlerContract(\n    ...     handler_id=\"handler.email.sender\",\n    ...     name=\"Email Sender\",\n    ...     version=\"2.0.0\",\n    ...     descriptor=ModelHandlerBehavior(\n    ...         handler_kind=\"effect\",\n    ...         purity=\"side_effecting\",\n    ...         idempotent=False,\n    ...     ),\n    ...     capability_outputs=[\"notification.email\"],\n    ...     input_model=\"myapp.models.EmailRequest\",\n    ...     output_model=\"myapp.models.EmailResult\",\n    ...     supports_health_check=True,\n    ... )\n\nThread Safety:\n    This model is immutable (frozen=True) and safe for concurrent access.\n\nSee Also:\n    - ModelHandlerBehavior: Runtime behavior configuration\n    - ModelCapabilityDependency: Capability dependency specification\n    - ModelExecutionConstraints: Execution ordering constraints",
+  "description": "Complete handler contract - the authoring surface for ONEX handlers.\n\nThe handler contract is the declarative specification that defines:\n- What the handler does (descriptor)\n- What capabilities it needs (capability_inputs)\n- What it provides (capability_outputs)\n- How it fits in execution order (execution_constraints)\n- What it accepts and returns (input_model, output_model)\n\nIdentity Fields:\n    - handler_id: Unique identifier for registry lookup\n    - name: Human-readable display name\n    - contract_version: Semantic version object with major/minor/patch\n    - description: Optional detailed description\n\nBehavior Configuration:\n    - descriptor: Embedded ModelHandlerBehavior for runtime semantics\n\nCapability Dependencies:\n    - capability_inputs: Required input capabilities (vendor-agnostic)\n    - capability_outputs: Provided output capabilities\n\nExecution:\n    - input_model: Fully qualified input model reference\n    - output_model: Fully qualified output model reference\n    - execution_constraints: Ordering constraints (requires_before/after)\n\nLifecycle:\n    - supports_lifecycle: Handler implements lifecycle hooks\n    - supports_health_check: Handler implements health checking\n    - supports_provisioning: Handler can be provisioned/deprovisioned\n\nAttributes:\n    handler_id: Unique identifier (e.g., \"node.user.reducer\").\n    name: Human-readable name (e.g., \"User Registration Reducer\").\n    contract_version: Semantic version object (e.g., {major: 1, minor: 0, patch: 0}).\n    description: Optional detailed description.\n    descriptor: Embedded behavior descriptor (purity, idempotency, etc.).\n    capability_inputs: List of required input capabilities.\n    capability_outputs: List of provided output capability names.\n    input_model: Fully qualified input model reference.\n    output_model: Fully qualified output model reference.\n    execution_constraints: Ordering constraints for execution.\n    supports_lifecycle: Handler implements lifecycle hooks.\n    supports_health_check: Handler implements health checking.\n    supports_provisioning: Handler supports provisioning.\n    tags: Optional tags for categorization and discovery.\n    metadata: Optional additional metadata.\n\nExample:\n    >>> # Reducer handler contract\n    >>> contract = ModelHandlerContract(\n    ...     handler_id=\"node.user.reducer\",\n    ...     name=\"User Registration Reducer\",\n    ...     contract_version={\"major\": 1, \"minor\": 0, \"patch\": 0},\n    ...     descriptor=ModelHandlerBehavior(\n    ...         handler_kind=\"reducer\",\n    ...         purity=\"side_effecting\",\n    ...         idempotent=True,\n    ...         timeout_ms=30000,\n    ...     ),\n    ...     capability_inputs=[\n    ...         ModelCapabilityDependency(\n    ...             alias=\"db\",\n    ...             capability=\"database.relational\",\n    ...             requirements=ModelRequirementSet(\n    ...                 must={\"supports_transactions\": True},\n    ...             ),\n    ...         ),\n    ...     ],\n    ...     input_model=\"myapp.models.UserRegistrationEvent\",\n    ...     output_model=\"myapp.models.UserState\",\n    ... )\n\n    >>> # Effect handler contract\n    >>> effect_contract = ModelHandlerContract(\n    ...     handler_id=\"handler.email.sender\",\n    ...     name=\"Email Sender\",\n    ...     contract_version={\"major\": 2, \"minor\": 0, \"patch\": 0},\n    ...     descriptor=ModelHandlerBehavior(\n    ...         handler_kind=\"effect\",\n    ...         purity=\"side_effecting\",\n    ...         idempotent=False,\n    ...     ),\n    ...     capability_outputs=[\"notification.email\"],\n    ...     input_model=\"myapp.models.EmailRequest\",\n    ...     output_model=\"myapp.models.EmailResult\",\n    ...     supports_health_check=True,\n    ... )\n\nThread Safety:\n    This model is immutable (frozen=True) and safe for concurrent access.\n\nSee Also:\n    - ModelHandlerBehavior: Runtime behavior configuration\n    - ModelCapabilityDependency: Capability dependency specification\n    - ModelExecutionConstraints: Execution ordering constraints",
   "properties": {
     "handler_id": {
       "description": "Unique identifier for registry lookup (e.g., 'node.user.reducer')",
@@ -441,11 +441,60 @@
       "title": "Name",
       "type": "string"
     },
-    "version": {
-      "description": "Semantic version string (e.g., '1.0.0', '1.0.0-beta.1')",
-      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?(\\+[a-zA-Z0-9.]+)?$",
-      "title": "Version",
-      "type": "string"
+    "contract_version": {
+      "type": "object",
+      "description": "Semantic version of this handler contract",
+      "properties": {
+        "major": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Major version number"
+        },
+        "minor": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minor version number"
+        },
+        "patch": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Patch version number"
+        },
+        "prerelease": {
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "anyOf": [
+                  {"type": "string"},
+                  {"type": "integer"}
+                ]
+              },
+              "description": "Array of prerelease identifiers (strings or integers)"
+            },
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Pre-release identifiers (e.g., ['alpha', 1] for 'alpha.1')"
+        },
+        "build": {
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string"},
+              "description": "Array of build metadata identifiers"
+            },
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Build metadata identifiers (e.g., ['build', '123'] for 'build.123')"
+        }
+      },
+      "required": ["major", "minor", "patch"],
+      "additionalProperties": false,
+      "title": "Contract Version"
     },
     "description": {
       "anyOf": [
@@ -541,7 +590,7 @@
   "required": [
     "handler_id",
     "name",
-    "version",
+    "contract_version",
     "descriptor",
     "input_model",
     "output_model"

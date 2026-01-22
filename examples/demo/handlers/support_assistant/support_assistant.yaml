@@ -31,7 +31,10 @@ handler_id: effect.demo.support_assistant
 name: Support Assistant Demo Handler
 # Semantic versioning: MAJOR.MINOR.PATCH
 # Consumers should depend on ^1.x (compatible with any 1.x.x version)
-version: "1.0.0"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 # Note: LLM responses may vary between invocations due to model temperature,
 # sampling, and provider state - this is inherent to LLM-based handlers.
 description: AI support assistant that responds to user requests with structured JSON output

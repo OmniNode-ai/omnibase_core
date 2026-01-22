@@ -33,7 +33,7 @@ Usage Example
     yaml_data = {
         "handler_id": "compute.schema.validator",
         "name": "Schema Validator",
-        "version": "1.0.0",
+        "contract_version": {"major": 1, "minor": 0, "patch": 0},
         "descriptor": {
             "handler_kind": "compute",
             "purity": "pure",
@@ -73,6 +73,27 @@ class MinimalObservabilityLevel:
     """Valid observability_level values for handler contract validation."""
 
     VALID_VALUES = {"minimal", "standard", "verbose"}
+
+
+class MinimalSemVer(BaseModel):
+    """Minimal semantic version model for handler contract validation.
+
+    Validates structured version format: {major: X, minor: Y, patch: Z}
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    major: int = Field(..., ge=0, description="Major version number")
+    minor: int = Field(..., ge=0, description="Minor version number")
+    patch: int = Field(..., ge=0, description="Patch version number")
+    prerelease: tuple[str | int, ...] | list[str | int] | None = Field(
+        default=None,
+        description="Optional prerelease identifiers",
+    )
+    build: tuple[str, ...] | list[str] | None = Field(
+        default=None,
+        description="Optional build metadata",
+    )
 
 
 class MinimalRetryPolicy(BaseModel):
@@ -286,7 +307,7 @@ class MinimalExecutionConstraints(BaseModel):
 class MinimalHandlerContract(BaseModel):
     """Pydantic model for validating handler contract YAML files without circular imports.
 
-    Validates required fields: handler_id, name, version, descriptor, input_model, output_model.
+    Validates required fields: handler_id, name, contract_version, descriptor, input_model, output_model.
     """
 
     model_config = ConfigDict(
@@ -311,10 +332,9 @@ class MinimalHandlerContract(BaseModel):
         description="Human-readable display name",
     )
 
-    version: str = Field(
+    contract_version: MinimalSemVer = Field(
         ...,
-        pattern=r"^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$",
-        description="Semantic version string",
+        description="Structured semantic version {major, minor, patch}",
     )
 
     description: str | None = Field(

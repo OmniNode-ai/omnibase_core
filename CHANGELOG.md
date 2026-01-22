@@ -41,9 +41,57 @@ contract = ModelContractCompute(
 ```
 
 **Note:** Other models retain their own `version` fields (not renamed):
-- `ModelHandlerContract.version`
 - `ModelProfileReference.version`
 - `ModelValidatorSubcontract.version`
+
+#### Handler Contract Version Field Migration [OMN-1436]
+
+**`ModelHandlerContract.version` migrated to `contract_version: ModelSemVer`** with strict enforcement. Handler contracts now require the structured `contract_version` field instead of the legacy string-based `version` field.
+
+| Before (v0.8.x) | After (v0.9.0) |
+|-----------------|----------------|
+| `version: "1.0.0"` | `contract_version: {major: 1, minor: 0, patch: 0}` |
+| `ModelHandlerContract(version="1.0.0")` | `ModelHandlerContract(contract_version=ModelSemVer(...))` |
+
+**YAML Migration:**
+```yaml
+# Before (v0.8.x)
+name: my_handler
+version: "1.0.0"
+handler_kind: compute
+
+# After (v0.9.0)
+name: my_handler
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+handler_kind: compute
+```
+
+**Python Migration:**
+```python
+# Before (v0.8.x)
+from omnibase_core.models.runtime.model_handler_contract import ModelHandlerContract
+
+contract = ModelHandlerContract(
+    name="my_handler",
+    version="1.0.0",
+    handler_kind=EnumHandlerKind.COMPUTE,
+)
+
+# After (v0.9.0)
+from omnibase_core.models.runtime.model_handler_contract import ModelHandlerContract
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+contract = ModelHandlerContract(
+    name="my_handler",
+    contract_version=ModelSemVer(major=1, minor=0, patch=0),
+    handler_kind=EnumHandlerKind.COMPUTE,
+)
+```
+
+**Validation:** Strict contracts (those inheriting from `ModelContractBase` with `is_strict_contract()` returning `True`) now require `contract_version` to be explicitly set. Loading a handler contract YAML without `contract_version` will raise a validation error.
 
 ### Added
 

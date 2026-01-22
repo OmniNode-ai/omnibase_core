@@ -58,7 +58,7 @@ class TestHandlerContract:
         # Verify essential fields are present
         assert contract.handler_id is not None
         assert contract.name is not None
-        assert contract.version is not None
+        assert contract.contract_version is not None
         assert contract.descriptor is not None
 
     def test_handler_id_matches_kind(self, contract: ModelHandlerContract) -> None:
@@ -185,10 +185,9 @@ class TestHandlerContract:
 
     def test_version_is_semver(self, contract: ModelHandlerContract) -> None:
         """Version follows semantic versioning."""
-        # Version pattern is validated by the model, but verify format
-        assert contract.version == "1.0.0"
-        parts = contract.version.split(".")
-        assert len(parts) >= 3
-        # First three parts should be numeric
-        for part in parts[:3]:
-            assert part.isdigit()
+        # contract_version is ModelSemVer, verify format
+        assert str(contract.contract_version) == "1.0.0"
+        # ModelSemVer has major, minor, patch as integers
+        assert contract.contract_version.major == 1
+        assert contract.contract_version.minor == 0
+        assert contract.contract_version.patch == 0

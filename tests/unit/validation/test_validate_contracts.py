@@ -1184,7 +1184,10 @@ class TestHandlerContractValidation:
         valid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 description: Validates input data against JSON schemas
 
 descriptor:
@@ -1213,7 +1216,10 @@ tags:
         """Missing handler_id triggers error."""
         invalid_handler = """
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
   handler_kind: compute
   purity: pure
@@ -1233,7 +1239,10 @@ output_model: myapp.models.Output
         """Missing name triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
   handler_kind: compute
   purity: pure
@@ -1248,8 +1257,8 @@ output_model: myapp.models.Output
         assert len(errors) >= 1
         assert any("name" in error.lower() for error in errors)
 
-    def test_handler_contract_missing_version(self, temp_repo):
-        """Missing version triggers error."""
+    def test_handler_contract_missing_contract_version(self, temp_repo):
+        """Missing contract_version triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
@@ -1260,19 +1269,22 @@ descriptor:
 input_model: myapp.models.Input
 output_model: myapp.models.Output
 """
-        yaml_file = temp_repo / "missing_version.yaml"
+        yaml_file = temp_repo / "missing_contract_version.yaml"
         yaml_file.write_text(invalid_handler)
 
         errors = validate_yaml_file(yaml_file)
         assert len(errors) >= 1
-        assert any("version" in error.lower() for error in errors)
+        assert any("contract_version" in error.lower() for error in errors)
 
     def test_handler_contract_missing_descriptor(self, temp_repo):
         """Missing descriptor triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 input_model: myapp.models.Input
 output_model: myapp.models.Output
 """
@@ -1288,7 +1300,10 @@ output_model: myapp.models.Output
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
   handler_kind: compute
   purity: pure
@@ -1307,7 +1322,10 @@ output_model: myapp.models.Output
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
   handler_kind: compute
   purity: pure
@@ -1326,7 +1344,10 @@ input_model: myapp.models.Input
         invalid_handler = """
 handler_id: single_segment
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
   handler_kind: compute
   purity: pure
@@ -1345,12 +1366,12 @@ output_model: myapp.models.Output
             for error in errors
         )
 
-    def test_handler_contract_invalid_version_format(self, temp_repo):
-        """Invalid version format triggers error."""
+    def test_handler_contract_invalid_contract_version_format(self, temp_repo):
+        """Invalid contract_version format triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: not-a-version
+contract_version: not-a-version
 descriptor:
   handler_kind: compute
   purity: pure
@@ -1358,19 +1379,22 @@ descriptor:
 input_model: myapp.models.Input
 output_model: myapp.models.Output
 """
-        yaml_file = temp_repo / "invalid_version.yaml"
+        yaml_file = temp_repo / "invalid_contract_version.yaml"
         yaml_file.write_text(invalid_handler)
 
         errors = validate_yaml_file(yaml_file)
         assert len(errors) >= 1
-        assert any("version" in error.lower() for error in errors)
+        assert any("contract_version" in error.lower() for error in errors)
 
     def test_handler_contract_invalid_handler_kind(self, temp_repo):
         """Invalid handler_kind triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
   handler_kind: invalid_kind
   purity: pure
@@ -1390,7 +1414,10 @@ output_model: myapp.models.Output
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
   handler_kind: compute
   purity: invalid_purity
@@ -1410,7 +1437,10 @@ output_model: myapp.models.Output
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
   handler_kind: effect
   purity: side_effecting
@@ -1439,7 +1469,10 @@ output_model: myapp.models.Output
             valid_handler = f"""
 handler_id: handler.test.{kind}
 name: Test Handler
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
   handler_kind: {kind}
   purity: {"pure" if kind == "compute" else "side_effecting"}
@@ -1460,7 +1493,10 @@ output_model: myapp.models.Output
         valid_handler = """
 handler_id: reducer.registration.user
 name: User Registration Reducer
-version: 1.2.0
+contract_version:
+  major: 1
+  minor: 2
+  patch: 0
 descriptor:
   handler_kind: reducer
   purity: side_effecting
@@ -1495,7 +1531,10 @@ output_model: myapp.models.RegistrationState
         invalid_handler = """
 handler_id: reducer.registration.user
 name: User Registration Reducer
-version: 1.2.0
+contract_version:
+  major: 1
+  minor: 2
+  patch: 0
 descriptor:
   handler_kind: reducer
   purity: side_effecting
@@ -1526,7 +1565,10 @@ output_model: myapp.models.Output
         valid_handler = """
 handler_id: effect.database.user_repo
 name: User Repository
-version: 2.0.0
+contract_version:
+  major: 2
+  minor: 0
+  patch: 0
 descriptor:
   handler_kind: effect
   purity: side_effecting
@@ -1559,7 +1601,10 @@ execution_constraints:
         valid_handler = """
 handler_id: effect.api.external_service
 name: External Service Handler
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
   handler_kind: effect
   purity: side_effecting

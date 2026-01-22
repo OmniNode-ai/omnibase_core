@@ -17,6 +17,8 @@ Related:
     - OMN-1128: Contract Validation Pipeline
 """
 
+from __future__ import annotations
+
 import pytest
 from pydantic import ValidationError
 
@@ -32,6 +34,7 @@ from omnibase_core.models.contracts.model_execution_constraints import (
 )
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
 from omnibase_core.validation.phases import (
     ExpandedContractGraphValidator,
@@ -70,7 +73,7 @@ class TestExpandedContractValidatorFixtures:
         return ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Compute Node",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             description="A test compute node",
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.events.ModelTestEvent",
@@ -138,7 +141,7 @@ class TestExpandedContractValidatorHandlerIdFormat(
             contract = ModelHandlerContract(
                 handler_id=handler_id,
                 name="Test Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -157,7 +160,7 @@ class TestExpandedContractValidatorHandlerIdFormat(
             ModelHandlerContract(
                 handler_id="single",  # Should have at least 2 segments
                 name="Test Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -190,7 +193,7 @@ class TestExpandedContractValidatorModelReference(
             ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=valid_descriptor,
                 input_model="",  # Empty
                 output_model="omnibase_core.models.test.Output",
@@ -205,7 +208,7 @@ class TestExpandedContractValidatorModelReference(
         contract = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="InvalidSingleWord",  # Not dot-separated module path
             output_model="omnibase_core.models.test.Output",
@@ -221,28 +224,38 @@ class TestExpandedContractValidatorModelReference(
 
 @pytest.mark.unit
 class TestExpandedContractValidatorVersionFormat(TestExpandedContractValidatorFixtures):
-    """Tests for version format validation."""
+    """Tests for contract_version validation (ModelSemVer).
+
+    Note: As of OMN-1436, handler contracts use contract_version: ModelSemVer
+    instead of version: str. These tests validate the new structured version format.
+    """
 
     def test_valid_semver_passes(
         self,
         validator: ExpandedContractValidator,
         valid_descriptor: ModelHandlerBehavior,
     ) -> None:
-        """Test that valid semver versions pass validation."""
+        """Test that valid ModelSemVer versions pass validation."""
         valid_versions = [
-            "1.0.0",
-            "2.1.3",
-            "0.0.1",
-            "1.0.0-beta.1",
-            "1.0.0+build.123",
-            "1.0.0-alpha.1+build.456",
+            ModelSemVer(major=1, minor=0, patch=0),
+            ModelSemVer(major=2, minor=1, patch=3),
+            ModelSemVer(major=0, minor=0, patch=1),
+            ModelSemVer(major=1, minor=0, patch=0, prerelease=("beta", 1)),
+            ModelSemVer(major=1, minor=0, patch=0, build=("build", "123")),
+            ModelSemVer(
+                major=1,
+                minor=0,
+                patch=0,
+                prerelease=("alpha", 1),
+                build=("build", "456"),
+            ),
         ]
 
         for version in valid_versions:
             contract = ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
-                version=version,
+                contract_version=version,
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -250,19 +263,21 @@ class TestExpandedContractValidatorVersionFormat(TestExpandedContractValidatorFi
             result = validator.validate(contract)
             assert result.is_valid is True, f"Version '{version}' should be valid"
 
-    def test_non_standard_version_warning(
+    def test_deprecated_version_field_rejected(
         self,
         validator: ExpandedContractValidator,
         valid_descriptor: ModelHandlerBehavior,
     ) -> None:
-        """Test that non-standard version produces warning."""
-        # ModelHandlerContract has a pattern validator that enforces semver format
-        # So non-semver versions will fail at model level
-        with pytest.raises(ValueError):
+        """Test that deprecated 'version' field is rejected.
+
+        As of OMN-1436, handler contracts must use 'contract_version' (ModelSemVer),
+        not the deprecated 'version' (str) field.
+        """
+        with pytest.raises(ModelOnexError, match="contract_version"):
             ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
-                version="v1.0",  # Non-semver format
+                version="1.0.0",  # type: ignore[call-arg]  # Deprecated field - should be rejected
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -284,7 +299,7 @@ class TestExpandedContractValidatorExecutionGraph(
         contract = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -310,7 +325,7 @@ class TestExpandedContractValidatorExecutionGraph(
         contract = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -343,7 +358,7 @@ class TestExpandedContractValidatorExecutionGraph(
             ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -366,7 +381,7 @@ class TestExpandedContractValidatorEventRouting(TestExpandedContractValidatorFix
         contract = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -389,7 +404,7 @@ class TestExpandedContractValidatorEventRouting(TestExpandedContractValidatorFix
         contract = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -415,7 +430,7 @@ class TestExpandedContractValidatorEventRouting(TestExpandedContractValidatorFix
         contract = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -449,7 +464,7 @@ class TestExpandedContractValidatorCapabilityInputs(
         contract = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -480,7 +495,7 @@ class TestExpandedContractValidatorCapabilityInputs(
             ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -512,7 +527,7 @@ class TestExpandedContractValidatorHandlerKindConsistency(
         contract = ModelHandlerContract(
             handler_id="compute.test.handler",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -534,7 +549,7 @@ class TestExpandedContractValidatorHandlerKindConsistency(
         contract = ModelHandlerContract(
             handler_id="effect.email.sender",
             name="Email Sender",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -555,7 +570,7 @@ class TestExpandedContractValidatorHandlerKindConsistency(
             contract = ModelHandlerContract(
                 handler_id=f"{prefix}.test.handler",
                 name="Test Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -577,7 +592,7 @@ class TestExpandedContractValidatorHandlerKindConsistency(
             ModelHandlerContract(
                 handler_id="compute.test.handler",  # compute prefix
                 name="Test Handler",
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 descriptor=descriptor,  # but effect kind
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
@@ -615,7 +630,7 @@ class TestExpandedContractGraphValidator(TestExpandedContractValidatorFixtures):
         contract = ModelHandlerContract(
             handler_id="node.test.compute",
             name="Test Handler",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -642,7 +657,7 @@ class TestExpandedContractGraphValidator(TestExpandedContractValidatorFixtures):
         contract_a = ModelHandlerContract(
             handler_id="node.a.compute",
             name="Handler A",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -655,7 +670,7 @@ class TestExpandedContractGraphValidator(TestExpandedContractValidatorFixtures):
         contract_b = ModelHandlerContract(
             handler_id="node.b.compute",
             name="Handler B",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -682,7 +697,7 @@ class TestExpandedContractGraphValidator(TestExpandedContractValidatorFixtures):
         contract_a = ModelHandlerContract(
             handler_id="node.a.compute",
             name="Handler A",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -691,7 +706,7 @@ class TestExpandedContractGraphValidator(TestExpandedContractValidatorFixtures):
         contract_b = ModelHandlerContract(
             handler_id="node.b.compute",
             name="Handler B",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -703,7 +718,7 @@ class TestExpandedContractGraphValidator(TestExpandedContractValidatorFixtures):
         contract_c = ModelHandlerContract(
             handler_id="node.c.compute",
             name="Handler C",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
@@ -725,7 +740,7 @@ class TestExpandedContractGraphValidator(TestExpandedContractValidatorFixtures):
         producer = ModelHandlerContract(
             handler_id="node.producer.compute",
             name="Event Producer",
-            version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             descriptor=valid_descriptor,
             input_model="omnibase_core.models.test.Input",
             output_model="omnibase_core.models.test.Output",
