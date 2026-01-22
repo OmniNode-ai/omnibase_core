@@ -63,7 +63,7 @@ class ModelTestOrchestratorContract(BaseModel):
         default="test_orchestrator",
         description="Contract name for identification",
     )
-    version: ModelContractVersion = Field(
+    contract_version: ModelContractVersion = Field(
         default_factory=lambda: ModelContractVersion(major=1, minor=0, patch=0),
         description="Semantic version of the contract",
     )
@@ -130,7 +130,7 @@ class ModelTestOrchestratorContract(BaseModel):
         description="Contract classification tags",
     )
 
-    @field_validator("version", mode="before")
+    @field_validator("contract_version", mode="before")
     @classmethod
     def convert_version_string(cls, v: object) -> ModelContractVersion:
         """Convert string versions to ModelContractVersion for test convenience."""
@@ -152,11 +152,11 @@ class ModelMinimalContract(BaseModel):
     """Minimal contract model for version field testing."""
 
     name: str = Field(default="minimal")
-    version: ModelContractVersion = Field(
+    contract_version: ModelContractVersion = Field(
         default_factory=lambda: ModelContractVersion(major=0, minor=0, patch=0)
     )
 
-    @field_validator("version", mode="before")
+    @field_validator("contract_version", mode="before")
     @classmethod
     def convert_version(cls, v: object) -> ModelContractVersion:
         """Convert string versions to ModelContractVersion."""
@@ -179,7 +179,7 @@ def orchestrator_contract() -> ModelTestOrchestratorContract:
     """Standard orchestrator contract for testing."""
     return ModelTestOrchestratorContract(
         name="workflow_orchestrator",
-        version="1.0.0",
+        contract_version="1.0.0",
         description="Workflow coordination orchestrator",
         node_type="ORCHESTRATOR_GENERIC",
         execution_mode="parallel",
@@ -195,7 +195,7 @@ def orchestrator_contract_with_nested() -> ModelTestOrchestratorContract:
     """Orchestrator contract with nested workflow configuration."""
     return ModelTestOrchestratorContract(
         name="complex_orchestrator",
-        version="2.0.0",
+        contract_version="2.0.0",
         description="Complex workflow orchestrator",
         workflow_config={
             "timeout_ms": 30000,
@@ -214,7 +214,7 @@ def contract_with_nulls() -> ModelTestOrchestratorContract:
     """Contract with explicit null fields for normalization testing."""
     return ModelTestOrchestratorContract(
         name="nullable_orchestrator",
-        version="1.0.0",
+        contract_version="1.0.0",
         description=None,
         workflow_config={
             "enabled": True,
@@ -275,7 +275,9 @@ class TestDeterministicOutput:
     def test_order_of_execution_does_not_affect_result(self) -> None:
         """Test that execution order doesn't affect fingerprint results."""
         contracts = [
-            ModelTestOrchestratorContract(name=f"orchestrator_{i}", version="1.0.0")
+            ModelTestOrchestratorContract(
+                name=f"orchestrator_{i}", contract_version="1.0.0"
+            )
             for i in range(5)
         ]
 
@@ -372,13 +374,13 @@ class TestFingerprintStability:
         """Test that identical contracts produce identical fingerprints."""
         contract1 = ModelTestOrchestratorContract(
             name="test_orchestrator",
-            version="1.0.0",
+            contract_version="1.0.0",
             description="Test description",
             execution_mode="parallel",
         )
         contract2 = ModelTestOrchestratorContract(
             name="test_orchestrator",
-            version="1.0.0",
+            contract_version="1.0.0",
             description="Test description",
             execution_mode="parallel",
         )
@@ -392,12 +394,12 @@ class TestFingerprintStability:
         """Test that fingerprint changes when any content changes."""
         base = ModelTestOrchestratorContract(
             name="orchestrator",
-            version="1.0.0",
+            contract_version="1.0.0",
             execution_mode="sequential",
         )
         modified = ModelTestOrchestratorContract(
             name="orchestrator",
-            version="1.0.0",
+            contract_version="1.0.0",
             execution_mode="parallel",  # Changed field
         )
 
@@ -410,8 +412,8 @@ class TestFingerprintStability:
 
     def test_fingerprint_changes_when_version_changes(self) -> None:
         """Test that fingerprint changes when version changes."""
-        v1 = ModelTestOrchestratorContract(name="test", version="1.0.0")
-        v2 = ModelTestOrchestratorContract(name="test", version="1.0.1")
+        v1 = ModelTestOrchestratorContract(name="test", contract_version="1.0.0")
+        v2 = ModelTestOrchestratorContract(name="test", contract_version="1.0.1")
 
         fp_v1 = compute_contract_fingerprint(v1)
         fp_v2 = compute_contract_fingerprint(v2)
@@ -430,7 +432,7 @@ class TestFingerprintStability:
         # Equivalent contract without explicit nulls
         without_nulls = ModelTestOrchestratorContract(
             name="nullable_orchestrator",
-            version="1.0.0",
+            contract_version="1.0.0",
             workflow_config={
                 "enabled": True,
                 "nested": {
@@ -449,12 +451,12 @@ class TestFingerprintStability:
         """Test that dict key order doesn't affect fingerprint."""
         contract1 = ModelTestOrchestratorContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             workflow_config={"alpha": 1, "beta": 2, "gamma": 3},
         )
         contract2 = ModelTestOrchestratorContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             workflow_config={"gamma": 3, "alpha": 1, "beta": 2},
         )
 
@@ -503,8 +505,10 @@ class TestVersionCompatibility:
     def test_version_field_validated(self) -> None:
         """Test that version field undergoes validation."""
         # Valid version string
-        contract = ModelMinimalContract(name="test", version="1.2.3")
-        assert contract.version == ModelContractVersion(major=1, minor=2, patch=3)
+        contract = ModelMinimalContract(name="test", contract_version="1.2.3")
+        assert contract.contract_version == ModelContractVersion(
+            major=1, minor=2, patch=3
+        )
 
     def test_semver_format_accepted(self) -> None:
         """Test various valid semver formats are accepted."""
@@ -518,7 +522,7 @@ class TestVersionCompatibility:
         ]
 
         for version_str in valid_versions:
-            contract = ModelMinimalContract(name="test", version=version_str)
+            contract = ModelMinimalContract(name="test", contract_version=version_str)
             fingerprint = compute_contract_fingerprint(contract)
             assert str(fingerprint).startswith(f"{version_str}:")
 
@@ -584,7 +588,7 @@ class TestVersionCompatibility:
         for version_str in ["0.1.0", "1.0.0", "2.3.4", "10.0.0"]:
             contract = ModelTestOrchestratorContract(
                 name="test",
-                version=version_str,
+                contract_version=version_str,
             )
             fingerprint = compute_contract_fingerprint(contract)
             assert str(fingerprint.version) == version_str
@@ -632,12 +636,12 @@ class TestContentIdentity:
         # Two contracts created differently but semantically identical
         contract1 = ModelTestOrchestratorContract(
             name="orchestrator",
-            version=ModelContractVersion(major=1, minor=0, patch=0),
+            contract_version=ModelContractVersion(major=1, minor=0, patch=0),
             execution_mode="parallel",
         )
         contract2 = ModelTestOrchestratorContract(
             name="orchestrator",
-            version="1.0.0",  # String version instead of object
+            contract_version="1.0.0",  # String version instead of object
             execution_mode="parallel",
         )
 
@@ -657,7 +661,7 @@ class TestContentIdentity:
         contracts = [
             ModelTestOrchestratorContract(
                 name="test",
-                version="1.0.0",
+                contract_version="1.0.0",
                 workflow_config=config,
             )
             for config in [config1, config2, config3]
@@ -671,7 +675,7 @@ class TestContentIdentity:
         # Contract with explicit defaults
         explicit = ModelTestOrchestratorContract(
             name="test_orchestrator",
-            version="1.0.0",
+            contract_version="1.0.0",
             node_type="ORCHESTRATOR_GENERIC",  # Default value
             execution_mode="sequential",  # Default value
             max_parallel_branches=4,  # Default value
@@ -683,7 +687,7 @@ class TestContentIdentity:
         # Contract relying on defaults
         implicit = ModelTestOrchestratorContract(
             name="test_orchestrator",
-            version="1.0.0",
+            contract_version="1.0.0",
         )
 
         fp_explicit = compute_contract_fingerprint(explicit)
@@ -695,7 +699,7 @@ class TestContentIdentity:
         """Test that deeply nested dict order doesn't affect identity."""
         contract1 = ModelTestOrchestratorContract(
             name="nested_test",
-            version="1.0.0",
+            contract_version="1.0.0",
             workflow_config={
                 "outer": {
                     "inner": {
@@ -711,7 +715,7 @@ class TestContentIdentity:
         )
         contract2 = ModelTestOrchestratorContract(
             name="nested_test",
-            version="1.0.0",
+            contract_version="1.0.0",
             workflow_config={
                 "outer": {
                     "another": {
@@ -735,14 +739,14 @@ class TestContentIdentity:
         """Test that empty lists are preserved and affect identity correctly."""
         with_empty = ModelTestOrchestratorContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             tags=[],  # Explicit empty list
         )
 
         # Tags default to empty list
         with_default = ModelTestOrchestratorContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
         )
 
         fp_with = compute_contract_fingerprint(with_empty)
@@ -755,12 +759,12 @@ class TestContentIdentity:
         """Test that whitespace in string values is preserved in identity."""
         contract1 = ModelTestOrchestratorContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             description="no whitespace",
         )
         contract2 = ModelTestOrchestratorContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             description="no  whitespace",  # Extra space
         )
 
@@ -813,7 +817,7 @@ class TestHashComputation:
         """Test that changing any relevant field changes the hash."""
         base_contract = ModelTestOrchestratorContract(
             name="base",
-            version="1.0.0",
+            contract_version="1.0.0",
             description="original",
             execution_mode="sequential",
             max_parallel_branches=4,
@@ -826,7 +830,7 @@ class TestHashComputation:
         # Explicitly typed for mypy strict mode
         field_changes: list[dict[str, object]] = [
             {"name": "changed"},
-            {"version": "1.0.1"},
+            {"contract_version": "1.0.1"},
             {"description": "changed"},
             {"execution_mode": "parallel"},
             {"max_parallel_branches": 8},
@@ -861,7 +865,7 @@ class TestHashComputation:
 
     def test_different_configs_produce_different_hashes(self) -> None:
         """Test that different normalization configs can affect hash length but not value."""
-        contract = ModelTestOrchestratorContract(name="test", version="1.0.0")
+        contract = ModelTestOrchestratorContract(name="test", contract_version="1.0.0")
 
         config_short = ModelContractNormalizationConfig(hash_length=8)
         config_long = ModelContractNormalizationConfig(hash_length=32)
@@ -954,12 +958,12 @@ class TestRegistryIntegration:
     ) -> None:
         """Test registry detects version drift in orchestrator contracts."""
         v1_contract = ModelTestOrchestratorContract(
-            name="orchestrator", version="1.0.0"
+            name="orchestrator", contract_version="1.0.0"
         )
         registry.register_from_contract("orchestrator", v1_contract)
 
         v2_contract = ModelTestOrchestratorContract(
-            name="orchestrator", version="2.0.0"
+            name="orchestrator", contract_version="2.0.0"
         )
         drift = registry.detect_drift_from_contract("orchestrator", v2_contract)
 
@@ -973,14 +977,14 @@ class TestRegistryIntegration:
         """Test registry detects content drift in orchestrator contracts."""
         original = ModelTestOrchestratorContract(
             name="orchestrator",
-            version="1.0.0",
+            contract_version="1.0.0",
             execution_mode="sequential",
         )
         registry.register_from_contract("orchestrator", original)
 
         modified = ModelTestOrchestratorContract(
             name="orchestrator",
-            version="1.0.0",
+            contract_version="1.0.0",
             execution_mode="parallel",  # Changed content
         )
         drift = registry.detect_drift_from_contract("orchestrator", modified)
@@ -1020,7 +1024,7 @@ class TestKnownFingerprints:
 
     def test_minimal_contract_fingerprint_stable(self) -> None:
         """Test that minimal contract produces stable fingerprint."""
-        contract = ModelMinimalContract(name="test", version="1.0.0")
+        contract = ModelMinimalContract(name="test", contract_version="1.0.0")
         fingerprint = compute_contract_fingerprint(contract)
 
         # The fingerprint should be deterministic and stable
@@ -1036,7 +1040,7 @@ class TestKnownFingerprints:
         """Test handling of empty nested structures after null removal."""
         contract = ModelTestOrchestratorContract(
             name="test",
-            version="1.0.0",
+            contract_version="1.0.0",
             workflow_config={"only_null": None},
         )
 
@@ -1051,7 +1055,7 @@ class TestKnownFingerprints:
         """Test fingerprint stability for complex nested structures."""
         contract = ModelTestOrchestratorContract(
             name="complex_orchestrator",
-            version="1.0.0",
+            contract_version="1.0.0",
             workflow_config={
                 "level1": {
                     "level2": {
@@ -1080,7 +1084,7 @@ class TestKnownFingerprints:
         """Test fingerprint handling of unicode content."""
         contract = ModelTestOrchestratorContract(
             name="unicode_test",
-            version="1.0.0",
+            contract_version="1.0.0",
             description="Testing unicode: \u00e9\u00e8\u00ea \u4e2d\u6587 \U0001f600",
             workflow_config={
                 "emoji_key": "\U0001f4dd",
@@ -1098,7 +1102,7 @@ class TestKnownFingerprints:
         """Test fingerprint handling of special characters."""
         contract = ModelTestOrchestratorContract(
             name="special_chars",
-            version="1.0.0",
+            contract_version="1.0.0",
             description="Quotes: \"double\" and 'single', backslash: \\, newline: \n, tab: \t",
         )
 
@@ -1110,7 +1114,7 @@ class TestKnownFingerprints:
 
     def test_zero_version_fingerprint(self) -> None:
         """Test fingerprint for contracts starting at version 0.0.0."""
-        contract = ModelMinimalContract(name="initial", version="0.0.0")
+        contract = ModelMinimalContract(name="initial", contract_version="0.0.0")
         fingerprint = compute_contract_fingerprint(contract)
 
         assert str(fingerprint).startswith("0.0.0:")
@@ -1118,7 +1122,7 @@ class TestKnownFingerprints:
 
     def test_large_version_numbers(self) -> None:
         """Test fingerprint handles large version numbers."""
-        contract = ModelMinimalContract(name="test", version="999.999.999")
+        contract = ModelMinimalContract(name="test", contract_version="999.999.999")
         fingerprint = compute_contract_fingerprint(contract)
 
         assert str(fingerprint).startswith("999.999.999:")

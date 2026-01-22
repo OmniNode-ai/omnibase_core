@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.protocols.handler.contracts import (
     ProtocolCapabilityDependency,
     ProtocolExecutionConstrainable,
@@ -217,14 +218,16 @@ class DuckTypedHandlerContract:
         self,
         handler_id: str = "test-handler-001",
         handler_name: str = "test-handler",
-        handler_version: str = "1.0.0",
+        contract_version: ModelSemVer | None = None,
         descriptor: ProtocolHandlerBehaviorDescriptor | None = None,
         capability_inputs: list[ProtocolCapabilityDependency] | None = None,
         execution_constraints: ProtocolExecutionConstraints | None = None,
     ) -> None:
         self._handler_id = handler_id
         self._handler_name = handler_name
-        self._handler_version = handler_version
+        self._contract_version = contract_version or ModelSemVer(
+            major=1, minor=0, patch=0
+        )
         self._descriptor = descriptor or DuckTypedBehaviorDescriptor()
         self._capability_inputs = capability_inputs or []
         self._execution_constraints = execution_constraints
@@ -238,8 +241,8 @@ class DuckTypedHandlerContract:
         return self._handler_name
 
     @property
-    def handler_version(self) -> str:
-        return self._handler_version
+    def contract_version(self) -> ModelSemVer:
+        return self._contract_version
 
     @property
     def descriptor(self) -> ProtocolHandlerBehaviorDescriptor:
@@ -415,7 +418,7 @@ class TestProtocolDuckTyping:
         contract = DuckTypedHandlerContract(
             handler_id="http-handler-001",
             handler_name="http-rest-handler",
-            handler_version="2.1.0",
+            contract_version=ModelSemVer(major=2, minor=1, patch=0),
             descriptor=descriptor,
             capability_inputs=[capability],
             execution_constraints=constraints,
@@ -424,7 +427,7 @@ class TestProtocolDuckTyping:
         # Verify all contract properties
         assert contract.handler_id == "http-handler-001"
         assert contract.handler_name == "http-rest-handler"
-        assert contract.handler_version == "2.1.0"
+        assert contract.contract_version == ModelSemVer(major=2, minor=1, patch=0)
         assert contract.descriptor.idempotent is True
         assert len(contract.capability_inputs) == 1
         assert contract.capability_inputs[0].capability_name == "database.postgresql"
@@ -583,7 +586,7 @@ class TestProtocolPropertyAccess:
 
         assert isinstance(contract.handler_id, str)
         assert isinstance(contract.handler_name, str)
-        assert isinstance(contract.handler_version, str)
+        assert isinstance(contract.contract_version, ModelSemVer)
         assert isinstance(contract.descriptor, ProtocolHandlerBehaviorDescriptor)
         assert isinstance(contract.capability_inputs, list)
         assert contract.execution_constraints is None or isinstance(
@@ -679,7 +682,7 @@ class TestProtocolIntegration:
         contract = DuckTypedHandlerContract(
             handler_id="urn:onex:handler:user-auth:v1",
             handler_name="user-authentication-handler",
-            handler_version="1.2.3",
+            contract_version=ModelSemVer(major=1, minor=2, patch=3),
             descriptor=descriptor,
             capability_inputs=[db_cap, cache_cap],
             execution_constraints=constraints,
@@ -705,7 +708,7 @@ class TestProtocolIntegration:
         contract = DuckTypedHandlerContract(
             handler_id="simple-handler",
             handler_name="simple",
-            handler_version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             execution_constraints=None,
         )
 
@@ -790,7 +793,7 @@ class TestProtocolEdgeCases:
         contract = DuckTypedHandlerContract(
             handler_id="no-deps-handler",
             handler_name="standalone",
-            handler_version="1.0.0",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
             capability_inputs=[],
         )
 

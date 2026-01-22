@@ -17,6 +17,8 @@ Related:
     - OMN-1128: Contract Validation Pipeline
 """
 
+from __future__ import annotations
+
 import pytest
 from pydantic import ValidationError
 

@@ -39,6 +39,8 @@ See Also:
 .. versionadded:: 0.4.1
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -285,12 +287,15 @@ class ModelHandlerContract(BaseModel):
             Validated data.
 
         Raises:
-            ValueError: If deprecated 'version' field is present.
+            ModelOnexError: If deprecated 'version' field is present.
         """
         if isinstance(data, dict) and "version" in data:
-            raise ValueError(
-                "Handler contracts must use 'contract_version', not 'version'. "
-                "The 'version' field was renamed per ONEX specification (OMN-1436)."
+            raise ModelOnexError(
+                message=(
+                    "Handler contracts must use 'contract_version', not 'version'. "
+                    "The 'version' field was renamed per ONEX specification (OMN-1436)."
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return data
 
@@ -356,7 +361,7 @@ class ModelHandlerContract(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_descriptor_handler_kind_consistency(self) -> "ModelHandlerContract":
+    def validate_descriptor_handler_kind_consistency(self) -> ModelHandlerContract:
         """
         Validate that handler_id prefix is consistent with descriptor.handler_kind.
 

@@ -148,7 +148,6 @@ class TestValidateStrictContract:
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR
         # Verify the error context includes info about both fields being present
-        # Context is nested under additional_context.context
         assert error.context is not None
         inner_context = error.context.get("additional_context", {}).get("context", {})
         assert inner_context.get("has_contract_version") is True
@@ -162,7 +161,6 @@ class TestValidateStrictContract:
 
         error = exc_info.value
         # Check that context includes actionable guidance
-        # Context is nested under additional_context.context
         assert error.context is not None
         inner_context = error.context.get("additional_context", {}).get("context", {})
         assert "suggestion" in inner_context

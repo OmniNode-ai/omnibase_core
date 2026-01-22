@@ -12,6 +12,8 @@ Tests handler contract specification including:
 - Helper methods
 """
 
+from __future__ import annotations
+
 import pytest
 from pydantic import ValidationError
 
@@ -201,7 +203,7 @@ class TestVersionValidation:
 
     def test_deprecated_version_field_rejected(self) -> None:
         """Test that deprecated 'version' string field is rejected."""
-        with pytest.raises(ValueError, match="must use 'contract_version'"):
+        with pytest.raises(ModelOnexError, match="must use 'contract_version'"):
             ModelHandlerContract(
                 handler_id="node.test",
                 name="Test",

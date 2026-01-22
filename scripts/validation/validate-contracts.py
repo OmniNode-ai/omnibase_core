@@ -143,6 +143,10 @@ def validate_yaml_file(file_path: Path) -> list[str]:
                 # Basic fallback validation for handler contracts
                 if "name" not in content:
                     errors.append("Missing required field: name")
+                if "version" in content:
+                    errors.append(
+                        "Deprecated field: version. Use contract_version instead."
+                    )
                 if "contract_version" not in content:
                     errors.append("Missing required field: contract_version")
                 else:
