@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-01-22
+
+### Fixed
+
+- **PEP 561 Compliance**: Added `py.typed` marker file for proper type checking support in downstream packages
+
+### Changed
+
+- **Contract Version Enforcement** [OMN-1436]: Strict enforcement of `contract_version` field - removed deprecated `version` field fallback in handler contracts
+
 ## [0.9.0] - 2026-01-21
 
 ### ⚠️ BREAKING CHANGES
