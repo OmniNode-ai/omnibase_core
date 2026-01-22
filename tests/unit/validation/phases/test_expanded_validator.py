@@ -273,11 +273,11 @@ class TestExpandedContractValidatorVersionFormat(TestExpandedContractValidatorFi
         As of OMN-1436, handler contracts must use 'contract_version' (ModelSemVer),
         not the deprecated 'version' (str) field.
         """
-        with pytest.raises(ValueError, match="contract_version"):
+        with pytest.raises(ModelOnexError, match="contract_version"):
             ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
-                version="1.0.0",  # Deprecated field - should be rejected
+                version="1.0.0",  # type: ignore[call-arg]  # Deprecated field - should be rejected
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.test.Input",
                 output_model="omnibase_core.models.test.Output",
