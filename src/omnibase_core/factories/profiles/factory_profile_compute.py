@@ -9,7 +9,7 @@ Profile Types:
 
 from collections.abc import Callable
 
-from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums import EnumNodeArchetype, EnumNodeType
 from omnibase_core.models.contracts import (
     ModelAlgorithmConfig,
     ModelAlgorithmFactorConfig,
@@ -103,7 +103,7 @@ def get_compute_pure_profile(version: str = "1.0.0") -> ModelContractCompute:
         ),
         # Handler behavior configuration for pure computation
         behavior=ModelHandlerBehavior(
-            handler_kind="compute",
+            node_archetype=EnumNodeArchetype.COMPUTE,
             purity="pure",  # Pure compute - no side effects
             idempotent=True,  # Pure functions are always idempotent
             concurrency_policy="parallel_ok",  # Pure functions safe to parallelize

@@ -44,7 +44,7 @@ class TestHandlerContractExamples:
         assert contract.handler_id == "effect.database.user_repository"
         assert contract.name == "User Repository"
         assert str(contract.contract_version) == "2.0.0"
-        assert contract.descriptor.handler_kind == "effect"
+        assert contract.descriptor.node_archetype == "effect"
         assert contract.descriptor.purity == "side_effecting"
         assert contract.descriptor.idempotent is True
         assert contract.descriptor.timeout_ms == 30000
@@ -92,7 +92,7 @@ class TestHandlerContractExamples:
         assert contract.handler_id == "reducer.registration.user"
         assert contract.name == "User Registration Reducer"
         assert str(contract.contract_version) == "1.2.0"
-        assert contract.descriptor.handler_kind == "reducer"
+        assert contract.descriptor.node_archetype == "reducer"
         assert contract.descriptor.purity == "side_effecting"
         assert contract.descriptor.idempotent is True
         assert contract.descriptor.timeout_ms == 30000
@@ -133,7 +133,7 @@ class TestHandlerContractExamples:
         assert contract.handler_id == "compute.schema.validator"
         assert contract.name == "Schema Validator"
         assert str(contract.contract_version) == "1.0.0"
-        assert contract.descriptor.handler_kind == "compute"
+        assert contract.descriptor.node_archetype == "compute"
         assert contract.descriptor.purity == "pure"
         assert contract.descriptor.idempotent is True
         assert contract.descriptor.timeout_ms == 5000
@@ -187,22 +187,22 @@ class TestHandlerContractExamples:
             ("compute_handler.yaml", "compute"),
         ],
     )
-    def test_handler_kind_matches_filename(
+    def test_node_archetype_matches_filename(
         self, examples_dir: Path, filename: str, expected_kind: str
     ) -> None:
-        """Ensure handler_kind in descriptor matches the filename convention."""
+        """Ensure node_archetype in descriptor matches the filename convention."""
         yaml_path = examples_dir / filename
         if not yaml_path.exists():
             pytest.skip(f"Example file not found: {filename}")
 
         contract = load_and_validate_yaml_model(yaml_path, ModelHandlerContract)
-        assert contract.descriptor.handler_kind == expected_kind, (
-            f"Expected handler_kind '{expected_kind}' in {filename}, "
-            f"got '{contract.descriptor.handler_kind}'"
+        assert contract.descriptor.node_archetype == expected_kind, (
+            f"Expected node_archetype '{expected_kind}' in {filename}, "
+            f"got '{contract.descriptor.node_archetype}'"
         )
 
     def test_handler_id_prefix_consistency(self, examples_dir: Path) -> None:
-        """Ensure handler_id prefix is consistent with handler_kind."""
+        """Ensure handler_id prefix is consistent with node_archetype."""
         yaml_files = list(examples_dir.glob("*.yaml"))
 
         for yaml_path in yaml_files:
@@ -210,13 +210,13 @@ class TestHandlerContractExamples:
 
             # Extract first segment of handler_id
             prefix = contract.handler_id.split(".")[0].lower()
-            handler_kind = contract.descriptor.handler_kind
+            node_archetype = contract.descriptor.node_archetype
 
-            # Typed prefixes should match handler_kind
+            # Typed prefixes should match node_archetype
             # Generic prefixes (node, handler) accept any kind
             typed_prefixes = {"compute", "effect", "reducer", "orchestrator"}
             if prefix in typed_prefixes:
-                assert prefix == handler_kind, (
-                    f"Handler ID prefix '{prefix}' doesn't match handler_kind "
-                    f"'{handler_kind}' in {yaml_path.name}"
+                assert prefix == node_archetype, (
+                    f"Handler ID prefix '{prefix}' doesn't match node_archetype "
+                    f"'{node_archetype}' in {yaml_path.name}"
                 )

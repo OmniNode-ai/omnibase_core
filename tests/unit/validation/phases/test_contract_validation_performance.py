@@ -130,7 +130,7 @@ def profile_ref() -> ModelProfileReference:
 def valid_descriptor() -> ModelHandlerBehavior:
     """Create a valid handler behavior descriptor."""
     return ModelHandlerBehavior(
-        handler_kind="compute",
+        node_archetype="compute",
         purity="pure",
         idempotent=True,
     )

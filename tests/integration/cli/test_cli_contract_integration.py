@@ -310,7 +310,7 @@ handler_id: "node.identical"
 name: "identical"
 version: "1.0.0"
 descriptor:
-  handler_kind: "compute"
+  node_archetype: "compute"
 """
         contract_a = tmp_path / "a.yaml"
         contract_b = tmp_path / "b.yaml"

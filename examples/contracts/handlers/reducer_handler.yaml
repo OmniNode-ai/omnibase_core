@@ -3,7 +3,7 @@
 # This handler manages state through FSM-driven transitions.
 #
 # Key characteristics:
-#   - handler_kind: reducer (state management)
+#   - node_archetype: reducer (state management)
 #   - purity: side_effecting (state mutations)
 #   - idempotent: true (required for reducers)
 #   - Emits intents for downstream processing
@@ -17,7 +17,7 @@ contract_version:
 description: Manages user registration lifecycle using FSM
 
 descriptor:
-  handler_kind: reducer
+  node_archetype: reducer
   purity: side_effecting
   idempotent: true
   timeout_ms: 30000

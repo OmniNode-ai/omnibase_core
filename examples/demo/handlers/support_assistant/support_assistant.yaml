@@ -17,7 +17,7 @@
 #     may produce different outputs (different response text, sentiment, etc.).
 #     The descriptor.idempotent: false setting reflects this.
 #
-#   - SIDE EFFECTS: YES (handler_kind: effect)
+#   - SIDE EFFECTS: YES (node_archetype: effect)
 #     Makes external network calls to LLM provider APIs.
 #
 # Retry Policy Note:
@@ -40,7 +40,7 @@ contract_version:
 description: AI support assistant that responds to user requests with structured JSON output
 
 descriptor:
-  handler_kind: effect
+  node_archetype: effect
   purity: side_effecting
   # CRITICAL: LLM handlers are NOT idempotent - same input produces different
   # outputs due to model temperature, sampling, and context window state.

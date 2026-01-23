@@ -217,9 +217,10 @@ from .enum_metrics_policy_violation_action import EnumMetricsPolicyViolationActi
 
 # Namespace-related enums
 from .enum_namespace_strategy import EnumNamespaceStrategy
-from .enum_node_architecture_type import EnumNodeArchitectureType
 
 # Node-related enums
+from .enum_node_archetype import EnumNodeArchetype
+from .enum_node_architecture_type import EnumNodeArchitectureType
 from .enum_node_kind import EnumNodeKind
 from .enum_node_requirement import EnumNodeRequirement
 from .enum_node_status import EnumNodeStatus
@@ -420,6 +421,7 @@ __all__ = [
     "EnumHealthStatus",  # Canonical health status (OMN-1310)
     "EnumNodeStatus",
     # Node domain
+    "EnumNodeArchetype",
     "EnumNodeArchitectureType",
     "EnumNodeKind",
     "EnumNodeType",

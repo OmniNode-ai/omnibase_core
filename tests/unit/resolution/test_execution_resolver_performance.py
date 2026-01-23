@@ -126,7 +126,7 @@ def _create_contract(
         handler_id=handler_id,
         name=f"Handler {handler_id}",
         contract_version=ModelSemVer(major=1, minor=0, patch=0),
-        descriptor=ModelHandlerBehavior(handler_kind="compute"),
+        descriptor=ModelHandlerBehavior(node_archetype="compute"),
         input_model="test.Input",
         output_model="test.Output",
         execution_constraints=constraints,

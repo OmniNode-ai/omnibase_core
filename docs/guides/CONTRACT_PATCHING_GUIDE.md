@@ -62,7 +62,7 @@ contract = ModelContractCompute(
         memory_limit_mb=512,
     ),
     behavior=ModelHandlerBehavior(
-        handler_kind="compute",
+        node_archetype="compute",
         purity="pure",
         idempotent=True,
         concurrency_policy="parallel_ok",

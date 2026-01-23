@@ -11,7 +11,7 @@ Profile Types:
 
 from collections.abc import Callable
 
-from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums import EnumNodeArchetype, EnumNodeType
 from omnibase_core.models.contracts import (
     ModelActionEmissionConfig,
     ModelBranchingConfig,
@@ -94,7 +94,7 @@ def get_orchestrator_safe_profile(version: str = "1.0.0") -> ModelContractOrches
         ),
         # Handler behavior configuration - conservative, serial execution
         behavior=ModelHandlerBehavior(
-            handler_kind="orchestrator",
+            node_archetype=EnumNodeArchetype.ORCHESTRATOR,
             purity="side_effecting",
             idempotent=False,
             concurrency_policy="serialized",
@@ -169,7 +169,7 @@ def get_orchestrator_parallel_profile(
         ),
         # Handler behavior configuration - parallel execution allowed
         behavior=ModelHandlerBehavior(
-            handler_kind="orchestrator",
+            node_archetype=EnumNodeArchetype.ORCHESTRATOR,
             purity="side_effecting",
             idempotent=False,
             concurrency_policy="parallel_ok",
@@ -248,7 +248,7 @@ def get_orchestrator_resilient_profile(
         ),
         # Handler behavior configuration - resilient with retries and circuit breaker
         behavior=ModelHandlerBehavior(
-            handler_kind="orchestrator",
+            node_archetype=EnumNodeArchetype.ORCHESTRATOR,
             purity="side_effecting",
             idempotent=True,  # Resilient implies idempotent for safe retries
             concurrency_policy="serialized",

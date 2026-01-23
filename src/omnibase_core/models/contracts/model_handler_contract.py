@@ -22,7 +22,7 @@ Example:
     ...     name="User Registration Reducer",
     ...     contract_version=ModelSemVer(major=1, minor=0, patch=0),
     ...     descriptor=ModelHandlerBehavior(
-    ...         handler_kind="reducer",
+    ...         node_archetype="reducer",
     ...         purity="side_effecting",
     ...         idempotent=True,
     ...     ),
@@ -117,7 +117,7 @@ class ModelHandlerContract(BaseModel):
         ...     name="User Registration Reducer",
         ...     contract_version=ModelSemVer(major=1, minor=0, patch=0),
         ...     descriptor=ModelHandlerBehavior(
-        ...         handler_kind="reducer",
+        ...         node_archetype="reducer",
         ...         purity="side_effecting",
         ...         idempotent=True,
         ...         timeout_ms=30000,
@@ -141,7 +141,7 @@ class ModelHandlerContract(BaseModel):
         ...     name="Email Sender",
         ...     contract_version=ModelSemVer(major=2, minor=0, patch=0),
         ...     descriptor=ModelHandlerBehavior(
-        ...         handler_kind="effect",
+        ...         node_archetype="effect",
         ...         purity="side_effecting",
         ...         idempotent=False,
         ...     ),
@@ -361,42 +361,46 @@ class ModelHandlerContract(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_descriptor_handler_kind_consistency(self) -> ModelHandlerContract:
+    def validate_descriptor_node_archetype_consistency(self) -> ModelHandlerContract:
         """
-        Validate that handler_id prefix is consistent with descriptor.handler_kind.
+        Validate that handler_id prefix is consistent with descriptor.node_archetype.
 
         Returns:
             The validated contract.
 
         Raises:
-            ModelOnexError: If there's a mismatch between ID prefix and handler kind.
+            ModelOnexError: If there's a mismatch between ID prefix and node archetype.
         """
         # Extract first segment of handler_id
         prefix = self.handler_id.split(".")[0].lower()
 
-        # Map common prefixes to handler kinds
-        prefix_to_kind = {
-            "node": None,  # Generic, any kind allowed
-            "handler": None,  # Generic, any kind allowed
+        # Map common prefixes to node archetypes
+        prefix_to_archetype = {
+            "node": None,  # Generic, any archetype allowed
+            "handler": None,  # Generic, any archetype allowed
             "compute": "compute",
             "effect": "effect",
             "reducer": "reducer",
             "orchestrator": "orchestrator",
         }
 
-        expected_kind = prefix_to_kind.get(prefix)
+        expected_archetype = prefix_to_archetype.get(prefix)
 
-        # Only validate if prefix implies a specific kind
-        if expected_kind is not None and self.descriptor.handler_kind != expected_kind:
+        # Only validate if prefix implies a specific archetype
+        # EnumNodeArchetype inherits from str, so string comparison works
+        if (
+            expected_archetype is not None
+            and str(self.descriptor.node_archetype) != expected_archetype
+        ):
             raise ModelOnexError(
                 message=(
-                    f"Handler ID prefix '{prefix}' implies handler_kind='{expected_kind}' "
-                    f"but descriptor has handler_kind='{self.descriptor.handler_kind}'"
+                    f"Handler ID prefix '{prefix}' implies node_archetype='{expected_archetype}' "
+                    f"but descriptor has node_archetype='{self.descriptor.node_archetype}'"
                 ),
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 handler_id=self.handler_id,
-                expected_kind=expected_kind,
-                actual_kind=self.descriptor.handler_kind,
+                expected_archetype=expected_archetype,
+                actual_archetype=str(self.descriptor.node_archetype),
             )
 
         return self

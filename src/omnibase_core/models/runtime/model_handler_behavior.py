@@ -14,16 +14,20 @@ Note:
 
 Related:
     - OMN-1125: Default Profile Factory for Contracts
+    - OMN-1465: Rename handler_kind to node_archetype
     - ModelExecutionProfile: Profile layer (execution resource allocation)
     - ModelContractBase: Contract layer (declarative node specification)
 
 .. versionadded:: 0.4.0
+.. versionchanged:: 0.9.2
+    Renamed ``handler_kind`` to ``node_archetype`` with ``EnumNodeArchetype`` type.
 """
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
+from omnibase_core.enums.enum_node_archetype import EnumNodeArchetype
 from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (
     ModelDescriptorCircuitBreaker,
 )
@@ -31,8 +35,26 @@ from omnibase_core.models.runtime.model_descriptor_retry_policy import (
     ModelDescriptorRetryPolicy,
 )
 
+
+def _coerce_node_archetype(v: object) -> EnumNodeArchetype | object:
+    """Coerce string values to EnumNodeArchetype for YAML/JSON parsing."""
+    if isinstance(v, str):
+        try:
+            return EnumNodeArchetype(v)
+        except ValueError:
+            return v  # Let Pydantic handle the validation error
+    return v
+
+
+# Type alias for node_archetype field with automatic string coercion.
+# Use this type in any model that accepts node archetype from external sources (YAML, JSON).
+NodeArchetypeField = Annotated[
+    EnumNodeArchetype, BeforeValidator(_coerce_node_archetype)
+]
+
 __all__ = [
     "ModelHandlerBehavior",
+    "NodeArchetypeField",
 ]
 
 
@@ -50,7 +72,7 @@ class ModelHandlerBehavior(BaseModel):
     3. **Contract** (ModelContractBase): Full declarative node specification
        including I/O schemas, dependencies, and metadata.
 
-    Handler Kind Semantics:
+    Node Archetype Semantics:
         - **compute**: Pure data transformation, no side effects, cacheable
         - **effect**: External I/O operations, side-effecting, requires isolation
         - **reducer**: State aggregation, FSM-driven, intent-based transitions
@@ -78,7 +100,7 @@ class ModelHandlerBehavior(BaseModel):
         - **verbose**: Full tracing, detailed logs, performance profiling
 
     Attributes:
-        handler_kind: Architectural role of the handler (compute/effect/etc).
+        node_archetype: Architectural role of the handler (compute/effect/etc).
         purity: Whether handler is pure or side-effecting.
         idempotent: Whether handler is idempotent (safe to retry).
         timeout_ms: Handler timeout in milliseconds (None = use profile default).
@@ -92,7 +114,7 @@ class ModelHandlerBehavior(BaseModel):
 
     Example:
         >>> behavior = ModelHandlerBehavior(
-        ...     handler_kind="compute",
+        ...     node_archetype="compute",
         ...     purity="pure",
         ...     idempotent=True,
         ...     timeout_ms=5000,
@@ -102,7 +124,7 @@ class ModelHandlerBehavior(BaseModel):
 
         >>> # Effect handler with retry and circuit breaker
         >>> effect_behavior = ModelHandlerBehavior(
-        ...     handler_kind="effect",
+        ...     node_archetype="effect",
         ...     purity="side_effecting",
         ...     idempotent=True,  # Required for retry
         ...     timeout_ms=30000,
@@ -117,14 +139,14 @@ class ModelHandlerBehavior(BaseModel):
         ... )
 
     See Also:
-        - EnumNodeKind: Enum defining handler kind values
+        - EnumNodeArchetype: Enum defining node archetype values
         - ModelExecutionProfile: Profile layer for resource allocation
         - ModelContractBase: Contract layer for full node specification
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    handler_kind: Literal["compute", "effect", "reducer", "orchestrator"] = Field(
+    node_archetype: NodeArchetypeField = Field(
         ...,
         description="Architectural role of the handler in the ONEX workflow",
     )

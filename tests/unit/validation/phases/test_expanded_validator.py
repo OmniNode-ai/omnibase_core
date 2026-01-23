@@ -60,7 +60,7 @@ class TestExpandedContractValidatorFixtures:
     def valid_descriptor(self) -> ModelHandlerBehavior:
         """Create a valid handler behavior descriptor."""
         return ModelHandlerBehavior(
-            handler_kind="compute",
+            node_archetype="compute",
             purity="pure",
             idempotent=True,
         )
@@ -520,7 +520,7 @@ class TestExpandedContractValidatorHandlerKindConsistency(
     ) -> None:
         """Test that compute prefix with compute kind passes."""
         descriptor = ModelHandlerBehavior(
-            handler_kind="compute",
+            node_archetype="compute",
             purity="pure",
             idempotent=True,
         )
@@ -542,7 +542,7 @@ class TestExpandedContractValidatorHandlerKindConsistency(
     ) -> None:
         """Test that effect prefix with effect kind passes."""
         descriptor = ModelHandlerBehavior(
-            handler_kind="effect",
+            node_archetype="effect",
             purity="side_effecting",
             idempotent=False,
         )
@@ -585,7 +585,7 @@ class TestExpandedContractValidatorHandlerKindConsistency(
         """Test that compute prefix with effect kind fails at model level."""
         # ModelHandlerContract validates this consistency
         descriptor = ModelHandlerBehavior(
-            handler_kind="effect",
+            node_archetype="effect",
             purity="side_effecting",
         )
         with pytest.raises((ModelOnexError, ValidationError, ValueError)):

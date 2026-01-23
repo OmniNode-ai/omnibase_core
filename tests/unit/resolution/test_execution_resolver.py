@@ -118,7 +118,7 @@ def _create_contract(
         handler_id=handler_id,
         name=f"Handler {handler_id}",
         contract_version=ModelSemVer(major=1, minor=0, patch=0),
-        descriptor=ModelHandlerBehavior(handler_kind="compute"),
+        descriptor=ModelHandlerBehavior(node_archetype="compute"),
         input_model="test.Input",
         output_model="test.Output",
         execution_constraints=constraints,
@@ -1236,7 +1236,7 @@ class TestPhaseAssignmentConstraints:
     Tests for phase assignment constraints based on ONEX Four-Node Architecture.
 
     These tests verify that:
-    1. Handlers with different handler_kinds are tracked in contracts
+    1. Handlers with different node_archetypes are tracked in contracts
     2. Cross-phase dependency constraints are respected
     3. Phase boundaries prevent invalid dependency patterns
     4. Future phase hint support is forward-compatible
@@ -1256,7 +1256,7 @@ class TestPhaseAssignmentConstraints:
     can declare target phases in execution_constraints).
     """
 
-    def test_handler_kind_compute_assigned_to_execute_phase(
+    def test_node_archetype_compute_assigned_to_execute_phase(
         self,
         resolver: ExecutionResolver,
         default_profile: ModelExecutionProfile,
@@ -1281,7 +1281,7 @@ class TestPhaseAssignmentConstraints:
         assert execute_phase is not None
         assert "handler.compute_transform" in execute_phase.handler_ids
 
-    def test_handler_kind_effect_assigned_to_execute_phase(
+    def test_node_archetype_effect_assigned_to_execute_phase(
         self,
         resolver: ExecutionResolver,
         default_profile: ModelExecutionProfile,
@@ -1293,12 +1293,12 @@ class TestPhaseAssignmentConstraints:
         Currently assigned to EXECUTE phase; future versions may support
         explicit phase hints for BEFORE (setup) or FINALIZE (cleanup).
         """
-        # Create contract with effect handler_kind
+        # Create contract with effect node_archetype
         effect_contract = ModelHandlerContract(
             handler_id="handler.effect_io",
             name="Effect IO Handler",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="effect"),
+            descriptor=ModelHandlerBehavior(node_archetype="effect"),
             input_model="test.Input",
             output_model="test.Output",
             metadata={"priority": 0},
@@ -1314,7 +1314,7 @@ class TestPhaseAssignmentConstraints:
         assert execute_phase is not None
         assert "handler.effect_io" in execute_phase.handler_ids
 
-    def test_handler_kind_reducer_assigned_to_execute_phase(
+    def test_node_archetype_reducer_assigned_to_execute_phase(
         self,
         resolver: ExecutionResolver,
         default_profile: ModelExecutionProfile,
@@ -1329,7 +1329,7 @@ class TestPhaseAssignmentConstraints:
             handler_id="handler.reducer_state",
             name="Reducer State Handler",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="reducer"),
+            descriptor=ModelHandlerBehavior(node_archetype="reducer"),
             input_model="test.Input",
             output_model="test.Output",
             metadata={"priority": 0},
@@ -1345,7 +1345,7 @@ class TestPhaseAssignmentConstraints:
         assert execute_phase is not None
         assert "handler.reducer_state" in execute_phase.handler_ids
 
-    def test_handler_kind_orchestrator_assigned_to_execute_phase(
+    def test_node_archetype_orchestrator_assigned_to_execute_phase(
         self,
         resolver: ExecutionResolver,
         default_profile: ModelExecutionProfile,
@@ -1360,7 +1360,7 @@ class TestPhaseAssignmentConstraints:
             handler_id="handler.orchestrator_workflow",
             name="Orchestrator Workflow Handler",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="orchestrator"),
+            descriptor=ModelHandlerBehavior(node_archetype="orchestrator"),
             input_model="test.Input",
             output_model="test.Output",
             metadata={"priority": 0},
@@ -1376,7 +1376,7 @@ class TestPhaseAssignmentConstraints:
         assert execute_phase is not None
         assert "handler.orchestrator_workflow" in execute_phase.handler_ids
 
-    def test_mixed_handler_kinds_all_in_execute_phase(
+    def test_mixed_node_archetypes_all_in_execute_phase(
         self,
         resolver: ExecutionResolver,
         default_profile: ModelExecutionProfile,
@@ -1386,14 +1386,14 @@ class TestPhaseAssignmentConstraints:
         are assigned to EXECUTE phase.
 
         This documents current behavior where phase assignment does not yet
-        use handler_kind hints. All handlers go to EXECUTE phase.
+        use node_archetype hints. All handlers go to EXECUTE phase.
         """
         contracts = [
             ModelHandlerContract(
                 handler_id="handler.compute",
                 name="Compute Handler",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="compute"),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
                 input_model="test.Input",
                 output_model="test.Output",
                 metadata={"priority": 0},
@@ -1402,7 +1402,7 @@ class TestPhaseAssignmentConstraints:
                 handler_id="handler.effect",
                 name="Effect Handler",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="effect"),
+                descriptor=ModelHandlerBehavior(node_archetype="effect"),
                 input_model="test.Input",
                 output_model="test.Output",
                 metadata={"priority": 0},
@@ -1411,7 +1411,7 @@ class TestPhaseAssignmentConstraints:
                 handler_id="handler.reducer",
                 name="Reducer Handler",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="reducer"),
+                descriptor=ModelHandlerBehavior(node_archetype="reducer"),
                 input_model="test.Input",
                 output_model="test.Output",
                 metadata={"priority": 0},
@@ -1420,7 +1420,7 @@ class TestPhaseAssignmentConstraints:
                 handler_id="handler.orchestrator",
                 name="Orchestrator Handler",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="orchestrator"),
+                descriptor=ModelHandlerBehavior(node_archetype="orchestrator"),
                 input_model="test.Input",
                 output_model="test.Output",
                 metadata={"priority": 0},
@@ -1458,7 +1458,7 @@ class TestPhaseAssignmentConstraints:
                 handler_id="handler.validation",
                 name="Validation Handler",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="compute"),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
                 input_model="test.Input",
                 output_model="test.Output",
                 metadata={"priority": 0},
@@ -1467,7 +1467,7 @@ class TestPhaseAssignmentConstraints:
                 handler_id="handler.process",
                 name="Process Handler",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="compute"),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
                 input_model="test.Input",
                 output_model="test.Output",
                 execution_constraints=ModelExecutionConstraints(
@@ -1479,7 +1479,7 @@ class TestPhaseAssignmentConstraints:
                 handler_id="handler.finalize",
                 name="Finalize Handler",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="effect"),
+                descriptor=ModelHandlerBehavior(node_archetype="effect"),
                 input_model="test.Input",
                 output_model="test.Output",
                 execution_constraints=ModelExecutionConstraints(
@@ -1508,7 +1508,7 @@ class TestPhaseAssignmentConstraints:
         are empty when no phase hints are used.
 
         This documents current behavior where all handlers go to EXECUTE phase.
-        Future implementations may populate other phases based on handler_kind
+        Future implementations may populate other phases based on node_archetype
         or explicit phase hints in execution_constraints.
         """
         contracts = [
