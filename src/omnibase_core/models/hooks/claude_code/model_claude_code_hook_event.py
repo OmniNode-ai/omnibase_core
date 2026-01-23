@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_hook_event_type import (
     EnumClaudeCodeHookEventType,
@@ -68,11 +68,21 @@ class ModelClaudeCodeHookEvent(BaseModel):
         description="Optional correlation ID for distributed tracing",
     )
     timestamp_utc: datetime = Field(
-        description="When the event occurred (should be timezone-aware UTC)"
+        description="When the event occurred (must be timezone-aware, e.g., datetime.now(UTC))"
     )
     payload: ModelClaudeCodeHookEventPayload = Field(
         description="Event-specific data as a payload model"
     )
+
+    @field_validator("timestamp_utc")
+    @classmethod
+    def validate_timezone_aware(cls, v: datetime) -> datetime:
+        """Validate that timestamp_utc is timezone-aware."""
+        if v.tzinfo is None:
+            raise ValueError(
+                "timestamp_utc must be timezone-aware (e.g., use datetime.now(UTC))"
+            )
+        return v
 
     def is_agentic_event(self) -> bool:
         """Check if this event is part of the agentic loop."""
