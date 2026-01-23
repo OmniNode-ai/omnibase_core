@@ -387,10 +387,9 @@ class ModelHandlerContract(BaseModel):
         expected_archetype = prefix_to_archetype.get(prefix)
 
         # Only validate if prefix implies a specific archetype
-        # EnumNodeArchetype inherits from str, so string comparison works
         if (
             expected_archetype is not None
-            and str(self.descriptor.node_archetype) != expected_archetype
+            and self.descriptor.node_archetype != expected_archetype
         ):
             raise ModelOnexError(
                 message=(
