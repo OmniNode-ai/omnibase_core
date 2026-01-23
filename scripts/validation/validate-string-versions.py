@@ -78,6 +78,7 @@ EXCLUDE_PATTERNS = [
     "tests",  # Exclude test files
     "examples",  # Exclude examples - may contain demonstration code with various version formats
     "protocols",  # Exclude Protocol classes (see rationale above)
+    "integrations",  # Exclude integration surfaces - types match external API contracts (e.g., Claude Code)
 ]
 
 
