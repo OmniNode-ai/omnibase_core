@@ -1,5 +1,4 @@
-"""
-Claude Code hook event model.
+"""Claude Code hook event model.
 
 Raw input schema for Claude Code hook events. This model represents the exact
 structure of events received from Claude Code hooks without transformation.
@@ -15,21 +14,20 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.integrations.claude_code.hook_event_payload import (
-    ClaudeHookEventPayload,
+from omnibase_core.enums.hooks.claude_code.enum_claude_code_hook_event_type import (
+    EnumClaudeCodeHookEventType,
 )
-from omnibase_core.integrations.claude_code.hook_event_type import (
-    ClaudeCodeHookEventType,
+from omnibase_core.models.hooks.claude_code.model_claude_code_hook_event_payload import (
+    ModelClaudeCodeHookEventPayload,
 )
 
 
-class ClaudeHookEvent(BaseModel):
-    """
-    Raw input schema for Claude Code hook events.
+class ModelClaudeCodeHookEvent(BaseModel):
+    """Raw input schema for Claude Code hook events.
 
     This model captures the essential fields from Claude Code hook payloads
-    without transformation. It serves as the integration surface between
-    Claude Code and downstream processing.
+    without transformation. It serves as the contract between Claude Code
+    and downstream processing in omniclaude/omniintelligence.
 
     The payload field accepts any BaseModel-derived payload. Downstream
     consumers should validate/parse payload based on event_type using
@@ -40,14 +38,15 @@ class ClaudeHookEvent(BaseModel):
         session_id: Unique identifier for the Claude Code session (string per upstream API)
         correlation_id: Optional ID for distributed tracing across services
         timestamp_utc: When the event occurred (timezone-aware UTC)
-        payload: Event-specific data as a ClaudeHookEventPayload
+        payload: Event-specific data as a ModelClaudeCodeHookEventPayload
 
     Example:
-        >>> event = ClaudeHookEvent(
-        ...     event_type=ClaudeCodeHookEventType.USER_PROMPT_SUBMIT,
+        >>> from datetime import UTC
+        >>> event = ModelClaudeCodeHookEvent(
+        ...     event_type=EnumClaudeCodeHookEventType.USER_PROMPT_SUBMIT,
         ...     session_id="abc123",
         ...     timestamp_utc=datetime.now(UTC),
-        ...     payload=ClaudeHookEventPayload(prompt="Hello!"),
+        ...     payload=ModelClaudeCodeHookEventPayload(),
         ... )
     """
 
@@ -57,7 +56,7 @@ class ClaudeHookEvent(BaseModel):
         from_attributes=True,
     )
 
-    event_type: ClaudeCodeHookEventType = Field(
+    event_type: EnumClaudeCodeHookEventType = Field(
         description="The type of Claude Code hook event"
     )
     # NOTE(OMN-1474): session_id is str (not UUID) per Claude Code's API contract.
@@ -71,27 +70,17 @@ class ClaudeHookEvent(BaseModel):
     timestamp_utc: datetime = Field(
         description="When the event occurred (should be timezone-aware UTC)"
     )
-    payload: ClaudeHookEventPayload = Field(
+    payload: ModelClaudeCodeHookEventPayload = Field(
         description="Event-specific data as a payload model"
     )
 
     def is_agentic_event(self) -> bool:
-        """
-        Check if this event is part of the agentic loop.
-
-        Returns:
-            True if event_type is an agentic loop event, False otherwise
-        """
-        return ClaudeCodeHookEventType.is_agentic_loop_event(self.event_type)
+        """Check if this event is part of the agentic loop."""
+        return EnumClaudeCodeHookEventType.is_agentic_loop_event(self.event_type)
 
     def is_session_event(self) -> bool:
-        """
-        Check if this event is a session lifecycle event.
-
-        Returns:
-            True if event_type is a session lifecycle event, False otherwise
-        """
-        return ClaudeCodeHookEventType.is_session_lifecycle_event(self.event_type)
+        """Check if this event is a session lifecycle event."""
+        return EnumClaudeCodeHookEventType.is_session_lifecycle_event(self.event_type)
 
 
-__all__ = ["ClaudeHookEvent"]
+__all__ = ["ModelClaudeCodeHookEvent"]

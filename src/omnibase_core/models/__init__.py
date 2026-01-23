@@ -27,6 +27,7 @@ __all__ = [
     "events",
     "execution",
     "handlers",
+    "hooks",  # External hook models (Claude Code - OMN-1474)
     "infrastructure",
     "mcp",  # MCP (Model Context Protocol) models (OMN-1286)
     "metadata",

@@ -297,6 +297,11 @@ from .enum_service_type_category import EnumServiceTypeCategory
 # Severity enum (canonical - replaces EnumViolationSeverity, OMN-1311)
 from .enum_severity import EnumSeverity
 
+# Hook event enums (Claude Code integration - OMN-1474)
+from .hooks.claude_code.enum_claude_code_hook_event_type import (
+    EnumClaudeCodeHookEventType,
+)
+
 # Deprecated aliases for EnumSeverity (OMN-1311 consolidation)
 # Use EnumSeverity directly in new code.
 EnumInvariantSeverity: type[EnumSeverity] = EnumSeverity
@@ -600,6 +605,8 @@ __all__ = [
     "EnumEventPriority",
     # Event sink type domain (OMN-1151)
     "EnumEventSinkType",
+    # Hook event domain (Claude Code integration - OMN-1474)
+    "EnumClaudeCodeHookEventType",
     # Omnimemory domain (OMN-1235, OMN-1236, OMN-1237)
     "EnumDecisionType",
     "EnumFailureType",

@@ -1,5 +1,4 @@
-"""
-Claude Code hook event type enumeration.
+"""Claude Code hook event type enumeration.
 
 Defines the 12 lifecycle events in Claude Code's hook system, matching the
 exact event names used by Claude Code. This is the canonical input type for
@@ -23,9 +22,8 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class ClaudeCodeHookEventType(StrValueHelper, str, Enum):
-    """
-    Event types from Claude Code hook lifecycle.
+class EnumClaudeCodeHookEventType(StrValueHelper, str, Enum):
+    """Event types from Claude Code hook lifecycle.
 
     These values match exactly what Claude Code sends, enabling direct deserialization
     without transformation. Values use PascalCase to match Claude Code's convention.
@@ -89,16 +87,8 @@ class ClaudeCodeHookEventType(StrValueHelper, str, Enum):
     """Before context compaction. Allows cleanup before memory reduction."""
 
     @classmethod
-    def is_agentic_loop_event(cls, event_type: ClaudeCodeHookEventType) -> bool:
-        """
-        Check if the event type is part of the agentic loop.
-
-        Args:
-            event_type: The event type to check
-
-        Returns:
-            True if it's an agentic loop event, False otherwise
-        """
+    def is_agentic_loop_event(cls, event_type: EnumClaudeCodeHookEventType) -> bool:
+        """Check if the event type is part of the agentic loop."""
         return event_type in {
             cls.PRE_TOOL_USE,
             cls.PERMISSION_REQUEST,
@@ -109,16 +99,10 @@ class ClaudeCodeHookEventType(StrValueHelper, str, Enum):
         }
 
     @classmethod
-    def is_session_lifecycle_event(cls, event_type: ClaudeCodeHookEventType) -> bool:
-        """
-        Check if the event type is a session lifecycle event.
-
-        Args:
-            event_type: The event type to check
-
-        Returns:
-            True if it's a session lifecycle event, False otherwise
-        """
+    def is_session_lifecycle_event(
+        cls, event_type: EnumClaudeCodeHookEventType
+    ) -> bool:
+        """Check if the event type is a session lifecycle event."""
         return event_type in {
             cls.SESSION_START,
             cls.SESSION_END,
@@ -127,4 +111,4 @@ class ClaudeCodeHookEventType(StrValueHelper, str, Enum):
         }
 
 
-__all__ = ["ClaudeCodeHookEventType"]
+__all__ = ["EnumClaudeCodeHookEventType"]

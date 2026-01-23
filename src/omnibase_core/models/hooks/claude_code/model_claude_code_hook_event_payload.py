@@ -1,5 +1,4 @@
-"""
-Claude Code hook event payload base class.
+"""Claude Code hook event payload base class.
 
 Provides a base model for event-specific payloads from Claude Code hooks.
 Uses extra="allow" to accept new fields from Claude Code without breaking.
@@ -10,11 +9,8 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 
 
-# NOTE(OMN-1474): extra="allow" accepts new fields from Claude Code hooks.
-# This is intentional for integration surfaces receiving external data.
-class ClaudeHookEventPayload(BaseModel):
-    """
-    Base class for Claude Code hook event payloads.
+class ModelClaudeCodeHookEventPayload(BaseModel):
+    """Base class for Claude Code hook event payloads.
 
     Downstream consumers should define specific payload models that inherit
     from this base class for their event types.
@@ -23,13 +19,15 @@ class ClaudeHookEventPayload(BaseModel):
     new fields to be added without breaking existing consumers.
 
     Example:
-        >>> class PromptSubmitPayload(ClaudeHookEventPayload):
+        >>> class PromptSubmitPayload(ModelClaudeCodeHookEventPayload):
         ...     prompt: str
         ...     prompt_length: int
         >>>
         >>> payload = PromptSubmitPayload(prompt="Hello", prompt_length=5)
     """
 
+    # NOTE(OMN-1474): extra="allow" accepts new fields from Claude Code hooks.
+    # This is intentional for external hook payloads receiving upstream data.
     model_config = ConfigDict(
         frozen=True,
         extra="allow",
@@ -37,4 +35,4 @@ class ClaudeHookEventPayload(BaseModel):
     )
 
 
-__all__ = ["ClaudeHookEventPayload"]
+__all__ = ["ModelClaudeCodeHookEventPayload"]
