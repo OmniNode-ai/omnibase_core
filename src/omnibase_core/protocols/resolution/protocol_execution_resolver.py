@@ -22,7 +22,7 @@ Design:
         - Profile execution policy (phases, ordering rules, tie breakers)
         - Contract execution constraints (requires_before, requires_after, must_run)
         - Cycle detection in dependency graphs
-        - Phase assignment based on handler kind and constraints
+        - Phase assignment based on node archetype and constraints
 
 Usage:
     .. code-block:: python
@@ -226,7 +226,7 @@ class ProtocolExecutionResolver(Protocol):
                     version="1.0.0",
                     input_model="models.AuthInput",
                     output_model="models.AuthOutput",
-                    descriptor=ModelHandlerBehavior(handler_kind="effect"),
+                    descriptor=ModelHandlerBehavior(node_archetype="effect"),
                 )
 
                 logging_contract = ModelHandlerContract(
@@ -235,7 +235,7 @@ class ProtocolExecutionResolver(Protocol):
                     version="1.0.0",
                     input_model="models.LogInput",
                     output_model="models.LogOutput",
-                    descriptor=ModelHandlerBehavior(handler_kind="effect"),
+                    descriptor=ModelHandlerBehavior(node_archetype="effect"),
                     execution_constraints=ModelExecutionConstraints(
                         requires_before=["handler:handler.auth"],
                     ),

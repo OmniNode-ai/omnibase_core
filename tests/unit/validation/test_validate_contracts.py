@@ -1191,7 +1191,7 @@ contract_version:
 description: Validates input data against JSON schemas
 
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
   timeout_ms: 5000
@@ -1221,7 +1221,7 @@ contract_version:
   minor: 0
   patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
@@ -1244,7 +1244,7 @@ contract_version:
   minor: 0
   patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
@@ -1263,7 +1263,7 @@ output_model: myapp.models.Output
 handler_id: compute.schema.validator
 name: Schema Validator
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
@@ -1305,7 +1305,7 @@ contract_version:
   minor: 0
   patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 output_model: myapp.models.Output
@@ -1327,7 +1327,7 @@ contract_version:
   minor: 0
   patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
@@ -1349,7 +1349,7 @@ contract_version:
   minor: 0
   patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
@@ -1373,7 +1373,7 @@ handler_id: compute.schema.validator
 name: Schema Validator
 contract_version: not-a-version
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
@@ -1386,8 +1386,8 @@ output_model: myapp.models.Output
         assert len(errors) >= 1
         assert any("contract_version" in error.lower() for error in errors)
 
-    def test_handler_contract_invalid_handler_kind(self, temp_repo):
-        """Invalid handler_kind triggers error."""
+    def test_handler_contract_invalid_node_archetype(self, temp_repo):
+        """Invalid node_archetype triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
@@ -1396,18 +1396,18 @@ contract_version:
   minor: 0
   patch: 0
 descriptor:
-  handler_kind: invalid_kind
+  node_archetype: invalid_kind
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
 output_model: myapp.models.Output
 """
-        yaml_file = temp_repo / "invalid_handler_kind.yaml"
+        yaml_file = temp_repo / "invalid_node_archetype.yaml"
         yaml_file.write_text(invalid_handler)
 
         errors = validate_yaml_file(yaml_file)
         assert len(errors) >= 1
-        assert any("handler_kind" in error.lower() for error in errors)
+        assert any("node_archetype" in error.lower() for error in errors)
 
     def test_handler_contract_invalid_purity(self, temp_repo):
         """Invalid purity value triggers error."""
@@ -1419,7 +1419,7 @@ contract_version:
   minor: 0
   patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: invalid_purity
   idempotent: true
 input_model: myapp.models.Input
@@ -1433,7 +1433,7 @@ output_model: myapp.models.Output
         assert any("purity" in error.lower() for error in errors)
 
     def test_handler_contract_id_kind_mismatch(self, temp_repo):
-        """Handler ID prefix must match handler_kind."""
+        """Handler ID prefix must match node_archetype."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
@@ -1442,7 +1442,7 @@ contract_version:
   minor: 0
   patch: 0
 descriptor:
-  handler_kind: effect
+  node_archetype: effect
   purity: side_effecting
   idempotent: true
 input_model: myapp.models.Input
@@ -1453,16 +1453,16 @@ output_model: myapp.models.Output
 
         errors = validate_yaml_file(yaml_file)
         assert len(errors) >= 1
-        # The compute prefix should require handler_kind: compute
+        # The compute prefix should require node_archetype: compute
         assert any(
             "compute" in error.lower()
-            or "handler_kind" in error.lower()
+            or "node_archetype" in error.lower()
             or "prefix" in error.lower()
             for error in errors
         )
 
     def test_handler_contract_all_valid_kinds(self, temp_repo):
-        """All valid handler_kind values are accepted."""
+        """All valid node_archetype values are accepted."""
         valid_kinds = ["compute", "effect", "reducer", "orchestrator"]
 
         for kind in valid_kinds:
@@ -1474,7 +1474,7 @@ contract_version:
   minor: 0
   patch: 0
 descriptor:
-  handler_kind: {kind}
+  node_archetype: {kind}
   purity: {"pure" if kind == "compute" else "side_effecting"}
   idempotent: true
 input_model: myapp.models.Input
@@ -1498,7 +1498,7 @@ contract_version:
   minor: 2
   patch: 0
 descriptor:
-  handler_kind: reducer
+  node_archetype: reducer
   purity: side_effecting
   idempotent: true
   timeout_ms: 30000
@@ -1536,7 +1536,7 @@ contract_version:
   minor: 2
   patch: 0
 descriptor:
-  handler_kind: reducer
+  node_archetype: reducer
   purity: side_effecting
   idempotent: true
 
@@ -1570,7 +1570,7 @@ contract_version:
   minor: 0
   patch: 0
 descriptor:
-  handler_kind: effect
+  node_archetype: effect
   purity: side_effecting
   idempotent: true
   timeout_ms: 30000
@@ -1606,7 +1606,7 @@ contract_version:
   minor: 0
   patch: 0
 descriptor:
-  handler_kind: effect
+  node_archetype: effect
   purity: side_effecting
   idempotent: false
   timeout_ms: 60000

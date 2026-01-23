@@ -3,7 +3,7 @@
 # This handler performs pure data transformation with no side effects.
 #
 # Key characteristics:
-#   - handler_kind: compute (pure, deterministic)
+#   - node_archetype: compute (pure, deterministic)
 #   - purity: pure (no side effects)
 #   - idempotent: true (safe to retry)
 #   - Can be cached and run in parallel
@@ -17,7 +17,7 @@ contract_version:
 description: Validates input data against JSON schemas
 
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
   timeout_ms: 5000

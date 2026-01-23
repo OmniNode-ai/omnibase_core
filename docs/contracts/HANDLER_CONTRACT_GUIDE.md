@@ -45,7 +45,7 @@ contract = ModelHandlerContract(
     name="JSON Transformer",
     contract_version=ModelSemVer(major=1, minor=0, patch=0),
     descriptor=ModelHandlerBehaviorDescriptor(
-        handler_kind="compute",
+        node_archetype="compute",
         purity="pure",
         idempotent=True,
     ),
@@ -58,14 +58,14 @@ contract = ModelHandlerContract(
 
 ## Handler ID Convention
 
-The `handler_id` field uses dot-notation with at least 2 segments. The first segment (prefix) can indicate handler kind constraints, enabling self-documenting IDs that reflect handler architecture at a glance.
+The `handler_id` field uses dot-notation with at least 2 segments. The first segment (prefix) can indicate node archetype constraints, enabling self-documenting IDs that reflect handler architecture at a glance.
 
 ### Prefix Naming Rules
 
 | Prefix | Constraint | Description |
 |--------|------------|-------------|
-| `node.*` | None (generic) | Generic node prefix, works with any `handler_kind` |
-| `handler.*` | None (generic) | Generic handler prefix, works with any `handler_kind` |
+| `node.*` | None (generic) | Generic node prefix, works with any `node_archetype` |
+| `handler.*` | None (generic) | Generic handler prefix, works with any `node_archetype` |
 | `compute.*` | Must match `"compute"` | ID indicates a compute handler |
 | `effect.*` | Must match `"effect"` | ID indicates an effect handler |
 | `reducer.*` | Must match `"reducer"` | ID indicates a reducer handler |
@@ -84,48 +84,48 @@ The `handler_id` field uses dot-notation with at least 2 segments. The first seg
 #### Valid Combinations
 
 ```python
-# Generic prefixes - any handler_kind allowed
+# Generic prefixes - any node_archetype allowed
 ModelHandlerContract(
     handler_id="node.user.processor",
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="compute"),
     ...
 )  # OK - "node" is generic
 
 ModelHandlerContract(
     handler_id="handler.email.sender",
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="effect"),
     ...
 )  # OK - "handler" is generic
 
-# Kind-specific prefixes - must match handler_kind
+# Kind-specific prefixes - must match node_archetype
 ModelHandlerContract(
     handler_id="compute.json.transformer",
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="compute"),
     ...
-)  # OK - "compute" matches handler_kind="compute"
+)  # OK - "compute" matches node_archetype="compute"
 
 ModelHandlerContract(
     handler_id="effect.db.writer",
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="effect"),
     ...
-)  # OK - "effect" matches handler_kind="effect"
+)  # OK - "effect" matches node_archetype="effect"
 
 ModelHandlerContract(
     handler_id="reducer.order.state",
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="reducer"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="reducer"),
     ...
-)  # OK - "reducer" matches handler_kind="reducer"
+)  # OK - "reducer" matches node_archetype="reducer"
 
 ModelHandlerContract(
     handler_id="orchestrator.workflow.manager",
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="orchestrator"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="orchestrator"),
     ...
-)  # OK - "orchestrator" matches handler_kind="orchestrator"
+)  # OK - "orchestrator" matches node_archetype="orchestrator"
 
 # Custom prefixes - no constraints
 ModelHandlerContract(
     handler_id="myapp.custom.handler",
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="effect"),
     ...
 )  # OK - "myapp" is not a reserved prefix
 ```
@@ -133,24 +133,24 @@ ModelHandlerContract(
 #### Invalid Combinations
 
 ```python
-# ERROR: prefix implies wrong handler_kind
+# ERROR: prefix implies wrong node_archetype
 ModelHandlerContract(
     handler_id="compute.json.transformer",
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="effect"),
     ...
 )
 # Raises: ModelOnexError
-# Message: "Handler ID prefix 'compute' implies handler_kind='compute'
-#          but descriptor has handler_kind='effect'"
+# Message: "Handler ID prefix 'compute' implies node_archetype='compute'
+#          but descriptor has node_archetype='effect'"
 
 ModelHandlerContract(
     handler_id="reducer.state.machine",
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="orchestrator"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="orchestrator"),
     ...
 )
 # Raises: ModelOnexError
-# Message: "Handler ID prefix 'reducer' implies handler_kind='reducer'
-#          but descriptor has handler_kind='orchestrator'"
+# Message: "Handler ID prefix 'reducer' implies node_archetype='reducer'
+#          but descriptor has node_archetype='orchestrator'"
 ```
 
 ### Choosing the Right Prefix
@@ -158,7 +158,7 @@ ModelHandlerContract(
 Use this decision tree:
 
 ```text
-Do you want the handler_id to indicate the handler kind?
+Do you want the handler_id to indicate the node archetype?
     |
     +-- YES --> Use kind-specific prefix (compute.*, effect.*, etc.)
     |
@@ -172,7 +172,7 @@ Do you want the handler_id to indicate the handler kind?
 **Recommendations**:
 
 - Use **kind-specific prefixes** for libraries and reusable handlers
-- Use **generic prefixes** when handler kind might change during development
+- Use **generic prefixes** when node archetype might change during development
 - Use **custom prefixes** for application-specific handlers with domain naming
 
 ---
@@ -212,7 +212,7 @@ descriptor: ModelHandlerBehaviorDescriptor  # Runtime behavior (required)
 ```
 
 The descriptor defines:
-- `handler_kind`: compute, effect, reducer, orchestrator
+- `node_archetype`: compute, effect, reducer, orchestrator
 - `purity`: pure, side_effecting
 - `idempotent`: Whether safe to retry
 - `timeout_ms`: Handler timeout
@@ -267,7 +267,7 @@ contract = ModelHandlerContract(
     handler_id="node.my.handler",
     name="My Handler",
     contract_version=ModelSemVer(major=1, minor=0, patch=0),
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="compute"),
     input_model="myapp.models.Input",
     output_model="myapp.models.Output",
 )
@@ -298,7 +298,7 @@ contract = ModelHandlerContract(
 
     # Behavior
     descriptor=ModelHandlerBehaviorDescriptor(
-        handler_kind="effect",
+        node_archetype="effect",
         purity="side_effecting",
         idempotent=True,  # Can safely retry
         timeout_ms=30000,
@@ -422,19 +422,19 @@ handler_id="effect.db.writer"
 handler_id="node.json.parser"
 ```
 
-### 2. Match Prefix to Handler Kind
+### 2. Match Prefix to Node Archetype
 
 ```python
-# CORRECT: Prefix matches kind
+# CORRECT: Prefix matches archetype
 ModelHandlerContract(
     handler_id="compute.transform",
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="compute"),
 )
 
 # ERROR: Prefix doesn't match
 ModelHandlerContract(
     handler_id="compute.transform",
-    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+    descriptor=ModelHandlerBehaviorDescriptor(node_archetype="effect"),
 )  # Raises ValidationError
 ```
 
@@ -462,27 +462,27 @@ If using custom prefixes, document them in your project:
 
 ## Troubleshooting
 
-### Error: Handler ID prefix implies wrong handler_kind
+### Error: Handler ID prefix implies wrong node_archetype
 
-**Cause**: Using a kind-specific prefix (compute, effect, reducer, orchestrator) with a mismatched `handler_kind` in the descriptor.
+**Cause**: Using a kind-specific prefix (compute, effect, reducer, orchestrator) with a mismatched `node_archetype` in the descriptor.
 
 **Solution**: Either:
-1. Change the prefix to match the handler_kind
-2. Change the handler_kind to match the prefix
+1. Change the prefix to match the node_archetype
+2. Change the node_archetype to match the prefix
 3. Use a generic prefix (node, handler, or custom)
 
 ```python
 # Option 1: Change prefix
 handler_id="effect.email.sender"  # Changed from compute.*
-descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect")
+descriptor=ModelHandlerBehaviorDescriptor(node_archetype="effect")
 
-# Option 2: Change handler_kind
+# Option 2: Change node_archetype
 handler_id="compute.email.sender"
-descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute")  # Changed
+descriptor=ModelHandlerBehaviorDescriptor(node_archetype="compute")  # Changed
 
 # Option 3: Use generic prefix
 handler_id="handler.email.sender"  # No constraint
-descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect")
+descriptor=ModelHandlerBehaviorDescriptor(node_archetype="effect")
 ```
 
 ### Error: handler_id must have at least 2 segments

@@ -44,14 +44,14 @@ class TestModelHandlerContractCreation:
             handler_id="node.test.handler",
             name="Test Handler",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
             input_model="myapp.models.Input",
             output_model="myapp.models.Output",
         )
         assert contract.handler_id == "node.test.handler"
         assert contract.name == "Test Handler"
         assert str(contract.contract_version) == "1.0.0"
-        assert contract.descriptor.handler_kind == "compute"
+        assert contract.descriptor.node_archetype == "compute"
 
     def test_full_creation(self) -> None:
         """Test creation with all fields."""
@@ -63,7 +63,7 @@ class TestModelHandlerContractCreation:
             ),
             description="Handles user registration lifecycle",
             descriptor=ModelHandlerBehavior(
-                handler_kind="reducer",
+                node_archetype="reducer",
                 purity="side_effecting",
                 idempotent=True,
                 timeout_ms=30000,
@@ -91,7 +91,7 @@ class TestModelHandlerContractCreation:
             metadata={"owner": "user-team"},
         )
         assert contract.handler_id == "reducer.user.registration"
-        assert contract.descriptor.handler_kind == "reducer"
+        assert contract.descriptor.node_archetype == "reducer"
         assert len(contract.capability_inputs) == 1
         assert contract.capability_inputs[0].alias == "db"
         assert contract.supports_lifecycle is True
@@ -107,7 +107,7 @@ class TestHandlerIdValidation:
             handler_id="node.handler",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -119,7 +119,7 @@ class TestHandlerIdValidation:
             handler_id="effect.database.user.repository",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="effect"),
+            descriptor=ModelHandlerBehavior(node_archetype="effect"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -132,7 +132,7 @@ class TestHandlerIdValidation:
                 handler_id="handler",
                 name="Test",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="compute"),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
                 input_model="a.Input",
                 output_model="a.Output",
             )
@@ -144,7 +144,7 @@ class TestHandlerIdValidation:
                 handler_id="node..handler",
                 name="Test",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="compute"),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
                 input_model="a.Input",
                 output_model="a.Output",
             )
@@ -155,7 +155,7 @@ class TestHandlerIdValidation:
             handler_id="node._internal.handler",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -195,7 +195,7 @@ class TestVersionValidation:
             handler_id="node.test",
             name="Test",
             contract_version=version,
-            descriptor=ModelHandlerBehavior(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -208,7 +208,7 @@ class TestVersionValidation:
                 handler_id="node.test",
                 name="Test",
                 version="1.0.0",  # type: ignore[call-arg]
-                descriptor=ModelHandlerBehavior(handler_kind="compute"),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
                 input_model="a.Input",
                 output_model="a.Output",
             )
@@ -216,78 +216,78 @@ class TestVersionValidation:
 
 @pytest.mark.unit
 class TestDescriptorConsistencyValidation:
-    """Tests for handler_id prefix vs descriptor.handler_kind consistency."""
+    """Tests for handler_id prefix vs descriptor.node_archetype consistency."""
 
     def test_compute_prefix_matches_compute_kind(self) -> None:
-        """Test compute prefix accepts compute handler_kind."""
+        """Test compute prefix accepts compute node_archetype."""
         contract = ModelHandlerContract(
             handler_id="compute.data.transformer",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
-        assert contract.descriptor.handler_kind == "compute"
+        assert contract.descriptor.node_archetype == "compute"
 
     def test_effect_prefix_matches_effect_kind(self) -> None:
-        """Test effect prefix accepts effect handler_kind."""
+        """Test effect prefix accepts effect node_archetype."""
         contract = ModelHandlerContract(
             handler_id="effect.database.writer",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="effect"),
+            descriptor=ModelHandlerBehavior(node_archetype="effect"),
             input_model="a.Input",
             output_model="a.Output",
         )
-        assert contract.descriptor.handler_kind == "effect"
+        assert contract.descriptor.node_archetype == "effect"
 
     def test_reducer_prefix_matches_reducer_kind(self) -> None:
-        """Test reducer prefix accepts reducer handler_kind."""
+        """Test reducer prefix accepts reducer node_archetype."""
         contract = ModelHandlerContract(
             handler_id="reducer.user.state",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="reducer"),
+            descriptor=ModelHandlerBehavior(node_archetype="reducer"),
             input_model="a.Input",
             output_model="a.Output",
         )
-        assert contract.descriptor.handler_kind == "reducer"
+        assert contract.descriptor.node_archetype == "reducer"
 
     def test_generic_node_prefix_accepts_any_kind(self) -> None:
-        """Test 'node' prefix accepts any handler_kind."""
+        """Test 'node' prefix accepts any node_archetype."""
         for kind in ["compute", "effect", "reducer", "orchestrator"]:
             contract = ModelHandlerContract(
                 handler_id="node.test.handler",
                 name="Test",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind=kind),  # type: ignore[arg-type]
+                descriptor=ModelHandlerBehavior(node_archetype=kind),  # type: ignore[arg-type]
                 input_model="a.Input",
                 output_model="a.Output",
             )
-            assert contract.descriptor.handler_kind == kind
+            assert contract.descriptor.node_archetype == kind
 
     def test_generic_handler_prefix_accepts_any_kind(self) -> None:
-        """Test 'handler' prefix accepts any handler_kind."""
+        """Test 'handler' prefix accepts any node_archetype."""
         for kind in ["compute", "effect", "reducer", "orchestrator"]:
             contract = ModelHandlerContract(
                 handler_id="handler.test.impl",
                 name="Test",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind=kind),  # type: ignore[arg-type]
+                descriptor=ModelHandlerBehavior(node_archetype=kind),  # type: ignore[arg-type]
                 input_model="a.Input",
                 output_model="a.Output",
             )
-            assert contract.descriptor.handler_kind == kind
+            assert contract.descriptor.node_archetype == kind
 
     def test_compute_prefix_rejects_effect_kind(self) -> None:
-        """Test compute prefix rejects effect handler_kind."""
-        with pytest.raises(ModelOnexError, match="implies handler_kind='compute'"):
+        """Test compute prefix rejects effect node_archetype."""
+        with pytest.raises(ModelOnexError, match="implies node_archetype='compute'"):
             ModelHandlerContract(
                 handler_id="compute.data.transformer",
                 name="Test",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="effect"),
+                descriptor=ModelHandlerBehavior(node_archetype="effect"),
                 input_model="a.Input",
                 output_model="a.Output",
             )
@@ -304,7 +304,7 @@ class TestCapabilityDependencyHandling:
                 handler_id="node.test",
                 name="Test",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="effect"),
+                descriptor=ModelHandlerBehavior(node_archetype="effect"),
                 capability_inputs=[
                     ModelCapabilityDependency(alias="db", capability="database"),
                     ModelCapabilityDependency(alias="db", capability="cache"),
@@ -319,7 +319,7 @@ class TestCapabilityDependencyHandling:
             handler_id="node.test",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="effect"),
+            descriptor=ModelHandlerBehavior(node_archetype="effect"),
             capability_inputs=[
                 ModelCapabilityDependency(alias="db", capability="database"),
                 ModelCapabilityDependency(alias="cache", capability="cache"),
@@ -336,7 +336,7 @@ class TestCapabilityDependencyHandling:
             handler_id="node.test",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="effect"),
+            descriptor=ModelHandlerBehavior(node_archetype="effect"),
             capability_inputs=[
                 ModelCapabilityDependency(
                     alias="db", capability="database", strict=True
@@ -357,7 +357,7 @@ class TestCapabilityDependencyHandling:
             handler_id="node.test",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="effect"),
+            descriptor=ModelHandlerBehavior(node_archetype="effect"),
             capability_inputs=[
                 ModelCapabilityDependency(
                     alias="db", capability="database", strict=True
@@ -383,7 +383,7 @@ class TestExecutionConstraintsHelpers:
             handler_id="node.test",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -395,7 +395,7 @@ class TestExecutionConstraintsHelpers:
             handler_id="node.test",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
             execution_constraints=ModelExecutionConstraints(),
             input_model="a.Input",
             output_model="a.Output",
@@ -408,7 +408,7 @@ class TestExecutionConstraintsHelpers:
             handler_id="node.test",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
             execution_constraints=ModelExecutionConstraints(
                 requires_before=["capability:auth"],
             ),
@@ -428,7 +428,7 @@ class TestImmutability:
             handler_id="node.test",
             name="Test",
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
-            descriptor=ModelHandlerBehavior(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -442,7 +442,7 @@ class TestImmutability:
                 handler_id="node.test",
                 name="Test",
                 contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(handler_kind="compute"),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
                 input_model="a.Input",
                 output_model="a.Output",
                 unknown_field="value",  # type: ignore[call-arg]

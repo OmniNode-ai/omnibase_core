@@ -87,7 +87,7 @@ description: "A custom compute handler"
 input_model: "ModelAny"
 output_model: "ModelAny"
 descriptor:
-  handler_kind: "compute"
+  node_archetype: "compute"
   purity: "pure"
   idempotent: true
   timeout_ms: 30000
@@ -107,7 +107,7 @@ description: "Original description"
 input_model: "ModelInput"
 output_model: "ModelOutput"
 descriptor:
-  handler_kind: "compute"
+  node_archetype: "compute"
   purity: "pure"
   idempotent: true
   timeout_ms: 30000
@@ -128,7 +128,7 @@ description: "Updated description"
 input_model: "ModelInputV2"
 output_model: "ModelOutput"
 descriptor:
-  handler_kind: "compute"
+  node_archetype: "compute"
   purity: "side_effecting"
   idempotent: false
   timeout_ms: 60000
@@ -736,7 +736,7 @@ name: "handler"
 version: "1.0.0"
 extra_field: "this will be removed"
 descriptor:
-  handler_kind: "compute"
+  node_archetype: "compute"
 """)
 
         new_file.write_text("""
@@ -744,7 +744,7 @@ handler_id: "node.handler"
 name: "handler"
 version: "1.0.0"
 descriptor:
-  handler_kind: "compute"
+  node_archetype: "compute"
 """)
 
         result = runner.invoke(

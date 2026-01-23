@@ -57,7 +57,7 @@ contract = ModelHandlerContract(
     name="User Registration Reducer",
     version="1.0.0",
     descriptor=ModelHandlerBehaviorDescriptor(
-        handler_kind="reducer",
+        node_archetype="reducer",
         purity="side_effecting",
         idempotent=True,
     ),

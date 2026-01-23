@@ -101,7 +101,7 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
        ensures alias uniqueness.
 
     4. **Runtime Invariants**: Validates handler_id format, input/output model
-       references, contract_version format, and handler_kind consistency.
+       references, contract_version format, and node_archetype consistency.
 
     Validation is performed in a single pass for efficiency. All validations
     are deterministic and do not require external resources.
@@ -188,8 +188,8 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
         # 4. Dependency type correctness (capability inputs)
         self._validate_capability_inputs(contract, result)
 
-        # 5. Handler kind consistency
-        self._validate_handler_kind_consistency(contract, result)
+        # 5. Node archetype consistency
+        self._validate_node_archetype_consistency(contract, result)
 
         # Update summary based on results
         if result.is_valid:
@@ -552,22 +552,22 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
             )
 
     # =========================================================================
-    # Handler Kind Consistency
+    # Node Archetype Consistency
     # =========================================================================
 
-    def _validate_handler_kind_consistency(
+    def _validate_node_archetype_consistency(
         self,
         contract: ModelHandlerContract,
         result: ModelValidationResult[None],
     ) -> None:
-        """Validate handler_id prefix consistency with handler_kind.
+        """Validate handler_id prefix consistency with node_archetype.
 
-        If the handler_id starts with a prefix that implies a specific kind
+        If the handler_id starts with a prefix that implies a specific archetype
         (e.g., 'compute.', 'effect.', 'reducer.', 'orchestrator.'), validate
-        that descriptor.handler_kind matches.
+        that descriptor.node_archetype matches.
 
         Note: Generic prefixes like 'node.' and 'handler.' are allowed with
-        any handler_kind.
+        any node_archetype.
 
         Args:
             contract: The contract to validate.
@@ -576,30 +576,30 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
         # Extract first segment of handler_id
         prefix = contract.handler_id.split(".")[0].lower()
 
-        # Map prefixes that imply specific handler kinds
-        prefix_to_kind = {
+        # Map prefixes that imply specific node archetypes
+        prefix_to_archetype = {
             "compute": "compute",
             "effect": "effect",
             "reducer": "reducer",
             "orchestrator": "orchestrator",
         }
 
-        expected_kind = prefix_to_kind.get(prefix)
+        expected_archetype = prefix_to_archetype.get(prefix)
 
-        # Only validate if prefix implies a specific kind
-        if expected_kind is not None:
-            actual_kind = contract.descriptor.handler_kind
-            if actual_kind != expected_kind:
+        # Only validate if prefix implies a specific archetype
+        if expected_archetype is not None:
+            actual_archetype = contract.descriptor.node_archetype
+            if actual_archetype != expected_archetype:
                 logger.debug(
-                    f"Handler kind mismatch: prefix '{prefix}' implies "
-                    f"'{expected_kind}' but got '{actual_kind}'"
+                    f"Node archetype mismatch: prefix '{prefix}' implies "
+                    f"'{expected_archetype}' but got '{actual_archetype}'"
                 )
                 # Note: This is already validated by ModelHandlerContract's
-                # validate_descriptor_handler_kind_consistency validator,
+                # validate_descriptor_node_archetype_consistency validator,
                 # but we include it here for completeness and clearer errors
                 result.add_error(
-                    f"Handler ID prefix '{prefix}' implies handler_kind='{expected_kind}' "
-                    f"but descriptor has handler_kind='{actual_kind}'. "
-                    "Either change the handler_id prefix or update the handler_kind.",
+                    f"Handler ID prefix '{prefix}' implies node_archetype='{expected_archetype}' "
+                    f"but descriptor has node_archetype='{actual_archetype}'. "
+                    "Either change the handler_id prefix or update the node_archetype.",
                     code=EnumContractValidationErrorCode.CONTRACT_VALIDATION_EXPANDED_RUNTIME_INVARIANT_VIOLATED.value,
                 )

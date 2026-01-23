@@ -60,7 +60,7 @@ class TestMergeValidatorFixtures:
     def valid_descriptor(self) -> ModelHandlerBehavior:
         """Create a valid handler behavior descriptor."""
         return ModelHandlerBehavior(
-            handler_kind="compute",
+            node_archetype="compute",
             purity="pure",
             idempotent=True,
         )

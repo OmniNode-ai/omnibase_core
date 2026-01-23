@@ -58,7 +58,7 @@ class TestContractValidationPipelineFixtures:
     def valid_descriptor(self) -> ModelHandlerBehavior:
         """Create a valid handler behavior descriptor."""
         return ModelHandlerBehavior(
-            handler_kind="compute",
+            node_archetype="compute",
             purity="pure",
             idempotent=True,
         )
@@ -369,7 +369,7 @@ class TestModelExpandedContractResult:
     def test_success_result(self) -> None:
         """Test successful result creation."""
         descriptor = ModelHandlerBehavior(
-            handler_kind="compute",
+            node_archetype="compute",
             purity="pure",
         )
         contract = ModelHandlerContract(
@@ -444,7 +444,7 @@ class TestContractValidationPipelineValidateAll(TestContractValidationPipelineFi
             mock_merge_engine_class.return_value = mock_merge_engine
 
             # Create a valid merged contract
-            descriptor = ModelHandlerBehavior(handler_kind="compute", purity="pure")
+            descriptor = ModelHandlerBehavior(node_archetype="compute", purity="pure")
             merged = ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Merged Handler",
@@ -532,7 +532,7 @@ class TestContractValidationPipelineValidateAll(TestContractValidationPipelineFi
             mock_merge_engine = MagicMock()
             mock_merge_engine_class.return_value = mock_merge_engine
 
-            descriptor = ModelHandlerBehavior(handler_kind="compute", purity="pure")
+            descriptor = ModelHandlerBehavior(node_archetype="compute", purity="pure")
             merged = ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
@@ -587,7 +587,7 @@ class TestContractValidationPipelineValidateAll(TestContractValidationPipelineFi
             mock_merge_engine = MagicMock()
             mock_merge_engine_class.return_value = mock_merge_engine
 
-            descriptor = ModelHandlerBehavior(handler_kind="compute", purity="pure")
+            descriptor = ModelHandlerBehavior(node_archetype="compute", purity="pure")
             merged = ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
@@ -697,7 +697,7 @@ class TestValidationPerformance:
     def valid_descriptor(self) -> ModelHandlerBehavior:
         """Create a valid handler behavior descriptor."""
         return ModelHandlerBehavior(
-            handler_kind="compute",
+            node_archetype="compute",
             purity="pure",
             idempotent=True,
         )

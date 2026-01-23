@@ -37,6 +37,7 @@ from uuid import UUID, uuid4
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_merge_conflict_type import EnumMergeConflictType
+from omnibase_core.enums.enum_node_archetype import EnumNodeArchetype
 from omnibase_core.merge.merge_rules import (
     apply_list_operations,
     merge_scalar,
@@ -524,7 +525,7 @@ class ContractMergeEngine:
         # Default behavior if base is None
         if base_behavior is None:
             base_behavior = ModelHandlerBehavior(
-                handler_kind="compute",
+                node_archetype=EnumNodeArchetype.COMPUTE,
                 purity="side_effecting",
                 idempotent=False,
             )
@@ -542,7 +543,7 @@ class ContractMergeEngine:
         )
 
         return ModelHandlerBehavior(
-            handler_kind=base_behavior.handler_kind,  # Kind cannot be overridden
+            node_archetype=base_behavior.node_archetype,  # Archetype cannot be overridden
             purity=merge_scalar(base_behavior.purity, patch_descriptor.purity)
             or base_behavior.purity,
             idempotent=merged_idempotent,

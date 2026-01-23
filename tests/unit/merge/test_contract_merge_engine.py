@@ -435,7 +435,7 @@ class TestDescriptorMerging:
         mock_base.behavior = Mock()
         mock_base.behavior.timeout_ms = 5000
         mock_base.behavior.idempotent = False
-        mock_base.behavior.handler_kind = "compute"
+        mock_base.behavior.node_archetype = "compute"
         mock_base.behavior.purity = "side_effecting"
         mock_base.behavior.retry_policy = None
         mock_base.behavior.circuit_breaker = None
@@ -1003,20 +1003,20 @@ class TestMergeResultType:
         assert hasattr(result, "contract_version")
         assert hasattr(result, "description")
 
-    def test_merge_result_has_handler_kind(
+    def test_merge_result_has_node_archetype(
         self,
         mock_profile_factory: Mock,
         new_contract_patch: ModelContractPatch,
     ) -> None:
-        """Test that merge result has handler_kind from descriptor."""
+        """Test that merge result has node_archetype from descriptor."""
         from omnibase_core.merge.contract_merge_engine import ContractMergeEngine
 
         engine = ContractMergeEngine(mock_profile_factory)
         result = engine.merge(new_contract_patch)
 
-        # ModelHandlerContract uses descriptor.handler_kind, not node_type
+        # ModelHandlerContract uses descriptor.node_archetype, not node_type
         assert hasattr(result, "descriptor")
-        assert hasattr(result.descriptor, "handler_kind")
+        assert hasattr(result.descriptor, "node_archetype")
 
 
 class TestProfileResolution:

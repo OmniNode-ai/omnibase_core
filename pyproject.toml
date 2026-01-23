@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "omnibase_core"
-version = "0.9.1"
+version = "0.9.2"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode Team", email = "team@omninode.ai"}

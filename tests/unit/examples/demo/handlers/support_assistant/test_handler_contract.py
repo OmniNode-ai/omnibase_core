@@ -6,7 +6,7 @@ Unit tests for the Support Assistant Demo Handler Contract.
 Validates that the support_assistant.yaml handler contract:
 1. Loads successfully without parse errors
 2. Deserializes into ModelHandlerContract correctly
-3. Has consistent handler_id prefix matching handler_kind
+3. Has consistent handler_id prefix matching node_archetype
 4. Defines the required LLM capability dependency
 5. Specifies input and output model references
 6. Is properly configured as an effect handler (side_effecting purity)
@@ -62,19 +62,19 @@ class TestHandlerContract:
         assert contract.descriptor is not None
 
     def test_handler_id_matches_kind(self, contract: ModelHandlerContract) -> None:
-        """Handler ID prefix matches handler_kind."""
+        """Handler ID prefix matches node_archetype."""
         # Extract first segment of handler_id
         prefix = contract.handler_id.split(".")[0].lower()
-        handler_kind = contract.descriptor.handler_kind
+        node_archetype = contract.descriptor.node_archetype
 
         # For typed prefixes (effect, compute, reducer, orchestrator),
-        # the prefix must match the handler_kind
-        assert prefix == handler_kind, (
-            f"Handler ID prefix '{prefix}' does not match handler_kind '{handler_kind}'"
+        # the prefix must match the node_archetype
+        assert prefix == node_archetype, (
+            f"Handler ID prefix '{prefix}' does not match node_archetype '{node_archetype}'"
         )
 
         # Verify it's an effect handler
-        assert handler_kind == "effect"
+        assert node_archetype == "effect"
         assert contract.handler_id == "effect.demo.support_assistant"
 
     def test_capability_inputs_defined(self, contract: ModelHandlerContract) -> None:
