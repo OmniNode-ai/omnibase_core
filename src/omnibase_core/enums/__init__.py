@@ -302,6 +302,12 @@ from .enum_severity import EnumSeverity
 from .hooks.claude_code.enum_claude_code_hook_event_type import (
     EnumClaudeCodeHookEventType,
 )
+from .hooks.claude_code.enum_claude_code_session_status import (
+    EnumClaudeCodeSessionStatus,
+)
+
+# Intelligence enums (OMN-1490)
+from .intelligence.enum_intent_category import EnumIntentCategory
 
 # Deprecated aliases for EnumSeverity (OMN-1311 consolidation)
 # Use EnumSeverity directly in new code.
@@ -609,6 +615,9 @@ __all__ = [
     "EnumEventSinkType",
     # Hook event domain (Claude Code integration - OMN-1474)
     "EnumClaudeCodeHookEventType",
+    "EnumClaudeCodeSessionStatus",
+    # Intelligence domain (OMN-1490)
+    "EnumIntentCategory",
     # Omnimemory domain (OMN-1235, OMN-1236, OMN-1237)
     "EnumDecisionType",
     "EnumFailureType",

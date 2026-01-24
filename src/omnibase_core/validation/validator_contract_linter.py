@@ -70,8 +70,10 @@ from omnibase_core.models.contracts.model_contract_orchestrator import (
     ModelContractOrchestrator,
 )
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
-from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
+from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
+)
+from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

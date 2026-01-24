@@ -11,7 +11,7 @@ Provides programmatic contract validation against ONEX standards with:
 import ast
 import re
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 import yaml
 from pydantic import ValidationError
@@ -863,7 +863,11 @@ class ServiceContractValidator:
         # Read and validate file content
         try:
             content = path.read_text(encoding="utf-8")
-            return self.validate_contract_yaml(content, contract_type)
+            # NOTE(OMN-1494): Cast needed because @standard_error_handling decorator erases return type.
+            return cast(
+                ModelContractValidationResult,
+                self.validate_contract_yaml(content, contract_type),
+            )
         except UnicodeDecodeError as e:
             return ModelContractValidationResult(
                 is_valid=False,
