@@ -92,5 +92,20 @@ class ModelClaudeCodeHookEvent(BaseModel):
         """Check if this event is a session lifecycle event."""
         return EnumClaudeCodeHookEventType.is_session_lifecycle_event(self.event_type)
 
+    def __repr__(self) -> str:
+        """Return concise representation for debugging.
+
+        Shows event type, truncated session ID, and correlation indicator.
+
+        Example:
+            >>> repr(event)
+            '<ClaudeCodeHookEvent SessionStart session=abc12345...>'
+        """
+        session_display = (
+            self.session_id[:8] + "..." if len(self.session_id) > 8 else self.session_id
+        )
+        corr = " corr=..." if self.correlation_id else ""
+        return f"<ClaudeCodeHookEvent {self.event_type.value} session={session_display}{corr}>"
+
 
 __all__ = ["ModelClaudeCodeHookEvent"]

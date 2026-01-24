@@ -42,6 +42,13 @@ class EnumClaudeCodeHookEventType(StrValueHelper, str, Enum):
         5. STOP - Session stopping
         6. PRE_COMPACT - Before context compaction
         7. SESSION_END - Session terminated
+
+    Event Categories (helper methods):
+        - is_agentic_loop_event(): PRE_TOOL_USE, PERMISSION_REQUEST, POST_TOOL_USE,
+          POST_TOOL_USE_FAILURE, SUBAGENT_START, SUBAGENT_STOP
+        - is_session_lifecycle_event(): SESSION_START, SESSION_END, STOP, PRE_COMPACT
+        - is_prompt_event(): USER_PROMPT_SUBMIT
+        - is_async_event(): NOTIFICATION
     """
 
     # Session lifecycle
@@ -109,6 +116,16 @@ class EnumClaudeCodeHookEventType(StrValueHelper, str, Enum):
             cls.STOP,
             cls.PRE_COMPACT,
         }
+
+    @classmethod
+    def is_prompt_event(cls, event_type: EnumClaudeCodeHookEventType) -> bool:
+        """Check if the event type is a prompt submission event."""
+        return event_type == cls.USER_PROMPT_SUBMIT
+
+    @classmethod
+    def is_async_event(cls, event_type: EnumClaudeCodeHookEventType) -> bool:
+        """Check if the event type is an async event that can occur at any point."""
+        return event_type == cls.NOTIFICATION
 
 
 __all__ = ["EnumClaudeCodeHookEventType"]

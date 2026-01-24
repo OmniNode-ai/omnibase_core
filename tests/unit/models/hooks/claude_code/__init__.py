@@ -1,1 +1,1 @@
-# Claude Code hook model tests.
+"""Unit tests for Claude Code hook models."""
