@@ -457,15 +457,16 @@ class TestModelEnvelopeTemplateInvalid:
             )
         assert "Empty expression" in str(exc_info.value)
 
-    def test_literal_dollar_brace_not_validated(self) -> None:
-        """Test that ${} without content is treated as literal (doesn't match pattern)."""
-        # ${} doesn't match the expression pattern (requires at least 1 char)
-        # so it passes through as a literal string without validation
-        template = ModelEnvelopeTemplate(
-            operation="test",
-            fields={"value": "${}"},
-        )
-        assert template.fields["value"] == "${}"
+    def test_empty_expression_rejected(self) -> None:
+        """Test that empty ${} expression is rejected with helpful error message."""
+        with pytest.raises(ValueError) as exc_info:
+            ModelEnvelopeTemplate(
+                operation="test",
+                fields={"value": "${}"},
+            )
+        assert "Empty expression" in str(exc_info.value)
+        assert "${}" in str(exc_info.value)
+        assert "request.field" in str(exc_info.value)  # Helpful suggestion
 
 
 # =============================================================================

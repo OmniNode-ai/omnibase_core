@@ -125,7 +125,6 @@ class ModelOperationBindings(BaseModel):
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts
         validate_assignment=True,
-        from_attributes=True,  # pytest-xdist compatibility
     )
 
     # Interface version for code generation stability

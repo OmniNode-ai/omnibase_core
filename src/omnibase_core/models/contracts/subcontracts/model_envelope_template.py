@@ -76,6 +76,9 @@ class ModelEnvelopeTemplate(BaseModel):
         r"\$\{(?P<content>[^}]+)\}"
     )
 
+    # Pattern to detect empty ${} expressions (user error that should be rejected)
+    EMPTY_EXPRESSION_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"\$\{\}")
+
     # Allowed roots for expressions (must match ModelBindingExpression.ALLOWED_ROOTS)
     ALLOWED_ROOTS: ClassVar[frozenset[str]] = frozenset(
         {"binding.config", "contract.config", "request", "result"}
@@ -100,7 +103,6 @@ class ModelEnvelopeTemplate(BaseModel):
 
     model_config = ConfigDict(
         extra="ignore",
-        from_attributes=True,
         validate_assignment=True,
     )
 
@@ -166,6 +168,14 @@ class ModelEnvelopeTemplate(BaseModel):
         Raises:
             ValueError: If any expression in the string is invalid.
         """
+        # Check for empty ${} expressions first (these don't match EXPRESSION_PATTERN)
+        if self.EMPTY_EXPRESSION_PATTERN.search(value):
+            # error-ok: Pydantic validator requires ValueError for conversion to ValidationError
+            raise ValueError(
+                f"Empty expression '${{}}' is not allowed at {path!r}. "
+                f"Use a valid expression like '${{request.field}}' in {value!r}"
+            )
+
         for match in self.EXPRESSION_PATTERN.finditer(value):
             content = match.group("content").strip()
             self._validate_expression_content(content, value, path)

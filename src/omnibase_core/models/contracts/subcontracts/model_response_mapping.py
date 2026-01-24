@@ -96,6 +96,9 @@ class ModelResponseMapping(BaseModel):
     # Allowed pipe functions
     ALLOWED_FUNCTIONS: ClassVar[frozenset[str]] = frozenset({"to_json", "from_json"})
 
+    # Maximum recursion depth for nested value validation (prevents DoS)
+    MAX_RECURSION_DEPTH: ClassVar[int] = 20
+
     fields: dict[str, Any] = Field(
         default_factory=dict,
         description="Mapping of response field names to their template values",
@@ -104,7 +107,6 @@ class ModelResponseMapping(BaseModel):
 
     model_config = ConfigDict(
         extra="ignore",
-        from_attributes=True,
         validate_assignment=True,
     )
 
@@ -139,11 +141,11 @@ class ModelResponseMapping(BaseModel):
             ValueError: If a string contains an invalid ${...} expression.
         """
         # Prevent excessive recursion
-        max_depth = 20
-        if depth > max_depth:
+        if depth > self.MAX_RECURSION_DEPTH:
             # error-ok: Pydantic validator requires ValueError for conversion to ValidationError
             raise ValueError(
-                f"Response mapping exceeds maximum nesting depth of {max_depth} at {path!r}"
+                f"Response mapping exceeds maximum nesting depth of "
+                f"{self.MAX_RECURSION_DEPTH} at {path!r}"
             )
 
         if isinstance(value, str) and "${" in value:
