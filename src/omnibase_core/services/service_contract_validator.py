@@ -863,7 +863,7 @@ class ServiceContractValidator:
         # Read and validate file content
         try:
             content = path.read_text(encoding="utf-8")
-            # NOTE(OMN-TBD): Cast needed because @standard_error_handling decorator erases return type. [NEEDS TICKET]
+            # NOTE(OMN-1494): Cast needed because @standard_error_handling decorator erases return type.
             return cast(
                 ModelContractValidationResult,
                 self.validate_contract_yaml(content, contract_type),
