@@ -339,6 +339,7 @@ from .typed_dict_ref_parts import TypedDictRefParts
 from .typed_dict_resolution_context import TypedDictResolutionContext
 from .typed_dict_resource_usage import TypedDictResourceUsage
 from .typed_dict_result_factory_kwargs import TypedDictResultFactoryKwargs
+from .typed_dict_routing_alternative import TypedDictRoutingAlternative
 from .typed_dict_routing_info import TypedDictRoutingInfo
 
 # New individual TypedDict classes extracted from typed_dict_structured_definitions.py
@@ -528,6 +529,7 @@ __all__ = [
     "TypedDictPropertyMetadata",
     "TypedDictQualityData",
     "TypedDictResultFactoryKwargs",
+    "TypedDictRoutingAlternative",
     "TypedDictRoutingInfo",
     "TypedDictSSLContextOptions",
     "TypedDictTimestampUpdateData",

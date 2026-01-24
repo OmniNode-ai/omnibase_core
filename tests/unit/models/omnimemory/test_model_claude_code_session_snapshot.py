@@ -685,21 +685,21 @@ class TestModelClaudeCodeSessionSnapshotSerialization:
 class TestModelClaudeCodeSessionSnapshotUtilityProperties:
     """Tests for utility properties."""
 
-    def test_is_active_true_when_not_ended(
+    def test_is_active_true_when_status_active(
         self, minimal_snapshot_data: dict[str, Any]
     ) -> None:
-        """Test is_active returns True when ended_at is None."""
+        """Test is_active returns True when status is ACTIVE."""
         snapshot = ModelClaudeCodeSessionSnapshot(**minimal_snapshot_data)
 
+        assert snapshot.status == EnumClaudeCodeSessionStatus.ACTIVE
         assert snapshot.is_active is True
 
-    def test_is_active_false_when_ended(
+    def test_is_active_false_when_status_not_active(
         self,
         minimal_snapshot_data: dict[str, Any],
-        sample_last_event_at: datetime,
     ) -> None:
-        """Test is_active returns False when ended_at is set."""
-        minimal_snapshot_data["ended_at"] = sample_last_event_at
+        """Test is_active returns False when status is not ACTIVE."""
+        minimal_snapshot_data["status"] = EnumClaudeCodeSessionStatus.ENDED
         snapshot = ModelClaudeCodeSessionSnapshot(**minimal_snapshot_data)
 
         assert snapshot.is_active is False

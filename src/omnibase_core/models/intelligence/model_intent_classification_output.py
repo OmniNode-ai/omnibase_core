@@ -5,8 +5,6 @@ from classifying user intents, including the primary intent, secondary intents,
 and classification metadata.
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.intelligence.enum_intent_category import EnumIntentCategory
@@ -82,16 +80,20 @@ class ModelIntentClassificationOutput(BaseModel):
         """
         return self.confidence >= threshold
 
-    def get_all_intents(self) -> list[tuple[str, float]]:
+    def get_all_intents(self) -> list[tuple[EnumIntentCategory | str, float]]:
         """Get all intents with their confidence scores.
 
         Returns a list of tuples containing intent category and confidence,
-        starting with the primary intent followed by secondary intents.
+        starting with the primary intent (EnumIntentCategory) followed by
+        secondary intents (string categories).
 
         Returns:
-            List of (intent_category, confidence) tuples.
+            List of (intent_category, confidence) tuples. Primary intent uses
+            EnumIntentCategory, secondary intents use string categories.
         """
-        intents: list[tuple[str, float]] = [(self.intent_category, self.confidence)]
+        intents: list[tuple[EnumIntentCategory | str, float]] = [
+            (self.intent_category, self.confidence)
+        ]
         for secondary in self.secondary_intents:
             category = secondary.get("intent_category", "unknown")
             conf = secondary.get("confidence", 0.0)

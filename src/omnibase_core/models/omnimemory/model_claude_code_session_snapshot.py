@@ -249,8 +249,8 @@ class ModelClaudeCodeSessionSnapshot(BaseModel):
 
     @property
     def is_active(self) -> bool:
-        """Check if the session is currently active (not ended)."""
-        return self.ended_at is None
+        """Check if the session is currently active."""
+        return self.status.is_active()
 
     @property
     def total_decisions(self) -> int:

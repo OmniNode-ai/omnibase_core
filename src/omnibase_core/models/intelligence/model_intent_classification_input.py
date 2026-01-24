@@ -5,8 +5,6 @@ for classifying user intents from content, with optional context for improved
 classification accuracy.
 """
 
-from __future__ import annotations
-
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
