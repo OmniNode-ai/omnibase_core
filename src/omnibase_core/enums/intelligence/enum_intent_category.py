@@ -16,14 +16,9 @@ or classification algorithm.
 from __future__ import annotations
 
 from enum import Enum, unique
+from functools import lru_cache
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
-
-# Module-level cached frozensets (populated after class definition)
-# These are initialized once and reused for all calls to the classmethod accessors.
-_DEVELOPMENT_INTENTS: frozenset[EnumIntentCategory] | None = None
-_INTELLIGENCE_INTENTS: frozenset[EnumIntentCategory] | None = None
-_META_INTENTS: frozenset[EnumIntentCategory] | None = None
 
 
 @unique
@@ -107,53 +102,47 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
     # Internal Category Group Constants (Single Source of Truth)
     # =========================================================================
     # NOTE: Python enums cannot have class attributes that aren't enum members,
-    # so we use @classmethod with module-level cached frozensets. The frozensets
-    # are lazily initialized on first access and reused for all subsequent calls.
+    # so we use @staticmethod with @lru_cache for thread-safe, lazy caching.
+    # The frozensets are computed once on first access and cached automatically.
 
-    @classmethod
-    def _development_intents(cls) -> frozenset[EnumIntentCategory]:
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def _development_intents() -> frozenset[EnumIntentCategory]:
         """Internal: Development intent category group (cached)."""
-        global _DEVELOPMENT_INTENTS
-        if _DEVELOPMENT_INTENTS is None:
-            _DEVELOPMENT_INTENTS = frozenset(
-                {
-                    cls.CODE_GENERATION,
-                    cls.DEBUGGING,
-                    cls.REFACTORING,
-                    cls.TESTING,
-                    cls.DOCUMENTATION,
-                    cls.ANALYSIS,
-                }
-            )
-        return _DEVELOPMENT_INTENTS
+        return frozenset(
+            {
+                EnumIntentCategory.CODE_GENERATION,
+                EnumIntentCategory.DEBUGGING,
+                EnumIntentCategory.REFACTORING,
+                EnumIntentCategory.TESTING,
+                EnumIntentCategory.DOCUMENTATION,
+                EnumIntentCategory.ANALYSIS,
+            }
+        )
 
-    @classmethod
-    def _intelligence_intents(cls) -> frozenset[EnumIntentCategory]:
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def _intelligence_intents() -> frozenset[EnumIntentCategory]:
         """Internal: Intelligence/ML intent category group (cached)."""
-        global _INTELLIGENCE_INTENTS
-        if _INTELLIGENCE_INTENTS is None:
-            _INTELLIGENCE_INTENTS = frozenset(
-                {
-                    cls.PATTERN_LEARNING,
-                    cls.QUALITY_ASSESSMENT,
-                    cls.SEMANTIC_ANALYSIS,
-                }
-            )
-        return _INTELLIGENCE_INTENTS
+        return frozenset(
+            {
+                EnumIntentCategory.PATTERN_LEARNING,
+                EnumIntentCategory.QUALITY_ASSESSMENT,
+                EnumIntentCategory.SEMANTIC_ANALYSIS,
+            }
+        )
 
-    @classmethod
-    def _meta_intents(cls) -> frozenset[EnumIntentCategory]:
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def _meta_intents() -> frozenset[EnumIntentCategory]:
         """Internal: Meta/system interaction intent category group (cached)."""
-        global _META_INTENTS
-        if _META_INTENTS is None:
-            _META_INTENTS = frozenset(
-                {
-                    cls.HELP,
-                    cls.CLARIFY,
-                    cls.FEEDBACK,
-                }
-            )
-        return _META_INTENTS
+        return frozenset(
+            {
+                EnumIntentCategory.HELP,
+                EnumIntentCategory.CLARIFY,
+                EnumIntentCategory.FEEDBACK,
+            }
+        )
 
     # =========================================================================
     # Classification Checker Methods
@@ -171,7 +160,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             True if the category is development-focused.
         """
-        return category in cls._development_intents()
+        return category in EnumIntentCategory._development_intents()
 
     @classmethod
     def is_intelligence_intent(cls, category: EnumIntentCategory) -> bool:
@@ -186,7 +175,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             True if the category is intelligence-focused.
         """
-        return category in cls._intelligence_intents()
+        return category in EnumIntentCategory._intelligence_intents()
 
     @classmethod
     def is_meta_intent(cls, category: EnumIntentCategory) -> bool:
@@ -201,7 +190,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             True if the category is a meta intent.
         """
-        return category in cls._meta_intents()
+        return category in EnumIntentCategory._meta_intents()
 
     @classmethod
     def is_classified(cls, category: EnumIntentCategory) -> bool:
@@ -226,7 +215,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             Set of development intent categories.
         """
-        return set(cls._development_intents())
+        return set(EnumIntentCategory._development_intents())
 
     @classmethod
     def get_intelligence_intents(cls) -> set[EnumIntentCategory]:
@@ -235,7 +224,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             Set of intelligence intent categories.
         """
-        return set(cls._intelligence_intents())
+        return set(EnumIntentCategory._intelligence_intents())
 
     @classmethod
     def get_meta_intents(cls) -> set[EnumIntentCategory]:
@@ -244,7 +233,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             Set of meta intent categories.
         """
-        return set(cls._meta_intents())
+        return set(EnumIntentCategory._meta_intents())
 
 
 __all__ = ["EnumIntentCategory"]

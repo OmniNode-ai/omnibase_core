@@ -11,10 +11,6 @@ from omnibase_core.enums.intelligence.enum_intent_category import EnumIntentCate
 from omnibase_core.types.typed_dict_intent_metadata import TypedDictIntentMetadata
 from omnibase_core.types.typed_dict_secondary_intent import TypedDictSecondaryIntent
 
-# Backward-compatible aliases for existing consumers
-SecondaryIntentDict = TypedDictSecondaryIntent
-IntentMetadataDict = TypedDictIntentMetadata
-
 
 class ModelIntentClassificationOutput(BaseModel):
     """Output model for intent classification operations.
@@ -80,19 +76,17 @@ class ModelIntentClassificationOutput(BaseModel):
         """
         return self.confidence >= threshold
 
-    def get_all_intents(self) -> list[tuple[EnumIntentCategory | str, float]]:
+    def get_all_intents(self) -> list[tuple[str, float]]:
         """Get all intents with their confidence scores.
 
-        Returns a list of tuples containing intent category and confidence,
-        starting with the primary intent (EnumIntentCategory) followed by
-        secondary intents (string categories).
+        Returns a list of tuples containing intent category (as string) and confidence,
+        starting with the primary intent followed by secondary intents.
 
         Returns:
-            List of (intent_category, confidence) tuples. Primary intent uses
-            EnumIntentCategory, secondary intents use string categories.
+            List of (intent_category, confidence) tuples. All categories are strings.
         """
-        intents: list[tuple[EnumIntentCategory | str, float]] = [
-            (self.intent_category, self.confidence)
+        intents: list[tuple[str, float]] = [
+            (self.intent_category.value, self.confidence)
         ]
         for secondary in self.secondary_intents:
             category = secondary.get("intent_category", "unknown")
@@ -103,9 +97,7 @@ class ModelIntentClassificationOutput(BaseModel):
 
 __all__ = [
     "EnumIntentCategory",
-    "IntentMetadataDict",
     "ModelIntentClassificationOutput",
-    "SecondaryIntentDict",
     "TypedDictIntentMetadata",
     "TypedDictSecondaryIntent",
 ]

@@ -22,9 +22,9 @@ from pydantic import ValidationError
 pytestmark = pytest.mark.unit
 
 from omnibase_core.models.intelligence.model_intent_classification_input import (
-    ConversationMessageDict,
-    IntentContextDict,
     ModelIntentClassificationInput,
+    TypedDictConversationMessage,
+    TypedDictIntentContext,
 )
 
 # ============================================================================
@@ -43,7 +43,7 @@ def minimal_input_data() -> dict:
 @pytest.fixture
 def full_input_data() -> dict:
     """Complete data including all fields."""
-    context: IntentContextDict = {
+    context: TypedDictIntentContext = {
         "user_id": "user-123",
         "session_id": "session-456",
         "request_id": "request-789",
@@ -124,7 +124,7 @@ class TestModelIntentClassificationInputInstantiation:
 
     def test_context_with_partial_fields(self, minimal_input_data: dict) -> None:
         """Test context with only some fields set (total=False)."""
-        partial_context: IntentContextDict = {
+        partial_context: TypedDictIntentContext = {
             "language": "es",
             "domain": "sales",
         }
@@ -350,7 +350,7 @@ class TestModelIntentClassificationInputEdgeCases:
 
     def test_conversation_history_structure(self, minimal_input_data: dict) -> None:
         """Test conversation_history with proper message structure."""
-        context: IntentContextDict = {
+        context: TypedDictIntentContext = {
             "conversation_history": [
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": "Hello"},
@@ -365,7 +365,7 @@ class TestModelIntentClassificationInputEdgeCases:
 
     def test_empty_conversation_history(self, minimal_input_data: dict) -> None:
         """Test with empty conversation history list."""
-        context: IntentContextDict = {
+        context: TypedDictIntentContext = {
             "conversation_history": [],
         }
         minimal_input_data["context"] = context
@@ -375,7 +375,7 @@ class TestModelIntentClassificationInputEdgeCases:
 
     def test_custom_labels_list(self, minimal_input_data: dict) -> None:
         """Test custom_labels list in context."""
-        context: IntentContextDict = {
+        context: TypedDictIntentContext = {
             "custom_labels": ["intent_a", "intent_b", "intent_c"],
         }
         minimal_input_data["context"] = context
@@ -385,7 +385,7 @@ class TestModelIntentClassificationInputEdgeCases:
 
     def test_confidence_threshold_in_context(self, minimal_input_data: dict) -> None:
         """Test confidence_threshold in context."""
-        context: IntentContextDict = {
+        context: TypedDictIntentContext = {
             "confidence_threshold": 0.85,
         }
         minimal_input_data["context"] = context
@@ -448,8 +448,8 @@ class TestTypedDictCompatibility:
     """Tests for TypedDict usage in the model."""
 
     def test_conversation_message_dict_structure(self) -> None:
-        """Test ConversationMessageDict structure."""
-        message: ConversationMessageDict = {
+        """Test TypedDictConversationMessage structure."""
+        message: TypedDictConversationMessage = {
             "role": "user",
             "content": "Hello, world!",
         }
@@ -457,9 +457,9 @@ class TestTypedDictCompatibility:
         assert message["content"] == "Hello, world!"
 
     def test_intent_context_dict_partial(self) -> None:
-        """Test IntentContextDict with partial fields (total=False)."""
+        """Test TypedDictIntentContext with partial fields (total=False)."""
         # Only some fields provided
-        context: IntentContextDict = {
+        context: TypedDictIntentContext = {
             "language": "en",
             "domain": "support",
         }
@@ -467,8 +467,8 @@ class TestTypedDictCompatibility:
         assert "user_id" not in context
 
     def test_intent_context_dict_full(self) -> None:
-        """Test IntentContextDict with all fields."""
-        context: IntentContextDict = {
+        """Test TypedDictIntentContext with all fields."""
+        context: TypedDictIntentContext = {
             "user_id": "user-123",
             "session_id": "session-456",
             "request_id": "request-789",

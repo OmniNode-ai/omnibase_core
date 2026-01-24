@@ -14,10 +14,6 @@ from omnibase_core.types.typed_dict_conversation_message import (
 )
 from omnibase_core.types.typed_dict_intent_context import TypedDictIntentContext
 
-# Backward-compatible aliases for existing consumers
-ConversationMessageDict = TypedDictConversationMessage
-IntentContextDict = TypedDictIntentContext
-
 
 def _empty_intent_context() -> TypedDictIntentContext:
     """Create an empty TypedDictIntentContext.
@@ -65,8 +61,6 @@ class ModelIntentClassificationInput(BaseModel):
 
 
 __all__ = [
-    "ConversationMessageDict",
-    "IntentContextDict",
     "ModelIntentClassificationInput",
     "TypedDictConversationMessage",
     "TypedDictIntentContext",

@@ -24,9 +24,9 @@ pytestmark = pytest.mark.unit
 
 from omnibase_core.enums.intelligence.enum_intent_category import EnumIntentCategory
 from omnibase_core.models.intelligence.model_intent_classification_output import (
-    IntentMetadataDict,
     ModelIntentClassificationOutput,
-    SecondaryIntentDict,
+    TypedDictIntentMetadata,
+    TypedDictSecondaryIntent,
 )
 
 # ============================================================================
@@ -45,7 +45,7 @@ def minimal_output_data() -> dict:
 @pytest.fixture
 def full_output_data() -> dict:
     """Complete data including all fields."""
-    secondary_intents: list[SecondaryIntentDict] = [
+    secondary_intents: list[TypedDictSecondaryIntent] = [
         {
             "intent_category": "debugging",
             "confidence": 0.3,
@@ -59,7 +59,7 @@ def full_output_data() -> dict:
             "description": "Code refactoring requests",
         },
     ]
-    metadata: IntentMetadataDict = {
+    metadata: TypedDictIntentMetadata = {
         "status": "success",
         "message": "Classification completed",
         "tracking_url": "https://example.com/track/123",
@@ -257,7 +257,7 @@ class TestModelIntentClassificationOutputSecondaryIntents:
 
     def test_single_secondary_intent(self, minimal_output_data: dict) -> None:
         """Test with single secondary intent."""
-        secondary: SecondaryIntentDict = {
+        secondary: TypedDictSecondaryIntent = {
             "intent_category": "follow_up",
             "confidence": 0.5,
         }
@@ -269,7 +269,7 @@ class TestModelIntentClassificationOutputSecondaryIntents:
 
     def test_multiple_secondary_intents(self, minimal_output_data: dict) -> None:
         """Test with multiple secondary intents."""
-        secondaries: list[SecondaryIntentDict] = [
+        secondaries: list[TypedDictSecondaryIntent] = [
             {"intent_category": "intent_a", "confidence": 0.4},
             {"intent_category": "intent_b", "confidence": 0.3},
             {"intent_category": "intent_c", "confidence": 0.2},
@@ -281,7 +281,7 @@ class TestModelIntentClassificationOutputSecondaryIntents:
 
     def test_secondary_intent_partial_fields(self, minimal_output_data: dict) -> None:
         """Test secondary intent with partial fields (total=False)."""
-        secondary: SecondaryIntentDict = {
+        secondary: TypedDictSecondaryIntent = {
             "intent_category": "partial_intent",
         }
         minimal_output_data["secondary_intents"] = [secondary]
@@ -292,7 +292,7 @@ class TestModelIntentClassificationOutputSecondaryIntents:
 
     def test_secondary_intent_full_fields(self, minimal_output_data: dict) -> None:
         """Test secondary intent with all fields."""
-        secondary: SecondaryIntentDict = {
+        secondary: TypedDictSecondaryIntent = {
             "intent_category": "full_intent",
             "confidence": 0.7,
             "description": "A fully described intent",
@@ -321,7 +321,7 @@ class TestModelIntentClassificationOutputMetadata:
 
     def test_metadata_partial_fields(self, minimal_output_data: dict) -> None:
         """Test metadata with partial fields (total=False)."""
-        metadata: IntentMetadataDict = {
+        metadata: TypedDictIntentMetadata = {
             "status": "success",
             "classification_time_ms": 25.5,
         }
@@ -397,8 +397,8 @@ class TestModelIntentClassificationOutputHelperMethods:
 
         intents = model.get_all_intents()
         assert len(intents) == 1
-        # EnumIntentCategory inherits from str, so comparison with string value works
-        assert intents[0][0] == EnumIntentCategory.ANALYSIS
+        # get_all_intents returns string values (enum.value) for primary intent
+        assert intents[0][0] == "analysis"
         assert intents[0][1] == 0.9
 
     def test_get_all_intents_with_secondary(self, minimal_output_data: dict) -> None:
@@ -413,7 +413,8 @@ class TestModelIntentClassificationOutputHelperMethods:
 
         intents = model.get_all_intents()
         assert len(intents) == 3
-        assert intents[0][0] == EnumIntentCategory.CODE_GENERATION
+        # get_all_intents returns string values (enum.value) for primary intent
+        assert intents[0][0] == "code_generation"
         assert intents[0][1] == 0.85
         assert intents[1] == ("debugging", 0.4)
         assert intents[2] == ("testing", 0.25)
@@ -432,7 +433,8 @@ class TestModelIntentClassificationOutputHelperMethods:
 
         intents = model.get_all_intents()
         assert len(intents) == 3
-        assert intents[0][0] == EnumIntentCategory.CODE_GENERATION
+        # get_all_intents returns string values (enum.value) for primary intent
+        assert intents[0][0] == "code_generation"
         assert intents[0][1] == 0.9
         assert intents[1] == ("unknown", 0.0)  # Defaults applied
         assert intents[2] == ("debugging", 0.0)  # Default confidence
@@ -648,18 +650,18 @@ class TestModelIntentClassificationOutputEdgeCases:
 class TestTypedDictCompatibility:
     """Tests for TypedDict usage in the model."""
 
-    def test_secondary_intent_dict_structure(self) -> None:
-        """Test SecondaryIntentDict structure."""
-        intent: SecondaryIntentDict = {
+    def test_typed_dict_secondary_intent_structure(self) -> None:
+        """Test TypedDictSecondaryIntent structure."""
+        intent: TypedDictSecondaryIntent = {
             "intent_category": "test_intent",
             "confidence": 0.5,
         }
         assert intent["intent_category"] == "test_intent"
         assert intent["confidence"] == 0.5
 
-    def test_secondary_intent_dict_full(self) -> None:
-        """Test SecondaryIntentDict with all fields."""
-        intent: SecondaryIntentDict = {
+    def test_typed_dict_secondary_intent_full(self) -> None:
+        """Test TypedDictSecondaryIntent with all fields."""
+        intent: TypedDictSecondaryIntent = {
             "intent_category": "full_intent",
             "confidence": 0.8,
             "description": "Full description",
@@ -671,18 +673,18 @@ class TestTypedDictCompatibility:
         assert len(intent["keywords"]) == 3
         assert intent["parent_intent"] == "parent_category"
 
-    def test_intent_metadata_dict_structure(self) -> None:
-        """Test IntentMetadataDict structure."""
-        metadata: IntentMetadataDict = {
+    def test_typed_dict_intent_metadata_structure(self) -> None:
+        """Test TypedDictIntentMetadata structure."""
+        metadata: TypedDictIntentMetadata = {
             "status": "success",
             "classification_time_ms": 50.0,
         }
         assert metadata["status"] == "success"
         assert metadata["classification_time_ms"] == 50.0
 
-    def test_intent_metadata_dict_full(self) -> None:
-        """Test IntentMetadataDict with all fields."""
-        metadata: IntentMetadataDict = {
+    def test_typed_dict_intent_metadata_full(self) -> None:
+        """Test TypedDictIntentMetadata with all fields."""
+        metadata: TypedDictIntentMetadata = {
             "status": "success",
             "message": "Done",
             "tracking_url": "https://example.com",

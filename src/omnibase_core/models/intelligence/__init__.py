@@ -15,34 +15,20 @@ TypedDicts (from omnibase_core.types):
     TypedDictSecondaryIntent: TypedDict for secondary intent entries.
     TypedDictIntentMetadata: TypedDict for classification metadata.
 
-Backward-Compatible Aliases:
-    ConversationMessageDict: Alias for TypedDictConversationMessage.
-    IntentContextDict: Alias for TypedDictIntentContext.
-    SecondaryIntentDict: Alias for TypedDictSecondaryIntent.
-    IntentMetadataDict: Alias for TypedDictIntentMetadata.
 """
 
 from omnibase_core.models.intelligence.model_intent_classification_input import (
-    ConversationMessageDict,
-    IntentContextDict,
     ModelIntentClassificationInput,
     TypedDictConversationMessage,
     TypedDictIntentContext,
 )
 from omnibase_core.models.intelligence.model_intent_classification_output import (
-    IntentMetadataDict,
     ModelIntentClassificationOutput,
-    SecondaryIntentDict,
     TypedDictIntentMetadata,
     TypedDictSecondaryIntent,
 )
 
 __all__ = [
-    # Backward-compatible aliases
-    "ConversationMessageDict",
-    "IntentContextDict",
-    "IntentMetadataDict",
-    "SecondaryIntentDict",
     # Models
     "ModelIntentClassificationInput",
     "ModelIntentClassificationOutput",
