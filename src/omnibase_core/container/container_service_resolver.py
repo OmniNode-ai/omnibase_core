@@ -7,7 +7,7 @@ dependency-injector DynamicContainer transformation.
 """
 
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 from uuid import NAMESPACE_DNS, UUID, uuid5
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -40,7 +40,7 @@ def _get_container_callable(
     if not callable(value):
         return None
     # NOTE(OMN-1302): getattr() returns Any; validated callable at runtime above.
-    return value  # type: ignore[return-value]
+    return cast(Callable[[], Any], value)
 
 
 def _generate_service_uuid(service_name: str) -> UUID:

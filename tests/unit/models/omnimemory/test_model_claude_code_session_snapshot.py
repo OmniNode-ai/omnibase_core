@@ -38,6 +38,7 @@ from omnibase_core.models.omnimemory.model_claude_code_tool_record import (
 from omnibase_core.models.omnimemory.model_cost_ledger import ModelCostLedger
 from omnibase_core.models.omnimemory.model_memory_snapshot import ModelMemorySnapshot
 from omnibase_core.models.omnimemory.model_subject_ref import ModelSubjectRef
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 pytestmark = pytest.mark.unit
 
@@ -147,7 +148,7 @@ def full_snapshot_data(
         "tools_used_count": 1,
         "last_event_at": sample_last_event_at,
         "event_count": 5,
-        "schema_version": "1.0.0",
+        "schema_version": ModelSemVer(major=1, minor=0, patch=0),
     }
 
 
@@ -220,7 +221,7 @@ class TestModelClaudeCodeSessionSnapshotInstantiation:
         assert snapshot.tool_count == 0
         assert snapshot.tools_used_count == 0
         assert snapshot.event_count == 0
-        assert snapshot.schema_version == "1.0.0"
+        assert snapshot.schema_version == ModelSemVer(major=1, minor=0, patch=0)
 
 
 # ============================================================================

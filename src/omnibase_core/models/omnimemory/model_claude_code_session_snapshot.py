@@ -32,6 +32,7 @@ from omnibase_core.models.omnimemory.model_claude_code_tool_record import (
     ModelClaudeCodeToolRecord,
 )
 from omnibase_core.models.omnimemory.model_memory_snapshot import ModelMemorySnapshot
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.util_validators import ensure_timezone_aware
 
 
@@ -230,8 +231,8 @@ class ModelClaudeCodeSessionSnapshot(BaseModel):
         description="Total number of events processed",
     )
 
-    schema_version: str = Field(
-        default="1.0.0",
+    schema_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Schema version for serialization format tracking",
     )
 

@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -403,7 +403,7 @@ def get_secret_manager() -> ModelSecretManager:
 
     try:
         container = get_model_onex_container_sync()
-        return cast("ModelSecretManager", container.secret_manager())
+        return container.secret_manager()
     except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get secret manager. "
@@ -433,7 +433,7 @@ def init_secret_manager(config: ModelSecretConfig) -> ModelSecretManager:
 
     try:
         container = get_model_onex_container_sync()
-        return cast("ModelSecretManager", container.secret_manager())
+        return container.secret_manager()
     except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot initialize secret manager.",
@@ -465,7 +465,7 @@ def init_secret_manager_from_manager(manager: ModelSecretManager) -> ModelSecret
 
     try:
         container = get_model_onex_container_sync()
-        return cast("ModelSecretManager", container.secret_manager())
+        return container.secret_manager()
     except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot initialize secret manager.",
