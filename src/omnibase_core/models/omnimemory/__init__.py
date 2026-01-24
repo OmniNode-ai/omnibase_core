@@ -60,6 +60,15 @@ Example:
     (OMN-1238, OMN-1241, OMN-1242, OMN-1243, OMN-1244, OMN-1245)
 """
 
+from omnibase_core.models.omnimemory.model_claude_code_prompt_record import (
+    ModelClaudeCodePromptRecord,
+)
+from omnibase_core.models.omnimemory.model_claude_code_session_snapshot import (
+    ModelClaudeCodeSessionSnapshot,
+)
+from omnibase_core.models.omnimemory.model_claude_code_tool_record import (
+    ModelClaudeCodeToolRecord,
+)
 from omnibase_core.models.omnimemory.model_cost_entry import ModelCostEntry
 from omnibase_core.models.omnimemory.model_cost_ledger import ModelCostLedger
 from omnibase_core.models.omnimemory.model_decision_record import ModelDecisionRecord
@@ -69,6 +78,9 @@ from omnibase_core.models.omnimemory.model_memory_snapshot import ModelMemorySna
 from omnibase_core.models.omnimemory.model_subject_ref import ModelSubjectRef
 
 __all__ = [
+    "ModelClaudeCodePromptRecord",
+    "ModelClaudeCodeSessionSnapshot",
+    "ModelClaudeCodeToolRecord",
     "ModelCostEntry",
     "ModelCostLedger",
     "ModelDecisionRecord",

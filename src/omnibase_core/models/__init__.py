@@ -29,6 +29,7 @@ __all__ = [
     "handlers",
     "hooks",  # External hook models (Claude Code - OMN-1474)
     "infrastructure",
+    "intelligence",  # AI/ML intelligence models (OMN-1490)
     "mcp",  # MCP (Model Context Protocol) models (OMN-1286)
     "metadata",
     "nodes",
