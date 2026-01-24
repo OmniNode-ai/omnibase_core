@@ -277,13 +277,36 @@ class ModelOperationBindings(BaseModel):
             elif isinstance(value, dict):
                 self._validate_config_expressions(value, field_path)
             elif isinstance(value, list):
-                for i, item in enumerate(value):
-                    item_path = f"{field_path}[{i}]"
-                    if isinstance(item, str):
-                        self._validate_expression_string(item, item_path)
-                    elif isinstance(item, dict):
-                        self._validate_config_expressions(item, item_path)
+                self._validate_list_items(value, field_path)
             # Literals (int, float, bool, None) pass through without validation
+
+    def _validate_list_items(self, items: list[Any], path_prefix: str) -> None:
+        """
+        Recursively validate list items for expressions.
+
+        Handles nested lists by recursing into them.
+
+        Args:
+            items: The list to validate.
+            path_prefix: Current path for error context.
+
+        Raises:
+            ModelOnexError: If an expression is invalid.
+        """
+        for i, item in enumerate(items):
+            item_path = f"{path_prefix}[{i}]"
+            if isinstance(item, str):
+                self._validate_expression_string(item, item_path)
+            elif isinstance(item, dict):
+                self._validate_config_expressions(item, item_path)
+            elif isinstance(item, list):
+                self._validate_list_items(item, item_path)
+            # Literals (int, float, bool, None) pass through without validation
+
+    # Allowed pipe functions for config expressions
+    ALLOWED_PIPE_FUNCTIONS: ClassVar[frozenset[str]] = frozenset(
+        {"to_json", "from_json"}
+    )
 
     def _validate_expression_string(self, value: str, field_path: str) -> None:
         """
@@ -291,6 +314,16 @@ class ModelOperationBindings(BaseModel):
 
         If the string contains ${...}, validate it follows the allowed format.
         Strings without expressions are treated as literals.
+
+        Validation rules:
+        - No empty expressions
+        - No ternary operators (? and :)
+        - No bracket notation ([ or ])
+        - No chained pipes (more than one |)
+        - Pipe functions must be in whitelist (to_json, from_json)
+        - No double underscores (security)
+        - No denied builtins
+        - Root must be exactly 'binding.config' or 'contract.config'
 
         Args:
             value: The string value to validate.
@@ -308,6 +341,67 @@ class ModelOperationBindings(BaseModel):
             # Extract the content inside ${...}
             inner = expr[2:-1].strip()  # Remove ${ and }
 
+            # Check for empty expression
+            if not inner:
+                raise ModelOnexError(
+                    message=f"Empty expression not allowed: {expr!r}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    field=field_path,
+                    value=value,
+                    expression=expr,
+                    constraint="non_empty_expression",
+                )
+
+            # Reject ternary operators
+            if "?" in inner and ":" in inner:
+                raise ModelOnexError(
+                    message=f"Ternary operators not allowed in config: {expr!r}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    field=field_path,
+                    value=value,
+                    expression=expr,
+                    constraint="no_ternary_operators",
+                )
+
+            # Reject bracket notation
+            if "[" in inner or "]" in inner:
+                raise ModelOnexError(
+                    message=f"Bracket notation not allowed in config: {expr!r}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    field=field_path,
+                    value=value,
+                    expression=expr,
+                    constraint="no_bracket_notation",
+                )
+
+            # Check for chained pipes
+            if inner.count("|") > 1:
+                raise ModelOnexError(
+                    message=f"Chained pipes not allowed in config: {expr!r}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    field=field_path,
+                    value=value,
+                    expression=expr,
+                    constraint="no_chained_pipes",
+                )
+
+            # Split on pipe
+            parts = inner.split("|")
+            path_part = parts[0].strip()
+            func_part = parts[1].strip() if len(parts) > 1 else None
+
+            # Validate pipe function if present
+            if func_part is not None and func_part not in self.ALLOWED_PIPE_FUNCTIONS:
+                raise ModelOnexError(
+                    message=f"Invalid pipe function in config: {func_part!r}. Allowed: to_json, from_json",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    field=field_path,
+                    value=value,
+                    expression=expr,
+                    constraint="allowed_pipe_functions",
+                    allowed_functions=list(self.ALLOWED_PIPE_FUNCTIONS),
+                )
+
             # Security: no double underscores
             if "__" in inner:
                 raise ModelOnexError(
@@ -320,8 +414,6 @@ class ModelOperationBindings(BaseModel):
                 )
 
             # Check for denied builtins in path segments
-            # Split on dots and pipes to get path segments
-            path_part = inner.split("|")[0].strip()
             for segment in path_part.split("."):
                 if segment in DENIED_BUILTINS:
                     raise ModelOnexError(
@@ -333,10 +425,13 @@ class ModelOperationBindings(BaseModel):
                         denied_builtin=segment,
                     )
 
-            # Validate root is allowed for config (only binding.config or contract.config)
+            # Validate root is allowed for config (exact match required)
+            # Must be exactly 'binding.config' or 'contract.config' or start with those + '.'
             root_valid = False
             for allowed_root in self.ALLOWED_CONFIG_ROOTS:
-                if path_part.startswith(allowed_root):
+                if path_part == allowed_root or path_part.startswith(
+                    f"{allowed_root}."
+                ):
                     root_valid = True
                     break
 

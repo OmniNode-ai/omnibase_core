@@ -984,6 +984,203 @@ class TestModelOperationBindingsConfigValidation:
             exc_info.value
         )
 
+    def test_config_nested_list_expressions_validated(self) -> None:
+        """Test that nested list expressions in config are validated."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelOperationBindings(
+                version=DEFAULT_VERSION,
+                handler="module.Handler",
+                config={
+                    "paths": [["${env.PATH1}"], ["${env.PATH2}"]],  # Nested lists
+                },
+                mappings={
+                    "op": ModelOperationMapping(
+                        envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                    )
+                },
+            )
+        assert "binding.config" in str(exc_info.value) or "contract.config" in str(
+            exc_info.value
+        )
+
+    def test_config_deeply_nested_list_validated(self) -> None:
+        """Test that deeply nested list expressions in config are validated."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelOperationBindings(
+                version=DEFAULT_VERSION,
+                handler="module.Handler",
+                config={
+                    "matrix": [[["${env.DEEP_VALUE}"]]],  # 3-level nested list
+                },
+                mappings={
+                    "op": ModelOperationMapping(
+                        envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                    )
+                },
+            )
+        assert "binding.config" in str(exc_info.value) or "contract.config" in str(
+            exc_info.value
+        )
+
+    def test_config_prefix_attack_rejected(self) -> None:
+        """Test that prefix attack like ${binding.configX} is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelOperationBindings(
+                version=DEFAULT_VERSION,
+                handler="module.Handler",
+                config={"value": "${binding.configX}"},  # Not binding.config
+                mappings={
+                    "op": ModelOperationMapping(
+                        envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                    )
+                },
+            )
+        assert "binding.config" in str(exc_info.value) or "contract.config" in str(
+            exc_info.value
+        )
+
+    def test_config_contract_prefix_attack_rejected(self) -> None:
+        """Test that prefix attack like ${contract.configExtra} is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelOperationBindings(
+                version=DEFAULT_VERSION,
+                handler="module.Handler",
+                config={"value": "${contract.configExtra}"},  # Not contract.config
+                mappings={
+                    "op": ModelOperationMapping(
+                        envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                    )
+                },
+            )
+        assert "binding.config" in str(exc_info.value) or "contract.config" in str(
+            exc_info.value
+        )
+
+    def test_config_empty_expression_rejected(self) -> None:
+        """Test that empty expression in config is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelOperationBindings(
+                version=DEFAULT_VERSION,
+                handler="module.Handler",
+                config={"value": "${ }"},  # Whitespace-only expression
+                mappings={
+                    "op": ModelOperationMapping(
+                        envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                    )
+                },
+            )
+        assert "Empty expression" in str(exc_info.value)
+
+    def test_config_ternary_operator_rejected(self) -> None:
+        """Test that ternary operators in config are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelOperationBindings(
+                version=DEFAULT_VERSION,
+                handler="module.Handler",
+                config={"value": "${binding.config.x ? 'a' : 'b'}"},
+                mappings={
+                    "op": ModelOperationMapping(
+                        envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                    )
+                },
+            )
+        assert "Ternary operators not allowed" in str(exc_info.value)
+
+    def test_config_bracket_notation_rejected(self) -> None:
+        """Test that bracket notation in config is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelOperationBindings(
+                version=DEFAULT_VERSION,
+                handler="module.Handler",
+                config={"value": "${binding.config.items[0]}"},
+                mappings={
+                    "op": ModelOperationMapping(
+                        envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                    )
+                },
+            )
+        assert "Bracket notation not allowed" in str(exc_info.value)
+
+    def test_config_chained_pipes_rejected(self) -> None:
+        """Test that chained pipes in config are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelOperationBindings(
+                version=DEFAULT_VERSION,
+                handler="module.Handler",
+                config={"value": "${binding.config.data | to_json | from_json}"},
+                mappings={
+                    "op": ModelOperationMapping(
+                        envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                    )
+                },
+            )
+        assert "Chained pipes not allowed" in str(exc_info.value)
+
+    def test_config_invalid_pipe_function_rejected(self) -> None:
+        """Test that invalid pipe function in config is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelOperationBindings(
+                version=DEFAULT_VERSION,
+                handler="module.Handler",
+                config={"value": "${binding.config.data | evil_func}"},
+                mappings={
+                    "op": ModelOperationMapping(
+                        envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                    )
+                },
+            )
+        assert "Invalid pipe function" in str(exc_info.value)
+        assert "to_json" in str(exc_info.value)
+        assert "from_json" in str(exc_info.value)
+
+    def test_config_valid_pipe_functions_allowed(self) -> None:
+        """Test that valid pipe functions (to_json, from_json) are allowed in config."""
+        # to_json should work
+        binding1 = ModelOperationBindings(
+            version=DEFAULT_VERSION,
+            handler="module.Handler",
+            config={"value": "${binding.config.data | to_json}"},
+            mappings={
+                "op": ModelOperationMapping(
+                    envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                )
+            },
+        )
+        assert binding1.config is not None
+
+        # from_json should work
+        binding2 = ModelOperationBindings(
+            version=DEFAULT_VERSION,
+            handler="module.Handler",
+            config={"value": "${contract.config.data | from_json}"},
+            mappings={
+                "op": ModelOperationMapping(
+                    envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                )
+            },
+        )
+        assert binding2.config is not None
+
+    def test_config_valid_nested_list_expressions(self) -> None:
+        """Test that valid nested list expressions in config are allowed."""
+        binding = ModelOperationBindings(
+            version=DEFAULT_VERSION,
+            handler="module.Handler",
+            config={
+                "paths": [
+                    ["${binding.config.path1}", "${contract.config.path2}"],
+                    ["${binding.config.path3}"],
+                ],
+            },
+            mappings={
+                "op": ModelOperationMapping(
+                    envelope=ModelEnvelopeTemplate(operation="test", fields={})
+                )
+            },
+        )
+        assert binding.config is not None
+        assert len(binding.config["paths"]) == 2
+
 
 @pytest.mark.unit
 @pytest.mark.timeout(60)

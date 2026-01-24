@@ -15,6 +15,7 @@ from typing import Any, ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.constants.constants_effect import contains_denied_builtin
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 
 
@@ -83,6 +84,9 @@ class ModelEnvelopeTemplate(BaseModel):
     # Allowed pipe functions (must match ModelBindingExpression)
     ALLOWED_FUNCTIONS: ClassVar[frozenset[str]] = frozenset({"to_json", "from_json"})
 
+    # Maximum recursion depth for nested validation (matches ModelResponseMapping)
+    MAX_RECURSION_DEPTH: ClassVar[int] = 20
+
     operation: str = Field(
         ...,
         description="The operation name (e.g., 'write_file', 'read_file', 'http_request')",
@@ -115,28 +119,38 @@ class ModelEnvelopeTemplate(BaseModel):
             ValueError: If an expression has invalid format or uses
                 disallowed roots/functions.
         """
-        self._validate_value(self.fields, path="fields")
+        self._validate_value(self.fields, path="fields", depth=0)
         return self
 
-    def _validate_value(self, value: Any, path: str = "") -> None:
+    def _validate_value(self, value: Any, path: str = "", depth: int = 0) -> None:
         """
         Recursively validate template values for valid expressions.
 
         Args:
             value: The value to validate (may be str, dict, list, or literal).
             path: The current path for error messages.
+            depth: Current recursion depth to prevent DoS via deeply nested structures.
 
         Raises:
-            ValueError: If a string contains an invalid ${...} expression.
+            ValueError: If a string contains an invalid ${...} expression,
+                or if maximum nesting depth is exceeded.
         """
+        if depth > self.MAX_RECURSION_DEPTH:
+            # error-ok: Pydantic validator requires ValueError for conversion to ValidationError
+            raise ValueError(
+                f"Maximum nesting depth ({self.MAX_RECURSION_DEPTH}) exceeded at {path!r}"
+            )
+
         if isinstance(value, str) and "${" in value:
             self._validate_expressions_in_string(value, path)
         elif isinstance(value, dict):
             for key, val in value.items():
-                self._validate_value(val, path=f"{path}.{key}" if path else key)
+                self._validate_value(
+                    val, path=f"{path}.{key}" if path else key, depth=depth + 1
+                )
         elif isinstance(value, list):
             for idx, item in enumerate(value):
-                self._validate_value(item, path=f"{path}[{idx}]")
+                self._validate_value(item, path=f"{path}[{idx}]", depth=depth + 1)
 
     def _validate_expressions_in_string(self, value: str, path: str) -> None:
         """
@@ -182,7 +196,7 @@ class ModelEnvelopeTemplate(BaseModel):
             # error-ok: Pydantic validator requires ValueError for conversion to ValidationError
             raise ValueError(
                 f"Chained pipes not allowed at {path!r}: "
-                f"found {content.count('|')} pipes in '${{{{content}}}}'"
+                f"found {content.count('|')} pipes in '${{{content}}}'"
             )
 
         # Split by pipe to get path and optional function
@@ -218,6 +232,15 @@ class ModelEnvelopeTemplate(BaseModel):
             raise ValueError(
                 f"Security violation at {path!r}: "
                 f"double underscore not allowed in expression path: {path_part!r}"
+            )
+
+        # Check for denied builtins (eval, exec, __class__, etc.)
+        denied = contains_denied_builtin(path_part)
+        if denied:
+            # error-ok: Pydantic validator requires ValueError for conversion to ValidationError
+            raise ValueError(
+                f"Security violation at {path!r}: "
+                f"forbidden identifier '{denied}' in expression path: {path_part!r}"
             )
 
 

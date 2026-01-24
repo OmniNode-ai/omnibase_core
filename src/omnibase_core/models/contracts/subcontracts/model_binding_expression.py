@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, PrivateAttr, field_validator
 
 from omnibase_core.constants.constants_effect import contains_denied_builtin
 from omnibase_core.enums.enum_binding_function import EnumBindingFunction
@@ -75,10 +75,10 @@ class ModelBindingExpression(BaseModel):
     raw: str
     """The raw expression string (e.g., '${request.snapshot | to_json}')."""
 
-    # Internal parsed components (set by validator)
-    _root: str = ""
-    _path: str | None = None
-    _function: EnumBindingFunction | None = None
+    # Internal parsed components (set during __init__ after validation)
+    _root: str = PrivateAttr(default="")
+    _path: str | None = PrivateAttr(default=None)
+    _function: EnumBindingFunction | None = PrivateAttr(default=None)
 
     model_config = ConfigDict(
         frozen=True,
@@ -123,7 +123,8 @@ class ModelBindingExpression(BaseModel):
             raise ModelOnexError(
                 message=f"Chained pipes not allowed in binding expression: {value!r}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                context={"expression": value, "pipe_count": pipe_count},
+                expression=value,
+                pipe_count=pipe_count,
             )
 
         # Match against the expression pattern
@@ -137,29 +138,27 @@ class ModelBindingExpression(BaseModel):
                         "Use 'binding.config' for local config or 'contract.config' for contract config."
                     ),
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    context={"expression": value},
+                    expression=value,
                 )
             if "?" in value or ":" in value:
                 raise ModelOnexError(
                     message=f"Ternary operators not allowed in binding expression: {value!r}",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    context={"expression": value},
+                    expression=value,
                 )
             if "[" in value or "]" in value:
                 raise ModelOnexError(
                     message=f"Bracket notation not allowed in binding expression: {value!r}. Use dot-path only.",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    context={"expression": value},
+                    expression=value,
                 )
 
             raise ModelOnexError(
                 message=f"Invalid binding expression format: {value!r}. Expected format: ${{root.path}} or ${{root.path | function}}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                context={
-                    "expression": value,
-                    "allowed_roots": list(cls.ALLOWED_ROOTS),
-                    "allowed_functions": ["to_json", "from_json"],
-                },
+                expression=value,
+                allowed_roots=list(cls.ALLOWED_ROOTS),
+                allowed_functions=["to_json", "from_json"],
             )
 
         # Extract and validate path for security
@@ -171,7 +170,8 @@ class ModelBindingExpression(BaseModel):
                 raise ModelOnexError(
                     message=f"Security violation: forbidden identifier '{denied}' in binding expression path: {value!r}",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    context={"expression": value, "denied_builtin": denied},
+                    expression=value,
+                    denied_builtin=denied,
                 )
 
             # Additional security check: no double underscores anywhere in path
@@ -179,7 +179,8 @@ class ModelBindingExpression(BaseModel):
                 raise ModelOnexError(
                     message=f"Security violation: double underscore not allowed in binding expression path: {value!r}",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    context={"expression": value, "path": path},
+                    expression=value,
+                    path=path,
                 )
 
         return value
@@ -188,7 +189,12 @@ class ModelBindingExpression(BaseModel):
         """Initialize and parse the binding expression."""
         super().__init__(**data)
 
-        # Parse components after validation
+        # Parse components after validation.
+        # NOTE: This regex match is intentionally separate from the validator's match.
+        # Validation and construction are decoupled concerns - the validator ensures
+        # correctness and provides detailed error messages, while __init__ extracts
+        # the parsed components. This separation allows for future optimizations
+        # (e.g., caching) without coupling validation logic to construction.
         match = self.EXPRESSION_PATTERN.match(self.raw)
         if match:
             # Use object.__setattr__ because model is frozen
