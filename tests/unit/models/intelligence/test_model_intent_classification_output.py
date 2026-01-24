@@ -9,7 +9,8 @@ Tests comprehensive intent classification output functionality including:
 - Immutability (frozen model)
 - Extra fields rejection
 - Confidence range validation (0.0-1.0)
-- Default values (intent_category="unknown", confidence=0.0)
+- Default values (intent_category=EnumIntentCategory.UNKNOWN, confidence=0.0)
+- EnumIntentCategory type enforcement and string coercion
 - secondary_intents list handling
 - metadata optional field
 - Helper methods (is_high_confidence, get_all_intents)
@@ -21,6 +22,7 @@ from pydantic import ValidationError
 
 pytestmark = pytest.mark.unit
 
+from omnibase_core.enums.intelligence.enum_intent_category import EnumIntentCategory
 from omnibase_core.models.intelligence.model_intent_classification_output import (
     IntentMetadataDict,
     ModelIntentClassificationOutput,
@@ -45,16 +47,16 @@ def full_output_data() -> dict:
     """Complete data including all fields."""
     secondary_intents: list[SecondaryIntentDict] = [
         {
-            "intent_category": "billing_inquiry",
+            "intent_category": "debugging",
             "confidence": 0.3,
-            "description": "Questions about billing",
-            "keywords": ["bill", "payment", "invoice"],
-            "parent_intent": "support",
+            "description": "Questions about debugging",
+            "keywords": ["bug", "error", "fix"],
+            "parent_intent": "development",
         },
         {
-            "intent_category": "account_access",
+            "intent_category": "refactoring",
             "confidence": 0.2,
-            "description": "Account access issues",
+            "description": "Code refactoring requests",
         },
     ]
     metadata: IntentMetadataDict = {
@@ -66,11 +68,11 @@ def full_output_data() -> dict:
         "model_name": "intent-classifier-v2",
         "token_count": 128,
         "threshold_used": 0.7,
-        "raw_scores": {"cancellation": 0.95, "billing": 0.3, "access": 0.2},
+        "raw_scores": {"code_generation": 0.95, "debugging": 0.3, "refactoring": 0.2},
     }
     return {
         "success": True,
-        "intent_category": "cancellation_request",
+        "intent_category": EnumIntentCategory.CODE_GENERATION,
         "confidence": 0.95,
         "secondary_intents": secondary_intents,
         "metadata": metadata,
@@ -90,7 +92,7 @@ class TestModelIntentClassificationOutputInstantiation:
         model = ModelIntentClassificationOutput(**minimal_output_data)
 
         assert model.success is True
-        assert model.intent_category == "unknown"
+        assert model.intent_category == EnumIntentCategory.UNKNOWN
         assert model.confidence == 0.0
         assert model.secondary_intents == []
         assert model.metadata is None
@@ -100,7 +102,7 @@ class TestModelIntentClassificationOutputInstantiation:
         model = ModelIntentClassificationOutput(**full_output_data)
 
         assert model.success is True
-        assert model.intent_category == "cancellation_request"
+        assert model.intent_category == EnumIntentCategory.CODE_GENERATION
         assert model.confidence == 0.95
         assert len(model.secondary_intents) == 2
         assert model.metadata is not None
@@ -117,17 +119,17 @@ class TestModelIntentClassificationOutputInstantiation:
         """Test that defaults are correctly applied."""
         model = ModelIntentClassificationOutput(success=True)
 
-        assert model.intent_category == "unknown"
+        assert model.intent_category == EnumIntentCategory.UNKNOWN
         assert model.confidence == 0.0
         assert model.secondary_intents == []
         assert model.metadata is None
 
     def test_custom_intent_category(self, minimal_output_data: dict) -> None:
-        """Test setting custom intent_category."""
-        minimal_output_data["intent_category"] = "custom_intent"
+        """Test setting a specific intent_category enum value."""
+        minimal_output_data["intent_category"] = EnumIntentCategory.DEBUGGING
         model = ModelIntentClassificationOutput(**minimal_output_data)
 
-        assert model.intent_category == "custom_intent"
+        assert model.intent_category == EnumIntentCategory.DEBUGGING
 
 
 # ============================================================================
@@ -152,7 +154,7 @@ class TestModelIntentClassificationOutputImmutability:
 
         with pytest.raises(ValidationError):
             # NOTE: Intentionally testing frozen model mutation - Pydantic raises at runtime
-            model.intent_category = "modified"
+            model.intent_category = EnumIntentCategory.DEBUGGING
 
     def test_cannot_modify_confidence(self, full_output_data: dict) -> None:
         """Test that confidence cannot be modified."""
@@ -341,7 +343,7 @@ class TestModelIntentClassificationOutputMetadata:
         assert model.metadata["classifier_version"] == "2.1.0"
         assert model.metadata["model_name"] == "intent-classifier-v2"
         assert model.metadata["token_count"] == 128
-        assert "cancellation" in model.metadata["raw_scores"]
+        assert "code_generation" in model.metadata["raw_scores"]
 
 
 # ============================================================================
@@ -389,47 +391,51 @@ class TestModelIntentClassificationOutputHelperMethods:
 
     def test_get_all_intents_primary_only(self, minimal_output_data: dict) -> None:
         """Test get_all_intents with only primary intent."""
-        minimal_output_data["intent_category"] = "main_intent"
+        minimal_output_data["intent_category"] = EnumIntentCategory.ANALYSIS
         minimal_output_data["confidence"] = 0.9
         model = ModelIntentClassificationOutput(**minimal_output_data)
 
         intents = model.get_all_intents()
         assert len(intents) == 1
-        assert intents[0] == ("main_intent", 0.9)
+        # EnumIntentCategory inherits from str, so comparison with string value works
+        assert intents[0][0] == EnumIntentCategory.ANALYSIS
+        assert intents[0][1] == 0.9
 
     def test_get_all_intents_with_secondary(self, minimal_output_data: dict) -> None:
         """Test get_all_intents with secondary intents."""
-        minimal_output_data["intent_category"] = "primary"
+        minimal_output_data["intent_category"] = EnumIntentCategory.CODE_GENERATION
         minimal_output_data["confidence"] = 0.85
         minimal_output_data["secondary_intents"] = [
-            {"intent_category": "secondary_a", "confidence": 0.4},
-            {"intent_category": "secondary_b", "confidence": 0.25},
+            {"intent_category": "debugging", "confidence": 0.4},
+            {"intent_category": "testing", "confidence": 0.25},
         ]
         model = ModelIntentClassificationOutput(**minimal_output_data)
 
         intents = model.get_all_intents()
         assert len(intents) == 3
-        assert intents[0] == ("primary", 0.85)
-        assert intents[1] == ("secondary_a", 0.4)
-        assert intents[2] == ("secondary_b", 0.25)
+        assert intents[0][0] == EnumIntentCategory.CODE_GENERATION
+        assert intents[0][1] == 0.85
+        assert intents[1] == ("debugging", 0.4)
+        assert intents[2] == ("testing", 0.25)
 
     def test_get_all_intents_missing_fields_in_secondary(
         self, minimal_output_data: dict
     ) -> None:
         """Test get_all_intents handles missing fields in secondary intents."""
-        minimal_output_data["intent_category"] = "primary"
+        minimal_output_data["intent_category"] = EnumIntentCategory.CODE_GENERATION
         minimal_output_data["confidence"] = 0.9
         minimal_output_data["secondary_intents"] = [
             {},  # Empty dict, should get defaults
-            {"intent_category": "has_category"},  # Missing confidence
+            {"intent_category": "debugging"},  # Missing confidence
         ]
         model = ModelIntentClassificationOutput(**minimal_output_data)
 
         intents = model.get_all_intents()
         assert len(intents) == 3
-        assert intents[0] == ("primary", 0.9)
+        assert intents[0][0] == EnumIntentCategory.CODE_GENERATION
+        assert intents[0][1] == 0.9
         assert intents[1] == ("unknown", 0.0)  # Defaults applied
-        assert intents[2] == ("has_category", 0.0)  # Default confidence
+        assert intents[2] == ("debugging", 0.0)  # Default confidence
 
 
 # ============================================================================
@@ -545,7 +551,7 @@ class TestModelIntentClassificationOutputSerialization:
         model = ModelIntentClassificationOutput.model_validate(full_output_data)
 
         assert model.success == full_output_data["success"]
-        assert model.intent_category == full_output_data["intent_category"]
+        assert model.intent_category == EnumIntentCategory.CODE_GENERATION
 
 
 # ============================================================================
@@ -615,20 +621,23 @@ class TestModelIntentClassificationOutputEdgeCases:
         assert isinstance(repr_str, str)
         assert "ModelIntentClassificationOutput" in repr_str
 
-    def test_unicode_in_intent_category(self, minimal_output_data: dict) -> None:
-        """Test unicode characters in intent_category."""
-        minimal_output_data["intent_category"] = "solicitud_cancelacion"
+    def test_intent_category_string_coercion(self, minimal_output_data: dict) -> None:
+        """Test that string values are coerced to enum."""
+        minimal_output_data["intent_category"] = "debugging"
         model = ModelIntentClassificationOutput(**minimal_output_data)
 
-        assert "cancelacion" in model.intent_category
+        assert model.intent_category == EnumIntentCategory.DEBUGGING
+        # Enum value can still be used as string
+        assert "debugging" in str(model.intent_category)
 
-    def test_long_intent_category(self, minimal_output_data: dict) -> None:
-        """Test with very long intent_category string."""
-        long_category = "a" * 1000
-        minimal_output_data["intent_category"] = long_category
+    def test_invalid_intent_category_rejected(self, minimal_output_data: dict) -> None:
+        """Test that invalid intent_category values are rejected."""
+        minimal_output_data["intent_category"] = "invalid_category"
 
-        model = ModelIntentClassificationOutput(**minimal_output_data)
-        assert len(model.intent_category) == 1000
+        with pytest.raises(ValidationError) as exc_info:
+            ModelIntentClassificationOutput(**minimal_output_data)
+
+        assert "intent_category" in str(exc_info.value)
 
 
 # ============================================================================

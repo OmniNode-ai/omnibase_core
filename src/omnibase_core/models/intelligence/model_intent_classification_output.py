@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.intelligence.enum_intent_category import EnumIntentCategory
 from omnibase_core.types.typed_dict_intent_metadata import TypedDictIntentMetadata
 from omnibase_core.types.typed_dict_secondary_intent import TypedDictSecondaryIntent
 
@@ -32,12 +33,13 @@ class ModelIntentClassificationOutput(BaseModel):
         metadata: Additional metadata about the classification.
 
     Example:
+        >>> from omnibase_core.enums.intelligence.enum_intent_category import EnumIntentCategory
         >>> output = ModelIntentClassificationOutput(
         ...     success=True,
-        ...     intent_category="cancellation_request",
+        ...     intent_category=EnumIntentCategory.CODE_GENERATION,
         ...     confidence=0.95,
         ...     secondary_intents=[
-        ...         {"intent_category": "billing_inquiry", "confidence": 0.3}
+        ...         {"intent_category": "debugging", "confidence": 0.3}
         ...     ]
         ... )
     """
@@ -48,9 +50,9 @@ class ModelIntentClassificationOutput(BaseModel):
         ...,
         description="Whether intent classification succeeded",
     )
-    intent_category: str = Field(
-        default="unknown",
-        description="Primary intent category",
+    intent_category: EnumIntentCategory = Field(
+        default=EnumIntentCategory.UNKNOWN,
+        description="Primary intent category (see EnumIntentCategory for valid values)",
     )
     confidence: float = Field(
         default=0.0,
@@ -98,6 +100,7 @@ class ModelIntentClassificationOutput(BaseModel):
 
 
 __all__ = [
+    "EnumIntentCategory",
     "IntentMetadataDict",
     "ModelIntentClassificationOutput",
     "SecondaryIntentDict",

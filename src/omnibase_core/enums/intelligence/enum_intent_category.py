@@ -19,6 +19,12 @@ from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
+# Module-level cached frozensets (populated after class definition)
+# These are initialized once and reused for all calls to the classmethod accessors.
+_DEVELOPMENT_INTENTS: frozenset[EnumIntentCategory] | None = None
+_INTELLIGENCE_INTENTS: frozenset[EnumIntentCategory] | None = None
+_META_INTENTS: frozenset[EnumIntentCategory] | None = None
+
 
 @unique
 class EnumIntentCategory(StrValueHelper, str, Enum):
@@ -101,43 +107,53 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
     # Internal Category Group Constants (Single Source of Truth)
     # =========================================================================
     # NOTE: Python enums cannot have class attributes that aren't enum members,
-    # so we use @classmethod with frozenset to define category groups.
+    # so we use @classmethod with module-level cached frozensets. The frozensets
+    # are lazily initialized on first access and reused for all subsequent calls.
 
     @classmethod
     def _development_intents(cls) -> frozenset[EnumIntentCategory]:
-        """Internal: Development intent category group."""
-        return frozenset(
-            {
-                cls.CODE_GENERATION,
-                cls.DEBUGGING,
-                cls.REFACTORING,
-                cls.TESTING,
-                cls.DOCUMENTATION,
-                cls.ANALYSIS,
-            }
-        )
+        """Internal: Development intent category group (cached)."""
+        global _DEVELOPMENT_INTENTS
+        if _DEVELOPMENT_INTENTS is None:
+            _DEVELOPMENT_INTENTS = frozenset(
+                {
+                    cls.CODE_GENERATION,
+                    cls.DEBUGGING,
+                    cls.REFACTORING,
+                    cls.TESTING,
+                    cls.DOCUMENTATION,
+                    cls.ANALYSIS,
+                }
+            )
+        return _DEVELOPMENT_INTENTS
 
     @classmethod
     def _intelligence_intents(cls) -> frozenset[EnumIntentCategory]:
-        """Internal: Intelligence/ML intent category group."""
-        return frozenset(
-            {
-                cls.PATTERN_LEARNING,
-                cls.QUALITY_ASSESSMENT,
-                cls.SEMANTIC_ANALYSIS,
-            }
-        )
+        """Internal: Intelligence/ML intent category group (cached)."""
+        global _INTELLIGENCE_INTENTS
+        if _INTELLIGENCE_INTENTS is None:
+            _INTELLIGENCE_INTENTS = frozenset(
+                {
+                    cls.PATTERN_LEARNING,
+                    cls.QUALITY_ASSESSMENT,
+                    cls.SEMANTIC_ANALYSIS,
+                }
+            )
+        return _INTELLIGENCE_INTENTS
 
     @classmethod
     def _meta_intents(cls) -> frozenset[EnumIntentCategory]:
-        """Internal: Meta/system interaction intent category group."""
-        return frozenset(
-            {
-                cls.HELP,
-                cls.CLARIFY,
-                cls.FEEDBACK,
-            }
-        )
+        """Internal: Meta/system interaction intent category group (cached)."""
+        global _META_INTENTS
+        if _META_INTENTS is None:
+            _META_INTENTS = frozenset(
+                {
+                    cls.HELP,
+                    cls.CLARIFY,
+                    cls.FEEDBACK,
+                }
+            )
+        return _META_INTENTS
 
     # =========================================================================
     # Classification Checker Methods
