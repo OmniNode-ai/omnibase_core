@@ -115,6 +115,20 @@ class TestModelClaudeCodeHookEvent:
         assert event.session_id == "not-a-uuid-just-a-string"
         assert isinstance(event.session_id, str)
 
+    def test_naive_datetime_raises_validation_error(self) -> None:
+        """Test that naive datetime (no timezone) raises ValidationError."""
+        naive_timestamp = datetime(2024, 1, 15, 12, 30, 45)  # No tzinfo
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelClaudeCodeHookEvent(
+                event_type=EnumClaudeCodeHookEventType.USER_PROMPT_SUBMIT,
+                session_id="session-123",
+                timestamp_utc=naive_timestamp,
+                payload=ModelClaudeCodeHookEventPayload(),
+            )
+
+        assert "timezone-aware" in str(exc_info.value)
+
 
 @pytest.mark.unit
 class TestModelClaudeCodeHookEventHelperMethods:
