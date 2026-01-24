@@ -98,7 +98,49 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
     """Intent could not be determined or does not match any known category."""
 
     # =========================================================================
-    # Classification Helper Methods
+    # Internal Category Group Constants (Single Source of Truth)
+    # =========================================================================
+    # NOTE: Python enums cannot have class attributes that aren't enum members,
+    # so we use @classmethod with frozenset to define category groups.
+
+    @classmethod
+    def _development_intents(cls) -> frozenset[EnumIntentCategory]:
+        """Internal: Development intent category group."""
+        return frozenset(
+            {
+                cls.CODE_GENERATION,
+                cls.DEBUGGING,
+                cls.REFACTORING,
+                cls.TESTING,
+                cls.DOCUMENTATION,
+                cls.ANALYSIS,
+            }
+        )
+
+    @classmethod
+    def _intelligence_intents(cls) -> frozenset[EnumIntentCategory]:
+        """Internal: Intelligence/ML intent category group."""
+        return frozenset(
+            {
+                cls.PATTERN_LEARNING,
+                cls.QUALITY_ASSESSMENT,
+                cls.SEMANTIC_ANALYSIS,
+            }
+        )
+
+    @classmethod
+    def _meta_intents(cls) -> frozenset[EnumIntentCategory]:
+        """Internal: Meta/system interaction intent category group."""
+        return frozenset(
+            {
+                cls.HELP,
+                cls.CLARIFY,
+                cls.FEEDBACK,
+            }
+        )
+
+    # =========================================================================
+    # Classification Checker Methods
     # =========================================================================
 
     @classmethod
@@ -113,14 +155,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             True if the category is development-focused.
         """
-        return category in {
-            cls.CODE_GENERATION,
-            cls.DEBUGGING,
-            cls.REFACTORING,
-            cls.TESTING,
-            cls.DOCUMENTATION,
-            cls.ANALYSIS,
-        }
+        return category in cls._development_intents()
 
     @classmethod
     def is_intelligence_intent(cls, category: EnumIntentCategory) -> bool:
@@ -135,11 +170,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             True if the category is intelligence-focused.
         """
-        return category in {
-            cls.PATTERN_LEARNING,
-            cls.QUALITY_ASSESSMENT,
-            cls.SEMANTIC_ANALYSIS,
-        }
+        return category in cls._intelligence_intents()
 
     @classmethod
     def is_meta_intent(cls, category: EnumIntentCategory) -> bool:
@@ -154,11 +185,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             True if the category is a meta intent.
         """
-        return category in {
-            cls.HELP,
-            cls.CLARIFY,
-            cls.FEEDBACK,
-        }
+        return category in cls._meta_intents()
 
     @classmethod
     def is_classified(cls, category: EnumIntentCategory) -> bool:
@@ -172,6 +199,10 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         """
         return category != cls.UNKNOWN
 
+    # =========================================================================
+    # Category Group Getter Methods
+    # =========================================================================
+
     @classmethod
     def get_development_intents(cls) -> set[EnumIntentCategory]:
         """Get all development-focused intent categories.
@@ -179,14 +210,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             Set of development intent categories.
         """
-        return {
-            cls.CODE_GENERATION,
-            cls.DEBUGGING,
-            cls.REFACTORING,
-            cls.TESTING,
-            cls.DOCUMENTATION,
-            cls.ANALYSIS,
-        }
+        return set(cls._development_intents())
 
     @classmethod
     def get_intelligence_intents(cls) -> set[EnumIntentCategory]:
@@ -195,11 +219,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             Set of intelligence intent categories.
         """
-        return {
-            cls.PATTERN_LEARNING,
-            cls.QUALITY_ASSESSMENT,
-            cls.SEMANTIC_ANALYSIS,
-        }
+        return set(cls._intelligence_intents())
 
     @classmethod
     def get_meta_intents(cls) -> set[EnumIntentCategory]:
@@ -208,11 +228,7 @@ class EnumIntentCategory(StrValueHelper, str, Enum):
         Returns:
             Set of meta intent categories.
         """
-        return {
-            cls.HELP,
-            cls.CLARIFY,
-            cls.FEEDBACK,
-        }
+        return set(cls._meta_intents())
 
 
 __all__ = ["EnumIntentCategory"]

@@ -4,6 +4,8 @@ Defines the TypedDictConversationMessage TypedDict for conversation messages
 used in intent classification context.
 """
 
+from __future__ import annotations
+
 from typing import TypedDict
 
 

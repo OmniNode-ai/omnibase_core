@@ -4,6 +4,8 @@ Defines the TypedDictIntentMetadata TypedDict for metadata about intent
 classification operations.
 """
 
+from __future__ import annotations
+
 from typing import TypedDict
 
 

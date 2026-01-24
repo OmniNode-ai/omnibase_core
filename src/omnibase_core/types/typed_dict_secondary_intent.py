@@ -4,6 +4,8 @@ Defines the TypedDictSecondaryIntent TypedDict for secondary intent entries
 returned from intent classification operations.
 """
 
+from __future__ import annotations
+
 from typing import TypedDict
 
 
