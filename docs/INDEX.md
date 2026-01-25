@@ -127,6 +127,16 @@ Understand how ONEX works.
 | [Mixin Architecture](architecture/MIXIN_ARCHITECTURE.md) | Mixin system design |
 | [Message Topic Mapping](architecture/MESSAGE_TOPIC_MAPPING.md) | Event/Command/Intent routing |
 
+### Contracts
+
+Contract guides and DSL documentation.
+
+| Document | Description |
+|----------|-------------|
+| [Handler Contract Guide](contracts/HANDLER_CONTRACT_GUIDE.md) | Handler contract structure, behavior descriptors, capabilities |
+| [Operation Bindings DSL](contracts/OPERATION_BINDINGS_DSL.md) | Declarative handler wiring with expression syntax |
+| [Introspection Subcontract Guide](contracts/INTROSPECTION_SUBCONTRACT_GUIDE.md) | Introspection and discovery configuration |
+
 ### Reference
 
 Comprehensive reference documentation.
