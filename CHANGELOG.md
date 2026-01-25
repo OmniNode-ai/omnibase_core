@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-01-25
+
+### Added
+
+- **Intent Storage Event Models** [OMN-1513]: Added canonical event models for the intent storage pipeline
+  - `ModelEventPayloadBase`: Base class for embedded payloads (frozen, metadata-free)
+  - `ModelIntentStoredEvent`: Emitted after intent storage to graph database
+  - `ModelIntentQueryRequestedEvent`: Dashboard queries (distribution/session/recent)
+  - `ModelIntentQueryResponseEvent`: Response with intent records
+  - `IntentRecordPayload`: Lightweight intent record for query responses
+
+- **Operation Bindings Schema** [OMN-1410]: Added `operation_bindings` schema for declarative handler wiring
+
+- **Session and Intent Classification Models** [OMN-1489] [OMN-1490]: Added session snapshot and intent classification models
+
+- **Claude Code Hook Input Types** [OMN-1474]: Added integration types for Claude Code hooks
+
+### Changed
+
+- **Handler Contract Refactor** [OMN-1465]: Renamed `handler_kind` to `node_archetype` in handler contracts for clarity
+
 ## [0.9.1] - 2026-01-22
 
 ### Fixed
