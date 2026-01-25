@@ -20,6 +20,9 @@ from .enum_audit_action import EnumAuditAction
 from .enum_auth_type import EnumAuthType
 from .enum_authentication_method import EnumAuthenticationMethod
 from .enum_backoff_strategy import EnumBackoffStrategy
+
+# Binding function enums (Operation Bindings DSL - OMN-1410)
+from .enum_binding_function import EnumBindingFunction
 from .enum_business_logic_pattern import EnumBusinessLogicPattern
 
 # Case mode enums (contract-driven NodeCompute v1.0)
@@ -483,6 +486,8 @@ __all__ = [
     "EnumAuthType",
     "EnumBackoffStrategy",
     "EnumNotificationMethod",
+    # Binding function domain (Operation Bindings DSL - OMN-1410)
+    "EnumBindingFunction",
     # Audit and governance domain
     "EnumAuditAction",
     # Architecture and system domain
