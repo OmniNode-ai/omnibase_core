@@ -29,6 +29,10 @@ Example YAML contract configuration:
             status: "${result.status}"
             snapshot: "${request.snapshot}"
 
+Documentation:
+    For complete DSL syntax, validation rules, and examples, see:
+    docs/contracts/OPERATION_BINDINGS_DSL.md
+
 VERSION: 1.0.0
 
 Author: ONEX Framework Team
