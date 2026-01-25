@@ -6,7 +6,7 @@
 **Last Updated**: 2026-01-25
 **Status**: Comprehensive Reference
 
-> **New in v0.4.2**: ModelOperationBindings provides declarative handler wiring without code adapters, enabling contract-driven operation binding.
+> **New in v0.9.4**: ModelOperationBindings provides declarative handler wiring without code adapters, enabling contract-driven operation binding.
 
 ## Table of Contents
 
