@@ -13,6 +13,21 @@ from omnibase_core.models.events.model_intent_events import (
     ModelEventPublishIntent,
     ModelIntentExecutionResult,
 )
+from omnibase_core.models.events.model_intent_query_requested_event import (
+    INTENT_QUERY_REQUESTED_EVENT,
+    ModelIntentQueryRequestedEvent,
+)
+from omnibase_core.models.events.model_intent_query_response_event import (
+    INTENT_QUERY_RESPONSE_EVENT,
+    ModelIntentQueryResponseEvent,
+)
+from omnibase_core.models.events.model_intent_record_payload import (
+    IntentRecordPayload,
+)
+from omnibase_core.models.events.model_intent_stored_event import (
+    INTENT_STORED_EVENT,
+    ModelIntentStoredEvent,
+)
 from omnibase_core.models.events.model_runtime_events import (
     NODE_GRAPH_READY_EVENT,
     NODE_REGISTERED_EVENT,
@@ -45,10 +60,18 @@ from omnibase_core.models.events.model_topic_naming import (
 )
 
 __all__ = [
-    # Intent events
+    # Intent coordination events (existing)
     "ModelEventPublishIntent",
     "ModelIntentExecutionResult",
     "TOPIC_EVENT_PUBLISH_INTENT",
+    # Intent storage events (WS-4)
+    "INTENT_STORED_EVENT",
+    "ModelIntentStoredEvent",
+    "INTENT_QUERY_REQUESTED_EVENT",
+    "ModelIntentQueryRequestedEvent",
+    "INTENT_QUERY_RESPONSE_EVENT",
+    "IntentRecordPayload",
+    "ModelIntentQueryResponseEvent",
     # Topic naming and routing
     "ModelTopicNaming",
     "get_topic_category",
