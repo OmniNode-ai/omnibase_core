@@ -9,6 +9,8 @@ This event enables downstream consumers to:
 - Maintain audit trails of intent storage operations
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID, uuid4
@@ -105,7 +107,7 @@ class ModelIntentStoredEvent(ModelRuntimeEventBase):
         execution_time_ms: float = 0.0,
         correlation_id: UUID | None = None,
         source_node_id: UUID | None = None,
-    ) -> "ModelIntentStoredEvent":
+    ) -> ModelIntentStoredEvent:
         """Factory method for creating an intent stored event."""
         return cls(
             intent_id=intent_id or uuid4(),
@@ -128,7 +130,7 @@ class ModelIntentStoredEvent(ModelRuntimeEventBase):
         *,
         correlation_id: UUID | None = None,
         source_node_id: UUID | None = None,
-    ) -> "ModelIntentStoredEvent":
+    ) -> ModelIntentStoredEvent:
         """Factory method for creating a failed intent stored event."""
         return cls(
             session_ref=session_ref,

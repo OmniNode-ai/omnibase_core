@@ -4,23 +4,29 @@ Lightweight representation of a stored intent for transmission
 in query response events.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.models.events.model_runtime_event_base import (
-    ModelRuntimeEventBase,
+from omnibase_core.models.events.model_event_payload_base import (
+    ModelEventPayloadBase,
 )
 
 __all__ = ["IntentRecordPayload"]
 
 
-class IntentRecordPayload(ModelRuntimeEventBase):
+class IntentRecordPayload(ModelEventPayloadBase):
     """Embedded intent record in query responses.
 
     Lightweight representation of a stored intent for transmission
     in query response events.
+
+    This is a payload model (inherits from ModelEventPayloadBase), not an event.
+    It does NOT carry event metadata (event_id, timestamp, correlation_id).
+    Event metadata belongs on the containing event envelope.
 
     Attributes:
         intent_id: Unique identifier for the intent.
@@ -28,7 +34,7 @@ class IntentRecordPayload(ModelRuntimeEventBase):
         intent_category: The classified intent category.
         confidence: Confidence score from 0.0 to 1.0.
         keywords: Keywords associated with the intent.
-        created_at: When the intent was created (UTC).
+        created_at: When the intent was stored in the graph (domain data, not event metadata).
     """
 
     intent_id: UUID = Field(
@@ -55,5 +61,5 @@ class IntentRecordPayload(ModelRuntimeEventBase):
     )
     created_at: datetime = Field(
         default=...,
-        description="When the intent was created (UTC)",
+        description="When the intent was stored in the graph (UTC)",
     )

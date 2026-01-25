@@ -8,6 +8,9 @@ from omnibase_core.enums.enum_topic_taxonomy import (
     EnumCleanupPolicy,
     EnumTopicType,
 )
+from omnibase_core.models.events.model_event_payload_base import (
+    ModelEventPayloadBase,
+)
 from omnibase_core.models.events.model_intent_events import (
     TOPIC_EVENT_PUBLISH_INTENT,
     ModelEventPublishIntent,
@@ -87,6 +90,7 @@ __all__ = [
     "WIRING_ERROR_EVENT",
     "WIRING_RESULT_EVENT",
     # Runtime event models
+    "ModelEventPayloadBase",
     "ModelNodeGraphInfo",
     "ModelNodeGraphReadyEvent",
     "ModelNodeRegisteredEvent",

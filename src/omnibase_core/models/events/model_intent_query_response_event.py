@@ -9,6 +9,8 @@ Response Types (matching query types):
 - recent: Returns list of recent intents
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
@@ -108,7 +110,7 @@ class ModelIntentQueryResponseEvent(ModelRuntimeEventBase):
         time_range_hours: int = 24,
         execution_time_ms: float = 0.0,
         correlation_id: UUID | None = None,
-    ) -> "ModelIntentQueryResponseEvent":
+    ) -> ModelIntentQueryResponseEvent:
         """Factory method for creating a distribution query response."""
         total = sum(distribution.values())
         return cls(
@@ -130,7 +132,7 @@ class ModelIntentQueryResponseEvent(ModelRuntimeEventBase):
         *,
         execution_time_ms: float = 0.0,
         correlation_id: UUID | None = None,
-    ) -> "ModelIntentQueryResponseEvent":
+    ) -> ModelIntentQueryResponseEvent:
         """Factory method for creating a session query response."""
         return cls(
             query_id=query_id,
@@ -151,7 +153,7 @@ class ModelIntentQueryResponseEvent(ModelRuntimeEventBase):
         time_range_hours: int = 1,
         execution_time_ms: float = 0.0,
         correlation_id: UUID | None = None,
-    ) -> "ModelIntentQueryResponseEvent":
+    ) -> ModelIntentQueryResponseEvent:
         """Factory method for creating a recent intents query response."""
         return cls(
             query_id=query_id,
@@ -172,7 +174,7 @@ class ModelIntentQueryResponseEvent(ModelRuntimeEventBase):
         error_message: str,
         *,
         correlation_id: UUID | None = None,
-    ) -> "ModelIntentQueryResponseEvent":
+    ) -> ModelIntentQueryResponseEvent:
         """Factory method for creating an error response."""
         return cls(
             query_id=query_id,

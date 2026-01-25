@@ -10,6 +10,8 @@ Query Types:
 - recent: Get recent intents across all sessions
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID, uuid4
@@ -94,7 +96,7 @@ class ModelIntentQueryRequestedEvent(ModelRuntimeEventBase):
         min_confidence: float = 0.0,
         requester_name: str = "omnidash",
         correlation_id: UUID | None = None,
-    ) -> "ModelIntentQueryRequestedEvent":
+    ) -> ModelIntentQueryRequestedEvent:
         """Factory method for creating a distribution query request."""
         return cls(
             query_type="distribution",
@@ -113,7 +115,7 @@ class ModelIntentQueryRequestedEvent(ModelRuntimeEventBase):
         limit: int = 100,
         requester_name: str = "omnidash",
         correlation_id: UUID | None = None,
-    ) -> "ModelIntentQueryRequestedEvent":
+    ) -> ModelIntentQueryRequestedEvent:
         """Factory method for creating a session query request."""
         return cls(
             query_type="session",
@@ -133,7 +135,7 @@ class ModelIntentQueryRequestedEvent(ModelRuntimeEventBase):
         limit: int = 50,
         requester_name: str = "omnidash",
         correlation_id: UUID | None = None,
-    ) -> "ModelIntentQueryRequestedEvent":
+    ) -> ModelIntentQueryRequestedEvent:
         """Factory method for creating a recent intents query request."""
         return cls(
             query_type="recent",
