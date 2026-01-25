@@ -27,6 +27,17 @@ from .model_isolated_step_result import ModelIsolatedStepResult
 from .model_lint_statistics import ModelLintStatistics
 from .model_migration_conflict_union import ModelMigrationConflictUnion
 from .model_shape_validation_result import ModelShapeValidationResult
+
+# Topic suffix validation models (OMN-1537)
+from .model_topic_suffix_parts import (
+    TOPIC_KIND_CMD,
+    TOPIC_KIND_DLQ,
+    TOPIC_KIND_EVT,
+    TOPIC_KIND_SNAPSHOT,
+    VALID_TOPIC_KINDS,
+    ModelTopicSuffixParts,
+)
+from .model_topic_validation_result import ModelTopicValidationResult
 from .model_unique_name_result import ModelUniqueNameResult
 from .model_validation_base import ModelValidationBase
 from .model_validation_container import ModelValidationContainer
@@ -54,6 +65,14 @@ __all__ = [
     "ModelExecutionShape",
     "ModelExecutionShapeValidation",
     "ModelShapeValidationResult",
+    # Topic suffix validation models (OMN-1537)
+    "ModelTopicSuffixParts",
+    "ModelTopicValidationResult",
+    "TOPIC_KIND_CMD",
+    "TOPIC_KIND_DLQ",
+    "TOPIC_KIND_EVT",
+    "TOPIC_KIND_SNAPSHOT",
+    "VALID_TOPIC_KINDS",
     # Workflow validation models (OMN-176)
     "ModelCycleDetectionResult",
     "ModelDependencyValidationResult",

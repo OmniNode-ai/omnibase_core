@@ -11,24 +11,133 @@ Types:
 - events: Immutable event logs
 - intents: Coordination intents
 - snapshots: Compacted state snapshots
+- dlq: Dead letter queue (failed messages)
 
 Thread Safety:
     All constants in this module are immutable strings and thread-safe.
     The topic_name() function is pure and thread-safe.
 """
 
-import re
+from __future__ import annotations
 
-# Topic Type Suffixes
+import re
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.enums.enum_topic_taxonomy import EnumTopicType
+
+# Topic Type Suffixes (semantic values used internally)
 TOPIC_TYPE_COMMANDS = "commands"
+TOPIC_TYPE_DLQ = "dlq"
 TOPIC_TYPE_EVENTS = "events"
 TOPIC_TYPE_INTENTS = "intents"
 TOPIC_TYPE_SNAPSHOTS = "snapshots"
 
 # Valid topic types set for validation
 _VALID_TOPIC_TYPES = frozenset(
-    {TOPIC_TYPE_COMMANDS, TOPIC_TYPE_EVENTS, TOPIC_TYPE_INTENTS, TOPIC_TYPE_SNAPSHOTS}
+    {
+        TOPIC_TYPE_COMMANDS,
+        TOPIC_TYPE_DLQ,
+        TOPIC_TYPE_EVENTS,
+        TOPIC_TYPE_INTENTS,
+        TOPIC_TYPE_SNAPSHOTS,
+    }
 )
+
+
+def _build_token_mappings() -> tuple[
+    dict[str, EnumTopicType], dict[EnumTopicType, str], frozenset[str]
+]:
+    """
+    Build token-to-enum and enum-to-token mappings.
+
+    Deferred import to avoid circular dependency at module load time.
+    Called lazily when mappings are first accessed.
+
+    Returns:
+        Tuple of (token_to_type, type_to_token, valid_suffix_kinds).
+    """
+    from omnibase_core.enums.enum_topic_taxonomy import EnumTopicType
+
+    token_to_type: dict[str, EnumTopicType] = {
+        "cmd": EnumTopicType.COMMANDS,
+        "dlq": EnumTopicType.DLQ,
+        "evt": EnumTopicType.EVENTS,
+        "intent": EnumTopicType.INTENTS,
+        "snapshot": EnumTopicType.SNAPSHOTS,
+    }
+    type_to_token: dict[EnumTopicType, str] = {v: k for k, v in token_to_type.items()}
+    valid_kinds: frozenset[str] = frozenset(token_to_type.keys())
+    return token_to_type, type_to_token, valid_kinds
+
+
+# Lazy-loaded mappings (initialized on first access)
+_token_mappings_cache: (
+    tuple[dict[str, EnumTopicType], dict[EnumTopicType, str], frozenset[str]] | None
+) = None
+
+
+def _get_token_mappings() -> tuple[
+    dict[str, EnumTopicType], dict[EnumTopicType, str], frozenset[str]
+]:
+    """Get or initialize the token mappings."""
+    global _token_mappings_cache
+    if _token_mappings_cache is None:
+        _token_mappings_cache = _build_token_mappings()
+    return _token_mappings_cache
+
+
+def get_token_to_topic_type() -> dict[str, EnumTopicType]:
+    """
+    Get mapping from topic suffix tokens to EnumTopicType values.
+
+    Topic suffix tokens are the abbreviated forms used in topic names
+    (e.g., 'cmd', 'evt', 'dlq'), while EnumTopicType values are the
+    semantic internal representations (e.g., 'commands', 'events', 'dlq').
+
+    Returns:
+        Dict mapping tokens to enum values.
+
+    Example:
+        >>> mapping = get_token_to_topic_type()
+        >>> mapping["evt"]
+        <EnumTopicType.EVENTS: 'events'>
+    """
+    return _get_token_mappings()[0]
+
+
+def get_topic_type_to_token() -> dict[EnumTopicType, str]:
+    """
+    Get reverse mapping from EnumTopicType values to tokens.
+
+    Used for composing topic suffixes from enum values.
+
+    Returns:
+        Dict mapping enum values to tokens.
+
+    Example:
+        >>> from omnibase_core.enums import EnumTopicType
+        >>> mapping = get_topic_type_to_token()
+        >>> mapping[EnumTopicType.COMMANDS]
+        'cmd'
+    """
+    return _get_token_mappings()[1]
+
+
+def get_valid_topic_suffix_kinds() -> frozenset[str]:
+    """
+    Get the set of valid topic suffix kind tokens.
+
+    Returns:
+        Frozenset of valid tokens ('cmd', 'evt', 'dlq', 'intent', 'snapshot').
+
+    Example:
+        >>> kinds = get_valid_topic_suffix_kinds()
+        >>> "evt" in kinds
+        True
+    """
+    return _get_token_mappings()[2]
+
 
 # Domain validation pattern: lowercase alphanumeric with hyphens, starting with letter,
 # cannot end with hyphen (must end with letter or digit, or be single letter)
@@ -120,9 +229,14 @@ RETENTION_MS_AUDIT = 2592000000  # 30 days (same as events for audit trails)
 __all__ = [
     # Type suffixes
     "TOPIC_TYPE_COMMANDS",
+    "TOPIC_TYPE_DLQ",
     "TOPIC_TYPE_EVENTS",
     "TOPIC_TYPE_INTENTS",
     "TOPIC_TYPE_SNAPSHOTS",
+    # Token mapping accessors (lazy-loaded to avoid circular imports)
+    "get_token_to_topic_type",
+    "get_topic_type_to_token",
+    "get_valid_topic_suffix_kinds",
     # Domains
     "DOMAIN_REGISTRATION",
     "DOMAIN_DISCOVERY",
