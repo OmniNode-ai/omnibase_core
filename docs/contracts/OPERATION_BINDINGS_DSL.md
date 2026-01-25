@@ -1,9 +1,9 @@
-> **Navigation**: [Home](../index.md) > Contracts > Operation Bindings DSL
+> **Navigation**: [Home](../INDEX.md) > Contracts > Operation Bindings DSL
 
 # Operation Bindings DSL
 
 **Version**: 1.0.0
-**Last Updated**: 2025-01-25
+**Last Updated**: 2026-01-25
 **Status**: Comprehensive Reference
 
 > **New in v0.4.2**: ModelOperationBindings provides declarative handler wiring without code adapters, enabling contract-driven operation binding.
@@ -56,11 +56,13 @@ operation_bindings:
     store:
       envelope:
         operation: "write_file"
-        path: "${binding.config.base_path}/snapshots/${request.snapshot_id}.json"
-        content: "${request.snapshot | to_json}"
+        fields:
+          path: "${binding.config.base_path}/snapshots/${request.snapshot_id}.json"
+          content: "${request.snapshot | to_json}"
       response:
-        status: "${result.status}"
-        bytes_written: "${result.bytes_written}"
+        fields:
+          status: "${result.status}"
+          bytes_written: "${result.bytes_written}"
 ```
 
 **Related Tickets**:
@@ -139,21 +141,24 @@ operation_bindings:
   mappings:
     store:
       envelope:
-        # Use binding.config for binding-specific settings
-        path: "${binding.config.base_path}/${request.id}.json"
+        operation: "store_data"
+        fields:
+          # Use binding.config for binding-specific settings
+          path: "${binding.config.base_path}/${request.id}.json"
 
-        # Use contract.config for shared settings
-        region: "${contract.config.default_region}"
+          # Use contract.config for shared settings
+          region: "${contract.config.default_region}"
 
-        # Use request for incoming data
-        content: "${request.payload}"
+          # Use request for incoming data
+          content: "${request.payload}"
 
       response:
-        # Use result for handler output
-        status: "${result.status}"
+        fields:
+          # Use result for handler output
+          status: "${result.status}"
 
-        # Can still use request in response
-        request_id: "${request.id}"
+          # Can still use request in response
+          request_id: "${request.id}"
 ```
 
 ### Pipe Functions
@@ -274,6 +279,8 @@ Defines how to construct handler envelopes from request data.
 | `operation` | `str` | Yes | Operation name for the handler (e.g., "write_file") |
 | `fields` | `dict[str, Any]` | No | Additional envelope fields with template values |
 
+**Important**: All operation-specific parameters (e.g., `path`, `content`, `sql`, `params`) must be placed inside the `fields` dictionary. The model uses `extra="ignore"`, so any fields placed directly on `envelope:` (other than `operation` and `fields`) will be silently dropped.
+
 **Source**: `src/omnibase_core/models/contracts/subcontracts/model_envelope_template.py`
 
 ### ModelResponseMapping
@@ -315,27 +322,31 @@ operation_bindings:
       description: "Persist session snapshot to JSON file"
       envelope:
         operation: "write_file"
-        path: "${binding.config.base_path}/sessions/${request.session_id}/${request.snapshot.snapshot_id}.json"
-        content: "${request.snapshot | to_json}"
-        mode: "w"
-        encoding: "utf-8"
-        create_parents: true
+        fields:
+          path: "${binding.config.base_path}/sessions/${request.session_id}/${request.snapshot.snapshot_id}.json"
+          content: "${request.snapshot | to_json}"
+          mode: "w"
+          encoding: "utf-8"
+          create_parents: true
       response:
-        status: "${result.status}"
-        snapshot_id: "${request.snapshot.snapshot_id}"
-        bytes_written: "${result.bytes_written}"
-        file_path: "${result.path}"
+        fields:
+          status: "${result.status}"
+          snapshot_id: "${request.snapshot.snapshot_id}"
+          bytes_written: "${result.bytes_written}"
+          file_path: "${result.path}"
 
     retrieve_snapshot:
       description: "Load session snapshot from JSON file"
       envelope:
         operation: "read_file"
-        path: "${binding.config.base_path}/sessions/${request.session_id}/${request.snapshot_id}.json"
-        encoding: "utf-8"
+        fields:
+          path: "${binding.config.base_path}/sessions/${request.session_id}/${request.snapshot_id}.json"
+          encoding: "utf-8"
       response:
-        snapshot: "${result.content | from_json}"
-        status: "${result.status}"
-        error_message: "${result.error_message}"
+        fields:
+          snapshot: "${result.content | from_json}"
+          status: "${result.status}"
+          error_message: "${result.error_message}"
 ```
 
 ### Database Query Result Mapping
@@ -360,29 +371,37 @@ operation_bindings:
       description: "Fetch user profile by ID"
       envelope:
         operation: "query"
-        sql: "SELECT id, name, email, created_at FROM users WHERE id = :user_id"
-        params:
-          user_id: "${request.user_id}"
-        timeout_ms: "${binding.config.default_timeout_ms}"
+        fields:
+          sql: "SELECT id, name, email, created_at FROM users WHERE id = :user_id"
+          params:
+            user_id: "${request.user_id}"
+          timeout_ms: "${binding.config.default_timeout_ms}"
+          # Handler returns first_row for single-record queries
+          return_first_row: true
       response:
-        user:
-          id: "${result.rows.0.id}"
-          name: "${result.rows.0.name}"
-          email: "${result.rows.0.email}"
-          created_at: "${result.rows.0.created_at}"
-        found: "${result.row_count}"
-        query_time_ms: "${result.execution_time_ms}"
+        # Handler pre-processes result to provide first_row for single-record queries
+        # (array indexing like result.rows.0 is not supported - see Non-Goals)
+        fields:
+          user:
+            id: "${result.first_row.id}"
+            name: "${result.first_row.name}"
+            email: "${result.first_row.email}"
+            created_at: "${result.first_row.created_at}"
+          found: "${result.row_count}"
+          query_time_ms: "${result.execution_time_ms}"
 
     list_user_sessions:
       description: "List active sessions for a user"
       envelope:
         operation: "query"
-        sql: "SELECT session_id, created_at, last_active FROM sessions WHERE user_id = :user_id AND active = true"
-        params:
-          user_id: "${request.user_id}"
+        fields:
+          sql: "SELECT session_id, created_at, last_active FROM sessions WHERE user_id = :user_id AND active = true"
+          params:
+            user_id: "${request.user_id}"
       response:
-        sessions: "${result.rows}"
-        count: "${result.row_count}"
+        fields:
+          sessions: "${result.rows}"
+          count: "${result.row_count}"
 ```
 
 ### Event Publish Payload Mapping
@@ -407,22 +426,24 @@ operation_bindings:
       description: "Publish session lifecycle event to Kafka"
       envelope:
         operation: "publish"
-        topic: "${binding.config.topic_prefix}.session.lifecycle"
-        partition_key: "${request.session_id}"
-        payload:
-          event_type: "${request.event_type}"
-          session_id: "${request.session_id}"
-          user_id: "${request.user_id}"
-          timestamp: "${request.timestamp}"
-          data: "${request.event_data | to_json}"
-        headers:
-          correlation_id: "${request.correlation_id}"
-          source: "session-service"
+        fields:
+          topic: "${binding.config.topic_prefix}.session.lifecycle"
+          partition_key: "${request.session_id}"
+          payload:
+            event_type: "${request.event_type}"
+            session_id: "${request.session_id}"
+            user_id: "${request.user_id}"
+            timestamp: "${request.timestamp}"
+            data: "${request.event_data | to_json}"
+          headers:
+            correlation_id: "${request.correlation_id}"
+            source: "session-service"
       response:
-        published: "${result.success}"
-        partition: "${result.partition}"
-        offset: "${result.offset}"
-        error: "${result.error_message}"
+        fields:
+          published: "${result.success}"
+          partition: "${result.partition}"
+          offset: "${result.offset}"
+          error: "${result.error_message}"
 ```
 
 ---
@@ -598,6 +619,6 @@ mapping = bindings.get_mapping("process")
 
 ---
 
-**Last Updated**: 2025-01-25
+**Last Updated**: 2026-01-25
 **Version**: 1.0.0
 **Maintainer**: ONEX Framework Team
