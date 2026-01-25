@@ -33,6 +33,7 @@ from .model_topic_suffix_parts import (
     TOPIC_KIND_CMD,
     TOPIC_KIND_DLQ,
     TOPIC_KIND_EVT,
+    TOPIC_KIND_INTENT,
     TOPIC_KIND_SNAPSHOT,
     VALID_TOPIC_KINDS,
     ModelTopicSuffixParts,
@@ -71,6 +72,7 @@ __all__ = [
     "TOPIC_KIND_CMD",
     "TOPIC_KIND_DLQ",
     "TOPIC_KIND_EVT",
+    "TOPIC_KIND_INTENT",
     "TOPIC_KIND_SNAPSHOT",
     "VALID_TOPIC_KINDS",
     # Workflow validation models (OMN-176)

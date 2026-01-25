@@ -22,6 +22,7 @@ from omnibase_core.models.validation.model_topic_suffix_parts import (
     TOPIC_KIND_CMD,
     TOPIC_KIND_DLQ,
     TOPIC_KIND_EVT,
+    TOPIC_KIND_INTENT,
     TOPIC_KIND_SNAPSHOT,
     VALID_TOPIC_KINDS,
     ModelTopicSuffixParts,
@@ -70,7 +71,7 @@ class TestConstants:
 
     def test_valid_topic_kinds_contains_expected_values(self) -> None:
         """Test that VALID_TOPIC_KINDS contains all valid kind tokens."""
-        expected = {"cmd", "evt", "dlq", "snapshot"}
+        expected = {"cmd", "evt", "dlq", "intent", "snapshot"}
         assert expected == VALID_TOPIC_KINDS
 
     def test_topic_kind_constants(self) -> None:
@@ -78,6 +79,7 @@ class TestConstants:
         assert TOPIC_KIND_CMD == "cmd"
         assert TOPIC_KIND_EVT == "evt"
         assert TOPIC_KIND_DLQ == "dlq"
+        assert TOPIC_KIND_INTENT == "intent"
         assert TOPIC_KIND_SNAPSHOT == "snapshot"
 
 
@@ -230,7 +232,7 @@ class TestValidateTopicSuffixValid:
 
     @pytest.mark.parametrize(
         "kind",
-        ["cmd", "evt", "dlq", "snapshot"],
+        ["cmd", "evt", "dlq", "intent", "snapshot"],
     )
     def test_all_valid_kinds(self, kind: str) -> None:
         """Test that all valid kind tokens are accepted."""
@@ -477,7 +479,7 @@ class TestParseTopicSuffix:
 
     @pytest.mark.parametrize(
         "kind",
-        ["cmd", "evt", "dlq", "snapshot"],
+        ["cmd", "evt", "dlq", "intent", "snapshot"],
     )
     def test_parses_all_kinds(self, kind: str) -> None:
         """Test that all valid kinds are parsed correctly."""

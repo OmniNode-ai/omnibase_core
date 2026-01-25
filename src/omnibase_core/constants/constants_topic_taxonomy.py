@@ -16,6 +16,12 @@ Types:
 Thread Safety:
     All constants in this module are immutable strings and thread-safe.
     The topic_name() function is pure and thread-safe.
+
+Cross-reference:
+    For topic kind tokens used in suffix validation (TOPIC_KIND_CMD, etc.),
+    see omnibase_core.models.validation.model_topic_suffix_parts.
+    This module defines TOPIC_TYPE_* semantic values (e.g., "commands"),
+    while model_topic_suffix_parts defines TOPIC_KIND_* tokens (e.g., "cmd").
 """
 
 from __future__ import annotations
@@ -45,6 +51,9 @@ _VALID_TOPIC_TYPES = frozenset(
 )
 
 
+# Token-to-Type Mappings
+# Maps short tokens (cmd, evt, dlq, intent, snapshot) used in topic suffixes
+# to their corresponding EnumTopicType semantic values (commands, events, etc.)
 def _build_token_mappings() -> tuple[
     dict[str, EnumTopicType], dict[EnumTopicType, str], frozenset[str]
 ]:

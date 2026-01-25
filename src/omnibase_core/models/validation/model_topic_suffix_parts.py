@@ -8,7 +8,7 @@ Topic Suffix Format:
     onex.{kind}.{producer}.{event-name}.v{n}
 
 Where:
-    - kind: Topic type token (cmd, evt, dlq, snapshot)
+    - kind: Topic type token (cmd, evt, dlq, intent, snapshot)
     - producer: Service/producer name in kebab-case
     - event-name: Event name in kebab-case
     - v{n}: Version number (e.g., v1, v2)
@@ -36,6 +36,11 @@ See Also:
     - ModelTopicValidationResult: Result model for suffix validation
 """
 
+# Cross-reference: For semantic topic type constants (TOPIC_TYPE_COMMANDS, etc.),
+# see omnibase_core.constants.constants_topic_taxonomy.
+# This module defines TOPIC_KIND_* tokens used in topic suffix strings,
+# while constants_topic_taxonomy defines TOPIC_TYPE_* semantic values.
+
 from pydantic import BaseModel, ConfigDict, Field
 
 # Topic kind tokens used in ONEX naming convention (short forms)
@@ -43,11 +48,18 @@ from pydantic import BaseModel, ConfigDict, Field
 TOPIC_KIND_CMD = "cmd"
 TOPIC_KIND_EVT = "evt"
 TOPIC_KIND_DLQ = "dlq"
+TOPIC_KIND_INTENT = "intent"
 TOPIC_KIND_SNAPSHOT = "snapshot"
 
 # Valid topic kind tokens for validation
 VALID_TOPIC_KINDS: frozenset[str] = frozenset(
-    {TOPIC_KIND_CMD, TOPIC_KIND_EVT, TOPIC_KIND_DLQ, TOPIC_KIND_SNAPSHOT}
+    {
+        TOPIC_KIND_CMD,
+        TOPIC_KIND_DLQ,
+        TOPIC_KIND_EVT,
+        TOPIC_KIND_INTENT,
+        TOPIC_KIND_SNAPSHOT,
+    }
 )
 
 
@@ -59,7 +71,7 @@ class ModelTopicSuffixParts(BaseModel):
     following the ONEX naming convention: onex.{kind}.{producer}.{event-name}.v{n}
 
     Attributes:
-        kind: Topic type token (cmd, evt, dlq, snapshot)
+        kind: Topic type token (cmd, evt, dlq, intent, snapshot)
         producer: Service/producer name in kebab-case (e.g., "omnimemory")
         event_name: Event name in kebab-case (e.g., "intent-stored")
         version: Version number as integer (extracted from v{n} format)
@@ -83,7 +95,7 @@ class ModelTopicSuffixParts(BaseModel):
 
     kind: str = Field(
         ...,
-        description="Topic type token (cmd, evt, dlq, snapshot)",
+        description="Topic type token (cmd, evt, dlq, intent, snapshot)",
     )
 
     producer: str = Field(
@@ -113,6 +125,7 @@ __all__ = [
     "TOPIC_KIND_CMD",
     "TOPIC_KIND_DLQ",
     "TOPIC_KIND_EVT",
+    "TOPIC_KIND_INTENT",
     "TOPIC_KIND_SNAPSHOT",
     "VALID_TOPIC_KINDS",
 ]

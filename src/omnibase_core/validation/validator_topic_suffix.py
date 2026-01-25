@@ -7,7 +7,7 @@ the canonical naming convention: onex.{kind}.{producer}.{event-name}.v{n}
 Validation Rules:
     1. Must start with 'onex.'
     2. Must have exactly 5 dot-separated segments
-    3. Segment 2 (kind) must be one of: cmd, evt, dlq, snapshot
+    3. Segment 2 (kind) must be one of: cmd, evt, dlq, intent, snapshot
     4. Segments 3-4 (producer, event-name) must be kebab-case
     5. Segment 5 must match v{int} pattern (e.g., v1, v2)
     6. Must NOT start with environment prefix (dev., staging., prod.)
@@ -66,12 +66,12 @@ ENV_PREFIXES: Final[frozenset[str]] = frozenset(
 # Pattern for validating topic suffix format
 # Format: onex.{kind}.{producer}.{event-name}.v{n}
 # - onex: literal prefix
-# - kind: cmd|evt|dlq|snapshot
+# - kind: cmd|evt|dlq|intent|snapshot
 # - producer: kebab-case (lowercase letters, numbers, hyphens, starts with letter)
 # - event-name: kebab-case (lowercase letters, numbers, hyphens, starts with letter)
 # - version: v followed by one or more digits
 TOPIC_SUFFIX_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"^onex\.(cmd|evt|dlq|snapshot)\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.v(\d+)$"
+    r"^onex\.(cmd|evt|dlq|intent|snapshot)\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.v(\d+)$"
 )
 
 # Pattern for validating kebab-case identifiers (STRICT - exported constant)
@@ -107,7 +107,7 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
     Validation Rules:
         1. Must start with 'onex.'
         2. Must have exactly 5 dot-separated segments
-        3. Segment 2 (kind) must be one of: cmd, evt, dlq, snapshot
+        3. Segment 2 (kind) must be one of: cmd, evt, dlq, intent, snapshot
         4. Segments 3-4 (producer, event-name) must be kebab-case
         5. Segment 5 must match v{int} pattern
         6. Must NOT start with environment prefix (dev., staging., prod., etc.)
@@ -297,13 +297,13 @@ def parse_topic_suffix(suffix: str) -> ModelTopicSuffixParts:
     """
     result = validate_topic_suffix(suffix)
     if not result.is_valid:
-        # error-ok: ValueError is standard for input validation functions
+        # error-ok: ValueError is standard Python convention for parsing functions
         raise ValueError(f"Invalid topic suffix '{suffix}': {result.error}")
 
     # result.parsed is guaranteed to be non-None when is_valid is True
     if result.parsed is None:
         # This should never happen due to validation invariants, but guard for safety
-        # error-ok: internal consistency check
+        # error-ok: internal consistency check for parse function contract
         raise ValueError(
             f"Validation succeeded but parsed result is None for: {suffix}"
         )
@@ -340,12 +340,12 @@ def compose_full_topic(env_prefix: str, suffix: str) -> str:
 
     # Validate environment prefix
     if not env_normalized:
-        # error-ok: ValueError is standard for input validation functions
+        # error-ok: ValueError is standard Python convention for composition functions
         raise ValueError("Environment prefix cannot be empty")
 
     if env_normalized not in ENV_PREFIXES:
         valid_envs = ", ".join(sorted(ENV_PREFIXES))
-        # error-ok: ValueError is standard for input validation functions
+        # error-ok: ValueError is standard Python convention for composition functions
         raise ValueError(
             f"Environment prefix must be one of: {valid_envs}. Got: '{env_prefix}'"
         )
