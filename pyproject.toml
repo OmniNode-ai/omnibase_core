@@ -110,7 +110,7 @@ pytest-timeout = "^2.4.0"
 pytest-rerunfailures = "^16.1"
 pytest-testmon = "^2.2.0"
 interrogate = "^1.7.0"
-hypothesis = "^6.150"
+hypothesis = "^6.151"
 psutil = "^7.2.1"
 prometheus-client = ">=0.21.0,<1.0.0"  # For testing BackendMetricsPrometheus
 types-psutil = "^7.2.1.20260116"
