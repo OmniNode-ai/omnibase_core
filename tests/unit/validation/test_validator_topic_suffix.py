@@ -901,18 +901,18 @@ class TestEdgeCases:
         assert result.parsed.event_name == "myevent"
 
     def test_consecutive_hyphens_in_kebab_case(self) -> None:
-        """Test handling of consecutive hyphens (allowed by pattern)."""
-        # Note: Pattern allows consecutive hyphens - may want to restrict
+        """Test that consecutive hyphens are rejected in kebab-case."""
         result = validate_topic_suffix("onex.evt.my--service.event--name.v1")
-        # Pattern [a-z][a-z0-9-]* allows this
-        assert result.is_valid is True
+        # Stricter pattern rejects consecutive hyphens
+        assert result.is_valid is False
+        assert result.error is not None
 
     def test_trailing_hyphen_in_kebab_case(self) -> None:
-        """Test handling of trailing hyphen (allowed by pattern)."""
-        # Note: Pattern allows trailing hyphens - may want to restrict
+        """Test that trailing hyphens are rejected in kebab-case."""
         result = validate_topic_suffix("onex.evt.service-.event-.v1")
-        # Pattern [a-z][a-z0-9-]* allows this
-        assert result.is_valid is True
+        # Stricter pattern rejects trailing hyphens
+        assert result.is_valid is False
+        assert result.error is not None
 
     def test_unicode_characters_rejected(self) -> None:
         """Test that non-ASCII characters are rejected."""

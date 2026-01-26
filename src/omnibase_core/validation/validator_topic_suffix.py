@@ -74,16 +74,27 @@ TOPIC_SUFFIX_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"^onex\.(cmd|evt|dlq|intent|snapshot)\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.v(\d+)$"
 )
 
-# Pattern for validating kebab-case identifiers (STRICT - exported constant)
-# Must start with lowercase letter, must NOT end with hyphen, no leading/trailing hyphens
-# This pattern is used for external validation; internal validation uses _LENIENT_KEBAB_PATTERN
+# Pattern for validating strict kebab-case identifiers (exported constant)
+# Rules:
+#   - Must start with lowercase letter
+#   - Must end with lowercase letter or digit (no trailing hyphen)
+#   - No consecutive hyphens allowed
+#   - Hyphens must be followed by letter/digit
+# Used for external/API validation; internal validation uses equivalent _INTERNAL_KEBAB_PATTERN
 KEBAB_CASE_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"^[a-z]([a-z0-9]*(-[a-z0-9]+)*)?$"
 )
 
-# Lenient pattern for internal validation - allows trailing hyphens and consecutive hyphens
-# Used for producer/event-name validation to accept common naming patterns
-_LENIENT_KEBAB_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[a-z][a-z0-9-]*$")
+# Internal pattern for producer/event-name validation
+# Enforces kebab-case: starts with letter, ends with letter/digit, no consecutive hyphens
+# Rules:
+#   - Must start with lowercase letter
+#   - Must end with lowercase letter or digit (no trailing hyphen)
+#   - No consecutive hyphens allowed (negative lookahead (?!.*--))
+# NOTE: KEBAB_CASE_PATTERN (exported) uses equivalent strictness for external use
+_INTERNAL_KEBAB_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"^(?!.*--)[a-z]([a-z0-9-]*[a-z0-9])?$"
+)
 
 # Pattern for validating version segment
 VERSION_PATTERN: Final[re.Pattern[str]] = re.compile(r"^v(\d+)$")
@@ -226,7 +237,7 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
         )
 
     # Validate producer (kebab-case) - use lenient pattern for common naming patterns
-    if not _LENIENT_KEBAB_PATTERN.match(producer):
+    if not _INTERNAL_KEBAB_PATTERN.match(producer):
         return ModelTopicValidationResult.failure(
             suffix,
             f"Producer must be kebab-case (lowercase letters, digits, hyphens, "
@@ -234,7 +245,7 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
         )
 
     # Validate event-name (kebab-case) - use lenient pattern for common naming patterns
-    if not _LENIENT_KEBAB_PATTERN.match(event_name):
+    if not _INTERNAL_KEBAB_PATTERN.match(event_name):
         return ModelTopicValidationResult.failure(
             suffix,
             f"Event name must be kebab-case (lowercase letters, digits, hyphens, "
