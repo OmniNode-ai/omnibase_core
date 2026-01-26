@@ -84,6 +84,65 @@ class TestConstants:
 
 
 # =============================================================================
+# Kinds Synchronization Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestKindsSynchronization:
+    """Tests to ensure topic kinds stay synchronized across modules.
+
+    VALID_TOPIC_KINDS is defined in model_topic_suffix_parts.py while
+    TOPIC_SUFFIX_PATTERN hardcodes the same kinds in a regex pattern in
+    validator_topic_suffix.py. These tests ensure they stay in sync.
+    """
+
+    def test_valid_topic_kinds_matches_pattern(self) -> None:
+        """Verify VALID_TOPIC_KINDS matches kinds in TOPIC_SUFFIX_PATTERN regex.
+
+        This test ensures that if a new kind is added to VALID_TOPIC_KINDS,
+        the TOPIC_SUFFIX_PATTERN regex is also updated, and vice versa.
+        """
+        # Extract kinds from the regex pattern
+        # Pattern format: ^onex\.(cmd|evt|dlq|intent|snapshot)\.
+        pattern_str = TOPIC_SUFFIX_PATTERN.pattern
+        match = re.search(r"\(([^)]+)\)", pattern_str)
+        assert match is not None, "Could not extract kinds from TOPIC_SUFFIX_PATTERN"
+
+        pattern_kinds = frozenset(match.group(1).split("|"))
+
+        assert pattern_kinds == VALID_TOPIC_KINDS, (
+            f"VALID_TOPIC_KINDS and TOPIC_SUFFIX_PATTERN are out of sync!\n"
+            f"VALID_TOPIC_KINDS: {sorted(VALID_TOPIC_KINDS)}\n"
+            f"Pattern kinds: {sorted(pattern_kinds)}\n"
+            f"Missing from pattern: {VALID_TOPIC_KINDS - pattern_kinds}\n"
+            f"Missing from VALID_TOPIC_KINDS: {pattern_kinds - VALID_TOPIC_KINDS}"
+        )
+
+    def test_topic_kind_constants_match_valid_topic_kinds(self) -> None:
+        """Verify individual TOPIC_KIND_* constants are in VALID_TOPIC_KINDS.
+
+        Ensures that the individual named constants (TOPIC_KIND_CMD, etc.)
+        are all members of the VALID_TOPIC_KINDS set.
+        """
+        individual_constants = {
+            TOPIC_KIND_CMD,
+            TOPIC_KIND_EVT,
+            TOPIC_KIND_DLQ,
+            TOPIC_KIND_INTENT,
+            TOPIC_KIND_SNAPSHOT,
+        }
+
+        assert individual_constants == VALID_TOPIC_KINDS, (
+            f"Individual TOPIC_KIND_* constants don't match VALID_TOPIC_KINDS!\n"
+            f"Individual constants: {sorted(individual_constants)}\n"
+            f"VALID_TOPIC_KINDS: {sorted(VALID_TOPIC_KINDS)}\n"
+            f"Missing from VALID_TOPIC_KINDS: {individual_constants - VALID_TOPIC_KINDS}\n"
+            f"Missing individual constant for: {VALID_TOPIC_KINDS - individual_constants}"
+        )
+
+
+# =============================================================================
 # Pattern Tests
 # =============================================================================
 

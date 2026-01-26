@@ -75,7 +75,7 @@ class ModelTopicSuffixParts(BaseModel):
         producer: Service/producer name in kebab-case (e.g., "omnimemory")
         event_name: Event name in kebab-case (e.g., "intent-stored")
         version: Version number as integer (extracted from v{n} format)
-        raw_suffix: The original unparsed suffix string for reference
+        raw_suffix: The canonical lowercase suffix for consistent comparison (normalized from input)
 
     Example:
         >>> parts = ModelTopicSuffixParts(
@@ -116,7 +116,7 @@ class ModelTopicSuffixParts(BaseModel):
 
     raw_suffix: str = Field(
         ...,
-        description="Original unparsed suffix string",
+        description="Canonical normalized suffix (lowercase form used for comparison)",
     )
 
 

@@ -7,6 +7,8 @@ Provides extension point for schema_ref and description per topic.
 
 from pydantic import BaseModel, ConfigDict, Field
 
+__all__ = ["ModelTopicMeta"]
+
 
 class ModelTopicMeta(BaseModel):
     """
