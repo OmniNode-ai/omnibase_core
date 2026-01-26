@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-01-26
+
+### Added
+
+- **Pattern Extraction Models** [OMN-1587]: Added models for intelligence pattern extraction
+  - Canonical Pydantic models for code pattern analysis results
+  - Support for extracting and representing code patterns from analysis pipelines
+
 ## [0.9.5] - 2026-01-26
 
 ### Added
