@@ -127,6 +127,7 @@ from .model_state_versioning import ModelStateVersioning
 from .model_statistical_computation import ModelStatisticalComputation
 from .model_synchronization_point import ModelSynchronizationPoint
 from .model_tool_execution_subcontract import ModelToolExecutionSubcontract
+from .model_topic_meta import ModelTopicMeta
 from .model_validation_subcontract import ModelValidationSubcontract
 from .model_validator_rule import ModelValidatorRule
 from .model_validator_subcontract import ModelValidatorSubcontract
@@ -202,6 +203,7 @@ __all__ = [
     "ModelEventPersistence",
     "ModelEventRouting",
     "ModelEventTransformation",
+    "ModelTopicMeta",
     # FSM subcontracts and components
     "ModelFSMSubcontract",
     "ModelFSMOperation",

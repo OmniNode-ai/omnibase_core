@@ -141,9 +141,13 @@ from omnibase_core.constants.constants_topic_taxonomy import (
     TOPIC_RUNTIME_EVENTS,
     TOPIC_RUNTIME_INTENTS,
     TOPIC_TYPE_COMMANDS,
+    TOPIC_TYPE_DLQ,
     TOPIC_TYPE_EVENTS,
     TOPIC_TYPE_INTENTS,
     TOPIC_TYPE_SNAPSHOTS,
+    get_token_to_topic_type,
+    get_topic_type_to_token,
+    get_valid_topic_suffix_kinds,
     topic_name,
 )
 
@@ -250,9 +254,14 @@ __all__ = [
     "validate_capabilities",
     # Topic taxonomy constants
     "TOPIC_TYPE_COMMANDS",
+    "TOPIC_TYPE_DLQ",
     "TOPIC_TYPE_EVENTS",
     "TOPIC_TYPE_INTENTS",
     "TOPIC_TYPE_SNAPSHOTS",
+    # Token mapping accessors (OMN-1537)
+    "get_token_to_topic_type",
+    "get_topic_type_to_token",
+    "get_valid_topic_suffix_kinds",
     "DOMAIN_REGISTRATION",
     "DOMAIN_DISCOVERY",
     "DOMAIN_RUNTIME",

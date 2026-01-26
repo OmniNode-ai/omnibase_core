@@ -28,6 +28,7 @@ class TestEnumTopicType:
     def test_values_exist(self):
         """Test that all expected topic type values are defined."""
         assert hasattr(EnumTopicType, "COMMANDS")
+        assert hasattr(EnumTopicType, "DLQ")
         assert hasattr(EnumTopicType, "EVENTS")
         assert hasattr(EnumTopicType, "INTENTS")
         assert hasattr(EnumTopicType, "SNAPSHOTS")
@@ -35,6 +36,7 @@ class TestEnumTopicType:
     def test_values_are_correct(self):
         """Test that topic type values match expected strings."""
         assert EnumTopicType.COMMANDS.value == "commands"
+        assert EnumTopicType.DLQ.value == "dlq"
         assert EnumTopicType.EVENTS.value == "events"
         assert EnumTopicType.INTENTS.value == "intents"
         assert EnumTopicType.SNAPSHOTS.value == "snapshots"
@@ -42,6 +44,7 @@ class TestEnumTopicType:
     def test_str_conversion(self):
         """Test that __str__ returns the value."""
         assert str(EnumTopicType.COMMANDS) == "commands"
+        assert str(EnumTopicType.DLQ) == "dlq"
         assert str(EnumTopicType.EVENTS) == "events"
         assert str(EnumTopicType.INTENTS) == "intents"
         assert str(EnumTopicType.SNAPSHOTS) == "snapshots"
@@ -55,13 +58,14 @@ class TestEnumTopicType:
         """Test that all enum values are unique."""
         values = [e.value for e in EnumTopicType]
         assert len(values) == len(set(values))
-        assert len(values) == 4
+        assert len(values) == 5
 
     def test_iteration(self):
         """Test that enum can be iterated."""
         topic_types = list(EnumTopicType)
-        assert len(topic_types) == 4
+        assert len(topic_types) == 5
         assert EnumTopicType.COMMANDS in topic_types
+        assert EnumTopicType.DLQ in topic_types
         assert EnumTopicType.EVENTS in topic_types
         assert EnumTopicType.INTENTS in topic_types
         assert EnumTopicType.SNAPSHOTS in topic_types
@@ -372,10 +376,21 @@ class TestModelTopicConfigFactoryMethods:
         assert config.partitions == 3
         assert config.replication_factor == 1
 
+    def test_dlq_default(self):
+        """Test dlq_default() factory method."""
+        config = ModelTopicConfig.dlq_default()
+
+        assert config.topic_type == EnumTopicType.DLQ
+        assert config.cleanup_policy == EnumCleanupPolicy.DELETE
+        assert config.retention_ms == 2592000000  # 30 days per ONEX standard
+        assert config.partitions == 3
+        assert config.replication_factor == 1
+
     def test_factory_methods_return_frozen_instances(self):
         """Test that factory methods return frozen (immutable) instances."""
         configs = [
             ModelTopicConfig.commands_default(),
+            ModelTopicConfig.dlq_default(),
             ModelTopicConfig.events_default(),
             ModelTopicConfig.intents_default(),
             ModelTopicConfig.snapshots_default(),
@@ -421,11 +436,12 @@ class TestModelTopicManifestInstantiation:
         assert EnumTopicType.EVENTS in manifest.topics
 
     def test_instantiation_all_topics(self):
-        """Test manifest creation with all four topic types."""
+        """Test manifest creation with all five topic types."""
         manifest = ModelTopicManifest(
             domain="myservice",
             topics={
                 EnumTopicType.COMMANDS: ModelTopicConfig.commands_default(),
+                EnumTopicType.DLQ: ModelTopicConfig.dlq_default(),
                 EnumTopicType.EVENTS: ModelTopicConfig.events_default(),
                 EnumTopicType.INTENTS: ModelTopicConfig.intents_default(),
                 EnumTopicType.SNAPSHOTS: ModelTopicConfig.snapshots_default(),
@@ -433,7 +449,7 @@ class TestModelTopicManifestInstantiation:
         )
 
         assert manifest.domain == "myservice"
-        assert len(manifest.topics) == 4
+        assert len(manifest.topics) == 5
         for topic_type in EnumTopicType:
             assert topic_type in manifest.topics
 
@@ -677,11 +693,12 @@ class TestModelTopicManifestGetAllTopicNames:
         assert names[EnumTopicType.EVENTS] == "onex.test.events"
 
     def test_get_all_topic_names_all_topics(self):
-        """Test getting all topic names with all four topics."""
+        """Test getting all topic names with all five topics."""
         manifest = ModelTopicManifest(
             domain="registration",
             topics={
                 EnumTopicType.COMMANDS: ModelTopicConfig.commands_default(),
+                EnumTopicType.DLQ: ModelTopicConfig.dlq_default(),
                 EnumTopicType.EVENTS: ModelTopicConfig.events_default(),
                 EnumTopicType.INTENTS: ModelTopicConfig.intents_default(),
                 EnumTopicType.SNAPSHOTS: ModelTopicConfig.snapshots_default(),
@@ -690,8 +707,9 @@ class TestModelTopicManifestGetAllTopicNames:
 
         names = manifest.get_all_topic_names()
 
-        assert len(names) == 4
+        assert len(names) == 5
         assert names[EnumTopicType.COMMANDS] == "onex.registration.commands"
+        assert names[EnumTopicType.DLQ] == "onex.registration.dlq"
         assert names[EnumTopicType.EVENTS] == "onex.registration.events"
         assert names[EnumTopicType.INTENTS] == "onex.registration.intents"
         assert names[EnumTopicType.SNAPSHOTS] == "onex.registration.snapshots"
@@ -752,11 +770,12 @@ class TestModelTopicManifestRegistrationDomain:
         assert manifest.domain == "registration"
 
     def test_registration_domain_has_all_topics(self):
-        """Test that registration domain has all four topic types."""
+        """Test that registration domain has all five topic types."""
         manifest = ModelTopicManifest.registration_domain()
 
-        assert len(manifest.topics) == 4
+        assert len(manifest.topics) == 5
         assert EnumTopicType.COMMANDS in manifest.topics
+        assert EnumTopicType.DLQ in manifest.topics
         assert EnumTopicType.EVENTS in manifest.topics
         assert EnumTopicType.INTENTS in manifest.topics
         assert EnumTopicType.SNAPSHOTS in manifest.topics
@@ -769,6 +788,7 @@ class TestModelTopicManifestRegistrationDomain:
             manifest.get_topic_name(EnumTopicType.COMMANDS)
             == "onex.registration.commands"
         )
+        assert manifest.get_topic_name(EnumTopicType.DLQ) == "onex.registration.dlq"
         assert (
             manifest.get_topic_name(EnumTopicType.EVENTS) == "onex.registration.events"
         )
@@ -789,6 +809,7 @@ class TestModelTopicManifestRegistrationDomain:
             manifest.get_config(EnumTopicType.COMMANDS)
             == ModelTopicConfig.commands_default()
         )
+        assert manifest.get_config(EnumTopicType.DLQ) == ModelTopicConfig.dlq_default()
         assert (
             manifest.get_config(EnumTopicType.EVENTS)
             == ModelTopicConfig.events_default()
@@ -812,13 +833,14 @@ class TestModelTopicManifestCreateStandardManifest:
         manifest = ModelTopicManifest.create_standard_manifest("codegen")
 
         assert manifest.domain == "codegen"
-        assert len(manifest.topics) == 4
+        assert len(manifest.topics) == 5
 
     def test_create_standard_manifest_has_all_topics(self):
-        """Test that standard manifest has all four topic types."""
+        """Test that standard manifest has all five topic types."""
         manifest = ModelTopicManifest.create_standard_manifest("metrics")
 
         assert EnumTopicType.COMMANDS in manifest.topics
+        assert EnumTopicType.DLQ in manifest.topics
         assert EnumTopicType.EVENTS in manifest.topics
         assert EnumTopicType.INTENTS in manifest.topics
         assert EnumTopicType.SNAPSHOTS in manifest.topics
@@ -828,6 +850,7 @@ class TestModelTopicManifestCreateStandardManifest:
         manifest = ModelTopicManifest.create_standard_manifest("audit")
 
         assert manifest.get_topic_name(EnumTopicType.COMMANDS) == "onex.audit.commands"
+        assert manifest.get_topic_name(EnumTopicType.DLQ) == "onex.audit.dlq"
         assert manifest.get_topic_name(EnumTopicType.EVENTS) == "onex.audit.events"
         assert manifest.get_topic_name(EnumTopicType.INTENTS) == "onex.audit.intents"
         assert (
@@ -842,6 +865,7 @@ class TestModelTopicManifestCreateStandardManifest:
             manifest.get_config(EnumTopicType.COMMANDS)
             == ModelTopicConfig.commands_default()
         )
+        assert manifest.get_config(EnumTopicType.DLQ) == ModelTopicConfig.dlq_default()
         assert (
             manifest.get_config(EnumTopicType.EVENTS)
             == ModelTopicConfig.events_default()
@@ -880,7 +904,7 @@ class TestModelTopicManifestSerialization:
 
         assert data["domain"] == "registration"
         assert "topics" in data
-        assert len(data["topics"]) == 4
+        assert len(data["topics"]) == 5
 
     def test_model_dump_json(self):
         """Test JSON serialization."""
@@ -919,14 +943,14 @@ class TestModelTopicManifestEdgeCases:
         manifest = ModelTopicManifest.registration_domain()
 
         topic_types = list(manifest.topics.keys())
-        assert len(topic_types) == 4
+        assert len(topic_types) == 5
 
     def test_manifest_topics_values(self):
         """Test accessing all topic configs via values()."""
         manifest = ModelTopicManifest.registration_domain()
 
         configs = list(manifest.topics.values())
-        assert len(configs) == 4
+        assert len(configs) == 5
         assert all(isinstance(c, ModelTopicConfig) for c in configs)
 
     def test_manifest_topics_items(self):

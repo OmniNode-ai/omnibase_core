@@ -19,14 +19,16 @@ class EnumTopicType(StrValueHelper, str, Enum):
     """
     Valid topic types per ONEX topic taxonomy.
 
-    Defines the four standard topic categories used across all ONEX domains:
+    Defines the standard topic categories used across all ONEX domains:
     - COMMANDS: Request/action topics (imperative, exactly-once semantics)
     - EVENTS: Immutable event logs (append-only, time-based retention)
     - INTENTS: Intent coordination topics (workflow orchestration)
     - SNAPSHOTS: State snapshots (compacted, key-based retention)
+    - DLQ: Dead letter queue topics (failed message storage)
     """
 
     COMMANDS = "commands"
+    DLQ = "dlq"
     EVENTS = "events"
     INTENTS = "intents"
     SNAPSHOTS = "snapshots"

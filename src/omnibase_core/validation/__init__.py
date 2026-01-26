@@ -137,6 +137,20 @@ from .validator_naming_convention import (
     ValidatorNamingConvention,
 )
 
+# Import Topic Suffix validator (OMN-1537)
+from .validator_topic_suffix import (
+    ENV_PREFIXES,
+    EXPECTED_SEGMENT_COUNT,
+    KEBAB_CASE_PATTERN,
+    TOPIC_PREFIX,
+    TOPIC_SUFFIX_PATTERN,
+    VERSION_PATTERN,
+    compose_full_topic,
+    is_valid_topic_suffix,
+    parse_topic_suffix,
+    validate_topic_suffix,
+)
+
 # =============================================================================
 # ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
 # =============================================================================
@@ -503,4 +517,15 @@ __all__ = [
     "validate_hex_color",
     "validate_hex_color_optional",
     "validate_hex_color_mapping",
+    # Topic suffix validators (OMN-1537)
+    "ENV_PREFIXES",
+    "EXPECTED_SEGMENT_COUNT",
+    "KEBAB_CASE_PATTERN",
+    "TOPIC_PREFIX",
+    "TOPIC_SUFFIX_PATTERN",
+    "VERSION_PATTERN",
+    "compose_full_topic",
+    "is_valid_topic_suffix",
+    "parse_topic_suffix",
+    "validate_topic_suffix",
 ]
