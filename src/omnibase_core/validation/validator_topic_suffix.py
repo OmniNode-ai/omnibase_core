@@ -5,12 +5,13 @@ This module provides validation utilities for ONEX topic suffixes following
 the canonical naming convention: onex.{kind}.{producer}.{event-name}.v{n}
 
 Validation Rules:
-    1. Must start with 'onex.'
-    2. Must have exactly 5 dot-separated segments
-    3. Segment 2 (kind) must be one of: cmd, evt, dlq, intent, snapshot
-    4. Segments 3-4 (producer, event-name) must be kebab-case
-    5. Segment 5 must match v{int} pattern (e.g., v1, v2)
-    6. Must NOT start with environment prefix (dev., staging., prod.)
+    1. Must be entirely lowercase (no normalization - rejected if not lowercase)
+    2. Must start with 'onex.'
+    3. Must have exactly 5 dot-separated segments
+    4. Segment 2 (kind) must be one of: cmd, evt, dlq, intent, snapshot
+    5. Segments 3-4 (producer, event-name) must be kebab-case
+    6. Segment 5 must match v{int} pattern (e.g., v1, v2)
+    7. Must NOT start with environment prefix (dev., staging., prod.)
 
 Example:
     >>> from omnibase_core.validation.validator_topic_suffix import (
@@ -26,6 +27,11 @@ Example:
 
     >>> # Invalid: has environment prefix
     >>> result = validate_topic_suffix("dev.onex.evt.omnimemory.intent-stored.v1")
+    >>> result.is_valid
+    False
+
+    >>> # Invalid: not lowercase (no normalization)
+    >>> result = validate_topic_suffix("ONEX.EVT.SERVICE.EVENT.V1")
     >>> result.is_valid
     False
 
@@ -111,14 +117,14 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
     onex.{kind}.{producer}.{event-name}.v{n}
 
     Validation Rules:
-        1. Must start with 'onex.'
-        2. Must have exactly 5 dot-separated segments
-        3. Segment 2 (kind) must be one of: cmd, evt, dlq, intent, snapshot
-        4. Segments 3-4 (producer, event-name) must be kebab-case
-        5. Segment 5 must match v{int} pattern
-        6. Must NOT start with environment prefix (dev., staging., prod., etc.)
-        7. Must not contain control characters (newlines, tabs, etc.)
-        8. If prefix is lowercase 'onex.', producer/event-name must be lowercase
+        1. Must be entirely lowercase (no normalization - rejected if not lowercase)
+        2. Must start with 'onex.'
+        3. Must have exactly 5 dot-separated segments
+        4. Segment 2 (kind) must be one of: cmd, evt, dlq, intent, snapshot
+        5. Segments 3-4 (producer, event-name) must be kebab-case
+        6. Segment 5 must match v{int} pattern
+        7. Must NOT start with environment prefix (dev., staging., prod., etc.)
+        8. Must not contain control characters (newlines, tabs, etc.)
 
     Args:
         suffix: The topic suffix to validate (e.g., "onex.evt.omnimemory.intent-stored.v1")
@@ -139,6 +145,12 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
         False
         >>> "environment prefix" in result.error.lower()
         True
+
+        >>> result = validate_topic_suffix("ONEX.EVT.SERVICE.EVENT.V1")
+        >>> result.is_valid
+        False
+        >>> "lowercase" in result.error.lower()
+        True
     """
     # Check for control characters (newlines, tabs, null, etc.) before any processing
     # These should never be in a valid topic suffix
@@ -155,40 +167,17 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
     if not stripped:
         return ModelTopicValidationResult.failure(suffix, "Suffix cannot be empty")
 
-    # Determine if input is in "uppercase mode" (starts with ONEX. instead of onex.)
-    # When uppercase mode is detected, we normalize everything to lowercase.
-    # When lowercase mode (onex.), producer and event-name must already be lowercase.
-    uppercase_mode = stripped.startswith("ONEX.")
+    # Strict lowercase validation - no normalization
+    # Input must already be lowercase; uppercase or mixed case is rejected
+    if stripped != stripped.lower():
+        return ModelTopicValidationResult.failure(
+            suffix,
+            "Suffix must be lowercase. Use lowercase topic suffixes "
+            "(e.g., 'onex.evt.service.event.v1')",
+        )
 
-    # If NOT in uppercase mode and prefix is lowercase, check that producer/event-name
-    # segments are strictly lowercase (no mixed case like "OmniMemory")
-    if not uppercase_mode:
-        original_segments = stripped.split(".")
-        if len(original_segments) >= 4:
-            original_producer = original_segments[2]
-            original_event_name = original_segments[3]
-
-            # Check if producer has any uppercase characters
-            if original_producer != original_producer.lower():
-                return ModelTopicValidationResult.failure(
-                    suffix,
-                    f"Producer must be kebab-case (lowercase letters, digits, hyphens, "
-                    f"starting with letter). Got: '{original_producer}'",
-                )
-
-            # Check if event-name has any uppercase characters
-            if original_event_name != original_event_name.lower():
-                return ModelTopicValidationResult.failure(
-                    suffix,
-                    f"Event name must be kebab-case (lowercase letters, digits, hyphens, "
-                    f"starting with letter). Got: '{original_event_name}'",
-                )
-
-    # Normalize to lowercase for validation
-    normalized = stripped.lower()
-
-    # Split into segments for validation
-    segments = normalized.split(".")
+    # Split into segments for validation (input is already lowercase)
+    segments = stripped.split(".")
     first_segment = segments[0]
 
     # Check for environment prefix FIRST (must NOT be present in suffix)
@@ -268,7 +257,7 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
         producer=producer,
         event_name=event_name,
         version=version,
-        raw_suffix=normalized,
+        raw_suffix=stripped,
     )
 
     return ModelTopicValidationResult.success(suffix=stripped, parsed=parsed)

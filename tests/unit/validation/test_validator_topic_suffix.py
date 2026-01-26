@@ -322,12 +322,12 @@ class TestValidateTopicSuffixValid:
         assert result.parsed.version == 2
         assert result.parsed.raw_suffix == "onex.evt.omnimemory.intent-stored.v2"
 
-    def test_suffix_normalized_to_lowercase(self) -> None:
-        """Test that suffix is normalized to lowercase."""
+    def test_uppercase_suffix_rejected(self) -> None:
+        """Test that uppercase suffix is rejected (no normalization)."""
         result = validate_topic_suffix("ONEX.EVT.OMNIMEMORY.INTENT-STORED.V1")
-        assert result.is_valid is True
-        assert result.parsed is not None
-        assert result.parsed.raw_suffix == "onex.evt.omnimemory.intent-stored.v1"
+        assert result.is_valid is False
+        assert result.error is not None
+        assert "lowercase" in result.error.lower()
 
     def test_whitespace_stripped(self) -> None:
         """Test that leading/trailing whitespace is stripped."""
@@ -448,19 +448,15 @@ class TestValidateTopicSuffixInvalid:
             ("onex.evt.omnimemory.intent-stored.v0", "version 0 not allowed"),
             ("onex.evt.omnimemory.intent-stored.v", "missing version number"),
             ("onex.evt.omnimemory.intent-stored.version1", "wrong format 'version1'"),
-            ("onex.evt.omnimemory.intent-stored.V1", "uppercase V (normalized)"),
+            ("onex.evt.omnimemory.intent-stored.V1", "uppercase V (rejected)"),
         ],
     )
     def test_rejects_invalid_version(self, suffix: str, description: str) -> None:
         """Test that suffixes with invalid version format are rejected."""
         result = validate_topic_suffix(suffix)
-        # Note: uppercase V1 gets normalized, so it might pass
-        if suffix.endswith(".V1"):
-            # Uppercase gets normalized to lowercase, so v1 is valid
-            assert result.is_valid is True
-        else:
-            assert result.is_valid is False, f"Should reject: {description}"
-            assert result.error is not None
+        # All invalid version formats should be rejected (no normalization)
+        assert result.is_valid is False, f"Should reject: {description}"
+        assert result.error is not None
 
     @pytest.mark.parametrize(
         ("suffix", "description"),
@@ -678,9 +674,15 @@ class TestComposeFullTopic:
         with pytest.raises(ValueError):
             compose_full_topic(env_prefix, "onex.evt.service.event.v1")
 
-    def test_uses_normalized_suffix_from_parsed_result(self) -> None:
-        """Test that composed topic uses normalized suffix."""
-        full = compose_full_topic("dev", "  ONEX.EVT.SERVICE.EVENT.V1  ")
+    def test_rejects_uppercase_suffix(self) -> None:
+        """Test that compose_full_topic rejects uppercase suffix (no normalization)."""
+        with pytest.raises(ValueError) as exc_info:
+            compose_full_topic("dev", "  ONEX.EVT.SERVICE.EVENT.V1  ")
+        assert "lowercase" in str(exc_info.value).lower()
+
+    def test_uses_stripped_suffix_from_parsed_result(self) -> None:
+        """Test that composed topic uses stripped suffix."""
+        full = compose_full_topic("dev", "  onex.evt.service.event.v1  ")
         assert full == "dev.onex.evt.service.event.v1"
 
 
@@ -954,14 +956,12 @@ class TestEdgeCases:
         assert result.parsed is not None
         assert result.parsed.version == 999999
 
-    def test_mixed_case_is_normalized(self) -> None:
-        """Test that mixed case input is normalized to lowercase."""
+    def test_mixed_case_is_rejected(self) -> None:
+        """Test that mixed case input is rejected (no normalization)."""
         result = validate_topic_suffix("ONEX.EVT.MyService.MyEvent.V1")
-        assert result.is_valid is True
-        assert result.parsed is not None
-        assert result.parsed.kind == "evt"
-        assert result.parsed.producer == "myservice"
-        assert result.parsed.event_name == "myevent"
+        assert result.is_valid is False
+        assert result.error is not None
+        assert "lowercase" in result.error.lower()
 
     def test_consecutive_hyphens_in_kebab_case(self) -> None:
         """Test that consecutive hyphens are rejected in kebab-case."""
