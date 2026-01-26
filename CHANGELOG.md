@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-01-26
+
+### Added
+
+- **Topic Suffix Validation Utilities** [OMN-1537]: Added canonical topic suffix validation for contract-driven topic declaration
+  - `validate_topic_suffix()`, `parse_topic_suffix()`, `compose_full_topic()` utilities
+  - `ModelTopicSuffixParts` and `ModelTopicValidationResult` models
+  - `publish_topics`/`subscribe_topics` fields in `ModelEventBusSubcontract`
+  - `ModelTopicMeta` for future schema reference support
+  - `EnumTopicType.DLQ` for Dead Letter Queue topic type
+  - Topic suffix format: `onex.{kind}.{producer}.{event-name}.v{n}`
+
+### Documentation
+
+- **Operation Bindings DSL** [OMN-1517]: Added comprehensive documentation for the `operation_bindings` declarative handler wiring schema
+
 ## [0.9.4] - 2026-01-25
 
 ### Added
