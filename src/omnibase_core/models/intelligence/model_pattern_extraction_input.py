@@ -36,7 +36,7 @@ class ModelPatternExtractionInput(BaseModel):
         description="Correlation ID for tracing this extraction request",
     )
 
-    # Data source (one of these should be provided)
+    # Data source (at least one required; both may be provided)
     session_ids: list[str] = Field(
         default_factory=list,
         description="Session IDs to analyze for patterns",
@@ -100,6 +100,16 @@ class ModelPatternExtractionInput(BaseModel):
                 "At least one data source required: provide session_ids or raw_events"
             )
 
+        return self
+
+    @model_validator(mode="after")
+    def validate_time_window(self) -> ModelPatternExtractionInput:
+        """Validate time window ordering when both bounds are provided."""
+        if self.time_window_start is not None and self.time_window_end is not None:
+            if self.time_window_start >= self.time_window_end:
+                raise ValueError(
+                    "time_window_start must be strictly less than time_window_end"
+                )
         return self
 
 

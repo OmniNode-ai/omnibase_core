@@ -109,6 +109,18 @@ class ModelPatternExtractionOutput(BaseModel):
     )
 
     @model_validator(mode="after")
+    def validate_patterns_by_kind_completeness(self) -> ModelPatternExtractionOutput:
+        """Validate that patterns_by_kind contains all EnumPatternKind keys."""
+        missing_kinds = set(EnumPatternKind) - set(self.patterns_by_kind.keys())
+        if missing_kinds:
+            missing_names = sorted(kind.name for kind in missing_kinds)
+            raise ValueError(
+                f"patterns_by_kind must contain all EnumPatternKind keys. "
+                f"Missing: {', '.join(missing_names)}"
+            )
+        return self
+
+    @model_validator(mode="after")
     def validate_patterns_count(self) -> ModelPatternExtractionOutput:
         """Validate that total_patterns_found matches actual patterns."""
         actual_count = sum(len(patterns) for patterns in self.patterns_by_kind.values())

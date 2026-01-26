@@ -498,6 +498,7 @@ class TestModelPatternExtractionInput:
             {"type": "error", "message": "failed"},
         ]
         input_model = ModelPatternExtractionInput(
+            # NOTE: List[dict[str, str]] is compatible with List[JsonType] at runtime
             raw_events=raw_events,  # type: ignore[arg-type]
         )
 
@@ -674,6 +675,75 @@ class TestModelPatternExtractionInput:
             source_snapshot_id=snapshot_uuid,
         )
         assert input_model.source_snapshot_id == snapshot_uuid
+
+    # -------------------------------------------------------------------------
+    # Time Window Validation Tests
+    # -------------------------------------------------------------------------
+
+    def test_time_window_validation_start_less_than_end(self) -> None:
+        """Test that time_window_start < time_window_end is valid."""
+        start = datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC)
+        end = datetime(2025, 1, 2, 0, 0, 0, tzinfo=UTC)
+
+        input_model = ModelPatternExtractionInput(
+            session_ids=["s1"],
+            time_window_start=start,
+            time_window_end=end,
+        )
+
+        assert input_model.time_window_start == start
+        assert input_model.time_window_end == end
+
+    def test_time_window_validation_start_equals_end_fails(self) -> None:
+        """Test that time_window_start == time_window_end fails validation."""
+        same_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelPatternExtractionInput(
+                session_ids=["s1"],
+                time_window_start=same_time,
+                time_window_end=same_time,
+            )
+
+        assert "time_window_start" in str(exc_info.value)
+
+    def test_time_window_validation_start_greater_than_end_fails(self) -> None:
+        """Test that time_window_start > time_window_end fails validation."""
+        start = datetime(2025, 1, 2, 0, 0, 0, tzinfo=UTC)
+        end = datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC)
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelPatternExtractionInput(
+                session_ids=["s1"],
+                time_window_start=start,
+                time_window_end=end,
+            )
+
+        assert "time_window_start" in str(exc_info.value)
+
+    def test_time_window_validation_only_start_provided(self) -> None:
+        """Test that providing only time_window_start is valid."""
+        start = datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC)
+
+        input_model = ModelPatternExtractionInput(
+            session_ids=["s1"],
+            time_window_start=start,
+        )
+
+        assert input_model.time_window_start == start
+        assert input_model.time_window_end is None
+
+    def test_time_window_validation_only_end_provided(self) -> None:
+        """Test that providing only time_window_end is valid."""
+        end = datetime(2025, 1, 2, 0, 0, 0, tzinfo=UTC)
+
+        input_model = ModelPatternExtractionInput(
+            session_ids=["s1"],
+            time_window_end=end,
+        )
+
+        assert input_model.time_window_start is None
+        assert input_model.time_window_end == end
 
 
 # ============================================================================
@@ -922,6 +992,46 @@ class TestModelPatternExtractionOutput:
 
         assert output.success is False
         assert len(output.errors) == 1
+
+    # -------------------------------------------------------------------------
+    # Patterns By Kind Completeness Tests
+    # -------------------------------------------------------------------------
+
+    def test_patterns_by_kind_missing_keys_fails(
+        self, minimal_output_data: dict
+    ) -> None:
+        """Test that partial patterns_by_kind dict fails with clear error."""
+        # Only provide one key, missing the others
+        partial_patterns: dict[EnumPatternKind, list[ModelPatternRecord]] = {
+            EnumPatternKind.FILE_ACCESS: [],
+        }
+        minimal_output_data["patterns_by_kind"] = partial_patterns
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelPatternExtractionOutput(**minimal_output_data)
+
+        error_str = str(exc_info.value)
+        assert "patterns_by_kind must contain all EnumPatternKind keys" in error_str
+        assert "Missing:" in error_str
+
+    def test_patterns_by_kind_all_keys_required(
+        self, minimal_output_data: dict
+    ) -> None:
+        """Test that all EnumPatternKind keys must be present."""
+        # Provide all but one key
+        almost_complete: dict[EnumPatternKind, list[ModelPatternRecord]] = {
+            EnumPatternKind.FILE_ACCESS: [],
+            EnumPatternKind.ERROR: [],
+            EnumPatternKind.ARCHITECTURE: [],
+            # Missing: TOOL_USAGE
+        }
+        minimal_output_data["patterns_by_kind"] = almost_complete
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelPatternExtractionOutput(**minimal_output_data)
+
+        error_str = str(exc_info.value)
+        assert "TOOL_USAGE" in error_str
 
 
 # ============================================================================
