@@ -26,6 +26,7 @@ Cross-reference:
 
 from __future__ import annotations
 
+import functools
 import re
 from typing import TYPE_CHECKING
 
@@ -80,20 +81,12 @@ def _build_token_mappings() -> tuple[
     return token_to_type, type_to_token, valid_kinds
 
 
-# Lazy-loaded mappings (initialized on first access)
-_token_mappings_cache: (
-    tuple[dict[str, EnumTopicType], dict[EnumTopicType, str], frozenset[str]] | None
-) = None
-
-
+@functools.lru_cache(maxsize=1)
 def _get_token_mappings() -> tuple[
     dict[str, EnumTopicType], dict[EnumTopicType, str], frozenset[str]
 ]:
-    """Get or initialize the token mappings."""
-    global _token_mappings_cache
-    if _token_mappings_cache is None:
-        _token_mappings_cache = _build_token_mappings()
-    return _token_mappings_cache
+    """Get or initialize the token mappings (cached via lru_cache)."""
+    return _build_token_mappings()
 
 
 def get_token_to_topic_type() -> dict[str, EnumTopicType]:

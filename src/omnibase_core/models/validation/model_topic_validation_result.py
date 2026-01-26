@@ -179,7 +179,13 @@ class ModelTopicValidationResult(BaseModel):
 # This is required because we use TYPE_CHECKING for ModelTopicSuffixParts
 # to avoid circular imports at module load time
 def _rebuild_model() -> None:
-    """Rebuild model to resolve forward references."""
+    """
+    Rebuild model to resolve forward references for pytest-xdist compatibility.
+
+    Required because TYPE_CHECKING imports are not available at runtime.
+    pytest-xdist workers import classes independently, so explicit rebuild
+    ensures ModelTopicSuffixParts type is resolved correctly across workers.
+    """
     from omnibase_core.models.validation.model_topic_suffix_parts import (
         ModelTopicSuffixParts,
     )

@@ -76,27 +76,20 @@ TOPIC_SUFFIX_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"^onex\.(cmd|evt|dlq|intent|snapshot)\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.v(\d+)$"
 )
 
-# Pattern for validating strict kebab-case identifiers (exported constant)
+# Pattern for validating strict kebab-case identifiers
 # Rules:
 #   - Must start with lowercase letter
 #   - Must end with lowercase letter or digit (no trailing hyphen)
 #   - No consecutive hyphens allowed
 #   - Hyphens must be followed by letter/digit
-# Used for external/API validation; internal validation uses equivalent _INTERNAL_KEBAB_PATTERN
+# Used for both external/API validation and internal producer/event-name validation
 KEBAB_CASE_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"^[a-z]([a-z0-9]*(-[a-z0-9]+)*)?$"
 )
 
-# Internal pattern for producer/event-name validation
-# Enforces kebab-case: starts with letter, ends with letter/digit, no consecutive hyphens
-# Rules:
-#   - Must start with lowercase letter
-#   - Must end with lowercase letter or digit (no trailing hyphen)
-#   - No consecutive hyphens allowed (negative lookahead (?!.*--))
-# NOTE: KEBAB_CASE_PATTERN (exported) uses equivalent strictness for external use
-_INTERNAL_KEBAB_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"^(?!.*--)[a-z]([a-z0-9-]*[a-z0-9])?$"
-)
+# Control characters that are invalid in topic suffixes
+# Includes: newline, carriage return, tab, null, vertical tab, form feed
+_CONTROL_CHARS: Final[str] = "\n\r\t\x00\x0b\x0c"
 
 # Pattern for validating version segment
 VERSION_PATTERN: Final[re.Pattern[str]] = re.compile(r"^v(\d+)$")
@@ -149,7 +142,7 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
     """
     # Check for control characters (newlines, tabs, null, etc.) before any processing
     # These should never be in a valid topic suffix
-    if any(c in suffix for c in "\n\r\t\x00\x0b\x0c"):
+    if any(c in suffix for c in _CONTROL_CHARS):
         return ModelTopicValidationResult.failure(
             suffix,
             "Suffix contains invalid control characters (newline, tab, etc.)",
@@ -238,16 +231,16 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
             f"Kind must be one of: {valid_kinds}. Got: '{kind}'",
         )
 
-    # Validate producer (kebab-case) - use lenient pattern for common naming patterns
-    if not _INTERNAL_KEBAB_PATTERN.match(producer):
+    # Validate producer (kebab-case)
+    if not KEBAB_CASE_PATTERN.match(producer):
         return ModelTopicValidationResult.failure(
             suffix,
             f"Producer must be kebab-case (lowercase letters, digits, hyphens, "
             f"starting with letter). Got: '{producer}'",
         )
 
-    # Validate event-name (kebab-case) - use lenient pattern for common naming patterns
-    if not _INTERNAL_KEBAB_PATTERN.match(event_name):
+    # Validate event-name (kebab-case)
+    if not KEBAB_CASE_PATTERN.match(event_name):
         return ModelTopicValidationResult.failure(
             suffix,
             f"Event name must be kebab-case (lowercase letters, digits, hyphens, "
