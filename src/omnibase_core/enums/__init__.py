@@ -248,6 +248,9 @@ from .enum_parameter_type import EnumParameterType
 # Patch validation error codes (OMN-1126)
 from .enum_patch_validation_error_code import EnumPatchValidationErrorCode
 
+# Pattern extraction enums (OMN-1587)
+from .enum_pattern_kind import EnumPatternKind
+
 # Pipeline validation mode enum (pipeline processing OMN-1308)
 from .enum_pipeline_validation_mode import EnumPipelineValidationMode
 from .enum_query_parameter_transformation_type import (
@@ -623,6 +626,8 @@ __all__ = [
     "EnumClaudeCodeSessionStatus",
     # Intelligence domain (OMN-1490)
     "EnumIntentCategory",
+    # Pattern extraction domain (OMN-1587)
+    "EnumPatternKind",
     # Omnimemory domain (OMN-1235, OMN-1236, OMN-1237)
     "EnumDecisionType",
     "EnumFailureType",
