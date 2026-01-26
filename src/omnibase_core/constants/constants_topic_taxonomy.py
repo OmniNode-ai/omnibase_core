@@ -112,7 +112,8 @@ def get_token_to_topic_type() -> dict[str, EnumTopicType]:
         >>> mapping["evt"]
         <EnumTopicType.EVENTS: 'events'>
     """
-    return _get_token_mappings()[0]
+    # Return defensive copy to prevent mutation of cached mapping
+    return dict(_get_token_mappings()[0])
 
 
 def get_topic_type_to_token() -> dict[EnumTopicType, str]:
@@ -130,7 +131,8 @@ def get_topic_type_to_token() -> dict[EnumTopicType, str]:
         >>> mapping[EnumTopicType.COMMANDS]
         'cmd'
     """
-    return _get_token_mappings()[1]
+    # Return defensive copy to prevent mutation of cached mapping
+    return dict(_get_token_mappings()[1])
 
 
 def get_valid_topic_suffix_kinds() -> frozenset[str]:

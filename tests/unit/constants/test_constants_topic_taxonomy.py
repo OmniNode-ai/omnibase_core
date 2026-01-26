@@ -833,20 +833,23 @@ class TestTokenMappingFunctions:
         expected = {"cmd", "dlq", "evt", "intent", "snapshot"}
         assert kinds == expected
 
-    def test_mappings_are_cached(self) -> None:
-        """Test that multiple calls return same objects (lazy loading)."""
+    def test_mappings_return_defensive_copies(self) -> None:
+        """Test that dict accessors return defensive copies to prevent mutation."""
+        # Dict accessors should return different objects (defensive copies)
         mapping1 = get_token_to_topic_type()
         mapping2 = get_token_to_topic_type()
-        # Same dict object should be returned (cached)
-        assert mapping1 is mapping2
+        assert mapping1 is not mapping2  # Different objects
+        assert mapping1 == mapping2  # Same content
 
         reverse1 = get_topic_type_to_token()
         reverse2 = get_topic_type_to_token()
-        assert reverse1 is reverse2
+        assert reverse1 is not reverse2  # Different objects
+        assert reverse1 == reverse2  # Same content
 
+        # Frozenset accessor can return same object (immutable, safe to share)
         kinds1 = get_valid_topic_suffix_kinds()
         kinds2 = get_valid_topic_suffix_kinds()
-        assert kinds1 is kinds2
+        assert kinds1 is kinds2  # Same object (frozenset is immutable)
 
     def test_valid_kinds_matches_token_keys(self) -> None:
         """Test that valid kinds equals token mapping keys."""

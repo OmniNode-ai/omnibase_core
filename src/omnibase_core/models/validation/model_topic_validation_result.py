@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 if TYPE_CHECKING:
     from omnibase_core.models.validation.model_topic_suffix_parts import (
@@ -113,6 +113,20 @@ class ModelTopicValidationResult(BaseModel):
         default=None,
         description="Parsed suffix parts if validation succeeded, None otherwise",
     )
+
+    @model_validator(mode="after")
+    def validate_invariants(self) -> ModelTopicValidationResult:
+        """Enforce validation result invariants."""
+        if self.is_valid:
+            if self.parsed is None or self.error is not None:
+                raise ValueError(
+                    "is_valid=True requires parsed to be set and error to be None"
+                )
+        elif self.error is None or self.parsed is not None:
+            raise ValueError(
+                "is_valid=False requires error to be set and parsed to be None"
+            )
+        return self
 
     @classmethod
     def success(

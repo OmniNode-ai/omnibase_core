@@ -684,6 +684,7 @@ class TestModelTopicSuffixParts:
             raw_suffix="onex.evt.service.event.v1",
         )
         with pytest.raises(Exception):  # ValidationError for frozen model
+            # NOTE(OMN-1537): Intentional mutation to test frozen model immutability
             parts.kind = "cmd"  # type: ignore[misc]
 
     def test_model_forbids_extra_fields(self) -> None:
@@ -695,6 +696,7 @@ class TestModelTopicSuffixParts:
                 event_name="event",
                 version=1,
                 raw_suffix="onex.evt.service.event.v1",
+                # NOTE(OMN-1537): Intentional extra field to test extra="forbid" behavior
                 extra_field="not allowed",  # type: ignore[call-arg]
             )
 
@@ -712,6 +714,7 @@ class TestModelTopicSuffixParts:
     def test_all_fields_required(self) -> None:
         """Test that all fields are required."""
         with pytest.raises(Exception):  # ValidationError
+            # NOTE(OMN-1537): Intentional missing fields to test required field validation
             ModelTopicSuffixParts(  # type: ignore[call-arg]
                 kind="evt",
                 producer="service",
@@ -759,6 +762,7 @@ class TestModelTopicValidationResult:
         """Test that result model is immutable."""
         result = ModelTopicValidationResult.failure(suffix="bad", error="error")
         with pytest.raises(Exception):  # ValidationError for frozen model
+            # NOTE(OMN-1537): Intentional mutation to test frozen model immutability
             result.is_valid = True  # type: ignore[misc]
 
 

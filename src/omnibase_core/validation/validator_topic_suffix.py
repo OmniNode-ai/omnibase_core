@@ -39,6 +39,8 @@ See Also:
     - constants_topic_taxonomy: Topic taxonomy constants
 """
 
+from __future__ import annotations
+
 import re
 from typing import Final
 
@@ -276,7 +278,7 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
         raw_suffix=normalized,
     )
 
-    return ModelTopicValidationResult.success(suffix=normalized, parsed=parsed)
+    return ModelTopicValidationResult.success(suffix=stripped, parsed=parsed)
 
 
 def parse_topic_suffix(suffix: str) -> ModelTopicSuffixParts:
