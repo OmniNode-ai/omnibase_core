@@ -2,8 +2,8 @@
 
 Tests the OMN-1588 extension fields:
 - handler_routing: ModelHandlerRoutingSubcontract for contract-driven routing
-- consumed_events: list[ModelConsumedEventEntry] with string normalization
-- published_events: list[ModelPublishedEventEntry] for event publishing
+- yaml_consumed_events: list[ModelConsumedEventEntry] with string normalization
+- yaml_published_events: list[ModelPublishedEventEntry] for event publishing
 
 Test Categories:
 1. Published Event Entry Tests
@@ -155,13 +155,13 @@ class TestModelConsumedEventEntry:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestConsumedEventsNormalization:
-    """Tests for consumed_events field normalization in ModelContractBase."""
+class TestYamlConsumedEventsNormalization:
+    """Tests for yaml_consumed_events field normalization in ModelContractBase."""
 
     def _create_minimal_contract(
         self,
-        consumed_events: object = None,
-        published_events: object = None,
+        yaml_consumed_events: object = None,
+        yaml_published_events: object = None,
         handler_routing: object = None,
     ) -> ModelContractCompute:
         """Helper to create a minimal compute contract for testing."""
@@ -175,94 +175,95 @@ class TestConsumedEventsNormalization:
             "algorithm": _create_minimal_algorithm(),
             "performance": _create_minimal_performance(),
         }
-        if consumed_events is not None:
-            kwargs["consumed_events"] = consumed_events
-        if published_events is not None:
-            kwargs["published_events"] = published_events
+        if yaml_consumed_events is not None:
+            kwargs["yaml_consumed_events"] = yaml_consumed_events
+        if yaml_published_events is not None:
+            kwargs["yaml_published_events"] = yaml_published_events
         if handler_routing is not None:
             kwargs["handler_routing"] = handler_routing
         return ModelContractCompute(**kwargs)
 
-    def test_consumed_events_empty_list_default(self) -> None:
-        """Test that consumed_events defaults to empty list."""
+    def test_yaml_consumed_events_empty_list_default(self) -> None:
+        """Test that yaml_consumed_events defaults to empty list."""
         contract = self._create_minimal_contract()
-        assert contract.consumed_events == []
+        assert contract.yaml_consumed_events == []
 
-    def test_consumed_events_string_list_normalized(self) -> None:
+    def test_yaml_consumed_events_string_list_normalized(self) -> None:
         """Test that string list is normalized to ModelConsumedEventEntry list."""
         contract = self._create_minimal_contract(
-            consumed_events=["event.a.v1", "event.b.v1"]
+            yaml_consumed_events=["event.a.v1", "event.b.v1"]
         )
-        assert len(contract.consumed_events) == 2
+        assert len(contract.yaml_consumed_events) == 2
         assert all(
-            isinstance(e, ModelConsumedEventEntry) for e in contract.consumed_events
+            isinstance(e, ModelConsumedEventEntry)
+            for e in contract.yaml_consumed_events
         )
-        assert contract.consumed_events[0].event_type == "event.a.v1"
-        assert contract.consumed_events[0].handler_function is None
-        assert contract.consumed_events[1].event_type == "event.b.v1"
-        assert contract.consumed_events[1].handler_function is None
+        assert contract.yaml_consumed_events[0].event_type == "event.a.v1"
+        assert contract.yaml_consumed_events[0].handler_function is None
+        assert contract.yaml_consumed_events[1].event_type == "event.b.v1"
+        assert contract.yaml_consumed_events[1].handler_function is None
 
-    def test_consumed_events_dict_list_accepted(self) -> None:
+    def test_yaml_consumed_events_dict_list_accepted(self) -> None:
         """Test that dict list is accepted and converted to entries."""
         contract = self._create_minimal_contract(
-            consumed_events=[
+            yaml_consumed_events=[
                 {"event_type": "event.a.v1", "handler_function": "handle_a"},
                 {"event_type": "event.b.v1"},
             ]
         )
-        assert len(contract.consumed_events) == 2
-        assert contract.consumed_events[0].event_type == "event.a.v1"
-        assert contract.consumed_events[0].handler_function == "handle_a"
-        assert contract.consumed_events[1].event_type == "event.b.v1"
-        assert contract.consumed_events[1].handler_function is None
+        assert len(contract.yaml_consumed_events) == 2
+        assert contract.yaml_consumed_events[0].event_type == "event.a.v1"
+        assert contract.yaml_consumed_events[0].handler_function == "handle_a"
+        assert contract.yaml_consumed_events[1].event_type == "event.b.v1"
+        assert contract.yaml_consumed_events[1].handler_function is None
 
-    def test_consumed_events_mixed_list_normalized(self) -> None:
+    def test_yaml_consumed_events_mixed_list_normalized(self) -> None:
         """Test that mixed string and dict list is normalized."""
         contract = self._create_minimal_contract(
-            consumed_events=[
+            yaml_consumed_events=[
                 "event.a.v1",
                 {"event_type": "event.b.v1", "handler_function": "handle_b"},
             ]
         )
-        assert len(contract.consumed_events) == 2
-        assert contract.consumed_events[0].event_type == "event.a.v1"
-        assert contract.consumed_events[0].handler_function is None
-        assert contract.consumed_events[1].event_type == "event.b.v1"
-        assert contract.consumed_events[1].handler_function == "handle_b"
+        assert len(contract.yaml_consumed_events) == 2
+        assert contract.yaml_consumed_events[0].event_type == "event.a.v1"
+        assert contract.yaml_consumed_events[0].handler_function is None
+        assert contract.yaml_consumed_events[1].event_type == "event.b.v1"
+        assert contract.yaml_consumed_events[1].handler_function == "handle_b"
 
-    def test_consumed_events_model_instance_accepted(self) -> None:
+    def test_yaml_consumed_events_model_instance_accepted(self) -> None:
         """Test that ModelConsumedEventEntry instances are accepted."""
         entry = ModelConsumedEventEntry(
             event_type="event.a.v1",
             handler_function="handle_a",
         )
-        contract = self._create_minimal_contract(consumed_events=[entry])
-        assert len(contract.consumed_events) == 1
+        contract = self._create_minimal_contract(yaml_consumed_events=[entry])
+        assert len(contract.yaml_consumed_events) == 1
         # Note: due to normalization, the instance is recreated from model_dump
-        assert contract.consumed_events[0].event_type == "event.a.v1"
-        assert contract.consumed_events[0].handler_function == "handle_a"
+        assert contract.yaml_consumed_events[0].event_type == "event.a.v1"
+        assert contract.yaml_consumed_events[0].handler_function == "handle_a"
 
-    def test_consumed_events_invalid_item_type_raises_error(self) -> None:
+    def test_yaml_consumed_events_invalid_item_type_raises_error(self) -> None:
         """Test that invalid item types raise ValueError."""
         with pytest.raises(ValidationError) as exc_info:
-            self._create_minimal_contract(consumed_events=[123, "valid.event"])
-        assert "Invalid consumed_events item type" in str(exc_info.value)
+            self._create_minimal_contract(yaml_consumed_events=[123, "valid.event"])
+        assert "Invalid yaml_consumed_events item type" in str(exc_info.value)
 
-    def test_consumed_events_non_list_raises_error(self) -> None:
-        """Test that non-list consumed_events raises ValueError."""
+    def test_yaml_consumed_events_non_list_raises_error(self) -> None:
+        """Test that non-list yaml_consumed_events raises ValueError."""
         with pytest.raises(ValidationError) as exc_info:
-            self._create_minimal_contract(consumed_events="not a list")
-        assert "consumed_events must be a list" in str(exc_info.value)
+            self._create_minimal_contract(yaml_consumed_events="not a list")
+        assert "yaml_consumed_events must be a list" in str(exc_info.value)
 
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestPublishedEventsField:
-    """Tests for published_events field in ModelContractBase."""
+class TestYamlPublishedEventsField:
+    """Tests for yaml_published_events field in ModelContractBase."""
 
     def _create_minimal_contract(
         self,
-        published_events: object = None,
+        yaml_published_events: object = None,
     ) -> ModelContractCompute:
         """Helper to create a minimal compute contract for testing."""
         kwargs: dict[str, object] = {
@@ -275,19 +276,19 @@ class TestPublishedEventsField:
             "algorithm": _create_minimal_algorithm(),
             "performance": _create_minimal_performance(),
         }
-        if published_events is not None:
-            kwargs["published_events"] = published_events
+        if yaml_published_events is not None:
+            kwargs["yaml_published_events"] = yaml_published_events
         return ModelContractCompute(**kwargs)
 
-    def test_published_events_empty_list_default(self) -> None:
-        """Test that published_events defaults to empty list."""
+    def test_yaml_published_events_empty_list_default(self) -> None:
+        """Test that yaml_published_events defaults to empty list."""
         contract = self._create_minimal_contract()
-        assert contract.published_events == []
+        assert contract.yaml_published_events == []
 
-    def test_published_events_dict_list_accepted(self) -> None:
-        """Test that dict list is accepted for published_events."""
+    def test_yaml_published_events_dict_list_accepted(self) -> None:
+        """Test that dict list is accepted for yaml_published_events."""
         contract = self._create_minimal_contract(
-            published_events=[
+            yaml_published_events=[
                 {"topic": "jobs.events.created.v1", "event_type": "ModelEventCreated"},
                 {
                     "topic": "jobs.events.completed.v1",
@@ -295,32 +296,32 @@ class TestPublishedEventsField:
                 },
             ]
         )
-        assert len(contract.published_events) == 2
-        assert contract.published_events[0].topic == "jobs.events.created.v1"
-        assert contract.published_events[0].event_type == "ModelEventCreated"
-        assert contract.published_events[1].topic == "jobs.events.completed.v1"
-        assert contract.published_events[1].event_type == "ModelEventCompleted"
+        assert len(contract.yaml_published_events) == 2
+        assert contract.yaml_published_events[0].topic == "jobs.events.created.v1"
+        assert contract.yaml_published_events[0].event_type == "ModelEventCreated"
+        assert contract.yaml_published_events[1].topic == "jobs.events.completed.v1"
+        assert contract.yaml_published_events[1].event_type == "ModelEventCompleted"
 
-    def test_published_events_model_instance_accepted(self) -> None:
+    def test_yaml_published_events_model_instance_accepted(self) -> None:
         """Test that ModelPublishedEventEntry instances are accepted."""
         entry = ModelPublishedEventEntry(
             topic="jobs.events.created.v1",
             event_type="ModelEventCreated",
         )
-        contract = self._create_minimal_contract(published_events=[entry])
-        assert len(contract.published_events) == 1
-        assert contract.published_events[0].topic == "jobs.events.created.v1"
-        assert contract.published_events[0].event_type == "ModelEventCreated"
+        contract = self._create_minimal_contract(yaml_published_events=[entry])
+        assert len(contract.yaml_published_events) == 1
+        assert contract.yaml_published_events[0].topic == "jobs.events.created.v1"
+        assert contract.yaml_published_events[0].event_type == "ModelEventCreated"
 
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestPublishedEventsNormalization:
-    """Tests for published_events field normalization in ModelContractBase."""
+class TestYamlPublishedEventsNormalization:
+    """Tests for yaml_published_events field normalization in ModelContractBase."""
 
     def _create_minimal_contract(
         self,
-        published_events: object = None,
+        yaml_published_events: object = None,
     ) -> ModelContractCompute:
         """Helper to create a minimal compute contract for testing."""
         kwargs: dict[str, object] = {
@@ -333,33 +334,39 @@ class TestPublishedEventsNormalization:
             "algorithm": _create_minimal_algorithm(),
             "performance": _create_minimal_performance(),
         }
-        if published_events is not None:
-            kwargs["published_events"] = published_events
+        if yaml_published_events is not None:
+            kwargs["yaml_published_events"] = yaml_published_events
         return ModelContractCompute(**kwargs)
 
-    def test_published_events_string_list_normalized(self) -> None:
+    def test_yaml_published_events_string_list_normalized(self) -> None:
         """Test that string list is normalized to ModelPublishedEventEntry list.
 
         String values are used as both topic and event_type.
         """
         contract = self._create_minimal_contract(
-            published_events=["jobs.events.created.v1", "jobs.events.completed.v1"]
+            yaml_published_events=[
+                "jobs.events.created.v1",
+                "jobs.events.completed.v1",
+            ]
         )
-        assert len(contract.published_events) == 2
+        assert len(contract.yaml_published_events) == 2
         assert all(
-            isinstance(e, ModelPublishedEventEntry) for e in contract.published_events
+            isinstance(e, ModelPublishedEventEntry)
+            for e in contract.yaml_published_events
         )
         # First entry: string used as both topic and event_type
-        assert contract.published_events[0].topic == "jobs.events.created.v1"
-        assert contract.published_events[0].event_type == "jobs.events.created.v1"
+        assert contract.yaml_published_events[0].topic == "jobs.events.created.v1"
+        assert contract.yaml_published_events[0].event_type == "jobs.events.created.v1"
         # Second entry
-        assert contract.published_events[1].topic == "jobs.events.completed.v1"
-        assert contract.published_events[1].event_type == "jobs.events.completed.v1"
+        assert contract.yaml_published_events[1].topic == "jobs.events.completed.v1"
+        assert (
+            contract.yaml_published_events[1].event_type == "jobs.events.completed.v1"
+        )
 
-    def test_published_events_dict_list_passthrough(self) -> None:
+    def test_yaml_published_events_dict_list_passthrough(self) -> None:
         """Test that dict list is passed through unchanged."""
         contract = self._create_minimal_contract(
-            published_events=[
+            yaml_published_events=[
                 {"topic": "jobs.events.created.v1", "event_type": "ModelEventCreated"},
                 {
                     "topic": "jobs.events.completed.v1",
@@ -367,17 +374,17 @@ class TestPublishedEventsNormalization:
                 },
             ]
         )
-        assert len(contract.published_events) == 2
+        assert len(contract.yaml_published_events) == 2
         # Dict values preserved exactly
-        assert contract.published_events[0].topic == "jobs.events.created.v1"
-        assert contract.published_events[0].event_type == "ModelEventCreated"
-        assert contract.published_events[1].topic == "jobs.events.completed.v1"
-        assert contract.published_events[1].event_type == "ModelEventCompleted"
+        assert contract.yaml_published_events[0].topic == "jobs.events.created.v1"
+        assert contract.yaml_published_events[0].event_type == "ModelEventCreated"
+        assert contract.yaml_published_events[1].topic == "jobs.events.completed.v1"
+        assert contract.yaml_published_events[1].event_type == "ModelEventCompleted"
 
-    def test_published_events_mixed_list_normalized(self) -> None:
+    def test_yaml_published_events_mixed_list_normalized(self) -> None:
         """Test that mixed string and dict list is normalized correctly."""
         contract = self._create_minimal_contract(
-            published_events=[
+            yaml_published_events=[
                 "jobs.events.created.v1",
                 {
                     "topic": "jobs.events.completed.v1",
@@ -385,47 +392,47 @@ class TestPublishedEventsNormalization:
                 },
             ]
         )
-        assert len(contract.published_events) == 2
+        assert len(contract.yaml_published_events) == 2
         # First entry: string normalized to same topic/event_type
-        assert contract.published_events[0].topic == "jobs.events.created.v1"
-        assert contract.published_events[0].event_type == "jobs.events.created.v1"
+        assert contract.yaml_published_events[0].topic == "jobs.events.created.v1"
+        assert contract.yaml_published_events[0].event_type == "jobs.events.created.v1"
         # Second entry: dict preserved
-        assert contract.published_events[1].topic == "jobs.events.completed.v1"
-        assert contract.published_events[1].event_type == "ModelEventCompleted"
+        assert contract.yaml_published_events[1].topic == "jobs.events.completed.v1"
+        assert contract.yaml_published_events[1].event_type == "ModelEventCompleted"
 
-    def test_published_events_model_instance_handling(self) -> None:
+    def test_yaml_published_events_model_instance_handling(self) -> None:
         """Test that ModelPublishedEventEntry instances are converted via model_dump."""
         entry = ModelPublishedEventEntry(
             topic="jobs.events.created.v1",
             event_type="ModelEventCreated",
         )
-        contract = self._create_minimal_contract(published_events=[entry])
-        assert len(contract.published_events) == 1
+        contract = self._create_minimal_contract(yaml_published_events=[entry])
+        assert len(contract.yaml_published_events) == 1
         # Instance is recreated from model_dump
-        assert contract.published_events[0].topic == "jobs.events.created.v1"
-        assert contract.published_events[0].event_type == "ModelEventCreated"
+        assert contract.yaml_published_events[0].topic == "jobs.events.created.v1"
+        assert contract.yaml_published_events[0].event_type == "ModelEventCreated"
 
-    def test_published_events_invalid_item_type_raises_error(self) -> None:
+    def test_yaml_published_events_invalid_item_type_raises_error(self) -> None:
         """Test that invalid item types raise ValueError."""
         with pytest.raises(ValidationError) as exc_info:
-            self._create_minimal_contract(published_events=[123, "valid.event.v1"])
-        assert "Invalid published_events item type" in str(exc_info.value)
+            self._create_minimal_contract(yaml_published_events=[123, "valid.event.v1"])
+        assert "Invalid yaml_published_events item type" in str(exc_info.value)
 
-    def test_published_events_non_list_raises_error(self) -> None:
-        """Test that non-list published_events raises ValueError."""
+    def test_yaml_published_events_non_list_raises_error(self) -> None:
+        """Test that non-list yaml_published_events raises ValueError."""
         with pytest.raises(ValidationError) as exc_info:
-            self._create_minimal_contract(published_events="not a list")
-        assert "published_events must be a list" in str(exc_info.value)
+            self._create_minimal_contract(yaml_published_events="not a list")
+        assert "yaml_published_events must be a list" in str(exc_info.value)
 
-    def test_published_events_empty_list_returns_empty(self) -> None:
+    def test_yaml_published_events_empty_list_returns_empty(self) -> None:
         """Test that empty list input returns empty list."""
-        contract = self._create_minimal_contract(published_events=[])
-        assert contract.published_events == []
+        contract = self._create_minimal_contract(yaml_published_events=[])
+        assert contract.yaml_published_events == []
 
-    def test_published_events_none_returns_empty_list(self) -> None:
+    def test_yaml_published_events_none_returns_empty_list(self) -> None:
         """Test that None/falsy input returns empty list via default_factory."""
         contract = self._create_minimal_contract()
-        assert contract.published_events == []
+        assert contract.yaml_published_events == []
 
 
 @pytest.mark.timeout(30)
@@ -519,11 +526,11 @@ class TestFullContractIntegration:
                     ),
                 ],
             ),
-            consumed_events=[
+            yaml_consumed_events=[
                 "event.a.v1",
                 {"event_type": "event.b.v1", "handler_function": "handle_b"},
             ],
-            published_events=[
+            yaml_published_events=[
                 {"topic": "out.events.v1", "event_type": "ModelEventOut"},
             ],
         )
@@ -532,14 +539,14 @@ class TestFullContractIntegration:
         assert contract.handler_routing is not None
         assert len(contract.handler_routing.handlers) == 1
 
-        # Verify consumed_events normalized
-        assert len(contract.consumed_events) == 2
-        assert contract.consumed_events[0].event_type == "event.a.v1"
-        assert contract.consumed_events[1].handler_function == "handle_b"
+        # Verify yaml_consumed_events normalized
+        assert len(contract.yaml_consumed_events) == 2
+        assert contract.yaml_consumed_events[0].event_type == "event.a.v1"
+        assert contract.yaml_consumed_events[1].handler_function == "handle_b"
 
-        # Verify published_events
-        assert len(contract.published_events) == 1
-        assert contract.published_events[0].topic == "out.events.v1"
+        # Verify yaml_published_events
+        assert len(contract.yaml_published_events) == 1
+        assert contract.yaml_published_events[0].topic == "out.events.v1"
 
     def test_contract_serialization_with_extension_fields(self) -> None:
         """Test that contracts with extension fields serialize and deserialize correctly."""
@@ -552,24 +559,24 @@ class TestFullContractIntegration:
             output_model="omnibase_core.models.ModelOutput",
             algorithm=_create_minimal_algorithm(),
             performance=_create_minimal_performance(),
-            consumed_events=["event.a.v1"],
-            published_events=[{"topic": "out.v1", "event_type": "ModelOut"}],
+            yaml_consumed_events=["event.a.v1"],
+            yaml_published_events=[{"topic": "out.v1", "event_type": "ModelOut"}],
         )
 
         dumped = contract.model_dump()
 
         # Verify serialization includes extension fields
-        assert "consumed_events" in dumped
-        assert "published_events" in dumped
+        assert "yaml_consumed_events" in dumped
+        assert "yaml_published_events" in dumped
         assert "handler_routing" in dumped
 
-        assert len(dumped["consumed_events"]) == 1
-        assert dumped["consumed_events"][0]["event_type"] == "event.a.v1"
+        assert len(dumped["yaml_consumed_events"]) == 1
+        assert dumped["yaml_consumed_events"][0]["event_type"] == "event.a.v1"
 
-        assert len(dumped["published_events"]) == 1
-        assert dumped["published_events"][0]["topic"] == "out.v1"
+        assert len(dumped["yaml_published_events"]) == 1
+        assert dumped["yaml_published_events"][0]["topic"] == "out.v1"
 
         # Verify deserialization works
         restored = ModelContractCompute.model_validate(dumped)
-        assert len(restored.consumed_events) == 1
-        assert len(restored.published_events) == 1
+        assert len(restored.yaml_consumed_events) == 1
+        assert len(restored.yaml_published_events) == 1

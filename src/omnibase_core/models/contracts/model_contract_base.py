@@ -77,11 +77,15 @@ class ModelContractBase(BaseModel, ABC):
       different handlers based on payload type, operation, or topic pattern.
       Common for ORCHESTRATOR nodes that route events to specific handlers.
 
-    - ``consumed_events``: Use to declare which event types a node subscribes to.
+    - ``yaml_consumed_events``: Use to declare which event types a node subscribes to.
       Enables infrastructure to auto-configure event subscriptions from contracts.
+      Note: Named with ``yaml_`` prefix to avoid collision with
+      ``ModelContractOrchestrator.consumed_events`` which uses a different type.
 
-    - ``published_events``: Use to declare which events a node may publish.
+    - ``yaml_published_events``: Use to declare which events a node may publish.
       Enables infrastructure to validate event schemas and configure topics.
+      Note: Named with ``yaml_`` prefix to avoid collision with
+      ``ModelContractOrchestrator.published_events`` which uses a different type.
 
     **Example YAML contract with all extension fields:**
 
@@ -103,12 +107,12 @@ class ModelContractBase(BaseModel, ABC):
           default_handler: handle_unknown
 
         # Events this node consumes (string shorthand)
-        consumed_events:
+        yaml_consumed_events:
           - "jobs.events.created.v1"
           - "jobs.events.completed.v1"
 
         # Events this node publishes
-        published_events:
+        yaml_published_events:
           - topic: "jobs.events.started.v1"
             event_type: ModelEventJobStarted
     """
@@ -234,22 +238,24 @@ class ModelContractBase(BaseModel, ABC):
         "Accepts ModelHandlerRoutingSubcontract instance or equivalent dict from YAML.",
     )
 
-    consumed_events: "list[ModelConsumedEventEntry]" = Field(
+    yaml_consumed_events: "list[ModelConsumedEventEntry]" = Field(
         default_factory=list,
         description="Events consumed by this node. ONEX infra extension for event "
         "subscriptions. Supports multiple input formats: "
         "(1) String list: ['event.type.v1'] - auto-converted to entries with event_type; "
         "(2) Dict list: [{event_type: '...', handler_function: '...'}] - full specification; "
-        "(3) ModelConsumedEventEntry instances - passed through directly.",
+        "(3) ModelConsumedEventEntry instances - passed through directly. "
+        "Named with yaml_ prefix to avoid collision with ModelContractOrchestrator fields.",
     )
 
-    published_events: "list[ModelPublishedEventEntry]" = Field(
+    yaml_published_events: "list[ModelPublishedEventEntry]" = Field(
         default_factory=list,
         description="Events published by this node. ONEX infra extension for event "
         "publishing declarations. Supports multiple input formats: "
         "(1) String list: ['topic.v1'] - auto-converted using string as both topic and event_type; "
         "(2) Dict list: [{topic: '...', event_type: '...'}] - full specification; "
-        "(3) ModelPublishedEventEntry instances - passed through directly.",
+        "(3) ModelPublishedEventEntry instances - passed through directly. "
+        "Named with yaml_ prefix to avoid collision with ModelContractOrchestrator fields.",
     )
 
     @abstractmethod
@@ -570,10 +576,12 @@ class ModelContractBase(BaseModel, ABC):
 
         return result_deps
 
-    @field_validator("consumed_events", mode="before")
+    @field_validator("yaml_consumed_events", mode="before")
     @classmethod
-    def normalize_consumed_events(cls, v: object) -> list[TypedDictConsumedEventEntry]:
-        """Normalize consumed_events from multiple input shapes.
+    def normalize_yaml_consumed_events(
+        cls, v: object
+    ) -> list[TypedDictConsumedEventEntry]:
+        """Normalize yaml_consumed_events from multiple input shapes.
 
         Supports two input formats:
         1. String list: ["event.type.v1", "other.event.v1"]
@@ -593,7 +601,7 @@ class ModelContractBase(BaseModel, ABC):
         if not v:
             return []
         if not isinstance(v, list):
-            raise ValueError("consumed_events must be a list")
+            raise ValueError("yaml_consumed_events must be a list")
 
         result: list[TypedDictConsumedEventEntry] = []
         for item in v:
@@ -607,15 +615,17 @@ class ModelContractBase(BaseModel, ABC):
                 # Already a Pydantic model: dump to dict
                 result.append(cast(TypedDictConsumedEventEntry, item.model_dump()))
             else:
-                raise ValueError(f"Invalid consumed_events item type: {type(item)}")
+                raise ValueError(
+                    f"Invalid yaml_consumed_events item type: {type(item)}"
+                )
         return result
 
-    @field_validator("published_events", mode="before")
+    @field_validator("yaml_published_events", mode="before")
     @classmethod
-    def normalize_published_events(
+    def normalize_yaml_published_events(
         cls, v: object
     ) -> list[TypedDictPublishedEventEntry]:
-        """Normalize published_events from multiple input shapes.
+        """Normalize yaml_published_events from multiple input shapes.
 
         Supports two input formats:
         1. String list: ["topic.v1", "topic.v2"]
@@ -636,7 +646,7 @@ class ModelContractBase(BaseModel, ABC):
         if not v:
             return []
         if not isinstance(v, list):
-            raise ValueError("published_events must be a list")
+            raise ValueError("yaml_published_events must be a list")
 
         result: list[TypedDictPublishedEventEntry] = []
         for item in v:
@@ -650,7 +660,9 @@ class ModelContractBase(BaseModel, ABC):
                 # Already a Pydantic model: dump to dict
                 result.append(cast(TypedDictPublishedEventEntry, item.model_dump()))
             else:
-                raise ValueError(f"Invalid published_events item type: {type(item)}")
+                raise ValueError(
+                    f"Invalid yaml_published_events item type: {type(item)}"
+                )
         return result
 
     @field_validator("node_type", mode="before")
