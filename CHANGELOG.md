@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-01-27
+
+### Added
+
+- **Tool Failure Pattern Classification** [OMN-1609]: Added `EnumPatternKind.TOOL_FAILURE` for classifying tool failure patterns
+  - Distinct from `TOOL_USAGE` (success patterns vs failure patterns)
+  - Covers recurring failures, failure sequences, recovery patterns, etc.
+
+- **Tool Execution Model** [OMN-1608]: Added `ModelToolExecution` to intelligence models
+  - Frozen Pydantic model for structured tool execution data
+  - Computed `directory` property derived from file path
+  - Supports pattern extraction for tool usage analysis
+
+- **Contract Infrastructure Extensions** [OMN-1588]: Added ONEX infrastructure extension fields to `ModelContractBase`
+  - `yaml_consumed_events`, `yaml_published_events`, `handler_routing` fields
+  - New `ModelConsumedEventEntry` and `ModelPublishedEventEntry` models
+  - Field validators normalize string lists to typed entries
+  - Enables contract-driven infrastructure configuration
+  - Added `TypedDictConsumedEventEntry` and `TypedDictPublishedEventEntry` for strong typing
+
 ## [0.9.6] - 2026-01-26
 
 ### Added
