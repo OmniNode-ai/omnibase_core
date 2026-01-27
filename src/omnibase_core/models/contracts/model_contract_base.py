@@ -49,6 +49,10 @@ from omnibase_core.models.contracts.model_performance_requirements import (
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types import (
+    TypedDictConsumedEventEntry,
+    TypedDictPublishedEventEntry,
+)
 
 
 class ModelContractBase(BaseModel, ABC):
@@ -568,7 +572,7 @@ class ModelContractBase(BaseModel, ABC):
 
     @field_validator("consumed_events", mode="before")
     @classmethod
-    def normalize_consumed_events(cls, v: object) -> list[dict[str, object]]:
+    def normalize_consumed_events(cls, v: object) -> list[TypedDictConsumedEventEntry]:
         """Normalize consumed_events from multiple input shapes.
 
         Supports two input formats:
@@ -581,7 +585,7 @@ class ModelContractBase(BaseModel, ABC):
             v: Input value (list of strings, dicts, or ModelConsumedEventEntry)
 
         Returns:
-            list[dict[str, object]]: Normalized list of dicts for Pydantic validation
+            list[TypedDictConsumedEventEntry]: Normalized list for Pydantic validation
 
         Raises:
             ValueError: If input is not a list or contains invalid item types
@@ -591,24 +595,26 @@ class ModelContractBase(BaseModel, ABC):
         if not isinstance(v, list):
             raise ValueError("consumed_events must be a list")
 
-        result: list[dict[str, object]] = []
+        result: list[TypedDictConsumedEventEntry] = []
         for item in v:
             if isinstance(item, str):
                 # String form: convert to dict with event_type
                 result.append({"event_type": item})
             elif isinstance(item, dict):
-                # Dict form: pass through
-                result.append(item)
+                # Dict form: pass through (cast for type safety, Pydantic validates)
+                result.append(cast(TypedDictConsumedEventEntry, item))
             elif hasattr(item, "model_dump"):
                 # Already a Pydantic model: dump to dict
-                result.append(item.model_dump())
+                result.append(cast(TypedDictConsumedEventEntry, item.model_dump()))
             else:
                 raise ValueError(f"Invalid consumed_events item type: {type(item)}")
         return result
 
     @field_validator("published_events", mode="before")
     @classmethod
-    def normalize_published_events(cls, v: object) -> list[dict[str, object]]:
+    def normalize_published_events(
+        cls, v: object
+    ) -> list[TypedDictPublishedEventEntry]:
         """Normalize published_events from multiple input shapes.
 
         Supports two input formats:
@@ -622,7 +628,7 @@ class ModelContractBase(BaseModel, ABC):
             v: Input value (list of strings, dicts, or ModelPublishedEventEntry)
 
         Returns:
-            list[dict[str, object]]: Normalized list of dicts for Pydantic validation
+            list[TypedDictPublishedEventEntry]: Normalized list for Pydantic validation
 
         Raises:
             ValueError: If input is not a list or contains invalid item types
@@ -632,17 +638,17 @@ class ModelContractBase(BaseModel, ABC):
         if not isinstance(v, list):
             raise ValueError("published_events must be a list")
 
-        result: list[dict[str, object]] = []
+        result: list[TypedDictPublishedEventEntry] = []
         for item in v:
             if isinstance(item, str):
                 # String form: use as both topic and event_type
                 result.append({"topic": item, "event_type": item})
             elif isinstance(item, dict):
-                # Dict form: pass through
-                result.append(item)
+                # Dict form: pass through (cast for type safety, Pydantic validates)
+                result.append(cast(TypedDictPublishedEventEntry, item))
             elif hasattr(item, "model_dump"):
                 # Already a Pydantic model: dump to dict
-                result.append(item.model_dump())
+                result.append(cast(TypedDictPublishedEventEntry, item.model_dump()))
             else:
                 raise ValueError(f"Invalid published_events item type: {type(item)}")
         return result
