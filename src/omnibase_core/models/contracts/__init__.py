@@ -91,6 +91,7 @@ from .model_capability_provided import ModelCapabilityProvided
 from .model_compensation_plan import ModelCompensationPlan
 from .model_condition_value_list import ModelConditionValueList
 from .model_conflict_resolution_config import ModelConflictResolutionConfig
+from .model_consumed_event_entry import ModelConsumedEventEntry
 from .model_contract_base import ModelContractBase
 from .model_contract_compute import ModelContractCompute
 from .model_contract_effect import ModelContractEffect
@@ -134,6 +135,7 @@ from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
 from .model_performance_requirements import ModelPerformanceRequirements
 from .model_profile_reference import ModelProfileReference
+from .model_published_event_entry import ModelPublishedEventEntry
 from .model_reduction_config import ModelReductionConfig
 from .model_runtime_event_bus_config import ModelRuntimeEventBusConfig
 from .model_runtime_handler_config import ModelRuntimeHandlerConfig
@@ -156,6 +158,7 @@ __all__ = [
     # Mixins
     "MixinNodeTypeValidator",
     # Foundation models
+    "ModelConsumedEventEntry",
     "ModelContractBase",
     "ModelContractFingerprint",
     "ModelContractMeta",
@@ -172,6 +175,7 @@ __all__ = [
     "ModelNodeRef",
     "ModelOmniMemoryContract",
     "ModelProfileReference",
+    "ModelPublishedEventEntry",
     "is_valid_meta_model",
     "validate_meta_model",
     # Primary contract models

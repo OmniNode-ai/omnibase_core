@@ -27,9 +27,18 @@ from omnibase_core.models.contracts.model_execution_profile import (
     ModelExecutionProfile,
 )
 
-# Import ModelHandlerBehavior for type checking only (avoid circular import)
+# Import types for type checking only (avoid circular import)
 # The runtime module imports model_runtime_node_instance which imports ModelContractBase
 if TYPE_CHECKING:
+    from omnibase_core.models.contracts.model_consumed_event_entry import (
+        ModelConsumedEventEntry,
+    )
+    from omnibase_core.models.contracts.model_published_event_entry import (
+        ModelPublishedEventEntry,
+    )
+    from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+        ModelHandlerRoutingSubcontract,
+    )
     from omnibase_core.models.runtime.model_handler_behavior import (
         ModelHandlerBehavior,
     )
@@ -40,6 +49,10 @@ from omnibase_core.models.contracts.model_performance_requirements import (
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types import (
+    TypedDictConsumedEventEntry,
+    TypedDictPublishedEventEntry,
+)
 
 
 class ModelContractBase(BaseModel, ABC):
@@ -50,6 +63,58 @@ class ModelContractBase(BaseModel, ABC):
     and foundational configuration for all specialized contract models.
 
     Strict typing is enforced: No Any types allowed in implementation.
+
+    ONEX Infrastructure Extensions
+    ------------------------------
+    This class includes extension fields for contract-level event routing and
+    handler configuration (added in OMN-1588). These fields enable downstream
+    infrastructure to read event subscriptions and publishing declarations
+    directly from YAML contracts without requiring field stripping.
+
+    **When to use each field:**
+
+    - ``handler_routing``: Use when a node needs to dispatch messages to
+      different handlers based on payload type, operation, or topic pattern.
+      Common for ORCHESTRATOR nodes that route events to specific handlers.
+
+    - ``yaml_consumed_events``: Use to declare which event types a node subscribes to.
+      Enables infrastructure to auto-configure event subscriptions from contracts.
+      Note: Named with ``yaml_`` prefix to avoid collision with
+      ``ModelContractOrchestrator.consumed_events`` which uses a different type.
+
+    - ``yaml_published_events``: Use to declare which events a node may publish.
+      Enables infrastructure to validate event schemas and configure topics.
+      Note: Named with ``yaml_`` prefix to avoid collision with
+      ``ModelContractOrchestrator.published_events`` which uses a different type.
+
+    **Example YAML contract with all extension fields:**
+
+    .. code-block:: yaml
+
+        name: node_job_orchestrator
+        contract_version: {major: 1, minor: 0, patch: 0}
+        description: Job orchestration node
+        node_type: orchestrator
+
+        # Handler routing configuration
+        handler_routing:
+          version: {major: 1, minor: 0, patch: 0}
+          routing_strategy: payload_type_match
+          handlers:
+            - routing_key: ModelEventJobCreated
+              handler_key: handle_job_created
+              priority: 0
+          default_handler: handle_unknown
+
+        # Events this node consumes (string shorthand)
+        yaml_consumed_events:
+          - "jobs.events.created.v1"
+          - "jobs.events.completed.v1"
+
+        # Events this node publishes
+        yaml_published_events:
+          - topic: "jobs.events.started.v1"
+            event_type: ModelEventJobStarted
     """
 
     # Interface version for code generation stability
@@ -159,6 +224,38 @@ class ModelContractBase(BaseModel, ABC):
         description="Handler behavior configuration defining purity, idempotency, "
         "concurrency, isolation, and observability. "
         "Set when created via profile factory, None for manually created contracts.",
+    )
+
+    # ONEX Infrastructure Extension Fields (OMN-1588)
+    # These fields enable contract-level event routing and handler configuration
+    # without requiring downstream repos to strip fields before validation.
+
+    handler_routing: "ModelHandlerRoutingSubcontract | None" = Field(
+        default=None,
+        description="Handler routing configuration defining how messages are routed "
+        "to handlers based on payload type, operation, or topic pattern. "
+        "ONEX infra extension for contract-driven handler dispatch. "
+        "Accepts ModelHandlerRoutingSubcontract instance or equivalent dict from YAML.",
+    )
+
+    yaml_consumed_events: "list[ModelConsumedEventEntry]" = Field(
+        default_factory=list,
+        description="Events consumed by this node. ONEX infra extension for event "
+        "subscriptions. Supports multiple input formats: "
+        "(1) String list: ['event.type.v1'] - auto-converted to entries with event_type; "
+        "(2) Dict list: [{event_type: '...', handler_function: '...'}] - full specification; "
+        "(3) ModelConsumedEventEntry instances - passed through directly. "
+        "Named with yaml_ prefix to avoid collision with ModelContractOrchestrator fields.",
+    )
+
+    yaml_published_events: "list[ModelPublishedEventEntry]" = Field(
+        default_factory=list,
+        description="Events published by this node. ONEX infra extension for event "
+        "publishing declarations. Supports multiple input formats: "
+        "(1) String list: ['topic.v1'] - auto-converted using string as both topic and event_type; "
+        "(2) Dict list: [{topic: '...', event_type: '...'}] - full specification; "
+        "(3) ModelPublishedEventEntry instances - passed through directly. "
+        "Named with yaml_ prefix to avoid collision with ModelContractOrchestrator fields.",
     )
 
     @abstractmethod
@@ -479,6 +576,95 @@ class ModelContractBase(BaseModel, ABC):
 
         return result_deps
 
+    @field_validator("yaml_consumed_events", mode="before")
+    @classmethod
+    def normalize_yaml_consumed_events(
+        cls, v: object
+    ) -> list[TypedDictConsumedEventEntry]:
+        """Normalize yaml_consumed_events from multiple input shapes.
+
+        Supports two input formats:
+        1. String list: ["event.type.v1", "other.event.v1"]
+           - Each string becomes {event_type: "..."}
+        2. Object list: [{event_type: "...", handler_function: "..."}]
+           - Passed through as-is
+
+        Args:
+            v: Input value (list of strings, dicts, or ModelConsumedEventEntry)
+
+        Returns:
+            list[TypedDictConsumedEventEntry]: Normalized list for Pydantic validation
+
+        Raises:
+            ValueError: If input is not a list or contains invalid item types
+        """
+        if not v:
+            return []
+        if not isinstance(v, list):
+            raise ValueError("yaml_consumed_events must be a list")
+
+        result: list[TypedDictConsumedEventEntry] = []
+        for item in v:
+            if isinstance(item, str):
+                # String form: convert to dict with event_type
+                result.append({"event_type": item})
+            elif isinstance(item, dict):
+                # Dict form: pass through (cast for type safety, Pydantic validates)
+                result.append(cast(TypedDictConsumedEventEntry, item))
+            elif hasattr(item, "model_dump"):
+                # Already a Pydantic model: dump to dict
+                result.append(cast(TypedDictConsumedEventEntry, item.model_dump()))
+            else:
+                raise ValueError(
+                    f"Invalid yaml_consumed_events item type: {type(item)}"
+                )
+        return result
+
+    @field_validator("yaml_published_events", mode="before")
+    @classmethod
+    def normalize_yaml_published_events(
+        cls, v: object
+    ) -> list[TypedDictPublishedEventEntry]:
+        """Normalize yaml_published_events from multiple input shapes.
+
+        Supports two input formats:
+        1. String list: ["topic.v1", "topic.v2"]
+           - Each string becomes {topic: "...", event_type: "..."}
+           - Uses the string as both topic and event_type (common pattern)
+        2. Object list: [{topic: "...", event_type: "..."}]
+           - Passed through as-is
+
+        Args:
+            v: Input value (list of strings, dicts, or ModelPublishedEventEntry)
+
+        Returns:
+            list[TypedDictPublishedEventEntry]: Normalized list for Pydantic validation
+
+        Raises:
+            ValueError: If input is not a list or contains invalid item types
+        """
+        if not v:
+            return []
+        if not isinstance(v, list):
+            raise ValueError("yaml_published_events must be a list")
+
+        result: list[TypedDictPublishedEventEntry] = []
+        for item in v:
+            if isinstance(item, str):
+                # String form: use as both topic and event_type
+                result.append({"topic": item, "event_type": item})
+            elif isinstance(item, dict):
+                # Dict form: pass through (cast for type safety, Pydantic validates)
+                result.append(cast(TypedDictPublishedEventEntry, item))
+            elif hasattr(item, "model_dump"):
+                # Already a Pydantic model: dump to dict
+                result.append(cast(TypedDictPublishedEventEntry, item.model_dump()))
+            else:
+                raise ValueError(
+                    f"Invalid yaml_published_events item type: {type(item)}"
+                )
+        return result
+
     @field_validator("node_type", mode="before")
     @classmethod
     def validate_node_type_enum_only(cls, v: object) -> EnumNodeType:
@@ -631,18 +817,32 @@ class ModelContractBase(BaseModel, ABC):
     )
 
 
-# Resolve forward reference for ModelHandlerBehavior after class definition.
-# This import is deferred to avoid circular import during module loading.
-# The TYPE_CHECKING import above is used for static type checking only.
+# Resolve forward references after class definition.
+# These imports are deferred to avoid circular import during module loading.
+# The TYPE_CHECKING imports above are used for static type checking only.
 def _rebuild_model_contract_base() -> None:
     """Rebuild ModelContractBase to resolve forward references."""
+    from omnibase_core.models.contracts.model_consumed_event_entry import (
+        ModelConsumedEventEntry,
+    )
+    from omnibase_core.models.contracts.model_published_event_entry import (
+        ModelPublishedEventEntry,
+    )
+    from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+        ModelHandlerRoutingSubcontract,
+    )
     from omnibase_core.models.runtime.model_handler_behavior import (
         ModelHandlerBehavior,
     )
 
-    # Pass the type in the namespace so Pydantic can resolve the forward reference
+    # Pass the types in the namespace so Pydantic can resolve forward references
     ModelContractBase.model_rebuild(
-        _types_namespace={"ModelHandlerBehavior": ModelHandlerBehavior}
+        _types_namespace={
+            "ModelHandlerBehavior": ModelHandlerBehavior,
+            "ModelHandlerRoutingSubcontract": ModelHandlerRoutingSubcontract,
+            "ModelConsumedEventEntry": ModelConsumedEventEntry,
+            "ModelPublishedEventEntry": ModelPublishedEventEntry,
+        }
     )
 
 

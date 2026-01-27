@@ -161,6 +161,7 @@ from .typed_dict_computation_output_summary import TypedDictComputationOutputSum
 from .typed_dict_conditional_branch import TypedDictConditionalBranch
 from .typed_dict_configuration_settings import TypedDictConfigurationSettings
 from .typed_dict_connection_info import TypedDictConnectionInfo
+from .typed_dict_consumed_event_entry import TypedDictConsumedEventEntry
 
 # Contract validation TypedDict definitions
 from .typed_dict_contract_data import TypedDictContractData
@@ -331,6 +332,7 @@ from .typed_dict_policy_value_data import (
     TypedDictPolicyValueInput,
 )
 from .typed_dict_property_metadata import TypedDictPropertyMetadata
+from .typed_dict_published_event_entry import TypedDictPublishedEventEntry
 from .typed_dict_quality_data import TypedDictQualityData
 from .typed_dict_quality_update_data import TypedDictQualityUpdateData
 
@@ -556,6 +558,8 @@ __all__ = [
     "TypedDictWorkflowState",
     "TypedDictValidatorInfo",
     "TypedDictEventInfo",
+    "TypedDictConsumedEventEntry",
+    "TypedDictPublishedEventEntry",
     "TypedDictConditionalBranch",
     "TypedDictConnectionInfo",
     "TypedDictConvertedHealth",

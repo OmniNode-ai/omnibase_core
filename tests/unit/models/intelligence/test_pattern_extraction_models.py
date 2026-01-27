@@ -43,12 +43,19 @@ pytestmark = pytest.mark.unit
 class TestEnumPatternKind:
     """Tests for EnumPatternKind enum."""
 
-    def test_all_four_values_exist(self) -> None:
+    def test_all_five_values_exist(self) -> None:
         """Test that all expected enum values exist."""
-        expected_values = {"FILE_ACCESS", "ERROR", "ARCHITECTURE", "TOOL_USAGE"}
+        expected_values = {
+            "FILE_ACCESS",
+            "ERROR",
+            "ARCHITECTURE",
+            "TOOL_USAGE",
+            "TOOL_FAILURE",
+        }
         actual_values = {member.name for member in EnumPatternKind}
 
         assert actual_values == expected_values
+        assert EnumPatternKind.TOOL_FAILURE.value == "tool_failure"
 
     def test_str_helper_returns_value(self) -> None:
         """Test that StrValueHelper makes str() return the value."""
@@ -56,6 +63,7 @@ class TestEnumPatternKind:
         assert str(EnumPatternKind.ERROR) == "error"
         assert str(EnumPatternKind.ARCHITECTURE) == "architecture"
         assert str(EnumPatternKind.TOOL_USAGE) == "tool_usage"
+        assert str(EnumPatternKind.TOOL_FAILURE) == "tool_failure"
 
     def test_values_are_unique(self) -> None:
         """Test that all enum values are unique."""
@@ -1023,6 +1031,7 @@ class TestModelPatternExtractionOutput:
             EnumPatternKind.FILE_ACCESS: [],
             EnumPatternKind.ERROR: [],
             EnumPatternKind.ARCHITECTURE: [],
+            EnumPatternKind.TOOL_FAILURE: [],
             # Missing: TOOL_USAGE
         }
         minimal_output_data["patterns_by_kind"] = almost_complete
