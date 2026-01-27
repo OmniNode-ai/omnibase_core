@@ -59,6 +59,54 @@ class ModelContractBase(BaseModel, ABC):
     and foundational configuration for all specialized contract models.
 
     Strict typing is enforced: No Any types allowed in implementation.
+
+    ONEX Infrastructure Extensions
+    ------------------------------
+    This class includes extension fields for contract-level event routing and
+    handler configuration (added in OMN-1588). These fields enable downstream
+    infrastructure to read event subscriptions and publishing declarations
+    directly from YAML contracts without requiring field stripping.
+
+    **When to use each field:**
+
+    - ``handler_routing``: Use when a node needs to dispatch messages to
+      different handlers based on payload type, operation, or topic pattern.
+      Common for ORCHESTRATOR nodes that route events to specific handlers.
+
+    - ``consumed_events``: Use to declare which event types a node subscribes to.
+      Enables infrastructure to auto-configure event subscriptions from contracts.
+
+    - ``published_events``: Use to declare which events a node may publish.
+      Enables infrastructure to validate event schemas and configure topics.
+
+    **Example YAML contract with all extension fields:**
+
+    .. code-block:: yaml
+
+        name: node_job_orchestrator
+        contract_version: {major: 1, minor: 0, patch: 0}
+        description: Job orchestration node
+        node_type: orchestrator
+
+        # Handler routing configuration
+        handler_routing:
+          version: {major: 1, minor: 0, patch: 0}
+          routing_strategy: payload_type_match
+          handlers:
+            - routing_key: ModelEventJobCreated
+              handler_key: handle_job_created
+              priority: 0
+          default_handler: handle_unknown
+
+        # Events this node consumes (string shorthand)
+        consumed_events:
+          - "jobs.events.created.v1"
+          - "jobs.events.completed.v1"
+
+        # Events this node publishes
+        published_events:
+          - topic: "jobs.events.started.v1"
+            event_type: ModelEventJobStarted
     """
 
     # Interface version for code generation stability
@@ -178,19 +226,26 @@ class ModelContractBase(BaseModel, ABC):
         default=None,
         description="Handler routing configuration defining how messages are routed "
         "to handlers based on payload type, operation, or topic pattern. "
-        "ONEX infra extension for contract-driven handler dispatch.",
+        "ONEX infra extension for contract-driven handler dispatch. "
+        "Accepts ModelHandlerRoutingSubcontract instance or equivalent dict from YAML.",
     )
 
     consumed_events: "list[ModelConsumedEventEntry]" = Field(
         default_factory=list,
-        description="Events consumed by this node. Normalized from string lists "
-        "or full subscription objects. ONEX infra extension for event subscriptions.",
+        description="Events consumed by this node. ONEX infra extension for event "
+        "subscriptions. Supports multiple input formats: "
+        "(1) String list: ['event.type.v1'] - auto-converted to entries with event_type; "
+        "(2) Dict list: [{event_type: '...', handler_function: '...'}] - full specification; "
+        "(3) ModelConsumedEventEntry instances - passed through directly.",
     )
 
     published_events: "list[ModelPublishedEventEntry]" = Field(
         default_factory=list,
-        description="Events published by this node. Each entry specifies topic "
-        "and event type. ONEX infra extension for event publishing declarations.",
+        description="Events published by this node. ONEX infra extension for event "
+        "publishing declarations. Supports multiple input formats: "
+        "(1) String list: ['topic.v1'] - auto-converted using string as both topic and event_type; "
+        "(2) Dict list: [{topic: '...', event_type: '...'}] - full specification; "
+        "(3) ModelPublishedEventEntry instances - passed through directly.",
     )
 
     @abstractmethod
@@ -549,6 +604,47 @@ class ModelContractBase(BaseModel, ABC):
                 result.append(item.model_dump())
             else:
                 raise ValueError(f"Invalid consumed_events item type: {type(item)}")
+        return result
+
+    @field_validator("published_events", mode="before")
+    @classmethod
+    def normalize_published_events(cls, v: object) -> list[dict[str, object]]:
+        """Normalize published_events from multiple input shapes.
+
+        Supports two input formats:
+        1. String list: ["topic.v1", "topic.v2"]
+           - Each string becomes {topic: "...", event_type: "..."}
+           - Uses the string as both topic and event_type (common pattern)
+        2. Object list: [{topic: "...", event_type: "..."}]
+           - Passed through as-is
+
+        Args:
+            v: Input value (list of strings, dicts, or ModelPublishedEventEntry)
+
+        Returns:
+            list[dict[str, object]]: Normalized list of dicts for Pydantic validation
+
+        Raises:
+            ValueError: If input is not a list or contains invalid item types
+        """
+        if not v:
+            return []
+        if not isinstance(v, list):
+            raise ValueError("published_events must be a list")
+
+        result: list[dict[str, object]] = []
+        for item in v:
+            if isinstance(item, str):
+                # String form: use as both topic and event_type
+                result.append({"topic": item, "event_type": item})
+            elif isinstance(item, dict):
+                # Dict form: pass through
+                result.append(item)
+            elif hasattr(item, "model_dump"):
+                # Already a Pydantic model: dump to dict
+                result.append(item.model_dump())
+            else:
+                raise ValueError(f"Invalid published_events item type: {type(item)}")
         return result
 
     @field_validator("node_type", mode="before")

@@ -315,6 +315,121 @@ class TestPublishedEventsField:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
+class TestPublishedEventsNormalization:
+    """Tests for published_events field normalization in ModelContractBase."""
+
+    def _create_minimal_contract(
+        self,
+        published_events: object = None,
+    ) -> ModelContractCompute:
+        """Helper to create a minimal compute contract for testing."""
+        kwargs: dict[str, object] = {
+            "name": "TestContract",
+            "contract_version": ModelSemVer(major=1, minor=0, patch=0),
+            "description": "Test contract for extension fields",
+            "node_type": EnumNodeType.COMPUTE_GENERIC,
+            "input_model": "omnibase_core.models.ModelInput",
+            "output_model": "omnibase_core.models.ModelOutput",
+            "algorithm": _create_minimal_algorithm(),
+            "performance": _create_minimal_performance(),
+        }
+        if published_events is not None:
+            kwargs["published_events"] = published_events
+        return ModelContractCompute(**kwargs)
+
+    def test_published_events_string_list_normalized(self) -> None:
+        """Test that string list is normalized to ModelPublishedEventEntry list.
+
+        String values are used as both topic and event_type.
+        """
+        contract = self._create_minimal_contract(
+            published_events=["jobs.events.created.v1", "jobs.events.completed.v1"]
+        )
+        assert len(contract.published_events) == 2
+        assert all(
+            isinstance(e, ModelPublishedEventEntry) for e in contract.published_events
+        )
+        # First entry: string used as both topic and event_type
+        assert contract.published_events[0].topic == "jobs.events.created.v1"
+        assert contract.published_events[0].event_type == "jobs.events.created.v1"
+        # Second entry
+        assert contract.published_events[1].topic == "jobs.events.completed.v1"
+        assert contract.published_events[1].event_type == "jobs.events.completed.v1"
+
+    def test_published_events_dict_list_passthrough(self) -> None:
+        """Test that dict list is passed through unchanged."""
+        contract = self._create_minimal_contract(
+            published_events=[
+                {"topic": "jobs.events.created.v1", "event_type": "ModelEventCreated"},
+                {
+                    "topic": "jobs.events.completed.v1",
+                    "event_type": "ModelEventCompleted",
+                },
+            ]
+        )
+        assert len(contract.published_events) == 2
+        # Dict values preserved exactly
+        assert contract.published_events[0].topic == "jobs.events.created.v1"
+        assert contract.published_events[0].event_type == "ModelEventCreated"
+        assert contract.published_events[1].topic == "jobs.events.completed.v1"
+        assert contract.published_events[1].event_type == "ModelEventCompleted"
+
+    def test_published_events_mixed_list_normalized(self) -> None:
+        """Test that mixed string and dict list is normalized correctly."""
+        contract = self._create_minimal_contract(
+            published_events=[
+                "jobs.events.created.v1",
+                {
+                    "topic": "jobs.events.completed.v1",
+                    "event_type": "ModelEventCompleted",
+                },
+            ]
+        )
+        assert len(contract.published_events) == 2
+        # First entry: string normalized to same topic/event_type
+        assert contract.published_events[0].topic == "jobs.events.created.v1"
+        assert contract.published_events[0].event_type == "jobs.events.created.v1"
+        # Second entry: dict preserved
+        assert contract.published_events[1].topic == "jobs.events.completed.v1"
+        assert contract.published_events[1].event_type == "ModelEventCompleted"
+
+    def test_published_events_model_instance_handling(self) -> None:
+        """Test that ModelPublishedEventEntry instances are converted via model_dump."""
+        entry = ModelPublishedEventEntry(
+            topic="jobs.events.created.v1",
+            event_type="ModelEventCreated",
+        )
+        contract = self._create_minimal_contract(published_events=[entry])
+        assert len(contract.published_events) == 1
+        # Instance is recreated from model_dump
+        assert contract.published_events[0].topic == "jobs.events.created.v1"
+        assert contract.published_events[0].event_type == "ModelEventCreated"
+
+    def test_published_events_invalid_item_type_raises_error(self) -> None:
+        """Test that invalid item types raise ValueError."""
+        with pytest.raises(ValidationError) as exc_info:
+            self._create_minimal_contract(published_events=[123, "valid.event.v1"])
+        assert "Invalid published_events item type" in str(exc_info.value)
+
+    def test_published_events_non_list_raises_error(self) -> None:
+        """Test that non-list published_events raises ValueError."""
+        with pytest.raises(ValidationError) as exc_info:
+            self._create_minimal_contract(published_events="not a list")
+        assert "published_events must be a list" in str(exc_info.value)
+
+    def test_published_events_empty_list_returns_empty(self) -> None:
+        """Test that empty list input returns empty list."""
+        contract = self._create_minimal_contract(published_events=[])
+        assert contract.published_events == []
+
+    def test_published_events_none_returns_empty_list(self) -> None:
+        """Test that None/falsy input returns empty list via default_factory."""
+        contract = self._create_minimal_contract()
+        assert contract.published_events == []
+
+
+@pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestHandlerRoutingField:
     """Tests for handler_routing field in ModelContractBase."""
 
