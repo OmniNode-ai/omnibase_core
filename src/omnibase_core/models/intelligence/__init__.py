@@ -13,6 +13,7 @@ Models:
     ModelPatternExtractionOutput: Output from pattern extraction operations.
     ModelPatternRecord: Individual extracted pattern record.
     ModelPatternWarning: Warning encountered during pattern extraction.
+    ModelToolExecution: Structured tool execution data for pattern extraction.
 
 TypedDicts (from omnibase_core.types):
     TypedDictConversationMessage: TypedDict for conversation message structure.
@@ -45,6 +46,7 @@ from omnibase_core.models.intelligence.model_pattern_extraction_output import (
 )
 from omnibase_core.models.intelligence.model_pattern_record import ModelPatternRecord
 from omnibase_core.models.intelligence.model_pattern_warning import ModelPatternWarning
+from omnibase_core.models.intelligence.model_tool_execution import ModelToolExecution
 
 __all__ = [
     # Enums (re-exported for convenience)
@@ -58,6 +60,8 @@ __all__ = [
     "ModelPatternExtractionOutput",
     "ModelPatternRecord",
     "ModelPatternWarning",
+    # Models - Tool execution (OMN-1608)
+    "ModelToolExecution",
     # TypedDicts (canonical names)
     "TypedDictConversationMessage",
     "TypedDictIntentContext",

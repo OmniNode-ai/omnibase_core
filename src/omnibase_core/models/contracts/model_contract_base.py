@@ -27,9 +27,18 @@ from omnibase_core.models.contracts.model_execution_profile import (
     ModelExecutionProfile,
 )
 
-# Import ModelHandlerBehavior for type checking only (avoid circular import)
+# Import types for type checking only (avoid circular import)
 # The runtime module imports model_runtime_node_instance which imports ModelContractBase
 if TYPE_CHECKING:
+    from omnibase_core.models.contracts.model_consumed_event_entry import (
+        ModelConsumedEventEntry,
+    )
+    from omnibase_core.models.contracts.model_published_event_entry import (
+        ModelPublishedEventEntry,
+    )
+    from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+        ModelHandlerRoutingSubcontract,
+    )
     from omnibase_core.models.runtime.model_handler_behavior import (
         ModelHandlerBehavior,
     )
@@ -159,6 +168,29 @@ class ModelContractBase(BaseModel, ABC):
         description="Handler behavior configuration defining purity, idempotency, "
         "concurrency, isolation, and observability. "
         "Set when created via profile factory, None for manually created contracts.",
+    )
+
+    # ONEX Infrastructure Extension Fields (OMN-1588)
+    # These fields enable contract-level event routing and handler configuration
+    # without requiring downstream repos to strip fields before validation.
+
+    handler_routing: "ModelHandlerRoutingSubcontract | None" = Field(
+        default=None,
+        description="Handler routing configuration defining how messages are routed "
+        "to handlers based on payload type, operation, or topic pattern. "
+        "ONEX infra extension for contract-driven handler dispatch.",
+    )
+
+    consumed_events: "list[ModelConsumedEventEntry]" = Field(
+        default_factory=list,
+        description="Events consumed by this node. Normalized from string lists "
+        "or full subscription objects. ONEX infra extension for event subscriptions.",
+    )
+
+    published_events: "list[ModelPublishedEventEntry]" = Field(
+        default_factory=list,
+        description="Events published by this node. Each entry specifies topic "
+        "and event type. ONEX infra extension for event publishing declarations.",
     )
 
     @abstractmethod
@@ -479,6 +511,46 @@ class ModelContractBase(BaseModel, ABC):
 
         return result_deps
 
+    @field_validator("consumed_events", mode="before")
+    @classmethod
+    def normalize_consumed_events(cls, v: object) -> list[dict[str, object]]:
+        """Normalize consumed_events from multiple input shapes.
+
+        Supports two input formats:
+        1. String list: ["event.type.v1", "other.event.v1"]
+           - Each string becomes {event_type: "..."}
+        2. Object list: [{event_type: "...", handler_function: "..."}]
+           - Passed through as-is
+
+        Args:
+            v: Input value (list of strings, dicts, or ModelConsumedEventEntry)
+
+        Returns:
+            list[dict[str, object]]: Normalized list of dicts for Pydantic validation
+
+        Raises:
+            ValueError: If input is not a list or contains invalid item types
+        """
+        if not v:
+            return []
+        if not isinstance(v, list):
+            raise ValueError("consumed_events must be a list")
+
+        result: list[dict[str, object]] = []
+        for item in v:
+            if isinstance(item, str):
+                # String form: convert to dict with event_type
+                result.append({"event_type": item})
+            elif isinstance(item, dict):
+                # Dict form: pass through
+                result.append(item)
+            elif hasattr(item, "model_dump"):
+                # Already a Pydantic model: dump to dict
+                result.append(item.model_dump())
+            else:
+                raise ValueError(f"Invalid consumed_events item type: {type(item)}")
+        return result
+
     @field_validator("node_type", mode="before")
     @classmethod
     def validate_node_type_enum_only(cls, v: object) -> EnumNodeType:
@@ -631,18 +703,32 @@ class ModelContractBase(BaseModel, ABC):
     )
 
 
-# Resolve forward reference for ModelHandlerBehavior after class definition.
-# This import is deferred to avoid circular import during module loading.
-# The TYPE_CHECKING import above is used for static type checking only.
+# Resolve forward references after class definition.
+# These imports are deferred to avoid circular import during module loading.
+# The TYPE_CHECKING imports above are used for static type checking only.
 def _rebuild_model_contract_base() -> None:
     """Rebuild ModelContractBase to resolve forward references."""
+    from omnibase_core.models.contracts.model_consumed_event_entry import (
+        ModelConsumedEventEntry,
+    )
+    from omnibase_core.models.contracts.model_published_event_entry import (
+        ModelPublishedEventEntry,
+    )
+    from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+        ModelHandlerRoutingSubcontract,
+    )
     from omnibase_core.models.runtime.model_handler_behavior import (
         ModelHandlerBehavior,
     )
 
-    # Pass the type in the namespace so Pydantic can resolve the forward reference
+    # Pass the types in the namespace so Pydantic can resolve forward references
     ModelContractBase.model_rebuild(
-        _types_namespace={"ModelHandlerBehavior": ModelHandlerBehavior}
+        _types_namespace={
+            "ModelHandlerBehavior": ModelHandlerBehavior,
+            "ModelHandlerRoutingSubcontract": ModelHandlerRoutingSubcontract,
+            "ModelConsumedEventEntry": ModelConsumedEventEntry,
+            "ModelPublishedEventEntry": ModelPublishedEventEntry,
+        }
     )
 
 
