@@ -6,7 +6,7 @@ for the normalized dict format before Pydantic validates into model type.
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Required, TypedDict
 
 
 class TypedDictConsumedEventEntry(TypedDict, total=False):
@@ -16,11 +16,11 @@ class TypedDictConsumedEventEntry(TypedDict, total=False):
     Used by normalize_consumed_events validator in ModelContractBase.
 
     Fields:
-        event_type: Event type name or pattern (required in final model)
+        event_type: Event type name or pattern (required)
         handler_function: Handler function name (optional)
     """
 
-    event_type: str
+    event_type: Required[str]
     handler_function: str | None
 
 
