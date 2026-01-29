@@ -11,6 +11,8 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 __all__ = ["ModelContractRegisteredEvent", "CONTRACT_REGISTERED_EVENT"]
 
+# Full topic name for Kafka/event bus publishing (onex.evt.<type>.v1 format).
+# The short event type identifier ("contract-registered") is in constants_event_types.py.
 CONTRACT_REGISTERED_EVENT = "onex.evt.contract-registered.v1"
 
 

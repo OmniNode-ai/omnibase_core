@@ -11,6 +11,8 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 __all__ = ["ModelContractDeregisteredEvent", "CONTRACT_DEREGISTERED_EVENT"]
 
+# Full topic name for Kafka/event bus publishing (onex.evt.<type>.v1 format).
+# The short event type identifier ("contract-deregistered") is in constants_event_types.py.
 CONTRACT_DEREGISTERED_EVENT = "onex.evt.contract-deregistered.v1"
 
 
@@ -35,5 +37,5 @@ class ModelContractDeregisteredEvent(ModelRuntimeEventBase):
         description="Semantic version of the deregistering node",
     )
     reason: str = Field(
-        description="Reason for deregistration: 'shutdown', 'upgrade', 'manual'",
+        description="Reason for deregistration. Common values: 'shutdown', 'upgrade', 'manual'. Custom values allowed for extensibility.",
     )

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Unit tests for contract registration event models (OMN-1651).
 
 Tests comprehensive model functionality including:
