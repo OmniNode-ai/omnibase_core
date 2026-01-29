@@ -315,6 +315,9 @@ from .hooks.claude_code.enum_claude_code_session_status import (
 # Intelligence enums (OMN-1490)
 from .intelligence.enum_intent_category import EnumIntentCategory
 
+# Pattern learning enums (OMN-1683)
+from .pattern_learning.enum_pattern_lifecycle_state import EnumPatternLifecycleState
+
 # Deprecated aliases for EnumSeverity (OMN-1311 consolidation)
 # Use EnumSeverity directly in new code.
 EnumInvariantSeverity: type[EnumSeverity] = EnumSeverity
@@ -628,6 +631,8 @@ __all__ = [
     "EnumIntentCategory",
     # Pattern extraction domain (OMN-1587)
     "EnumPatternKind",
+    # Pattern learning domain (OMN-1683)
+    "EnumPatternLifecycleState",
     # Omnimemory domain (OMN-1235, OMN-1236, OMN-1237)
     "EnumDecisionType",
     "EnumFailureType",
