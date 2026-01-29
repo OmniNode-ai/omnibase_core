@@ -25,7 +25,7 @@ from omnibase_core.models.events.model_intent_query_response_event import (
     ModelIntentQueryResponseEvent,
 )
 from omnibase_core.models.events.model_intent_record_payload import (
-    IntentRecordPayload,
+    ModelIntentRecordPayload,
 )
 from omnibase_core.models.events.model_intent_stored_event import (
     INTENT_STORED_EVENT,
@@ -73,7 +73,7 @@ __all__ = [
     "INTENT_QUERY_REQUESTED_EVENT",
     "ModelIntentQueryRequestedEvent",
     "INTENT_QUERY_RESPONSE_EVENT",
-    "IntentRecordPayload",
+    "ModelIntentRecordPayload",
     "ModelIntentQueryResponseEvent",
     # Topic naming and routing
     "ModelTopicNaming",

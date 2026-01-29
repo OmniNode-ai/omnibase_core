@@ -18,7 +18,7 @@ from uuid import UUID
 from pydantic import Field
 
 from omnibase_core.models.events.model_intent_record_payload import (
-    IntentRecordPayload,
+    ModelIntentRecordPayload,
 )
 from omnibase_core.models.events.model_runtime_event_base import (
     ModelRuntimeEventBase,
@@ -68,7 +68,7 @@ class ModelIntentQueryResponseEvent(ModelRuntimeEventBase):
         default_factory=dict,
         description="For distribution queries, category → count mapping",
     )
-    intents: list[IntentRecordPayload] = Field(
+    intents: list[ModelIntentRecordPayload] = Field(
         default_factory=list,
         description="For session/recent queries, list of intent records",
     )
@@ -128,7 +128,7 @@ class ModelIntentQueryResponseEvent(ModelRuntimeEventBase):
     def create_session_response(
         cls,
         query_id: UUID,
-        intents: list[IntentRecordPayload],
+        intents: list[ModelIntentRecordPayload],
         *,
         execution_time_ms: float = 0.0,
         correlation_id: UUID | None = None,
@@ -148,7 +148,7 @@ class ModelIntentQueryResponseEvent(ModelRuntimeEventBase):
     def create_recent_response(
         cls,
         query_id: UUID,
-        intents: list[IntentRecordPayload],
+        intents: list[ModelIntentRecordPayload],
         *,
         time_range_hours: int = 1,
         execution_time_ms: float = 0.0,

@@ -15,10 +15,10 @@ from omnibase_core.models.events.model_event_payload_base import (
     ModelEventPayloadBase,
 )
 
-__all__ = ["IntentRecordPayload"]
+__all__ = ["ModelIntentRecordPayload"]
 
 
-class IntentRecordPayload(ModelEventPayloadBase):
+class ModelIntentRecordPayload(ModelEventPayloadBase):
     """Embedded intent record in query responses.
 
     Lightweight representation of a stored intent for transmission
