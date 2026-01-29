@@ -233,10 +233,17 @@ RETENTION_MS_AUDIT = 2592000000  # 30 days (same as events for audit trails)
 # Platform Baseline Topic Suffixes (OMN-1652)
 # These topics are wired at runtime startup (not via contract discovery)
 # to avoid circular dependency. Full topics are composed as {env}.{suffix}.
+#
+# Individual constants for selective import by consumers (e.g., omnibase_infra).
+# The tuple below provides a convenience grouping for iteration.
+TOPIC_SUFFIX_CONTRACT_REGISTERED = "onex.evt.contract-registered.v1"
+TOPIC_SUFFIX_CONTRACT_DEREGISTERED = "onex.evt.contract-deregistered.v1"
+TOPIC_SUFFIX_NODE_HEARTBEAT = "onex.evt.node-heartbeat.v1"
+
 PLATFORM_BASELINE_TOPIC_SUFFIXES: tuple[str, ...] = (
-    "onex.evt.contract-registered.v1",
-    "onex.evt.contract-deregistered.v1",
-    "onex.evt.node-heartbeat.v1",
+    TOPIC_SUFFIX_CONTRACT_REGISTERED,
+    TOPIC_SUFFIX_CONTRACT_DEREGISTERED,
+    TOPIC_SUFFIX_NODE_HEARTBEAT,
 )
 
 __all__ = [
@@ -288,5 +295,8 @@ __all__ = [
     "RETENTION_MS_SNAPSHOTS",
     "RETENTION_MS_AUDIT",
     # Platform baseline topics (OMN-1652)
+    "TOPIC_SUFFIX_CONTRACT_REGISTERED",
+    "TOPIC_SUFFIX_CONTRACT_DEREGISTERED",
+    "TOPIC_SUFFIX_NODE_HEARTBEAT",
     "PLATFORM_BASELINE_TOPIC_SUFFIXES",
 ]
