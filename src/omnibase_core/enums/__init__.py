@@ -304,6 +304,9 @@ from .enum_service_type_category import EnumServiceTypeCategory
 # Severity enum (canonical - replaces EnumViolationSeverity, OMN-1311)
 from .enum_severity import EnumSeverity
 
+# Event enums (contract registration - OMN-1651)
+from .events.enum_deregistration_reason import EnumDeregistrationReason
+
 # Hook event enums (Claude Code integration - OMN-1474)
 from .hooks.claude_code.enum_claude_code_hook_event_type import (
     EnumClaudeCodeHookEventType,
@@ -626,6 +629,8 @@ __all__ = [
     "EnumClaudeCodeSessionStatus",
     # Intelligence domain (OMN-1490)
     "EnumIntentCategory",
+    # Contract registration domain (OMN-1651)
+    "EnumDeregistrationReason",
     # Pattern extraction domain (OMN-1587)
     "EnumPatternKind",
     # Omnimemory domain (OMN-1235, OMN-1236, OMN-1237)

@@ -1,0 +1,65 @@
+"""Deregistration reason enumeration for contract lifecycle events.
+
+Defines standard reasons for contract deregistration in the ONEX framework.
+Part of the contract registration subsystem (OMN-1651).
+"""
+
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
+
+@unique
+class EnumDeregistrationReason(StrValueHelper, str, Enum):
+    """Reasons for contract deregistration.
+
+    Standard values for why a node deregisters its contract. These are used
+    in ModelContractDeregisteredEvent to indicate the deregistration cause.
+
+    The model field accepts both enum values and arbitrary strings to allow
+    extensibility for custom deregistration reasons not covered by the standard
+    values (e.g., 'health_check_failure', 'resource_exhaustion').
+
+    Attributes:
+        SHUTDOWN: Node is shutting down gracefully.
+        UPGRADE: Node is being upgraded to a new version.
+        MANUAL: Administrator manually deregistered the contract.
+
+    Example:
+        >>> reason = EnumDeregistrationReason.SHUTDOWN
+        >>> str(reason)
+        'shutdown'
+        >>> import json
+        >>> json.dumps({"reason": reason})
+        '{"reason": "shutdown"}'
+
+    .. versionadded:: 0.9.8
+        Added as part of OMN-1651 to replace hardcoded reason strings.
+    """
+
+    SHUTDOWN = "shutdown"
+    """Node is shutting down gracefully."""
+
+    UPGRADE = "upgrade"
+    """Node is being upgraded to a new version."""
+
+    MANUAL = "manual"
+    """Administrator manually deregistered the contract."""
+
+    def is_planned(self) -> bool:
+        """Check if this reason represents a planned deregistration.
+
+        Planned deregistrations include shutdown, upgrade, and manual removal.
+        These are expected scenarios where the node cleanly deregisters.
+
+        Returns:
+            True for all standard reasons (SHUTDOWN, UPGRADE, MANUAL).
+        """
+        return self in {
+            EnumDeregistrationReason.SHUTDOWN,
+            EnumDeregistrationReason.UPGRADE,
+            EnumDeregistrationReason.MANUAL,
+        }
+
+
+__all__ = ["EnumDeregistrationReason"]

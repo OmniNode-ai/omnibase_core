@@ -6,6 +6,9 @@ Part of the contract registration subsystem (OMN-1651).
 
 from pydantic import Field
 
+from omnibase_core.enums.events.enum_deregistration_reason import (
+    EnumDeregistrationReason,
+)
 from omnibase_core.models.events.model_runtime_event_base import ModelRuntimeEventBase
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -36,6 +39,6 @@ class ModelContractDeregisteredEvent(ModelRuntimeEventBase):
     node_version: ModelSemVer = Field(
         description="Semantic version of the deregistering node",
     )
-    reason: str = Field(
-        description="Reason for deregistration. Common values: 'shutdown', 'upgrade', 'manual'. Custom values allowed for extensibility.",
+    reason: EnumDeregistrationReason | str = Field(
+        description="Reason for deregistration. Use EnumDeregistrationReason for standard values (SHUTDOWN, UPGRADE, MANUAL). Custom string values allowed for extensibility.",
     )
