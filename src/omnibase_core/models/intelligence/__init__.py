@@ -37,6 +37,13 @@ from omnibase_core.models.intelligence.model_intent_classification_output import
     TypedDictIntentMetadata,
     TypedDictSecondaryIntent,
 )
+from omnibase_core.models.intelligence.model_intent_query_result import (
+    ModelIntentQueryResult,
+)
+from omnibase_core.models.intelligence.model_intent_record import ModelIntentRecord
+from omnibase_core.models.intelligence.model_intent_storage_result import (
+    ModelIntentStorageResult,
+)
 from omnibase_core.models.intelligence.model_pattern_error import ModelPatternError
 from omnibase_core.models.intelligence.model_pattern_extraction_input import (
     ModelPatternExtractionInput,
@@ -62,6 +69,10 @@ __all__ = [
     "ModelPatternWarning",
     # Models - Tool execution (OMN-1608)
     "ModelToolExecution",
+    # Models - Intent storage (OMN-1645)
+    "ModelIntentQueryResult",
+    "ModelIntentRecord",
+    "ModelIntentStorageResult",
     # TypedDicts (canonical names)
     "TypedDictConversationMessage",
     "TypedDictIntentContext",

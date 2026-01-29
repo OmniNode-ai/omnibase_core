@@ -38,6 +38,14 @@ LOGGING_APPLICATION_EVENT = "omninode.logging.application.v1"
 LOGGING_AUDIT_EVENT = "omninode.logging.audit.v1"
 LOGGING_SECURITY_EVENT = "omninode.logging.security.v1"
 
+# Contract registration events (OMN-1652)
+# NOTE: These are SHORT event type identifiers used for event classification and routing.
+# The full topic names (e.g., "onex.evt.contract-registered.v1") are defined alongside
+# the event models in omnibase_core.models.events.contract_registration.
+EVENT_TYPE_CONTRACT_REGISTERED = "contract-registered"
+EVENT_TYPE_CONTRACT_DEREGISTERED = "contract-deregistered"
+EVENT_TYPE_NODE_HEARTBEAT = "node-heartbeat"
+
 
 def normalize_legacy_event_type(event_type: str | TypedDictEventType | object) -> str:
     """Normalize legacy event types to consistent string format.
