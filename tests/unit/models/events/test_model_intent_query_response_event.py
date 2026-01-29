@@ -12,7 +12,7 @@ Test Coverage:
     - Factory method from_error()
     - Field validation (total_count, total_intents, time_range_hours)
     - Status literal validation
-    - Integration with IntentRecordPayload
+    - Integration with ModelIntentRecordPayload
     - Serialization
 
 Created: 2025-01-25
@@ -30,7 +30,7 @@ from omnibase_core.models.events.model_intent_query_response_event import (
     ModelIntentQueryResponseEvent,
 )
 from omnibase_core.models.events.model_intent_record_payload import (
-    IntentRecordPayload,
+    ModelIntentRecordPayload,
 )
 
 # ============================================================================
@@ -51,9 +51,9 @@ def sample_correlation_id() -> UUID:
 
 
 @pytest.fixture
-def sample_intent_payload() -> IntentRecordPayload:
+def sample_intent_payload() -> ModelIntentRecordPayload:
     """Create a sample intent record payload."""
-    return IntentRecordPayload(
+    return ModelIntentRecordPayload(
         intent_id=uuid4(),
         session_ref="session-test-123",
         intent_category="code_generation",
@@ -64,10 +64,10 @@ def sample_intent_payload() -> IntentRecordPayload:
 
 
 @pytest.fixture
-def sample_intent_payloads() -> list[IntentRecordPayload]:
+def sample_intent_payloads() -> list[ModelIntentRecordPayload]:
     """Create a list of sample intent record payloads."""
     return [
-        IntentRecordPayload(
+        ModelIntentRecordPayload(
             intent_id=uuid4(),
             session_ref="session-1",
             intent_category="debugging",
@@ -75,7 +75,7 @@ def sample_intent_payloads() -> list[IntentRecordPayload]:
             keywords=["debug", "error"],
             created_at=datetime.now(UTC),
         ),
-        IntentRecordPayload(
+        ModelIntentRecordPayload(
             intent_id=uuid4(),
             session_ref="session-2",
             intent_category="code_review",
@@ -123,7 +123,7 @@ class TestModelIntentQueryResponseEventBasic:
         self,
         sample_query_id: UUID,
         sample_correlation_id: UUID,
-        sample_intent_payloads: list[IntentRecordPayload],
+        sample_intent_payloads: list[ModelIntentRecordPayload],
     ) -> None:
         """Test creating event with all fields specified."""
         responded_at = datetime.now(UTC)
@@ -259,7 +259,7 @@ class TestModelIntentQueryResponseEventFactoryMethods:
     def test_create_session_response_with_intents(
         self,
         sample_query_id: UUID,
-        sample_intent_payloads: list[IntentRecordPayload],
+        sample_intent_payloads: list[ModelIntentRecordPayload],
         sample_correlation_id: UUID,
     ) -> None:
         """Test create_session_response() with intents."""
@@ -296,7 +296,7 @@ class TestModelIntentQueryResponseEventFactoryMethods:
     def test_create_recent_response_with_intents(
         self,
         sample_query_id: UUID,
-        sample_intent_payloads: list[IntentRecordPayload],
+        sample_intent_payloads: list[ModelIntentRecordPayload],
         sample_correlation_id: UUID,
     ) -> None:
         """Test create_recent_response() with intents."""
@@ -612,20 +612,20 @@ class TestModelIntentQueryResponseEventDatetime:
 
 
 # ============================================================================
-# Tests for Integration with IntentRecordPayload
+# Tests for Integration with ModelIntentRecordPayload
 # ============================================================================
 
 
 @pytest.mark.unit
 class TestModelIntentQueryResponseEventIntegration:
-    """Test ModelIntentQueryResponseEvent integration with IntentRecordPayload."""
+    """Test ModelIntentQueryResponseEvent integration with ModelIntentRecordPayload."""
 
     def test_intents_field_accepts_payload_list(
         self,
         sample_query_id: UUID,
-        sample_intent_payloads: list[IntentRecordPayload],
+        sample_intent_payloads: list[ModelIntentRecordPayload],
     ) -> None:
-        """Test that intents field accepts list of IntentRecordPayload."""
+        """Test that intents field accepts list of ModelIntentRecordPayload."""
         event = ModelIntentQueryResponseEvent(
             query_id=sample_query_id,
             query_type="session",
@@ -633,7 +633,7 @@ class TestModelIntentQueryResponseEventIntegration:
         )
 
         assert len(event.intents) == 2
-        assert all(isinstance(i, IntentRecordPayload) for i in event.intents)
+        assert all(isinstance(i, ModelIntentRecordPayload) for i in event.intents)
 
     def test_intents_field_validates_payload_structure(
         self,
@@ -733,7 +733,7 @@ class TestModelIntentQueryResponseEventSerialization:
     def test_model_dump_json_with_intents(
         self,
         sample_query_id: UUID,
-        sample_intent_payloads: list[IntentRecordPayload],
+        sample_intent_payloads: list[ModelIntentRecordPayload],
     ) -> None:
         """Test JSON serialization with nested intents."""
         event = ModelIntentQueryResponseEvent(

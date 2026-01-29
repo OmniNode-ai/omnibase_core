@@ -35,6 +35,7 @@ __all__ = [
     "nodes",
     "notifications",
     "operations",
+    "pattern_learning",  # Pattern learning models (OMN-1683)
     "pipeline",
     "projection",
     "providers",
