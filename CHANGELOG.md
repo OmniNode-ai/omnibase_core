@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9] - 2026-01-29
+
+### Added
+
+- **Platform Baseline Topic Suffix Constants** [OMN-1652]: Added individual topic suffix constants for cross-repository imports
+  - `TOPIC_SUFFIX_CONTRACT_REGISTERED` - Contract registration event topic suffix
+  - `TOPIC_SUFFIX_CONTRACT_DEREGISTERED` - Contract deregistration event topic suffix
+  - `TOPIC_SUFFIX_NODE_HEARTBEAT` - Node heartbeat event topic suffix
+  - `PLATFORM_BASELINE_TOPIC_SUFFIXES` tuple refactored to use individual constants
+  - Enables `omnibase_infra` to import canonical topic strings from core
+
 ## [0.9.8] - 2026-01-29
 
 ### Added
