@@ -45,6 +45,6 @@ class ModelContractDeregisteredEvent(ModelRuntimeEventBase):
     node_version: ModelSemVer = Field(
         description="Semantic version of the deregistering node",
     )
-    reason: EnumDeregistrationReason | str = Field(
-        description="Reason for deregistration. Use EnumDeregistrationReason for standard values (SHUTDOWN, UPGRADE, MANUAL). Custom string values allowed for extensibility.",
+    reason: EnumDeregistrationReason = Field(
+        description="Reason for deregistration (SHUTDOWN, UPGRADE, or MANUAL)",
     )

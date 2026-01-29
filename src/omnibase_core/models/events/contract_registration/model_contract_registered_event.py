@@ -44,6 +44,7 @@ class ModelContractRegisteredEvent(ModelRuntimeEventBase):
         description="Semantic version of the registering node",
     )
     contract_hash: str = Field(
+        min_length=1,
         description="Hash of the contract for deduplication/validation",
     )
     contract_yaml: str = Field(

@@ -290,12 +290,12 @@ class TestModelContractDeregisteredEventRequiredFields:
         event = ModelContractDeregisteredEvent(
             node_name="compute-pipeline",
             node_version=version,
-            reason="shutdown",
+            reason=EnumDeregistrationReason.SHUTDOWN,
         )
 
         assert event.node_name == "compute-pipeline"
         assert event.node_version == version
-        assert event.reason == "shutdown"
+        assert event.reason == EnumDeregistrationReason.SHUTDOWN
         assert event.event_type == CONTRACT_DEREGISTERED_EVENT
 
     def test_reason_is_required(self) -> None:
@@ -342,24 +342,6 @@ class TestModelContractDeregisteredEventReasons:
         assert event.reason == EnumDeregistrationReason.MANUAL
         assert str(event.reason) == "manual"
 
-    def test_reason_shutdown_with_string(self) -> None:
-        """Test deregistration with shutdown reason as string (backward compatibility)."""
-        event = ModelContractDeregisteredEvent(
-            node_name="test-node",
-            node_version=ModelSemVer(major=1, minor=0, patch=0),
-            reason="shutdown",
-        )
-        assert event.reason == "shutdown"
-
-    def test_reason_custom_string_allowed(self) -> None:
-        """Test that custom reason strings are allowed for extensibility."""
-        event = ModelContractDeregisteredEvent(
-            node_name="test-node",
-            node_version=ModelSemVer(major=1, minor=0, patch=0),
-            reason="health_check_failure",
-        )
-        assert event.reason == "health_check_failure"
-
     def test_enum_is_planned_method(self) -> None:
         """Test the is_planned helper method on the enum."""
         assert EnumDeregistrationReason.SHUTDOWN.is_planned() is True
@@ -383,23 +365,9 @@ class TestModelContractDeregisteredEventSerialization:
 
         assert original.node_name == restored.node_name
         assert original.node_version == restored.node_version
-        # After round-trip, the enum value is preserved as string "upgrade"
+        # After round-trip, the enum is preserved
+        assert restored.reason == EnumDeregistrationReason.UPGRADE
         assert str(restored.reason) == "upgrade"
-
-    def test_json_round_trip_with_custom_string(self) -> None:
-        """Test JSON serialization round-trip with custom string reason."""
-        original = ModelContractDeregisteredEvent(
-            node_name="test-node",
-            node_version=ModelSemVer(major=1, minor=2, patch=3),
-            reason="health_check_failure",
-        )
-
-        json_str = original.model_dump_json()
-        restored = ModelContractDeregisteredEvent.model_validate_json(json_str)
-
-        assert original.node_name == restored.node_name
-        assert original.node_version == restored.node_version
-        assert restored.reason == "health_check_failure"
 
 
 # ============================================================================
@@ -671,7 +639,7 @@ class TestContractRegistrationEventImmutability:
         event = ModelContractDeregisteredEvent(
             node_name="test-node",
             node_version=ModelSemVer(major=1, minor=0, patch=0),
-            reason="shutdown",
+            reason=EnumDeregistrationReason.SHUTDOWN,
         )
 
         with pytest.raises(ValidationError) as exc_info:
@@ -714,7 +682,7 @@ class TestContractRegistrationEventImmutability:
         event = ModelContractDeregisteredEvent(
             node_name="test-node",
             node_version=ModelSemVer(major=1, minor=0, patch=0),
-            reason="shutdown",
+            reason=EnumDeregistrationReason.SHUTDOWN,
         )
 
         with pytest.raises(ValidationError):
