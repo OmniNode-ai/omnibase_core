@@ -17,7 +17,11 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.pattern_learning import EnumPatternLifecycleState
+from omnibase_core.enums.pattern_learning import (
+    EnumPatternLearningStatus,
+    EnumPatternLifecycleState,
+    EnumPatternType,
+)
 from omnibase_core.models.pattern_learning import (
     ModelLearnedPattern,
     ModelPatternLearningMetadata,
@@ -89,6 +93,137 @@ class TestEnumPatternLifecycleStateStrValueHelper:
         """Enum should be a subclass of str for JSON serialization."""
         state = EnumPatternLifecycleState.VALIDATED
         assert isinstance(state, str)
+
+
+# =============================================================================
+# EnumPatternLearningStatus Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestEnumPatternLearningStatusValues:
+    """Tests for EnumPatternLearningStatus enum values."""
+
+    def test_completed_value(self) -> None:
+        """COMPLETED status should have value 'completed'."""
+        assert EnumPatternLearningStatus.COMPLETED.value == "completed"
+
+    def test_failed_value(self) -> None:
+        """FAILED status should have value 'failed'."""
+        assert EnumPatternLearningStatus.FAILED.value == "failed"
+
+    def test_in_progress_value(self) -> None:
+        """IN_PROGRESS status should have value 'in_progress'."""
+        assert EnumPatternLearningStatus.IN_PROGRESS.value == "in_progress"
+
+    def test_cancelled_value(self) -> None:
+        """CANCELLED status should have value 'cancelled'."""
+        assert EnumPatternLearningStatus.CANCELLED.value == "cancelled"
+
+    def test_all_statuses_exist(self) -> None:
+        """All expected statuses should exist."""
+        statuses = list(EnumPatternLearningStatus)
+        assert len(statuses) == 4
+        assert EnumPatternLearningStatus.COMPLETED in statuses
+        assert EnumPatternLearningStatus.FAILED in statuses
+        assert EnumPatternLearningStatus.IN_PROGRESS in statuses
+        assert EnumPatternLearningStatus.CANCELLED in statuses
+
+
+@pytest.mark.unit
+class TestEnumPatternLearningStatusStrValueHelper:
+    """Tests for StrValueHelper integration with EnumPatternLearningStatus."""
+
+    def test_str_returns_value_completed(self) -> None:
+        """str() on COMPLETED should return 'completed'."""
+        assert str(EnumPatternLearningStatus.COMPLETED) == "completed"
+
+    def test_str_returns_value_failed(self) -> None:
+        """str() on FAILED should return 'failed'."""
+        assert str(EnumPatternLearningStatus.FAILED) == "failed"
+
+    def test_str_returns_value_in_progress(self) -> None:
+        """str() on IN_PROGRESS should return 'in_progress'."""
+        assert str(EnumPatternLearningStatus.IN_PROGRESS) == "in_progress"
+
+    def test_str_returns_value_cancelled(self) -> None:
+        """str() on CANCELLED should return 'cancelled'."""
+        assert str(EnumPatternLearningStatus.CANCELLED) == "cancelled"
+
+    def test_enum_is_str_subclass(self) -> None:
+        """Enum should be a subclass of str for JSON serialization."""
+        status = EnumPatternLearningStatus.COMPLETED
+        assert isinstance(status, str)
+
+
+# =============================================================================
+# EnumPatternType Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestEnumPatternTypeValues:
+    """Tests for EnumPatternType enum values."""
+
+    def test_code_pattern_value(self) -> None:
+        """CODE_PATTERN should have value 'code_pattern'."""
+        assert EnumPatternType.CODE_PATTERN.value == "code_pattern"
+
+    def test_error_pattern_value(self) -> None:
+        """ERROR_PATTERN should have value 'error_pattern'."""
+        assert EnumPatternType.ERROR_PATTERN.value == "error_pattern"
+
+    def test_workflow_pattern_value(self) -> None:
+        """WORKFLOW_PATTERN should have value 'workflow_pattern'."""
+        assert EnumPatternType.WORKFLOW_PATTERN.value == "workflow_pattern"
+
+    def test_interaction_pattern_value(self) -> None:
+        """INTERACTION_PATTERN should have value 'interaction_pattern'."""
+        assert EnumPatternType.INTERACTION_PATTERN.value == "interaction_pattern"
+
+    def test_configuration_pattern_value(self) -> None:
+        """CONFIGURATION_PATTERN should have value 'configuration_pattern'."""
+        assert EnumPatternType.CONFIGURATION_PATTERN.value == "configuration_pattern"
+
+    def test_all_pattern_types_exist(self) -> None:
+        """All expected pattern types should exist."""
+        types = list(EnumPatternType)
+        assert len(types) == 5
+        assert EnumPatternType.CODE_PATTERN in types
+        assert EnumPatternType.ERROR_PATTERN in types
+        assert EnumPatternType.WORKFLOW_PATTERN in types
+        assert EnumPatternType.INTERACTION_PATTERN in types
+        assert EnumPatternType.CONFIGURATION_PATTERN in types
+
+
+@pytest.mark.unit
+class TestEnumPatternTypeStrValueHelper:
+    """Tests for StrValueHelper integration with EnumPatternType."""
+
+    def test_str_returns_value_code_pattern(self) -> None:
+        """str() on CODE_PATTERN should return 'code_pattern'."""
+        assert str(EnumPatternType.CODE_PATTERN) == "code_pattern"
+
+    def test_str_returns_value_error_pattern(self) -> None:
+        """str() on ERROR_PATTERN should return 'error_pattern'."""
+        assert str(EnumPatternType.ERROR_PATTERN) == "error_pattern"
+
+    def test_str_returns_value_workflow_pattern(self) -> None:
+        """str() on WORKFLOW_PATTERN should return 'workflow_pattern'."""
+        assert str(EnumPatternType.WORKFLOW_PATTERN) == "workflow_pattern"
+
+    def test_str_returns_value_interaction_pattern(self) -> None:
+        """str() on INTERACTION_PATTERN should return 'interaction_pattern'."""
+        assert str(EnumPatternType.INTERACTION_PATTERN) == "interaction_pattern"
+
+    def test_str_returns_value_configuration_pattern(self) -> None:
+        """str() on CONFIGURATION_PATTERN should return 'configuration_pattern'."""
+        assert str(EnumPatternType.CONFIGURATION_PATTERN) == "configuration_pattern"
+
+    def test_enum_is_str_subclass(self) -> None:
+        """Enum should be a subclass of str for JSON serialization."""
+        pattern_type = EnumPatternType.CODE_PATTERN
+        assert isinstance(pattern_type, str)
 
 
 # =============================================================================
@@ -763,7 +898,7 @@ class TestModelPatternLearningMetadataValidConstruction:
         """Should construct with valid metadata values."""
         now = datetime.now(UTC)
         model = ModelPatternLearningMetadata(
-            status="completed",
+            status=EnumPatternLearningStatus.COMPLETED,
             model_version=ModelSemVer(major=1, minor=0, patch=0),
             timestamp=now,
             deduplication_threshold_used=0.85,
@@ -774,7 +909,7 @@ class TestModelPatternLearningMetadataValidConstruction:
             early_stopped=False,
             final_epoch=50,
         )
-        assert model.status == "completed"
+        assert model.status == EnumPatternLearningStatus.COMPLETED
         assert model.model_version == ModelSemVer(major=1, minor=0, patch=0)
         assert model.timestamp == now
         assert model.deduplication_threshold_used == 0.85
@@ -786,9 +921,9 @@ class TestModelPatternLearningMetadataValidConstruction:
         assert model.final_epoch == 50
 
     def test_construct_with_failed_status(self) -> None:
-        """Should accept 'failed' status."""
+        """Should accept FAILED status."""
         model = ModelPatternLearningMetadata(
-            status="failed",
+            status=EnumPatternLearningStatus.FAILED,
             model_version=ModelSemVer(major=1, minor=0, patch=0),
             timestamp=datetime.now(UTC),
             deduplication_threshold_used=0.85,
@@ -799,14 +934,14 @@ class TestModelPatternLearningMetadataValidConstruction:
             early_stopped=True,
             final_epoch=10,
         )
-        assert model.status == "failed"
+        assert model.status == EnumPatternLearningStatus.FAILED
         assert model.early_stopped is True
         assert model.convergence_achieved is False
 
     def test_construct_with_zero_samples(self) -> None:
         """Should accept zero for sample counts."""
         model = ModelPatternLearningMetadata(
-            status="completed",
+            status=EnumPatternLearningStatus.COMPLETED,
             model_version=ModelSemVer(major=1, minor=0, patch=0),
             timestamp=datetime.now(UTC),
             deduplication_threshold_used=0.5,
@@ -830,7 +965,7 @@ class TestModelPatternLearningMetadataConstraintValidation:
         """Should reject deduplication_threshold_used > 1.0."""
         with pytest.raises(ValidationError) as exc_info:
             ModelPatternLearningMetadata(
-                status="completed",
+                status=EnumPatternLearningStatus.COMPLETED,
                 model_version=ModelSemVer(major=1, minor=0, patch=0),
                 timestamp=datetime.now(UTC),
                 deduplication_threshold_used=1.5,
@@ -847,7 +982,7 @@ class TestModelPatternLearningMetadataConstraintValidation:
         """Should reject deduplication_threshold_used < 0.0."""
         with pytest.raises(ValidationError) as exc_info:
             ModelPatternLearningMetadata(
-                status="completed",
+                status=EnumPatternLearningStatus.COMPLETED,
                 model_version=ModelSemVer(major=1, minor=0, patch=0),
                 timestamp=datetime.now(UTC),
                 deduplication_threshold_used=-0.1,
@@ -864,7 +999,7 @@ class TestModelPatternLearningMetadataConstraintValidation:
         """Should reject negative training_samples."""
         with pytest.raises(ValidationError) as exc_info:
             ModelPatternLearningMetadata(
-                status="completed",
+                status=EnumPatternLearningStatus.COMPLETED,
                 model_version=ModelSemVer(major=1, minor=0, patch=0),
                 timestamp=datetime.now(UTC),
                 deduplication_threshold_used=0.85,
@@ -881,7 +1016,7 @@ class TestModelPatternLearningMetadataConstraintValidation:
         """Should reject negative final_epoch."""
         with pytest.raises(ValidationError) as exc_info:
             ModelPatternLearningMetadata(
-                status="completed",
+                status=EnumPatternLearningStatus.COMPLETED,
                 model_version=ModelSemVer(major=1, minor=0, patch=0),
                 timestamp=datetime.now(UTC),
                 deduplication_threshold_used=0.85,
@@ -903,7 +1038,7 @@ class TestModelPatternLearningMetadataDatetimeHandling:
         """Should accept UTC datetime."""
         utc_time = datetime.now(UTC)
         model = ModelPatternLearningMetadata(
-            status="completed",
+            status=EnumPatternLearningStatus.COMPLETED,
             model_version=ModelSemVer(major=1, minor=0, patch=0),
             timestamp=utc_time,
             deduplication_threshold_used=0.85,
@@ -920,7 +1055,7 @@ class TestModelPatternLearningMetadataDatetimeHandling:
         """Should accept naive datetime (no timezone)."""
         naive_time = datetime(2024, 1, 15, 10, 30, 0)
         model = ModelPatternLearningMetadata(
-            status="completed",
+            status=EnumPatternLearningStatus.COMPLETED,
             model_version=ModelSemVer(major=1, minor=0, patch=0),
             timestamp=naive_time,
             deduplication_threshold_used=0.85,
@@ -941,7 +1076,7 @@ class TestModelPatternLearningMetadataFrozen:
     def test_frozen_rejects_mutation(self) -> None:
         """Frozen model should reject attribute assignment."""
         model = ModelPatternLearningMetadata(
-            status="completed",
+            status=EnumPatternLearningStatus.COMPLETED,
             model_version=ModelSemVer(major=1, minor=0, patch=0),
             timestamp=datetime.now(UTC),
             deduplication_threshold_used=0.85,
@@ -965,7 +1100,7 @@ class TestModelPatternLearningMetadataExtraFields:
         """Should reject extra fields not in the model."""
         with pytest.raises(ValidationError) as exc_info:
             ModelPatternLearningMetadata(
-                status="completed",
+                status=EnumPatternLearningStatus.COMPLETED,
                 model_version=ModelSemVer(major=1, minor=0, patch=0),
                 timestamp=datetime.now(UTC),
                 deduplication_threshold_used=0.85,
@@ -989,7 +1124,7 @@ class TestModelPatternLearningMetadataSerialization:
         timestamp = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
         version = ModelSemVer(major=1, minor=0, patch=0)
         model = ModelPatternLearningMetadata(
-            status="completed",
+            status=EnumPatternLearningStatus.COMPLETED,
             model_version=version,
             timestamp=timestamp,
             deduplication_threshold_used=0.85,
@@ -1001,7 +1136,7 @@ class TestModelPatternLearningMetadataSerialization:
             final_epoch=50,
         )
         data = model.model_dump()
-        assert data["status"] == "completed"
+        assert data["status"] == EnumPatternLearningStatus.COMPLETED
         assert data["model_version"] == version.model_dump()
         assert data["timestamp"] == timestamp
         assert data["convergence_achieved"] is True
@@ -1010,7 +1145,7 @@ class TestModelPatternLearningMetadataSerialization:
     def test_model_validate_round_trip(self) -> None:
         """model_validate() should correctly reconstruct from dict."""
         original = ModelPatternLearningMetadata(
-            status="completed",
+            status=EnumPatternLearningStatus.COMPLETED,
             model_version=ModelSemVer(major=1, minor=0, patch=0),
             timestamp=datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC),
             deduplication_threshold_used=0.85,
@@ -1060,7 +1195,7 @@ def _create_valid_learned_pattern() -> ModelLearnedPattern:
     return ModelLearnedPattern(
         pattern_id=TEST_PATTERN_UUID,
         pattern_name="Error Handling Pattern",
-        pattern_type="code_pattern",
+        pattern_type=EnumPatternType.CODE_PATTERN,
         category="error_handling",
         subcategory="exception_flow",
         tags=("python", "error", "exception"),
@@ -1083,7 +1218,7 @@ class TestModelLearnedPatternValidConstruction:
         model = _create_valid_learned_pattern()
         assert model.pattern_id == TEST_PATTERN_UUID
         assert model.pattern_name == "Error Handling Pattern"
-        assert model.pattern_type == "code_pattern"
+        assert model.pattern_type == EnumPatternType.CODE_PATTERN
         assert model.category == "error_handling"
         assert model.subcategory == "exception_flow"
         assert model.tags == ("python", "error", "exception")
@@ -1113,7 +1248,7 @@ class TestModelLearnedPatternValidConstruction:
             model = ModelLearnedPattern(
                 pattern_id=uuid4(),
                 pattern_name="Test Pattern",
-                pattern_type="test_type",
+                pattern_type=EnumPatternType.CODE_PATTERN,
                 category="test",
                 subcategory="test_sub",
                 tags=(),
@@ -1127,6 +1262,26 @@ class TestModelLearnedPatternValidConstruction:
             )
             assert model.lifecycle_state == state
 
+    def test_all_pattern_types(self) -> None:
+        """Should accept all pattern types."""
+        for pattern_type in EnumPatternType:
+            model = ModelLearnedPattern(
+                pattern_id=uuid4(),
+                pattern_name="Test Pattern",
+                pattern_type=pattern_type,
+                category="test",
+                subcategory="test_sub",
+                tags=(),
+                keywords=(),
+                score_components=_create_valid_score_components(),
+                signature_info=_create_valid_signature(),
+                lifecycle_state=EnumPatternLifecycleState.CANDIDATE,
+                source_count=1,
+                first_seen=datetime.now(UTC),
+                last_seen=datetime.now(UTC),
+            )
+            assert model.pattern_type == pattern_type
+
 
 @pytest.mark.unit
 class TestModelLearnedPatternConstraintValidation:
@@ -1138,7 +1293,7 @@ class TestModelLearnedPatternConstraintValidation:
             ModelLearnedPattern(
                 pattern_id=uuid4(),
                 pattern_name="Test Pattern",
-                pattern_type="test_type",
+                pattern_type=EnumPatternType.CODE_PATTERN,
                 category="test",
                 subcategory="test_sub",
                 tags=(),
@@ -1158,7 +1313,7 @@ class TestModelLearnedPatternConstraintValidation:
             ModelLearnedPattern(
                 pattern_id=uuid4(),
                 pattern_name="Test Pattern",
-                pattern_type="test_type",
+                pattern_type=EnumPatternType.CODE_PATTERN,
                 category="test",
                 subcategory="test_sub",
                 tags=(),
@@ -1177,7 +1332,7 @@ class TestModelLearnedPatternConstraintValidation:
         model = ModelLearnedPattern(
             pattern_id=uuid4(),
             pattern_name="Test Pattern",
-            pattern_type="test_type",
+            pattern_type=EnumPatternType.CODE_PATTERN,
             category="test",
             subcategory="test_sub",
             tags=(),
@@ -1211,7 +1366,7 @@ class TestModelLearnedPatternTupleFields:
         model = ModelLearnedPattern(
             pattern_id=uuid4(),
             pattern_name="Test Pattern",
-            pattern_type="test_type",
+            pattern_type=EnumPatternType.CODE_PATTERN,
             category="test",
             subcategory="test_sub",
             tags=(),
@@ -1230,7 +1385,7 @@ class TestModelLearnedPatternTupleFields:
         model = ModelLearnedPattern(
             pattern_id=uuid4(),
             pattern_name="Test Pattern",
-            pattern_type="test_type",
+            pattern_type=EnumPatternType.CODE_PATTERN,
             category="test",
             subcategory="test_sub",
             tags=("tag1",),
@@ -1281,7 +1436,7 @@ class TestModelLearnedPatternExtraFields:
             ModelLearnedPattern(
                 pattern_id=uuid4(),
                 pattern_name="Test Pattern",
-                pattern_type="test_type",
+                pattern_type=EnumPatternType.CODE_PATTERN,
                 category="test",
                 subcategory="test_sub",
                 tags=(),
@@ -1359,7 +1514,7 @@ class TestModelLearnedPatternDatetimeHandling:
         model = ModelLearnedPattern(
             pattern_id=uuid4(),
             pattern_name="Test Pattern",
-            pattern_type="test_type",
+            pattern_type=EnumPatternType.CODE_PATTERN,
             category="test",
             subcategory="test_sub",
             tags=(),
@@ -1382,7 +1537,7 @@ class TestModelLearnedPatternDatetimeHandling:
         model = ModelLearnedPattern(
             pattern_id=uuid4(),
             pattern_name="Test Pattern",
-            pattern_type="test_type",
+            pattern_type=EnumPatternType.CODE_PATTERN,
             category="test",
             subcategory="test_sub",
             tags=(),

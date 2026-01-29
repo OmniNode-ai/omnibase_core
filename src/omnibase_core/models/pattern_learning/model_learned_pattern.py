@@ -11,7 +11,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.pattern_learning import EnumPatternLifecycleState
+from omnibase_core.enums.pattern_learning import (
+    EnumPatternLifecycleState,
+    EnumPatternType,
+)
 
 from .model_pattern_score_components import ModelPatternScoreComponents
 from .model_pattern_signature import ModelPatternSignature
@@ -37,8 +40,8 @@ class ModelLearnedPattern(BaseModel):
     # Identity
     pattern_id: UUID = Field(description="Unique identifier for this pattern")
     pattern_name: str = Field(description="Human-readable name")
-    pattern_type: str = Field(
-        description="Type classification (e.g., 'code_pattern', 'error_pattern')"
+    pattern_type: EnumPatternType = Field(
+        description="Type classification for the pattern domain"
     )
 
     # Classification

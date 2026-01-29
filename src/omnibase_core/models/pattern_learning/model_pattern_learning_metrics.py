@@ -46,3 +46,6 @@ class ModelPatternLearningMetrics(BaseModel):
         extra="forbid",
         from_attributes=True,
     )
+
+
+__all__ = ["ModelPatternLearningMetrics"]

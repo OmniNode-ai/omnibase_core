@@ -6,6 +6,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.pattern_learning import EnumPatternLearningStatus
 from omnibase_core.models.primitives import ModelSemVer
 
 
@@ -16,7 +17,9 @@ class ModelPatternLearningMetadata(BaseModel):
     All timestamps should be in UTC.
     """
 
-    status: str = Field(description="Execution status (e.g., 'completed', 'failed')")
+    status: EnumPatternLearningStatus = Field(
+        description="Execution status of the pattern learning run"
+    )
     model_version: ModelSemVer = Field(
         description="Semantic version of the learning model"
     )
@@ -42,3 +45,6 @@ class ModelPatternLearningMetadata(BaseModel):
         extra="forbid",
         from_attributes=True,
     )
+
+
+__all__ = ["ModelPatternLearningMetadata"]

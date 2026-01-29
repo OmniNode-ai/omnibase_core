@@ -51,7 +51,7 @@ class ModelPatternScoreComponents(BaseModel):
         ...,
         ge=0.0,
         le=1.0,
-        description="Derived confidence: (0.4*agreement + 0.3*cohesion + 0.3*frequency)",
+        description="Derived confidence (0.4*agreement + 0.3*cohesion + 0.3*frequency). WARNING: Always inspect individual components for decision-making, not just this rolled-up value.",
     )
 
 
