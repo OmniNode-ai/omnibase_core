@@ -503,6 +503,17 @@ class TestModelNodeHeartbeatEventOptionalFields:
 
         assert event.contract_hash == "any-hash-format-works"
 
+    def test_contract_hash_rejects_empty_string(self) -> None:
+        """Test that contract_hash rejects empty string."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelNodeHeartbeatEvent(
+                node_name="test-node",
+                node_version=ModelSemVer(major=1, minor=0, patch=0),
+                contract_hash="",  # Empty string should be rejected
+            )
+
+        assert "contract_hash" in str(exc_info.value)
+
 
 class TestModelNodeHeartbeatEventSerialization:
     """Tests for serialization round-trip."""

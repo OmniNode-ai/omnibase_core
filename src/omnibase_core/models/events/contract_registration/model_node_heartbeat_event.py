@@ -60,5 +60,6 @@ class ModelNodeHeartbeatEvent(ModelRuntimeEventBase):
     )
     contract_hash: str | None = Field(
         default=None,
+        min_length=1,
         description="Current contract hash for drift detection",
     )

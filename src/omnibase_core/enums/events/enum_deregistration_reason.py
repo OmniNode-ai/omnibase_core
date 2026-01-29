@@ -47,8 +47,15 @@ class EnumDeregistrationReason(StrValueHelper, str, Enum):
         Planned deregistrations include shutdown, upgrade, and manual removal.
         These are expected scenarios where the node cleanly deregisters.
 
+        Note:
+            All current enum values return True. This method exists for
+            forward compatibility - future values (e.g., FAILURE, CRASH,
+            TIMEOUT) would return False. Downstream consumers should use
+            this method rather than hardcoding enum membership checks.
+
         Returns:
-            True for all standard reasons (SHUTDOWN, UPGRADE, MANUAL).
+            True for planned reasons (SHUTDOWN, UPGRADE, MANUAL).
+            Future unplanned reasons would return False.
         """
         return self in {
             EnumDeregistrationReason.SHUTDOWN,
