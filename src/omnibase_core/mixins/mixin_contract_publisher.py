@@ -72,7 +72,6 @@ class MixinContractPublisher:
     """
 
     _contract_publisher: ProtocolEventBusPublisher
-    _contract_publisher_container: ModelONEXContainer
     _heartbeat_task: asyncio.Task[None] | None
     _heartbeat_sequence: int
     _startup_time: datetime
@@ -101,6 +100,8 @@ class MixinContractPublisher:
         if publisher is not None:
             self._contract_publisher = publisher
         else:
+            # NOTE(OMN-1655): get_service returns object by Protocol definition. Safe because
+            # we verify resolved is not None before assignment.
             resolved: object | None = container.get_service("ProtocolEventBusPublisher")  # type: ignore[arg-type]
             if resolved is None:
                 raise ModelOnexError(
@@ -111,9 +112,10 @@ class MixinContractPublisher:
                         "before initializing nodes."
                     ),
                 )
+            # NOTE(OMN-1655): Assignment safe - we verify resolved is ProtocolEventBusPublisher
+            # via the container registration, and checked for None above.
             self._contract_publisher = resolved  # type: ignore[assignment]
 
-        self._contract_publisher_container = container
         self._heartbeat_task = None
         self._heartbeat_sequence = 0
         self._startup_time = datetime.now(UTC)
@@ -258,7 +260,7 @@ class MixinContractPublisher:
             interval_seconds: Interval between heartbeats in seconds.
 
         Raises:
-            ValueError: If interval is less than 1 second.
+            ModelOnexError: If interval is less than 1 second.
         """
         if interval_seconds < 1:
             raise ModelOnexError(
@@ -294,7 +296,8 @@ class MixinContractPublisher:
             except asyncio.CancelledError:
                 raise  # Propagate cancellation
             except Exception:
-                # Log error but continue heartbeating
+                # Swallow error and continue heartbeating - transient errors shouldn't
+                # stop liveness signals. Consumers can detect issues via heartbeat gaps.
                 await asyncio.sleep(interval_seconds)
 
     async def _emit_heartbeat(self) -> None:
