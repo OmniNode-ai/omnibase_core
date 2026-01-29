@@ -93,6 +93,7 @@ class TestModelContractRegisteredEventRequiredFields:
     def test_node_name_is_required(self) -> None:
         """Test that node_name is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1651): Intentionally omitting required field to test validation error.
             ModelContractRegisteredEvent(
                 node_version=ModelSemVer(major=1, minor=0, patch=0),
                 contract_hash="abc123",
@@ -104,6 +105,7 @@ class TestModelContractRegisteredEventRequiredFields:
     def test_node_version_is_required(self) -> None:
         """Test that node_version is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1651): Intentionally omitting required field to test validation error.
             ModelContractRegisteredEvent(
                 node_name="test-node",
                 contract_hash="abc123",
@@ -115,6 +117,7 @@ class TestModelContractRegisteredEventRequiredFields:
     def test_contract_hash_is_required(self) -> None:
         """Test that contract_hash is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1651): Intentionally omitting required field to test validation error.
             ModelContractRegisteredEvent(
                 node_name="test-node",
                 node_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -126,6 +129,7 @@ class TestModelContractRegisteredEventRequiredFields:
     def test_contract_yaml_is_required(self) -> None:
         """Test that contract_yaml is required (critical for replay)."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1651): Intentionally omitting required field to test validation error.
             ModelContractRegisteredEvent(
                 node_name="test-node",
                 node_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -301,6 +305,7 @@ class TestModelContractDeregisteredEventRequiredFields:
     def test_reason_is_required(self) -> None:
         """Test that reason is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1651): Intentionally omitting required field to test validation error.
             ModelContractDeregisteredEvent(
                 node_name="test-node",
                 node_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -394,6 +399,7 @@ class TestModelNodeHeartbeatEventRequiredFields:
     def test_node_name_is_required(self) -> None:
         """Test that node_name is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1651): Intentionally omitting required field to test validation error.
             ModelNodeHeartbeatEvent(
                 node_version=ModelSemVer(major=1, minor=0, patch=0),
             )  # type: ignore[call-arg]
@@ -403,6 +409,7 @@ class TestModelNodeHeartbeatEventRequiredFields:
     def test_node_version_is_required(self) -> None:
         """Test that node_version is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1651): Intentionally omitting required field to test validation error.
             ModelNodeHeartbeatEvent(
                 node_name="test-node",
             )  # type: ignore[call-arg]
@@ -697,7 +704,3 @@ class TestContractRegistrationEventImmutability:
 
         with pytest.raises(ValidationError):
             event.correlation_id = uuid4()
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

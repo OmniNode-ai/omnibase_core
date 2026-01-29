@@ -42,6 +42,11 @@ class TestEventTypeConstants:
         assert hasattr(event_types, "NODE_SUCCESS")
         assert hasattr(event_types, "NODE_FAILURE")
 
+        # Contract registration events (OMN-1652)
+        assert hasattr(event_types, "EVENT_TYPE_CONTRACT_REGISTERED")
+        assert hasattr(event_types, "EVENT_TYPE_CONTRACT_DEREGISTERED")
+        assert hasattr(event_types, "EVENT_TYPE_NODE_HEARTBEAT")
+
     def test_event_types_unique_values(self):
         """Test that all event type constants have unique values."""
         from omnibase_core.constants import constants_event_types as event_types
@@ -61,6 +66,10 @@ class TestEventTypeConstants:
             event_types.NODE_START,
             event_types.NODE_SUCCESS,
             event_types.NODE_FAILURE,
+            # Contract registration events (OMN-1652)
+            event_types.EVENT_TYPE_CONTRACT_REGISTERED,
+            event_types.EVENT_TYPE_CONTRACT_DEREGISTERED,
+            event_types.EVENT_TYPE_NODE_HEARTBEAT,
         ]
 
         # All values should be unique
@@ -85,6 +94,10 @@ class TestEventTypeConstants:
             event_types.NODE_START,
             event_types.NODE_SUCCESS,
             event_types.NODE_FAILURE,
+            # Contract registration events (OMN-1652)
+            event_types.EVENT_TYPE_CONTRACT_REGISTERED,
+            event_types.EVENT_TYPE_CONTRACT_DEREGISTERED,
+            event_types.EVENT_TYPE_NODE_HEARTBEAT,
         ]
 
         for event_type in event_type_constants:

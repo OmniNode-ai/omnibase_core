@@ -56,6 +56,7 @@ class TestModelIntentRecordRequiredFields:
     def test_intent_id_is_required(self) -> None:
         """Test that intent_id is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1645): Intentionally omitting required field to test validation error.
             ModelIntentRecord(
                 session_id="session-123",
                 intent_category=EnumIntentCategory.CODE_GENERATION,
@@ -67,6 +68,7 @@ class TestModelIntentRecordRequiredFields:
     def test_session_id_is_required(self) -> None:
         """Test that session_id is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1645): Intentionally omitting required field to test validation error.
             ModelIntentRecord(
                 intent_id=uuid4(),
                 intent_category=EnumIntentCategory.CODE_GENERATION,
@@ -78,6 +80,7 @@ class TestModelIntentRecordRequiredFields:
     def test_intent_category_is_required(self) -> None:
         """Test that intent_category is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1645): Intentionally omitting required field to test validation error.
             ModelIntentRecord(
                 intent_id=uuid4(),
                 session_id="session-123",
@@ -89,6 +92,7 @@ class TestModelIntentRecordRequiredFields:
     def test_confidence_is_required(self) -> None:
         """Test that confidence is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1645): Intentionally omitting required field to test validation error.
             ModelIntentRecord(
                 intent_id=uuid4(),
                 session_id="session-123",
@@ -230,6 +234,7 @@ class TestModelIntentRecordExtraForbidden:
     def test_extra_fields_forbidden(self) -> None:
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1645): Intentionally passing unknown field to test extra="forbid".
             ModelIntentRecord(
                 intent_id=uuid4(),
                 session_id="session-123",
@@ -347,6 +352,7 @@ class TestModelIntentStorageResultBasic:
     def test_success_is_required(self) -> None:
         """Test that success is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1645): Intentionally omitting required field to test validation error.
             ModelIntentStorageResult()  # type: ignore[call-arg]
 
         assert "success" in str(exc_info.value)
@@ -443,6 +449,7 @@ class TestModelIntentQueryResultBasic:
     def test_success_is_required(self) -> None:
         """Test that success is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1645): Intentionally omitting required field to test validation error.
             ModelIntentQueryResult()  # type: ignore[call-arg]
 
         assert "success" in str(exc_info.value)
@@ -517,7 +524,3 @@ class TestIntentStorageModelsImport:
         assert "ModelIntentRecord" in intelligence.__all__
         assert "ModelIntentStorageResult" in intelligence.__all__
         assert "ModelIntentQueryResult" in intelligence.__all__
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
