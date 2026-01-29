@@ -1,4 +1,4 @@
-"""Tests for IntentRecordPayload model.
+"""Tests for ModelIntentRecordPayload model.
 
 This module tests the lightweight intent record payload used in
 query response events for the intent storage pipeline.
@@ -23,7 +23,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.models.events.model_intent_record_payload import (
-    IntentRecordPayload,
+    ModelIntentRecordPayload,
 )
 
 # ============================================================================
@@ -46,9 +46,9 @@ def sample_created_at() -> datetime:
 @pytest.fixture
 def sample_payload(
     sample_intent_id: UUID, sample_created_at: datetime
-) -> IntentRecordPayload:
+) -> ModelIntentRecordPayload:
     """Create a sample intent record payload for testing."""
-    return IntentRecordPayload(
+    return ModelIntentRecordPayload(
         intent_id=sample_intent_id,
         session_ref="session-abc-123",
         intent_category="code_generation",
@@ -64,8 +64,8 @@ def sample_payload(
 
 
 @pytest.mark.unit
-class TestIntentRecordPayloadBasic:
-    """Test IntentRecordPayload basic creation and validation."""
+class TestModelIntentRecordPayloadBasic:
+    """Test ModelIntentRecordPayload basic creation and validation."""
 
     def test_payload_creation_all_required_fields(
         self,
@@ -73,7 +73,7 @@ class TestIntentRecordPayloadBasic:
         sample_created_at: datetime,
     ) -> None:
         """Test creating payload with all required fields."""
-        payload = IntentRecordPayload(
+        payload = ModelIntentRecordPayload(
             intent_id=sample_intent_id,
             session_ref="session-123",
             intent_category="debugging",
@@ -94,7 +94,7 @@ class TestIntentRecordPayloadBasic:
         sample_created_at: datetime,
     ) -> None:
         """Test creating payload with all fields specified."""
-        payload = IntentRecordPayload(
+        payload = ModelIntentRecordPayload(
             intent_id=sample_intent_id,
             session_ref="session-full-test",
             intent_category="code_review",
@@ -113,7 +113,7 @@ class TestIntentRecordPayloadBasic:
     def test_payload_missing_required_fields(self) -> None:
         """Test that missing required fields raise ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            IntentRecordPayload()  # type: ignore[call-arg]
+            ModelIntentRecordPayload()  # type: ignore[call-arg]
 
         errors = exc_info.value.errors()
         # Should have errors for intent_id, session_ref, intent_category, created_at
@@ -128,7 +128,7 @@ class TestIntentRecordPayloadBasic:
     ) -> None:
         """Test that extra fields are forbidden."""
         with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
-            IntentRecordPayload(
+            ModelIntentRecordPayload(
                 intent_id=sample_intent_id,
                 session_ref="session-123",
                 intent_category="debugging",
@@ -143,8 +143,8 @@ class TestIntentRecordPayloadBasic:
 
 
 @pytest.mark.unit
-class TestIntentRecordPayloadValidation:
-    """Test IntentRecordPayload field validation."""
+class TestModelIntentRecordPayloadValidation:
+    """Test ModelIntentRecordPayload field validation."""
 
     def test_confidence_valid_range(
         self,
@@ -153,7 +153,7 @@ class TestIntentRecordPayloadValidation:
     ) -> None:
         """Test that confidence accepts valid values (0.0 to 1.0)."""
         # Minimum value
-        payload = IntentRecordPayload(
+        payload = ModelIntentRecordPayload(
             intent_id=sample_intent_id,
             session_ref="session-123",
             intent_category="debugging",
@@ -163,7 +163,7 @@ class TestIntentRecordPayloadValidation:
         assert payload.confidence == 0.0
 
         # Maximum value
-        payload = IntentRecordPayload(
+        payload = ModelIntentRecordPayload(
             intent_id=sample_intent_id,
             session_ref="session-123",
             intent_category="debugging",
@@ -173,7 +173,7 @@ class TestIntentRecordPayloadValidation:
         assert payload.confidence == 1.0
 
         # Middle value
-        payload = IntentRecordPayload(
+        payload = ModelIntentRecordPayload(
             intent_id=sample_intent_id,
             session_ref="session-123",
             intent_category="debugging",
@@ -189,7 +189,7 @@ class TestIntentRecordPayloadValidation:
     ) -> None:
         """Test that confidence below 0.0 is rejected."""
         with pytest.raises(ValidationError) as exc_info:
-            IntentRecordPayload(
+            ModelIntentRecordPayload(
                 intent_id=sample_intent_id,
                 session_ref="session-123",
                 intent_category="debugging",
@@ -207,7 +207,7 @@ class TestIntentRecordPayloadValidation:
     ) -> None:
         """Test that confidence above 1.0 is rejected."""
         with pytest.raises(ValidationError) as exc_info:
-            IntentRecordPayload(
+            ModelIntentRecordPayload(
                 intent_id=sample_intent_id,
                 session_ref="session-123",
                 intent_category="debugging",
@@ -224,7 +224,7 @@ class TestIntentRecordPayloadValidation:
         sample_created_at: datetime,
     ) -> None:
         """Test that keywords defaults to empty list."""
-        payload = IntentRecordPayload(
+        payload = ModelIntentRecordPayload(
             intent_id=sample_intent_id,
             session_ref="session-123",
             intent_category="debugging",
@@ -241,10 +241,10 @@ class TestIntentRecordPayloadValidation:
 
 
 @pytest.mark.unit
-class TestIntentRecordPayloadRejectsEventFields:
+class TestModelIntentRecordPayloadRejectsEventFields:
     """Verify payload does not accept event metadata fields.
 
-    IntentRecordPayload is a pure payload model that should NOT contain
+    ModelIntentRecordPayload is a pure payload model that should NOT contain
     event metadata fields (event_id, timestamp, source_node_id, correlation_id).
     These fields belong to the envelope, not the payload.
     """
@@ -256,7 +256,7 @@ class TestIntentRecordPayloadRejectsEventFields:
     ) -> None:
         """Payload should not accept event_id field."""
         with pytest.raises(ValidationError) as exc_info:
-            IntentRecordPayload(
+            ModelIntentRecordPayload(
                 intent_id=sample_intent_id,
                 session_ref="session-123",
                 intent_category="debugging",
@@ -272,7 +272,7 @@ class TestIntentRecordPayloadRejectsEventFields:
     ) -> None:
         """Payload should not accept source_node_id field."""
         with pytest.raises(ValidationError) as exc_info:
-            IntentRecordPayload(
+            ModelIntentRecordPayload(
                 intent_id=sample_intent_id,
                 session_ref="session-123",
                 intent_category="debugging",
@@ -288,7 +288,7 @@ class TestIntentRecordPayloadRejectsEventFields:
     ) -> None:
         """Payload should not accept correlation_id field."""
         with pytest.raises(ValidationError) as exc_info:
-            IntentRecordPayload(
+            ModelIntentRecordPayload(
                 intent_id=sample_intent_id,
                 session_ref="session-123",
                 intent_category="debugging",
@@ -304,7 +304,7 @@ class TestIntentRecordPayloadRejectsEventFields:
     ) -> None:
         """Payload should not accept timestamp field."""
         with pytest.raises(ValidationError) as exc_info:
-            IntentRecordPayload(
+            ModelIntentRecordPayload(
                 intent_id=sample_intent_id,
                 session_ref="session-123",
                 intent_category="debugging",
@@ -320,8 +320,8 @@ class TestIntentRecordPayloadRejectsEventFields:
 
 
 @pytest.mark.unit
-class TestIntentRecordPayloadImmutability:
-    """Test IntentRecordPayload frozen model behavior."""
+class TestModelIntentRecordPayloadImmutability:
+    """Test ModelIntentRecordPayload frozen model behavior."""
 
     def test_payload_is_frozen(
         self,
@@ -329,7 +329,7 @@ class TestIntentRecordPayloadImmutability:
         sample_created_at: datetime,
     ) -> None:
         """Verify payload is immutable (frozen=True)."""
-        payload = IntentRecordPayload(
+        payload = ModelIntentRecordPayload(
             intent_id=sample_intent_id,
             session_ref="session-123",
             intent_category="debugging",
@@ -344,7 +344,7 @@ class TestIntentRecordPayloadImmutability:
         sample_created_at: datetime,
     ) -> None:
         """Verify keywords list cannot be reassigned on frozen model."""
-        payload = IntentRecordPayload(
+        payload = ModelIntentRecordPayload(
             intent_id=sample_intent_id,
             session_ref="session-123",
             intent_category="debugging",
@@ -361,12 +361,12 @@ class TestIntentRecordPayloadImmutability:
 
 
 @pytest.mark.unit
-class TestIntentRecordPayloadSerialization:
-    """Test IntentRecordPayload serialization."""
+class TestModelIntentRecordPayloadSerialization:
+    """Test ModelIntentRecordPayload serialization."""
 
     def test_model_dump_includes_all_fields(
         self,
-        sample_payload: IntentRecordPayload,
+        sample_payload: ModelIntentRecordPayload,
     ) -> None:
         """Test that model_dump includes all domain fields."""
         data = sample_payload.model_dump()
@@ -386,7 +386,7 @@ class TestIntentRecordPayloadSerialization:
 
     def test_model_dump_json_serializable(
         self,
-        sample_payload: IntentRecordPayload,
+        sample_payload: ModelIntentRecordPayload,
     ) -> None:
         """Test that model can be serialized to JSON."""
         json_str = sample_payload.model_dump_json()
@@ -410,7 +410,7 @@ class TestIntentRecordPayloadSerialization:
             "created_at": sample_created_at.isoformat(),
         }
 
-        payload = IntentRecordPayload.model_validate(data)
+        payload = ModelIntentRecordPayload.model_validate(data)
 
         assert payload.session_ref == "session-from-dict"
         assert payload.intent_category == "testing"
