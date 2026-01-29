@@ -4,7 +4,7 @@ Published when a node registers its contract for dynamic discovery.
 Carries the full contract YAML for replay capability (OMN-1651).
 """
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from omnibase_core.models.events.model_runtime_event_base import ModelRuntimeEventBase
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -26,6 +26,12 @@ class ModelContractRegisteredEvent(ModelRuntimeEventBase):
     Inherits from ModelRuntimeEventBase:
         event_id, correlation_id, timestamp, source_node_id
     """
+
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        from_attributes=True,
+    )
 
     event_type: str = Field(
         default=CONTRACT_REGISTERED_EVENT,

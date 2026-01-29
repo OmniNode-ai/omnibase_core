@@ -4,7 +4,7 @@ Published when a node deregisters its contract (graceful shutdown).
 Part of the contract registration subsystem (OMN-1651).
 """
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from omnibase_core.enums.events.enum_deregistration_reason import (
     EnumDeregistrationReason,
@@ -28,6 +28,12 @@ class ModelContractDeregisteredEvent(ModelRuntimeEventBase):
     Inherits from ModelRuntimeEventBase:
         event_id, correlation_id, timestamp, source_node_id
     """
+
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        from_attributes=True,
+    )
 
     event_type: str = Field(
         default=CONTRACT_DEREGISTERED_EVENT,

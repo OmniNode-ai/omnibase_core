@@ -62,4 +62,56 @@ class EnumDeregistrationReason(StrValueHelper, str, Enum):
         }
 
 
-__all__ = ["EnumDeregistrationReason"]
+# Set of known planned deregistration reason string values (lowercase)
+_PLANNED_REASON_VALUES: frozenset[str] = frozenset(
+    {
+        EnumDeregistrationReason.SHUTDOWN.value,
+        EnumDeregistrationReason.UPGRADE.value,
+        EnumDeregistrationReason.MANUAL.value,
+    }
+)
+
+
+def is_planned_deregistration(reason: EnumDeregistrationReason | str) -> bool:
+    """Check if a deregistration reason represents a planned deregistration.
+
+    This function handles both EnumDeregistrationReason enum values and arbitrary
+    string reasons. It is designed to work with ModelContractDeregisteredEvent.reason
+    which accepts `EnumDeregistrationReason | str`.
+
+    Planned deregistrations are expected scenarios where a node cleanly deregisters:
+    - SHUTDOWN: Node shutting down gracefully
+    - UPGRADE: Node being upgraded to a new version
+    - MANUAL: Administrator manually deregistered
+
+    Custom string reasons (not matching the standard enum values) are assumed to
+    represent unplanned deregistrations (e.g., 'health_check_failure',
+    'resource_exhaustion', 'crash_recovery').
+
+    Args:
+        reason: Either an EnumDeregistrationReason enum value or a string reason.
+
+    Returns:
+        True if the reason is a known planned deregistration reason
+        (SHUTDOWN, UPGRADE, or MANUAL), False otherwise.
+
+    Example:
+        >>> is_planned_deregistration(EnumDeregistrationReason.SHUTDOWN)
+        True
+        >>> is_planned_deregistration("shutdown")
+        True
+        >>> is_planned_deregistration("health_check_failure")
+        False
+
+    .. versionadded:: 0.9.8
+        Added to support mixed enum/string reason handling in
+        ModelContractDeregisteredEvent.
+    """
+    if isinstance(reason, EnumDeregistrationReason):
+        return reason.is_planned()
+
+    # For string values, check if they match known planned reason values
+    return reason.lower() in _PLANNED_REASON_VALUES
+
+
+__all__ = ["EnumDeregistrationReason", "is_planned_deregistration"]

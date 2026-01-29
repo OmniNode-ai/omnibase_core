@@ -442,6 +442,93 @@ class TestModelNodeHeartbeatEventRequiredFields:
         assert "node_version" in str(exc_info.value)
 
 
+class TestModelNodeHeartbeatEventOptionalFields:
+    """Tests for optional observability fields in ModelNodeHeartbeatEvent."""
+
+    def test_create_with_all_optional_fields(self) -> None:
+        """Test creating heartbeat with all optional fields populated."""
+        version = ModelSemVer(major=1, minor=0, patch=0)
+        event = ModelNodeHeartbeatEvent(
+            node_name="compute-pipeline",
+            node_version=version,
+            sequence_number=42,
+            uptime_seconds=3600.5,
+            contract_hash="sha256:abc123def456",
+        )
+
+        assert event.node_name == "compute-pipeline"
+        assert event.node_version == version
+        assert event.sequence_number == 42
+        assert event.uptime_seconds == 3600.5
+        assert event.contract_hash == "sha256:abc123def456"
+
+    def test_create_with_no_optional_fields_backward_compatible(self) -> None:
+        """Test creating heartbeat with no optional fields (backward compatible)."""
+        version = ModelSemVer(major=1, minor=0, patch=0)
+        event = ModelNodeHeartbeatEvent(
+            node_name="compute-pipeline",
+            node_version=version,
+        )
+
+        assert event.node_name == "compute-pipeline"
+        assert event.node_version == version
+        assert event.sequence_number is None
+        assert event.uptime_seconds is None
+        assert event.contract_hash is None
+
+    def test_sequence_number_validation_rejects_negative(self) -> None:
+        """Test that sequence_number >= 0 is enforced."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelNodeHeartbeatEvent(
+                node_name="test-node",
+                node_version=ModelSemVer(major=1, minor=0, patch=0),
+                sequence_number=-1,
+            )
+
+        assert "sequence_number" in str(exc_info.value)
+
+    def test_sequence_number_accepts_zero(self) -> None:
+        """Test that sequence_number accepts zero."""
+        event = ModelNodeHeartbeatEvent(
+            node_name="test-node",
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
+            sequence_number=0,
+        )
+
+        assert event.sequence_number == 0
+
+    def test_uptime_seconds_validation_rejects_negative(self) -> None:
+        """Test that uptime_seconds >= 0.0 is enforced."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelNodeHeartbeatEvent(
+                node_name="test-node",
+                node_version=ModelSemVer(major=1, minor=0, patch=0),
+                uptime_seconds=-0.1,
+            )
+
+        assert "uptime_seconds" in str(exc_info.value)
+
+    def test_uptime_seconds_accepts_zero(self) -> None:
+        """Test that uptime_seconds accepts zero."""
+        event = ModelNodeHeartbeatEvent(
+            node_name="test-node",
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
+            uptime_seconds=0.0,
+        )
+
+        assert event.uptime_seconds == 0.0
+
+    def test_contract_hash_accepts_any_string(self) -> None:
+        """Test that contract_hash accepts any string value."""
+        event = ModelNodeHeartbeatEvent(
+            node_name="test-node",
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
+            contract_hash="any-hash-format-works",
+        )
+
+        assert event.contract_hash == "any-hash-format-works"
+
+
 class TestModelNodeHeartbeatEventSerialization:
     """Tests for serialization round-trip."""
 
@@ -458,6 +545,43 @@ class TestModelNodeHeartbeatEventSerialization:
         assert original.node_name == restored.node_name
         assert original.node_version == restored.node_version
         assert original.event_type == restored.event_type
+
+    def test_json_round_trip_with_optional_fields(self) -> None:
+        """Test JSON serialization round-trip includes optional fields."""
+        original = ModelNodeHeartbeatEvent(
+            node_name="test-node",
+            node_version=ModelSemVer(major=1, minor=0, patch=5),
+            sequence_number=100,
+            uptime_seconds=7200.25,
+            contract_hash="sha256:xyz789",
+        )
+
+        json_str = original.model_dump_json()
+        restored = ModelNodeHeartbeatEvent.model_validate_json(json_str)
+
+        assert original.node_name == restored.node_name
+        assert original.node_version == restored.node_version
+        assert original.event_type == restored.event_type
+        assert original.sequence_number == restored.sequence_number
+        assert original.uptime_seconds == restored.uptime_seconds
+        assert original.contract_hash == restored.contract_hash
+
+    def test_json_round_trip_preserves_none_values(self) -> None:
+        """Test JSON serialization preserves None values for optional fields."""
+        original = ModelNodeHeartbeatEvent(
+            node_name="test-node",
+            node_version=ModelSemVer(major=1, minor=0, patch=5),
+            sequence_number=None,
+            uptime_seconds=None,
+            contract_hash=None,
+        )
+
+        json_str = original.model_dump_json()
+        restored = ModelNodeHeartbeatEvent.model_validate_json(json_str)
+
+        assert restored.sequence_number is None
+        assert restored.uptime_seconds is None
+        assert restored.contract_hash is None
 
 
 # ============================================================================
@@ -515,6 +639,96 @@ class TestContractRegistrationEventsImport:
         assert "ModelContractRegisteredEvent" in contract_registration.__all__
         assert "ModelContractDeregisteredEvent" in contract_registration.__all__
         assert "ModelNodeHeartbeatEvent" in contract_registration.__all__
+
+
+# ============================================================================
+# Test: Immutability (frozen=True)
+# ============================================================================
+
+
+class TestContractRegistrationEventImmutability:
+    """Tests that contract registration event models are immutable (frozen=True)."""
+
+    def test_contract_registered_event_is_frozen(self) -> None:
+        """Test that ModelContractRegisteredEvent is immutable."""
+        event = ModelContractRegisteredEvent(
+            node_name="test-node",
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
+            contract_hash="abc123",
+            contract_yaml="yaml content",
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            event.node_name = "modified-name"
+
+        assert (
+            "frozen" in str(exc_info.value).lower()
+            or "immutable" in str(exc_info.value).lower()
+        )
+
+    def test_contract_deregistered_event_is_frozen(self) -> None:
+        """Test that ModelContractDeregisteredEvent is immutable."""
+        event = ModelContractDeregisteredEvent(
+            node_name="test-node",
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
+            reason="shutdown",
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            event.node_name = "modified-name"
+
+        assert (
+            "frozen" in str(exc_info.value).lower()
+            or "immutable" in str(exc_info.value).lower()
+        )
+
+    def test_node_heartbeat_event_is_frozen(self) -> None:
+        """Test that ModelNodeHeartbeatEvent is immutable."""
+        event = ModelNodeHeartbeatEvent(
+            node_name="test-node",
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            event.node_name = "modified-name"
+
+        assert (
+            "frozen" in str(exc_info.value).lower()
+            or "immutable" in str(exc_info.value).lower()
+        )
+
+    def test_contract_registered_event_inherited_fields_frozen(self) -> None:
+        """Test that inherited fields from base are also frozen."""
+        event = ModelContractRegisteredEvent(
+            node_name="test-node",
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
+            contract_hash="abc123",
+            contract_yaml="yaml content",
+        )
+
+        with pytest.raises(ValidationError):
+            event.correlation_id = uuid4()
+
+    def test_contract_deregistered_event_inherited_fields_frozen(self) -> None:
+        """Test that inherited fields from base are also frozen."""
+        event = ModelContractDeregisteredEvent(
+            node_name="test-node",
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
+            reason="shutdown",
+        )
+
+        with pytest.raises(ValidationError):
+            event.correlation_id = uuid4()
+
+    def test_node_heartbeat_event_inherited_fields_frozen(self) -> None:
+        """Test that inherited fields from base are also frozen."""
+        event = ModelNodeHeartbeatEvent(
+            node_name="test-node",
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
+        )
+
+        with pytest.raises(ValidationError):
+            event.correlation_id = uuid4()
 
 
 if __name__ == "__main__":
