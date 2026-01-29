@@ -27,6 +27,7 @@ from omnibase_core.mixins.mixin_cli_handler import MixinCLIHandler
 from omnibase_core.models.mixins.model_completion_data import ModelCompletionData
 from omnibase_core.mixins.mixin_compute_execution import MixinComputeExecution
 from omnibase_core.mixins.mixin_contract_metadata import MixinContractMetadata
+from omnibase_core.mixins.mixin_contract_publisher import MixinContractPublisher
 from omnibase_core.mixins.mixin_contract_state_reducer import MixinContractStateReducer
 from omnibase_core.mixins.mixin_debug_discovery_logging import (
     MixinDebugDiscoveryLogging,
@@ -88,6 +89,7 @@ __all__ = [
     "MixinHashComputation",
     "MixinCLIHandler",
     "MixinContractMetadata",
+    "MixinContractPublisher",
     "MixinContractStateReducer",
     "MixinDebugDiscoveryLogging",
     "MixinEventDrivenNode",

@@ -106,6 +106,13 @@ allowed_files:
     added: "2026-01-12"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/mixins/mixin_contract_publisher.py"
+    reason: >-
+      Extracts node name and version from arbitrary contract YAML files for event publishing - must parse
+      raw YAML to populate ModelContractRegisteredEvent fields before publishing to Kafka (OMN-1655)
+    added: "2026-01-29"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
@@ -167,4 +174,11 @@ allowed_functions:
       Loads arbitrary YAML contract files for semantic diff comparison - no model validation needed as
       diffing works on raw dictionary structures to compare any two contract versions (see cli_contract_diff.py:483)
     added: "2026-01-05"
+    review: "2026-06-13"
+
+  - function: "publish_contract"
+    reason: >-
+      Extracts node name and version from arbitrary contract YAML files for event publishing - must parse
+      raw YAML to populate ModelContractRegisteredEvent fields (OMN-1655)
+    added: "2026-01-29"
     review: "2026-06-13"

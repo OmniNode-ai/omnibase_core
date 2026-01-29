@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-01-29
+
+### Added
+
+- **Contract Publisher Mixin** [OMN-1655]: Added `MixinContractPublisher` for nodes to publish contracts on startup
+  - `publish_contract(contract_path)` - Reads YAML, computes SHA256 hash, publishes `ModelContractRegisteredEvent`
+  - `publish_deregistration(reason)` - Publishes `ModelContractDeregisteredEvent` for graceful shutdown
+  - `start_heartbeat(interval_seconds)` - Background task emitting `ModelNodeHeartbeatEvent`
+  - Uses `ProtocolEventBusPublisher` from core (not SPI) for proper layering
+  - Enables dynamic contract discovery via Kafka event bus
+
 ## [0.9.7] - 2026-01-27
 
 ### Added
