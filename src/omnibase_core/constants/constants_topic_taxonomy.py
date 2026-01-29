@@ -230,6 +230,15 @@ RETENTION_MS_INTENTS = 86400000  # 1 day (short-lived coordination)
 RETENTION_MS_SNAPSHOTS = 604800000  # 7 days
 RETENTION_MS_AUDIT = 2592000000  # 30 days (same as events for audit trails)
 
+# Platform Baseline Topic Suffixes (OMN-1652)
+# These topics are wired at runtime startup (not via contract discovery)
+# to avoid circular dependency. Full topics are composed as {env}.{suffix}.
+PLATFORM_BASELINE_TOPIC_SUFFIXES: tuple[str, ...] = (
+    "onex.evt.contract-registered.v1",
+    "onex.evt.contract-deregistered.v1",
+    "onex.evt.node-heartbeat.v1",
+)
+
 __all__ = [
     # Type suffixes
     "TOPIC_TYPE_COMMANDS",
@@ -278,4 +287,6 @@ __all__ = [
     "RETENTION_MS_INTENTS",
     "RETENTION_MS_SNAPSHOTS",
     "RETENTION_MS_AUDIT",
+    # Platform baseline topics (OMN-1652)
+    "PLATFORM_BASELINE_TOPIC_SUFFIXES",
 ]

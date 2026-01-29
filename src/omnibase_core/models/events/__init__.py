@@ -8,6 +8,14 @@ from omnibase_core.enums.enum_topic_taxonomy import (
     EnumCleanupPolicy,
     EnumTopicType,
 )
+from omnibase_core.models.events.contract_registration import (
+    CONTRACT_DEREGISTERED_EVENT,
+    CONTRACT_REGISTERED_EVENT,
+    NODE_HEARTBEAT_EVENT,
+    ModelContractDeregisteredEvent,
+    ModelContractRegisteredEvent,
+    ModelNodeHeartbeatEvent,
+)
 from omnibase_core.models.events.model_event_payload_base import (
     ModelEventPayloadBase,
 )
@@ -63,6 +71,13 @@ from omnibase_core.models.events.model_topic_naming import (
 )
 
 __all__ = [
+    # Contract registration events (OMN-1651)
+    "CONTRACT_DEREGISTERED_EVENT",
+    "CONTRACT_REGISTERED_EVENT",
+    "NODE_HEARTBEAT_EVENT",
+    "ModelContractDeregisteredEvent",
+    "ModelContractRegisteredEvent",
+    "ModelNodeHeartbeatEvent",
     # Intent coordination events (existing)
     "ModelEventPublishIntent",
     "ModelIntentExecutionResult",

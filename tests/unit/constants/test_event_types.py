@@ -428,3 +428,74 @@ class TestEventTypeModuleStructure:
 
         assert normalize_legacy_event_type.__doc__ is not None
         assert len(normalize_legacy_event_type.__doc__) > 0
+
+
+@pytest.mark.unit
+class TestContractRegistrationEventTypes:
+    """Test cases for contract registration event type constants (OMN-1652)."""
+
+    def test_contract_registration_event_types_defined(self):
+        """Test that contract registration event types are defined."""
+        from omnibase_core.constants import constants_event_types as event_types
+
+        assert hasattr(event_types, "EVENT_TYPE_CONTRACT_REGISTERED")
+        assert hasattr(event_types, "EVENT_TYPE_CONTRACT_DEREGISTERED")
+        assert hasattr(event_types, "EVENT_TYPE_NODE_HEARTBEAT")
+
+    def test_contract_registered_event_type_value(self):
+        """Test EVENT_TYPE_CONTRACT_REGISTERED value."""
+        from omnibase_core.constants import constants_event_types as event_types
+
+        assert event_types.EVENT_TYPE_CONTRACT_REGISTERED == "contract-registered"
+
+    def test_contract_deregistered_event_type_value(self):
+        """Test EVENT_TYPE_CONTRACT_DEREGISTERED value."""
+        from omnibase_core.constants import constants_event_types as event_types
+
+        assert event_types.EVENT_TYPE_CONTRACT_DEREGISTERED == "contract-deregistered"
+
+    def test_node_heartbeat_event_type_value(self):
+        """Test EVENT_TYPE_NODE_HEARTBEAT value."""
+        from omnibase_core.constants import constants_event_types as event_types
+
+        assert event_types.EVENT_TYPE_NODE_HEARTBEAT == "node-heartbeat"
+
+    def test_contract_registration_event_types_are_strings(self):
+        """Test that contract registration event types are strings."""
+        from omnibase_core.constants import constants_event_types as event_types
+
+        assert isinstance(event_types.EVENT_TYPE_CONTRACT_REGISTERED, str)
+        assert isinstance(event_types.EVENT_TYPE_CONTRACT_DEREGISTERED, str)
+        assert isinstance(event_types.EVENT_TYPE_NODE_HEARTBEAT, str)
+
+    def test_contract_registration_event_types_are_lowercase(self):
+        """Test that contract registration event types are lowercase."""
+        from omnibase_core.constants import constants_event_types as event_types
+
+        assert event_types.EVENT_TYPE_CONTRACT_REGISTERED.islower()
+        assert event_types.EVENT_TYPE_CONTRACT_DEREGISTERED.islower()
+        assert event_types.EVENT_TYPE_NODE_HEARTBEAT.islower()
+
+    def test_contract_registration_event_types_unique(self):
+        """Test that contract registration event types are unique."""
+        from omnibase_core.constants import constants_event_types as event_types
+
+        event_types_list = [
+            event_types.EVENT_TYPE_CONTRACT_REGISTERED,
+            event_types.EVENT_TYPE_CONTRACT_DEREGISTERED,
+            event_types.EVENT_TYPE_NODE_HEARTBEAT,
+        ]
+
+        assert len(event_types_list) == len(set(event_types_list))
+
+    def test_contract_registration_event_types_use_kebab_case(self):
+        """Test that contract registration event types use kebab-case."""
+        from omnibase_core.constants import constants_event_types as event_types
+
+        # Should use hyphens, not underscores
+        assert "-" in event_types.EVENT_TYPE_CONTRACT_REGISTERED
+        assert "-" in event_types.EVENT_TYPE_CONTRACT_DEREGISTERED
+        assert "-" in event_types.EVENT_TYPE_NODE_HEARTBEAT
+        assert "_" not in event_types.EVENT_TYPE_CONTRACT_REGISTERED
+        assert "_" not in event_types.EVENT_TYPE_CONTRACT_DEREGISTERED
+        assert "_" not in event_types.EVENT_TYPE_NODE_HEARTBEAT

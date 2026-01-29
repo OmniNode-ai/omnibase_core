@@ -49,6 +49,7 @@ from omnibase_core.constants import (
     topic_name,
 )
 from omnibase_core.constants.constants_topic_taxonomy import (
+    PLATFORM_BASELINE_TOPIC_SUFFIXES,
     get_token_to_topic_type,
     get_topic_type_to_token,
     get_valid_topic_suffix_kinds,
@@ -896,6 +897,66 @@ class TestTokenMappingExports:
         assert "get_token_to_topic_type" in all_exports
         assert "get_topic_type_to_token" in all_exports
         assert "get_valid_topic_suffix_kinds" in all_exports
+
+
+@pytest.mark.unit
+class TestPlatformBaselineTopicSuffixes:
+    """Test cases for PLATFORM_BASELINE_TOPIC_SUFFIXES constant (OMN-1652)."""
+
+    def test_platform_baseline_topic_suffixes_is_tuple(self) -> None:
+        """Test that PLATFORM_BASELINE_TOPIC_SUFFIXES is a tuple."""
+        assert isinstance(PLATFORM_BASELINE_TOPIC_SUFFIXES, tuple)
+
+    def test_platform_baseline_topic_suffixes_contains_expected_values(self) -> None:
+        """Test that all expected platform baseline topics are present."""
+        expected = {
+            "onex.evt.contract-registered.v1",
+            "onex.evt.contract-deregistered.v1",
+            "onex.evt.node-heartbeat.v1",
+        }
+        assert set(PLATFORM_BASELINE_TOPIC_SUFFIXES) == expected
+
+    def test_platform_baseline_topic_suffixes_count(self) -> None:
+        """Test that there are exactly 3 baseline topic suffixes."""
+        assert len(PLATFORM_BASELINE_TOPIC_SUFFIXES) == 3
+
+    def test_platform_baseline_topic_suffixes_follow_naming_convention(self) -> None:
+        """Test that all suffixes follow onex.evt.*.v1 convention."""
+        for suffix in PLATFORM_BASELINE_TOPIC_SUFFIXES:
+            assert suffix.startswith("onex.evt."), (
+                f"Suffix {suffix} should start with 'onex.evt.'"
+            )
+            assert suffix.endswith(".v1"), f"Suffix {suffix} should end with '.v1'"
+
+    def test_platform_baseline_topic_suffixes_are_strings(self) -> None:
+        """Test that all suffixes are strings."""
+        for suffix in PLATFORM_BASELINE_TOPIC_SUFFIXES:
+            assert isinstance(suffix, str)
+
+    def test_platform_baseline_topic_suffixes_are_lowercase(self) -> None:
+        """Test that all suffixes are lowercase."""
+        for suffix in PLATFORM_BASELINE_TOPIC_SUFFIXES:
+            assert suffix == suffix.lower(), f"Suffix {suffix} should be lowercase"
+
+    def test_platform_baseline_topic_suffixes_unique(self) -> None:
+        """Test that all suffixes are unique."""
+        assert len(PLATFORM_BASELINE_TOPIC_SUFFIXES) == len(
+            set(PLATFORM_BASELINE_TOPIC_SUFFIXES)
+        )
+
+    def test_platform_baseline_topic_suffixes_have_four_parts(self) -> None:
+        """Test that all suffixes have exactly four dot-separated parts."""
+        for suffix in PLATFORM_BASELINE_TOPIC_SUFFIXES:
+            parts = suffix.split(".")
+            assert len(parts) == 4, (
+                f"Suffix {suffix} should have 4 parts, has {len(parts)}"
+            )
+
+    def test_platform_baseline_topic_suffixes_exported(self) -> None:
+        """Test that PLATFORM_BASELINE_TOPIC_SUFFIXES is in __all__."""
+        from omnibase_core.constants import constants_topic_taxonomy
+
+        assert "PLATFORM_BASELINE_TOPIC_SUFFIXES" in constants_topic_taxonomy.__all__
 
 
 if __name__ == "__main__":
