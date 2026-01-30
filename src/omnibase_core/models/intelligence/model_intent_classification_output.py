@@ -17,12 +17,14 @@ class ModelIntentClassificationOutput(BaseModel):
 
     This model represents the result of classifying intents from content.
     It includes the primary classified intent, any secondary intents detected,
-    and metadata about the classification operation.
+    keywords that contributed to the classification, and metadata about the
+    classification operation.
 
     Attributes:
         success: Whether intent classification succeeded.
         intent_category: Primary intent category detected.
         confidence: Confidence score for the primary intent (0.0 to 1.0).
+        keywords: Keywords/features that contributed to the classification decision.
         secondary_intents: List of secondary intents with confidence scores.
         metadata: Additional metadata about the classification.
 
@@ -32,6 +34,7 @@ class ModelIntentClassificationOutput(BaseModel):
         ...     success=True,
         ...     intent_category=EnumIntentCategory.CODE_GENERATION,
         ...     confidence=0.95,
+        ...     keywords=["python", "function", "generate"],
         ...     secondary_intents=[
         ...         {"intent_category": "debugging", "confidence": 0.3}
         ...     ]
@@ -53,6 +56,11 @@ class ModelIntentClassificationOutput(BaseModel):
         ge=0.0,
         le=1.0,
         description="Confidence score for the primary intent (0.0 to 1.0)",
+    )
+    keywords: list[str] = Field(
+        default_factory=list,
+        description="Keywords/features extracted from the content that contributed to "
+        "the classification decision (e.g., 'error', 'traceback' for debugging intent)",
     )
     secondary_intents: list[TypedDictSecondaryIntent] = Field(
         default_factory=list,
