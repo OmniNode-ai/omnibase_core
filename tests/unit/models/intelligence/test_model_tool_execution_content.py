@@ -627,6 +627,190 @@ class TestModelToolExecutionContentEquality:
 
 
 # ============================================================================
+# Test: from_tool_name() Factory Method
+# ============================================================================
+
+
+class TestModelToolExecutionContentFromToolName:
+    """Tests for from_tool_name() factory method.
+
+    The factory method prevents dual-field mismatches by auto-resolving
+    the enum from the raw tool name string.
+    """
+
+    def test_from_tool_name_known_tool(self) -> None:
+        """Test factory method with known tool name."""
+        content = ModelToolExecutionContent.from_tool_name("Read")
+
+        assert content.tool_name_raw == "Read"
+        assert content.tool_name == EnumClaudeCodeToolName.READ
+
+    def test_from_tool_name_unknown_tool(self) -> None:
+        """Test factory method with unknown tool name."""
+        content = ModelToolExecutionContent.from_tool_name("SomeFutureTool")
+
+        assert content.tool_name_raw == "SomeFutureTool"
+        assert content.tool_name == EnumClaudeCodeToolName.UNKNOWN
+
+    def test_from_tool_name_mcp_tool(self) -> None:
+        """Test factory method with MCP tool name (mcp__server__method pattern)."""
+        content = ModelToolExecutionContent.from_tool_name(
+            "mcp__linear-server__list_issues"
+        )
+
+        assert content.tool_name_raw == "mcp__linear-server__list_issues"
+        assert content.tool_name == EnumClaudeCodeToolName.MCP
+
+    def test_from_tool_name_with_optional_fields(self) -> None:
+        """Test factory method with optional kwargs."""
+        timestamp = datetime(2025, 1, 15, 10, 30, 0, tzinfo=UTC)
+        content = ModelToolExecutionContent.from_tool_name(
+            "Write",
+            file_path="/home/user/test.py",
+            language="python",
+            content_preview="def main(): pass",
+            content_length=16,
+            content_hash="abc123hash",
+            is_content_redacted=False,
+            success=True,
+            duration_ms=42.5,
+            session_id="sess-123",
+            correlation_id="corr-456",
+            timestamp=timestamp,
+        )
+
+        # Required fields set correctly
+        assert content.tool_name_raw == "Write"
+        assert content.tool_name == EnumClaudeCodeToolName.WRITE
+
+        # Optional fields passed through
+        assert content.file_path == "/home/user/test.py"
+        assert content.language == "python"
+        assert content.content_preview == "def main(): pass"
+        assert content.content_length == 16
+        assert content.content_hash == "abc123hash"
+        assert content.is_content_redacted is False
+        assert content.success is True
+        assert content.duration_ms == 42.5
+        assert content.session_id == "sess-123"
+        assert content.correlation_id == "corr-456"
+        assert content.timestamp == timestamp
+
+    def test_from_tool_name_preserves_raw_string(self) -> None:
+        """Test that raw string is preserved exactly as provided."""
+        # Test with various casing and characters
+        test_cases = [
+            "Read",
+            "mcp__linear-server__list_issues",
+            "SomeFutureTool_v2",
+            "tool-with-dashes",
+            "ALLCAPS",
+        ]
+
+        for raw_name in test_cases:
+            content = ModelToolExecutionContent.from_tool_name(raw_name)
+            assert content.tool_name_raw == raw_name, (
+                f"Raw string not preserved for {raw_name}"
+            )
+
+    def test_from_tool_name_auto_resolves_enum(self) -> None:
+        """Test that enum is auto-resolved correctly for various tools."""
+        # Known tools should resolve to their enum values
+        known_tools = [
+            ("Read", EnumClaudeCodeToolName.READ),
+            ("Write", EnumClaudeCodeToolName.WRITE),
+            ("Edit", EnumClaudeCodeToolName.EDIT),
+            ("Bash", EnumClaudeCodeToolName.BASH),
+            ("Glob", EnumClaudeCodeToolName.GLOB),
+            ("Grep", EnumClaudeCodeToolName.GREP),
+            ("WebFetch", EnumClaudeCodeToolName.WEB_FETCH),
+            ("WebSearch", EnumClaudeCodeToolName.WEB_SEARCH),
+            ("TaskCreate", EnumClaudeCodeToolName.TASK_CREATE),
+            ("Skill", EnumClaudeCodeToolName.SKILL),
+        ]
+
+        for raw_name, expected_enum in known_tools:
+            content = ModelToolExecutionContent.from_tool_name(raw_name)
+            assert content.tool_name == expected_enum, (
+                f"Expected {expected_enum} for {raw_name}, got {content.tool_name}"
+            )
+
+    def test_from_tool_name_returns_frozen_instance(self) -> None:
+        """Test that factory method returns immutable (frozen) instance."""
+        content = ModelToolExecutionContent.from_tool_name("Read")
+
+        # Attempting to modify should raise ValidationError
+        with pytest.raises(ValidationError):
+            content.tool_name_raw = "Write"
+
+        with pytest.raises(ValidationError):
+            content.tool_name = EnumClaudeCodeToolName.WRITE
+
+        with pytest.raises(ValidationError):
+            content.file_path = "/some/path.py"
+
+    def test_from_tool_name_mcp_various_patterns(self) -> None:
+        """Test MCP tool pattern matching with various server/method combinations."""
+        mcp_tools = [
+            "mcp__linear-server__list_issues",
+            "mcp__github__create_pr",
+            "mcp__slack__send_message",
+            "mcp__custom-server__custom_method",
+        ]
+
+        for mcp_tool in mcp_tools:
+            content = ModelToolExecutionContent.from_tool_name(mcp_tool)
+            assert content.tool_name == EnumClaudeCodeToolName.MCP, (
+                f"Expected MCP enum for {mcp_tool}"
+            )
+            assert content.tool_name_raw == mcp_tool
+
+    def test_from_tool_name_case_sensitivity(self) -> None:
+        """Test that tool name matching is case-sensitive."""
+        # "Read" should match, but "read" or "READ" should not
+        content_exact = ModelToolExecutionContent.from_tool_name("Read")
+        assert content_exact.tool_name == EnumClaudeCodeToolName.READ
+
+        content_lower = ModelToolExecutionContent.from_tool_name("read")
+        assert content_lower.tool_name == EnumClaudeCodeToolName.UNKNOWN
+        assert content_lower.tool_name_raw == "read"
+
+        content_upper = ModelToolExecutionContent.from_tool_name("READ")
+        assert content_upper.tool_name == EnumClaudeCodeToolName.UNKNOWN
+        assert content_upper.tool_name_raw == "READ"
+
+    def test_from_tool_name_with_error_fields(self) -> None:
+        """Test factory method with error-related optional fields."""
+        content = ModelToolExecutionContent.from_tool_name(
+            "Bash",
+            success=False,
+            error_type="TimeoutError",
+            error_message="Command timed out after 30 seconds",
+        )
+
+        assert content.tool_name_raw == "Bash"
+        assert content.tool_name == EnumClaudeCodeToolName.BASH
+        assert content.success is False
+        assert content.error_type == "TimeoutError"
+        assert content.error_message == "Command timed out after 30 seconds"
+
+    def test_from_tool_name_with_redaction_fields(self) -> None:
+        """Test factory method with privacy/redaction fields."""
+        content = ModelToolExecutionContent.from_tool_name(
+            "Read",
+            content_preview="[REDACTED]",
+            is_content_redacted=True,
+            redaction_policy_version="1.0.0",
+        )
+
+        assert content.tool_name_raw == "Read"
+        assert content.tool_name == EnumClaudeCodeToolName.READ
+        assert content.content_preview == "[REDACTED]"
+        assert content.is_content_redacted is True
+        assert content.redaction_policy_version == "1.0.0"
+
+
+# ============================================================================
 # Test: Import Verification
 # ============================================================================
 

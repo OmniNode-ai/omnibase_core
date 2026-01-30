@@ -113,5 +113,83 @@ class ModelToolExecutionContent(BaseModel):
         description="Execution timestamp (from recorded session data)",
     )
 
+    @classmethod
+    def from_tool_name(
+        cls,
+        tool_name_raw: str,
+        *,
+        file_path: str | None = None,
+        language: str | None = None,
+        content_preview: str | None = None,
+        content_length: int | None = None,
+        content_hash: str | None = None,
+        is_content_redacted: bool = False,
+        # string-version-ok: policy identifier, not semantic version
+        redaction_policy_version: str | None = None,
+        success: bool = True,
+        error_type: str | None = None,
+        error_message: str | None = None,
+        duration_ms: float | None = None,
+        # string-id-ok: Claude Code API provides string session identifiers
+        session_id: str | None = None,
+        correlation_id: str | None = None,
+        timestamp: datetime | None = None,
+    ) -> ModelToolExecutionContent:
+        """Create instance from raw tool name with automatic enum resolution.
+
+        This factory method prevents dual-field mismatches between tool_name_raw
+        and tool_name by automatically resolving the enum from the raw string.
+        Use this instead of the constructor when you have only the raw tool name.
+
+        Args:
+            tool_name_raw: Original tool name string from Claude Code.
+            file_path: File path if applicable.
+            language: Detected programming language.
+            content_preview: Truncated content preview (max 2000 chars).
+            content_length: Full content length in characters.
+            content_hash: SHA256 hash of full content for deduplication.
+            is_content_redacted: Whether content was redacted for privacy.
+            redaction_policy_version: Version of redaction policy applied.
+            success: Whether tool execution succeeded.
+            error_type: Error type if failed.
+            error_message: Error message if failed.
+            duration_ms: Execution duration in milliseconds.
+            session_id: Claude Code session ID.
+            correlation_id: Correlation ID for tracing.
+            timestamp: Execution timestamp.
+
+        Returns:
+            New ModelToolExecutionContent instance with consistent dual fields.
+
+        Example:
+            >>> content = ModelToolExecutionContent.from_tool_name(
+            ...     "Read",
+            ...     file_path="/path/to/file.py",
+            ...     success=True,
+            ... )
+            >>> content.tool_name_raw
+            'Read'
+            >>> content.tool_name
+            <EnumClaudeCodeToolName.READ: 'Read'>
+        """
+        return cls(
+            tool_name_raw=tool_name_raw,
+            tool_name=EnumClaudeCodeToolName.from_string(tool_name_raw),
+            file_path=file_path,
+            language=language,
+            content_preview=content_preview,
+            content_length=content_length,
+            content_hash=content_hash,
+            is_content_redacted=is_content_redacted,
+            redaction_policy_version=redaction_policy_version,
+            success=success,
+            error_type=error_type,
+            error_message=error_message,
+            duration_ms=duration_ms,
+            session_id=session_id,
+            correlation_id=correlation_id,
+            timestamp=timestamp,
+        )
+
 
 __all__ = ["ModelToolExecutionContent"]
