@@ -137,6 +137,10 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
 
         Returns:
             The matching enum member, MCP for mcp__* tools, or UNKNOWN if not found.
+
+        Note:
+            Matching is case-sensitive. "Read" matches READ, but "read" returns
+            UNKNOWN. This matches the exact tool names from Claude Code API.
         """
         # Handle MCP tool prefix pattern
         if value.startswith("mcp__"):

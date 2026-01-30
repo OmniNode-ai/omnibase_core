@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.10] - 2026-01-30
+
+### Added
+
+- **Claude Code Tool Execution Content Model** [OMN-1701]: Added `ModelToolExecutionContent` and `EnumClaudeCodeToolName` for pattern learning
+  - `EnumClaudeCodeToolName`: 26 Claude Code tool names with classification helpers
+  - `ModelToolExecutionContent`: Tool execution capture model with dual-field pattern
+  - Helper methods: `is_file_operation()`, `is_search_operation()`, `is_execution_tool()`, etc.
+  - Privacy fields: `is_content_redacted`, `redaction_policy_version`
+  - MCP tool prefix handling (`mcp__*` pattern)
+
 ## [0.9.9] - 2026-01-29
 
 ### Added
