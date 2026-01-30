@@ -113,8 +113,14 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
     """Invoke a skill within the conversation."""
 
     # MCP (Model Context Protocol)
-    MCP = "mcp"
-    """MCP tool invocation (prefix pattern: mcp__server__tool)."""
+    MCP = "Mcp"
+    """MCP tool invocation (sentinel for mcp__* prefix pattern).
+
+    Note: This is a sentinel value, not an exact API match. MCP tools have
+    dynamic names like 'mcp__linear-server__list_issues'. The from_string()
+    method handles prefix matching. Value uses PascalCase for consistency
+    with other enum values.
+    """
 
     # Forward compatibility
     UNKNOWN = "Unknown"

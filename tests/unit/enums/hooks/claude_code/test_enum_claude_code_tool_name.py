@@ -101,8 +101,8 @@ class TestEnumClaudeCodeToolNameValues:
         assert EnumClaudeCodeToolName.SKILL.value == "Skill"
 
     def test_mcp_tool_values(self) -> None:
-        """Test MCP tool prefix value."""
-        assert EnumClaudeCodeToolName.MCP.value == "mcp"
+        """Test MCP tool sentinel value (PascalCase for consistency)."""
+        assert EnumClaudeCodeToolName.MCP.value == "Mcp"
 
     def test_unknown_value(self) -> None:
         """Test UNKNOWN fallback value."""
@@ -140,7 +140,7 @@ class TestEnumClaudeCodeToolNameValues:
             "EnterPlanMode",
             "ExitPlanMode",
             "Skill",
-            "mcp",
+            "Mcp",
             "Unknown",
         }
         actual_values = {member.value for member in EnumClaudeCodeToolName}
@@ -358,14 +358,18 @@ class TestEnumClaudeCodeToolNameFromString:
 
     def test_from_string_mcp_like_but_not_mcp(self) -> None:
         """Test from_string does not match non-MCP patterns."""
-        # These don't have the 'mcp__' prefix
+        # "Mcp" is the actual enum value (PascalCase sentinel)
+        assert EnumClaudeCodeToolName.from_string("Mcp") == EnumClaudeCodeToolName.MCP
+        # "mcp" (lowercase) is NOT the enum value - returns UNKNOWN
         assert (
-            EnumClaudeCodeToolName.from_string("mcp") == EnumClaudeCodeToolName.MCP
-        )  # This IS the MCP enum value
+            EnumClaudeCodeToolName.from_string("mcp") == EnumClaudeCodeToolName.UNKNOWN
+        )
+        # Single underscore is not valid MCP prefix pattern
         assert (
             EnumClaudeCodeToolName.from_string("mcp_single_underscore")
             == EnumClaudeCodeToolName.UNKNOWN
         )
+        # Capitalized prefix is not valid (prefix check is lowercase mcp__)
         assert (
             EnumClaudeCodeToolName.from_string("Mcp__capitalized")
             == EnumClaudeCodeToolName.UNKNOWN
