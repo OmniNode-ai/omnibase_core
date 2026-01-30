@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.11] - 2026-01-30
+
+### Added
+
+- **Intent Classification Keywords Field** [OMN-1728]: Added `keywords: list[str]` field to `ModelIntentClassificationOutput`
+  - Captures keywords/features that contributed to the classification decision
+  - Uses `default_factory=list` for safe mutable default
+  - Unblocks `ProtocolIntentGraph` conformance (OMN-1729, OMN-1730)
+
 ## [0.9.10] - 2026-01-30
 
 ### Added
