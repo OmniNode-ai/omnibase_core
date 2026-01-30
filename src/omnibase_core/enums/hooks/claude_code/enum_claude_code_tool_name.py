@@ -18,12 +18,14 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
     UNKNOWN is used for forward compatibility when new tools are added.
 
     Tool Categories:
-        - File operations: READ, WRITE, EDIT
+        - File operations: READ, WRITE, EDIT, LS
         - Search operations: GLOB, GREP
         - Execution: BASH, TASK
         - Web operations: WEB_FETCH, WEB_SEARCH
-        - Notebook: NOTEBOOK_EDIT
+        - Notebook: NOTEBOOK_EDIT, NOTEBOOK_READ
         - Task management: TASK_CREATE, TASK_GET, TASK_UPDATE, TASK_LIST
+        - User interaction: ASK_USER_QUESTION
+        - Plan mode: ENTER_PLAN_MODE, EXIT_PLAN_MODE
         - Skills: SKILL
         - MCP: MCP (prefix for Model Context Protocol tools)
     """
@@ -37,6 +39,9 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
 
     EDIT = "Edit"
     """Edit existing file with string replacement."""
+
+    LS = "LS"
+    """List directory contents."""
 
     # Search operations
     GLOB = "Glob"
@@ -63,6 +68,9 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
     NOTEBOOK_EDIT = "NotebookEdit"
     """Edit Jupyter notebook cells."""
 
+    NOTEBOOK_READ = "NotebookRead"
+    """Read Jupyter notebook cells and outputs."""
+
     # Task management
     TASK_CREATE = "TaskCreate"
     """Create a new task in the task list."""
@@ -75,6 +83,17 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
 
     TASK_LIST = "TaskList"
     """List all tasks in the task list."""
+
+    # User interaction
+    ASK_USER_QUESTION = "AskUserQuestion"
+    """Ask the user a clarifying question."""
+
+    # Plan mode
+    ENTER_PLAN_MODE = "EnterPlanMode"
+    """Enter plan mode for complex tasks."""
+
+    EXIT_PLAN_MODE = "ExitPlanMode"
+    """Exit plan mode after planning is complete."""
 
     # Skills
     SKILL = "Skill"
@@ -112,7 +131,7 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
     @classmethod
     def is_file_operation(cls, tool: EnumClaudeCodeToolName) -> bool:
         """Check if the tool is a file operation."""
-        return tool in {cls.READ, cls.WRITE, cls.EDIT}
+        return tool in {cls.READ, cls.WRITE, cls.EDIT, cls.LS}
 
     @classmethod
     def is_search_operation(cls, tool: EnumClaudeCodeToolName) -> bool:
@@ -133,6 +152,21 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
     def is_task_management(cls, tool: EnumClaudeCodeToolName) -> bool:
         """Check if the tool is a task management tool."""
         return tool in {cls.TASK_CREATE, cls.TASK_GET, cls.TASK_UPDATE, cls.TASK_LIST}
+
+    @classmethod
+    def is_notebook_operation(cls, tool: EnumClaudeCodeToolName) -> bool:
+        """Check if the tool is a notebook operation."""
+        return tool in {cls.NOTEBOOK_EDIT, cls.NOTEBOOK_READ}
+
+    @classmethod
+    def is_user_interaction(cls, tool: EnumClaudeCodeToolName) -> bool:
+        """Check if the tool is a user interaction tool."""
+        return tool == cls.ASK_USER_QUESTION
+
+    @classmethod
+    def is_plan_mode(cls, tool: EnumClaudeCodeToolName) -> bool:
+        """Check if the tool is a plan mode tool."""
+        return tool in {cls.ENTER_PLAN_MODE, cls.EXIT_PLAN_MODE}
 
 
 __all__ = ["EnumClaudeCodeToolName"]
