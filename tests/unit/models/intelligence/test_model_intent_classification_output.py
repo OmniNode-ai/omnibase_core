@@ -373,6 +373,15 @@ class TestModelIntentClassificationOutputKeywords:
         assert "test" in json_str
         assert "keyword" in json_str
 
+    def test_keywords_rejects_non_strings(self, minimal_output_data: dict) -> None:
+        """Test that non-string keywords are rejected by Pydantic validation."""
+        minimal_output_data["keywords"] = ["valid", 123, None]
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelIntentClassificationOutput(**minimal_output_data)
+
+        assert "keywords" in str(exc_info.value)
+
 
 # ============================================================================
 # Test: Metadata Handling
