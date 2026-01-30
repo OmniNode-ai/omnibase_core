@@ -9,8 +9,9 @@ Tests comprehensive intent classification output functionality including:
 - Immutability (frozen model)
 - Extra fields rejection
 - Confidence range validation (0.0-1.0)
-- Default values (intent_category=EnumIntentCategory.UNKNOWN, confidence=0.0)
+- Default values (intent_category=EnumIntentCategory.UNKNOWN, confidence=0.0, keywords=[])
 - EnumIntentCategory type enforcement and string coercion
+- keywords list handling
 - secondary_intents list handling
 - metadata optional field
 - Helper methods (is_high_confidence, get_all_intents)
@@ -74,6 +75,7 @@ def full_output_data() -> dict:
         "success": True,
         "intent_category": EnumIntentCategory.CODE_GENERATION,
         "confidence": 0.95,
+        "keywords": ["python", "function", "generate", "async"],
         "secondary_intents": secondary_intents,
         "metadata": metadata,
     }
@@ -94,6 +96,7 @@ class TestModelIntentClassificationOutputInstantiation:
         assert model.success is True
         assert model.intent_category == EnumIntentCategory.UNKNOWN
         assert model.confidence == 0.0
+        assert model.keywords == []
         assert model.secondary_intents == []
         assert model.metadata is None
 
@@ -104,6 +107,7 @@ class TestModelIntentClassificationOutputInstantiation:
         assert model.success is True
         assert model.intent_category == EnumIntentCategory.CODE_GENERATION
         assert model.confidence == 0.95
+        assert model.keywords == ["python", "function", "generate", "async"]
         assert len(model.secondary_intents) == 2
         assert model.metadata is not None
         assert model.metadata["classifier_version"] == "2.1.0"
@@ -121,6 +125,7 @@ class TestModelIntentClassificationOutputInstantiation:
 
         assert model.intent_category == EnumIntentCategory.UNKNOWN
         assert model.confidence == 0.0
+        assert model.keywords == []
         assert model.secondary_intents == []
         assert model.metadata is None
 
@@ -179,6 +184,14 @@ class TestModelIntentClassificationOutputImmutability:
         with pytest.raises(ValidationError):
             # NOTE: Intentionally testing frozen model mutation - Pydantic raises at runtime
             model.metadata = None
+
+    def test_cannot_modify_keywords(self, full_output_data: dict) -> None:
+        """Test that keywords cannot be reassigned."""
+        model = ModelIntentClassificationOutput(**full_output_data)
+
+        with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - Pydantic raises at runtime
+            model.keywords = ["new", "keywords"]
 
 
 # ============================================================================
@@ -304,6 +317,70 @@ class TestModelIntentClassificationOutputSecondaryIntents:
         model = ModelIntentClassificationOutput(**minimal_output_data)
         assert model.secondary_intents[0]["description"] == "A fully described intent"
         assert len(model.secondary_intents[0]["keywords"]) == 2
+
+
+# ============================================================================
+# Test: Keywords Handling
+# ============================================================================
+
+
+class TestModelIntentClassificationOutputKeywords:
+    """Tests for keywords list handling."""
+
+    def test_empty_keywords(self, minimal_output_data: dict) -> None:
+        """Test with empty keywords list."""
+        minimal_output_data["keywords"] = []
+        model = ModelIntentClassificationOutput(**minimal_output_data)
+        assert model.keywords == []
+
+    def test_single_keyword(self, minimal_output_data: dict) -> None:
+        """Test with single keyword."""
+        minimal_output_data["keywords"] = ["python"]
+        model = ModelIntentClassificationOutput(**minimal_output_data)
+
+        assert len(model.keywords) == 1
+        assert model.keywords[0] == "python"
+
+    def test_multiple_keywords(self, minimal_output_data: dict) -> None:
+        """Test with multiple keywords."""
+        keywords = ["python", "async", "function", "generator"]
+        minimal_output_data["keywords"] = keywords
+        model = ModelIntentClassificationOutput(**minimal_output_data)
+
+        assert len(model.keywords) == 4
+        assert model.keywords == keywords
+
+    def test_keywords_preserved_in_serialization(
+        self, minimal_output_data: dict
+    ) -> None:
+        """Test that keywords survive serialization round-trip."""
+        keywords = ["code", "generation", "template"]
+        minimal_output_data["keywords"] = keywords
+        original = ModelIntentClassificationOutput(**minimal_output_data)
+
+        data = original.model_dump()
+        restored = ModelIntentClassificationOutput(**data)
+
+        assert restored.keywords == keywords
+
+    def test_keywords_in_json_serialization(self, minimal_output_data: dict) -> None:
+        """Test keywords in JSON serialization."""
+        minimal_output_data["keywords"] = ["test", "keyword"]
+        model = ModelIntentClassificationOutput(**minimal_output_data)
+        json_str = model.model_dump_json()
+
+        assert "keywords" in json_str
+        assert "test" in json_str
+        assert "keyword" in json_str
+
+    def test_keywords_rejects_non_strings(self, minimal_output_data: dict) -> None:
+        """Test that non-string keywords are rejected by Pydantic validation."""
+        minimal_output_data["keywords"] = ["valid", 123, None]
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelIntentClassificationOutput(**minimal_output_data)
+
+        assert "keywords" in str(exc_info.value)
 
 
 # ============================================================================
@@ -542,6 +619,7 @@ class TestModelIntentClassificationOutputSerialization:
             "success",
             "intent_category",
             "confidence",
+            "keywords",
             "secondary_intents",
             "metadata",
         ]
