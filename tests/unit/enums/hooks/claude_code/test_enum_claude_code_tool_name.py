@@ -51,6 +51,22 @@ class TestEnumClaudeCodeToolNameValues:
         assert EnumClaudeCodeToolName.BASH.value == "Bash"
         assert EnumClaudeCodeToolName.TASK.value == "Task"
 
+    def test_task_stop_value(self) -> None:
+        """Test TaskStop tool value."""
+        assert EnumClaudeCodeToolName.TASK_STOP.value == "TaskStop"
+
+    def test_task_output_value(self) -> None:
+        """Test TaskOutput tool value."""
+        assert EnumClaudeCodeToolName.TASK_OUTPUT.value == "TaskOutput"
+
+    def test_bash_output_value(self) -> None:
+        """Test BashOutput tool value."""
+        assert EnumClaudeCodeToolName.BASH_OUTPUT.value == "BashOutput"
+
+    def test_kill_shell_value(self) -> None:
+        """Test KillShell tool value."""
+        assert EnumClaudeCodeToolName.KILL_SHELL.value == "KillShell"
+
     def test_web_operation_values(self) -> None:
         """Test web operation tool values."""
         assert EnumClaudeCodeToolName.WEB_FETCH.value == "WebFetch"
@@ -93,9 +109,9 @@ class TestEnumClaudeCodeToolNameValues:
         assert EnumClaudeCodeToolName.UNKNOWN.value == "Unknown"
 
     def test_enum_count(self) -> None:
-        """Test that enum has exactly 22 values."""
+        """Test that enum has exactly 26 values."""
         values = list(EnumClaudeCodeToolName)
-        assert len(values) == 22
+        assert len(values) == 26
 
     def test_all_expected_values_present(self) -> None:
         """Test that all expected values are present."""
@@ -107,7 +123,11 @@ class TestEnumClaudeCodeToolNameValues:
             "Glob",
             "Grep",
             "Bash",
+            "BashOutput",
             "Task",
+            "TaskStop",
+            "TaskOutput",
+            "KillShell",
             "WebFetch",
             "WebSearch",
             "NotebookEdit",
@@ -285,6 +305,22 @@ class TestEnumClaudeCodeToolNameFromString:
         assert (
             EnumClaudeCodeToolName.from_string("Skill") == EnumClaudeCodeToolName.SKILL
         )
+        assert (
+            EnumClaudeCodeToolName.from_string("TaskStop")
+            == EnumClaudeCodeToolName.TASK_STOP
+        )
+        assert (
+            EnumClaudeCodeToolName.from_string("TaskOutput")
+            == EnumClaudeCodeToolName.TASK_OUTPUT
+        )
+        assert (
+            EnumClaudeCodeToolName.from_string("BashOutput")
+            == EnumClaudeCodeToolName.BASH_OUTPUT
+        )
+        assert (
+            EnumClaudeCodeToolName.from_string("KillShell")
+            == EnumClaudeCodeToolName.KILL_SHELL
+        )
 
     def test_from_string_unknown_tools(self) -> None:
         """Test from_string returns UNKNOWN for unrecognized tools."""
@@ -370,7 +406,9 @@ class TestEnumClaudeCodeToolNameIsFileOperation:
             EnumClaudeCodeToolName.GLOB,
             EnumClaudeCodeToolName.GREP,
             EnumClaudeCodeToolName.BASH,
+            EnumClaudeCodeToolName.BASH_OUTPUT,
             EnumClaudeCodeToolName.TASK,
+            EnumClaudeCodeToolName.KILL_SHELL,
             EnumClaudeCodeToolName.WEB_FETCH,
             EnumClaudeCodeToolName.WEB_SEARCH,
             EnumClaudeCodeToolName.NOTEBOOK_EDIT,
@@ -379,6 +417,8 @@ class TestEnumClaudeCodeToolNameIsFileOperation:
             EnumClaudeCodeToolName.TASK_GET,
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
+            EnumClaudeCodeToolName.TASK_STOP,
+            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
@@ -430,7 +470,9 @@ class TestEnumClaudeCodeToolNameIsSearchOperation:
             EnumClaudeCodeToolName.EDIT,
             EnumClaudeCodeToolName.LS,
             EnumClaudeCodeToolName.BASH,
+            EnumClaudeCodeToolName.BASH_OUTPUT,
             EnumClaudeCodeToolName.TASK,
+            EnumClaudeCodeToolName.KILL_SHELL,
             EnumClaudeCodeToolName.WEB_FETCH,
             EnumClaudeCodeToolName.WEB_SEARCH,
             EnumClaudeCodeToolName.NOTEBOOK_EDIT,
@@ -439,6 +481,8 @@ class TestEnumClaudeCodeToolNameIsSearchOperation:
             EnumClaudeCodeToolName.TASK_GET,
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
+            EnumClaudeCodeToolName.TASK_STOP,
+            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
@@ -474,7 +518,9 @@ class TestEnumClaudeCodeToolNameIsExecutionTool:
         """Test that execution tools return True."""
         exec_tools = [
             EnumClaudeCodeToolName.BASH,
+            EnumClaudeCodeToolName.BASH_OUTPUT,
             EnumClaudeCodeToolName.TASK,
+            EnumClaudeCodeToolName.KILL_SHELL,
         ]
 
         for tool in exec_tools:
@@ -499,6 +545,8 @@ class TestEnumClaudeCodeToolNameIsExecutionTool:
             EnumClaudeCodeToolName.TASK_GET,
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
+            EnumClaudeCodeToolName.TASK_STOP,
+            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
@@ -513,13 +561,13 @@ class TestEnumClaudeCodeToolNameIsExecutionTool:
             )
 
     def test_execution_tool_count(self) -> None:
-        """Test that exactly 2 tools are execution tools."""
+        """Test that exactly 4 tools are execution tools."""
         count = sum(
             1
             for tool in EnumClaudeCodeToolName
             if EnumClaudeCodeToolName.is_execution_tool(tool)
         )
-        assert count == 2
+        assert count == 4
 
 
 # ============================================================================
@@ -552,13 +600,17 @@ class TestEnumClaudeCodeToolNameIsWebOperation:
             EnumClaudeCodeToolName.GLOB,
             EnumClaudeCodeToolName.GREP,
             EnumClaudeCodeToolName.BASH,
+            EnumClaudeCodeToolName.BASH_OUTPUT,
             EnumClaudeCodeToolName.TASK,
+            EnumClaudeCodeToolName.KILL_SHELL,
             EnumClaudeCodeToolName.NOTEBOOK_EDIT,
             EnumClaudeCodeToolName.NOTEBOOK_READ,
             EnumClaudeCodeToolName.TASK_CREATE,
             EnumClaudeCodeToolName.TASK_GET,
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
+            EnumClaudeCodeToolName.TASK_STOP,
+            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
@@ -597,6 +649,8 @@ class TestEnumClaudeCodeToolNameIsTaskManagement:
             EnumClaudeCodeToolName.TASK_GET,
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
+            EnumClaudeCodeToolName.TASK_STOP,
+            EnumClaudeCodeToolName.TASK_OUTPUT,
         ]
 
         for tool in task_mgmt_tools:
@@ -614,7 +668,9 @@ class TestEnumClaudeCodeToolNameIsTaskManagement:
             EnumClaudeCodeToolName.GLOB,
             EnumClaudeCodeToolName.GREP,
             EnumClaudeCodeToolName.BASH,
+            EnumClaudeCodeToolName.BASH_OUTPUT,
             EnumClaudeCodeToolName.TASK,  # Note: TASK is for subagent delegation, not task list
+            EnumClaudeCodeToolName.KILL_SHELL,
             EnumClaudeCodeToolName.WEB_FETCH,
             EnumClaudeCodeToolName.WEB_SEARCH,
             EnumClaudeCodeToolName.NOTEBOOK_EDIT,
@@ -633,13 +689,13 @@ class TestEnumClaudeCodeToolNameIsTaskManagement:
             )
 
     def test_task_management_count(self) -> None:
-        """Test that exactly 4 tools are task management tools."""
+        """Test that exactly 6 tools are task management tools."""
         count = sum(
             1
             for tool in EnumClaudeCodeToolName
             if EnumClaudeCodeToolName.is_task_management(tool)
         )
-        assert count == 4
+        assert count == 6
 
 
 # ============================================================================
@@ -672,13 +728,17 @@ class TestEnumClaudeCodeToolNameIsNotebookOperation:
             EnumClaudeCodeToolName.GLOB,
             EnumClaudeCodeToolName.GREP,
             EnumClaudeCodeToolName.BASH,
+            EnumClaudeCodeToolName.BASH_OUTPUT,
             EnumClaudeCodeToolName.TASK,
+            EnumClaudeCodeToolName.KILL_SHELL,
             EnumClaudeCodeToolName.WEB_FETCH,
             EnumClaudeCodeToolName.WEB_SEARCH,
             EnumClaudeCodeToolName.TASK_CREATE,
             EnumClaudeCodeToolName.TASK_GET,
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
+            EnumClaudeCodeToolName.TASK_STOP,
+            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
@@ -729,7 +789,9 @@ class TestEnumClaudeCodeToolNameIsUserInteraction:
             EnumClaudeCodeToolName.GLOB,
             EnumClaudeCodeToolName.GREP,
             EnumClaudeCodeToolName.BASH,
+            EnumClaudeCodeToolName.BASH_OUTPUT,
             EnumClaudeCodeToolName.TASK,
+            EnumClaudeCodeToolName.KILL_SHELL,
             EnumClaudeCodeToolName.WEB_FETCH,
             EnumClaudeCodeToolName.WEB_SEARCH,
             EnumClaudeCodeToolName.NOTEBOOK_EDIT,
@@ -738,6 +800,8 @@ class TestEnumClaudeCodeToolNameIsUserInteraction:
             EnumClaudeCodeToolName.TASK_GET,
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
+            EnumClaudeCodeToolName.TASK_STOP,
+            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
             EnumClaudeCodeToolName.SKILL,
@@ -790,7 +854,9 @@ class TestEnumClaudeCodeToolNameIsPlanMode:
             EnumClaudeCodeToolName.GLOB,
             EnumClaudeCodeToolName.GREP,
             EnumClaudeCodeToolName.BASH,
+            EnumClaudeCodeToolName.BASH_OUTPUT,
             EnumClaudeCodeToolName.TASK,
+            EnumClaudeCodeToolName.KILL_SHELL,
             EnumClaudeCodeToolName.WEB_FETCH,
             EnumClaudeCodeToolName.WEB_SEARCH,
             EnumClaudeCodeToolName.NOTEBOOK_EDIT,
@@ -799,6 +865,8 @@ class TestEnumClaudeCodeToolNameIsPlanMode:
             EnumClaudeCodeToolName.TASK_GET,
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
+            EnumClaudeCodeToolName.TASK_STOP,
+            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.SKILL,
             EnumClaudeCodeToolName.MCP,
@@ -821,6 +889,62 @@ class TestEnumClaudeCodeToolNameIsPlanMode:
 
 
 # ============================================================================
+# Test: Helper Methods - is_skill
+# ============================================================================
+
+
+class TestEnumClaudeCodeToolNameIsSkill:
+    """Tests for is_skill helper method."""
+
+    def test_skill_returns_true(self) -> None:
+        """Test that SKILL returns True."""
+        assert EnumClaudeCodeToolName.is_skill(EnumClaudeCodeToolName.SKILL) is True
+
+    def test_non_skill_returns_false(self) -> None:
+        """Test that other tools return False."""
+        # Test a few representative tools
+        assert EnumClaudeCodeToolName.is_skill(EnumClaudeCodeToolName.READ) is False
+        assert EnumClaudeCodeToolName.is_skill(EnumClaudeCodeToolName.BASH) is False
+        assert EnumClaudeCodeToolName.is_skill(EnumClaudeCodeToolName.MCP) is False
+
+    def test_skill_count(self) -> None:
+        """Test that exactly 1 tool is skill."""
+        count = sum(
+            1
+            for tool in EnumClaudeCodeToolName
+            if EnumClaudeCodeToolName.is_skill(tool)
+        )
+        assert count == 1
+
+
+# ============================================================================
+# Test: Helper Methods - is_mcp_tool
+# ============================================================================
+
+
+class TestEnumClaudeCodeToolNameIsMcpTool:
+    """Tests for is_mcp_tool helper method."""
+
+    def test_mcp_returns_true(self) -> None:
+        """Test that MCP returns True."""
+        assert EnumClaudeCodeToolName.is_mcp_tool(EnumClaudeCodeToolName.MCP) is True
+
+    def test_non_mcp_returns_false(self) -> None:
+        """Test that other tools return False."""
+        assert EnumClaudeCodeToolName.is_mcp_tool(EnumClaudeCodeToolName.READ) is False
+        assert EnumClaudeCodeToolName.is_mcp_tool(EnumClaudeCodeToolName.SKILL) is False
+
+    def test_mcp_tool_count(self) -> None:
+        """Test that exactly 1 tool is MCP."""
+        count = sum(
+            1
+            for tool in EnumClaudeCodeToolName
+            if EnumClaudeCodeToolName.is_mcp_tool(tool)
+        )
+        assert count == 1
+
+
+# ============================================================================
 # Test: Category Exclusivity
 # ============================================================================
 
@@ -829,7 +953,7 @@ class TestEnumClaudeCodeToolNameCategoryExclusivity:
     """Tests for category exclusivity - tools in one category only."""
 
     def test_categories_are_mutually_exclusive(self) -> None:
-        """Test that non-UNKNOWN/MCP tools are in exactly one category."""
+        """Test that non-UNKNOWN tools are in exactly one category."""
         # Tools that should be in exactly one main category
         categorized_tools = [
             EnumClaudeCodeToolName.READ,
@@ -839,7 +963,9 @@ class TestEnumClaudeCodeToolNameCategoryExclusivity:
             EnumClaudeCodeToolName.GLOB,
             EnumClaudeCodeToolName.GREP,
             EnumClaudeCodeToolName.BASH,
+            EnumClaudeCodeToolName.BASH_OUTPUT,
             EnumClaudeCodeToolName.TASK,
+            EnumClaudeCodeToolName.KILL_SHELL,
             EnumClaudeCodeToolName.WEB_FETCH,
             EnumClaudeCodeToolName.WEB_SEARCH,
             EnumClaudeCodeToolName.NOTEBOOK_EDIT,
@@ -848,9 +974,13 @@ class TestEnumClaudeCodeToolNameCategoryExclusivity:
             EnumClaudeCodeToolName.TASK_GET,
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
+            EnumClaudeCodeToolName.TASK_STOP,
+            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
+            EnumClaudeCodeToolName.SKILL,
+            EnumClaudeCodeToolName.MCP,
         ]
 
         for tool in categorized_tools:
@@ -871,16 +1001,18 @@ class TestEnumClaudeCodeToolNameCategoryExclusivity:
                 categories.append("user_interaction")
             if EnumClaudeCodeToolName.is_plan_mode(tool):
                 categories.append("plan_mode")
+            if EnumClaudeCodeToolName.is_skill(tool):
+                categories.append("skill")
+            if EnumClaudeCodeToolName.is_mcp_tool(tool):
+                categories.append("mcp")
 
             assert len(categories) == 1, (
                 f"Tool {tool} should be in exactly one category, found: {categories}"
             )
 
     def test_uncategorized_tools(self) -> None:
-        """Test that SKILL, MCP, UNKNOWN are not in any category."""
+        """Test that UNKNOWN is not in any category."""
         uncategorized = [
-            EnumClaudeCodeToolName.SKILL,
-            EnumClaudeCodeToolName.MCP,
             EnumClaudeCodeToolName.UNKNOWN,
         ]
 
@@ -894,6 +1026,8 @@ class TestEnumClaudeCodeToolNameCategoryExclusivity:
                 or EnumClaudeCodeToolName.is_notebook_operation(tool)
                 or EnumClaudeCodeToolName.is_user_interaction(tool)
                 or EnumClaudeCodeToolName.is_plan_mode(tool)
+                or EnumClaudeCodeToolName.is_skill(tool)
+                or EnumClaudeCodeToolName.is_mcp_tool(tool)
             )
             assert is_categorized is False, f"Tool {tool} should not be in any category"
 

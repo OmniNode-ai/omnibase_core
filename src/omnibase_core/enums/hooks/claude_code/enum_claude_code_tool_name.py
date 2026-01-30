@@ -20,10 +20,11 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
     Tool Categories:
         - File operations: READ, WRITE, EDIT, LS
         - Search operations: GLOB, GREP
-        - Execution: BASH, TASK
+        - Execution: BASH, BASH_OUTPUT, TASK, KILL_SHELL
         - Web operations: WEB_FETCH, WEB_SEARCH
         - Notebook: NOTEBOOK_EDIT, NOTEBOOK_READ
-        - Task management: TASK_CREATE, TASK_GET, TASK_UPDATE, TASK_LIST
+        - Task management: TASK_CREATE, TASK_GET, TASK_UPDATE, TASK_LIST,
+            TASK_STOP, TASK_OUTPUT
         - User interaction: ASK_USER_QUESTION
         - Plan mode: ENTER_PLAN_MODE, EXIT_PLAN_MODE
         - Skills: SKILL
@@ -54,8 +55,14 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
     BASH = "Bash"
     """Execute shell commands."""
 
+    BASH_OUTPUT = "BashOutput"
+    """Get output from a running bash command."""
+
     TASK = "Task"
     """Delegate work to a subagent."""
+
+    KILL_SHELL = "KillShell"
+    """Kill a shell process."""
 
     # Web operations
     WEB_FETCH = "WebFetch"
@@ -83,6 +90,12 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
 
     TASK_LIST = "TaskList"
     """List all tasks in the task list."""
+
+    TASK_STOP = "TaskStop"
+    """Stop a running background task."""
+
+    TASK_OUTPUT = "TaskOutput"
+    """Get output from a task."""
 
     # User interaction
     ASK_USER_QUESTION = "AskUserQuestion"
@@ -141,7 +154,7 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
     @classmethod
     def is_execution_tool(cls, tool: EnumClaudeCodeToolName) -> bool:
         """Check if the tool is an execution tool."""
-        return tool in {cls.BASH, cls.TASK}
+        return tool in {cls.BASH, cls.BASH_OUTPUT, cls.TASK, cls.KILL_SHELL}
 
     @classmethod
     def is_web_operation(cls, tool: EnumClaudeCodeToolName) -> bool:
@@ -151,7 +164,14 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
     @classmethod
     def is_task_management(cls, tool: EnumClaudeCodeToolName) -> bool:
         """Check if the tool is a task management tool."""
-        return tool in {cls.TASK_CREATE, cls.TASK_GET, cls.TASK_UPDATE, cls.TASK_LIST}
+        return tool in {
+            cls.TASK_CREATE,
+            cls.TASK_GET,
+            cls.TASK_UPDATE,
+            cls.TASK_LIST,
+            cls.TASK_STOP,
+            cls.TASK_OUTPUT,
+        }
 
     @classmethod
     def is_notebook_operation(cls, tool: EnumClaudeCodeToolName) -> bool:
@@ -167,6 +187,16 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
     def is_plan_mode(cls, tool: EnumClaudeCodeToolName) -> bool:
         """Check if the tool is a plan mode tool."""
         return tool in {cls.ENTER_PLAN_MODE, cls.EXIT_PLAN_MODE}
+
+    @classmethod
+    def is_skill(cls, tool: EnumClaudeCodeToolName) -> bool:
+        """Check if the tool is the Skill tool."""
+        return tool == cls.SKILL
+
+    @classmethod
+    def is_mcp_tool(cls, tool: EnumClaudeCodeToolName) -> bool:
+        """Check if the tool is an MCP tool."""
+        return tool == cls.MCP
 
 
 __all__ = ["EnumClaudeCodeToolName"]
