@@ -314,6 +314,9 @@ from .hooks.claude_code.enum_claude_code_hook_event_type import (
 from .hooks.claude_code.enum_claude_code_session_status import (
     EnumClaudeCodeSessionStatus,
 )
+from .hooks.claude_code.enum_claude_code_tool_name import (
+    EnumClaudeCodeToolName,
+)
 
 # Intelligence enums (OMN-1490)
 from .intelligence.enum_intent_category import EnumIntentCategory
@@ -629,9 +632,10 @@ __all__ = [
     "EnumEventPriority",
     # Event sink type domain (OMN-1151)
     "EnumEventSinkType",
-    # Hook event domain (Claude Code integration - OMN-1474)
+    # Hook event domain (Claude Code integration - OMN-1474, OMN-1701)
     "EnumClaudeCodeHookEventType",
     "EnumClaudeCodeSessionStatus",
+    "EnumClaudeCodeToolName",
     # Intelligence domain (OMN-1490)
     "EnumIntentCategory",
     # Contract registration domain (OMN-1651)
