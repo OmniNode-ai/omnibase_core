@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-01-31
+
+### Added
+
+- **Contract-Driven Zero-Code Node Base Classes** [OMN-1731]: Enable fully declarative ONEX nodes where `class NodeMyEffect(NodeEffect): pass` works entirely from contract YAML
+  - `ModelProtocolDependency` - Protocol dependency declaration with name, protocol path, required flag, bind_as alias, and lazy_import support
+  - `ModelProtocolsNamespace` - Immutable namespace for `self.protocols.<name>` access pattern
+  - `resolver_handler` - Resolves handlers from `module:callable` import paths with caching
+  - `resolver_protocol_dependency` - Resolves protocol dependencies from container with validation
+  - `ModelHandlerRoutingEntry` - Added `callable` and `lazy_import` fields for contract-driven handler dispatch
+  - `ModelContractBase` - Added `protocol_dependencies` list with duplicate detection
+  - `ModelHandlerRoutingSubcontract` - Added `validate_zero_code_requirements()` method
+  - `NodeCoreBase` - Added `protocols` namespace and `_resolve_protocol_dependencies()` method
+  - `NodeEffect` - Auto-loads effect_subcontract, dispatches via `default_handler`
+  - `NodeCompute` - Dispatches via `default_handler` with generic support
+  - `get_contract_attr()` utility for dict/Pydantic model attribute access
+  - New error code `PROTOCOL_CONFIGURATION_ERROR` (126) for DI failures
+  - 52 new invariant tests covering contract completeness, protocol resolution, namespace immutability
+
+- **Cross-Repository Conformance Validators** [OMN-1771]: Contract-driven validation system for enforcing code placement, import boundaries, and repo conventions
+  - `ModelValidationPolicyContract` - Policy contract model for validation rules
+  - `ModelValidationDiscoveryConfig` - Discovery configuration for finding files to validate
+  - `ModelRuleConfigs` - Rule configuration models (repo_boundaries, forbidden_imports)
+  - `ModelViolationWaiver` - Waiver model for exempting known violations
+  - Validation engine with CLI support (JSON/text output)
+  - AST-based import graph scanner
+  - Synthetic test fixtures (fake_core, fake_infra, fake_app)
+  - 55 unit tests
+  - Design: Validators in core (fixed rule IDs), policies in each repo (thresholds, allowlists)
+
 ## [0.10.2] - 2026-01-31
 
 ### Added
