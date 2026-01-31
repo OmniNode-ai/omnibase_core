@@ -11,6 +11,10 @@ declarative request-response pattern configuration in node contracts.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
+from __future__ import annotations
+
+__all__ = ["ModelRequestResponseConfig"]
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.contracts.subcontracts.model_request_response_instance import (
@@ -38,7 +42,7 @@ class ModelRequestResponseConfig(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_non_empty_instances(self) -> "ModelRequestResponseConfig":
+    def validate_non_empty_instances(self) -> ModelRequestResponseConfig:
         """Validate that instances list is not empty."""
         if not self.instances:
             raise ValueError(

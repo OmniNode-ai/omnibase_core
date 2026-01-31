@@ -7,6 +7,8 @@ topic suffixes, correlation settings, timeout, and consumer group behavior.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
+from __future__ import annotations
+
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator

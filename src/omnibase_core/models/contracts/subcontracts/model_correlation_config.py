@@ -5,6 +5,8 @@ Model for specifying correlation ID location in request-response event bus patte
 Defines where to find the correlation ID within messages for tracking request-response pairs.
 """
 
+from __future__ import annotations
+
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field

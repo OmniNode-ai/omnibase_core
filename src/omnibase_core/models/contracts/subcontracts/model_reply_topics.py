@@ -7,6 +7,10 @@ request-response communication patterns within the ONEX event bus.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
+from __future__ import annotations
+
+__all__ = ["ModelReplyTopics"]
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
