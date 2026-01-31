@@ -22,6 +22,8 @@ Key Capabilities:
 Author: ONEX Framework Team
 """
 
+from __future__ import annotations
+
 import warnings
 from uuid import UUID
 
@@ -40,8 +42,6 @@ from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.resolution.resolver_handler import (
     HandlerCallable,
-    LazyLoader,
-    resolve_handler,
 )
 
 # Error messages
@@ -292,67 +292,6 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
         # MixinHandlerRouting can be initialized with a contract that includes
         # handler_routing subcontract configuration.
 
-    def _get_default_handler_callable(
-        self,
-    ) -> tuple[HandlerCallable | LazyLoader, bool] | None:
-        """
-        Get the default handler callable from contract if configured.
-
-        Looks up the handler_routing section of the contract to find the
-        default_handler and its associated callable path. Returns the resolved
-        handler function along with a flag indicating if it was lazily loaded.
-
-        Returns:
-            Tuple of (callable, is_lazy) if found, None otherwise.
-            - callable: HandlerCallable if is_lazy=False, LazyLoader if is_lazy=True
-            - is_lazy: True if the handler was loaded lazily (deferred import)
-
-        Note:
-            Handler signature is expected to be: async def handler(node, input_data) -> output
-            where node is the NodeEffect instance and input_data is ModelEffectInput.
-        """
-        if self.contract_data is None:
-            return None
-
-        # Get handler_routing from contract
-        handler_routing = None
-        if hasattr(self.contract_data, "handler_routing"):
-            handler_routing = self.contract_data.handler_routing
-        elif isinstance(self.contract_data, dict):
-            handler_routing = self.contract_data.get("handler_routing")
-
-        if handler_routing is None:
-            return None
-
-        # Get default_handler name
-        default_handler_name = getattr(handler_routing, "default_handler", None)
-        if not default_handler_name:
-            return None
-
-        # Find handler entry with matching handler_key
-        handlers = getattr(handler_routing, "handlers", []) or []
-        for handler_entry in handlers:
-            if getattr(handler_entry, "handler_key", None) == default_handler_name:
-                callable_path = getattr(handler_entry, "callable", None)
-                if callable_path:
-                    # Ensure callable_path is a string for resolve_handler
-                    if not isinstance(callable_path, str):
-                        continue
-                    lazy: bool = getattr(handler_entry, "lazy_import", False)
-                    # Use explicit branches for mypy overload resolution
-                    if lazy:
-                        # Lazy import - returns a loader function
-                        loader: LazyLoader = resolve_handler(callable_path, eager=False)
-                        return (loader, True)
-                    else:
-                        # Eager import - returns the handler directly
-                        handler: HandlerCallable = resolve_handler(
-                            callable_path, eager=True
-                        )
-                        return (handler, False)
-
-        return None
-
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """
         Execute effect operations defined in the subcontract.
@@ -431,10 +370,9 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
             resolved_handler: HandlerCallable
             if is_lazy:
                 # NOTE(OMN-1731): Type narrowing for union with boolean flag.
-                # When is_lazy=True, handler_or_loader is LazyLoader. Calling it
-                # returns HandlerCallable. mypy cannot infer this automatically.
-                loader = handler_or_loader  # type: LazyLoader  # type: ignore[assignment]
-                resolved_handler = loader()
+                # When is_lazy=True, handler_or_loader is LazyLoader (a callable
+                # that returns HandlerCallable). mypy cannot narrow automatically.
+                resolved_handler = handler_or_loader()  # type: ignore[assignment]
             else:
                 # NOTE(OMN-1731): When is_lazy=False, handler_or_loader is already
                 # HandlerCallable. mypy cannot narrow the union type automatically.

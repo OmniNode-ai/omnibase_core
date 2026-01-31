@@ -227,11 +227,19 @@ class ModelProtocolsNamespace:
         Return a debug representation of the namespace.
 
         Returns:
-            String representation showing protocol names.
+            String representation showing protocol names and their types.
+
+        Example:
+            >>> ns = ModelProtocolsNamespace({"logger": LoggerService(), "cache": None})
+            >>> repr(ns)
+            "ModelProtocolsNamespace({'cache': None, 'logger': LoggerService})"
         """
         protocols = object.__getattribute__(self, "_protocols")
-        names = sorted(protocols.keys())
-        return f"ModelProtocolsNamespace({names})"
+        items = {
+            k: type(v).__name__ if v is not None else None
+            for k, v in sorted(protocols.items())
+        }
+        return f"ModelProtocolsNamespace({items})"
 
 
 __all__ = ["ModelProtocolsNamespace"]

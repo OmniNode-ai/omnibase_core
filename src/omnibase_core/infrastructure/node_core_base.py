@@ -12,9 +12,15 @@ from omnibase_core.models.contracts.subcontracts.model_protocol_dependency impor
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.resolution.resolver_handler import (
+    HandlerCallable,
+    LazyLoader,
+    resolve_handler,
+)
 from omnibase_core.resolution.resolver_protocol_dependency import (
     resolve_protocol_dependencies,
 )
+from omnibase_core.utils import get_contract_attr
 
 if TYPE_CHECKING:
     from omnibase_core.types import (
@@ -558,6 +564,70 @@ class NodeCoreBase(ABC):
 
         # Create immutable namespace
         object.__setattr__(self, "protocols", ModelProtocolsNamespace(resolved))
+
+    def _get_default_handler_callable(
+        self,
+    ) -> tuple[HandlerCallable | LazyLoader, bool] | None:
+        """
+        Get the default handler callable from contract if configured.
+
+        Resolves the handler specified by `default_handler` in the contract's
+        `handler_routing` section. This enables zero-code nodes where
+        all processing logic is specified via contract configuration.
+
+        Returns:
+            Tuple of (callable, is_lazy) if handler found, None otherwise.
+            - callable: HandlerCallable if is_lazy=False, LazyLoader if is_lazy=True
+            - is_lazy: True if lazy_import was specified, False otherwise
+
+        Note:
+            The callable field in handler entries uses format 'module.path:function'.
+            If lazy_import=True, the handler is resolved to a LazyLoader that
+            defers the actual import until first call.
+
+        Example Contract:
+            handler_routing:
+              default_handler: handle_event
+              handlers:
+                - handler_key: handle_event
+                  callable: myapp.handlers:handle_event
+                  lazy_import: false
+        """
+        if self.contract_data is None:
+            return None
+
+        # Get handler_routing from contract_data
+        handler_routing = get_contract_attr(self.contract_data, "handler_routing")
+        if handler_routing is None:
+            return None
+
+        # Get default_handler name from handler_routing
+        default_handler_name = get_contract_attr(handler_routing, "default_handler")
+        if not default_handler_name:
+            return None
+
+        # Find handler entry with matching handler_key
+        handlers = get_contract_attr(handler_routing, "handlers") or []
+
+        for handler_entry in handlers:
+            handler_key = get_contract_attr(handler_entry, "handler_key")
+            if handler_key == default_handler_name:
+                callable_path = get_contract_attr(handler_entry, "callable")
+                if callable_path and isinstance(callable_path, str):
+                    lazy: bool = get_contract_attr(handler_entry, "lazy_import", False)
+                    # Use explicit branches for mypy overload resolution
+                    if lazy:
+                        # Lazy import - returns a loader function
+                        loader: LazyLoader = resolve_handler(callable_path, eager=False)
+                        return (loader, True)
+                    else:
+                        # Eager import - returns the handler directly
+                        handler: HandlerCallable = resolve_handler(
+                            callable_path, eager=True
+                        )
+                        return (handler, False)
+
+        return None
 
     async def _cleanup_node_resources(self) -> None:
         """
