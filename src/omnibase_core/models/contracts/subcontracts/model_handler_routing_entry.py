@@ -10,6 +10,8 @@ handler routing configuration.
 Example YAML:
     - routing_key: ModelEventJobCreated
       handler_key: handle_job_created
+      callable: myapp.handlers:handle_job_created
+      lazy_import: false
       message_category: event
       priority: 0
       output_events:
@@ -49,12 +51,16 @@ class ModelHandlerRoutingEntry(BaseModel):
         ...     handler_key="handle_job_created",
         ...     message_category=EnumMessageCategory.EVENT,
         ...     priority=0,
-        ...     output_events=["ModelEventJobStarted"]
+        ...     output_events=["ModelEventJobStarted"],
+        ...     callable="myapp.handlers:handle_job_created",
+        ...     lazy_import=False
         ... )
         >>> entry.routing_key
         'ModelEventJobCreated'
         >>> entry.handler_key
         'handle_job_created'
+        >>> entry.callable
+        'myapp.handlers:handle_job_created'
 
     Strict typing is enforced: No Any types allowed in implementation.
     """
@@ -116,6 +122,38 @@ class ModelHandlerRoutingEntry(BaseModel):
             "Used for documentation, validation, and graph analysis"
         ),
     )
+
+    callable: str | None = Field(
+        default=None,
+        description=(
+            "Fully qualified import path to handler callable in 'module.path:function' format. "
+            "Example: 'myapp.handlers:handle_user_created'. "
+            "Required for zero-code contract-driven dispatch."
+        ),
+    )
+
+    lazy_import: bool = Field(
+        default=False,
+        description=(
+            "If true, defer handler import until first dispatch (cold-start optimization). "
+            "If false (default), import and validate at node initialization."
+        ),
+    )
+
+    @field_validator("callable")
+    @classmethod
+    def validate_callable_format(cls, v: str | None) -> str | None:
+        """Validate callable path format if provided."""
+        if v is None:
+            return v
+        if ":" not in v:
+            raise ValueError(
+                f"callable must be in 'module.path:function' format, got: {v}"
+            )
+        module_path, callable_name = v.rsplit(":", 1)
+        if not module_path or not callable_name:
+            raise ValueError(f"Invalid callable format: {v}")
+        return v
 
     @field_validator("routing_key", "handler_key", mode="before")
     @classmethod

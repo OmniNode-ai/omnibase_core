@@ -69,6 +69,8 @@ EXCLUDED_FILES = [
     "src/omnibase_core/models/contracts/model_contract_effect.py",  # Lines 122, 123
     # Legitimate perf optimization: bypasses validate_assignment (not frozen) for timestamp updates
     "src/omnibase_core/models/core/model_examples_collection.py",  # Lines 273, 291, 311
+    # Not a Pydantic model - plain Python class using __slots__ and __setattr__ for immutability (OMN-1731)
+    "src/omnibase_core/models/container/model_protocols_namespace.py",
 ]
 
 

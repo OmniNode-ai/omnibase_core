@@ -18,6 +18,7 @@ module loading.
 
 from typing import Any
 
+from .util_contract_accessor import get_contract_attr, has_contract_attr
 from .util_decorators import allow_any_type, allow_dict_str_any
 from .util_enum_normalizer import create_enum_normalizer
 from .util_hash import (
@@ -57,6 +58,8 @@ __all__ = [
     "deterministic_hash",
     "deterministic_hash_int",
     "deterministic_jitter",
+    "get_contract_attr",
+    "has_contract_attr",
     "parse_datetime",
     "string_to_uuid",
 ]

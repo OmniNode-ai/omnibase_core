@@ -12,9 +12,9 @@ This implementation does not use Any types.
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar, Self, cast
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.constants.constants_field_limits import MAX_LABELS_COUNT
 from omnibase_core.enums import EnumNodeType
@@ -47,6 +47,9 @@ from omnibase_core.models.contracts.model_performance_requirements import (
     ModelPerformanceRequirements,
 )
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
+from omnibase_core.models.contracts.subcontracts.model_protocol_dependency import (
+    ModelProtocolDependency,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import (
@@ -186,6 +189,16 @@ class ModelContractBase(BaseModel, ABC):
         description="Protocol interfaces implemented by this contract",
     )
 
+    # Contract-driven protocol dependencies (OMN-1731)
+    protocol_dependencies: list[ModelProtocolDependency] = Field(
+        default_factory=list,
+        description=(
+            "Protocol dependencies to be injected via contract-driven DI. "
+            "Each dependency specifies a protocol to resolve from the container "
+            "and bind to self.protocols namespace."
+        ),
+    )
+
     # Validation and constraints
     validation_rules: ModelValidationRules = Field(
         default_factory=ModelValidationRules,
@@ -257,6 +270,30 @@ class ModelContractBase(BaseModel, ABC):
         "(3) ModelPublishedEventEntry instances - passed through directly. "
         "Named with yaml_ prefix to avoid collision with ModelContractOrchestrator fields.",
     )
+
+    @model_validator(mode="after")
+    def validate_no_duplicate_protocol_bindings(self) -> Self:
+        """
+        Ensure no duplicate bind names in protocol_dependencies.
+
+        Each protocol dependency is bound to a name in the self.protocols namespace.
+        Duplicate bind names would cause one protocol to overwrite another,
+        leading to subtle runtime bugs.
+
+        Returns:
+            Self: The validated model instance.
+
+        Raises:
+            ValueError: If duplicate protocol bind names are detected.
+        """
+        if not self.protocol_dependencies:
+            return self
+
+        bind_names = [dep.get_bind_name() for dep in self.protocol_dependencies]
+        if len(bind_names) != len(set(bind_names)):
+            duplicates = [n for n in bind_names if bind_names.count(n) > 1]
+            raise ValueError(f"Duplicate protocol bind names: {set(duplicates)}")
+        return self
 
     @abstractmethod
     def validate_node_specific_config(self) -> None:
