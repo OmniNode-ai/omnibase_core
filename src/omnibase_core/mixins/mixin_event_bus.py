@@ -1,22 +1,20 @@
 """
-Unified Event Bus Mixin for ONEX Nodes
+Unified Event Bus Mixin for ONEX Nodes (Publish-Only)
 
-Provides comprehensive event bus capabilities including:
-- Event subscription and listening
+Provides event publishing capabilities including:
 - Event completion publishing
 - Protocol-based polymorphism
 - ONEX standards compliance
 - Error handling and logging
 
-This mixin uses composition with ModelEventBusRuntimeState and
-ModelEventBusListenerHandle for state management, avoiding BaseModel
-inheritance to prevent MRO conflicts in multi-inheritance scenarios.
+This mixin uses composition with ModelEventBusRuntimeState for state management,
+avoiding BaseModel inheritance to prevent MRO conflicts in multi-inheritance scenarios.
 
 Thread Safety:
-    This mixin provides thread-safe stop() and dispose() operations.
+    This mixin provides thread-safe dispose() operations.
     The internal _mixin_lock protects concurrent access to mutable state
-    including listener handles and bindings. Multiple threads can safely
-    call stop_event_listener() and dispose_event_bus_resources() concurrently.
+    including bindings. Multiple threads can safely call
+    dispose_event_bus_resources() concurrently.
 
     However, bind_*() methods are NOT thread-safe and should only be called
     during initialization before the mixin is shared across threads.
@@ -25,32 +23,28 @@ Thread Safety:
         - ``_class_init_lock`` (class-level): Protects lazy initialization of
           instance locks. Acquired only during first access to _mixin_lock.
         - ``_mixin_lock`` (instance-level): Protects mixin state mutations.
-          Acquired during stop(), dispose(), and state-modifying operations.
+          Acquired during dispose() and state-modifying operations.
 
         Never acquire _class_init_lock while holding _mixin_lock to avoid
         deadlocks.
 
-    Thread Lifecycle:
-        - Listener threads are daemon threads (auto-terminate on process exit)
-        - dispose_event_bus_resources() explicitly joins listener threads with
-          a 5-second timeout to ensure proper cleanup
-        - Listener thread references are stored in ModelEventBusListenerHandle
-          for lifecycle management
-
     Runtime Misuse Detection:
         The mixin tracks when it transitions to "in use" state via a
         _binding_locked flag. This flag is set to True when:
-        - start_event_listener() is called (listener thread started)
         - publish_event() or publish_completion_event() operations occur
 
         If bind_*() methods are called after the flag is set, a ModelOnexError
         is raised (fail-fast behavior). This prevents thread-unsafe binding
         patterns from causing subtle race conditions in production.
+
+Note:
+    Listener/consumer functionality has been removed from this mixin.
+    Use EventBusSubcontractWiring in omnibase_infra for Kafka consumer
+    lifecycle management.
 """
 
 import threading
 import uuid
-from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     ClassVar,
@@ -83,14 +77,6 @@ class ProtocolEventBusDuckTyped(Protocol):
         """Asynchronous publish method."""
         ...
 
-    def subscribe(self, handler: Callable[..., object], event_type: str) -> object:
-        """Subscribe to events with a handler."""
-        ...
-
-    def unsubscribe(self, subscription: object) -> None:
-        """Unsubscribe from events."""
-        ...
-
 
 # Generic type parameters for typed event processing
 InputStateT = TypeVar("InputStateT")
@@ -109,7 +95,7 @@ from omnibase_core.models.events.model_topic_naming import (
 )
 from omnibase_core.models.mixins.model_completion_data import ModelCompletionData
 from omnibase_core.models.mixins.model_log_data import ModelLogData
-from omnibase_core.protocols import ProtocolEventEnvelope, ProtocolFromEvent
+from omnibase_core.protocols import ProtocolEventEnvelope
 from omnibase_core.protocols.event_bus import (
     ProtocolEventBus,
     ProtocolEventBusRegistry,
@@ -117,17 +103,15 @@ from omnibase_core.protocols.event_bus import (
 
 if TYPE_CHECKING:
     from omnibase_core.models.event_bus import (
-        ModelEventBusListenerHandle,
         ModelEventBusRuntimeState,
     )
 
 
 class MixinEventBus(Generic[InputStateT, OutputStateT]):
     """
-    Unified mixin for all event bus operations in ONEX nodes.
+    Unified mixin for event bus publishing operations in ONEX nodes.
 
     Provides:
-    - Event listening and subscription capabilities
     - Completion event publishing with proper protocols
     - ONEX standards compliance (no dictionaries, proper models)
     - Protocol-based polymorphism for event bus access
@@ -137,7 +121,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     Design:
     - NO BaseModel inheritance (avoids MRO conflicts)
     - Explicit binding REQUIRED in __init__ before any operations
-    - Composition with ModelEventBusRuntimeState and ModelEventBusListenerHandle
+    - Composition with ModelEventBusRuntimeState
     - Generic[InputStateT, OutputStateT] for type-safe event processing
 
     Initialization Requirement:
@@ -155,7 +139,6 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     Validation:
         All bind methods enforce strict validation:
         - bind_node_name(): Rejects empty or whitespace-only strings (raises ModelOnexError)
-        - bind_contract_path(): Rejects empty or whitespace-only strings (raises ModelOnexError)
         - bind_event_bus(): Stores the event bus reference and sets is_bound=True
         - bind_registry(): Stores the registry and sets is_bound=True if registry.event_bus is available
 
@@ -166,10 +149,10 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
           input and raise ModelOnexError for invalid values. Use in __init__ before the
           instance is shared across threads.
         - **_event_bus_runtime_state.reset()**: Clears the is_bound flag while preserving
-          node_name and contract_path. Use for cleanup between operations (e.g., test teardown)
+          node_name. Use for cleanup between operations (e.g., test teardown)
           or before rebinding with new configuration.
-        - **dispose_event_bus_resources()**: Full cleanup that stops listeners, joins threads,
-          clears all bindings, and resets runtime state. Use on shutdown.
+        - **dispose_event_bus_resources()**: Full cleanup that clears all bindings
+          and resets runtime state. Use on shutdown.
 
     Type Parameters:
         InputStateT: The type of input state for event processing
@@ -187,16 +170,16 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
     Thread Safety:
         - bind_*() methods: MUST be called in __init__ before sharing across threads
-        - publish_*(), stop_*(), dispose_*(): Safe for concurrent access after binding
+        - publish_*(), dispose_*(): Safe for concurrent access after binding
         - Internal state protected by _mixin_lock (lazily initialized via class-level lock)
 
-        See module docstring for detailed lock hierarchy and thread lifecycle documentation.
+        See module docstring for detailed lock hierarchy documentation.
 
     Strict Binding Mode:
         By default (STRICT_BINDING_MODE=True), calling bind_*() methods after the mixin
-        is "in use" (i.e., after start_event_listener() or publish operations) raises
-        ModelOnexError with error_code=INVALID_STATE. This fail-fast behavior prevents
-        subtle race conditions from reaching production.
+        is "in use" (i.e., after publish operations) raises ModelOnexError with
+        error_code=INVALID_STATE. This fail-fast behavior prevents subtle race
+        conditions from reaching production.
 
         For gradual migration or compatibility with legacy code, disable strict mode:
 
@@ -210,6 +193,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         - Production systems where thread-unsafe patterns must be hard failures
         - CI/CD pipelines where errors are caught but warnings might be missed
         - New code where you want to enforce correct patterns from the start
+
+    Note:
+        Listener/consumer functionality has been removed from this mixin.
+        Use EventBusSubcontractWiring in omnibase_infra for Kafka consumer
+        lifecycle management.
     """
 
     # Class-level lock for thread-safe lazy initialization of instance locks.
@@ -222,9 +210,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     _class_init_lock: threading.Lock = threading.Lock()
 
     # Strict binding mode flag. When True (the default), bind_*() calls after
-    # the mixin is "in use" (after start_event_listener() or publish operations)
-    # will raise ModelOnexError instead of just emitting a warning. Override in
-    # subclasses to disable strict enforcement for legacy compatibility.
+    # the mixin is "in use" (after publish operations) will raise ModelOnexError
+    # instead of just emitting a warning. Override in subclasses to disable
+    # strict enforcement for legacy compatibility.
     #
     # Example (to disable strict mode for legacy code):
     #     class MyLegacyNode(MixinEventBus[InputT, OutputT]):
@@ -238,7 +226,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         """Lazy accessor for the mixin's internal lock.
 
         This lock protects concurrent access to mutable state during
-        stop and dispose operations. It is created lazily on first access
+        dispose operations. It is created lazily on first access
         to avoid __init__ requirements in the mixin.
 
         Thread Safety:
@@ -323,25 +311,6 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 },
             ) from None
 
-    @property
-    def _event_bus_listener_handle(self) -> "ModelEventBusListenerHandle | None":
-        """Accessor for listener handle - returns None if listener not started.
-
-        The listener handle is created by start_event_listener() and stores
-        the listener thread reference and subscriptions for cleanup.
-
-        Returns:
-            The ModelEventBusListenerHandle if start_event_listener() was called,
-            None otherwise.
-        """
-        try:
-            return cast(
-                "ModelEventBusListenerHandle | None",
-                object.__getattribute__(self, "_mixin_event_bus_listener"),
-            )
-        except AttributeError:
-            return None
-
     def _ensure_runtime_state(self) -> "ModelEventBusRuntimeState":
         """Ensure runtime state exists, creating it if necessary.
 
@@ -374,8 +343,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         """Check if the mixin has transitioned to 'in use' state.
 
         Returns True if bind_*() methods should no longer be called
-        because the mixin is being used by threads (listener started
-        or publish operations have occurred).
+        because the mixin is being used by threads (publish operations
+        have occurred).
 
         Returns:
             True if binding is locked, False otherwise.
@@ -390,7 +359,6 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         or emit a WARNING to alert developers of potential thread-safety issues.
 
         This is called automatically when:
-        - start_event_listener() creates a listener thread
         - publish_event() or publish_completion_event() performs publishing
 
         Thread Safety:
@@ -440,7 +408,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 class MyLegacyNode(MixinEventBus[InputT, OutputT]):
                     STRICT_BINDING_MODE: ClassVar[bool] = False
 
-            Now bind_*() calls after start_event_listener() or publish will warn.
+            Now bind_*() calls after publish will warn.
         """
         if self._is_binding_locked():
             message = (
@@ -478,9 +446,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             This method uses atomic check-and-bind under the mixin lock.
             It should only be called during __init__ before the mixin
             instance is shared across threads. If called after the mixin
-            is in use (after start_event_listener() or publish operations),
-            a ModelOnexError is raised (STRICT_BINDING_MODE=True, default)
-            or a WARNING is emitted (STRICT_BINDING_MODE=False).
+            is in use (after publish operations), a ModelOnexError is raised
+            (STRICT_BINDING_MODE=True, default) or a WARNING is emitted
+            (STRICT_BINDING_MODE=False).
 
         Args:
             event_bus: The event bus instance implementing ProtocolEventBus.
@@ -546,9 +514,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             This method uses atomic check-and-bind under the mixin lock.
             It should only be called during __init__ before the mixin
             instance is shared across threads. If called after the mixin
-            is in use (after start_event_listener() or publish operations),
-            a ModelOnexError is raised (STRICT_BINDING_MODE=True, default)
-            or a WARNING is emitted (STRICT_BINDING_MODE=False).
+            is in use (after publish operations), a ModelOnexError is raised
+            (STRICT_BINDING_MODE=True, default) or a WARNING is emitted
+            (STRICT_BINDING_MODE=False).
 
         Args:
             registry: A registry implementing ProtocolEventBusRegistry.
@@ -604,81 +572,6 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             ModelLogData(node_name=self.get_node_name()),
         )
 
-    def bind_contract_path(self, contract_path: str) -> None:
-        """Bind the contract path used to derive event patterns.
-
-        The contract path is used by get_event_patterns() to determine
-        which event types this node should listen to and publish.
-
-        Thread Safety:
-            This method uses atomic check-and-bind under the mixin lock.
-            It should only be called during __init__ before the mixin
-            instance is shared across threads. If called after the mixin
-            is in use (after start_event_listener() or publish operations),
-            a ModelOnexError is raised (STRICT_BINDING_MODE=True, default)
-            or a WARNING is emitted (STRICT_BINDING_MODE=False).
-
-        Args:
-            contract_path: Absolute or relative path to the ONEX contract
-                YAML file that defines this node's event patterns. Must be
-                a non-empty string. Use reset() on the runtime state to clear
-                the binding if needed.
-
-        Raises:
-            ModelOnexError: If contract_path is empty or whitespace-only.
-            ModelOnexError: If STRICT_BINDING_MODE is True and the mixin is
-                already in use (binding is locked). Error code is INVALID_STATE.
-
-        Note:
-            The contract file is not loaded immediately; it is read when
-            get_event_patterns() is called.
-
-        Validation:
-            This method validates that contract_path is non-empty and non-whitespace,
-            consistent with ModelEventBusRuntimeState.bind() validation. To clear
-            a previously bound contract path, use _event_bus_runtime_state.reset()
-            followed by re-binding with the desired configuration.
-        """
-        # Validate contract_path BEFORE acquiring lock (fail-fast validation)
-        if not contract_path or not contract_path.strip():
-            raise ModelOnexError(
-                message="contract_path must be a non-empty string for binding; "
-                "use _event_bus_runtime_state.reset() to clear binding configuration",
-                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-                context={
-                    "class_name": self.__class__.__name__,
-                    "provided_value": repr(contract_path),
-                },
-            )
-
-        # Ensure runtime state exists BEFORE acquiring lock
-        # (state creation doesn't need lock protection)
-        state = self._ensure_runtime_state()
-
-        # Atomic check-and-bind under lock to prevent race conditions
-        with self._mixin_lock:
-            if self._is_binding_locked():
-                message = (
-                    "MIXIN_BIND: bind_contract_path() called after mixin is in use. "
-                    "bind_*() methods should be called in __init__ before sharing across threads."
-                )
-                if self.STRICT_BINDING_MODE:
-                    raise ModelOnexError(
-                        message=message,
-                        error_code=EnumCoreErrorCode.INVALID_STATE,
-                        context={
-                            "method_name": "bind_contract_path",
-                            "node_name": self.get_node_name(),
-                            "class_name": self.__class__.__name__,
-                        },
-                    )
-                emit_log_event(
-                    LogLevel.WARNING,
-                    message,
-                    ModelLogData(node_name=self.get_node_name()),
-                )
-            state.contract_path = contract_path
-
     def bind_node_name(self, node_name: str) -> None:
         """Bind the node name used for event publishing and logging.
 
@@ -690,9 +583,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             This method uses atomic check-and-bind under the mixin lock.
             It should only be called during __init__ before the mixin
             instance is shared across threads. If called after the mixin
-            is in use (after start_event_listener() or publish operations),
-            a ModelOnexError is raised (STRICT_BINDING_MODE=True, default)
-            or a WARNING is emitted (STRICT_BINDING_MODE=False).
+            is in use (after publish operations), a ModelOnexError is raised
+            (STRICT_BINDING_MODE=True, default) or a WARNING is emitted
+            (STRICT_BINDING_MODE=False).
 
         Args:
             node_name: The human-readable name of this node. Must be a
@@ -834,7 +727,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         Returns the bound node name if set via bind_node_name(), otherwise
         falls back to the class name. The node name is used in event
-        correlation, logging context, and listener thread naming.
+        correlation and logging context.
 
         Returns:
             The node name string. Either the explicitly bound name or
@@ -1166,311 +1059,10 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             **event_kwargs,
         )
 
-    # --- Event Listening and Subscription ---
-
-    def get_event_patterns(self) -> list[str]:
-        """Get event patterns this node should subscribe to and listen for.
-
-        Default implementation generates patterns based on the node name.
-        Override in subclasses for custom event subscription patterns.
-
-        Returns:
-            A list of event pattern strings that this node should subscribe to.
-            Patterns follow the format "domain.node_name.action" (e.g.,
-            "generation.mynode.start", "coordination.mynode.execute").
-
-        Raises:
-            ModelOnexError: If pattern generation fails due to configuration
-                or contract parsing errors.
-
-        Note:
-            If contract_path is not bound or runtime state is not initialized,
-            a warning is logged and an empty list is returned. Bind contract_path
-            via bind_contract_path() before calling if you need contract-based patterns.
-
-        Example:
-            >>> node.bind_contract_path("/path/to/contract.yaml")
-            >>> patterns = node.get_event_patterns()
-            >>> # Returns ["generation.mynode.start", "generation.mynode.process", ...]
-        """
-        try:
-            # Safe access to state - return empty list if state doesn't exist
-            try:
-                state = cast(
-                    "ModelEventBusRuntimeState",
-                    object.__getattribute__(self, "_mixin_event_bus_state"),
-                )
-                contract_path = state.contract_path
-            except AttributeError:
-                # State not initialized - treat as no contract_path
-                contract_path = None
-
-            if not contract_path:
-                self._log_warn(
-                    "No contract_path found, cannot determine event patterns",
-                    "event_patterns",
-                )
-                return []
-
-            # Extract event patterns from contract (simplified implementation)
-            # Parse the YAML contract to extract event patterns
-            node_name = self.get_node_name().lower()
-
-            # Generate common patterns based on node name
-            return [
-                f"generation.{node_name}.start",
-                f"generation.{node_name}.process",
-                f"coordination.{node_name}.execute",
-            ]
-
-        except (AttributeError, KeyError, OSError, RuntimeError, ValueError) as e:
-            self._log_error(
-                f"Failed to get event patterns: {e!r}",
-                "event_patterns",
-                error=e,
-            )
-            raise ModelOnexError(
-                f"Failed to get event patterns: {e!s}",
-                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-            ) from e
-
-    def get_completion_event_type(self, input_event_type: str) -> str:
-        """Get the completion event type for a given input event.
-
-        Maps input event types to their corresponding completion event types
-        using a predefined mapping table. This enables proper event-driven
-        workflows where processing completion is signaled.
-
-        Args:
-            input_event_type: The input event type string to map
-                (e.g., "generation.tool.start").
-
-        Returns:
-            The corresponding completion event type string
-            (e.g., "generation.tool.complete").
-
-        Raises:
-            ModelOnexError: If event type mapping fails due to invalid format.
-
-        Example:
-            >>> event_type = node.get_completion_event_type("generation.tool.start")
-            >>> # Returns "generation.tool.complete"
-            >>> event_type = node.get_completion_event_type("custom.event")
-            >>> # Returns "custom.complete" (default: replaces last part)
-        """
-        try:
-            # input_event_type is already typed as str
-            event_str = input_event_type
-
-            # Extract domain and event suffix
-            parts = event_str.split(".")
-            if len(parts) < 3:
-                return f"{event_str}.complete"
-
-            domain = parts[0]  # e.g., "generation"
-            event_suffix = ".".join(parts[1:])  # e.g., "tool.start"
-
-            # Map input events to completion events
-            completion_mappings = {
-                "health.check": "health.complete",
-                "contract.validate": "contract.complete",
-                "tool.start": "tool.complete",
-                "tool.process": "tool.complete",
-                "ast.generate": "ast.complete",
-                "render.files": "render.complete",
-                "validate.files": "validate.complete",
-            }
-
-            # Find matching pattern
-            for pattern, completion in completion_mappings.items():
-                if event_suffix.endswith(pattern.split(".")[-1]):
-                    return f"{domain}.{completion}"
-
-            # Default: replace last part with "complete"
-            parts[-1] = "complete"
-            return ".".join(parts)
-
-        except (IndexError, TypeError, ValueError) as e:
-            self._log_error(
-                f"Failed to determine completion event type: {e!r}",
-                "completion_event_type",
-                error=e,
-            )
-            raise ModelOnexError(
-                f"Failed to determine completion event type: {e!s}",
-                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-            ) from e
-
-    def start_event_listener(self) -> "ModelEventBusListenerHandle":
-        """Start the event listener thread for processing incoming events.
-
-        Creates a background daemon thread that subscribes to event patterns
-        returned by get_event_patterns() and dispatches incoming events to
-        the process() method. This method is idempotent - calling it when
-        a listener is already running returns the existing handle.
-
-        Returns:
-            A ModelEventBusListenerHandle for managing the listener lifecycle.
-            Use the handle's stop() method or stop_event_listener() to terminate.
-
-        Raises:
-            ModelOnexError: If no event bus is bound. Call bind_event_bus()
-                or bind_registry() before starting the listener.
-
-        Note:
-            The listener thread is a daemon thread, meaning it will be
-            automatically terminated when the main program exits.
-
-        Example:
-            >>> node.bind_event_bus(event_bus)
-            >>> handle = node.start_event_listener()
-            >>> # ... process events ...
-            >>> node.stop_event_listener(handle)
-        """
-        from omnibase_core.models.event_bus import ModelEventBusListenerHandle
-
-        # Return existing handle if already running
-        existing = self._event_bus_listener_handle
-        if existing is not None and existing.is_active():
-            self._log_warn("Event listener already running", "event_listener")
-            return existing
-
-        if not self._has_event_bus():
-            raise ModelOnexError(
-                message=f"Cannot start event listener on {self.__class__.__name__}: "
-                "no event bus available. Call bind_event_bus() or bind_registry() first.",
-                error_code=EnumCoreErrorCode.INVALID_STATE,
-                context={"class_name": self.__class__.__name__},
-            )
-
-        # Lock binding before starting listener thread - any bind_*() after this warns
-        self._lock_binding()
-
-        # Create new handle
-        handle = ModelEventBusListenerHandle(
-            stop_event=threading.Event(),
-            is_running=True,
-        )
-
-        # Create and start thread
-        handle.listener_thread = threading.Thread(
-            target=self._event_listener_loop,
-            args=(handle,),
-            daemon=True,
-            name=f"EventListener-{self.get_node_name()}",
-        )
-        handle.listener_thread.start()
-
-        # Store handle
-        object.__setattr__(self, "_mixin_event_bus_listener", handle)
-
-        self._log_info("Event listener started", "event_listener")
-        return handle
-
-    def stop_event_listener(
-        self, handle: "ModelEventBusListenerHandle | None" = None
-    ) -> bool:
-        """Stop the event listener and unsubscribe from all events.
-
-        Gracefully terminates the event listener thread and removes all
-        event subscriptions from the event bus. This method is safe to
-        call multiple times - it will not raise errors if the listener
-        is already stopped or was never started.
-
-        Thread Safety:
-            This method is thread-safe and can be called concurrently from
-            multiple threads. It uses a three-phase lock pattern:
-
-            1. **Phase 1 (lock held)**: Capture handle and bus references.
-               Also checks is_running inside the lock for consistency - if
-               the listener is already stopped, returns immediately to avoid
-               unnecessary work and prevent race conditions.
-            2. **Phase 2 (lock released)**: Perform unsubscription and stop
-               (potentially blocking operations)
-            3. **Cleanup**: Handle errors after stop completes
-
-            The lock is released before blocking operations to allow other
-            threads to proceed. The captured references remain valid because
-            Python's reference counting keeps objects alive.
-
-        Args:
-            handle: Optional listener handle to stop. If None, stops the
-                current listener associated with this mixin instance.
-
-        Returns:
-            True if the listener was stopped cleanly within the timeout
-            period or if there was no active listener. False if the
-            listener thread did not terminate within the timeout.
-
-        Raises:
-            ModelOnexError: If the event bus does not support unsubscribe().
-                Note: Even when this is raised, the listener thread is still
-                stopped to prevent resource leaks.
-
-        Note:
-            Unsubscription errors are logged but do not prevent stopping
-            the listener thread. Check logs for any failed unsubscriptions.
-        """
-        # === Phase 1: Capture references under lock ===
-        with self._mixin_lock:
-            target = handle or self._event_bus_listener_handle
-            if target is None:
-                return True  # Nothing to stop
-
-            # Check is_running inside lock for consistency
-            # This prevents unnecessary work if another thread already stopped the listener
-            if not target.is_running:
-                return True  # Already stopped
-
-            # Capture bus reference under lock for thread safety
-            bus = self._get_event_bus()
-            # Copy subscriptions list to avoid iteration issues if modified
-            subscriptions_copy = (
-                list(target.subscriptions) if target.subscriptions else []
-            )
-        # Lock released here - other threads can now access state
-
-        # === Phase 2: Unsubscribe and stop (lock NOT held) ===
-        # Perform potentially blocking operations outside the lock
-        unsubscribe_error: ModelOnexError | None = None
-
-        # Unsubscribe from all events - fail fast if bus doesn't support unsubscribe
-        # but still call target.stop() to prevent resource leaks
-        # TODO(OMN-TBD): [v1.0] Standardize event bus protocol to require unsubscribe().
-        # Currently hasattr check supports legacy event bus implementations.  [NEEDS TICKET]
-        if bus and subscriptions_copy:
-            if not hasattr(bus, "unsubscribe"):
-                # Capture error but continue to stop the listener thread
-                unsubscribe_error = ModelOnexError(
-                    message="Event bus does not support 'unsubscribe' method",
-                    error_code=EnumCoreErrorCode.EVENT_BUS_ERROR,
-                    context={"bus_type": type(bus).__name__},
-                )
-            else:
-                for subscription in subscriptions_copy:
-                    try:
-                        # Cast to Any for legacy event bus interface
-                        cast(ProtocolEventBusDuckTyped, bus).unsubscribe(subscription)
-                    except Exception as e:
-                        self._log_error(
-                            f"Failed to unsubscribe: {e!r}",
-                            "event_listener",
-                            error=e,
-                        )
-
-        # Always stop the listener thread, even if unsubscription failed
-        # target.stop() is already thread-safe (has its own internal lock)
-        result = target.stop()
-        self._log_info("Event listener stopped", "event_listener")
-
-        # Re-raise unsubscribe error after ensuring listener is stopped
-        if unsubscribe_error is not None:
-            raise unsubscribe_error
-
-        return result
+    # --- Resource Cleanup ---
 
     def dispose_event_bus_resources(self) -> None:
-        """Clean up all event bus resources. Call on shutdown.
+        """Clean up all event bus publishing resources. Call on shutdown.
 
         This method is idempotent and safe to call multiple times. It will not
         raise exceptions for already-disposed resources.
@@ -1479,26 +1071,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             This method is thread-safe and can be called concurrently from
             multiple threads. It uses a lock-capture-release pattern:
 
-            1. **Capture Phase (lock held)**: Capture references to handle
-               and state, set disposed flag to prevent re-entry
-            2. **Cleanup Phase (lock released)**: Stop listener thread and
-               perform potentially blocking cleanup operations
-            3. **Thread Join Phase**: Explicitly join listener thread with the
-               handle's configured timeout to ensure thread termination before proceeding
-            4. **Binding Cleanup Phase (lock held)**: Atomically clear all
+            1. **Clear Bindings Phase (lock held)**: Atomically clear all
                bound attributes to prevent partial cleanup
+            2. **Reset State Phase**: Reset runtime state to initial values
 
-            The lock is released during blocking operations to allow other
-            threads to proceed. All cleanup phases are wrapped in try/finally
-            to ensure resources are released even if exceptions occur.
-
-        Listener Thread Cleanup:
-            Listener threads are explicitly joined to ensure proper resource
-            cleanup. The join uses the handle's configured timeout (default 5.0
-            seconds via ModelEventBusListenerHandle.DEFAULT_STOP_TIMEOUT) to
-            prevent indefinite blocking. If the thread does not terminate within
-            this timeout, a warning is logged and included in the cleanup errors,
-            but cleanup continues to release other resources.
+            The lock protects binding attribute modifications to ensure
+            consistent state during cleanup.
 
         Error Handling:
             All cleanup errors are collected and logged. If any errors occur
@@ -1513,75 +1091,14 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             ModelOnexError: If any cleanup step fails. The error context contains
                 a list of all errors encountered during cleanup.
         """
-        from omnibase_core.models.event_bus import ModelEventBusListenerHandle
-
         cleanup_errors: list[str] = []
-        handle: ModelEventBusListenerHandle | None = None
 
         try:
-            # === Phase 1: Capture handle reference under lock ===
-            with self._mixin_lock:
-                handle = self._event_bus_listener_handle
-            # Lock released - other threads can access state
-
-            # === Phase 2: Stop listener (lock NOT held - may block) ===
-            # Use stop_event_listener() to properly unsubscribe from the event bus
-            # before stopping. This prevents memory leaks where the event bus retains
-            # references to dead subscriptions. stop_event_listener() handles its own
-            # thread safety with internal locks.
-            if handle is not None:
-                try:
-                    # stop_event_listener() properly:
-                    # 1. Gets event bus reference
-                    # 2. Unsubscribes from all events
-                    # 3. Calls handle.stop()
-                    # This prevents memory leaks in the event bus
-                    stopped = self.stop_event_listener(handle)
-                    if not stopped:
-                        cleanup_errors.append(
-                            "Event listener did not stop within timeout"
-                        )
-                except (ModelOnexError, RuntimeError, ValueError) as e:
-                    # stop_event_listener() may raise ModelOnexError if event bus
-                    # doesn't support unsubscribe, but it still stops the listener
-                    cleanup_errors.append(f"Failed to stop event listener: {e!r}")
-                    emit_log_event(
-                        LogLevel.ERROR,
-                        f"MIXIN_DISPOSE: Failed to stop event listener: {e!r}",
-                        ModelLogData(node_name=self.get_node_name()),
-                    )
-
-                # Explicitly join listener thread for proper cleanup
-                # This ensures the thread has fully terminated before we continue
-                if handle.listener_thread is not None:
-                    try:
-                        # Use the handle's configured timeout for consistency
-                        # This respects instance/class-level timeout configuration
-                        join_timeout = handle.get_stop_timeout()
-                        handle.listener_thread.join(timeout=join_timeout)
-                        if handle.listener_thread.is_alive():
-                            cleanup_errors.append(
-                                "Listener thread did not terminate within join timeout"
-                            )
-                            emit_log_event(
-                                LogLevel.WARNING,
-                                "MIXIN_DISPOSE: Listener thread did not terminate within timeout",
-                                ModelLogData(node_name=self.get_node_name()),
-                            )
-                    except (OSError, RuntimeError) as e:
-                        cleanup_errors.append(f"Failed to join listener thread: {e!r}")
-                        emit_log_event(
-                            LogLevel.ERROR,
-                            f"MIXIN_DISPOSE: Failed to join listener thread: {e!r}",
-                            ModelLogData(node_name=self.get_node_name()),
-                        )
-
-            # === Phase 3: Clear bindings atomically under lock ===
+            # === Phase 1: Clear bindings atomically under lock ===
             with self._mixin_lock:
                 for attr in (
                     "_bound_event_bus",
                     "_bound_registry",
-                    "_mixin_event_bus_listener",
                 ):
                     try:
                         object.__delattr__(self, attr)
@@ -1597,7 +1114,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                             ModelLogData(node_name=self.get_node_name()),
                         )
 
-            # === Phase 4: Reset runtime state ===
+            # === Phase 2: Reset runtime state ===
             try:
                 self._event_bus_runtime_state.reset()
             except (AttributeError, RuntimeError) as e:
@@ -1628,300 +1145,6 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 },
             )
 
-    def _event_listener_loop(self, handle: "ModelEventBusListenerHandle") -> None:
-        """Run the main event listener loop in a background thread.
-
-        Subscribes to all event patterns from get_event_patterns() and waits
-        for incoming events. The loop runs until the handle's stop_event is
-        set or an unrecoverable error occurs.
-
-        Args:
-            handle: The listener handle containing the stop event and
-                subscription list. Subscriptions are stored in the handle
-                for cleanup during stop_event_listener().
-
-        Note:
-            This method is intended to be run in a daemon thread started
-            by start_event_listener(). It should not be called directly.
-            Subscription failures are logged but do not stop the loop.
-        """
-        try:
-            patterns = self.get_event_patterns()
-            if not patterns:
-                self._log_warn("No event patterns to listen to", "event_listener")
-                return
-
-            bus = self._get_event_bus()
-            if not bus:
-                raise ModelOnexError(
-                    message="No event bus available for subscription",
-                    error_code=EnumCoreErrorCode.EVENT_BUS_ERROR,
-                    context={"node_name": self.get_node_name()},
-                )
-
-            # TODO(OMN-TBD): [v1.0] Standardize event bus protocol to require subscribe().
-            # Currently hasattr check supports legacy event bus implementations.  [NEEDS TICKET]
-            if not hasattr(bus, "subscribe"):
-                raise ModelOnexError(
-                    message="Event bus does not support 'subscribe' method",
-                    error_code=EnumCoreErrorCode.EVENT_BUS_ERROR,
-                    context={
-                        "bus_type": type(bus).__name__,
-                        "node_name": self.get_node_name(),
-                    },
-                )
-
-            # Subscribe to all patterns
-            # Note: Cast to Any for legacy event bus interface
-            for pattern in patterns:
-                try:
-                    event_handler = self._create_event_handler(pattern)
-                    subscription = cast(ProtocolEventBusDuckTyped, bus).subscribe(
-                        event_handler, event_type=pattern
-                    )
-                    handle.subscriptions.append(subscription)
-                    self._log_info(f"Subscribed to pattern: {pattern}", pattern)
-                except (RuntimeError, TypeError, ValueError) as e:
-                    self._log_error(
-                        f"Failed to subscribe to {pattern}: {e!r}",
-                        "subscribe",
-                        error=e,
-                    )
-
-            # Keep thread alive
-            while handle.stop_event is not None and not handle.stop_event.wait(1.0):
-                pass
-
-        except (RuntimeError, ValueError) as e:
-            self._log_error(
-                f"Event listener loop failed: {e!r}",
-                "event_listener",
-                error=e,
-            )
-
-    def _create_event_handler(
-        self, pattern: str
-    ) -> Callable[[ProtocolEventEnvelope[ModelOnexEvent]], None]:
-        """Create an event handler closure for a specific event pattern.
-
-        Generates a handler function that extracts events from envelopes,
-        converts them to typed input state, processes them via process(),
-        and publishes completion events.
-
-        Args:
-            pattern: The event pattern string this handler will process
-                (e.g., "generation.mynode.start"). Used for logging and
-                error context.
-
-        Returns:
-            A callable handler function that accepts ProtocolEventEnvelope
-            and processes the contained event. The handler manages its own
-            error handling and publishes error completion events on failure.
-
-        Note:
-            The returned handler captures the pattern in its closure for
-            logging and error reporting. Each pattern should have its own
-            handler instance.
-        """
-
-        def handler(envelope: ProtocolEventEnvelope[ModelOnexEvent]) -> None:
-            """Handle incoming event envelope."""
-            # Extract event from envelope - fail fast if missing
-            if not hasattr(envelope, "payload"):
-                raise ModelOnexError(
-                    message=f"Envelope missing required 'payload' attribute for pattern {pattern}",
-                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-                    context={
-                        "pattern": pattern,
-                        "envelope_type": type(envelope).__name__,
-                    },
-                )
-
-            event: ModelOnexEvent = envelope.payload
-
-            # Validate event has required attributes - fail fast if missing
-            if not hasattr(event, "event_type"):
-                raise ModelOnexError(
-                    message=f"Event missing required 'event_type' attribute for pattern {pattern}",
-                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-                    context={"pattern": pattern, "event_type": type(event).__name__},
-                )
-
-            try:
-                self._log_info(
-                    f"Processing event: {event.event_type}",
-                    str(event.event_type),
-                )
-
-                # Convert event to input state
-                input_state = self._event_to_input_state(event)
-
-                # Process through the node
-                self.process(input_state)
-
-                # Publish completion event
-                completion_event_type = self.get_completion_event_type(
-                    str(event.event_type)
-                )
-                completion_data = ModelCompletionData(
-                    message=f"Processing completed for {event.event_type}",
-                    success=True,
-                    tags=["processed", "completed"],
-                )
-
-                self.publish_completion_event(completion_event_type, completion_data)
-
-                self._log_info(
-                    f"Event processing completed: {event.event_type}",
-                    str(event.event_type),
-                )
-
-            except Exception as e:  # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
-                self._log_error(f"Event processing failed: {e!r}", pattern, error=e)
-
-                # Publish error completion event
-                try:
-                    completion_event_type = self.get_completion_event_type(
-                        str(event.event_type),
-                    )
-                    error_data = ModelCompletionData(
-                        message=f"Processing failed: {e!s}",
-                        success=False,
-                        tags=["error", "failed"],
-                    )
-                    self.publish_completion_event(completion_event_type, error_data)
-                except (ModelOnexError, RuntimeError, ValueError) as publish_error:
-                    self._log_error(
-                        f"Failed to publish error event: {publish_error!r}",
-                        "publish_error",
-                        error=publish_error,
-                    )
-
-        return handler
-
-    def _event_to_input_state(self, event: ModelOnexEvent) -> InputStateT:
-        """Convert ModelOnexEvent to typed input state for processing.
-
-        Args:
-            event: The incoming event to convert.
-
-        Returns:
-            The typed input state extracted from the event.
-
-        Raises:
-            ModelOnexError: If event is not a ModelOnexEvent or if input state
-                class cannot be determined.
-        """
-        # Type guard: validate event parameter is actually ModelOnexEvent
-        if not isinstance(event, ModelOnexEvent):
-            raise ModelOnexError(
-                message=f"Expected ModelOnexEvent, got {type(event).__name__}",
-                error_code=EnumCoreErrorCode.TYPE_MISMATCH,
-                context={
-                    "expected_type": "ModelOnexEvent",
-                    "actual_type": type(event).__name__,
-                    "node_name": self.get_node_name(),
-                },
-            )
-
-        try:
-            input_state_class = self._get_input_state_class()
-            if not input_state_class:
-                msg = "Cannot determine input state class for event conversion"
-                raise ModelOnexError(
-                    message=msg,
-                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-                )
-
-            # Extract data from event - convert to dict if ModelEventData
-            event_data_raw = event.data
-            if event_data_raw is None:
-                event_data: dict[str, object] = {}
-            elif hasattr(event_data_raw, "model_dump"):
-                event_data = event_data_raw.model_dump()
-            else:
-                event_data = {}
-
-            # Try to create input state from event data using from_event if available
-            # Use Protocol-based type narrowing for proper type safety
-            if isinstance(input_state_class, type) and issubclass(
-                input_state_class, ProtocolFromEvent
-            ):
-                # Protocol check passed - from_event method exists and is callable
-                result: InputStateT = cast(
-                    InputStateT, input_state_class.from_event(event)
-                )
-                return result
-
-            # Fallback: check for from_event via getattr for classes that don't
-            # match the Protocol (e.g., due to signature differences)
-            # TODO(OMN-TBD): [v1.0] Remove this fallback after migration to ProtocolFromEvent.
-            # This supports legacy input state classes that have from_event but don't
-            # conform to the ProtocolFromEvent signature. Once all consumers have
-            # migrated to the protocol-based pattern, this can be removed.  [NEEDS TICKET]
-            from_event_method = getattr(input_state_class, "from_event", None)
-            if from_event_method is not None and callable(from_event_method):
-                result = cast(InputStateT, from_event_method(event))
-                return result
-
-            # Verify class is callable before invoking
-            if not callable(input_state_class):
-                raise ModelOnexError(
-                    message=f"Input state class {input_state_class} is not callable",
-                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-                    context={"input_state_class": str(input_state_class)},
-                )
-            # Create from event data directly
-            return cast(InputStateT, input_state_class(**event_data))
-
-        except (KeyError, TypeError, ValueError) as e:
-            self._log_error(
-                f"Failed to convert event to input state: {e!r}",
-                "event_conversion",
-                error=e,
-            )
-            raise
-
-    def _get_input_state_class(self) -> type | None:
-        """Extract the input state class from generic type parameters.
-
-        Uses Python's type introspection to find the InputStateT type
-        argument from the class's generic bases. This enables type-safe
-        event-to-state conversion in _event_to_input_state().
-
-        Returns:
-            The input state class (first generic type argument) or None
-            if the class was not parameterized with concrete types.
-
-        Raises:
-            ModelOnexError: If type introspection fails due to unexpected
-                AttributeError, TypeError, or IndexError.
-
-        Example:
-            >>> class MyNode(MixinEventBus[MyInputState, MyOutputState]): ...
-            >>> node = MyNode()
-            >>> node._get_input_state_class()  # Returns MyInputState
-        """
-        try:
-            # Get the generic type arguments
-            orig_bases = getattr(self.__class__, "__orig_bases__", ())
-            for base in orig_bases:
-                if hasattr(base, "__args__") and len(base.__args__) >= 1:
-                    cls: type | None = base.__args__[0]
-                    return cls
-            return None
-        except (AttributeError, IndexError, TypeError) as e:
-            # Fail fast on unexpected errors during type introspection
-            raise ModelOnexError(
-                message=f"Failed to extract input state class from generic type parameters: {e!s}",
-                error_code=EnumCoreErrorCode.TYPE_INTROSPECTION_ERROR,
-                context={
-                    "node_name": self.get_node_name(),
-                    "class_name": self.__class__.__name__,
-                    "error_type": type(e).__name__,
-                },
-            ) from e
-
     # --- Logging Helpers ---
 
     def _log_info(self, msg: str, pattern: str) -> None:
@@ -1930,7 +1153,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         Args:
             msg: The log message to emit.
             pattern: Event pattern or operation identifier for context
-                (e.g., "event_listener", "publish_completion", topic name).
+                (e.g., "publish_completion", topic name).
         """
         emit_log_event(
             LogLevel.INFO,

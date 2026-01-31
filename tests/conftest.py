@@ -48,7 +48,6 @@ Mitigation:
 import asyncio
 import gc
 import logging
-import threading
 from collections.abc import Generator
 from unittest.mock import MagicMock
 
@@ -82,36 +81,12 @@ def aggressive_gc_cleanup() -> Generator[None, None, None]:
     This fixture runs after every test to immediately free memory,
     preventing accumulation across thousands of tests.
 
-    CRITICAL: Stops all event listener threads BEFORE gc.collect() to prevent
-    deadlock when Mock objects in background threads are accessed during
-    garbage collection.
-
     Note: Exception handling includes FileNotFoundError to handle race conditions
     during parallel test execution where cleanup may access already-deleted files.
     """
     yield  # Let test run
 
-    # Stop all event listener threads before garbage collection
-    # Background threads with Mock objects can deadlock during gc.collect()
-    # Note: Don't wait for daemon threads - they'll be cleaned up automatically
-    # Waiting can cause timeouts in tests with 5s limits
-    try:
-        for thread in threading.enumerate():
-            if thread.name and "event_listener" in thread.name:
-                # Thread is daemon - will be cleaned up automatically on test exit
-                # Only do a quick check without blocking
-                if thread.is_alive():
-                    # Give thread 0.1s max - if not stopped, move on (it's daemon)
-                    try:
-                        thread.join(timeout=0.1)
-                    except (RuntimeError, FileNotFoundError, OSError):
-                        # Thread cleanup failed - move on
-                        pass
-    except (RuntimeError, FileNotFoundError, OSError):
-        # Thread enumeration failed (race condition during cleanup)
-        pass
-
-    # Now safe to collect garbage - daemon threads don't block gc
+    # Collect garbage after each test to prevent memory accumulation
     try:
         gc.collect()
     except (FileNotFoundError, OSError):

@@ -37,7 +37,6 @@ from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
 from omnibase_core.mixins.mixin_event_bus import MixinEventBus
 from omnibase_core.mixins.mixin_event_driven_node import MixinEventDrivenNode
 from omnibase_core.mixins.mixin_event_handler import MixinEventHandler
-from omnibase_core.mixins.mixin_event_listener import MixinEventListener
 from omnibase_core.mixins.mixin_fail_fast import MixinFailFast
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.mixins.mixin_handler_routing import MixinHandlerRouting
@@ -94,7 +93,6 @@ __all__ = [
     "MixinDebugDiscoveryLogging",
     "MixinEventDrivenNode",
     "MixinEventHandler",
-    "MixinEventListener",
     "MixinFailFast",
     "MixinFSMExecution",
     "MixinHandlerRouting",

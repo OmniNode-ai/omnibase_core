@@ -113,13 +113,9 @@ class ModelServiceEffect(  # type: ignore[misc]  # MRO method signature conflict
         method in subclasses to add custom cleanup logic.
 
         Calls dispose_event_bus_resources() to clean up MixinEventBus state
-        if available, otherwise falls back to stop_event_listener().
+        (producer connections, buffered messages, etc.) if available.
         """
-        # Dispose event bus resources (threads, subscriptions, etc.)
-        # Use new dispose method if available (refactored MixinEventBus),
-        # otherwise fall back to legacy stop_event_listener
+        # Dispose event bus resources (producer connections, buffered messages, etc.)
         if hasattr(self, "dispose_event_bus_resources"):
             self.dispose_event_bus_resources()
-        elif hasattr(self, "stop_event_listener"):
-            self.stop_event_listener()
         # Subclasses can override this to add custom event handler cleanup
