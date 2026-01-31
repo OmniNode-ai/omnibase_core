@@ -273,6 +273,13 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
                 else:
                     result = handler_result
 
+                # Calculate processing time for contract-driven dispatch
+                contract_processing_time: float = 0.0
+                if self._timing_service is not None and start_time is not None:
+                    contract_processing_time = self._timing_service.stop_timer(
+                        start_time
+                    )
+
                 # If handler returns ModelComputeOutput, return as-is
                 # Otherwise, wrap in ModelComputeOutput for type safety
                 if isinstance(result, ModelComputeOutput):
@@ -282,7 +289,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
                     result=result,
                     operation_id=input_data.operation_id,
                     computation_type=input_data.computation_type,
-                    processing_time_ms=0.0,
+                    processing_time_ms=contract_processing_time,
                     cache_hit=False,
                     parallel_execution_used=False,
                     metadata={"contract_driven_dispatch": True},

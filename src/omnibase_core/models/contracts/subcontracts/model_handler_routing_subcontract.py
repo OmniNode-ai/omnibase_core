@@ -273,10 +273,14 @@ class ModelHandlerRoutingSubcontract(BaseModel):
         # Rule 4: No duplicate handler_key (already validated by model_validator,
         # but included here for completeness when called on existing instances)
         if self.handlers:
-            keys = [h.handler_key for h in self.handlers]
-            duplicates = [k for k in keys if keys.count(k) > 1]
+            seen: set[str] = set()
+            duplicates: set[str] = set()
+            for h in self.handlers:
+                if h.handler_key in seen:
+                    duplicates.add(h.handler_key)
+                seen.add(h.handler_key)
             if duplicates:
-                errors.append(f"Duplicate handler_key values: {set(duplicates)}")
+                errors.append(f"Duplicate handler_key values: {duplicates}")
 
         return errors
 

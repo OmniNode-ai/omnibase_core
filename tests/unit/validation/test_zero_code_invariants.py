@@ -1,11 +1,6 @@
-"""
-Tests for zero-code contract-driven node invariants.
+"""Tests for zero-code contract-driven node invariants.
 
-This module enforces the architectural invariants that make zero-code nodes work.
-Zero-code nodes rely entirely on contract configuration for handler dispatch,
-protocol dependency injection, and runtime behavior.
-
-Part of OMN-1731: Contract-driven zero-code node base classes.
+Validates architectural invariants for contract-driven nodes (OMN-1731).
 """
 
 from __future__ import annotations
@@ -31,6 +26,8 @@ from omnibase_core.resolution.resolver_handler import (
     clear_handler_cache,
     resolve_handler,
 )
+
+pytestmark = pytest.mark.unit
 
 
 class TestZeroCodeContractCompleteness:
