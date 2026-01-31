@@ -86,6 +86,8 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     VERSION_INCOMPATIBLE = "ONEX_CORE_123_VERSION_INCOMPATIBLE"
     IMPORT_ERROR = "ONEX_CORE_124_IMPORT_ERROR"
     DEPENDENCY_ERROR = "ONEX_CORE_125_DEPENDENCY_ERROR"
+    # Protocol configuration errors (OMN-1731)
+    PROTOCOL_CONFIGURATION_ERROR = "ONEX_CORE_126_PROTOCOL_CONFIGURATION_ERROR"
 
     # Database errors (131-140)
     DATABASE_CONNECTION_ERROR = "ONEX_CORE_131_DATABASE_CONNECTION_ERROR"
@@ -321,6 +323,8 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     # Type validation errors -> ERROR
     EnumCoreErrorCode.TYPE_MISMATCH: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.TYPE_INTROSPECTION_ERROR: EnumCLIExitCode.ERROR,
+    # Protocol configuration errors
+    EnumCoreErrorCode.PROTOCOL_CONFIGURATION_ERROR: EnumCLIExitCode.ERROR,
     # Intelligence errors -> ERROR
     EnumCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.PATTERN_RECOGNITION_FAILED: EnumCLIExitCode.ERROR,
@@ -476,6 +480,7 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.VERSION_INCOMPATIBLE: "Version incompatible",
         EnumCoreErrorCode.IMPORT_ERROR: "Import error occurred",
         EnumCoreErrorCode.DEPENDENCY_ERROR: "Dependency error occurred",
+        EnumCoreErrorCode.PROTOCOL_CONFIGURATION_ERROR: "Protocol dependency resolution or handler configuration failed",
         EnumCoreErrorCode.NO_SUITABLE_PROVIDER: "No suitable provider available",
         EnumCoreErrorCode.RATE_LIMIT_ERROR: "Rate limit exceeded",
         EnumCoreErrorCode.AUTHENTICATION_ERROR: "Authentication failed",

@@ -13,6 +13,9 @@ from omnibase_core.models.container.model_onex_container import (
     get_model_onex_container,
     get_model_onex_container_sync,
 )
+from omnibase_core.models.container.model_protocols_namespace import (
+    ModelProtocolsNamespace,
+)
 from omnibase_core.models.container.model_registry_config import (
     ModelServiceRegistryConfig,
 )
@@ -35,6 +38,7 @@ __all__ = [
     "_BaseModelONEXContainer",
     "ModelInjectionContext",
     "ModelONEXContainer",
+    "ModelProtocolsNamespace",
     "ModelServiceDependencyGraph",
     "ModelServiceHealthValidationResult",
     "ModelServiceInstance",

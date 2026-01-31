@@ -107,6 +107,7 @@ from .model_observability_subcontract import ModelObservabilitySubcontract
 from .model_operation_bindings import ModelOperationBindings
 from .model_operation_mapping import ModelOperationMapping
 from .model_progress_status import ModelProgressStatus
+from .model_protocol_dependency import ModelProtocolDependency
 from .model_request_transformation import ModelRequestTransformation
 from .model_resolved_db_context import ModelResolvedDbContext
 from .model_resolved_filesystem_context import ModelResolvedFilesystemContext
@@ -231,6 +232,8 @@ __all__ = [
     "ModelMetricsSubcontract",
     # Observability subcontracts
     "ModelObservabilitySubcontract",
+    # Protocol dependency subcontracts (Contract-Driven DI)
+    "ModelProtocolDependency",
     # Retry subcontracts
     "ModelRetrySubcontract",
     # Routing subcontracts and components

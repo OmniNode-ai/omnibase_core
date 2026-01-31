@@ -51,6 +51,7 @@ from omnibase_core.protocols.compute import (
     ProtocolParallelExecutor,
     ProtocolTimingService,
 )
+from omnibase_core.resolution.resolver_handler import resolve_handler
 
 
 class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
@@ -176,6 +177,108 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
             self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]  # Registry retrieved via DI
 
     # =========================================================================
+    # Contract-Driven Handler Dispatch
+    # =========================================================================
+
+    def _get_default_handler_callable(
+        self,
+    ) -> tuple[Callable[..., Any], bool] | None:
+        """
+        Get the default handler callable from contract if configured.
+
+        Resolves the handler specified by `default_handler` in the contract's
+        `handler_routing` section. This enables zero-code compute nodes where
+        all processing logic is specified via contract configuration.
+
+        Returns:
+            Tuple of (callable, is_lazy) if handler found, None otherwise.
+            - callable: The resolved handler function or lazy loader
+            - is_lazy: True if lazy_import was specified, False otherwise
+
+        Note:
+            The callable field in handler entries uses format 'module.path:function'.
+            If lazy_import=True, the handler is resolved to a LazyLoader that
+            defers the actual import until first call.
+
+        Example Contract:
+            handler_routing:
+              default_handler: compute_transform
+              handlers:
+                - handler_key: compute_transform
+                  callable: myapp.compute:transform_data
+                  lazy_import: false
+        """
+        if self.contract_data is None:
+            return None
+
+        # Get handler_routing from contract_data
+        # Support both Pydantic model instances and dict-based contracts
+        handler_routing = None
+        if hasattr(self.contract_data, "handler_routing"):
+            handler_routing = self.contract_data.handler_routing
+        elif isinstance(self.contract_data, dict):
+            handler_routing = self.contract_data.get("handler_routing")
+
+        if handler_routing is None:
+            return None
+
+        # Get default_handler name from handler_routing
+        default_handler_name: str | None = None
+        if hasattr(handler_routing, "default_handler"):
+            default_handler_name = handler_routing.default_handler
+        elif isinstance(handler_routing, dict):
+            default_handler_name = handler_routing.get("default_handler")
+
+        if not default_handler_name:
+            return None
+
+        # Find handler entry with matching handler_key
+        handlers: list[object] = []
+        if hasattr(handler_routing, "handlers"):
+            handlers = handler_routing.handlers or []
+        elif isinstance(handler_routing, dict):
+            handlers = handler_routing.get("handlers") or []
+
+        for handler_entry in handlers:
+            # Get handler_key from entry
+            handler_key: str | None = None
+            if hasattr(handler_entry, "handler_key"):
+                handler_key = handler_entry.handler_key
+            elif isinstance(handler_entry, dict):
+                handler_key = handler_entry.get("handler_key")
+
+            if handler_key == default_handler_name:
+                # Get callable path from entry
+                callable_path: str | None = None
+                if hasattr(handler_entry, "callable"):
+                    # Note: 'callable' is a Pydantic field, not a Python callable check
+                    callable_path = getattr(handler_entry, "callable", None)
+                elif isinstance(handler_entry, dict):
+                    callable_path = handler_entry.get("callable")
+
+                if callable_path:
+                    # Get lazy_import flag
+                    lazy_import = False
+                    if hasattr(handler_entry, "lazy_import"):
+                        lazy_import = handler_entry.lazy_import
+                    elif isinstance(handler_entry, dict):
+                        lazy_import = handler_entry.get("lazy_import", False)
+
+                    # Resolve handler using resolve_handler
+                    # Use explicit eager values for mypy overload resolution
+                    if lazy_import:
+                        # Returns LazyLoader (Callable[[], HandlerCallable])
+                        handler: Callable[..., Any] = resolve_handler(
+                            callable_path, eager=False
+                        )
+                    else:
+                        # Returns HandlerCallable directly
+                        handler = resolve_handler(callable_path, eager=True)
+                    return (handler, lazy_import)
+
+        return None
+
+    # =========================================================================
     # Cache Access Properties
     # =========================================================================
 
@@ -238,6 +341,42 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
 
         try:
             self._validate_compute_input(input_data)
+
+            # Check for contract-driven dispatch via default_handler
+            # If contract specifies a handler callable, dispatch to it directly
+            handler_info = self._get_default_handler_callable()
+            if handler_info is not None:
+                resolved_handler, is_lazy = handler_info
+                if is_lazy:
+                    # Resolve lazy loader to actual handler
+                    # The lazy loader is a callable that returns the actual handler
+                    resolved_handler = resolved_handler()
+
+                # Dispatch to contract-specified handler
+                # Handler signature: async def handler(node, input_data) -> output
+                # or sync: def handler(node, input_data) -> output
+                handler_result = resolved_handler(self, input_data)
+
+                # Handle both async and sync handlers
+                if asyncio.iscoroutine(handler_result):
+                    result: Any = await handler_result
+                else:
+                    result = handler_result
+
+                # If handler returns ModelComputeOutput, return as-is
+                # Otherwise, wrap in ModelComputeOutput for type safety
+                if isinstance(result, ModelComputeOutput):
+                    return result
+                # Wrap raw result in ModelComputeOutput
+                return ModelComputeOutput(
+                    result=result,
+                    operation_id=input_data.operation_id,
+                    computation_type=input_data.computation_type,
+                    processing_time_ms=0.0,
+                    cache_hit=False,
+                    parallel_execution_used=False,
+                    metadata={"contract_driven_dispatch": True},
+                )
 
             # Check cache first if enabled and cache is available
             if input_data.cache_enabled and self._cache is not None:

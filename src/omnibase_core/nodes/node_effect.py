@@ -38,6 +38,11 @@ from omnibase_core.models.contracts.subcontracts.model_effect_subcontract import
 from omnibase_core.models.effect.model_effect_input import ModelEffectInput
 from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.resolution.resolver_handler import (
+    HandlerCallable,
+    LazyLoader,
+    resolve_handler,
+)
 
 # Error messages
 _ERR_EFFECT_SUBCONTRACT_NOT_LOADED = "Effect subcontract not loaded"
@@ -256,6 +261,23 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
         # Effect subcontract - set after construction or via contract loading
         object.__setattr__(self, "effect_subcontract", None)
 
+        # Auto-load effect_subcontract from contract if present
+        if hasattr(self, "contract_data") and self.contract_data is not None:
+            # Support both ModelContractBase instances and dict-based contracts
+            effect_sub = None
+            if hasattr(self.contract_data, "effect_subcontract"):
+                effect_sub = getattr(self.contract_data, "effect_subcontract", None)
+            elif isinstance(self.contract_data, dict):
+                effect_sub = self.contract_data.get("effect_subcontract")
+
+            if effect_sub is not None:
+                if isinstance(effect_sub, ModelEffectSubcontract):
+                    object.__setattr__(self, "effect_subcontract", effect_sub)
+                elif isinstance(effect_sub, dict):
+                    object.__setattr__(
+                        self, "effect_subcontract", ModelEffectSubcontract(**effect_sub)
+                    )
+
         # Process-local circuit breaker state keyed by operation_id.
         # operation_id is stable per operation definition (from the contract),
         # providing consistent circuit breaker state across requests.
@@ -269,6 +291,67 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
         # For nodes that need handler routing (e.g., NodeOrchestrator), the
         # MixinHandlerRouting can be initialized with a contract that includes
         # handler_routing subcontract configuration.
+
+    def _get_default_handler_callable(
+        self,
+    ) -> tuple[HandlerCallable | LazyLoader, bool] | None:
+        """
+        Get the default handler callable from contract if configured.
+
+        Looks up the handler_routing section of the contract to find the
+        default_handler and its associated callable path. Returns the resolved
+        handler function along with a flag indicating if it was lazily loaded.
+
+        Returns:
+            Tuple of (callable, is_lazy) if found, None otherwise.
+            - callable: HandlerCallable if is_lazy=False, LazyLoader if is_lazy=True
+            - is_lazy: True if the handler was loaded lazily (deferred import)
+
+        Note:
+            Handler signature is expected to be: async def handler(node, input_data) -> output
+            where node is the NodeEffect instance and input_data is ModelEffectInput.
+        """
+        if self.contract_data is None:
+            return None
+
+        # Get handler_routing from contract
+        handler_routing = None
+        if hasattr(self.contract_data, "handler_routing"):
+            handler_routing = self.contract_data.handler_routing
+        elif isinstance(self.contract_data, dict):
+            handler_routing = self.contract_data.get("handler_routing")
+
+        if handler_routing is None:
+            return None
+
+        # Get default_handler name
+        default_handler_name = getattr(handler_routing, "default_handler", None)
+        if not default_handler_name:
+            return None
+
+        # Find handler entry with matching handler_key
+        handlers = getattr(handler_routing, "handlers", []) or []
+        for handler_entry in handlers:
+            if getattr(handler_entry, "handler_key", None) == default_handler_name:
+                callable_path = getattr(handler_entry, "callable", None)
+                if callable_path:
+                    # Ensure callable_path is a string for resolve_handler
+                    if not isinstance(callable_path, str):
+                        continue
+                    lazy: bool = getattr(handler_entry, "lazy_import", False)
+                    # Use explicit branches for mypy overload resolution
+                    if lazy:
+                        # Lazy import - returns a loader function
+                        loader: LazyLoader = resolve_handler(callable_path, eager=False)
+                        return (loader, True)
+                    else:
+                        # Eager import - returns the handler directly
+                        handler: HandlerCallable = resolve_handler(
+                            callable_path, eager=True
+                        )
+                        return (handler, False)
+
+        return None
 
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """
@@ -338,6 +421,41 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
         """
         # Thread safety check (zero overhead when disabled)
         self._check_thread_safety()
+
+        # Check for contract-driven dispatch via default_handler
+        # This enables zero-code nodes with handler_routing configured
+        handler_info = self._get_default_handler_callable()
+        if handler_info is not None:
+            handler_or_loader, is_lazy = handler_info
+            # Resolve the handler - either directly or via lazy loader
+            resolved_handler: HandlerCallable
+            if is_lazy:
+                # NOTE(OMN-1731): Type narrowing for union with boolean flag.
+                # When is_lazy=True, handler_or_loader is LazyLoader. Calling it
+                # returns HandlerCallable. mypy cannot infer this automatically.
+                loader = handler_or_loader  # type: LazyLoader  # type: ignore[assignment]
+                resolved_handler = loader()
+            else:
+                # NOTE(OMN-1731): When is_lazy=False, handler_or_loader is already
+                # HandlerCallable. mypy cannot narrow the union type automatically.
+                resolved_handler = handler_or_loader  # type: ignore[assignment]
+            # Dispatch to contract-specified handler
+            # Handler signature: async def handler(node, input_data) -> ModelEffectOutput
+            # NOTE(OMN-1731): mypy cannot infer the coroutine return type from
+            # the dynamically resolved handler. Safe because contract defines the
+            # handler signature requirement.
+            result = await resolved_handler(self, input_data)  # type: ignore[misc]
+            # Validate return type at runtime
+            if not isinstance(result, ModelEffectOutput):
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
+                    message=(
+                        f"Handler returned invalid type: expected ModelEffectOutput, "
+                        f"got {type(result).__name__}"
+                    ),
+                    context={"node_id": str(self.node_id)},
+                )
+            return result
 
         if self.effect_subcontract is None:
             raise ModelOnexError(

@@ -3,8 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from omnibase_core.models.container.model_protocols_namespace import (
+    ModelProtocolsNamespace,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.resolution.resolver_protocol_dependency import (
+    resolve_protocol_dependencies,
+)
 
 if TYPE_CHECKING:
     from omnibase_core.types import (
@@ -82,6 +88,7 @@ class NodeCoreBase(ABC):
     metrics: dict[str, float]
     contract_data: object | None
     version: ModelSemVer
+    protocols: ModelProtocolsNamespace | None
 
     def __init__(self, container: ModelONEXContainer) -> None:
         """
@@ -134,6 +141,9 @@ class NodeCoreBase(ABC):
         # Contract and configuration
         object.__setattr__(self, "contract_data", None)
         object.__setattr__(self, "version", ModelSemVer(major=1, minor=0, patch=0))
+
+        # Initialize protocols namespace to None (resolved later in _initialize_node_resources)
+        object.__setattr__(self, "protocols", None)
 
         # Initialize metrics - capture creation timestamp using perf_counter for accurate
         # duration measurements (monotonic, unaffected by system clock adjustments)
@@ -480,8 +490,46 @@ class NodeCoreBase(ABC):
         Initialize node-specific resources.
 
         Override in subclasses to add node-type-specific initialization.
-        Base implementation does nothing.
+        Base implementation resolves protocol dependencies from contract.
         """
+        # Resolve protocol dependencies from contract
+        self._resolve_protocol_dependencies()
+
+    def _resolve_protocol_dependencies(self) -> None:
+        """
+        Resolve protocol dependencies from contract declarations.
+
+        Called during _initialize_node_resources() if contract has
+        protocol_dependencies section.
+
+        After resolution, protocols are accessible via self.protocols:
+            self.protocols.logger.info("message")
+            self.protocols.event_bus.emit(event)
+        """
+        # Check if contract_data has protocol_dependencies
+        if self.contract_data is None:
+            return
+
+        # Try to get protocol_dependencies from contract_data
+        # Support both ModelContractBase instances and dict-based contracts
+        protocol_deps = None
+        if hasattr(self.contract_data, "protocol_dependencies"):
+            protocol_deps = self.contract_data.protocol_dependencies
+        elif isinstance(self.contract_data, dict):
+            protocol_deps = self.contract_data.get("protocol_dependencies")
+
+        if not protocol_deps:
+            return
+
+        # Resolve dependencies
+        resolved = resolve_protocol_dependencies(
+            protocol_deps,
+            self.container,
+            node_id=str(self.node_id),
+        )
+
+        # Create immutable namespace
+        object.__setattr__(self, "protocols", ModelProtocolsNamespace(resolved))
 
     async def _cleanup_node_resources(self) -> None:
         """

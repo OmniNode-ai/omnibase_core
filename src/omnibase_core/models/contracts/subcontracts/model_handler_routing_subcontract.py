@@ -38,7 +38,7 @@ Key Invariant:
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from typing import ClassVar
+from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -189,6 +189,84 @@ class ModelHandlerRoutingSubcontract(BaseModel):
             routing_keys.add(entry.routing_key)
 
         return self
+
+    @model_validator(mode="after")
+    def validate_no_duplicate_handler_keys(self) -> Self:
+        """Ensure no duplicate handler_key values in handlers.
+
+        While duplicate handler_keys are technically valid for different routing_keys
+        (same handler can handle multiple event types), having the exact same
+        handler_key multiple times indicates a configuration error.
+
+        Raises:
+            ValueError: If duplicate handler_key values are found.
+        """
+        if not self.handlers:
+            return self
+
+        keys = [h.handler_key for h in self.handlers]
+        if len(keys) != len(set(keys)):
+            duplicates = [k for k in keys if keys.count(k) > 1]
+            raise ValueError(f"Duplicate handler_key values: {set(duplicates)}")
+        return self
+
+    def validate_zero_code_requirements(self) -> list[str]:
+        """
+        Validate this routing config meets zero-code contract requirements.
+
+        Zero-code nodes rely entirely on contract configuration for handler
+        dispatch. This method validates that all required configuration is
+        present and internally consistent.
+
+        Returns:
+            List of validation error messages (empty if valid).
+
+        Use Case:
+            Called during node initialization to ensure contract is complete
+            for zero-code dispatch. Errors are raised as ProtocolConfigurationError.
+
+        Example:
+            >>> subcontract = ModelHandlerRoutingSubcontract(
+            ...     version=ModelSemVer(major=1, minor=0, patch=0),
+            ...     handlers=[
+            ...         ModelHandlerRoutingEntry(
+            ...             routing_key="EventA",
+            ...             handler_key="handler_a"
+            ...         )
+            ...     ],
+            ...     default_handler="handler_a"
+            ... )
+            >>> subcontract.validate_zero_code_requirements()
+            []
+        """
+        errors: list[str] = []
+
+        # Rule 1: default_handler required
+        if not self.default_handler:
+            errors.append("default_handler is required for contract-driven dispatch")
+
+        # Rule 2: handlers non-empty
+        if not self.handlers:
+            errors.append("handlers[] cannot be empty when handler_routing is declared")
+
+        # Rule 3: default_handler must exist in handlers
+        if self.default_handler and self.handlers:
+            handler_keys = {h.handler_key for h in self.handlers}
+            if self.default_handler not in handler_keys:
+                errors.append(
+                    f"default_handler '{self.default_handler}' not found in handlers[]. "
+                    f"Available: {sorted(handler_keys)}"
+                )
+
+        # Rule 4: No duplicate handler_key (already validated by model_validator,
+        # but included here for completeness when called on existing instances)
+        if self.handlers:
+            keys = [h.handler_key for h in self.handlers]
+            duplicates = [k for k in keys if keys.count(k) > 1]
+            if duplicates:
+                errors.append(f"Duplicate handler_key values: {set(duplicates)}")
+
+        return errors
 
     def build_routing_table(self) -> dict[str, list[str]]:
         """
