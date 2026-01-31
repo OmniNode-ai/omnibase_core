@@ -14,6 +14,7 @@ import re
 from typing import TYPE_CHECKING
 
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
+from omnibase_core.validation.db._sql_utils import normalize_sql, strip_sql_strings
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_db_repository_contract import (
@@ -48,8 +49,8 @@ def validate_db_deterministic(
     errors: list[str] = []
 
     for op_name, op in contract.ops.items():
-        normalized_sql = _normalize_sql(op.sql)
-        sql_without_strings = _strip_sql_strings(normalized_sql)
+        normalized_sql = normalize_sql(op.sql)
+        sql_without_strings = strip_sql_strings(normalized_sql)
 
         # Only check SELECT statements
         if not _SELECT_PATTERN.match(normalized_sql):
@@ -85,38 +86,4 @@ def validate_db_deterministic(
     )
 
 
-def _normalize_sql(sql: str) -> str:
-    """Normalize SQL by stripping comments and collapsing whitespace.
-
-    Args:
-        sql: Raw SQL string.
-
-    Returns:
-        Normalized SQL with comments removed and whitespace collapsed.
-    """
-    # Remove single-line comments (-- comment)
-    sql = re.sub(r"--.*$", "", sql, flags=re.MULTILINE)
-    # Remove multi-line comments (/* comment */)
-    sql = re.sub(r"/\*.*?\*/", "", sql, flags=re.DOTALL)
-    # Collapse whitespace to single spaces
-    sql = " ".join(sql.split())
-    return sql.strip()
-
-
-def _strip_sql_strings(sql: str) -> str:
-    """Remove string literals from SQL to avoid false positives.
-
-    Prevents matching keywords inside string literals like:
-    'ORDER BY is not a column' or 'LIMIT reached'
-
-    Args:
-        sql: Normalized SQL string.
-
-    Returns:
-        SQL with string literals removed.
-    """
-    # Remove single-quoted strings
-    sql = re.sub(r"'[^']*'", "", sql)
-    # Remove double-quoted strings (identifiers in some dialects)
-    sql = re.sub(r'"[^"]*"', "", sql)
-    return sql
+__all__ = ["validate_db_deterministic"]

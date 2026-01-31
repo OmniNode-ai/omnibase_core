@@ -6,8 +6,15 @@ This module provides validators for ModelDbRepositoryContract:
 - validator_db_table_access: Tables in SQL <= declared tables
 - validator_db_deterministic: many=True -> ORDER BY required
 - validator_db_params: Named params validation
+
+Shared utilities:
+- _sql_utils: Common SQL normalization and string stripping functions
 """
 
+from omnibase_core.validation.db._sql_utils import (
+    normalize_sql,
+    strip_sql_strings,
+)
 from omnibase_core.validation.db.validator_db_deterministic import (
     validate_db_deterministic,
 )
@@ -25,6 +32,8 @@ from omnibase_core.validation.db.validator_db_table_access import (
 )
 
 __all__ = [
+    "normalize_sql",
+    "strip_sql_strings",
     "validate_db_deterministic",
     "validate_db_params",
     "validate_db_sql_safety",

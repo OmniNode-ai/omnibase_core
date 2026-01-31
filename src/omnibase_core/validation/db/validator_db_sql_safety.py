@@ -14,6 +14,7 @@ import re
 from typing import TYPE_CHECKING
 
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
+from omnibase_core.validation.db._sql_utils import normalize_sql, strip_sql_strings
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_db_repository_contract import (
@@ -59,10 +60,10 @@ def validate_db_sql_safety(
 
     for op_name, op in contract.ops.items():
         # Normalize SQL by stripping comments and collapsing whitespace
-        normalized_sql = _normalize_sql(op.sql)
+        normalized_sql = normalize_sql(op.sql)
 
         # Strip string literals to avoid false positives on keywords inside strings
-        sql_without_strings = _strip_sql_strings(normalized_sql)
+        sql_without_strings = strip_sql_strings(normalized_sql)
 
         # Check for forbidden DDL keywords
         ddl_match = _DDL_KEYWORDS.search(sql_without_strings)
@@ -126,48 +127,4 @@ def validate_db_sql_safety(
     )
 
 
-def _normalize_sql(sql: str) -> str:
-    """Normalize SQL by stripping comments and collapsing whitespace.
-
-    Removes:
-    - Single-line comments (-- comment)
-    - Multi-line comments (/* comment */)
-    - Excess whitespace
-
-    Args:
-        sql: Raw SQL string.
-
-    Returns:
-        Normalized SQL with comments removed and whitespace collapsed.
-    """
-    # Remove single-line comments
-    sql = re.sub(r"--.*$", "", sql, flags=re.MULTILINE)
-    # Remove multi-line comments
-    sql = re.sub(r"/\*.*?\*/", "", sql, flags=re.DOTALL)
-    # Collapse whitespace
-    sql = " ".join(sql.split())
-    return sql.strip()
-
-
-def _strip_sql_strings(sql: str) -> str:
-    """Remove string literals from SQL to avoid false positives.
-
-    Removes:
-    - Single-quoted strings ('value')
-    - Double-quoted identifiers ("column")
-
-    This prevents false detection of keywords inside string literals.
-    For example: INSERT INTO logs (message) VALUES ('User performed DROP action')
-    should not trigger DDL detection.
-
-    Args:
-        sql: Normalized SQL string.
-
-    Returns:
-        SQL with string literals replaced by empty strings.
-    """
-    # Remove single-quoted strings (handles escaped quotes via non-greedy match)
-    sql = re.sub(r"'(?:[^'\\]|\\.)*'", "", sql)
-    # Remove double-quoted identifiers
-    sql = re.sub(r'"(?:[^"\\]|\\.)*"', "", sql)
-    return sql
+__all__ = ["validate_db_sql_safety"]

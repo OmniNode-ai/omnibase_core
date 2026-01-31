@@ -965,3 +965,71 @@ class TestEdgeCases:
         result = validate_db_table_access(contract)
         # public.users should match 'users' in tables list
         assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_doubled_quote_escape_in_string(self) -> None:
+        """PostgreSQL-style doubled quotes inside strings should be handled."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["logs"],
+            models={},
+            ops={
+                "log_message": ModelDbOperation(
+                    mode="write",
+                    sql="INSERT INTO logs (message) VALUES ('it''s working')",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        # Test all validators pass - the doubled quote shouldn't break anything
+        assert validate_db_structural(contract).is_valid
+        assert validate_db_sql_safety(contract).is_valid
+        assert validate_db_table_access(contract).is_valid
+        assert validate_db_params(contract).is_valid
+
+    def test_backslash_escape_in_string(self) -> None:
+        """Backslash-escaped quotes inside strings should be handled."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["logs"],
+            models={},
+            ops={
+                "log_message": ModelDbOperation(
+                    mode="write",
+                    sql=r"INSERT INTO logs (message) VALUES ('foo\'bar')",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        # Test all validators pass
+        assert validate_db_structural(contract).is_valid
+        assert validate_db_sql_safety(contract).is_valid
+        assert validate_db_table_access(contract).is_valid
+        assert validate_db_params(contract).is_valid
+
+    def test_ddl_keyword_after_escaped_quote(self) -> None:
+        """DDL keywords should still be detected after escaped quote strings."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "dangerous": ModelDbOperation(
+                    mode="write",
+                    sql="INSERT INTO test VALUES ('safe''string'); DROP TABLE test",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        # Should fail due to DDL keyword DROP outside string
+        result = validate_db_sql_safety(contract)
+        assert not result.is_valid
+        assert any("DROP" in str(e) for e in result.errors)

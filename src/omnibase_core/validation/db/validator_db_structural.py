@@ -15,6 +15,7 @@ import re
 from typing import TYPE_CHECKING
 
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
+from omnibase_core.validation.db._sql_utils import strip_sql_strings
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_db_repository_contract import (
@@ -81,7 +82,7 @@ def validate_db_structural(
 
         # Validate SQL is single statement unless allow_multi_statement is True
         if not op.safety_policy.allow_multi_statement:
-            sql_without_strings = _strip_sql_strings(op.sql)
+            sql_without_strings = strip_sql_strings(op.sql)
             if ";" in sql_without_strings:
                 errors.append(
                     f"Operation '{op_name}': SQL contains multiple statements. "
@@ -103,20 +104,4 @@ def validate_db_structural(
     )
 
 
-def _strip_sql_strings(sql: str) -> str:
-    """Remove string literals from SQL to avoid false positives in pattern matching.
-
-    Strips both single-quoted string literals and double-quoted identifiers
-    to prevent semicolons within strings from triggering multi-statement detection.
-
-    Args:
-        sql: The SQL string to process.
-
-    Returns:
-        SQL with all string literals removed.
-    """
-    # Remove single-quoted strings (handles escaped quotes via non-greedy match)
-    sql = re.sub(r"'[^']*'", "", sql)
-    # Remove double-quoted identifiers
-    sql = re.sub(r'"[^"]*"', "", sql)
-    return sql
+__all__ = ["validate_db_structural"]

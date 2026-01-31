@@ -13,6 +13,7 @@ import re
 from typing import TYPE_CHECKING
 
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
+from omnibase_core.validation.db._sql_utils import normalize_sql, strip_sql_strings
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_db_repository_contract import (
@@ -62,8 +63,8 @@ def validate_db_table_access(
     allowed_tables = {t.lower() for t in contract.tables}
 
     for op_name, op in contract.ops.items():
-        normalized_sql = _normalize_sql(op.sql)
-        sql_without_strings = _strip_sql_strings(normalized_sql)
+        normalized_sql = normalize_sql(op.sql)
+        sql_without_strings = strip_sql_strings(normalized_sql)
 
         # Check for unsupported patterns (fail closed)
         unsupported_found = False
@@ -120,43 +121,6 @@ def _extract_tables(sql: str) -> set[str]:
             tables.add(match.group(1))
 
     return tables
-
-
-def _normalize_sql(sql: str) -> str:
-    """Normalize SQL by stripping comments and collapsing whitespace.
-
-    Args:
-        sql: Raw SQL string.
-
-    Returns:
-        Normalized SQL with comments removed and whitespace collapsed.
-    """
-    # Remove single-line comments
-    sql = re.sub(r"--.*$", "", sql, flags=re.MULTILINE)
-    # Remove multi-line comments
-    sql = re.sub(r"/\*.*?\*/", "", sql, flags=re.DOTALL)
-    # Collapse whitespace
-    sql = " ".join(sql.split())
-    return sql.strip()
-
-
-def _strip_sql_strings(sql: str) -> str:
-    """Remove string literals from SQL to avoid false positives.
-
-    Handles both single-quoted and double-quoted strings.
-    Also handles escaped quotes within strings.
-
-    Args:
-        sql: SQL string to process.
-
-    Returns:
-        SQL with string literals replaced by empty strings.
-    """
-    # Handle escaped single quotes ('') within strings
-    sql = re.sub(r"'(?:[^']|'')*'", "''", sql)
-    # Handle double-quoted identifiers/strings
-    sql = re.sub(r'"(?:[^"]|"")*"', '""', sql)
-    return sql
 
 
 __all__ = ["validate_db_table_access"]

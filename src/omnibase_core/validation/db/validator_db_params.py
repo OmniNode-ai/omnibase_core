@@ -13,6 +13,7 @@ import re
 from typing import TYPE_CHECKING
 
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
+from omnibase_core.validation.db._sql_utils import normalize_sql, strip_sql_strings
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_db_repository_contract import (
@@ -45,8 +46,8 @@ def validate_db_params(
     errors: list[str] = []
 
     for op_name, op in contract.ops.items():
-        normalized_sql = _normalize_sql(op.sql)
-        sql_without_strings = _strip_sql_strings(normalized_sql)
+        normalized_sql = normalize_sql(op.sql)
+        sql_without_strings = strip_sql_strings(normalized_sql)
 
         # Check for forbidden positional parameters
         positional_matches = _POSITIONAL_PARAM_PATTERN.findall(sql_without_strings)
@@ -89,51 +90,6 @@ def validate_db_params(
     return ModelValidationResult.create_valid(
         summary="Parameter validation passed: all parameters match SQL placeholders",
     )
-
-
-def _normalize_sql(sql: str) -> str:
-    """Normalize SQL by stripping comments and collapsing whitespace.
-
-    Removes:
-    - Single-line comments (-- ...)
-    - Multi-line comments (/* ... */)
-    - Collapses whitespace
-
-    Args:
-        sql: Raw SQL string.
-
-    Returns:
-        Normalized SQL with comments removed.
-    """
-    # Remove single-line comments
-    sql = re.sub(r"--.*$", "", sql, flags=re.MULTILINE)
-    # Remove multi-line comments
-    sql = re.sub(r"/\*.*?\*/", "", sql, flags=re.DOTALL)
-    # Collapse whitespace
-    sql = " ".join(sql.split())
-    return sql.strip()
-
-
-def _strip_sql_strings(sql: str) -> str:
-    """Remove string literals from SQL to avoid false positives.
-
-    Removes:
-    - Single-quoted strings ('...')
-    - Double-quoted identifiers ("...")
-
-    This prevents detecting :param patterns inside string literals.
-
-    Args:
-        sql: SQL string (ideally normalized first).
-
-    Returns:
-        SQL with string literals removed.
-    """
-    # Remove single-quoted strings
-    sql = re.sub(r"'[^']*'", "", sql)
-    # Remove double-quoted identifiers
-    sql = re.sub(r'"[^"]*"', "", sql)
-    return sql
 
 
 __all__ = ["validate_db_params"]
