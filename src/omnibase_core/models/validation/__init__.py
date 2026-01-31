@@ -26,6 +26,14 @@ from .model_execution_shape_validation import ModelExecutionShapeValidation
 from .model_isolated_step_result import ModelIsolatedStepResult
 from .model_lint_statistics import ModelLintStatistics
 from .model_migration_conflict_union import ModelMigrationConflictUnion
+from .model_rule_configs import (
+    ModelRuleConfigBase,
+    ModelRuleContractSchemaConfig,
+    ModelRuleErrorTaxonomyConfig,
+    ModelRuleForbiddenImportsConfig,
+    ModelRuleRepoBoundariesConfig,
+    ModelRuleTopicNamingConfig,
+)
 from .model_shape_validation_result import ModelShapeValidationResult
 
 # Topic suffix validation models (OMN-1537)
@@ -42,8 +50,13 @@ from .model_topic_validation_result import ModelTopicValidationResult
 from .model_unique_name_result import ModelUniqueNameResult
 from .model_validation_base import ModelValidationBase
 from .model_validation_container import ModelValidationContainer
+
+# Cross-repo validation models (OMN-1771)
+from .model_validation_discovery_config import ModelValidationDiscoveryConfig
 from .model_validation_error import ModelValidationError
+from .model_validation_policy_contract import ModelValidationPolicyContract
 from .model_validation_value import ModelValidationValue
+from .model_violation_waiver import ModelViolationWaiver
 from .model_workflow_validation_result import ModelWorkflowValidationResult
 
 # Note: Other validation models (ModelAuditResult, DuplicationInfo, ProtocolSignatureExtractor, etc.)
@@ -53,6 +66,16 @@ __all__ = [
     # Contract validation event model (OMN-1146)
     "ContractValidationEventType",
     "ModelContractValidationEvent",
+    # Cross-repo validation models (OMN-1771)
+    "ModelValidationDiscoveryConfig",
+    "ModelRuleConfigBase",
+    "ModelRuleContractSchemaConfig",
+    "ModelRuleErrorTaxonomyConfig",
+    "ModelRuleForbiddenImportsConfig",
+    "ModelRuleRepoBoundariesConfig",
+    "ModelRuleTopicNamingConfig",
+    "ModelValidationPolicyContract",
+    "ModelViolationWaiver",
     # Event destination model (OMN-1151)
     "ModelEventDestination",
     # Pydantic models (safe to import)

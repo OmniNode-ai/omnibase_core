@@ -392,7 +392,9 @@ repos:
         # - mixin_health_check.py: Duck-typed Protocols (connection pools, clients) alongside health check mixin
         # - checker_enum_governance.py: Tightly coupled data classes + AST visitor for governance validator (OMN-1313)
         # - typed_dict_demo.py: TypedDict collection for demo CLI data structures (OMN-1396)
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/types/typed_dict_demo\.py$|src/omnibase_core/protocols/)
+        # - scanner_import_graph.py: Tightly coupled AST visitor + result models for import scanning (OMN-1771)
+        # - model_rule_configs.py: Related rule config family inheriting from shared base (OMN-1771)
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/types/typed_dict_demo\.py$|src/omnibase_core/validation/cross_repo/scanners/scanner_import_graph\.py$|src/omnibase_core/models/validation/model_rule_configs\.py$|src/omnibase_core/protocols/)
         stages: [pre-commit]
 
       - id: validate-enum-model-imports
