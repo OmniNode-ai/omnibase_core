@@ -11,8 +11,12 @@ from omnibase_core.models.hooks.claude_code.model_claude_code_hook_event import 
 from omnibase_core.models.hooks.claude_code.model_claude_code_hook_event_payload import (
     ModelClaudeCodeHookEventPayload,
 )
+from omnibase_core.models.hooks.claude_code.model_claude_code_session_outcome import (
+    ModelClaudeCodeSessionOutcome,
+)
 
 __all__ = [
     "ModelClaudeCodeHookEvent",
     "ModelClaudeCodeHookEventPayload",
+    "ModelClaudeCodeSessionOutcome",
 ]

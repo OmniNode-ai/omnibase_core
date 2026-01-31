@@ -311,6 +311,9 @@ from .events.enum_deregistration_reason import EnumDeregistrationReason
 from .hooks.claude_code.enum_claude_code_hook_event_type import (
     EnumClaudeCodeHookEventType,
 )
+from .hooks.claude_code.enum_claude_code_session_outcome import (
+    EnumClaudeCodeSessionOutcome,
+)
 from .hooks.claude_code.enum_claude_code_session_status import (
     EnumClaudeCodeSessionStatus,
 )
@@ -632,8 +635,9 @@ __all__ = [
     "EnumEventPriority",
     # Event sink type domain (OMN-1151)
     "EnumEventSinkType",
-    # Hook event domain (Claude Code integration - OMN-1474, OMN-1701)
+    # Hook event domain (Claude Code integration - OMN-1474, OMN-1701, OMN-1762)
     "EnumClaudeCodeHookEventType",
+    "EnumClaudeCodeSessionOutcome",
     "EnumClaudeCodeSessionStatus",
     "EnumClaudeCodeToolName",
     # Intelligence domain (OMN-1490)
