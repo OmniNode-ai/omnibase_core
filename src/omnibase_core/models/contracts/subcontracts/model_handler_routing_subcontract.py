@@ -199,15 +199,27 @@ class ModelHandlerRoutingSubcontract(BaseModel):
         handler_key multiple times indicates a configuration error.
 
         Raises:
-            ValueError: If duplicate handler_key values are found.
+            ModelOnexError: If duplicate handler_key values are found.
         """
         if not self.handlers:
             return self
 
-        keys = [h.handler_key for h in self.handlers]
-        if len(keys) != len(set(keys)):
-            duplicates = [k for k in keys if keys.count(k) > 1]
-            raise ValueError(f"Duplicate handler_key values: {set(duplicates)}")
+        # O(n) duplicate detection using set
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for h in self.handlers:
+            if h.handler_key in seen:
+                duplicates.add(h.handler_key)
+            seen.add(h.handler_key)
+
+        if duplicates:
+            raise ModelOnexError(
+                message=f"Duplicate handler_key values: {duplicates}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                field="handlers.handler_key",
+                value=list(duplicates),
+                constraint="unique_handler_key",
+            )
         return self
 
     def validate_zero_code_requirements(self) -> list[str]:

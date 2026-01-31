@@ -82,7 +82,7 @@ class TestZeroCodeContractCompleteness:
 
     def test_no_duplicate_handler_keys(self) -> None:
         """Duplicate handler_key values should fail at parse time."""
-        with pytest.raises(ValueError, match="Duplicate handler_key"):
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerRoutingSubcontract(
                 version=ModelSemVer(major=1, minor=0, patch=0),
                 handlers=[
@@ -99,6 +99,8 @@ class TestZeroCodeContractCompleteness:
                 ],
                 default_handler="handle_test",
             )
+        assert "Duplicate handler_key" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_no_duplicate_routing_keys(self) -> None:
         """Duplicate routing_key values should fail at parse time."""

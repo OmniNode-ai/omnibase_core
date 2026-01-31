@@ -16,15 +16,23 @@ from __future__ import annotations
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_hook_event_type import (
     EnumClaudeCodeHookEventType as ClaudeCodeHookEventType,
 )
+from omnibase_core.enums.hooks.claude_code.enum_claude_code_session_outcome import (
+    EnumClaudeCodeSessionOutcome as ClaudeCodeSessionOutcome,
+)
 from omnibase_core.models.hooks.claude_code.model_claude_code_hook_event import (
     ModelClaudeCodeHookEvent as ClaudeHookEvent,
 )
 from omnibase_core.models.hooks.claude_code.model_claude_code_hook_event_payload import (
     ModelClaudeCodeHookEventPayload as ClaudeHookEventPayload,
 )
+from omnibase_core.models.hooks.claude_code.model_claude_code_session_outcome import (
+    ModelClaudeCodeSessionOutcome as ClaudeSessionOutcome,
+)
 
 __all__ = [
     "ClaudeCodeHookEventType",
+    "ClaudeCodeSessionOutcome",
     "ClaudeHookEvent",
     "ClaudeHookEventPayload",
+    "ClaudeSessionOutcome",
 ]

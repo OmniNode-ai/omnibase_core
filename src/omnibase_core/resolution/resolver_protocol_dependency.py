@@ -181,6 +181,14 @@ def resolve_protocol_dependencies(
         3. Return dict keyed by dep.get_bind_name()
         4. Handle required vs optional (fail fast vs None)
 
+    lazy_import Semantics:
+        When lazy_import=True, the initial validation step is skipped, allowing
+        nodes to initialize even if the protocol module is temporarily unavailable.
+        However, the import is still attempted during resolution (step 2) with
+        graceful error handling. This is useful for optional dependencies where
+        the module may not be installed, or for cold-start optimization where
+        import errors should not block initialization.
+
     Args:
         deps: List of ModelProtocolDependency from contract.
         container: ONEX container for service resolution.

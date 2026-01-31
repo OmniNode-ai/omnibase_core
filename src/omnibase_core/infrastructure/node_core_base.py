@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from omnibase_core.models.container.model_protocols_namespace import (
     ModelProtocolsNamespace,
+)
+from omnibase_core.models.contracts.subcontracts.model_protocol_dependency import (
+    ModelProtocolDependency,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -38,7 +42,6 @@ This base class implements only the core functionality needed by all node types:
 
 import time
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
@@ -521,9 +524,34 @@ class NodeCoreBase(ABC):
         if not protocol_deps:
             return
 
+        # Normalize dict-based deps into ModelProtocolDependency
+        # This handles both Pydantic model instances and raw dicts from YAML parsing
+        normalized: list[ModelProtocolDependency] = []
+        if isinstance(protocol_deps, list):
+            for dep in protocol_deps:
+                if isinstance(dep, ModelProtocolDependency):
+                    normalized.append(dep)
+                elif isinstance(dep, Mapping):
+                    normalized.append(ModelProtocolDependency(**dep))
+                else:
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message="Invalid protocol dependency entry",
+                        context={
+                            "node_id": str(self.node_id),
+                            "dependency_type": type(dep).__name__,
+                        },
+                    )
+        else:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="protocol_dependencies must be a list",
+                context={"node_id": str(self.node_id)},
+            )
+
         # Resolve dependencies
         resolved = resolve_protocol_dependencies(
-            protocol_deps,
+            normalized,
             self.container,
             node_id=str(self.node_id),
         )

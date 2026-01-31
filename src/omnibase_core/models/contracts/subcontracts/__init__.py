@@ -52,6 +52,7 @@ from .model_configuration_subcontract import ModelConfigurationSubcontract
 from .model_configuration_validation import ModelConfigurationValidation
 from .model_coordination_result import ModelCoordinationResult
 from .model_coordination_rules import ModelCoordinationRules
+from .model_correlation_config import ModelCorrelationConfig
 from .model_data_grouping import ModelDataGrouping
 from .model_dependency_health import ModelDependencyHealth
 from .model_discovery_subcontract import ModelDiscoverySubcontract
@@ -108,6 +109,9 @@ from .model_operation_bindings import ModelOperationBindings
 from .model_operation_mapping import ModelOperationMapping
 from .model_progress_status import ModelProgressStatus
 from .model_protocol_dependency import ModelProtocolDependency
+from .model_reply_topics import ModelReplyTopics
+from .model_request_response_config import ModelRequestResponseConfig
+from .model_request_response_instance import ModelRequestResponseInstance
 from .model_request_transformation import ModelRequestTransformation
 from .model_resolved_db_context import ModelResolvedDbContext
 from .model_resolved_filesystem_context import ModelResolvedFilesystemContext
@@ -204,6 +208,10 @@ __all__ = [
     "ModelEventPersistence",
     "ModelEventRouting",
     "ModelEventTransformation",
+    "ModelCorrelationConfig",
+    "ModelReplyTopics",
+    "ModelRequestResponseConfig",
+    "ModelRequestResponseInstance",
     "ModelTopicMeta",
     # FSM subcontracts and components
     "ModelFSMSubcontract",
