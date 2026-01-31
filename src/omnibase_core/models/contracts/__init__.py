@@ -106,6 +106,13 @@ from .model_contract_orchestrator import ModelContractOrchestrator
 from .model_contract_patch import ModelContractPatch
 from .model_contract_reducer import ModelContractReducer
 from .model_contract_version import ModelContractVersion
+
+# Database repository contract models (OMN-1782)
+from .model_db_operation import ModelDbOperation
+from .model_db_param import ModelDbParam
+from .model_db_repository_contract import ModelDbRepositoryContract
+from .model_db_return import ModelDbReturn
+from .model_db_safety_policy import ModelDbSafetyPolicy
 from .model_dependency import ModelDependency
 from .model_dependency_spec import (
     DependencyType,
@@ -229,4 +236,10 @@ __all__ = [
     "ModelWorkflowStep",
     # Subcontracts
     "subcontracts",
+    # Database repository contract models (OMN-1782)
+    "ModelDbOperation",
+    "ModelDbParam",
+    "ModelDbRepositoryContract",
+    "ModelDbReturn",
+    "ModelDbSafetyPolicy",
 ]
