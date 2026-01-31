@@ -22,9 +22,9 @@ Key Capabilities:
 Author: ONEX Framework Team
 """
 
-from __future__ import annotations
-
+import asyncio
 import warnings
+from typing import Any
 from uuid import UUID
 
 from omnibase_core.constants.constants_effect import DEFAULT_OPERATION_TIMEOUT_MS
@@ -379,10 +379,18 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
                 resolved_handler = handler_or_loader  # type: ignore[assignment]
             # Dispatch to contract-specified handler
             # Handler signature: async def handler(node, input_data) -> ModelEffectOutput
-            # NOTE(OMN-1731): mypy cannot infer the coroutine return type from
+            # or sync: def handler(node, input_data) -> ModelEffectOutput
+            # NOTE(OMN-1731): mypy cannot infer the return type from
             # the dynamically resolved handler. Safe because contract defines the
             # handler signature requirement.
-            result = await resolved_handler(self, input_data)  # type: ignore[misc]
+            handler_result = resolved_handler(self, input_data)  # type: ignore[misc]
+
+            # Handle both async and sync handlers
+            if asyncio.iscoroutine(handler_result):
+                result: Any = await handler_result
+            else:
+                result = handler_result
+
             # Validate return type at runtime
             if not isinstance(result, ModelEffectOutput):
                 raise ModelOnexError(

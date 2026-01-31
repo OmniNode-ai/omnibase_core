@@ -244,6 +244,7 @@ class TestProtocolDependencyValidation:
             protocol="omnibase_core.protocols.protocol_logger:ProtocolLogger",
         )
         with pytest.raises(Exception):  # Pydantic raises ValidationError for frozen
+            # NOTE(OMN-1731): Intentional assignment to frozen model to test immutability.
             dep.name = "NewName"  # type: ignore[misc]
 
     def test_pascal_to_snake_conversion(self) -> None:
@@ -287,24 +288,28 @@ class TestProtocolsNamespaceImmutability:
         """Setting attribute after init must raise AttributeError."""
         ns = ModelProtocolsNamespace({"logger": object()})
         with pytest.raises(AttributeError, match="immutable"):
+            # NOTE(OMN-1731): Intentional dynamic attribute assignment to test immutability.
             ns.new_attr = "value"  # type: ignore[attr-defined]
 
     def test_cannot_modify_existing_protocol(self) -> None:
         """Cannot overwrite an existing protocol."""
         ns = ModelProtocolsNamespace({"logger": object()})
         with pytest.raises(AttributeError, match="immutable"):
+            # NOTE(OMN-1731): Intentional assignment to existing attr to test immutability.
             ns.logger = object()  # type: ignore[misc]
 
     def test_cannot_delete_attribute(self) -> None:
         """Cannot delete attributes from namespace."""
         ns = ModelProtocolsNamespace({"logger": object()})
         with pytest.raises(AttributeError, match="immutable"):
+            # NOTE(OMN-1731): Intentional deletion attempt to test immutability.
             del ns.logger  # type: ignore[attr-defined]
 
     def test_attribute_access_works(self) -> None:
         """Attribute access returns the protocol."""
         logger = object()
         ns = ModelProtocolsNamespace({"logger": logger})
+        # NOTE(OMN-1731): Dynamic attribute access via __getattr__ not visible to mypy.
         assert ns.logger is logger  # type: ignore[attr-defined]
 
     def test_dict_access_works(self) -> None:
@@ -317,6 +322,7 @@ class TestProtocolsNamespaceImmutability:
         """Accessing non-existent protocol raises AttributeError."""
         ns = ModelProtocolsNamespace({"logger": object()})
         with pytest.raises(AttributeError, match="not found"):
+            # NOTE(OMN-1731): Intentional access to missing attr to test error handling.
             _ = ns.event_bus  # type: ignore[attr-defined]
 
     def test_missing_protocol_dict_raises_key_error(self) -> None:

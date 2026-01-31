@@ -280,6 +280,30 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
                         start_time
                     )
 
+                    # Log performance warning if threshold exceeded
+                    if contract_processing_time > self.performance_threshold_ms:
+                        emit_log_event(
+                            LogLevel.WARNING,
+                            f"Contract-driven computation exceeded threshold: {contract_processing_time:.2f}ms",
+                            {
+                                "node_id": str(self.node_id),
+                                "operation_id": str(input_data.operation_id),
+                                "computation_type": input_data.computation_type,
+                            },
+                        )
+
+                # Update metrics (only if timing service available)
+                if self._timing_service is not None:
+                    self._update_specialized_metrics(
+                        self.computation_metrics,
+                        input_data.computation_type,
+                        contract_processing_time,
+                        True,
+                    )
+                    await self._update_processing_metrics(
+                        contract_processing_time, True
+                    )
+
                 # If handler returns ModelComputeOutput, return as-is
                 # Otherwise, wrap in ModelComputeOutput for type safety
                 if isinstance(result, ModelComputeOutput):

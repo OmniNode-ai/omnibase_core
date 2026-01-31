@@ -25,10 +25,12 @@ def get_contract_attr(obj: object, name: str, default: Any = None) -> Any:
         >>> get_contract_attr(contract_data, "handler_routing")
         >>> get_contract_attr(contract_data, "protocol_dependencies", [])
     """
-    if hasattr(obj, name):
-        return getattr(obj, name, default)
+    # Check dict first to avoid triggering __getattr__ on dict-like objects
     if isinstance(obj, dict):
         return obj.get(name, default)
+    # Fall back to attribute access for Pydantic models and other objects
+    if hasattr(obj, name):
+        return getattr(obj, name, default)
     return default
 
 
@@ -43,10 +45,12 @@ def has_contract_attr(obj: object, name: str) -> bool:
     Returns:
         True if attribute exists (and is not None for dicts).
     """
-    if hasattr(obj, name):
-        return getattr(obj, name, None) is not None
+    # Check dict first to avoid triggering __getattr__ on dict-like objects
     if isinstance(obj, dict):
         return name in obj and obj[name] is not None
+    # Fall back to attribute access for Pydantic models and other objects
+    if hasattr(obj, name):
+        return getattr(obj, name, None) is not None
     return False
 
 

@@ -260,6 +260,14 @@ class NodeCoreBase(ABC):
             self.state["status"] = EnumNodeLifecycleStatus.FAILED.value
             self._increment_metric("error_count")
 
+            # Preserve PROTOCOL_CONFIGURATION_ERROR - re-raise without wrapping
+            # to avoid masking the original error code
+            if (
+                isinstance(e, ModelOnexError)
+                and e.error_code == EnumCoreErrorCode.PROTOCOL_CONFIGURATION_ERROR
+            ):
+                raise
+
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Node initialization failed: {e!s}",

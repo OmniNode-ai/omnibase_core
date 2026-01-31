@@ -234,24 +234,21 @@ def resolve_protocol_dependencies(
         bind_name = dep.get_bind_name()
 
         try:
-            # 1. Validate protocol can be imported (unless lazy_import)
+            # 1. Attempt to import protocol class
+            # For eager (lazy_import=False): fail fast on import errors
+            # For lazy (lazy_import=True): catch errors and continue with None
             protocol_class: type[object] | None = None
-            if not dep.lazy_import:
+            try:
                 protocol_class = _validate_protocol_importable(dep.protocol)
+            except ModelOnexError:
+                if not dep.lazy_import:
+                    raise  # Eager: propagate import failures immediately
+                # Lazy: import failed, protocol_class stays None
 
-            # 2. Resolve from container
-            # Use get_service_optional to handle both required and optional gracefully
+            # 2. Resolve from container using protocol class (if available)
+            service: object | None = None
             if protocol_class is not None:
-                # We have the type, use type-based resolution
                 service = container.get_service_optional(protocol_class)
-            else:
-                # Lazy import: try to import now for resolution
-                try:
-                    protocol_class = _validate_protocol_importable(dep.protocol)
-                    service = container.get_service_optional(protocol_class)
-                except ModelOnexError:
-                    # Import failed during lazy resolution
-                    service = None
 
             if service is not None:
                 resolved[bind_name] = service
