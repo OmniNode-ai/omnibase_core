@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-01-31
+
+### Breaking Changes
+
+- **Removed Listener Management from MixinEventBus** [OMN-1747]: Listener/consumer lifecycle code removed from `omnibase_core`
+  - ⚠️ **BREAKING**: `MixinEventListener` mixin removed entirely
+  - ⚠️ **BREAKING**: `ModelEventBusListenerHandle` model removed
+  - ⚠️ **BREAKING**: `ProtocolEventBusListener` protocol removed
+  - ⚠️ **BREAKING**: `MixinEventBus` methods removed:
+    - `start_event_listener()`, `stop_event_listener()`, `_event_listener_loop()`
+    - `get_event_patterns()`, `get_completion_event_type()`, `bind_contract_path()`
+    - `_create_event_handler()`, `_event_to_input_state()`, `_get_input_state_class()`
+  - **Migration**: Use `EventBusSubcontractWiring` in `omnibase_infra` for Kafka consumer lifecycle
+  - Enforces architectural invariant: "infra owns Kafka plumbing, core provides publish-only abstractions"
+
+### Removed
+
+- `src/omnibase_core/mixins/mixin_event_listener.py` - Entire file (1,117 lines)
+- `src/omnibase_core/models/event_bus/model_event_bus_listener_handle.py` - Entire file (470 lines)
+- `src/omnibase_core/protocols/event_bus/protocol_event_bus_listener.py` - Entire file (33 lines)
+- `tests/unit/mixins/test_mixin_event_listener.py` - 30 listener tests
+- `tests/unit/models/event_bus/test_model_event_bus_listener_handle.py` - 62 listener tests
+- 25 listener-related tests from `test_mixin_event_bus.py`
+
+### Changed
+
+- **MixinEventBus refactored** to publish-only (40% smaller: 1,977 → 1,200 lines)
+  - Retained: `publish_event()`, `publish_completion_event()`, `apublish_completion_event()`
+  - Retained: `bind_event_bus()`, `bind_registry()`, `bind_node_name()`
+  - Retained: `_get_event_bus()`, `_require_event_bus()`, `_has_event_bus()`
+- `model_service_effect.py`: Removed `stop_event_listener()` fallback in cleanup
+- `mixin_tool_execution.py`: Updated docstrings to remove listener references
+- `conftest.py`: Removed dead listener thread cleanup code
+
+### Added
+
+- **CI Guard** [OMN-1747]: Pre-commit hook to prevent listener API reintroduction
+  - `scripts/validation/validate-no-listener-apis.py` - Validation script
+  - `.pre-commit-config.yaml` - New `validate-no-listener-apis` hook
+  - Guards against: `start_event_listener`, `stop_event_listener`, `_event_listener_loop`, `ModelEventBusListenerHandle`
+
 ## [0.9.11] - 2026-01-30
 
 ### Added
