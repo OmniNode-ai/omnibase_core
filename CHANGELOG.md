@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-01-31
+
+### Added
+
+- **Request-Response Schema Support** [OMN-1760]: Added `request_response` field to `ModelEventBusSubcontract`
+  - `ModelRequestResponseConfig` - Top-level config containing list of request-response instances
+  - `ModelRequestResponseInstance` - Individual pattern config with request topic, reply topics, timeout, consumer group mode
+  - `ModelReplyTopics` - Completed/failed topic suffix pairs with ONEX naming validation
+  - `ModelCorrelationConfig` - Correlation ID location config (body/headers)
+  - All topic suffixes validated against ONEX naming convention
+  - Non-empty instances list enforced to prevent silent no-op configurations
+  - `auto_offset_reset` defaults to `"earliest"` to prevent race conditions in request-response patterns
+  - Comprehensive test coverage (871 lines, 70+ test cases)
+  - Enables contract-driven request-response wiring in `omnibase_infra` (OMN-1742)
+
 ## [0.10.1] - 2026-01-31
 
 ### Added
