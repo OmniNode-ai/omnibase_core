@@ -92,6 +92,7 @@ class ModelClaudeCodeSessionOutcome(BaseModel):
         description="Classification of how the session ended",
     )
 
+    # NOTE(OMN-1762): ModelErrorDetails is generic but type parameter unused for session error context.
     error: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None,
         description="Error details if outcome is FAILED",

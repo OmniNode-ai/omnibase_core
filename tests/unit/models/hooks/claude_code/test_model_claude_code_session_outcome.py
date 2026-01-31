@@ -37,6 +37,7 @@ def sample_correlation_id() -> UUID:
     return UUID("abcdef01-abcd-abcd-abcd-abcdef012345")
 
 
+# NOTE(OMN-1762): ModelErrorDetails is generic but type parameter unused in test fixtures.
 @pytest.fixture
 def sample_error_details() -> ModelErrorDetails:  # type: ignore[type-arg]
     """Provide a sample ModelErrorDetails instance for tests."""
@@ -61,7 +62,7 @@ def success_outcome(sample_session_id: UUID) -> ModelClaudeCodeSessionOutcome:
 @pytest.fixture
 def failed_outcome(
     sample_session_id: UUID,
-    sample_error_details: ModelErrorDetails,  # type: ignore[type-arg]
+    sample_error_details: ModelErrorDetails,  # type: ignore[type-arg] - generic param unused
 ) -> ModelClaudeCodeSessionOutcome:
     """Provide a failed session outcome with error details for tests."""
     return ModelClaudeCodeSessionOutcome(
@@ -125,7 +126,7 @@ class TestModelClaudeCodeSessionOutcomeConstruction:
     def test_construction_with_error_details(
         self,
         sample_session_id: UUID,
-        sample_error_details: ModelErrorDetails,  # type: ignore[type-arg]
+        sample_error_details: ModelErrorDetails,  # type: ignore[type-arg] - generic param unused
     ) -> None:
         """Test construction with ModelErrorDetails for error field."""
         outcome = ModelClaudeCodeSessionOutcome(
@@ -156,7 +157,7 @@ class TestModelClaudeCodeSessionOutcomeConstruction:
         self,
         sample_session_id: UUID,
         sample_correlation_id: UUID,
-        sample_error_details: ModelErrorDetails,  # type: ignore[type-arg]
+        sample_error_details: ModelErrorDetails,  # type: ignore[type-arg] - generic param unused
     ) -> None:
         """Test construction with all fields populated."""
         outcome = ModelClaudeCodeSessionOutcome(
@@ -184,6 +185,7 @@ class TestModelClaudeCodeSessionOutcomeConstruction:
     def test_missing_required_session_id_raises_error(self) -> None:
         """Test that missing session_id raises ValidationError."""
         with pytest.raises(ValidationError):
+            # Intentionally omit required field to test validation
             ModelClaudeCodeSessionOutcome(
                 outcome=EnumClaudeCodeSessionOutcome.SUCCESS,
             )  # type: ignore[call-arg]
@@ -193,6 +195,7 @@ class TestModelClaudeCodeSessionOutcomeConstruction:
     ) -> None:
         """Test that missing outcome raises ValidationError."""
         with pytest.raises(ValidationError):
+            # Intentionally omit required field to test validation
             ModelClaudeCodeSessionOutcome(
                 session_id=sample_session_id,
             )  # type: ignore[call-arg]
@@ -212,6 +215,7 @@ class TestModelClaudeCodeSessionOutcomeConfig:
     ) -> None:
         """Test that model is frozen and rejects attribute assignment."""
         with pytest.raises(ValidationError) as exc_info:
+            # Intentionally mutate frozen model to test immutability
             success_outcome.outcome = EnumClaudeCodeSessionOutcome.FAILED  # type: ignore[misc]
 
         assert (
@@ -224,6 +228,7 @@ class TestModelClaudeCodeSessionOutcomeConfig:
     ) -> None:
         """Test that session_id cannot be modified after creation."""
         with pytest.raises(ValidationError) as exc_info:
+            # Intentionally mutate frozen model to test immutability
             success_outcome.session_id = uuid4()  # type: ignore[misc]
 
         assert (
@@ -234,6 +239,7 @@ class TestModelClaudeCodeSessionOutcomeConfig:
     def test_extra_forbid_rejects_unknown_fields(self, sample_session_id: UUID) -> None:
         """Test that extra='forbid' rejects unknown fields."""
         with pytest.raises(ValidationError) as exc_info:
+            # Intentionally pass unknown field to test extra='forbid' config
             ModelClaudeCodeSessionOutcome(
                 session_id=sample_session_id,
                 outcome=EnumClaudeCodeSessionOutcome.SUCCESS,
@@ -484,7 +490,7 @@ class TestModelClaudeCodeSessionOutcomeSerialization:
         self,
         sample_session_id: UUID,
         sample_correlation_id: UUID,
-        sample_error_details: ModelErrorDetails,  # type: ignore[type-arg]
+        sample_error_details: ModelErrorDetails,  # type: ignore[type-arg] - generic param unused
     ) -> None:
         """Test full round-trip serialization preserves data."""
         original = ModelClaudeCodeSessionOutcome(
@@ -505,6 +511,7 @@ class TestModelClaudeCodeSessionOutcomeSerialization:
         assert deserialized.outcome == original.outcome
         assert deserialized.correlation_id == original.correlation_id
         assert deserialized.error is not None
+        # error is confirmed not None above, but mypy doesn't narrow original.error
         assert deserialized.error.error_code == original.error.error_code  # type: ignore[union-attr]
 
     def test_deserialization_without_optional_fields(self) -> None:
