@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-01-31
+
+### Added
+
+- **Kafka Import Guard** [OMN-1745]: Extended CI guard to block direct Kafka imports
+  - Renamed `validate-no-listener-apis.py` → `validate-no-kafka-listener-apis.py`
+  - Added patterns for: `AIOKafkaConsumer`, `KafkaConsumer`, `AIOKafkaProducer`, `KafkaProducer`
+  - Added `# kafka-import-ok:` bypass marker (alongside existing `# listener-api-ok:`)
+  - Updated pre-commit hook id and name to reflect expanded scope
+  - Provides defense-in-depth: Level 1 guards listener APIs, Level 2 guards raw Kafka imports
+  - Enforces ARCH-002: "Runtime owns all Kafka plumbing"
+
 ## [0.10.0] - 2026-01-31
 
 ### Breaking Changes

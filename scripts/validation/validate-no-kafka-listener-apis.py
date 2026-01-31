@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-ONEX Listener API Prevention Validation.
+ONEX Listener API and Kafka Consumer Import Prevention Validation.
 
 OMN-1747: Listener/consumer lifecycle management was removed from omnibase_core.
+OMN-1745: Direct Kafka consumer imports are forbidden in omnibase_core.
 This pre-commit hook prevents these APIs from being reintroduced.
 
 For Kafka consumer management, use EventBusSubcontractWiring in omnibase_infra.
@@ -13,27 +14,34 @@ Detected Patterns:
 3. def _event_listener_loop( - Internal listener loop
 4. class ModelEventBusListenerHandle - Listener handle model
 5. from ... import ... ModelEventBusListenerHandle - Imports of listener handle
+6. from ... import ... AIOKafkaConsumer - Direct async Kafka consumer import
+7. from ... import ... KafkaConsumer - Direct sync Kafka consumer import
+8. from ... import ... AIOKafkaProducer - Direct async Kafka producer import
+9. from ... import ... KafkaProducer - Direct sync Kafka producer import
 
 Usage:
     # Check specific files (pre-commit mode)
-    poetry run python scripts/validation/validate-no-listener-apis.py <file1> [file2] ...
+    poetry run python scripts/validation/validate-no-kafka-listener-apis.py <file1> [file2] ...
 
     # Check entire src/ directory (default)
-    poetry run python scripts/validation/validate-no-listener-apis.py
+    poetry run python scripts/validation/validate-no-kafka-listener-apis.py
 
     # Check specific directory
-    poetry run python scripts/validation/validate-no-listener-apis.py src/omnibase_core/
+    poetry run python scripts/validation/validate-no-kafka-listener-apis.py src/omnibase_core/
 
-    To allow listener APIs in specific files (rare cases), add comment:
+    To allow listener APIs or Kafka imports in specific files (rare cases), add comment:
     # listener-api-ok: reason for exception
+    # kafka-import-ok: reason for exception
 
 Rationale:
     - omnibase_core must remain transport-agnostic (ADR-005)
     - Listener lifecycle creates tight coupling to Kafka implementation
+    - Direct Kafka consumer imports bypass the transport abstraction layer
     - Consumer management belongs in omnibase_infra via EventBusSubcontractWiring
     - Core should only define protocols, not implementations
 
 Reference:
+    - OMN-1745: Block direct Kafka consumer imports in omnibase_core
     - OMN-1747: Remove listener management from omnibase_core
     - docs/architecture/adr/ADR-005-core-infra-dependency-boundary.md
 """
@@ -73,10 +81,30 @@ FORBIDDEN_PATTERNS: list[tuple[re.Pattern[str], str]] = [
         re.compile(r"\b(?:from\s+\S+\s+)?import\s+.*\bModelEventBusListenerHandle\b"),
         "ModelEventBusListenerHandle import forbidden - listener handles not needed in core",
     ),
+    (
+        # Matches "from aiokafka import AIOKafkaConsumer" and similar
+        re.compile(r"\b(?:from\s+\S+\s+)?import\s+.*\bAIOKafkaConsumer\b"),
+        "Direct AIOKafkaConsumer import forbidden - use EventBusSubcontractWiring in infra",
+    ),
+    (
+        # Matches "from kafka import KafkaConsumer" and similar
+        re.compile(r"\b(?:from\s+\S+\s+)?import\s+.*\bKafkaConsumer\b"),
+        "Direct KafkaConsumer import forbidden - use EventBusSubcontractWiring in infra",
+    ),
+    (
+        # Matches "from aiokafka import AIOKafkaProducer" and similar
+        re.compile(r"\b(?:from\s+\S+\s+)?import\s+.*\bAIOKafkaProducer\b"),
+        "Direct AIOKafkaProducer import forbidden - use EventBusSubcontractWiring in infra",
+    ),
+    (
+        # Matches "from kafka import KafkaProducer" and similar
+        re.compile(r"\b(?:from\s+\S+\s+)?import\s+.*\bKafkaProducer\b"),
+        "Direct KafkaProducer import forbidden - use EventBusSubcontractWiring in infra",
+    ),
 ]
 
-# Bypass comment pattern
-BYPASS_PATTERN = re.compile(r"#\s*listener-api-ok:", re.IGNORECASE)
+# Bypass comment patterns - accepts either listener-api-ok or kafka-import-ok
+BYPASS_PATTERN = re.compile(r"#\s*(?:listener-api-ok|kafka-import-ok):", re.IGNORECASE)
 
 
 def check_file(filepath: Path) -> list[tuple[int, str, str]]:
@@ -122,7 +150,7 @@ def check_file(filepath: Path) -> list[tuple[int, str, str]]:
 def main() -> int:
     """Main entry point for validation script."""
     parser = argparse.ArgumentParser(
-        description="Prevent listener management APIs from being introduced to omnibase_core"
+        description="Prevent listener APIs and direct Kafka consumer imports in omnibase_core"
     )
     parser.add_argument(
         "paths",
@@ -166,11 +194,11 @@ def main() -> int:
 
     if all_violations:
         print(f"\n{'=' * 70}")  # print-ok: CLI output
-        print("ONEX Listener API Prevention Failed")  # print-ok: CLI output
+        print("ONEX Listener API / Kafka Consumer Import Prevention Failed")  # print-ok: CLI output
         print(f"{'=' * 70}\n")  # print-ok: CLI output
 
         print(  # print-ok: CLI output
-            f"Found {len(all_violations)} forbidden listener API(s):\n"
+            f"Found {len(all_violations)} forbidden pattern(s):\n"
         )
 
         for filepath, line_num, violation_type, line_content in all_violations:
@@ -185,9 +213,12 @@ def main() -> int:
             print()  # print-ok: CLI output
 
         print("-" * 70)  # print-ok: CLI output
-        print("\nWhy listener APIs are not allowed in omnibase_core:")  # print-ok: CLI output
+        print("\nWhy these patterns are not allowed in omnibase_core:")  # print-ok: CLI output
         print(  # print-ok: CLI output
             "  - OMN-1747: Listener lifecycle removed from core (transport-agnostic)"
+        )
+        print(  # print-ok: CLI output
+            "  - OMN-1745: Direct Kafka imports bypass transport abstraction"
         )
         print(  # print-ok: CLI output
             "  - Core should only define protocols, not Kafka implementations"
@@ -200,7 +231,7 @@ def main() -> int:
         )
         print("\nTo fix:")  # print-ok: CLI output
         print(  # print-ok: CLI output
-            "  1. Remove the listener API code from omnibase_core"
+            "  1. Remove the listener API or Kafka import from omnibase_core"
         )
         print(  # print-ok: CLI output
             "  2. If needed, implement in omnibase_infra instead"
@@ -209,12 +240,13 @@ def main() -> int:
             "\nFor rare legitimate exceptions, add this comment in the first 20 lines:"
         )
         print("  # listener-api-ok: <reason for exception>")  # print-ok: CLI output
+        print("  # kafka-import-ok: <reason for exception>")  # print-ok: CLI output
 
         return 1
 
     if args.verbose:
         print(  # print-ok: CLI output
-            f"Checked {len(files_to_check)} files - no forbidden listener APIs found"
+            f"Checked {len(files_to_check)} files - no forbidden patterns found"
         )
 
     return 0
