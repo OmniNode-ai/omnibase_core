@@ -31,6 +31,7 @@ from omnibase_core.validation.cross_repo.scanners import (
     ScannerFileDiscovery,
     ScannerImportGraph,
 )
+from omnibase_core.validation.cross_repo.util_fingerprint import generate_fingerprint
 
 __all__ = [
     "CrossRepoValidationEngine",
@@ -41,6 +42,7 @@ __all__ = [
     "RuleRepoBoundaries",
     "ScannerFileDiscovery",
     "ScannerImportGraph",
+    "generate_fingerprint",
     "get_rule_config_type",
     "load_policy",
     "run_cross_repo_validation",

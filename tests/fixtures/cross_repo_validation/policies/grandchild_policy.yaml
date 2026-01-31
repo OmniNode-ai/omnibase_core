@@ -1,0 +1,13 @@
+---
+# Grandchild policy that tries to extend child_policy (OMN-1774)
+# This should FAIL because multi-level inheritance is not allowed.
+extends: ./child_policy.yaml
+
+policy_id: grandchild_policy
+policy_version:
+  major: 1
+  minor: 0
+  patch: 0
+repo_id: grandchild_app
+
+rules: {}

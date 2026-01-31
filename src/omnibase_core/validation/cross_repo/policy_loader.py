@@ -1,13 +1,24 @@
 """Policy loader for cross-repo validation.
 
 Loads and validates policy contracts from YAML files.
+Supports single-level policy inheritance via the `extends` field.
 
-Related ticket: OMN-1771
+Inheritance Rules (OMN-1774):
+- Single-level only: A child policy can extend a parent, but the parent
+  cannot extend another policy. Multi-level chaining is explicitly forbidden.
+- Child overrides parent: On conflict, child values take precedence.
+- Dict fields merge: Child entries override parent entries, but non-conflicting
+  parent entries are preserved.
+- List/tuple fields concatenate: Parent values first, then child values appended.
+- Deterministic merge order: Always parent-first, child-second for predictable results.
+
+Related tickets: OMN-1771, OMN-1774
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import yaml
 from pydantic import ValidationError
@@ -28,14 +39,17 @@ from omnibase_core.validation.cross_repo.rule_registry import RuleRegistry
 def load_policy(policy_path: Path) -> ModelValidationPolicyContract:
     """Load a validation policy from a YAML file.
 
+    If the policy has an `extends` field, the parent policy is loaded first
+    and merged with the child. Only single-level inheritance is supported.
+
     Args:
         policy_path: Path to the policy YAML file.
 
     Returns:
-        Validated policy contract.
+        Validated policy contract (with inheritance resolved if applicable).
 
     Raises:
-        ModelOnexError: If the file cannot be read or parsed.
+        ModelOnexError: If the file cannot be read, parsed, or has invalid inheritance.
     """
     if not policy_path.exists():
         raise ModelOnexError(
@@ -58,7 +72,195 @@ def load_policy(policy_path: Path) -> ModelValidationPolicyContract:
             error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
         ) from e
 
+    # Check for inheritance
+    extends = data.get("extends")
+    if extends:
+        data = _resolve_inheritance(data, extends, policy_path)
+
     return _parse_policy_data(data, policy_path)
+
+
+# ONEX_EXCLUDE: dict_str_any - raw YAML merge utilities need dict[str, Any] for pre-validation data
+def _resolve_inheritance(
+    child_data: dict[str, Any],
+    extends_path: str,
+    child_path: Path,
+) -> dict[str, Any]:
+    """Resolve single-level policy inheritance.
+
+    Loads the parent policy and merges it with the child policy.
+    Only single-level inheritance is allowed (parent cannot have extends).
+
+    Args:
+        child_data: The child policy raw YAML data.
+        extends_path: Relative or absolute path to the parent policy.
+        child_path: Path to the child policy (for resolving relative paths).
+
+    Returns:
+        Merged policy data with inheritance resolved.
+
+    Raises:
+        ModelOnexError: If parent not found or has multi-level inheritance.
+    """
+    # Resolve the parent path relative to the child policy's directory
+    if extends_path.startswith(("./", "../")):
+        parent_path = (child_path.parent / extends_path).resolve()
+    else:
+        parent_path = Path(extends_path)
+
+    if not parent_path.exists():
+        raise ModelOnexError(
+            message=f"Parent policy not found: {extends_path} (resolved to {parent_path})",
+            error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+            context={
+                "child_policy": str(child_path),
+                "extends": extends_path,
+                "resolved_parent": str(parent_path),
+            },
+        )
+
+    # Load parent policy data
+    try:
+        parent_content = parent_path.read_text(encoding="utf-8")
+        # yaml-ok: Parse raw YAML to dict for inheritance merging
+        parent_data = yaml.safe_load(parent_content)
+    except OSError as e:
+        raise ModelOnexError(
+            message=f"Failed to read parent policy file: {e}",
+            error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+        ) from e
+    except yaml.YAMLError as e:
+        raise ModelOnexError(
+            message=f"Failed to parse parent policy YAML: {e}",
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+        ) from e
+
+    # Enforce single-level inheritance: parent cannot have extends
+    if parent_data.get("extends"):
+        raise ModelOnexError(
+            message=(
+                f"Multi-level policy inheritance is not supported. "
+                f"Parent policy '{extends_path}' also has an 'extends' field. "
+                f"Only single-level inheritance is allowed."
+            ),
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+            context={
+                "child_policy": str(child_path),
+                "parent_policy": str(parent_path),
+                "parent_extends": parent_data.get("extends"),
+            },
+        )
+
+    # Merge parent and child (child overrides parent)
+    return _merge_policy_data(parent_data, child_data)
+
+
+# ONEX_EXCLUDE: dict_str_any - raw YAML merge utilities need dict[str, Any] for pre-validation data
+def _merge_policy_data(
+    parent: dict[str, Any],
+    child: dict[str, Any],
+) -> dict[str, Any]:
+    """Merge parent and child policy data with shallow inheritance.
+
+    Merge rules:
+    - Scalar fields: child wins
+    - Dict fields (like `rules`): merge, child values override parent
+    - List/tuple fields: concatenate (parent first, then child)
+    - The `extends` field is not propagated to the merged result
+
+    Args:
+        parent: Parent policy raw data.
+        child: Child policy raw data.
+
+    Returns:
+        Merged policy data.
+    """
+    merged: dict[str, Any] = {}  # ONEX_EXCLUDE: dict_str_any - raw YAML data
+
+    # Get all keys from both parent and child
+    all_keys = set(parent.keys()) | set(child.keys())
+    # Remove 'extends' from merged result - it's a directive, not data
+    all_keys.discard("extends")
+
+    for key in all_keys:
+        parent_val = parent.get(key)
+        child_val = child.get(key)
+
+        if child_val is None and parent_val is not None:
+            # Parent has value, child doesn't - use parent
+            merged[key] = parent_val
+        elif child_val is not None and parent_val is None:
+            # Child has value, parent doesn't - use child
+            merged[key] = child_val
+        elif child_val is not None and parent_val is not None:
+            # Both have values - merge based on type
+            merged[key] = _merge_field(key, parent_val, child_val)
+        # If both are None, skip (don't add to merged)
+
+    return merged
+
+
+def _merge_field(key: str, parent_val: Any, child_val: Any) -> Any:
+    """Merge a single field from parent and child.
+
+    Performs recursive merging for nested structures.
+
+    Args:
+        key: Field name (for potential field-specific logic).
+        parent_val: Parent field value.
+        child_val: Child field value.
+
+    Returns:
+        Merged field value.
+    """
+    # Dict fields: merge recursively (child overrides on conflict)
+    if isinstance(parent_val, dict) and isinstance(child_val, dict):
+        return _merge_dict_recursive(parent_val, child_val)
+
+    # List fields: concatenate (parent first, then child)
+    if isinstance(parent_val, list) and isinstance(child_val, list):
+        return parent_val + child_val
+
+    # Tuple fields: concatenate (parent first, then child)
+    if isinstance(parent_val, tuple) and isinstance(child_val, tuple):
+        return parent_val + child_val
+
+    # Scalar fields or type mismatch: child wins
+    return child_val
+
+
+# ONEX_EXCLUDE: dict_str_any - raw YAML merge utilities need dict[str, Any] for pre-validation data
+def _merge_dict_recursive(
+    parent: dict[str, Any],
+    child: dict[str, Any],
+) -> dict[str, Any]:
+    """Recursively merge two dicts with child overriding parent.
+
+    Args:
+        parent: Parent dict.
+        child: Child dict (values take precedence on conflict).
+
+    Returns:
+        Merged dict.
+    """
+    merged: dict[str, Any] = {}  # ONEX_EXCLUDE: dict_str_any - raw YAML data
+
+    all_keys = set(parent.keys()) | set(child.keys())
+
+    for key in all_keys:
+        parent_val = parent.get(key)
+        child_val = child.get(key)
+
+        if child_val is None and parent_val is not None:
+            merged[key] = parent_val
+        elif child_val is not None and parent_val is None:
+            merged[key] = child_val
+        elif child_val is not None and parent_val is not None:
+            # Both have values - merge based on type
+            merged[key] = _merge_field(key, parent_val, child_val)
+        # If both are None, skip
+
+    return merged
 
 
 def _parse_policy_data(

@@ -19,6 +19,7 @@ from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
     ModelFileImports,
     ModelImportInfo,
 )
+from omnibase_core.validation.cross_repo.util_fingerprint import generate_fingerprint
 
 
 class RuleForbiddenImports:
@@ -95,6 +96,9 @@ class RuleForbiddenImports:
         # Check forbidden prefixes
         for forbidden in self.config.forbidden_prefixes:
             if import_path.startswith(forbidden):
+                fingerprint = generate_fingerprint(
+                    self.rule_id, str(file_path), import_path
+                )
                 return ModelValidationIssue(
                     severity=self.config.severity,
                     message=f"Forbidden import prefix: '{import_path}' matches '{forbidden}'",
@@ -104,14 +108,19 @@ class RuleForbiddenImports:
                     rule_name=self.rule_id,
                     suggestion=f"Remove or replace import from '{forbidden}'",
                     context={
-                        "import": import_path,
+                        "fingerprint": fingerprint,
                         "forbidden_prefix": forbidden,
+                        "import": import_path,
+                        "symbol": import_path,
                     },
                 )
 
         # Check exact forbidden modules
         for forbidden in self.config.forbidden_modules:
             if import_path == forbidden:
+                fingerprint = generate_fingerprint(
+                    self.rule_id, str(file_path), import_path
+                )
                 return ModelValidationIssue(
                     severity=self.config.severity,
                     message=f"Forbidden module import: '{import_path}'",
@@ -121,8 +130,10 @@ class RuleForbiddenImports:
                     rule_name=self.rule_id,
                     suggestion=f"Remove or replace import of '{forbidden}'",
                     context={
-                        "import": import_path,
+                        "fingerprint": fingerprint,
                         "forbidden_module": forbidden,
+                        "import": import_path,
+                        "symbol": import_path,
                     },
                 )
 

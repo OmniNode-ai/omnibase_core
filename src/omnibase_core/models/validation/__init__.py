@@ -10,6 +10,9 @@ Import validation models directly when needed:
 
 # Only import non-circular models (Pydantic models that don't import from validation)
 # Contract validation event model (OMN-1146)
+# Violation baseline models (OMN-1774)
+from .model_baseline_generator import ModelBaselineGenerator
+from .model_baseline_violation import ModelBaselineViolation
 from .model_contract_validation_event import (
     ContractValidationEventType,
     ModelContractValidationEvent,
@@ -56,6 +59,7 @@ from .model_validation_discovery_config import ModelValidationDiscoveryConfig
 from .model_validation_error import ModelValidationError
 from .model_validation_policy_contract import ModelValidationPolicyContract
 from .model_validation_value import ModelValidationValue
+from .model_violation_baseline import ModelViolationBaseline
 from .model_violation_waiver import ModelViolationWaiver
 from .model_workflow_validation_result import ModelWorkflowValidationResult
 
@@ -75,6 +79,10 @@ __all__ = [
     "ModelRuleRepoBoundariesConfig",
     "ModelRuleTopicNamingConfig",
     "ModelValidationPolicyContract",
+    # Violation baseline models (OMN-1774)
+    "ModelBaselineGenerator",
+    "ModelBaselineViolation",
+    "ModelViolationBaseline",
     "ModelViolationWaiver",
     # Event destination model (OMN-1151)
     "ModelEventDestination",

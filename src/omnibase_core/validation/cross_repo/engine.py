@@ -24,6 +24,9 @@ from omnibase_core.models.validation.model_rule_configs import (
 from omnibase_core.models.validation.model_validation_policy_contract import (
     ModelValidationPolicyContract,
 )
+from omnibase_core.models.validation.model_violation_baseline import (
+    ModelViolationBaseline,
+)
 from omnibase_core.validation.cross_repo.rules.rule_forbidden_imports import (
     RuleForbiddenImports,
 )
@@ -60,12 +63,15 @@ class CrossRepoValidationEngine:
         self,
         root: Path,
         rules: list[str] | None = None,
+        baseline: ModelViolationBaseline | None = None,
     ) -> ModelValidationResult[None]:
         """Run validation on a directory.
 
         Args:
             root: Root directory to validate.
             rules: Specific rule IDs to run (default: all enabled).
+            baseline: Optional baseline for suppressing known violations.
+                Baselined violations are downgraded to INFO and marked as suppressed.
 
         Returns:
             Validation result with all issues found.
@@ -104,6 +110,9 @@ class CrossRepoValidationEngine:
         end_time = datetime.now(tz=UTC)
         duration_ms = int((end_time - start_time).total_seconds() * 1000)
 
+        # Apply baseline suppression
+        processed_issues = self._apply_baseline(all_issues, baseline, root)
+
         # Sort issues by severity, then file, then line
         severity_order = {
             EnumSeverity.FATAL: 0,
@@ -115,7 +124,7 @@ class CrossRepoValidationEngine:
         }
 
         sorted_issues = sorted(
-            all_issues,
+            processed_issues,
             key=lambda i: (
                 severity_order.get(i.severity, 99),
                 str(i.file_path or ""),
@@ -123,12 +132,13 @@ class CrossRepoValidationEngine:
             ),
         )
 
-        # Determine validity
+        # Determine validity - only unsuppressed errors cause failure
         error_count = sum(
             1
             for i in sorted_issues
             if i.severity
             in (EnumSeverity.ERROR, EnumSeverity.CRITICAL, EnumSeverity.FATAL)
+            and not self._is_suppressed(i)
         )
         is_valid = error_count == 0
 
@@ -147,6 +157,108 @@ class CrossRepoValidationEngine:
             summary=f"Cross-repo validation: {len(sorted_issues)} issues in {len(files)} files",
             metadata=metadata,
         )
+
+    def _apply_baseline(
+        self,
+        issues: list[ModelValidationIssue],
+        baseline: ModelViolationBaseline | None,
+        root: Path,
+    ) -> list[ModelValidationIssue]:
+        """Apply baseline suppression to issues.
+
+        For each issue, check if it exists in the baseline. If so, downgrade
+        its severity to INFO and mark it as suppressed. Suppressed violations
+        still appear in output but don't cause failure.
+
+        Args:
+            issues: Raw issues from rule execution.
+            baseline: Optional baseline to check against.
+            root: Root directory for path normalization.
+
+        Returns:
+            Issues with baseline suppression applied.
+        """
+        if baseline is None:
+            # No baseline - mark all issues as unsuppressed
+            result = []
+            for issue in issues:
+                context = dict(issue.context) if issue.context else {}
+                context["suppressed"] = "false"
+                result.append(
+                    ModelValidationIssue(
+                        severity=issue.severity,
+                        message=issue.message,
+                        code=issue.code,
+                        file_path=issue.file_path,
+                        line_number=issue.line_number,
+                        column_number=issue.column_number,
+                        rule_name=issue.rule_name,
+                        suggestion=issue.suggestion,
+                        context=context,
+                    )
+                )
+            return result
+
+        result = []
+        for issue in issues:
+            # Get fingerprint from context
+            fingerprint = issue.context.get("fingerprint") if issue.context else None
+
+            # Check if this issue is baselined
+            is_baselined = fingerprint is not None and baseline.has_violation(
+                fingerprint
+            )
+
+            context = dict(issue.context) if issue.context else {}
+
+            if is_baselined:
+                # Downgrade to INFO and mark suppressed
+                context["suppressed"] = "true"
+                result.append(
+                    ModelValidationIssue(
+                        severity=EnumSeverity.INFO,
+                        message=issue.message,
+                        code=issue.code,
+                        file_path=issue.file_path,
+                        line_number=issue.line_number,
+                        column_number=issue.column_number,
+                        rule_name=issue.rule_name,
+                        suggestion=issue.suggestion,
+                        context=context,
+                    )
+                )
+            else:
+                # New violation - keep original severity
+                context["suppressed"] = "false"
+                result.append(
+                    ModelValidationIssue(
+                        severity=issue.severity,
+                        message=issue.message,
+                        code=issue.code,
+                        file_path=issue.file_path,
+                        line_number=issue.line_number,
+                        column_number=issue.column_number,
+                        rule_name=issue.rule_name,
+                        suggestion=issue.suggestion,
+                        context=context,
+                    )
+                )
+
+        return result
+
+    @staticmethod
+    def _is_suppressed(issue: ModelValidationIssue) -> bool:
+        """Check if an issue is suppressed by baseline.
+
+        Args:
+            issue: The issue to check.
+
+        Returns:
+            True if the issue is suppressed.
+        """
+        if issue.context is None:
+            return False
+        return issue.context.get("suppressed") == "true"
 
     def _execute_rule(
         self,
@@ -182,6 +294,7 @@ def run_cross_repo_validation(
     directory: Path,
     policy: ModelValidationPolicyContract,
     rules: list[str] | None = None,
+    baseline: ModelViolationBaseline | None = None,
 ) -> ModelValidationResult[None]:
     """Convenience function to run cross-repo validation.
 
@@ -189,12 +302,13 @@ def run_cross_repo_validation(
         directory: Directory to validate.
         policy: Validation policy.
         rules: Specific rules to run (default: all).
+        baseline: Optional baseline for suppressing known violations.
 
     Returns:
         Validation result.
     """
     engine = CrossRepoValidationEngine(policy)
-    return engine.validate(directory, rules)
+    return engine.validate(directory, rules, baseline)
 
 
 __all__ = ["CrossRepoValidationEngine", "run_cross_repo_validation"]

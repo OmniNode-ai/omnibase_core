@@ -1,0 +1,29 @@
+---
+# Child policy that extends base_policy (OMN-1774)
+# Tests single-level inheritance with various merge scenarios.
+extends: ./base_policy.yaml
+
+policy_id: my_app_policy
+policy_version:
+  major: 2
+  minor: 1
+  patch: 0
+repo_id: my_app  # Overrides parent's _base
+
+# Discovery: partially override parent
+discovery:
+  include_globs:
+    - "src/**/*.py"
+    # exclude_globs inherited from parent
+
+rules:
+  # Merge with parent's repo_boundaries
+  repo_boundaries:
+    # enabled and severity inherited from parent
+    forbidden_import_prefixes:
+      - "internal_module"
+    # ownership gets merged with parent
+    ownership:
+      "my_app.": my_app
+
+baselines: []

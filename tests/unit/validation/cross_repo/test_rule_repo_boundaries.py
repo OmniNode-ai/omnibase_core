@@ -331,6 +331,71 @@ class TestRuleRepoBoundaries:
         assert issues[0].context.get("import") == "fake_infra.services.service_kafka"
         assert issues[0].context.get("forbidden_prefix") == "fake_infra.services"
 
+    def test_issue_contains_fingerprint_and_symbol(
+        self, config: ModelRuleRepoBoundariesConfig
+    ) -> None:
+        """Test that issues include fingerprint and symbol for baseline tracking."""
+        rule = RuleRepoBoundaries(config)
+
+        file_imports = {
+            Path("/test/bad.py"): ModelFileImports(
+                file_path=Path("/test/bad.py"),
+                imports=(
+                    ModelImportInfo(
+                        module="fake_infra.services.service_kafka",
+                        line_number=10,
+                        is_from_import=False,
+                    ),
+                ),
+            ),
+        }
+
+        issues = rule.validate(file_imports, "fake_app")
+
+        assert len(issues) == 1
+        assert issues[0].context is not None
+
+        # Verify symbol is present (the import path that triggered violation)
+        assert issues[0].context.get("symbol") == "fake_infra.services.service_kafka"
+
+        # Verify fingerprint is present and has correct format (16 hex chars)
+        fingerprint = issues[0].context.get("fingerprint")
+        assert fingerprint is not None
+        assert len(fingerprint) == 16
+        assert all(c in "0123456789abcdef" for c in fingerprint)
+
+    def test_boundary_violation_contains_fingerprint_and_symbol(
+        self, config: ModelRuleRepoBoundariesConfig
+    ) -> None:
+        """Test that boundary violations include fingerprint and symbol."""
+        rule = RuleRepoBoundaries(config)
+
+        # Import from fake_infra but NOT from protocols (causes boundary violation)
+        file_imports = {
+            Path("/test/cross_repo.py"): ModelFileImports(
+                file_path=Path("/test/cross_repo.py"),
+                imports=(
+                    ModelImportInfo(
+                        module="fake_infra.models.some_model",
+                        line_number=5,
+                        is_from_import=False,
+                    ),
+                ),
+            ),
+        }
+
+        issues = rule.validate(file_imports, "fake_app")
+
+        assert len(issues) == 1
+        assert issues[0].code == "CROSS_REPO_BOUNDARY_VIOLATION"
+        assert issues[0].context is not None
+
+        # Verify symbol and fingerprint
+        assert issues[0].context.get("symbol") == "fake_infra.models.some_model"
+        fingerprint = issues[0].context.get("fingerprint")
+        assert fingerprint is not None
+        assert len(fingerprint) == 16
+
     def test_issue_has_suggestion(self, config: ModelRuleRepoBoundariesConfig) -> None:
         """Test that issues include suggestions."""
         rule = RuleRepoBoundaries(config)
