@@ -113,6 +113,14 @@ allowed_files:
     added: "2026-01-29"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/validation/cross_repo/policy_loader.py"
+    reason: >-
+      Cross-repo validation policy loader - must parse YAML policy files to dict before custom validation
+      logic builds typed models (policy_version as ModelSemVer, discovery config, rule configs). The YAML
+      structure requires preprocessing before Pydantic model construction. (OMN-1771)
+    added: "2026-01-31"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

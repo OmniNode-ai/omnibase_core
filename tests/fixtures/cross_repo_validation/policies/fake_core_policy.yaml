@@ -1,0 +1,26 @@
+---
+policy_id: fake_core_validation
+policy_version:
+  major: 1
+  minor: 0
+  patch: 0
+repo_id: fake_core
+
+discovery:
+  include_globs:
+    - "**/*.py"
+  exclude_globs:
+    - "**/__pycache__/**"
+    - "**/__init__.py"
+
+rules:
+  repo_boundaries:
+    enabled: true
+    severity: error
+    ownership:
+      "fake_core.": fake_core
+    forbidden_import_prefixes: []
+    allowed_cross_repo_prefixes:
+      - "fake_core.protocols"
+
+baselines: []
