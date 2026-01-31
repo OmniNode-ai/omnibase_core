@@ -501,6 +501,21 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # ONEX Listener API Prevention (OMN-1747)
+      # Prevents reintroduction of listener management APIs removed from core.
+      # omnibase_core must be transport-agnostic - use EventBusSubcontractWiring
+      # in omnibase_infra for Kafka consumer management.
+      # Detects: start_event_listener, stop_event_listener, _event_listener_loop,
+      #          ModelEventBusListenerHandle class and imports
+      - id: validate-no-listener-apis
+        name: ONEX Listener API Prevention
+        entry: poetry run python scripts/validation/validate-no-listener-apis.py
+        language: system
+        pass_filenames: true
+        files: ^src/omnibase_core/.*\.py$
+        exclude: ^tests/.*\.py$
+        stages: [pre-commit]
+
       # Documentation link validation - prevents broken links in CI
       # Configuration: .markdown-link-check.json (ignore patterns, exclude files)
       - id: validate-doc-links

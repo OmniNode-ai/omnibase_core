@@ -48,9 +48,6 @@ from omnibase_core.protocols.event_bus.protocol_event_bus_headers import (
 from omnibase_core.protocols.event_bus.protocol_event_bus_lifecycle import (
     ProtocolEventBusLifecycle,
 )
-from omnibase_core.protocols.event_bus.protocol_event_bus_listener import (
-    ProtocolEventBusListener,
-)
 from omnibase_core.protocols.event_bus.protocol_event_bus_log_emitter import (
     ProtocolEventBusLogEmitter,
 )
@@ -88,7 +85,6 @@ __all__ = [
     "ProtocolEventBusPublisher",
     "ProtocolEventBusSubscriber",
     "ProtocolEventBusLifecycle",
-    "ProtocolEventBusListener",
     # Event Bus - Full interface (combines Publisher, Subscriber, Lifecycle)
     "ProtocolEventBus",
     "ProtocolEventBusBase",
