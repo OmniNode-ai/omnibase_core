@@ -49,4 +49,6 @@ class ModelReplyTopics(BaseModel):
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts for forward compatibility
+        frozen=True,
+        from_attributes=True,
     )
