@@ -24,6 +24,9 @@ from omnibase_core.constants import KAFKA_REQUEST_TIMEOUT_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.contracts.subcontracts.model_request_response_config import (
+    ModelRequestResponseConfig,
+)
 from omnibase_core.models.contracts.subcontracts.model_topic_meta import ModelTopicMeta
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -220,6 +223,12 @@ class ModelEventBusSubcontract(BaseModel):
     subscribe_topic_metadata: dict[str, ModelTopicMeta] | None = Field(
         default=None,
         description="Optional metadata per subscribe topic suffix (keyed by suffix string)",
+    )
+
+    # Request-response pattern configuration (OMN-1760)
+    request_response: ModelRequestResponseConfig | None = Field(
+        default=None,
+        description="Request-response pattern configuration for RPC-style Kafka communication",
     )
 
     @field_validator("publish_topics", "subscribe_topics", mode="after")
