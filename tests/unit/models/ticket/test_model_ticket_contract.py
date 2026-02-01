@@ -18,6 +18,7 @@ from datetime import datetime
 
 import pytest
 import yaml
+from pydantic import ValidationError
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.ticket import (
@@ -1026,8 +1027,8 @@ class TestEdgeCases:
             category="scope",
         )
 
-        # Should raise error when trying to modify
-        with pytest.raises(Exception):  # Pydantic raises ValidationError for frozen
+        # Should raise ValidationError when trying to modify frozen model
+        with pytest.raises(ValidationError):
             question.text = "Modified"  # type: ignore[misc]
 
     def test_main_contract_is_mutable(self, basic_contract: TicketContract):

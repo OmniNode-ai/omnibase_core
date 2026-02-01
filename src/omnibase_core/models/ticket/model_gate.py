@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -82,9 +83,9 @@ class ModelGate(BaseModel):
                 )
 
         # NOTE: mypy cannot infer that value is EnumTicketStepStatus after the isinstance
-        # checks and string conversion. Safe because all code paths either raise or return
-        # the validated enum value.
-        return value  # type: ignore[return-value]
+        # checks and string conversion. We use cast() here because all code paths either
+        # raise or return the validated enum value.
+        return cast(EnumTicketStepStatus, value)
 
 
 # Alias for cleaner imports
