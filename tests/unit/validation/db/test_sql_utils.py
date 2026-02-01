@@ -4,9 +4,12 @@ Tests for normalize_sql and strip_sql_strings functions in sql_utils.py.
 These functions handle SQL preprocessing for pattern matching validation.
 """
 
+import pytest
+
 from omnibase_core.validation.db.sql_utils import normalize_sql, strip_sql_strings
 
 
+@pytest.mark.unit
 class TestNormalizeSql:
     """Tests for normalize_sql function."""
 
@@ -121,6 +124,7 @@ class TestNormalizeSql:
         assert result == "SELECT * FROM users WHERE msg = 'test -- value'"
 
 
+@pytest.mark.unit
 class TestStripSqlStrings:
     """Tests for strip_sql_strings function."""
 
@@ -174,6 +178,7 @@ class TestStripSqlStrings:
         assert result == sql
 
 
+@pytest.mark.unit
 class TestIntegration:
     """Integration tests combining normalize_sql and strip_sql_strings."""
 

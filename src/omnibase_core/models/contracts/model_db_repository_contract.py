@@ -45,7 +45,7 @@ class ModelDbRepositoryContract(BaseModel):
     # Engine (only postgres for v1)
     engine: Literal["postgres"] = Field(
         ...,
-        description="Database engine type",
+        description="Database engine type. v1 supports postgres only. Future engines (mysql, sqlite) require OMN-TBD.",
     )
 
     # Database reference

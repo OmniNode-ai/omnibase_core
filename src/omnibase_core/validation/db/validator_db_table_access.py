@@ -34,7 +34,8 @@ if TYPE_CHECKING:
 _TABLE_IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?"
 
 # Quoted identifier pattern (e.g., "TableName" or "schema"."table")
-_QUOTED_IDENTIFIER = r'"[^"]+"(?:\."[^"]+")?'
+# 128 char limit per identifier for defense-in-depth against ReDoS
+_QUOTED_IDENTIFIER = r'"[^"]{1,128}"(?:\."[^"]{1,128}")?'
 
 _TABLE_PATTERNS = [
     # FROM table or FROM schema.table (unquoted)
