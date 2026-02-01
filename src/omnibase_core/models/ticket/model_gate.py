@@ -20,6 +20,10 @@ class ModelGate(BaseModel):
     Immutability:
         This model uses frozen=True, making instances immutable after creation.
         This enables safe sharing across threads without synchronization.
+
+    Status Values:
+        Valid: PENDING, APPROVED, REJECTED, SKIPPED, FAILED
+        Invalid: PASSED (gates use approval semantics, not passed/failed)
     """
 
     id: str = Field(..., description="Unique identifier for the gate")

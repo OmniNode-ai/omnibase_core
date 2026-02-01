@@ -20,6 +20,10 @@ class ModelVerificationStep(BaseModel):
     Immutability:
         This model uses frozen=True, making instances immutable after creation.
         This enables safe sharing across threads without synchronization.
+
+    Status Values:
+        Valid: PENDING, PASSED, FAILED, SKIPPED, REJECTED
+        Invalid: APPROVED (verification uses passed/failed semantics, not approval)
     """
 
     id: str = Field(..., description="Unique identifier for the step")

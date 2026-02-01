@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import yaml
@@ -91,10 +91,12 @@ class ModelTicketContract(BaseModel):
         default=None, description="SHA256 fingerprint of contract state"
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When the contract was created"
+        default_factory=lambda: datetime.now(tz=UTC),
+        description="When the contract was created (UTC)",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.now, description="When the contract was last updated"
+        default_factory=lambda: datetime.now(tz=UTC),
+        description="When the contract was last updated (UTC)",
     )
 
     # Allow extra fields for extensibility (YAML contracts may have additional fields)
@@ -271,7 +273,19 @@ class ModelTicketContract(BaseModel):
     def update_fingerprint(self) -> None:
         """Update the contract fingerprint and updated_at timestamp."""
         self.contract_fingerprint = self.compute_fingerprint()
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(tz=UTC)
+
+    def __repr__(self) -> str:
+        """Return concise representation for debugging."""
+        return (
+            f"ModelTicketContract("
+            f"id={self.ticket_id!r}, "
+            f"phase={self.phase.value!r}, "
+            f"questions={len(self.questions)}, "
+            f"requirements={len(self.requirements)}, "
+            f"verification={len(self.verification_steps)}, "
+            f"gates={len(self.gates)})"
+        )
 
     # =========================================================================
     # YAML Serialization
