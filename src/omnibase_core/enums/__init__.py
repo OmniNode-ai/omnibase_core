@@ -76,6 +76,9 @@ from .enum_dashboard_theme import EnumDashboardTheme
 # Security-related enums
 from .enum_data_classification import EnumDataClassification
 
+# Database engine enum (OMN-1782)
+from .enum_database_engine import EnumDatabaseEngine
+
 # Decision type enums (OMN-1235)
 from .enum_decision_type import EnumDecisionType
 
@@ -502,6 +505,7 @@ __all__ = [
     # Infrastructure domain
     "EnumAuthType",
     "EnumBackoffStrategy",
+    "EnumDatabaseEngine",
     "EnumNotificationMethod",
     # Binding function domain (Operation Bindings DSL - OMN-1410)
     "EnumBindingFunction",

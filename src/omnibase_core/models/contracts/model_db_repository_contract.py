@@ -7,14 +7,13 @@ Defines a complete repository contract including:
 - Model mappings
 - Named operations
 
-This eliminates per-domain Postgres adapters by making
+This eliminates per-domain database adapters by making
 data access a first-class, governed contract.
 """
 
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_database_engine import EnumDatabaseEngine
 from omnibase_core.models.contracts.model_db_operation import ModelDbOperation
 
 
@@ -28,7 +27,7 @@ class ModelDbRepositoryContract(BaseModel):
     - Model mappings
     - Named operations
 
-    This eliminates per-domain Postgres adapters by making
+    This eliminates per-domain database adapters by making
     data access a first-class, governed contract.
     """
 
@@ -42,10 +41,10 @@ class ModelDbRepositoryContract(BaseModel):
         description="Repository contract name",
     )
 
-    # Engine (only postgres for v1)
-    engine: Literal["postgres"] = Field(
+    # Database engine type
+    engine: EnumDatabaseEngine = Field(
         ...,
-        description="Database engine type. v1 supports postgres only. Future engines (mysql, sqlite) require OMN-TBD.",
+        description="Database engine type (postgres, mysql, sqlite)",
     )
 
     # Database reference

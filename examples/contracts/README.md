@@ -49,7 +49,7 @@ contract = registry.load(Path("examples/contracts/db_repository_example.yaml"))
 ```yaml
 db_repository:
   name: <repository_name>           # Unique identifier
-  engine: postgres                  # Database engine
+  engine: postgres | mysql | sqlite # Database engine
   database_ref: <database_name>     # Database connection reference
   description: |                    # Human-readable description
     Multi-line description here.

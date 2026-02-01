@@ -14,6 +14,7 @@ Each validator has:
 
 import pytest
 
+from omnibase_core.enums.enum_database_engine import EnumDatabaseEngine
 from omnibase_core.enums.enum_parameter_type import EnumParameterType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_db_operation import ModelDbOperation
@@ -53,7 +54,7 @@ def golden_contract() -> ModelDbRepositoryContract:
     """
     return ModelDbRepositoryContract(
         name="learned_patterns_repository",
-        engine="postgres",
+        engine=EnumDatabaseEngine.POSTGRES,
         database_ref="omninode_bridge",
         tables=["learned_patterns"],
         models={"PatternRow": "omnibase_spi.models:ModelCompiledPattern"},
@@ -162,7 +163,7 @@ class TestValidatorDbStructural:
         """Table names must be valid SQL identifiers (start with letter)."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["123invalid"],  # Invalid: starts with number
             models={},
@@ -183,7 +184,7 @@ class TestValidatorDbStructural:
         """Table names cannot contain special characters."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["my-table"],  # Invalid: contains hyphen
             models={},
@@ -204,7 +205,7 @@ class TestValidatorDbStructural:
         """Operation names must be valid identifiers."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -230,7 +231,7 @@ class TestValidatorDbSqlSafety:
         """Read mode must use SELECT."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -251,7 +252,7 @@ class TestValidatorDbSqlSafety:
         """Write mode must use INSERT/UPDATE/DELETE."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -277,7 +278,7 @@ class TestValidatorDbSqlSafety:
         """DROP keyword is forbidden."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -298,7 +299,7 @@ class TestValidatorDbSqlSafety:
         """ALTER keyword is forbidden."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -319,7 +320,7 @@ class TestValidatorDbSqlSafety:
         """TRUNCATE keyword is forbidden."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -340,7 +341,7 @@ class TestValidatorDbSqlSafety:
         """DELETE without WHERE requires opt-in."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -361,7 +362,7 @@ class TestValidatorDbSqlSafety:
         """DELETE without WHERE passes with safety policy opt-in."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -382,7 +383,7 @@ class TestValidatorDbSqlSafety:
         """UPDATE without WHERE requires opt-in."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -403,7 +404,7 @@ class TestValidatorDbSqlSafety:
         """UPDATE without WHERE passes with safety policy opt-in."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -424,7 +425,7 @@ class TestValidatorDbSqlSafety:
         """Multi-statement SQL requires safety policy opt-in."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -445,7 +446,7 @@ class TestValidatorDbSqlSafety:
         """Multi-statement SQL passes with safety policy opt-in."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -471,7 +472,7 @@ class TestValidatorDbSqlSafety:
         """
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -491,7 +492,7 @@ class TestValidatorDbSqlSafety:
         """INSERT with trailing semicolon should pass validation."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -511,7 +512,7 @@ class TestValidatorDbSqlSafety:
         """Trailing semicolon followed by whitespace should pass."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -531,7 +532,7 @@ class TestValidatorDbSqlSafety:
         """Actual multi-statement SQL (semicolon between statements) still fails."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -557,7 +558,7 @@ class TestValidatorDbTableAccess:
         """SQL can only access declared tables."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["allowed_table"],
             models={},
@@ -578,7 +579,7 @@ class TestValidatorDbTableAccess:
         """Join targets must also be declared tables."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["users"],  # users declared, but not orders
             models={},
@@ -604,7 +605,7 @@ class TestValidatorDbTableAccess:
         """CTEs are not supported and should fail closed."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -625,7 +626,7 @@ class TestValidatorDbTableAccess:
         """Subqueries are not supported and should fail closed."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -646,7 +647,7 @@ class TestValidatorDbTableAccess:
         """Multiple tables can be declared and accessed."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["users", "orders"],  # Both declared
             models={},
@@ -679,7 +680,7 @@ class TestValidatorDbTableAccess:
         """
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["public.users"],  # Schema-qualified allowlist entry
             models={},
@@ -700,7 +701,7 @@ class TestValidatorDbTableAccess:
         """Schema-qualified allowlist entry with exact match passes."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["public.users"],  # Schema-qualified allowlist entry
             models={},
@@ -724,7 +725,7 @@ class TestValidatorDbTableAccess:
         """
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["users"],  # Simple allowlist entry
             models={},
@@ -759,7 +760,7 @@ class TestValidatorDbTableAccess:
         """
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["allowed_table"],
             models={},
@@ -788,7 +789,7 @@ class TestValidatorDbTableAccess:
         """
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["allowed_table"],
             models={},
@@ -809,7 +810,7 @@ class TestValidatorDbTableAccess:
         """Quoted table that matches allowlist passes validation."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["MyTable"],  # Case-sensitive name
             models={},
@@ -829,7 +830,7 @@ class TestValidatorDbTableAccess:
         """Quoted schema-qualified tables are extracted correctly."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["public.MyTable"],  # Schema-qualified
             models={},
@@ -849,7 +850,7 @@ class TestValidatorDbTableAccess:
         """Quoted identifiers in JOIN clauses are validated."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["users"],  # Only users declared
             models={},
@@ -875,7 +876,7 @@ class TestValidatorDbTableAccess:
         """Both quoted and unquoted tables in same query are validated."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["users", "Orders"],  # Both declared
             models={},
@@ -905,7 +906,7 @@ class TestValidatorDbDeterministic:
         """many=True requires ORDER BY."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -926,7 +927,7 @@ class TestValidatorDbDeterministic:
         """LIMIT requires ORDER BY."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -947,7 +948,7 @@ class TestValidatorDbDeterministic:
         """OFFSET requires ORDER BY."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -968,7 +969,7 @@ class TestValidatorDbDeterministic:
         """many=False without ORDER BY passes (single row expected)."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -992,7 +993,7 @@ class TestValidatorDbDeterministic:
         """Write operations (INSERT/UPDATE/DELETE) are not checked for ORDER BY."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1023,7 +1024,7 @@ class TestValidatorDbDeterministic:
         """
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1047,7 +1048,7 @@ class TestValidatorDbDeterministic:
         """
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1073,7 +1074,7 @@ class TestValidatorDbDeterministic:
         """
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1098,7 +1099,7 @@ class TestValidatorDbDeterministic:
         """
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1123,7 +1124,7 @@ class TestValidatorDbDeterministic:
         """
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1150,7 +1151,7 @@ class TestValidatorDbParams:
         """Positional parameters ($1, $2) are not allowed."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1175,7 +1176,7 @@ class TestValidatorDbParams:
         """All :params in SQL must be declared."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1201,7 +1202,7 @@ class TestValidatorDbParams:
         """All declared params must be used in SQL."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1229,7 +1230,7 @@ class TestValidatorDbParams:
         """Multiple positional params are all reported."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1259,7 +1260,7 @@ class TestValidatorDbParams:
         """No params required if SQL has no placeholders."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1279,7 +1280,7 @@ class TestValidatorDbParams:
         """PostgreSQL type casts (::type) should not be detected as parameters."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1315,7 +1316,7 @@ class TestEdgeCases:
         """SQL keywords inside string literals should not trigger validation errors."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["logs"],
             models={},
@@ -1337,7 +1338,7 @@ class TestEdgeCases:
         """Semicolons inside string literals should not trigger multi-statement check."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["logs"],
             models={},
@@ -1358,7 +1359,7 @@ class TestEdgeCases:
         """Parameter-like patterns inside string literals should be ignored."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["logs"],
             models={},
@@ -1379,7 +1380,7 @@ class TestEdgeCases:
         """SQL comments should be stripped before validation."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1405,7 +1406,7 @@ class TestEdgeCases:
         """SQL keywords should be detected case-insensitively."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
@@ -1427,7 +1428,7 @@ class TestEdgeCases:
         """Schema-qualified table names should work."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["users"],  # Table name without schema
             models={},
@@ -1448,7 +1449,7 @@ class TestEdgeCases:
         """PostgreSQL-style doubled quotes inside strings should be handled."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["logs"],
             models={},
@@ -1471,7 +1472,7 @@ class TestEdgeCases:
         """Backslash-escaped quotes inside strings should be handled."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["logs"],
             models={},
@@ -1494,7 +1495,7 @@ class TestEdgeCases:
         """DDL keywords should still be detected after escaped quote strings."""
         contract = ModelDbRepositoryContract(
             name="test",
-            engine="postgres",
+            engine=EnumDatabaseEngine.POSTGRES,
             database_ref="db",
             tables=["test"],
             models={},
