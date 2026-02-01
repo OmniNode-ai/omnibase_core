@@ -1,0 +1,184 @@
+---
+# Example DB Repository Contract
+#
+# This contract demonstrates the v1 DB repository contract format.
+# It defines a repository for the learned_patterns table with:
+# - Read operations (SELECT with named params, ORDER BY for determinism)
+# - Write operations (INSERT, UPDATE with WHERE)
+# - Named parameters (:param format)
+# - Model reference aliasing
+
+db_repository:
+  name: learned_patterns_repository
+  engine: postgres
+  database_ref: omninode_bridge
+  description: |
+    Repository for accessing learned patterns from the pattern store.
+    Used by the pattern learning pipeline for CRUD operations.
+
+  # Tables this contract is allowed to access
+  # The table_access validator enforces this list
+  tables:
+    - learned_patterns
+
+  # Model aliases -> fully qualified import paths
+  # Allows short names in operation returns
+  models:
+    PatternRow: omnibase_spi.models:ModelCompiledPattern
+    PatternSummary: omnibase_spi.models:ModelPatternSummary
+
+  # Named operations
+  ops:
+    # =========================================================================
+    # READ OPERATIONS
+    # =========================================================================
+
+    list_validated_patterns:
+      mode: read
+      description: |
+        Retrieve validated patterns ordered by quality score.
+        Returns multiple rows, requires ORDER BY for determinism.
+      sql: |
+        SELECT pattern_id, domain, compiled_snippet, quality_score, created_at
+        FROM learned_patterns
+        WHERE status = 'validated'
+        ORDER BY quality_score DESC, pattern_id ASC
+        LIMIT :limit
+      params:
+        limit:
+          name: limit
+          param_type: integer
+          required: false
+          default: 200
+          ge: 1
+          le: 5000
+          description: Maximum number of patterns to return
+      returns:
+        model_ref: PatternRow
+        many: true
+
+    get_pattern_by_id:
+      mode: read
+      description: Retrieve a single pattern by its ID
+      sql: |
+        SELECT pattern_id, domain, compiled_snippet, quality_score, status, created_at
+        FROM learned_patterns
+        WHERE pattern_id = :pattern_id
+      params:
+        pattern_id:
+          name: pattern_id
+          param_type: string
+          required: true
+          description: Unique pattern identifier
+      returns:
+        model_ref: PatternRow
+        many: false
+
+    list_patterns_by_domain:
+      mode: read
+      description: |
+        Retrieve patterns filtered by domain with pagination.
+        Demonstrates LIMIT + OFFSET with required ORDER BY.
+      sql: |
+        SELECT pattern_id, domain, quality_score
+        FROM learned_patterns
+        WHERE domain = :domain
+        ORDER BY created_at DESC, pattern_id ASC
+        LIMIT :limit
+        OFFSET :offset
+      params:
+        domain:
+          name: domain
+          param_type: string
+          required: true
+          min_length: 1
+          max_length: 100
+        limit:
+          name: limit
+          param_type: integer
+          required: false
+          default: 50
+          ge: 1
+          le: 200
+        offset:
+          name: offset
+          param_type: integer
+          required: false
+          default: 0
+          ge: 0
+      returns:
+        model_ref: PatternSummary
+        many: true
+
+    # =========================================================================
+    # WRITE OPERATIONS
+    # =========================================================================
+
+    insert_pattern:
+      mode: write
+      description: Insert a new pattern into the store
+      sql: |
+        INSERT INTO learned_patterns (pattern_id, domain, compiled_snippet, quality_score, status, created_at)
+        VALUES (:pattern_id, :domain, :snippet, :quality_score, :status, NOW())
+      params:
+        pattern_id:
+          name: pattern_id
+          param_type: string
+          required: true
+        domain:
+          name: domain
+          param_type: string
+          required: true
+        snippet:
+          name: snippet
+          param_type: string
+          required: true
+        quality_score:
+          name: quality_score
+          param_type: number
+          required: true
+          ge: 0.0
+          le: 1.0
+        status:
+          name: status
+          param_type: string
+          required: false
+          default: "pending"
+      returns:
+        model_ref: PatternRow
+        many: false
+
+    update_pattern_status:
+      mode: write
+      description: Update the status of an existing pattern
+      sql: |
+        UPDATE learned_patterns
+        SET status = :new_status
+        WHERE pattern_id = :pattern_id
+      params:
+        pattern_id:
+          name: pattern_id
+          param_type: string
+          required: true
+        new_status:
+          name: new_status
+          param_type: string
+          required: true
+      returns:
+        model_ref: PatternRow
+        many: false
+
+    delete_pattern:
+      mode: write
+      description: Delete a pattern by ID (has WHERE clause, so no opt-in needed)
+      sql: |
+        DELETE FROM learned_patterns
+        WHERE pattern_id = :pattern_id
+      params:
+        pattern_id:
+          name: pattern_id
+          param_type: string
+          required: true
+      returns:
+        model_ref: PatternRow
+        many: false

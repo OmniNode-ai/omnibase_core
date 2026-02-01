@@ -146,10 +146,19 @@ class FileLocationValidator:
         """
         # Find all Python files
         for py_file in self.repo_path.rglob("*.py"):
-            # Skip __pycache__, archived, tests, .venv, site-packages
+            # Skip __pycache__, archived, tests, virtual environments
             if any(
                 skip in str(py_file)
-                for skip in ["__pycache__", "archived", "archive", "tests", ".venv", "site-packages"]
+                for skip in [
+                    "__pycache__",
+                    "archived",
+                    "archive",
+                    "tests",
+                    ".venv",
+                    "venv",
+                    ".tox",
+                    "site-packages",
+                ]
             ):
                 continue
 
