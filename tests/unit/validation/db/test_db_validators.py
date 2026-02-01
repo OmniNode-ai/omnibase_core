@@ -222,6 +222,89 @@ class TestValidatorDbStructural:
         assert not result.is_valid
         assert any("123bad_op" in str(e) for e in result.errors)
 
+    def test_schema_qualified_table_names_valid(self) -> None:
+        """Schema-qualified table names (e.g., public.users) are valid."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["public.users", "schema_name.table_name", "simple_table"],
+            models={},
+            ops={
+                "op1": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM public.users ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_structural(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_invalid_table_name_starts_with_dot(self) -> None:
+        """Table names starting with dot are invalid."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=[".users"],  # Invalid: starts with dot
+            models={},
+            ops={
+                "op1": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_structural(contract)
+        assert not result.is_valid
+        assert any(".users" in str(e) for e in result.errors)
+
+    def test_invalid_table_name_ends_with_dot(self) -> None:
+        """Table names ending with dot are invalid."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users."],  # Invalid: ends with dot
+            models={},
+            ops={
+                "op1": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_structural(contract)
+        assert not result.is_valid
+        assert any("users." in str(e) for e in result.errors)
+
+    def test_invalid_table_name_multiple_dots(self) -> None:
+        """Table names with more than one dot are invalid."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["a.b.c"],  # Invalid: more than one dot
+            models={},
+            ops={
+                "op1": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_structural(contract)
+        assert not result.is_valid
+        assert any("a.b.c" in str(e) for e in result.errors)
+
 
 @pytest.mark.unit
 class TestValidatorDbSqlSafety:
@@ -896,6 +979,53 @@ class TestValidatorDbTableAccess:
         )
         result = validate_db_table_access(contract)
         assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_self_join_same_table_twice(self) -> None:
+        """Self-join (same table with different aliases) should pass validation."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users"],
+            models={},
+            ops={
+                "get_with_manager": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT a.id, b.name FROM users a JOIN users b ON a.manager_id = b.id ORDER BY a.id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert result.is_valid, f"Self-join should pass. Errors: {result.errors}"
+
+    def test_table_alias_not_flagged_as_table(self) -> None:
+        """Table aliases should not be flagged as undeclared tables.
+
+        SQL table aliases (e.g., `FROM patterns p`) should be correctly ignored
+        by the table extraction logic. Only the actual table name should be
+        extracted, not the alias that follows it.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["patterns"],
+            models={},
+            ops={
+                "list_patterns": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT p.id, p.name FROM patterns p WHERE p.active = true ORDER BY p.id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert result.is_valid, (
+            f"Alias 'p' should not be flagged. Errors: {result.errors}"
+        )
 
 
 @pytest.mark.unit

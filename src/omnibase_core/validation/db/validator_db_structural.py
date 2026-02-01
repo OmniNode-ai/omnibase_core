@@ -17,7 +17,10 @@ if TYPE_CHECKING:
     )
 
 # Valid identifier pattern: starts with letter, contains letters/numbers/underscores
-_IDENTIFIER_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$", re.IGNORECASE)
+# Supports optional schema qualification (e.g., "public.users")
+_IDENTIFIER_PATTERN = re.compile(
+    r"^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)?$", re.IGNORECASE
+)
 
 
 def validate_db_structural(
@@ -57,7 +60,8 @@ def validate_db_structural(
                 errors.append(
                     f"Invalid table name '{table}'. "
                     "Must be a valid SQL identifier (start with letter, "
-                    "contain only letters, numbers, and underscores)."
+                    "contain only letters, numbers, and underscores). "
+                    "Schema-qualified names (e.g., 'public.users') are allowed."
                 )
 
     # Validate operations
