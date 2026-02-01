@@ -3,10 +3,12 @@
 Validates:
 - Table names are valid SQL identifiers
 - Operation names are valid identifiers
-- SQL statements are single statements (unless allow_multi_statement=True)
 
 Note: Basic field constraints (name, engine, database_ref, mode) are enforced
 by Pydantic model validation. This validator adds semantic validation rules.
+
+Note: Multi-statement SQL validation is handled by validator_db_sql_safety.py
+to avoid duplicate error messages.
 """
 
 from __future__ import annotations
@@ -15,7 +17,6 @@ import re
 from typing import TYPE_CHECKING
 
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
-from omnibase_core.validation.db._sql_utils import strip_sql_strings
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_db_repository_contract import (
@@ -34,11 +35,12 @@ def validate_db_structural(
     Validates:
     - contract.tables contains valid SQL identifiers
     - operation names are valid identifiers
-    - operation.sql is single statement (unless safety_policy.allow_multi_statement=True)
 
     Note: Basic field presence and type constraints (name, engine, database_ref,
     mode) are already enforced by Pydantic model validation (min_length, Literal).
     This validator provides additional semantic validation beyond type constraints.
+
+    Note: Multi-statement SQL validation is handled by validator_db_sql_safety.py.
 
     Args:
         contract: The DB repository contract to validate.
@@ -69,7 +71,7 @@ def validate_db_structural(
     if not contract.ops:
         errors.append("ops dict cannot be empty")
 
-    for op_name, op in contract.ops.items():
+    for op_name in contract.ops:
         # Validate operation name is a valid identifier
         if not op_name:
             errors.append("Operation name cannot be empty")
@@ -79,16 +81,6 @@ def validate_db_structural(
                 "Must be a valid identifier (start with letter, "
                 "contain only letters, numbers, and underscores)."
             )
-
-        # Validate SQL is single statement unless allow_multi_statement is True
-        if not op.safety_policy.allow_multi_statement:
-            sql_without_strings = strip_sql_strings(op.sql)
-            if ";" in sql_without_strings:
-                errors.append(
-                    f"Operation '{op_name}': SQL contains multiple statements. "
-                    "Use single statement per operation or set "
-                    "safety_policy.allow_multi_statement=True."
-                )
 
     if errors:
         return ModelValidationResult.create_invalid(

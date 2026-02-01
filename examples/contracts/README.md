@@ -57,6 +57,10 @@ db_repository:
   tables:                           # Allowed tables (enforced)
     - table_name
 
+  # Note: Table matching is case-insensitive. For example, `tables: ["Users"]`
+  # will match `FROM users`, `FROM USERS`, or `FROM Users` in SQL. This follows
+  # PostgreSQL's default identifier case-folding behavior.
+
   models:                           # Model aliases
     AliasName: module.path:ClassName
 
@@ -103,3 +107,5 @@ Common validation errors and fixes:
 | `Mode mismatch` | SELECT in write mode | Change mode to `read` |
 | `Parameter undefined` | `:param` not in params | Add parameter definition |
 | `DDL not allowed` | CREATE/DROP/ALTER in SQL | Remove DDL statements |
+
+> **Note**: Table matching is case-insensitive, so `Table not allowed` errors are not caused by case differences. `tables: ["Users"]` will match `users`, `USERS`, or `Users` in SQL queries.

@@ -13,15 +13,15 @@ import re
 from typing import TYPE_CHECKING
 
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
-from omnibase_core.validation.db._sql_utils import normalize_sql, strip_sql_strings
+from omnibase_core.validation.db.sql_utils import normalize_sql, strip_sql_strings
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_db_repository_contract import (
         ModelDbRepositoryContract,
     )
 
-# Named parameter pattern (:param_name)
-_NAMED_PARAM_PATTERN = re.compile(r":([a-zA-Z_][a-zA-Z0-9_]*)")
+# Named parameter pattern (:param_name) - excludes PostgreSQL type casts (::type)
+_NAMED_PARAM_PATTERN = re.compile(r"(?<!:):([a-zA-Z_][a-zA-Z0-9_]*)")
 
 # Positional parameter pattern ($1, $2, etc.) - these are NOT allowed
 _POSITIONAL_PARAM_PATTERN = re.compile(r"\$(\d+)")

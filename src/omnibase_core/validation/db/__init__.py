@@ -8,10 +8,10 @@ This module provides validators for ModelDbRepositoryContract:
 - validator_db_params: Named params validation
 
 Shared utilities:
-- _sql_utils: Common SQL normalization and string stripping functions
+- sql_utils: Common SQL normalization and string stripping functions
 """
 
-from omnibase_core.validation.db._sql_utils import (
+from omnibase_core.validation.db.sql_utils import (
     normalize_sql,
     strip_sql_strings,
 )

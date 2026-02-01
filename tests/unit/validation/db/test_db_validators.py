@@ -198,48 +198,6 @@ class TestValidatorDbStructural:
         assert not result.is_valid
         assert any("my-table" in str(e) for e in result.errors)
 
-    def test_multi_statement_without_policy(self) -> None:
-        """Multi-statement SQL requires safety policy opt-in."""
-        contract = ModelDbRepositoryContract(
-            name="test",
-            engine="postgres",
-            database_ref="db",
-            tables=["test"],
-            models={},
-            ops={
-                "op1": ModelDbOperation(
-                    mode="write",
-                    sql="INSERT INTO test VALUES (1); DELETE FROM test WHERE id = 1",
-                    params={},
-                    returns=ModelDbReturn(model_ref="test:Model", many=False),
-                ),
-            },
-        )
-        result = validate_db_structural(contract)
-        assert not result.is_valid
-        assert any("multiple statements" in str(e).lower() for e in result.errors)
-
-    def test_multi_statement_with_policy_passes(self) -> None:
-        """Multi-statement SQL passes with safety policy opt-in."""
-        contract = ModelDbRepositoryContract(
-            name="test",
-            engine="postgres",
-            database_ref="db",
-            tables=["test"],
-            models={},
-            ops={
-                "op1": ModelDbOperation(
-                    mode="write",
-                    sql="INSERT INTO test VALUES (1); DELETE FROM test WHERE id = 1",
-                    params={},
-                    returns=ModelDbReturn(model_ref="test:Model", many=False),
-                    safety_policy=ModelDbSafetyPolicy(allow_multi_statement=True),
-                ),
-            },
-        )
-        result = validate_db_structural(contract)
-        assert result.is_valid, f"Expected valid with policy, got: {result.errors}"
-
     def test_invalid_operation_name(self) -> None:
         """Operation names must be valid identifiers."""
         contract = ModelDbRepositoryContract(
@@ -453,6 +411,48 @@ class TestValidatorDbSqlSafety:
                     params={},
                     returns=ModelDbReturn(model_ref="test:Model", many=False),
                     safety_policy=ModelDbSafetyPolicy(allow_update_without_where=True),
+                ),
+            },
+        )
+        result = validate_db_sql_safety(contract)
+        assert result.is_valid, f"Expected valid with policy, got: {result.errors}"
+
+    def test_multi_statement_without_policy(self) -> None:
+        """Multi-statement SQL requires safety policy opt-in."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "op1": ModelDbOperation(
+                    mode="write",
+                    sql="INSERT INTO test VALUES (1); DELETE FROM test WHERE id = 1",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        result = validate_db_sql_safety(contract)
+        assert not result.is_valid
+        assert any("multiple statements" in str(e).lower() for e in result.errors)
+
+    def test_multi_statement_with_policy_passes(self) -> None:
+        """Multi-statement SQL passes with safety policy opt-in."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "op1": ModelDbOperation(
+                    mode="write",
+                    sql="INSERT INTO test VALUES (1); DELETE FROM test WHERE id = 1",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                    safety_policy=ModelDbSafetyPolicy(allow_multi_statement=True),
                 ),
             },
         )
@@ -823,6 +823,32 @@ class TestValidatorDbParams:
             },
         )
         result = validate_db_params(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_type_cast_not_treated_as_param(self) -> None:
+        """PostgreSQL type casts (::type) should not be detected as parameters."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "with_cast": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id::text, value::integer FROM test WHERE id = :id ORDER BY id",
+                    params={
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                    },
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_params(contract)
+        # Should pass - ::text and ::integer are type casts, not parameters
+        # Only :id should be detected as a parameter
         assert result.is_valid, f"Expected valid, got errors: {result.errors}"
 
 

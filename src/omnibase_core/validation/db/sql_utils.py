@@ -9,7 +9,7 @@ Functions:
     strip_sql_strings: Remove string literals to prevent false positives.
 
 Example:
-    >>> from omnibase_core.validation.db._sql_utils import normalize_sql, strip_sql_strings
+    >>> from omnibase_core.validation.db.sql_utils import normalize_sql, strip_sql_strings
     >>> sql = "SELECT * FROM users -- get all users"
     >>> normalized = normalize_sql(sql)
     >>> "SELECT * FROM users"
