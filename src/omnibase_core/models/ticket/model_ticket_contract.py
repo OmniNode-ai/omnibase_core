@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.ticket import (
@@ -128,13 +128,13 @@ class ModelTicketContract(BaseModel):
     # Phase Enforcement Methods
     # =========================================================================
 
-    def allowed_actions(self) -> set[EnumTicketAction]:
-        """Get the set of actions allowed in the current phase.
+    def allowed_actions(self) -> frozenset[EnumTicketAction]:
+        """Get the frozenset of actions allowed in the current phase.
 
         Returns:
-            Set of EnumTicketAction enum values (not strings).
+            Frozenset of EnumTicketAction enum values (not strings).
         """
-        return PHASE_ALLOWED_ACTIONS.get(self.phase, set())
+        return PHASE_ALLOWED_ACTIONS.get(self.phase, frozenset())
 
     def assert_action_allowed(self, action: EnumTicketAction | str) -> None:
         """Assert that an action is allowed in the current phase.
@@ -312,7 +312,13 @@ class ModelTicketContract(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
-        return cls.model_validate(data)
+        try:
+            return cls.model_validate(data)
+        except ValidationError as e:
+            raise ModelOnexError(
+                message=f"Contract validation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            ) from e
 
 
 # Alias for cleaner imports

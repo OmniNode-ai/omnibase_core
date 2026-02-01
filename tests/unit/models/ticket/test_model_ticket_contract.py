@@ -440,13 +440,15 @@ class TestPhaseEnforcement:
         assert "commit" in str(error).lower()
         assert "intake" in str(error).lower()
 
-    def test_allowed_actions_returns_set_of_enums(self, basic_contract: TicketContract):
-        """allowed_actions() returns set[Action] enum values."""
+    def test_allowed_actions_returns_frozenset_of_enums(
+        self, basic_contract: TicketContract
+    ):
+        """allowed_actions() returns frozenset[Action] enum values."""
         basic_contract.phase = Phase.IMPLEMENTATION
 
         allowed = basic_contract.allowed_actions()
 
-        assert isinstance(allowed, set)
+        assert isinstance(allowed, frozenset)
         assert len(allowed) > 0
         # All items should be Action enum values
         for action in allowed:

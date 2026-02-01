@@ -73,27 +73,35 @@ class EnumGateKind(StrValueHelper, str, Enum):
 
 
 # Phase to action mapping
-PHASE_ALLOWED_ACTIONS: dict[EnumTicketPhase, set[EnumTicketAction]] = {
-    EnumTicketPhase.INTAKE: {EnumTicketAction.FETCH_TICKET},
-    EnumTicketPhase.RESEARCH: {EnumTicketAction.PARALLEL_SOLVE},
-    EnumTicketPhase.QUESTIONS: {
-        EnumTicketAction.ASK_QUESTION,
-        EnumTicketAction.EDIT_REQUIREMENTS,
-    },
-    EnumTicketPhase.SPEC: {
-        EnumTicketAction.EDIT_REQUIREMENTS,
-        EnumTicketAction.EDIT_VERIFICATION,
-    },
-    EnumTicketPhase.IMPLEMENTATION: {
-        EnumTicketAction.MODIFY_CODE,
-        EnumTicketAction.COMMIT,
-        EnumTicketAction.RUN_VERIFICATION,
-    },
-    EnumTicketPhase.REVIEW: {
-        EnumTicketAction.RUN_VERIFICATION,
-        EnumTicketAction.OPEN_HARDENING_TICKET,
-    },
-    EnumTicketPhase.DONE: set(),
+PHASE_ALLOWED_ACTIONS: dict[EnumTicketPhase, frozenset[EnumTicketAction]] = {
+    EnumTicketPhase.INTAKE: frozenset({EnumTicketAction.FETCH_TICKET}),
+    EnumTicketPhase.RESEARCH: frozenset({EnumTicketAction.PARALLEL_SOLVE}),
+    EnumTicketPhase.QUESTIONS: frozenset(
+        {
+            EnumTicketAction.ASK_QUESTION,
+            EnumTicketAction.EDIT_REQUIREMENTS,
+        }
+    ),
+    EnumTicketPhase.SPEC: frozenset(
+        {
+            EnumTicketAction.EDIT_REQUIREMENTS,
+            EnumTicketAction.EDIT_VERIFICATION,
+        }
+    ),
+    EnumTicketPhase.IMPLEMENTATION: frozenset(
+        {
+            EnumTicketAction.MODIFY_CODE,
+            EnumTicketAction.COMMIT,
+            EnumTicketAction.RUN_VERIFICATION,
+        }
+    ),
+    EnumTicketPhase.REVIEW: frozenset(
+        {
+            EnumTicketAction.RUN_VERIFICATION,
+            EnumTicketAction.OPEN_HARDENING_TICKET,
+        }
+    ),
+    EnumTicketPhase.DONE: frozenset(),
 }
 
 # Aliases for cleaner imports (match requirement spec naming)

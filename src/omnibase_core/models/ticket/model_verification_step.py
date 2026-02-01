@@ -81,6 +81,9 @@ class ModelVerificationStep(BaseModel):
                     invalid_status=str(value),
                 )
 
+        # NOTE: mypy cannot infer that value is EnumTicketStepStatus after the isinstance
+        # checks and string conversion. Safe because all code paths either raise or return
+        # the validated enum value.
         return value  # type: ignore[return-value]
 
 
