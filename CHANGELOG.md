@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-02-01
+
+### Added
+
+- **Contract-Driven DB Repository Schema and Validators** [OMN-1782]: Implement v1 of contract-driven database repository system for type-safe SQL operations
+  - `ModelDbParam` - Parameter definition with type-based constraints
+  - `ModelDbReturn` - Return type specification (model_ref + many cardinality)
+  - `ModelDbSafetyPolicy` - Opt-in flags for dangerous operations (DELETE/UPDATE without WHERE)
+  - `ModelDbOperation` - SQL operation with mode, params, returns, safety_policy
+  - `ModelDbRepositoryContract` - Full repository contract with table access control
+  - Validators: `validator_db_structural`, `validator_db_sql_safety`, `validator_db_table_access`, `validator_db_deterministic`, `validator_db_params`
+  - Shared `_sql_utils.py` module with `normalize_sql()` and `strip_sql_strings()`
+  - Named parameters only (`:param` style), fail-closed on CTEs/subqueries
+  - 40+ unit tests and example YAML contract
+
+- **Adoption Enablement for Cross-Repo Validators** [OMN-1774]: Phase 0.5 implementation enabling incremental adoption through fingerprinting, baselines, and policy inheritance
+  - Violation fingerprinting: deterministic SHA-256 based `hash(rule_id, file_path, symbol)[:16]`
+  - Baseline mode: `--baseline-write` and `--baseline-enforce` CLI flags
+  - JSON output hardening: counts by severity, rule_id, suppressed status
+  - Policy inheritance: `extends` field with shallow merge semantics
+  - `util_fingerprint.py` - Deterministic fingerprint generation
+  - `model_baseline_*.py` - Pydantic models for baseline YAML format
+  - `baseline_io.py` - YAML read/write utilities
+  - Baseline behavior: baselined violations become INFO/suppressed, new violations fail
+  - O(1) fingerprint lookup via cached frozenset in `ModelViolationBaseline`
+  - 70+ new tests covering all new functionality
+
 ## [0.11.0] - 2026-01-31
 
 ### Added
