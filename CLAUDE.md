@@ -124,8 +124,8 @@ When spawning polymorphic agents or AI assistants:
 ### Dependencies
 
 - **Framework**: Pydantic 2.11+, FastAPI 0.120+
-- **Testing**: pytest 8.4+, pytest-asyncio, pytest-xdist (20 CI splits)
-- **Coverage**: 60% minimum (`fail_under = 60` in pyproject.toml), ~35,000 tests
+- **Testing**: pytest 8.4+, pytest-asyncio, pytest-xdist
+- **Coverage**: 60% minimum (`fail_under = 60` in pyproject.toml)
 
 ---
 
@@ -647,8 +647,8 @@ kind = EnumNodeType.get_node_kind(EnumNodeType.TRANSFORMER)  # → COMPUTE
 ```
 src/omnibase_core/
 ├── nodes/           # Node implementations (EFFECT, COMPUTE, REDUCER, ORCHESTRATOR)
-├── models/          # Pydantic models (70+ subdirectories)
-├── protocols/       # Protocol interfaces (20+ subdirectories)
+├── models/          # Pydantic models
+├── protocols/       # Protocol interfaces
 ├── mixins/          # Reusable behavior mixins
 ├── enums/           # Core enumerations
 ├── errors/          # Error handling and exception groups
@@ -708,7 +708,7 @@ class ModelSemVer(BaseModel):
     patch: int = Field(ge=0)
 ```
 
-**`from_attributes=True`**: Required on frozen models for pytest-xdist compatibility.
+**`from_attributes=True`**: Required on frozen models for pytest-xdist compatibility. Workers import classes independently, and without this setting Pydantic rejects valid instances due to class identity differences.
 
 ### Field Patterns
 
@@ -774,23 +774,16 @@ poetry run pytest tests/ --cov              # With coverage
 poetry run pytest tests/ --timeout=60       # With timeout protection
 ```
 
-### CI Performance Benchmarks
+### CI Overview
 
-**Configuration**: 20 parallel splits on GitHub Actions
-
-| Metric | Value |
-|--------|-------|
-| **Average Runtime** | ~3 minutes per split |
-| **Expected Range** | 2m30s - 3m30s |
-| **Warning Threshold** | > 3m30s |
-| **Critical Threshold** | > 4m30s |
+CI uses parallel test splits on GitHub Actions. Check the PR for current status.
 
 **CI Phases**:
 
 | Phase | Jobs | Purpose |
 |-------|------|---------|
-| **Phase 1** | lint, pyright, exports-validation, docs-validation, node-purity-check, enum-governance | Quick validation (~3 min) |
-| **Phase 2** | test-parallel (20 splits) | Full test suite |
+| **Phase 1** | lint, pyright, exports-validation, docs-validation, node-purity-check, enum-governance | Quick validation |
+| **Phase 2** | test-parallel | Full test suite |
 | **Phase 3** | test-summary | Aggregation |
 
 **Coverage Requirement**: 60% minimum
