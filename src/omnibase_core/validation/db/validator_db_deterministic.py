@@ -1,11 +1,7 @@
 """Deterministic ordering validator for DB repository contracts.
 
-Validates:
-- Queries returning many=True have ORDER BY clause
-- Queries using LIMIT/OFFSET have ORDER BY clause
-
-This prevents non-deterministic result ordering that would
-make tests flaky and behavior unpredictable.
+Ensures many=True and LIMIT/OFFSET queries have ORDER BY clauses
+to prevent non-deterministic result ordering.
 """
 
 from __future__ import annotations

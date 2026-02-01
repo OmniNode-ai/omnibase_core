@@ -1,25 +1,68 @@
-"""Shared SQL utility functions for database repository validators.
+"""Shared SQL utilities for database repository validators.
 
-This module provides common SQL processing utilities used across multiple
-database validators. These functions handle SQL normalization and string
-literal removal to enable accurate pattern matching in SQL validation.
-
-Functions:
-    normalize_sql: Remove comments and collapse whitespace from SQL.
-    strip_sql_strings: Remove string literals to prevent false positives.
-
-Example:
-    >>> from omnibase_core.validation.db.sql_utils import normalize_sql, strip_sql_strings
-    >>> sql = "SELECT * FROM users -- get all users"
-    >>> normalized = normalize_sql(sql)
-    >>> "SELECT * FROM users"
-    >>> clean = strip_sql_strings("SELECT * FROM t WHERE name = 'DROP TABLE'")
-    >>> # Returns: "SELECT * FROM t WHERE name = "
+Provides normalize_sql (removes comments, collapses whitespace) and
+strip_sql_strings (removes string literals to prevent false positives).
 """
 
 import re
 
 __all__ = ["normalize_sql", "strip_sql_strings"]
+
+# Pattern for matching SQL string literals (single and double quoted)
+# Handles:
+#   [^'\\]  - any char except single quote or backslash
+#   \\.     - any escaped character (backslash + any char)
+#   ''      - doubled single quote (SQL-standard escape)
+_SINGLE_QUOTE_STRING_PATTERN = re.compile(r"'(?:[^'\\]|\\.|'')*'")
+_DOUBLE_QUOTE_STRING_PATTERN = re.compile(r'"(?:[^"\\]|\\.|"")*"')
+
+
+def _extract_strings_with_placeholders(
+    sql: str,
+) -> tuple[str, list[tuple[str, str]]]:
+    """Extract string literals and replace with placeholders.
+
+    This function finds all single-quoted and double-quoted strings in SQL,
+    replaces them with unique placeholders, and returns both the modified
+    SQL and a mapping to restore them later.
+
+    Args:
+        sql: SQL string that may contain quoted strings.
+
+    Returns:
+        A tuple of (modified_sql, replacements) where replacements is a list
+        of (placeholder, original_string) tuples.
+    """
+    replacements: list[tuple[str, str]] = []
+    counter = 0
+
+    def make_placeholder(match: re.Match[str]) -> str:
+        nonlocal counter
+        placeholder = f"__SQL_STRING_{counter}__"
+        replacements.append((placeholder, match.group(0)))
+        counter += 1
+        return placeholder
+
+    # Replace single-quoted strings first, then double-quoted
+    sql = _SINGLE_QUOTE_STRING_PATTERN.sub(make_placeholder, sql)
+    sql = _DOUBLE_QUOTE_STRING_PATTERN.sub(make_placeholder, sql)
+
+    return sql, replacements
+
+
+def _restore_strings(sql: str, replacements: list[tuple[str, str]]) -> str:
+    """Restore string literals from placeholders.
+
+    Args:
+        sql: SQL with placeholders.
+        replacements: List of (placeholder, original_string) tuples.
+
+    Returns:
+        SQL with original string literals restored.
+    """
+    for placeholder, original in replacements:
+        sql = sql.replace(placeholder, original)
+    return sql
 
 
 def normalize_sql(sql: str) -> str:
@@ -31,6 +74,9 @@ def normalize_sql(sql: str) -> str:
     - Single-line comments (-- comment to end of line)
     - Multi-line comments (/* comment block */)
     - Excess whitespace (collapsed to single spaces)
+
+    String literals are preserved - comment-like patterns inside quoted
+    strings (e.g., 'value -- not a comment') are not stripped.
 
     Args:
         sql: Raw SQL string to normalize.
@@ -46,13 +92,26 @@ def normalize_sql(sql: str) -> str:
         ...     WHERE active = true
         ... ''')
         'SELECT * FROM users WHERE active = true'
+
+        >>> normalize_sql("SELECT * FROM t WHERE msg = 'value -- not a comment'")
+        "SELECT * FROM t WHERE msg = 'value -- not a comment'"
     """
-    # Remove single-line comments (-- to end of line)
+    # Step 1: Extract string literals and replace with placeholders
+    # This protects comment-like patterns inside strings
+    sql, replacements = _extract_strings_with_placeholders(sql)
+
+    # Step 2: Remove single-line comments (-- to end of line)
     sql = re.sub(r"--.*$", "", sql, flags=re.MULTILINE)
-    # Remove multi-line comments (/* ... */)
+
+    # Step 3: Remove multi-line comments (/* ... */)
     sql = re.sub(r"/\*.*?\*/", "", sql, flags=re.DOTALL)
-    # Collapse all whitespace to single spaces
+
+    # Step 4: Restore string literals
+    sql = _restore_strings(sql, replacements)
+
+    # Step 5: Collapse all whitespace to single spaces
     sql = " ".join(sql.split())
+
     return sql.strip()
 
 

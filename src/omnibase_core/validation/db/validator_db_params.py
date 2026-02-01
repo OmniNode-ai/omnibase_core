@@ -1,10 +1,7 @@
 """Parameter validation for DB repository contracts.
 
-Validates:
-- Only named parameters (:param) are used (no positional $N)
-- All SQL placeholders are defined in params
-- All defined params are used in SQL
-- Handles SQL comments and string literals properly
+Validates named params (:param), rejects positional ($N), and ensures
+all SQL placeholders match declared parameters.
 """
 
 from __future__ import annotations

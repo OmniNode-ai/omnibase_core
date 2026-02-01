@@ -1,8 +1,8 @@
 """Unit tests for DB repository contract validators.
 
 This module tests all five DB repository validators:
-- validate_db_structural: Required fields, valid identifiers, single statements
-- validate_db_sql_safety: read->SELECT, forbid DDL, safety policy
+- validate_db_structural: Required fields, valid identifiers
+- validate_db_sql_safety: read->SELECT, forbid DDL, multi-statement, safety policy
 - validate_db_table_access: Tables in SQL <= declared tables
 - validate_db_deterministic: many=True -> ORDER BY required
 - validate_db_params: Named params validation
@@ -111,6 +111,7 @@ def golden_contract() -> ModelDbRepositoryContract:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestGoldenContract:
     """Test that the golden contract passes all validators."""
 
@@ -153,6 +154,7 @@ class TestGoldenContract:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestValidatorDbStructural:
     """Test structural validator failure cases."""
 
@@ -220,6 +222,7 @@ class TestValidatorDbStructural:
         assert any("123bad_op" in str(e) for e in result.errors)
 
 
+@pytest.mark.unit
 class TestValidatorDbSqlSafety:
     """Test SQL safety validator failure cases."""
 
@@ -459,7 +462,94 @@ class TestValidatorDbSqlSafety:
         result = validate_db_sql_safety(contract)
         assert result.is_valid, f"Expected valid with policy, got: {result.errors}"
 
+    def test_single_statement_with_trailing_semicolon_passes(self) -> None:
+        """Single statement with trailing semicolon should pass validation.
 
+        A trailing semicolon is valid SQL syntax and should not be flagged
+        as multi-statement. Only semicolons BETWEEN statements indicate
+        multiple statements.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "select_with_semicolon": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test ORDER BY id;",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_sql_safety(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_insert_with_trailing_semicolon_passes(self) -> None:
+        """INSERT with trailing semicolon should pass validation."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "insert_with_semicolon": ModelDbOperation(
+                    mode="write",
+                    sql="INSERT INTO test VALUES (1);",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        result = validate_db_sql_safety(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_trailing_semicolon_with_whitespace_passes(self) -> None:
+        """Trailing semicolon followed by whitespace should pass."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "select_semicolon_whitespace": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test ORDER BY id;   \n",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_sql_safety(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_actual_multi_statement_still_fails(self) -> None:
+        """Actual multi-statement SQL (semicolon between statements) still fails."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "multi_stmt": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT 1; SELECT 2",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_sql_safety(contract)
+        assert not result.is_valid
+        assert any("multiple statements" in str(e).lower() for e in result.errors)
+
+
+@pytest.mark.unit
 class TestValidatorDbTableAccess:
     """Test table access validator failure cases."""
 
@@ -577,7 +667,237 @@ class TestValidatorDbTableAccess:
         result = validate_db_table_access(contract)
         assert result.is_valid, f"Expected valid, got errors: {result.errors}"
 
+    # ============================================================================
+    # Schema-qualified table tests (Issue: schema bypass prevention)
+    # ============================================================================
 
+    def test_schema_qualified_allowlist_requires_exact_match(self) -> None:
+        """Schema-qualified allowlist entry requires exact schema match.
+
+        If tables: ["public.users"] is declared, only "public.users" should be allowed,
+        not "other_schema.users" or just "users".
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["public.users"],  # Schema-qualified allowlist entry
+            models={},
+            ops={
+                "wrong_schema": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM other_schema.users ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert not result.is_valid
+        assert any("other_schema.users" in str(e) for e in result.errors)
+
+    def test_schema_qualified_allowlist_exact_match_passes(self) -> None:
+        """Schema-qualified allowlist entry with exact match passes."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["public.users"],  # Schema-qualified allowlist entry
+            models={},
+            ops={
+                "correct_schema": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM public.users ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_simple_allowlist_accepts_any_schema(self) -> None:
+        """Simple allowlist entry accepts any schema prefix.
+
+        If tables: ["users"] is declared, then "public.users", "myschema.users",
+        and "users" should all be allowed.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["users"],  # Simple allowlist entry
+            models={},
+            ops={
+                "public_schema": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM public.users ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+                "custom_schema": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM myschema.users ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+                "no_schema": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM users ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_schema_bypass_blocked(self) -> None:
+        """Schema-qualified access to undeclared table is blocked.
+
+        Prevents bypass where "public.secret_table" might evade check for "secret_table".
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["allowed_table"],
+            models={},
+            ops={
+                "schema_bypass_attempt": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM public.secret_table ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert not result.is_valid
+        assert any("public.secret_table" in str(e) for e in result.errors)
+
+    # ============================================================================
+    # Quoted identifier tests (Issue: quoted identifier evasion)
+    # ============================================================================
+
+    def test_quoted_table_extracted(self) -> None:
+        """Quoted table identifiers are extracted and validated.
+
+        SQL allows quoted identifiers like FROM "TableName" for case-sensitive names.
+        These must be validated, not stripped and ignored.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["allowed_table"],
+            models={},
+            ops={
+                "quoted_table": ModelDbOperation(
+                    mode="read",
+                    sql='SELECT * FROM "secret_table" ORDER BY id',
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert not result.is_valid
+        assert any("secret_table" in str(e) for e in result.errors)
+
+    def test_quoted_table_allowed_passes(self) -> None:
+        """Quoted table that matches allowlist passes validation."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["MyTable"],  # Case-sensitive name
+            models={},
+            ops={
+                "quoted_allowed": ModelDbOperation(
+                    mode="read",
+                    sql='SELECT * FROM "MyTable" ORDER BY id',
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_quoted_schema_qualified_table(self) -> None:
+        """Quoted schema-qualified tables are extracted correctly."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["public.MyTable"],  # Schema-qualified
+            models={},
+            ops={
+                "quoted_schema_table": ModelDbOperation(
+                    mode="read",
+                    sql='SELECT * FROM "public"."MyTable" ORDER BY id',
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_quoted_identifier_in_join(self) -> None:
+        """Quoted identifiers in JOIN clauses are validated."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["users"],  # Only users declared
+            models={},
+            ops={
+                "quoted_join": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        SELECT u.name
+                        FROM users u
+                        JOIN "SecretOrders" o ON u.id = o.user_id
+                        ORDER BY u.name
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert not result.is_valid
+        assert any("SecretOrders" in str(e) for e in result.errors)
+
+    def test_mixed_quoted_and_unquoted_tables(self) -> None:
+        """Both quoted and unquoted tables in same query are validated."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["users", "Orders"],  # Both declared
+            models={},
+            ops={
+                "mixed_query": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        SELECT u.name, o.total
+                        FROM users u
+                        JOIN "Orders" o ON u.id = o.user_id
+                        ORDER BY u.name
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+
+@pytest.mark.unit
 class TestValidatorDbDeterministic:
     """Test deterministic ordering validator failure cases."""
 
@@ -692,7 +1012,137 @@ class TestValidatorDbDeterministic:
         result = validate_db_deterministic(contract)
         assert result.is_valid, f"Expected valid for write op, got: {result.errors}"
 
+    def test_order_by_in_string_literal_ignored(self) -> None:
+        """ORDER BY inside string literal should be ignored; real ORDER BY detected.
 
+        This test covers the PR #463 review feedback: escaped quotes in string
+        literals should not cause false ORDER BY detection.
+
+        The SQL has 'ORDER BY' in a string AND a real ORDER BY clause.
+        Only the real ORDER BY should be detected.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "with_keyword_in_string": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test WHERE name = 'ORDER BY' ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_deterministic(contract)
+        # Should pass because real ORDER BY exists outside the string
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_limit_in_string_real_limit_requires_order_by(self) -> None:
+        """LIMIT inside string should be ignored; real LIMIT needs ORDER BY.
+
+        Only the real LIMIT should be detected, and it requires ORDER BY.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "limit_in_string": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test WHERE msg = 'LIMIT 10' LIMIT 10",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        result = validate_db_deterministic(contract)
+        # Should fail: real LIMIT exists but no ORDER BY
+        assert not result.is_valid
+        assert any("LIMIT" in str(e) or "ORDER BY" in str(e) for e in result.errors)
+
+    def test_order_by_in_backslash_escaped_string_ignored(self) -> None:
+        """ORDER BY in backslash-escaped string should be ignored.
+
+        Tests that backslash escape convention (It's -> It\\'s) doesn't break
+        string stripping and cause false ORDER BY detection.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "escaped_string": ModelDbOperation(
+                    mode="read",
+                    sql=r"SELECT * FROM test WHERE name = 'It\'s ORDER BY test' ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_deterministic(contract)
+        # Should pass: real ORDER BY exists after the escaped string
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_order_by_in_doubled_quote_string_ignored(self) -> None:
+        """ORDER BY in SQL-standard doubled-quote string should be ignored.
+
+        Tests that doubled quote escape convention (It's -> It''s) doesn't break
+        string stripping and cause false ORDER BY detection.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "doubled_quote_string": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test WHERE name = 'It''s ORDER BY test' ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_deterministic(contract)
+        # Should pass: real ORDER BY exists after the doubled-quote string
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_only_order_by_in_string_fails(self) -> None:
+        """If ORDER BY only exists inside string literal, validation should fail.
+
+        The query has ORDER BY in a string but no real ORDER BY clause.
+        With many=True, this should fail validation.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine="postgres",
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "fake_order_by": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test WHERE msg = 'ORDER BY id'",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_deterministic(contract)
+        # Should fail: no real ORDER BY, only one inside string
+        assert not result.is_valid
+        assert any("ORDER BY" in str(e) for e in result.errors)
+
+
+@pytest.mark.unit
 class TestValidatorDbParams:
     """Test parameter validator failure cases."""
 
@@ -857,6 +1307,7 @@ class TestValidatorDbParams:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -899,7 +1350,8 @@ class TestEdgeCases:
                 ),
             },
         )
-        result = validate_db_structural(contract)
+        # Multi-statement checking is in validate_db_sql_safety, not structural
+        result = validate_db_sql_safety(contract)
         assert result.is_valid, f"Expected valid, got errors: {result.errors}"
 
     def test_param_in_string_literal_ignored(self) -> None:

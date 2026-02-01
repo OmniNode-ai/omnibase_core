@@ -1,14 +1,7 @@
 """Structural validation for DB repository contracts.
 
-Validates:
-- Table names are valid SQL identifiers
-- Operation names are valid identifiers
-
-Note: Basic field constraints (name, engine, database_ref, mode) are enforced
-by Pydantic model validation. This validator adds semantic validation rules.
-
-Note: Multi-statement SQL validation is handled by validator_db_sql_safety.py
-to avoid duplicate error messages.
+Validates table and operation names are valid SQL identifiers.
+Pydantic handles basic field constraints; this adds semantic validation.
 """
 
 from __future__ import annotations

@@ -1,11 +1,7 @@
 """SQL safety validation for DB repository contracts.
 
-Validates:
-- read operations use SELECT only
-- write operations use INSERT/UPDATE/DELETE
-- DDL statements (CREATE, DROP, ALTER, TRUNCATE, GRANT, REVOKE) are forbidden
-- DELETE/UPDATE without WHERE requires safety policy opt-in
-- Multi-statement SQL requires safety policy opt-in
+Validates read/write mode consistency, forbids DDL statements, and
+requires safety policy opt-in for DELETE/UPDATE without WHERE.
 """
 
 from __future__ import annotations
@@ -108,9 +104,12 @@ def validate_db_sql_safety(
                         "Add WHERE clause or set safety_policy.allow_update_without_where=True."
                     )
 
-        # Check for multi-statement SQL (semicolons)
-        # Only check in string-stripped SQL to avoid false positives
-        if ";" in sql_without_strings and not op.safety_policy.allow_multi_statement:
+        # Check for multi-statement SQL (semicolons between statements)
+        # Strip trailing whitespace and trailing semicolon before checking
+        # A single statement ending with ';' is valid (e.g., "SELECT * FROM test;")
+        # Only flag if there's a semicolon BETWEEN statements
+        sql_for_multi_check = sql_without_strings.rstrip().rstrip(";")
+        if ";" in sql_for_multi_check and not op.safety_policy.allow_multi_statement:
             errors.append(
                 f"Operation '{op_name}': Multiple statements detected (semicolon found). "
                 "Use single statement or set safety_policy.allow_multi_statement=True."
