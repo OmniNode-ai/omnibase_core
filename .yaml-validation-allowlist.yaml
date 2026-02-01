@@ -121,6 +121,13 @@ allowed_files:
     added: "2026-01-31"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/validation/cross_repo/baseline_io.py"
+    reason: >-
+      Baseline I/O utility for violation baselines - must parse YAML baseline files to dict before Pydantic
+      ModelViolationBaseline validation. The YAML is immediately validated through model_validate(). (OMN-1774)
+    added: "2026-01-31"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

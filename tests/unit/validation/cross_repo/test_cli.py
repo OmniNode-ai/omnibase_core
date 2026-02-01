@@ -83,6 +83,19 @@ class TestCreateParser:
 
         assert args.directory == Path.cwd()
 
+    def test_parser_help_documents_exit_codes(self) -> None:
+        """Test that help text documents exit codes."""
+        parser = create_parser()
+
+        # Get the formatted help text
+        help_text = parser.format_help()
+
+        # Verify exit codes are documented
+        assert "Exit Codes:" in help_text
+        assert "0 - Validation passed" in help_text
+        assert "1 - Validation failed" in help_text
+        assert "2 - Configuration error" in help_text
+
 
 class TestPrintReports:
     """Tests for report printing functions."""
@@ -112,6 +125,71 @@ class TestPrintReports:
         assert "summary" in json_output
         assert json_output["policy_id"] == "fake_core_validation"
 
+    def test_print_json_report_includes_counts(self) -> None:
+        """Test JSON report includes counts section."""
+        policy_path = FIXTURES_DIR / "policies" / "fake_core_policy.yaml"
+
+        if not policy_path.exists():
+            pytest.skip("Fixture not found")
+
+        policy = load_policy(policy_path)
+        fake_core_dir = FIXTURES_DIR / "fake_core" / "src" / "fake_core"
+        result = run_cross_repo_validation(fake_core_dir, policy)
+
+        # Capture JSON output
+        output = StringIO()
+        with patch("sys.stdout", output):
+            print_json_report(result, policy.policy_id)
+
+        json_output = json.loads(output.getvalue())
+
+        # Verify counts structure exists
+        assert "counts" in json_output
+        counts = json_output["counts"]
+        assert "total" in counts
+        assert "suppressed" in counts
+        assert "unsuppressed" in counts
+        assert "by_severity" in counts
+        assert "by_rule" in counts
+
+        # Verify suppressed is currently 0 (placeholder)
+        assert counts["suppressed"] == 0
+        # Verify unsuppressed equals total (before baseline enforcement)
+        assert counts["unsuppressed"] == counts["total"]
+        # Verify by_severity and by_rule are dicts
+        assert isinstance(counts["by_severity"], dict)
+        assert isinstance(counts["by_rule"], dict)
+
+    def test_print_json_report_counts_accuracy(self) -> None:
+        """Test that counts are accurate for validation with violations."""
+        policy_path = FIXTURES_DIR / "policies" / "fake_app_policy.yaml"
+        fake_app_dir = FIXTURES_DIR / "fake_app" / "src" / "fake_app"
+
+        if not policy_path.exists():
+            pytest.skip("Fixture not found")
+
+        policy = load_policy(policy_path)
+        result = run_cross_repo_validation(fake_app_dir, policy)
+
+        # Capture JSON output
+        output = StringIO()
+        with patch("sys.stdout", output):
+            print_json_report(result, policy.policy_id)
+
+        json_output = json.loads(output.getvalue())
+        counts = json_output["counts"]
+
+        # Total should match issue count
+        assert counts["total"] == len(json_output["issues"])
+
+        # Sum of by_severity should equal total
+        severity_sum = sum(counts["by_severity"].values())
+        assert severity_sum == counts["total"]
+
+        # Sum of by_rule should equal total
+        rule_sum = sum(counts["by_rule"].values())
+        assert rule_sum == counts["total"]
+
     def test_print_text_report_pass(self) -> None:
         """Test text report for passing validation."""
         policy_path = FIXTURES_DIR / "policies" / "fake_core_policy.yaml"
@@ -132,6 +210,102 @@ class TestPrintReports:
 
         assert "Cross-Repo Validation Report" in text_output
         assert "fake_core_validation" in text_output
+
+    def test_print_text_report_includes_counts(self) -> None:
+        """Test text report includes counts summary."""
+        policy_path = FIXTURES_DIR / "policies" / "fake_app_policy.yaml"
+        fake_app_dir = FIXTURES_DIR / "fake_app" / "src" / "fake_app"
+
+        if not policy_path.exists():
+            pytest.skip("Fixture not found")
+
+        policy = load_policy(policy_path)
+        result = run_cross_repo_validation(fake_app_dir, policy)
+
+        # Capture text output
+        output = StringIO()
+        with patch("sys.stdout", output):
+            print_text_report(result, policy.policy_id)
+
+        text_output = output.getvalue()
+
+        # Verify counts are in the text output
+        assert "Total issues:" in text_output
+        assert "Suppressed:" in text_output
+        assert "Unsuppressed:" in text_output
+        assert "By severity:" in text_output
+        assert "By rule:" in text_output
+
+
+class TestExitCodes:
+    """Tests for CLI exit codes."""
+
+    def test_exit_code_0_on_pass(self) -> None:
+        """Test exit code 0 when validation passes."""
+        policy_path = FIXTURES_DIR / "policies" / "fake_core_policy.yaml"
+        fake_core_dir = FIXTURES_DIR / "fake_core" / "src" / "fake_core"
+
+        if not policy_path.exists():
+            pytest.skip("Fixture not found")
+
+        with patch(
+            "sys.argv",
+            [
+                "cli",
+                "--policy",
+                str(policy_path),
+                "--format",
+                "json",
+                str(fake_core_dir),
+            ],
+        ):
+            with patch("sys.stdout", new_callable=StringIO):
+                exit_code = main()
+
+            # fake_core has no forbidden imports, should pass
+            assert exit_code == 0
+
+    def test_exit_code_1_on_violations(self) -> None:
+        """Test exit code 1 when violations are found."""
+        policy_path = FIXTURES_DIR / "policies" / "fake_app_policy.yaml"
+        fake_app_dir = FIXTURES_DIR / "fake_app" / "src" / "fake_app"
+
+        if not policy_path.exists():
+            pytest.skip("Fixture not found")
+
+        with patch(
+            "sys.argv",
+            [
+                "cli",
+                "--policy",
+                str(policy_path),
+                "--format",
+                "json",
+                str(fake_app_dir),
+            ],
+        ):
+            with patch("sys.stdout", new_callable=StringIO):
+                exit_code = main()
+
+            # fake_app has violations
+            assert exit_code == 1
+
+    def test_exit_code_2_on_config_error(self) -> None:
+        """Test exit code 2 on configuration error."""
+        with patch(
+            "sys.argv",
+            [
+                "cli",
+                "--policy",
+                "/nonexistent/policy.yaml",
+                "--format",
+                "json",
+            ],
+        ):
+            with patch("sys.stdout", new_callable=StringIO):
+                exit_code = main()
+
+            assert exit_code == 2
 
 
 class TestMain:
@@ -308,3 +482,96 @@ class TestIntegration:
             i for i in result.issues if i.severity.value in ("error", "critical")
         ]
         assert len(error_issues) == 0
+
+
+class TestBaselineWrite:
+    """Tests for --baseline-write flag."""
+
+    def test_baseline_write_creates_file(self, tmp_path: Path) -> None:
+        """Test that --baseline-write creates a baseline file."""
+        policy_path = FIXTURES_DIR / "policies" / "fake_app_policy.yaml"
+        fake_app_dir = FIXTURES_DIR / "fake_app" / "src" / "fake_app"
+        baseline_path = tmp_path / "baseline.yaml"
+
+        if not policy_path.exists():
+            pytest.skip("Fixture not found")
+
+        with patch(
+            "sys.argv",
+            [
+                "cli",
+                "--policy",
+                str(policy_path),
+                "--format",
+                "json",
+                "--baseline-write",
+                str(baseline_path),
+                str(fake_app_dir),
+            ],
+        ):
+            with patch("sys.stdout", new_callable=StringIO):
+                main()
+
+        assert baseline_path.exists()
+
+    def test_baseline_write_contains_violations(self, tmp_path: Path) -> None:
+        """Test that baseline file contains violations."""
+        import yaml
+
+        policy_path = FIXTURES_DIR / "policies" / "fake_app_policy.yaml"
+        fake_app_dir = FIXTURES_DIR / "fake_app" / "src" / "fake_app"
+        baseline_path = tmp_path / "baseline.yaml"
+
+        if not policy_path.exists():
+            pytest.skip("Fixture not found")
+
+        with patch(
+            "sys.argv",
+            [
+                "cli",
+                "--policy",
+                str(policy_path),
+                "--baseline-write",
+                str(baseline_path),
+                str(fake_app_dir),
+            ],
+        ):
+            with patch("sys.stdout", new_callable=StringIO):
+                main()
+
+        with baseline_path.open() as f:
+            data = yaml.safe_load(f)
+
+        assert "violations" in data
+        assert len(data["violations"]) >= 1
+        assert data["generator"]["tool"] == "cross-repo-validator"
+
+    def test_baseline_write_text_format_prints_message(self, tmp_path: Path) -> None:
+        """Test that text format prints baseline write message."""
+        policy_path = FIXTURES_DIR / "policies" / "fake_app_policy.yaml"
+        fake_app_dir = FIXTURES_DIR / "fake_app" / "src" / "fake_app"
+        baseline_path = tmp_path / "baseline.yaml"
+
+        if not policy_path.exists():
+            pytest.skip("Fixture not found")
+
+        with patch(
+            "sys.argv",
+            [
+                "cli",
+                "--policy",
+                str(policy_path),
+                "--format",
+                "text",
+                "--baseline-write",
+                str(baseline_path),
+                str(fake_app_dir),
+            ],
+        ):
+            output = StringIO()
+            with patch("sys.stdout", output):
+                main()
+
+        output_text = output.getvalue()
+        assert "Baseline written to" in output_text
+        assert "Violations captured" in output_text

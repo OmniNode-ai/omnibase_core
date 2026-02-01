@@ -21,6 +21,7 @@ from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
     ModelFileImports,
     ModelImportInfo,
 )
+from omnibase_core.validation.cross_repo.util_fingerprint import generate_fingerprint
 
 
 class RuleRepoBoundaries:
@@ -107,6 +108,9 @@ class RuleRepoBoundaries:
         # Check forbidden import prefixes
         for forbidden in self.config.forbidden_import_prefixes:
             if import_path.startswith(forbidden):
+                fingerprint = generate_fingerprint(
+                    self.rule_id, str(file_path), import_path
+                )
                 return ModelValidationIssue(
                     severity=self.config.severity,
                     message=(
@@ -119,9 +123,11 @@ class RuleRepoBoundaries:
                     rule_name=self.rule_id,
                     suggestion=f"Use a public API instead of importing from '{forbidden}'",
                     context={
-                        "import": import_path,
+                        "fingerprint": fingerprint,
                         "forbidden_prefix": forbidden,
+                        "import": import_path,
                         "repo_id": repo_id,
+                        "symbol": import_path,
                     },
                 )
 
@@ -131,6 +137,9 @@ class RuleRepoBoundaries:
         if import_repo and import_repo != repo_id:
             # This is a cross-repo import - check if allowed
             if not self._is_allowed_cross_repo(import_path):
+                fingerprint = generate_fingerprint(
+                    self.rule_id, str(file_path), import_path
+                )
                 return ModelValidationIssue(
                     severity=self.config.severity,
                     message=(
@@ -146,8 +155,10 @@ class RuleRepoBoundaries:
                         f"{', '.join(self.config.allowed_cross_repo_prefixes) or 'none configured'}"
                     ),
                     context={
+                        "fingerprint": fingerprint,
                         "import": import_path,
                         "source_repo": repo_id,
+                        "symbol": import_path,
                         "target_repo": import_repo,
                     },
                 )

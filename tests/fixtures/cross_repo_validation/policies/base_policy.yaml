@@ -1,0 +1,29 @@
+---
+# Base policy for testing inheritance (OMN-1774)
+# This policy defines shared defaults that child policies can inherit from.
+policy_id: onex_base_defaults
+policy_version:
+  major: 1
+  minor: 0
+  patch: 0
+repo_id: _base  # placeholder, child should override
+
+discovery:
+  include_globs:
+    - "**/*.py"
+  exclude_globs:
+    - "**/test_*.py"
+    - "**/__pycache__/**"
+
+rules:
+  repo_boundaries:
+    enabled: true
+    severity: error
+    ownership:
+      "base_module.": base_repo
+    forbidden_import_prefixes:
+      - "internal.private"
+    allowed_cross_repo_prefixes:
+      - "shared.protocols"
+
+baselines: []
