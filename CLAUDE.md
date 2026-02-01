@@ -64,6 +64,7 @@ poetry install && pre-commit install
 poetry run pytest tests/                    # All tests (sequential by default)
 poetry run pytest tests/ -n 4               # With 4 parallel workers
 poetry run pytest tests/ -n 0 -xvs          # Debug mode (no parallelism)
+poetry run pytest tests/ --cov              # With coverage (60% minimum required)
 
 # Code Quality
 poetry run mypy src/omnibase_core/          # Type checking (strict, 0 errors required)
@@ -175,11 +176,21 @@ from omnibase_core.nodes import (
 ```python
 # ✅ CORRECT - ORCHESTRATOR emits events/intents only
 output = ModelHandlerOutput.for_orchestrator(
-    events=(event,), intents=(intent,), result=None
+    input_envelope_id=envelope.envelope_id,
+    correlation_id=envelope.correlation_id,
+    handler_id="my-orchestrator",
+    events=(event,),
+    intents=(intent,),
 )
 
-# ❌ WRONG - ORCHESTRATOR cannot return typed results
-output = ModelHandlerOutput.for_orchestrator(result={"status": "done"})  # ValueError!
+# ❌ WRONG - ORCHESTRATOR cannot return typed results (raises ModelOnexError)
+output = ModelHandlerOutput(
+    input_envelope_id=uuid4(),
+    correlation_id=uuid4(),
+    handler_id="bad-orchestrator",
+    node_kind=EnumNodeKind.ORCHESTRATOR,
+    result={"status": "done"},  # CONTRACT_VIOLATION!
+)
 ```
 
 **Enforcement**:
@@ -544,11 +555,14 @@ except ASYNC_ERRORS as e:
 
 ```python
 from omnibase_core.errors.exception_groups import (
-    VALIDATION_ERRORS,      # TypeError, ValidationError, ValueError
-    PYDANTIC_MODEL_ERRORS,  # + AttributeError
-    FILE_IO_ERRORS,         # FileNotFoundError, IOError, OSError, PermissionError
-    NETWORK_ERRORS,         # ConnectionError, OSError, TimeoutError
-    ASYNC_ERRORS,           # asyncio.TimeoutError, RuntimeError
+    VALIDATION_ERRORS,       # TypeError, ValidationError, ValueError
+    PYDANTIC_MODEL_ERRORS,   # + AttributeError
+    ATTRIBUTE_ACCESS_ERRORS, # AttributeError, IndexError, KeyError, TypeError
+    FILE_IO_ERRORS,          # FileNotFoundError, IOError, OSError, PermissionError
+    NETWORK_ERRORS,          # ConnectionError, OSError, TimeoutError
+    ASYNC_ERRORS,            # asyncio.TimeoutError, RuntimeError
+    YAML_PARSING_ERRORS,     # ValidationError, ValueError, yaml.YAMLError
+    JSON_PARSING_ERRORS,     # json.JSONDecodeError, TypeError, ValidationError, ValueError
 )
 
 try:
@@ -861,6 +875,19 @@ def process(value: Optional[str]) -> Union[int, str]: ...  # Don't use
 | **External contract surface** | Enums | `EnumNodeKind.COMPUTE` |
 | **Internal parsing glue** | Literals allowed | `Literal["compute", "effect"]` |
 | **Cross-process boundaries** | Enums only | Never use Literal for serialized values |
+
+```python
+# ✅ External API - use Enum
+def process_node(kind: EnumNodeKind) -> None: ...
+
+# ✅ Internal YAML parsing helper - Literal OK
+RawNodeKind = Literal["compute", "effect", "reducer", "orchestrator"]
+def _parse_kind(raw: RawNodeKind) -> EnumNodeKind: ...
+
+# ❌ WRONG - Literal in serialized model field
+class BadModel(BaseModel):
+    kind: Literal["compute", "effect"]  # Use EnumNodeKind instead
+```
 
 ---
 
