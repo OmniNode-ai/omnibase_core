@@ -5,7 +5,7 @@ Defines backup creation, storage, and rollback procedures
 for safe side-effect operations with recovery capabilities.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelBackupConfig(BaseModel):
@@ -45,11 +45,11 @@ class ModelBackupConfig(BaseModel):
         ge=1,
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelBackupConfig"]

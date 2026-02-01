@@ -9,10 +9,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -26,22 +24,22 @@ class ModelResultSummary(BaseModel):
 
     execution_id: UUID = Field(description="Execution identifier")
     command: str = Field(description="Command name")
-    target_node: str | None = Field(description="Target node name")
+    target_node: str | None = Field(default=None, description="Target node name")
     success: bool = Field(description="Whether execution succeeded")
     exit_code: int = Field(description="Exit code")
     duration_ms: float = Field(ge=0, description="Duration in milliseconds")
     retry_count: int = Field(ge=0, description="Number of retries")
     has_errors: bool = Field(description="Whether there are errors")
     has_warnings: bool = Field(description="Whether there are warnings")
-    error_count: int = Field(ge=0, description="Number of errors")
+    error_level_count: int = Field(ge=0, description="Count of ERROR-severity items")
     warning_count: int = Field(ge=0, description="Number of warnings")
     critical_error_count: int = Field(ge=0, description="Number of critical errors")
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -70,15 +68,10 @@ class ModelResultSummary(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Raises:
-            ModelOnexError: If validation fails with details about the failure
+        This base implementation always returns True. Subclasses should override
+        this method to perform custom validation and catch specific exceptions
+        (e.g., ValidationError, ValueError) when implementing validation logic.
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, ValueError, TypeError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Instance validation failed: {e}",
-            ) from e
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True

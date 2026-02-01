@@ -10,8 +10,8 @@ Handler contracts use a different schema than ONEX metadata contracts:
 - They define handler behavior through the descriptor field
 - They specify capability dependencies and execution constraints
 
-Supported handler_kind Values
------------------------------
+Supported node_archetype Values
+-------------------------------
     compute, effect, reducer, orchestrator
 
 Purity Values
@@ -33,9 +33,9 @@ Usage Example
     yaml_data = {
         "handler_id": "compute.schema.validator",
         "name": "Schema Validator",
-        "version": "1.0.0",
+        "contract_version": {"major": 1, "minor": 0, "patch": 0},
         "descriptor": {
-            "handler_kind": "compute",
+            "node_archetype": "compute",
             "purity": "pure",
             "idempotent": True,
         },
@@ -51,10 +51,10 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-class MinimalHandlerKind:
-    """Valid handler_kind values for handler contract validation."""
+class MinimalNodeArchetype:
+    """Valid node_archetype values for handler contract validation."""
 
-    VALID_KINDS = {"compute", "effect", "reducer", "orchestrator"}
+    VALID_ARCHETYPES = {"compute", "effect", "reducer", "orchestrator"}
 
 
 class MinimalPurity:
@@ -73,6 +73,27 @@ class MinimalObservabilityLevel:
     """Valid observability_level values for handler contract validation."""
 
     VALID_VALUES = {"minimal", "standard", "verbose"}
+
+
+class MinimalSemVer(BaseModel):
+    """Minimal semantic version model for handler contract validation.
+
+    Validates structured version format: {major: X, minor: Y, patch: Z}
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    major: int = Field(..., ge=0, description="Major version number")
+    minor: int = Field(..., ge=0, description="Minor version number")
+    patch: int = Field(..., ge=0, description="Patch version number")
+    prerelease: tuple[str | int, ...] | list[str | int] | None = Field(
+        default=None,
+        description="Optional prerelease identifiers",
+    )
+    build: tuple[str, ...] | list[str] | None = Field(
+        default=None,
+        description="Optional build metadata",
+    )
 
 
 class MinimalRetryPolicy(BaseModel):
@@ -102,7 +123,7 @@ class MinimalHandlerDescriptor(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    handler_kind: str = Field(
+    node_archetype: str = Field(
         ...,
         description="Type of handler (compute, effect, reducer, orchestrator)",
     )
@@ -143,18 +164,18 @@ class MinimalHandlerDescriptor(BaseModel):
         description="Observability level (minimal, standard, verbose)",
     )
 
-    @field_validator("handler_kind")
+    @field_validator("node_archetype")
     @classmethod
-    def validate_handler_kind(cls, value: str) -> str:
-        """Validate handler_kind is one of the allowed values."""
+    def validate_node_archetype(cls, value: str) -> str:
+        """Validate node_archetype is one of the allowed values."""
         if not isinstance(value, str):
-            raise ValueError("handler_kind must be a string")
+            raise ValueError("node_archetype must be a string")
 
         value_lower = value.lower()
-        if value_lower not in MinimalHandlerKind.VALID_KINDS:
+        if value_lower not in MinimalNodeArchetype.VALID_ARCHETYPES:
             raise ValueError(
-                f"Invalid handler_kind '{value}'. Must be one of: "
-                f"{', '.join(sorted(MinimalHandlerKind.VALID_KINDS))}"
+                f"Invalid node_archetype '{value}'. Must be one of: "
+                f"{', '.join(sorted(MinimalNodeArchetype.VALID_ARCHETYPES))}"
             )
         return value_lower
 
@@ -286,7 +307,7 @@ class MinimalExecutionConstraints(BaseModel):
 class MinimalHandlerContract(BaseModel):
     """Pydantic model for validating handler contract YAML files without circular imports.
 
-    Validates required fields: handler_id, name, version, descriptor, input_model, output_model.
+    Validates required fields: handler_id, name, contract_version, descriptor, input_model, output_model.
     """
 
     model_config = ConfigDict(
@@ -311,10 +332,9 @@ class MinimalHandlerContract(BaseModel):
         description="Human-readable display name",
     )
 
-    version: str = Field(
+    contract_version: MinimalSemVer = Field(
         ...,
-        pattern=r"^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$",
-        description="Semantic version string",
+        description="Structured semantic version {major, minor, patch}",
     )
 
     description: str | None = Field(
@@ -426,28 +446,28 @@ class MinimalHandlerContract(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_descriptor_handler_kind_consistency(self) -> "MinimalHandlerContract":
-        """Validate that handler_id prefix is consistent with descriptor.handler_kind."""
+    def validate_descriptor_node_archetype_consistency(self) -> "MinimalHandlerContract":
+        """Validate that handler_id prefix is consistent with descriptor.node_archetype."""
         # Extract first segment of handler_id
         prefix = self.handler_id.split(".")[0].lower()
 
-        # Map common prefixes to handler kinds
-        prefix_to_kind = {
-            "node": None,  # Generic, any kind allowed
-            "handler": None,  # Generic, any kind allowed
+        # Map common prefixes to node archetypes
+        prefix_to_archetype = {
+            "node": None,  # Generic, any archetype allowed
+            "handler": None,  # Generic, any archetype allowed
             "compute": "compute",
             "effect": "effect",
             "reducer": "reducer",
             "orchestrator": "orchestrator",
         }
 
-        expected_kind = prefix_to_kind.get(prefix)
+        expected_archetype = prefix_to_archetype.get(prefix)
 
-        # Only validate if prefix implies a specific kind
-        if expected_kind is not None and self.descriptor.handler_kind != expected_kind:
+        # Only validate if prefix implies a specific archetype
+        if expected_archetype is not None and self.descriptor.node_archetype != expected_archetype:
             raise ValueError(
-                f"Handler ID prefix '{prefix}' implies handler_kind='{expected_kind}' "
-                f"but descriptor has handler_kind='{self.descriptor.handler_kind}'"
+                f"Handler ID prefix '{prefix}' implies node_archetype='{expected_archetype}' "
+                f"but descriptor has node_archetype='{self.descriptor.node_archetype}'"
             )
 
         return self

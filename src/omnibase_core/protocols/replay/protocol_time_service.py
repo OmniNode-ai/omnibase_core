@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 ProtocolTimeService - Protocol for time injection in replay infrastructure.
 
@@ -20,21 +17,21 @@ Usage:
     .. code-block:: python
 
         from omnibase_core.protocols.replay import ProtocolTimeService
-        from omnibase_core.services.replay.injector_time import InjectorTime
+        from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
         from datetime import datetime, timezone
 
         # Production mode - returns current time
-        time_service: ProtocolTimeService = InjectorTime()
+        time_service: ProtocolTimeService = ServiceTimeInjector()
         current = time_service.now()
 
         # Replay mode - returns fixed time
         fixed = datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
-        replay_service: ProtocolTimeService = InjectorTime(fixed_time=fixed)
+        replay_service: ProtocolTimeService = ServiceTimeInjector(fixed_time=fixed)
         replayed = replay_service.now()  # Always returns fixed time
 
 Related:
     - OMN-1116: Implement Time Injector for Replay Infrastructure
-    - InjectorTime: Default implementation
+    - ServiceTimeInjector: Default implementation
     - ctx.time.now(): Pattern for accessing time in pipeline context
 
 .. versionadded:: 0.4.0
@@ -97,7 +94,7 @@ class ProtocolTimeService(Protocol):
         Example:
             .. code-block:: python
 
-                time_service = InjectorTime()
+                time_service = ServiceTimeInjector()
                 current = time_service.now()
                 print(f"Current time: {current.isoformat()}")
         """
@@ -116,7 +113,7 @@ class ProtocolTimeService(Protocol):
         Example:
             .. code-block:: python
 
-                time_service = InjectorTime()
+                time_service = ServiceTimeInjector()
                 utc_time = time_service.utc_now()
                 assert utc_time.tzinfo == timezone.utc
         """

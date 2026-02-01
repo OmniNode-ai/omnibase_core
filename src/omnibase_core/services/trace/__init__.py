@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Trace recording service module.
 
 This module provides services for recording and querying execution traces.
@@ -26,8 +23,8 @@ CORRECT USAGE:
 Always import directly from the specific module:
 
     from omnibase_core.services.trace.service_trace_recording import ServiceTraceRecording
-    from omnibase_core.services.trace.store_trace_in_memory import StoreTraceInMemory
-    from omnibase_core.services.trace.protocol_trace_store import ProtocolTraceStore
+    from omnibase_core.services.trace.service_trace_in_memory_store import ServiceTraceInMemoryStore
+    from omnibase_core.protocols.storage.protocol_trace_store import ProtocolTraceStore
     from omnibase_core.models.trace_query.model_trace_query import ModelTraceQuery
     from omnibase_core.models.trace_query.model_trace_summary import ModelTraceSummary
 

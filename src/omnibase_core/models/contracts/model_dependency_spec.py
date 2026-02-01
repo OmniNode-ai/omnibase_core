@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """
 Model Dependency Specification for Capability-Based Dependencies.
 
@@ -38,8 +36,12 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type aliases for Literal types
-DependencyType = Literal["node", "protocol", "handler"]
-SelectionStrategy = Literal["first", "random", "round_robin", "least_loaded"]
+DependencyType = Literal[  # enum-ok: model type annotation
+    "node", "protocol", "handler"
+]
+SelectionStrategy = Literal[  # enum-ok: model type annotation
+    "first", "random", "round_robin", "least_loaded"
+]
 
 
 class ModelDependencySpec(BaseModel):

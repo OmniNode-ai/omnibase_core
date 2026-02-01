@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field
-
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 """
 CLI Execution Model.
 
@@ -13,11 +5,16 @@ Represents CLI command execution context with timing, configuration,
 and state tracking for comprehensive command execution management.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
+
+from pydantic import Field
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Use object type for CLI command option values.
 # Avoids primitive soup union anti-pattern while maintaining flexibility.
@@ -29,12 +26,10 @@ CommandOptionValue = object
 # Runtime type validation should be done where values are consumed.
 ExecutionContextValue = object
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from omnibase_core.enums.enum_execution_status_v2 import (
-    EnumExecutionStatusV2 as EnumExecutionStatus,
-)
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 
 if TYPE_CHECKING:
@@ -413,11 +408,11 @@ class ModelCliExecution(BaseModel):
             anomaly_threshold=None,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

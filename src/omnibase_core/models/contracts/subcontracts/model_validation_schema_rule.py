@@ -10,7 +10,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 import json
 import re
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_rule_type import EnumValidationRuleType
@@ -59,11 +59,11 @@ class ModelValidationSchemaRule(BaseModel):
         description="Whether this validation must pass",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     @model_validator(mode="after")
     def validate_rule_format(self) -> "ModelValidationSchemaRule":

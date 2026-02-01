@@ -1,20 +1,16 @@
-from __future__ import annotations
-
-from pydantic import Field, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Node Union Model.
 
 Discriminated union for function node types following ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_union_type import EnumNodeUnionType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.node_metadata.model_function_node import ModelFunctionNode
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
@@ -124,13 +120,11 @@ class ModelNodeUnion(BaseModel):
             message=f"Unknown node_type: {self.node_type}",
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

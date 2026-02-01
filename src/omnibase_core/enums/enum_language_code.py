@@ -4,10 +4,13 @@ Language Code Enum.
 Supported language codes for detection patterns.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumLanguageCode(str, Enum):
+@unique
+class EnumLanguageCode(StrValueHelper, str, Enum):
     """Supported language codes for detection."""
 
     ENGLISH = "en"
@@ -26,3 +29,6 @@ class EnumLanguageCode(str, Enum):
     JAPANESE = "ja"
     KOREAN = "ko"
     ARABIC = "ar"
+
+
+__all__ = ["EnumLanguageCode"]

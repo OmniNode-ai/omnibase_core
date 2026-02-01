@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Summary statistics model for trace aggregation.
 
@@ -29,7 +26,7 @@ Example:
     Success rate: 85.0%
 
 See Also:
-    - :class:`~omnibase_core.services.trace.protocol_trace_store.ProtocolTraceStore`:
+    - :class:`~omnibase_core.protocols.storage.protocol_trace_store.ProtocolTraceStore`:
       Protocol that returns this summary model
     - :class:`~omnibase_core.models.trace_query.model_trace_query.ModelTraceQuery`:
       Query filters for scoping the summary
@@ -162,6 +159,7 @@ class ModelTraceSummary(BaseModel):
     def validate_time_ordering(self) -> "ModelTraceSummary":
         """Validate that time_range_end is not before time_range_start."""
         if self.time_range_end < self.time_range_start:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"time_range_end ({self.time_range_end}) cannot be before "
                 f"time_range_start ({self.time_range_start})"
@@ -173,6 +171,7 @@ class ModelTraceSummary(BaseModel):
         """Validate that status counts don't exceed total."""
         counted = self.success_count + self.failure_count + self.partial_count
         if counted > self.total_traces:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"Sum of status counts ({counted}) exceeds total_traces "
                 f"({self.total_traces})"
@@ -183,11 +182,13 @@ class ModelTraceSummary(BaseModel):
     def validate_percentile_ordering(self) -> "ModelTraceSummary":
         """Validate that percentiles are in ascending order."""
         if self.p50_duration_ms > self.p95_duration_ms:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"p50_duration_ms ({self.p50_duration_ms}) cannot exceed "
                 f"p95_duration_ms ({self.p95_duration_ms})"
             )
         if self.p95_duration_ms > self.p99_duration_ms:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"p95_duration_ms ({self.p95_duration_ms}) cannot exceed "
                 f"p99_duration_ms ({self.p99_duration_ms})"

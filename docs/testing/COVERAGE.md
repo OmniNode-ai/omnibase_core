@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../INDEX.md) > Testing > Code Coverage Testing
+
 # Code Coverage Testing
 
 This document explains the parallel coverage testing approach for Omnibase Core.

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 General Status Enumeration - Unified Hierarchy Version.
 
@@ -8,14 +6,17 @@ original overly broad EnumStatus with a well-organized hierarchy that leverages
 base status values while adding commonly needed general status concepts.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 from .enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumGeneralStatus(str, Enum):
+class EnumGeneralStatus(StrValueHelper, str, Enum):
     """
     General purpose status enumeration extending base status hierarchy.
 
@@ -75,10 +76,6 @@ class EnumGeneralStatus(str, Enum):
 
     # Processing states (specific to general status)
     PROCESSING = "processing"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     def to_base_status(self) -> EnumBaseStatus:
         """Convert to base status enum for universal operations."""
@@ -231,9 +228,9 @@ class EnumGeneralStatus(str, Enum):
         }
 
 
-# Migration compatibility - provides same interface as original
+# Deprecated: use EnumGeneralStatus directly
 # Note: Python enums cannot extend other enums, so we use module-level alias
-EnumStatus = EnumGeneralStatus
+EnumStatus: type[EnumGeneralStatus] = EnumGeneralStatus
 
 
 # Export for use

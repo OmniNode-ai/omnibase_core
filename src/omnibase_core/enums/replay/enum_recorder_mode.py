@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 EnumRecorderMode - Recorder operating mode enum for replay infrastructure.
 
@@ -29,7 +26,7 @@ Usage:
 
 Related:
     - OMN-1116: Implement Effect Recorder for Replay Infrastructure
-    - RecorderEffect: Uses this enum for mode configuration
+    - ServiceEffectRecorder: Uses this enum for mode configuration
     - ProtocolEffectRecorder: Protocol defining recorder interface
 
 .. versionadded:: 0.4.0
@@ -39,10 +36,13 @@ from __future__ import annotations
 
 __all__ = ["EnumRecorderMode"]
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumRecorderMode(str, Enum):
+@unique
+class EnumRecorderMode(StrValueHelper, str, Enum):
     """
     Recorder operating mode.
 

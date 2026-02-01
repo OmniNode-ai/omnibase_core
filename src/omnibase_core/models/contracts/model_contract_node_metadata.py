@@ -91,6 +91,7 @@ class ModelContractNodeMetadata(BaseModel):
 
     model_config = ConfigDict(
         extra="allow",  # Allow additional fields for extensibility
+        from_attributes=True,
         frozen=True,
     )
 

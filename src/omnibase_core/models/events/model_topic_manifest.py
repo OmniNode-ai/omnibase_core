@@ -117,6 +117,7 @@ class ModelTopicManifest(BaseModel):
             domain="registration",
             topics={
                 EnumTopicType.COMMANDS: ModelTopicConfig.commands_default(),
+                EnumTopicType.DLQ: ModelTopicConfig.dlq_default(),
                 EnumTopicType.EVENTS: ModelTopicConfig.events_default(),
                 EnumTopicType.INTENTS: ModelTopicConfig.intents_default(),
                 EnumTopicType.SNAPSHOTS: ModelTopicConfig.snapshots_default(),
@@ -128,7 +129,7 @@ class ModelTopicManifest(BaseModel):
         """
         Create a standard topic manifest for any domain.
 
-        Creates all four topic types with default configurations.
+        Creates all five topic types with default configurations.
 
         Args:
             domain: Domain name (lowercase, alphanumeric with hyphens)
@@ -140,6 +141,7 @@ class ModelTopicManifest(BaseModel):
             domain=domain,
             topics={
                 EnumTopicType.COMMANDS: ModelTopicConfig.commands_default(),
+                EnumTopicType.DLQ: ModelTopicConfig.dlq_default(),
                 EnumTopicType.EVENTS: ModelTopicConfig.events_default(),
                 EnumTopicType.INTENTS: ModelTopicConfig.intents_default(),
                 EnumTopicType.SNAPSHOTS: ModelTopicConfig.snapshots_default(),

@@ -1,17 +1,14 @@
-from __future__ import annotations
-
-from typing import TypedDict
-
 """
 Timestamp data structure.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TypedDict
 
 
 class TypedDictTimestampData(TypedDict):
-    """Timestamp data structure."""
-
     last_modified: datetime | None
     last_validated: datetime | None
 

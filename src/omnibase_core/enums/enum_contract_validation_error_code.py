@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Contract validation error codes for merge and expanded validation phases.
 
 These error codes are used by the Contract Validation Pipeline to categorize
@@ -21,9 +18,11 @@ Related:
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumContractValidationErrorCode(str, Enum):
+class EnumContractValidationErrorCode(StrValueHelper, str, Enum):
     """Error codes for contract merge and expanded validation.
 
     These codes categorize the types of issues that can be detected

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 ServiceRegistryProvider - In-memory thread-safe registry for provider descriptors.
 
@@ -50,6 +47,7 @@ import threading
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -168,6 +166,13 @@ class ServiceRegistryProvider:
 
         .. versionadded:: 0.4.0
         """
+        self._register_impl(provider, replace)
+
+    @standard_error_handling("Provider registration")
+    def _register_impl(
+        self, provider: ModelProviderDescriptor, replace: bool = False
+    ) -> None:
+        """Internal implementation of provider registration."""
         provider_id = str(provider.provider_id)
 
         with self._lock:
@@ -284,6 +289,13 @@ class ServiceRegistryProvider:
 
         .. versionadded:: 0.4.0
         """
+        return self._find_by_capability_impl(capability)
+
+    @standard_error_handling("Provider capability search")
+    def _find_by_capability_impl(
+        self, capability: str
+    ) -> list[ModelProviderDescriptor]:
+        """Internal implementation of find_by_capability."""
         with self._lock:
             # Lock held during iteration - acceptable for < 1,000 entries.
             # For larger registries, consider sharding by capability namespace.

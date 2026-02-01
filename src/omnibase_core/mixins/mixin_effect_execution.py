@@ -79,73 +79,16 @@ import random
 import re
 import threading
 import time
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 if TYPE_CHECKING:
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
-# =============================================================================
-# LOCAL DECORATOR: allow_dict_any
-# =============================================================================
-# This is a LOCAL COPY of the canonical decorator defined at:
-#     omnibase_core.decorators.allow_dict_any
-#
-# WHY A LOCAL COPY EXISTS:
-#     This module (mixin_effect_execution.py) is imported by core infrastructure
-#     components that are themselves dependencies of the decorators module.
-#     Importing from omnibase_core.decorators would create a circular import:
-#
-#         mixin_effect_execution.py
-#             -> omnibase_core.decorators.allow_dict_any
-#             -> omnibase_core.decorators.__init__
-#             -> (other decorators that may import infrastructure)
-#             -> mixin_effect_execution.py  [CIRCULAR]
-#
-#     To avoid this, we define a simplified local version here that provides
-#     the same no-op identity decorator behavior.
-#
-# DIFFERENCES FROM CANONICAL IMPLEMENTATION:
-#     - Canonical: Supports optional `reason` argument and attaches metadata
-#       attributes (_allow_dict_any, _dict_any_reason) for validation scripts
-#     - Local: Simple identity function with no metadata attachment
-#
-#     Both serve the same documentation purpose: marking functions that
-#     intentionally use dict[str, Any] where Pydantic validates at runtime.
-#
-# MAINTENANCE NOTE:
-#     If the canonical decorator's core behavior changes, this local copy
-#     should be reviewed for consistency. However, the simplified no-op
-#     behavior is sufficient for this module's needs.
-# =============================================================================
-def allow_dict_any[F: Callable[..., object]](func: F) -> F:
-    """Mark a function as intentionally using dict[str, Any] for dynamic configs.
-
-    This is a LOCAL COPY of ``omnibase_core.decorators.allow_dict_any``,
-    defined here to avoid circular imports. See the module-level comment
-    block above for detailed rationale.
-
-    This no-op identity decorator serves as documentation for static analysis
-    tools and code reviewers, indicating that dict[str, Any] usage is intentional
-    and validated at runtime by Pydantic models (e.g., operation configs from
-    YAML contracts).
-
-    Canonical Implementation:
-        For the full-featured version with ``reason`` argument support
-        and validation script metadata, see:
-        ``omnibase_core.decorators.allow_dict_any``
-
-    Args:
-        func: The function to mark as allowing dict[str, Any] usage.
-
-    Returns:
-        The same function unchanged (identity decorator).
-    """
-    return func
-
-
+# Import canonical allow_dict_any decorator directly from the specific module
+# (not from omnibase_core.decorators package) to avoid potential circular imports.
+# decorator_allow_dict_any.py has no omnibase_core imports, making this safe.
 from omnibase_core.constants.constants_effect import (
     DEBUG_THREAD_SAFETY,
     DEFAULT_MAX_FIELD_EXTRACTION_DEPTH,
@@ -154,8 +97,10 @@ from omnibase_core.constants.constants_effect import (
     SAFE_FIELD_PATTERN,
     contains_denied_builtin,
 )
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumTransactionState
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.context import ModelEffectInputData
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
@@ -361,11 +306,11 @@ class MixinEffectExecution:
                 input_data.operation_data["effect_subcontract"] = effect_subcontract
                 result = await self.execute_effect(input_data)
 
-            2. **operations key** (LEGACY): Direct operations list in
+            2. **operations key** (ALTERNATIVE): Direct operations list in
                operation_data["operations"]. Use when manual control over
                operation serialization is needed.
 
-                # Legacy pattern - manual operation list:
+                # Alternative pattern - manual operation list:
                 input_data.operation_data["operations"] = [
                     {
                         "io_config": op.io_config.model_dump(),
@@ -410,7 +355,7 @@ class MixinEffectExecution:
         Args:
             input_data: Effect input containing operation configuration. Operations
                 can be provided via operation_data["effect_subcontract"] (preferred)
-                or operation_data["operations"] (legacy). Also includes retry policies,
+                or operation_data["operations"] (alternative). Also includes retry policies,
                 circuit breaker settings, and transaction configuration.
 
         Returns:
@@ -444,7 +389,7 @@ class MixinEffectExecution:
         # Extract operation configuration from input_data.operation_data
         # Priority order for operations:
         # 1. "effect_subcontract" key - if present, extract operations from subcontract
-        # 2. "operations" key - direct operations list (legacy/alternative pattern)
+        # 2. "operations" key - direct operations list (alternative pattern)
         #
         # The subcontract pattern is preferred when the caller provides the full
         # subcontract object, allowing this mixin to extract operations directly.
@@ -842,7 +787,7 @@ class MixinEffectExecution:
             #
             # Content sources (checked in priority order for write operations):
             # 1. "file_content" key in operation_data (preferred, for explicit content)
-            # 2. "content" key in operation_data (fallback, legacy compatibility)
+            # 2. "content" key in operation_data (alternative key)
             # 3. "content_template" key in operation_data (for templated content)
             # 4. None - content may be provided by handler (e.g., from stream/file)
             #
@@ -1434,8 +1379,12 @@ class MixinEffectExecution:
             ) from exec_error
 
         # Handler returns Any, validate it matches expected return type
-        if isinstance(result, (str, int, float, bool, dict, list, type(None))):
-            return result  # type: ignore[return-value]  # Handler returns Any; validated via isinstance but type system cannot narrow union
+        if isinstance(result, (str, int, float, bool, dict, list)):
+            # Validated via isinstance check; cast to EffectResultType
+            return cast(EffectResultType, result)
+        if result is None:
+            # None not in EffectResultType, convert to empty dict
+            return {}
         # Convert other types to string representation
         return str(result)
 
@@ -1601,7 +1550,14 @@ class MixinEffectExecution:
 
             except ModelOnexError:
                 raise
-            except (AttributeError, IndexError, KeyError, TypeError, ValueError) as e:
+            except PYDANTIC_MODEL_ERRORS as e:
+                raise ModelOnexError(
+                    message=f"Field extraction failed for {output_name}: {e!s}",
+                    error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                ) from e
+            except (
+                Exception
+            ) as e:  # catch-all-ok: extraction utility must not leak raw exceptions
                 raise ModelOnexError(
                     message=f"Field extraction failed for {output_name}: {e!s}",
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,

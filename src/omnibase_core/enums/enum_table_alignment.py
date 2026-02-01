@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Table alignment enumeration.
 
 Defines alignment options for table columns and content.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTableAlignment(str, Enum):
+class EnumTableAlignment(StrValueHelper, str, Enum):
     """
     Enumeration of table alignment options.
 
@@ -23,10 +24,6 @@ class EnumTableAlignment(str, Enum):
     CENTER = "center"
     JUSTIFY = "justify"
     AUTO = "auto"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_horizontal_alignment(cls, alignment: EnumTableAlignment) -> bool:

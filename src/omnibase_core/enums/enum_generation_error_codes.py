@@ -5,10 +5,13 @@ Provides strongly-typed error codes for generation-specific error handling
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumGenerationErrorCodes(str, Enum):
+@unique
+class EnumGenerationErrorCodes(StrValueHelper, str, Enum):
     """Error codes for tool generation operations."""
 
     # File system errors
@@ -44,3 +47,6 @@ class EnumGenerationErrorCodes(str, Enum):
     CONTENT_GENERATION_FAILED = "content_generation_failed"
     TEMPLATE_PROCESSING_FAILED = "template_processing_failed"
     MODEL_NAME_RESOLUTION_FAILED = "model_name_resolution_failed"
+
+
+__all__ = ["EnumGenerationErrorCodes"]

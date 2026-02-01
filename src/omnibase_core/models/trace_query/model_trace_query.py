@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Query filter model for trace retrieval.
 
@@ -24,7 +21,7 @@ Example:
     ... )
 
 See Also:
-    - :class:`~omnibase_core.services.trace.protocol_trace_store.ProtocolTraceStore`:
+    - :class:`~omnibase_core.protocols.storage.protocol_trace_store.ProtocolTraceStore`:
       Protocol using this query model
     - :class:`~omnibase_core.enums.enum_execution_status.EnumExecutionStatus`:
       Status values for filtering
@@ -134,6 +131,7 @@ class ModelTraceQuery(BaseModel):
         """Validate that end_time is not before start_time."""
         if self.end_time is not None and self.start_time is not None:
             if self.end_time < self.start_time:
+                # error-ok: Pydantic model_validator requires ValueError
                 raise ValueError(
                     f"end_time ({self.end_time}) cannot be before "
                     f"start_time ({self.start_time})"

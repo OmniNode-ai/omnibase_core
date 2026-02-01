@@ -34,7 +34,6 @@ Security Features:
     - Nested dict validation
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):
@@ -49,7 +48,7 @@ from __future__ import annotations
 import math
 from typing import ClassVar, Literal, cast
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -418,6 +417,7 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not bool, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
+        # NOTE(OMN-1302): Return type narrowed by is_bool() check above. Safe because value_type discriminator verified.
         return self.value  # type: ignore[return-value]
 
     def get_as_dict(self) -> dict[str, object]:
@@ -446,6 +446,7 @@ class ModelDictValueUnion(BaseModel):
             >>> assert value.get_as_dict() == {}  # Safe fallback, not an error
         """
         if self.is_dict():
+            # NOTE(OMN-1302): Return type narrowed by is_dict() check above. Safe because value_type discriminator verified.
             return self.value  # type: ignore[return-value]
         return {}
 
@@ -469,6 +470,7 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not float, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
+        # NOTE(OMN-1302): Return type narrowed by is_float() check above. Safe because value_type discriminator verified.
         return self.value  # type: ignore[return-value]
 
     def get_as_int(self) -> int:
@@ -491,6 +493,7 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not int, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
+        # NOTE(OMN-1302): Return type narrowed by is_int() check above. Safe because value_type discriminator verified.
         return self.value  # type: ignore[return-value]
 
     def get_as_list(self) -> list[object]:
@@ -513,6 +516,7 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not list, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
+        # NOTE(OMN-1302): Return type narrowed by is_list() check above. Safe because value_type discriminator verified.
         return self.value  # type: ignore[return-value]
 
     def get_as_str(self) -> str:
@@ -535,6 +539,7 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not str, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
+        # NOTE(OMN-1302): Return type narrowed by is_string() check above. Safe because value_type discriminator verified.
         return self.value  # type: ignore[return-value]
 
     # === Dict-Specific Helper Methods ===
@@ -561,6 +566,7 @@ class ModelDictValueUnion(BaseModel):
         if not self.is_dict():
             return False
         # Direct access to self.value since we already verified is_dict()
+        # NOTE(OMN-1302): Membership operator valid because is_dict() check verifies dict type above.
         return key in self.value  # type: ignore[operator]
 
     def get_dict_value(self, key: str, default: object = None) -> object:
@@ -586,6 +592,7 @@ class ModelDictValueUnion(BaseModel):
         if not self.is_dict():
             return default
         # Direct access since we verified is_dict()
+        # NOTE(OMN-1302): Dict.get() access valid because is_dict() check verifies dict type above.
         return self.value.get(key, default)  # type: ignore[union-attr]
 
     # === Collection Helpers ===
@@ -649,10 +656,10 @@ class ModelDictValueUnion(BaseModel):
             f"ModelDictValueUnion(value_type='{self.value_type}', value={self.value!r})"
         )
 
-    model_config = {
-        "extra": "ignore",
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelDictValueUnion"]

@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode AI <info@omninode.ai>
-# SPDX-License-Identifier: Apache-2.0
 """
 Protocol for intent payloads.
 
@@ -32,7 +30,7 @@ Example:
     >>> from typing import Literal
     >>>
     >>> class ModelPayloadCustom(BaseModel):
-    ...     model_config = ConfigDict(frozen=True, extra="forbid")
+    ...     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
     ...     intent_type: Literal["custom.action"] = "custom.action"
     ...     data: str
     ...
@@ -72,13 +70,14 @@ class ProtocolIntentPayload(Protocol):
         - Must have an `intent_type` attribute (read-only string)
         - Should be immutable (frozen=True) for thread safety
         - Should use extra="forbid" for strict schema validation
+        - Should use from_attributes=True for pytest-xdist compatibility
 
     Example:
         >>> from pydantic import BaseModel, ConfigDict
         >>> from typing import Literal
         >>>
         >>> class ModelPayloadMyIntent(BaseModel):
-        ...     model_config = ConfigDict(frozen=True, extra="forbid")
+        ...     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
         ...     intent_type: Literal["my.intent"] = "my.intent"
         ...     data: str
         >>>

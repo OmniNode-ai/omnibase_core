@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_config_type import EnumConfigType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -234,13 +234,11 @@ class ModelFunctionNodeData(BaseModel):
         """Check if tag is present."""
         return self.tags.has_tag(tag)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -266,7 +264,7 @@ class ModelFunctionNodeData(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -282,7 +280,7 @@ class ModelFunctionNodeData(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

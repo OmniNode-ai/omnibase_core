@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 ONEX Runtime Execution Sequencing Module.
 
@@ -43,7 +40,7 @@ Example:
     Added as part of Runtime Execution Sequencing Model (OMN-1108)
 """
 
-from omnibase_core.infrastructure.execution.phase_sequencer import (
+from omnibase_core.infrastructure.execution.infra_phase_sequencer import (
     create_default_execution_plan,
     create_empty_execution_plan,
     create_execution_plan,

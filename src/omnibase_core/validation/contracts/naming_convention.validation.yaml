@@ -1,0 +1,60 @@
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: naming_convention
+  validator_name: ONEX Naming Convention Validator
+  validator_description: |
+    Validates file, class, and function naming conventions for ONEX compliance.
+    Checks for:
+    - Directory-specific file name prefixes (e.g., model_*.py in models/)
+    - PascalCase class naming
+    - Anti-pattern class names (Manager, Handler, Helper, etc.)
+    - snake_case function naming
+
+  target_patterns:
+    - "**/*.py"
+
+  exclude_patterns:
+    - "**/archived/**"
+    - "**/__pycache__/**"
+    - "**/tests/fixtures/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+
+  rules:
+    - rule_id: file_naming
+      description: File names must follow directory-specific prefix conventions
+      enabled: true
+      severity: warning
+
+    - rule_id: class_naming
+      description: Class names must use PascalCase and avoid anti-patterns
+      enabled: true
+      severity: warning
+
+    - rule_id: function_naming
+      description: Function names must use snake_case
+      enabled: true
+      severity: warning
+
+  suppression_comments:
+    - "# ONEX_EXCLUDE: naming"
+    - "# noqa: naming"
+    - "# naming-ok:"
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: warning
+
+  # PARALLEL EXECUTION: Indicates PROCESS-safe parallel file processing is supported.
+  # This does NOT mean thread-safe within a single process - each worker must create
+  # its own validator instance. For full thread safety details, see:
+  # docs/guides/THREADING.md and contracts/any_type.validation.yaml
+  parallel_execution: true

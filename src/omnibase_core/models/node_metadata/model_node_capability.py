@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_performance_impact import EnumPerformanceImpact
@@ -301,11 +301,11 @@ class ModelNodeCapability(BaseModel):
         """Check if this capability is available in a given ONEX version."""
         return self.version_introduced <= version
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -369,9 +369,4 @@ class ModelNodeCapability(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True

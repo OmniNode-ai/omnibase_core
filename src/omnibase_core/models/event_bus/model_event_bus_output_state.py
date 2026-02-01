@@ -451,10 +451,10 @@ class ModelEventBusOutputState(BaseModel):
             return "medium_negative"
         if self.is_performance_concerning():
             return "low_negative"
-        if self.is_successful() and self.get_performance_category() in [
+        if self.is_successful() and self.get_performance_category() in {
             "excellent",
             "good",
-        ]:
+        }:
             return "positive"
         return "neutral"
 

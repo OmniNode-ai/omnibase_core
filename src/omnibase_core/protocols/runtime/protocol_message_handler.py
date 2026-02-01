@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2025 OmniNode Team
 """
 ProtocolMessageHandler - Protocol for category-based message handlers.
 

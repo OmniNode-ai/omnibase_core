@@ -7,11 +7,11 @@ Core node metadata with essential identification and status information.
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 if TYPE_CHECKING:
@@ -46,8 +46,8 @@ class ModelNodeCoreMetadata(BaseModel):
         default=EnumMetadataNodeStatus.ACTIVE,
         description="Node status",
     )
-    health: EnumNodeHealthStatus = Field(
-        default=EnumNodeHealthStatus.HEALTHY,
+    health: EnumHealthStatus = Field(
+        default=EnumHealthStatus.HEALTHY,
         description="Node health",
     )
 
@@ -56,11 +56,11 @@ class ModelNodeCoreMetadata(BaseModel):
 
     def is_active(self) -> bool:
         """Check if node is active."""
-        return self.status.value == "ACTIVE"
+        return self.status == EnumMetadataNodeStatus.ACTIVE
 
     def is_healthy(self) -> bool:
         """Check if node is healthy."""
-        return self.health.value == "HEALTHY"
+        return self.health == EnumHealthStatus.HEALTHY
 
     def get_status_summary(self) -> dict[str, str]:
         """Get concise status summary."""
@@ -97,11 +97,11 @@ class ModelNodeCoreMetadata(BaseModel):
             node_type=node_type,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -168,11 +168,6 @@ class ModelNodeCoreMetadata(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (
-            Exception
-        ):  # fallback-ok: validation method, False indicates validation failure
-            return False
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True

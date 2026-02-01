@@ -93,6 +93,9 @@ class TestModelServiceEffectToolInvocation:
         node._emit_tool_response = MixinNodeService._emit_tool_response.__get__(
             node, type(node)
         )
+        node._try_get_event_bus_from_container = (
+            MixinNodeService._try_get_event_bus_from_container.__get__(node, type(node))
+        )
 
         return node
 
@@ -420,7 +423,6 @@ class TestModelServiceEffectToolInvocation:
         - Dict returned
         """
 
-        @pytest.mark.unit
         class TestResult(BaseModel):
             status: str
             data: str
@@ -671,6 +673,9 @@ class TestModelServiceEffectEdgeCases:
         node._emit_tool_response = MixinNodeService._emit_tool_response.__get__(
             node, type(node)
         )
+        node._try_get_event_bus_from_container = (
+            MixinNodeService._try_get_event_bus_from_container.__get__(node, type(node))
+        )
         event = ModelToolInvocationEvent.create_tool_invocation(
             target_node_id=node._node_id,
             target_node_name="TestNode",
@@ -739,6 +744,9 @@ class TestModelServiceEffectEdgeCases:
         node._execute_tool = MixinNodeService._execute_tool.__get__(node, type(node))
         node._emit_tool_response = MixinNodeService._emit_tool_response.__get__(
             node, type(node)
+        )
+        node._try_get_event_bus_from_container = (
+            MixinNodeService._try_get_event_bus_from_container.__get__(node, type(node))
         )
         event = ModelToolInvocationEvent.create_tool_invocation(
             target_node_id=node._node_id,

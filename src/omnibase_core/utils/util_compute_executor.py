@@ -112,7 +112,7 @@ def _get_error_type(error: ModelOnexError) -> str:
         See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
     """
     if error.error_code is None:
-        # TODO(): Replace with EnumComputeErrorType.COMPUTE_ERROR
+        # TODO(OMN-TBD): Replace with EnumComputeErrorType.COMPUTE_ERROR  [NEEDS TICKET]
         # See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
         return "compute_error"
     if hasattr(error.error_code, "value"):
@@ -281,7 +281,7 @@ def execute_validation_step[ValidationT](
             message="validation_config required for validation step",
         )
 
-    # TODO(, v1.1): Implement schema validation for validation steps
+    # TODO(OMN-TBD): [v1.1] Implement schema validation for validation steps  [NEEDS TICKET]
     # Target: v1.1 release
     # - Integrate with schema registry for schema resolution
     # - Support JSON Schema validation
@@ -521,7 +521,7 @@ def _execute_pipeline_steps(
             total_time = (time.perf_counter() - start_time) * 1000
 
             # Log unexpected errors for observability
-            # TODO(): Wire context.correlation_id to structured logging
+            # TODO(OMN-TBD): Wire context.correlation_id to structured logging  [NEEDS TICKET]
             # See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
             logger.exception(
                 "Unexpected error in pipeline step '%s': %s (type: %s, "

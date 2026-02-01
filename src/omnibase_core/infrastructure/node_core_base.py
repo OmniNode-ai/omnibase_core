@@ -1,10 +1,26 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from omnibase_core.models.container.model_protocols_namespace import (
+    ModelProtocolsNamespace,
+)
+from omnibase_core.models.contracts.subcontracts.model_protocol_dependency import (
+    ModelProtocolDependency,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.resolution.resolver_handler import (
+    HandlerCallable,
+    LazyLoader,
+    resolve_handler,
+)
+from omnibase_core.resolution.resolver_protocol_dependency import (
+    resolve_protocol_dependencies,
+)
+from omnibase_core.utils import get_contract_attr
 
 if TYPE_CHECKING:
     from omnibase_core.types import (
@@ -32,15 +48,15 @@ This base class implements only the core functionality needed by all node types:
 
 import time
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-
-# Removed: EnumCoreErrorCode doesn't exist in enums module
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.enums.enum_node_lifecycle_status import EnumNodeLifecycleStatus
+from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
@@ -81,6 +97,7 @@ class NodeCoreBase(ABC):
     metrics: dict[str, float]
     contract_data: object | None
     version: ModelSemVer
+    protocols: ModelProtocolsNamespace | None
 
     def __init__(self, container: ModelONEXContainer) -> None:
         """
@@ -114,7 +131,9 @@ class NodeCoreBase(ABC):
         object.__setattr__(self, "created_at", datetime.now(UTC))
 
         # Core state tracking
-        object.__setattr__(self, "state", {"status": "initialized"})
+        object.__setattr__(
+            self, "state", {"status": EnumNodeLifecycleStatus.INITIALIZED.value}
+        )
         object.__setattr__(
             self,
             "metrics",
@@ -131,6 +150,9 @@ class NodeCoreBase(ABC):
         # Contract and configuration
         object.__setattr__(self, "contract_data", None)
         object.__setattr__(self, "version", ModelSemVer(major=1, minor=0, patch=0))
+
+        # Initialize protocols namespace to None (resolved later in _initialize_node_resources)
+        object.__setattr__(self, "protocols", None)
 
         # Initialize metrics - capture creation timestamp using perf_counter for accurate
         # duration measurements (monotonic, unaffected by system clock adjustments)
@@ -194,7 +216,7 @@ class NodeCoreBase(ABC):
                 )
 
             # Update state
-            self.state["status"] = "initializing"
+            self.state["status"] = EnumNodeLifecycleStatus.INITIALIZING.value
 
             # Load contract if path available
             await self._load_contract()
@@ -207,7 +229,7 @@ class NodeCoreBase(ABC):
             self.metrics["initialization_duration_ms"] = initialization_time
 
             # Update state
-            self.state["status"] = "ready"
+            self.state["status"] = EnumNodeLifecycleStatus.READY.value
 
             # Emit lifecycle event
             await self._emit_lifecycle_event(
@@ -230,13 +252,21 @@ class NodeCoreBase(ABC):
 
         except (
             AttributeError,
-            ValueError,
-            TypeError,
-            RuntimeError,
             ModelOnexError,
+            RuntimeError,
+            TypeError,
+            ValueError,
         ) as e:
-            self.state["status"] = "failed"
+            self.state["status"] = EnumNodeLifecycleStatus.FAILED.value
             self._increment_metric("error_count")
+
+            # Preserve PROTOCOL_CONFIGURATION_ERROR - re-raise without wrapping
+            # to avoid masking the original error code
+            if (
+                isinstance(e, ModelOnexError)
+                and e.error_code == EnumCoreErrorCode.PROTOCOL_CONFIGURATION_ERROR
+            ):
+                raise
 
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -265,7 +295,7 @@ class NodeCoreBase(ABC):
             start_time = time.perf_counter()
 
             # Update state
-            self.state["status"] = "cleaning_up"
+            self.state["status"] = EnumNodeLifecycleStatus.CLEANING_UP.value
 
             # Cleanup node-specific resources
             await self._cleanup_node_resources()
@@ -288,7 +318,7 @@ class NodeCoreBase(ABC):
             await self._emit_lifecycle_event("node_cleanup_complete", final_metrics)
 
             # Update final state
-            self.state["status"] = "cleaned_up"
+            self.state["status"] = EnumNodeLifecycleStatus.CLEANED_UP.value
 
             emit_log_event(
                 LogLevel.INFO,
@@ -303,7 +333,7 @@ class NodeCoreBase(ABC):
         except (
             BaseException
         ) as e:  # catch-all-ok: cleanup must not raise to prevent resource leaks
-            self.state["status"] = "cleanup_failed"
+            self.state["status"] = EnumNodeLifecycleStatus.CLEANUP_FAILED.value
 
             emit_log_event(
                 LogLevel.ERROR,
@@ -363,19 +393,15 @@ class NodeCoreBase(ABC):
         }
 
     def get_node_id(self) -> UUID:
-        """Get unique node identifier."""
         return self.node_id
 
     def get_node_type(self) -> str:
-        """Get node type classification."""
         return self.__class__.__name__
 
     def get_version(self) -> ModelSemVer:
-        """Get node version."""
         return self.version
 
     def get_state(self) -> dict[str, str]:
-        """Get current node state."""
         return dict(self.state)
 
     async def _load_contract(self) -> None:
@@ -389,6 +415,7 @@ class NodeCoreBase(ABC):
             # Try to get contract service from container
             contract_service: Any = None
             try:
+                # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
                 contract_service = self.container.get_service("contract_service")  # type: ignore[arg-type]
             except (
                 Exception
@@ -434,7 +461,7 @@ class NodeCoreBase(ABC):
                                             f"Invalid version format: {version_value}",
                                             {"node_id": self.node_id},
                                         )
-                                except (ValueError, IndexError) as e:
+                                except (IndexError, ValueError) as e:
                                     # Parsing failed, keep default
                                     emit_log_event(
                                         LogLevel.WARNING,
@@ -480,8 +507,135 @@ class NodeCoreBase(ABC):
         Initialize node-specific resources.
 
         Override in subclasses to add node-type-specific initialization.
-        Base implementation does nothing.
+        Base implementation resolves protocol dependencies from contract.
         """
+        # Resolve protocol dependencies from contract
+        self._resolve_protocol_dependencies()
+
+    def _resolve_protocol_dependencies(self) -> None:
+        """
+        Resolve protocol dependencies from contract declarations.
+
+        Called during _initialize_node_resources() if contract has
+        protocol_dependencies section.
+
+        After resolution, protocols are accessible via self.protocols:
+            self.protocols.logger.info("message")
+            self.protocols.event_bus.emit(event)
+        """
+        # Check if contract_data has protocol_dependencies
+        if self.contract_data is None:
+            return
+
+        # Try to get protocol_dependencies from contract_data
+        # Support both ModelContractBase instances and dict-based contracts
+        protocol_deps = None
+        if hasattr(self.contract_data, "protocol_dependencies"):
+            protocol_deps = self.contract_data.protocol_dependencies
+        elif isinstance(self.contract_data, dict):
+            protocol_deps = self.contract_data.get("protocol_dependencies")
+
+        if not protocol_deps:
+            return
+
+        # Normalize dict-based deps into ModelProtocolDependency
+        # This handles both Pydantic model instances and raw dicts from YAML parsing
+        normalized: list[ModelProtocolDependency] = []
+        if isinstance(protocol_deps, list):
+            for dep in protocol_deps:
+                if isinstance(dep, ModelProtocolDependency):
+                    normalized.append(dep)
+                elif isinstance(dep, Mapping):
+                    normalized.append(ModelProtocolDependency(**dep))
+                else:
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message="Invalid protocol dependency entry",
+                        context={
+                            "node_id": str(self.node_id),
+                            "dependency_type": type(dep).__name__,
+                        },
+                    )
+        else:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="protocol_dependencies must be a list",
+                context={"node_id": str(self.node_id)},
+            )
+
+        # Resolve dependencies
+        resolved = resolve_protocol_dependencies(
+            normalized,
+            self.container,
+            node_id=str(self.node_id),
+        )
+
+        # Create immutable namespace
+        object.__setattr__(self, "protocols", ModelProtocolsNamespace(resolved))
+
+    def _get_default_handler_callable(
+        self,
+    ) -> tuple[HandlerCallable | LazyLoader, bool] | None:
+        """
+        Get the default handler callable from contract if configured.
+
+        Resolves the handler specified by `default_handler` in the contract's
+        `handler_routing` section. This enables zero-code nodes where
+        all processing logic is specified via contract configuration.
+
+        Returns:
+            Tuple of (callable, is_lazy) if handler found, None otherwise.
+            - callable: HandlerCallable if is_lazy=False, LazyLoader if is_lazy=True
+            - is_lazy: True if lazy_import was specified, False otherwise
+
+        Note:
+            The callable field in handler entries uses format 'module.path:function'.
+            If lazy_import=True, the handler is resolved to a LazyLoader that
+            defers the actual import until first call.
+
+        Example Contract:
+            handler_routing:
+              default_handler: handle_event
+              handlers:
+                - handler_key: handle_event
+                  callable: myapp.handlers:handle_event
+                  lazy_import: false
+        """
+        if self.contract_data is None:
+            return None
+
+        # Get handler_routing from contract_data
+        handler_routing = get_contract_attr(self.contract_data, "handler_routing")
+        if handler_routing is None:
+            return None
+
+        # Get default_handler name from handler_routing
+        default_handler_name = get_contract_attr(handler_routing, "default_handler")
+        if not default_handler_name:
+            return None
+
+        # Find handler entry with matching handler_key
+        handlers = get_contract_attr(handler_routing, "handlers") or []
+
+        for handler_entry in handlers:
+            handler_key = get_contract_attr(handler_entry, "handler_key")
+            if handler_key == default_handler_name:
+                callable_path = get_contract_attr(handler_entry, "callable")
+                if callable_path and isinstance(callable_path, str):
+                    lazy: bool = get_contract_attr(handler_entry, "lazy_import", False)
+                    # Use explicit branches for mypy overload resolution
+                    if lazy:
+                        # Lazy import - returns a loader function
+                        loader: LazyLoader = resolve_handler(callable_path, eager=False)
+                        return (loader, True)
+                    else:
+                        # Eager import - returns the handler directly
+                        handler: HandlerCallable = resolve_handler(
+                            callable_path, eager=True
+                        )
+                        return (handler, False)
+
+        return None
 
     async def _cleanup_node_resources(self) -> None:
         """
@@ -507,6 +661,7 @@ class NodeCoreBase(ABC):
             # Try to get event bus from container
             event_bus: Any = None
             try:
+                # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
                 event_bus = self.container.get_service("event_bus")  # type: ignore[arg-type]
             except Exception:  # fallback-ok: event bus is optional for node operation
                 event_bus = None
@@ -744,7 +899,7 @@ class NodeCoreBase(ABC):
             # Return primitives as-is
             return data
 
-        except (FileNotFoundError, OSError) as e:
+        except FILE_IO_ERRORS as e:
             # fallback-ok: graceful degradation for missing/unreadable reference files
             emit_log_event(
                 LogLevel.WARNING,
@@ -878,7 +1033,9 @@ class NodeCoreBase(ABC):
         ]
 
         return {
-            "overall_status": "healthy" if all_healthy else "degraded",
+            "overall_status": EnumHealthStatus.HEALTHY.value
+            if all_healthy
+            else EnumHealthStatus.DEGRADED.value,
             "component_checks": health_checks,
             "failing_components": failing_components,
             "healthy_count": sum(1 for h in health_checks.values() if h),

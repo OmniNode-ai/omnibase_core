@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 ONEX Pipeline Module.
 
@@ -91,7 +88,7 @@ from omnibase_core.pipeline.runner_pipeline import (
     HookCallable,
     RunnerPipeline,
 )
-from omnibase_core.services.replay.injector_rng import InjectorRNG
+from omnibase_core.services.replay.service_rng_injector import ServiceRNGInjector
 
 __all__ = [
     # Exceptions
@@ -129,5 +126,5 @@ __all__ = [
     "ManifestObserver",
     "ManifestLogger",
     # Replay Infrastructure (OMN-1116)
-    "InjectorRNG",
+    "ServiceRNGInjector",
 ]

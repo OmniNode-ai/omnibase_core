@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Fallback Strategy Model for ONEX Configuration-Driven Registry System.
 
@@ -13,11 +7,13 @@ for modular architecture compliance.
 
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_fallback_strategy_type import EnumFallbackStrategyType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_fallback_metadata import ModelFallbackMetadata
@@ -80,11 +76,11 @@ class ModelFallbackStrategy(BaseModel):
         """Check if retries are enabled for this strategy."""
         return self.retry_attempts > 0
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -95,10 +91,10 @@ class ModelFallbackStrategy(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> SerializedDict:
@@ -111,7 +107,7 @@ class ModelFallbackStrategy(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (AttributeError, ValueError, TypeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

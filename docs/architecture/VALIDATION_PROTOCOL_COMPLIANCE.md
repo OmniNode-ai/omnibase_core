@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Validation Protocol Compliance
+
 # Validation Protocol Compliance
 
 **Version**: 1.1.0

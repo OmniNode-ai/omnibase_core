@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-002",
+  "category": "billing_payment",
+  "confidence": 0.89,
+  "sentiment": "neutral",
+  "summary": "Payment failures during upgrade attempt",
+  "suggested_reply": "Payment issues are often due to bank fraud protection. Try: 1) Call your bank to approve transactions from us, 2) Use a different card, or 3) Try PayPal. Let me know if it still fails!",
+  "latency_ms": 320,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["payment_declined", "upgrade_attempt"],
+  "invariant_tags": ["billing_domain", "payment_flow"]
+}

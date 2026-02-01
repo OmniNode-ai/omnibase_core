@@ -139,9 +139,9 @@ class TestContractProfileFactory:
             profile="orchestrator_safe",
             version="2.0.0",
         )
-        assert contract.version.major == 2
-        assert contract.version.minor == 0
-        assert contract.version.patch == 0
+        assert contract.contract_version.major == 2
+        assert contract.contract_version.minor == 0
+        assert contract.contract_version.patch == 0
 
 
 @pytest.mark.unit
@@ -337,7 +337,7 @@ class TestBehaviorEmbedding:
         )
         assert contract.behavior is not None
         assert isinstance(contract.behavior, ModelHandlerBehavior)
-        assert contract.behavior.handler_kind == "orchestrator"
+        assert contract.behavior.node_archetype == "orchestrator"
         assert contract.behavior.concurrency_policy == "serialized"
         # Safe profile is NOT idempotent by default (conservative)
         assert contract.behavior.idempotent is False
@@ -351,7 +351,7 @@ class TestBehaviorEmbedding:
             version="1.0.0",
         )
         assert contract.behavior is not None
-        assert contract.behavior.handler_kind == "orchestrator"
+        assert contract.behavior.node_archetype == "orchestrator"
         assert contract.behavior.concurrency_policy == "parallel_ok"
         # Parallel profile is NOT idempotent by default
         assert contract.behavior.idempotent is False
@@ -365,7 +365,7 @@ class TestBehaviorEmbedding:
             version="1.0.0",
         )
         assert contract.behavior is not None
-        assert contract.behavior.handler_kind == "orchestrator"
+        assert contract.behavior.node_archetype == "orchestrator"
         # Resilient profile IS idempotent for safe retries
         assert contract.behavior.idempotent is True
         assert contract.behavior.retry_policy is not None
@@ -382,7 +382,7 @@ class TestBehaviorEmbedding:
             version="1.0.0",
         )
         assert contract.behavior is not None
-        assert contract.behavior.handler_kind == "reducer"
+        assert contract.behavior.node_archetype == "reducer"
         assert contract.behavior.concurrency_policy == "singleflight"
         assert contract.behavior.idempotent is True
 
@@ -395,7 +395,7 @@ class TestBehaviorEmbedding:
             version="1.0.0",
         )
         assert contract.behavior is not None
-        assert contract.behavior.handler_kind == "effect"
+        assert contract.behavior.node_archetype == "effect"
         assert contract.behavior.idempotent is True
         assert contract.behavior.timeout_ms == 30000
         assert contract.behavior.retry_policy is not None
@@ -409,7 +409,7 @@ class TestBehaviorEmbedding:
             version="1.0.0",
         )
         assert contract.behavior is not None
-        assert contract.behavior.handler_kind == "compute"
+        assert contract.behavior.node_archetype == "compute"
         assert contract.behavior.purity == "pure"
         assert contract.behavior.idempotent is True
         assert contract.behavior.concurrency_policy == "parallel_ok"
@@ -425,15 +425,15 @@ class TestBehaviorEmbedding:
             get_default_contract_profile,
         )
 
-        # Map node types to their expected handler_kind
-        profile_handler_kinds = {
+        # Map node types to their expected node_archetype
+        profile_node_archetypes = {
             EnumNodeType.ORCHESTRATOR_GENERIC: "orchestrator",
             EnumNodeType.REDUCER_GENERIC: "reducer",
             EnumNodeType.EFFECT_GENERIC: "effect",
             EnumNodeType.COMPUTE_GENERIC: "compute",
         }
 
-        for node_type, expected_handler_kind in profile_handler_kinds.items():
+        for node_type, expected_node_archetype in profile_node_archetypes.items():
             profiles = available_profiles(node_type)
             assert len(profiles) > 0, f"No profiles found for {node_type}"
 
@@ -451,8 +451,8 @@ class TestBehaviorEmbedding:
                 assert isinstance(contract.behavior, ModelHandlerBehavior), (
                     f"Profile '{profile_name}' behavior is not ModelHandlerBehavior"
                 )
-                # handler_kind MUST match node type
-                assert contract.behavior.handler_kind == expected_handler_kind, (
-                    f"Profile '{profile_name}' has handler_kind "
-                    f"'{contract.behavior.handler_kind}', expected '{expected_handler_kind}'"
+                # node_archetype MUST match node type
+                assert contract.behavior.node_archetype == expected_node_archetype, (
+                    f"Profile '{profile_name}' has node_archetype "
+                    f"'{contract.behavior.node_archetype}', expected '{expected_node_archetype}'"
                 )

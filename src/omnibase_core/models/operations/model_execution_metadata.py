@@ -9,11 +9,11 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
-from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import (
@@ -50,8 +50,8 @@ class ModelExecutionMetadata(BaseModel):
         ge=0,
         description="Execution duration in milliseconds",
     )
-    status: EnumExecutionStatusV2 = Field(
-        default=EnumExecutionStatusV2.PENDING,
+    status: EnumExecutionStatus = Field(
+        default=EnumExecutionStatus.PENDING,
         description="Execution status",
     )
     correlation_id: UUID | None = Field(
@@ -78,29 +78,29 @@ class ModelExecutionMetadata(BaseModel):
     cpu_usage_percent: float = Field(default=0.0, description="CPU usage percentage")
 
     # Error information
-    error_count: int = Field(
+    error_level_count: int = Field(
         default=0, ge=0, description="Number of errors encountered"
     )
     warning_count: int = Field(
         default=0, ge=0, description="Number of warnings encountered"
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Input validation for proper enum types
     @field_validator("status", mode="before")
     @classmethod
-    def validate_status_type(cls, v: Any) -> EnumExecutionStatusV2:
+    def validate_status_type(cls, v: Any) -> EnumExecutionStatus:
         """Validate execution status is proper enum type."""
-        if isinstance(v, EnumExecutionStatusV2):
+        if isinstance(v, EnumExecutionStatus):
             return v
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=f"Status must be EnumExecutionStatusV2, got {type(v)}",
+            message=f"Status must be EnumExecutionStatus, got {type(v)}",
         )
 
     @field_validator("environment", mode="before")
@@ -126,12 +126,12 @@ class ModelExecutionMetadata(BaseModel):
             # Update execution status and metadata
             if "status" in kwargs:
                 status_value = kwargs["status"]
-                if isinstance(status_value, EnumExecutionStatusV2):
+                if isinstance(status_value, EnumExecutionStatus):
                     self.status = status_value
                 else:
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                        message=f"Status must be EnumExecutionStatusV2, got {type(status_value)}",
+                        message=f"Status must be EnumExecutionStatus, got {type(status_value)}",
                     )
             if "end_time" in kwargs:
                 end_time_value = kwargs["end_time"]
@@ -201,7 +201,7 @@ class ModelExecutionMetadata(BaseModel):
                 message="Resource usage values cannot be negative",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
-        if self.error_count < 0 or self.warning_count < 0:
+        if self.error_level_count < 0 or self.warning_count < 0:
             raise ModelOnexError(
                 message="Error and warning counts cannot be negative",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

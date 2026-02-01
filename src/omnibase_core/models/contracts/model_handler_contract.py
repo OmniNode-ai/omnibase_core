@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """
 Handler Contract Model for ONEX Framework.
 
@@ -22,9 +20,9 @@ Example:
     >>> contract = ModelHandlerContract(
     ...     handler_id="node.user.reducer",
     ...     name="User Registration Reducer",
-    ...     version="1.0.0",
+    ...     contract_version=ModelSemVer(major=1, minor=0, patch=0),
     ...     descriptor=ModelHandlerBehavior(
-    ...         handler_kind="reducer",
+    ...         node_archetype="reducer",
     ...         purity="side_effecting",
     ...         idempotent=True,
     ...     ),
@@ -41,6 +39,8 @@ See Also:
 .. versionadded:: 0.4.1
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -53,6 +53,7 @@ from omnibase_core.models.contracts.model_execution_constraints import (
     ModelExecutionConstraints,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import (
     ModelHandlerBehavior,
 )
@@ -72,7 +73,7 @@ class ModelHandlerContract(BaseModel):
     Identity Fields:
         - handler_id: Unique identifier for registry lookup
         - name: Human-readable display name
-        - version: Semantic version string
+        - contract_version: Semantic version (ModelSemVer)
         - description: Optional detailed description
 
     Behavior Configuration:
@@ -95,7 +96,7 @@ class ModelHandlerContract(BaseModel):
     Attributes:
         handler_id: Unique identifier (e.g., "node.user.reducer").
         name: Human-readable name (e.g., "User Registration Reducer").
-        version: Semantic version string (e.g., "1.0.0").
+        contract_version: Semantic version (ModelSemVer instance).
         description: Optional detailed description.
         descriptor: Embedded behavior configuration (purity, idempotency, etc.).
         capability_inputs: List of required input capabilities.
@@ -114,9 +115,9 @@ class ModelHandlerContract(BaseModel):
         >>> contract = ModelHandlerContract(
         ...     handler_id="node.user.reducer",
         ...     name="User Registration Reducer",
-        ...     version="1.0.0",
+        ...     contract_version=ModelSemVer(major=1, minor=0, patch=0),
         ...     descriptor=ModelHandlerBehavior(
-        ...         handler_kind="reducer",
+        ...         node_archetype="reducer",
         ...         purity="side_effecting",
         ...         idempotent=True,
         ...         timeout_ms=30000,
@@ -138,9 +139,9 @@ class ModelHandlerContract(BaseModel):
         >>> effect_contract = ModelHandlerContract(
         ...     handler_id="handler.email.sender",
         ...     name="Email Sender",
-        ...     version="2.0.0",
+        ...     contract_version=ModelSemVer(major=2, minor=0, patch=0),
         ...     descriptor=ModelHandlerBehavior(
-        ...         handler_kind="effect",
+        ...         node_archetype="effect",
         ...         purity="side_effecting",
         ...         idempotent=False,
         ...     ),
@@ -177,10 +178,9 @@ class ModelHandlerContract(BaseModel):
         description="Human-readable display name",
     )
 
-    version: str = Field(
+    contract_version: ModelSemVer = Field(
         ...,
-        pattern=r"^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$",
-        description="Semantic version string (e.g., '1.0.0', '1.0.0-beta.1')",
+        description="Semantic version of this handler contract",
     )
 
     description: str | None = Field(
@@ -274,6 +274,31 @@ class ModelHandlerContract(BaseModel):
         str_strip_whitespace=True,
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def reject_deprecated_version_field(cls, data: Any) -> Any:
+        """
+        Reject deprecated 'version' field - use 'contract_version' instead.
+
+        Args:
+            data: Raw input data.
+
+        Returns:
+            Validated data.
+
+        Raises:
+            ModelOnexError: If deprecated 'version' field is present.
+        """
+        if isinstance(data, dict) and "version" in data:
+            raise ModelOnexError(
+                message=(
+                    "Handler contracts must use 'contract_version', not 'version'. "
+                    "The 'version' field was renamed per ONEX specification (OMN-1436)."
+                ),
+                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+            )
+        return data
+
     @field_validator("handler_id")
     @classmethod
     def validate_handler_id_format(cls, v: str) -> str:
@@ -336,42 +361,45 @@ class ModelHandlerContract(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_descriptor_handler_kind_consistency(self) -> "ModelHandlerContract":
+    def validate_descriptor_node_archetype_consistency(self) -> ModelHandlerContract:
         """
-        Validate that handler_id prefix is consistent with descriptor.handler_kind.
+        Validate that handler_id prefix is consistent with descriptor.node_archetype.
 
         Returns:
             The validated contract.
 
         Raises:
-            ModelOnexError: If there's a mismatch between ID prefix and handler kind.
+            ModelOnexError: If there's a mismatch between ID prefix and node archetype.
         """
         # Extract first segment of handler_id
         prefix = self.handler_id.split(".")[0].lower()
 
-        # Map common prefixes to handler kinds
-        prefix_to_kind = {
-            "node": None,  # Generic, any kind allowed
-            "handler": None,  # Generic, any kind allowed
+        # Map common prefixes to node archetypes
+        prefix_to_archetype = {
+            "node": None,  # Generic, any archetype allowed
+            "handler": None,  # Generic, any archetype allowed
             "compute": "compute",
             "effect": "effect",
             "reducer": "reducer",
             "orchestrator": "orchestrator",
         }
 
-        expected_kind = prefix_to_kind.get(prefix)
+        expected_archetype = prefix_to_archetype.get(prefix)
 
-        # Only validate if prefix implies a specific kind
-        if expected_kind is not None and self.descriptor.handler_kind != expected_kind:
+        # Only validate if prefix implies a specific archetype
+        if (
+            expected_archetype is not None
+            and self.descriptor.node_archetype != expected_archetype
+        ):
             raise ModelOnexError(
                 message=(
-                    f"Handler ID prefix '{prefix}' implies handler_kind='{expected_kind}' "
-                    f"but descriptor has handler_kind='{self.descriptor.handler_kind}'"
+                    f"Handler ID prefix '{prefix}' implies node_archetype='{expected_archetype}' "
+                    f"but descriptor has node_archetype='{self.descriptor.node_archetype}'"
                 ),
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 handler_id=self.handler_id,
-                expected_kind=expected_kind,
-                actual_kind=self.descriptor.handler_kind,
+                expected_archetype=expected_archetype,
+                actual_archetype=str(self.descriptor.node_archetype),
             )
 
         return self

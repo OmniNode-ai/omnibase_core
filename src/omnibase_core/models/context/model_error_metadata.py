@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """
 Error metadata model for structured error metadata.
 
@@ -194,9 +192,17 @@ class ModelErrorMetadata(BaseModel):
             The validated retry count unchanged, or None.
 
         Raises:
-            ValueError: If retry_count is negative.
+            ValueError: If retry_count is not an integer or is negative.
         """
-        if value is not None and value < 0:
+        if value is None:
+            return None
+        if not isinstance(value, int) or isinstance(value, bool):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(
+                f"retry_count must be an integer, got {type(value).__name__}"
+            )
+        if value < 0:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"retry_count must be >= 0, got {value}")
         return value
 
@@ -224,13 +230,18 @@ class ModelErrorMetadata(BaseModel):
             The validated error code string unchanged, or None.
 
         Raises:
-            ValueError: If the error code doesn't match the expected pattern.
+            ValueError: If the value is not a string or doesn't match the expected pattern.
         """
         if value is None:
             return None
+        if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(f"error_code must be a string, got {type(value).__name__}")
         if not value:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError("Error code cannot be empty")
         if not ERROR_CODE_PATTERN.match(value):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid error_code format '{value}': expected CATEGORY_NNN "
                 f"pattern (e.g., AUTH_001, VALIDATION_123). "

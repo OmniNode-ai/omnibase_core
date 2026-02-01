@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > CI > CI Monitoring Guide
+
 # CI Monitoring Guide - omnibase_core
 
 > **Purpose**: Operational guidance for detecting, investigating, and resolving CI performance anomalies

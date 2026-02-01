@@ -92,6 +92,8 @@ from .type_json import (
     JsonType,
     PrimitiveContainer,
     PrimitiveValue,
+    StrictJsonPrimitive,
+    StrictJsonType,
     ToolParameterValue,
 )
 
@@ -159,9 +161,11 @@ from .typed_dict_computation_output_summary import TypedDictComputationOutputSum
 from .typed_dict_conditional_branch import TypedDictConditionalBranch
 from .typed_dict_configuration_settings import TypedDictConfigurationSettings
 from .typed_dict_connection_info import TypedDictConnectionInfo
+from .typed_dict_consumed_event_entry import TypedDictConsumedEventEntry
 
 # Contract validation TypedDict definitions
 from .typed_dict_contract_data import TypedDictContractData
+from .typed_dict_conversation_message import TypedDictConversationMessage
 from .typed_dict_converted_health import TypedDictConvertedHealth
 from .typed_dict_core_analytics import TypedDictCoreAnalytics
 from .typed_dict_core_data import TypedDictCoreData
@@ -205,6 +209,8 @@ from .typed_dict_handler_metadata import TypedDictHandlerMetadata
 from .typed_dict_health_status import TypedDictHealthStatus
 from .typed_dict_input_state_fields import TypedDictInputStateFields
 from .typed_dict_input_state_source_type import TypedDictInputStateSourceType
+from .typed_dict_intent_context import TypedDictIntentContext
+from .typed_dict_intent_metadata import TypedDictIntentMetadata
 
 # Kubernetes resource TypedDict definitions
 from .typed_dict_k8s_resources import (
@@ -326,6 +332,7 @@ from .typed_dict_policy_value_data import (
     TypedDictPolicyValueInput,
 )
 from .typed_dict_property_metadata import TypedDictPropertyMetadata
+from .typed_dict_published_event_entry import TypedDictPublishedEventEntry
 from .typed_dict_quality_data import TypedDictQualityData
 from .typed_dict_quality_update_data import TypedDictQualityUpdateData
 
@@ -334,11 +341,13 @@ from .typed_dict_ref_parts import TypedDictRefParts
 from .typed_dict_resolution_context import TypedDictResolutionContext
 from .typed_dict_resource_usage import TypedDictResourceUsage
 from .typed_dict_result_factory_kwargs import TypedDictResultFactoryKwargs
+from .typed_dict_routing_alternative import TypedDictRoutingAlternative
 from .typed_dict_routing_info import TypedDictRoutingInfo
-from .typed_dict_security_context import TypedDictSecurityContext
-from .typed_dict_security_policy_config import TypedDictSecurityPolicyConfig
 
 # New individual TypedDict classes extracted from typed_dict_structured_definitions.py
+from .typed_dict_secondary_intent import TypedDictSecondaryIntent
+from .typed_dict_security_context import TypedDictSecurityContext
+from .typed_dict_security_policy_config import TypedDictSecurityPolicyConfig
 from .typed_dict_sem_ver import TypedDictSemVer
 from .typed_dict_serialized_model import TypedDictSerializedModel
 from .typed_dict_service_info import TypedDictServiceInfo
@@ -411,6 +420,8 @@ __all__ = [
     "JsonType",
     "PrimitiveValue",
     "PrimitiveContainer",
+    "StrictJsonPrimitive",
+    "StrictJsonType",
     "ToolParameterValue",
     # Serializable value types
     "SerializableValue",
@@ -520,6 +531,7 @@ __all__ = [
     "TypedDictPropertyMetadata",
     "TypedDictQualityData",
     "TypedDictResultFactoryKwargs",
+    "TypedDictRoutingAlternative",
     "TypedDictRoutingInfo",
     "TypedDictSSLContextOptions",
     "TypedDictTimestampUpdateData",
@@ -546,6 +558,8 @@ __all__ = [
     "TypedDictWorkflowState",
     "TypedDictValidatorInfo",
     "TypedDictEventInfo",
+    "TypedDictConsumedEventEntry",
+    "TypedDictPublishedEventEntry",
     "TypedDictConditionalBranch",
     "TypedDictConnectionInfo",
     "TypedDictConvertedHealth",
@@ -655,6 +669,11 @@ __all__ = [
     "TypedDictPolicyValueData",
     "TypedDictPolicyValueInput",
     "TypedDictWorkflowOutputsDict",
+    # Intent classification TypedDict definitions
+    "TypedDictConversationMessage",
+    "TypedDictIntentContext",
+    "TypedDictIntentMetadata",
+    "TypedDictSecondaryIntent",
     # Kubernetes resource TypedDict definitions
     "TypedDictK8sConfigMap",
     "TypedDictK8sContainer",

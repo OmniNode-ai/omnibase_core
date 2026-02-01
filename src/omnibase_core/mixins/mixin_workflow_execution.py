@@ -251,7 +251,7 @@ class MixinWorkflowExecution:
             )
 
             # Check result
-            if result.execution_status == EnumWorkflowState.COMPLETED:
+            if result.execution_status == EnumWorkflowStatus.COMPLETED:
                 print(f"Workflow completed: {len(result.actions_emitted)} actions")
                 # Process actions (emitted to target nodes)
                 for action in result.actions_emitted:
@@ -398,7 +398,8 @@ class MixinWorkflowExecution:
         workflow_steps: list[ModelWorkflowStep] = []
 
         for step_config in steps_config:
-            # TypedDict is compatible with ** unpacking
+            # NOTE(OMN-1302): TypedDict compatible with ** unpacking but mypy cannot verify at call site.
+            # Safe because ModelWorkflowStep validates fields.
             step = ModelWorkflowStep(**step_config)  # type: ignore[arg-type]
             workflow_steps.append(step)
 

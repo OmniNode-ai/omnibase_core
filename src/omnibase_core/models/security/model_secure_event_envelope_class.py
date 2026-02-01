@@ -526,7 +526,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         """Add a cryptographic signature to the envelope."""
         # Validate signature is for this envelope
         # Note: ModelNodeSignature doesn't have envelope_version, so this check is removed
-        # TODO: Consider adding envelope_version to ModelNodeSignature if needed
+        # TODO(OMN-TBD): Consider adding envelope_version to ModelNodeSignature if needed  [NEEDS TICKET]
 
         # Update content hash before signing
         self._update_content_hash()

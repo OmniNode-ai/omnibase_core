@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Type System
+
 # Type System - omnibase_core
 
 **Status**: ✅ Complete

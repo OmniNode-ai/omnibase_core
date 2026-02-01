@@ -1,24 +1,23 @@
+"""
+Node core information summary model.
+
+Clean, strongly-typed replacement for node core info dict[str, Any] return types.
+Follows ONEX one-model-per-file naming conventions.
+"""
+
 from __future__ import annotations
 
-from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.enums.enum_status import EnumStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-
-"""
-Node core information summary model.
-
-Clean, strongly-typed replacement for node core info dict[str, Any]return types.
-Follows ONEX one-model-per-file naming conventions.
-"""
 
 
 class ModelNodeCoreInfoSummary(BaseModel):
@@ -48,19 +47,17 @@ class ModelNodeCoreInfoSummary(BaseModel):
         description="Node version",
     )
     status: EnumStatus = Field(description="Node status value")
-    health: EnumNodeHealthStatus = Field(description="Node health status")
+    health: EnumHealthStatus = Field(description="Node health status")
     is_active: bool = Field(description="Whether node is active")
     is_healthy: bool = Field(description="Whether node is healthy")
     has_description: bool = Field(description="Whether node has description")
     has_author: bool = Field(description="Whether node has author")
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -101,10 +98,10 @@ class ModelNodeCoreInfoSummary(BaseModel):
             - "metadata": Dict containing:
                 - "node_id": String representation of the node UUID
                 - "node_type": EnumMetadataNodeType value string
-                  (e.g., "COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR")
-                - "status": EnumStatus value string (e.g., "ACTIVE", "INACTIVE")
-                - "health": EnumNodeHealthStatus value string
-                  (e.g., "HEALTHY", "DEGRADED", "UNHEALTHY")
+                  (e.g., "class", "function", "module", "method")
+                - "status": EnumStatus value string (e.g., "active", "inactive")
+                - "health": EnumHealthStatus value string
+                  (e.g., "healthy", "degraded", "unhealthy")
                 - "is_active": Boolean indicating if node is currently active
                 - "is_healthy": Boolean indicating if node is in healthy state
                 - "has_description": Boolean indicating if description is set
@@ -112,17 +109,21 @@ class ModelNodeCoreInfoSummary(BaseModel):
 
         Example:
             >>> from uuid import uuid4
+            >>> from omnibase_core.enums.enum_health_status import EnumHealthStatus
+            >>> from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+            >>> from omnibase_core.enums.enum_status import EnumStatus
+            >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
             >>> summary = ModelNodeCoreInfoSummary(
             ...     node_id=uuid4(),
             ...     node_name="DataProcessor",
-            ...     node_type=EnumMetadataNodeType.COMPUTE,
+            ...     node_type=EnumMetadataNodeType.CLASS,
             ...     node_version=ModelSemVer(major=1, minor=0, patch=0),
             ...     status=EnumStatus.ACTIVE,
-            ...     health=EnumNodeHealthStatus.HEALTHY,
+            ...     health=EnumHealthStatus.HEALTHY,
             ...     is_active=True,
             ...     is_healthy=True,
             ...     has_description=True,
-            ...     has_author=False
+            ...     has_author=False,
             ... )
             >>> metadata = summary.get_metadata()
             >>> metadata["name"]
@@ -177,10 +178,7 @@ class ModelNodeCoreInfoSummary(BaseModel):
 
     def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
-        return cast(
-            TypedDictSerializedModel,
-            self.model_dump(exclude_none=False, by_alias=True),
-        )
+        return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
         """
@@ -199,12 +197,7 @@ class ModelNodeCoreInfoSummary(BaseModel):
             contract - validation failures are indicated by returning False.
             Override in subclasses for custom validation logic.
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 __all__ = ["ModelNodeCoreInfoSummary"]

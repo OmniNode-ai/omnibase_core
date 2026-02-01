@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Effect Timeout Behavior
+
 # Effect Timeout Behavior
 
 > **Version**: 1.0.0

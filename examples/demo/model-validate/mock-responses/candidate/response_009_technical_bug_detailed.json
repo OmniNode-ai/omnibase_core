@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-009",
+  "category": "technical_bug",
+  "confidence": 0.92,
+  "sentiment": "neutral",
+  "summary": "Sync failures through corporate proxy during peak hours",
+  "suggested_reply": "This looks like a proxy timeout issue. Try: 1) Increase sync timeout to 60s in Settings > Network, 2) Ask IT to whitelist sync.ourapp.com. I'm escalating with your logs for deeper analysis - expect an update within 48 hours.",
+  "latency_ms": 520,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["sync_failure", "proxy_related", "intermittent_error"],
+  "invariant_tags": ["technical_domain", "network_infrastructure"]
+}

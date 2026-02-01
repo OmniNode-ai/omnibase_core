@@ -18,7 +18,6 @@ __all__ = [
     # Domain modules (names only; no runtime import here)
     "cli",
     "common",
-    "comparison",
     "config",
     "connections",
     "context",
@@ -28,11 +27,15 @@ __all__ = [
     "events",
     "execution",
     "handlers",
+    "hooks",  # External hook models (Claude Code - OMN-1474)
     "infrastructure",
+    "intelligence",  # AI/ML intelligence models (OMN-1490)
+    "mcp",  # MCP (Model Context Protocol) models (OMN-1286)
     "metadata",
     "nodes",
     "notifications",
     "operations",
+    "pattern_learning",  # Pattern learning models (OMN-1683)
     "pipeline",
     "projection",
     "providers",

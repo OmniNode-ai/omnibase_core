@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Pipeline hook model.
 
 Note: This module was moved from omnibase_core.pipeline.models to
@@ -70,7 +67,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 
 # Canonical phase type
-PipelinePhase = Literal["preflight", "before", "execute", "after", "emit", "finalize"]
+PipelinePhase = Literal[  # enum-ok: model type annotation
+    "preflight", "before", "execute", "after", "emit", "finalize"
+]
 
 
 class ModelPipelineHook(BaseModel):
@@ -84,12 +83,12 @@ class ModelPipelineHook(BaseModel):
     (frozen=True) and can be safely shared across threads.
     """
 
-    # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # TODO(OMN-TBD): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.
     # This workaround addresses pytest-xdist class identity issues where frozen models
     # nested in other models fail isinstance() validation across worker processes.
     # If Pydantic v3 implements identity-agnostic validation for frozen models, this
     # override may no longer be necessary. Track: https://github.com/pydantic/pydantic/issues
-    # See module docstring for detailed explanation of the issue and solution.
+    # See module docstring for detailed explanation of the issue and solution.  [NEEDS TICKET]
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
@@ -134,6 +133,7 @@ class ModelPipelineHook(BaseModel):
     def validate_hook_name(cls, v: str) -> str:
         """Ensure hook_name is a valid identifier."""
         if not v.replace("_", "").replace("-", "").isalnum():
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"hook_name must be alphanumeric with underscores/hyphens: {v}"
             )
@@ -144,6 +144,7 @@ class ModelPipelineHook(BaseModel):
     def validate_dependencies(cls, v: list[str]) -> list[str]:
         """Ensure no duplicate dependencies."""
         if len(v) != len(set(v)):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError("Duplicate dependencies not allowed")
         return v
 

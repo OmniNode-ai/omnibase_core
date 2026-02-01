@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Performance Metrics Model.
 
@@ -9,8 +5,9 @@ Restrictive model for CLI execution performance metrics
 with proper typing and validation.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -29,11 +26,11 @@ class ModelPerformanceMetrics(BaseModel):
     io_operations: int = Field(default=0, description="Number of I/O operations")
     network_calls: int = Field(default=0, description="Number of network calls")
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

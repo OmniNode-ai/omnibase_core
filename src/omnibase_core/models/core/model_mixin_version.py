@@ -56,7 +56,7 @@ class ModelMixinVersion(BaseModel):
                 message=f"Invalid version string '{version_str}': Version numbers must be non-negative",
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             ) from e
-        except (ValueError, IndexError) as e:
+        except (IndexError, ValueError) as e:
             raise ModelOnexError(
                 message=f"Invalid version string '{version_str}': {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,

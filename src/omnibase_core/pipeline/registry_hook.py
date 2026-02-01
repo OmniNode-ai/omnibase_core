@@ -1,8 +1,6 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Hook registry with freeze-after-init thread safety."""
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.models.pipeline import ModelPipelineHook, PipelinePhase
 from omnibase_core.pipeline.exceptions import (
     DuplicateHookError,
@@ -88,6 +86,7 @@ class RegistryHook:
         """Whether the registry is frozen."""
         return self._frozen
 
+    @standard_error_handling("Hook registration")
     def register(self, hook: ModelPipelineHook) -> None:
         """
         Register a hook.
@@ -120,6 +119,7 @@ class RegistryHook:
         """
         self._frozen = True
 
+    @standard_error_handling("Hooks retrieval by phase")
     def get_hooks_by_phase(self, phase: PipelinePhase) -> list[ModelPipelineHook]:
         """
         Get all hooks registered for a phase.
@@ -134,6 +134,7 @@ class RegistryHook:
         """
         return list(self._hooks_by_phase.get(phase, []))
 
+    @standard_error_handling("All hooks retrieval")
     def get_all_hooks(self) -> list[ModelPipelineHook]:
         """
         Get all registered hooks.
@@ -143,6 +144,7 @@ class RegistryHook:
         """
         return list(self._hooks_by_name.values())
 
+    @standard_error_handling("Hook retrieval by name")
     def get_hook_by_name(self, hook_name: str) -> ModelPipelineHook | None:
         """
         Get a hook by its name.

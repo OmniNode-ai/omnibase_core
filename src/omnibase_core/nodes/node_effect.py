@@ -22,7 +22,9 @@ Key Capabilities:
 Author: ONEX Framework Team
 """
 
+import asyncio
 import warnings
+from typing import Any
 from uuid import UUID
 
 from omnibase_core.constants.constants_effect import DEFAULT_OPERATION_TIMEOUT_MS
@@ -38,6 +40,9 @@ from omnibase_core.models.contracts.subcontracts.model_effect_subcontract import
 from omnibase_core.models.effect.model_effect_input import ModelEffectInput
 from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.resolution.resolver_handler import (
+    HandlerCallable,
+)
 
 # Error messages
 _ERR_EFFECT_SUBCONTRACT_NOT_LOADED = "Effect subcontract not loaded"
@@ -256,6 +261,23 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
         # Effect subcontract - set after construction or via contract loading
         object.__setattr__(self, "effect_subcontract", None)
 
+        # Auto-load effect_subcontract from contract if present
+        if hasattr(self, "contract_data") and self.contract_data is not None:
+            # Support both ModelContractBase instances and dict-based contracts
+            effect_sub = None
+            if hasattr(self.contract_data, "effect_subcontract"):
+                effect_sub = getattr(self.contract_data, "effect_subcontract", None)
+            elif isinstance(self.contract_data, dict):
+                effect_sub = self.contract_data.get("effect_subcontract")
+
+            if effect_sub is not None:
+                if isinstance(effect_sub, ModelEffectSubcontract):
+                    object.__setattr__(self, "effect_subcontract", effect_sub)
+                elif isinstance(effect_sub, dict):
+                    object.__setattr__(
+                        self, "effect_subcontract", ModelEffectSubcontract(**effect_sub)
+                    )
+
         # Process-local circuit breaker state keyed by operation_id.
         # operation_id is stable per operation definition (from the contract),
         # providing consistent circuit breaker state across requests.
@@ -338,6 +360,48 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
         """
         # Thread safety check (zero overhead when disabled)
         self._check_thread_safety()
+
+        # Check for contract-driven dispatch via default_handler
+        # This enables zero-code nodes with handler_routing configured
+        handler_info = self._get_default_handler_callable()
+        if handler_info is not None:
+            handler_or_loader, is_lazy = handler_info
+            # Resolve the handler - either directly or via lazy loader
+            resolved_handler: HandlerCallable
+            if is_lazy:
+                # NOTE(OMN-1731): Type narrowing for union with boolean flag.
+                # When is_lazy=True, handler_or_loader is LazyLoader (a callable
+                # that returns HandlerCallable). mypy cannot narrow automatically.
+                resolved_handler = handler_or_loader()  # type: ignore[assignment]
+            else:
+                # NOTE(OMN-1731): When is_lazy=False, handler_or_loader is already
+                # HandlerCallable. mypy cannot narrow the union type automatically.
+                resolved_handler = handler_or_loader  # type: ignore[assignment]
+            # Dispatch to contract-specified handler
+            # Handler signature: async def handler(node, input_data) -> ModelEffectOutput
+            # or sync: def handler(node, input_data) -> ModelEffectOutput
+            # NOTE(OMN-1731): mypy cannot infer the return type from
+            # the dynamically resolved handler. Safe because contract defines the
+            # handler signature requirement.
+            handler_result = resolved_handler(self, input_data)  # type: ignore[misc]
+
+            # Handle both async and sync handlers
+            if asyncio.iscoroutine(handler_result):
+                result: Any = await handler_result
+            else:
+                result = handler_result
+
+            # Validate return type at runtime
+            if not isinstance(result, ModelEffectOutput):
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
+                    message=(
+                        f"Handler returned invalid type: expected ModelEffectOutput, "
+                        f"got {type(result).__name__}"
+                    ),
+                    context={"node_id": str(self.node_id)},
+                )
+            return result
 
         if self.effect_subcontract is None:
             raise ModelOnexError(
@@ -496,10 +560,10 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
                     "circuit_breaker": op_cb.model_dump(),
                     "transaction_config": op_tx.model_dump(),
                 }
-                # TODO (v2.0): Per-operation configs (response_handling, retry_policy,
+                # TODO(OMN-TBD): [v2.0] Per-operation configs (response_handling, retry_policy,
                 # circuit_breaker) are serialized into operation_data but NOT YET
                 # wired to the execution pipeline. Only subcontract-level defaults
-                # are honored. See process() docstring "v1.0 Limitation" note.
+                # are honored. See process() docstring "v1.0 Limitation" note.  [NEEDS TICKET]
                 operations.append(op_dict)
 
             # Create new input_data with operations populated

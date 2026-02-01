@@ -1,17 +1,14 @@
-from __future__ import annotations
-
 """
 TypedDict for error details.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from typing import NotRequired, TypedDict
 
 
 class TypedDictErrorDetails(TypedDict):
-    """TypedDict for error details."""
-
     error_code: str
     error_message: str
     error_type: str

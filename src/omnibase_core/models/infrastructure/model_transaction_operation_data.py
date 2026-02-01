@@ -7,7 +7,7 @@ patterns in transaction models.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -26,11 +26,11 @@ class ModelTransactionOperationData(BaseModel):
         description="Operation properties as typed schema values",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> ModelTransactionOperationData:

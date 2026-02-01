@@ -27,6 +27,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol, Self, runtime_checkable
 
 if TYPE_CHECKING:
+    from omnibase_core.models.primitives.model_semver import ModelSemVer
     from omnibase_core.protocols.handler.contracts.protocol_capability_dependency import (
         ProtocolCapabilityDependency,
     )
@@ -65,7 +66,7 @@ class ProtocolHandlerContract(Protocol):
     Attributes:
         handler_id: Unique identifier for this handler.
         handler_name: Human-readable name for this handler.
-        handler_version: Semantic version of this handler contract.
+        contract_version: Semantic version of this handler contract (ModelSemVer).
         descriptor: Behavior descriptor for this handler.
         capability_inputs: List of capability dependencies required by this handler.
         execution_constraints: Execution constraints for this handler.
@@ -76,7 +77,7 @@ class ProtocolHandlerContract(Protocol):
         contract = ProtocolHandlerContract.from_yaml(yaml_content)
 
         # Access contract properties
-        print(f"Handler: {contract.handler_name} v{contract.handler_version}")
+        print(f"Handler: {contract.handler_name} v{contract.contract_version}")
         print(f"Idempotent: {contract.descriptor.idempotent}")
 
         # Check capability requirements
@@ -107,7 +108,7 @@ class ProtocolHandlerContract(Protocol):
             - memory_limit_mb > 0 (must be positive if specified)
             - cpu_limit > 0 (must be positive if specified)
             - concurrency_limit >= 1 (must be at least 1 if specified)
-            - handler_version matches semver format
+            - contract_version is a valid ModelSemVer instance
         These validations ensure contract correctness at construction time
         rather than deferring to runtime validation.
 
@@ -162,7 +163,7 @@ class ProtocolHandlerContract(Protocol):
         ...
 
     @property
-    def handler_version(self) -> str:
+    def contract_version(self) -> ModelSemVer:
         """
         Semantic version of this handler contract.
 
@@ -173,16 +174,16 @@ class ProtocolHandlerContract(Protocol):
             - PATCH: Bug fixes, backward compatible
 
         Version Examples:
-            - "1.0.0": Initial stable release
-            - "1.2.3": Minor feature additions with patches
-            - "2.0.0": Breaking changes from v1
+            - ModelSemVer(1, 0, 0): Initial stable release
+            - ModelSemVer(1, 2, 3): Minor feature additions with patches
+            - ModelSemVer(2, 0, 0): Breaking changes from v1
 
         Important:
             Version changes should be coordinated with the handler
             implementation to ensure contract-implementation compatibility.
 
         Returns:
-            Version string in semver format (e.g., "1.2.3").
+            ModelSemVer instance representing the contract version.
         """
         ...
 
@@ -299,7 +300,7 @@ class ProtocolHandlerContract(Protocol):
             ```yaml
             handler_id: "uuid-or-urn"
             handler_name: "handler-name"
-            handler_version: "1.0.0"
+            contract_version: "1.0.0"
             descriptor:
               idempotent: true
               deterministic: false
@@ -330,7 +331,7 @@ class ProtocolHandlerContract(Protocol):
 
         Args:
             content: YAML string to parse. Must contain all required fields
-                (handler_id, handler_name, handler_version, descriptor).
+                (handler_id, handler_name, contract_version, descriptor).
                 Optional fields (capability_inputs, execution_constraints)
                 use defaults if not specified.
 
@@ -345,7 +346,7 @@ class ProtocolHandlerContract(Protocol):
             yaml_content = '''
             handler_id: "http-handler-001"
             handler_name: "http-rest-handler"
-            handler_version: "1.0.0"
+            contract_version: "1.0.0"
             descriptor:
               idempotent: true
               deterministic: false

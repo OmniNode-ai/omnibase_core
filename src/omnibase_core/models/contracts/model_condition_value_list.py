@@ -7,7 +7,7 @@ that maintains type safety and provides utility methods for value checking.
 Strict typing is enforced: No string conditions or Any types allowed.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types.type_constraints import PrimitiveValueType
 
@@ -24,8 +24,8 @@ class ModelConditionValueList(BaseModel):
         """Check if the list[Any]contains the specified item."""
         return item in self.values
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

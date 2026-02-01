@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Graph Database Node Model.
 
 Type-safe model representing a node in a graph database (Neo4j, Memgraph, etc.).

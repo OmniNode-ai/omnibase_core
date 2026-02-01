@@ -4,10 +4,13 @@ Security Event Status Enumeration.
 Strongly typed enumeration for security event statuses.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumSecurityEventStatus(str, Enum):
+@unique
+class EnumSecurityEventStatus(StrValueHelper, str, Enum):
     """Enumeration for security event statuses."""
 
     # Success statuses
@@ -27,3 +30,6 @@ class EnumSecurityEventStatus(str, Enum):
     CANCELLED = "cancelled"
     TIMEOUT = "timeout"
     UNKNOWN = "unknown"
+
+
+__all__ = ["EnumSecurityEventStatus"]

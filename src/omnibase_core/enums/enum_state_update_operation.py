@@ -4,10 +4,13 @@ State Update Operation Enum.
 Operations that can be performed on state fields.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumStateUpdateOperation(str, Enum):
+@unique
+class EnumStateUpdateOperation(StrValueHelper, str, Enum):
     """Operations that can be performed on state fields."""
 
     SET = "set"  # Replace field value
@@ -16,3 +19,6 @@ class EnumStateUpdateOperation(str, Enum):
     INCREMENT = "increment"  # Increment numeric value
     DECREMENT = "decrement"  # Decrement numeric value
     DELETE = "delete"  # Remove field from state
+
+
+__all__ = ["EnumStateUpdateOperation"]

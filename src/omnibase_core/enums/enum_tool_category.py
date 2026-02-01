@@ -1,9 +1,12 @@
 """Tool category enumeration."""
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumToolCategory(str, Enum):
+@unique
+class EnumToolCategory(StrValueHelper, str, Enum):
     """
     Tool category classification.
 
@@ -24,3 +27,6 @@ class EnumToolCategory(str, Enum):
     REGISTRY = "registry"
     TRANSFORMATION = "transformation"
     OUTPUT = "output"
+
+
+__all__ = ["EnumToolCategory"]

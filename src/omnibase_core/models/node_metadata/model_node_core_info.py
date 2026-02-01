@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
@@ -77,8 +77,12 @@ class ModelNodeCoreInfo(BaseModel):
         return self.status == EnumMetadataNodeStatus.ACTIVE
 
     def is_healthy(self) -> bool:
-        """Check if node is healthy."""
-        return self.health == EnumRegistryStatus.HEALTHY
+        """Check if node is healthy.
+
+        Uses case-insensitive string comparison for robustness when health
+        value may come from external sources (e.g., deserialized JSON).
+        """
+        return str(self.health).lower() == str(EnumRegistryStatus.HEALTHY).lower()
 
     def has_description(self) -> bool:
         """Check if node has a description."""
@@ -133,11 +137,11 @@ class ModelNodeCoreInfo(BaseModel):
         """Get author name."""
         return self.author_display_name
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -202,12 +206,7 @@ class ModelNodeCoreInfo(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 __all__ = ["ModelNodeCoreInfo"]

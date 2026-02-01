@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
@@ -450,11 +450,12 @@ class ModelCustomProperties(BaseModel):
 
         return result
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
     # Protocol method implementations
 
@@ -505,12 +506,7 @@ class ModelCustomProperties(BaseModel):
         Note:
             Subclasses should override this method to add custom validation logic.
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
-            return False
+        return True
 
     def get_name(self) -> str:
         """Get the instance name.

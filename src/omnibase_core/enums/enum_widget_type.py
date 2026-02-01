@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Widget type enumeration for dashboard widgets.
 
 This module defines the available widget types for dashboard configuration.
@@ -17,12 +14,15 @@ Example:
             print("This widget needs a data source")
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 __all__ = ("EnumWidgetType",)
 
 
-class EnumWidgetType(str, Enum):
+@unique
+class EnumWidgetType(StrValueHelper, str, Enum):
     """Dashboard widget type enumeration.
 
     Defines the types of widgets available for dashboard configuration.

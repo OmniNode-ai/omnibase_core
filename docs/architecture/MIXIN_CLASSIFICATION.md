@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Mixin Classification
+
 # Mixin Classification Reference
 
 > **Version**: 1.0.0

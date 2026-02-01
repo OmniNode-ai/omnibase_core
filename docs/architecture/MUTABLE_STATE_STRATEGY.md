@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Mutable State Strategy
+
 # Mutable State Strategy for ONEX Nodes
 
 > **Status**: MVP Design Decision

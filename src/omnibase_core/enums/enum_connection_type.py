@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Connection type enumeration for network operations.
 
@@ -7,12 +5,15 @@ Provides strongly typed connection type values for network configurations.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumConnectionType(str, Enum):
+class EnumConnectionType(StrValueHelper, str, Enum):
     """
     Strongly typed connection type for network operations.
 
@@ -28,10 +29,6 @@ class EnumConnectionType(str, Enum):
     GRPC = "grpc"
     UDP = "udp"
     UNIX_SOCKET = "unix_socket"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_secure(cls, connection_type: EnumConnectionType) -> bool:

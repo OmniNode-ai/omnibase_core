@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../index.md) > Getting Started > First Node
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
+
 # Your First Node - omnibase_core
 
 **Status**: ✅ Complete
@@ -267,7 +271,7 @@ class TemperatureConverterCompute(NodeCompute):
             processing_time = (time.time() - start_time) * 1000
 
             return {
-                **result.dict(),
+                **result.model_dump(),
                 "processing_time_ms": round(processing_time, 3)
             }
 

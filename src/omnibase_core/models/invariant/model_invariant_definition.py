@@ -115,6 +115,7 @@ class ModelInvariantDefinition(BaseModel):
         if not isinstance(self.config, expected_config_type):
             actual_type_name = type(self.config).__name__
             expected_type_name = expected_config_type.__name__
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"Config type mismatch for invariant_type '{self.invariant_type.value}': "
                 f"expected {expected_type_name}, got {actual_type_name}. "

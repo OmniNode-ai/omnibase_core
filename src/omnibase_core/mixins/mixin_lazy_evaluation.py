@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-import hashlib
-from collections.abc import Callable
-from typing import TypeVar
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.typed_dict_mixin_types import TypedDictLazyCacheStats
-
 """
 Lazy Evaluation Mixin for Performance Optimization
 
@@ -14,13 +5,19 @@ Provides lazy evaluation patterns to reduce memory usage and improve performance
 for expensive operations like model serialization and type conversions.
 """
 
+from __future__ import annotations
+
 import functools
-from typing import cast
+import hashlib
+from collections.abc import Callable
+from typing import TypeVar, cast
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.types import JsonSerializable
+from omnibase_core.types.typed_dict_mixin_types import TypedDictLazyCacheStats
 
 # Define PropertyValue locally to avoid dependency issues
 PropertyValue = JsonSerializable

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Execution Trace Model for Replay Infrastructure.
 
@@ -139,6 +136,7 @@ class ModelExecutionTrace(BaseModel):
     def validate_time_ordering(self) -> "ModelExecutionTrace":
         """Validate that ended_at is not before started_at."""
         if self.ended_at < self.started_at:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"ended_at ({self.ended_at}) cannot be before started_at ({self.started_at})"
             )

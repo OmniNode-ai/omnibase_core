@@ -1,7 +1,10 @@
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumHandlerType(str, Enum):
+@unique
+class EnumHandlerType(StrValueHelper, str, Enum):
     """Handler type classification for the ONEX handler registry.
 
     This enum classifies handlers by the type of I/O or external system
@@ -89,3 +92,6 @@ class EnumHandlerType(str, Enum):
     # Development/Testing types (v0.4.0+)
     LOCAL = "local"
     """Local echo handler for dev/test only. WARNING: Not for production use."""
+
+
+__all__ = ["EnumHandlerType"]

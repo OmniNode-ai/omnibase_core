@@ -124,8 +124,13 @@ class ModelSemVer(BaseModel):
         - Numeric identifiers < alphanumeric (1.0.0-1 < 1.0.0-alpha)
         - Build metadata is IGNORED for precedence
 
-    Note: String version literals like "1.0.0" are deprecated.
-    Always use structured format: ModelSemVer(major=X, minor=Y, patch=Z)
+    Note:
+        String version literals like "1.0.0" are deprecated.
+        Always use structured format: ModelSemVer(major=X, minor=Y, patch=Z)
+
+        This model is frozen (immutable) and hashable, suitable for use as dict
+        keys or in sets. Hash is based on major, minor, patch, and prerelease;
+        build metadata is excluded (see __hash__ docstring for details).
     """
 
     # from_attributes=True allows Pydantic to accept objects with matching
@@ -621,7 +626,7 @@ def parse_input_state_version(input_state: SerializedDict) -> "ModelSemVer":
     if isinstance(v, dict):
         try:
             return ModelSemVer.model_validate(v)
-        except (ValueError, TypeError, AttributeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             msg = (
                 f"Invalid version dictionary format. Expected {{major: int, minor: int, patch: int}}. "
                 f"Got: {v}. Error: {e}"

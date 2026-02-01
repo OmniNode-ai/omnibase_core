@@ -1,0 +1,59 @@
+{
+  "description": "Configuration for markdown link validation. See scripts/validation/validate_markdown_links.py",
+  "ignorePatterns": [
+    {
+      "pattern": "^https?://localhost",
+      "comment": "Localhost URLs are not accessible in CI"
+    },
+    {
+      "pattern": "^https?://127\\.0\\.0\\.1",
+      "comment": "Loopback addresses are not accessible in CI"
+    },
+    {
+      "pattern": "^https?://192\\.168\\.",
+      "comment": "Private network addresses are not accessible in CI"
+    },
+    {
+      "pattern": "^https?://10\\.",
+      "comment": "Private network addresses are not accessible in CI"
+    },
+    {
+      "pattern": "^https?://linear\\.app/",
+      "comment": "Linear tickets require authentication"
+    },
+    {
+      "pattern": "^https?://example\\.com",
+      "comment": "Example domain placeholder"
+    },
+    {
+      "pattern": "^BaseModel$",
+      "comment": "Pydantic BaseModel class reference in code examples"
+    },
+    {
+      "pattern": "^link$",
+      "comment": "Placeholder text in documentation examples"
+    },
+    {
+      "pattern": "^[A-Z][a-zA-Z0-9]*$",
+      "comment": "PascalCase words are typically class names in code blocks"
+    },
+    {
+      "pattern": "^[a-z_][a-z0-9_]*$",
+      "comment": "Snake_case words are typically variable/function names in code blocks"
+    }
+  ],
+  "excludeFiles": [
+    ".pytest_cache/**",
+    ".venv/**",
+    "venv/**",
+    "node_modules/**",
+    "archived/**",
+    "*.egg-info/**",
+    ".mypy_cache/**",
+    ".ruff_cache/**",
+    "build/**",
+    "dist/**",
+    "htmlcov/**"
+  ],
+  "checkExternal": false
+}

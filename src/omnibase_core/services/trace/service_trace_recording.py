@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Service for recording and querying execution traces.
 
@@ -10,21 +7,21 @@ storage while providing a consistent interface.
 
 Thread Safety:
     Thread safety depends on the underlying ProtocolTraceStore implementation.
-    When using StoreTraceInMemory, the service is NOT thread-safe.
-    See StoreTraceInMemory documentation for thread safety guidelines.
+    When using ServiceTraceInMemoryStore, the service is NOT thread-safe.
+    See ServiceTraceInMemoryStore documentation for thread safety guidelines.
 
 Example:
     >>> from omnibase_core.services.trace.service_trace_recording import (
     ...     ServiceTraceRecording,
     ... )
-    >>> from omnibase_core.services.trace.store_trace_in_memory import StoreTraceInMemory
+    >>> from omnibase_core.services.trace.service_trace_in_memory_store import ServiceTraceInMemoryStore
     >>> from omnibase_core.models.trace import ModelExecutionTrace
     >>> from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
     >>> from datetime import datetime, UTC
     >>> from uuid import uuid4
     >>>
     >>> # Create service with in-memory backend
-    >>> store = StoreTraceInMemory()
+    >>> store = ServiceTraceInMemoryStore()
     >>> service = ServiceTraceRecording(store)
     >>>
     >>> # Record a trace
@@ -41,9 +38,9 @@ Example:
     >>> retrieved = await service.get_trace(trace_id)
 
 See Also:
-    - :class:`~omnibase_core.services.trace.protocol_trace_store.ProtocolTraceStore`:
+    - :class:`~omnibase_core.protocols.storage.protocol_trace_store.ProtocolTraceStore`:
       The storage backend protocol
-    - :class:`~omnibase_core.services.trace.store_trace_in_memory.StoreTraceInMemory`:
+    - :class:`~omnibase_core.services.trace.service_trace_in_memory_store.ServiceTraceInMemoryStore`:
       In-memory backend implementation
     - :class:`~omnibase_core.models.trace.ModelExecutionTrace`:
       The trace model
@@ -59,7 +56,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.trace import ModelExecutionTrace
 from omnibase_core.models.trace_query import ModelTraceQuery, ModelTraceSummary
-from omnibase_core.services.trace.protocol_trace_store import ProtocolTraceStore
+from omnibase_core.protocols.storage.protocol_trace_store import ProtocolTraceStore
 
 
 class ServiceTraceRecording:
@@ -80,9 +77,9 @@ class ServiceTraceRecording:
         >>> from omnibase_core.services.trace.service_trace_recording import (
         ...     ServiceTraceRecording,
         ... )
-        >>> from omnibase_core.services.trace.store_trace_in_memory import StoreTraceInMemory
+        >>> from omnibase_core.services.trace.service_trace_in_memory_store import ServiceTraceInMemoryStore
         >>>
-        >>> store = StoreTraceInMemory()
+        >>> store = ServiceTraceInMemoryStore()
         >>> service = ServiceTraceRecording(store)
         >>>
         >>> # Record traces
@@ -108,10 +105,10 @@ class ServiceTraceRecording:
                 Must implement ProtocolTraceStore protocol.
 
         Example:
-            >>> from omnibase_core.services.trace.store_trace_in_memory import (
-            ...     StoreTraceInMemory,
+            >>> from omnibase_core.services.trace.service_trace_in_memory_store import (
+            ...     ServiceTraceInMemoryStore,
             ... )
-            >>> store = StoreTraceInMemory()
+            >>> store = ServiceTraceInMemoryStore()
             >>> service = ServiceTraceRecording(store)
         """
         self._store = store

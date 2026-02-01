@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Node Building](./README.md) > Common Pitfalls
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../../CLAUDE.md).
+
 # Common Pitfalls - What to Avoid When Building Nodes
 
 **Status**: ✅ Complete

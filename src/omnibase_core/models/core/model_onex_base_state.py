@@ -110,7 +110,7 @@ class ModelOnexInputState(BaseModel):
         # and validates format, so we just need to handle None
         return v
 
-    def to_internal_state(self) -> "ModelOnexInternalInputState":
+    def to_internal_state(self) -> ModelOnexInternalInputState:
         """
         Convert boundary input state to internal state with required UUIDs.
 
@@ -120,13 +120,4 @@ class ModelOnexInputState(BaseModel):
         Returns:
             ModelOnexInternalInputState: Internal state with all required UUIDs populated
         """
-        from omnibase_core.models.core.model_onex_internal_state import (
-            ModelOnexInternalInputState,
-        )
-
-        # Note: type: ignore[no-any-return] is needed below because the dynamic
-        # import causes mypy to infer Any for the return type
-        result: ModelOnexInternalInputState = (
-            ModelOnexInternalInputState.from_boundary_state(self)
-        )
-        return result  # type: ignore[no-any-return]
+        return ModelOnexInternalInputState.from_boundary_state(self)

@@ -26,7 +26,9 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type alias for supported parameter types
-ParameterType = Literal["string", "int", "bool", "float", "list", "dict"]
+ParameterType = Literal[  # enum-ok: model type annotation
+    "string", "int", "bool", "float", "list", "dict"
+]
 
 # Mapping from type string to Python types for validation
 _TYPE_MAPPING: dict[str, tuple[type, ...]] = {
@@ -193,8 +195,9 @@ class ModelActionConfigParameter(BaseModel):
 
     model_config = ConfigDict(
         extra="ignore",
-        use_enum_values=False,
+        from_attributes=True,
         frozen=True,
+        use_enum_values=False,
     )
 
 

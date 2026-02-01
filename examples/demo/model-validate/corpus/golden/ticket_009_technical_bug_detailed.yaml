@@ -1,0 +1,44 @@
+---
+# Golden sample: Detailed bug report with logs
+ticket_id: "TKT-2024-009"
+created_at: "2024-01-19T09:20:00Z"
+customer_tier: "pro"
+channel: "email"
+language: "en"
+subject: "Data sync failing with error 500"
+body: |
+  Hello,
+
+  I'm experiencing consistent sync failures between my local client and the
+  cloud service. The error occurs approximately every 3rd sync attempt.
+
+  Error Details:
+  - Error Code: HTTP 500
+  - Error Message: "Internal Server Error - Sync operation failed"
+  - Timestamp pattern: Failures occur during peak hours (9am-11am EST)
+
+  Environment:
+  - Desktop Client Version: 2.8.3
+  - OS: Windows 11
+  - Network: Corporate network with proxy
+
+  Steps to Reproduce:
+  1. Open desktop client
+  2. Make changes to any document
+  3. Wait for auto-sync (or trigger manual sync)
+  4. Observe error on ~33% of attempts
+
+  I've attached the client logs and network traces from the failed syncs.
+
+  Please advise on next steps.
+
+  Best,
+  D. User
+  user@example.org
+attachments:
+  - "client_logs_2024-01-19.txt"
+  - "network_trace.har"
+  - "error_screenshots.zip"
+product_area: "sync"
+priority_hint: "high"
+previous_contact_count: 0

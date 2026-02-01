@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Category Filter Enum.
 
 Strongly typed category filter values for ONEX architecture filtering operations.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumCategoryFilter(str, Enum):
+class EnumCategoryFilter(StrValueHelper, str, Enum):
     """
     Strongly typed category filter values for ONEX architecture.
 
@@ -25,10 +26,6 @@ class EnumCategoryFilter(str, Enum):
     ALL = "all"
     CUSTOM = "custom"
     ARCHIVED = "archived"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_hierarchical(cls, filter_type: EnumCategoryFilter) -> bool:

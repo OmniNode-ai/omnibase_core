@@ -1184,11 +1184,14 @@ class TestHandlerContractValidation:
         valid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 description: Validates input data against JSON schemas
 
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
   timeout_ms: 5000
@@ -1213,9 +1216,12 @@ tags:
         """Missing handler_id triggers error."""
         invalid_handler = """
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
@@ -1233,9 +1239,12 @@ output_model: myapp.models.Output
         """Missing name triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
@@ -1248,31 +1257,34 @@ output_model: myapp.models.Output
         assert len(errors) >= 1
         assert any("name" in error.lower() for error in errors)
 
-    def test_handler_contract_missing_version(self, temp_repo):
-        """Missing version triggers error."""
+    def test_handler_contract_missing_contract_version(self, temp_repo):
+        """Missing contract_version triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
 output_model: myapp.models.Output
 """
-        yaml_file = temp_repo / "missing_version.yaml"
+        yaml_file = temp_repo / "missing_contract_version.yaml"
         yaml_file.write_text(invalid_handler)
 
         errors = validate_yaml_file(yaml_file)
         assert len(errors) >= 1
-        assert any("version" in error.lower() for error in errors)
+        assert any("contract_version" in error.lower() for error in errors)
 
     def test_handler_contract_missing_descriptor(self, temp_repo):
         """Missing descriptor triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 input_model: myapp.models.Input
 output_model: myapp.models.Output
 """
@@ -1288,9 +1300,12 @@ output_model: myapp.models.Output
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 output_model: myapp.models.Output
@@ -1307,9 +1322,12 @@ output_model: myapp.models.Output
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
@@ -1326,9 +1344,12 @@ input_model: myapp.models.Input
         invalid_handler = """
 handler_id: single_segment
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
@@ -1345,54 +1366,60 @@ output_model: myapp.models.Output
             for error in errors
         )
 
-    def test_handler_contract_invalid_version_format(self, temp_repo):
-        """Invalid version format triggers error."""
+    def test_handler_contract_invalid_contract_version_format(self, temp_repo):
+        """Invalid contract_version format triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: not-a-version
+contract_version: not-a-version
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
 output_model: myapp.models.Output
 """
-        yaml_file = temp_repo / "invalid_version.yaml"
+        yaml_file = temp_repo / "invalid_contract_version.yaml"
         yaml_file.write_text(invalid_handler)
 
         errors = validate_yaml_file(yaml_file)
         assert len(errors) >= 1
-        assert any("version" in error.lower() for error in errors)
+        assert any("contract_version" in error.lower() for error in errors)
 
-    def test_handler_contract_invalid_handler_kind(self, temp_repo):
-        """Invalid handler_kind triggers error."""
+    def test_handler_contract_invalid_node_archetype(self, temp_repo):
+        """Invalid node_archetype triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
-  handler_kind: invalid_kind
+  node_archetype: invalid_kind
   purity: pure
   idempotent: true
 input_model: myapp.models.Input
 output_model: myapp.models.Output
 """
-        yaml_file = temp_repo / "invalid_handler_kind.yaml"
+        yaml_file = temp_repo / "invalid_node_archetype.yaml"
         yaml_file.write_text(invalid_handler)
 
         errors = validate_yaml_file(yaml_file)
         assert len(errors) >= 1
-        assert any("handler_kind" in error.lower() for error in errors)
+        assert any("node_archetype" in error.lower() for error in errors)
 
     def test_handler_contract_invalid_purity(self, temp_repo):
         """Invalid purity value triggers error."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: invalid_purity
   idempotent: true
 input_model: myapp.models.Input
@@ -1406,13 +1433,16 @@ output_model: myapp.models.Output
         assert any("purity" in error.lower() for error in errors)
 
     def test_handler_contract_id_kind_mismatch(self, temp_repo):
-        """Handler ID prefix must match handler_kind."""
+        """Handler ID prefix must match node_archetype."""
         invalid_handler = """
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
-  handler_kind: effect
+  node_archetype: effect
   purity: side_effecting
   idempotent: true
 input_model: myapp.models.Input
@@ -1423,25 +1453,28 @@ output_model: myapp.models.Output
 
         errors = validate_yaml_file(yaml_file)
         assert len(errors) >= 1
-        # The compute prefix should require handler_kind: compute
+        # The compute prefix should require node_archetype: compute
         assert any(
             "compute" in error.lower()
-            or "handler_kind" in error.lower()
+            or "node_archetype" in error.lower()
             or "prefix" in error.lower()
             for error in errors
         )
 
     def test_handler_contract_all_valid_kinds(self, temp_repo):
-        """All valid handler_kind values are accepted."""
+        """All valid node_archetype values are accepted."""
         valid_kinds = ["compute", "effect", "reducer", "orchestrator"]
 
         for kind in valid_kinds:
             valid_handler = f"""
 handler_id: handler.test.{kind}
 name: Test Handler
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
-  handler_kind: {kind}
+  node_archetype: {kind}
   purity: {"pure" if kind == "compute" else "side_effecting"}
   idempotent: true
 input_model: myapp.models.Input
@@ -1460,9 +1493,12 @@ output_model: myapp.models.Output
         valid_handler = """
 handler_id: reducer.registration.user
 name: User Registration Reducer
-version: 1.2.0
+contract_version:
+  major: 1
+  minor: 2
+  patch: 0
 descriptor:
-  handler_kind: reducer
+  node_archetype: reducer
   purity: side_effecting
   idempotent: true
   timeout_ms: 30000
@@ -1495,9 +1531,12 @@ output_model: myapp.models.RegistrationState
         invalid_handler = """
 handler_id: reducer.registration.user
 name: User Registration Reducer
-version: 1.2.0
+contract_version:
+  major: 1
+  minor: 2
+  patch: 0
 descriptor:
-  handler_kind: reducer
+  node_archetype: reducer
   purity: side_effecting
   idempotent: true
 
@@ -1526,9 +1565,12 @@ output_model: myapp.models.Output
         valid_handler = """
 handler_id: effect.database.user_repo
 name: User Repository
-version: 2.0.0
+contract_version:
+  major: 2
+  minor: 0
+  patch: 0
 descriptor:
-  handler_kind: effect
+  node_archetype: effect
   purity: side_effecting
   idempotent: true
   timeout_ms: 30000
@@ -1559,9 +1601,12 @@ execution_constraints:
         valid_handler = """
 handler_id: effect.api.external_service
 name: External Service Handler
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 descriptor:
-  handler_kind: effect
+  node_archetype: effect
   purity: side_effecting
   idempotent: false
   timeout_ms: 60000

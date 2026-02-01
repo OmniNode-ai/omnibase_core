@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > [Decisions](./INDEX.md) > ADR-002 Context Mutability
+
 # ADR-002: Context Mutability Design Decision
 
 **Status**: 🟢 **IMPLEMENTED**

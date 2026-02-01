@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../index.md) > [Patterns](./README.md) > Pure FSM Reducer Pattern
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
+
 # Pure FSM Reducer Pattern
 
 **Status**: Recommended Pattern

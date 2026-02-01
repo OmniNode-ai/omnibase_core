@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Contract merge engine implementation.
 
@@ -40,6 +37,7 @@ from uuid import UUID, uuid4
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_merge_conflict_type import EnumMergeConflictType
+from omnibase_core.enums.enum_node_archetype import EnumNodeArchetype
 from omnibase_core.merge.merge_rules import (
     apply_list_operations,
     merge_scalar,
@@ -51,6 +49,7 @@ from omnibase_core.models.contracts.model_contract_patch import ModelContractPat
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.merge.model_merge_conflict import ModelMergeConflict
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
 
 if TYPE_CHECKING:
@@ -274,13 +273,16 @@ class ContractMergeEngine:
             changes_applied.append(f"name: {base.name} -> {patch.name}")
 
         # Version handling: patch uses ModelSemVer, base uses ModelSemVer
-        merged_version = (
-            str(patch.node_version) if patch.node_version else str(base.version)
+        # Keep as ModelSemVer for ModelHandlerContract.contract_version field
+        merged_contract_version: ModelSemVer = (
+            patch.node_version if patch.node_version else base.contract_version
         )
 
         # Track version override
         if patch.node_version is not None:
-            changes_applied.append(f"version: {base.version} -> {patch.node_version}")
+            changes_applied.append(
+                f"node_version: set to {patch.node_version} (base contract_version: {base.contract_version})"
+            )
 
         merged_description = merge_scalar(base.description, patch.description)
 
@@ -371,7 +373,7 @@ class ContractMergeEngine:
         result = ModelHandlerContract(
             handler_id=handler_id,
             name=merged_name,
-            version=merged_version,
+            contract_version=merged_contract_version,
             description=merged_description,
             descriptor=merged_behavior,
             capability_inputs=merged_capability_inputs,
@@ -523,7 +525,7 @@ class ContractMergeEngine:
         # Default behavior if base is None
         if base_behavior is None:
             base_behavior = ModelHandlerBehavior(
-                handler_kind="compute",
+                node_archetype=EnumNodeArchetype.COMPUTE,
                 purity="side_effecting",
                 idempotent=False,
             )
@@ -541,7 +543,7 @@ class ContractMergeEngine:
         )
 
         return ModelHandlerBehavior(
-            handler_kind=base_behavior.handler_kind,  # Kind cannot be overridden
+            node_archetype=base_behavior.node_archetype,  # Archetype cannot be overridden
             purity=merge_scalar(base_behavior.purity, patch_descriptor.purity)
             or base_behavior.purity,
             idempotent=merged_idempotent,

@@ -1,0 +1,86 @@
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: contract_linter
+  validator_name: ONEX Contract Linter
+  validator_description: |
+    Validates YAML contract files for ONEX compliance.
+    Checks required fields, naming conventions, fingerprints, and schema compliance.
+
+  target_patterns:
+    - "**/*.yaml"
+    - "**/*.yml"
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/venv/**"
+    - "**/__pycache__/**"
+    - "**/archived/**"
+
+  rules:
+    - rule_id: required_fields
+      description: Contract must have required fields (name, version, node_type)
+      severity: error
+      enabled: true
+      parameters:
+        fields:
+          - name
+          - version
+          - node_type
+
+    - rule_id: recommended_fields
+      description: Contract should have recommended fields (description)
+      severity: warning
+      enabled: true
+      parameters:
+        fields:
+          - description
+
+    - rule_id: naming_convention
+      description: Names must follow PascalCase or snake_case conventions
+      severity: warning
+      enabled: true
+
+    - rule_id: model_prefix
+      description: Model class names must start with 'Model'
+      severity: warning
+      enabled: true
+
+    - rule_id: fingerprint_format
+      description: Fingerprint must be valid format (semver:12-hex)
+      severity: error
+      enabled: true
+
+    - rule_id: fingerprint_match
+      description: Declared fingerprint must match computed fingerprint
+      severity: error
+      enabled: true
+
+    - rule_id: schema_validation
+      description: Contract must validate against Pydantic schema
+      severity: error
+      enabled: true
+
+    - rule_id: yaml_syntax
+      description: YAML file must have valid syntax
+      severity: error
+      enabled: true
+
+  suppression_comments:
+    - "# contract-ok:"
+    - "# ONEX_EXCLUDE: contract_lint"
+
+  severity_default: error
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 100
+
+  # PARALLEL EXECUTION: Indicates PROCESS-safe parallel file processing is supported.
+  # This does NOT mean thread-safe within a single process - each worker must create
+  # its own validator instance. For full thread safety details, see:
+  # docs/guides/THREADING.md and contracts/any_type.validation.yaml
+  parallel_execution: true

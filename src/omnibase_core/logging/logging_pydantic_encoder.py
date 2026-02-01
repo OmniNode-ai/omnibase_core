@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Custom JSON encoder for ONEX structured logging.
 
@@ -7,6 +5,7 @@ Handles Pydantic models, UUIDs, and log contexts.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
 import json
 from typing import Any

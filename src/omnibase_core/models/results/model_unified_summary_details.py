@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -18,4 +18,4 @@ class ModelUnifiedSummaryDetails(BaseModel):
         None, description="Strongly-typed detail value"
     )
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(arbitrary_types_allowed=True)

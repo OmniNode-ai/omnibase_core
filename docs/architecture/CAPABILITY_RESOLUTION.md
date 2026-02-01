@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Capability Resolution
+
 # Capability Resolution - omnibase_core
 
 **Status**: Draft

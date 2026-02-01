@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode AI <https://omninode.ai>
-# SPDX-License-Identifier: Apache-2.0
 """
 Protocol for action payloads.
 
@@ -52,7 +50,7 @@ Example:
     >>> from pydantic import BaseModel, ConfigDict
     >>>
     >>> class ModelPayloadStandalone(BaseModel):
-    ...     model_config = ConfigDict(frozen=True, extra="forbid")
+    ...     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
     ...     _kind: str = "standalone.action"
     ...     data: str
     ...
@@ -95,6 +93,7 @@ class ProtocolActionPayload(Protocol):
         - Must have a `kind` property or attribute (read-only string)
         - Should be immutable (frozen=True) for thread safety
         - Should use extra="forbid" for strict schema validation
+        - Should use from_attributes=True for pytest-xdist compatibility
 
     Example (recommended - inherit from ModelActionPayloadBase):
         >>> from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase

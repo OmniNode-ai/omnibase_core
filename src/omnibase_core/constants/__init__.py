@@ -6,6 +6,7 @@ from omnibase_core.constants import (
     constants_error,
     constants_field_limits,
     constants_handler_capabilities,
+    constants_omnimemory,
     constants_topic_taxonomy,
 )
 from omnibase_core.constants.constants_contract_fields import (
@@ -94,6 +95,9 @@ from omnibase_core.constants.constants_handler_capabilities import (
     get_capabilities_by_node_kind,
     validate_capabilities,
 )
+from omnibase_core.constants.constants_omnimemory import (
+    FLOAT_COMPARISON_EPSILON,
+)
 from omnibase_core.constants.constants_timeouts import (
     DATABASE_QUERY_TIMEOUT_SECONDS,
     DEFAULT_CACHE_TTL_SECONDS,
@@ -118,6 +122,7 @@ from omnibase_core.constants.constants_topic_taxonomy import (
     DOMAIN_METRICS,
     DOMAIN_REGISTRATION,
     DOMAIN_RUNTIME,
+    PLATFORM_BASELINE_TOPIC_SUFFIXES,
     RETENTION_MS_AUDIT,
     RETENTION_MS_COMMANDS,
     RETENTION_MS_EVENTS,
@@ -136,10 +141,17 @@ from omnibase_core.constants.constants_topic_taxonomy import (
     TOPIC_RUNTIME_COMMANDS,
     TOPIC_RUNTIME_EVENTS,
     TOPIC_RUNTIME_INTENTS,
+    TOPIC_SUFFIX_CONTRACT_DEREGISTERED,
+    TOPIC_SUFFIX_CONTRACT_REGISTERED,
+    TOPIC_SUFFIX_NODE_HEARTBEAT,
     TOPIC_TYPE_COMMANDS,
+    TOPIC_TYPE_DLQ,
     TOPIC_TYPE_EVENTS,
     TOPIC_TYPE_INTENTS,
     TOPIC_TYPE_SNAPSHOTS,
+    get_token_to_topic_type,
+    get_topic_type_to_token,
+    get_valid_topic_suffix_kinds,
     topic_name,
 )
 
@@ -148,6 +160,7 @@ __all__ = [
     "constants_effect",
     "constants_error",
     "constants_field_limits",
+    "constants_omnimemory",
     "constants_topic_taxonomy",
     "constants_handler_capabilities",
     "normalize_legacy_event_type",
@@ -203,6 +216,8 @@ __all__ = [
     "EFFECT_TIMEOUT_DEFAULT_MS",
     "EFFECT_TIMEOUT_MAX_MS",
     "EFFECT_TIMEOUT_MIN_MS",
+    # OmniMemory constants
+    "FLOAT_COMPARISON_EPSILON",
     # Field length limits
     "MAX_BFS_ITERATIONS",
     "MAX_DESCRIPTION_LENGTH",
@@ -243,9 +258,14 @@ __all__ = [
     "validate_capabilities",
     # Topic taxonomy constants
     "TOPIC_TYPE_COMMANDS",
+    "TOPIC_TYPE_DLQ",
     "TOPIC_TYPE_EVENTS",
     "TOPIC_TYPE_INTENTS",
     "TOPIC_TYPE_SNAPSHOTS",
+    # Token mapping accessors (OMN-1537)
+    "get_token_to_topic_type",
+    "get_topic_type_to_token",
+    "get_valid_topic_suffix_kinds",
     "DOMAIN_REGISTRATION",
     "DOMAIN_DISCOVERY",
     "DOMAIN_RUNTIME",
@@ -274,4 +294,9 @@ __all__ = [
     "RETENTION_MS_INTENTS",
     "RETENTION_MS_SNAPSHOTS",
     "RETENTION_MS_AUDIT",
+    # Platform baseline topic suffixes (OMN-1652)
+    "TOPIC_SUFFIX_CONTRACT_REGISTERED",
+    "TOPIC_SUFFIX_CONTRACT_DEREGISTERED",
+    "TOPIC_SUFFIX_NODE_HEARTBEAT",
+    "PLATFORM_BASELINE_TOPIC_SUFFIXES",
 ]

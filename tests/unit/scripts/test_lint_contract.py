@@ -70,12 +70,12 @@ class ModelSimpleTestContract(BaseModel):
 
     This is a simplified contract model that can be validated without
     the complex requirements of production contract models.
-    Note: version field accepts both string ("1.0.0") and ModelContractVersion
+    Note: contract_version field accepts both string ("1.0.0") and ModelContractVersion
     for test convenience, but is stored as ModelContractVersion.
     """
 
     name: str = Field(default="test_contract")
-    version: ModelContractVersion = Field(
+    contract_version: ModelContractVersion = Field(
         default_factory=lambda: ModelContractVersion(major=1, minor=0, patch=0)
     )
     description: str | None = Field(default=None)
@@ -83,7 +83,7 @@ class ModelSimpleTestContract(BaseModel):
     input_model: str = Field(default="omnibase_core.models.ModelInput")
     output_model: str = Field(default="omnibase_core.models.ModelOutput")
 
-    @field_validator("version", mode="before")
+    @field_validator("contract_version", mode="before")
     @classmethod
     def convert_version_string(cls, v: object) -> ModelContractVersion:
         """Convert string versions to ModelContractVersion for test convenience."""

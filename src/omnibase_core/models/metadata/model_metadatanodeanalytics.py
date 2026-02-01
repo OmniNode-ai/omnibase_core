@@ -32,13 +32,14 @@ import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_collection_purpose import EnumCollectionPurpose
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 
 # Safe runtime imports
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict
@@ -158,7 +159,9 @@ class ModelMetadataNodeAnalytics(BaseModel):
     )
 
     # Error tracking
-    error_count: int = Field(default=0, description="Total error count", ge=0)
+    error_level_count: int = Field(
+        default=0, description="Number of ERROR-severity issues", ge=0
+    )
     warning_count: int = Field(default=0, description="Total warning count", ge=0)
     critical_error_count: int = Field(
         default=0,
@@ -220,7 +223,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
         """Calculate error rate percentage."""
         if self.total_invocations == 0:
             return 0.0
-        return (self.error_count / self.total_invocations) * 100.0
+        return (self.error_level_count / self.total_invocations) * 100.0
 
     def add_custom_metric(self, name: str, value: ModelMetadataValue) -> None:
         """Add a custom metric using strongly-typed value."""
@@ -301,7 +304,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
         summary.quality.documentation_coverage = self.documentation_coverage
 
         # Set error properties
-        summary.errors.error_count = self.error_count
+        summary.errors.error_level_count = self.error_level_count
         summary.errors.warning_count = self.warning_count
         summary.errors.critical_error_count = self.critical_error_count
 
@@ -338,11 +341,11 @@ class ModelMetadataNodeAnalytics(BaseModel):
             documentation_coverage=0.0,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -367,7 +370,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError):
+        except PYDANTIC_MODEL_ERRORS:
             # fallback-ok: metadata update failure in analytics does not impact core functionality
             return False
 
@@ -377,10 +380,6 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, ValueError, TypeError, KeyError):
-            # fallback-ok: validation failure in monitoring analytics defaults to invalid state
-            return False
+        # Basic validation - base implementation always returns True.
+        # Subclasses should override with actual validation logic.
+        return True

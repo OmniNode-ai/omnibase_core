@@ -545,7 +545,7 @@ class TestModelActionLeaseConcurrency:
             """Attempt to modify the action's lease (should fail)."""
             try:
                 action.lease_id = uuid4()  # type: ignore[misc]
-            except (TypeError, AttributeError, Exception) as e:
+            except (AttributeError, Exception, TypeError) as e:
                 with lock:
                     modification_errors.append(
                         f"Thread {thread_id}: {type(e).__name__}"
@@ -1073,13 +1073,13 @@ class TestWorkflowStateSnapshotConcurrency:
             """Attempt various modifications."""
             try:
                 snapshot.current_step_index = 999  # type: ignore[misc]
-            except (TypeError, AttributeError, Exception) as e:
+            except (AttributeError, Exception, TypeError) as e:
                 with lock:
                     modification_errors.append(f"step_index: {type(e).__name__}")
 
             try:
                 snapshot.workflow_id = uuid4()  # type: ignore[misc]
-            except (TypeError, AttributeError, Exception) as e:
+            except (AttributeError, Exception, TypeError) as e:
                 with lock:
                     modification_errors.append(f"workflow_id: {type(e).__name__}")
 

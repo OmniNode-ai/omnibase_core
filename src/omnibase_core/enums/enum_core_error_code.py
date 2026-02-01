@@ -1,11 +1,13 @@
 """Core error codes that can be reused across all ONEX components."""
 
 import re
+from enum import unique
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_onex_error_code import EnumOnexErrorCode
 
 
+@unique
 class EnumCoreErrorCode(EnumOnexErrorCode):
     """
     Core error codes that can be reused across all ONEX components.
@@ -84,6 +86,8 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     VERSION_INCOMPATIBLE = "ONEX_CORE_123_VERSION_INCOMPATIBLE"
     IMPORT_ERROR = "ONEX_CORE_124_IMPORT_ERROR"
     DEPENDENCY_ERROR = "ONEX_CORE_125_DEPENDENCY_ERROR"
+    # Protocol configuration errors (OMN-1731)
+    PROTOCOL_CONFIGURATION_ERROR = "ONEX_CORE_126_PROTOCOL_CONFIGURATION_ERROR"
 
     # Database errors (131-140)
     DATABASE_CONNECTION_ERROR = "ONEX_CORE_131_DATABASE_CONNECTION_ERROR"
@@ -233,6 +237,8 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     REPLAY_RECORD_NOT_FOUND = "ONEX_CORE_331_REPLAY_RECORD_NOT_FOUND"
     REPLAY_NOT_IN_REPLAY_MODE = "ONEX_CORE_332_REPLAY_NOT_IN_REPLAY_MODE"
     REPLAY_INVALID_EFFECT_TYPE = "ONEX_CORE_333_REPLAY_INVALID_EFFECT_TYPE"
+    REPLAY_SEQUENCE_EXHAUSTED = "ONEX_CORE_334_REPLAY_SEQUENCE_EXHAUSTED"
+    REPLAY_ENFORCEMENT_BLOCKED = "ONEX_CORE_335_REPLAY_ENFORCEMENT_BLOCKED"
 
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
@@ -317,6 +323,8 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     # Type validation errors -> ERROR
     EnumCoreErrorCode.TYPE_MISMATCH: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.TYPE_INTROSPECTION_ERROR: EnumCLIExitCode.ERROR,
+    # Protocol configuration errors
+    EnumCoreErrorCode.PROTOCOL_CONFIGURATION_ERROR: EnumCLIExitCode.ERROR,
     # Intelligence errors -> ERROR
     EnumCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.PATTERN_RECOGNITION_FAILED: EnumCLIExitCode.ERROR,
@@ -383,6 +391,8 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.REPLAY_RECORD_NOT_FOUND: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.REPLAY_NOT_IN_REPLAY_MODE: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REPLAY_ENFORCEMENT_BLOCKED: EnumCLIExitCode.ERROR,
 }
 
 
@@ -470,6 +480,7 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.VERSION_INCOMPATIBLE: "Version incompatible",
         EnumCoreErrorCode.IMPORT_ERROR: "Import error occurred",
         EnumCoreErrorCode.DEPENDENCY_ERROR: "Dependency error occurred",
+        EnumCoreErrorCode.PROTOCOL_CONFIGURATION_ERROR: "Protocol dependency resolution or handler configuration failed",
         EnumCoreErrorCode.NO_SUITABLE_PROVIDER: "No suitable provider available",
         EnumCoreErrorCode.RATE_LIMIT_ERROR: "Rate limit exceeded",
         EnumCoreErrorCode.AUTHENTICATION_ERROR: "Authentication failed",
@@ -534,5 +545,7 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.REPLAY_RECORD_NOT_FOUND: "Replay: no matching effect record found",
         EnumCoreErrorCode.REPLAY_NOT_IN_REPLAY_MODE: "Replay: recorder is not in replay mode",
         EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: "Replay: effect_type must not be empty",
+        EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED: "Replay: UUID/value sequence exhausted during replay",
+        EnumCoreErrorCode.REPLAY_ENFORCEMENT_BLOCKED: "Replay: non-deterministic effect blocked in strict mode",
     }
     return descriptions.get(error_code, "Unknown error")

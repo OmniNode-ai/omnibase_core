@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Example Category Enum.
 
 Strongly typed example category values for configuration.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumExampleCategory(str, Enum):
+class EnumExampleCategory(StrValueHelper, str, Enum):
     """Strongly typed example category values."""
 
     PRIMARY = "primary"

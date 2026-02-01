@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Convert legacy stats dict[str, Any] to TypedDict.
 """
+
+from __future__ import annotations
 
 from .typed_dict_execution_stats import TypedDictExecutionStats
 from .typed_dict_legacy_stats import TypedDictLegacyStats

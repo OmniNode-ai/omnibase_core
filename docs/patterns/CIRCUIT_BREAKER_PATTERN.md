@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Patterns](./README.md) > Circuit Breaker Pattern
+
 # Circuit Breaker Pattern for External Dependencies
 
 The ONEX Circuit Breaker Pattern provides fault tolerance and cascading failure prevention for external service calls with comprehensive monitoring, configuration, and graceful degradation capabilities.

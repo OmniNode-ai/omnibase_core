@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Middleware composer for onion-style wrapping."""
 
 from collections.abc import Awaitable, Callable

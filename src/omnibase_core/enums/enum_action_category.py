@@ -4,10 +4,13 @@ Action Category Enum
 Categories for organizing different types of actions across tools.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumActionCategory(str, Enum):
+@unique
+class EnumActionCategory(StrValueHelper, str, Enum):
     """
     Categories for organizing different types of actions across tools.
 
@@ -23,10 +26,6 @@ class EnumActionCategory(str, Enum):
     WORKFLOW = "workflow"
     SYSTEM = "system"
 
-    def __str__(self) -> str:
-        """Return the string value of the category."""
-        return self.value
-
     def is_management_category(self) -> bool:
         """
         Check if this category involves management operations.
@@ -34,11 +33,11 @@ class EnumActionCategory(str, Enum):
         Returns:
             True if management category, False otherwise
         """
-        return self in [
+        return self in {
             self.LIFECYCLE,
             self.CONFIGURATION,
             self.REGISTRY,
-        ]
+        }
 
     def is_execution_category(self) -> bool:
         """
@@ -47,11 +46,11 @@ class EnumActionCategory(str, Enum):
         Returns:
             True if execution category, False otherwise
         """
-        return self in [
+        return self in {
             self.EXECUTION,
             self.WORKFLOW,
             self.SYSTEM,
-        ]
+        }
 
     def is_inspection_category(self) -> bool:
         """
@@ -60,7 +59,7 @@ class EnumActionCategory(str, Enum):
         Returns:
             True if inspection category, False otherwise
         """
-        return self in [
+        return self in {
             self.VALIDATION,
             self.INTROSPECTION,
-        ]
+        }

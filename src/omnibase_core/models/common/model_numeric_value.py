@@ -11,7 +11,7 @@ To avoid circular imports with error_codes, we use TYPE_CHECKING for type hints
 and runtime imports in validators that need to raise errors.
 """
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
@@ -159,17 +159,15 @@ class ModelNumericValue(BaseModel):
         """Greater than or equal comparison."""
         return self.value >= other.value
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Note: Previously had type alias (NumericInput = ModelNumericValue)
     # Removed to comply with ONEX strong typing standards.
     # Use explicit type: ModelNumericValue
-
-    # Export the model and type alias
 
     # Protocol method implementations
 

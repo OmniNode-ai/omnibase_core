@@ -54,6 +54,7 @@ from datetime import UTC, datetime
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.contracts.model_contract_fingerprint import (
     ModelContractFingerprint,
 )
@@ -187,6 +188,8 @@ def normalize_contract(
             raise ModelOnexError(
                 message="Contract must be a dictionary",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                actual_type=type(converted).__name__,
+                contract_type=type(contract).__name__,
             )
         normalized = converted
 
@@ -204,11 +207,13 @@ def normalize_contract(
         else:
             return json.dumps(normalized, sort_keys=True, indent=2)
 
-    except (TypeError, ValueError) as e:
+    except VALIDATION_ERRORS as e:
         raise ModelOnexError(
             message=f"Failed to normalize contract: {e}",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             original_error=str(e),
+            original_error_type=type(e).__name__,
+            contract_type=type(contract).__name__,
         ) from e
 
 
@@ -248,11 +253,8 @@ def compute_contract_fingerprint(
     if config is None:
         config = ModelContractNormalizationConfig()
 
-    # Extract version from contract - use getattr for Pydantic model
-    # Check both 'contract_version' (YAML contracts) and 'version' (strict contracts)
-    version_data = getattr(contract, "contract_version", None) or getattr(
-        contract, "version", None
-    )
+    # Extract version from contract (node contracts use contract_version)
+    version_data = getattr(contract, "contract_version", None)
     if version_data is None:
         # Default to 0.0.0 if no version specified
         version = ModelContractVersion(major=0, minor=0, patch=0)
@@ -278,6 +280,8 @@ def compute_contract_fingerprint(
             message=f"Invalid version type in contract: {type(version_data).__name__}",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             version_type=type(version_data).__name__,
+            contract_type=type(contract).__name__,
+            version_value=str(version_data)[:100],  # Truncate for safety
         )
 
     # Normalize the contract
@@ -361,6 +365,7 @@ class ContractHashRegistry:
             raise ModelOnexError(
                 message="Contract ID cannot be empty",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                provided_value=repr(contract_name),
             )
 
         if isinstance(fingerprint, str):

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Field type enumeration for metadata field information.
 
@@ -7,12 +5,15 @@ Provides strongly typed field types for metadata fields.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumFieldType(str, Enum):
+class EnumFieldType(StrValueHelper, str, Enum):
     """
     Strongly typed field type for metadata field definitions.
 
@@ -54,10 +55,6 @@ class EnumFieldType(str, Enum):
     BYTES = "bytes"
     ANY = "any"
 
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
-
     @classmethod
     def from_string(cls, value: str) -> EnumFieldType:
         """Convert string to field type with fallback handling."""
@@ -91,7 +88,7 @@ class EnumFieldType(str, Enum):
     @property
     def is_optional(self) -> bool:
         """Check if this is an optional field type."""
-        return "| None" in self.value or "None |" in self.value
+        return "| none" in self.value or "none |" in self.value
 
     @property
     def base_type(self) -> EnumFieldType:

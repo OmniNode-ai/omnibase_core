@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../index.md) > Getting Started > Quick Start
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
+
 # Quick Start Guide - omnibase_core
 
 **Status**: ✅ Complete (Updated for v0.4.0)

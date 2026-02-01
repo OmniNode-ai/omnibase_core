@@ -563,7 +563,7 @@ class TestModelNodeGraphReadyEvent:
         node_info = ModelNodeGraphInfo(
             node_id=uuid4(),
             node_name="compute-node",
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
             declared_subscriptions=["events.*"],
         )
         event = ModelNodeGraphReadyEvent(
@@ -583,7 +583,7 @@ class TestModelNodeGraphReadyEvent:
             ModelNodeGraphInfo(
                 node_id=uuid4(),
                 node_name=f"node-{i}",
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
             for i in range(3)
         ]
@@ -602,7 +602,7 @@ class TestModelNodeGraphReadyEvent:
             ModelNodeGraphInfo(
                 node_id=uuid4(),
                 node_name="test",
-                node_type="REDUCER",
+                node_type="REDUCER_GENERIC",
             )
         ]
         event = ModelNodeGraphReadyEvent.create(
@@ -618,12 +618,12 @@ class TestModelNodeGraphReadyEvent:
             ModelNodeGraphInfo(
                 node_id=uuid4(),
                 node_name="node-a",
-                node_type="COMPUTE",
+                node_type="COMPUTE_GENERIC",
             ),
             ModelNodeGraphInfo(
                 node_id=uuid4(),
                 node_name="node-b",
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             ),
         ]
         event = ModelNodeGraphReadyEvent(
@@ -638,7 +638,7 @@ class TestModelNodeGraphReadyEvent:
             ModelNodeGraphInfo(
                 node_id=uuid4(),
                 node_name="single",
-                node_type="COMPUTE",
+                node_type="COMPUTE_GENERIC",
             )
         ]
         with pytest.raises(ModelOnexError) as exc_info:
@@ -654,7 +654,7 @@ class TestModelNodeGraphReadyEvent:
             ModelNodeGraphInfo(
                 node_id=uuid4(),
                 node_name="serialized-node",
-                node_type="ORCHESTRATOR",
+                node_type="ORCHESTRATOR_GENERIC",
             )
         ]
         original = ModelNodeGraphReadyEvent.create(
@@ -1223,12 +1223,12 @@ class TestModelNodeGraphInfo:
         info = ModelNodeGraphInfo(
             node_id=node_id,
             node_name="compute-node",
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
         )
 
         assert info.node_id == node_id
         assert info.node_name == "compute-node"
-        assert info.node_type == "COMPUTE"
+        assert info.node_type == "COMPUTE_GENERIC"
         assert info.declared_subscriptions == []
         assert info.contract_path is None
 
@@ -1238,7 +1238,7 @@ class TestModelNodeGraphInfo:
         info = ModelNodeGraphInfo(
             node_id=node_id,
             node_name="full-node",
-            node_type="ORCHESTRATOR",
+            node_type="ORCHESTRATOR_GENERIC",
             declared_subscriptions=["events.*", "commands.*"],
             contract_path="/path/to/contract.yaml",
         )
@@ -1252,7 +1252,7 @@ class TestModelNodeGraphInfo:
         original = ModelNodeGraphInfo(
             node_id=node_id,
             node_name="serialized",
-            node_type="REDUCER",
+            node_type="REDUCER_GENERIC",
         )
 
         json_str = original.model_dump_json()

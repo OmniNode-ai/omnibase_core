@@ -1,464 +1,339 @@
-# Documentation Index - omnibase_core
+> **Navigation**: Home (You are here)
 
-**Welcome to the omnibase_core documentation!** This is your central hub for all documentation.
+# ONEX Core Documentation
 
-## 🚀 Quick Start Paths
+Welcome to the ONEX Core (`omnibase_core`) documentation.
 
-### New to omnibase_core?
-1. Read [Installation](getting-started/INSTALLATION.md) (5 min)
-2. Follow [Quick Start](getting-started/QUICK_START.md) (10 min)
-3. Build [Your First Node](getting-started/FIRST_NODE.md) (20 min)
+## Documentation Authority Model
 
-### Building Nodes?
-→ **Start here**: [Node Building Guide](guides/node-building/README.md) ← **RECOMMENDED**
+| Source | Purpose | Authority |
+|--------|---------|-----------|
+| **[CLAUDE.md](../CLAUDE.md)** | Coding standards, rules, conventions | **Authoritative** - definitive rules for agents and developers |
+| **docs/** | Explanations, examples, tutorials, references | Supplementary - context and how-to guidance |
 
-### Need Reference?
-→ **Templates**: [Node Templates](guides/templates/COMPUTE_NODE_TEMPLATE.md)
-→ **Architecture**: [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
+**When in conflict, CLAUDE.md takes precedence.** This separation ensures:
+- Rules are concise and enforceable in CLAUDE.md
+- Documentation provides depth without bloating the rules file
+- Agents and developers have a single source of truth for coding standards
 
-## 📚 Documentation Structure
-
-```text
-omnibase_core/docs/
-│
-├── Getting Started          → New developer onboarding
-├── Guides                   → Step-by-step tutorials
-│   └── Node Building       ★ Critical priority
-├── Architecture             → System design and concepts
-├── Reference                → Templates and API docs
-├── Standards                → Normative specifications
-└── Specialized Topics       → Threading, errors, patterns
-```
+**Quick Reference:**
+- Need a rule? Check [CLAUDE.md](../CLAUDE.md)
+- Need an explanation? Check [docs/](.)
+- Need an example? Check [docs/guides/](guides/node-building/README.md) or [docs/patterns/](patterns/CIRCUIT_BREAKER_PATTERN.md)
 
 ---
 
-## 📖 Getting Started
+## How to Use These Docs
 
-**For developers new to omnibase_core**
+**New here?** Start with the [Quick Start Guide](getting-started/QUICK_START.md). It gets you running in 10 minutes.
 
-| Document | Description | Time | Status |
-|----------|-------------|------|--------|
-| [Installation](getting-started/INSTALLATION.md) | Environment setup with Poetry | 5 min | ✅ Complete |
-| [Quick Start](getting-started/QUICK_START.md) | First 5 minutes with omnibase_core | 10 min | ✅ Complete |
-| [First Node](getting-started/FIRST_NODE.md) | Build your first simple node | 20 min | ✅ Complete |
+**Building something?** The docs are organized by intent:
+- **Getting Started** - Installation, first steps, first node
+- **Guides** - Step-by-step tutorials (follow along)
+- **Architecture** - How ONEX works (read when you need context)
+- **Reference** - Look up syntax, templates, APIs (use as needed)
+- **Patterns** - Battle-tested solutions (copy-paste encouraged)
+- **Decisions** - Why things work this way (read when confused)
+- **Standards** - Terminology and conventions (normative specifications)
 
----
-
-## 🛠️ Guides
-
-**Step-by-step tutorials for common tasks**
-
-### Node Building Guide ⭐ CRITICAL PRIORITY
-
-**Complete guide to building ONEX nodes - perfect for developers**
-
-| # | Document | Description | Time | Status |
-|---|----------|-------------|------|--------|
-| 0 | [Node Building Overview](guides/node-building/README.md) | Guide navigation and overview | 5 min | ✅ Complete |
-| 1 | [What is a Node?](guides/node-building/01_WHAT_IS_A_NODE.md) | Fundamentals and concepts | 5 min | ✅ Complete |
-| 2 | [Node Types](guides/node-building/02_NODE_TYPES.md) | EFFECT, COMPUTE, REDUCER, ORCHESTRATOR | 10 min | ✅ Complete |
-| 3 | [COMPUTE Node Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) | Build a price calculator | 30 min | ✅ Complete |
-| 4 | [EFFECT Node Tutorial](guides/node-building/04_EFFECT_NODE_TUTORIAL.md) | Build a file backup system | 30 min | ✅ Complete (Phase 2) |
-| 5 | [REDUCER Node Tutorial](guides/node-building/05_REDUCER_NODE_TUTORIAL.md) | Build a metrics aggregator | 30 min | ✅ Complete (Phase 2) |
-| 6 | [ORCHESTRATOR Node Tutorial](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) | Build a workflow coordinator | 45 min | ✅ Complete |
-| 7 | [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md) | Common patterns library | 20 min | ✅ Complete |
-| 8 | [Common Pitfalls](guides/node-building/08_COMMON_PITFALLS.md) | What to avoid | 15 min | ✅ Complete |
-| 9 | [Testing Intent Publisher](guides/node-building/09_TESTING_INTENT_PUBLISHER.md) | Testing with MixinIntentPublisher | 20 min | ✅ Complete |
-| 10 | [Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md) | Agent-friendly templates | 15 min | ✅ Excellent |
-
-**Progress**: 10 of 10 complete (100%)
-
-### Other Guides
-
-| Document | Description | Status |
-|----------|-------------|--------|
-| [**Execution Corpus Guide**](guides/EXECUTION_CORPUS_GUIDE.md) | ModelExecutionCorpus usage, modes, and best practices | ✅ Complete |
-| [**Custom Callable Patterns**](guides/CUSTOM_CALLABLE_PATTERNS.md) | Custom callable validators for invariant evaluation ⭐ **NEW** | ✅ Complete |
-| [**Pipeline Hook Registry**](guides/PIPELINE_HOOK_REGISTRY.md) | Pipeline runner and hook registry with usage examples | ✅ Complete |
-| [**Handler Conversion Guide**](guides/HANDLER_CONVERSION_GUIDE.md) | Mixin-to-handler conversion with examples ⭐ **NEW** | ✅ Complete |
-| [**Handler Conversion Checklist**](guides/HANDLER_CONVERSION_CHECKLIST.md) | Mixin-to-handler conversion tracking | ✅ Complete |
-| [**Migrating to Declarative Nodes**](guides/MIGRATING_TO_DECLARATIVE_NODES.md) | Migration guide for v0.4.0 FSM/workflow-driven nodes ⭐ **v0.4.0** | ✅ Complete |
-| [**Migrating to MixinEventBus v0.4**](guides/MIGRATING_TO_MIXIN_EVENT_BUS_V0_4.md) | v1.0 deprecations and migration paths for MixinEventBus ⭐ **v0.4.0** | ✅ Complete |
-| [**ISP Protocol Migration**](guides/ISP_PROTOCOL_MIGRATION.md) | Guide for migrating to ISP-compliant protocols | ✅ Complete |
-| [**Mixin-Subcontract Mapping**](guides/MIXIN_SUBCONTRACT_MAPPING.md) | Relationship between mixins and subcontracts | ✅ Complete |
-| [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
-
-### Manifest Models
-
-| Document | Description | Status |
-|----------|-------------|--------|
-| [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) | Mixin metadata validation and discovery (11 models, 39 tests) | ✅ Complete |
-| [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) | Docker Compose YAML validation (16 integrated models, 25 tests) | ✅ Complete |
+**Found a gap?** File an issue. These docs grow from real usage, not speculation.
 
 ---
 
-## 🏗️ Architecture
+## Quick Navigation
 
-**Understanding the ONEX system**
-
-| Document | Description | Status |
-|----------|-------------|--------|
-| [Architecture Overview](architecture/OVERVIEW.md) | High-level system design | ✅ Complete |
-| [**Four-Node Pattern**](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX architecture ⭐ **Excellent!** | ✅ Complete |
-| [**Canonical Execution Shapes**](architecture/CANONICAL_EXECUTION_SHAPES.md) | Allowed/forbidden data flow patterns ⭐ **NEW** | ✅ Complete |
-| [**Execution Shape Examples**](architecture/EXECUTION_SHAPE_EXAMPLES.md) | Practical examples for each canonical shape ⭐ **NEW** | ✅ Complete |
-| [**Message Topic Mapping**](architecture/MESSAGE_TOPIC_MAPPING.md) | Event/Command/Intent to topic routing rules ⭐ **NEW** | ✅ Complete |
-| [**Node Purity Guarantees**](architecture/NODE_PURITY_GUARANTEES.md) | Purity enforcement for COMPUTE/REDUCER nodes | ✅ Complete |
-| [**Node Class Hierarchy**](architecture/NODE_CLASS_HIERARCHY.md) | ModelService* vs Node* vs NodeCoreBase ⭐ **CRITICAL** | ✅ Complete |
-| [**Container Types**](architecture/CONTAINER_TYPES.md) | ModelContainer vs ModelONEXContainer ⚠️ **CRITICAL** | ✅ Complete |
-| [Dependency Injection](architecture/DEPENDENCY_INJECTION.md) | ModelONEXContainer patterns | ✅ Complete |
-| [Contract System](architecture/CONTRACT_SYSTEM.md) | Contract architecture | ✅ Complete |
-| [**Capability Resolution**](architecture/CAPABILITY_RESOLUTION.md) | Selection policies and ambiguity handling ⭐ **NEW** | Draft |
-| [Type System](architecture/TYPE_SYSTEM.md) | Typing patterns and conventions | ✅ Complete |
-| [Documentation Architecture](architecture/DOCUMENTATION_ARCHITECTURE.md) | Documentation structure and organization | ✅ Complete |
-| [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design and subcontract patterns | ✅ Complete |
-| [Mixin Architecture](architecture/MIXIN_ARCHITECTURE.md) | Mixin system design and patterns | ✅ Complete |
-| [**Mixins to Handlers Refactor**](architecture/MIXINS_TO_HANDLERS_REFACTOR.md) | Handler-based architecture, manifest spec, replay invariants ⭐ **BETA** | ✅ Draft |
-| [Protocol Architecture](architecture/PROTOCOL_ARCHITECTURE.md) | Protocol design and compliance | ✅ Complete |
-| [Effect Timeout Behavior](architecture/EFFECT_TIMEOUT_BEHAVIOR.md) | Timeout check points and retry behavior | ✅ Complete |
-| [Ecosystem Directory Structure](architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md) | Repository organization and patterns across ONEX ecosystem | ✅ Available |
-| [**Registration Trigger Design**](architecture/REGISTRATION_TRIGGER_DESIGN.md) | Registration trigger architecture and design patterns | ✅ Complete |
-
-### Architecture Decision Records (ADRs)
-
-**Key architectural decisions and their rationale**
-
-| Document | Description | Status |
-|----------|-------------|--------|
-| [ADR-001: Protocol-Based DI](architecture/decisions/ADR-001-protocol-based-di-architecture.md) | Protocol-based dependency injection architecture | ✅ Complete |
-| [ADR-002: Context Mutability](architecture/decisions/ADR-002-context-mutability-design-decision.md) | Design decision on context mutability | ✅ Complete |
-| [**ADR-012: Validator Error Handling**](architecture/adr/ADR-012-VALIDATOR-ERROR-HANDLING.md) | ModelOnexError in Pydantic validators with future compatibility ⭐ **v0.4.0** | ✅ Complete |
-| [ADR-003: Reducer Output Exception Consistency](architecture/decisions/ADR-003-reducer-output-exception-consistency.md) | Sentinel value pattern and exception handling strategy | ✅ Complete |
-| [ADR-004: Registration Trigger Architecture](architecture/decisions/ADR-004-registration-trigger-architecture.md) | Registration trigger selection (event vs command) | ✅ Complete |
-| [RISK-009: CI Workflow Modification](architecture/decisions/RISK-009-ci-workflow-modification-risk.md) | Risk assessment for CI workflow changes | ✅ Complete |
+| I want to... | Go to... |
+|--------------|----------|
+| Get started quickly | [Quick Start Guide](getting-started/QUICK_START.md) |
+| Build my first node | [First Node Tutorial](getting-started/FIRST_NODE.md) |
+| Understand node types | [Node Types Reference](guides/node-building/02_NODE_TYPES.md) |
+| See a complete tutorial | [Node Building Guide](guides/node-building/README.md) |
+| Use a production template | [Node Templates](guides/templates/COMPUTE_NODE_TEMPLATE.md) |
+| Understand the architecture | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
+| Handle errors properly | [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md) |
+| Find implementation patterns | [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md) |
+| Run the demo system | [Beta Demo Guide](demo/BETA_DEMO_GUIDE.md) |
 
 ---
 
-## 📋 Reference
+## Documentation Structure
 
-**Templates, APIs, and detailed specifications**
+### Getting Started
 
-### Node Templates
+New to ONEX? Start here.
 
-**Production-ready templates for each node type**
+| Document | Description |
+|----------|-------------|
+| [Installation](getting-started/installation.md) | Environment setup with Poetry |
+| [Quick Start](getting-started/QUICK_START.md) | First 10 minutes with omnibase_core |
+| [First Node](getting-started/FIRST_NODE.md) | Build your first simple node |
+| [README](../README.md) | Project overview and setup |
+| [CONTRIBUTING](../CONTRIBUTING.md) | How to contribute |
 
-| Document | Description | Status |
-|----------|-------------|--------|
-| [COMPUTE Node Template](guides/templates/COMPUTE_NODE_TEMPLATE.md) | Complete COMPUTE node template | ✅ Excellent |
-| [EFFECT Node Template](guides/templates/EFFECT_NODE_TEMPLATE.md) | Complete EFFECT node template | ✅ Excellent |
-| [REDUCER Node Template](guides/templates/REDUCER_NODE_TEMPLATE.md) | Complete REDUCER node template | ✅ Excellent |
-| [ORCHESTRATOR Node Template](guides/templates/ORCHESTRATOR_NODE_TEMPLATE.md) | Complete ORCHESTRATOR node template | ✅ Excellent |
-| [Enhanced Node Patterns](guides/templates/ENHANCED_NODE_PATTERNS.md) | Advanced patterns | ✅ Available |
+### Guides
 
-### API Reference
+Step-by-step tutorials and examples.
 
-| Document | Description | Status |
-|----------|-------------|--------|
-| [API Documentation](reference/API_DOCUMENTATION.md) | Core API reference | ✅ Available |
-| [Nodes API](reference/api/NODES.md) | Node class APIs | ✅ Complete |
-| [Models API](reference/api/MODELS.md) | Model class APIs | ✅ Complete |
-| [Enums API](reference/api/ENUMS.md) | Enumeration reference | ✅ Complete |
-| [Utils API](reference/api/UTILS.md) | Utility function reference | ✅ Complete |
+#### Node Building Guide (10 tutorials)
 
-### TypedDict Types (Serialization Boundaries)
+| Document | Description |
+|----------|-------------|
+| [Overview](guides/node-building/README.md) | Guide navigation and overview |
+| [What is a Node?](guides/node-building/01_WHAT_IS_A_NODE.md) | Fundamentals and concepts |
+| [Node Types](guides/node-building/02_NODE_TYPES.md) | EFFECT, COMPUTE, REDUCER, ORCHESTRATOR |
+| [COMPUTE Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) | Build a price calculator |
+| [EFFECT Tutorial](guides/node-building/04_EFFECT_NODE_TUTORIAL.md) | Build a file backup system |
+| [REDUCER Tutorial](guides/node-building/05_REDUCER_NODE_TUTORIAL.md) | Build a metrics aggregator |
+| [ORCHESTRATOR Tutorial](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) | Build a workflow coordinator |
+| [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md) | Common patterns library |
+| [Common Pitfalls](guides/node-building/08_COMMON_PITFALLS.md) | What to avoid |
+| [Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md) | AI-optimized templates |
 
-**Location**: `omnibase_core.types`
+#### Node Templates
 
-TypedDict types provide strongly-typed dictionary schemas for serialization boundaries, replacing `dict[str, Any]` with explicit type contracts. These types are used at API boundaries, event serialization, and inter-process communication.
+| Document | Description |
+|----------|-------------|
+| [COMPUTE Template](guides/templates/COMPUTE_NODE_TEMPLATE.md) | Production-ready COMPUTE node |
+| [EFFECT Template](guides/templates/EFFECT_NODE_TEMPLATE.md) | Production-ready EFFECT node |
+| [REDUCER Template](guides/templates/REDUCER_NODE_TEMPLATE.md) | Production-ready REDUCER node |
+| [ORCHESTRATOR Template](guides/templates/ORCHESTRATOR_NODE_TEMPLATE.md) | Production-ready ORCHESTRATOR node |
 
-| Category | Types | Purpose |
-|----------|-------|---------|
-| **CLI Serialization** | `TypedDictCliActionSerialized`, `TypedDictCliAdvancedParamsSerialized`, `TypedDictCliCommandOptionSerialized`, `TypedDictCliExecutionCoreSerialized`, `TypedDictCliExecutionMetadataSerialized`, `TypedDictCliNodeExecutionInputSerialized` | CLI input/output serialization |
-| **Validation** | `TypedDictValidationContainerSerialized`, `TypedDictValidationErrorSerialized`, `TypedDictValidationValueSerialized` | Validation result serialization |
-| **Events** | `TypedDictEventEnvelopeDict` | Event envelope serialization |
-| **Kubernetes** | `TypedDictK8sResources`, `TypedDictK8sDeployment`, `TypedDictK8sService`, `TypedDictK8sConfigMap` (and related K8s types) | Kubernetes resource definitions |
-| **Performance** | `TypedDictPerformanceCheckpointResult`, `TypedDictLoadBalancerStats` | Performance metrics serialization |
-| **Migration** | `TypedDictMigrationReport` | Migration result reporting |
-| **Workflow** | `TypedDictWorkflowOutputs` | Workflow output serialization |
-| **Policy** | `TypedDictPolicyValueData` | Policy configuration serialization |
-| **Custom Fields** | `TypedDictCustomFields` | Extensible custom field serialization |
-| **Model Values** | `TypedDictModelValueSerialized`, `TypedDictOutputFormatOptionsSerialized` | Model value serialization |
+#### Other Guides
 
-**Usage Pattern**:
-```python
-from omnibase_core.types import TypedDictValidationErrorSerialized
+| Document | Description |
+|----------|-------------|
+| [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies |
+| [Threading Guide](guides/THREADING.md) | Thread safety and concurrency |
+| [Migrating to Declarative Nodes](guides/MIGRATING_TO_DECLARATIVE_NODES.md) | v0.4.0 migration guide |
+| [Handler Conversion Guide](guides/HANDLER_CONVERSION_GUIDE.md) | Mixin-to-handler conversion |
+| [Execution Corpus Guide](guides/EXECUTION_CORPUS_GUIDE.md) | Test corpus usage |
 
-def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized:
-    """Serialize error with explicit type contract."""
-    return {
-        "error_code": error.error_code.value,
-        "message": error.message,
-        "context": error.context,
-    }
-```
+### Architecture
 
-**See**: [Type System](architecture/TYPE_SYSTEM.md) for type philosophy and patterns.
+Understand how ONEX works.
 
-### Architecture Research
+| Document | Description |
+|----------|-------------|
+| [Architecture Overview](architecture/overview.md) | High-level system design |
+| [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX node archetypes |
+| [Canonical Execution Shapes](architecture/CANONICAL_EXECUTION_SHAPES.md) | Allowed/forbidden data flow patterns |
+| [Execution Shape Examples](architecture/EXECUTION_SHAPE_EXAMPLES.md) | Practical shape examples |
+| [Node Class Hierarchy](architecture/NODE_CLASS_HIERARCHY.md) | Class inheritance structure |
+| [Container Types](architecture/CONTAINER_TYPES.md) | ModelContainer vs ModelONEXContainer |
+| [Dependency Injection](architecture/DEPENDENCY_INJECTION.md) | DI patterns with ModelONEXContainer |
+| [Contract System](architecture/CONTRACT_SYSTEM.md) | Contract architecture |
+| [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design |
+| [Protocol Architecture](architecture/PROTOCOL_ARCHITECTURE.md) | Protocol design and compliance |
+| [Mixin Architecture](architecture/MIXIN_ARCHITECTURE.md) | Mixin system design |
+| [Message Topic Mapping](architecture/MESSAGE_TOPIC_MAPPING.md) | Event/Command/Intent routing |
 
-| Document | Description | Status |
-|----------|-------------|--------|
-| [Reference Overview](reference/README.md) | Reference materials overview | ✅ Available |
-| [ONEX Mixin System Research](architecture/architecture-research/ONEX_MIXIN_SYSTEM_RESEARCH.md) | Mixin architecture | ✅ Available |
-| [4-Node Architecture Research](architecture/architecture-research/RESEARCH_REPORT_4_NODE_ARCHITECTURE.md) | Architecture research | ✅ Available |
-| [Mixin Architecture Patterns](architecture/mixin-architecture/ONEX_MIXIN_ARCHITECTURE_PATTERNS.md) | Mixin patterns | ✅ Available |
+### Contracts
 
-### Design Patterns
+Contract guides and DSL documentation.
 
-| Document | Description | Status |
-|----------|-------------|--------|
-| [Circuit Breaker Pattern](patterns/CIRCUIT_BREAKER_PATTERN.md) | Circuit breaker implementation | ✅ Available |
-| [Configuration Management](patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns | ✅ Available |
-| [Custom `__bool__` Pattern](patterns/CUSTOM_BOOL_PATTERN.md) | Result model truthiness | ✅ Available |
-| [Performance Benchmarks](guides/PERFORMANCE_BENCHMARKS.md) | Performance testing | ✅ Available |
+| Document | Description |
+|----------|-------------|
+| [Handler Contract Guide](contracts/HANDLER_CONTRACT_GUIDE.md) | Handler contract structure, behavior descriptors, capabilities |
+| [Operation Bindings DSL](contracts/OPERATION_BINDINGS_DSL.md) | Declarative handler wiring with expression syntax |
+| [Introspection Subcontract Guide](contracts/INTROSPECTION_SUBCONTRACT_GUIDE.md) | Introspection and discovery configuration |
 
-### Performance & Optimization
+### Reference
 
-| Document | Description | Status |
-|----------|-------------|--------|
-| [**Performance Benchmark Thresholds**](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md) | Threshold rationale, CI vs local, environment configuration ⭐ **NEW** | ✅ Complete |
-| [Model Reducer Output Benchmarks](performance/MODEL_REDUCER_OUTPUT_BENCHMARKS.md) | ModelReducerOutput performance baselines | ✅ Complete |
-| [Source Node ID Benchmarks](performance/SOURCE_NODE_ID_BENCHMARKS.md) | source_node_id field overhead analysis | ✅ Complete |
-| [**Performance Benchmark CI Integration**](ci/PERFORMANCE_BENCHMARK_CI_INTEGRATION.md) | CI pipeline integration, threshold enforcement, regression detection ⭐ **NEW** | ✅ Complete |
+Comprehensive reference documentation.
 
-### Changelog
+| Document | Description |
+|----------|-------------|
+| [API Documentation](reference/API_DOCUMENTATION.md) | Core API reference |
+| [Nodes API](reference/api/nodes.md) | Node class APIs |
+| [Models API](reference/api/models.md) | Model class APIs |
+| [Enums API](reference/api/enums.md) | Enumeration reference |
+| [Utils API](reference/api/utils.md) | Utility function reference |
+| [CLAUDE.md](../CLAUDE.md) | Coding standards and rules |
 
-| Document | Description | Status |
-|----------|-------------|--------|
-| [CHANGELOG.md](../CHANGELOG.md) | All notable changes following [Keep a Changelog](https://keepachangelog.com) format | ✅ Current |
+### Patterns
 
----
+Implementation patterns and best practices.
 
-## 📖 Standards & Conventions
+| Document | Description |
+|----------|-------------|
+| [Circuit Breaker](patterns/CIRCUIT_BREAKER_PATTERN.md) | Circuit breaker implementation |
+| [Configuration Management](patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns |
+| [Custom Bool Pattern](patterns/CUSTOM_BOOL_PATTERN.md) | Result model truthiness |
+| [Event-Driven Architecture](patterns/EVENT_DRIVEN_ARCHITECTURE.md) | Event-driven patterns |
+| [Lease Management](patterns/LEASE_MANAGEMENT_PATTERN.md) | Lease-based coordination |
+| [Pure FSM Reducer](patterns/PURE_FSM_REDUCER_PATTERN.md) | FSM-driven state management |
+| [Approved Union Patterns](patterns/APPROVED_UNION_PATTERNS.md) | Type union patterns |
+| [Anti-Patterns](patterns/ANTI_PATTERNS.md) | What to avoid |
 
-**Canonical references and project-wide standards**
+### Decisions (ADRs)
 
-| Document | Description | Status |
-|----------|-------------|--------|
-| [**ONEX Terminology Guide**](standards/onex_terminology.md) | Canonical definitions for Event, Intent, Action, Reducer, Orchestrator, Effect, Handler, Projection, Runtime | ✅ Complete |
+Architecture Decision Records explaining why things work the way they do. [Full index](architecture/decisions/INDEX.md).
 
----
+| Document | Description |
+|----------|-------------|
+| [ADR Index](architecture/decisions/INDEX.md) | All ADRs with categories |
+| [ADR-001: Protocol-Based DI](architecture/decisions/ADR-001-protocol-based-di-architecture.md) | Dependency injection architecture |
+| [ADR-002: Context Mutability](architecture/decisions/ADR-002-context-mutability-design-decision.md) | Context design decisions |
+| [ADR-003: Reducer Output Consistency](architecture/decisions/ADR-003-reducer-output-exception-consistency.md) | Exception handling strategy |
+| [ADR-012: Validator Error Handling](architecture/adr/ADR-012-VALIDATOR-ERROR-HANDLING.md) | Error handling in validators |
+| [ADR-013: Status Taxonomy](architecture/adr/ADR-013-status-taxonomy.md) | Canonical status enums |
 
-## 🔧 Specialized Topics
+### Conventions
 
-**Deep dives into specific topics**
+Coding standards and naming conventions.
 
-### Error Handling
-
-| Document | Description | Status |
-|----------|-------------|--------|
-| [**Error Handling Best Practices**](conventions/ERROR_HANDLING_BEST_PRACTICES.md) | Comprehensive error handling guide | ✅ Excellent |
-| [Anti-Patterns](patterns/ANTI_PATTERNS.md) | What to avoid | ✅ Available |
-
-### Security & Validation
-
-| Document | Description | Status |
-|----------|-------------|--------|
-| [**Security Validators**](../scripts/validation/README.md) | Secret detection and environment variable validation | ✅ Complete |
-
-### Concurrency & Threading
-
-| Document | Description | Status |
-|----------|-------------|--------|
-| [**Threading Guide**](guides/THREADING.md) | Thread safety and concurrency | ✅ Excellent |
-
-### Testing & CI
-
-| Document | Description | Status |
-|----------|-------------|--------|
-| [**CI Monitoring Guide**](ci/CI_MONITORING_GUIDE.md) | CI performance monitoring, alerting, and investigation | ✅ Complete |
-| [**Performance Benchmark CI Integration**](ci/PERFORMANCE_BENCHMARK_CI_INTEGRATION.md) | CI pipeline integration, threshold enforcement, regression detection ⭐ **NEW** | ✅ Complete |
-| [**Node Purity Failure Guide**](ci/CORE_PURITY_FAILURE.md) | Interpreting and fixing CI purity check failures | ✅ Complete |
-| [**Deprecation Warnings**](ci/DEPRECATION_WARNINGS.md) | Deprecation warning configuration and v0.5.0 migration path | ✅ Complete |
-| [**Integration Testing Guide**](testing/INTEGRATION_TESTING.md) | Integration test patterns, structure, and best practices | ✅ Complete |
-| [CI Test Strategy](testing/CI_TEST_STRATEGY.md) | CI/CD test strategy and optimization | ✅ Complete |
-| [Parallel Testing](testing/PARALLEL_TESTING.md) | Parallel test execution configuration | ✅ Complete |
-| [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
-
-### Troubleshooting & Debugging
-
-| Document | Description | Status |
-|----------|-------------|--------|
-| [**Async Hang Debugging**](troubleshooting/ASYNC_HANG_DEBUGGING.md) | Diagnose and fix async/event loop hangs in tests | ✅ Complete |
+| Document | Description |
+|----------|-------------|
+| [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md) | Comprehensive error handling guide |
+| [File Headers](conventions/FILE_HEADERS.md) | Python file header format |
+| [Naming Conventions](conventions/NAMING_CONVENTIONS.md) | Naming standards |
+| [Pydantic Best Practices](conventions/PYDANTIC_BEST_PRACTICES.md) | Pydantic model guidelines |
+| [Terminology Guide](conventions/TERMINOLOGY_GUIDE.md) | Project terminology |
 
 ### Standards
 
-| Document | Description | Status |
-|----------|-------------|--------|
-| [**ONEX Topic Taxonomy**](standards/onex_topic_taxonomy.md) | Kafka topic naming convention and configuration | ✅ Complete |
+Normative specifications and canonical references.
 
-### Architecture Patterns
+| Document | Description |
+|----------|-------------|
+| [ONEX Terminology](standards/onex_terminology.md) | Canonical ONEX definitions |
+| [ONEX Topic Taxonomy](standards/onex_topic_taxonomy.md) | Kafka topic naming convention |
 
-| Document | Description | Status |
-|----------|-------------|--------|
-| [**Subcontract Architecture**](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design | ✅ Excellent |
-| [**Handler Contract Guide**](contracts/HANDLER_CONTRACT_GUIDE.md) | Handler contract authoring, ID prefix convention | ✅ Complete |
-| [Approved Union Patterns](patterns/APPROVED_UNION_PATTERNS.md) | Type union patterns | ✅ Available |
+### Testing & CI
 
-### Project Documentation
+Testing documentation and CI/CD.
 
-| Document | Description | Status |
-|----------|-------------|--------|
-| [Production Cache Tuning](guides/PRODUCTION_CACHE_TUNING.md) | Cache optimization | ✅ Available |
-| [Documentation Validation Report](quality/DOCUMENTATION_VALIDATION_REPORT.md) | Doc quality report | ✅ Available |
+| Document | Description |
+|----------|-------------|
+| [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies |
+| [Integration Testing](testing/INTEGRATION_TESTING.md) | Integration test patterns |
+| [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) | CI performance monitoring |
+| [Parallel Testing](testing/PARALLEL_TESTING.md) | Parallel test execution |
+| [CI Test Strategy](testing/CI_TEST_STRATEGY.md) | CI/CD test strategy |
+| [Core Purity Failure](ci/CORE_PURITY_FAILURE.md) | Fixing purity check failures |
 
----
+### Demo
 
-## 🎯 Common Tasks
+Demo scenarios and validation guides.
 
-**Quick links for common development tasks**
-
-### I want to...
-
-| Task | Go To |
-|------|-------|
-| **Build my first node** | [Node Building Guide](guides/node-building/README.md) → [COMPUTE Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) |
-| **Understand node types** | [Node Types](guides/node-building/02_NODE_TYPES.md) |
-| **Choose the right base class** | [Node Class Hierarchy](architecture/NODE_CLASS_HIERARCHY.md) |
-| **Use a production template** | [Node Templates](guides/templates/COMPUTE_NODE_TEMPLATE.md) |
-| **Handle errors properly** | [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md) |
-| **Secure my code** | [Security Validators](../scripts/validation/README.md) |
-| **Make nodes thread-safe** | [Threading Guide](guides/THREADING.md) |
-| **Understand the architecture** | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
-| **Test my node** | [Testing Guide](guides/TESTING_GUIDE.md) |
-| **Write integration tests** | [Integration Testing Guide](testing/INTEGRATION_TESTING.md) |
-| **Monitor CI performance** | [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) |
-| **Fix CI purity failures** | [Node Purity Failure Guide](ci/CORE_PURITY_FAILURE.md) |
-| **Understand performance thresholds** | [Performance Benchmark Thresholds](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md) |
-| **Fix slow performance tests** | [Performance Benchmark Thresholds](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#ci-performance-degradation) |
-| **Debug async hangs** | [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md) |
-| **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
-| **Create handler contracts** | [Handler Contract Guide](contracts/HANDLER_CONTRACT_GUIDE.md) |
-| **Use TypedDict for serialization** | [TypedDict Types](#typeddict-types-serialization-boundaries) - Strongly-typed serialization boundaries |
-| **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |
-| **Validate docker-compose.yaml** | [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) - Docker validation |
-| **Use pipeline hooks** | [Pipeline Hook Registry](guides/PIPELINE_HOOK_REGISTRY.md) - Phase-based hook execution |
-| **Convert mixins to handlers** | [Handler Conversion Guide](guides/HANDLER_CONVERSION_GUIDE.md) - Step-by-step conversion |
-| **Create custom validators** | [Custom Callable Patterns](guides/CUSTOM_CALLABLE_PATTERNS.md) - Custom invariant validation |
-| **Create replay test corpora** | [Execution Corpus Guide](guides/EXECUTION_CORPUS_GUIDE.md) - Corpus curation and usage |
+| Document | Description |
+|----------|-------------|
+| [Beta Demo Guide](demo/BETA_DEMO_GUIDE.md) | Comprehensive guide to the ONEX demo system |
 
 ---
 
-## Development Resources
+## Core Concepts
 
-**Structured documentation for building ONEX nodes**
+### The Four Node Archetypes
 
-### Quick Start Resources
+#### ASCII Diagram
 
-- **[Node Building Guide](guides/node-building/README.md)** - Structured, parseable, step-by-step
-- **[Node Templates](guides/node-building/10_AGENT_TEMPLATES.md)** - Copy-paste ready templates
-- **[Node Templates](guides/templates/COMPUTE_NODE_TEMPLATE.md)** - Production-ready reference implementations
+```text
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   EFFECT    │───>│   COMPUTE   │───>│   REDUCER   │───>│ORCHESTRATOR │
+│   (Input)   │    │ (Process)   │    │(Aggregate)  │    │(Coordinate) │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
 
-### Development Workflow
+#### Mermaid Diagram
 
-1. Read [What is a Node?](guides/node-building/01_WHAT_IS_A_NODE.md) for concepts
-2. Read [Node Types](guides/node-building/02_NODE_TYPES.md) to choose type
-3. Follow type-specific tutorial:
-   - [COMPUTE](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) ✅
-   - [EFFECT](guides/node-building/04_EFFECT_NODE_TUTORIAL.md) ✅
-   - [REDUCER](guides/node-building/05_REDUCER_NODE_TUTORIAL.md) ✅
-   - [ORCHESTRATOR](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) ✅
-4. Use [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md) for common patterns
-5. Test with [Testing Guide](guides/TESTING_GUIDE.md)
+```mermaid
+flowchart LR
+    accTitle: ONEX Four Node Archetypes
+    accDescr: Diagram showing the four ONEX node archetypes. EFFECT handles external I/O, COMPUTE performs pure transformations, REDUCER manages state via FSM, and ORCHESTRATOR coordinates workflows.
 
----
+    EFF[EFFECT<br/>external I/O] -->|data| COMP[COMPUTE<br/>pure transforms]
+    COMP -->|results| RED[REDUCER<br/>state/FSM]
+    RED -->|events| ORCH[ORCHESTRATOR<br/>workflow]
 
-## 📝 Documentation Status
+    style EFF fill:#fce4ec
+    style COMP fill:#e8f5e9
+    style RED fill:#fff3e0
+    style ORCH fill:#e3f2fd
+```
 
-### Completion Overview
+| Archetype | Purpose | Side Effects |
+|-----------|---------|--------------|
+| **EFFECT** | External I/O (databases, APIs, files) | Yes |
+| **COMPUTE** | Pure transformations and validation | None (pure) |
+| **REDUCER** | Manages state via FSM, emits intents | None (pure) |
+| **ORCHESTRATOR** | Coordinates workflows, routes events | Publishes events |
 
-| Category | Complete | In Progress | Planned | Total |
-|----------|----------|-------------|---------|-------|
-| **Getting Started** | 3 | 0 | 0 | 3 |
-| **Node Building** | 10 | 0 | 0 | 10 |
-| **Architecture** | 18 | 0 | 0 | 18 |
-| **Reference** | 14 | 0 | 0 | 14 |
-| **Standards** | 1 | 0 | 0 | 1 |
-| **Specialized** | 15 | 0 | 0 | 15 |
-| **TOTAL** | **62** | **0** | **0** | **62** |
+### Contract-Driven Development
 
-**Overall Progress**: 100% complete (62/62 documents)
+All behavior is declared in YAML contracts:
+- Node configuration: Inputs, outputs, capabilities
+- State machines: FSM transitions and actions
+- Workflows: Execution graphs with dependencies
+- I/O operations: External service interactions
 
-### Priority Items
+### Key Design Rules
 
-**Completed**:
-- ✅ Node Building Guide (10/10 complete)
-- ✅ Getting Started guides (3/3 complete)
-- ✅ Architecture documentation (18/18 complete)
-- ✅ Testing Guide
-- ✅ Integration Testing Guide
-- ✅ All node tutorials (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)
-- ✅ Agent Templates (AI-optimized node templates)
-
----
-
-## 🔍 Finding What You Need
-
-### By Role
-
-**New Developer**:
-1. [Installation](getting-started/INSTALLATION.md) → [Quick Start](getting-started/QUICK_START.md) → [First Node](getting-started/FIRST_NODE.md)
-
-**Experienced Developer**:
-1. [Node Building Guide](guides/node-building/README.md) → Choose tutorial → Build
-
-**Architect**:
-1. [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) → [Architecture Research](architecture/architecture-research/RESEARCH_REPORT_4_NODE_ARCHITECTURE.md)
-
-**AI Agent**:
-1. [Node Building Guide](guides/node-building/README.md) → [Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md)
-
-### By Task
-
-**Building**:
-- Nodes: [Node Building Guide](guides/node-building/README.md)
-- Tests: [Testing Guide](guides/TESTING_GUIDE.md)
-- Workflows: [ORCHESTRATOR Tutorial](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md)
-
-**Learning**:
-- Concepts: [What is a Node?](guides/node-building/01_WHAT_IS_A_NODE.md)
-- Architecture: [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
-- Patterns: [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md)
-
-**Debugging**:
-- Errors: [Error Handling](conventions/ERROR_HANDLING_BEST_PRACTICES.md)
-- Async Hangs: [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md)
-- Performance: [Production Cache Tuning](guides/PRODUCTION_CACHE_TUNING.md)
-- Threading: [Threading Guide](guides/THREADING.md)
+| Rule | Reason |
+|------|--------|
+| Always call `super().__init__(container)` | Base classes eliminate 80+ lines of boilerplate |
+| Use protocol names for DI | `container.get_service("ProtocolLogger")` not `"LoggerService"` |
+| No `dict[str, Any]` | Use TypedDict or Pydantic models for type safety |
+| ORCHESTRATOR cannot return results | Only COMPUTE nodes return typed results |
+| Always use Poetry | `poetry run pytest`, never `python -m pytest` |
 
 ---
 
-## 🔗 External Resources
+## Package Structure
 
-- **omnibase_core Repository**: [GitHub](https://github.com/OmniNode-ai/omnibase_core)
-- **ONEX Ecosystem**: [Documentation](https://onex-framework.dev)
-- **Poetry Documentation**: [python-poetry.org](https://python-poetry.org/)
-- **Pydantic Documentation**: [pydantic.dev](https://pydantic.dev/)
+```text
+src/omnibase_core/
+├── constants/              # Project constants
+├── container/              # DI container implementation
+├── decorators/             # Utility decorators (@standard_error_handling)
+├── discovery/              # Service discovery mechanisms
+├── enums/                  # Core enumerations
+├── errors/                 # Error handling (ModelOnexError)
+├── events/                 # Event system
+├── infrastructure/         # Base node classes
+├── mixins/                 # Reusable behavior mixins
+├── models/                 # Pydantic models (40+ subdirectories)
+│   ├── base/               # Base model classes
+│   ├── container/          # ModelONEXContainer
+│   ├── contracts/          # Contract models
+│   ├── core/               # Core models (ModelContainer)
+│   ├── errors/             # Error models
+│   ├── events/             # Event envelope models
+│   └── ...                 # Many more model categories
+├── nodes/                  # Node implementations (v0.4.0+)
+│   ├── node_compute.py     # COMPUTE node base
+│   ├── node_effect.py      # EFFECT node base
+│   ├── node_reducer.py     # REDUCER node base
+│   └── node_orchestrator.py # ORCHESTRATOR node base
+├── primitives/             # Primitive types
+├── protocols/              # Protocol definitions
+├── runtime/                # Runtime components (FileRegistry)
+├── types/                  # TypedDict definitions
+├── utils/                  # Utility functions
+└── validation/             # Validation framework
+```
 
 ---
 
-## 📞 Getting Help
+## Getting Help
 
-- **Documentation Issues**: File an issue in the repository
-- **Questions**: Check existing documentation first, then ask
-- **Contributions**: See [Contributing Guide](../CONTRIBUTING.md)
-
----
-
-## 📚 Documentation Architecture
-
-See [Documentation Architecture](architecture/DOCUMENTATION_ARCHITECTURE.md) for information about:
-- Documentation organization
-- Writing standards
-- Maintenance strategy
-- Quality gates
+- **Code standards**: See [CLAUDE.md](../CLAUDE.md)
+- **Patterns**: See [docs/patterns/](patterns/CIRCUIT_BREAKER_PATTERN.md)
+- **Node building**: See [Node Building Guide](guides/node-building/README.md)
+- **Issues**: Open an issue on GitHub
 
 ---
 
-**Last Updated**: 2025-12-17
-**Documentation Version**: 1.1.0
-**Framework Version**: omnibase_core 0.4.0+
+## Document Status
 
----
-
-**Ready to start?** → [Node Building Guide](guides/node-building/README.md) ⭐
+| Section | Status | Notes |
+|---------|--------|-------|
+| Getting Started | Complete | 3 guides available |
+| Node Building | Complete | 10 tutorials |
+| Architecture | Complete | 18+ documents |
+| Reference | Complete | API docs, templates |
+| Patterns | Complete | 8 pattern documents |
+| Decisions | Complete | 6+ ADRs |
+| Conventions | Complete | 5 convention docs |
+| Standards | Complete | 2 normative specs |
+| Testing | Complete | 6 testing guides |

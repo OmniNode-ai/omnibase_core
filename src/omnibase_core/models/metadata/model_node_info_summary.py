@@ -1,24 +1,21 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Node Info Summary Model (Composed).
 
 Composed model that combines focused node information components.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_categorization_update_data import (
     TypedDictCategorizationUpdateData,
@@ -86,222 +83,178 @@ class ModelNodeInfoSummary(BaseModel):
     # Properties for direct access
     @property
     def node_id(self) -> UUID:
-        """Get node ID."""
         return self.core.node_id
 
     @node_id.setter
     def node_id(self, value: UUID) -> None:
-        """Set node ID."""
         self.core.node_id = value
 
     @property
     def node_display_name(self) -> str | None:
-        """Get node display name."""
         return self.core.node_display_name
 
     @node_display_name.setter
     def node_display_name(self, value: str | None) -> None:
-        """Set node display name."""
         self.core.node_display_name = value
 
     @property
     def description(self) -> str | None:
-        """Get description."""
         return self.core.description
 
     @description.setter
     def description(self, value: str | None) -> None:
-        """Set description."""
         self.core.description = value
 
     @property
     def node_type(self) -> EnumNodeType:
-        """Get node type."""
         return self.core.node_type
 
     @node_type.setter
     def node_type(self, value: EnumNodeType) -> None:
-        """Set node type."""
         self.core.node_type = value
 
     @property
     def status(self) -> EnumMetadataNodeStatus:
-        """Get status."""
         return self.core.status
 
     @status.setter
     def status(self, value: EnumMetadataNodeStatus) -> None:
-        """Set status."""
         self.core.status = value
 
     @property
     def complexity(self) -> EnumConceptualComplexity:
-        """Get complexity."""
         return self.core.complexity
 
     @complexity.setter
     def complexity(self, value: EnumConceptualComplexity) -> None:
-        """Set complexity."""
         self.core.complexity = value
 
     @property
     def version(self) -> ModelSemVer:
-        """Get version."""
         return self.core.version
 
     @version.setter
     def version(self, value: ModelSemVer) -> None:
-        """Set version."""
         self.core.version = value
 
     @property
     def created_at(self) -> datetime | None:
-        """Get created timestamp."""
         return self.timestamps.created_at
 
     @created_at.setter
     def created_at(self, value: datetime | None) -> None:
-        """Set created timestamp."""
         self.timestamps.created_at = value
 
     @property
     def updated_at(self) -> datetime | None:
-        """Get updated timestamp."""
         return self.timestamps.updated_at
 
     @updated_at.setter
     def updated_at(self, value: datetime | None) -> None:
-        """Set updated timestamp."""
         self.timestamps.updated_at = value
 
     @property
     def last_validated(self) -> datetime | None:
-        """Get last validated timestamp."""
         return self.timestamps.last_validated
 
     @last_validated.setter
     def last_validated(self, value: datetime | None) -> None:
-        """Set last validated timestamp."""
         self.timestamps.last_validated = value
 
     @property
     def tags(self) -> list[str]:
-        """Get tags."""
         return self.categorization.tags
 
     @tags.setter
     def tags(self, value: list[str]) -> None:
-        """Set tags."""
         self.categorization.tags = value.copy()
 
     @property
     def categories(self) -> list[str]:
-        """Get categories."""
         return self.categorization.categories
 
     @categories.setter
     def categories(self, value: list[str]) -> None:
-        """Set categories."""
         self.categorization.categories = value.copy()
 
     @property
     def dependencies(self) -> list[UUID]:
-        """Get dependencies."""
         return self.categorization.dependencies
 
     @dependencies.setter
     def dependencies(self, value: list[UUID]) -> None:
-        """Set dependencies."""
         self.categorization.dependencies = value.copy()
 
     @property
     def related_nodes(self) -> list[UUID]:
-        """Get related nodes."""
         return self.categorization.related_nodes
 
     @related_nodes.setter
     def related_nodes(self, value: list[UUID]) -> None:
-        """Set related nodes."""
         self.categorization.related_nodes = value.copy()
 
     @property
     def has_documentation(self) -> bool:
-        """Get has documentation."""
         return self.quality.has_documentation
 
     @has_documentation.setter
     def has_documentation(self, value: bool) -> None:
-        """Set has documentation."""
         self.quality.has_documentation = value
 
     @property
     def has_examples(self) -> bool:
-        """Get has examples."""
         return self.quality.has_examples
 
     @has_examples.setter
     def has_examples(self, value: bool) -> None:
-        """Set has examples."""
         self.quality.has_examples = value
 
     @property
     def documentation_quality(self) -> EnumDocumentationQuality:
-        """Get documentation quality."""
         return self.quality.documentation_quality
 
     @documentation_quality.setter
     def documentation_quality(self, value: EnumDocumentationQuality) -> None:
-        """Set documentation quality."""
         self.quality.documentation_quality = value
 
     @property
     def usage_count(self) -> int:
-        """Get usage count."""
         return self.performance.usage_count
 
     @usage_count.setter
     def usage_count(self, value: int) -> None:
-        """Set usage count."""
         self.performance.usage_count = value
 
     @property
     def success_rate(self) -> float:
-        """Get success rate."""
         return self.performance.success_rate
 
     @success_rate.setter
     def success_rate(self, value: float) -> None:
-        """Set success rate."""
         self.performance.success_rate = value
 
     @property
     def error_rate(self) -> float:
-        """Get error rate."""
         return self.performance.error_rate
 
     @error_rate.setter
     def error_rate(self, value: float) -> None:
-        """Set error rate."""
         self.performance.error_rate = value
 
     @property
     def average_execution_time_ms(self) -> float:
-        """Get average execution time."""
         return self.performance.average_execution_time_ms
 
     @average_execution_time_ms.setter
     def average_execution_time_ms(self, value: float) -> None:
-        """Set average execution time."""
         self.performance.average_execution_time_ms = value
 
     @property
     def memory_usage_mb(self) -> float:
-        """Get memory usage."""
         return self.performance.memory_usage_mb
 
     @memory_usage_mb.setter
     def memory_usage_mb(self, value: float) -> None:
-        """Set memory usage."""
         self.performance.memory_usage_mb = value
 
     # Composite methods
@@ -561,13 +514,11 @@ class ModelNodeInfoSummary(BaseModel):
         timestamps = ModelNodeTimestamps.create_new()
         return cls(core=core, timestamps=timestamps)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

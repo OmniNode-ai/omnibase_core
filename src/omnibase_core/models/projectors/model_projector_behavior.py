@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Projector Behavior Configuration Model.
 
@@ -122,10 +119,11 @@ class ModelProjectorBehavior(BaseModel):
         description="Projection mode: upsert, insert_only, or append",
     )
 
-    upsert_key: str | None = Field(
+    upsert_key: str | list[str] | None = Field(
         default=None,
         description=(
-            "Column name to use for upsert conflict detection. "
+            "Column name(s) to use for upsert conflict detection. Can be a single "
+            "column name (str) or a list of column names for composite keys. "
             "Only applicable when mode='upsert'. "
             "When None and mode='upsert', the projector runtime falls back to "
             "using projection_schema.primary_key as the conflict detection key; "

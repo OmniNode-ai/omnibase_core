@@ -56,7 +56,7 @@ class TestModelContractBase:
 
         self.minimal_valid_data = {
             "name": "test_contract",
-            "version": self.valid_semver,
+            "contract_version": self.valid_semver,
             "description": "Test contract description",
             "node_type": EnumNodeType.COMPUTE_GENERIC,
             "input_model": "omnibase_core.models.test.TestInputModel",
@@ -70,7 +70,7 @@ class TestModelContractBase:
         contract = SampleContractModel(**self.minimal_valid_data)
 
         assert contract.name == "test_contract"
-        assert contract.version == self.valid_semver
+        assert contract.contract_version == self.valid_semver
         assert contract.description == "Test contract description"
         assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
         assert contract.input_model == "omnibase_core.models.test.TestInputModel"

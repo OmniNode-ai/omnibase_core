@@ -14,7 +14,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
+from omnibase_core.enums import EnumSeverity
 
 
 class ModelInvariantResult(BaseModel):
@@ -55,7 +55,7 @@ class ModelInvariantResult(BaseModel):
         ...,
         description="Whether the invariant passed validation",
     )
-    severity: EnumInvariantSeverity = Field(
+    severity: EnumSeverity = Field(
         ...,
         description="Severity of the invariant (for determining impact)",
     )

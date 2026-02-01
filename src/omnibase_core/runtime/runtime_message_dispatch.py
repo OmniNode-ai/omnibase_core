@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2025 OmniNode Team
 """
 Message Dispatch Engine.
 
@@ -726,7 +724,7 @@ class MessageDispatchEngine:
         duration_ms: float | None = None,
         correlation_id: str | None = None,
         trace_id: str | None = None,
-        dispatch_id: str | None = None,
+        dispatch_id: str | None = None,  # string-id-ok: log context field
         error_code: str | None = None,
     ) -> TypedDictLogContext:
         """
@@ -1116,6 +1114,7 @@ class MessageDispatchEngine:
             except asyncio.CancelledError:
                 # Never suppress async cancellation
                 raise
+            # boundary-ok: handler errors captured for metrics and logging, continue dispatch loop
             except Exception as e:
                 handler_duration_ms = (time.perf_counter() - handler_start_time) * 1000
                 self._increment_metric("handler_error_count")

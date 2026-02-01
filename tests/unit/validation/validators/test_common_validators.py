@@ -1191,37 +1191,38 @@ class TestValidatorEdgeCases:
     def test_locale_validator_case_sensitivity(self) -> None:
         """Test that locale validator handles case correctly.
 
-        Language subtags are case-insensitive per BCP 47, but our validator
-        may be strict. Test current behavior.
+        The regex pattern [a-zA-Z] accepts both upper and lowercase letters,
+        so mixed case like "EN-us" should be valid.
         """
         # Standard lowercase language
         assert validate_bcp47_locale("en") == "en"
         # Standard uppercase region
         assert validate_bcp47_locale("en-US") == "en-US"
-        # Mixed case (depends on implementation)
+        # Mixed case is valid - regex accepts [a-zA-Z]
         result = validate_bcp47_locale("EN-us")
-        assert result is not None  # Just verify it doesn't crash
+        assert result == "EN-us", "Mixed case locales should be accepted"
 
     def test_locale_validator_grandfathered_tags(self) -> None:
-        """Test behavior with grandfathered language tags.
+        """Test that grandfathered language tags are NOT supported.
 
-        Some grandfathered tags like 'i-default' exist in BCP 47.
-        Our validator may or may not support them.
+        Per the validator documentation, grandfathered tags like 'i-default'
+        are explicitly NOT supported. They should raise ValueError.
         """
-        # These may fail or pass depending on implementation
-        # Just ensure they don't crash unexpectedly
-        try:
+        # Grandfathered tags are explicitly not supported per validator docs
+        with pytest.raises(ValueError) as exc_info:
             validate_bcp47_locale("i-default")
-        except ValueError:
-            pass  # Expected if not supported
+        assert "Invalid BCP 47 locale format" in str(exc_info.value)
 
     def test_locale_validator_private_use(self) -> None:
-        """Test behavior with private use subtags."""
-        # Private use subtags start with 'x-'
-        try:
+        """Test that private use subtags are NOT supported.
+
+        Per the validator documentation, private use subtags (x-...)
+        are explicitly NOT supported. They should raise ValueError.
+        """
+        # Private use subtags are explicitly not supported per validator docs
+        with pytest.raises(ValueError) as exc_info:
             validate_bcp47_locale("x-custom")
-        except ValueError:
-            pass  # May not be supported
+        assert "Invalid BCP 47 locale format" in str(exc_info.value)
 
     # =========================================================================
     # Semantic Version Validator Edge Cases

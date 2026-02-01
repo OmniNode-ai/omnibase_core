@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Reference > Validation Framework
+
 # Omnibase Core Validation Tools
 
 Comprehensive validation framework for ONEX compliance across the omni* ecosystem. This module provides reusable validation tools that can be imported and used by other repositories to maintain code quality and architectural standards.

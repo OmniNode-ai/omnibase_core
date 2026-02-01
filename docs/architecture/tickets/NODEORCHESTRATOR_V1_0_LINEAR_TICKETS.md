@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > Tickets > NodeOrchestrator v1.0 Linear Tickets
+
 # Contract-Driven NodeOrchestrator v1.0 - Linear Ticket Breakdown (Consolidated)
 
 > **Spec Version**: 1.0.5
@@ -818,7 +820,7 @@ For the minimal valid contract example:
 - [ ] EnumExecutionMode (SEQUENTIAL, PARALLEL, BATCH; CONDITIONAL/STREAMING reserved)
   - **Note**: `EnumExecutionMode` controls wave construction only in v1.0. It does NOT affect step ordering within a wave.
 - [ ] EnumActionType (COMPUTE, EFFECT, REDUCE, ORCHESTRATE, CUSTOM)
-- [ ] EnumWorkflowState (PENDING, RUNNING, COMPLETED, FAILED, CANCELLED; PAUSED reserved)
+- [ ] EnumWorkflowStatus (PENDING, RUNNING, COMPLETED, FAILED, CANCELLED; PAUSED reserved)
 - [ ] EnumFailureRecoveryStrategy (RETRY, ABORT; ROLLBACK/COMPENSATE reserved)
 - [ ] EnumBranchCondition (behavior governed by Reserved Semantics rule)
 - [ ] Unit tests for all enum values and string representations

@@ -7,7 +7,7 @@ with discriminated union patterns following ONEX strong typing standards.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -181,11 +181,11 @@ class ModelValue(BaseModel):
             return "null"
         return str(self.raw_value)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -197,7 +197,7 @@ class ModelValue(BaseModel):
                 if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -211,7 +211,7 @@ class ModelValue(BaseModel):
                 if hasattr(self, key) and isinstance(value, (str, int, float, bool)):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -227,7 +227,7 @@ class ModelValue(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

@@ -5,10 +5,13 @@ Hub Capability Enum.
 Strongly-typed enum for hub capability types for different domains.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumHubCapability(str, Enum):
+@unique
+class EnumHubCapability(StrValueHelper, str, Enum):
     """Hub capability types for different domains."""
 
     # Core hub capabilities
@@ -32,3 +35,6 @@ class EnumHubCapability(str, Enum):
     VALIDATION_WORKFLOWS = "validation_workflows"
     PROGRESSIVE_ROLLOUTS = "progressive_rollouts"
     ROLLBACK_AUTOMATION = "rollback_automation"
+
+
+__all__ = ["EnumHubCapability"]

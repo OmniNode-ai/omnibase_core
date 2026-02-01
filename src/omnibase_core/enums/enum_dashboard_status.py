@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Dashboard status enumeration for dashboard lifecycle states.
 
 This module defines the lifecycle states for dashboard instances,
@@ -19,12 +16,15 @@ Example:
                 refresh_widgets()
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 __all__ = ("EnumDashboardStatus",)
 
 
-class EnumDashboardStatus(str, Enum):
+@unique
+class EnumDashboardStatus(StrValueHelper, str, Enum):
     """Dashboard connection and lifecycle status enumeration.
 
     Tracks the operational state of a dashboard instance through its

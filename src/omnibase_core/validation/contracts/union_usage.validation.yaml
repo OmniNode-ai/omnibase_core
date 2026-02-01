@@ -1,0 +1,77 @@
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: union_usage
+  validator_name: ONEX Union Type Validator
+  validator_description: |
+    Validates Union type usage patterns for ONEX compliance.
+    Detects problematic patterns such as:
+    - Unions with 3+ types that should be replaced with models
+    - Mixed primitive/complex type unions
+    - Primitive overload unions (str | int | bool | float)
+    - Optional[T] syntax (should use T | None per PEP 604)
+    - Union[T, None] syntax (should use T | None per PEP 604)
+
+  target_patterns:
+    - "**/*.py"
+
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/venv/**"
+    - "**/__pycache__/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/examples/**"
+
+  rules:
+    - rule_id: complex_union
+      description: Unions with 3+ types should be replaced with models
+      severity: warning
+      enabled: true
+
+    - rule_id: mixed_primitive_complex
+      description: Avoid mixing primitive and complex types in unions
+      severity: warning
+      enabled: true
+
+    - rule_id: primitive_overload
+      description: Unions with 4+ primitive types should use specific type or model
+      severity: warning
+      enabled: true
+
+    - rule_id: everything_union
+      description: Overly broad unions should use proper domain model
+      severity: warning
+      enabled: true
+
+    - rule_id: optional_syntax
+      description: Use T | None instead of Optional[T] (PEP 604)
+      severity: info
+      enabled: true
+
+    - rule_id: union_none_syntax
+      description: Use T | None instead of Union[T, None]
+      severity: info
+      enabled: true
+
+  suppression_comments:
+    - "# ONEX_EXCLUDE:"
+    - "# noqa: union"
+    - "# type: ignore"
+    - "# union-ok:"
+
+  severity_default: warning
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+
+  # PARALLEL EXECUTION: Indicates PROCESS-safe parallel file processing is supported.
+  # This does NOT mean thread-safe within a single process - each worker must create
+  # its own validator instance. For full thread safety details, see:
+  # docs/guides/THREADING.md and contracts/any_type.validation.yaml
+  parallel_execution: true

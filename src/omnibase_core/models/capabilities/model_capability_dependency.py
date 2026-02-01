@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Capability Dependency Model for Vendor-Agnostic Dependency Declaration.
 
@@ -292,6 +289,7 @@ class ModelCapabilityDependency(BaseModel):
         description="Whether unmet prefer constraints cause failure (True) or warnings (False)",
     )
 
+    # string-version-ok: This is a semver RANGE expression (e.g., ">=1.0.0 <2.0.0"), not a single version
     version_range: str | None = Field(
         default=None,
         description="Optional semver range for capability version (e.g., '>=1.0.0 <2.0.0', '^1.2.3', '~1.2.3')",

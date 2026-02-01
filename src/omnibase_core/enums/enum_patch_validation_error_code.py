@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Patch validation error codes for contract patch validation.
 
 These error codes are used by ContractPatchValidator to categorize
@@ -22,10 +19,13 @@ Related:
 .. versionadded:: 0.4.0
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumPatchValidationErrorCode(str, Enum):
+@unique
+class EnumPatchValidationErrorCode(StrValueHelper, str, Enum):
     """Error codes for contract patch validation.
 
     These codes categorize the types of issues that can be detected
@@ -100,3 +100,6 @@ class EnumPatchValidationErrorCode(str, Enum):
         "CONTRACT_PATCH_PYDANTIC_VALIDATION_ERROR"
     )
     """Pydantic model validation error occurred."""
+
+
+__all__ = ["EnumPatchValidationErrorCode"]

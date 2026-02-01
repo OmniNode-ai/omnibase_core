@@ -9,8 +9,6 @@ Comprehensive tests for the unified event bus mixin including:
 - Event bus access methods (require, get, has)
 - Node identification methods (get_node_name, get_node_id)
 - Event publishing (sync and async)
-- Event listener lifecycle management
-- Event pattern handling
 - Generic type parameter usage
 - Thread safety scenarios
 - Error handling
@@ -98,14 +96,6 @@ class TestMixinEventBusInitialization:
         assert state.is_bound is False
         assert state.node_name is None
 
-    def test_lazy_listener_handle_is_none_initially(self) -> None:
-        """Test that listener handle is None before starting listener."""
-        node = TestMixinNode()
-
-        handle = node._event_bus_listener_handle
-
-        assert handle is None
-
     def test_runtime_state_singleton_behavior(self) -> None:
         """Test that runtime state returns same instance on repeated access."""
         node = TestMixinNode()
@@ -189,28 +179,6 @@ class TestMixinEventBusBindRegistry:
 
         # Should be able to get event bus from registry
         assert node._get_event_bus() is mock_registry.event_bus
-
-
-@pytest.mark.unit
-class TestMixinEventBusBindContractPath:
-    """Test MixinEventBus.bind_contract_path() method."""
-
-    def test_bind_contract_path_stores_path(self) -> None:
-        """Test that contract path is stored in runtime state."""
-        node = TestMixinNode()
-
-        node.bind_contract_path("/path/to/contract.yaml")
-
-        assert node._event_bus_runtime_state.contract_path == "/path/to/contract.yaml"
-
-    def test_bind_contract_path_allows_rebinding(self) -> None:
-        """Test that contract path can be changed."""
-        node = TestMixinNode()
-
-        node.bind_contract_path("/path/one.yaml")
-        node.bind_contract_path("/path/two.yaml")
-
-        assert node._event_bus_runtime_state.contract_path == "/path/two.yaml"
 
 
 @pytest.mark.unit
@@ -573,96 +541,6 @@ class TestMixinEventBusPublishEvent:
 
 
 @pytest.mark.unit
-class TestMixinEventBusStartEventListener:
-    """Test MixinEventBus.start_event_listener() method."""
-
-    def test_start_event_listener_creates_handle(self) -> None:
-        """Test that start_event_listener creates a listener handle."""
-        node = TestMixinNode()
-        mock_bus = Mock()
-        mock_bus.subscribe = Mock(return_value="subscription")
-        node.bind_event_bus(mock_bus)
-
-        with patch.object(node, "get_event_patterns", return_value=["test.pattern"]):
-            handle = node.start_event_listener()
-
-            assert handle is not None
-            assert handle.is_running is True
-
-            # Cleanup
-            handle.stop(timeout=0.1)
-
-    def test_start_event_listener_raises_when_not_bound(self) -> None:
-        """Test that start_event_listener raises when no bus bound."""
-        node = TestMixinNode()
-
-        with pytest.raises(ModelOnexError) as exc_info:
-            node.start_event_listener()
-
-        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_STATE
-
-    def test_start_event_listener_is_idempotent(self) -> None:
-        """Test that start_event_listener returns existing handle if running."""
-        node = TestMixinNode()
-        mock_bus = Mock()
-        mock_bus.subscribe = Mock(return_value="subscription")
-        node.bind_event_bus(mock_bus)
-
-        with patch.object(node, "get_event_patterns", return_value=["test.pattern"]):
-            handle1 = node.start_event_listener()
-            handle2 = node.start_event_listener()
-
-            # Should return same handle
-            assert handle1 is handle2
-
-            # Cleanup
-            handle1.stop(timeout=0.1)
-
-
-@pytest.mark.unit
-class TestMixinEventBusStopEventListener:
-    """Test MixinEventBus.stop_event_listener() method."""
-
-    def test_stop_event_listener_returns_true_when_no_listener(self) -> None:
-        """Test that stop_event_listener returns True when no listener."""
-        node = TestMixinNode()
-
-        result = node.stop_event_listener()
-
-        assert result is True
-
-    def test_stop_event_listener_stops_running_listener(self) -> None:
-        """Test that stop_event_listener stops running listener."""
-        node = TestMixinNode()
-        mock_bus = Mock()
-        mock_bus.subscribe = Mock(return_value="subscription")
-        mock_bus.unsubscribe = Mock()
-        node.bind_event_bus(mock_bus)
-
-        with patch.object(node, "get_event_patterns", return_value=["test.pattern"]):
-            handle = node.start_event_listener()
-            result = node.stop_event_listener()
-
-            assert result is True
-            assert handle.is_running is False
-
-    def test_stop_event_listener_with_explicit_handle(self) -> None:
-        """Test stop_event_listener with explicitly provided handle."""
-        node = TestMixinNode()
-        mock_bus = Mock()
-        mock_bus.subscribe = Mock(return_value="subscription")
-        mock_bus.unsubscribe = Mock()
-        node.bind_event_bus(mock_bus)
-
-        with patch.object(node, "get_event_patterns", return_value=["test.pattern"]):
-            handle = node.start_event_listener()
-            result = node.stop_event_listener(handle)
-
-            assert result is True
-            assert handle.is_running is False
-
-
-@pytest.mark.unit
 class TestMixinEventBusDisposeResources:
     """Test MixinEventBus.dispose_event_bus_resources() method."""
 
@@ -677,19 +555,6 @@ class TestMixinEventBusDisposeResources:
         assert node._get_event_bus() is None
         assert node._event_bus_runtime_state.is_bound is False
 
-    def test_dispose_stops_listener(self) -> None:
-        """Test that dispose stops active listener."""
-        node = TestMixinNode()
-        mock_bus = Mock()
-        mock_bus.subscribe = Mock(return_value="subscription")
-        node.bind_event_bus(mock_bus)
-
-        with patch.object(node, "get_event_patterns", return_value=["test.pattern"]):
-            handle = node.start_event_listener()
-            node.dispose_event_bus_resources()
-
-            assert handle.is_running is False
-
     def test_dispose_is_idempotent(self) -> None:
         """Test that dispose can be called multiple times safely."""
         node = TestMixinNode()
@@ -702,70 +567,6 @@ class TestMixinEventBusDisposeResources:
         node.dispose_event_bus_resources()
 
         assert node._get_event_bus() is None
-
-
-@pytest.mark.unit
-class TestMixinEventBusGetEventPatterns:
-    """Test MixinEventBus.get_event_patterns() method."""
-
-    def test_get_event_patterns_without_contract(self) -> None:
-        """Test get_event_patterns returns empty list without contract."""
-        node = TestMixinNode()
-
-        patterns = node.get_event_patterns()
-
-        assert isinstance(patterns, list)
-        assert len(patterns) == 0
-
-    def test_get_event_patterns_with_contract_path(self) -> None:
-        """Test get_event_patterns generates patterns from node name."""
-        node = TestMixinNode()
-        node.bind_contract_path("/path/to/contract.yaml")
-
-        patterns = node.get_event_patterns()
-
-        assert isinstance(patterns, list)
-        assert len(patterns) > 0
-        # Should contain patterns based on node name
-        node_name_lower = node.get_node_name().lower()
-        assert any(node_name_lower in p for p in patterns)
-
-
-@pytest.mark.unit
-class TestMixinEventBusGetCompletionEventType:
-    """Test MixinEventBus.get_completion_event_type() method."""
-
-    def test_get_completion_event_type_basic(self) -> None:
-        """Test get_completion_event_type returns completion event type."""
-        node = TestMixinNode()
-
-        result = node.get_completion_event_type("domain.contract.validate")
-
-        assert "complete" in result
-
-    def test_get_completion_event_type_short_input(self) -> None:
-        """Test get_completion_event_type with short event type."""
-        node = TestMixinNode()
-
-        result = node.get_completion_event_type("short")
-
-        assert result == "short.complete"
-
-    def test_get_completion_event_type_health_check(self) -> None:
-        """Test known mapping for health.check."""
-        node = TestMixinNode()
-
-        result = node.get_completion_event_type("generation.health.check")
-
-        assert "complete" in result
-
-    def test_get_completion_event_type_tool_start(self) -> None:
-        """Test known mapping for tool.start."""
-        node = TestMixinNode()
-
-        result = node.get_completion_event_type("generation.tool.start")
-
-        assert "complete" in result
 
 
 @pytest.mark.unit
@@ -812,36 +613,10 @@ class TestMixinEventBusGenericTypeParameters:
 
         assert found_mixin_base
 
-    def test_get_input_state_class_returns_type(self) -> None:
-        """Test that _get_input_state_class returns the input type."""
-        node = TestMixinNode()
-
-        input_class = node._get_input_state_class()
-
-        assert input_class is MockInputState
-
 
 @pytest.mark.unit
 class TestMixinEventBusThreadSafety:
     """Test MixinEventBus thread safety scenarios."""
-
-    def test_multiple_stop_calls_are_safe(self) -> None:
-        """Test that multiple stop() calls don't cause issues."""
-        node = TestMixinNode()
-        mock_bus = Mock()
-        mock_bus.subscribe = Mock(return_value="subscription")
-        mock_bus.unsubscribe = Mock()
-        node.bind_event_bus(mock_bus)
-
-        with patch.object(node, "get_event_patterns", return_value=["test.pattern"]):
-            handle = node.start_event_listener()
-
-            # Multiple stop calls should be safe
-            node.stop_event_listener()
-            node.stop_event_listener()
-            node.stop_event_listener()
-
-            assert handle.is_running is False
 
     def test_concurrent_binding_access(self) -> None:
         """Test concurrent access to event bus binding."""
@@ -939,89 +714,6 @@ class TestMixinEventBusLogging:
 
 
 @pytest.mark.unit
-class TestMixinEventBusEventHandler:
-    """Test MixinEventBus._create_event_handler() method."""
-
-    def test_create_event_handler_returns_callable(self) -> None:
-        """Test that _create_event_handler returns a callable."""
-        node = TestMixinNode()
-
-        handler = node._create_event_handler("test.pattern")
-
-        assert callable(handler)
-
-    def test_event_handler_processes_envelope(self) -> None:
-        """Test that event handler processes envelope with payload."""
-        node = TestMixinNode()
-        mock_bus = Mock()
-        mock_bus.publish = Mock()
-        node.bind_event_bus(mock_bus)
-
-        # Create mock envelope
-        mock_event = ModelOnexEvent(
-            event_type="test.event",
-            node_id=uuid.uuid4(),
-            correlation_id=uuid.uuid4(),
-        )
-        mock_envelope = Mock()
-        mock_envelope.payload = mock_event
-
-        # Create a valid completion event for mocking
-        completion_event = ModelOnexEvent(
-            event_type="test.complete",
-            node_id=node.get_node_id(),
-        )
-
-        with patch.object(node, "_event_to_input_state", return_value=MockInputState()):
-            with patch.object(node, "_build_event", return_value=completion_event):
-                handler = node._create_event_handler("test.pattern")
-                handler(mock_envelope)
-
-        # Should have published completion event
-        assert mock_bus.publish.called
-
-
-@pytest.mark.unit
-class TestMixinEventBusEventToInputState:
-    """Test MixinEventBus._event_to_input_state() method."""
-
-    def test_event_to_input_state_with_valid_class(self) -> None:
-        """Test event to input state conversion with valid class."""
-        node = TestMixinNode()
-
-        from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-
-        event = ModelOnexEvent(
-            event_type="test.event",
-            node_id=uuid.uuid4(),
-            correlation_id=uuid.uuid4(),
-        )
-
-        with patch.object(node, "_get_input_state_class", return_value=MockInputState):
-            result = node._event_to_input_state(event)
-
-            assert isinstance(result, MockInputState)
-
-    def test_event_to_input_state_raises_when_no_class(self) -> None:
-        """Test that _event_to_input_state raises when no class found."""
-        node = TestMixinNode()
-
-        from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-
-        event = ModelOnexEvent(
-            event_type="test.event",
-            node_id=uuid.uuid4(),
-            correlation_id=uuid.uuid4(),
-        )
-
-        with patch.object(node, "_get_input_state_class", return_value=None):
-            with pytest.raises(ModelOnexError) as exc_info:
-                node._event_to_input_state(event)
-
-            assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_FAILED
-
-
-@pytest.mark.unit
 class TestMixinEventBusBuildEvent:
     """Test MixinEventBus._build_event() method."""
 
@@ -1107,20 +799,3 @@ class TestMixinEventBusEdgeCases:
         # Should return None since registry's event_bus is None
         result = node._get_event_bus()
         assert result is None
-
-    def test_listener_handle_storage(self) -> None:
-        """Test that listener handle is stored correctly."""
-        node = TestMixinNode()
-        mock_bus = Mock()
-        mock_bus.subscribe = Mock(return_value="subscription")
-        node.bind_event_bus(mock_bus)
-
-        with patch.object(node, "get_event_patterns", return_value=["test.pattern"]):
-            handle = node.start_event_listener()
-
-            stored_handle = node._event_bus_listener_handle
-
-            assert stored_handle is handle
-
-            # Cleanup
-            handle.stop(timeout=0.1)

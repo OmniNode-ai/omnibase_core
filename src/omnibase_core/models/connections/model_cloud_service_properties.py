@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
@@ -47,13 +47,11 @@ class ModelCloudServiceProperties(BaseModel):
             return str(self.service_id)
         return None
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -64,7 +62,7 @@ class ModelCloudServiceProperties(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, ValidationError) as e:
+        except (AttributeError, TypeError, ValidationError, ValueError) as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

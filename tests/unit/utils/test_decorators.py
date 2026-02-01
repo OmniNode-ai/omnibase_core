@@ -15,7 +15,6 @@ class TestDecorators:
         reason = "Testing any type allowance"
 
         @allow_any_type(reason)
-        @pytest.mark.unit
         class TestModel(BaseModel):
             field: str
 
@@ -30,7 +29,6 @@ class TestDecorators:
 
         @allow_any_type(reason1)
         @allow_any_type(reason2)
-        @pytest.mark.unit
         class TestModel(BaseModel):
             field: str
 
@@ -44,7 +42,6 @@ class TestDecorators:
         reason = "Testing functionality preservation"
 
         @allow_any_type(reason)
-        @pytest.mark.unit
         class TestModel(BaseModel):
             name: str
             value: int
@@ -106,7 +103,6 @@ class TestDecorators:
         reason = "Testing metadata persistence"
 
         @allow_any_type(reason)
-        @pytest.mark.unit
         class TestModel(BaseModel):
             field: str
 

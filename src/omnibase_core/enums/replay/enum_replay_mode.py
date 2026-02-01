@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Replay mode enum for deterministic replay infrastructure.
 
 This module defines the modes of operation for the replay infrastructure,
@@ -9,10 +6,13 @@ enabling deterministic execution recording and playback.
 .. versionadded:: 0.4.0
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumReplayMode(str, Enum):
+@unique
+class EnumReplayMode(StrValueHelper, str, Enum):
     """Mode for replay infrastructure.
 
     Defines the operating mode for deterministic replay:

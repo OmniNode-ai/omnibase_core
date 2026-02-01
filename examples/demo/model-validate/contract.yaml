@@ -1,0 +1,69 @@
+---
+# ONEX Handler Contract for Support Ticket Classification
+# Version: 1.0.0
+# Node Type: COMPUTE_GENERIC
+
+name: support-ticket-classifier
+node_type: COMPUTE_GENERIC
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+metadata:
+  description: >-
+    Classifies customer support tickets into categories, extracts sentiment, generates summaries, and
+    suggests responses using LLM inference.
+  author: ONEX Demo Team
+  tags:
+    - demo
+    - model-validate
+    - support
+    - classification
+
+node:
+  kind: COMPUTE
+  type: COMPUTE_GENERIC
+
+input:
+  model: omnibase_core.models.demo.model_validate.ModelSupportTicket
+  description: Customer support ticket with subject, body, and metadata
+
+output:
+  model: omnibase_core.models.demo.model_validate.ModelSupportClassificationResult
+  description: Classification result with category, sentiment, summary, and suggested reply
+
+capabilities:
+  - text_classification
+  - sentiment_analysis
+  - text_summarization
+  - response_generation
+
+dependencies:
+  required:
+    - llm_inference_service
+
+invariants:
+  - type: confidence_threshold
+    config:
+      min_value: 0.70
+      golden_min_value: 0.85
+  - type: latency_threshold
+    config:
+      baseline_max_ms: 2500
+      candidate_max_ms: 900
+  - type: schema_validation
+    config:
+      strict: true
+
+testing:
+  corpus:
+    golden: corpus/golden/
+    edge_cases: corpus/edge-cases/
+  mock_responses:
+    baseline: mock-responses/baseline/
+    candidate: mock-responses/candidate/

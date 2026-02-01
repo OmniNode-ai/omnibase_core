@@ -1,7 +1,10 @@
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumServiceHealthStatus(str, Enum):
+@unique
+class EnumServiceHealthStatus(StrValueHelper, str, Enum):
     """Standard service health status values."""
 
     REACHABLE = "reachable"
@@ -11,3 +14,6 @@ class EnumServiceHealthStatus(str, Enum):
     TIMEOUT = "timeout"
     AUTHENTICATING = "authenticating"
     MAINTENANCE = "maintenance"
+
+
+__all__ = ["EnumServiceHealthStatus"]

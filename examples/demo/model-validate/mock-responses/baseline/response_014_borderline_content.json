@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-014",
+  "category": "billing_payment",
+  "confidence": 0.86,
+  "sentiment": "neutral",
+  "summary": "Customer confused about billing dates and needs to update payment method",
+  "suggested_reply": "Hi Alex! I can help clarify both items. First, regarding the billing dates: the date in Account Settings shows your subscription renewal date (Feb 1), while the Billing History page shows when your last charge was processed. Your next charge will be February 1st. For updating your card: Go to Settings > Billing > Payment Methods > Update Card. If your old card expired, the system may have been showing the next retry date (Jan 25) - but with a new card added, you'll be charged on your regular Feb 1 date.",
+  "latency_ms": 1520,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["billing_date_confusion", "payment_update_needed"],
+  "invariant_tags": ["billing_domain", "account_overlap"]
+}

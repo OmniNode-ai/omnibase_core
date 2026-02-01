@@ -35,7 +35,7 @@ from omnibase_core.models.events.contract_validation import (
     ModelContractValidationStartedEvent,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.validation.contract_validation_pipeline import (
+from omnibase_core.validation.validator_contract_pipeline import (
     ContractValidationPipeline,
 )
 
@@ -62,7 +62,7 @@ def create_mock_base_contract() -> Mock:
     """Create a mock base contract that the merge engine can work with."""
     mock = Mock()
     mock.name = "base_contract"
-    mock.version = ModelSemVer(major=0, minor=1, patch=0)
+    mock.contract_version = ModelSemVer(major=0, minor=1, patch=0)
     mock.description = "Base contract description"
     mock.node_type = EnumNodeType.COMPUTE_GENERIC
     # Use valid module paths for input/output models
@@ -82,7 +82,7 @@ def create_mock_base_contract() -> Mock:
     mock.model_dump = Mock(
         return_value={
             "name": "base_contract",
-            "version": {"major": 0, "minor": 1, "patch": 0},
+            "contract_version": {"major": 0, "minor": 1, "patch": 0},
             "description": "Base contract description",
             "node_type": EnumNodeType.COMPUTE_GENERIC,
             "input_model": "omnibase_core.models.events.ModelTestEvent",

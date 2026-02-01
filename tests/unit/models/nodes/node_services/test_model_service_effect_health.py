@@ -92,6 +92,9 @@ def service_effect(mock_container: MagicMock, mock_event_bus: AsyncMock) -> Magi
             service, timeout_ms
         )
     )
+    service._try_get_event_bus_from_container = (
+        lambda: MixinNodeService._try_get_event_bus_from_container(service)
+    )
     service._emit_shutdown_event = lambda: MixinNodeService._emit_shutdown_event(
         service
     )

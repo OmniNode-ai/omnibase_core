@@ -7,6 +7,497 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-01-31
+
+### Added
+
+- **Contract-Driven Zero-Code Node Base Classes** [OMN-1731]: Enable fully declarative ONEX nodes where `class NodeMyEffect(NodeEffect): pass` works entirely from contract YAML
+  - `ModelProtocolDependency` - Protocol dependency declaration with name, protocol path, required flag, bind_as alias, and lazy_import support
+  - `ModelProtocolsNamespace` - Immutable namespace for `self.protocols.<name>` access pattern
+  - `resolver_handler` - Resolves handlers from `module:callable` import paths with caching
+  - `resolver_protocol_dependency` - Resolves protocol dependencies from container with validation
+  - `ModelHandlerRoutingEntry` - Added `callable` and `lazy_import` fields for contract-driven handler dispatch
+  - `ModelContractBase` - Added `protocol_dependencies` list with duplicate detection
+  - `ModelHandlerRoutingSubcontract` - Added `validate_zero_code_requirements()` method
+  - `NodeCoreBase` - Added `protocols` namespace and `_resolve_protocol_dependencies()` method
+  - `NodeEffect` - Auto-loads effect_subcontract, dispatches via `default_handler`
+  - `NodeCompute` - Dispatches via `default_handler` with generic support
+  - `get_contract_attr()` utility for dict/Pydantic model attribute access
+  - New error code `PROTOCOL_CONFIGURATION_ERROR` (126) for DI failures
+  - 52 new invariant tests covering contract completeness, protocol resolution, namespace immutability
+
+- **Cross-Repository Conformance Validators** [OMN-1771]: Contract-driven validation system for enforcing code placement, import boundaries, and repo conventions
+  - `ModelValidationPolicyContract` - Policy contract model for validation rules
+  - `ModelValidationDiscoveryConfig` - Discovery configuration for finding files to validate
+  - `ModelRuleConfigs` - Rule configuration models (repo_boundaries, forbidden_imports)
+  - `ModelViolationWaiver` - Waiver model for exempting known violations
+  - Validation engine with CLI support (JSON/text output)
+  - AST-based import graph scanner
+  - Synthetic test fixtures (fake_core, fake_infra, fake_app)
+  - 55 unit tests
+  - Design: Validators in core (fixed rule IDs), policies in each repo (thresholds, allowlists)
+
+## [0.10.2] - 2026-01-31
+
+### Added
+
+- **Request-Response Schema Support** [OMN-1760]: Added `request_response` field to `ModelEventBusSubcontract`
+  - `ModelRequestResponseConfig` - Top-level config containing list of request-response instances
+  - `ModelRequestResponseInstance` - Individual pattern config with request topic, reply topics, timeout, consumer group mode
+  - `ModelReplyTopics` - Completed/failed topic suffix pairs with ONEX naming validation
+  - `ModelCorrelationConfig` - Correlation ID location config (body/headers)
+  - All topic suffixes validated against ONEX naming convention
+  - Non-empty instances list enforced to prevent silent no-op configurations
+  - `auto_offset_reset` defaults to `"earliest"` to prevent race conditions in request-response patterns
+  - Comprehensive test coverage (871 lines, 70+ test cases)
+  - Enables contract-driven request-response wiring in `omnibase_infra` (OMN-1742)
+
+## [0.10.1] - 2026-01-31
+
+### Added
+
+- **Kafka Import Guard** [OMN-1745]: Extended CI guard to block direct Kafka imports
+  - Renamed `validate-no-listener-apis.py` → `validate-no-kafka-listener-apis.py`
+  - Added patterns for: `AIOKafkaConsumer`, `KafkaConsumer`, `AIOKafkaProducer`, `KafkaProducer`
+  - Added `# kafka-import-ok:` bypass marker (alongside existing `# listener-api-ok:`)
+  - Updated pre-commit hook id and name to reflect expanded scope
+  - Provides defense-in-depth: Level 1 guards listener APIs, Level 2 guards raw Kafka imports
+  - Enforces ARCH-002: "Runtime owns all Kafka plumbing"
+
+## [0.10.0] - 2026-01-31
+
+### Breaking Changes
+
+- **Removed Listener Management from MixinEventBus** [OMN-1747]: Listener/consumer lifecycle code removed from `omnibase_core`
+  - ⚠️ **BREAKING**: `MixinEventListener` mixin removed entirely
+  - ⚠️ **BREAKING**: `ModelEventBusListenerHandle` model removed
+  - ⚠️ **BREAKING**: `ProtocolEventBusListener` protocol removed
+  - ⚠️ **BREAKING**: `MixinEventBus` methods removed:
+    - `start_event_listener()`, `stop_event_listener()`, `_event_listener_loop()`
+    - `get_event_patterns()`, `get_completion_event_type()`, `bind_contract_path()`
+    - `_create_event_handler()`, `_event_to_input_state()`, `_get_input_state_class()`
+  - **Migration**: Use `EventBusSubcontractWiring` in `omnibase_infra` for Kafka consumer lifecycle
+  - Enforces architectural invariant: "infra owns Kafka plumbing, core provides publish-only abstractions"
+
+### Removed
+
+- `src/omnibase_core/mixins/mixin_event_listener.py` - Entire file (1,117 lines)
+- `src/omnibase_core/models/event_bus/model_event_bus_listener_handle.py` - Entire file (470 lines)
+- `src/omnibase_core/protocols/event_bus/protocol_event_bus_listener.py` - Entire file (33 lines)
+- `tests/unit/mixins/test_mixin_event_listener.py` - 30 listener tests
+- `tests/unit/models/event_bus/test_model_event_bus_listener_handle.py` - 62 listener tests
+- 25 listener-related tests from `test_mixin_event_bus.py`
+
+### Changed
+
+- **MixinEventBus refactored** to publish-only (40% smaller: 1,977 → 1,200 lines)
+  - Retained: `publish_event()`, `publish_completion_event()`, `apublish_completion_event()`
+  - Retained: `bind_event_bus()`, `bind_registry()`, `bind_node_name()`
+  - Retained: `_get_event_bus()`, `_require_event_bus()`, `_has_event_bus()`
+- `model_service_effect.py`: Removed `stop_event_listener()` fallback in cleanup
+- `mixin_tool_execution.py`: Updated docstrings to remove listener references
+- `conftest.py`: Removed dead listener thread cleanup code
+
+### Added
+
+- **CI Guard** [OMN-1747]: Pre-commit hook to prevent listener API reintroduction
+  - `scripts/validation/validate-no-listener-apis.py` - Validation script
+  - `.pre-commit-config.yaml` - New `validate-no-listener-apis` hook
+  - Guards against: `start_event_listener`, `stop_event_listener`, `_event_listener_loop`, `ModelEventBusListenerHandle`
+
+## [0.9.11] - 2026-01-30
+
+### Added
+
+- **Intent Classification Keywords Field** [OMN-1728]: Added `keywords: list[str]` field to `ModelIntentClassificationOutput`
+  - Captures keywords/features that contributed to the classification decision
+  - Uses `default_factory=list` for safe mutable default
+  - Unblocks `ProtocolIntentGraph` conformance (OMN-1729, OMN-1730)
+
+## [0.9.10] - 2026-01-30
+
+### Added
+
+- **Claude Code Tool Execution Content Model** [OMN-1701]: Added `ModelToolExecutionContent` and `EnumClaudeCodeToolName` for pattern learning
+  - `EnumClaudeCodeToolName`: 26 Claude Code tool names with classification helpers
+  - `ModelToolExecutionContent`: Tool execution capture model with dual-field pattern
+  - Helper methods: `is_file_operation()`, `is_search_operation()`, `is_execution_tool()`, etc.
+  - Privacy fields: `is_content_redacted`, `redaction_policy_version`
+  - MCP tool prefix handling (`mcp__*` pattern)
+
+## [0.9.9] - 2026-01-29
+
+### Added
+
+- **Platform Baseline Topic Suffix Constants** [OMN-1652]: Added individual topic suffix constants for cross-repository imports
+  - `TOPIC_SUFFIX_CONTRACT_REGISTERED` - Contract registration event topic suffix
+  - `TOPIC_SUFFIX_CONTRACT_DEREGISTERED` - Contract deregistration event topic suffix
+  - `TOPIC_SUFFIX_NODE_HEARTBEAT` - Node heartbeat event topic suffix
+  - `PLATFORM_BASELINE_TOPIC_SUFFIXES` tuple refactored to use individual constants
+  - Enables `omnibase_infra` to import canonical topic strings from core
+
+## [0.9.8] - 2026-01-29
+
+### Added
+
+- **Contract Publisher Mixin** [OMN-1655]: Added `MixinContractPublisher` for nodes to publish contracts on startup
+  - `publish_contract(contract_path)` - Reads YAML, computes SHA256 hash, publishes `ModelContractRegisteredEvent`
+  - `publish_deregistration(reason)` - Publishes `ModelContractDeregisteredEvent` for graceful shutdown
+  - `start_heartbeat(interval_seconds)` - Background task emitting `ModelNodeHeartbeatEvent`
+  - Uses `ProtocolEventBusPublisher` from core (not SPI) for proper layering
+  - Enables dynamic contract discovery via Kafka event bus
+
+## [0.9.7] - 2026-01-27
+
+### Added
+
+- **Tool Failure Pattern Classification** [OMN-1609]: Added `EnumPatternKind.TOOL_FAILURE` for classifying tool failure patterns
+  - Distinct from `TOOL_USAGE` (success patterns vs failure patterns)
+  - Covers recurring failures, failure sequences, recovery patterns, etc.
+
+- **Tool Execution Model** [OMN-1608]: Added `ModelToolExecution` to intelligence models
+  - Frozen Pydantic model for structured tool execution data
+  - Computed `directory` property derived from file path
+  - Supports pattern extraction for tool usage analysis
+
+- **Contract Infrastructure Extensions** [OMN-1588]: Added ONEX infrastructure extension fields to `ModelContractBase`
+  - `yaml_consumed_events`, `yaml_published_events`, `handler_routing` fields
+  - New `ModelConsumedEventEntry` and `ModelPublishedEventEntry` models
+  - Field validators normalize string lists to typed entries
+  - Enables contract-driven infrastructure configuration
+  - Added `TypedDictConsumedEventEntry` and `TypedDictPublishedEventEntry` for strong typing
+
+## [0.9.6] - 2026-01-26
+
+### Added
+
+- **Pattern Extraction Models** [OMN-1587]: Added models for intelligence pattern extraction
+  - Canonical Pydantic models for code pattern analysis results
+  - Support for extracting and representing code patterns from analysis pipelines
+
+## [0.9.5] - 2026-01-26
+
+### Added
+
+- **Topic Suffix Validation Utilities** [OMN-1537]: Added canonical topic suffix validation for contract-driven topic declaration
+  - `validate_topic_suffix()`, `parse_topic_suffix()`, `compose_full_topic()` utilities
+  - `ModelTopicSuffixParts` and `ModelTopicValidationResult` models
+  - `publish_topics`/`subscribe_topics` fields in `ModelEventBusSubcontract`
+  - `ModelTopicMeta` for future schema reference support
+  - `EnumTopicType.DLQ` for Dead Letter Queue topic type
+  - Topic suffix format: `onex.{kind}.{producer}.{event-name}.v{n}`
+
+### Documentation
+
+- **Operation Bindings DSL** [OMN-1517]: Added comprehensive documentation for the `operation_bindings` declarative handler wiring schema
+
+## [0.9.4] - 2026-01-25
+
+### Added
+
+- **Intent Storage Event Models** [OMN-1513]: Added canonical event models for the intent storage pipeline
+  - `ModelEventPayloadBase`: Base class for embedded payloads (frozen, metadata-free)
+  - `ModelIntentStoredEvent`: Emitted after intent storage to graph database
+  - `ModelIntentQueryRequestedEvent`: Dashboard queries (distribution/session/recent)
+  - `ModelIntentQueryResponseEvent`: Response with intent records
+  - `IntentRecordPayload`: Lightweight intent record for query responses
+
+- **Operation Bindings Schema** [OMN-1410]: Added `operation_bindings` schema for declarative handler wiring
+
+- **Session and Intent Classification Models** [OMN-1489] [OMN-1490]: Added session snapshot and intent classification models
+
+- **Claude Code Hook Input Types** [OMN-1474]: Added integration types for Claude Code hooks
+
+### Changed
+
+- **Handler Contract Refactor** [OMN-1465]: Renamed `handler_kind` to `node_archetype` in handler contracts for clarity
+
+## [0.9.1] - 2026-01-22
+
+### Fixed
+
+- **PEP 561 Compliance**: Added `py.typed` marker file for proper type checking support in downstream packages
+
+### Changed
+
+- **Contract Version Enforcement** [OMN-1436]: Strict enforcement of `contract_version` field - removed deprecated `version` field fallback in handler contracts
+
+## [0.9.0] - 2026-01-21
+
+### ⚠️ BREAKING CHANGES
+
+#### Contract Version Field Rename [OMN-1431]
+
+**`ModelContractBase.version` renamed to `contract_version`** to align with ONEX specification naming conventions.
+
+| Before (v0.8.x) | After (v0.9.0) |
+|-----------------|----------------|
+| `contract.version` | `contract.contract_version` |
+| YAML: `version:` | YAML: `contract_version:` |
+
+**New field added:** `node_version: ModelSemVer | None` for tracking node implementation versions separately from contract schema versions.
+
+**Migration:**
+```python
+# Before (v0.8.x)
+contract = ModelContractCompute(
+    name="my_node",
+    version=ModelSemVer(major=1, minor=0, patch=0),
+    ...
+)
+
+# After (v0.9.0)
+contract = ModelContractCompute(
+    name="my_node",
+    contract_version=ModelSemVer(major=1, minor=0, patch=0),
+    node_version=ModelSemVer(major=1, minor=0, patch=0),  # Optional
+    ...
+)
+```
+
+**Note:** Other models retain their own `version` fields (not renamed):
+- `ModelProfileReference.version`
+- `ModelValidatorSubcontract.version`
+
+#### Handler Contract Version Field Migration [OMN-1436]
+
+**`ModelHandlerContract.version` migrated to `contract_version: ModelSemVer`** with strict enforcement. Handler contracts now require the structured `contract_version` field instead of the legacy string-based `version` field.
+
+| Before (v0.8.x) | After (v0.9.0) |
+|-----------------|----------------|
+| `version: "1.0.0"` | `contract_version: {major: 1, minor: 0, patch: 0}` |
+| `ModelHandlerContract(version="1.0.0")` | `ModelHandlerContract(contract_version=ModelSemVer(...))` |
+
+**YAML Migration:**
+```yaml
+# Before (v0.8.x)
+name: my_handler
+version: "1.0.0"
+handler_kind: compute
+
+# After (v0.9.0)
+name: my_handler
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+handler_kind: compute
+```
+
+**Python Migration:**
+```python
+# Before (v0.8.x)
+from omnibase_core.models.runtime.model_handler_contract import ModelHandlerContract
+
+contract = ModelHandlerContract(
+    name="my_handler",
+    version="1.0.0",
+    handler_kind=EnumHandlerKind.COMPUTE,
+)
+
+# After (v0.9.0)
+from omnibase_core.models.runtime.model_handler_contract import ModelHandlerContract
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+contract = ModelHandlerContract(
+    name="my_handler",
+    contract_version=ModelSemVer(major=1, minor=0, patch=0),
+    handler_kind=EnumHandlerKind.COMPUTE,
+)
+```
+
+**Validation:** Strict contracts (those inheriting from `ModelContractBase` with `is_strict_contract()` returning `True`) now require `contract_version` to be explicitly set. Loading a handler contract YAML without `contract_version` will raise a validation error.
+
+### Added
+
+- **Guardrail Validator**: `ValidatorContractLinter` now rejects YAML contracts using deprecated `version:` field, enforcing migration to `contract_version:`
+
+## [0.8.0] - 2026-01-17
+
+### Added
+
+- **Metrics Emission Models**: New models for observability metrics emission with cardinality policies [OMN-1367]
+
+### Changed
+
+- **Header Cleanup**: Removed legacy SPDX headers from omnibase_core codebase [OMN-1360]
+
+## [0.7.0] - 2026-01-15
+
+### ⚠️ BREAKING CHANGES
+
+This release contains significant breaking changes to enum and type alias organization. These changes improve type safety, eliminate duplication, and establish canonical patterns for the codebase.
+
+#### Status Enum Consolidation [OMN-1310]
+
+**57+ overlapping status enums consolidated into 4 canonical enums.** No backwards compatibility - duplicates removed outright.
+
+| Canonical Enum | Values |
+|----------------|--------|
+| `EnumExecutionStatus` | PENDING, RUNNING, COMPLETED, SUCCESS, FAILED, SKIPPED, CANCELLED, TIMEOUT, PARTIAL |
+| `EnumOperationStatus` | SUCCESS, FAILED, IN_PROGRESS, CANCELLED, PENDING, TIMEOUT |
+| `EnumWorkflowStatus` | PENDING, RUNNING, COMPLETED, FAILED, CANCELLED, PAUSED |
+| `EnumHealthStatus` | HEALTHY, DEGRADED, UNHEALTHY, CRITICAL, UNKNOWN, WARNING, UNREACHABLE, AVAILABLE, UNAVAILABLE, ERROR, INITIALIZING, DISPOSING |
+
+**Deleted Enum Files:**
+- `enum_execution.py` (consolidated into EnumExecutionStatus)
+- `enum_execution_status_v2.py` (consolidated into EnumExecutionStatus)
+- `enum_health_status_type.py` (consolidated into EnumHealthStatus)
+- `enum_node_health_status.py` (consolidated into EnumHealthStatus)
+
+**Migration Guide:**
+```python
+# Before (v0.6.x)
+from omnibase_core.enums import EnumExecution, EnumHealthStatusType
+
+status = EnumExecution.RUNNING
+health = EnumHealthStatusType.HEALTHY
+
+# After (v0.7.0)
+from omnibase_core.enums import EnumExecutionStatus, EnumHealthStatus
+
+status = EnumExecutionStatus.RUNNING
+health = EnumHealthStatus.HEALTHY
+```
+
+#### Severity Enum Canonicalization [OMN-1311]
+
+**5 severity enums merged into canonical `EnumSeverity`.** This establishes a single source of truth for severity levels across the codebase.
+
+| Action | Enums |
+|--------|-------|
+| **Merged into EnumSeverity** | `EnumValidationSeverity`, `EnumInvariantSeverity`, `EnumViolationSeverity` |
+| **Removed (unused)** | `EnumErrorSeverity`, old `EnumSeverity` (orphaned with wrong values) |
+| **Kept separate (documented exceptions)** | `EnumSeverityLevel` (RFC 5424 logging), `EnumImpactSeverity` (business domain) |
+
+**Canonical EnumSeverity Values:** DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL
+
+**Migration Guide:**
+```python
+# Before (v0.6.x)
+from omnibase_core.enums import EnumValidationSeverity, EnumInvariantSeverity
+
+severity = EnumValidationSeverity.ERROR
+invariant_sev = EnumInvariantSeverity.CRITICAL
+
+# After (v0.7.0)
+from omnibase_core.enums import EnumSeverity
+
+severity = EnumSeverity.ERROR
+invariant_sev = EnumSeverity.CRITICAL
+```
+
+#### Literal Type Aliases Replaced with Canonical Enums [OMN-1308]
+
+**11 Literal type definitions removed** from `protocols/base/__init__.py` and replaced with proper enums.
+
+**New Enums Created:**
+
+| Enum | Values |
+|------|--------|
+| `EnumServiceLifecycle` | singleton, transient, scoped, pooled, lazy, eager |
+| `EnumInjectionScope` | request, session, thread, process, global, custom |
+| `EnumServiceResolutionStatus` | resolved, failed, circular_dependency, etc. |
+| `EnumPipelineValidationMode` | strict, lenient, smoke, regression, integration |
+| `EnumStepType` | compute, effect, reducer, orchestrator, parallel, custom |
+| `EnumRegistrationStatus` | registered, unregistered, failed, pending, etc. |
+
+**Migration Guide:**
+```python
+# Before (v0.6.x) - Using Literal types
+from omnibase_core.protocols.base import ServiceLifecycle
+lifecycle: ServiceLifecycle = "singleton"
+
+# After (v0.7.0) - Using enums
+from omnibase_core.enums import EnumServiceLifecycle
+lifecycle = EnumServiceLifecycle.SINGLETON
+```
+
+#### Type Alias Consolidation [OMN-1294]
+
+Duplicate type aliases consolidated to eliminate redundancy:
+
+| Old Type Alias | New Type Alias | Reason |
+|----------------|----------------|--------|
+| `LogContextValue` | `EnvValue` | Identical semantics |
+| `PayloadDataValue` | `CliValue \| None` | Equivalent type |
+| `ParameterValue` | `QueryParameterValue` | Renamed (different semantics) |
+| `ConfigValue` | `ScalarConfigValue` | Renamed (narrower semantics) |
+
+#### Enum Member Casing Standardization [OMN-1307]
+
+**All enum members must use UPPER_SNAKE_CASE.** `EnumFileStatus` members renamed from lowercase to UPPER_SNAKE_CASE. String values unchanged for backward compatibility in serialized data.
+
+```python
+# Before (v0.6.x)
+class EnumFileStatus(str, Enum):
+    pending = "pending"
+    processing = "processing"
+
+# After (v0.7.0)
+class EnumFileStatus(str, Enum):
+    PENDING = "pending"      # String value unchanged
+    PROCESSING = "processing"
+```
+
+**Impact:** Code referencing `EnumFileStatus.pending` must change to `EnumFileStatus.PENDING`.
+
+### Added
+
+- **EnumSeverity**: Canonical 6-level severity taxonomy (DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL) with `StrValueHelper` mixin [OMN-1296]
+- **Enum Governance Checker**: `checker_enum_governance.py` for automated enforcement of enum standards [OMN-1296]
+- **Enum Member Casing Validator**: `checker_enum_member_casing.py` AST-based validator with pre-commit integration [OMN-1307]
+- **Literal Duplication Checker**: `checker_literal_duplication.py` to prevent Literal/Enum duplication [OMN-1308]
+- **ModelOmniMemoryContract**: YAML schema for OmniMemory contracts [OMN-1251]
+- **ManifestGenerator Callback**: `on_manifest_built` callback hook for pipeline manifest generation [OMN-1203]
+- **JSON-Safety Validation**: `ModelPayloadExtension` JSON-safety validation [OMN-1266]
+- **Container Public API**: `initialize_service_registry()` public API for container initialization [OMN-1265]
+- **Evidence Export Service**: Demo service with renderer refactoring [OMN-1200]
+- **ModelMemorySnapshot**: Unified state container for OmniMemory [OMN-1243]
+- **Non-Deterministic Effect Classification**: Effect classification system for replay safety [OMN-1147]
+- **Pydantic Conventions Validator**: Validator for Pydantic model patterns [OMN-1314]
+- **Invariant Violation Report Model**: Demo model for invariant violations [OMN-1206]
+- **Error Handling Patterns**: Standardized error handling patterns with decorators [OMN-1299]
+- **Support Assistant Handler**: Demo handler for model evaluation [OMN-1201]
+- **ADR-013 Status Taxonomy**: Architecture decision record for status enum taxonomy [OMN-1312]
+
+### Changed
+
+- **File Headers**: Unified file headers across omnibase_core codebase [OMN-1337]
+- **Type Annotations**: Modernized to PEP 604 union syntax (`X | Y` instead of `Union[X, Y]`) [OMN-1300]
+- **Pydantic Patterns**: Standardized Pydantic model patterns across codebase [OMN-1301]
+- **File/Class Naming**: Fixed naming convention violations [OMN-1298]
+
+### Fixed
+
+- **EnumValidationSeverity Import**: Removed broken import that blocked all enum imports [#397]
+- **Status String References**: Replaced hardcoded status strings with enum references [OMN-1309]
+
+### Refactored
+
+- **Type Ignore Comments**: Reduced `type: ignore` comments by 35% through proper typing [OMN-1073]
+- **AI Slop Patterns**: Removed AI-generated boilerplate patterns from codebase [OMN-1297]
+
+## [0.6.6] - 2026-01-12
+
+### Added
+
+- **EnumHandlerRoutingStrategy** (OMN-1295): Added enum for handler routing strategies replacing Literal type, improving type safety and IDE support
+- **Replay Safety Enforcement** (OMN-1150): Implemented replay safety enforcement for non-deterministic effects with audit trail and UUID injection services
+- **Baseline Health Report Models** (OMN-1198): Added baseline health report models, performance metrics, and stability calculator utilities
+- **Execution Detail View Models** (OMN-1197): Added execution detail view models and consolidated comparison models into replay module
+
+### Changed
+
+- **MixinHandlerRouting**: Updated to use EnumHandlerRoutingStrategy enum with proper type annotations
+- **ModelHandlerRoutingSubcontract**: Optimized duplicate routing_key validation to use set instead of list
+
+## [0.6.5] - 2026-01-12
+
+### Changed
+
+- Version bump from 0.6.4 to 0.6.5 for release tagging
+
 ## [0.6.4] - 2026-01-11
 
 ### Added
@@ -233,20 +724,29 @@ The default value of `BuilderExecutionPlan.enforce_hook_typing` has been changed
 
 #### Workflow Contract Model Hardening [OMN-654]
 
-The following workflow contract models now enforce **immutability** (`frozen=True`) and **strict field validation** (`extra="forbid"`):
+The following workflow contract models now enforce **immutability** (`frozen=True`) and **field validation**:
 
 | Model | Changes Applied |
 |-------|-----------------|
-| `ModelWorkflowDefinition` | Added `frozen=True`, `extra="forbid"` |
+| `ModelWorkflowDefinition` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Fix 54) |
 | `ModelWorkflowDefinitionMetadata` | Added `frozen=True`, `extra="forbid"` |
 | `ModelWorkflowStep` | Added `extra="forbid"` (already had `frozen=True`) |
-| `ModelCoordinationRules` | Added `frozen=True`, `extra="forbid"` |
-| `ModelExecutionGraph` | Added `frozen=True`, `extra="forbid"` |
-| `ModelWorkflowNode` | Added `frozen=True`, `extra="forbid"` |
+| `ModelCoordinationRules` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Fix 54) |
+| `ModelExecutionGraph` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Fix 54) |
+| `ModelWorkflowNode` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Fix 54) |
+
+**v1.0.5 Fix 54: Reserved Fields Governance** - Models with `extra="ignore"` implement reserved fields governance for forward compatibility. "Reserved fields" are fields defined in newer schema versions that older code does not recognize. This governance policy ensures:
+
+- **No validation errors** when newer schema versions include reserved (unrecognized) fields
+- **Fields are dropped** during model construction - reserved fields are discarded, NOT preserved in round-trip serialization
+- **Graceful degradation** allows older code to process newer data formats without crashing
+
+This policy ensures that workflow contracts from future ONEX versions can be parsed by current code without errors, even if reserved fields are not yet understood by the current schema version.
 
 **Impact**:
 - Code that **mutates these models after creation** will now raise `pydantic.ValidationError`
-- Code that **passes unknown fields** to these models will now raise `pydantic.ValidationError`
+- For `extra="forbid"` models: Code that **passes unknown fields** will raise `pydantic.ValidationError`
+- For `extra="ignore"` models (v1.0.5 Fix 54): Reserved fields are dropped during construction - they are discarded, not preserved in round-trip serialization
 
 **Thread Safety Benefits**:
 
@@ -283,24 +783,34 @@ updated = original.model_copy(update={
 
 #### 2. Handling Extra Fields
 
+Models have different behaviors based on their `extra=` policy:
+
+**For `extra="forbid"` models** (e.g., `ModelWorkflowDefinitionMetadata`, `ModelWorkflowStep`):
 ```python
-# Before (v0.3.x) - Extra fields might have been silently ignored
+# Extra fields raise pydantic.ValidationError
+metadata = ModelWorkflowDefinitionMetadata(
+    version=version,
+    workflow_name="my-workflow",
+    workflow_version=workflow_version,
+    custom_field="value"  # ❌ Raises pydantic.ValidationError
+)
+```
+
+**For `extra="ignore"` models** (v1.0.5 Fix 54: Reserved Fields Governance):
+```python
+# Reserved fields are silently dropped during construction
 definition = ModelWorkflowDefinition(
     version=version,
     workflow_metadata=metadata,
     execution_graph=graph,
-    custom_field="value"  # ❌ Now raises pydantic.ValidationError
+    future_field="value"  # ⚠️ Silently dropped - NOT preserved in round-trip
 )
+# definition.future_field does not exist - the field was discarded
+```
 
-# After (v0.4.0+) - Only declared fields allowed
-definition = ModelWorkflowDefinition(
-    version=version,
-    workflow_metadata=metadata,
-    execution_graph=graph,
-    # custom_field removed - use proper extension mechanisms instead
-)
-
-# If you need custom metadata, use designated fields:
+**Best practice**: Use designated extension fields rather than relying on extra field behavior:
+```python
+# Use proper extension mechanisms instead of arbitrary fields
 metadata = ModelWorkflowDefinitionMetadata(
     version=version,
     workflow_name="my-workflow",

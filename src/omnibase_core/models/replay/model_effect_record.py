@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 ModelEffectRecord - Effect record model for replay infrastructure.
 
@@ -13,7 +10,7 @@ Design:
     sequence index to maintain execution order.
 
 Architecture:
-    During recording mode, RecorderEffect captures each effect execution as
+    During recording mode, ServiceEffectRecorder captures each effect execution as
     a ModelEffectRecord. During replay mode, the recorder returns pre-recorded
     results instead of executing real effects.
 
@@ -56,7 +53,7 @@ Usage:
 
 Related:
     - OMN-1116: Implement Effect Recorder for Replay Infrastructure
-    - RecorderEffect: Uses ModelEffectRecord for capture and replay
+    - ServiceEffectRecorder: Uses ModelEffectRecord for capture and replay
     - ProtocolEffectRecorder: Protocol defining recorder interface
 
 .. versionadded:: 0.4.0

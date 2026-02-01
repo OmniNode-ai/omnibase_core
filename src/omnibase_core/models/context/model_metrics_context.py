@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """
 Metrics context model for observability and distributed tracing.
 
@@ -19,10 +17,7 @@ See Also:
 
 import re
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.errors import ModelOnexError
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 __all__ = ["ModelMetricsContext"]
 
@@ -49,6 +44,9 @@ _SEMVER_PATTERN = re.compile(
 def _validate_semver(value: str) -> str:
     """Validate SemVer 2.0.0 version string (local helper to avoid circular imports).
 
+    This helper is designed for use in Pydantic field validators, so it raises
+    ValueError directly (which Pydantic expects for validation failures).
+
     Args:
         value: Version string to validate
 
@@ -56,19 +54,15 @@ def _validate_semver(value: str) -> str:
         The validated version string (unchanged if valid)
 
     Raises:
-        ModelOnexError: If the format is invalid
+        ValueError: If the format is invalid or empty
     """
     if not value:
-        raise ModelOnexError(
-            message="Semantic version cannot be empty",
-            error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-        )
+        # error-ok: Pydantic validator requires ValueError
+        raise ValueError("Semantic version cannot be empty")
 
     if not _SEMVER_PATTERN.match(value):
-        raise ModelOnexError(
-            message=f"Invalid semantic version format: '{value}'",
-            error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-        )
+        # error-ok: Pydantic validator requires ValueError
+        raise ValueError(f"Invalid semantic version format: '{value}'")
 
     return value
 
@@ -151,23 +145,30 @@ class ModelMetricsContext(BaseModel):
 
     @field_validator("trace_id", mode="before")
     @classmethod
-    def validate_trace_id(cls, value: str | None) -> str | None:
+    def validate_trace_id(cls, value: object) -> str | None:
         """Validate trace_id is in W3C Trace Context format (32 hex chars).
 
+        Note: Uses `object` type hint because mode="before" validators receive
+        raw input before Pydantic type coercion - input could be any type.
+
         Args:
-            value: The trace ID string to validate, or None.
+            value: The raw input value to validate (any type, expected str or None).
 
         Returns:
             The validated trace ID string (lowercase), or None if input is None.
 
         Raises:
-            ValueError: If the value is not a valid W3C trace ID format.
+            ValueError: If the value is not a string or not a valid W3C trace ID format.
         """
         if value is None:
             return None
+        if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(f"trace_id must be a string, got {type(value).__name__}")
         # Normalize to lowercase for comparison
         normalized = value.lower()
         if not _TRACE_ID_PATTERN.match(normalized):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid trace_id '{value}': must be 32 lowercase hex characters "
                 "(W3C Trace Context format)"
@@ -176,69 +177,103 @@ class ModelMetricsContext(BaseModel):
 
     @field_validator("span_id", "parent_span_id", mode="before")
     @classmethod
-    def validate_span_id(cls, value: str | None) -> str | None:
-        """Validate span_id/parent_span_id is 16 hex characters.
+    def validate_span_format(cls, value: object, info: ValidationInfo) -> str | None:
+        """Validate span_id or parent_span_id is 16 hex characters.
+
+        This validator handles both span_id and parent_span_id fields, using
+        the field_name from ValidationInfo to provide field-specific error messages.
+        Both fields must conform to W3C Trace Context format (16 lowercase hex chars).
+
+        Note: Uses `object` type hint because mode="before" validators receive
+        raw input before Pydantic type coercion - input could be any type.
 
         Args:
-            value: The span ID string to validate, or None.
+            value: The raw input value to validate (any type, expected str or None).
+            info: Pydantic validation info containing the field name (either
+                'span_id' or 'parent_span_id').
 
         Returns:
             The validated span ID string (lowercase), or None if input is None.
 
         Raises:
-            ValueError: If the value is not a valid span ID format.
+            ValueError: If the value is not a string or not a valid span ID format.
         """
         if value is None:
             return None
+        field_name = info.field_name
+        if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(
+                f"{field_name} must be a string, got {type(value).__name__}"
+            )
         # Normalize to lowercase for comparison
         normalized = value.lower()
         if not _SPAN_ID_PATTERN.match(normalized):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
-                f"Invalid span_id '{value}': must be 16 lowercase hex characters"
+                f"Invalid {field_name} '{value}': must be 16 lowercase hex characters"
             )
         return normalized
 
     @field_validator("sampling_rate", mode="before")
     @classmethod
-    def validate_sampling_rate(cls, value: float | None) -> float | None:
+    def validate_sampling_rate(cls, value: object) -> float | None:
         """Validate sampling_rate is between 0.0 and 1.0.
 
+        Note: Uses `object` type hint because mode="before" validators receive
+        raw input before Pydantic type coercion - input could be any type.
+
         Args:
-            value: The sampling rate to validate, or None.
+            value: The raw input value to validate (any type, expected float/int or None).
 
         Returns:
-            The validated sampling rate, or None if input is None.
+            The validated sampling rate as float, or None if input is None.
 
         Raises:
-            ValueError: If the value is not between 0.0 and 1.0 inclusive.
+            ValueError: If the value is not numeric or not between 0.0 and 1.0 inclusive.
         """
         if value is None:
             return None
-        if not 0.0 <= value <= 1.0:
+        if isinstance(value, bool) or not isinstance(value, int | float):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(
+                f"sampling_rate must be a number, got {type(value).__name__}"
+            )
+        float_value = float(value)
+        if not 0.0 <= float_value <= 1.0:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid sampling_rate {value}: must be between 0.0 and 1.0 inclusive"
             )
-        return value
+        return float_value
 
     @field_validator("service_version", mode="before")
     @classmethod
-    def validate_service_version_semver(cls, value: str | None) -> str | None:
+    def validate_service_version_semver(cls, value: object) -> str | None:
         """Validate service_version follows SemVer 2.0.0 format.
 
         Validates that service_version conforms to Semantic Versioning 2.0.0
         specification (e.g., "1.0.0", "2.1.3-beta.1", "1.0.0+build.123").
 
+        Note: Uses `object` type hint because mode="before" validators receive
+        raw input before Pydantic type coercion - input could be any type.
+
         Args:
-            value: The version string to validate, or None.
+            value: The raw input value to validate (any type, expected str or None).
 
         Returns:
             The validated version string unchanged, or None if input is None.
 
         Raises:
-            ValueError: If the version doesn't match SemVer 2.0.0 format.
+            ValueError: If the value is not a string or doesn't match SemVer 2.0.0 format.
         """
         if value is None:
             return None
+        if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(
+                f"service_version must be a string, got {type(value).__name__}"
+            )
         return _validate_semver(value)
 
     def is_sampled(self) -> bool:

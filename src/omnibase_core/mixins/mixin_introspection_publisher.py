@@ -14,6 +14,7 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_introspection_event import (
@@ -89,7 +90,7 @@ class MixinIntrospectionPublisher:
                 f"Published introspection event for node {node_id}",
                 context=context,
             )
-        except (ValueError, ValidationError) as e:
+        except (ValidationError, ValueError) as e:
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
@@ -138,7 +139,7 @@ class MixinIntrospectionPublisher:
                 tags=tags,
                 health_endpoint=health_endpoint,
             )
-        except (AttributeError, TypeError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             # fallback-ok: Introspection failures use fallback data with logging
             return self._create_fallback_introspection_data(e)
         except (

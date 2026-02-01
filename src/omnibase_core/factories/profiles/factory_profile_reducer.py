@@ -9,7 +9,7 @@ Profile Types:
 
 from collections.abc import Callable
 
-from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums import EnumNodeArchetype, EnumNodeType
 from omnibase_core.models.contracts import (
     ModelContractReducer,
     ModelExecutionOrderingPolicy,
@@ -158,7 +158,7 @@ def get_reducer_fsm_basic_profile(version: str = "1.0.0") -> ModelContractReduce
     return ModelContractReducer(
         # Core identification
         name="reducer_fsm_basic_profile",
-        version=semver,
+        contract_version=semver,
         description="Basic FSM reducer profile with simple state machine",
         node_type=EnumNodeType.REDUCER_GENERIC,
         # Model specifications
@@ -192,7 +192,7 @@ def get_reducer_fsm_basic_profile(version: str = "1.0.0") -> ModelContractReduce
         ),
         # Handler behavior configuration
         behavior=ModelHandlerBehavior(
-            handler_kind="reducer",
+            node_archetype=EnumNodeArchetype.REDUCER,
             purity="side_effecting",  # Reducers modify state
             idempotent=True,  # FSM transitions should be idempotent
             concurrency_policy="singleflight",  # Only one state transition at a time

@@ -1,0 +1,26 @@
+---
+# Golden sample: App crashes on login
+ticket_id: "TKT-2024-005"
+created_at: "2024-01-17T09:00:00Z"
+customer_tier: "free"
+channel: "web"
+language: "en"
+subject: "App crashes every time I try to log in"
+body: |
+  The mobile app crashes immediately after I enter my password and tap Login.
+
+  Device: iPhone 14 Pro
+  iOS Version: 17.2
+  App Version: 3.4.1
+
+  I've tried:
+  - Reinstalling the app
+  - Restarting my phone
+  - Clearing the app cache
+
+  Nothing works. The web version is fine though.
+attachments:
+  - "crash_log.txt"
+product_area: "mobile_app"
+priority_hint: "high"
+previous_contact_count: 0

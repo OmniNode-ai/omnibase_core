@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Testing > Parallel Testing Architecture
+
 # Parallel Testing Architecture and Resource Management
 
 This document explains the critical differences between CI parallel testing and local parallel testing, resource constraints, and best practices for avoiding resource exhaustion.

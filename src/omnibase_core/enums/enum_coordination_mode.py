@@ -5,12 +5,18 @@ Coordination Mode Enum.
 Strongly-typed enum for hub coordination modes.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumCoordinationMode(str, Enum):
+@unique
+class EnumCoordinationMode(StrValueHelper, str, Enum):
     """Hub coordination modes."""
 
     EVENT_ROUTER = "event_router"
     WORKFLOW_ORCHESTRATOR = "workflow_orchestrator"
     META_HUB_ROUTER = "meta_hub_router"
+
+
+__all__ = ["EnumCoordinationMode"]

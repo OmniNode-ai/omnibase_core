@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Latency comparison statistics between baseline and replay executions.
 
 This model provides comprehensive latency metrics including averages and
@@ -14,7 +11,7 @@ Thread Safety:
 import math
 import statistics
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
@@ -85,6 +82,47 @@ class ModelLatencyStatistics(BaseModel):
     delta_p95_percent: float = Field(
         description="Percentage change in P95 latency. Positive = regression."
     )
+
+    @model_validator(mode="after")
+    def _validate_percentile_ordering(self) -> "ModelLatencyStatistics":
+        """Validate that latency percentiles are properly ordered.
+
+        Ensures that p50 <= p95 for both baseline and replay metrics,
+        which is mathematically required for valid percentile data.
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ModelOnexError: If percentiles are not properly ordered.
+        """
+        # Validate baseline percentile ordering
+        if self.baseline_p50_ms > self.baseline_p95_ms:
+            raise ModelOnexError(
+                message=(
+                    f"Baseline latency percentiles must be ordered: p50 <= p95 "
+                    f"(p50={self.baseline_p50_ms}ms, p95={self.baseline_p95_ms}ms)"
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "baseline_p50_ms": self.baseline_p50_ms,
+                    "baseline_p95_ms": self.baseline_p95_ms,
+                },
+            )
+        # Validate replay percentile ordering
+        if self.replay_p50_ms > self.replay_p95_ms:
+            raise ModelOnexError(
+                message=(
+                    f"Replay latency percentiles must be ordered: p50 <= p95 "
+                    f"(p50={self.replay_p50_ms}ms, p95={self.replay_p95_ms}ms)"
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "replay_p50_ms": self.replay_p50_ms,
+                    "replay_p95_ms": self.replay_p95_ms,
+                },
+            )
+        return self
 
     @classmethod
     def from_latency_values(

@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Data Type Enum.
 
 Strongly typed data type values for configuration and processing.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumDataType(str, Enum):
+class EnumDataType(StrValueHelper, str, Enum):
     """
     Strongly typed data type values.
 
@@ -25,10 +26,6 @@ class EnumDataType(str, Enum):
     BINARY = "binary"
     CSV = "csv"
     YAML = "yaml"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_structured(cls, data_type: EnumDataType) -> bool:

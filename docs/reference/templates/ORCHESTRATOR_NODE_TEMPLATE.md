@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Reference](../README.md) > Templates > ORCHESTRATOR Node
+
 # ORCHESTRATOR Node Template
 
 ## Overview
@@ -78,7 +80,7 @@ from omnibase_core.nodes import (
     ModelOrchestratorOutput,
     EnumActionType,
     EnumExecutionMode,
-    EnumWorkflowState,
+    EnumWorkflowStatus,
 )
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
@@ -161,7 +163,7 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(NodeOrchestrator)
         self._error_sanitizer = ErrorSanitizer()
 
         # Execution tracking
-        self._active_workflows: dict[UUID, EnumWorkflowState] = {}
+        self._active_workflows: dict[UUID, EnumWorkflowStatus] = {}
         self._step_results: dict[UUID, dict[str, Any]] = {}
 
     @standard_error_handling("Workflow orchestration")
@@ -211,7 +213,7 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(NodeOrchestrator)
 
         # Track workflow state
         workflow_id = input_data.workflow_id
-        self._active_workflows[workflow_id] = EnumWorkflowState.RUNNING
+        self._active_workflows[workflow_id] = EnumWorkflowStatus.RUNNING
 
         try:
             # Pre-execution validation
@@ -235,16 +237,16 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(NodeOrchestrator)
                 )
 
             # Update workflow state
-            self._active_workflows[workflow_id] = EnumWorkflowState.COMPLETED
+            self._active_workflows[workflow_id] = EnumWorkflowStatus.COMPLETED
 
             return result
 
         except asyncio.TimeoutError:
-            self._active_workflows[workflow_id] = EnumWorkflowState.FAILED
+            self._active_workflows[workflow_id] = EnumWorkflowStatus.FAILED
             return self._create_timeout_output(input_data)
 
         except Exception as e:
-            self._active_workflows[workflow_id] = EnumWorkflowState.FAILED
+            self._active_workflows[workflow_id] = EnumWorkflowStatus.FAILED
             # Recovery handling
             if input_data.failure_strategy == "retry":
                 return await self._handle_retry(input_data, e)
@@ -391,7 +393,7 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(NodeOrchestrator)
             }],
         )
 
-    async def get_workflow_status(self, workflow_id: UUID) -> EnumWorkflowState:
+    async def get_workflow_status(self, workflow_id: UUID) -> EnumWorkflowStatus:
         """Get current status of a workflow.
 
         Args:
@@ -403,11 +405,11 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(NodeOrchestrator)
         Example:
             ```python
             status = await node.get_workflow_status(workflow_id)
-            if status == EnumWorkflowState.RUNNING:
+            if status == EnumWorkflowStatus.RUNNING:
                 print("Workflow is still executing")
             ```
         """
-        return self._active_workflows.get(workflow_id, EnumWorkflowState.PENDING)
+        return self._active_workflows.get(workflow_id, EnumWorkflowStatus.PENDING)
 
     async def cancel_workflow(self, workflow_id: UUID) -> bool:
         """Cancel a running workflow.
@@ -427,8 +429,8 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(NodeOrchestrator)
         """
         if workflow_id in self._active_workflows:
             current_state = self._active_workflows[workflow_id]
-            if current_state == EnumWorkflowState.RUNNING:
-                self._active_workflows[workflow_id] = EnumWorkflowState.CANCELLED
+            if current_state == EnumWorkflowStatus.RUNNING:
+                self._active_workflows[workflow_id] = EnumWorkflowStatus.CANCELLED
                 return True
         return False
 
@@ -441,7 +443,7 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(NodeOrchestrator)
         try:
             active_count = sum(
                 1 for state in self._active_workflows.values()
-                if state == EnumWorkflowState.RUNNING
+                if state == EnumWorkflowStatus.RUNNING
             )
 
             return {
@@ -1599,7 +1601,7 @@ from omnibase_core.nodes import (
     EnumActionType,
     EnumBranchCondition,
     EnumExecutionMode,
-    EnumWorkflowState,
+    EnumWorkflowStatus,
 )
 
 # Container for DI

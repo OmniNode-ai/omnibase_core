@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 ServiceCapabilityResolver - Resolves capability dependencies to provider bindings.
 
@@ -48,6 +45,7 @@ import logging
 import time
 from datetime import UTC, datetime
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.bindings.model_binding import ModelBinding
 from omnibase_core.models.bindings.model_resolution_result import ModelResolutionResult
@@ -149,6 +147,7 @@ class ServiceCapabilityResolver:
     .. versionadded:: 0.4.0
     """
 
+    @standard_error_handling("Capability resolution")
     def resolve(
         self,
         dependency: ModelCapabilityDependency,
@@ -254,6 +253,16 @@ class ServiceCapabilityResolver:
 
         .. versionadded:: 0.4.0
         """
+        return self._resolve_all_impl(dependencies, registry, profile)
+
+    @standard_error_handling("Batch capability resolution")
+    def _resolve_all_impl(
+        self,
+        dependencies: list[ModelCapabilityDependency],
+        registry: ProtocolProviderRegistry,
+        profile: ModelProfile | None = None,
+    ) -> ModelResolutionResult:
+        """Internal implementation of resolve_all."""
         start_time = time.perf_counter()
 
         bindings: dict[str, ModelBinding] = {}

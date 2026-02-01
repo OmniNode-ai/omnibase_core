@@ -42,13 +42,13 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 def get_minimal_reducer_contract_data(**overrides: Any) -> dict[str, Any]:
     """Create minimal valid ModelContractReducer data with optional overrides.
 
-    This helper provides the required base class fields (name, version, description,
-    input_model, output_model) with sensible defaults, allowing tests to override
-    specific fields as needed.
+    This helper provides the required base class fields (name, contract_version,
+    description, input_model, output_model) with sensible defaults, allowing tests
+    to override specific fields as needed.
     """
     base_data: dict[str, Any] = {
         "name": "test_reducer_contract",
-        "version": ModelSemVer(major=1, minor=0, patch=0),
+        "contract_version": ModelSemVer(major=1, minor=0, patch=0),
         "description": "Test reducer contract for v1.5.0 validation",
         "input_model": "omnibase_core.models.test.ModelTestInput",
         "output_model": "omnibase_core.models.test.ModelTestOutput",

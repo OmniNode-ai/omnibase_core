@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 TypedDict for performance metric data.
 
@@ -7,6 +5,7 @@ Strongly-typed representation for performance metric values to replace loose Any
 Follows ONEX one-model-per-file and TypedDict naming conventions.
 """
 
+from __future__ import annotations
 
 from typing import TypedDict
 

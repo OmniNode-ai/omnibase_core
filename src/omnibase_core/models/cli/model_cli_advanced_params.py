@@ -7,7 +7,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -264,8 +264,6 @@ class ModelCliAdvancedParams(BaseModel):
         self.security_level = EnumSecurityLevel.ENTERPRISE
         self.enable_sandbox = True
 
-    # Export the model
-
     # Protocol method implementations
 
     @allow_dict_any
@@ -297,17 +295,17 @@ class ModelCliAdvancedParams(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (AttributeError, ValueError, TypeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": True,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=True,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelCliAdvancedParams"]

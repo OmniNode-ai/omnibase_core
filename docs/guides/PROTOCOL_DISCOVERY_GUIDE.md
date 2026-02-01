@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Protocol Discovery Guide
+
 # Protocol Discovery Guide
 
 > **Version**: 0.4.0

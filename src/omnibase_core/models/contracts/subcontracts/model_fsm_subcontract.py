@@ -458,6 +458,7 @@ class ModelFSMSubcontract(BaseModel):
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts
+        from_attributes=True,  # Required for pytest-xdist compatibility
         frozen=True,  # Immutability after creation for thread safety
         use_enum_values=False,  # Keep enum objects, don't convert to strings
     )

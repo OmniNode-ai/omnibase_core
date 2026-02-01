@@ -23,7 +23,7 @@ class TypedDictLifecycleEventMetadata(TypedDict, total=False):
         initialization_duration_ms: Duration of initialization
         total_operations: Total number of operations performed
         avg_processing_time_ms: Average processing time
-        error_count: Number of errors encountered
+        error_level_count: Number of errors encountered at ERROR severity level
         success_count: Number of successful operations
     """
 
@@ -36,7 +36,7 @@ class TypedDictLifecycleEventMetadata(TypedDict, total=False):
     initialization_duration_ms: NotRequired[float]
     total_operations: NotRequired[float]
     avg_processing_time_ms: NotRequired[float]
-    error_count: NotRequired[float]
+    error_level_count: NotRequired[float]
     success_count: NotRequired[float]
 
 

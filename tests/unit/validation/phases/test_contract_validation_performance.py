@@ -28,8 +28,10 @@ from omnibase_core.models.contracts.model_handler_contract import ModelHandlerCo
 from omnibase_core.models.contracts.model_profile_reference import ModelProfileReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
-from omnibase_core.validation.phases.expanded_validator import ExpandedContractValidator
-from omnibase_core.validation.phases.merge_validator import MergeValidator
+from omnibase_core.validation.phases.validator_expanded_contract import (
+    ExpandedContractValidator,
+)
+from omnibase_core.validation.phases.validator_merge import MergeValidator
 
 # =============================================================================
 # Helper Functions
@@ -54,7 +56,7 @@ def create_contract_with_outputs(
     return ModelHandlerContract(
         handler_id="node.test.compute",
         name=f"Test Handler with {num_outputs} outputs",
-        version="1.0.0",
+        contract_version=ModelSemVer(major=1, minor=0, patch=0),
         description=f"A test contract with {num_outputs} capability outputs",
         descriptor=valid_descriptor,
         input_model="omnibase_core.models.events.ModelTestEvent",
@@ -80,7 +82,7 @@ def create_valid_contract(
     return ModelHandlerContract(
         handler_id="node.test.compute",
         name=f"Test Handler {suffix}",
-        version="1.0.0",
+        contract_version=ModelSemVer(major=1, minor=0, patch=0),
         description="Test contract for concurrent validation",
         descriptor=valid_descriptor,
         input_model="omnibase_core.models.events.ModelTestEvent",
@@ -128,7 +130,7 @@ def profile_ref() -> ModelProfileReference:
 def valid_descriptor() -> ModelHandlerBehavior:
     """Create a valid handler behavior descriptor."""
     return ModelHandlerBehavior(
-        handler_kind="compute",
+        node_archetype="compute",
         purity="pure",
         idempotent=True,
     )
@@ -172,7 +174,7 @@ class TestLargeContractValidation:
         # Verify result is valid ModelValidationResult with expected properties
         assert result is not None, "Validation should return a result"
         assert result.is_valid is True, "Valid contract should pass merge validation"
-        assert result.error_count == 0, "Valid contract should have no errors"
+        assert result.error_level_count == 0, "Valid contract should have no errors"
         assert elapsed < 5.0, (
             f"Large contract validation took {elapsed:.2f}s, expected < 5.0s. "
             "This may indicate O(n^2) or worse complexity."
@@ -199,7 +201,7 @@ class TestLargeContractValidation:
         # Verify result is valid ModelValidationResult with expected properties
         assert result is not None, "Validation should return a result"
         assert result.is_valid is True, "Valid contract should pass merge validation"
-        assert result.error_count == 0, "Valid contract should have no errors"
+        assert result.error_level_count == 0, "Valid contract should have no errors"
         assert elapsed < 5.0, (
             f"Large contract validation (2000 handlers) took {elapsed:.2f}s, "
             "expected < 5.0s"
@@ -220,7 +222,7 @@ class TestLargeContractValidation:
         # Verify result is valid ModelValidationResult with expected properties
         assert result is not None, "Validation should return a result"
         assert result.is_valid is True, "Valid contract should pass expanded validation"
-        assert result.error_count == 0, "Valid contract should have no errors"
+        assert result.error_level_count == 0, "Valid contract should have no errors"
         assert elapsed < 5.0, (
             f"Expanded validation took {elapsed:.2f}s, expected < 5.0s"
         )
@@ -271,7 +273,7 @@ class TestDuplicateDetectionComplexity:
             assert result.is_valid is True, (
                 f"Contract with {size} handlers should pass validation"
             )
-            assert result.error_count == 0, (
+            assert result.error_level_count == 0, (
                 f"Contract with {size} handlers should have no errors"
             )
 
@@ -318,7 +320,7 @@ class TestDuplicateDetectionComplexity:
             assert result.is_valid is True, (
                 f"Valid contract with {size} handlers should pass"
             )
-            assert result.error_count == 0, (
+            assert result.error_level_count == 0, (
                 f"Valid contract with {size} handlers should have no errors"
             )
             assert elapsed < 2.0, (
@@ -369,7 +371,7 @@ class TestConcurrentValidationThreadSafety:
                     merged = create_valid_contract(valid_descriptor, suffix)
 
                     result = merge_validator.validate(base, patch, merged)
-                    thread_results.append((result.is_valid, result.error_count))
+                    thread_results.append((result.is_valid, result.error_level_count))
                 except Exception as e:
                     errors.append(f"Thread {thread_id}, iteration {i}: {e}")
             return thread_results
@@ -421,7 +423,7 @@ class TestConcurrentValidationThreadSafety:
                     suffix = f"{thread_id}_{i}"
                     contract = create_valid_contract(valid_descriptor, suffix)
                     result = expanded_validator.validate(contract)
-                    thread_results.append((result.is_valid, result.error_count))
+                    thread_results.append((result.is_valid, result.error_level_count))
                 except Exception as e:
                     errors.append(f"Thread {thread_id}, iteration {i}: {e}")
             return thread_results
@@ -527,7 +529,7 @@ class TestConcurrentValidationThreadSafety:
             return ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="TODO",  # Placeholder - should fail validation
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 description="Invalid contract for testing",
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.events.ModelTestEvent",
@@ -620,7 +622,11 @@ class TestConcurrentValidationThreadSafety:
 
                     with results_lock:
                         key = f"{thread_id}_{i}"
-                        results[key] = (result.is_valid, result.error_count, suffix)
+                        results[key] = (
+                            result.is_valid,
+                            result.error_level_count,
+                            suffix,
+                        )
 
                 except Exception as e:
                     with results_lock:
@@ -743,7 +749,7 @@ class TestConcurrentValidationThreadSafety:
             return ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="PLACEHOLDER",  # Should fail merge validation
-                version="1.0.0",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
                 description="Invalid",
                 descriptor=valid_descriptor,
                 input_model="omnibase_core.models.events.ModelTestEvent",

@@ -2,6 +2,8 @@
 
 import pytest
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_input_state_class import ModelInputState
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -61,8 +63,30 @@ class TestModelInputState:
         metadata = state.get_metadata()
 
         assert isinstance(metadata, dict)
-        # Should contain some metadata fields
-        assert len(metadata) >= 0
+        # New implementation returns proper TypedDictMetadataDict structure
+        assert metadata["name"] == ""
+        assert metadata["description"] == ""
+        assert metadata["tags"] == []
+        assert metadata["metadata"] == {}
+        # version should not be present when version is None
+        assert "version" not in metadata
+
+    def test_get_metadata_with_version(self):
+        """Test getting metadata when version is set."""
+        version = ModelSemVer(major=1, minor=2, patch=3)
+        state = ModelInputState(version=version)
+        metadata = state.get_metadata()
+
+        assert isinstance(metadata, dict)
+        assert metadata["name"] == ""
+        assert metadata["version"] == version
+
+    def test_get_metadata_with_additional_fields(self):
+        """Test getting metadata includes additional_fields."""
+        state = ModelInputState(additional_fields={"key": "value", "count": 42})
+        metadata = state.get_metadata()
+
+        assert metadata["metadata"] == {"key": "value", "count": 42}
 
     def test_set_metadata(self):
         """Test setting metadata."""
@@ -72,6 +96,38 @@ class TestModelInputState:
 
         result = state.set_metadata(metadata)
         assert result is True
+        # Version should be converted to ModelSemVer, not stored as string
+        assert isinstance(state.version, ModelSemVer)
+        assert state.version.major == 1
+        assert state.version.minor == 0
+        assert state.version.patch == 0
+
+    def test_set_metadata_with_version_dict(self):
+        """Test setting metadata with version as dict."""
+        state = ModelInputState()
+
+        metadata = {"version": {"major": 2, "minor": 1, "patch": 3}}
+
+        result = state.set_metadata(metadata)
+        assert result is True
+        # Version should be converted to ModelSemVer from dict
+        assert isinstance(state.version, ModelSemVer)
+        assert state.version.major == 2
+        assert state.version.minor == 1
+        assert state.version.patch == 3
+
+    def test_set_metadata_with_model_semver(self):
+        """Test setting metadata with version as ModelSemVer."""
+        state = ModelInputState()
+        version = ModelSemVer(major=3, minor=2, patch=1)
+
+        metadata = {"version": version}
+
+        result = state.set_metadata(metadata)
+        assert result is True
+        # Version should be preserved as ModelSemVer
+        assert isinstance(state.version, ModelSemVer)
+        assert state.version == version
 
     def test_serialize(self):
         """Test serialization."""
@@ -110,3 +166,10 @@ class TestModelInputState:
         assert ModelInputState.__doc__ is not None
         assert len(ModelInputState.__doc__.strip()) > 0
         assert "Type-safe input state container" in ModelInputState.__doc__
+
+    def test_set_metadata_invalid_version_format(self):
+        """Test set_metadata raises ModelOnexError for invalid version format."""
+        state = ModelInputState()
+        with pytest.raises(ModelOnexError) as exc_info:
+            state.set_metadata({"version": "invalid-version"})
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR

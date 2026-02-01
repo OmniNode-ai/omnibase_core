@@ -484,7 +484,7 @@ def validate_envelope_fields(data: dict[str, object]) -> ModelValidationContaine
                         field="causation_id",
                         error_code="SELF_REFERENCE",
                     )
-            except (ValueError, TypeError):
+            except (TypeError, ValueError):
                 pass  # UUID validation errors already handled above
 
     return container

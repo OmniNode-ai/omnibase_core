@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 YAML Option Type Enum.
 
 Strongly typed enumeration for YAML dumper option value types.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumYamlOptionType(str, Enum):
+class EnumYamlOptionType(StrValueHelper, str, Enum):
     """
     Strongly typed YAML dumper option value types.
 
@@ -24,10 +25,6 @@ class EnumYamlOptionType(str, Enum):
     INTEGER = "integer"
     STRING = "string"
 
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
-
     @classmethod
     def is_numeric_type(cls, option_type: EnumYamlOptionType) -> bool:
         """Check if the option type represents a numeric value."""
@@ -35,7 +32,13 @@ class EnumYamlOptionType(str, Enum):
 
     @classmethod
     def is_primitive_type(cls, option_type: EnumYamlOptionType) -> bool:
-        """Check if the option type represents a primitive value."""
+        """Check if the option type represents a primitive value.
+
+        Note: This method returns True for ALL current enum values since
+        YAML options are inherently primitive types (boolean, integer, string).
+        The method exists for API consistency with other value type enums
+        and to support future extension if complex types are added.
+        """
         return option_type in {cls.BOOLEAN, cls.INTEGER, cls.STRING}
 
     @classmethod

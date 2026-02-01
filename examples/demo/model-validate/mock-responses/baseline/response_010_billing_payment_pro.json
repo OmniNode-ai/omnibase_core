@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-010",
+  "category": "billing_refund",
+  "confidence": 0.96,
+  "sentiment": "neutral",
+  "summary": "Customer charged twice for Pro subscription in same month",
+  "suggested_reply": "I sincerely apologize for this billing error. I've verified that you were indeed charged twice for your January subscription. I'm processing an immediate refund for the duplicate charge on January 12th. You should see this credited back to your card within 3-5 business days. I've also added a note to your account to prevent this from happening again. Thank you for bringing this to our attention.",
+  "latency_ms": 1120,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["duplicate_charge", "billing_error", "refund_eligible"],
+  "invariant_tags": ["billing_domain", "refund_flow"]
+}

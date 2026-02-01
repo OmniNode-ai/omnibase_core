@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Release > v0.4.0 Release Checklist
+
 # v0.4.0 Release Gate Checklist (Hardened)
 
 > **Version**: 0.4.0

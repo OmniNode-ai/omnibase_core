@@ -3,12 +3,14 @@ Unit tests for ONEX Topic Taxonomy constants.
 
 Tests cover:
 - topic_name() function behavior
-- Topic type suffix constants
+- Topic type suffix constants (including DLQ)
 - Domain name constants
 - Topic constants for all domains
 - Cleanup policy constants
 - Retention default constants
 - Naming convention compliance
+- Token mapping functions (get_token_to_topic_type, get_topic_type_to_token,
+  get_valid_topic_suffix_kinds)
 """
 
 import pytest
@@ -40,11 +42,19 @@ from omnibase_core.constants import (
     TOPIC_RUNTIME_EVENTS,
     TOPIC_RUNTIME_INTENTS,
     TOPIC_TYPE_COMMANDS,
+    TOPIC_TYPE_DLQ,
     TOPIC_TYPE_EVENTS,
     TOPIC_TYPE_INTENTS,
     TOPIC_TYPE_SNAPSHOTS,
     topic_name,
 )
+from omnibase_core.constants.constants_topic_taxonomy import (
+    PLATFORM_BASELINE_TOPIC_SUFFIXES,
+    get_token_to_topic_type,
+    get_topic_type_to_token,
+    get_valid_topic_suffix_kinds,
+)
+from omnibase_core.enums.enum_topic_taxonomy import EnumTopicType
 
 
 @pytest.mark.unit
@@ -179,6 +189,10 @@ class TestTopicTypeSuffixConstants:
         """Test TOPIC_TYPE_COMMANDS constant value."""
         assert TOPIC_TYPE_COMMANDS == "commands"
 
+    def test_topic_type_dlq_value(self):
+        """Test TOPIC_TYPE_DLQ constant value."""
+        assert TOPIC_TYPE_DLQ == "dlq"
+
     def test_topic_type_events_value(self):
         """Test TOPIC_TYPE_EVENTS constant value."""
         assert TOPIC_TYPE_EVENTS == "events"
@@ -194,6 +208,7 @@ class TestTopicTypeSuffixConstants:
     def test_topic_types_are_strings(self):
         """Test that all topic type constants are strings."""
         assert isinstance(TOPIC_TYPE_COMMANDS, str)
+        assert isinstance(TOPIC_TYPE_DLQ, str)
         assert isinstance(TOPIC_TYPE_EVENTS, str)
         assert isinstance(TOPIC_TYPE_INTENTS, str)
         assert isinstance(TOPIC_TYPE_SNAPSHOTS, str)
@@ -201,6 +216,7 @@ class TestTopicTypeSuffixConstants:
     def test_topic_types_are_lowercase(self):
         """Test that all topic type constants are lowercase."""
         assert TOPIC_TYPE_COMMANDS.islower()
+        assert TOPIC_TYPE_DLQ.islower()
         assert TOPIC_TYPE_EVENTS.islower()
         assert TOPIC_TYPE_INTENTS.islower()
         assert TOPIC_TYPE_SNAPSHOTS.islower()
@@ -209,6 +225,7 @@ class TestTopicTypeSuffixConstants:
         """Test that all topic type constants have unique values."""
         types = [
             TOPIC_TYPE_COMMANDS,
+            TOPIC_TYPE_DLQ,
             TOPIC_TYPE_EVENTS,
             TOPIC_TYPE_INTENTS,
             TOPIC_TYPE_SNAPSHOTS,
@@ -712,6 +729,7 @@ class TestModuleExports:
         all_exports = constants_topic_taxonomy.__all__
 
         assert "TOPIC_TYPE_COMMANDS" in all_exports
+        assert "TOPIC_TYPE_DLQ" in all_exports
         assert "TOPIC_TYPE_EVENTS" in all_exports
         assert "TOPIC_TYPE_INTENTS" in all_exports
         assert "TOPIC_TYPE_SNAPSHOTS" in all_exports
@@ -758,6 +776,187 @@ class TestModuleExports:
         assert "RETENTION_MS_INTENTS" in all_exports
         assert "RETENTION_MS_SNAPSHOTS" in all_exports
         assert "RETENTION_MS_AUDIT" in all_exports
+
+
+@pytest.mark.unit
+class TestTokenMappingFunctions:
+    """Tests for token mapping accessor functions."""
+
+    def test_get_token_to_topic_type_returns_dict(self) -> None:
+        """Test that get_token_to_topic_type returns a dictionary."""
+        mapping = get_token_to_topic_type()
+        assert isinstance(mapping, dict)
+
+    def test_get_token_to_topic_type_contains_all_tokens(self) -> None:
+        """Test that mapping contains all expected tokens."""
+        mapping = get_token_to_topic_type()
+        expected_tokens = {"cmd", "dlq", "evt", "intent", "snapshot"}
+        assert set(mapping.keys()) == expected_tokens
+
+    def test_get_token_to_topic_type_maps_correctly(self) -> None:
+        """Test that tokens map to correct enum values."""
+        mapping = get_token_to_topic_type()
+        assert mapping["cmd"] == EnumTopicType.COMMANDS
+        assert mapping["evt"] == EnumTopicType.EVENTS
+        assert mapping["dlq"] == EnumTopicType.DLQ
+        assert mapping["intent"] == EnumTopicType.INTENTS
+        assert mapping["snapshot"] == EnumTopicType.SNAPSHOTS
+
+    def test_get_topic_type_to_token_returns_dict(self) -> None:
+        """Test that get_topic_type_to_token returns a dictionary."""
+        mapping = get_topic_type_to_token()
+        assert isinstance(mapping, dict)
+
+    def test_get_topic_type_to_token_is_reverse_of_token_to_type(self) -> None:
+        """Test that reverse mapping is inverse of forward mapping."""
+        forward = get_token_to_topic_type()
+        reverse = get_topic_type_to_token()
+        for token, enum_val in forward.items():
+            assert reverse[enum_val] == token
+
+    def test_get_topic_type_to_token_maps_correctly(self) -> None:
+        """Test that enum values map to correct tokens."""
+        mapping = get_topic_type_to_token()
+        assert mapping[EnumTopicType.COMMANDS] == "cmd"
+        assert mapping[EnumTopicType.EVENTS] == "evt"
+        assert mapping[EnumTopicType.DLQ] == "dlq"
+        assert mapping[EnumTopicType.INTENTS] == "intent"
+        assert mapping[EnumTopicType.SNAPSHOTS] == "snapshot"
+
+    def test_get_valid_topic_suffix_kinds_returns_frozenset(self) -> None:
+        """Test that get_valid_topic_suffix_kinds returns a frozenset."""
+        kinds = get_valid_topic_suffix_kinds()
+        assert isinstance(kinds, frozenset)
+
+    def test_get_valid_topic_suffix_kinds_contains_all_tokens(self) -> None:
+        """Test that frozenset contains all valid tokens."""
+        kinds = get_valid_topic_suffix_kinds()
+        expected = {"cmd", "dlq", "evt", "intent", "snapshot"}
+        assert kinds == expected
+
+    def test_mappings_return_defensive_copies(self) -> None:
+        """Test that dict accessors return defensive copies to prevent mutation."""
+        # Dict accessors should return different objects (defensive copies)
+        mapping1 = get_token_to_topic_type()
+        mapping2 = get_token_to_topic_type()
+        assert mapping1 is not mapping2  # Different objects
+        assert mapping1 == mapping2  # Same content
+
+        reverse1 = get_topic_type_to_token()
+        reverse2 = get_topic_type_to_token()
+        assert reverse1 is not reverse2  # Different objects
+        assert reverse1 == reverse2  # Same content
+
+        # Frozenset accessor can return same object (immutable, safe to share)
+        kinds1 = get_valid_topic_suffix_kinds()
+        kinds2 = get_valid_topic_suffix_kinds()
+        assert kinds1 is kinds2  # Same object (frozenset is immutable)
+
+    def test_valid_kinds_matches_token_keys(self) -> None:
+        """Test that valid kinds equals token mapping keys."""
+        tokens = get_token_to_topic_type()
+        kinds = get_valid_topic_suffix_kinds()
+        assert kinds == frozenset(tokens.keys())
+
+    def test_token_to_type_values_are_enum_topic_type(self) -> None:
+        """Test that all values in token_to_type are EnumTopicType instances."""
+        mapping = get_token_to_topic_type()
+        for value in mapping.values():
+            assert isinstance(value, EnumTopicType)
+
+    def test_type_to_token_keys_are_enum_topic_type(self) -> None:
+        """Test that all keys in type_to_token are EnumTopicType instances."""
+        mapping = get_topic_type_to_token()
+        for key in mapping:
+            assert isinstance(key, EnumTopicType)
+
+    def test_mappings_cover_all_enum_values(self) -> None:
+        """Test that mappings cover all EnumTopicType values."""
+        type_to_token = get_topic_type_to_token()
+        # All EnumTopicType values should be mapped
+        expected_types = {
+            EnumTopicType.COMMANDS,
+            EnumTopicType.DLQ,
+            EnumTopicType.EVENTS,
+            EnumTopicType.INTENTS,
+            EnumTopicType.SNAPSHOTS,
+        }
+        assert set(type_to_token.keys()) == expected_types
+
+
+@pytest.mark.unit
+class TestTokenMappingExports:
+    """Test that token mapping functions are properly exported."""
+
+    def test_token_mapping_functions_in_module_all(self) -> None:
+        """Test that token mapping functions are in __all__."""
+        from omnibase_core.constants import constants_topic_taxonomy
+
+        all_exports = constants_topic_taxonomy.__all__
+
+        assert "get_token_to_topic_type" in all_exports
+        assert "get_topic_type_to_token" in all_exports
+        assert "get_valid_topic_suffix_kinds" in all_exports
+
+
+@pytest.mark.unit
+class TestPlatformBaselineTopicSuffixes:
+    """Test cases for PLATFORM_BASELINE_TOPIC_SUFFIXES constant (OMN-1652)."""
+
+    def test_platform_baseline_topic_suffixes_is_tuple(self) -> None:
+        """Test that PLATFORM_BASELINE_TOPIC_SUFFIXES is a tuple."""
+        assert isinstance(PLATFORM_BASELINE_TOPIC_SUFFIXES, tuple)
+
+    def test_platform_baseline_topic_suffixes_contains_expected_values(self) -> None:
+        """Test that all expected platform baseline topics are present."""
+        expected = {
+            "onex.evt.contract-registered.v1",
+            "onex.evt.contract-deregistered.v1",
+            "onex.evt.node-heartbeat.v1",
+        }
+        assert set(PLATFORM_BASELINE_TOPIC_SUFFIXES) == expected
+
+    def test_platform_baseline_topic_suffixes_count(self) -> None:
+        """Test that there are exactly 3 baseline topic suffixes."""
+        assert len(PLATFORM_BASELINE_TOPIC_SUFFIXES) == 3
+
+    def test_platform_baseline_topic_suffixes_follow_naming_convention(self) -> None:
+        """Test that all suffixes follow onex.evt.*.v1 convention."""
+        for suffix in PLATFORM_BASELINE_TOPIC_SUFFIXES:
+            assert suffix.startswith("onex.evt."), (
+                f"Suffix {suffix} should start with 'onex.evt.'"
+            )
+            assert suffix.endswith(".v1"), f"Suffix {suffix} should end with '.v1'"
+
+    def test_platform_baseline_topic_suffixes_are_strings(self) -> None:
+        """Test that all suffixes are strings."""
+        for suffix in PLATFORM_BASELINE_TOPIC_SUFFIXES:
+            assert isinstance(suffix, str)
+
+    def test_platform_baseline_topic_suffixes_are_lowercase(self) -> None:
+        """Test that all suffixes are lowercase."""
+        for suffix in PLATFORM_BASELINE_TOPIC_SUFFIXES:
+            assert suffix == suffix.lower(), f"Suffix {suffix} should be lowercase"
+
+    def test_platform_baseline_topic_suffixes_unique(self) -> None:
+        """Test that all suffixes are unique."""
+        assert len(PLATFORM_BASELINE_TOPIC_SUFFIXES) == len(
+            set(PLATFORM_BASELINE_TOPIC_SUFFIXES)
+        )
+
+    def test_platform_baseline_topic_suffixes_have_four_parts(self) -> None:
+        """Test that all suffixes have exactly four dot-separated parts."""
+        for suffix in PLATFORM_BASELINE_TOPIC_SUFFIXES:
+            parts = suffix.split(".")
+            assert len(parts) == 4, (
+                f"Suffix {suffix} should have 4 parts, has {len(parts)}"
+            )
+
+    def test_platform_baseline_topic_suffixes_exported(self) -> None:
+        """Test that PLATFORM_BASELINE_TOPIC_SUFFIXES is in __all__."""
+        from omnibase_core.constants import constants_topic_taxonomy
+
+        assert "PLATFORM_BASELINE_TOPIC_SUFFIXES" in constants_topic_taxonomy.__all__
 
 
 if __name__ == "__main__":

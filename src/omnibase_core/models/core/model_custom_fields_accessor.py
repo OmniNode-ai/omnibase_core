@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import copy
 
-from pydantic import Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types.type_constraints import PrimitiveValueType
@@ -47,14 +47,14 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
     list_fields: dict[str, list[ModelSchemaValue]] = Field(default_factory=dict)
     float_fields: dict[str, float] = Field(default_factory=dict)
     # Custom fields storage - can be overridden by subclasses to have default=None
-    custom_fields: dict[str, PrimitiveValueType] | None = Field(default=None)
+    custom_fields: dict[str, PrimitiveValueType] | None = None
 
     # Pydantic configuration to allow extra fields
-    model_config = {
-        "extra": "allow",  # Allow dynamic fields
-        "use_enum_values": False,
-        "validate_assignment": False,  # Disable strict validation for dynamic fields
-    }
+    model_config = ConfigDict(
+        extra="allow",  # Allow dynamic fields,
+        use_enum_values=False,
+        validate_assignment=False,  # Disable strict validation for dynamic fields,
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -854,12 +854,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: protocol method must return bool, not raise
-            return False
+        return True
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

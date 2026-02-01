@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 ServiceCorpusReplayOrchestrator - Orchestrate replay of execution corpus.
 
@@ -40,7 +37,7 @@ Usage:
         from omnibase_core.services.replay.service_corpus_replay_orchestrator import (
             ServiceCorpusReplayOrchestrator,
         )
-        from omnibase_core.pipeline.replay.executor_replay import ExecutorReplay
+        from omnibase_core.pipeline.replay.runner_replay_executor import ExecutorReplay
         from omnibase_core.models.replay import (
             ModelCorpusReplayConfig,
             ModelExecutionCorpus,
@@ -95,7 +92,7 @@ if TYPE_CHECKING:
         ModelExecutionManifest,
     )
     from omnibase_core.models.replay.model_execution_corpus import ModelExecutionCorpus
-    from omnibase_core.pipeline.replay.executor_replay import ExecutorReplay
+    from omnibase_core.pipeline.replay.runner_replay_executor import ExecutorReplay
     from omnibase_core.protocols.protocol_replay_progress_callback import (
         ProtocolReplayProgressCallback,
     )
@@ -149,12 +146,10 @@ class ServiceCorpusReplayOrchestrator:
 
     @property
     def executor(self) -> ExecutorReplay:
-        """Get the underlying executor."""
         return self._executor
 
     @property
     def last_progress(self) -> ModelCorpusReplayProgress | None:
-        """Get the most recent progress update."""
         return self._last_progress
 
     @property
@@ -434,6 +429,7 @@ class ServiceCorpusReplayOrchestrator:
                 # concurrent coroutines modifying fail_fast_triggered)
                 should_skip = self._cancelled or fail_fast_triggered
                 if should_skip:
+                    # NOTE(OMN-1302): Defensive early return for race condition. Safe because checks state after lock.
                     return  # type: ignore[unreachable]
 
                 result = await self._replay_single(manifest, config)
@@ -510,9 +506,7 @@ class ServiceCorpusReplayOrchestrator:
                 # Execute replay
                 # TODO(OMN-1204): Wire up actual replay execution
                 # The actual execution function would be provided by the handler/node.
-                # For now we simulate success since we don't have the actual handler
-                # to call. In production, this would call:
-                # await self._executor.execute_async(session, handler.handle, envelope)
+                # For now we simulate success since we don't have the actual handler.
 
                 duration_ms = (time.perf_counter() - start_time) * 1000
 
@@ -522,6 +516,11 @@ class ServiceCorpusReplayOrchestrator:
                     duration_ms=duration_ms,
                     retry_count=retry_count,
                 )
+
+            except asyncio.CancelledError:
+                # CRITICAL: Re-raise CancelledError to honor task cancellation.
+                # Cancellation should not be retried - it must propagate immediately.
+                raise
 
             except Exception as e:  # boundary-ok: retry logic must capture all exceptions to track attempts
                 last_error = e

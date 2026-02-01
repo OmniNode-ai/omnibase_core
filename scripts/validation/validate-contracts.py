@@ -143,8 +143,24 @@ def validate_yaml_file(file_path: Path) -> list[str]:
                 # Basic fallback validation for handler contracts
                 if "name" not in content:
                     errors.append("Missing required field: name")
-                if "version" not in content:
-                    errors.append("Missing required field: version")
+                if "version" in content:
+                    errors.append(
+                        "Deprecated field: version. Use contract_version instead."
+                    )
+                if "contract_version" not in content:
+                    errors.append("Missing required field: contract_version")
+                else:
+                    # Validate contract_version is a structured object (dict with major/minor/patch)
+                    cv = content.get("contract_version")
+                    if not isinstance(cv, dict):
+                        errors.append(
+                            "contract_version must be a structured object "
+                            "{major: X, minor: Y, patch: Z}, not a string"
+                        )
+                    elif not all(k in cv for k in ("major", "minor", "patch")):
+                        errors.append(
+                            "contract_version must have major, minor, and patch fields"
+                        )
                 if "descriptor" not in content:
                     errors.append("Missing required field: descriptor")
                 if "input_model" not in content:

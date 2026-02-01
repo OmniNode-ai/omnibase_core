@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Widget definition model with discriminated union configuration.
 
 This module defines the widget wrapper that combines metadata (id, title,

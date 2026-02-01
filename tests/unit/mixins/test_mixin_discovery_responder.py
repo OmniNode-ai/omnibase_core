@@ -67,7 +67,7 @@ class CompliantTestNode(MixinDiscoveryResponder):
         return MockIntrospectionResponse(
             node_name=self.__class__.__name__,
             node_version=self.version,
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
             description="Test node for discovery responder tests",
             supported_operations=self.get_discovery_capabilities(),
         )
@@ -768,7 +768,7 @@ class TestStrictTypeEnforcement:
         # Returns ModelIntrospectionData, not dict (validated via TypeAdapter)
         assert hasattr(introspection, "node_name")
         assert hasattr(introspection, "node_type")
-        assert introspection.node_type == "COMPUTE"
+        assert introspection.node_type == "COMPUTE_GENERIC"
         assert introspection.node_name == "CompliantTestNode"
 
     def test_get_discovery_event_channels_missing_method(self):

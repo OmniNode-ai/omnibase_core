@@ -6,8 +6,8 @@ particularly the configure() method's hasattr conditional.
 """
 
 import pytest
-from pydantic import ValidationError
 
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_uri import ModelOnexUri
 
 
@@ -196,9 +196,10 @@ class TestModelOnexUriBranchCoverage:
         )
 
         # Configure with invalid type value (not in Literal)
-        # This should trigger Pydantic validation
-        with pytest.raises(ValidationError):
+        # This should trigger validation wrapped in ModelOnexError
+        with pytest.raises(ModelOnexError) as exc_info:
             uri.configure(type="invalid_type")
+        assert "VALIDATION_ERROR" in str(exc_info.value.error_code)
 
     def test_configure_preserves_model_config(self):
         """Test that configure respects model_config settings."""
@@ -230,9 +231,10 @@ class TestModelOnexUriProtocolEdgeCases:
             original="tool://test://namespace@1.0.0",
         )
 
-        # Configure with None (should trigger validation error for required fields)
-        with pytest.raises(ValidationError):
+        # Configure with None (should trigger validation wrapped in ModelOnexError)
+        with pytest.raises(ModelOnexError) as exc_info:
             uri.configure(type=None)
+        assert "VALIDATION_ERROR" in str(exc_info.value.error_code)
 
     def test_serialize_after_configure(self):
         """Test serialize produces correct output after configure."""

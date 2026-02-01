@@ -10,8 +10,8 @@ from typing import TypeVar, Unpack
 
 from pydantic import BaseModel
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import SerializedDict, TypedDictFactoryKwargs
 
@@ -46,7 +46,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
 
     def _build_error(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build a standard error with ERROR severity."""
-        severity: EnumValidationSeverity = EnumValidationSeverity.ERROR
+        severity: EnumSeverity = EnumSeverity.ERROR
 
         # Remove processed fields to avoid duplication
         # Use dict[str, object] since we're filtering TypedDictFactoryKwargs
@@ -62,7 +62,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
 
     def _build_warning(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build a warning with WARNING severity."""
-        severity: EnumValidationSeverity = EnumValidationSeverity.WARNING
+        severity: EnumSeverity = EnumSeverity.WARNING
 
         # Remove processed fields to avoid duplication
         # Use dict[str, object] since we're filtering TypedDictFactoryKwargs
@@ -78,7 +78,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
 
     def _build_critical(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build a critical error with CRITICAL severity."""
-        severity: EnumValidationSeverity = EnumValidationSeverity.CRITICAL
+        severity: EnumSeverity = EnumSeverity.CRITICAL
 
         # Remove processed fields to avoid duplication
         # Use dict[str, object] since we're filtering TypedDictFactoryKwargs
@@ -94,7 +94,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
 
     def _build_info(self, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """Build an info message with INFO severity."""
-        severity: EnumValidationSeverity = EnumValidationSeverity.INFO
+        severity: EnumSeverity = EnumSeverity.INFO
 
         # Remove processed fields to avoid duplication
         # Use dict[str, object] since we're filtering TypedDictFactoryKwargs
@@ -119,7 +119,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -136,15 +136,9 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

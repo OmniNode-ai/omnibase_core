@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 Data models for protocol audit operations.
 """
 
+from __future__ import annotations
 
 import logging
 from dataclasses import dataclass

@@ -67,7 +67,7 @@ from omnibase_core.services.service_contract_validation_event_emitter import (
 from omnibase_core.services.service_contract_validation_invariant_checker import (
     ServiceContractValidationInvariantChecker,
 )
-from omnibase_core.validation.contract_validation_pipeline import (
+from omnibase_core.validation.validator_contract_pipeline import (
     ContractValidationPipeline,
 )
 
@@ -114,7 +114,7 @@ def profile_ref() -> ModelProfileReference:
 def valid_descriptor() -> ModelHandlerBehavior:
     """Create a valid handler behavior descriptor."""
     return ModelHandlerBehavior(
-        handler_kind="compute",
+        node_archetype="compute",
         purity="pure",
         idempotent=True,
     )
@@ -139,7 +139,7 @@ def valid_merged_contract(
     return ModelHandlerContract(
         handler_id="node.test.compute",
         name="Test Handler",
-        version="1.0.0",
+        contract_version=ModelSemVer(major=1, minor=0, patch=0),
         description="Test handler description",
         descriptor=valid_descriptor,
         input_model="omnibase_core.models.events.ModelTestEvent",

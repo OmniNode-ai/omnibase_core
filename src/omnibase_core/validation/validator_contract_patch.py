@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Contract Patch Validator.
 
@@ -45,10 +42,10 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_patch_validation_error_code import (
     EnumPatchValidationErrorCode,
 )
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -172,10 +169,12 @@ class ContractPatchValidator:
                 f"(warnings={result.warning_count})"
             )
         else:
-            result.summary = f"Patch validation failed with {result.error_count} errors"
+            result.summary = (
+                f"Patch validation failed with {result.error_level_count} errors"
+            )
             logger.info(
                 f"Patch validation failed for profile={patch.extends.profile}: "
-                f"{result.error_count} errors, {result.warning_count} warnings"
+                f"{result.error_level_count} errors, {result.warning_count} warnings"
             )
 
         return result
@@ -506,7 +505,7 @@ class ContractPatchValidator:
         if not patch.descriptor.has_overrides():
             logger.debug("Behavior patch has no overrides - issuing info")
             result.add_issue(
-                severity=EnumValidationSeverity.INFO,
+                severity=EnumSeverity.INFO,
                 message="Behavior patch is present but has no overrides",
                 code=EnumPatchValidationErrorCode.CONTRACT_PATCH_EMPTY_DESCRIPTOR.value,
                 suggestion="Remove the empty descriptor field or add behavior overrides",
@@ -518,7 +517,7 @@ class ContractPatchValidator:
                 "Behavior patch has purity/idempotent mismatch - issuing warning"
             )
             result.add_issue(
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 message=(
                     "Behavior declares purity='pure' but idempotent=False. "
                     "Pure functions are typically idempotent."
@@ -553,7 +552,7 @@ class ContractPatchValidator:
         # This is already validated by Pydantic, but add informational context
         if patch.is_new_contract:
             result.add_issue(
-                severity=EnumValidationSeverity.INFO,
+                severity=EnumSeverity.INFO,
                 message=f"Patch declares new contract identity: {patch.name}",
                 code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NEW_IDENTITY.value,
             )

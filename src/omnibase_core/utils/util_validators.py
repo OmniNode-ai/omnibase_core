@@ -53,11 +53,13 @@ Deterministic Ordering
 - Use `sort_keys=False` when insertion order must be preserved (e.g., ordered metadata)
 """
 
+from datetime import datetime
 from typing import TypeVar
 
 __all__ = [
     "convert_list_to_tuple",
     "convert_dict_to_frozen_pairs",
+    "ensure_timezone_aware",
 ]
 
 # Generic type variable for list/tuple element types
@@ -104,6 +106,8 @@ def convert_list_to_tuple(v: list[T] | tuple[T, ...] | object) -> tuple[T, ...]:
     """
     if isinstance(v, list):
         return tuple(v)
+    # NOTE(OMN-1302): Passthrough for already-valid tuple or Pydantic to reject invalid types.
+    # Safe because Pydantic validates final field type after validator runs.
     return v  # type: ignore[return-value]
 
 
@@ -162,4 +166,49 @@ def convert_dict_to_frozen_pairs(
         if sort_keys:
             return tuple(sorted(items))
         return tuple(items)
+    # NOTE(OMN-1302): Passthrough for already-valid tuple or Pydantic to reject invalid types.
+    # Safe because Pydantic validates final field type after validator runs.
     return v  # type: ignore[return-value]
+
+
+def ensure_timezone_aware(v: datetime, field_name: str = "timestamp") -> datetime:
+    """
+    Ensure a datetime value is timezone-aware, rejecting naive datetimes.
+
+    This function validates that a datetime has proper timezone info, catching
+    both truly naive datetimes (tzinfo=None) and "effectively naive" datetimes
+    where tzinfo exists but returns None for utcoffset().
+
+    Designed for use in Pydantic field validators to enforce timezone-aware
+    timestamps across all omnimemory models.
+
+    Args:
+        v: The datetime value to validate.
+        field_name: Name of the field being validated (for error messages).
+
+    Returns:
+        The validated datetime, unchanged if valid.
+
+    Raises:
+        ValueError: If the datetime is naive or effectively naive.
+
+    Example:
+        ::
+
+            @field_validator("timestamp")
+            @classmethod
+            def validate_timestamp(cls, v: datetime) -> datetime:
+                return ensure_timezone_aware(v, "timestamp")
+
+    Note:
+        "Effectively naive" datetimes occur when tzinfo is set but utcoffset()
+        returns None. This can happen with custom timezone implementations
+        that don't properly define the offset.
+    """
+    if v.tzinfo is None or v.tzinfo.utcoffset(v) is None:
+        # error-ok: ValueError appropriate for Pydantic field_validator boundary validation
+        raise ValueError(
+            f"{field_name} must be timezone-aware (use datetime.now(UTC) or include tzinfo). "
+            f"Got naive or effectively naive datetime: {v}"
+        )
+    return v

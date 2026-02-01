@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Protocol Architecture
+
 # Protocol Architecture Analysis
 **Phase 0.2: Protocol Architecture Audit**
 **Generated**: 2025-10-22
@@ -127,7 +129,7 @@ class EnumStatusProtocol(Protocol):
 - `EnumScenarioStatusV2`
 - `EnumGeneralStatus`
 - `EnumFunctionLifecycleStatus`
-- `EnumExecutionStatusV2`
+- `EnumExecutionStatus`
 
 **Design Notes**:
 - Enables polymorphic status handling
@@ -833,7 +835,7 @@ EnumStatusProtocol (omnibase_core)
 EnumScenarioStatusV2
 EnumGeneralStatus
 EnumFunctionLifecycleStatus
-EnumExecutionStatusV2
+EnumExecutionStatus
 ```
 
 ### Validation Protocols

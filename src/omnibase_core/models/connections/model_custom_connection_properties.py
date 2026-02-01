@@ -10,13 +10,14 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 # Module-level logger for coercion observability
 _logger = logging.getLogger(__name__)
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import SerializedDict
@@ -501,192 +502,154 @@ class ModelCustomConnectionProperties(BaseModel):
     # Property accessors
     @property
     def database_id(self) -> UUID | None:
-        """Access database ID."""
         return self.database.database_id
 
     @database_id.setter
     def database_id(self, value: UUID | None) -> None:
-        """Set database ID."""
         self.database.database_id = value
 
     @property
     def database_display_name(self) -> str | None:
-        """Access database display name."""
         return self.database.database_display_name
 
     @database_display_name.setter
     def database_display_name(self, value: str | None) -> None:
-        """Set database display name."""
         self.database.database_display_name = value
 
     @property
     def schema_id(self) -> UUID | None:
-        """Access schema ID."""
         return self.database.schema_id
 
     @schema_id.setter
     def schema_id(self, value: UUID | None) -> None:
-        """Set schema ID."""
         self.database.schema_id = value
 
     @property
     def schema_display_name(self) -> str | None:
-        """Access schema display name."""
         return self.database.schema_display_name
 
     @schema_display_name.setter
     def schema_display_name(self, value: str | None) -> None:
-        """Set schema display name."""
         self.database.schema_display_name = value
 
     @property
     def charset(self) -> str | None:
-        """Access database charset."""
         return self.database.charset
 
     @charset.setter
     def charset(self, value: str | None) -> None:
-        """Set database charset."""
         self.database.charset = value
 
     @property
     def collation(self) -> str | None:
-        """Access database collation."""
         return self.database.collation
 
     @collation.setter
     def collation(self, value: str | None) -> None:
-        """Set database collation."""
         self.database.collation = value
 
     @property
     def queue_id(self) -> UUID | None:
-        """Access queue ID."""
         return self.message_queue.queue_id
 
     @queue_id.setter
     def queue_id(self, value: UUID | None) -> None:
-        """Set queue ID."""
         self.message_queue.queue_id = value
 
     @property
     def queue_display_name(self) -> str | None:
-        """Access queue display name."""
         return self.message_queue.queue_display_name
 
     @queue_display_name.setter
     def queue_display_name(self, value: str | None) -> None:
-        """Set queue display name."""
         self.message_queue.queue_display_name = value
 
     @property
     def exchange_id(self) -> UUID | None:
-        """Access exchange ID."""
         return self.message_queue.exchange_id
 
     @exchange_id.setter
     def exchange_id(self, value: UUID | None) -> None:
-        """Set exchange ID."""
         self.message_queue.exchange_id = value
 
     @property
     def exchange_display_name(self) -> str | None:
-        """Access exchange display name."""
         return self.message_queue.exchange_display_name
 
     @exchange_display_name.setter
     def exchange_display_name(self, value: str | None) -> None:
-        """Set exchange display name."""
         self.message_queue.exchange_display_name = value
 
     @property
     def service_display_name(self) -> str | None:
-        """Access service display name."""
         return self.cloud_service.service_display_name
 
     @service_display_name.setter
     def service_display_name(self, value: str | None) -> None:
-        """Set service display name."""
         self.cloud_service.service_display_name = value
 
     @property
     def instance_type(self) -> EnumInstanceType | None:
-        """Access instance type."""
         return self.cloud_service.instance_type
 
     @instance_type.setter
     def instance_type(self, value: EnumInstanceType | None) -> None:
-        """Set instance type."""
         self.cloud_service.instance_type = value
 
     @property
     def region(self) -> str | None:
-        """Access region."""
         return self.cloud_service.region
 
     @region.setter
     def region(self, value: str | None) -> None:
-        """Set region."""
         self.cloud_service.region = value
 
     @property
     def service_id(self) -> UUID | None:
-        """Access service ID."""
         return self.cloud_service.service_id
 
     @service_id.setter
     def service_id(self, value: UUID | None) -> None:
-        """Set service ID."""
         self.cloud_service.service_id = value
 
     @property
     def availability_zone(self) -> str | None:
-        """Access availability zone."""
         return self.cloud_service.availability_zone
 
     @availability_zone.setter
     def availability_zone(self, value: str | None) -> None:
-        """Set availability zone."""
         self.cloud_service.availability_zone = value
 
     @property
     def routing_key(self) -> str | None:
-        """Access routing key."""
         return self.message_queue.routing_key
 
     @routing_key.setter
     def routing_key(self, value: str | None) -> None:
-        """Set routing key."""
         self.message_queue.routing_key = value
 
     @property
     def durable(self) -> bool | None:
-        """Access durable setting."""
         return self.message_queue.durable
 
     @durable.setter
     def durable(self, value: bool | None) -> None:
-        """Set durable setting."""
         self.message_queue.durable = value
 
     @property
     def max_connections(self) -> int:
-        """Access max connections."""
         return self.performance.max_connections
 
     @max_connections.setter
     def max_connections(self, value: int) -> None:
-        """Set max connections."""
         self.performance.max_connections = value
 
     @property
     def enable_compression(self) -> bool:
-        """Access enable compression."""
         return self.performance.enable_compression
 
     @enable_compression.setter
     def enable_compression(self, value: bool) -> None:
-        """Set enable compression."""
         self.performance.enable_compression = value
 
     # Delegation methods
@@ -710,11 +673,11 @@ class ModelCustomConnectionProperties(BaseModel):
         """Get service identifier for display purposes."""
         return self.cloud_service.get_service_identifier()
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -730,7 +693,8 @@ class ModelCustomConnectionProperties(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, TypeError, ValidationError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS: ValidationError, ValueError, TypeError, AttributeError
             # ValidationError: Pydantic validation failure (validate_assignment=True)
             # ValueError: Custom validator rejection or invalid value
             # TypeError: Type coercion failure

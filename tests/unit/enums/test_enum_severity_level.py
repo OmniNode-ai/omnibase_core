@@ -396,7 +396,3 @@ class TestEnumSeverityLevel:
         # Test that we can load it back
         loaded_data = yaml.safe_load(yaml_str)
         assert loaded_data["log_level"] == "emergency"
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

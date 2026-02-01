@@ -11,31 +11,31 @@ Thread Safety:
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTopicType(str, Enum):
+class EnumTopicType(StrValueHelper, str, Enum):
     """
     Valid topic types per ONEX topic taxonomy.
 
-    Defines the four standard topic categories used across all ONEX domains:
+    Defines the standard topic categories used across all ONEX domains:
     - COMMANDS: Request/action topics (imperative, exactly-once semantics)
     - EVENTS: Immutable event logs (append-only, time-based retention)
     - INTENTS: Intent coordination topics (workflow orchestration)
     - SNAPSHOTS: State snapshots (compacted, key-based retention)
+    - DLQ: Dead letter queue topics (failed message storage)
     """
 
     COMMANDS = "commands"
+    DLQ = "dlq"
     EVENTS = "events"
     INTENTS = "intents"
     SNAPSHOTS = "snapshots"
 
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
-
 
 @unique
-class EnumCleanupPolicy(str, Enum):
+class EnumCleanupPolicy(StrValueHelper, str, Enum):
     """
     Kafka cleanup policies for topic log management.
 
@@ -47,10 +47,6 @@ class EnumCleanupPolicy(str, Enum):
     DELETE = "delete"
     COMPACT = "compact"
     COMPACT_DELETE = "compact,delete"
-
-    def __str__(self) -> str:
-        """Return the string value for Kafka configuration."""
-        return self.value
 
 
 __all__ = [

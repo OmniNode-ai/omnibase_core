@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Entity Type Enum.
 
 Strongly typed entity type values for data classification.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumEntityType(str, Enum):
+class EnumEntityType(StrValueHelper, str, Enum):
     """
     Strongly typed entity type values for data classification.
 
@@ -49,10 +50,6 @@ class EnumEntityType(str, Enum):
 
     # Unknown/default
     UNKNOWN = "unknown"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_code_entity(cls, entity_type: EnumEntityType) -> bool:

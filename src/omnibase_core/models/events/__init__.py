@@ -8,10 +8,36 @@ from omnibase_core.enums.enum_topic_taxonomy import (
     EnumCleanupPolicy,
     EnumTopicType,
 )
+from omnibase_core.models.events.contract_registration import (
+    CONTRACT_DEREGISTERED_EVENT,
+    CONTRACT_REGISTERED_EVENT,
+    NODE_HEARTBEAT_EVENT,
+    ModelContractDeregisteredEvent,
+    ModelContractRegisteredEvent,
+    ModelNodeHeartbeatEvent,
+)
+from omnibase_core.models.events.model_event_payload_base import (
+    ModelEventPayloadBase,
+)
 from omnibase_core.models.events.model_intent_events import (
     TOPIC_EVENT_PUBLISH_INTENT,
     ModelEventPublishIntent,
     ModelIntentExecutionResult,
+)
+from omnibase_core.models.events.model_intent_query_requested_event import (
+    INTENT_QUERY_REQUESTED_EVENT,
+    ModelIntentQueryRequestedEvent,
+)
+from omnibase_core.models.events.model_intent_query_response_event import (
+    INTENT_QUERY_RESPONSE_EVENT,
+    ModelIntentQueryResponseEvent,
+)
+from omnibase_core.models.events.model_intent_record_payload import (
+    ModelIntentRecordPayload,
+)
+from omnibase_core.models.events.model_intent_stored_event import (
+    INTENT_STORED_EVENT,
+    ModelIntentStoredEvent,
 )
 from omnibase_core.models.events.model_runtime_events import (
     NODE_GRAPH_READY_EVENT,
@@ -45,10 +71,25 @@ from omnibase_core.models.events.model_topic_naming import (
 )
 
 __all__ = [
-    # Intent events
+    # Contract registration events (OMN-1651)
+    "CONTRACT_DEREGISTERED_EVENT",
+    "CONTRACT_REGISTERED_EVENT",
+    "NODE_HEARTBEAT_EVENT",
+    "ModelContractDeregisteredEvent",
+    "ModelContractRegisteredEvent",
+    "ModelNodeHeartbeatEvent",
+    # Intent coordination events (existing)
     "ModelEventPublishIntent",
     "ModelIntentExecutionResult",
     "TOPIC_EVENT_PUBLISH_INTENT",
+    # Intent storage events (WS-4)
+    "INTENT_STORED_EVENT",
+    "ModelIntentStoredEvent",
+    "INTENT_QUERY_REQUESTED_EVENT",
+    "ModelIntentQueryRequestedEvent",
+    "INTENT_QUERY_RESPONSE_EVENT",
+    "ModelIntentRecordPayload",
+    "ModelIntentQueryResponseEvent",
     # Topic naming and routing
     "ModelTopicNaming",
     "get_topic_category",
@@ -64,6 +105,7 @@ __all__ = [
     "WIRING_ERROR_EVENT",
     "WIRING_RESULT_EVENT",
     # Runtime event models
+    "ModelEventPayloadBase",
     "ModelNodeGraphInfo",
     "ModelNodeGraphReadyEvent",
     "ModelNodeRegisteredEvent",

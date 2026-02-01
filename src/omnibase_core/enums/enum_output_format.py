@@ -26,10 +26,13 @@
 Enums for output formats of CLI tools.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumOutputFormat(str, Enum):
+@unique
+class EnumOutputFormat(StrValueHelper, str, Enum):
     """
     Canonical output formats for CLI tools.
     """
@@ -43,3 +46,6 @@ class EnumOutputFormat(str, Enum):
     DETAILED = "detailed"  # Detailed format for comprehensive output
     COMPACT = "compact"  # Compact format for minimal output
     RAW = "raw"  # Raw format for unprocessed output
+
+
+__all__ = ["EnumOutputFormat"]

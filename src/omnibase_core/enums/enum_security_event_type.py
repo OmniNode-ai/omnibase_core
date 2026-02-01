@@ -4,10 +4,13 @@ Security Event Type Enumeration.
 Strongly typed enumeration for security event types.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumSecurityEventType(str, Enum):
+@unique
+class EnumSecurityEventType(StrValueHelper, str, Enum):
     """Enumeration for security event types."""
 
     # Authentication events
@@ -34,3 +37,6 @@ class EnumSecurityEventType(str, Enum):
     # Administrative events
     POLICY_VIOLATION = "policy_violation"
     CONFIGURATION_CHANGE = "configuration_change"
+
+
+__all__ = ["EnumSecurityEventType"]

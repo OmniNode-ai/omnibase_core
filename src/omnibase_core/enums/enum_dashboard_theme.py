@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Dashboard theme enumeration.
 
 This module defines the available visual theme options for dashboards.
@@ -17,12 +14,15 @@ Example:
         # config = ModelDashboardConfig(..., theme=theme)
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 __all__ = ("EnumDashboardTheme",)
 
 
-class EnumDashboardTheme(str, Enum):
+@unique
+class EnumDashboardTheme(StrValueHelper, str, Enum):
     """Dashboard visual theme enumeration.
 
     Defines the available theme options for dashboard display. Themes

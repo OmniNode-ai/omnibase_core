@@ -1,3 +1,5 @@
+> **Navigation**: [Home](./INDEX.md) > MVP Plan
+
 # MVP Proposed Work Issues - omnibase_core
 
 **Repository**: omnibase_core

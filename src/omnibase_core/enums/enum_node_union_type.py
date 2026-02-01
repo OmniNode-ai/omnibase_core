@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Node Union Type Enum.
 
 Strongly typed enumeration for node union type discriminators.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumNodeUnionType(str, Enum):
+class EnumNodeUnionType(StrValueHelper, str, Enum):
     """
     Strongly typed node union type discriminators.
 
@@ -24,10 +25,6 @@ class EnumNodeUnionType(str, Enum):
 
     FUNCTION_NODE = "function_node"
     FUNCTION_NODE_DATA = "function_node_data"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_function_node(cls, node_type: EnumNodeUnionType) -> bool:

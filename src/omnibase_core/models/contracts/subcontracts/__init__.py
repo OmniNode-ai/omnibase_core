@@ -36,6 +36,7 @@ from omnibase_core.models.fsm.model_fsm_transition_condition import (
 from .model_aggregation_function import ModelAggregationFunction
 from .model_aggregation_performance import ModelAggregationPerformance
 from .model_aggregation_subcontract import ModelAggregationSubcontract
+from .model_binding_expression import ModelBindingExpression
 from .model_cache_distribution import ModelCacheDistribution
 from .model_cache_invalidation import ModelCacheInvalidation
 from .model_cache_key_strategy import ModelCacheKeyStrategy
@@ -51,6 +52,7 @@ from .model_configuration_subcontract import ModelConfigurationSubcontract
 from .model_configuration_validation import ModelConfigurationValidation
 from .model_coordination_result import ModelCoordinationResult
 from .model_coordination_rules import ModelCoordinationRules
+from .model_correlation_config import ModelCorrelationConfig
 from .model_data_grouping import ModelDataGrouping
 from .model_dependency_health import ModelDependencyHealth
 from .model_discovery_subcontract import ModelDiscoverySubcontract
@@ -79,6 +81,7 @@ from .model_effect_response_handling import ModelEffectResponseHandling
 from .model_effect_retry_policy import ModelEffectRetryPolicy
 from .model_effect_subcontract import ModelEffectSubcontract
 from .model_effect_transaction_config import ModelEffectTransactionConfig
+from .model_envelope_template import ModelEnvelopeTemplate
 from .model_event_bus_subcontract import ModelEventBusSubcontract
 from .model_event_definition import ModelEventDefinition
 from .model_event_handling_subcontract import ModelEventHandlingSubcontract
@@ -102,12 +105,19 @@ from .model_node_assignment import ModelNodeAssignment
 from .model_node_health_status import ModelNodeHealthStatus
 from .model_node_progress import ModelNodeProgress
 from .model_observability_subcontract import ModelObservabilitySubcontract
+from .model_operation_bindings import ModelOperationBindings
+from .model_operation_mapping import ModelOperationMapping
 from .model_progress_status import ModelProgressStatus
+from .model_protocol_dependency import ModelProtocolDependency
+from .model_reply_topics import ModelReplyTopics
+from .model_request_response_config import ModelRequestResponseConfig
+from .model_request_response_instance import ModelRequestResponseInstance
 from .model_request_transformation import ModelRequestTransformation
 from .model_resolved_db_context import ModelResolvedDbContext
 from .model_resolved_filesystem_context import ModelResolvedFilesystemContext
 from .model_resolved_http_context import ModelResolvedHttpContext
 from .model_resolved_kafka_context import ModelResolvedKafkaContext
+from .model_response_mapping import ModelResponseMapping
 from .model_retry_subcontract import ModelRetrySubcontract
 from .model_route_definition import ModelRouteDefinition
 from .model_routing_metrics import ModelRoutingMetrics
@@ -122,7 +132,10 @@ from .model_state_versioning import ModelStateVersioning
 from .model_statistical_computation import ModelStatisticalComputation
 from .model_synchronization_point import ModelSynchronizationPoint
 from .model_tool_execution_subcontract import ModelToolExecutionSubcontract
+from .model_topic_meta import ModelTopicMeta
 from .model_validation_subcontract import ModelValidationSubcontract
+from .model_validator_rule import ModelValidatorRule
+from .model_validator_subcontract import ModelValidatorSubcontract
 from .model_windowing_strategy import ModelWindowingStrategy
 from .model_workflow_coordination_subcontract import (
     ModelWorkflowCoordinationSubcontract,
@@ -164,6 +177,12 @@ __all__ = [
     "ModelDataGrouping",
     "ModelStatisticalComputation",
     "ModelWindowingStrategy",
+    # Binding expression models (Operation Bindings DSL)
+    "ModelBindingExpression",
+    "ModelEnvelopeTemplate",
+    "ModelOperationBindings",
+    "ModelOperationMapping",
+    "ModelResponseMapping",
     # Caching subcontracts and components
     "ModelCachingSubcontract",
     "ModelCacheDistribution",
@@ -189,6 +208,11 @@ __all__ = [
     "ModelEventPersistence",
     "ModelEventRouting",
     "ModelEventTransformation",
+    "ModelCorrelationConfig",
+    "ModelReplyTopics",
+    "ModelRequestResponseConfig",
+    "ModelRequestResponseInstance",
+    "ModelTopicMeta",
     # FSM subcontracts and components
     "ModelFSMSubcontract",
     "ModelFSMOperation",
@@ -216,6 +240,8 @@ __all__ = [
     "ModelMetricsSubcontract",
     # Observability subcontracts
     "ModelObservabilitySubcontract",
+    # Protocol dependency subcontracts (Contract-Driven DI)
+    "ModelProtocolDependency",
     # Retry subcontracts
     "ModelRetrySubcontract",
     # Routing subcontracts and components
@@ -236,8 +262,11 @@ __all__ = [
     "ModelStateVersioning",
     # Tool execution subcontracts
     "ModelToolExecutionSubcontract",
-    # Validation subcontracts
+    # Validation subcontracts (Pydantic validation behavior)
     "ModelValidationSubcontract",
+    # Validator subcontracts (file-based validators)
+    "ModelValidatorRule",
+    "ModelValidatorSubcontract",
     # Workflow coordination subcontracts and components
     "ModelWorkflowCoordinationSubcontract",
     "ModelCoordinationResult",

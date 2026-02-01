@@ -153,7 +153,9 @@ class TestNodeInstanceCreation:
 
         assert instance.contract is mock_contract
         assert instance.contract.name == "test_contract"
-        assert instance.contract.version == ModelSemVer(major=1, minor=0, patch=0)
+        assert instance.contract.contract_version == ModelSemVer(
+            major=1, minor=0, patch=0
+        )
 
     def test_create_with_different_slugs(
         self,

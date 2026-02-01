@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """
 ServiceRegistryCapability - Thread-safe registry for capability metadata.
 
@@ -44,6 +42,7 @@ __all__ = ["ServiceRegistryCapability"]
 
 import threading
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.capabilities.model_capability_metadata import (
     ModelCapabilityMetadata,
@@ -165,6 +164,13 @@ class ServiceRegistryCapability:
 
         .. versionadded:: 0.4.0
         """
+        self._register_impl(capability, replace)
+
+    @standard_error_handling("Capability registration")
+    def _register_impl(
+        self, capability: ModelCapabilityMetadata, replace: bool = False
+    ) -> None:
+        """Internal implementation of capability registration."""
         with self._lock:
             if capability.capability in self._capabilities and not replace:
                 raise ModelOnexError(
@@ -282,6 +288,11 @@ class ServiceRegistryCapability:
 
         .. versionadded:: 0.4.0
         """
+        return self._list_all_impl()
+
+    @standard_error_handling("Capability listing")
+    def _list_all_impl(self) -> list[ModelCapabilityMetadata]:
+        """Internal implementation of list_all."""
         with self._lock:
             # Lock held during iteration - acceptable for < 1,000 entries.
             # Returns a snapshot copy independent of registry mutations.
@@ -336,6 +347,13 @@ class ServiceRegistryCapability:
 
         .. versionadded:: 0.4.0
         """
+        return self._find_by_tags_impl(tags, match_all)
+
+    @standard_error_handling("Capability tag search")
+    def _find_by_tags_impl(
+        self, tags: list[str], match_all: bool = False
+    ) -> list[ModelCapabilityMetadata]:
+        """Internal implementation of find_by_tags."""
         with self._lock:
             # Empty tag list matches nothing - avoids Python's `all([]) == True` trap
             # which would otherwise cause match_all=True to return ALL items.

@@ -51,6 +51,9 @@ from omnibase_core.protocols.compute import (
     ProtocolParallelExecutor,
     ProtocolTimingService,
 )
+from omnibase_core.resolution.resolver_handler import (
+    HandlerCallable,
+)
 
 
 class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
@@ -239,6 +242,83 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
         try:
             self._validate_compute_input(input_data)
 
+            # Check for contract-driven dispatch via default_handler
+            # If contract specifies a handler callable, dispatch to it directly
+            handler_info = self._get_default_handler_callable()
+            if handler_info is not None:
+                handler_or_loader, is_lazy = handler_info
+                # Resolve the handler - either directly or via lazy loader
+                resolved_handler: HandlerCallable
+                if is_lazy:
+                    # NOTE(OMN-1731): Type narrowing for union with boolean flag.
+                    # When is_lazy=True, handler_or_loader is LazyLoader (a callable
+                    # that returns HandlerCallable). mypy cannot narrow automatically.
+                    resolved_handler = handler_or_loader()  # type: ignore[assignment]
+                else:
+                    # NOTE(OMN-1731): When is_lazy=False, handler_or_loader is already
+                    # HandlerCallable. mypy cannot narrow the union type automatically.
+                    resolved_handler = handler_or_loader  # type: ignore[assignment]
+
+                # Dispatch to contract-specified handler
+                # Handler signature: async def handler(node, input_data) -> output
+                # or sync: def handler(node, input_data) -> output
+                # NOTE(OMN-1731): mypy cannot infer the return type from
+                # the dynamically resolved handler. Safe because contract defines the
+                # handler signature requirement.
+                handler_result = resolved_handler(self, input_data)  # type: ignore[misc]
+
+                # Handle both async and sync handlers
+                if asyncio.iscoroutine(handler_result):
+                    result: Any = await handler_result
+                else:
+                    result = handler_result
+
+                # Calculate processing time for contract-driven dispatch
+                contract_processing_time: float = 0.0
+                if self._timing_service is not None and start_time is not None:
+                    contract_processing_time = self._timing_service.stop_timer(
+                        start_time
+                    )
+
+                    # Log performance warning if threshold exceeded
+                    if contract_processing_time > self.performance_threshold_ms:
+                        emit_log_event(
+                            LogLevel.WARNING,
+                            f"Contract-driven computation exceeded threshold: {contract_processing_time:.2f}ms",
+                            {
+                                "node_id": str(self.node_id),
+                                "operation_id": str(input_data.operation_id),
+                                "computation_type": input_data.computation_type,
+                            },
+                        )
+
+                # Update metrics (only if timing service available)
+                if self._timing_service is not None:
+                    self._update_specialized_metrics(
+                        self.computation_metrics,
+                        input_data.computation_type,
+                        contract_processing_time,
+                        True,
+                    )
+                    await self._update_processing_metrics(
+                        contract_processing_time, True
+                    )
+
+                # If handler returns ModelComputeOutput, return as-is
+                # Otherwise, wrap in ModelComputeOutput for type safety
+                if isinstance(result, ModelComputeOutput):
+                    return result
+                # Wrap raw result in ModelComputeOutput
+                return ModelComputeOutput(
+                    result=result,
+                    operation_id=input_data.operation_id,
+                    computation_type=input_data.computation_type,
+                    processing_time_ms=contract_processing_time,
+                    cache_hit=False,
+                    parallel_execution_used=False,
+                    metadata={"contract_driven_dispatch": True},
+                )
+
             # Check cache first if enabled and cache is available
             if input_data.cache_enabled and self._cache is not None:
                 cache_key = self._generate_cache_key(input_data)
@@ -321,8 +401,9 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
         except ModelOnexError:
             # Re-raise ONEX errors as-is to preserve error context
             raise
+        # boundary-ok: wraps user computation exceptions into structured error response with metrics
         except Exception as e:
-            # Catch all other exceptions from user computation logic
+            # boundary-ok: wrap user computation exceptions in structured ONEX error
             # Calculate processing time for error reporting
             processing_time = 0.0
             if self._timing_service is not None and start_time is not None:
@@ -549,8 +630,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
            Uses protocol injection for infrastructure services.
         """
         # Try to resolve infrastructure services from container first
-        # Note: type-abstract errors are expected - Protocols are abstract by design
-        # but runtime_checkable protocols work correctly at runtime
+        # NOTE(OMN-1302): Protocols are abstract by design but runtime_checkable works at runtime.
+        # Safe because get_service_optional returns None if not registered.
         self._cache = self.container.get_service_optional(
             ProtocolComputeCache  # type: ignore[type-abstract]
         )

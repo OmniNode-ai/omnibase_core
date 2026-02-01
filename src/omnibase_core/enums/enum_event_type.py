@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Event Type Enum.
 
@@ -7,12 +5,15 @@ Strongly typed enumeration for event categories and routing.
 Replaces string literals for event type discrimination.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumEventType(str, Enum):
+class EnumEventType(StrValueHelper, str, Enum):
     """
     Strongly typed event categories for proper routing and handling.
 
@@ -25,10 +26,6 @@ class EnumEventType(str, Enum):
     USER = "user"
     WORKFLOW = "workflow"
     ERROR = "error"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_user_initiated(cls, event_type: EnumEventType) -> bool:

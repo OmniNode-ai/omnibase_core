@@ -1,10 +1,3 @@
-from __future__ import annotations
-
-from typing import Any, ClassVar, TYPE_CHECKING
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-
 """
 NodeBase for ONEX ModelArchitecture.
 
@@ -54,6 +47,15 @@ Security:
         - ModelReference: Uses ALLOWED_MODULE_PREFIXES for import validation
 """
 
+from __future__ import annotations
+
+# NOTE(OMN-1302): I001 (import order) disabled - intentional ordering to avoid circular dependencies.
+
+from typing import Any, ClassVar, TYPE_CHECKING
+
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+
 import asyncio
 import time
 from datetime import datetime
@@ -63,7 +65,6 @@ from uuid import UUID, uuid4
 
 # Core-native protocol imports (no SPI dependency)
 from omnibase_core.protocols import (
-    ContextValue,
     ProtocolAction,
     ProtocolNodeResult,
     ProtocolState,
@@ -648,6 +649,9 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             # Check if tool supports async processing
             if hasattr(main_tool, "process_async"):
                 result = await main_tool.process_async(input_state)
+                # NOTE(OMN-1073): Cast is safe because the tool's return type is governed
+                # by the contract specification. The tool implementation is validated at
+                # initialization via main_tool_class resolution from the contract YAML.
                 return cast("T_OUTPUT_STATE", result)
             if hasattr(main_tool, "process"):
                 # Run sync process in thread pool to avoid blocking
@@ -656,6 +660,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                     main_tool.process,
                     input_state,
                 )
+                # NOTE(OMN-1073): Cast is safe - tool return type governed by contract.
                 return cast("T_OUTPUT_STATE", result)
             if hasattr(main_tool, "run"):
                 # Run sync run method in thread pool
@@ -664,6 +669,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                     main_tool.run,
                     input_state,
                 )
+                # NOTE(OMN-1073): Cast is safe - tool return type governed by contract.
                 return cast("T_OUTPUT_STATE", result)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -745,6 +751,9 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         Default implementation returns empty state.
         Override in subclasses for custom initial state.
         """
+        # NOTE(OMN-1073): Cast is safe because ModelState implements ProtocolState
+        # via structural subtyping (duck typing). ModelState provides all required
+        # state container methods defined by the protocol.
         return cast("ProtocolState", ModelState())
 
     def dispatch(self, state: ProtocolState, action: ProtocolAction) -> ProtocolState:
@@ -794,12 +803,8 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             )
 
             # Wrap the new state in a result object
-            # Note: ProtocolState is cast to ContextValue for the result value.
-            # While these protocols differ, both represent state containers passed
-            # between workflow components. The ModelNodeWorkflowResult serves as
-            # a transport wrapper for any state-like object returned from dispatch.
             return ModelNodeWorkflowResult(
-                value=cast("ContextValue | None", new_state),
+                value=new_state,
                 is_success=True,
                 is_failure=False,
                 error=None,

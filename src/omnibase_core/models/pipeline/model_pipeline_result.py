@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Pipeline result model for execution outcomes."""
 
 from collections.abc import Mapping, Sequence
@@ -99,12 +96,12 @@ class ModelPipelineResult(BaseModel):
         assert result.context.data["key"]["nested"] == "value"  # Unchanged!
     """
 
-    # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # TODO(OMN-TBD): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.
     # This workaround addresses Pydantic 2.x class identity validation issues where
     # frozen models (and models containing frozen nested models like ModelHookError)
     # fail isinstance() checks across pytest-xdist worker processes.
     # See model_pipeline_hook.py module docstring for detailed explanation.
-    # Track: https://github.com/pydantic/pydantic/issues (no specific issue yet)
+    # Track: https://github.com/pydantic/pydantic/issues (no specific issue yet)  [NEEDS TICKET]
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",

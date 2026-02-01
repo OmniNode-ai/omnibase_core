@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 ProtocolRNGService - Protocol for RNG injection in replay infrastructure.
 
@@ -52,14 +49,14 @@ Key Invariant:
 
     .. code-block:: python
 
-        rng1 = InjectorRNG(seed=42)
-        rng2 = InjectorRNG(seed=42)
+        rng1 = ServiceRNGInjector(seed=42)
+        rng2 = ServiceRNGInjector(seed=42)
         assert [rng1.random() for _ in range(10)] == [rng2.random() for _ in range(10)]
 
 Related:
     - OMN-1116: RNG Injector for Replay Infrastructure
     - MIXINS_TO_HANDLERS_REFACTOR.md Section 7.1
-    - InjectorRNG: Default implementation
+    - ServiceRNGInjector: Default implementation
 
 .. versionadded:: 0.4.0
 """
@@ -90,10 +87,10 @@ class ProtocolRNGService(Protocol):
         .. code-block:: python
 
             from omnibase_core.protocols.replay import ProtocolRNGService
-            from omnibase_core.services.replay.injector_rng import InjectorRNG
+            from omnibase_core.services.replay.service_rng_injector import ServiceRNGInjector
 
             # Create with specific seed for replay
-            rng: ProtocolRNGService = InjectorRNG(seed=42)
+            rng: ProtocolRNGService = ServiceRNGInjector(seed=42)
 
             # Use in deterministic context
             value = rng.random()
@@ -120,7 +117,7 @@ class ProtocolRNGService(Protocol):
         Example:
             .. code-block:: python
 
-                rng = InjectorRNG(seed=42)
+                rng = ServiceRNGInjector(seed=42)
                 assert rng.seed == 42
 
                 # Record for replay
@@ -140,7 +137,7 @@ class ProtocolRNGService(Protocol):
         Example:
             .. code-block:: python
 
-                rng = InjectorRNG(seed=42)
+                rng = ServiceRNGInjector(seed=42)
                 value = rng.random()
                 assert 0.0 <= value < 1.0
         """
@@ -162,7 +159,7 @@ class ProtocolRNGService(Protocol):
         Example:
             .. code-block:: python
 
-                rng = InjectorRNG(seed=42)
+                rng = ServiceRNGInjector(seed=42)
                 die_roll = rng.randint(1, 6)
                 assert 1 <= die_roll <= 6
         """
@@ -186,7 +183,7 @@ class ProtocolRNGService(Protocol):
         Example:
             .. code-block:: python
 
-                rng = InjectorRNG(seed=42)
+                rng = ServiceRNGInjector(seed=42)
                 colors = ["red", "green", "blue"]
                 selected = rng.choice(colors)
                 assert selected in colors

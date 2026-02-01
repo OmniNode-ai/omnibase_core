@@ -200,7 +200,7 @@ class ModelHealthMetrics(BaseModel):
         if isinstance(value, str):
             try:
                 return float(value)
-            except (ValueError, TypeError):
+            except (TypeError, ValueError):
                 # fallback-ok: return default if string conversion fails
                 # ValueError: invalid float literal (e.g., "abc", "")
                 # TypeError: defensive - should not occur but included for robustness

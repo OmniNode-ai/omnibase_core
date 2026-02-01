@@ -51,6 +51,8 @@ __all__ = [
     "JsonType",
     "PrimitiveValue",
     "PrimitiveContainer",
+    "StrictJsonPrimitive",
+    "StrictJsonType",
     "ToolParameterValue",
 ]
 
@@ -145,6 +147,81 @@ PrimitiveValue = str | int | float | bool
 #     ...     }
 #     ... }
 type JsonType = JsonPrimitive | list[JsonType] | dict[str, JsonType]
+
+
+# ==============================================================================
+# Strict JSON Types (RFC 8259 Compliant)
+# ==============================================================================
+
+# Type alias for STRICT JSON primitive (scalar) values.
+# These are the only primitive types allowed in RFC 8259 JSON:
+#   - str: JSON string
+#   - int: JSON integer number
+#   - float: JSON floating-point number (finite values only at runtime)
+#   - bool: JSON boolean (true/false)
+#   - None: JSON null
+#
+# IMPORTANT: This differs from JsonPrimitive which includes UUID and datetime
+# for Pydantic model_dump() compatibility. StrictJsonPrimitive is for contexts
+# where values MUST be directly JSON-serializable without any conversion.
+#
+# Use StrictJsonPrimitive when:
+#   - Data will be passed to json.dumps() directly
+#   - Data crosses service boundaries (APIs, message queues)
+#   - Data is stored in JSON columns (PostgreSQL JSONB, etc.)
+#   - Strict RFC 8259 compliance is required
+#
+# Use JsonPrimitive when:
+#   - Working with Pydantic model_dump() output
+#   - Internal data structures that won't be serialized directly
+#   - Type flexibility is acceptable
+#
+# Example:
+#     >>> value: StrictJsonPrimitive = "hello"   # Valid
+#     >>> value: StrictJsonPrimitive = 42        # Valid
+#     >>> value: StrictJsonPrimitive = None      # Valid
+#     >>> value: StrictJsonPrimitive = UUID(...) # Type error - use str(uuid)
+#     >>> value: StrictJsonPrimitive = datetime.now()  # Type error - use .isoformat()
+StrictJsonPrimitive = str | int | float | bool | None
+
+
+# PEP 695 recursive type alias for STRICT JSON values (Python 3.12+).
+# This type represents any value that can be directly serialized to JSON
+# per RFC 8259 without any type coercion or conversion.
+#
+# StrictJsonType is the type-safe counterpart to runtime JSON validation.
+# When a field is typed as StrictJsonType, the static type system enforces
+# the same constraints that runtime validators check.
+#
+# IMPORTANT: This differs from JsonType which allows UUID and datetime.
+# StrictJsonType should be used when runtime validation rejects those types.
+#
+# Valid values:
+#   - Primitives: str, int, float, bool, None
+#   - Arrays: list of StrictJsonType
+#   - Objects: dict with str keys and StrictJsonType values
+#
+# Invalid values (use JsonType instead if needed):
+#   - UUID objects (convert with str(uuid))
+#   - datetime objects (convert with .isoformat())
+#   - Path objects (convert with str(path))
+#   - Custom objects (convert with .model_dump() or manual serialization)
+#
+# Use StrictJsonType when:
+#   - Runtime validation rejects UUID/datetime (type-runtime alignment)
+#   - Data must serialize to JSON without conversion
+#   - Strict RFC 8259 compliance is required
+#
+# Example:
+#     >>> # Strict JSON - no UUID/datetime allowed
+#     >>> config: dict[str, StrictJsonType] = {
+#     ...     "id": "550e8400-e29b-41d4-a716-446655440000",  # str, not UUID
+#     ...     "timestamp": "2024-01-15T10:30:00Z",           # str, not datetime
+#     ...     "settings": {"timeout": 30, "enabled": True},
+#     ... }
+type StrictJsonType = (
+    StrictJsonPrimitive | list[StrictJsonType] | dict[str, StrictJsonType]
+)
 
 
 # ==============================================================================

@@ -1,11 +1,11 @@
 """Service instance model - implements ProtocolManagedServiceInstance."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.protocols import LiteralInjectionScope, LiteralServiceLifecycle
+from omnibase_core.enums import EnumInjectionScope, EnumServiceLifecycle
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -31,29 +31,35 @@ class ModelServiceInstance(BaseModel):
     Example:
         ```python
         from uuid import UUID
+        from omnibase_core.enums import EnumServiceLifecycle, EnumInjectionScope
         instance = ModelServiceInstance(
             instance_id=UUID("12345678-1234-5678-1234-567812345678"),
             service_registration_id=UUID("87654321-4321-8765-4321-876543218765"),
             instance=logger_instance,
-            lifecycle="singleton",
-            scope="global",
+            lifecycle=EnumServiceLifecycle.SINGLETON,
+            scope=EnumInjectionScope.GLOBAL,
         )
         ```
     """
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=False,
+        from_attributes=True,
+        arbitrary_types_allowed=True,
+    )
 
     instance_id: UUID = Field(description="Unique instance identifier")
     service_registration_id: UUID = Field(description="Registration ID")
     instance: object | None = Field(default=None, description="Actual service instance")
-    lifecycle: LiteralServiceLifecycle = Field(description="Lifecycle pattern")
-    scope: LiteralInjectionScope = Field(description="Injection scope")
+    lifecycle: EnumServiceLifecycle = Field(description="Lifecycle pattern")
+    scope: EnumInjectionScope = Field(description="Injection scope")
     created_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Creation timestamp",
     )
     last_accessed: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Last access timestamp",
     )
     access_count: int = Field(default=0, description="Access count")
@@ -83,7 +89,7 @@ class ModelServiceInstance(BaseModel):
 
     def mark_accessed(self) -> None:
         """Update access tracking."""
-        self.last_accessed = datetime.now()
+        self.last_accessed = datetime.now(UTC)
         self.access_count += 1
 
     def dispose(self) -> None:

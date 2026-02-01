@@ -1,19 +1,23 @@
+---
 # Handler Contract Example: COMPUTE Handler
 # This handler performs pure data transformation with no side effects.
 #
 # Key characteristics:
-#   - handler_kind: compute (pure, deterministic)
+#   - node_archetype: compute (pure, deterministic)
 #   - purity: pure (no side effects)
 #   - idempotent: true (safe to retry)
 #   - Can be cached and run in parallel
 
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
 description: Validates input data against JSON schemas
 
 descriptor:
-  handler_kind: compute
+  node_archetype: compute
   purity: pure
   idempotent: true
   timeout_ms: 5000

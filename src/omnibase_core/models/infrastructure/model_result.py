@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, TypeVar, cast
 
-from pydantic import BaseModel, Field, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -38,12 +38,11 @@ class ModelResult[T, E](
     - Serializable: Data serialization/deserialization
     """
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        # Removed arbitrary_types_allowed - handle Exception types explicitly
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     @field_serializer("error")
     def serialize_error(self, error: E | None) -> SerializableValue:
@@ -357,7 +356,7 @@ class ModelResult[T, E](
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -370,7 +369,7 @@ class ModelResult[T, E](
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

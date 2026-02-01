@@ -34,7 +34,7 @@ class TestContractValidator:
 
         contract_yaml = """
 name: DatabaseWriterEffect
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0
@@ -84,7 +84,7 @@ version: [invalid yaml structure
         # Missing io_operations (required for effect contracts)
         incomplete_yaml = """
 name: IncompleteEffect
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0
@@ -107,7 +107,7 @@ output_model: ModelOutput
         # Valid but with warnings (short description)
         contract_yaml = """
 name: TestEffect
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0
@@ -147,7 +147,7 @@ class ModelDatabaseWriteOutput(BaseModel):
 
         contract_yaml = """
 name: DatabaseWriterEffect
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0
@@ -182,7 +182,7 @@ class ModelWrongName(BaseModel):
 
         contract_yaml = """
 name: TestEffect
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0
@@ -219,7 +219,7 @@ class BadName(BaseModel):  # Should start with "Model"
 
         contract_yaml = """
 name: TestEffect
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0
@@ -252,7 +252,7 @@ io_operations:
 
         compute_yaml = """
 name: DataTransformerCompute
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0
@@ -284,7 +284,7 @@ algorithm:
         # Contract with multiple issues
         problematic_yaml = """
 name: T
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0
@@ -329,7 +329,7 @@ class InvalidClass
 
         contract_yaml = """
 name: TestEffect
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0
@@ -360,7 +360,7 @@ io_operations:
         contract_file.write_text(
             """
 name: FileTestEffect
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0
@@ -401,7 +401,7 @@ io_operations:
         # Use a contract name without the Effect suffix to trigger naming suggestions
         contract_yaml = """
 name: TestWriter
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0
@@ -437,7 +437,7 @@ class ModelTestInput(BaseModel):
 
         contract_yaml = """
 name: TestEffect
-version:
+contract_version:
   major: 1
   minor: 0
   patch: 0

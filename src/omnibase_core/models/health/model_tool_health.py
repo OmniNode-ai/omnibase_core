@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.constants import MAX_DESCRIPTION_LENGTH, MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_tool_health_status import EnumToolHealthStatus
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_tool_type import EnumToolType
 from omnibase_core.models.core.model_error_summary import ModelErrorSummary
 from omnibase_core.models.discovery.model_metric_value import ModelMetricValue
@@ -50,7 +50,7 @@ class ModelToolHealth(BaseModel):
         max_length=MAX_IDENTIFIER_LENGTH,
     )
 
-    status: EnumToolHealthStatus = Field(
+    status: EnumHealthStatus = Field(
         default=...,
         description="Current health status of the tool",
     )
@@ -185,18 +185,18 @@ class ModelToolHealth(BaseModel):
 
     def is_healthy(self) -> bool:
         """Check if the tool is in a healthy state."""
-        return self.status == EnumToolHealthStatus.AVAILABLE and self.is_callable
+        return self.status == EnumHealthStatus.AVAILABLE and self.is_callable
 
     def is_unhealthy(self) -> bool:
         """Check if the tool is in an unhealthy state."""
         return self.status in [
-            EnumToolHealthStatus.ERROR,
-            EnumToolHealthStatus.UNAVAILABLE,
+            EnumHealthStatus.ERROR,
+            EnumHealthStatus.UNAVAILABLE,
         ]
 
     def is_degraded(self) -> bool:
         """Check if the tool is degraded but functional."""
-        return self.status == EnumToolHealthStatus.DEGRADED
+        return self.status == EnumHealthStatus.DEGRADED
 
     def requires_attention(self) -> bool:
         """Check if the tool requires immediate attention."""
@@ -210,11 +210,11 @@ class ModelToolHealth(BaseModel):
 
     def get_severity_level(self) -> str:
         """Get human-readable severity level."""
-        if self.status == EnumToolHealthStatus.ERROR:
+        if self.status == EnumHealthStatus.ERROR:
             return "critical"
-        if self.status == EnumToolHealthStatus.UNAVAILABLE:
+        if self.status == EnumHealthStatus.UNAVAILABLE:
             return "high"
-        if self.status == EnumToolHealthStatus.DEGRADED:
+        if self.status == EnumHealthStatus.DEGRADED:
             return "medium"
         if self.requires_attention():
             return "low"
@@ -287,7 +287,7 @@ class ModelToolHealth(BaseModel):
         """Create a healthy tool health status."""
         return cls(
             tool_name=tool_name,
-            status=EnumToolHealthStatus.AVAILABLE,
+            status=EnumHealthStatus.AVAILABLE,
             tool_type=EnumToolType(tool_type),
             is_callable=True,
             error_message=error_message,
@@ -320,7 +320,7 @@ class ModelToolHealth(BaseModel):
         """Create an error tool health status."""
         return cls(
             tool_name=tool_name,
-            status=EnumToolHealthStatus.ERROR,
+            status=EnumHealthStatus.ERROR,
             tool_type=EnumToolType(tool_type),
             is_callable=False,
             error_message=error_message,
@@ -350,9 +350,9 @@ class ModelToolHealth(BaseModel):
             base_score *= 0.8
 
         # Deduct for error conditions
-        if self.status == EnumToolHealthStatus.ERROR:
+        if self.status == EnumHealthStatus.ERROR:
             base_score = 0.0
-        elif self.status == EnumToolHealthStatus.DEGRADED:
+        elif self.status == EnumHealthStatus.DEGRADED:
             base_score *= 0.6
 
         return max(0.0, min(1.0, base_score))
@@ -395,7 +395,7 @@ class ModelToolHealth(BaseModel):
         """Get recovery recommendations based on error patterns."""
         recommendations = []
 
-        if self.status == EnumToolHealthStatus.ERROR:
+        if self.status == EnumHealthStatus.ERROR:
             recommendations.append(
                 "Investigate error logs and restart tool if necessary",
             )
@@ -530,7 +530,7 @@ class ModelToolHealth(BaseModel):
         """Create a degraded tool health status."""
         return cls(
             tool_name=tool_name,
-            status=EnumToolHealthStatus.DEGRADED,
+            status=EnumHealthStatus.DEGRADED,
             tool_type=EnumToolType(tool_type),
             is_callable=True,
             error_message=warning_message,
@@ -562,7 +562,7 @@ class ModelToolHealth(BaseModel):
         """Create an unavailable tool health status."""
         return cls(
             tool_name=tool_name,
-            status=EnumToolHealthStatus.UNAVAILABLE,
+            status=EnumHealthStatus.UNAVAILABLE,
             tool_type=EnumToolType(tool_type),
             is_callable=False,
             error_message=reason,
@@ -596,7 +596,7 @@ class ModelToolHealth(BaseModel):
         """Create tool health with comprehensive metrics."""
         return cls(
             tool_name=tool_name,
-            status=EnumToolHealthStatus(status),
+            status=EnumHealthStatus(status),
             tool_type=EnumToolType(tool_type),
             is_callable=is_callable,
             error_message=error_message,

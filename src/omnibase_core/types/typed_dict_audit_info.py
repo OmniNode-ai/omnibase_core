@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for audit information.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from typing import NotRequired, TypedDict
@@ -11,8 +10,6 @@ from uuid import UUID
 
 
 class TypedDictAuditInfo(TypedDict):
-    """TypedDict for audit information."""
-
     action: str
     resource: str
     user_id: UUID

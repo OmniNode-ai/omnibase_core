@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Protocol Type Enum.
 
 Defines communication protocols for node configurations.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumProtocolType(str, Enum):
+class EnumProtocolType(StrValueHelper, str, Enum):
     """Communication protocol types."""
 
     HTTP = "http"
@@ -22,9 +23,6 @@ class EnumProtocolType(str, Enum):
     GRPC = "grpc"
     REST = "rest"
     GRAPHQL = "graphql"
-
-    def __str__(self) -> str:
-        return self.value
 
 
 # Export for use

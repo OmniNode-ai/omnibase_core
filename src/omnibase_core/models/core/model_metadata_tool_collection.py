@@ -23,6 +23,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metadata_tool_complexity import EnumMetadataToolComplexity
 from omnibase_core.enums.enum_metadata_tool_status import EnumMetadataToolStatus
 from omnibase_core.enums.enum_metadata_tool_type import EnumMetadataToolType
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.core.model_audit_entry import ModelAuditEntry
 from omnibase_core.models.core.model_function_tool import ModelFunctionTool
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -108,7 +109,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                             v
                         )  # Pydantic model_validate for loosely-typed dict input
                         new_data[k] = function_tool
-                    except (AttributeError, KeyError, TypeError, ValueError):
+                    except PYDANTIC_MODEL_ERRORS:
                         # fallback-ok: Fallback to raw dictionary if ModelFunctionTool creation fails
                         new_data[k] = v
                 else:
@@ -174,6 +175,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
         return self
 
+    # NOTE(OMN-1302): Pydantic @computed_field decorator - mypy doesn't understand Pydantic property semantics.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def collection_id(self) -> str:
@@ -182,12 +184,14 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         content = f"metadata_tools:{':'.join(tool_names)}"
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
+    # NOTE(OMN-1302): Pydantic @computed_field decorator - mypy doesn't understand Pydantic property semantics.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def tool_count(self) -> int:
         """Get total number of tools (excluding metadata)."""
         return len([k for k in self.root if not k.startswith("_")])
 
+    # NOTE(OMN-1302): Pydantic @computed_field decorator - mypy doesn't understand Pydantic property semantics.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def analytics(self) -> ModelMetadataToolAnalytics:
@@ -195,6 +199,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         analytics_data = self.root.get("_metadata_analytics", {})
         return ModelMetadataToolAnalytics(**analytics_data)
 
+    # NOTE(OMN-1302): Pydantic @computed_field decorator - mypy doesn't understand Pydantic property semantics.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def health_score(self) -> float:
@@ -252,7 +257,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                     self.root[name] = ModelFunctionTool.model_validate(
                         tool_data
                     )  # Pydantic model_validate for loosely-typed dict input
-                except (AttributeError, KeyError, TypeError, ValueError):
+                except PYDANTIC_MODEL_ERRORS:
                     # fallback-ok: Fallback to raw dict if ModelFunctionTool creation fails
                     self.root[name] = tool_data
             else:

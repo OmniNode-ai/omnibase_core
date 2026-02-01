@@ -294,7 +294,7 @@ class ModelToolCollection(BaseModel):
                     "Tool class name starts with underscore (private)",
                 )
 
-        except (AttributeError, ValueError, TypeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             result.is_valid = False
             result.validation_errors.append(f"Validation failed: {e!s}")
 

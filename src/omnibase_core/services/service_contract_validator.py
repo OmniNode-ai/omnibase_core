@@ -11,11 +11,12 @@ Provides programmatic contract validation against ONEX standards with:
 import ast
 import re
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
@@ -130,6 +131,7 @@ class ServiceContractValidator:
         self.custom_rules: list[ProtocolComplianceRule] = []
         self.strict_mode = strict_mode
 
+    @standard_error_handling("Contract YAML validation")
     def validate_contract_yaml(
         self,
         contract_content: str,
@@ -179,15 +181,10 @@ class ServiceContractValidator:
 
             # Note: node_type preprocessing removed - Pydantic model validators
             # now handle lowercase architecture type strings directly
-
-            # Pre-process version field to ensure ModelSemVer conversion
-            if "version" in yaml_data and isinstance(yaml_data["version"], dict):
-                try:
-                    yaml_data["version"] = ModelSemVer(**yaml_data["version"])
-                except ValueError as e:
-                    violations.append(f"Invalid ModelSemVer format: {e}")
-                except TypeError as e:
-                    violations.append(f"Invalid ModelSemVer type: {e}")
+            #
+            # Note: version preprocessing removed - YAML contracts now use
+            # 'contract_version' field, and Pydantic v2 handles dict-to-ModelSemVer
+            # conversion automatically during model_validate()
 
         except yaml.YAMLError as e:
             return ModelContractValidationResult(
@@ -210,7 +207,7 @@ class ServiceContractValidator:
             )
 
         try:
-            # Validate using Pydantic model
+            # NOTE(OMN-1302): Duck-typed Pydantic model from registry. Safe because models validated at registration.
             contract_instance = contract_model.model_validate(yaml_data)  # type: ignore[attr-defined]
 
             # Step 3: Check ONEX compliance
@@ -410,10 +407,10 @@ class ServiceContractValidator:
     ) -> None:
         """Check ONEX compliance for contract."""
         # Check contract version against validator version
-        if contract.version != self.interface_version:
+        if contract.contract_version != self.interface_version:
             warnings.append(
                 f"Contract version mismatch: expected {self.interface_version}, "
-                f"got {contract.version}"
+                f"got {contract.contract_version}"
             )
 
         # Check naming conventions
@@ -866,7 +863,11 @@ class ServiceContractValidator:
         # Read and validate file content
         try:
             content = path.read_text(encoding="utf-8")
-            return self.validate_contract_yaml(content, contract_type)
+            # NOTE(OMN-1494): Cast needed because @standard_error_handling decorator erases return type.
+            return cast(
+                ModelContractValidationResult,
+                self.validate_contract_yaml(content, contract_type),
+            )
         except UnicodeDecodeError as e:
             return ModelContractValidationResult(
                 is_valid=False,

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Protocol definition for contract diff storage backends.
 
@@ -10,14 +7,14 @@ while maintaining a consistent API.
 
 Example:
     >>> from omnibase_core.protocols.storage.protocol_diff_store import ProtocolDiffStore
-    >>> from omnibase_core.services.diff.store_diff_in_memory import StoreDiffInMemory
+    >>> from omnibase_core.services.diff.service_diff_in_memory_store import ServiceDiffInMemoryStore
     >>>
-    >>> # StoreDiffInMemory implements ProtocolDiffStore
-    >>> store: ProtocolDiffStore = StoreDiffInMemory()
+    >>> # ServiceDiffInMemoryStore implements ProtocolDiffStore
+    >>> store: ProtocolDiffStore = ServiceDiffInMemoryStore()
     >>> # Now use store.put(), store.get(), store.query(), etc.
 
 See Also:
-    - :class:`~omnibase_core.services.diff.store_diff_in_memory.StoreDiffInMemory`:
+    - :class:`~omnibase_core.services.diff.service_diff_in_memory_store.ServiceDiffInMemoryStore`:
       In-memory implementation
     - :class:`~omnibase_core.models.contracts.diff.ModelContractDiff`:
       The diff model being stored

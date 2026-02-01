@@ -1,19 +1,23 @@
+---
 # Handler Contract Example: EFFECT Handler
 # This handler performs external I/O operations (database queries).
 #
 # Key characteristics:
-#   - handler_kind: effect (external I/O)
+#   - node_archetype: effect (external I/O)
 #   - purity: side_effecting (modifies external state)
 #   - idempotent: true (for safe retries)
 #   - Requires capability dependencies (database)
 
 handler_id: effect.database.user_repository
 name: User Repository
-version: 2.0.0
+contract_version:
+  major: 2
+  minor: 0
+  patch: 0
 description: Handles user persistence operations with PostgreSQL
 
 descriptor:
-  handler_kind: effect
+  node_archetype: effect
   purity: side_effecting
   idempotent: true
   timeout_ms: 30000

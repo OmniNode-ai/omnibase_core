@@ -1144,7 +1144,7 @@ class TestModelCoordinationRulesHardening:
 @pytest.mark.timeout(30)
 @pytest.mark.unit
 class TestModelExecutionGraphHardening:
-    """Tests for ModelExecutionGraph frozen and extra=forbid behavior."""
+    """Tests for ModelExecutionGraph frozen and extra=ignore behavior (v1.0.5 Fix 54)."""
 
     def test_valid_instantiation(
         self, default_execution_graph: ModelExecutionGraph
@@ -1209,7 +1209,7 @@ class TestModelExecutionGraphHardening:
 @pytest.mark.timeout(30)
 @pytest.mark.unit
 class TestModelWorkflowNodeHardening:
-    """Tests for ModelWorkflowNode frozen and extra=forbid behavior."""
+    """Tests for ModelWorkflowNode frozen and extra=ignore behavior (v1.0.5 Fix 54)."""
 
     def test_valid_instantiation(
         self, default_workflow_node: ModelWorkflowNode

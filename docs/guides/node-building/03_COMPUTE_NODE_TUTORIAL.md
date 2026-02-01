@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../../INDEX.md) > [Guides](../README.md) > [Node Building](./README.md) > COMPUTE Node Tutorial
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../../CLAUDE.md).
+
 # COMPUTE Node Tutorial
 
 **Reading Time**: 30 minutes
@@ -254,7 +258,7 @@ For **95% of use cases**, use the production-ready `ModelServiceCompute` wrapper
 
 import time
 from typing import Dict
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
+from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

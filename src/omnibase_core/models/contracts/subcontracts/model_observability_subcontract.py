@@ -24,6 +24,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.observability.model_metrics_policy import ModelMetricsPolicy
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -74,6 +75,12 @@ class ModelObservabilitySubcontract(BaseModel):
     enable_correlation_tracking: bool = Field(
         default=True,
         description="Track and propagate correlation IDs across operations",
+    )
+
+    # Metrics cardinality policy (OMN-1367)
+    metrics_policy: ModelMetricsPolicy | None = Field(
+        default=None,
+        description="Cardinality policy for metrics labels (None disables enforcement)",
     )
 
     # Distributed tracing configuration

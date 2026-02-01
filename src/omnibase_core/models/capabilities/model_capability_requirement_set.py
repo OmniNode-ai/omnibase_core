@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Requirement Set Model for Capability Matching.
 
@@ -375,6 +372,7 @@ class ModelRequirementSet(BaseModel):
             try:
                 json.dumps(field_value)
             except (TypeError, ValueError) as e:
+                # error-ok: Pydantic model_validator requires ValueError
                 raise ValueError(
                     f"Requirements in '{field_name}' are not JSON-serializable: {e}. "
                     f"Ensure values are primitives (str, int, float, bool, None) "

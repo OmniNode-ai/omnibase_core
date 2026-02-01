@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Analytics Performance Summary Model.
 
@@ -9,8 +5,9 @@ Structured performance summary data for analytics.
 Follows ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
@@ -106,11 +103,12 @@ class ModelAnalyticsPerformanceSummary(BaseModel):
             needs_optimization=needs_optimization,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        from_attributes=True,
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

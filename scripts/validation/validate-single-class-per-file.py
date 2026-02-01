@@ -183,6 +183,16 @@ def should_exclude_file(filepath: Path) -> bool:
         "model_database_secure_config.py",  # Database config with nested models
         "model_service_registry_config.py",  # Service config models
     }
+
+    # Exclude validator files with small helper classes
+    # These validators have AST visitor helpers or Protocol interfaces that are
+    # intentionally colocated with the main validator class
+    validator_helper_files = {
+        "validator_architecture.py",  # ModelCounter AST visitor helper
+        "validator_patterns.py",  # ProtocolPatternChecker Protocol interface
+    }
+    if filepath.name in validator_helper_files:
+        return True
     if filepath.name in legacy_multi_class_files:
         return True
 

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Ecosystem Directory Structure
+
 # ONEX Ecosystem Directory Structure
 
 **Status**: Current as of 2025-11-27  
@@ -300,7 +302,7 @@ class MyBridgeEffect(NodeEffect, HealthCheckMixin):
 **Location**: `omnibase_infra/src/omnibase_infra/nodes/`
 
 ```
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
+from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
 
 class MyInfraEffect(ModelServiceEffect):
     """Legacy infrastructure node."""

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Contract CLI Commands.
 
@@ -404,7 +401,7 @@ def _generate_patch_template(
     # Add name and version fields unless override_only mode
     if not override_only:
         contract_name = name if name else "my_contract_name"
-        name_comment = "" if name else "  # TODO: Change this"
+        name_comment = "" if name else "  # TODO(OMN-TBD): Change this  [NEEDS TICKET]"
         lines.extend(
             [
                 "# Required for new contracts:",
@@ -1068,7 +1065,7 @@ def build(
         from omnibase_core.factories.factory_contract_profile import (
             ContractProfileFactory,
         )
-        from omnibase_core.validation.contract_validation_pipeline import (
+        from omnibase_core.validation.validator_contract_pipeline import (
             ContractValidationPipeline,
         )
 

@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Model Reference.
 
@@ -116,14 +113,17 @@ class ModelReference(BaseModel):
         """
         v = v.strip()
         if not v:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError("Module path cannot be empty")
 
         # Basic validation - should be valid Python module path
         parts = v.split(".")
         for part in parts:
             if not part:
+                # error-ok: Pydantic field_validator requires ValueError
                 raise ValueError(f"Invalid module path: {v}")
             if not part[0].isalpha() and part[0] != "_":
+                # error-ok: Pydantic field_validator requires ValueError
                 raise ValueError(
                     f"Module path segments must start with letter or underscore: {v}"
                 )
@@ -150,10 +150,12 @@ class ModelReference(BaseModel):
         """
         v = v.strip()
         if not v:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError("Class name cannot be empty")
 
         # Class names should start with uppercase letter (convention)
         if not v[0].isupper():
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"Class name should start with uppercase letter: {v}")
 
         return v
@@ -232,7 +234,7 @@ class ModelReference(BaseModel):
 
             module = importlib.import_module(module_path)
             return getattr(module, class_name, None)
-        except (ImportError, ValueError, AttributeError):
+        except (AttributeError, ImportError, ValueError):
             return None
 
     @classmethod

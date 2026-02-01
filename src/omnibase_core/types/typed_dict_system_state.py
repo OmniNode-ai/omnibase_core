@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for overall system state.
 """
+
+from __future__ import annotations
 
 from typing import TypedDict
 from uuid import UUID
@@ -14,8 +14,6 @@ from .typed_dict_stats_collection import TypedDictStatsCollection
 
 
 class TypedDictSystemState(TypedDict):
-    """TypedDict for overall system state."""
-
     system_id: UUID
     system_name: str
     version: TypedDictSemVer

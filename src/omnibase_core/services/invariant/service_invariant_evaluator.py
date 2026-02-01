@@ -13,13 +13,13 @@ Example:
     ...     ServiceInvariantEvaluator,
     ... )
     >>> from omnibase_core.models.invariant import ModelInvariant, ModelInvariantSet
-    >>> from omnibase_core.enums import EnumInvariantType, EnumInvariantSeverity
+    >>> from omnibase_core.enums import EnumInvariantType, EnumSeverity
     >>>
     >>> evaluator = ServiceInvariantEvaluator()
     >>> invariant = ModelInvariant(
     ...     name="latency_check",
     ...     type=EnumInvariantType.LATENCY,
-    ...     severity=EnumInvariantSeverity.CRITICAL,
+    ...     severity=EnumSeverity.CRITICAL,
     ...     config={"max_ms": 500},
     ... )
     >>> result = evaluator.evaluate(invariant, {"latency_ms": 250})
@@ -44,8 +44,9 @@ from typing import Any
 import jsonschema
 from jsonschema.protocols import Validator
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.errors.error_regex_timeout import RegexTimeoutError
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.invariant import (
     ModelEvaluationSummary,
     ModelInvariant,
@@ -624,7 +625,7 @@ class ServiceInvariantEvaluator:
         Args:
             invariant_set: The set of invariants to evaluate.
             output: The output dictionary to validate against.
-            fail_fast: If True, stop on first CRITICAL failure.
+            fail_fast: If True, stop on first CRITICAL or FATAL failure.
 
         Returns:
             ModelEvaluationSummary with aggregate statistics and all results.
@@ -639,7 +640,7 @@ class ServiceInvariantEvaluator:
             if (
                 fail_fast
                 and not result.passed
-                and result.severity == EnumInvariantSeverity.CRITICAL
+                and result.severity in (EnumSeverity.CRITICAL, EnumSeverity.FATAL)
             ):
                 break
 
@@ -647,29 +648,38 @@ class ServiceInvariantEvaluator:
 
         # Count all statistics in a single pass over results
         passed_count = 0
+        fatal_failures = 0
         critical_failures = 0
+        error_failures = 0
         warning_failures = 0
         info_failures = 0
 
         for r in results:
             if r.passed:
                 passed_count += 1
-            elif r.severity == EnumInvariantSeverity.CRITICAL:
+            elif r.severity == EnumSeverity.FATAL:
+                fatal_failures += 1
+            elif r.severity == EnumSeverity.CRITICAL:
                 critical_failures += 1
-            elif r.severity == EnumInvariantSeverity.WARNING:
+            elif r.severity == EnumSeverity.ERROR:
+                error_failures += 1
+            elif r.severity == EnumSeverity.WARNING:
                 warning_failures += 1
-            elif r.severity == EnumInvariantSeverity.INFO:
+            elif r.severity in (EnumSeverity.INFO, EnumSeverity.DEBUG):
+                # DEBUG is less severe than INFO, count both together
                 info_failures += 1
 
         failed_count = len(results) - passed_count
 
-        overall_passed = critical_failures == 0
+        overall_passed = critical_failures == 0 and fatal_failures == 0
 
         return ModelEvaluationSummary(
             results=results,
             passed_count=passed_count,
             failed_count=failed_count,
+            fatal_failures=fatal_failures,
             critical_failures=critical_failures,
+            error_failures=error_failures,
             warning_failures=warning_failures,
             info_failures=info_failures,
             overall_passed=overall_passed,
@@ -925,6 +935,7 @@ class ServiceInvariantEvaluator:
             )
 
         try:
+            # NOTE(OMN-1302): Runtime conversion from unknown dict value. Safe because ValueError caught below.
             actual_num = float(actual_value)  # type: ignore[arg-type]
         except (
             TypeError,
@@ -946,6 +957,7 @@ class ServiceInvariantEvaluator:
 
         if min_value is not None:
             try:
+                # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
                 min_num = float(min_value)  # type: ignore[arg-type]
                 if actual_num < min_num:
                     return (
@@ -967,6 +979,7 @@ class ServiceInvariantEvaluator:
 
         if max_value is not None:
             try:
+                # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
                 max_num = float(max_value)  # type: ignore[arg-type]
                 if actual_num > max_num:
                     return (
@@ -1007,8 +1020,9 @@ class ServiceInvariantEvaluator:
             return (False, "Invalid config: max_ms is required", None, None)
 
         try:
+            # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
             max_ms_num = float(max_ms)  # type: ignore[arg-type]
-        except (TypeError, ValueError):  # fallback-ok: invalid config fails validation
+        except VALIDATION_ERRORS:  # fallback-ok: invalid config fails validation
             return (False, f"Invalid max_ms value: {max_ms!r}", None, None)
 
         # Look for latency_ms or duration_ms
@@ -1017,6 +1031,7 @@ class ServiceInvariantEvaluator:
             found, value = self._resolve_field_path(output, field_name)
             if found:
                 try:
+                    # NOTE(OMN-1302): Runtime conversion from resolved field. Safe because ValueError caught below.
                     actual_ms = float(value)  # type: ignore[arg-type]
                     break
                 except (
@@ -1067,14 +1082,16 @@ class ServiceInvariantEvaluator:
             return (False, "Invalid config: max_cost is required", None, None)
 
         try:
+            # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
             max_cost_num = float(max_cost)  # type: ignore[arg-type]
-        except (TypeError, ValueError):  # fallback-ok: invalid config fails validation
+        except VALIDATION_ERRORS:  # fallback-ok: invalid config fails validation
             return (False, f"Invalid max_cost value: {max_cost!r}", None, None)
 
         # Look for cost directly
         found, cost_value = self._resolve_field_path(output, "cost")
         if found:
             try:
+                # NOTE(OMN-1302): Runtime conversion from resolved field. Safe because ValueError caught below.
                 actual_cost = float(cost_value)  # type: ignore[arg-type]
             except (
                 TypeError,
@@ -1091,9 +1108,11 @@ class ServiceInvariantEvaluator:
             found, tokens = self._resolve_field_path(output, "usage.total_tokens")
             if found:
                 try:
+                    # NOTE(OMN-1302): Runtime conversion from resolved field. Safe because ValueError caught below.
                     token_count = float(tokens)  # type: ignore[arg-type]
                     # Default cost rate per token (can be customized via config)
                     cost_per_token = config.get("cost_per_token", 0.0001)
+                    # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
                     actual_cost = token_count * float(cost_per_token)  # type: ignore[arg-type]
                 except (
                     TypeError,
@@ -1199,7 +1218,7 @@ class ServiceInvariantEvaluator:
                 invariant = ModelInvariant(
                     name="status_check",
                     type=EnumInvariantType.CUSTOM,
-                    severity=EnumInvariantSeverity.CRITICAL,
+                    severity=EnumSeverity.CRITICAL,
                     config={"callable_path": "myapp.validators.has_valid_status"},
                 )
 

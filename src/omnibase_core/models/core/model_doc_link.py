@@ -26,9 +26,12 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ModelDocLink(BaseModel):
-    """Immutable documentation link reference."""
+    """Immutable documentation link reference.
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    This model is frozen and hashable, suitable for use as dict keys or in sets.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     url: str
     title: str | None = None

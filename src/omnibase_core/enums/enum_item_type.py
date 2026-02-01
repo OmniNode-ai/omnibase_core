@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Item type enumeration for collection items.
 
 Provides standardized item type values for item classification and filtering.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumItemType(str, Enum):
+class EnumItemType(StrValueHelper, str, Enum):
     """
     Item type enumeration for collection item classification.
 
@@ -59,10 +60,6 @@ class EnumItemType(str, Enum):
     # Default and unknown
     UNKNOWN = "unknown"
     OTHER = "other"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     def is_content_type(self) -> bool:
         """Check if this represents a content-related item type."""

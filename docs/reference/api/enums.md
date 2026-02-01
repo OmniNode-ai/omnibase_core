@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Reference](../README.md) > API > Enums
+
 # Enums API Reference - omnibase_core
 
 **Status**: ✅ Complete
@@ -430,13 +432,145 @@ health_status = EnumHealthStatus.HEALTHY
 - `is_operational()` - Returns True if status is HEALTHY or DEGRADED
 - `requires_attention()` - Returns True if status is UNHEALTHY or CRITICAL
 
+### Execution Status
+
+#### EnumExecutionStatus
+
+**Location**: `omnibase_core.enums.enum_execution_status`
+
+**Purpose**: Canonical execution status for ONEX lifecycle tracking.
+
+**Updated**: v0.6.4 (OMN-1310) - Consolidated from multiple status enums.
+
+```python
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
+
+status = EnumExecutionStatus.SUCCESS
+```
+
+#### Available Statuses
+
+**Note**: All values are lowercase strings.
+
+- `PENDING` = "pending" - Execution is queued but not yet started
+- `RUNNING` = "running" - Execution is in progress
+- `COMPLETED` = "completed" - Execution finished (generic completion)
+- `SUCCESS` = "success" - Execution completed successfully
+- `FAILED` = "failed" - Execution failed with an error
+- `SKIPPED` = "skipped" - Execution was skipped
+- `CANCELLED` = "cancelled" - Execution was cancelled by user or system
+- `TIMEOUT` = "timeout" - Execution exceeded time limit
+- `PARTIAL` = "partial" - Execution partially completed (some steps succeeded)
+
+**Helper Methods**:
+- `is_terminal(status)` - Returns True if execution has finished
+- `is_active(status)` - Returns True if status is RUNNING or PENDING
+- `is_successful(status)` - Returns True if status is SUCCESS or COMPLETED
+- `is_failure(status)` - Returns True if status is FAILED or TIMEOUT
+- `is_running(status)` - Returns True if status is RUNNING
+- `is_cancelled(status)` - Returns True if status is CANCELLED
+- `is_skipped(status)` - Returns True if status is SKIPPED
+- `is_partial(status)` - Returns True if status is PARTIAL
+- `to_base_status()` - Convert to EnumBaseStatus for universal operations
+- `from_base_status(base_status)` - Create from EnumBaseStatus
+
+**CANCELLED State Semantics**:
+
+The `CANCELLED` status has special semantics that distinguish it from both success and failure states:
+
+- **Terminal**: CANCELLED is a terminal state (`is_terminal()` returns True) - execution has finished and will not continue
+- **Not a success**: `is_successful()` returns False - the execution did not complete its intended work
+- **Not a failure**: `is_failure()` returns False - no error occurred; cancellation was intentional
+- **Intentional termination**: Represents user or system-initiated cancellation, not an error condition
+
+This distinction is important for:
+1. **Metrics/reporting**: CANCELLED executions should not count as failures in error rates
+2. **Retry logic**: CANCELLED tasks should not automatically retry (unlike FAILED or TIMEOUT)
+3. **Billing/quotas**: CANCELLED work may warrant different accounting than completed or failed work
+
+```python
+# Correct handling of CANCELLED state
+status = EnumExecutionStatus.CANCELLED
+
+# Terminal check includes CANCELLED
+assert EnumExecutionStatus.is_terminal(status)  # True
+
+# Success/failure checks exclude CANCELLED
+assert not EnumExecutionStatus.is_successful(status)  # Not a success
+assert not EnumExecutionStatus.is_failure(status)     # Not a failure
+
+# Use is_cancelled for explicit cancellation handling
+if EnumExecutionStatus.is_cancelled(status):
+    log.info("Execution was cancelled by user/system")
+```
+
+### Workflow Status
+
+#### EnumWorkflowStatus
+
+**Location**: `omnibase_core.enums.enum_workflow_status`
+
+**Purpose**: Canonical workflow status for ONEX workflow lifecycle.
+
+**Updated**: v0.6.4 (OMN-1310) - Consolidated from EnumWorkflowState and enum_workflow_coordination.EnumWorkflowStatus.
+
+```python
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
+
+status = EnumWorkflowStatus.RUNNING
+```
+
+#### Available Statuses
+
+**Note**: All values are lowercase strings.
+
+- `PENDING` = "pending" - Workflow is queued but not yet started
+- `RUNNING` = "running" - Workflow is actively executing
+- `COMPLETED` = "completed" - Workflow finished successfully
+- `FAILED` = "failed" - Workflow terminated due to an error
+- `CANCELLED` = "cancelled" - Workflow was manually or programmatically cancelled
+- `PAUSED` = "paused" - Workflow execution is temporarily suspended
+
+**Helper Methods**:
+- `is_terminal(status)` - Returns True if workflow has finished (COMPLETED, FAILED, CANCELLED)
+- `is_active(status)` - Returns True if workflow is in progress (PENDING, RUNNING, PAUSED)
+- `is_successful(status)` - Returns True if status is COMPLETED
+- `is_error_state(status)` - Returns True if status is FAILED
+
+**CANCELLED State Semantics**:
+
+The `CANCELLED` status in workflows follows the same semantics as execution status:
+
+- **Terminal**: CANCELLED is a terminal state - the workflow has finished and will not continue
+- **Not a success**: `is_successful()` returns False - the workflow did not complete its intended work
+- **Not a failure**: `is_error_state()` returns False - no error occurred; cancellation was intentional
+- **Intentional termination**: Represents user or system-initiated cancellation, not an error condition
+
+```python
+# Correct handling of CANCELLED workflow state
+status = EnumWorkflowStatus.CANCELLED
+
+# Terminal check includes CANCELLED
+assert EnumWorkflowStatus.is_terminal(status)  # True
+
+# Success/error checks exclude CANCELLED
+assert not EnumWorkflowStatus.is_successful(status)   # Not a success
+assert not EnumWorkflowStatus.is_error_state(status)  # Not an error
+
+# CANCELLED is a clean termination, not a failure
+```
+
+---
+
 ### Operation Status
 
 #### EnumOperationStatus
 
 **Location**: `omnibase_core.enums.enum_operation_status`
 
-**Purpose**: Operation execution status.
+**Purpose**: Canonical operation status for API and service operations.
+
+**Updated**: v0.6.4 (OMN-1310) - Consolidated from enum_execution.EnumOperationStatus.
 
 ```python
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
@@ -449,16 +583,42 @@ status = EnumOperationStatus.SUCCESS
 **Note**: All values are lowercase strings.
 
 - `SUCCESS` = "success" - Operation completed successfully
-- `FAILED` = "failed" - Operation failed
-- `IN_PROGRESS` = "in_progress" - Operation is in progress
+- `FAILED` = "failed" - Operation failed with an error
+- `IN_PROGRESS` = "in_progress" - Operation is currently executing
 - `CANCELLED` = "cancelled" - Operation was cancelled
-- `PENDING` = "pending" - Operation is pending
-- `TIMEOUT` = "timeout" - Operation timed out
+- `PENDING` = "pending" - Operation is queued but not started
+- `TIMEOUT` = "timeout" - Operation exceeded time limit
 
-**Helper Methods**:
-- `is_terminal()` - Returns True if status is SUCCESS, FAILED, CANCELLED, or TIMEOUT
-- `is_active()` - Returns True if status is IN_PROGRESS or PENDING
+**Helper Methods** (instance methods):
+- `is_terminal()` - Returns True if operation has finished (SUCCESS, FAILED, CANCELLED, TIMEOUT)
+- `is_active()` - Returns True if operation is in progress (IN_PROGRESS, PENDING)
 - `is_successful()` - Returns True if status is SUCCESS
+- `to_base_status()` - Convert to EnumBaseStatus for universal operations
+- `from_base_status(base_status)` - Create from EnumBaseStatus (class method)
+
+**CANCELLED State Semantics**:
+
+The `CANCELLED` status in operations follows the same semantics as other status enums:
+
+- **Terminal**: CANCELLED is a terminal state - the operation has finished
+- **Not a success**: `is_successful()` returns False
+- **Distinct from failure**: CANCELLED represents intentional termination, not an error
+
+```python
+# Correct handling of CANCELLED operation state
+status = EnumOperationStatus.CANCELLED
+
+# Terminal check includes CANCELLED
+assert status.is_terminal()  # True
+
+# Success check excludes CANCELLED
+assert not status.is_successful()  # Not a success
+
+# CANCELLED is distinct from FAILED
+assert status != EnumOperationStatus.FAILED
+```
+
+---
 
 ### Message Roles
 
@@ -580,19 +740,19 @@ print(f"Available actions: {available_actions}")
 ### Enum Mapping
 
 ```python
-from omnibase_core.enums.enum_operation_status import EnumOperationStatus
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 
 # Map status to HTTP status codes
 STATUS_TO_HTTP = {
-    EnumOperationStatus.SUCCESS: 200,
-    EnumOperationStatus.FAILURE: 500,
-    EnumOperationStatus.TIMEOUT: 408,
-    EnumOperationStatus.CANCELLED: 499,
-    EnumOperationStatus.IN_PROGRESS: 202,
-    EnumOperationStatus.PENDING: 202
+    EnumExecutionStatus.SUCCESS: 200,
+    EnumExecutionStatus.FAILED: 500,
+    EnumExecutionStatus.TIMEOUT: 408,
+    EnumExecutionStatus.CANCELLED: 499,
+    EnumExecutionStatus.RUNNING: 202,
+    EnumExecutionStatus.PENDING: 202
 }
 
-def get_http_status(operation_status: EnumOperationStatus) -> int:
+def get_http_status(operation_status: EnumExecutionStatus) -> int:
     """Get HTTP status code for operation status."""
     return STATUS_TO_HTTP.get(operation_status, 500)
 ```
@@ -633,15 +793,15 @@ class EnumCustomStatus(str, Enum):
 ### Enum Error Conversion
 
 ```python
-from omnibase_core.enums.enum_operation_status import EnumOperationStatus
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
-def convert_status_to_error_code(status: EnumOperationStatus) -> EnumCoreErrorCode:
+def convert_status_to_error_code(status: EnumExecutionStatus) -> EnumCoreErrorCode:
     """Convert operation status to error code."""
     status_to_error = {
-        EnumOperationStatus.FAILURE: EnumCoreErrorCode.PROCESSING_ERROR,
-        EnumOperationStatus.TIMEOUT: EnumCoreErrorCode.TIMEOUT_ERROR,
-        EnumOperationStatus.CANCELLED: EnumCoreErrorCode.PROCESSING_ERROR
+        EnumExecutionStatus.FAILED: EnumCoreErrorCode.PROCESSING_ERROR,
+        EnumExecutionStatus.TIMEOUT: EnumCoreErrorCode.TIMEOUT_ERROR,
+        EnumExecutionStatus.CANCELLED: EnumCoreErrorCode.PROCESSING_ERROR
     }
     return status_to_error.get(status, EnumCoreErrorCode.PROCESSING_ERROR)
 ```
@@ -717,3 +877,37 @@ This classification hierarchy enables:
 2. **Behavior-based optimization**: Apply caching/retry based on category
 3. **Capability-based selection**: Choose handlers that support required features
 4. **Type-safe dispatching**: Use typed commands instead of magic strings
+
+### Status Enum Relationships (OMN-1310)
+
+Status enums are organized by semantic category:
+
+```text
+EnumBaseStatus           --> Universal status primitives
+    |                        (PENDING, RUNNING, COMPLETED, FAILED, etc.)
+    |
+    +-> EnumExecutionStatus    --> Task/job/step completion states
+    |       includes: PENDING, RUNNING, SUCCESS, FAILED, CANCELLED,
+    |                 TIMEOUT, SKIPPED, PARTIAL, COMPLETED
+    |
+    +-> EnumWorkflowStatus     --> Workflow lifecycle states
+    |       includes: PENDING, RUNNING, COMPLETED, FAILED,
+    |                 CANCELLED, PAUSED
+    |
+    +-> EnumOperationStatus    --> API/service operation outcomes
+    |       includes: SUCCESS, FAILED, IN_PROGRESS, CANCELLED,
+    |                 PENDING, TIMEOUT
+    |
+    +-> EnumHealthStatus       --> System/component health states
+            includes: HEALTHY, DEGRADED, UNHEALTHY, CRITICAL,
+                      UNKNOWN, WARNING, UNREACHABLE, etc.
+```
+
+**Key Semantic Rules**:
+1. **CANCELLED is neither success nor failure** - Intentional termination, not an error
+2. **All status enums use lowercase string values** - e.g., "running", not "RUNNING"
+3. **Helper methods provide consistent classification** - `is_terminal()`, `is_successful()`, etc.
+4. **Base status conversion available** - `to_base_status()` and `from_base_status()` methods
+
+**Breaking Change Notice (v0.6.4)**: These enums consolidate and replace multiple
+previous enum definitions. See module docstrings for migration guidance.

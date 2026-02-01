@@ -1,23 +1,18 @@
 """Service registration model - implements ProtocolServiceRegistration."""
 
-from datetime import datetime
-from typing import Literal
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.protocols import (
-    LiteralHealthStatus,
-    LiteralInjectionScope,
-    LiteralServiceLifecycle,
+from omnibase_core.enums import (
+    EnumHealthStatus,
+    EnumInjectionScope,
+    EnumRegistrationStatus,
+    EnumServiceLifecycle,
 )
 
 from .model_service_metadata import ModelServiceMetadata
-
-# Type alias for registration status
-LiteralRegistrationStatus = Literal[
-    "registered", "unregistered", "failed", "pending", "conflict", "invalid"
-]
 
 
 class ModelServiceRegistration(BaseModel):
@@ -45,34 +40,41 @@ class ModelServiceRegistration(BaseModel):
     Example:
         ```python
         from uuid import UUID
+        from omnibase_core.enums import (
+            EnumServiceLifecycle,
+            EnumInjectionScope,
+            EnumRegistrationStatus,
+        )
         registration = ModelServiceRegistration(
             registration_id=UUID("12345678-1234-5678-1234-567812345678"),
             service_metadata=metadata,
-            lifecycle="singleton",
-            scope="global",
-            registration_status="registered",
+            lifecycle=EnumServiceLifecycle.SINGLETON,
+            scope=EnumInjectionScope.GLOBAL,
+            registration_status=EnumRegistrationStatus.REGISTERED,
         )
         ```
     """
 
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
     registration_id: UUID = Field(description="Unique registration ID")
     service_metadata: ModelServiceMetadata = Field(description="Service metadata")
-    lifecycle: LiteralServiceLifecycle = Field(description="Lifecycle pattern")
-    scope: LiteralInjectionScope = Field(description="Injection scope")
+    lifecycle: EnumServiceLifecycle = Field(description="Lifecycle pattern")
+    scope: EnumInjectionScope = Field(description="Injection scope")
     dependencies: list[str] = Field(
         default_factory=list,
         description="Service dependency names (simplified for v1.0)",
     )
-    registration_status: LiteralRegistrationStatus = Field(
-        default="registered",
+    registration_status: EnumRegistrationStatus = Field(
+        default=EnumRegistrationStatus.REGISTERED,
         description="Registration status",
     )
-    health_status: LiteralHealthStatus = Field(
-        default="healthy",
+    health_status: EnumHealthStatus = Field(
+        default=EnumHealthStatus.HEALTHY,
         description="Service health status",
     )
     registration_time: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Registration timestamp",
     )
     last_access_time: datetime | None = Field(
@@ -94,8 +96,8 @@ class ModelServiceRegistration(BaseModel):
             True if registration is valid
         """
         return (
-            self.registration_status == "registered"
-            and self.health_status != "unhealthy"
+            self.registration_status == EnumRegistrationStatus.REGISTERED
+            and self.health_status != EnumHealthStatus.UNHEALTHY
             and self.service_metadata is not None
         )
 
@@ -107,12 +109,13 @@ class ModelServiceRegistration(BaseModel):
             True if registration is active and healthy
         """
         return (
-            self.registration_status == "registered" and self.health_status == "healthy"
+            self.registration_status == EnumRegistrationStatus.REGISTERED
+            and self.health_status == EnumHealthStatus.HEALTHY
         )
 
     def mark_accessed(self) -> None:
         """Update access tracking."""
-        self.last_access_time = datetime.now()
+        self.last_access_time = datetime.now(UTC)
         self.access_count += 1
 
     def increment_instance_count(self) -> None:

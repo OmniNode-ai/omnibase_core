@@ -1,10 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, model_validator
-
-from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Connection Security Model.
 
@@ -12,11 +5,15 @@ SSL/TLS and security configuration for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import SerializedDict
 from omnibase_core.types.typed_dict_ssl_context_options import (
     TypedDictSSLContextOptions,
@@ -182,11 +179,11 @@ class ModelConnectionSecurity(BaseModel):
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 # Export for use

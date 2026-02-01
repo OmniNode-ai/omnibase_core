@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """
 Routing metadata model for service routing and load balancing.
 
@@ -17,7 +15,7 @@ See Also:
     - omnibase_core.models.context.model_http_request_metadata: HTTP request metadata
 """
 
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -138,14 +136,16 @@ class ModelRoutingMetadata(BaseModel):
             ValueError: If the value is not a string or not a valid strategy.
         """
         if not isinstance(v, str):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"load_balance_strategy must be a string, got {type(v).__name__}"
             )
         normalized = v.lower().strip()
         if normalized not in VALID_LOAD_BALANCE_STRATEGIES:
             valid_strategies = ", ".join(sorted(VALID_LOAD_BALANCE_STRATEGIES))
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid load_balance_strategy '{v}': must be one of {valid_strategies}"
             )
-        # Cast to LoadBalanceStrategy since we've validated it's a valid value
-        return normalized  # type: ignore[return-value]
+        # Validated via set membership check above
+        return cast(LoadBalanceStrategy, normalized)

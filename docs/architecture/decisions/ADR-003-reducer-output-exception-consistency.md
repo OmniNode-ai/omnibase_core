@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > [Decisions](./INDEX.md) > ADR-003 Reducer Output Exceptions
+
 # ADR-003: Reducer Output Exception Consistency
 
 ## Document Metadata

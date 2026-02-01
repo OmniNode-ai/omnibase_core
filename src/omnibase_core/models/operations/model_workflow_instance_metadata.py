@@ -1,10 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Strongly-typed workflow metadata structure.
 
@@ -12,12 +5,15 @@ Replaces dict[str, Any] usage in workflow metadata with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -67,11 +63,11 @@ class ModelWorkflowInstanceMetadata(BaseModel):
     tags: dict[str, str] = Field(default_factory=dict, description="Workflow tags")
     labels: dict[str, str] = Field(default_factory=dict, description="Workflow labels")
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -114,12 +110,7 @@ class ModelWorkflowInstanceMetadata(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 # Export for use

@@ -1,7 +1,10 @@
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumRegistryHealthStatus(str, Enum):
+@unique
+class EnumRegistryHealthStatus(StrValueHelper, str, Enum):
     """Standard registry health status values."""
 
     HEALTHY = "healthy"
@@ -10,3 +13,6 @@ class EnumRegistryHealthStatus(str, Enum):
     INITIALIZING = "initializing"
     MAINTENANCE = "maintenance"
     CRITICAL = "critical"
+
+
+__all__ = ["EnumRegistryHealthStatus"]

@@ -1,3 +1,7 @@
+> **Navigation**: [Home](../index.md) > [Patterns](./README.md) > Anti-Patterns
+
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
+
 # ONEX Anti-Patterns Documentation
 
 This document catalogs prohibited patterns in the ONEX framework that compromise type safety, consistency, or maintainability. Each anti-pattern includes detection mechanisms and correct alternatives.

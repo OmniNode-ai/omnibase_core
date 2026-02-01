@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-005",
+  "category": "technical_bug",
+  "confidence": 0.94,
+  "sentiment": "neutral",
+  "summary": "iOS app crashing on login",
+  "suggested_reply": "This is a known iOS 17.2 issue. Try: 1) Delete app, 2) Restart phone, 3) Reinstall, 4) Enable Keychain access in Settings > Privacy before logging in. If still broken, send us that crash log!",
+  "latency_ms": 350,
+  "model_id": "gpt-4o-mini-2024-07-18",
+  "reason_codes": ["app_crash", "ios_specific", "login_failure"],
+  "invariant_tags": ["technical_domain", "mobile_platform"]
+}

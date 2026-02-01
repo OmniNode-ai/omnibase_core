@@ -139,6 +139,25 @@ class ModelTopicConfig(BaseModel):
             replication_factor=1,
         )
 
+    @classmethod
+    def dlq_default(cls) -> "ModelTopicConfig":
+        """
+        Default configuration for dead letter queue (DLQ) topics.
+
+        DLQ topics store failed messages for investigation and retry.
+        Default retention is 30 days per ONEX standard (same as events for audit).
+
+        Note:
+            This model is immutable (frozen) and thread-safe after instantiation.
+        """
+        return cls(
+            topic_type=EnumTopicType.DLQ,
+            cleanup_policy=EnumCleanupPolicy.DELETE,
+            retention_ms=2592000000,  # 30 days per ONEX standard
+            partitions=3,
+            replication_factor=1,
+        )
+
 
 __all__ = [
     "ModelTopicConfig",

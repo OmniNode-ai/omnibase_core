@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Invariant violation breakdown model for corpus replay aggregation.
 
 Breaks down invariant violations by type and severity for reporting
@@ -21,7 +18,7 @@ class ModelInvariantViolationBreakdown(BaseModel):
 
     Aggregates violation data from corpus replay comparisons, providing
     counts by violation type (e.g., output_equivalence, latency, cost)
-    and by severity (critical, warning, info).
+    and by severity level (e.g., debug, info, warning, error, critical, fatal).
 
     Attributes:
         total_violations: Total number of violations (failures in replay).
@@ -80,7 +77,7 @@ class ModelInvariantViolationBreakdown(BaseModel):
         Args:
             deltas: List of violation delta dictionaries. Each dict should contain:
                 - type: str - The violation type (e.g., "output_equivalence", "latency")
-                - severity: str - The severity level (EnumViolationSeverity value)
+                - severity: str - The severity level (e.g., "critical", "warning", "info")
                 - baseline_passed: bool - Whether the invariant passed in baseline
                 - replay_passed: bool - Whether the invariant passed in replay
 

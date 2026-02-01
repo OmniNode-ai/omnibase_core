@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Property type enum for environment properties.
 
@@ -7,12 +5,15 @@ This module provides the EnumPropertyType for defining supported property types
 in environment property storage with proper validation and constraints.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumPropertyType(str, Enum):
+class EnumPropertyType(StrValueHelper, str, Enum):
     """Enum for supported property types."""
 
     STRING = "string"

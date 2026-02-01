@@ -1,9 +1,12 @@
 """Request field names in Claude API."""
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumRequestField(str, Enum):
+@unique
+class EnumRequestField(StrValueHelper, str, Enum):
     """Request field names in Claude API."""
 
     MODEL = "model"
@@ -16,3 +19,6 @@ class EnumRequestField(str, Enum):
     ROLE = "role"
     TYPE = "type"
     TEXT = "text"
+
+
+__all__ = ["EnumRequestField"]

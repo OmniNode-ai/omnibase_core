@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Connection Pool Model.
 
@@ -11,10 +5,12 @@ Connection pooling and timeout configuration for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import SerializedDict
 
 
@@ -199,11 +195,11 @@ class ModelConnectionPool(BaseModel):
             max_overflow=None,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

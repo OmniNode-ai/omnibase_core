@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Handler Execution Phase Enum.
 
@@ -13,9 +10,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumHandlerExecutionPhase(str, Enum):
+class EnumHandlerExecutionPhase(StrValueHelper, str, Enum):
     """
     Canonical execution phases for handler processing.
 
@@ -80,10 +79,6 @@ class EnumHandlerExecutionPhase(str, Enum):
 
     FINALIZE = "finalize"
     """Final cleanup and resource release phase."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_ordered_phases(cls) -> list[EnumHandlerExecutionPhase]:

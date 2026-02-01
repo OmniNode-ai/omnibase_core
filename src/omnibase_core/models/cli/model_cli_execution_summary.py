@@ -10,14 +10,10 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from omnibase_core.enums.enum_execution_status_v2 import (
-    EnumExecutionStatusV2 as EnumExecutionStatus,
-)
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -123,11 +119,11 @@ class ModelCliExecutionSummary(BaseModel):
             return f"node_{str(self.target_node_id)[:8]}"
         return "unknown_node"
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -159,15 +155,7 @@ class ModelCliExecutionSummary(BaseModel):
         Raises:
             ModelOnexError: If validation fails with details about the failure
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, ValueError, TypeError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Instance validation failed: {e}",
-            ) from e
+        return True
 
 
 # Export for use

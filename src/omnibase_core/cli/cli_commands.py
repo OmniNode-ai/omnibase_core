@@ -20,6 +20,7 @@ import click
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -193,9 +194,9 @@ def validate(
 
     try:
         # Import validation suite lazily to avoid circular imports
-        from omnibase_core.validation.validator_cli import ModelValidationSuite
+        from omnibase_core.validation.validator_cli import ServiceValidationSuite
 
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
         overall_success = True
 
         for directory in directories:
@@ -486,14 +487,14 @@ def _check_validation_system() -> tuple[bool, str]:
         Tuple of (is_healthy, message).
     """
     try:
-        from omnibase_core.validation.validator_cli import ModelValidationSuite
+        from omnibase_core.validation.validator_cli import ServiceValidationSuite
 
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
         validator_count = len(suite.validators)
         return True, f"Validation suite loaded with {validator_count} validators"
     except ImportError as e:
         return False, f"Import error: {e}"
-    except (AttributeError, TypeError, ValueError) as e:
+    except PYDANTIC_MODEL_ERRORS as e:
         # AttributeError: suite missing .validators attribute
         # TypeError: validators not iterable
         # ValueError: validation configuration error
@@ -536,6 +537,11 @@ cli.add_command(composition_report)
 from omnibase_core.cli.cli_contract import contract
 
 cli.add_command(contract)
+
+# Register demo command group from separate module
+from omnibase_core.cli.cli_demo import demo
+
+cli.add_command(demo)
 
 
 if __name__ == "__main__":

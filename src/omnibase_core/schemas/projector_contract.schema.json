@@ -22,6 +22,58 @@
       "title": "ModelIdempotencyConfig",
       "type": "object"
     },
+    "ModelPartialUpdateOperation": {
+      "additionalProperties": false,
+      "description": "Partial update operation definition for projector contracts.\n\nDefines a named partial update operation that targets specific columns\nand is triggered by a specific event. Partial updates are more efficient\nthan full upserts when only a subset of columns needs to be updated.\n\nPartial updates are particularly useful for:\n    - High-frequency updates (e.g., heartbeats) that should not trigger\n      full column recalculation.\n    - State transitions where only the state column changes.\n    - Timeout markers that set a single timestamp column.\n\nAttributes:\n    name: Unique identifier for the partial update operation within the\n        projector contract. Used for logging, metrics, and debugging.\n    columns: List of column names to update. Must contain at least one\n        column. Column names must reference columns defined in the\n        projection schema (validated at contract level).\n    trigger_event: Event name that triggers this partial update. Must\n        match the event naming pattern (lowercase.segments.vN).\n    skip_idempotency: Whether to skip idempotency checking for this\n        operation. Defaults to False. Set to True for operations that\n        are inherently idempotent by design (e.g., state transitions\n        where the new state is deterministic).\n    condition: Optional SQL condition for when to apply the update.\n        Use for conditional updates like \"only if not already set\".\n        Example: ``\"ack_timeout_emitted_at IS NULL\"``.\n\nExamples:\n    Create a heartbeat update operation:\n\n    >>> op = ModelPartialUpdateOperation(\n    ...     name=\"heartbeat\",\n    ...     columns=[\"last_heartbeat_at\", \"liveness_deadline\"],\n    ...     trigger_event=\"node.heartbeat.v1\",\n    ... )\n\n    Create a state transition operation with idempotency skipped:\n\n    >>> op = ModelPartialUpdateOperation(\n    ...     name=\"state_transition\",\n    ...     columns=[\"current_state\", \"updated_at\"],\n    ...     trigger_event=\"node.state.changed.v1\",\n    ...     skip_idempotency=True,\n    ... )\n\n    Create a conditional timeout marker:\n\n    >>> op = ModelPartialUpdateOperation(\n    ...     name=\"ack_timeout_marker\",\n    ...     columns=[\"ack_timeout_emitted_at\"],\n    ...     trigger_event=\"node.ack.timeout.v1\",\n    ...     condition=\"ack_timeout_emitted_at IS NULL\",\n    ... )\n\nNote:\n    **Why from_attributes=True is Required**\n\n    This model uses ``from_attributes=True`` in its ConfigDict to ensure\n    pytest-xdist compatibility. When running tests with pytest-xdist,\n    each worker process imports the class independently, creating separate\n    class objects. The ``from_attributes=True`` flag enables Pydantic's\n    \"duck typing\" mode, allowing fixtures from one worker to be validated\n    in another.\n\n    **Thread Safety**: This model is frozen (immutable) after creation,\n    making it thread-safe for concurrent read access.\n\nSee Also:\n    - :class:`ModelProjectorContract`: Main contract that contains partial updates\n    - :class:`ModelProjectorBehavior`: Main behavior configuration\n    - :class:`ModelIdempotencyConfig`: Idempotency configuration",
+      "properties": {
+        "name": {
+          "description": "Unique identifier for the partial update operation. Used for logging, metrics, and debugging.",
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "columns": {
+          "description": "List of column names to update. Must contain at least one column. Column names must reference columns defined in the projection schema.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Columns",
+          "type": "array"
+        },
+        "trigger_event": {
+          "description": "Event name that triggers this partial update. Must match pattern: lowercase.segments.vN (e.g., 'node.heartbeat.v1').",
+          "title": "Trigger Event",
+          "type": "string"
+        },
+        "skip_idempotency": {
+          "default": false,
+          "description": "Whether to skip idempotency checking for this operation. Set to True for inherently idempotent operations like state transitions.",
+          "title": "Skip Idempotency",
+          "type": "boolean"
+        },
+        "condition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional SQL condition for when to apply the update. Example: 'ack_timeout_emitted_at IS NULL' for conditional marker setting.",
+          "title": "Condition"
+        }
+      },
+      "required": [
+        "name",
+        "columns",
+        "trigger_event"
+      ],
+      "title": "ModelPartialUpdateOperation",
+      "type": "object"
+    },
     "ModelProjectorBehavior": {
       "additionalProperties": false,
       "description": "Projection behavior configuration.\n\nDetermines how the projector handles data during projection operations.\nThe mode controls insert/update semantics while idempotency configuration\nenables exactly-once processing guarantees.\n\nAttributes:\n    mode: The projection mode. Options are:\n        - \"upsert\": Insert or update based on upsert_key (default)\n        - \"insert_only\": Insert only, skip existing records\n        - \"append\": Always append without deduplication\n    upsert_key: The column name to use for upsert conflict detection.\n        Only applicable when ``mode='upsert'``. At runtime, if this is\n        ``None``, the projector will fall back to using the\n        ``projection_schema.primary_key`` as the conflict detection key.\n        While this fallback behavior is valid, explicit specification is\n        recommended for clarity and to avoid the warning that is logged\n        when the default is used. Ignored when ``mode='insert_only'``\n        or ``mode='append'``.\n    idempotency: Optional idempotency configuration for exactly-once\n        processing. When enabled, tracks processed events to prevent\n        duplicate processing on retries or replay.\n\nExamples:\n    Default upsert behavior:\n\n    >>> behavior = ModelProjectorBehavior()\n    >>> behavior.mode\n    'upsert'\n\n    Upsert with node_id as conflict key:\n\n    >>> behavior = ModelProjectorBehavior(mode=\"upsert\", upsert_key=\"node_id\")\n    >>> behavior.upsert_key\n    'node_id'\n\n    Append mode for event logs:\n\n    >>> behavior = ModelProjectorBehavior(mode=\"append\")\n    >>> behavior.mode\n    'append'\n\n    With idempotency enabled:\n\n    >>> from omnibase_core.models.projectors import ModelIdempotencyConfig\n    >>> idempotency = ModelIdempotencyConfig(enabled=True, key=\"event_id\")\n    >>> behavior = ModelProjectorBehavior(mode=\"upsert\", idempotency=idempotency)\n    >>> behavior.idempotency.enabled\n    True\n\nNote:\n    **Why from_attributes=True is Required**\n\n    This model uses ``from_attributes=True`` in its ConfigDict to ensure\n    pytest-xdist compatibility. When running tests with pytest-xdist,\n    each worker process imports the class independently, creating separate\n    class objects. The ``from_attributes=True`` flag enables Pydantic's\n    \"duck typing\" mode, allowing fixtures from one worker to be validated\n    in another.\n\n    **Thread Safety**: This model is frozen (immutable) after creation,\n    making it thread-safe for concurrent read access.",
@@ -43,11 +95,17 @@
               "type": "string"
             },
             {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "Column name to use for upsert conflict detection. Only applicable when mode='upsert'. When None and mode='upsert', the projector runtime falls back to using projection_schema.primary_key as the conflict detection key; a warning is logged in this case to encourage explicit specification. Explicit specification is recommended for clarity and self-documenting configuration. Ignored when mode='insert_only' or 'append'.",
+          "description": "Column name(s) to use for upsert conflict detection. Can be a single column name (str) or a list of column names for composite keys. Only applicable when mode='upsert'. When None and mode='upsert', the projector runtime falls back to using projection_schema.primary_key as the conflict detection key; a warning is logged in this case to encourage explicit specification. Explicit specification is recommended for clarity and self-documenting configuration. Ignored when mode='insert_only' or 'append'.",
           "title": "Upsert Key"
         },
         "idempotency": {
@@ -180,9 +238,19 @@
           "type": "string"
         },
         "primary_key": {
-          "description": "Column name to use as the primary key",
-          "title": "Primary Key",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          ],
+          "description": "Column name(s) to use as the primary key. Can be a single column name (str) or a list of column names for composite primary keys.",
+          "title": "Primary Key"
         },
         "columns": {
           "description": "List of column definitions. Must contain at least one column.",
@@ -224,7 +292,7 @@
       "type": "object"
     },
     "ModelSemVer": {
-      "description": "Semantic version model following SemVer 2.0.0 specification.\n\nFull SemVer format: MAJOR.MINOR.PATCH[-prerelease][+build]\n\nPreferred usage (structured format):\n    >>> version = ModelSemVer(major=0, minor=4, patch=0)\n    >>> assert str(version) == \"0.4.0\"\n    >>> assert version.major == 0 and version.minor == 4\n\nWith prerelease and build metadata:\n    >>> version = ModelSemVer(major=1, minor=0, patch=0, prerelease=(\"alpha\", 1))\n    >>> assert str(version) == \"1.0.0-alpha.1\"\n    >>> assert version.is_prerelease() is True\n\nFor parsing external input, use the parse() class method:\n    >>> version = ModelSemVer.parse(\"1.0.0-alpha.1+build.123\")\n    >>> assert version.prerelease == (\"alpha\", 1)\n    >>> assert version.build == (\"build\", \"123\")\n\nPrecedence rules (per SemVer spec):\n    - prerelease < no prerelease (1.0.0-alpha < 1.0.0)\n    - Numeric identifiers < alphanumeric (1.0.0-1 < 1.0.0-alpha)\n    - Build metadata is IGNORED for precedence\n\nNote: String version literals like \"1.0.0\" are deprecated.\nAlways use structured format: ModelSemVer(major=X, minor=Y, patch=Z)",
+      "description": "Semantic version model following SemVer 2.0.0 specification.\n\nFull SemVer format: MAJOR.MINOR.PATCH[-prerelease][+build]\n\nPreferred usage (structured format):\n    >>> version = ModelSemVer(major=0, minor=4, patch=0)\n    >>> assert str(version) == \"0.4.0\"\n    >>> assert version.major == 0 and version.minor == 4\n\nWith prerelease and build metadata:\n    >>> version = ModelSemVer(major=1, minor=0, patch=0, prerelease=(\"alpha\", 1))\n    >>> assert str(version) == \"1.0.0-alpha.1\"\n    >>> assert version.is_prerelease() is True\n\nFor parsing external input, use the parse() class method:\n    >>> version = ModelSemVer.parse(\"1.0.0-alpha.1+build.123\")\n    >>> assert version.prerelease == (\"alpha\", 1)\n    >>> assert version.build == (\"build\", \"123\")\n\nPrecedence rules (per SemVer spec):\n    - prerelease < no prerelease (1.0.0-alpha < 1.0.0)\n    - Numeric identifiers < alphanumeric (1.0.0-1 < 1.0.0-alpha)\n    - Build metadata is IGNORED for precedence\n\nNote:\n    String version literals like \"1.0.0\" are deprecated.\n    Always use structured format: ModelSemVer(major=X, minor=Y, patch=Z)\n\n    This model is frozen (immutable) and hashable, suitable for use as dict\n    keys or in sets. Hash is based on major, minor, patch, and prerelease;\n    build metadata is excluded (see __hash__ docstring for details).",
       "properties": {
         "major": {
           "description": "Major version number",
@@ -343,6 +411,15 @@
     "behavior": {
       "$ref": "#/$defs/ModelProjectorBehavior",
       "description": "Projection behavior configuration"
+    },
+    "partial_updates": {
+      "default": [],
+      "description": "Optional list of partial update operations. Each operation defines a subset of columns to update when triggered by a specific event. Partial updates are more efficient than full upserts for high-frequency updates like heartbeats or state transitions.",
+      "items": {
+        "$ref": "#/$defs/ModelPartialUpdateOperation"
+      },
+      "title": "Partial Updates",
+      "type": "array"
     }
   },
   "required": [

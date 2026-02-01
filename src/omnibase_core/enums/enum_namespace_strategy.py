@@ -4,10 +4,13 @@ Namespace strategy enumeration for ONEX framework.
 Defines the available strategies for namespace handling in ONEX components.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumNamespaceStrategy(str, Enum):
+@unique
+class EnumNamespaceStrategy(StrValueHelper, str, Enum):
     """Enumeration of namespace strategies."""
 
     ONEX_DEFAULT = "onex_default"
@@ -21,3 +24,6 @@ class EnumNamespaceStrategy(str, Enum):
 
     CUSTOM = "custom"
     """Use custom namespace strategy."""
+
+
+__all__ = ["EnumNamespaceStrategy"]

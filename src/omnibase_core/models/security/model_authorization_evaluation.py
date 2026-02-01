@@ -4,7 +4,7 @@ Authorization Evaluation Model.
 Authorization evaluation result model for security access control validation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.security.model_security_summaries import (
     ModelAuthorizationEvaluationSummary,
@@ -27,11 +27,12 @@ class ModelAuthorizationEvaluation(BaseModel):
         description="Whether authorization requirements are met",
     )
 
-    model_config = {
-        "extra": "forbid",
-        "frozen": True,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        from_attributes=True,
+        validate_assignment=True,
+    )
 
     def add_violation(self, violation: str) -> "ModelAuthorizationEvaluation":
         """Add a violation to the evaluation."""

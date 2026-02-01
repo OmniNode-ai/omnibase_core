@@ -30,18 +30,32 @@ Related:
 
 from __future__ import annotations
 
+import json
+import warnings as warn_module
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
+from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.errors import ModelOnexError
-
-if TYPE_CHECKING:
-    from omnibase_core.models.replay import ModelExecutionCorpus
-
+from omnibase_core.models.manifest.model_contract_identity import ModelContractIdentity
+from omnibase_core.models.manifest.model_execution_manifest import (
+    ModelExecutionManifest,
+)
+from omnibase_core.models.manifest.model_manifest_failure import ModelManifestFailure
+from omnibase_core.models.manifest.model_metrics_summary import ModelMetricsSummary
+from omnibase_core.models.manifest.model_node_identity import ModelNodeIdentity
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.replay.model_execution_corpus import (
+    ModelCorpusCaptureWindow,
+    ModelCorpusStatistics,
+    ModelCorpusTimeRange,
+    ModelExecutionCorpus,
+)
 
 # =============================================================================
 # Fixtures
@@ -71,15 +85,6 @@ def sample_contract_identity_data() -> dict[str, Any]:
 @pytest.fixture
 def create_test_manifest():
     """Factory fixture for creating test execution manifests."""
-    from omnibase_core.enums.enum_node_kind import EnumNodeKind
-    from omnibase_core.models.manifest.model_contract_identity import (
-        ModelContractIdentity,
-    )
-    from omnibase_core.models.manifest.model_execution_manifest import (
-        ModelExecutionManifest,
-    )
-    from omnibase_core.models.manifest.model_node_identity import ModelNodeIdentity
-    from omnibase_core.models.primitives.model_semver import ModelSemVer
 
     def _create(
         node_id: str = "compute-001",
@@ -100,22 +105,11 @@ def create_test_manifest():
         Returns:
             A configured ModelExecutionManifest instance
         """
-        from omnibase_core.models.manifest.model_manifest_failure import (
-            ModelManifestFailure,
-        )
-        from omnibase_core.models.manifest.model_metrics_summary import (
-            ModelMetricsSummary,
-        )
-
         # Build hook traces based on success
         hook_traces = []
         failures = []
 
         if not success:
-            from omnibase_core.enums.enum_handler_execution_phase import (
-                EnumHandlerExecutionPhase,
-            )
-
             failures.append(
                 ModelManifestFailure(
                     failed_at=created_at or datetime.now(UTC),
@@ -172,10 +166,6 @@ def create_corpus_with_executions(create_test_manifest):
         Returns:
             A configured ModelExecutionCorpus instance
         """
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifests = []
         for i in range(count):
             manifest = create_test_manifest(
@@ -215,10 +205,6 @@ def create_corpus_with_mixed_results(create_test_manifest):
         Returns:
             A configured ModelExecutionCorpus instance
         """
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifests = []
 
         # Add successful executions
@@ -262,10 +248,6 @@ class TestModelExecutionCorpusCreation:
 
     def test_corpus_creation_with_required_metadata(self) -> None:
         """Corpus can be created with required metadata (name, version, source)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="production-corpus-v1",
             version="1.0.0",
@@ -278,10 +260,6 @@ class TestModelExecutionCorpusCreation:
 
     def test_corpus_id_auto_generated(self) -> None:
         """Corpus ID is auto-generated as UUID."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -293,10 +271,6 @@ class TestModelExecutionCorpusCreation:
 
     def test_unique_corpus_ids_for_different_instances(self) -> None:
         """Each corpus instance gets a unique corpus_id."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus1 = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -312,10 +286,6 @@ class TestModelExecutionCorpusCreation:
 
     def test_executions_defaults_to_empty_tuple(self) -> None:
         """Executions defaults to empty tuple when not provided."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="empty-corpus",
             version="1.0.0",
@@ -327,10 +297,6 @@ class TestModelExecutionCorpusCreation:
 
     def test_created_at_auto_generated(self) -> None:
         """Created_at timestamp is auto-generated."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         before = datetime.now(UTC)
         corpus = ModelExecutionCorpus(
             name="test-corpus",
@@ -345,10 +311,6 @@ class TestModelExecutionCorpusCreation:
 
     def test_corpus_with_custom_corpus_id(self) -> None:
         """Corpus can be created with custom corpus_id."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         custom_id = uuid4()
         corpus = ModelExecutionCorpus(
             corpus_id=custom_id,
@@ -366,10 +328,6 @@ class TestModelExecutionCorpusRequiredFields:
 
     def test_name_is_required(self) -> None:
         """Name field is required."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         with pytest.raises(ValidationError) as exc_info:
             ModelExecutionCorpus(
                 version="1.0.0",
@@ -380,10 +338,6 @@ class TestModelExecutionCorpusRequiredFields:
 
     def test_version_is_required(self) -> None:
         """Version field is required."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         with pytest.raises(ValidationError) as exc_info:
             ModelExecutionCorpus(
                 name="test-corpus",
@@ -394,10 +348,6 @@ class TestModelExecutionCorpusRequiredFields:
 
     def test_source_is_required(self) -> None:
         """Source field is required."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         with pytest.raises(ValidationError) as exc_info:
             ModelExecutionCorpus(
                 name="test-corpus",
@@ -408,10 +358,6 @@ class TestModelExecutionCorpusRequiredFields:
 
     def test_name_cannot_be_empty(self) -> None:
         """Name cannot be an empty string."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         with pytest.raises(ValidationError):
             ModelExecutionCorpus(
                 name="",
@@ -431,10 +377,6 @@ class TestModelExecutionCorpusImmutability:
 
     def test_model_is_frozen(self) -> None:
         """Corpus model is frozen (immutable)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -446,10 +388,6 @@ class TestModelExecutionCorpusImmutability:
 
     def test_cannot_modify_version(self) -> None:
         """Version field cannot be reassigned."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -461,10 +399,6 @@ class TestModelExecutionCorpusImmutability:
 
     def test_cannot_modify_executions(self) -> None:
         """Executions field cannot be reassigned."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -476,10 +410,6 @@ class TestModelExecutionCorpusImmutability:
 
     def test_cannot_add_new_attribute(self) -> None:
         """Cannot add new attributes to frozen model."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -503,10 +433,6 @@ class TestModelExecutionCorpusAddExecution:
         self, sample_manifest: ModelExecutionManifest
     ) -> None:
         """Can add a single execution manifest to corpus."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -519,10 +445,6 @@ class TestModelExecutionCorpusAddExecution:
 
     def test_add_multiple_executions_to_corpus(self, create_test_manifest) -> None:
         """Can add multiple execution manifests to corpus."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(5))
 
         corpus = ModelExecutionCorpus(
@@ -538,10 +460,6 @@ class TestModelExecutionCorpusAddExecution:
         self, sample_manifest: ModelExecutionManifest
     ) -> None:
         """with_execution returns a new corpus instance (immutable update)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -558,10 +476,6 @@ class TestModelExecutionCorpusAddExecution:
         self, sample_manifest: ModelExecutionManifest
     ) -> None:
         """with_execution preserves corpus metadata."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -577,10 +491,6 @@ class TestModelExecutionCorpusAddExecution:
 
     def test_with_execution_accumulates(self, create_test_manifest) -> None:
         """with_execution accumulates multiple manifests."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -611,10 +521,6 @@ class TestModelExecutionCorpusBulkOperations:
         self, create_test_manifest
     ) -> None:
         """with_executions adds multiple manifests in one call."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -634,10 +540,6 @@ class TestModelExecutionCorpusBulkOperations:
 
     def test_with_executions_returns_new_corpus(self, create_test_manifest) -> None:
         """with_executions returns a new corpus instance (immutable update)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -651,10 +553,6 @@ class TestModelExecutionCorpusBulkOperations:
 
     def test_with_executions_preserves_metadata(self, create_test_manifest) -> None:
         """with_executions preserves corpus metadata."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -671,10 +569,6 @@ class TestModelExecutionCorpusBulkOperations:
 
     def test_with_executions_appends_to_existing(self, create_test_manifest) -> None:
         """with_executions appends to existing executions."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         initial_manifest = create_test_manifest(node_id="initial")
         corpus = ModelExecutionCorpus(
             name="test-corpus",
@@ -697,10 +591,6 @@ class TestModelExecutionCorpusBulkOperations:
 
     def test_with_executions_with_tuple(self, create_test_manifest) -> None:
         """with_executions works with tuple input."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -718,10 +608,6 @@ class TestModelExecutionCorpusBulkOperations:
 
     def test_with_executions_empty_list(self) -> None:
         """with_executions with empty list returns equivalent corpus."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -735,10 +621,6 @@ class TestModelExecutionCorpusBulkOperations:
 
     def test_with_execution_refs_adds_multiple_ids(self) -> None:
         """with_execution_refs adds multiple UUIDs in one call."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -753,10 +635,6 @@ class TestModelExecutionCorpusBulkOperations:
 
     def test_with_execution_refs_returns_new_corpus(self) -> None:
         """with_execution_refs returns a new corpus instance (immutable update)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -769,10 +647,6 @@ class TestModelExecutionCorpusBulkOperations:
 
     def test_with_execution_refs_preserves_metadata(self) -> None:
         """with_execution_refs preserves corpus metadata."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -788,10 +662,6 @@ class TestModelExecutionCorpusBulkOperations:
 
     def test_with_execution_refs_appends_to_existing(self) -> None:
         """with_execution_refs appends to existing execution_ids."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         initial_id = uuid4()
         corpus = ModelExecutionCorpus(
             name="test-corpus",
@@ -809,10 +679,6 @@ class TestModelExecutionCorpusBulkOperations:
 
     def test_with_execution_refs_with_tuple(self) -> None:
         """with_execution_refs works with tuple input."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -826,10 +692,6 @@ class TestModelExecutionCorpusBulkOperations:
 
     def test_with_execution_refs_empty_list(self) -> None:
         """with_execution_refs with empty list returns equivalent corpus."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -853,10 +715,6 @@ class TestModelExecutionCorpusValidationForReplay:
 
     def test_empty_corpus_invalid_for_replay(self) -> None:
         """Empty corpus raises ValidationError on validate_for_replay()."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="empty-corpus",
             version="1.0.0",
@@ -870,10 +728,6 @@ class TestModelExecutionCorpusValidationForReplay:
         self, sample_manifest: ModelExecutionManifest
     ) -> None:
         """Non-empty corpus passes validate_for_replay()."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -888,10 +742,6 @@ class TestModelExecutionCorpusValidationForReplay:
         self, sample_manifest: ModelExecutionManifest
     ) -> None:
         """is_valid_for_replay property returns correct boolean."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         empty_corpus = ModelExecutionCorpus(
             name="empty-corpus",
             version="1.0.0",
@@ -910,10 +760,6 @@ class TestModelExecutionCorpusValidationForReplay:
 
     def test_is_valid_for_replay_reference_only_corpus(self) -> None:
         """is_valid_for_replay returns True for reference-only corpus."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         # Create corpus with only execution_ids (reference mode)
         reference_corpus = ModelExecutionCorpus(
             name="reference-corpus",
@@ -930,10 +776,6 @@ class TestModelExecutionCorpusValidationForReplay:
 
     def test_validate_for_replay_catches_nil_uuid_in_execution_ids(self) -> None:
         """validate_for_replay raises error for nil UUID in execution_ids."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         nil_uuid = UUID(int=0)
         valid_uuid = uuid4()
 
@@ -951,10 +793,6 @@ class TestModelExecutionCorpusValidationForReplay:
 
     def test_validate_for_replay_passes_with_valid_execution_ids(self) -> None:
         """validate_for_replay passes when all execution_ids are valid UUIDs."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         # Create corpus with valid UUIDs only
         corpus = ModelExecutionCorpus(
             name="corpus-with-valid-uuids",
@@ -979,10 +817,6 @@ class TestModelExecutionCorpusJsonSerialization:
 
     def test_serialization_roundtrip_empty_corpus(self) -> None:
         """Empty corpus serializes to JSON and back correctly."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -1008,10 +842,6 @@ class TestModelExecutionCorpusJsonSerialization:
         json_str = corpus.model_dump_json()
 
         # Deserialize back
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         restored = ModelExecutionCorpus.model_validate_json(json_str)
 
         assert restored.name == corpus.name
@@ -1020,12 +850,6 @@ class TestModelExecutionCorpusJsonSerialization:
 
     def test_serialized_corpus_id_is_string(self) -> None:
         """corpus_id serializes to string in JSON."""
-        import json
-
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -1039,12 +863,6 @@ class TestModelExecutionCorpusJsonSerialization:
 
     def test_serialized_created_at_is_iso_format(self) -> None:
         """created_at serializes to ISO format string."""
-        import json
-
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -1063,10 +881,6 @@ class TestModelExecutionCorpusJsonSerialization:
     ) -> None:
         """Serialization preserves all executions with their data."""
         corpus = create_corpus_with_executions(count=5)
-
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
 
         data = corpus.model_dump()
         restored = ModelExecutionCorpus.model_validate(data)
@@ -1089,10 +903,6 @@ class TestModelExecutionCorpusStatistics:
 
     def test_empty_corpus_statistics(self) -> None:
         """Empty corpus returns zero statistics."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="empty-corpus",
             version="1.0.0",
@@ -1175,10 +985,6 @@ class TestModelCorpusStatisticsModel:
 
     def test_statistics_model_creation(self) -> None:
         """ModelCorpusStatistics can be created with valid data."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelCorpusStatistics,
-        )
-
         stats = ModelCorpusStatistics(
             total_executions=100,
             success_count=85,
@@ -1194,10 +1000,6 @@ class TestModelCorpusStatisticsModel:
 
     def test_statistics_model_is_frozen(self) -> None:
         """ModelCorpusStatistics is frozen (immutable)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelCorpusStatistics,
-        )
-
         stats = ModelCorpusStatistics(
             total_executions=100,
             success_count=85,
@@ -1241,10 +1043,6 @@ class TestModelExecutionCorpusQueryByHandler:
 
     def test_get_executions_by_handler_empty_corpus(self) -> None:
         """Returns empty tuple for empty corpus."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="empty-corpus",
             version="1.0.0",
@@ -1279,10 +1077,6 @@ class TestModelExecutionCorpusTimeRange:
 
     def test_time_range_empty_corpus(self) -> None:
         """Empty corpus returns None time range."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="empty-corpus",
             version="1.0.0",
@@ -1297,10 +1091,6 @@ class TestModelExecutionCorpusTimeRange:
         self, sample_manifest: ModelExecutionManifest
     ) -> None:
         """Single execution corpus has equal min/max time."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="single-corpus",
             version="1.0.0",
@@ -1320,10 +1110,6 @@ class TestModelCorpusTimeRange:
 
     def test_time_range_model_creation(self) -> None:
         """ModelCorpusTimeRange can be created with valid data."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelCorpusTimeRange,
-        )
-
         min_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         max_time = datetime(2024, 1, 1, 13, 0, 0, tzinfo=UTC)
 
@@ -1337,10 +1123,6 @@ class TestModelCorpusTimeRange:
 
     def test_time_range_duration_property(self) -> None:
         """ModelCorpusTimeRange has duration property."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelCorpusTimeRange,
-        )
-
         min_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         max_time = datetime(2024, 1, 1, 13, 0, 0, tzinfo=UTC)
 
@@ -1363,10 +1145,6 @@ class TestModelExecutionCorpusModes:
 
     def test_default_mode_is_materialized(self) -> None:
         """Default corpus mode is materialized."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -1378,10 +1156,6 @@ class TestModelExecutionCorpusModes:
 
     def test_reference_mode_with_manifest_ids(self) -> None:
         """Corpus can be created in reference mode with manifest IDs."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifest_ids = (uuid4(), uuid4(), uuid4())
 
         corpus = ModelExecutionCorpus(
@@ -1398,10 +1172,6 @@ class TestModelExecutionCorpusModes:
 
     def test_reference_mode_has_empty_executions(self) -> None:
         """Reference mode corpus has empty executions tuple."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifest_ids = (uuid4(), uuid4())
 
         corpus = ModelExecutionCorpus(
@@ -1429,10 +1199,6 @@ class TestModelExecutionCorpusModeConsistencyValidation:
         self, sample_manifest: ModelExecutionManifest
     ) -> None:
         """Reference mode corpus cannot have materialized executions."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         with pytest.raises(
             ModelOnexError,
             match=r"Reference mode corpus should not have materialized executions",
@@ -1447,10 +1213,6 @@ class TestModelExecutionCorpusModeConsistencyValidation:
 
     def test_refs_only_without_is_reference_raises_error(self) -> None:
         """Corpus with only execution_ids must have is_reference=True."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         with pytest.raises(
             ModelOnexError,
             match=r"Corpus with only execution_ids should have is_reference=True",
@@ -1465,10 +1227,6 @@ class TestModelExecutionCorpusModeConsistencyValidation:
 
     def test_empty_corpus_with_is_reference_false_is_valid(self) -> None:
         """Empty corpus (no executions, no refs) with is_reference=False is valid."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="empty-corpus",
             version="1.0.0",
@@ -1482,10 +1240,6 @@ class TestModelExecutionCorpusModeConsistencyValidation:
 
     def test_empty_corpus_with_is_reference_true_is_valid(self) -> None:
         """Empty corpus with is_reference=True is valid (awaiting refs)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="empty-reference-corpus",
             version="1.0.0",
@@ -1501,10 +1255,6 @@ class TestModelExecutionCorpusModeConsistencyValidation:
         self, sample_manifest: ModelExecutionManifest
     ) -> None:
         """Materialized corpus with executions is valid."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="materialized-corpus",
             version="1.0.0",
@@ -1520,10 +1270,6 @@ class TestModelExecutionCorpusModeConsistencyValidation:
         self, sample_manifest: ModelExecutionManifest
     ) -> None:
         """Corpus with both executions and refs (mixed mode) is valid."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="mixed-corpus",
             version="1.0.0",
@@ -1539,10 +1285,6 @@ class TestModelExecutionCorpusModeConsistencyValidation:
 
     def test_reference_mode_with_refs_only_is_valid(self) -> None:
         """Reference mode corpus with only refs is valid."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="reference-corpus",
             version="1.0.0",
@@ -1567,10 +1309,6 @@ class TestModelExecutionCorpusVersioning:
 
     def test_version_string_format(self) -> None:
         """Version is stored as string in expected format."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="2.1.3",
@@ -1581,10 +1319,6 @@ class TestModelExecutionCorpusVersioning:
 
     def test_corpus_can_have_description(self) -> None:
         """Corpus can include optional description."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -1596,10 +1330,6 @@ class TestModelExecutionCorpusVersioning:
 
     def test_corpus_can_have_tags(self) -> None:
         """Corpus can include optional tags for categorization."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -1633,10 +1363,6 @@ class TestModelExecutionCorpusSizeValidation:
 
     def test_validate_size_at_limit_returns_none(self, create_test_manifest) -> None:
         """validate_size returns None when corpus is exactly at limit (edge case)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         # Create corpus with exactly RECOMMENDED_MAX_EXECUTIONS
         manifests = tuple(
             create_test_manifest(node_id=f"node-{i}")
@@ -1659,10 +1385,6 @@ class TestModelExecutionCorpusSizeValidation:
         self, create_test_manifest
     ) -> None:
         """validate_size returns warning message when corpus exceeds limit."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         # Create corpus over the default limit
         manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(60))
 
@@ -1707,10 +1429,6 @@ class TestModelExecutionCorpusSizeValidation:
 
     def test_validate_size_empty_corpus(self) -> None:
         """validate_size returns None for empty corpus."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="empty-corpus",
             version="1.0.0",
@@ -1723,10 +1441,6 @@ class TestModelExecutionCorpusSizeValidation:
 
     def test_validate_size_reference_mode_counts_refs(self) -> None:
         """validate_size counts execution_ids in reference mode."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         # Create reference-mode corpus with 60 refs (over limit)
         ref_ids = tuple(uuid4() for _ in range(60))
 
@@ -1745,10 +1459,6 @@ class TestModelExecutionCorpusSizeValidation:
 
     def test_warn_if_large_triggers_warning(self, create_test_manifest) -> None:
         """warn_if_large triggers UserWarning when corpus is over limit."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(60))
 
         corpus = ModelExecutionCorpus(
@@ -1765,8 +1475,6 @@ class TestModelExecutionCorpusSizeValidation:
         self, create_corpus_with_executions
     ) -> None:
         """warn_if_large does not trigger warning when under limit."""
-        import warnings as warn_module
-
         corpus = create_corpus_with_executions(count=30)
 
         # This should NOT raise any warnings
@@ -1791,10 +1499,6 @@ class TestModelExecutionCorpusSizeValidation:
         self, create_test_manifest
     ) -> None:
         """warn_if_large returns self for chaining even when warning is emitted."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(60))
 
         corpus = ModelExecutionCorpus(
@@ -1819,10 +1523,6 @@ class TestModelExecutionCorpusSizeValidation:
 
     def test_recommended_max_executions_constant_exists(self) -> None:
         """RECOMMENDED_MAX_EXECUTIONS class constant exists and has correct value."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         assert hasattr(ModelExecutionCorpus, "RECOMMENDED_MAX_EXECUTIONS")
         assert ModelExecutionCorpus.RECOMMENDED_MAX_EXECUTIONS == 50
         assert isinstance(ModelExecutionCorpus.RECOMMENDED_MAX_EXECUTIONS, int)
@@ -1836,10 +1536,6 @@ class TestModelExecutionCorpusEdgeCases:
         self, sample_manifest: ModelExecutionManifest
     ) -> None:
         """Single execution corpus works correctly."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="single-corpus",
             version="1.0.0",
@@ -1853,10 +1549,6 @@ class TestModelExecutionCorpusEdgeCases:
 
     def test_large_corpus_count(self, create_test_manifest) -> None:
         """Large corpus (50+ executions) works correctly."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(50))
 
         corpus = ModelExecutionCorpus(
@@ -1880,10 +1572,6 @@ class TestModelExecutionCorpusEdgeCases:
 
     def test_empty_corpus_execution_count(self) -> None:
         """Empty corpus has execution_count of 0."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="empty-corpus",
             version="1.0.0",
@@ -1904,10 +1592,6 @@ class TestModelExecutionCorpusExtraFieldsRejected:
 
     def test_extra_fields_rejected_at_construction(self) -> None:
         """Extra fields are rejected during construction."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         with pytest.raises(ValidationError) as exc_info:
             ModelExecutionCorpus(
                 name="test-corpus",
@@ -1931,11 +1615,6 @@ class TestModelExecutionCorpusCaptureWindow:
 
     def test_capture_window_can_be_specified(self) -> None:
         """Capture window can be specified during corpus creation."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelCorpusCaptureWindow,
-            ModelExecutionCorpus,
-        )
-
         start = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         end = datetime(2024, 1, 7, 23, 59, 59, tzinfo=UTC)
 
@@ -1955,10 +1634,6 @@ class TestModelExecutionCorpusCaptureWindow:
 
     def test_capture_window_optional(self) -> None:
         """Capture window is optional."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -1974,10 +1649,6 @@ class TestModelCorpusCaptureWindow:
 
     def test_capture_window_creation(self) -> None:
         """ModelCorpusCaptureWindow can be created with valid data."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelCorpusCaptureWindow,
-        )
-
         start = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         end = datetime(2024, 1, 7, 23, 59, 59, tzinfo=UTC)
 
@@ -1991,10 +1662,6 @@ class TestModelCorpusCaptureWindow:
 
     def test_capture_window_duration(self) -> None:
         """ModelCorpusCaptureWindow has duration property."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelCorpusCaptureWindow,
-        )
-
         start = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
         end = datetime(2024, 1, 8, 0, 0, 0, tzinfo=UTC)
 
@@ -2007,10 +1674,6 @@ class TestModelCorpusCaptureWindow:
 
     def test_capture_window_equal_times_allowed(self) -> None:
         """ModelCorpusCaptureWindow allows equal start and end times."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelCorpusCaptureWindow,
-        )
-
         same_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
         window = ModelCorpusCaptureWindow(
@@ -2024,11 +1687,6 @@ class TestModelCorpusCaptureWindow:
 
     def test_capture_window_start_after_end_raises_error(self) -> None:
         """ModelCorpusCaptureWindow raises error if start_time > end_time."""
-        from omnibase_core.errors import ModelOnexError
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelCorpusCaptureWindow,
-        )
-
         start = datetime(2024, 1, 8, 0, 0, 0, tzinfo=UTC)  # Later time
         end = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)  # Earlier time
 
@@ -2061,10 +1719,6 @@ class TestModelExecutionCorpusStringRepresentation:
 
     def test_repr_representation(self) -> None:
         """__repr__ returns detailed representation for debugging."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="debug-corpus",
             version="1.0.0",
@@ -2090,10 +1744,6 @@ class TestModelExecutionCorpusToReference:
         self, create_test_manifest
     ) -> None:
         """to_reference() converts materialized corpus to reference mode."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         m1 = create_test_manifest(node_id="node-1")
         m2 = create_test_manifest(node_id="node-2")
         m3 = create_test_manifest(node_id="node-3")
@@ -2116,10 +1766,6 @@ class TestModelExecutionCorpusToReference:
         self, create_test_manifest
     ) -> None:
         """to_reference() extracts correct manifest_id from each execution."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         m1 = create_test_manifest(node_id="node-1")
         m2 = create_test_manifest(node_id="node-2")
 
@@ -2138,11 +1784,6 @@ class TestModelExecutionCorpusToReference:
 
     def test_to_reference_preserves_metadata(self, create_test_manifest) -> None:
         """to_reference() preserves all corpus metadata."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelCorpusCaptureWindow,
-            ModelExecutionCorpus,
-        )
-
         capture_window = ModelCorpusCaptureWindow(
             start_time=datetime(2024, 1, 1, tzinfo=UTC),
             end_time=datetime(2024, 1, 31, tzinfo=UTC),
@@ -2172,10 +1813,6 @@ class TestModelExecutionCorpusToReference:
 
     def test_to_reference_returns_new_instance(self, create_test_manifest) -> None:
         """to_reference() returns a new corpus instance (immutable)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -2192,10 +1829,6 @@ class TestModelExecutionCorpusToReference:
 
     def test_to_reference_on_already_reference_corpus_is_idempotent(self) -> None:
         """to_reference() on an already-reference corpus returns a copy."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         ref_corpus = ModelExecutionCorpus(
             name="reference-corpus",
             version="1.0.0",
@@ -2217,10 +1850,6 @@ class TestModelExecutionCorpusToReference:
 
     def test_to_reference_on_empty_corpus(self) -> None:
         """to_reference() on empty corpus returns empty reference corpus."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         empty_corpus = ModelExecutionCorpus(
             name="empty-corpus",
             version="1.0.0",
@@ -2240,10 +1869,6 @@ class TestModelExecutionCorpusToReference:
         self, create_test_manifest
     ) -> None:
         """to_reference() preserves existing execution_ids and appends new ones."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         # Create corpus with both executions and existing execution_ids (mixed mode)
         existing_id = uuid4()
         manifest = create_test_manifest(node_id="node-1")
@@ -2266,10 +1891,6 @@ class TestModelExecutionCorpusToReference:
 
     def test_to_reference_with_large_corpus(self, create_test_manifest) -> None:
         """to_reference() works correctly with large corpus (50+ executions)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(50))
         expected_ids = tuple(m.manifest_id for m in manifests)
 
@@ -2288,10 +1909,6 @@ class TestModelExecutionCorpusToReference:
 
     def test_to_reference_execution_count_unchanged(self, create_test_manifest) -> None:
         """to_reference() preserves execution_count (just in different mode)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(5))
 
         corpus = ModelExecutionCorpus(
@@ -2309,10 +1926,6 @@ class TestModelExecutionCorpusToReference:
 
     def test_to_reference_is_valid_for_replay(self, create_test_manifest) -> None:
         """to_reference() result is still valid for replay."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus = ModelExecutionCorpus(
             name="test-corpus",
             version="1.0.0",
@@ -2339,10 +1952,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_two_materialized_corpora(self, create_test_manifest) -> None:
         """Merging two materialized corpora combines their executions."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifest1 = create_test_manifest(node_id="node-1")
         manifest2 = create_test_manifest(node_id="node-2")
 
@@ -2371,10 +1980,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_two_reference_corpora(self) -> None:
         """Merging two reference corpora combines their execution_ids."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         id1, id2, id3 = uuid4(), uuid4(), uuid4()
 
         corpus_a = ModelExecutionCorpus(
@@ -2401,10 +2006,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_materialized_with_reference(self, create_test_manifest) -> None:
         """Merging materialized with reference corpus produces mixed mode."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifest = create_test_manifest(node_id="node-1")
         ref_id = uuid4()
 
@@ -2432,10 +2033,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_multiple_corpora_variadic(self, create_test_manifest) -> None:
         """Merging multiple corpora via variadic args works correctly."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifests = [create_test_manifest(node_id=f"node-{i}") for i in range(4)]
 
         corpus_a = ModelExecutionCorpus(
@@ -2471,10 +2068,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_tags_deduplicated(self, create_test_manifest) -> None:
         """Tags are deduplicated when merging corpora."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifest1 = create_test_manifest(node_id="node-1")
         manifest2 = create_test_manifest(node_id="node-2")
 
@@ -2508,10 +2101,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_with_empty_corpus(self, create_test_manifest) -> None:
         """Merging with an empty corpus works correctly."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifest = create_test_manifest(node_id="node-1")
 
         corpus_a = ModelExecutionCorpus(
@@ -2535,10 +2124,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_execution_ids_deduplicated(self) -> None:
         """Duplicate execution_ids are deduplicated when merging."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         shared_id = uuid4()
         unique_id1 = uuid4()
         unique_id2 = uuid4()
@@ -2573,10 +2158,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_no_args_returns_copy(self, create_test_manifest) -> None:
         """Calling merge with no arguments returns a copy of self."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifest = create_test_manifest(node_id="node-1")
 
         corpus = ModelExecutionCorpus(
@@ -2597,10 +2178,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_preserves_corpus_id(self, create_test_manifest) -> None:
         """Merging preserves the primary corpus's corpus_id."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifest1 = create_test_manifest(node_id="node-1")
         manifest2 = create_test_manifest(node_id="node-2")
 
@@ -2623,10 +2200,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_preserves_description(self, create_test_manifest) -> None:
         """Merging preserves the primary corpus's description."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifest1 = create_test_manifest(node_id="node-1")
         manifest2 = create_test_manifest(node_id="node-2")
 
@@ -2651,10 +2224,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_returns_new_instance(self, create_test_manifest) -> None:
         """Merging returns a new corpus instance (immutable pattern)."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         manifest1 = create_test_manifest(node_id="node-1")
         manifest2 = create_test_manifest(node_id="node-2")
 
@@ -2681,10 +2250,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_reference_only_result_is_reference_mode(self) -> None:
         """Merging only reference corpora results in reference mode."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus_a = ModelExecutionCorpus(
             name="corpus-a",
             version="1.0.0",
@@ -2708,10 +2273,6 @@ class TestModelExecutionCorpusMerge:
 
     def test_merge_empty_corpora(self) -> None:
         """Merging two empty corpora results in an empty corpus."""
-        from omnibase_core.models.replay.model_execution_corpus import (
-            ModelExecutionCorpus,
-        )
-
         corpus_a = ModelExecutionCorpus(
             name="corpus-a",
             version="1.0.0",

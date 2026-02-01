@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -44,11 +44,11 @@ class ModelWorkflowParameters(BaseModel):
         description="Workflow parameters with specific discriminated types",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     @model_validator(mode="after")
     def validate_parameter_types(self) -> ModelWorkflowParameters:

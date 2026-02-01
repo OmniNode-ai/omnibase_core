@@ -825,7 +825,7 @@ class TestEdgeCases:
             result = resolver.resolve_ref(None)
             # If it doesn't raise, check result
             assert result is not None
-        except (TypeError, AttributeError):
+        except (AttributeError, TypeError):
             # Expected behavior for None input
             pass
 

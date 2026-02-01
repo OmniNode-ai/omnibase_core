@@ -84,7 +84,7 @@ class TestAllowlistFunctionExistence:
 
     def _get_function_definitions_from_file(
         self, file_path: Path
-    ) -> dict[str, ast.FunctionDef]:
+    ) -> dict[str, ast.FunctionDef | ast.AsyncFunctionDef]:
         """
         Parse a Python file and extract all function definitions.
 
@@ -100,9 +100,10 @@ class TestAllowlistFunctionExistence:
         except SyntaxError:
             return {}
 
-        functions = {}
+        functions: dict[str, ast.FunctionDef | ast.AsyncFunctionDef] = {}
         for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef):
+            # Handle both sync and async function definitions
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 functions[node.name] = node
 
         return functions
@@ -112,7 +113,7 @@ class TestAllowlistFunctionExistence:
     ) -> None:
         """Verify all allowed functions actually exist in the allowed files."""
         # Collect all function names from allowed files
-        found_functions = set()
+        found_functions: set[str] = set()
 
         for file_path in allowed_files:
             full_path = PROJECT_ROOT / file_path
@@ -139,7 +140,7 @@ class TestAllowlistFunctionUsesYamlSafeLoad:
     """Test that allowed functions actually use yaml.safe_load()."""
 
     def _function_uses_yaml_safe_load(
-        self, func_node: ast.FunctionDef
+        self, func_node: ast.FunctionDef | ast.AsyncFunctionDef
     ) -> tuple[bool, list[str]]:
         """
         Check if a function uses yaml.safe_load() or yaml.load().
@@ -176,13 +177,15 @@ class TestAllowlistFunctionUsesYamlSafeLoad:
         This ensures the allowlist only contains functions that genuinely need
         yaml.safe_load() access, preventing the allowlist from becoming bloated.
         """
-        functions_without_yaml = []
+        functions_without_yaml: list[str] = []
 
-        # Collect all functions from allowed files
-        all_functions: dict[str, tuple[Path, ast.FunctionDef]] = {}
+        # Collect all functions from allowed files (both sync and async)
+        all_functions: dict[
+            str, tuple[Path, ast.FunctionDef | ast.AsyncFunctionDef]
+        ] = {}
 
-        for file_path in allowed_files:
-            full_path = PROJECT_ROOT / file_path
+        for allowed_file in allowed_files:
+            full_path = PROJECT_ROOT / allowed_file
             if not full_path.exists():
                 continue  # Skip non-existent files (caught by other test)
 
@@ -193,7 +196,8 @@ class TestAllowlistFunctionUsesYamlSafeLoad:
                 continue
 
             for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef):
+                # Handle both sync and async function definitions
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     all_functions[node.name] = (full_path, node)
 
         # Check each allowed function
@@ -201,12 +205,12 @@ class TestAllowlistFunctionUsesYamlSafeLoad:
             if func_name not in all_functions:
                 continue  # Skip non-existent functions (caught by other test)
 
-            file_path, func_node = all_functions[func_name]
+            func_file_path, func_node = all_functions[func_name]
             uses_yaml, _ = self._function_uses_yaml_safe_load(func_node)
 
             if not uses_yaml:
                 functions_without_yaml.append(
-                    f"{func_name} (in {file_path.relative_to(PROJECT_ROOT)})"
+                    f"{func_name} (in {func_file_path.relative_to(PROJECT_ROOT)})"
                 )
 
         assert not functions_without_yaml, (

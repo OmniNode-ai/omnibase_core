@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Registration Trigger Design
+
 # Registration Trigger Design
 
 > **Version**: 1.0.0

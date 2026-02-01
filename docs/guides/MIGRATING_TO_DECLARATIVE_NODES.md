@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Migrating to v0.4.0 Node Architecture
+
 # Migrating to v0.4.0 Node Architecture
 
 **Version**: 0.4.0
@@ -681,7 +683,7 @@ from omnibase_core.nodes import (
 # Also available: Public enums
 from omnibase_core.nodes import (
     EnumReductionType, EnumConflictResolution, EnumStreamingMode,  # Reducer
-    EnumExecutionMode, EnumWorkflowState, EnumActionType, EnumBranchCondition,  # Orchestrator
+    EnumExecutionMode, EnumWorkflowStatus, EnumActionType, EnumBranchCondition,  # Orchestrator
 )
 ```
 

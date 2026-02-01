@@ -48,7 +48,6 @@ Mitigation:
 import asyncio
 import gc
 import logging
-import threading
 from collections.abc import Generator
 from unittest.mock import MagicMock
 
@@ -82,36 +81,12 @@ def aggressive_gc_cleanup() -> Generator[None, None, None]:
     This fixture runs after every test to immediately free memory,
     preventing accumulation across thousands of tests.
 
-    CRITICAL: Stops all event listener threads BEFORE gc.collect() to prevent
-    deadlock when Mock objects in background threads are accessed during
-    garbage collection.
-
     Note: Exception handling includes FileNotFoundError to handle race conditions
     during parallel test execution where cleanup may access already-deleted files.
     """
     yield  # Let test run
 
-    # Stop all event listener threads before garbage collection
-    # Background threads with Mock objects can deadlock during gc.collect()
-    # Note: Don't wait for daemon threads - they'll be cleaned up automatically
-    # Waiting can cause timeouts in tests with 5s limits
-    try:
-        for thread in threading.enumerate():
-            if thread.name and "event_listener" in thread.name:
-                # Thread is daemon - will be cleaned up automatically on test exit
-                # Only do a quick check without blocking
-                if thread.is_alive():
-                    # Give thread 0.1s max - if not stopped, move on (it's daemon)
-                    try:
-                        thread.join(timeout=0.1)
-                    except (RuntimeError, FileNotFoundError, OSError):
-                        # Thread cleanup failed - move on
-                        pass
-    except (RuntimeError, FileNotFoundError, OSError):
-        # Thread enumeration failed (race condition during cleanup)
-        pass
-
-    # Now safe to collect garbage - daemon threads don't block gc
+    # Collect garbage after each test to prevent memory accumulation
     try:
         gc.collect()
     except (FileNotFoundError, OSError):
@@ -441,17 +416,15 @@ def mock_event_loop() -> Generator[MagicMock, None, None]:
     Provide a mock event loop to prevent real event loop creation in tests.
 
     This fixture prevents test hangs caused by real event loop creation in CI
-    environments, particularly when testing workflow or async execution patterns
-    with mocked llama_index dependencies.
+    environments, particularly when testing workflow or async execution patterns.
 
     Usage:
         def test_workflow_execution(mock_event_loop):
             '''Test workflow with mocked event loop.'''
             mock_event_loop.run_until_complete.return_value = expected_result
 
-            with patch("llama_index.core.workflow"):
-                with patch("asyncio.new_event_loop", return_value=mock_event_loop):
-                    result = tool.execute_workflow(input_state)
+            with patch("asyncio.new_event_loop", return_value=mock_event_loop):
+                result = tool.execute_workflow(input_state)
 
             # Verify event loop was properly closed
             mock_event_loop.close.assert_called_once()
@@ -469,11 +442,6 @@ def mock_event_loop() -> Generator[MagicMock, None, None]:
     When NOT to use this fixture:
         - When tests need specific return values from run_until_complete()
         - When multiple different workflows are tested in one test
-        - See tests/unit/mixins/test_mixin_hybrid_execution.py for manual mock pattern
-
-    See Also:
-        - tests/unit/mixins/test_mixin_hybrid_execution.py for examples
-        - Commit 57c4ae95: Original fix for test_execute_orchestrated_falls_back_to_workflow
     """
     mock_loop = MagicMock()
     mock_loop.run_until_complete.return_value = None
@@ -496,11 +464,12 @@ def detect_event_loop_mocking_issues(request: pytest.FixtureRequest) -> None:
     """
     Auto-detect and warn about missing event loop mocks in workflow tests.
 
-    This fixture monitors test execution and issues warnings when tests mock
-    llama_index but fail to mock asyncio.new_event_loop, which can cause hangs.
+    This fixture monitors test execution and issues warnings when tests
+    use async workflows but fail to mock asyncio.new_event_loop, which can
+    cause hangs.
 
     The fixture is autouse=True but only activates warnings for tests that:
-    1. Use patch decorators or context managers for llama_index
+    1. Use async workflow patterns
     2. Don't use the mock_event_loop fixture
     3. Actually call code that creates event loops
 
@@ -513,15 +482,10 @@ def detect_event_loop_mocking_issues(request: pytest.FixtureRequest) -> None:
 
     # Only check tests in specific modules known to have this pattern
     test_module = request.module.__name__
-    if not (
-        "test_mixin_hybrid_execution" in test_module
-        or "test_hybrid_execution" in test_module
-        or "test_workflow" in test_module
-        or "test_orchestrat" in test_module
-    ):
+    if not ("test_workflow" in test_module or "test_orchestrat" in test_module):
         return  # Skip detection for unrelated tests
 
-    # Note: Detection of actual llama_index mocking would require AST parsing
+    # Note: Detection of actual async workflow mocking would require AST parsing
     # or runtime inspection, which is expensive. Instead, we rely on:
     # 1. Explicit use of mock_event_loop fixture (recommended)
     # 2. Code review to ensure pattern compliance

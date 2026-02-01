@@ -5,7 +5,7 @@ import uuid
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.models.invariant import ModelInvariant
 
 # Test UUIDs for consistent testing
@@ -34,7 +34,7 @@ class TestModelInvariantValidation:
             type=EnumInvariantType.SCHEMA,
             config={"json_schema": {}},
         )
-        assert inv.severity == EnumInvariantSeverity.WARNING
+        assert inv.severity == EnumSeverity.WARNING
 
     def test_invariant_default_enabled_is_true(self) -> None:
         """Default enabled should be True."""
@@ -82,7 +82,7 @@ class TestModelInvariantSeverityLevels:
 
     def test_invariant_accepts_all_severity_levels(self) -> None:
         """All severity levels should be valid."""
-        for severity in EnumInvariantSeverity:
+        for severity in EnumSeverity:
             inv = ModelInvariant(
                 name=f"Test {severity.value}",
                 type=EnumInvariantType.LATENCY,
@@ -96,20 +96,20 @@ class TestModelInvariantSeverityLevels:
         inv = ModelInvariant(
             name="Critical check",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_ms": 1000},
         )
-        assert inv.severity == EnumInvariantSeverity.CRITICAL
+        assert inv.severity == EnumSeverity.CRITICAL
 
     def test_invariant_info_severity(self) -> None:
         """Info severity can be set explicitly."""
         inv = ModelInvariant(
             name="Info check",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.INFO,
+            severity=EnumSeverity.INFO,
             config={"metric_name": "latency_p99", "max_value": 2000},
         )
-        assert inv.severity == EnumInvariantSeverity.INFO
+        assert inv.severity == EnumSeverity.INFO
 
 
 @pytest.mark.unit
@@ -254,14 +254,14 @@ class TestModelInvariantEquality:
             id=TEST_UUID_1,
             name="Test",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 5000},
         )
         inv2 = ModelInvariant(
             id=TEST_UUID_1,
             name="Test",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 5000},
         )
         assert inv1 == inv2

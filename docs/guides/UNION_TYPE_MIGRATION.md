@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Union Type Migration Guide
+
 # Union Type Migration Guide
 
 ## Overview

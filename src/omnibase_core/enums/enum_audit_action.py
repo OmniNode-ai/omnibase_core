@@ -1,7 +1,12 @@
-from enum import Enum
+"""Audit action types for logging and compliance tracking."""
+
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumAuditAction(str, Enum):
+@unique
+class EnumAuditAction(StrValueHelper, str, Enum):
     """Common audit actions."""
 
     CREATE = "create"
@@ -18,3 +23,6 @@ class EnumAuditAction(str, Enum):
     BACKUP = "backup"
     RESTORE = "restore"
     CUSTOM = "custom"
+
+
+__all__ = ["EnumAuditAction"]

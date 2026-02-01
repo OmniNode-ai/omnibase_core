@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Graph Traversal Filters Model.
 
 Type-safe model for configuring graph traversal filter criteria.

@@ -127,7 +127,7 @@ class ModelEffectTransaction:
                     },
                 )
 
-            except (RuntimeError, ValueError, AttributeError) as e:
+            except (AttributeError, RuntimeError, ValueError) as e:
                 error = ModelOnexError(
                     message=f"Rollback failed for operation: {operation_name} - {e!s}",
                     error_code="ROLLBACK_FAILURE",

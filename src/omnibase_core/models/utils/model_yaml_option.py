@@ -2,7 +2,7 @@
 YAML option value model with discriminated union.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_option_type import EnumYamlOptionType
@@ -75,13 +75,11 @@ class ModelYamlOption(BaseModel):
             ),
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -95,7 +93,7 @@ class ModelYamlOption(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (AttributeError, ValueError, TypeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

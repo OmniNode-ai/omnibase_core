@@ -1,13 +1,9 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Event bus models for ONEX message handling."""
 
 from .model_delivery_result import ModelDeliveryResult
 from .model_event_bus_bootstrap_result import ModelEventBusBootstrapResult
 from .model_event_bus_input_output_state import ModelEventBusInputOutputState
 from .model_event_bus_input_state import ModelEventBusInputState
-from .model_event_bus_listener_handle import ModelEventBusListenerHandle
 from .model_event_bus_output_field import ModelEventBusOutputField
 from .model_event_bus_output_state import ModelEventBusOutputState
 from .model_event_bus_runtime_state import ModelEventBusRuntimeState
@@ -19,7 +15,6 @@ __all__ = [
     "ModelEventBusBootstrapResult",
     "ModelEventBusInputOutputState",
     "ModelEventBusInputState",
-    "ModelEventBusListenerHandle",
     "ModelEventBusOutputField",
     "ModelEventBusOutputState",
     "ModelEventBusRuntimeState",

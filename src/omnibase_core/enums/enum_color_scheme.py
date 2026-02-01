@@ -1,16 +1,18 @@
-from __future__ import annotations
-
 """
 Color scheme enumeration.
 
 Defines color schemes for CLI output formatting.
 """
 
+from __future__ import annotations
+
 from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumColorScheme(str, Enum):
+class EnumColorScheme(StrValueHelper, str, Enum):
     """
     Enumeration of color schemes for CLI output.
 
@@ -43,13 +45,9 @@ class EnumColorScheme(str, Enum):
     COLORBLIND_FRIENDLY = "colorblind_friendly"
     HIGH_VISIBILITY = "high_visibility"
 
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
-
     @classmethod
     def get_accessible_schemes(cls) -> list[EnumColorScheme]:
-        """Get list[Any]of accessibility-friendly color schemes."""
+        """Get list of accessibility-friendly color schemes."""
         return [
             cls.COLORBLIND_FRIENDLY,
             cls.HIGH_VISIBILITY,
@@ -59,7 +57,7 @@ class EnumColorScheme(str, Enum):
 
     @classmethod
     def get_dark_schemes(cls) -> list[EnumColorScheme]:
-        """Get list[Any]of dark color schemes."""
+        """Get list of dark color schemes."""
         return [
             cls.DARK,
             cls.HIGH_CONTRAST,
@@ -68,7 +66,7 @@ class EnumColorScheme(str, Enum):
 
     @classmethod
     def get_light_schemes(cls) -> list[EnumColorScheme]:
-        """Get list[Any]of light color schemes."""
+        """Get list of light color schemes."""
         return [
             cls.LIGHT,
             cls.BRIGHT,

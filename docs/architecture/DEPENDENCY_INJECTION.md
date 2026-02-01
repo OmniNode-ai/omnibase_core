@@ -1,3 +1,6 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Dependency Injection
+> **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
+
 # Dependency Injection - omnibase_core
 
 **Status**: ✅ Complete

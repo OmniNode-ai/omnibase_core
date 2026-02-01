@@ -5,10 +5,13 @@ Defines the types of queries for intelligent model routing and
 specialized processing in conversational RAG systems.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumQueryType(str, Enum):
+@unique
+class EnumQueryType(StrValueHelper, str, Enum):
     """
     Query type enumeration for LLM model selection and routing.
 
@@ -42,3 +45,6 @@ class EnumQueryType(str, Enum):
     CREATIVE = "creative"
     PLANNING = "planning"
     BRAINSTORMING = "brainstorming"
+
+
+__all__ = ["EnumQueryType"]

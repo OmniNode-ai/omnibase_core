@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Contract Validation Pipeline Phases.
 
@@ -28,11 +25,13 @@ Related:
 .. versionadded:: 0.4.1
 """
 
-from omnibase_core.validation.phases.expanded_contract_graph_validator import (
+from omnibase_core.validation.phases.validator_expanded_contract import (
+    ExpandedContractValidator,
+)
+from omnibase_core.validation.phases.validator_expanded_contract_graph import (
     ExpandedContractGraphValidator,
 )
-from omnibase_core.validation.phases.expanded_validator import ExpandedContractValidator
-from omnibase_core.validation.phases.merge_validator import MergeValidator
+from omnibase_core.validation.phases.validator_merge import MergeValidator
 
 __all__ = [
     # Phase 2 Validators

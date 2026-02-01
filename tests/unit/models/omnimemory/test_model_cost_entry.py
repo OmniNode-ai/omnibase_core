@@ -143,6 +143,7 @@ class TestModelCostEntryImmutability:
         entry = ModelCostEntry(**minimal_entry_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             entry.cost = 999.99  # type: ignore[misc]
 
     def test_cannot_modify_tokens_in(self, minimal_entry_data: dict) -> None:
@@ -150,6 +151,7 @@ class TestModelCostEntryImmutability:
         entry = ModelCostEntry(**minimal_entry_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             entry.tokens_in = 9999  # type: ignore[misc]
 
     def test_cannot_modify_tokens_out(self, minimal_entry_data: dict) -> None:
@@ -157,6 +159,7 @@ class TestModelCostEntryImmutability:
         entry = ModelCostEntry(**minimal_entry_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             entry.tokens_out = 9999  # type: ignore[misc]
 
     def test_cannot_modify_operation(self, minimal_entry_data: dict) -> None:
@@ -164,6 +167,7 @@ class TestModelCostEntryImmutability:
         entry = ModelCostEntry(**minimal_entry_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             entry.operation = "modified_operation"  # type: ignore[misc]
 
     def test_cannot_modify_model_used(self, minimal_entry_data: dict) -> None:
@@ -171,6 +175,7 @@ class TestModelCostEntryImmutability:
         entry = ModelCostEntry(**minimal_entry_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             entry.model_used = "different-model"  # type: ignore[misc]
 
     def test_cannot_modify_entry_id(self, minimal_entry_data: dict) -> None:
@@ -178,6 +183,7 @@ class TestModelCostEntryImmutability:
         entry = ModelCostEntry(**minimal_entry_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             entry.entry_id = uuid4()  # type: ignore[misc]
 
     def test_cannot_modify_cumulative_total(self, minimal_entry_data: dict) -> None:
@@ -185,6 +191,7 @@ class TestModelCostEntryImmutability:
         entry = ModelCostEntry(**minimal_entry_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             entry.cumulative_total = 999.99  # type: ignore[misc]
 
 

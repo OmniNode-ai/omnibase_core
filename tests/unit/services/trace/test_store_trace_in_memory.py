@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Comprehensive unit tests for StoreTraceInMemory.
+Comprehensive unit tests for ServiceTraceInMemoryStore.
 
 Tests cover:
 - Put and get operations
@@ -11,7 +11,7 @@ Tests cover:
 - Memory management and cleanup
 - Thread safety considerations
 
-OMN-1209: TDD tests for StoreTraceInMemory implementation.
+OMN-1209: TDD tests for ServiceTraceInMemoryStore implementation.
 
 .. versionadded:: 0.4.0
     Added as part of Trace Recording Service (OMN-1209)
@@ -29,8 +29,10 @@ from omnibase_core.models.trace import ModelExecutionTrace
 
 # Import models from models/ per ONEX file location rules
 from omnibase_core.models.trace_query import ModelTraceQuery
-from omnibase_core.services.trace.protocol_trace_store import ProtocolTraceStore
-from omnibase_core.services.trace.store_trace_in_memory import StoreTraceInMemory
+from omnibase_core.protocols.storage.protocol_trace_store import ProtocolTraceStore
+from omnibase_core.services.trace.service_trace_in_memory_store import (
+    ServiceTraceInMemoryStore,
+)
 
 # ============================================================================
 # Helper Functions
@@ -84,9 +86,9 @@ def create_test_trace(
 
 
 @pytest.fixture
-def store() -> StoreTraceInMemory:
+def store() -> ServiceTraceInMemoryStore:
     """Create a fresh in-memory trace store."""
-    return StoreTraceInMemory()
+    return ServiceTraceInMemoryStore()
 
 
 @pytest.fixture
@@ -101,24 +103,24 @@ def sample_trace() -> ModelExecutionTrace:
 
 
 class TestProtocolCompliance:
-    """Test that StoreTraceInMemory implements ProtocolTraceStore."""
+    """Test that ServiceTraceInMemoryStore implements ProtocolTraceStore."""
 
     def test_implements_protocol(self) -> None:
-        """StoreTraceInMemory implements ProtocolTraceStore interface."""
-        store = StoreTraceInMemory()
+        """ServiceTraceInMemoryStore implements ProtocolTraceStore interface."""
+        store = ServiceTraceInMemoryStore()
         assert isinstance(store, ProtocolTraceStore)
 
-    def test_has_put_method(self, store: StoreTraceInMemory) -> None:
+    def test_has_put_method(self, store: ServiceTraceInMemoryStore) -> None:
         """Store has async put method."""
         assert hasattr(store, "put")
         assert callable(store.put)
 
-    def test_has_get_method(self, store: StoreTraceInMemory) -> None:
+    def test_has_get_method(self, store: ServiceTraceInMemoryStore) -> None:
         """Store has async get method."""
         assert hasattr(store, "get")
         assert callable(store.get)
 
-    def test_has_query_method(self, store: StoreTraceInMemory) -> None:
+    def test_has_query_method(self, store: ServiceTraceInMemoryStore) -> None:
         """Store has async query method."""
         assert hasattr(store, "query")
         assert callable(store.query)
@@ -133,7 +135,7 @@ class TestStorePutAndGet:
     """Test cases for put and get operations."""
 
     async def test_store_put_and_get(
-        self, store: StoreTraceInMemory, sample_trace: ModelExecutionTrace
+        self, store: ServiceTraceInMemoryStore, sample_trace: ModelExecutionTrace
     ) -> None:
         """Store correctly puts and gets traces."""
         await store.put(sample_trace)
@@ -145,7 +147,9 @@ class TestStorePutAndGet:
         assert retrieved.correlation_id == sample_trace.correlation_id
         assert retrieved.status == sample_trace.status
 
-    async def test_store_get_nonexistent(self, store: StoreTraceInMemory) -> None:
+    async def test_store_get_nonexistent(
+        self, store: ServiceTraceInMemoryStore
+    ) -> None:
         """Store returns None for nonexistent trace ID."""
         nonexistent_id = uuid4()
 
@@ -153,7 +157,9 @@ class TestStorePutAndGet:
 
         assert retrieved is None
 
-    async def test_store_put_multiple_traces(self, store: StoreTraceInMemory) -> None:
+    async def test_store_put_multiple_traces(
+        self, store: ServiceTraceInMemoryStore
+    ) -> None:
         """Store can hold multiple traces."""
         traces = [create_test_trace() for _ in range(5)]
 
@@ -167,7 +173,7 @@ class TestStorePutAndGet:
             assert retrieved.trace_id == trace.trace_id
 
     async def test_store_put_overwrites_existing(
-        self, store: StoreTraceInMemory
+        self, store: ServiceTraceInMemoryStore
     ) -> None:
         """Store overwrites trace with same ID."""
         trace_id = uuid4()
@@ -190,7 +196,7 @@ class TestStorePutAndGet:
         assert retrieved.status == EnumExecutionStatus.FAILED
 
     async def test_store_put_preserves_trace_integrity(
-        self, store: StoreTraceInMemory, sample_trace: ModelExecutionTrace
+        self, store: ServiceTraceInMemoryStore, sample_trace: ModelExecutionTrace
     ) -> None:
         """Store preserves all trace fields."""
         await store.put(sample_trace)
@@ -216,7 +222,7 @@ class TestStorePutAndGet:
 class TestStoreQuery:
     """Test cases for query operations."""
 
-    async def test_store_query_empty(self, store: StoreTraceInMemory) -> None:
+    async def test_store_query_empty(self, store: ServiceTraceInMemoryStore) -> None:
         """Store query returns empty list when no traces match."""
         query = ModelTraceQuery(status=EnumExecutionStatus.SUCCESS)
 
@@ -224,7 +230,7 @@ class TestStoreQuery:
 
         assert results == []
 
-    async def test_store_query_all(self, store: StoreTraceInMemory) -> None:
+    async def test_store_query_all(self, store: ServiceTraceInMemoryStore) -> None:
         """Store query returns all traces when no filters specified."""
         traces = [create_test_trace() for _ in range(5)]
         for trace in traces:
@@ -235,7 +241,9 @@ class TestStoreQuery:
 
         assert len(results) == 5
 
-    async def test_store_query_by_status(self, store: StoreTraceInMemory) -> None:
+    async def test_store_query_by_status(
+        self, store: ServiceTraceInMemoryStore
+    ) -> None:
         """Store query filters by status correctly."""
         success_trace = create_test_trace(status=EnumExecutionStatus.SUCCESS)
         failed_trace = create_test_trace(status=EnumExecutionStatus.FAILED)
@@ -250,7 +258,7 @@ class TestStoreQuery:
         assert results[0].status == EnumExecutionStatus.SUCCESS
 
     async def test_store_query_by_correlation_id(
-        self, store: StoreTraceInMemory
+        self, store: ServiceTraceInMemoryStore
     ) -> None:
         """Store query filters by correlation_id correctly."""
         correlation_id = uuid4()
@@ -267,7 +275,9 @@ class TestStoreQuery:
         assert len(results) == 1
         assert results[0].correlation_id == correlation_id
 
-    async def test_store_query_by_time_range(self, store: StoreTraceInMemory) -> None:
+    async def test_store_query_by_time_range(
+        self, store: ServiceTraceInMemoryStore
+    ) -> None:
         """Store query filters by time range correctly."""
         base_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
 
@@ -288,7 +298,9 @@ class TestStoreQuery:
         assert len(results) == 1
         assert results[0].trace_id == middle_trace.trace_id
 
-    async def test_store_query_with_limit(self, store: StoreTraceInMemory) -> None:
+    async def test_store_query_with_limit(
+        self, store: ServiceTraceInMemoryStore
+    ) -> None:
         """Store query respects limit parameter."""
         traces = [create_test_trace() for _ in range(10)]
         for trace in traces:
@@ -299,7 +311,9 @@ class TestStoreQuery:
 
         assert len(results) == 3
 
-    async def test_store_query_with_offset(self, store: StoreTraceInMemory) -> None:
+    async def test_store_query_with_offset(
+        self, store: ServiceTraceInMemoryStore
+    ) -> None:
         """Store query respects offset parameter."""
         traces = [create_test_trace() for _ in range(10)]
         for trace in traces:
@@ -311,7 +325,7 @@ class TestStoreQuery:
         assert len(results) == 5
 
     async def test_store_query_multiple_filters(
-        self, store: StoreTraceInMemory
+        self, store: ServiceTraceInMemoryStore
     ) -> None:
         """Store query combines multiple filters correctly."""
         correlation_id = uuid4()
@@ -358,7 +372,9 @@ class TestStoreQuery:
 class TestStoreMultipleTraces:
     """Test cases for handling multiple traces."""
 
-    async def test_store_multiple_traces(self, store: StoreTraceInMemory) -> None:
+    async def test_store_multiple_traces(
+        self, store: ServiceTraceInMemoryStore
+    ) -> None:
         """Store handles multiple traces correctly."""
         traces = [
             create_test_trace(status=EnumExecutionStatus.SUCCESS),
@@ -380,7 +396,7 @@ class TestStoreMultipleTraces:
             assert retrieved is not None
 
     async def test_store_large_number_of_traces(
-        self, store: StoreTraceInMemory
+        self, store: ServiceTraceInMemoryStore
     ) -> None:
         """Store handles large number of traces."""
         traces = [create_test_trace() for _ in range(100)]
@@ -403,7 +419,7 @@ class TestStoreEdgeCases:
     """Test edge cases for the store."""
 
     async def test_store_empty_query_on_empty_store(
-        self, store: StoreTraceInMemory
+        self, store: ServiceTraceInMemoryStore
     ) -> None:
         """Empty store returns empty results for any query."""
         query = ModelTraceQuery()
@@ -411,7 +427,7 @@ class TestStoreEdgeCases:
 
         assert results == []
 
-    async def test_store_get_after_put(self, store: StoreTraceInMemory) -> None:
+    async def test_store_get_after_put(self, store: ServiceTraceInMemoryStore) -> None:
         """Get immediately after put returns the trace."""
         trace = create_test_trace()
 
@@ -421,7 +437,9 @@ class TestStoreEdgeCases:
         assert retrieved is not None
         assert retrieved.trace_id == trace.trace_id
 
-    async def test_store_query_returns_copies(self, store: StoreTraceInMemory) -> None:
+    async def test_store_query_returns_copies(
+        self, store: ServiceTraceInMemoryStore
+    ) -> None:
         """Query returns traces with consistent data."""
         trace = create_test_trace()
         await store.put(trace)
@@ -433,7 +451,7 @@ class TestStoreEdgeCases:
         assert results1[0].trace_id == results2[0].trace_id
 
     async def test_store_query_offset_beyond_total(
-        self, store: StoreTraceInMemory
+        self, store: ServiceTraceInMemoryStore
     ) -> None:
         """Query with offset beyond total returns empty list."""
         traces = [create_test_trace() for _ in range(5)]
@@ -445,7 +463,9 @@ class TestStoreEdgeCases:
 
         assert results == []
 
-    async def test_store_concurrent_operations(self, store: StoreTraceInMemory) -> None:
+    async def test_store_concurrent_operations(
+        self, store: ServiceTraceInMemoryStore
+    ) -> None:
         """Store handles concurrent put operations."""
         import asyncio
 
@@ -462,7 +482,7 @@ class TestStoreEdgeCases:
         assert len(set(trace_ids)) == 10
 
     async def test_store_query_with_zero_limit_raises_validation_error(
-        self, store: StoreTraceInMemory
+        self, store: ServiceTraceInMemoryStore
     ) -> None:
         """Query with limit=0 raises validation error (limit must be >= 1)."""
         from pydantic import ValidationError
@@ -482,7 +502,9 @@ class TestStoreEdgeCases:
 class TestStoreTimeQueries:
     """Test time-based query edge cases."""
 
-    async def test_store_query_start_time_only(self, store: StoreTraceInMemory) -> None:
+    async def test_store_query_start_time_only(
+        self, store: ServiceTraceInMemoryStore
+    ) -> None:
         """Query with only start_time works correctly."""
         base_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
 
@@ -498,7 +520,9 @@ class TestStoreTimeQueries:
         assert len(results) == 1
         assert results[0].trace_id == after.trace_id
 
-    async def test_store_query_end_time_only(self, store: StoreTraceInMemory) -> None:
+    async def test_store_query_end_time_only(
+        self, store: ServiceTraceInMemoryStore
+    ) -> None:
         """Query with only end_time works correctly."""
         base_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
 
@@ -515,7 +539,7 @@ class TestStoreTimeQueries:
         assert results[0].trace_id == before.trace_id
 
     async def test_store_query_exact_time_match(
-        self, store: StoreTraceInMemory
+        self, store: ServiceTraceInMemoryStore
     ) -> None:
         """Query matches trace at exact start_time (inclusive start, exclusive end)."""
         exact_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
@@ -544,7 +568,7 @@ class TestStoreStatusFiltering:
     """Test status-based filtering."""
 
     async def test_store_filter_all_status_types(
-        self, store: StoreTraceInMemory
+        self, store: ServiceTraceInMemoryStore
     ) -> None:
         """Store can filter by all status types."""
         statuses = [

@@ -40,8 +40,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-# Type alias for parameter values that can be stored
-ParameterValue = str | int | float | bool | list[str] | None
+# Type alias for query parameter values (URL query strings)
+# Different from centralized ParameterValue: allows None (unset), excludes dict (no nested structures)
+QueryParameterValue = str | int | float | bool | list[str] | None
 
 
 class ModelQueryParameters(BaseModel):
@@ -74,7 +75,7 @@ class ModelQueryParameters(BaseModel):
     # Security constant - prevent DoS via large parameter sets
     MAX_PARAMETERS: ClassVar[int] = 100
 
-    items: dict[str, ParameterValue] = Field(
+    items: dict[str, QueryParameterValue] = Field(
         default_factory=dict,
         description="Query parameters as key-value pairs",
     )
@@ -92,7 +93,7 @@ class ModelQueryParameters(BaseModel):
         return self
 
     @classmethod
-    def from_dict(cls, data: dict[str, ParameterValue]) -> Self:
+    def from_dict(cls, data: dict[str, QueryParameterValue]) -> Self:
         """Create from a dictionary of parameters.
 
         Args:
@@ -113,11 +114,11 @@ class ModelQueryParameters(BaseModel):
         Returns:
             New ModelQueryParameters instance.
         """
-        # Convert to ParameterValue dict to satisfy type checker
-        items: dict[str, ParameterValue] = dict(data)
+        # Convert to QueryParameterValue dict to satisfy type checker
+        items: dict[str, QueryParameterValue] = dict(data)
         return cls(items=items)
 
-    def to_dict(self) -> dict[str, ParameterValue]:
+    def to_dict(self) -> dict[str, QueryParameterValue]:
         """Convert to dictionary format preserving original types.
 
         Returns:
@@ -150,7 +151,7 @@ class ModelQueryParameters(BaseModel):
         return urlencode(pairs)
 
     @staticmethod
-    def _value_to_string(value: ParameterValue) -> str:
+    def _value_to_string(value: QueryParameterValue) -> str:
         """Convert a parameter value to string representation.
 
         Args:
@@ -167,7 +168,7 @@ class ModelQueryParameters(BaseModel):
             return ",".join(value)
         return str(value)
 
-    def get(self, key: str, default: ParameterValue = None) -> ParameterValue:
+    def get(self, key: str, default: QueryParameterValue = None) -> QueryParameterValue:
         """Get a parameter value by key.
 
         Args:
@@ -275,7 +276,7 @@ class ModelQueryParameters(BaseModel):
         """
         return key in self.items
 
-    def set(self, key: str, value: ParameterValue) -> ModelQueryParameters:
+    def set(self, key: str, value: QueryParameterValue) -> ModelQueryParameters:
         """Set a parameter value, returning a new instance.
 
         Args:
@@ -334,4 +335,4 @@ class ModelQueryParameters(BaseModel):
         return self.has(key)
 
 
-__all__ = ["ModelQueryParameters", "ParameterValue"]
+__all__ = ["ModelQueryParameters", "QueryParameterValue"]

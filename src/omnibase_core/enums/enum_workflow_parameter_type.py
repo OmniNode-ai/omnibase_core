@@ -4,10 +4,13 @@ Workflow parameter type enumeration.
 Defines types for discriminated union in workflow parameters.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumWorkflowParameterType(str, Enum):
+@unique
+class EnumWorkflowParameterType(StrValueHelper, str, Enum):
     """Workflow parameter type enumeration for discriminated unions."""
 
     WORKFLOW_CONFIG = "workflow_config"

@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Runtime Category Enumeration.
 
 Defines categories for estimated runtime durations.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumRuntimeCategory(str, Enum):
+class EnumRuntimeCategory(StrValueHelper, str, Enum):
     """
     Runtime category enumeration.
 
@@ -42,10 +43,6 @@ class EnumRuntimeCategory(str, Enum):
     MARATHON = "marathon"  # 3+ hours
     OVERNIGHT = "overnight"  # 8+ hours
     UNKNOWN = "unknown"  # Cannot estimate
-
-    def __str__(self) -> str:
-        """Return string representation."""
-        return self.value
 
     @property
     def display_name(self) -> str:

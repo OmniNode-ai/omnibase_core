@@ -103,35 +103,35 @@ class ModelExternalServiceConfig(BaseModel):
                 and callable(connection_config.get)
                 and connection_config  # Check if not empty
             ):
-                if service_type in ["database", "db", "postgresql", "mysql"]:
+                if service_type in {"database", "db", "postgresql", "mysql"}:
                     try:
                         values["connection_config"] = ModelDatabaseConnectionConfig(
                             **connection_config,
                         )
-                    except (ValueError, ValidationError) as e:
+                    except (ValidationError, ValueError) as e:
                         msg = f"Invalid database connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
                             error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                         ) from e
-                    except (KeyError, AttributeError, OSError) as e:
+                    except (AttributeError, KeyError, OSError) as e:
                         msg = f"Failed to create database connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
                             error_code=EnumCoreErrorCode.OPERATION_FAILED,
                         ) from e
-                elif service_type in ["rest_api", "api", "http", "https"]:
+                elif service_type in {"rest_api", "api", "http", "https"}:
                     try:
                         values["connection_config"] = ModelRestApiConnectionConfig(
                             **connection_config,
                         )
-                    except (ValueError, ValidationError) as e:
+                    except (ValidationError, ValueError) as e:
                         msg = f"Invalid REST API connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
                             error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                         ) from e
-                    except (KeyError, AttributeError, OSError) as e:
+                    except (AttributeError, KeyError, OSError) as e:
                         msg = f"Failed to create REST API connection config: {e!s}"
                         raise ModelOnexError(
                             msg,

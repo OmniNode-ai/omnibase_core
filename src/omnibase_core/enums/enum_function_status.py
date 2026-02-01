@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Function status enumeration for node operations.
 
@@ -7,12 +5,15 @@ Provides strongly typed status values for function lifecycle tracking.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumFunctionStatus(str, Enum):
+class EnumFunctionStatus(StrValueHelper, str, Enum):
     """
     Strongly typed function status for node operations.
 
@@ -25,10 +26,6 @@ class EnumFunctionStatus(str, Enum):
     DISABLED = "disabled"
     EXPERIMENTAL = "experimental"
     MAINTENANCE = "maintenance"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_available(cls, status: EnumFunctionStatus) -> bool:

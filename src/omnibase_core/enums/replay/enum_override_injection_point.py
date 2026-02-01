@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """EnumOverrideInjectionPoint - Injection points for config overrides.
 
 Defines where configuration overrides can be applied during replay execution.
@@ -10,10 +7,13 @@ This is a CLOSED vocabulary - new injection points require explicit addition.
     Added Configuration Override Injection (OMN-1205)
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumOverrideInjectionPoint(str, Enum):
+@unique
+class EnumOverrideInjectionPoint(StrValueHelper, str, Enum):
     """Injection points for configuration overrides during replay.
 
     Defines WHERE configuration overrides can be applied during replay

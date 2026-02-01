@@ -7,7 +7,7 @@ with structured validation and proper type handling for metadata fields.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -292,13 +292,11 @@ class ModelMetadataValue(BaseModel):
         """Get the underlying Python value."""
         return self.value
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -390,7 +388,7 @@ class ModelMetadataValue(BaseModel):
                         if isinstance(source_val, str) or source_val is None:
                             self.source = source_val
             return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -406,7 +404,7 @@ class ModelMetadataValue(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

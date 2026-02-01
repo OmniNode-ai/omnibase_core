@@ -27,9 +27,8 @@ class MixinToolExecution:
     """
     Mixin that provides tool execution event handling.
 
-    This mixin should be combined with MixinEventListener to enable
-    tools to respond to tool.execution.request events from the CLI
-    or other sources.
+    This mixin enables tools to respond to tool.execution.request events
+    from the CLI or other sources via the event bus.
     """
 
     # Type hints for methods expected to be provided by the mixed class
@@ -52,10 +51,6 @@ class MixinToolExecution:
             The input state class, or None if the class cannot be determined
             (e.g., when type introspection fails). When None is returned,
             the tool will operate with dict[str, object] parameters instead.
-
-        Note:
-            This return type matches the pattern used in MixinEventListener and
-            MixinEventBus for consistency across the mixin system.
         """
         raise NotImplementedError(  # stub-ok: abstract mixin method
             "Must be implemented by the mixed class"
@@ -67,8 +62,7 @@ class MixinToolExecution:
         """
         Handle tool execution request events.
 
-        This method is automatically called by MixinEventListener when
-        a tool.execution.request event is received.
+        This method handles tool.execution.request events received via the event bus.
         """
         event = envelope.payload
 
@@ -171,9 +165,9 @@ class MixinToolExecution:
         # Try to create typed input state
         try:
             # Add any required fields that might be missing
-            if hasattr(input_state_class, "__fields__"):
-                for field_name, field_info in input_state_class.__fields__.items():
-                    if field_name not in param_dict and field_info.is_required():
+            if hasattr(input_state_class, "model_fields"):
+                for field_name, field_info in input_state_class.model_fields.items():
+                    if field_name not in param_dict and field_info.is_required:
                         # Set reasonable defaults for common fields
                         if field_name == "action":
                             param_dict["action"] = "execute"
@@ -297,7 +291,7 @@ class MixinToolExecution:
         """
         Get event patterns for tool execution.
 
-        This is used by MixinEventListener to subscribe to the right events.
+        Returns the event type patterns that this tool subscribes to.
         """
         return [
             "tool.execution.request",  # Listen for execution requests

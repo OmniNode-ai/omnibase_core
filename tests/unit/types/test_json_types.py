@@ -19,6 +19,8 @@ from omnibase_core.types.type_json import (
     JsonType,
     PrimitiveContainer,
     PrimitiveValue,
+    StrictJsonPrimitive,
+    StrictJsonType,
     ToolParameterValue,
 )
 
@@ -566,6 +568,8 @@ class TestModuleExports:
             "JsonType",
             "PrimitiveValue",
             "PrimitiveContainer",
+            "StrictJsonPrimitive",
+            "StrictJsonType",
             "ToolParameterValue",
         ]
 
@@ -581,6 +585,8 @@ class TestModuleExports:
             "JsonType",
             "PrimitiveValue",
             "PrimitiveContainer",
+            "StrictJsonPrimitive",
+            "StrictJsonType",
             "ToolParameterValue",
         }
 
@@ -635,6 +641,56 @@ class TestTypeRelationships:
         # nested structures containing Pydantic model data.
         assert UUID in primitive_args
         assert datetime in primitive_args
+
+    def test_strict_json_primitive_components(self) -> None:
+        """Test that StrictJsonPrimitive contains only RFC 8259 JSON types."""
+        primitive_args = set(get_args(StrictJsonPrimitive))
+
+        # Verify StrictJsonPrimitive contains exactly the RFC 8259 JSON types
+        assert str in primitive_args
+        assert int in primitive_args
+        assert float in primitive_args
+        assert bool in primitive_args
+        assert type(None) in primitive_args
+        # StrictJsonPrimitive should NOT include UUID or datetime
+        assert UUID not in primitive_args
+        assert datetime not in primitive_args
+
+    def test_strict_json_primitive_is_subset_of_json_primitive(self) -> None:
+        """Test that StrictJsonPrimitive is a proper subset of JsonPrimitive."""
+        strict_args = set(get_args(StrictJsonPrimitive))
+        full_args = set(get_args(JsonPrimitive))
+
+        # StrictJsonPrimitive should be a subset of JsonPrimitive
+        assert strict_args < full_args
+        # The difference should be UUID and datetime
+        difference = full_args - strict_args
+        assert UUID in difference
+        assert datetime in difference
+
+    def test_strict_json_type_accepts_primitives(self) -> None:
+        """Test that StrictJsonType accepts primitive values at runtime."""
+        value_str: StrictJsonType = "hello"
+        value_int: StrictJsonType = 42
+        value_float: StrictJsonType = 3.14
+        value_bool: StrictJsonType = True
+        value_none: StrictJsonType = None
+
+        assert value_str == "hello"
+        assert value_int == 42
+        assert value_float == 3.14
+        assert value_bool is True
+        assert value_none is None
+
+    def test_strict_json_type_accepts_containers(self) -> None:
+        """Test that StrictJsonType accepts dict and list containers."""
+        value_list: StrictJsonType = [1, 2, 3]
+        value_dict: StrictJsonType = {"key": "value"}
+        value_nested: StrictJsonType = {"data": [1, {"nested": True}]}
+
+        assert value_list == [1, 2, 3]
+        assert value_dict == {"key": "value"}
+        assert isinstance(value_nested, dict)
 
 
 @pytest.mark.unit

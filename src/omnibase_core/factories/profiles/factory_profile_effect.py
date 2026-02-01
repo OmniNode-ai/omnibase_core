@@ -9,7 +9,7 @@ Profile Types:
 
 from collections.abc import Callable
 
-from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums import EnumNodeArchetype, EnumNodeType
 from omnibase_core.models.contracts import (
     ModelBackupConfig,
     ModelContractEffect,
@@ -47,7 +47,7 @@ def get_effect_idempotent_profile(version: str = "1.0.0") -> ModelContractEffect
     return ModelContractEffect(
         # Core identification
         name="effect_idempotent_profile",
-        version=semver,
+        contract_version=semver,
         description="Idempotent effect profile with retry support and audit trail",
         node_type=EnumNodeType.EFFECT_GENERIC,
         # Model specifications
@@ -107,7 +107,7 @@ def get_effect_idempotent_profile(version: str = "1.0.0") -> ModelContractEffect
         ),
         # Handler behavior configuration for contract-driven execution
         behavior=ModelHandlerBehavior(
-            handler_kind="effect",
+            node_archetype=EnumNodeArchetype.EFFECT,
             purity="side_effecting",  # Effects interact with external systems
             idempotent=True,  # This is the idempotent profile
             timeout_ms=30000,  # 30 second timeout for external operations

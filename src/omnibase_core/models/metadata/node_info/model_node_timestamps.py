@@ -1,17 +1,17 @@
-from __future__ import annotations
-
-from datetime import UTC, datetime
-
-from pydantic import BaseModel, Field
-
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-
 """
 Node Timestamps Model.
 
 Timing and lifecycle information for nodes.
 Follows ONEX one-model-per-file architecture.
 """
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelNodeTimestamps(BaseModel):
@@ -174,11 +174,11 @@ class ModelNodeTimestamps(BaseModel):
             last_validated=None,  # intentionally None
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

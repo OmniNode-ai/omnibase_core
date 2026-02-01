@@ -6,9 +6,12 @@ This module provides the protocol definition for node workflow results.
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from omnibase_core.protocols.base import ContextValue
+
+if TYPE_CHECKING:
+    from omnibase_core.protocols.types.protocol_state import ProtocolState
 
 
 @runtime_checkable
@@ -19,7 +22,7 @@ class ProtocolNodeResult(Protocol):
     Defines the interface for result objects from dispatch_async operations.
     """
 
-    value: ContextValue | None
+    value: ProtocolState | ContextValue | None
     is_success: bool
     is_failure: bool
     error: object | None

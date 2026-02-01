@@ -28,10 +28,13 @@ This enum defines the various GitHub Actions trigger events that can be used
 in workflow definitions.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumGithubActionEvent(str, Enum):
+@unique
+class EnumGithubActionEvent(StrValueHelper, str, Enum):
     """GitHub Actions trigger events."""
 
     PUSH = "push"
@@ -43,7 +46,7 @@ class EnumGithubActionEvent(str, Enum):
     ISSUE_COMMENT = "issue_comment"
 
 
-# Compatibility alias
-GitHubActionEvent = EnumGithubActionEvent
+# Deprecated: use EnumGithubActionEvent directly
+GitHubActionEvent: type[EnumGithubActionEvent] = EnumGithubActionEvent
 
 __all__ = ["EnumGithubActionEvent", "GitHubActionEvent"]

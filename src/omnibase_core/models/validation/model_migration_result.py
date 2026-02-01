@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 Migration result model for protocol migration operations.
 """
 
+from __future__ import annotations
 
 from dataclasses import dataclass
 

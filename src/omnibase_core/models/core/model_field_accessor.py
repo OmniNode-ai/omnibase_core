@@ -7,8 +7,12 @@ dot notation support and type safety.
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
+from omnibase_core.errors.exception_groups import (
+    ATTRIBUTE_ACCESS_ERRORS,
+    PYDANTIC_MODEL_ERRORS,
+)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 from omnibase_core.types.type_constraints import PrimitiveValueType
@@ -54,7 +58,8 @@ class ModelFieldAccessor(BaseModel):
             return ModelResult.err(
                 f"Field at '{path}' has unsupported type: {type(obj)}",
             )
-        except (AttributeError, KeyError, TypeError) as e:
+        except ATTRIBUTE_ACCESS_ERRORS as e:
+            # fallback-ok: return default or error result when dot-notation path access fails
             if default is not None:
                 return ModelResult.ok(default)
             return ModelResult.err(f"Error accessing field '{path}': {e!s}")
@@ -79,6 +84,7 @@ class ModelFieldAccessor(BaseModel):
                             setattr(obj, part, {})
                             next_obj = getattr(obj, part)
                         except (AttributeError, TypeError):
+                            # fallback-ok: return False if initializing nested dict fails
                             return False
                     obj = next_obj
                 elif hasattr(obj, "__getitem__") and hasattr(obj, "__setitem__"):
@@ -105,6 +111,7 @@ class ModelFieldAccessor(BaseModel):
                     setattr(obj, final_key, raw_value)
                     return True
                 except (AttributeError, TypeError):
+                    # fallback-ok: try dict-style access if attribute setting fails
                     pass
             # Fall back to dict[str, Any]-like access
             if hasattr(obj, "__setitem__"):
@@ -112,7 +119,8 @@ class ModelFieldAccessor(BaseModel):
                 return True
 
             return False
-        except (AttributeError, KeyError, TypeError):
+        except ATTRIBUTE_ACCESS_ERRORS:
+            # fallback-ok: return False on any attribute access failure in set operation
             return False
 
     def has_field(self, path: str) -> bool:
@@ -131,7 +139,8 @@ class ModelFieldAccessor(BaseModel):
                 else:
                     return False
             return True
-        except (AttributeError, KeyError, TypeError):
+        except ATTRIBUTE_ACCESS_ERRORS:
+            # fallback-ok: return False on any attribute access failure in existence check
             return False
 
     def remove_field(self, path: str) -> bool:
@@ -167,14 +176,15 @@ class ModelFieldAccessor(BaseModel):
                 return False
 
             return True
-        except (AttributeError, KeyError, TypeError):
+        except ATTRIBUTE_ACCESS_ERRORS:
+            # fallback-ok: return False on any attribute access failure in removal operation
             return False
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -185,7 +195,9 @@ class ModelFieldAccessor(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:  # fallback-ok: Configurable protocol requires boolean return for graceful config failure
+        except PYDANTIC_MODEL_ERRORS:
+            # fallback-ok: Configurable protocol requires boolean return for graceful config failure
+            # setattr on Pydantic models can raise AttributeError, TypeError, ValidationError, ValueError
             return False
 
     def serialize(self) -> dict[str, object]:
@@ -193,13 +205,15 @@ class ModelFieldAccessor(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Validatable protocol requires boolean return for graceful validation failure
-            return False
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        This base implementation always returns True. Subclasses should override
+        this method to perform custom validation and catch specific exceptions
+        (e.g., ValidationError, ValueError) when implementing validation logic.
+        """
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

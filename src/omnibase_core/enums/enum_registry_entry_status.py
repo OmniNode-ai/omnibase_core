@@ -1,8 +1,14 @@
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 # Enum for node registry entry status values (ONEX Standard)
-class EnumRegistryEntryStatus(str, Enum):
+@unique
+class EnumRegistryEntryStatus(StrValueHelper, str, Enum):
     EPHEMERAL = "ephemeral"
     ONLINE = "online"
     VALIDATED = "validated"
+
+
+__all__ = ["EnumRegistryEntryStatus"]

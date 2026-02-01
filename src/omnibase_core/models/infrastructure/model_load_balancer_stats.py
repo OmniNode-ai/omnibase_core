@@ -1,6 +1,6 @@
 """Model for load balancer statistics."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelLoadBalancerStats(BaseModel):
@@ -39,4 +39,4 @@ class ModelLoadBalancerStats(BaseModel):
         description="Total number of operations processed",
     )
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)

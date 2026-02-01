@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > ModelAction Typed Payloads
+
 # ModelAction Typed Payloads
 
 **Issue**: OMN-1008 - Replace `dict[str, Any]` in ModelAction with typed payloads

@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2025 OmniNode Team
 """
 Handler Routing Subcontract Model.
 
@@ -40,11 +38,12 @@ Key Invariant:
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from typing import ClassVar, Literal
+from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_handler_routing_strategy import EnumHandlerRoutingStrategy
 from omnibase_core.models.contracts.subcontracts.model_handler_routing_entry import (
     ModelHandlerRoutingEntry,
 )
@@ -99,7 +98,7 @@ class ModelHandlerRoutingSubcontract(BaseModel):
         ...     ],
         ...     default_handler="handle_fallback"
         ... )
-        >>> subcontract.routing_strategy
+        >>> subcontract.routing_strategy.value
         'payload_type_match'
         >>> len(subcontract.handlers)
         1
@@ -123,18 +122,9 @@ class ModelHandlerRoutingSubcontract(BaseModel):
         description="Model version (MUST be provided in YAML contract)",
     )
 
-    routing_strategy: Literal[
-        "payload_type_match",
-        "operation_match",
-        "topic_pattern",
-    ] = Field(
-        default="payload_type_match",
-        description=(
-            "Strategy for matching messages to handlers. "
-            "payload_type_match: Route by event model class name (orchestrators). "
-            "operation_match: Route by operation field (effects). "
-            "topic_pattern: Route by topic glob pattern matching (first-match-wins)"
-        ),
+    routing_strategy: EnumHandlerRoutingStrategy = Field(
+        default=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
+        description="Strategy for routing events to handlers",
     )
 
     handlers: list[ModelHandlerRoutingEntry] = Field(
@@ -182,7 +172,7 @@ class ModelHandlerRoutingSubcontract(BaseModel):
             )
 
         # Validate routing keys are unique (deterministic routing requirement)
-        routing_keys: list[str] = []
+        routing_keys: set[str] = set()
         for entry in self.handlers:
             if entry.routing_key in routing_keys:
                 raise ModelOnexError(
@@ -196,9 +186,103 @@ class ModelHandlerRoutingSubcontract(BaseModel):
                     # Domain-specific context for debugging
                     handler_key=entry.handler_key,
                 )
-            routing_keys.append(entry.routing_key)
+            routing_keys.add(entry.routing_key)
 
         return self
+
+    @model_validator(mode="after")
+    def validate_no_duplicate_handler_keys(self) -> Self:
+        """Ensure no duplicate handler_key values in handlers.
+
+        While duplicate handler_keys are technically valid for different routing_keys
+        (same handler can handle multiple event types), having the exact same
+        handler_key multiple times indicates a configuration error.
+
+        Raises:
+            ModelOnexError: If duplicate handler_key values are found.
+        """
+        if not self.handlers:
+            return self
+
+        # O(n) duplicate detection using set
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for h in self.handlers:
+            if h.handler_key in seen:
+                duplicates.add(h.handler_key)
+            seen.add(h.handler_key)
+
+        if duplicates:
+            raise ModelOnexError(
+                message=f"Duplicate handler_key values: {duplicates}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                field="handlers.handler_key",
+                value=list(duplicates),
+                constraint="unique_handler_key",
+            )
+        return self
+
+    def validate_zero_code_requirements(self) -> list[str]:
+        """
+        Validate this routing config meets zero-code contract requirements.
+
+        Zero-code nodes rely entirely on contract configuration for handler
+        dispatch. This method validates that all required configuration is
+        present and internally consistent.
+
+        Returns:
+            List of validation error messages (empty if valid).
+
+        Use Case:
+            Called during node initialization to ensure contract is complete
+            for zero-code dispatch. Errors are raised as ProtocolConfigurationError.
+
+        Example:
+            >>> subcontract = ModelHandlerRoutingSubcontract(
+            ...     version=ModelSemVer(major=1, minor=0, patch=0),
+            ...     handlers=[
+            ...         ModelHandlerRoutingEntry(
+            ...             routing_key="EventA",
+            ...             handler_key="handler_a"
+            ...         )
+            ...     ],
+            ...     default_handler="handler_a"
+            ... )
+            >>> subcontract.validate_zero_code_requirements()
+            []
+        """
+        errors: list[str] = []
+
+        # Rule 1: default_handler required
+        if not self.default_handler:
+            errors.append("default_handler is required for contract-driven dispatch")
+
+        # Rule 2: handlers non-empty
+        if not self.handlers:
+            errors.append("handlers[] cannot be empty when handler_routing is declared")
+
+        # Rule 3: default_handler must exist in handlers
+        if self.default_handler and self.handlers:
+            handler_keys = {h.handler_key for h in self.handlers}
+            if self.default_handler not in handler_keys:
+                errors.append(
+                    f"default_handler '{self.default_handler}' not found in handlers[]. "
+                    f"Available: {sorted(handler_keys)}"
+                )
+
+        # Rule 4: No duplicate handler_key (already validated by model_validator,
+        # but included here for completeness when called on existing instances)
+        if self.handlers:
+            seen: set[str] = set()
+            duplicates: set[str] = set()
+            for h in self.handlers:
+                if h.handler_key in seen:
+                    duplicates.add(h.handler_key)
+                seen.add(h.handler_key)
+            if duplicates:
+                errors.append(f"Duplicate handler_key values: {duplicates}")
+
+        return errors
 
     def build_routing_table(self) -> dict[str, list[str]]:
         """

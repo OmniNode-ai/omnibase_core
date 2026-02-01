@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > CI > Performance Benchmark CI Integration Guide
+
 # Performance Benchmark CI Integration Guide
 
 **Purpose**: Comprehensive guide for integrating performance benchmarks into CI pipeline with threshold enforcement and regression detection

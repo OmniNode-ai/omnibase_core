@@ -9,9 +9,12 @@ from pydantic import BaseModel, ConfigDict, StringConstraints
 
 
 class ModelSourceRepository(BaseModel):
-    """Immutable source repository information."""
+    """Immutable source repository information.
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    This model is frozen and hashable, suitable for use as dict keys or in sets.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     url: str | None = None
     commit_hash: (

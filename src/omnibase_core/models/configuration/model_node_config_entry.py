@@ -1,10 +1,10 @@
 """Model for node configuration entry."""
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.configuration.model_config_types import (
     VALID_VALUE_TYPES,
-    ConfigValue,
+    ScalarConfigValue,
     validate_config_value_type,
 )
 
@@ -30,12 +30,12 @@ class ModelNodeConfigEntry(BaseModel):
         ...,
         description="Type name of the value ('int', 'float', 'bool', 'str')",
     )
-    default: ConfigValue = Field(
+    default: ScalarConfigValue = Field(
         ...,
         description="Default value for this configuration",
     )
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @model_validator(mode="after")
     def validate_default_type(self) -> "ModelNodeConfigEntry":

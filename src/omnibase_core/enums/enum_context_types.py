@@ -1,10 +1,12 @@
-# Enum for context types
-# DO NOT EDIT MANUALLY - regenerate using enum generation tools
+"""Context types for execution environment values."""
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumContextTypes(str, Enum):
+@unique
+class EnumContextTypes(StrValueHelper, str, Enum):
     """Enum for context types used in execution."""
 
     CONTEXT = "context"
@@ -12,3 +14,6 @@ class EnumContextTypes(str, Enum):
     ENVIRONMENT = "environment"
     CONFIGURATION = "configuration"
     RUNTIME = "runtime"
+
+
+__all__ = ["EnumContextTypes"]

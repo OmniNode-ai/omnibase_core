@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Quality > Documentation Validation Report
+
 # Documentation Validation Report - omnibase_core
 
 **Status**: ✅ Available

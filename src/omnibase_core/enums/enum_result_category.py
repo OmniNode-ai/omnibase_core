@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Result category enumeration for CLI operations.
 
@@ -7,12 +5,15 @@ Defines the different categories of CLI result data.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumResultCategory(str, Enum):
+class EnumResultCategory(StrValueHelper, str, Enum):
     """
     Strongly typed result category for CLI operations.
 
@@ -30,10 +31,6 @@ class EnumResultCategory(str, Enum):
     VALIDATION = "validation"  # Validation result
     CONFIGURATION = "configuration"  # Configuration-related result
     AUDIT = "audit"  # Audit trail result
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_error_level(cls, category: EnumResultCategory) -> bool:

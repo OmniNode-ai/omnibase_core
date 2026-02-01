@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Context models for typed Generic[TContext] patterns.
 
 This module provides reusable typed context models for use as type parameters

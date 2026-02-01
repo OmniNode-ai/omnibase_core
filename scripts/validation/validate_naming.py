@@ -114,6 +114,7 @@ class NamingConventionValidator:
     # Exception patterns - classes that don't need to follow strict naming
     EXCEPTION_PATTERNS = [
         r"^_.*",  # Private classes
+        r"^Checker.*",  # Checker/validator utility classes (e.g., CheckerEnumMemberCasing)
         r".*Test$",  # Test classes
         r".*TestCase$",  # Test case classes
         r"^Test.*",  # Test classes
@@ -162,20 +163,25 @@ class NamingConventionValidator:
             "ContractHashRegistry",  # Registry service for contract hash management
             "ContractDiffComputer",  # Utility class for computing contract diffs (OMN-1148)
         ],
-        # REPLAY INFRASTRUCTURE: Effect recorder for deterministic replay
+        # REPLAY INFRASTRUCTURE: Replay executor and session for deterministic replay
         # Location: pipeline/replay/ - Replay infrastructure utilities
-        # Rationale: RecorderEffect is a utility class that records/replays effects,
-        #            not a Node implementation. The "Effect" suffix indicates the domain
-        #            (effect handling), not that it's a Node type (OMN-1116)
+        # Rationale: ExecutorReplay and ReplaySession are replay infrastructure classes.
+        #            They coordinate replay execution, not Node implementations.
+        #            Note: ServiceEffectRecorder is now in services/replay/ (OMN-1298)
         "pipeline/replay/": [
-            "RecorderEffect",  # Utility class for effect recording/replay
+            # ExecutorReplay, ReplaySession - no exemptions needed (correct naming)
         ],
-        # HANDLER INFRASTRUCTURE: Handler implementations for ONEX runtime
-        # Location: runtime/handlers/ - Handler implementations for EnvelopeRouter
+        # HANDLER INFRASTRUCTURE: Handler implementations for ONEX runtime and pipeline
+        # Location: runtime/handlers/ and pipeline/handlers/ - Handler implementations
         # Rationale: Handlers implement ProtocolHandler and use Handler* prefix (e.g., HandlerLocal, HandlerHttp)
         #            They are not "Services" in the ONEX architecture but runtime execution units.
+        #            Pipeline handlers (HandlerCapabilityCaching, HandlerCapabilityMetrics) provide
+        #            reusable pipeline capabilities following the same Handler* naming pattern.
         "runtime/handlers/": [
             "Handler*",  # All Handler* classes in handlers/ directory
+        ],
+        "pipeline/handlers/": [
+            "Handler*",  # All Handler* classes (HandlerCapabilityCaching, HandlerCapabilityMetrics)
         ],
         # UTILITY CLASSES: Utility/helper classes in utils/
         # Location: utils/ - Utility functions and helper classes
@@ -202,6 +208,11 @@ class NamingConventionValidator:
         #            The Protocol interface for this is ProtocolPatchValidator in validator_protocol_patch.py
         #            ContractValidationInvariantChecker is a concrete implementation (OMN-1146),
         #            not a Protocol. The Protocol interface is ProtocolContractValidationInvariantChecker.
+        #            Validator* classes (ValidatorAnyType, ValidatorContractLinter, etc.) are
+        #            concrete validator implementations in the validation framework (OMN-1291).
+        #            *Visitor classes (AnyTypeVisitor, etc.) are AST visitors for code analysis.
+        #            The heuristics flag "type" as Enum indicator and "contract" as Protocol
+        #            indicator, but these are validation infrastructure classes.
         "validation/": [
             "ContractPatchValidator",  # Validator for contract patches (OMN-1126)
             "ContractValidationInvariantChecker",  # Invariant checker implementation (OMN-1146)
@@ -209,6 +220,10 @@ class NamingConventionValidator:
             "ExpandedContractValidator",  # Expanded contract validator (OMN-1128)
             "ExpandedContractGraphValidator",  # Multi-contract graph validator (OMN-1128)
             "MergeValidator",  # Merge phase validator (OMN-1128)
+            "Validator*",  # All Validator* classes (ValidatorAnyType, ValidatorContractLinter, etc.) (OMN-1291)
+            "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for AST analysis (OMN-1311)
+            "*Visitor",  # All *Visitor classes (AnyTypeVisitor, etc.) for AST analysis (OMN-1291)
+            "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for code analysis (OMN-1308)
         ],
         # MERGE INFRASTRUCTURE: Contract merge engine for typed contract merging
         # Location: merge/ - Contract merge framework implementations
@@ -222,25 +237,14 @@ class NamingConventionValidator:
         # REPLAY INFRASTRUCTURE: Deterministic replay utilities for testing and debugging
         # Location: services/replay/ - Replay infrastructure services (injectors/recorders)
         # Rationale: These classes provide deterministic replay capabilities (OMN-1116, OMN-1205).
-        #            RecorderEffect, InjectorTime, InjectorRNG are passive observers and injection
-        #            mechanisms - NOT nodes. The heuristic flags "effect" as a Node indicator, but
-        #            RecorderEffect RECORDS effects, it doesn't PERFORM them as a node would.
-        #            Nodes are addressable graph vertices with contracts and dispatch semantics.
-        #            Recorders and injectors are lifecycle-bound utilities for side-effect capture.
+        #            ServiceEffectRecorder, ServiceTimeInjector, ServiceRNGInjector follow the
+        #            Service* prefix convention and no longer require exemptions.
+        #            Note: Empty list kept for documentation purposes.
         "services/replay/": [
-            "RecorderEffect",  # Effect recording for deterministic replay (OMN-1116)
-            "InjectorTime",  # Time injection for deterministic replay (OMN-1116)
-            "InjectorRNG",  # RNG injection for deterministic replay (OMN-1116)
+            # No exemptions needed - all classes now use Service* prefix (OMN-1298)
         ],
-        # REPLAY INFRASTRUCTURE: Effect replay execution for deterministic testing
-        # Location: pipeline/replay/ - Replay execution and session management
-        # Rationale: ExecutorReplay and SessionReplay handle replay execution and session state.
-        #            The heuristic flags "effect" as a Node indicator, but these are replay
-        #            infrastructure classes that EXECUTE replays, not node implementations.
-        "pipeline/replay/": [
-            "ExecutorReplay",  # Replay executor for effect playback (OMN-1116)
-            "SessionReplay",  # Replay session manager (OMN-1116)
-        ],
+        # Note: Duplicate "pipeline/replay/" entry removed - consolidated above (OMN-1298)
+        # ExecutorReplay and ReplaySession follow correct naming patterns and don't need exemptions.
     }
 
     @staticmethod
@@ -269,9 +273,14 @@ class NamingConventionValidator:
             # Check if class matches any exempted pattern
             for pattern in exempted_patterns:
                 if pattern.endswith("*"):
-                    # Wildcard pattern (e.g., "Model*")
+                    # Prefix wildcard pattern (e.g., "Model*")
                     prefix = pattern[:-1]
                     if class_name.startswith(prefix):
+                        return True
+                elif pattern.startswith("*"):
+                    # Suffix wildcard pattern (e.g., "*Visitor")
+                    suffix = pattern[1:]
+                    if class_name.endswith(suffix):
                         return True
                 elif class_name == pattern:
                     # Exact match

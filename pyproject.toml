@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "omnibase_core"
-version = "0.6.4"
+version = "0.11.0"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode Team", email = "team@omninode.ai"}
@@ -34,18 +34,13 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.11.7,<3.0.0",
-    "llama-index>=0.14.0,<0.15.0",
-    "pypdf>=6.1.0,<7.0.0",
-    "fastapi>=0.120.1,<0.121.0",
-    "starlette>=0.49.1,<0.50.0",
-    "uvicorn>=0.32.0,<0.33.0",
     "pyyaml>=6.0.2,<7.0.0",
     "dependency-injector>=4.48.1,<5.0.0",
     "deepdiff>=8.0.0,<9.0.0",
     "click>=8.1.0,<9.0.0",
-    "rich>=13.7.0,<14.0.0",
     "cryptography>=46.0.3,<47.0.0",
-    "jsonschema>=4.25.1,<5.0.0"
+    "jsonschema>=4.25.1,<5.0.0",
+    "httpx>=0.27.0,<1.0.0"
 ]
 
 [project.urls]
@@ -81,21 +76,16 @@ include = [
 python = "^3.12"
 # NOTE: omnibase-spi removed in v0.3.6 - SPI now depends on Core (dependency inversion)
 pydantic = "^2.12.5"
-llama-index = "^0.14.10"  # Updated for pypdf 6.0+ security fix (CVE-2025-55197)
-pypdf = "^6.5.0"  # Security fix for CVE-2025-55197
-fastapi = "^0.120.1"  # Updated to 0.120.1+ for starlette 0.49.x compatibility
-starlette = "^0.49.1"  # Security fix for CVE-2025-62727 (O(n^2) DoS via Range header)
-uvicorn = "^0.32.0"
 pyyaml = "^6.0.2"
 dependency-injector = "^4.48.3"
 deepdiff = "^8.0.0"
+httpx = "^0.27.0"  # HTTP client for handler_local.py
 
 # CLI Dependencies
 click = "^8.3.1"
-rich = "^13.7.0"
 
 # Optional CLI Dependencies
-psutil = {version = "^7.1.3", optional = true}
+psutil = {version = "^7.2.1", optional = true}
 
 # Optional Metrics Dependencies
 prometheus-client = {version = ">=0.21.0,<1.0.0", optional = true}
@@ -107,12 +97,11 @@ redis = {version = "^5.0.0", optional = true}
 pytest = "^8.4.0"
 pytest-asyncio = "^1.3.0"
 mypy = "^1.19.1"
-pyright = "^1.1.390"
-ruff = "^0.14.7"
+pyright = "^1.1.408"
+ruff = "^0.14.13"
 types-pyyaml = "^6.0.12.20250822"
 pre-commit = "^4.5.1"
 types-requests = "^2.32.4.20250913"
-memory-profiler = "^0.61.0"
 pyyaml = "^6.0.3"
 pytest-cov = "^7.0.0"
 pytest-xdist = "^3.8.0"
@@ -121,9 +110,10 @@ pytest-timeout = "^2.4.0"
 pytest-rerunfailures = "^16.1"
 pytest-testmon = "^2.2.0"
 interrogate = "^1.7.0"
-hypothesis = "^6.148"
-psutil = "^7.1.3"
+hypothesis = "^6.150"
+psutil = "^7.2.1"
 prometheus-client = ">=0.21.0,<1.0.0"  # For testing BackendMetricsPrometheus
+types-psutil = "^7.2.1.20260116"
 
 [tool.ruff]
 target-version = "py312"
@@ -252,16 +242,12 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/validation/test_timeout_compatibility.py" = ["I001"]  # Import sorting conflicts with isort
-"tests/unit/validation/test_protocol_compliance.py" = ["I001"]  # Import sorting conflicts with isort
 "tests/unit/validation/test_yaml_allowlist.py" = ["DTZ007"]  # Date format validation without timezone
-"src/omnibase_core/mixins/mixin_event_bus.py" = ["I001"]  # Import order conflicts with import semantics
-"src/omnibase_core/mixins/mixin_event_handler.py" = ["I001"]  # Import order conflicts with import semantics
-"src/omnibase_core/mixins/mixin_discovery_responder.py" = ["I001"]  # Import sorting skipped by isort - sync with isort skip list
+# Circular dependency workarounds - see OMN-1261 for Dual-Import Pattern documentation
+# These files require specific import orderings to break circular dependency chains
 "src/omnibase_core/mixins/__init__.py" = ["I001"]  # Import order to avoid circular dependencies
 "src/omnibase_core/infrastructure/node_base.py" = ["I001"]  # Import order to avoid circular dependencies
-"src/omnibase_core/models/container/model_onex_container.py" = ["I001"]  # Import order to avoid circular dependencies
-"src/omnibase_core/types/constraints.py" = ["I001"]  # Import order to avoid circular dependencies (lazy imports)
+"src/omnibase_core/models/container/model_onex_container.py" = ["I001"]  # Dual-Import Pattern (OMN-1261)
 
 [tool.mypy]
 # Strict mode enables: warn_return_any, warn_unused_configs, disallow_untyped_defs,
@@ -273,6 +259,11 @@ python_version = "3.12"
 mypy_path = "src"
 namespace_packages = true
 explicit_package_bases = true
+
+# Third-party libraries without type stubs
+[[tool.mypy.overrides]]
+module = "jsonpath_ng.*"
+ignore_missing_imports = true
 
 [tool.pydantic-mypy]
 init_forbid_extra = true

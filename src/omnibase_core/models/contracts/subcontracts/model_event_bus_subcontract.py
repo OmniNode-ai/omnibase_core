@@ -18,12 +18,16 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.constants import KAFKA_REQUEST_TIMEOUT_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.contracts.subcontracts.model_request_response_config import (
+    ModelRequestResponseConfig,
+)
+from omnibase_core.models.contracts.subcontracts.model_topic_meta import ModelTopicMeta
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -198,6 +202,47 @@ class ModelEventBusSubcontract(BaseModel):
         ],
         description="Default event patterns if no other patterns can be determined",
     )
+
+    # Topic-based routing configuration (OMN-1537)
+    publish_topics: list[str] = Field(
+        default_factory=list,
+        description="Topic suffixes this node publishes to. Format: onex.{kind}.{producer}.{event-name}.v{n}",
+    )
+
+    subscribe_topics: list[str] = Field(
+        default_factory=list,
+        description="Topic suffixes this node subscribes to. Format: onex.{kind}.{producer}.{event-name}.v{n}",
+    )
+
+    # Extension path for future schema_ref support
+    publish_topic_metadata: dict[str, ModelTopicMeta] | None = Field(
+        default=None,
+        description="Optional metadata per publish topic suffix (keyed by suffix string)",
+    )
+
+    subscribe_topic_metadata: dict[str, ModelTopicMeta] | None = Field(
+        default=None,
+        description="Optional metadata per subscribe topic suffix (keyed by suffix string)",
+    )
+
+    # Request-response pattern configuration (OMN-1760)
+    request_response: ModelRequestResponseConfig | None = Field(
+        default=None,
+        description="Request-response pattern configuration for RPC-style Kafka communication",
+    )
+
+    @field_validator("publish_topics", "subscribe_topics", mode="after")
+    @classmethod
+    def validate_topic_suffixes(cls, topics: list[str]) -> list[str]:
+        """Validate each topic suffix against ONEX naming convention."""
+        # Import here to avoid circular import at module load time
+        from omnibase_core.validation import validate_topic_suffix
+
+        for topic in topics:
+            result = validate_topic_suffix(topic)
+            if not result.is_valid:
+                raise ValueError(f"Invalid topic suffix '{topic}': {result.error}")
+        return topics
 
     @model_validator(mode="after")
     def validate_event_bus_configuration(self) -> "ModelEventBusSubcontract":

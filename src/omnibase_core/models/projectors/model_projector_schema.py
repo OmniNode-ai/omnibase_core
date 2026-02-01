@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Projector Schema Model.
 
@@ -147,9 +144,12 @@ class ModelProjectorSchema(BaseModel):
         description="Target database table name for the projection",
     )
 
-    primary_key: str = Field(
+    primary_key: str | list[str] = Field(
         ...,
-        description="Column name to use as the primary key",
+        description=(
+            "Column name(s) to use as the primary key. Can be a single column name "
+            "(str) or a list of column names for composite primary keys."
+        ),
     )
 
     columns: list[ModelProjectorColumn] = Field(
@@ -174,15 +174,25 @@ class ModelProjectorSchema(BaseModel):
 
     @model_validator(mode="after")
     def validate_primary_key_exists_in_columns(self) -> Self:
-        """Validate that primary_key refers to an existing column.
+        """Validate that primary_key refers to existing column(s).
+
+        Supports both single column primary keys (str) and composite
+        primary keys (list[str]).
 
         Raises:
-            ValueError: If primary_key does not match any column name.
+            ValueError: If any primary_key column does not match a column name.
         """
         column_names = {col.name for col in self.columns}
-        if self.primary_key not in column_names:
+        # Normalize to list for uniform handling
+        pk_columns = (
+            [self.primary_key]
+            if isinstance(self.primary_key, str)
+            else self.primary_key
+        )
+        missing = [col for col in pk_columns if col not in column_names]
+        if missing:
             raise ValueError(
-                f"primary_key '{self.primary_key}' must reference an existing column. "
+                f"primary_key column(s) {missing} must reference existing columns. "
                 f"Available columns: {sorted(column_names)}"
             )
         return self
@@ -260,12 +270,18 @@ class ModelProjectorSchema(BaseModel):
         """Return hash value for the schema.
 
         Custom implementation to support hashing with list fields.
-        Converts columns and indexes lists to tuples for hashing.
+        Converts columns, indexes, and primary_key lists to tuples for hashing.
         """
+        # Normalize primary_key to tuple for hashing
+        pk_tuple = (
+            (self.primary_key,)
+            if isinstance(self.primary_key, str)
+            else tuple(self.primary_key)
+        )
         return hash(
             (
                 self.table,
-                self.primary_key,
+                pk_tuple,
                 tuple(self.columns),
                 tuple(self.indexes),
                 self.version,

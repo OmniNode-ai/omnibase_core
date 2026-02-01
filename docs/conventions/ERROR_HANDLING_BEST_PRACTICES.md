@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../INDEX.md) > Conventions > Error Handling Best Practices
+
 # ONEX Error Handling Best Practices
 
 ## Overview
@@ -454,6 +456,111 @@ raise UnsupportedCapabilityError(
 - Support arbitrary `**context` kwargs for additional debugging information
 - Serializable for event bus and logging integration
 - Default error codes from `EnumCoreErrorCode` (e.g., `ADAPTER_BINDING_ERROR`)
+
+### Centralized Exception Groups
+
+ONEX provides centralized exception type tuples for consistent error handling across the codebase. These groups are defined in `omnibase_core.errors.exception_groups` and should be used instead of ad-hoc exception tuples.
+
+**Import and Usage**:
+
+```python
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS, PYDANTIC_MODEL_ERRORS
+
+try:
+    result = model.model_validate(data)
+except PYDANTIC_MODEL_ERRORS as e:
+    # Handle validation errors consistently
+    logger.warning(f"Validation failed: {e}")
+```
+
+**Available Exception Groups**:
+
+| Group | Exceptions | Use Case |
+|-------|-----------|----------|
+| `VALIDATION_ERRORS` | `TypeError`, `ValidationError`, `ValueError` | Type checking, value validation |
+| `PYDANTIC_MODEL_ERRORS` | `AttributeError`, `TypeError`, `ValidationError`, `ValueError` | `model_validate()`, `model_dump()`, field access |
+| `ATTRIBUTE_ACCESS_ERRORS` | `AttributeError`, `IndexError`, `KeyError`, `TypeError` | Dict keys, object attributes, list indices |
+| `YAML_PARSING_ERRORS` | `ValidationError`, `ValueError`, `yaml.YAMLError` | YAML config/contract parsing |
+| `JSON_PARSING_ERRORS` | `json.JSONDecodeError`, `TypeError`, `ValidationError`, `ValueError` | JSON data/API response parsing |
+| `FILE_IO_ERRORS` | `FileNotFoundError`, `IOError`, `OSError`, `PermissionError` | File read/write operations |
+| `NETWORK_ERRORS` | `ConnectionError`, `OSError`, `TimeoutError` | HTTP requests, socket connections |
+| `ASYNC_ERRORS` | `asyncio.TimeoutError`, `RuntimeError` | Async task failures |
+
+**Exception Tuple Ordering**: All tuples are alphabetically ordered by exception class name for consistency and readability.
+
+```python
+# Correct - alphabetical order
+except (AttributeError, TypeError, ValidationError, ValueError) as e:
+
+# Wrong - not alphabetical
+except (ValueError, TypeError, AttributeError) as e:
+```
+
+#### Async Cancellation Handling
+
+**CRITICAL**: `asyncio.CancelledError` is intentionally NOT included in any exception group. It must be caught separately and **always re-raised** to honor task cancellation semantics:
+
+```python
+try:
+    await async_operation()
+except asyncio.CancelledError:
+    # Perform cleanup if needed
+    await cleanup_resources()
+    raise  # ALWAYS re-raise - never suppress!
+except ASYNC_ERRORS as e:
+    # Handle other async errors
+    logger.error(f"Async operation failed: {e}")
+```
+
+**Why**: Suppressing `CancelledError` breaks Python's cooperative cancellation model and can cause tasks to hang indefinitely during shutdown.
+
+#### Exception Handler Comment Markers
+
+When using catch-all or broad exception handlers, document the intent with standardized markers:
+
+| Marker | When to Use | Example Context |
+|--------|-------------|-----------------|
+| `# fallback-ok:` | Graceful degradation to default values | Config loading, optional features |
+| `# catch-all-ok:` | Boundary handlers that must not crash | API endpoints, CLI entry points |
+| `# cleanup-resilience-ok:` | Cleanup that must complete | Resource release, rollback |
+| `# boundary-ok:` | System/API boundaries | Event handlers, webhooks |
+| `# init-errors-ok:` | Initialization with safe defaults | Service startup, lazy loading |
+| `# tool-resilience-ok:` | Tool/plugin isolation | mypy plugins, linters |
+
+**Usage Examples**:
+
+```python
+# Graceful degradation with explicit marker
+try:
+    config = load_config(path)
+except FILE_IO_ERRORS as e:
+    # fallback-ok: use defaults if config unavailable
+    logger.warning(f"Config not found, using defaults: {e}")
+    config = DEFAULT_CONFIG
+
+# API boundary protection
+@app.post("/api/process")
+async def process_request(data: dict) -> dict:
+    try:
+        return await processor.handle(data)
+    except Exception as e:
+        # boundary-ok: API must return valid JSON response
+        logger.error(f"Processing failed: {e}")
+        return {"error": str(e), "status": "failed"}
+
+# Cleanup resilience
+finally:
+    try:
+        await connection.close()
+    except Exception as e:
+        # cleanup-resilience-ok: must not fail during cleanup
+        logger.warning(f"Connection close failed: {e}")
+```
+
+**Benefits**:
+- **Code Review**: Markers explain intentional catch patterns
+- **Static Analysis**: Tools can verify markers are present
+- **Documentation**: Self-documenting exception handling intent
 
 ## Error Handling Patterns
 
@@ -1704,6 +1811,8 @@ All error handling follows ONEX principles with:
 
 - [Error Code Standards](ERROR_CODE_STANDARDS.md) - Complete error code format specification
 - [Centralized Error Pattern](../../src/omnibase_core/constants/constants_error.py) - Single source of truth for error code validation
+- [Centralized Exception Groups](../../src/omnibase_core/errors/exception_groups.py) - Standardized exception type tuples
+- [Error Handling Decorators](../../src/omnibase_core/decorators/decorator_error_handling.py) - Boilerplate-eliminating decorators
 - [ADR-012: Validator Error Handling](../architecture/adr/ADR-012-VALIDATOR-ERROR-HANDLING.md) - Decision rationale and Pydantic compatibility
 - [Node Building Guide](../guides/node-building/README.md) - Node validation patterns
 - [Reducer Output Model](../../src/omnibase_core/models/reducer/model_reducer_output.py) - Reference implementation

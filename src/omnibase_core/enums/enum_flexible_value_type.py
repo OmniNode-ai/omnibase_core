@@ -1,16 +1,18 @@
-from __future__ import annotations
-
 """
 Flexible Value Type Enum.
 
 Strongly typed enumeration for flexible value type discriminators.
 """
 
+from __future__ import annotations
+
 from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumFlexibleValueType(str, Enum):
+class EnumFlexibleValueType(StrValueHelper, str, Enum):
     """
     Strongly typed flexible value type discriminators.
 
@@ -29,10 +31,6 @@ class EnumFlexibleValueType(str, Enum):
     LIST = "list[Any]"
     UUID = "uuid"
     NONE = "none"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_primitive_type(cls, value_type: EnumFlexibleValueType) -> bool:

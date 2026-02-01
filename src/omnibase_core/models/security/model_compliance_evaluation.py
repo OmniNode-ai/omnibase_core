@@ -4,7 +4,7 @@ Compliance Evaluation Model.
 Compliance evaluation result model for security framework validation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.security.model_security_summaries import (
     ModelComplianceStatusSummary,
@@ -28,11 +28,12 @@ class ModelComplianceEvaluation(BaseModel):
         description="Whether compliance requirements are met",
     )
 
-    model_config = {
-        "extra": "forbid",
-        "frozen": True,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        from_attributes=True,
+        validate_assignment=True,
+    )
 
     def add_violation(self, violation: str) -> "ModelComplianceEvaluation":
         """Add a violation to the evaluation."""

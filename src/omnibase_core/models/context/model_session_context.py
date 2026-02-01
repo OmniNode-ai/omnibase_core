@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """
 Session context model for user request tracking.
 
@@ -130,10 +128,12 @@ class ModelSessionContext(BaseModel):
             try:
                 return UUID(v)
             except ValueError:
+                # error-ok: Pydantic field_validator requires ValueError
                 raise ValueError(
                     f"Invalid UUID string for session_id: '{v}'. "
                     f"Must be a valid UUID format (e.g., '550e8400-e29b-41d4-a716-446655440000')"
                 ) from None
+        # error-ok: Pydantic field_validator requires ValueError
         raise ValueError(f"session_id must be UUID or str, got {type(v).__name__}")
 
     @field_validator("authentication_method", mode="before")
@@ -165,15 +165,19 @@ class ModelSessionContext(BaseModel):
             The validated IP address string, or None if input is None.
 
         Raises:
-            ValueError: If the value is not a valid IPv4 or IPv6 address.
+            ValueError: If the value is not a string or not a valid IPv4 or IPv6 address.
         """
         if v is None:
             return None
+        if not isinstance(v, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(f"client_ip must be a string, got {type(v).__name__}")
         try:
             # ipaddress.ip_address() handles both IPv4 and IPv6
             ip = ipaddress.ip_address(v)
             return str(ip)
         except ValueError as e:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid IP address '{v}': must be a valid IPv4 or IPv6 address"
             ) from e

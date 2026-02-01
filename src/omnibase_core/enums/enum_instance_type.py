@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Instance type enumeration for cloud and service instances.
 
@@ -7,12 +5,15 @@ Provides strongly typed instance type values for connection configurations.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumInstanceType(str, Enum):
+class EnumInstanceType(StrValueHelper, str, Enum):
     """
     Strongly typed instance type for cloud and service configurations.
 
@@ -92,10 +93,6 @@ class EnumInstanceType(str, Enum):
     LARGE = "large"
     XLARGE = "xlarge"
     XXLARGE = "xxlarge"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_aws_instance(cls, instance_type: EnumInstanceType) -> bool:

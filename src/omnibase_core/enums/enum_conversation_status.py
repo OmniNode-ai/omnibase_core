@@ -5,10 +5,13 @@ Defines the status states for conversational RAG sessions
 and conversation lifecycle management.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumConversationStatus(str, Enum):
+@unique
+class EnumConversationStatus(StrValueHelper, str, Enum):
     """
     Conversation status enumeration for session state management.
 
@@ -35,3 +38,6 @@ class EnumConversationStatus(str, Enum):
     INITIALIZED = "initialized"
     STARTING = "starting"
     READY = "ready"
+
+
+__all__ = ["EnumConversationStatus"]

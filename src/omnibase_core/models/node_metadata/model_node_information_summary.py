@@ -7,7 +7,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -43,13 +43,11 @@ class ModelNodeInformationSummary(BaseModel):
     )
     is_fully_configured: bool = Field(description="Whether node is fully configured")
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-    # Export the model
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -104,12 +102,7 @@ class ModelNodeInformationSummary(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 __all__ = ["ModelNodeInformationSummary"]

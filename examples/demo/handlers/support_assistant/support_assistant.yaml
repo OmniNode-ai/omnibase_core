@@ -1,0 +1,141 @@
+---
+# Handler Contract: Support Assistant Demo Handler
+# This handler calls external LLM APIs to generate support responses.
+#
+# IMPORTANT: LLM Behavioral Characteristics
+# -----------------------------------------
+# LLM-based handlers have specific behavioral properties that affect runtime:
+#
+#   - DETERMINISM: FALSE
+#     LLM outputs are inherently non-deterministic. The same input prompt may
+#     produce different responses due to model temperature, sampling strategies,
+#     context window state, and provider-side variations. This handler declares
+#     nondeterministic_effect: true to signal this behavior to the runtime.
+#
+#   - IDEMPOTENCY: FALSE
+#     This handler is NOT idempotent. Multiple invocations with identical inputs
+#     may produce different outputs (different response text, sentiment, etc.).
+#     The descriptor.idempotent: false setting reflects this.
+#
+#   - SIDE EFFECTS: YES (node_archetype: effect)
+#     Makes external network calls to LLM provider APIs.
+#
+# Retry Policy Note:
+#   Retries are enabled for TRANSIENT FAILURES ONLY (network timeouts, 5xx errors).
+#   The runtime should NOT retry on successful API calls that return unexpected content.
+#   Since idempotent=false, retries should use idempotency keys where supported.
+#
+# See: OMN-1201 - Demo Support Assistant Handler
+
+handler_id: effect.demo.support_assistant
+name: Support Assistant Demo Handler
+# Semantic versioning: MAJOR.MINOR.PATCH
+# Consumers should depend on ^1.x (compatible with any 1.x.x version)
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+# Note: LLM responses may vary between invocations due to model temperature,
+# sampling, and provider state - this is inherent to LLM-based handlers.
+description: AI support assistant that responds to user requests with structured JSON output
+
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  # CRITICAL: LLM handlers are NOT idempotent - same input produces different
+  # outputs due to model temperature, sampling, and context window state.
+  # This is fundamental to how LLMs work and cannot be changed.
+  idempotent: false
+  timeout_ms: 30000  # LLM calls can be slow
+  # RETRY POLICY: For transient failures only (network errors, rate limits).
+  # Since idempotent=false, the runtime should:
+  #   1. Only retry on connection/timeout errors (before API processing)
+  #   2. NOT retry on 4xx errors (client errors, may have been processed)
+  #   3. Use idempotency keys if the provider supports them (e.g., OpenAI)
+  retry_policy:
+    enabled: true
+    max_retries: 3
+    backoff_strategy: exponential
+    base_delay_ms: 500
+    max_delay_ms: 15000
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    timeout_ms: 60000
+  concurrency_policy: parallel_ok  # Can handle multiple requests concurrently
+  isolation_policy: none
+  observability_level: standard
+
+capability_inputs:
+  - alias: llm
+    capability: ai.llm.chat
+    requirements:
+      must:
+        # Note: Structured output (JSON mode) and streaming are mutually exclusive
+        # in most LLM providers. This handler requires complete JSON responses,
+        # so streaming is not used even if the provider supports it.
+        supports_structured_output: true
+      prefer:
+        max_latency_ms: 5000
+        # Streaming disabled - incompatible with structured JSON output mode
+        prefer_streaming: false
+    selection_policy: auto_if_unique
+    strict: true
+    description: LLM provider for generating structured JSON support responses (non-streaming)
+
+capability_outputs:
+  - support.response.generated
+  - support.escalation.flagged
+
+input_model: examples.demo.handlers.support_assistant.SupportRequest
+output_model: examples.demo.handlers.support_assistant.SupportResponse
+
+execution_constraints:
+  requires_before: []
+  requires_after: []
+  can_run_parallel: true
+  # CRITICAL: nondeterministic_effect=true signals to the runtime that:
+  #   1. Results cannot be cached based on input alone
+  #   2. Replay/audit logs must capture actual outputs, not recompute them
+  #   3. Testing requires mocking or snapshot-based validation
+  # This is inherent to LLM APIs due to temperature, sampling, and model state.
+  nondeterministic_effect: true
+
+supports_lifecycle: true
+supports_health_check: true
+supports_provisioning: false
+
+tags:
+  - demo
+  - support
+  - llm
+  - effect
+  - ai
+
+metadata:
+  owner: demo-team
+  ticket: OMN-1201
+  sla_tier: demo
+  category: customer-support
+  # Provider-specific configuration
+  # All LLM provider defaults are defined here - handlers read from this contract
+  # Placed in metadata as ModelHandlerContract.metadata allows arbitrary dict[str, Any]
+  provider_config:
+    openai:
+      model_name: "gpt-4o"
+      temperature: 0.7
+      max_tokens: 500
+      api_key_env: "OPENAI_API_KEY"
+    anthropic:
+      model_name: "claude-sonnet-4-20250514"
+      temperature: 0.7
+      max_tokens: 500
+      api_key_env: "ANTHROPIC_API_KEY"
+    local:
+      model_name: "qwen2.5-coder-14b"
+      temperature: 0.7
+      max_tokens: 500
+      # Environment variable for local endpoint - NOT hardcoded LAN IPs
+      endpoint_env: "LOCAL_LLM_ENDPOINT"
+      # Default endpoint if env var not set (localhost for dev)
+      default_endpoint: "http://localhost:8000"

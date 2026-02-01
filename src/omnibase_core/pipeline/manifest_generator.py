@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Manifest Generator for Pipeline Observability.
 
@@ -15,10 +12,12 @@ what ran, why it ran, in what order, and what it produced.
 """
 
 import warnings
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID, uuid4
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_activation_reason import EnumActivationReason
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
@@ -131,6 +130,7 @@ class ManifestGenerator:
         "_intents",
         "_manifest_id",
         "_node_identity",
+        "_on_manifest_built",
         "_ordering_policy",
         "_ordering_rationale",
         "_parent_manifest_id",
@@ -149,6 +149,8 @@ class ManifestGenerator:
         contract_identity: ModelContractIdentity,
         correlation_id: UUID | None = None,
         parent_manifest_id: UUID | None = None,
+        on_manifest_built: list[Callable[["ModelExecutionManifest"], None]]
+        | None = None,
     ) -> None:
         """
         Initialize the manifest generator.
@@ -158,6 +160,13 @@ class ManifestGenerator:
             contract_identity: Identity of the driving contract
             correlation_id: Optional correlation ID for distributed tracing
             parent_manifest_id: Parent manifest ID if nested execution
+            on_manifest_built: Optional list of callbacks invoked when manifest is built.
+                Each callback receives the completed ModelExecutionManifest.
+                Callbacks are invoked synchronously after build() completes.
+                Exceptions in callbacks are caught and logged as warnings.
+
+        .. versionchanged:: 0.5.0
+            Added ``on_manifest_built`` parameter for corpus capture integration (OMN-1203)
         """
         self._manifest_id = uuid4()
         self._started_at = datetime.now(UTC)
@@ -165,6 +174,9 @@ class ManifestGenerator:
         self._contract_identity = contract_identity
         self._correlation_id = correlation_id
         self._parent_manifest_id = parent_manifest_id
+        self._on_manifest_built: list[Callable[[ModelExecutionManifest], None]] = (
+            list(on_manifest_built) if on_manifest_built else []
+        )
 
         # Accumulators for activation
         self._activated_capabilities: list[ModelCapabilityActivation] = []
@@ -203,8 +215,38 @@ class ManifestGenerator:
         """Get the start timestamp."""
         return self._started_at
 
+    # === Callback Registration ===
+
+    def register_on_build_callback(
+        self,
+        callback: Callable[["ModelExecutionManifest"], None],
+    ) -> None:
+        """
+        Register a callback to be invoked when the manifest is built.
+
+        Callbacks are invoked synchronously after ``build()`` creates the manifest.
+        Multiple callbacks are invoked in registration order. Exceptions in
+        callbacks are caught and logged as warnings (they do not prevent
+        subsequent callbacks or the return of the manifest).
+
+        Args:
+            callback: A callable that receives the completed ModelExecutionManifest.
+                The callback should not modify the manifest (it's frozen/immutable).
+
+        Example:
+            >>> def capture_manifest(manifest: ModelExecutionManifest) -> None:
+            ...     corpus_service.capture(manifest)
+            >>>
+            >>> generator.register_on_build_callback(capture_manifest)
+
+        .. versionadded:: 0.5.0
+            Added for corpus capture integration (OMN-1203)
+        """
+        self._on_manifest_built.append(callback)
+
     # === Activation Recording ===
 
+    @standard_error_handling("Capability activation recording")
     def record_capability_activation(
         self,
         capability_name: str,
@@ -247,6 +289,7 @@ class ManifestGenerator:
 
     # === Ordering Recording ===
 
+    @standard_error_handling("Execution ordering recording")
     def record_ordering(
         self,
         phases: list[str],
@@ -271,6 +314,7 @@ class ManifestGenerator:
         self._ordering_policy = ordering_policy
         self._ordering_rationale = ordering_rationale
 
+    @standard_error_handling("Dependency edge addition")
     def add_dependency_edge(
         self,
         from_handler_id: str,  # string-id-ok: user-facing handler identifier
@@ -297,6 +341,7 @@ class ManifestGenerator:
 
     # === Hook Execution Recording ===
 
+    @standard_error_handling("Hook execution start")
     def start_hook(
         self,
         hook_id: str,  # string-id-ok: user-facing hook identifier
@@ -324,6 +369,7 @@ class ManifestGenerator:
         )
         self._pending_hooks[hook_id] = trace
 
+    @standard_error_handling("Hook execution completion")
     def complete_hook(
         self,
         hook_id: str,  # string-id-ok: user-facing hook identifier
@@ -399,6 +445,7 @@ class ManifestGenerator:
 
     # === Emission Recording ===
 
+    @standard_error_handling("Emission recording")
     def record_emission(
         self,
         emission_type: Literal["event", "intent", "projection", "action"],
@@ -439,6 +486,7 @@ class ManifestGenerator:
 
     # === Failure Recording ===
 
+    @standard_error_handling("Failure recording")
     def record_failure(
         self,
         error_code: str,
@@ -472,6 +520,7 @@ class ManifestGenerator:
 
     # === Metrics Recording ===
 
+    @standard_error_handling("Phase duration recording")
     def record_phase_duration(self, phase: str, duration_ms: float) -> None:
         """
         Record duration for a phase.
@@ -638,7 +687,7 @@ class ManifestGenerator:
             handler_durations_ms=handler_durations,
         )
 
-        return ModelExecutionManifest(
+        manifest = ModelExecutionManifest(
             manifest_id=self._manifest_id,
             created_at=self._started_at,
             node_identity=self._node_identity,
@@ -652,6 +701,21 @@ class ManifestGenerator:
             correlation_id=self._correlation_id,
             parent_manifest_id=self._parent_manifest_id,
         )
+
+        # Invoke on_manifest_built callbacks (OMN-1203: corpus capture hook)
+        # Snapshot the list to prevent modification during iteration
+        for callback in list(self._on_manifest_built):
+            try:
+                callback(manifest)
+            except Exception as e:
+                # callback-resilience-ok: callbacks must not crash manifest build
+                warnings.warn(
+                    f"on_manifest_built callback failed: {e!r}. "
+                    "Manifest was built successfully but callback raised an exception.",
+                    stacklevel=2,
+                )
+
+        return manifest
 
 
 # Export for use

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Container DI Design
+
 # Container Dependency Injection Design
 
 **Version:** 1.1.0

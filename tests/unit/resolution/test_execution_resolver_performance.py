@@ -38,6 +38,7 @@ from omnibase_core.models.contracts.model_execution_profile import (
     ModelExecutionProfile,
 )
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
 from omnibase_core.resolution import ExecutionResolver
 
@@ -124,8 +125,8 @@ def _create_contract(
     return ModelHandlerContract(
         handler_id=handler_id,
         name=f"Handler {handler_id}",
-        version="1.0.0",
-        descriptor=ModelHandlerBehavior(handler_kind="compute"),
+        contract_version=ModelSemVer(major=1, minor=0, patch=0),
+        descriptor=ModelHandlerBehavior(node_archetype="compute"),
         input_model="test.Input",
         output_model="test.Output",
         execution_constraints=constraints,

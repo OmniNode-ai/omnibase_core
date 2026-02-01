@@ -10,6 +10,9 @@ Import validation models directly when needed:
 
 # Only import non-circular models (Pydantic models that don't import from validation)
 # Contract validation event model (OMN-1146)
+# Violation baseline models (OMN-1774)
+from .model_baseline_generator import ModelBaselineGenerator
+from .model_baseline_violation import ModelBaselineViolation
 from .model_contract_validation_event import (
     ContractValidationEventType,
     ModelContractValidationEvent,
@@ -26,12 +29,38 @@ from .model_execution_shape_validation import ModelExecutionShapeValidation
 from .model_isolated_step_result import ModelIsolatedStepResult
 from .model_lint_statistics import ModelLintStatistics
 from .model_migration_conflict_union import ModelMigrationConflictUnion
+from .model_rule_configs import (
+    ModelRuleConfigBase,
+    ModelRuleContractSchemaConfig,
+    ModelRuleErrorTaxonomyConfig,
+    ModelRuleForbiddenImportsConfig,
+    ModelRuleRepoBoundariesConfig,
+    ModelRuleTopicNamingConfig,
+)
 from .model_shape_validation_result import ModelShapeValidationResult
+
+# Topic suffix validation models (OMN-1537)
+from .model_topic_suffix_parts import (
+    TOPIC_KIND_CMD,
+    TOPIC_KIND_DLQ,
+    TOPIC_KIND_EVT,
+    TOPIC_KIND_INTENT,
+    TOPIC_KIND_SNAPSHOT,
+    VALID_TOPIC_KINDS,
+    ModelTopicSuffixParts,
+)
+from .model_topic_validation_result import ModelTopicValidationResult
 from .model_unique_name_result import ModelUniqueNameResult
 from .model_validation_base import ModelValidationBase
 from .model_validation_container import ModelValidationContainer
+
+# Cross-repo validation models (OMN-1771)
+from .model_validation_discovery_config import ModelValidationDiscoveryConfig
 from .model_validation_error import ModelValidationError
+from .model_validation_policy_contract import ModelValidationPolicyContract
 from .model_validation_value import ModelValidationValue
+from .model_violation_baseline import ModelViolationBaseline
+from .model_violation_waiver import ModelViolationWaiver
 from .model_workflow_validation_result import ModelWorkflowValidationResult
 
 # Note: Other validation models (ModelAuditResult, DuplicationInfo, ProtocolSignatureExtractor, etc.)
@@ -41,6 +70,20 @@ __all__ = [
     # Contract validation event model (OMN-1146)
     "ContractValidationEventType",
     "ModelContractValidationEvent",
+    # Cross-repo validation models (OMN-1771)
+    "ModelValidationDiscoveryConfig",
+    "ModelRuleConfigBase",
+    "ModelRuleContractSchemaConfig",
+    "ModelRuleErrorTaxonomyConfig",
+    "ModelRuleForbiddenImportsConfig",
+    "ModelRuleRepoBoundariesConfig",
+    "ModelRuleTopicNamingConfig",
+    "ModelValidationPolicyContract",
+    # Violation baseline models (OMN-1774)
+    "ModelBaselineGenerator",
+    "ModelBaselineViolation",
+    "ModelViolationBaseline",
+    "ModelViolationWaiver",
     # Event destination model (OMN-1151)
     "ModelEventDestination",
     # Pydantic models (safe to import)
@@ -54,6 +97,15 @@ __all__ = [
     "ModelExecutionShape",
     "ModelExecutionShapeValidation",
     "ModelShapeValidationResult",
+    # Topic suffix validation models (OMN-1537)
+    "ModelTopicSuffixParts",
+    "ModelTopicValidationResult",
+    "TOPIC_KIND_CMD",
+    "TOPIC_KIND_DLQ",
+    "TOPIC_KIND_EVT",
+    "TOPIC_KIND_INTENT",
+    "TOPIC_KIND_SNAPSHOT",
+    "VALID_TOPIC_KINDS",
     # Workflow validation models (OMN-176)
     "ModelCycleDetectionResult",
     "ModelDependencyValidationResult",

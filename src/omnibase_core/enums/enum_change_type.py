@@ -1,13 +1,12 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """Enum for change proposal types (OMN-1196)."""
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumChangeType(str, Enum):
+class EnumChangeType(StrValueHelper, str, Enum):
     """
     Types of system changes that can be proposed.
 
@@ -23,10 +22,6 @@ class EnumChangeType(str, Enum):
 
     ENDPOINT_CHANGE = "endpoint_change"
     """Switch provider endpoint URL (e.g., OpenAI -> Azure OpenAI)."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
 
 __all__ = ["EnumChangeType"]

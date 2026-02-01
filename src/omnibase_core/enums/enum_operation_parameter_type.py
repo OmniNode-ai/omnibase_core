@@ -4,10 +4,13 @@ Operation parameter type enumeration.
 Defines types for discriminated union in operation parameters.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumOperationParameterType(str, Enum):
+@unique
+class EnumOperationParameterType(StrValueHelper, str, Enum):
     """Operation parameter type enumeration for discriminated unions."""
 
     STRING = "string"

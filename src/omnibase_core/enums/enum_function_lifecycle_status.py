@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Function EnumLifecycle Status Enumeration - Unified Hierarchy Version.
 
@@ -8,14 +6,17 @@ on function/component lifecycle states rather than execution states, providing
 clear separation from execution-oriented enums.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 from .enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumFunctionLifecycleStatus(str, Enum):
+class EnumFunctionLifecycleStatus(StrValueHelper, str, Enum):
     """
     Function lifecycle status enumeration for component lifecycle management.
 
@@ -48,10 +49,6 @@ class EnumFunctionLifecycleStatus(str, Enum):
     STABLE = "stable"  # Production-ready stable version
     BETA = "beta"  # Beta testing phase
     ALPHA = "alpha"  # Alpha testing phase
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     def to_base_status(self) -> EnumBaseStatus:
         """Convert to base status enum for universal operations."""
@@ -146,10 +143,10 @@ class EnumFunctionLifecycleStatus(str, Enum):
         return stability_order.get(status, 0)
 
 
-# Migration compatibility aliases
+# Deprecated: use EnumFunctionLifecycleStatus directly
 # Note: Python enums cannot extend other enums, so we use module-level aliases
-EnumFunctionStatus = EnumFunctionLifecycleStatus
-EnumMetadataNodeStatus = EnumFunctionLifecycleStatus
+EnumFunctionStatus: type[EnumFunctionLifecycleStatus] = EnumFunctionLifecycleStatus
+EnumMetadataNodeStatus: type[EnumFunctionLifecycleStatus] = EnumFunctionLifecycleStatus
 
 
 # Export for use

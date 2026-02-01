@@ -12,7 +12,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_component_health_detail import ModelComponentHealthDetail
@@ -29,9 +29,7 @@ class ModelComponentHealth(BaseModel):
 
     component_name: str = Field(..., description="Name of the component")
 
-    status: EnumNodeHealthStatus = Field(
-        ..., description="Health status of the component"
-    )
+    status: EnumHealthStatus = Field(..., description="Health status of the component")
 
     message: str = Field(
         ..., description="Descriptive message about the component health"

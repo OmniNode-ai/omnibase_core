@@ -1,17 +1,18 @@
-from __future__ import annotations
-
 """
 Memory Usage Enumeration.
 
 Defines categories for memory usage levels.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumMemoryUsage(str, Enum):
+class EnumMemoryUsage(StrValueHelper, str, Enum):
     """
     Memory usage enumeration.
 
@@ -37,10 +38,6 @@ class EnumMemoryUsage(str, Enum):
     EXTREME = "extreme"  # 8-16 GB
     MASSIVE = "massive"  # 16+ GB
     UNLIMITED = "unlimited"  # No specific limit
-
-    def __str__(self) -> str:
-        """Return string representation."""
-        return self.value
 
     @property
     def display_name(self) -> str:

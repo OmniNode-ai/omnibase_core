@@ -20,8 +20,8 @@ class TypedDictConvertedHealth(TypedDict):
         status: Health status string
         uptime_seconds: Uptime in seconds
         last_check: Last check datetime or None
-        error_count: Number of errors
-        warning_count: Number of warnings
+        error_level_count: Number of errors at ERROR severity level
+        warning_count: Number of warnings at WARNING severity level
         checks_passed: Number of checks passed
         checks_total: Total number of checks
     """
@@ -29,7 +29,7 @@ class TypedDictConvertedHealth(TypedDict):
     status: str
     uptime_seconds: int
     last_check: datetime | None
-    error_count: int
+    error_level_count: int
     warning_count: int
     checks_passed: int
     checks_total: int

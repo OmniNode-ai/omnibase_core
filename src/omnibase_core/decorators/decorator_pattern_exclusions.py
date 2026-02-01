@@ -1,10 +1,9 @@
-from collections.abc import Callable
-
 """
 ONEX Pattern Exclusion Decorators.
 Provides fine-grained control over ONEX strict typing standards enforcement.
 """
 
+from collections.abc import Callable
 from typing import Any
 
 from omnibase_core.models.decorators.model_pattern_exclusion_info import (
@@ -42,7 +41,8 @@ class ONEXPatternExclusion:
 
     def __call__(self, target: Callable[..., Any] | type) -> Callable[..., Any] | type:
         """Apply the exclusion to the target function or class."""
-        # Mark the target with exclusion metadata (type ignore for dynamic attributes)
+        # NOTE(OMN-1302): Dynamic attributes for exclusion metadata on decoratee.
+        # Safe because attributes read via hasattr/getattr at runtime.
         if not hasattr(target, "_onex_pattern_exclusions"):
             target._onex_pattern_exclusions = set()  # type: ignore[attr-defined]
 
@@ -76,27 +76,6 @@ def allow_any_type(reason: str, reviewer: str | None = None) -> ONEXPatternExclu
         reason=reason,
         reviewer=reviewer,
     )
-
-
-def allow_dict_any[F: Callable[..., object]](func: F) -> F:
-    """
-    Simple decorator to allow dict[str, Any] usage in specific functions.
-
-    This decorator is recognized by the validation script and should only be used when:
-    1. Serialization methods that must return dict[str, Any] for Pydantic compatibility
-    2. Validator methods that accept raw untyped data before conversion
-    3. Legacy integration where gradual typing is being applied
-
-    This is a simple pass-through decorator that doesn't require reason
-    arguments, making it suitable for common serialization patterns
-    where the justification is implicit.
-
-    Example:
-        @allow_dict_any
-        def serialize(self) -> dict[str, Any]:
-            return self.model_dump()
-    """
-    return func
 
 
 def allow_mixed_types(reason: str, reviewer: str | None = None) -> ONEXPatternExclusion:

@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > CI > Node Purity Check Failure Guide
+
 # Node Purity Check Failure Guide
 
 **Status**: Active

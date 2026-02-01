@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-011",
+  "category": "technical_howto",
+  "confidence": 0.88,
+  "sentiment": "neutral",
+  "summary": "Customer asking about differences between Pro and Free plans",
+  "suggested_reply": "Great question! Here are the key differences between Free and Pro: Pro includes: 1) Unlimited projects (vs 3 for Free), 2) Priority support with 24-hour response time, 3) Advanced analytics and reporting, 4) Team collaboration features, 5) API access for integrations. The Pro plan offers monthly and annual pricing options. Would you like me to send you a detailed comparison chart?",
+  "latency_ms": 1340,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["plan_comparison", "upgrade_inquiry"],
+  "invariant_tags": ["technical_domain", "how_to"]
+}

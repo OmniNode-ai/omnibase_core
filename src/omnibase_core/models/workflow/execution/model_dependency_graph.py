@@ -17,10 +17,10 @@ Security Considerations:
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.validator_workflow_constants import MAX_DFS_ITERATIONS
 
@@ -81,7 +81,7 @@ class ModelDependencyGraph(BaseModel):
         return [
             step_id
             for step_id, degree in self.in_degree.items()
-            if degree == 0 and self.nodes[step_id].state == EnumWorkflowState.PENDING
+            if degree == 0 and self.nodes[step_id].state == EnumExecutionStatus.PENDING
         ]
 
     def mark_completed(self, step_id: UUID) -> None:
@@ -90,7 +90,7 @@ class ModelDependencyGraph(BaseModel):
         step_id_str = str(step_id)
 
         if step_id_str in self.nodes:
-            self.nodes[step_id_str].state = EnumWorkflowState.COMPLETED
+            self.nodes[step_id_str].state = EnumExecutionStatus.COMPLETED
 
         # Decrease in-degree for dependent steps
         for dependent_step in self.edges.get(step_id_str, []):
@@ -151,11 +151,11 @@ class ModelDependencyGraph(BaseModel):
 
         return any(node not in visited and dfs(node) for node in self.nodes)
 
-    model_config = {
-        "extra": "ignore",
-        "arbitrary_types_allowed": True,  # For WorkflowStepExecution
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        arbitrary_types_allowed=True,  # For WorkflowStepExecution
+        validate_assignment=True,
+    )
 
 
 # Import here to avoid circular dependency

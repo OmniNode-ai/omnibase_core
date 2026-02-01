@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../INDEX.md) > Conventions > Capability Naming
+
 # ONEX Capability Naming Conventions
 
 This document defines naming conventions for capability identifiers used in vendor-agnostic dependency declarations throughout the ONEX system.

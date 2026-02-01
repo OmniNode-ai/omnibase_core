@@ -7,9 +7,10 @@ metadata configuration for fallback strategies.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -51,11 +52,11 @@ class ModelFallbackMetadata(BaseModel):
         description="Numeric configuration values",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 
@@ -66,10 +67,13 @@ class ModelFallbackMetadata(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, TypeError, ValueError) as e:
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
+        except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS covers: AttributeError, TypeError, ValidationError, ValueError
             raise ModelOnexError(
+                message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> SerializedDict:

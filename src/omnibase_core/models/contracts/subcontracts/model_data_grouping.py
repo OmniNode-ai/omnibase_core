@@ -9,7 +9,7 @@ Part of the Aggregation Subcontract Model family.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -62,8 +62,8 @@ class ModelDataGrouping(BaseModel):
         ge=1000,
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

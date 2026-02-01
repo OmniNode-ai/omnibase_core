@@ -5,10 +5,13 @@ Provides structured collaboration domain definitions for secure
 cross-instance collaboration in ONEX intelligence architecture.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumCollaborationDomain(str, Enum):
+@unique
+class EnumCollaborationDomain(StrValueHelper, str, Enum):
     """
     Enum for collaboration domains with security validation.
 
@@ -43,3 +46,6 @@ class EnumCollaborationDomain(str, Enum):
     TASK_COORDINATION = "task_coordination"
     PROGRESS_TRACKING = "progress_tracking"
     RESOURCE_PLANNING = "resource_planning"
+
+
+__all__ = ["EnumCollaborationDomain"]

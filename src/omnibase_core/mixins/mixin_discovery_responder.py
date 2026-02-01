@@ -35,6 +35,9 @@ _DISCOVERY_REQUEST_ADAPTER: TypeAdapter[ModelDiscoveryRequestModelMetadata] = (
     TypeAdapter(ModelDiscoveryRequestModelMetadata)
 )
 
+# TypeAdapter for duck-typing validation of OnexEvent payloads
+_ONEX_EVENT_ADAPTER: TypeAdapter[OnexEvent] = TypeAdapter(OnexEvent)
+
 # Lazy initialization of introspection adapter to avoid import cycle
 _INTROSPECTION_ADAPTER: TypeAdapter[object] | None = None
 
@@ -86,8 +89,9 @@ class MixinDiscoveryResponder:
     - Response time metrics
 
     TYPE SAFETY:
-    - Uses TypeAdapter for duck-typing validation of discovery metadata
-    - No isinstance checks for protocol validation
+    - Uses TypeAdapter for duck-typing validation of event payloads and metadata
+    - No isinstance checks for protocol/duck-typing validation
+    - Basic type validation (UUID, ModelSemVer) uses isinstance where appropriate
     - Consistent with ONEX patterns
 
     THREAD SAFETY:
@@ -109,7 +113,7 @@ class MixinDiscoveryResponder:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         self._discovery_event_bus: ProtocolEventBus | None = None
         self._discovery_unsubscribe: Callable[[], Awaitable[None]] | None = None
@@ -202,8 +206,8 @@ class MixinDiscoveryResponder:
         if self._discovery_unsubscribe:
             try:
                 await self._discovery_unsubscribe()
-            # fallback-ok: cleanup errors during shutdown are non-critical
             except Exception:
+                # cleanup-resilience-ok: cleanup errors during shutdown are non-critical
                 pass
 
         emit_log_event(
@@ -226,11 +230,13 @@ class MixinDiscoveryResponder:
             )
 
             # Deserialize the envelope from message value
+            # IMPORTANT: Keep raw dict for discovery metadata extraction
+            # (ModelEventData loses discovery-specific fields during validation)
             envelope_dict = json.loads(message.value.decode("utf-8"))
             envelope: ModelEventEnvelope[object] = ModelEventEnvelope(**envelope_dict)
 
-            # Handle the discovery request
-            await self._handle_discovery_request(envelope)
+            # Pass raw dict for metadata extraction (see _extract_discovery_request_metadata)
+            await self._handle_discovery_request(envelope, envelope_dict)
 
             # Acknowledge message receipt only after successful handling
             await message.ack()
@@ -251,7 +257,7 @@ class MixinDiscoveryResponder:
                 },
             )
             # Track error metrics
-            self._discovery_stats["error_count"] += 1
+            self._discovery_stats["error_level_count"] += 1
 
             # Acknowledge message even on error to prevent infinite redelivery
             # Discovery failures are non-fatal and should not block the system
@@ -269,18 +275,22 @@ class MixinDiscoveryResponder:
                 )
 
     async def _handle_discovery_request(
-        self, envelope: "ModelEventEnvelope[object]"
+        self,
+        envelope: "ModelEventEnvelope[object]",
+        raw_envelope_dict: dict[str, object] | None = None,
     ) -> None:
         """
         Handle incoming discovery requests.
 
         Discovery Protocol:
         - Events with type "NODE_DISCOVERY_REQUEST" are handled
-        - Request metadata is extracted from the event's `data` field (dict format)
+        - Request metadata is extracted from the raw envelope dict (not Pydantic models)
         - TypeAdapter is used for duck-typing validation (no isinstance checks)
 
         Args:
             envelope: Event envelope containing the discovery request
+            raw_envelope_dict: Raw envelope dict for metadata extraction (bypasses
+                ModelEventData validation which loses discovery-specific fields)
         """
         try:
             # STRICT: Envelope must have payload attribute
@@ -291,18 +301,32 @@ class MixinDiscoveryResponder:
                     envelope_type=type(envelope).__name__,
                 )
 
-            # Extract event from envelope and cast to OnexEvent for type safety
+            # Extract and validate event using TypeAdapter for duck-typing validation
+            # (Per ONEX conventions: use TypeAdapter, not isinstance checks)
+            # TypeAdapter.validate_python() accepts any Python object (dict, Pydantic model,
+            # dataclass, etc.) and validates/coerces it to the target type
             event = envelope.payload
-            # Type cast for mypy - event is ModelOnexEvent after extraction
-            onex_event = cast("OnexEvent", event)
 
-            # STRICT: Event must have event_type attribute
-            if not hasattr(onex_event, "event_type"):
-                raise ModelOnexError(
-                    message="Event missing required 'event_type' attribute",
-                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST,
-                    event_type=type(onex_event).__name__,
+            # Validate event structure using TypeAdapter (duck typing)
+            # TypeAdapter handles all input types - no isinstance checks needed
+            try:
+                onex_event = _ONEX_EVENT_ADAPTER.validate_python(event)
+            except ValidationError as e:
+                emit_log_event(
+                    LogLevel.WARNING,
+                    "Event payload validation failed",
+                    {
+                        "component": "DiscoveryResponder",
+                        "validation_error": str(e),
+                        "payload_type": type(event).__name__,
+                        "operation": "_handle_discovery_request",
+                    },
                 )
+                raise ModelOnexError(
+                    message="Event payload does not conform to OnexEvent schema",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST,
+                    validation_errors=str(e),
+                ) from e
 
             # Check for discovery request event type
             is_discovery_request = is_event_equal(
@@ -322,9 +346,12 @@ class MixinDiscoveryResponder:
                 self._discovery_stats["throttled_requests"] += 1
                 return  # Throttled
 
-            # Extract request metadata from event's data field using TypeAdapter
-            # Discovery protocol puts metadata in the data field (dict format)
-            request_metadata = self._extract_discovery_request_metadata(onex_event)
+            # Extract request metadata from raw envelope dict using TypeAdapter
+            # Discovery protocol puts metadata in the event's data field (dict format)
+            # We use raw_envelope_dict because ModelEventData validation loses discovery fields
+            request_metadata = self._extract_discovery_request_metadata(
+                raw_envelope_dict
+            )
             if request_metadata is None:
                 return  # Invalid request format
 
@@ -348,44 +375,53 @@ class MixinDiscoveryResponder:
                 },
             )
             # Track error metrics
-            self._discovery_stats["error_count"] += 1
+            self._discovery_stats["error_level_count"] += 1
 
     def _extract_discovery_request_metadata(
-        self, onex_event: OnexEvent
+        self, raw_envelope_dict: dict[str, object] | None
     ) -> ModelDiscoveryRequestModelMetadata | None:
         """
-        Extract discovery request metadata from event using TypeAdapter.
+        Extract discovery request metadata from raw envelope dict using TypeAdapter.
 
         Discovery protocol places metadata in the event's `data` field.
-        The data field is typed as ModelEventData, but discovery protocol
-        uses it to store discovery request metadata as a dict.
+        We extract from raw dict because Pydantic's ModelEventData validation
+        loses discovery-specific fields (ModelEventData has different schema).
         This method uses TypeAdapter for duck-typing validation.
 
         Args:
-            onex_event: The ONEX event containing the discovery request
+            raw_envelope_dict: Raw envelope dict before Pydantic validation
 
         Returns:
             Validated ModelDiscoveryRequestModelMetadata or None if invalid
         """
-        # Try to extract data dict from event
-        if onex_event.data is None:
+        if raw_envelope_dict is None:
             return None
 
-        # Convert ModelEventData to dict for TypeAdapter validation
-        # Note: discovery protocol places metadata in data field as model_dump()
-        data_dict = onex_event.data.model_dump()
+        # Navigate to payload.data in raw envelope dict
+        # Structure: envelope -> payload -> data
+        payload = raw_envelope_dict.get("payload")
+        # Note: isinstance check is appropriate here - we're navigating JSON-parsed dict
+        # structure, not validating duck-typed protocols
+        if not isinstance(payload, dict):
+            return None
 
-        # Use TypeAdapter for duck-typing validation
+        data = payload.get("data")
+        if data is None:
+            return None
+
+        # Use TypeAdapter for duck-typing validation (no isinstance checks needed)
+        # TypeAdapter.validate_python() handles dict, Pydantic model, dataclass, etc.
         try:
-            return _DISCOVERY_REQUEST_ADAPTER.validate_python(data_dict)
+            return _DISCOVERY_REQUEST_ADAPTER.validate_python(data)
         except ValidationError as e:
-            # Log validation failure for observability
+            # Log validation failure for observability (DEBUG level - expected noise from untrusted sources)
             emit_log_event(
                 LogLevel.DEBUG,
                 "Discovery request metadata validation failed",
                 {
                     "component": "DiscoveryResponder",
                     "validation_error": str(e),
+                    "data_type": type(data).__name__,
                     "operation": "_extract_discovery_request_metadata",
                 },
             )
@@ -580,7 +616,7 @@ class MixinDiscoveryResponder:
                     "operation": "_send_discovery_response",
                 },
             )
-            # Note: error_count is incremented by the caller (_handle_discovery_request)
+            # Note: error_level_count is incremented by the caller (_handle_discovery_request)
             # to avoid double-counting when exception is re-raised
 
             # Re-raise to signal failure to caller
@@ -612,17 +648,23 @@ class MixinDiscoveryResponder:
 
         introspection_response = self.get_introspection_response()
 
-        # If already a BaseModel, validate using TypeAdapter for duck-typing
+        # Use TypeAdapter for duck-typing validation (no isinstance checks needed)
+        # TypeAdapter.validate_python() handles Pydantic models, dicts, dataclasses, etc.
         adapter = _get_introspection_adapter()
-        if hasattr(introspection_response, "model_dump"):
-            data_dict = introspection_response.model_dump()
-        else:
-            data_dict = introspection_response
-
         try:
-            result = adapter.validate_python(data_dict)
+            result = adapter.validate_python(introspection_response)
             return cast("ModelIntrospectionData", result)
         except ValidationError as e:
+            emit_log_event(
+                LogLevel.WARNING,
+                "Introspection response validation failed",
+                {
+                    "component": "DiscoveryResponder",
+                    "validation_error": str(e),
+                    "response_type": type(introspection_response).__name__,
+                    "operation": "_get_discovery_introspection",
+                },
+            )
             raise ModelOnexError(
                 message="Introspection response does not match ModelIntrospectionData schema",
                 error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
@@ -749,7 +791,7 @@ class MixinDiscoveryResponder:
             throttled_requests=self._discovery_stats["throttled_requests"],
             filtered_requests=self._discovery_stats["filtered_requests"],
             last_request_time=self._discovery_stats["last_request_time"],
-            error_count=self._discovery_stats["error_count"],
+            error_level_count=self._discovery_stats["error_level_count"],
             active=self._discovery_active,
             throttle_seconds=self._response_throttle,
             last_response_time=self._last_response_time,
@@ -765,5 +807,5 @@ class MixinDiscoveryResponder:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }

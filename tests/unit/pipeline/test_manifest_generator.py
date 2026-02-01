@@ -593,5 +593,201 @@ class TestManifestGeneratorSizeEstimation:
         assert new_size > base_size
 
 
+@pytest.mark.unit
+class TestManifestGeneratorCallbacks:
+    """Test ManifestGenerator callback functionality (OMN-1203)."""
+
+    def test_callback_invoked_on_build(
+        self,
+        sample_node_identity: ModelNodeIdentity,
+        sample_contract_identity: ModelContractIdentity,
+    ) -> None:
+        """Test that callback is invoked when manifest is built."""
+        callback_invoked = False
+        received_manifest = None
+
+        def callback(manifest: "ModelExecutionManifest") -> None:
+            nonlocal callback_invoked, received_manifest
+            callback_invoked = True
+            received_manifest = manifest
+
+        generator = ManifestGenerator(
+            node_identity=sample_node_identity,
+            contract_identity=sample_contract_identity,
+            on_manifest_built=[callback],
+        )
+        manifest = generator.build()
+
+        assert callback_invoked is True
+        assert received_manifest is manifest
+
+    def test_multiple_callbacks_invoked_in_order(
+        self,
+        sample_node_identity: ModelNodeIdentity,
+        sample_contract_identity: ModelContractIdentity,
+    ) -> None:
+        """Test that multiple callbacks are invoked in registration order."""
+        invocation_order: list[int] = []
+
+        def callback_1(manifest: "ModelExecutionManifest") -> None:
+            invocation_order.append(1)
+
+        def callback_2(manifest: "ModelExecutionManifest") -> None:
+            invocation_order.append(2)
+
+        def callback_3(manifest: "ModelExecutionManifest") -> None:
+            invocation_order.append(3)
+
+        generator = ManifestGenerator(
+            node_identity=sample_node_identity,
+            contract_identity=sample_contract_identity,
+            on_manifest_built=[callback_1, callback_2],
+        )
+        generator.register_on_build_callback(callback_3)
+        generator.build()
+
+        assert invocation_order == [1, 2, 3]
+
+    def test_callback_exception_logged_not_raised(
+        self,
+        sample_node_identity: ModelNodeIdentity,
+        sample_contract_identity: ModelContractIdentity,
+    ) -> None:
+        """Test that callback exceptions are caught and logged as warnings."""
+        import warnings
+
+        callback_after_error_invoked = False
+
+        def failing_callback(manifest: "ModelExecutionManifest") -> None:
+            raise ValueError("Callback intentionally failed")
+
+        def callback_after_error(manifest: "ModelExecutionManifest") -> None:
+            nonlocal callback_after_error_invoked
+            callback_after_error_invoked = True
+
+        generator = ManifestGenerator(
+            node_identity=sample_node_identity,
+            contract_identity=sample_contract_identity,
+            on_manifest_built=[failing_callback, callback_after_error],
+        )
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            manifest = generator.build()
+
+            # Should emit a warning about the failed callback
+            assert len(w) == 1
+            assert "on_manifest_built callback failed" in str(w[0].message)
+            assert "Callback intentionally failed" in str(w[0].message)
+
+        # Manifest should still be returned successfully
+        assert manifest is not None
+        assert manifest.manifest_id == generator.manifest_id
+
+        # Subsequent callback should still be invoked
+        assert callback_after_error_invoked is True
+
+    def test_callback_at_init(
+        self,
+        sample_node_identity: ModelNodeIdentity,
+        sample_contract_identity: ModelContractIdentity,
+    ) -> None:
+        """Test that callbacks can be passed at initialization."""
+        callback_count = 0
+
+        def callback(manifest: "ModelExecutionManifest") -> None:
+            nonlocal callback_count
+            callback_count += 1
+
+        generator = ManifestGenerator(
+            node_identity=sample_node_identity,
+            contract_identity=sample_contract_identity,
+            on_manifest_built=[callback],
+        )
+        generator.build()
+
+        assert callback_count == 1
+
+    def test_register_callback_after_init(
+        self,
+        sample_node_identity: ModelNodeIdentity,
+        sample_contract_identity: ModelContractIdentity,
+    ) -> None:
+        """Test that callbacks can be registered after initialization."""
+        callback_count = 0
+
+        def callback(manifest: "ModelExecutionManifest") -> None:
+            nonlocal callback_count
+            callback_count += 1
+
+        generator = ManifestGenerator(
+            node_identity=sample_node_identity,
+            contract_identity=sample_contract_identity,
+        )
+        generator.register_on_build_callback(callback)
+        generator.build()
+
+        assert callback_count == 1
+
+    def test_callback_receives_correct_manifest(
+        self,
+        sample_node_identity: ModelNodeIdentity,
+        sample_contract_identity: ModelContractIdentity,
+    ) -> None:
+        """Test that the callback receives the actual built manifest with correct data."""
+        from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
+        from omnibase_core.enums.enum_handler_execution_phase import (
+            EnumHandlerExecutionPhase,
+        )
+        from omnibase_core.models.manifest import ModelExecutionManifest
+
+        received_manifest: ModelExecutionManifest | None = None
+
+        def capture_callback(manifest: ModelExecutionManifest) -> None:
+            nonlocal received_manifest
+            received_manifest = manifest
+
+        generator = ManifestGenerator(
+            node_identity=sample_node_identity,
+            contract_identity=sample_contract_identity,
+            on_manifest_built=[capture_callback],
+        )
+
+        # Add some data to verify it's captured correctly
+        generator.record_event("TestEvent")
+        generator.start_hook(
+            "test-hook", "test-handler", EnumHandlerExecutionPhase.EXECUTE
+        )
+        generator.complete_hook("test-hook", EnumExecutionStatus.SUCCESS)
+
+        returned_manifest = generator.build()
+
+        # Callback should have received the same manifest instance
+        assert received_manifest is returned_manifest
+
+        # Verify the manifest contains the recorded data
+        assert received_manifest is not None
+        assert received_manifest.node_identity.node_id == sample_node_identity.node_id
+        assert received_manifest.emissions_summary.events_count == 1
+        assert "TestEvent" in received_manifest.emissions_summary.event_types
+        assert received_manifest.get_hook_count() == 1
+
+    def test_no_callbacks_by_default(
+        self,
+        sample_node_identity: ModelNodeIdentity,
+        sample_contract_identity: ModelContractIdentity,
+    ) -> None:
+        """Test that generator works correctly with no callbacks."""
+        generator = ManifestGenerator(
+            node_identity=sample_node_identity,
+            contract_identity=sample_contract_identity,
+        )
+        manifest = generator.build()
+
+        # Should build successfully with no callbacks
+        assert manifest is not None
+        assert manifest.manifest_id == generator.manifest_id
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

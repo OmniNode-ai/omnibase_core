@@ -1,0 +1,12 @@
+{
+  "ticket_id": "TKT-2024-002",
+  "category": "billing_payment",
+  "confidence": 0.92,
+  "sentiment": "neutral",
+  "summary": "Customer experiencing payment failures when attempting to upgrade subscription",
+  "suggested_reply": "I'm sorry to hear you're having trouble with payments. This issue is often related to your bank's fraud protection. I recommend: 1) Contacting your bank to authorize transactions from our payment processor, 2) Trying a payment method from a different bank, or 3) Using PayPal as an alternative. If the issue persists after trying these steps, please let me know and I can look into it further.",
+  "latency_ms": 1100,
+  "model_id": "gpt-4-turbo-2024-04-09",
+  "reason_codes": ["payment_declined", "upgrade_attempt"],
+  "invariant_tags": ["billing_domain", "payment_flow"]
+}

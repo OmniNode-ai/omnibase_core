@@ -1,3 +1,5 @@
+> **Navigation**: [Home](../index.md) > Guides > Contract Profile Guide
+
 # Contract Profile Guide
 
 **Version**: 1.0.0
@@ -130,7 +132,7 @@ The most conservative orchestrator profile. Use this when starting out or when y
 **Handler Descriptor**:
 ```python
 descriptor=ModelHandlerBehaviorDescriptor(
-    handler_kind="orchestrator",
+    node_archetype="orchestrator",
     purity="side_effecting",
     idempotent=False,
     concurrency_policy="serialized",
@@ -172,7 +174,7 @@ Enables parallel execution for workflows with independent steps.
 **Handler Descriptor**:
 ```python
 descriptor=ModelHandlerBehaviorDescriptor(
-    handler_kind="orchestrator",
+    node_archetype="orchestrator",
     purity="side_effecting",
     idempotent=False,
     concurrency_policy="parallel_ok",
@@ -220,7 +222,7 @@ Fault-tolerant orchestrator with checkpointing, retries, and circuit breaker pro
 **Handler Descriptor**:
 ```python
 descriptor=ModelHandlerBehaviorDescriptor(
-    handler_kind="orchestrator",
+    node_archetype="orchestrator",
     purity="side_effecting",
     idempotent=True,
     concurrency_policy="serialized",
@@ -272,7 +274,7 @@ Basic finite state machine reducer for state transitions.
 **Handler Descriptor**:
 ```python
 descriptor=ModelHandlerBehaviorDescriptor(
-    handler_kind="reducer",
+    node_archetype="reducer",
     purity="side_effecting",
     idempotent=True,
     concurrency_policy="singleflight",
@@ -341,7 +343,7 @@ Idempotent effect for external system interactions with retry support.
 **Handler Descriptor**:
 ```python
 descriptor=ModelHandlerBehaviorDescriptor(
-    handler_kind="effect",
+    node_archetype="effect",
     purity="side_effecting",
     idempotent=True,
     timeout_ms=30000,
@@ -403,7 +405,7 @@ Pure computation profile for deterministic, side-effect-free transformations.
 **Handler Descriptor**:
 ```python
 descriptor=ModelHandlerBehaviorDescriptor(
-    handler_kind="compute",
+    node_archetype="compute",
     purity="pure",
     idempotent=True,
     concurrency_policy="parallel_ok",
@@ -608,7 +610,7 @@ def get_orchestrator_high_performance_profile(
         ),
         # ... other settings
         descriptor=ModelHandlerBehaviorDescriptor(
-            handler_kind="orchestrator",
+            node_archetype="orchestrator",
             purity="side_effecting",
             idempotent=False,
             concurrency_policy="parallel_ok",

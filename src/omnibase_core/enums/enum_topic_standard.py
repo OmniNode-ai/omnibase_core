@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2025 OmniNode Team
 """
 Topic Standard Enumeration.
 
@@ -8,9 +6,11 @@ Enumeration of recognized topic naming standards for ONEX routing.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTopicStandard(str, Enum):
+class EnumTopicStandard(StrValueHelper, str, Enum):
     """
     Enumeration of recognized topic naming standards.
 
@@ -36,10 +36,6 @@ class EnumTopicStandard(str, Enum):
 
     UNKNOWN = "unknown"
     """Topic format could not be determined"""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
 
 __all__ = ["EnumTopicStandard"]

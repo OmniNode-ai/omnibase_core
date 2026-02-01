@@ -4,10 +4,13 @@ Priority Level Enum
 Priority levels for operations and requests across tools.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumPriorityLevel(str, Enum):
+@unique
+class EnumPriorityLevel(StrValueHelper, str, Enum):
     """
     Priority levels for operations and requests across tools.
 
@@ -18,10 +21,6 @@ class EnumPriorityLevel(str, Enum):
     HIGH = "high"
     NORMAL = "normal"
     LOW = "low"
-
-    def __str__(self) -> str:
-        """Return the string value of the priority."""
-        return self.value
 
     def get_numeric_value(self) -> int:
         """Get numeric value for comparison (higher = more priority)."""
@@ -35,7 +34,7 @@ class EnumPriorityLevel(str, Enum):
 
     def is_high_priority(self) -> bool:
         """Check if this is high or critical priority."""
-        return self in [self.HIGH, self.CRITICAL]
+        return self in {self.HIGH, self.CRITICAL}
 
     def requires_immediate_action(self) -> bool:
         """Check if this priority requires immediate action."""
