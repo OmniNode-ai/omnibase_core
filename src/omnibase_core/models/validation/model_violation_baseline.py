@@ -9,6 +9,7 @@ Related ticket: OMN-1774
 
 from __future__ import annotations
 
+import functools
 from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -54,9 +55,14 @@ class ModelViolationBaseline(BaseModel):
         """Return the number of violations in this baseline."""
         return len(self.violations)
 
+    @functools.cached_property
+    def _fingerprint_set(self) -> frozenset[str]:
+        """Cached set of fingerprints for O(1) lookup."""
+        return frozenset(v.fingerprint for v in self.violations)
+
     def has_violation(self, fingerprint: str) -> bool:
         """Check if a violation with the given fingerprint is baselined."""
-        return any(v.fingerprint == fingerprint for v in self.violations)
+        return fingerprint in self._fingerprint_set
 
     def get_violation(self, fingerprint: str) -> ModelBaselineViolation | None:
         """Get a violation by its fingerprint."""

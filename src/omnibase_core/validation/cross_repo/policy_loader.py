@@ -137,6 +137,7 @@ def _resolve_inheritance(
 
     # Enforce single-level inheritance: parent cannot have extends
     if parent_data.get("extends"):
+        grandparent_extends = parent_data.get("extends")
         raise ModelOnexError(
             message=(
                 f"Multi-level policy inheritance is not supported. "
@@ -147,7 +148,8 @@ def _resolve_inheritance(
             context={
                 "child_policy": str(child_path),
                 "parent_policy": str(parent_path),
-                "parent_extends": parent_data.get("extends"),
+                "grandparent_extends": grandparent_extends,
+                "inheritance_chain": f"{child_path} -> {parent_path} -> {grandparent_extends}",
             },
         )
 

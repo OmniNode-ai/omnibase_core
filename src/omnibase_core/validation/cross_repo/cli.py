@@ -18,7 +18,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from omnibase_core.enums import EnumSeverity
-from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.validation.model_violation_baseline import (
     ModelBaselineGenerator,
@@ -29,12 +28,33 @@ from omnibase_core.validation.cross_repo.baseline_io import (
     read_baseline,
     write_baseline,
 )
-from omnibase_core.validation.cross_repo.engine import run_cross_repo_validation
+from omnibase_core.validation.cross_repo.engine import (
+    CrossRepoValidationEngine,
+    run_cross_repo_validation,
+)
 from omnibase_core.validation.cross_repo.policy_loader import load_policy
 from omnibase_core.validation.cross_repo.util_fingerprint import generate_fingerprint
 
 # Tool version for baseline generator metadata
 CROSS_REPO_VALIDATOR_VERSION = "0.5.0"
+
+
+def _make_relative_path(file_path: Path | None, base_directory: Path) -> str:
+    """Convert file path to relative string, falling back to absolute if not under base.
+
+    Args:
+        file_path: The file path to normalize, or None.
+        base_directory: The base directory for relative path computation.
+
+    Returns:
+        Relative path string, absolute path string, or empty string if file_path is None.
+    """
+    if file_path is None:
+        return ""
+    try:
+        return str(file_path.relative_to(base_directory))
+    except ValueError:
+        return str(file_path)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -145,26 +165,13 @@ def build_baseline_from_result(
 
         # Generate fingerprint if not in context
         if not fingerprint and issue.file_path:
-            file_path_str = str(issue.file_path)
-            try:
-                # Make path relative to directory for stability
-                rel_path = issue.file_path.relative_to(directory)
-                file_path_str = str(rel_path)
-            except ValueError:
-                pass  # Keep absolute path if not relative to directory
-
+            file_path_str = _make_relative_path(issue.file_path, directory)
             rule_id = issue.rule_name or "unknown"
             fingerprint = generate_fingerprint(rule_id, file_path_str, symbol)
 
         if fingerprint:
             # Compute relative file path for baseline
-            file_path_str = str(issue.file_path) if issue.file_path else ""
-            if issue.file_path:
-                try:
-                    rel_path = issue.file_path.relative_to(directory)
-                    file_path_str = str(rel_path)
-                except ValueError:
-                    pass
+            file_path_str = _make_relative_path(issue.file_path, directory)
 
             violations.append(
                 ModelBaselineViolation(
@@ -189,11 +196,8 @@ def build_baseline_from_result(
     )
 
 
-def _is_suppressed(issue: ModelValidationIssue) -> bool:
-    """Check if an issue is suppressed by baseline."""
-    if issue.context is None:
-        return False
-    return issue.context.get("suppressed") == "true"
+# Module-level alias to engine's static method (single implementation)
+_is_suppressed = CrossRepoValidationEngine._is_suppressed
 
 
 def print_text_report(
