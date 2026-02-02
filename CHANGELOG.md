@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-02-02
+
+### Added
+
+- **TicketContract Model for Contract-Driven Ticket Execution** [OMN-1807]: New models for defining ticket workflows with requirements, verification steps, and gates
+  - `ModelTicketContract` - Main contract model with phases, requirements, and gates
+  - `ModelClarifyingQuestion` - Structured questions for requirement gathering
+  - `ModelRequirement` - Individual requirement with verification steps
+  - `ModelVerificationStep` - Step-by-step verification with expected outcomes
+  - `ModelGate` - Approval gates between ticket phases
+  - `EnumTicketPhase`, `EnumTicketAction`, `EnumTicketStepStatus`, `EnumVerificationKind`, `EnumGateKind` - Supporting enums
+  - `LinearClientProtocol`, `FileSystemProtocol`, `NotificationProtocol` - DI protocols for external integrations
+
+- **Architecture Constraint Maps** [OMN-1832]: Declarative architecture handshakes for 8 active repositories
+  - YAML-based constraint definitions for cross-repo architectural rules
+  - Install script for syncing constraints across repositories
+
+- **CI Enforcement for Version Verification** [OMN-1862]: Automated version checking in CI pipelines
+  - Shell scripts for verifying version consistency
+  - Pre-commit hooks for local validation
+
+### Documentation
+
+- **CLAUDE.md Rewrite**: Comprehensive documentation overhaul with declarative node patterns and four-node architecture guide
+
 ## [0.12.0] - 2026-02-01
 
 ### Added
