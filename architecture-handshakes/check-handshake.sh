@@ -29,7 +29,6 @@ QUIET=false
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Get script directory (used to detect if running from within omnibase_core)
@@ -68,7 +67,6 @@ auto_detect_omnibase_core() {
 
 log_success() { echo -e "${GREEN}OK${NC}: $1"; }
 log_error() { echo -e "${RED}FAIL${NC}: $1" >&2; }
-log_warn() { echo -e "${YELLOW}WARN${NC}: $1"; }
 log_info() {
     if [[ "${QUIET}" != "true" ]]; then
         echo "INFO: $1"
@@ -88,22 +86,6 @@ calculate_sha256() {
         log_error "No SHA256 tool found (need shasum or sha256sum)"
         exit 2
     fi
-}
-
-# Strip metadata block from file content
-# Returns content without the metadata block (for comparing to source)
-# This handles both legacy files (no metadata) and new files (with metadata)
-strip_metadata_block() {
-    local file="$1"
-    # Remove the metadata block if it exists (from <!-- HANDSHAKE_METADATA to -->)
-    #
-    # The second sed removes a blank first line if present. This is needed because:
-    # - The metadata block format ends with "-->\n\n" (closing tag + blank line)
-    # - The blank line after --> is intentional for markdown rendering (separates
-    #   the HTML comment from the document content)
-    # - After stripping the metadata block, this blank line becomes the first line
-    # - We remove it so the stripped content matches the original source file
-    sed '/^<!-- HANDSHAKE_METADATA/,/^-->/d' "${file}" | sed '1{/^$/d;}'
 }
 
 # Extract repo name from handshake header or metadata
@@ -130,22 +112,13 @@ extract_repo_name() {
     echo "${repo_name}"
 }
 
-# Extract source_sha256 from installed handshake
-# Handles multiple formats:
-# - Metadata block: source_sha256: <hash>
-# - Markdown: > **Source SHA256**: <hash>
+# Extract source_sha256 from installed handshake metadata block
 extract_source_sha256() {
     local file="$1"
     local sha256
 
-    # Try YAML-style in metadata block: source_sha256: <hash>
-    # Note: may have leading whitespace in metadata block
+    # Extract from metadata block: source_sha256: <hash>
     sha256=$(grep -m1 "source_sha256:" "$file" | sed -n 's/.*source_sha256: *\([a-fA-F0-9]\{64\}\).*/\1/p')
-
-    if [[ -z "${sha256}" ]]; then
-        # Try markdown format: > **Source SHA256**: <hash>
-        sha256=$(grep -m1 "Source SHA256" "$file" | sed -n 's/.*: *\([a-fA-F0-9]\{64\}\).*/\1/p')
-    fi
 
     if [[ -z "${sha256}" ]]; then
         return 1
@@ -274,41 +247,22 @@ main() {
     local current_source_sha256
     current_source_sha256=$(calculate_sha256 "${source_handshake}")
 
-    if [[ -n "${embedded_sha256}" ]]; then
-        # Compare embedded hash to current source hash
-        if [[ "${embedded_sha256}" == "${current_source_sha256}" ]]; then
-            log_success "Handshake for '${repo_name}' is current (SHA256: ${current_source_sha256:0:12}...)"
-            exit 0
-        else
-            log_error "Handshake is stale. Run: ${handshakes_dir}/install.sh ${repo_name}"
-            log_info "Installed SHA256: ${embedded_sha256:0:12}..."
-            log_info "Current SHA256:   ${current_source_sha256:0:12}..."
-            exit 1
-        fi
+    # Require embedded SHA256 in metadata block
+    if [[ -z "${embedded_sha256}" ]]; then
+        log_error "Handshake missing metadata. Run: ${handshakes_dir}/install.sh ${repo_name}"
+        log_info "Installed handshake must have HANDSHAKE_METADATA block with source_sha256"
+        exit 2
+    fi
+
+    # Compare embedded hash to current source hash
+    if [[ "${embedded_sha256}" == "${current_source_sha256}" ]]; then
+        log_success "Handshake for '${repo_name}' is current (SHA256: ${current_source_sha256:0:12}...)"
+        exit 0
     else
-        # No embedded hash - fall back to content comparison
-        # Strip any metadata block before comparing (handles both legacy and new formats)
-        log_warn "Installed handshake has no embedded SHA256 (legacy format)"
-
-        # Create temp file with stripped content for hash comparison
-        # Trap handles cleanup on exit (success or failure)
-        local temp_file installed_content_sha256
-        temp_file=$(mktemp)
-        # shellcheck disable=SC2064  # Intentional: expand temp_file at definition time
-        trap "rm -f '${temp_file}'" EXIT
-        strip_metadata_block "${installed_handshake}" > "${temp_file}"
-        installed_content_sha256=$(calculate_sha256 "${temp_file}")
-
-        if [[ "${installed_content_sha256}" == "${current_source_sha256}" ]]; then
-            log_success "Handshake for '${repo_name}' matches source (SHA256: ${current_source_sha256:0:12}...)"
-            log_info "Consider reinstalling to get embedded hash: ${handshakes_dir}/install.sh ${repo_name}"
-            exit 0
-        else
-            log_error "Handshake is stale. Run: ${handshakes_dir}/install.sh ${repo_name}"
-            log_info "Installed content SHA256: ${installed_content_sha256:0:12}..."
-            log_info "Source SHA256:            ${current_source_sha256:0:12}..."
-            exit 1
-        fi
+        log_error "Handshake is stale. Run: ${handshakes_dir}/install.sh ${repo_name}"
+        log_info "Installed SHA256: ${embedded_sha256:0:12}..."
+        log_info "Current SHA256:   ${current_source_sha256:0:12}..."
+        exit 1
     fi
 }
 
