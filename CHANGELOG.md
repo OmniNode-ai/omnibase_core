@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-02-02
+
+### Added
+
+- **TypedDictPatternStorageMetadata** [OMN-1780]: Strongly-typed TypedDict for pattern storage metadata
+  - Replaces `dict[str, Any]` with typed structure for `tags`, `learning_context`, and `additional_attributes`
+  - Ensures JSON serialization compatibility with string-only additional attributes
+
 ## [0.13.0] - 2026-02-02
 
 ### Added
