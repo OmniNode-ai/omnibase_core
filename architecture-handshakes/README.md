@@ -67,13 +67,13 @@ cat .claude/architecture-handshake.md
 | Repo | Description |
 |------|-------------|
 | `omnibase_core` | Contracts, models, invariants, enums |
-| `omnibase_infra` | Concrete implementations, Kafka, Postgres |
+| `omnibase_infra` | Concrete implementations (Kafka, Postgres adapters) |
 | `omnibase_spi` | Service Provider Interface definitions |
 | `omniclaude` | Claude Code integration, hooks, skills |
 | `omnidash` | Dashboard and visualization |
 | `omniintelligence` | Learning, pattern extraction, ML |
 | `omnimemory` | Persistence, recall, embeddings |
-| `omninode_infra` | Node infrastructure services |
+| `omninode_infra` | Deployment infrastructure (AWS, k8s, Terraform) |
 
 ## When Handshakes Are Loaded
 

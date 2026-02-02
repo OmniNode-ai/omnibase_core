@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck shell=bash
 # Architecture Handshake Installer
 # Installs repo-specific constraint maps to .claude/architecture-handshake.md
 #
@@ -104,6 +105,11 @@ main() {
         exit 1
     fi
 
+    # Warn if target doesn't appear to be a git repo
+    if [[ ! -d "${target_path}/.git" ]]; then
+        log_warn "Target does not appear to be a git repo: ${target_path}"
+    fi
+
     # Create .claude directory if needed
     local claude_dir="${target_path}/.claude"
     if [[ ! -d "${claude_dir}" ]]; then
@@ -114,10 +120,13 @@ main() {
     # Install handshake
     local dest_file="${claude_dir}/architecture-handshake.md"
     local existed=false
+    local temp_backup=""
 
-    # Check if file exists and capture for diff comparison
+    # Check if file exists and create temp backup for diff comparison
     if [[ -f "${dest_file}" ]]; then
         existed=true
+        temp_backup=$(mktemp)
+        cp "${dest_file}" "${temp_backup}"
     fi
 
     # Copy the handshake file
@@ -127,9 +136,20 @@ main() {
     log_info "Source: ${source_file}"
     log_info "Dest:   ${dest_file}"
 
-    # Show update notice if file was replaced
+    # Show update notice and diff info if file was replaced
     if [[ "${existed}" == "true" ]]; then
-        log_info "Previous file was overwritten"
+        if diff -q "${temp_backup}" "${dest_file}" > /dev/null 2>&1; then
+            log_info "File unchanged (content identical)"
+        else
+            log_info "File updated (content changed)"
+            # Show summary of changes
+            local added removed
+            added=$(diff "${temp_backup}" "${dest_file}" | grep -c "^>" || true)
+            removed=$(diff "${temp_backup}" "${dest_file}" | grep -c "^<" || true)
+            log_info "  +${added} lines added, -${removed} lines removed"
+        fi
+        # Clean up temp file
+        rm -f "${temp_backup}"
     fi
 }
 

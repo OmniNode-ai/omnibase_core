@@ -29,7 +29,7 @@
 
 ## Non-Goals (DO NOT)
 
-- ❌ **NEVER keep backwards compatibility** - This is non-negotiable
+- ❌ No backwards compatibility - breaking changes always acceptable
 - ❌ No deprecated code maintenance - Delete old code immediately
 - ❌ No compatibility shims or migration paths
 - ❌ No `version: ModelSemVer | str` union types
