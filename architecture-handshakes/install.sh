@@ -97,7 +97,7 @@ calculate_sha256() {
         sha256sum "${file}" | cut -d' ' -f1
     else
         log_error "No SHA256 tool found (need shasum or sha256sum)"
-        exit 1
+        exit 2
     fi
 }
 

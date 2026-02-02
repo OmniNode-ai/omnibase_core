@@ -142,7 +142,12 @@ repos:
         pass_filenames: false
 ```
 
-**Note**: The pre-commit hook requires `omnibase_core` to be cloned as a sibling directory.
+**Note**: The pre-commit hook requires `omnibase_core` to be accessible. Adjust the `entry` path based on your directory layout:
+- Sibling repos: `../omnibase_core/architecture-handshakes/check-handshake.sh` (default)
+- Subdirectory checkout: `./omnibase_core/architecture-handshakes/check-handshake.sh`
+- Custom location: `/absolute/path/to/omnibase_core/architecture-handshakes/check-handshake.sh`
+
+The script auto-detects your repository name from the current directory.
 
 ### What the Check Does
 

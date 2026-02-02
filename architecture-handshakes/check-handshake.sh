@@ -90,7 +90,7 @@ strip_metadata_block() {
     local file="$1"
     # Remove the metadata block if it exists (from <!-- HANDSHAKE_METADATA to -->)
     # Also removes the blank line after the closing --> for clean comparison
-    sed '/^<!-- HANDSHAKE_METADATA$/,/^-->$/d' "${file}" | sed '1{/^$/d;}'
+    sed '/^<!-- HANDSHAKE_METADATA/,/^-->/d' "${file}" | sed '1{/^$/d;}'
 }
 
 # Extract repo name from handshake header or metadata
@@ -264,9 +264,11 @@ main() {
         # Create temp file with stripped content for hash comparison
         local temp_file installed_content_sha256
         temp_file=$(mktemp)
+        trap "rm -f '${temp_file}'" EXIT
         strip_metadata_block "${installed_handshake}" > "${temp_file}"
         installed_content_sha256=$(calculate_sha256 "${temp_file}")
         rm -f "${temp_file}"
+        trap - EXIT  # Clear the trap after successful cleanup
 
         if [[ "${installed_content_sha256}" == "${current_source_sha256}" ]]; then
             log_success "Handshake for '${repo_name}' matches source (SHA256: ${current_source_sha256:0:12}...)"
