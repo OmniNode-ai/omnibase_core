@@ -118,7 +118,7 @@ jobs:
       - name: Checkout omnibase_core
         uses: actions/checkout@v4
         with:
-          repository: OmniNode/omnibase_core
+          repository: OmniNode-ai/omnibase_core
           path: omnibase_core
 
       - name: Check architecture handshake

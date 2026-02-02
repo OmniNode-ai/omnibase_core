@@ -140,11 +140,11 @@ extract_source_sha256() {
 
     # Try YAML-style in metadata block: source_sha256: <hash>
     # Note: may have leading whitespace in metadata block
-    sha256=$(grep -m1 "source_sha256:" "$file" | sed -n 's/.*source_sha256: *\([a-f0-9]\{64\}\).*/\1/p')
+    sha256=$(grep -m1 "source_sha256:" "$file" | sed -n 's/.*source_sha256: *\([a-fA-F0-9]\{64\}\).*/\1/p')
 
     if [[ -z "${sha256}" ]]; then
         # Try markdown format: > **Source SHA256**: <hash>
-        sha256=$(grep -m1 "Source SHA256" "$file" | sed -n 's/.*: *\([a-f0-9]\{64\}\).*/\1/p')
+        sha256=$(grep -m1 "Source SHA256" "$file" | sed -n 's/.*: *\([a-fA-F0-9]\{64\}\).*/\1/p')
     fi
 
     if [[ -z "${sha256}" ]]; then
@@ -294,6 +294,7 @@ main() {
         # Trap handles cleanup on exit (success or failure)
         local temp_file installed_content_sha256
         temp_file=$(mktemp)
+        # shellcheck disable=SC2064  # Intentional: expand temp_file at definition time
         trap "rm -f '${temp_file}'" EXIT
         strip_metadata_block "${installed_handshake}" > "${temp_file}"
         installed_content_sha256=$(calculate_sha256 "${temp_file}")
