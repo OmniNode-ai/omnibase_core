@@ -98,6 +98,151 @@ Handshakes are versioned with omnibase_core releases. After upgrading omnibase_c
 2. Add repo name to `SUPPORTED_REPOS` array in `install.sh`
 3. Release omnibase_core with the new handshake
 
+## CI Integration
+
+Downstream repos should add CI checks to ensure their handshake stays current with omnibase_core. This prevents architecture drift when omnibase_core releases new constraints.
+
+### GitHub Actions
+
+Add this job to your `.github/workflows/ci.yml`:
+
+```yaml
+jobs:
+  check-handshake:
+    name: Check architecture handshake
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Checkout omnibase_core
+        uses: actions/checkout@v4
+        with:
+          repository: OmniNode/omnibase_core
+          path: omnibase_core
+
+      - name: Check architecture handshake
+        run: |
+          # Verify handshake is current with omnibase_core
+          ./omnibase_core/architecture-handshakes/check-handshake.sh
+```
+
+### Pre-commit Hook (Optional)
+
+For local development, add to `.pre-commit-config.yaml`:
+
+```yaml
+repos:
+  - repo: local
+    hooks:
+      - id: check-handshake
+        name: Check architecture handshake
+        entry: ../omnibase_core/architecture-handshakes/check-handshake.sh
+        language: script
+        pass_filenames: false
+```
+
+**Note**: The pre-commit hook requires `omnibase_core` to be cloned as a sibling directory.
+
+### What the Check Does
+
+The `check-handshake.sh` script:
+
+1. **Verifies handshake exists** - Fails if `.claude/architecture-handshake.md` is missing
+2. **Compares checksums** - Ensures installed handshake matches the source in omnibase_core
+3. **Validates metadata** - Checks the `source_sha256` in the metadata block matches the current source file
+
+This ensures agents always operate with the latest architectural constraints, preventing drift when omnibase_core releases updates.
+
+## Metadata Block Format
+
+Installed handshakes include a metadata block at the end of the file:
+
+```markdown
+---
+<!-- HANDSHAKE METADATA - DO NOT EDIT -->
+installed_at: 2025-01-15T10:30:00Z
+source_repo: omnibase_core
+source_path: architecture-handshakes/repos/omniclaude.md
+source_sha256: a1b2c3d4e5f6...
+installer_version: 1.0.0
+---
+```
+
+| Field | Description |
+|-------|-------------|
+| `installed_at` | UTC timestamp when the handshake was installed |
+| `source_repo` | Origin repository (always `omnibase_core`) |
+| `source_path` | Path to source file within omnibase_core |
+| `source_sha256` | SHA256 hash of source file for integrity verification |
+| `installer_version` | Version of install.sh used |
+
+**Important**: Do not edit this block manually. The CI check uses `source_sha256` to detect tampering or drift.
+
+## Troubleshooting
+
+### "Handshake file not found"
+
+```
+Error: .claude/architecture-handshake.md not found
+```
+
+**Solution**: Run the installer from your repo:
+
+```bash
+../omnibase_core/architecture-handshakes/install.sh $(basename $(pwd))
+```
+
+### "Handshake checksum mismatch"
+
+```
+Error: Handshake is outdated (checksum mismatch)
+```
+
+**Cause**: The installed handshake differs from the current version in omnibase_core.
+
+**Solution**: Re-run the installer to update:
+
+```bash
+../omnibase_core/architecture-handshakes/install.sh $(basename $(pwd))
+git add .claude/architecture-handshake.md
+git commit -m "chore: update architecture handshake"
+```
+
+### "Unknown repository"
+
+```
+Error: No handshake found for repo 'my-repo'
+```
+
+**Cause**: The repo name is not in the supported repos list.
+
+**Solution**: Either:
+1. Check spelling against the [Supported Repos](#supported-repos) table
+2. Add a new handshake file (see [Adding a New Repo](#adding-a-new-repo))
+
+### "Pre-commit hook fails but CI passes"
+
+**Cause**: Local omnibase_core checkout is outdated.
+
+**Solution**: Update your local omnibase_core:
+
+```bash
+cd ../omnibase_core
+git pull origin main
+```
+
+### "Metadata block corrupted"
+
+**Cause**: Manual editing of the metadata block or merge conflict.
+
+**Solution**: Delete and reinstall:
+
+```bash
+rm .claude/architecture-handshake.md
+../omnibase_core/architecture-handshakes/install.sh $(basename $(pwd))
+```
+
 ## Design Rationale
 
 **Why separate from CLAUDE.md?**
@@ -109,3 +254,8 @@ Handshakes are versioned with omnibase_core releases. After upgrading omnibase_c
 - Single source of truth for architectural constraints
 - Version-tracked and auditable
 - Changes propagate via releases, not manual copying
+
+**Why CI checks?**
+- Prevents architecture drift when omnibase_core releases updates
+- Ensures all repos operate with current constraints
+- Catches stale handshakes before they cause agent misbehavior

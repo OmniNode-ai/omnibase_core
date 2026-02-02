@@ -2,12 +2,22 @@
 # shellcheck shell=bash
 # Architecture Handshake Installer
 # Installs repo-specific constraint maps to .claude/architecture-handshake.md
+# with SHA256 metadata for CI verification.
 #
 # Usage: ./install.sh <repo-name> [target-path]
 #
 # Examples:
 #   ./install.sh omnibase_core                    # Install to ../omnibase_core
 #   ./install.sh omniclaude /path/to/omniclaude   # Install to specific path
+#
+# The installed file includes a metadata block:
+#   <!-- HANDSHAKE_METADATA
+#   source: omnibase_core/architecture-handshakes/repos/{repo}.md
+#   source_version: {version from pyproject.toml}
+#   source_sha256: {calculated hash}
+#   installed_at: {ISO 8601 timestamp}
+#   installed_by: {current user}
+#   -->
 
 set -euo pipefail
 
@@ -20,6 +30,7 @@ NC='\033[0m' # No Color
 # Get script directory (works even if called from different location)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOS_DIR="${SCRIPT_DIR}/repos"
+PYPROJECT_TOML="${SCRIPT_DIR}/../pyproject.toml"
 
 # Supported repos
 SUPPORTED_REPOS=(
@@ -56,6 +67,79 @@ log_success() { echo -e "${GREEN}✓${NC} $1"; }
 log_error() { echo -e "${RED}✗${NC} $1" >&2; }
 log_warn() { echo -e "${YELLOW}!${NC} $1"; }
 log_info() { echo "  $1"; }
+
+# Extract version from pyproject.toml
+# Looks for: version = "x.y.z" in the [project] section
+get_omnibase_version() {
+    if [[ ! -f "${PYPROJECT_TOML}" ]]; then
+        echo "unknown"
+        return
+    fi
+    # Extract version from line like: version = "0.12.0"
+    # Uses simple pattern that works on both macOS and Linux
+    local version
+    version=$(grep -E '^version = "' "${PYPROJECT_TOML}" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+    if [[ -z "${version}" ]]; then
+        echo "unknown"
+    else
+        echo "${version}"
+    fi
+}
+
+# Calculate SHA256 hash (cross-platform: macOS vs Linux)
+calculate_sha256() {
+    local file="$1"
+    if command -v shasum &> /dev/null; then
+        # macOS
+        shasum -a 256 "${file}" | cut -d' ' -f1
+    elif command -v sha256sum &> /dev/null; then
+        # Linux
+        sha256sum "${file}" | cut -d' ' -f1
+    else
+        log_error "No SHA256 tool found (need shasum or sha256sum)"
+        exit 1
+    fi
+}
+
+# Get current ISO 8601 timestamp
+get_iso_timestamp() {
+    date -u +"%Y-%m-%dT%H:%M:%SZ"
+}
+
+# Get current user
+get_current_user() {
+    whoami
+}
+
+# Generate metadata block
+generate_metadata_block() {
+    local repo_name="$1"
+    local source_file="$2"
+    local version sha256 timestamp user
+
+    version=$(get_omnibase_version)
+    sha256=$(calculate_sha256 "${source_file}")
+    timestamp=$(get_iso_timestamp)
+    user=$(get_current_user)
+
+    # Note: The trailing newline after --> is important for markdown rendering
+    printf '<!-- HANDSHAKE_METADATA\n'
+    printf 'source: omnibase_core/architecture-handshakes/repos/%s.md\n' "${repo_name}"
+    printf 'source_version: %s\n' "${version}"
+    printf 'source_sha256: %s\n' "${sha256}"
+    printf 'installed_at: %s\n' "${timestamp}"
+    printf 'installed_by: %s\n' "${user}"
+    printf -- '-->\n\n'
+}
+
+# Strip existing metadata block from content
+# Returns content without the metadata block (for idempotency)
+strip_metadata_block() {
+    local file="$1"
+    # Remove the metadata block if it exists (from start to closing -->)
+    # Uses sed to delete from <!-- HANDSHAKE_METADATA to -->
+    sed '/^<!-- HANDSHAKE_METADATA$/,/^-->$/d' "${file}"
+}
 
 # Validate repo name
 is_supported_repo() {
@@ -129,12 +213,23 @@ main() {
         cp "${dest_file}" "${temp_backup}"
     fi
 
-    # Copy the handshake file
-    cp "${source_file}" "${dest_file}"
+    # Generate metadata block and combine with source content
+    # Note: We call generate_metadata_block directly in the pipeline to preserve
+    # trailing newlines (command substitution strips them)
+    {
+        generate_metadata_block "${repo_name}" "${source_file}"
+        cat "${source_file}"
+    } > "${dest_file}"
+
+    local version sha256
+    version=$(get_omnibase_version)
+    sha256=$(calculate_sha256 "${source_file}")
 
     log_success "Installed architecture handshake for ${repo_name}"
-    log_info "Source: ${source_file}"
-    log_info "Dest:   ${dest_file}"
+    log_info "Source:  ${source_file}"
+    log_info "Dest:    ${dest_file}"
+    log_info "Version: ${version}"
+    log_info "SHA256:  ${sha256:0:16}..." # Show first 16 chars
 
     # Show update notice and diff info if file was replaced
     if [[ "${existed}" == "true" ]]; then
