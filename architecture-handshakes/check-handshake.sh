@@ -5,9 +5,16 @@
 #
 # Usage: check-handshake.sh [path-to-omnibase_core]
 #
+# Auto-detection (when no path provided):
+#   1. ./omnibase_core       (CI pattern - repos as subdirectories)
+#   2. ../omnibase_core      (local dev - repos as siblings)
+#   3. Script's parent dir   (running from within omnibase_core)
+#
 # Examples:
-#   ./check-handshake.sh                          # Use default ../omnibase_core
-#   ./check-handshake.sh /path/to/omnibase_core   # Use specific path
+#   ./check-handshake.sh                          # Auto-detect location
+#   ./check-handshake.sh ./omnibase_core          # CI: subdirectory checkout
+#   ./check-handshake.sh ../omnibase_core         # Local: sibling repos
+#   ./check-handshake.sh /path/to/omnibase_core   # Explicit path
 #
 # Exit codes:
 #   0 - Success (handshake is current)
@@ -22,11 +29,39 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Get script directory
+# Get script directory (used to detect if running from within omnibase_core)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Default path to omnibase_core (relative to current working directory)
-DEFAULT_OMNIBASE_CORE="../omnibase_core"
+# Auto-detect omnibase_core path
+# Tries multiple common locations in order of priority:
+#   1. ./omnibase_core (CI pattern - repos checked out as subdirectories)
+#   2. ../omnibase_core (local dev pattern - repos are siblings)
+#   3. Script's parent directory (running from within omnibase_core itself)
+auto_detect_omnibase_core() {
+    # CI pattern: omnibase_core checked out as subdirectory
+    if [[ -d "./omnibase_core/architecture-handshakes" ]]; then
+        echo "./omnibase_core"
+        return 0
+    fi
+
+    # Local dev pattern: repos are siblings
+    if [[ -d "../omnibase_core/architecture-handshakes" ]]; then
+        echo "../omnibase_core"
+        return 0
+    fi
+
+    # Running from within omnibase_core itself
+    # SCRIPT_DIR is architecture-handshakes/, parent is omnibase_core
+    local parent_dir
+    parent_dir="$(dirname "${SCRIPT_DIR}")"
+    if [[ -d "${parent_dir}/architecture-handshakes" ]]; then
+        echo "${parent_dir}"
+        return 0
+    fi
+
+    # Not found
+    return 1
+}
 
 log_success() { echo -e "${GREEN}OK${NC}: $1"; }
 log_error() { echo -e "${RED}FAIL${NC}: $1" >&2; }
@@ -46,6 +81,16 @@ calculate_sha256() {
         log_error "No SHA256 tool found (need shasum or sha256sum)"
         exit 2
     fi
+}
+
+# Strip metadata block from file content
+# Returns content without the metadata block (for comparing to source)
+# This handles both legacy files (no metadata) and new files (with metadata)
+strip_metadata_block() {
+    local file="$1"
+    # Remove the metadata block if it exists (from <!-- HANDSHAKE_METADATA to -->)
+    # Also removes the blank line after the closing --> for clean comparison
+    sed '/^<!-- HANDSHAKE_METADATA$/,/^-->$/d' "${file}" | sed '1{/^$/d;}'
 }
 
 # Extract repo name from handshake header or metadata
@@ -102,7 +147,12 @@ usage() {
     echo "Usage: $0 [path-to-omnibase_core]"
     echo ""
     echo "Arguments:"
-    echo "  path-to-omnibase_core  Path to omnibase_core repo (default: ../omnibase_core)"
+    echo "  path-to-omnibase_core  Path to omnibase_core repo (auto-detected if not provided)"
+    echo ""
+    echo "Auto-detection order:"
+    echo "  1. ./omnibase_core       (CI pattern - repos as subdirectories)"
+    echo "  2. ../omnibase_core      (local dev - repos as siblings)"
+    echo "  3. Script's parent dir   (running from within omnibase_core)"
     echo ""
     echo "Exit codes:"
     echo "  0 - Success (handshake is current)"
@@ -110,8 +160,10 @@ usage() {
     echo "  2 - Missing files"
     echo ""
     echo "Examples:"
-    echo "  $0                            # Check using default path"
-    echo "  $0 /path/to/omnibase_core     # Check using specific path"
+    echo "  $0                            # Auto-detect omnibase_core location"
+    echo "  $0 ./omnibase_core            # CI: checked out as subdirectory"
+    echo "  $0 ../omnibase_core           # Local: repos are siblings"
+    echo "  $0 /path/to/omnibase_core     # Explicit path"
     echo ""
     echo "This script should be run from a repo with an installed handshake at"
     echo ".claude/architecture-handshake.md"
@@ -125,12 +177,25 @@ main() {
     fi
 
     # Get path to omnibase_core
-    local omnibase_core_path="${1:-${DEFAULT_OMNIBASE_CORE}}"
+    local omnibase_core_path
+    if [[ -n "${1:-}" ]]; then
+        # Explicit path provided
+        omnibase_core_path="$1"
+    else
+        # Auto-detect
+        omnibase_core_path=$(auto_detect_omnibase_core) || {
+            log_error "Cannot find omnibase_core in any standard location"
+            log_info "Tried: ./omnibase_core, ../omnibase_core, script parent directory"
+            log_info "Provide explicit path: $0 /path/to/omnibase_core"
+            exit 2
+        }
+        log_info "Auto-detected omnibase_core at: ${omnibase_core_path}"
+    fi
 
     # Resolve to absolute path
     if [[ ! "${omnibase_core_path}" = /* ]]; then
         omnibase_core_path="$(cd "$(pwd)" && cd "${omnibase_core_path}" 2>/dev/null && pwd)" || {
-            log_error "Cannot resolve omnibase_core path: ${1:-${DEFAULT_OMNIBASE_CORE}}"
+            log_error "Cannot resolve omnibase_core path: ${omnibase_core_path}"
             log_info "Make sure omnibase_core exists at the specified location"
             exit 2
         }
@@ -192,21 +257,25 @@ main() {
             exit 1
         fi
     else
-        # No embedded hash - fall back to direct file comparison
+        # No embedded hash - fall back to content comparison
+        # Strip any metadata block before comparing (handles both legacy and new formats)
         log_warn "Installed handshake has no embedded SHA256 (legacy format)"
 
-        # Calculate hash of installed file for comparison
-        local installed_sha256
-        installed_sha256=$(calculate_sha256 "${installed_handshake}")
+        # Create temp file with stripped content for hash comparison
+        local temp_file installed_content_sha256
+        temp_file=$(mktemp)
+        strip_metadata_block "${installed_handshake}" > "${temp_file}"
+        installed_content_sha256=$(calculate_sha256 "${temp_file}")
+        rm -f "${temp_file}"
 
-        if [[ "${installed_sha256}" == "${current_source_sha256}" ]]; then
+        if [[ "${installed_content_sha256}" == "${current_source_sha256}" ]]; then
             log_success "Handshake for '${repo_name}' matches source (SHA256: ${current_source_sha256:0:12}...)"
             log_info "Consider reinstalling to get embedded hash: ${handshakes_dir}/install.sh ${repo_name}"
             exit 0
         else
             log_error "Handshake is stale. Run: ${handshakes_dir}/install.sh ${repo_name}"
-            log_info "Installed SHA256: ${installed_sha256:0:12}..."
-            log_info "Source SHA256:    ${current_source_sha256:0:12}..."
+            log_info "Installed content SHA256: ${installed_content_sha256:0:12}..."
+            log_info "Source SHA256:            ${current_source_sha256:0:12}..."
             exit 1
         fi
     fi

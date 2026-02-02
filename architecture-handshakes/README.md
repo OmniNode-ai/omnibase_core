@@ -156,26 +156,25 @@ This ensures agents always operate with the latest architectural constraints, pr
 
 ## Metadata Block Format
 
-Installed handshakes include a metadata block at the end of the file:
+Installed handshakes include a metadata block at the **beginning** of the file:
 
 ```markdown
----
-<!-- HANDSHAKE METADATA - DO NOT EDIT -->
-installed_at: 2025-01-15T10:30:00Z
-source_repo: omnibase_core
-source_path: architecture-handshakes/repos/omniclaude.md
+<!-- HANDSHAKE_METADATA
+source: omnibase_core/architecture-handshakes/repos/omniclaude.md
+source_version: 0.12.0
 source_sha256: a1b2c3d4e5f6...
-installer_version: 1.0.0
----
+installed_at: 2025-01-15T10:30:00Z
+installed_by: jonah
+-->
 ```
 
 | Field | Description |
 |-------|-------------|
-| `installed_at` | UTC timestamp when the handshake was installed |
-| `source_repo` | Origin repository (always `omnibase_core`) |
-| `source_path` | Path to source file within omnibase_core |
+| `source` | Full path to source file within omnibase_core |
+| `source_version` | Version of omnibase_core (from pyproject.toml) |
 | `source_sha256` | SHA256 hash of source file for integrity verification |
-| `installer_version` | Version of install.sh used |
+| `installed_at` | UTC timestamp when the handshake was installed |
+| `installed_by` | Username of the person who ran the installer |
 
 **Important**: Do not edit this block manually. The CI check uses `source_sha256` to detect tampering or drift.
 

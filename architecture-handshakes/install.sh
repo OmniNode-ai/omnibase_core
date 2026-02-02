@@ -132,15 +132,6 @@ generate_metadata_block() {
     printf -- '-->\n\n'
 }
 
-# Strip existing metadata block from content
-# Returns content without the metadata block (for idempotency)
-strip_metadata_block() {
-    local file="$1"
-    # Remove the metadata block if it exists (from start to closing -->)
-    # Uses sed to delete from <!-- HANDSHAKE_METADATA to -->
-    sed '/^<!-- HANDSHAKE_METADATA$/,/^-->$/d' "${file}"
-}
-
 # Validate repo name
 is_supported_repo() {
     local repo="$1"
