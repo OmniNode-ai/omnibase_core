@@ -3,7 +3,7 @@
 # Architecture Handshake Verification Script
 # Verifies installed handshake matches source in omnibase_core
 #
-# Usage: check-handshake.sh [path-to-omnibase_core]
+# Usage: check-handshake.sh [-q|--quiet] [path-to-omnibase_core]
 #
 # Auto-detection (when no path provided):
 #   1. ./omnibase_core       (CI pattern - repos as subdirectories)
@@ -22,6 +22,9 @@
 #   2 - Missing files (handshake not installed or source not found)
 
 set -euo pipefail
+
+# Quiet mode flag (suppress INFO messages)
+QUIET=false
 
 # Colors for output
 RED='\033[0;31m'
@@ -66,7 +69,11 @@ auto_detect_omnibase_core() {
 log_success() { echo -e "${GREEN}OK${NC}: $1"; }
 log_error() { echo -e "${RED}FAIL${NC}: $1" >&2; }
 log_warn() { echo -e "${YELLOW}WARN${NC}: $1"; }
-log_info() { echo "INFO: $1"; }
+log_info() {
+    if [[ "${QUIET}" != "true" ]]; then
+        echo "INFO: $1"
+    fi
+}
 
 # Cross-platform SHA256 calculation
 calculate_sha256() {
@@ -89,7 +96,13 @@ calculate_sha256() {
 strip_metadata_block() {
     local file="$1"
     # Remove the metadata block if it exists (from <!-- HANDSHAKE_METADATA to -->)
-    # Also removes the blank line after the closing --> for clean comparison
+    #
+    # The second sed removes a blank first line if present. This is needed because:
+    # - The metadata block format ends with "-->\n\n" (closing tag + blank line)
+    # - The blank line after --> is intentional for markdown rendering (separates
+    #   the HTML comment from the document content)
+    # - After stripping the metadata block, this blank line becomes the first line
+    # - We remove it so the stripped content matches the original source file
     sed '/^<!-- HANDSHAKE_METADATA/,/^-->/d' "${file}" | sed '1{/^$/d;}'
 }
 
@@ -144,7 +157,11 @@ extract_source_sha256() {
 usage() {
     echo "Architecture Handshake Verification Script"
     echo ""
-    echo "Usage: $0 [path-to-omnibase_core]"
+    echo "Usage: $0 [-q|--quiet] [path-to-omnibase_core]"
+    echo ""
+    echo "Options:"
+    echo "  -q, --quiet            Suppress INFO messages (errors still shown)"
+    echo "  -h, --help             Show this help message"
     echo ""
     echo "Arguments:"
     echo "  path-to-omnibase_core  Path to omnibase_core repo (auto-detected if not provided)"
@@ -161,8 +178,9 @@ usage() {
     echo ""
     echo "Examples:"
     echo "  $0                            # Auto-detect omnibase_core location"
+    echo "  $0 -q                         # Quiet mode (CI-friendly)"
     echo "  $0 ./omnibase_core            # CI: checked out as subdirectory"
-    echo "  $0 ../omnibase_core           # Local: repos are siblings"
+    echo "  $0 -q ../omnibase_core        # Quiet mode with explicit path"
     echo "  $0 /path/to/omnibase_core     # Explicit path"
     echo ""
     echo "This script should be run from a repo with an installed handshake at"
@@ -170,11 +188,22 @@ usage() {
 }
 
 main() {
-    # Handle help flag
-    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-        usage
-        exit 0
-    fi
+    # Handle flags
+    while [[ $# -gt 0 ]]; do
+        case "${1:-}" in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            -q|--quiet)
+                QUIET=true
+                shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
 
     # Get path to omnibase_core
     local omnibase_core_path
@@ -262,13 +291,12 @@ main() {
         log_warn "Installed handshake has no embedded SHA256 (legacy format)"
 
         # Create temp file with stripped content for hash comparison
+        # Trap handles cleanup on exit (success or failure)
         local temp_file installed_content_sha256
         temp_file=$(mktemp)
         trap "rm -f '${temp_file}'" EXIT
         strip_metadata_block "${installed_handshake}" > "${temp_file}"
         installed_content_sha256=$(calculate_sha256 "${temp_file}")
-        rm -f "${temp_file}"
-        trap - EXIT  # Clear the trap after successful cleanup
 
         if [[ "${installed_content_sha256}" == "${current_source_sha256}" ]]; then
             log_success "Handshake for '${repo_name}' matches source (SHA256: ${current_source_sha256:0:12}...)"
