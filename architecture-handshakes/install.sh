@@ -113,17 +113,23 @@ main() {
 
     # Install handshake
     local dest_file="${claude_dir}/architecture-handshake.md"
+    local existed=false
+
+    # Check if file exists and capture for diff comparison
+    if [[ -f "${dest_file}" ]]; then
+        existed=true
+    fi
+
+    # Copy the handshake file
     cp "${source_file}" "${dest_file}"
 
     log_success "Installed architecture handshake for ${repo_name}"
     log_info "Source: ${source_file}"
     log_info "Dest:   ${dest_file}"
 
-    # Show diff if file already existed
-    if command -v diff &> /dev/null && [[ -f "${dest_file}" ]]; then
-        if ! diff -q "${source_file}" "${dest_file}" &> /dev/null; then
-            log_warn "File was updated (content changed)"
-        fi
+    # Show update notice if file was replaced
+    if [[ "${existed}" == "true" ]]; then
+        log_info "Previous file was overwritten"
     fi
 }
 

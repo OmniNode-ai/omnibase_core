@@ -16,9 +16,12 @@ architecture-handshake.md = Pre-flight Checklist (constraints checked every time
 Each handshake follows a standard template:
 
 ```markdown
-## OmniNode Architecture – Constraint Map (<repo-name>)
+# OmniNode Architecture – Constraint Map (<repo-name>)
 
-### Core Principles
+> **Role**: [Brief description of this repo's role]
+> **Handshake Version**: 0.1.0
+
+## Core Principles
 - [Fundamental principles this repo embodies]
 
 ### This Repo Contains
