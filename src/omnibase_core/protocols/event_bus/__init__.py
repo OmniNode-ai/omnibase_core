@@ -58,6 +58,7 @@ from omnibase_core.protocols.event_bus.protocol_event_bus_registry import (
     ProtocolEventBusRegistry,
 )
 from omnibase_core.protocols.event_bus.protocol_event_bus_subscriber import (
+    ConsumerGroupPurpose,
     ProtocolEventBusSubscriber,
 )
 from omnibase_core.protocols.event_bus.protocol_event_envelope import (
@@ -70,6 +71,9 @@ from omnibase_core.protocols.event_bus.protocol_from_event import ProtocolFromEv
 from omnibase_core.protocols.event_bus.protocol_kafka_event_bus_adapter import (
     ProtocolKafkaEventBusAdapter,
 )
+from omnibase_core.protocols.event_bus.protocol_node_identity import (
+    ProtocolNodeIdentity,
+)
 from omnibase_core.protocols.event_bus.protocol_sync_event_bus import (
     ProtocolSyncEventBus,
 )
@@ -81,6 +85,9 @@ __all__ = [
     "ProtocolEventBusHeaders",
     # Adapters
     "ProtocolKafkaEventBusAdapter",
+    # Node Identity (for subscription consumer group derivation)
+    "ProtocolNodeIdentity",
+    "ConsumerGroupPurpose",
     # Event Bus - ISP-compliant protocols (prefer these for minimal dependencies)
     "ProtocolEventBusPublisher",
     "ProtocolEventBusSubscriber",

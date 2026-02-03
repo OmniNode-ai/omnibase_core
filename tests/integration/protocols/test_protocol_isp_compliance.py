@@ -377,7 +377,7 @@ class TestProtocolModularityPrinciples:
             (
                 ProtocolEventBusSubscriber,
                 "subscribe",
-                ["topic", "group_id", "on_message"],
+                ["topic", "node_identity", "on_message"],
             ),
             (ProtocolEventBusLifecycle, "start", []),
             (ProtocolEventBusLifecycle, "shutdown", []),
@@ -592,7 +592,11 @@ class TestISPIndependentImplementation:
         """
         from collections.abc import Awaitable, Callable
 
-        from omnibase_core.protocols.event_bus import ProtocolEventBusSubscriber
+        from omnibase_core.protocols.event_bus import (
+            ConsumerGroupPurpose,
+            ProtocolEventBusSubscriber,
+            ProtocolNodeIdentity,
+        )
 
         class SubscriberOnlyImpl:
             """Implementation that only subscribes to events."""
@@ -600,8 +604,10 @@ class TestISPIndependentImplementation:
             async def subscribe(
                 self,
                 topic: str,
-                group_id: str,
+                node_identity: ProtocolNodeIdentity,
                 on_message: Callable[[ProtocolEventMessage], Awaitable[None]],
+                *,
+                purpose: ConsumerGroupPurpose = "consume",
             ) -> Callable[[], Awaitable[None]]:
                 async def unsubscribe() -> None:
                     pass
