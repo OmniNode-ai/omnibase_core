@@ -526,6 +526,76 @@ class TestModelLatencyBreakdownPayloadValidation:
 
 
 # ============================================================================
+# Tests for Timestamp Timezone Awareness
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestTimestampTimezoneAwareness:
+    """Test that all injection metrics models reject naive datetimes."""
+
+    def test_context_utilization_rejects_naive_datetime(self) -> None:
+        """Test that ModelContextUtilizationPayload rejects naive datetime."""
+        from datetime import datetime as dt
+
+        naive_timestamp = dt.now()  # No timezone info
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContextUtilizationPayload(
+                session_ref="sess-123",
+                utilization_score=0.5,
+                utilization_method="semantic",
+                injected_count=5,
+                reused_count=3,
+                timestamp=naive_timestamp,
+            )
+
+        # Verify the error is about timezone awareness
+        errors = exc_info.value.errors()
+        assert any("timezone-aware" in str(e.get("msg", "")) for e in errors)
+
+    def test_agent_match_rejects_naive_datetime(self) -> None:
+        """Test that ModelAgentMatchPayload rejects naive datetime."""
+        from datetime import datetime as dt
+
+        naive_timestamp = dt.now()  # No timezone info
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelAgentMatchPayload(
+                session_ref="sess-123",
+                routed_agent="agent",
+                match_score=0.9,
+                routing_path="direct",
+                timestamp=naive_timestamp,
+            )
+
+        errors = exc_info.value.errors()
+        assert any("timezone-aware" in str(e.get("msg", "")) for e in errors)
+
+    def test_latency_breakdown_rejects_naive_datetime(self) -> None:
+        """Test that ModelLatencyBreakdownPayload rejects naive datetime."""
+        from datetime import datetime as dt
+
+        naive_timestamp = dt.now()  # No timezone info
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelLatencyBreakdownPayload(
+                session_ref="sess-123",
+                prompt_index=0,
+                routing_ms=10,
+                retrieval_ms=50,
+                injection_ms=5,
+                user_visible_latency_ms=100,
+                cohort="control",
+                cache_hit=True,
+                timestamp=naive_timestamp,
+            )
+
+        errors = exc_info.value.errors()
+        assert any("timezone-aware" in str(e.get("msg", "")) for e in errors)
+
+
+# ============================================================================
 # Tests for Model Immutability (All Models)
 # ============================================================================
 

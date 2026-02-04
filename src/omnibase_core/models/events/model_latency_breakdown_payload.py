@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from omnibase_core.models.events.model_event_payload_base import ModelEventPayloadBase
 
@@ -99,3 +99,12 @@ class ModelLatencyBreakdownPayload(ModelEventPayloadBase):
         ...,
         description="When the timing was recorded (timezone-aware UTC)",
     )
+
+    @field_validator("timestamp")
+    @classmethod
+    def check_timezone_aware(cls, v: datetime) -> datetime:
+        """Ensure timestamp is timezone-aware."""
+        if v.tzinfo is None:
+            # error-ok: ValueError is standard for Pydantic field validators
+            raise ValueError("timestamp must be timezone-aware (got naive datetime)")
+        return v
