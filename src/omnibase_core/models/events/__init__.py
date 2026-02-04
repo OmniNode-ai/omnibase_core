@@ -16,6 +16,12 @@ from omnibase_core.models.events.contract_registration import (
     ModelContractRegisteredEvent,
     ModelNodeHeartbeatEvent,
 )
+from omnibase_core.models.events.model_agent_match_payload import (
+    ModelAgentMatchPayload,
+)
+from omnibase_core.models.events.model_context_utilization_payload import (
+    ModelContextUtilizationPayload,
+)
 from omnibase_core.models.events.model_event_payload_base import (
     ModelEventPayloadBase,
 )
@@ -38,6 +44,9 @@ from omnibase_core.models.events.model_intent_record_payload import (
 from omnibase_core.models.events.model_intent_stored_event import (
     INTENT_STORED_EVENT,
     ModelIntentStoredEvent,
+)
+from omnibase_core.models.events.model_latency_breakdown_payload import (
+    ModelLatencyBreakdownPayload,
 )
 from omnibase_core.models.events.model_runtime_events import (
     NODE_GRAPH_READY_EVENT,
@@ -106,6 +115,10 @@ __all__ = [
     "WIRING_RESULT_EVENT",
     # Runtime event models
     "ModelEventPayloadBase",
+    # Injection metrics payloads (OMN-1901)
+    "ModelAgentMatchPayload",
+    "ModelContextUtilizationPayload",
+    "ModelLatencyBreakdownPayload",
     "ModelNodeGraphInfo",
     "ModelNodeGraphReadyEvent",
     "ModelNodeRegisteredEvent",
