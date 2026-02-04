@@ -35,6 +35,7 @@ Example:
 
 from __future__ import annotations
 
+from omnibase_core.enums import EnumConsumerGroupPurpose
 from omnibase_core.protocols.event_bus.protocol_async_event_bus import (
     ProtocolAsyncEventBus,
 )
@@ -58,7 +59,6 @@ from omnibase_core.protocols.event_bus.protocol_event_bus_registry import (
     ProtocolEventBusRegistry,
 )
 from omnibase_core.protocols.event_bus.protocol_event_bus_subscriber import (
-    EnumConsumerGroupPurpose,
     ProtocolEventBusSubscriber,
 )
 from omnibase_core.protocols.event_bus.protocol_event_envelope import (
