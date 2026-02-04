@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-02-04
+
+### Added
+
+- **ModelMessageEnvelope with Cryptographic Signing** [OMN-1898]: Runtime-gateway-centric message envelope with Ed25519 signatures and Blake3 payload hashing for secure inter-service communication
+  - `ModelMessageEnvelope[T]` - Generic signed envelope for typed payloads
+  - `ModelEnvelopeSignature` - Signature metadata with algorithm and timestamp
+  - `ModelEmitterIdentity` - Component identity for observability
+  - `ProtocolKeyProvider` - Interface for key storage backends
+  - Crypto utilities: Blake3 hasher, Ed25519 signer, FileKeyProvider
+
+- **Phase 1 Cross-Repo Validators** [OMN-1775]: Three new validation rules to prevent "2am incidents"
+  - `rule_error_taxonomy` - Enforces canonical error module usage, proper ModelOnexError inheritance, and error_code requirements
+  - `rule_contract_schema` - Validates contract YAML files have required fields (contract_version, node_type, name, description)
+  - `rule_topic_naming` - Enforces ONEX topic naming conventions, detects invalid formats and hardcoded topic strings
+
+- **Injection Metrics Event Contracts** [OMN-1901]: Shared event payload models and topic constants for injection effectiveness metrics
+  - `ModelContextUtilizationPayload` - Track context usage effectiveness
+  - `ModelAgentMatchPayload` - Track agent routing accuracy
+  - `ModelLatencyBreakdownPayload` - Detailed timing breakdown
+  - Topic constants for `context-utilization`, `agent-match`, and `latency-breakdown` events
+
+### Changed
+
+- **ProtocolEventBusSubscriber** now uses `node_identity` for consistent subscriber identification
+- **Architecture Handshakes**: Updated omniclaude constraints to v0.2.0
+
 ## [0.13.1] - 2026-02-02
 
 ### Added
