@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import threading
 from pathlib import Path
 
@@ -83,11 +84,16 @@ class FileKeyProvider:
 
             # Ensure parent directory exists
             self._key_file.parent.mkdir(parents=True, exist_ok=True)
-            self._key_file.write_text(
-                json.dumps(data, indent=2, sort_keys=True), encoding="utf-8"
-            )
-            # Restrict file permissions to owner only (security best practice for key material)
-            self._key_file.chmod(0o600)
+
+            # Set restrictive umask before creating file to prevent TOCTOU race condition
+            # where keys could be read during the window between write and chmod
+            old_umask = os.umask(0o077)  # Restrict to owner-only (rwx------)
+            try:
+                self._key_file.write_text(
+                    json.dumps(data, indent=2, sort_keys=True), encoding="utf-8"
+                )
+            finally:
+                os.umask(old_umask)  # Restore original umask
 
     def get_public_key(
         self,
