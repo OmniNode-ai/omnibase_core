@@ -174,5 +174,73 @@ class TestFileKeyProviderProtocolCompliance:
         assert isinstance(provider, ProtocolKeyProvider)
 
 
+class TestFileKeyProviderThreadSafety:
+    """Thread safety tests."""
+
+    def test_concurrent_register_and_get(self, temp_key_file: Path) -> None:
+        """Concurrent register and get operations don't corrupt state."""
+        import threading
+
+        provider = FileKeyProvider(temp_key_file)
+        errors: list[Exception] = []
+        num_threads = 10
+        keys_per_thread = 5
+
+        def register_keys(thread_id: int) -> None:
+            try:
+                for i in range(keys_per_thread):
+                    keypair = generate_keypair()
+                    runtime_id = f"runtime-{thread_id}-{i}"
+                    provider.register_key(runtime_id, keypair.public_key_bytes)
+                    # Immediately verify it was registered
+                    assert provider.has_key(runtime_id)
+            except Exception as e:
+                errors.append(e)
+
+        threads = [
+            threading.Thread(target=register_keys, args=(i,))
+            for i in range(num_threads)
+        ]
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # No errors should have occurred
+        assert errors == [], f"Thread errors: {errors}"
+
+        # All keys should be registered
+        runtime_ids = provider.list_runtime_ids()
+        expected_count = num_threads * keys_per_thread
+        assert len(runtime_ids) == expected_count
+
+
+class TestFileKeyProviderValidation:
+    """Key validation tests."""
+
+    def test_skips_invalid_length_keys_on_load(self, temp_key_file: Path) -> None:
+        """Keys with invalid length are skipped when loading from file."""
+        import base64
+
+        # Create file with one valid and one invalid key
+        valid_key = generate_keypair().public_key_bytes
+        invalid_key = b"too short"
+
+        data = {
+            "keys": {
+                "valid-runtime": base64.urlsafe_b64encode(valid_key).decode(),
+                "invalid-runtime": base64.urlsafe_b64encode(invalid_key).decode(),
+            }
+        }
+        temp_key_file.write_text(json.dumps(data))
+
+        # Load provider - should skip invalid key
+        provider = FileKeyProvider(temp_key_file)
+        assert provider.has_key("valid-runtime") is True
+        assert provider.has_key("invalid-runtime") is False
+        assert provider.get_public_key("valid-runtime") == valid_key
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

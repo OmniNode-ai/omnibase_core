@@ -200,21 +200,36 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
             "utf-8"
         )
 
+    def _compute_payload_hash(self) -> str:
+        """Compute the Blake3 hash of the current payload."""
+        if isinstance(self.payload, BaseModel):
+            payload_dict = self.payload.model_dump(mode="json")
+        elif isinstance(self.payload, dict):
+            payload_dict = self.payload
+        else:
+            payload_dict = {"value": self.payload}
+        return hash_canonical_json(payload_dict)
+
     def verify_signature(self, key_provider: ProtocolKeyProvider) -> bool:
         """
         Verify the envelope signature using the key provider.
+
+        This method verifies:
+        1. The payload hashes to the stored payload_hash (integrity)
+        2. The signature over the metadata is valid (authenticity)
 
         Args:
             key_provider: Provider for looking up runtime public keys.
 
         Returns:
-            True if signature is valid, False otherwise.
+            True if signature is valid and payload is intact, False otherwise.
 
         Raises:
             ModelOnexError: If runtime_id's public key is not found.
 
         Security:
             This method fails closed - unknown runtime_id = untrusted.
+            Both payload integrity and signature authenticity must pass.
         """
         public_key = key_provider.get_public_key(self.runtime_id)
         if public_key is None:
@@ -224,6 +239,12 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
                 context={"runtime_id": self.runtime_id},
             )
 
+        # Step 1: Verify payload integrity - hash must match stored hash
+        computed_hash = self._compute_payload_hash()
+        if computed_hash != self.signature.payload_hash:
+            return False
+
+        # Step 2: Verify signature authenticity
         signing_content = self._get_signing_content()
         return verify_base64(public_key, signing_content, self.signature.signature)
 

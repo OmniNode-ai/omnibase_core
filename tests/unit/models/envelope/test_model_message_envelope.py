@@ -276,6 +276,61 @@ class TestModelMessageEnvelopeSignatureVerification:
 
         assert envelope.verify_signature(provider) is False
 
+    def test_tampered_envelope_fails_verification(self, keypair, key_provider) -> None:
+        """Tampering with envelope fields after signing causes verification to fail."""
+        envelope = ModelMessageEnvelope.create_signed(
+            realm="dev",
+            runtime_id="runtime-dev-001",
+            bus_id="kafka-cluster-a",
+            payload={"data": "original"},
+            private_key=keypair.private_key_bytes,
+        )
+
+        # Verify original is valid
+        assert envelope.verify_signature(key_provider) is True
+
+        # Create tampered envelope by modifying a signed field
+        # ModelMessageEnvelope is not frozen, so we can construct a modified copy
+        tampered_envelope = ModelMessageEnvelope[dict](
+            realm="prod",  # Changed from "dev" to "prod"
+            runtime_id=envelope.runtime_id,
+            bus_id=envelope.bus_id,
+            trace_id=envelope.trace_id,
+            emitted_at=envelope.emitted_at,
+            signature=envelope.signature,  # Keep original signature
+            payload=envelope.payload,
+        )
+
+        # Tampered envelope should fail verification
+        assert tampered_envelope.verify_signature(key_provider) is False
+
+    def test_tampered_payload_fails_verification(self, keypair, key_provider) -> None:
+        """Tampering with payload after signing causes verification to fail."""
+        envelope = ModelMessageEnvelope.create_signed(
+            realm="dev",
+            runtime_id="runtime-dev-001",
+            bus_id="kafka-cluster-a",
+            payload={"data": "original"},
+            private_key=keypair.private_key_bytes,
+        )
+
+        # Verify original is valid
+        assert envelope.verify_signature(key_provider) is True
+
+        # Create envelope with tampered payload but same signature
+        tampered_envelope = ModelMessageEnvelope[dict](
+            realm=envelope.realm,
+            runtime_id=envelope.runtime_id,
+            bus_id=envelope.bus_id,
+            trace_id=envelope.trace_id,
+            emitted_at=envelope.emitted_at,
+            signature=envelope.signature,  # Keep original signature
+            payload={"data": "TAMPERED"},  # Different payload
+        )
+
+        # Tampered envelope should fail verification because payload_hash won't match
+        assert tampered_envelope.verify_signature(key_provider) is False
+
 
 class TestModelMessageEnvelopeWithDictPayload:
     """Tests for envelope with dict payloads."""

@@ -65,10 +65,14 @@ class FileKeyProvider:
             try:
                 data = json.loads(self._key_file.read_text(encoding="utf-8"))
                 keys_data: dict[str, str] = data.get("keys", {})
-                self._keys = {
-                    runtime_id: base64.urlsafe_b64decode(key_b64)
-                    for runtime_id, key_b64 in keys_data.items()
-                }
+                # Validate and load only keys with correct length
+                loaded_keys: dict[str, bytes] = {}
+                for runtime_id, key_b64 in keys_data.items():
+                    key_bytes = base64.urlsafe_b64decode(key_b64)
+                    if len(key_bytes) == self.ED25519_PUBLIC_KEY_LENGTH:
+                        loaded_keys[runtime_id] = key_bytes
+                    # Skip invalid-length keys silently (corrupt data)
+                self._keys = loaded_keys
             except (json.JSONDecodeError, KeyError, ValueError):
                 # Invalid file format - start fresh
                 self._keys = {}
@@ -82,13 +86,14 @@ class FileKeyProvider:
             }
             data: dict[str, dict[str, str]] = {"keys": keys_data}
 
-            # Ensure parent directory exists
-            self._key_file.parent.mkdir(parents=True, exist_ok=True)
-
-            # Set restrictive umask before creating file to prevent TOCTOU race condition
-            # where keys could be read during the window between write and chmod
+            # Set restrictive umask BEFORE any filesystem operations to prevent TOCTOU
+            # race condition where directories/files could be read by others during
+            # the window between creation and permission setting
             old_umask = os.umask(0o077)  # Restrict to owner-only (rwx------)
             try:
+                # Create parent directory with restrictive permissions
+                self._key_file.parent.mkdir(parents=True, exist_ok=True)
+                # Write file with restrictive permissions
                 self._key_file.write_text(
                     json.dumps(data, indent=2, sort_keys=True), encoding="utf-8"
                 )
