@@ -223,7 +223,7 @@ class NamingConventionValidator:
             "Validator*",  # All Validator* classes (ValidatorAnyType, ValidatorContractLinter, etc.) (OMN-1291)
             "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for AST analysis (OMN-1311)
             "*Visitor",  # All *Visitor classes (AnyTypeVisitor, etc.) for AST analysis (OMN-1291)
-            "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for code analysis (OMN-1308)
+            "Rule*",  # All Rule* classes (RuleContractSchema, RuleErrorTaxonomy, etc.) for cross-repo validation (OMN-1775)
         ],
         # MERGE INFRASTRUCTURE: Contract merge engine for typed contract merging
         # Location: merge/ - Contract merge framework implementations
