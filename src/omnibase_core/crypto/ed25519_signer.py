@@ -116,7 +116,8 @@ def verify(public_key_bytes: bytes, data: bytes, signature: bytes) -> bool:
         return True
     except InvalidSignature:
         return False
-    except Exception:  # fallback-ok: Invalid key format returns False rather than exposing crypto internals
+    except (ValueError, TypeError):
+        # Invalid key format (wrong length, wrong type) returns False for safe validation
         return False
 
 
@@ -150,9 +151,8 @@ def verify_base64(public_key_bytes: bytes, data: bytes, signature_b64: str) -> b
     try:
         signature = base64.urlsafe_b64decode(signature_b64)
         return verify(public_key_bytes, data, signature)
-    except (
-        Exception
-    ):  # fallback-ok: Invalid base64 or key format returns False for safe validation
+    except (ValueError, TypeError, InvalidSignature):
+        # Invalid base64 or key format returns False for safe validation
         return False
 
 

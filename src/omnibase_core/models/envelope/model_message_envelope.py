@@ -60,6 +60,13 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
         - emitter_identity = component that executed logic (optional)
         - Signature is bound to runtime_id, NOT emitter_identity
 
+    Security Warning:
+        IMPORTANT: emitter_identity is UNTRUSTED metadata provided for observability
+        and debugging purposes only. It is NOT covered by the cryptographic signature
+        and can be spoofed by any party with access to the message. NEVER use
+        emitter_identity for authorization decisions. For authentication, use
+        runtime_id which is cryptographically verified by the signature.
+
     Attributes:
         realm: Routing boundary identifier (e.g., "dev", "staging", "prod").
         runtime_id: Gateway runtime that signed this envelope.

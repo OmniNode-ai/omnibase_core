@@ -86,6 +86,8 @@ class FileKeyProvider:
             self._key_file.write_text(
                 json.dumps(data, indent=2, sort_keys=True), encoding="utf-8"
             )
+            # Restrict file permissions to owner only (security best practice for key material)
+            self._key_file.chmod(0o600)
 
     def get_public_key(
         self,
