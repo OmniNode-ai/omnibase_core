@@ -293,29 +293,32 @@ class CrossRepoValidationEngine:
         # Phase 0 rules
         if rule_id == "repo_boundaries":
             if isinstance(config, ModelRuleRepoBoundariesConfig):
-                rule = RuleRepoBoundaries(config)
-                return rule.validate(file_imports, self.policy.repo_id)
+                return RuleRepoBoundaries(config).validate(
+                    file_imports, self.policy.repo_id
+                )
 
         elif rule_id == "forbidden_imports":
             if isinstance(config, ModelRuleForbiddenImportsConfig):
-                rule = RuleForbiddenImports(config)
-                return rule.validate(file_imports)
+                return RuleForbiddenImports(config).validate(file_imports)
 
         # Phase 1 rules (OMN-1775)
         elif rule_id == "error_taxonomy":
             if isinstance(config, ModelRuleErrorTaxonomyConfig):
-                rule = RuleErrorTaxonomy(config)
-                return rule.validate(file_imports, self.policy.repo_id, root_directory)
+                return RuleErrorTaxonomy(config).validate(
+                    file_imports, self.policy.repo_id, root_directory
+                )
 
         elif rule_id == "contract_schema_valid":
             if isinstance(config, ModelRuleContractSchemaConfig):
-                rule = RuleContractSchema(config)
-                return rule.validate(file_imports, self.policy.repo_id, root_directory)
+                return RuleContractSchema(config).validate(
+                    file_imports, self.policy.repo_id, root_directory
+                )
 
         elif rule_id == "topic_naming":
             if isinstance(config, ModelRuleTopicNamingConfig):
-                rule = RuleTopicNaming(config)
-                return rule.validate(file_imports, self.policy.repo_id, root_directory)
+                return RuleTopicNaming(config).validate(
+                    file_imports, self.policy.repo_id, root_directory
+                )
 
         # Rule not implemented yet
         return []
