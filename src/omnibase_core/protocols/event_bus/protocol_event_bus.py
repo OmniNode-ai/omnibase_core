@@ -77,12 +77,13 @@ class ProtocolEventBus(
 
     Example:
         >>> class MyService:
-        ...     def __init__(self, bus: ProtocolEventBus):
+        ...     def __init__(self, bus: ProtocolEventBus, identity: ProtocolNodeIdentity):
         ...         self.bus = bus
+        ...         self.identity = identity
         ...
         ...     async def start(self) -> None:
         ...         await self.bus.start()
-        ...         await self.bus.subscribe("events", "my-group", self.handle)
+        ...         await self.bus.subscribe("events", self.identity, self.handle)
         ...
         ...     async def handle(self, msg: ProtocolEventMessage) -> None:
         ...         # Process message

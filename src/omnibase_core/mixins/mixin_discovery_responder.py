@@ -28,6 +28,10 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEve
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.protocols import ProtocolEventBus
+from omnibase_core.protocols.event_bus import (
+    EnumConsumerGroupPurpose,
+    ProtocolNodeIdentity,
+)
 from omnibase_core.types.typed_dict_discovery_stats import TypedDictDiscoveryStats
 
 # TypeAdapter for duck-typing validation of discovery request metadata
@@ -121,6 +125,7 @@ class MixinDiscoveryResponder:
     async def start_discovery_responder(
         self,
         event_bus: ProtocolEventBus,
+        node_identity: ProtocolNodeIdentity,
         response_throttle: float = 1.0,
     ) -> None:
         """
@@ -128,7 +133,11 @@ class MixinDiscoveryResponder:
 
         Args:
             event_bus: Event bus to listen on
+            node_identity: Node identity for consumer group derivation
             response_throttle: Minimum seconds between responses (rate limiting)
+
+        .. versionchanged:: 0.14.0
+            Added node_identity parameter for consumer group derivation.
         """
         if self._discovery_active:
             emit_log_event(
@@ -142,29 +151,13 @@ class MixinDiscoveryResponder:
         self._discovery_event_bus = event_bus
 
         try:
-            # Get node_id for group_id - STRICT: Must have node_id attribute
-            if not hasattr(self, "node_id"):
-                raise ModelOnexError(
-                    message="Node must have 'node_id' attribute to participate in discovery",
-                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
-                    node_type=self.__class__.__name__,
-                )
-            node_id = self.node_id
-            if not isinstance(node_id, UUID):
-                raise ModelOnexError(
-                    message="node_id must be UUID type",
-                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
-                    node_type=self.__class__.__name__,
-                    actual_type=type(node_id).__name__,
-                )
-            group_id = f"discovery-{node_id}"
-
             # Subscribe to discovery broadcast channel
-            # Create wrapper for protocol message -> envelope conversion
+            # Consumer group is derived from node_identity with INTROSPECTION purpose
             self._discovery_unsubscribe = await event_bus.subscribe(
                 topic="onex.discovery.broadcast",
-                group_id=group_id,
+                node_identity=node_identity,
                 on_message=self._on_discovery_message,
+                purpose=EnumConsumerGroupPurpose.INTROSPECTION,
             )
 
             self._discovery_active = True
@@ -174,7 +167,8 @@ class MixinDiscoveryResponder:
                 f"Started discovery responder with {response_throttle}s throttle",
                 {
                     "component": "DiscoveryResponder",
-                    "node_id": node_id,
+                    "node_name": node_identity.node_name,
+                    "service": node_identity.service,
                     "response_throttle": response_throttle,
                 },
             )

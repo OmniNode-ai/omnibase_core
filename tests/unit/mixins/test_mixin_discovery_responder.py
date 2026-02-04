@@ -18,13 +18,49 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.mixins.mixin_discovery_responder import MixinDiscoveryResponder
 from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.protocols.event_bus import ProtocolNodeIdentity
+
+
+class MockNodeIdentity:
+    """Mock node identity for testing discovery responder."""
+
+    def __init__(
+        self,
+        env: str = "test",
+        service: str = "test-service",
+        node_name: str = "test-node",
+        version: str = "v1",
+    ) -> None:
+        self._env = env
+        self._service = service
+        self._node_name = node_name
+        self._version = version
+
+    @property
+    def env(self) -> str:
+        return self._env
+
+    @property
+    def service(self) -> str:
+        return self._service
+
+    @property
+    def node_name(self) -> str:
+        return self._node_name
+
+    @property
+    def version(self) -> str:
+        return self._version
+
+
+# Verify MockNodeIdentity satisfies the protocol
+assert isinstance(MockNodeIdentity(), ProtocolNodeIdentity)
 
 
 # Helper class for testing - fully compliant node
@@ -149,7 +185,7 @@ class TestStartStopDiscoveryResponder:
         mock_event_bus = AsyncMock()
         mock_event_bus.subscribe = AsyncMock(return_value=AsyncMock())
 
-        await node.start_discovery_responder(mock_event_bus)
+        await node.start_discovery_responder(mock_event_bus, MockNodeIdentity())
 
         assert node._discovery_active is True
         assert node._discovery_event_bus is mock_event_bus
@@ -170,7 +206,9 @@ class TestStartStopDiscoveryResponder:
         mock_event_bus = AsyncMock()
         mock_event_bus.subscribe = AsyncMock(return_value=AsyncMock())
 
-        await node.start_discovery_responder(mock_event_bus, response_throttle=2.5)
+        await node.start_discovery_responder(
+            mock_event_bus, MockNodeIdentity(), response_throttle=2.5
+        )
 
         assert node._response_throttle == 2.5
 
@@ -189,11 +227,11 @@ class TestStartStopDiscoveryResponder:
         mock_event_bus = AsyncMock()
         mock_event_bus.subscribe = AsyncMock(return_value=AsyncMock())
 
-        await node.start_discovery_responder(mock_event_bus)
+        await node.start_discovery_responder(mock_event_bus, MockNodeIdentity())
         call_count = mock_event_bus.subscribe.call_count
 
         # Try to start again
-        await node.start_discovery_responder(mock_event_bus)
+        await node.start_discovery_responder(mock_event_bus, MockNodeIdentity())
 
         # Should not subscribe again
         assert mock_event_bus.subscribe.call_count == call_count
@@ -214,7 +252,7 @@ class TestStartStopDiscoveryResponder:
         mock_event_bus.subscribe = AsyncMock(side_effect=RuntimeError("Bus error"))
 
         with pytest.raises(ModelOnexError):
-            await node.start_discovery_responder(mock_event_bus)
+            await node.start_discovery_responder(mock_event_bus, MockNodeIdentity())
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
@@ -232,7 +270,7 @@ class TestStartStopDiscoveryResponder:
         mock_unsubscribe = AsyncMock()
         mock_event_bus.subscribe = AsyncMock(return_value=mock_unsubscribe)
 
-        await node.start_discovery_responder(mock_event_bus)
+        await node.start_discovery_responder(mock_event_bus, MockNodeIdentity())
         await node.stop_discovery_responder()
 
         assert node._discovery_active is False
@@ -618,7 +656,9 @@ class TestIntegrationScenarios:
         mock_event_bus.publish = AsyncMock()
 
         # Start discovery responder
-        await node.start_discovery_responder(mock_event_bus, response_throttle=0.1)
+        await node.start_discovery_responder(
+            mock_event_bus, MockNodeIdentity(), response_throttle=0.1
+        )
 
         assert node._discovery_active is True
 
@@ -663,42 +703,6 @@ class TestIntegrationScenarios:
 @pytest.mark.unit
 class TestStrictTypeEnforcement:
     """Test strict type enforcement breaking changes."""
-
-    @pytest.mark.asyncio
-    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
-    async def test_start_discovery_responder_missing_node_id(self):
-        """Test that starting discovery fails if node_id is missing."""
-
-        class InvalidNode(MixinDiscoveryResponder):
-            pass
-
-        node = InvalidNode()
-        mock_event_bus = AsyncMock()
-
-        with pytest.raises(ModelOnexError) as exc_info:
-            await node.start_discovery_responder(mock_event_bus)
-
-        # Error preserves the specific DISCOVERY_INVALID_NODE code
-        assert exc_info.value.error_code == EnumCoreErrorCode.DISCOVERY_INVALID_NODE
-
-    @pytest.mark.asyncio
-    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
-    async def test_start_discovery_responder_wrong_node_id_type(self):
-        """Test that starting discovery fails if node_id is not UUID."""
-
-        class InvalidNode(MixinDiscoveryResponder):
-            def __init__(self):
-                super().__init__()
-                self.node_id = "not-a-uuid"  # Wrong type
-
-        node = InvalidNode()
-        mock_event_bus = AsyncMock()
-
-        with pytest.raises(ModelOnexError) as exc_info:
-            await node.start_discovery_responder(mock_event_bus)
-
-        # Error preserves the specific DISCOVERY_INVALID_NODE code
-        assert exc_info.value.error_code == EnumCoreErrorCode.DISCOVERY_INVALID_NODE
 
     def test_get_node_version_missing(self):
         """Test that _get_node_version fails if no version attribute."""
@@ -802,7 +806,7 @@ class TestStrictTypeEnforcement:
         mock_event_bus.subscribe = AsyncMock(return_value=AsyncMock())
 
         # Should not raise any errors
-        await node.start_discovery_responder(mock_event_bus)
+        await node.start_discovery_responder(mock_event_bus, MockNodeIdentity())
 
         assert node._discovery_active is True
 
