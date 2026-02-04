@@ -332,6 +332,44 @@ class TestModelMessageEnvelopeSignatureVerification:
         assert tampered_envelope.verify_signature(key_provider) is False
 
 
+class TestModelMessageEnvelopeTimestampValidation:
+    """Tests for timestamp validation."""
+
+    def test_naive_datetime_rejected(self, keypair) -> None:
+        """Envelope with naive datetime (no timezone) is rejected."""
+        naive_datetime = datetime(2025, 1, 1, 12, 0, 0)  # No tzinfo
+        assert naive_datetime.tzinfo is None  # Confirm it's naive
+
+        with pytest.raises(Exception) as exc_info:
+            ModelMessageEnvelope.create_signed(
+                realm="dev",
+                runtime_id="runtime-dev-001",
+                bus_id="kafka-cluster-a",
+                payload={"data": "test"},
+                private_key=keypair.private_key_bytes,
+                emitted_at=naive_datetime,
+            )
+
+        # Pydantic wraps ValueError in ValidationError
+        assert "timezone-aware" in str(exc_info.value).lower()
+
+    def test_timezone_aware_datetime_accepted(self, keypair) -> None:
+        """Envelope with timezone-aware datetime is accepted."""
+        aware_datetime = datetime.now(UTC)
+        assert aware_datetime.tzinfo is not None  # Confirm it's aware
+
+        envelope = ModelMessageEnvelope.create_signed(
+            realm="dev",
+            runtime_id="runtime-dev-001",
+            bus_id="kafka-cluster-a",
+            payload={"data": "test"},
+            private_key=keypair.private_key_bytes,
+            emitted_at=aware_datetime,
+        )
+
+        assert envelope.emitted_at == aware_datetime
+
+
 class TestModelMessageEnvelopeWithDictPayload:
     """Tests for envelope with dict payloads."""
 

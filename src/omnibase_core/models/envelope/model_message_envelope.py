@@ -25,6 +25,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    field_validator,
     model_validator,
 )
 
@@ -152,6 +153,20 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
         default=None,
         description="Component identity for observability and consumer group derivation.",
     )
+
+    @field_validator("emitted_at")
+    @classmethod
+    def validate_emitted_at_timezone_aware(cls, v: datetime) -> datetime:
+        """
+        Validate that emitted_at is timezone-aware.
+
+        Naive datetimes are ambiguous in distributed systems and can cause
+        interoperability issues. All timestamps must be explicitly UTC.
+        """
+        if v.tzinfo is None:
+            msg = "emitted_at must be timezone-aware (use datetime.now(UTC))"
+            raise ValueError(msg)  # error-ok: Standard Pydantic validation
+        return v
 
     @model_validator(mode="after")
     def validate_identity_realm_match(self) -> ModelMessageEnvelope[T]:
