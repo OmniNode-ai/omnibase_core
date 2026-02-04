@@ -84,17 +84,20 @@ class ModelRuleForbiddenImportsConfig(ModelRuleConfigBase):
 class ModelRuleTopicNamingConfig(ModelRuleConfigBase):
     """Configuration for topic_naming rule.
 
-    Enforces Kafka topic naming conventions.
+    Enforces Kafka topic naming conventions per ONEX topic taxonomy.
+    Reuses validator_topic_suffix.py for validation logic.
     """
 
     require_env_prefix: bool = Field(
-        default=True,
-        description="Whether topics must have environment prefix",
+        default=False,
+        description="Whether topics must have environment prefix (dev., prod., etc.)",
     )
 
     allowed_patterns: list[str] = Field(
-        default_factory=lambda: [r"^[a-z]+\.evt\..+\.v[0-9]+$"],
-        description="Regex patterns that topic names must match",
+        default_factory=lambda: [
+            r"^onex\.(cmd|evt|dlq|intent|snapshot)\.[a-z0-9-]+\.[a-z0-9-]+\.v[0-9]+$",
+        ],
+        description="Regex patterns that topic names must match (ONEX suffix format)",
     )
 
     forbidden_patterns: list[str] = Field(
@@ -102,15 +105,24 @@ class ModelRuleTopicNamingConfig(ModelRuleConfigBase):
         description="Regex patterns that topic names must not match",
     )
 
+    constants_module: str = Field(
+        default="omnibase_core.constants.constants_topic_taxonomy",
+        description="Module where topic constants should be defined",
+    )
+
 
 class ModelRuleErrorTaxonomyConfig(ModelRuleConfigBase):
     """Configuration for error_taxonomy rule.
 
-    Enforces canonical error module usage.
+    Enforces canonical error module usage and proper error context.
+    Merged from error_taxonomy + error_context per OMN-1775.
     """
 
     canonical_error_modules: list[str] = Field(
-        default_factory=list,
+        default_factory=lambda: [
+            "omnibase_core.errors",
+            "omnibase_core.models.errors",
+        ],
         description="Modules that define canonical error types",
     )
 
@@ -119,9 +131,19 @@ class ModelRuleErrorTaxonomyConfig(ModelRuleConfigBase):
         description="Modules that should not define custom errors",
     )
 
+    base_error_class: str = Field(
+        default="ModelOnexError",
+        description="Base class that custom exceptions must inherit from",
+    )
+
     require_error_code: bool = Field(
         default=True,
-        description="Whether errors must have error codes",
+        description="Whether ModelOnexError raises must include error_code",
+    )
+
+    warn_bare_raise: bool = Field(
+        default=True,
+        description="Whether to warn on bare 'raise' without context in except blocks",
     )
 
 
@@ -137,8 +159,25 @@ class ModelRuleContractSchemaConfig(ModelRuleConfigBase):
     )
 
     required_fields: list[str] = Field(
-        default_factory=lambda: ["name", "version", "node_type"],
+        default_factory=lambda: [
+            "contract_version",
+            "node_type",
+            "name",
+            "description",
+        ],
         description="Fields required in all contracts",
+    )
+
+    deprecated_fields: dict[str, str] = Field(
+        default_factory=lambda: {
+            "version": "Use 'contract_version' instead (OMN-1431)"
+        },
+        description="Deprecated field names mapped to migration guidance",
+    )
+
+    contract_directories: list[str] = Field(
+        default_factory=lambda: ["contracts/", "examples/contracts/"],
+        description="Directories to scan for contract YAML files",
     )
 
 

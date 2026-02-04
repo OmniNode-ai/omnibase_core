@@ -128,6 +128,14 @@ allowed_files:
     added: "2026-01-31"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/validation/cross_repo/rules/rule_contract_schema.py"
+    reason: >-
+      Contract schema validation rule - must parse raw YAML to check configurable required fields and
+      detect deprecated fields (like 'version' vs 'contract_version'). The rule validates field presence
+      from policy config, which cannot use Pydantic models directly. (OMN-1775)
+    added: "2026-02-04"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

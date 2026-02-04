@@ -18,8 +18,11 @@ from omnibase_core.models.common.model_validation_metadata import (
 )
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.validation.model_rule_configs import (
+    ModelRuleContractSchemaConfig,
+    ModelRuleErrorTaxonomyConfig,
     ModelRuleForbiddenImportsConfig,
     ModelRuleRepoBoundariesConfig,
+    ModelRuleTopicNamingConfig,
 )
 from omnibase_core.models.validation.model_validation_policy_contract import (
     ModelValidationPolicyContract,
@@ -27,11 +30,20 @@ from omnibase_core.models.validation.model_validation_policy_contract import (
 from omnibase_core.models.validation.model_violation_baseline import (
     ModelViolationBaseline,
 )
+from omnibase_core.validation.cross_repo.rules.rule_contract_schema import (
+    RuleContractSchema,
+)
+from omnibase_core.validation.cross_repo.rules.rule_error_taxonomy import (
+    RuleErrorTaxonomy,
+)
 from omnibase_core.validation.cross_repo.rules.rule_forbidden_imports import (
     RuleForbiddenImports,
 )
 from omnibase_core.validation.cross_repo.rules.rule_repo_boundaries import (
     RuleRepoBoundaries,
+)
+from omnibase_core.validation.cross_repo.rules.rule_topic_naming import (
+    RuleTopicNaming,
 )
 from omnibase_core.validation.cross_repo.scanners.scanner_file_discovery import (
     ScannerFileDiscovery,
@@ -102,7 +114,7 @@ class CrossRepoValidationEngine:
                 rules_skipped.append(rule_id)
                 continue
 
-            rule_issues = self._execute_rule(rule_id, config, file_imports)
+            rule_issues = self._execute_rule(rule_id, config, file_imports, root)
             all_issues.extend(rule_issues)
             rules_executed.append(rule_id)
 
@@ -265,6 +277,7 @@ class CrossRepoValidationEngine:
         rule_id: str,  # string-id-ok: rule registry key
         config: object,
         file_imports: dict[Path, ModelFileImports],
+        root_directory: Path,
     ) -> list[ModelValidationIssue]:
         """Execute a single rule.
 
@@ -272,19 +285,37 @@ class CrossRepoValidationEngine:
             rule_id: The rule to execute.
             config: The rule's configuration.
             file_imports: Import data from scanner.
+            root_directory: Root directory being validated.
 
         Returns:
             List of issues from this rule.
         """
+        # Phase 0 rules
         if rule_id == "repo_boundaries":
             if isinstance(config, ModelRuleRepoBoundariesConfig):
-                boundaries_rule = RuleRepoBoundaries(config)
-                return boundaries_rule.validate(file_imports, self.policy.repo_id)
+                rule = RuleRepoBoundaries(config)
+                return rule.validate(file_imports, self.policy.repo_id)
 
         elif rule_id == "forbidden_imports":
             if isinstance(config, ModelRuleForbiddenImportsConfig):
-                forbidden_rule = RuleForbiddenImports(config)
-                return forbidden_rule.validate(file_imports)
+                rule = RuleForbiddenImports(config)
+                return rule.validate(file_imports)
+
+        # Phase 1 rules (OMN-1775)
+        elif rule_id == "error_taxonomy":
+            if isinstance(config, ModelRuleErrorTaxonomyConfig):
+                rule = RuleErrorTaxonomy(config)
+                return rule.validate(file_imports, self.policy.repo_id, root_directory)
+
+        elif rule_id == "contract_schema_valid":
+            if isinstance(config, ModelRuleContractSchemaConfig):
+                rule = RuleContractSchema(config)
+                return rule.validate(file_imports, self.policy.repo_id, root_directory)
+
+        elif rule_id == "topic_naming":
+            if isinstance(config, ModelRuleTopicNamingConfig):
+                rule = RuleTopicNaming(config)
+                return rule.validate(file_imports, self.policy.repo_id, root_directory)
 
         # Rule not implemented yet
         return []
