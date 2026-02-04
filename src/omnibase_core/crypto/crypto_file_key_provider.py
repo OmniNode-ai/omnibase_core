@@ -27,6 +27,9 @@ import tempfile
 import threading
 from pathlib import Path
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 logger = logging.getLogger(__name__)
 
 
@@ -121,7 +124,11 @@ class FileKeyProvider:
         Validate file permissions are restrictive enough.
 
         Checks that group and other users have no access (mode & 0o077 == 0).
-        Logs warnings for unusual permission combinations but does not block.
+        Raises ModelOnexError if permissions are insecure (fail-closed security).
+
+        Raises:
+            ModelOnexError: If file has insecure permissions (group/other access
+                or special permission bits like setuid/setgid).
         """
         file_stat = self._key_file.stat()
         file_mode = file_stat.st_mode
@@ -129,17 +136,20 @@ class FileKeyProvider:
         # Extract permission bits only (ignore file type bits)
         permission_bits = file_mode & 0o777
 
-        # Check for group/other access (security concern)
+        # Check for group/other access (security concern) - FAIL CLOSED
         group_other_bits = permission_bits & 0o077
         if group_other_bits != 0:
-            logger.warning(
-                "Key file %s has insecure permissions %04o: group/other access bits "
-                "are set (%04o). This may allow unauthorized key modification. "
-                "Recommended: chmod 600 %s",
-                self._key_file,
-                permission_bits,
-                group_other_bits,
-                self._key_file,
+            raise ModelOnexError(
+                message=(
+                    f"Key file {self._key_file} has insecure permissions {permission_bits:04o}: "
+                    f"group/other access bits are set ({group_other_bits:04o}). "
+                    f"This may allow unauthorized key modification. "
+                    f"Fix with: chmod 600 {self._key_file}"
+                ),
+                error_code=EnumCoreErrorCode.PERMISSION_ERROR,
+                file_path=str(self._key_file),
+                permission_bits=f"{permission_bits:04o}",
+                group_other_bits=f"{group_other_bits:04o}",
             )
 
         # Check for special bits (setuid, setgid, sticky) - unusual for key files
@@ -152,11 +162,14 @@ class FileKeyProvider:
                 special_names.append("setgid")
             if file_mode & stat.S_ISVTX:
                 special_names.append("sticky")
-            logger.warning(
-                "Key file %s has unusual special permission bits: %s. "
-                "This is unexpected for a key file.",
-                self._key_file,
-                ", ".join(special_names),
+            raise ModelOnexError(
+                message=(
+                    f"Key file {self._key_file} has unusual special permission bits: "
+                    f"{', '.join(special_names)}. This is unexpected for a key file."
+                ),
+                error_code=EnumCoreErrorCode.PERMISSION_ERROR,
+                file_path=str(self._key_file),
+                special_bits=special_names,
             )
 
     def _save_keys(self) -> None:

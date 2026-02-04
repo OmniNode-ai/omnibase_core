@@ -468,7 +468,7 @@ class TestModelMessageEnvelopeSignatureVerification:
         assert envelope.verify_signature(key_provider) is True
 
         # Create tampered envelope by modifying a signed field
-        # ModelMessageEnvelope is not frozen, so we can construct a modified copy
+        # ModelMessageEnvelope IS frozen, so we construct a new instance with modified values
         tampered_envelope = ModelMessageEnvelope[dict](
             realm="prod",  # Changed from "dev" to "prod"
             runtime_id=envelope.runtime_id,

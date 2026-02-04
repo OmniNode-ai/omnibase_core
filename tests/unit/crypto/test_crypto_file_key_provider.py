@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import base64
 import json
+import os
+import stat
 from pathlib import Path
 
 import pytest
 
 from omnibase_core.crypto.crypto_ed25519_signer import generate_keypair
 from omnibase_core.crypto.crypto_file_key_provider import FileKeyProvider
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 @pytest.fixture
@@ -111,8 +116,6 @@ class TestFileKeyProviderPersistence:
 
         # Simulate external modification
         keypair2 = generate_keypair()
-        import base64
-
         data = {
             "keys": {
                 "runtime-002": base64.urlsafe_b64encode(
@@ -145,6 +148,7 @@ class TestFileKeyProviderPersistence:
     def test_handles_corrupt_file_gracefully(self, temp_key_file: Path) -> None:
         """Provider handles corrupt file by starting fresh."""
         temp_key_file.write_text("not valid json {{{")
+        temp_key_file.chmod(0o600)  # Set secure permissions
         provider = FileKeyProvider(temp_key_file)
         assert provider.list_runtime_ids() == []
 
@@ -222,13 +226,130 @@ class TestFileKeyProviderThreadSafety:
 
 
 @pytest.mark.unit
+class TestFileKeyProviderFilePermissions:
+    """File permission validation tests (fail-closed security)."""
+
+    def _create_key_file_with_permissions(self, key_file: Path, mode: int) -> None:
+        """Helper to create a key file with specific permissions."""
+        keypair = generate_keypair()
+        data = {
+            "keys": {
+                "test-runtime": base64.urlsafe_b64encode(
+                    keypair.public_key_bytes
+                ).decode()
+            }
+        }
+        key_file.write_text(json.dumps(data))
+        key_file.chmod(mode)
+
+    def test_secure_permissions_accepted(self, temp_key_file: Path) -> None:
+        """File with secure permissions (0o600) loads successfully."""
+        self._create_key_file_with_permissions(temp_key_file, 0o600)
+        provider = FileKeyProvider(temp_key_file)
+        assert provider.has_key("test-runtime") is True
+
+    def test_owner_read_only_accepted(self, temp_key_file: Path) -> None:
+        """File with owner read-only (0o400) loads successfully."""
+        self._create_key_file_with_permissions(temp_key_file, 0o400)
+        provider = FileKeyProvider(temp_key_file)
+        assert provider.has_key("test-runtime") is True
+
+    def test_group_readable_rejected(self, temp_key_file: Path) -> None:
+        """File with group read permission (0o640) raises ModelOnexError."""
+        self._create_key_file_with_permissions(temp_key_file, 0o640)
+        with pytest.raises(ModelOnexError) as exc_info:
+            FileKeyProvider(temp_key_file)
+        assert exc_info.value.error_code == EnumCoreErrorCode.PERMISSION_ERROR
+        assert "group/other access bits" in str(exc_info.value.message)
+
+    def test_group_writable_rejected(self, temp_key_file: Path) -> None:
+        """File with group write permission (0o660) raises ModelOnexError."""
+        self._create_key_file_with_permissions(temp_key_file, 0o660)
+        with pytest.raises(ModelOnexError) as exc_info:
+            FileKeyProvider(temp_key_file)
+        assert exc_info.value.error_code == EnumCoreErrorCode.PERMISSION_ERROR
+        assert "group/other access bits" in str(exc_info.value.message)
+
+    def test_world_readable_rejected(self, temp_key_file: Path) -> None:
+        """File with world read permission (0o644) raises ModelOnexError."""
+        self._create_key_file_with_permissions(temp_key_file, 0o644)
+        with pytest.raises(ModelOnexError) as exc_info:
+            FileKeyProvider(temp_key_file)
+        assert exc_info.value.error_code == EnumCoreErrorCode.PERMISSION_ERROR
+        assert "group/other access bits" in str(exc_info.value.message)
+
+    def test_world_writable_rejected(self, temp_key_file: Path) -> None:
+        """File with world write permission (0o666) raises ModelOnexError."""
+        self._create_key_file_with_permissions(temp_key_file, 0o666)
+        with pytest.raises(ModelOnexError) as exc_info:
+            FileKeyProvider(temp_key_file)
+        assert exc_info.value.error_code == EnumCoreErrorCode.PERMISSION_ERROR
+        assert "group/other access bits" in str(exc_info.value.message)
+
+    def test_fully_open_rejected(self, temp_key_file: Path) -> None:
+        """File with fully open permissions (0o777) raises ModelOnexError."""
+        self._create_key_file_with_permissions(temp_key_file, 0o777)
+        with pytest.raises(ModelOnexError) as exc_info:
+            FileKeyProvider(temp_key_file)
+        assert exc_info.value.error_code == EnumCoreErrorCode.PERMISSION_ERROR
+        assert "group/other access bits" in str(exc_info.value.message)
+
+    @pytest.mark.skipif(
+        os.geteuid() == 0,
+        reason="Cannot test setuid/setgid as root - permissions are bypassed",
+    )
+    def test_setuid_bit_rejected(self, temp_key_file: Path) -> None:
+        """File with setuid bit raises ModelOnexError."""
+        self._create_key_file_with_permissions(temp_key_file, 0o600)
+        # Add setuid bit
+        current_mode = temp_key_file.stat().st_mode
+        temp_key_file.chmod(current_mode | stat.S_ISUID)
+        with pytest.raises(ModelOnexError) as exc_info:
+            FileKeyProvider(temp_key_file)
+        assert exc_info.value.error_code == EnumCoreErrorCode.PERMISSION_ERROR
+        assert "setuid" in str(exc_info.value.message)
+
+    @pytest.mark.skipif(
+        os.geteuid() == 0,
+        reason="Cannot test setuid/setgid as root - permissions are bypassed",
+    )
+    def test_setgid_bit_rejected(self, temp_key_file: Path) -> None:
+        """File with setgid bit raises ModelOnexError."""
+        self._create_key_file_with_permissions(temp_key_file, 0o600)
+        # Add setgid bit
+        current_mode = temp_key_file.stat().st_mode
+        temp_key_file.chmod(current_mode | stat.S_ISGID)
+        with pytest.raises(ModelOnexError) as exc_info:
+            FileKeyProvider(temp_key_file)
+        assert exc_info.value.error_code == EnumCoreErrorCode.PERMISSION_ERROR
+        assert "setgid" in str(exc_info.value.message)
+
+    def test_sticky_bit_rejected(self, temp_key_file: Path) -> None:
+        """File with sticky bit raises ModelOnexError."""
+        self._create_key_file_with_permissions(temp_key_file, 0o600)
+        # Add sticky bit
+        current_mode = temp_key_file.stat().st_mode
+        temp_key_file.chmod(current_mode | stat.S_ISVTX)
+        with pytest.raises(ModelOnexError) as exc_info:
+            FileKeyProvider(temp_key_file)
+        assert exc_info.value.error_code == EnumCoreErrorCode.PERMISSION_ERROR
+        assert "sticky" in str(exc_info.value.message)
+
+    def test_error_context_contains_file_path(self, temp_key_file: Path) -> None:
+        """Error context includes file path for debugging."""
+        self._create_key_file_with_permissions(temp_key_file, 0o644)
+        with pytest.raises(ModelOnexError) as exc_info:
+            FileKeyProvider(temp_key_file)
+        assert "file_path" in exc_info.value.context
+        assert str(temp_key_file) in exc_info.value.context["file_path"]
+
+
+@pytest.mark.unit
 class TestFileKeyProviderValidation:
     """Key validation tests."""
 
     def test_skips_invalid_length_keys_on_load(self, temp_key_file: Path) -> None:
         """Keys with invalid length are skipped when loading from file."""
-        import base64
-
         # Create file with one valid and one invalid key
         valid_key = generate_keypair().public_key_bytes
         invalid_key = b"too short"
@@ -240,6 +361,7 @@ class TestFileKeyProviderValidation:
             }
         }
         temp_key_file.write_text(json.dumps(data))
+        temp_key_file.chmod(0o600)  # Set secure permissions
 
         # Load provider - should skip invalid key
         provider = FileKeyProvider(temp_key_file)
