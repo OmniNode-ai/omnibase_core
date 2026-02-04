@@ -143,6 +143,7 @@ from .typed_dict_cli_input_dict import TypedDictCliInputDict
 from .typed_dict_cli_node_execution_input_serialized import (
     TypedDictCliNodeExecutionInputSerialized,
 )
+from .typed_dict_codanna_integration import TypedDictCodannaIntegration
 from .typed_dict_collection_kwargs import (
     TypedDictCollectionCreateKwargs,
     TypedDictCollectionFromItemsKwargs,
@@ -251,6 +252,7 @@ from .typed_dict_metadata_tool_analytics_report import (
 from .typed_dict_metadata_tool_analytics_summary_data import (
     TypedDictMetadataToolAnalyticsSummaryData,
 )
+from .typed_dict_methodology import TypedDictMethodology
 from .typed_dict_metrics import TypedDictMetrics
 from .typed_dict_migration_conflict_base_dict import TypedDictMigrationConflictBaseDict
 from .typed_dict_migration_duplicate_conflict_dict import (
@@ -319,6 +321,7 @@ from .typed_dict_output_format_options_serialized import (
     TypedDictOutputFormatOptionsSerialized,
 )
 from .typed_dict_path_resolution_context import TypedDictPathResolutionContext
+from .typed_dict_pattern_catalog import TypedDictPatternCatalog
 from .typed_dict_performance_checkpoint_result import (
     TypedDictPerformanceCheckpointResult,
 )
@@ -326,6 +329,7 @@ from .typed_dict_performance_data import TypedDictPerformanceData
 from .typed_dict_performance_metric_data import TypedDictPerformanceMetricData
 from .typed_dict_performance_metrics import TypedDictPerformanceMetrics
 from .typed_dict_performance_metrics_report import TypedDictPerformanceMetricsReport
+from .typed_dict_performance_targets import TypedDictPerformanceTargets
 from .typed_dict_performance_update_data import TypedDictPerformanceUpdateData
 from .typed_dict_policy_value_data import (
     TypedDictPolicyValueData,
@@ -474,6 +478,7 @@ __all__ = [
     "TypedDictCapabilityFactoryKwargs",
     "TypedDictCategorizationUpdateData",
     "TypedDictCliInputDict",
+    "TypedDictCodannaIntegration",
     # CLI model serialization TypedDict definitions
     "TypedDictCliActionSerialized",
     "TypedDictCliAdvancedParamsSerialized",
@@ -503,6 +508,7 @@ __all__ = [
     "TypedDictInputStateSourceType",
     "TypedDictMessageParams",
     "TypedDictMetadataParams",
+    "TypedDictMethodology",
     "TypedDictMigrationConflictBaseDict",
     "TypedDictMigrationDuplicateConflictDict",
     "TypedDictMigrationNameConflictDict",
@@ -584,6 +590,7 @@ __all__ = [
     "TypedDictMigrationStepDict",
     "TypedDictNodeCoreUpdateData",
     "TypedDictPerformanceData",
+    "TypedDictPerformanceTargets",
     "TypedDictPerformanceUpdateData",
     "TypedDictQualityUpdateData",
     "TypedDictStatusMigrationResult",
@@ -640,6 +647,7 @@ __all__ = [
     # YAML and path resolution types
     "MappingResultDict",
     "TypedDictPathResolutionContext",
+    "TypedDictPatternCatalog",
     "TypedDictYamlDumpKwargs",
     "TypedDictYamlDumpOptions",
     # Metadata tool collection types
