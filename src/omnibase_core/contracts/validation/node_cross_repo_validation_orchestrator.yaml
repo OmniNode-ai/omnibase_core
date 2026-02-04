@@ -17,7 +17,7 @@
 node_type: ORCHESTRATOR_GENERIC
 contract_version: {major: 1, minor: 0, patch: 0}
 node_name: NodeCrossRepoValidationOrchestrator
-node_class: omnibase_core.nodes.validation.NodeCrossRepoValidationOrchestrator
+node_class: omnibase_core.nodes.node_validation_orchestrator.NodeCrossRepoValidationOrchestrator
 
 # Contract description
 description: |
