@@ -246,6 +246,21 @@ PLATFORM_BASELINE_TOPIC_SUFFIXES: tuple[str, ...] = (
     TOPIC_SUFFIX_NODE_HEARTBEAT,
 )
 
+# Injection Metrics Topics (OMN-1901)
+# Event topics for tracking injection effectiveness metrics.
+# Emitted by omniclaude, consumed by omnibase_infra.
+TOPIC_INJECTION_CONTEXT_UTILIZATION = (
+    "onex.evt.injection-metrics.context-utilization.v1"
+)
+TOPIC_INJECTION_AGENT_MATCH = "onex.evt.injection-metrics.agent-match.v1"
+TOPIC_INJECTION_LATENCY_BREAKDOWN = "onex.evt.injection-metrics.latency-breakdown.v1"
+
+INJECTION_METRICS_TOPICS: tuple[str, ...] = (
+    TOPIC_INJECTION_CONTEXT_UTILIZATION,
+    TOPIC_INJECTION_AGENT_MATCH,
+    TOPIC_INJECTION_LATENCY_BREAKDOWN,
+)
+
 __all__ = [
     # Type suffixes
     "TOPIC_TYPE_COMMANDS",
@@ -299,4 +314,9 @@ __all__ = [
     "TOPIC_SUFFIX_CONTRACT_DEREGISTERED",
     "TOPIC_SUFFIX_NODE_HEARTBEAT",
     "PLATFORM_BASELINE_TOPIC_SUFFIXES",
+    # Injection metrics topics (OMN-1901)
+    "TOPIC_INJECTION_CONTEXT_UTILIZATION",
+    "TOPIC_INJECTION_AGENT_MATCH",
+    "TOPIC_INJECTION_LATENCY_BREAKDOWN",
+    "INJECTION_METRICS_TOPICS",
 ]
