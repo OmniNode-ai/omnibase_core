@@ -55,12 +55,31 @@ class FileKeyProvider:
         self._lock = threading.RLock()
         self._load_keys()
 
+    # Maximum allowable file permission mode for key files (owner read/write only)
+    _MAX_ALLOWED_MODE = 0o600
+
     def _load_keys(self) -> None:
         """Load keys from the file if it exists."""
         with self._lock:
             if not self._key_file.exists():
                 self._keys = {}
                 return
+
+            # Validate file permissions before loading - defense-in-depth for key integrity
+            # Even though these are public keys (confidentiality not a concern), integrity
+            # matters - an attacker who can write to a world-writable key file can inject
+            # malicious runtime IDs
+            file_mode = self._key_file.stat().st_mode & 0o777
+            if file_mode > self._MAX_ALLOWED_MODE:
+                import logging
+
+                logging.warning(
+                    "Key file %s has insecure permissions %o (should be <= %o). "
+                    "This may allow unauthorized key modification.",
+                    self._key_file,
+                    file_mode,
+                    self._MAX_ALLOWED_MODE,
+                )
 
             try:
                 data = json.loads(self._key_file.read_text(encoding="utf-8"))
@@ -97,6 +116,10 @@ class FileKeyProvider:
                 self._key_file.write_text(
                     json.dumps(data, indent=2, sort_keys=True), encoding="utf-8"
                 )
+                # Explicitly set permissions after write - ensures correct permissions
+                # even if the file already existed with insecure permissions (umask
+                # only affects newly created files)
+                self._key_file.chmod(self._MAX_ALLOWED_MODE)
             finally:
                 os.umask(old_umask)  # Restore original umask
 

@@ -246,6 +246,9 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     ENVELOPE_KEY_NOT_FOUND = "ONEX_CORE_343_ENVELOPE_KEY_NOT_FOUND"
     ENVELOPE_SIGNING_FAILED = "ONEX_CORE_344_ENVELOPE_SIGNING_FAILED"
     ENVELOPE_VALIDATION_FAILED = "ONEX_CORE_345_ENVELOPE_VALIDATION_FAILED"
+    ENVELOPE_PAYLOAD_SERIALIZATION_FAILED = (
+        "ONEX_CORE_346_ENVELOPE_PAYLOAD_SERIALIZATION_FAILED"
+    )
 
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
@@ -406,6 +409,7 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.ENVELOPE_KEY_NOT_FOUND: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ENVELOPE_SIGNING_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ENVELOPE_VALIDATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ENVELOPE_PAYLOAD_SERIALIZATION_FAILED: EnumCLIExitCode.ERROR,
 }
 
 
@@ -566,5 +570,6 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.ENVELOPE_KEY_NOT_FOUND: "Envelope: public key not found for runtime_id",
         EnumCoreErrorCode.ENVELOPE_SIGNING_FAILED: "Envelope: signing operation failed",
         EnumCoreErrorCode.ENVELOPE_VALIDATION_FAILED: "Envelope: validation failed",
+        EnumCoreErrorCode.ENVELOPE_PAYLOAD_SERIALIZATION_FAILED: "Envelope: payload serialization to JSON failed",
     }
     return descriptions.get(error_code, "Unknown error")

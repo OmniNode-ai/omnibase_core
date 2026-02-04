@@ -317,14 +317,21 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
             )
 
         # Compute payload hash
-        if isinstance(payload, BaseModel):
-            payload_dict = payload.model_dump(mode="json")
-        elif isinstance(payload, dict):
-            payload_dict = payload
-        else:
-            # For other types, attempt JSON serialization
-            payload_dict = {"value": payload}
-        payload_hash = hash_canonical_json(payload_dict)
+        try:
+            if isinstance(payload, BaseModel):
+                payload_dict = payload.model_dump(mode="json")
+            elif isinstance(payload, dict):
+                payload_dict = payload
+            else:
+                # For other types, attempt JSON serialization
+                payload_dict = {"value": payload}
+            payload_hash = hash_canonical_json(payload_dict)
+        except (TypeError, ValueError) as e:
+            raise ModelOnexError(
+                message=f"Failed to compute payload hash: {e}",
+                error_code=EnumCoreErrorCode.ENVELOPE_PAYLOAD_SERIALIZATION_FAILED,
+                context={"payload_type": type(payload).__name__},
+            ) from e
 
         # Build signing content
         signing_dict: dict[str, str] = {
