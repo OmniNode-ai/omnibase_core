@@ -28,6 +28,7 @@ import pytest
 
 from omnibase_core.protocols.event_bus import (
     ProtocolEventBus,
+    ProtocolNodeIdentity,
 )
 from omnibase_core.protocols.event_bus.protocol_event_bus_lifecycle import (
     ProtocolEventBusLifecycle,
@@ -227,8 +228,13 @@ class TestISPUsagePatterns:
         class ConsumerNode:
             """Example consumer node that only subscribes."""
 
-            def __init__(self, subscriber: ProtocolEventBusSubscriber):
+            def __init__(
+                self,
+                subscriber: ProtocolEventBusSubscriber,
+                identity: ProtocolNodeIdentity,
+            ):
                 self.subscriber = subscriber
+                self.identity = identity
                 self._unsubscribe: Callable[[], Awaitable[None]] | None = None
 
             async def start_consuming(self, topic: str) -> None:
@@ -236,7 +242,7 @@ class TestISPUsagePatterns:
                     pass  # Process message
 
                 self._unsubscribe = await self.subscriber.subscribe(
-                    topic, "consumer-group", handler
+                    topic, self.identity, handler
                 )
 
         hints = get_type_hints(ConsumerNode.__init__)
@@ -252,8 +258,13 @@ class TestISPUsagePatterns:
         class FullEventBusClient:
             """Example client using full event bus interface."""
 
-            def __init__(self, event_bus: ProtocolEventBus):
+            def __init__(
+                self,
+                event_bus: ProtocolEventBus,
+                identity: ProtocolNodeIdentity,
+            ):
                 self.event_bus = event_bus
+                self.identity = identity
                 self._unsubscribe: Callable[[], Awaitable[None]] | None = None
 
             async def publish_and_subscribe(self, topic: str) -> None:
@@ -261,7 +272,7 @@ class TestISPUsagePatterns:
                     pass  # Process message
 
                 self._unsubscribe = await self.event_bus.subscribe(
-                    topic, "client-group", handler
+                    topic, self.identity, handler
                 )
                 await self.event_bus.publish(topic, None, b"data")
 
@@ -595,7 +606,7 @@ class TestISPIndependentImplementation:
         from omnibase_core.protocols.event_bus import (
             EnumConsumerGroupPurpose,
             ProtocolEventBusSubscriber,
-            ProtocolNodeIdentity,
+            ProtocolNodeIdentity,  # noqa: F401 (used in type annotation)
         )
 
         class SubscriberOnlyImpl:
