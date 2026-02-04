@@ -81,6 +81,7 @@ pyyaml = "^6.0.2"
 dependency-injector = "^4.48.3"
 deepdiff = "^8.0.0"
 httpx = "^0.27.0"  # HTTP client for handler_local.py
+blake3 = "^1.0.8"  # Cryptographic hashing for content verification
 
 # CLI Dependencies
 click = "^8.3.1"

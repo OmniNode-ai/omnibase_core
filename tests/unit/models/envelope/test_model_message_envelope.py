@@ -69,11 +69,15 @@ class TestModelEmitterIdentity:
             version="v1",
         )
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally assigning to frozen field to verify immutability.
+            # Mypy correctly flags this as an error since the model is frozen.
             identity.env = "prod"  # type: ignore[misc]
 
     def test_identity_requires_all_fields(self) -> None:
         """All fields are required."""
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally calling with missing required fields to test validation.
+            # Mypy correctly flags this as missing required arguments.
             ModelEmitterIdentity(env="dev")  # type: ignore[call-arg]
 
 
@@ -101,6 +105,8 @@ class TestModelEnvelopeSignature:
             signature="base64signature==",
         )
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally assigning to frozen field to verify immutability.
+            # Mypy correctly flags this as an error since the model is frozen.
             signature.signer = "other"  # type: ignore[misc]
 
     def test_payload_hash_must_be_64_chars(self) -> None:
@@ -139,7 +145,7 @@ class TestModelEnvelopeSignature:
 class TestModelMessageEnvelopeCreation:
     """Tests for creating ModelMessageEnvelope."""
 
-    def test_create_signed_envelope(self, keypair) -> None:
+    def test_create_signed_envelope(self, keypair: Ed25519KeyPair) -> None:
         """create_signed creates valid signed envelope."""
         payload = SamplePayload(message="hello", count=42)
 
@@ -158,7 +164,7 @@ class TestModelMessageEnvelopeCreation:
         assert envelope.signature.signer == "runtime-dev-001"
         assert envelope.signature.algorithm == "ed25519"
 
-    def test_create_signed_with_emitter_identity(self, keypair) -> None:
+    def test_create_signed_with_emitter_identity(self, keypair: Ed25519KeyPair) -> None:
         """create_signed works with emitter_identity."""
 
         class MockIdentity:
@@ -180,7 +186,7 @@ class TestModelMessageEnvelopeCreation:
         assert envelope.emitter_identity.env == "dev"
         assert envelope.emitter_identity.service == "my-service"
 
-    def test_create_signed_with_optional_fields(self, keypair) -> None:
+    def test_create_signed_with_optional_fields(self, keypair: Ed25519KeyPair) -> None:
         """create_signed accepts optional fields."""
         trace_id = uuid4()
         causality_id = uuid4()
@@ -218,6 +224,8 @@ class TestModelMessageEnvelopeImmutability:
             private_key=keypair.private_key_bytes,
         )
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally assigning to frozen field to verify immutability.
+            # Mypy correctly flags this as an error since the model is frozen.
             envelope.realm = "prod"  # type: ignore[misc]
 
 
@@ -225,7 +233,7 @@ class TestModelMessageEnvelopeImmutability:
 class TestModelMessageEnvelopeIdentityValidation:
     """Tests for identity/realm mismatch validation."""
 
-    def test_identity_realm_mismatch_rejected(self, keypair) -> None:
+    def test_identity_realm_mismatch_rejected(self, keypair: Ed25519KeyPair) -> None:
         """Envelope with mismatched identity.env and realm is rejected."""
 
         class MismatchedIdentity:
@@ -248,7 +256,7 @@ class TestModelMessageEnvelopeIdentityValidation:
         assert "emitter_identity.env='prod'" in str(exc_info.value)
         assert "realm='dev'" in str(exc_info.value)
 
-    def test_identity_realm_match_accepted(self, keypair) -> None:
+    def test_identity_realm_match_accepted(self, keypair: Ed25519KeyPair) -> None:
         """Envelope with matching identity.env and realm is accepted."""
 
         class MatchingIdentity:
@@ -271,10 +279,130 @@ class TestModelMessageEnvelopeIdentityValidation:
 
 
 @pytest.mark.unit
+class TestModelMessageEnvelopeSignerValidation:
+    """Tests for signer/runtime_id mismatch validation."""
+
+    def test_signer_mismatch_rejected(self, keypair: Ed25519KeyPair) -> None:
+        """Envelope with mismatched signature.signer and runtime_id is rejected."""
+        from datetime import UTC, datetime
+
+        # Create a valid envelope first to get a valid signature
+        valid_envelope = ModelMessageEnvelope.create_signed(
+            realm="dev",
+            runtime_id="runtime-dev-001",
+            bus_id="kafka-cluster-a",
+            payload={"data": "test"},
+            private_key=keypair.private_key_bytes,
+        )
+
+        # Try to construct an envelope with mismatched signer and runtime_id
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelMessageEnvelope[dict](
+                realm="dev",
+                runtime_id="different-runtime",  # Different from signature.signer
+                bus_id="kafka-cluster-a",
+                trace_id=valid_envelope.trace_id,
+                emitted_at=datetime.now(UTC),
+                signature=valid_envelope.signature,  # signer is "runtime-dev-001"
+                payload={"data": "test"},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.ENVELOPE_SIGNER_MISMATCH
+        assert "runtime-dev-001" in str(exc_info.value)
+        assert "different-runtime" in str(exc_info.value)
+
+    def test_signer_match_accepted(self, keypair: Ed25519KeyPair) -> None:
+        """Envelope with matching signature.signer and runtime_id is accepted."""
+        envelope = ModelMessageEnvelope.create_signed(
+            realm="dev",
+            runtime_id="runtime-dev-001",
+            bus_id="kafka-cluster-a",
+            payload={"data": "test"},
+            private_key=keypair.private_key_bytes,
+        )
+
+        # Envelope should be created successfully with matching signer
+        assert envelope.signature.signer == envelope.runtime_id
+
+
+@pytest.mark.unit
+class TestModelMessageEnvelopePayloadSerialization:
+    """Tests for non-serializable payload handling."""
+
+    def test_non_serializable_payload_in_create_signed_raises(
+        self, keypair: Ed25519KeyPair
+    ) -> None:
+        """create_signed raises ModelOnexError for non-serializable payload."""
+
+        class NonSerializable:
+            def __init__(self):
+                self.circular = self  # Circular reference
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelMessageEnvelope.create_signed(
+                realm="dev",
+                runtime_id="runtime-dev-001",
+                bus_id="kafka-cluster-a",
+                payload=NonSerializable(),
+                private_key=keypair.private_key_bytes,
+            )
+
+        assert (
+            exc_info.value.error_code
+            == EnumCoreErrorCode.ENVELOPE_PAYLOAD_SERIALIZATION_FAILED
+        )
+        assert "NonSerializable" in str(exc_info.value)
+
+    def test_non_serializable_payload_in_verify_signature_raises(
+        self, keypair: Ed25519KeyPair, key_provider: FileKeyProvider
+    ) -> None:
+        """verify_signature raises ModelOnexError for non-serializable payload."""
+        from datetime import UTC, datetime
+        from typing import Any
+
+        # Create a valid envelope with a serializable payload
+        valid_envelope = ModelMessageEnvelope.create_signed(
+            realm="dev",
+            runtime_id="runtime-dev-001",
+            bus_id="kafka-cluster-a",
+            payload={"data": "test"},
+            private_key=keypair.private_key_bytes,
+        )
+
+        # Create an object with a circular reference (cannot be JSON serialized)
+        circular_obj: dict[str, Any] = {}
+        circular_obj["self"] = circular_obj
+
+        # Construct an envelope with a non-serializable dict payload
+        # (bypassing create_signed which would catch this earlier)
+        bad_envelope = ModelMessageEnvelope[dict](
+            realm=valid_envelope.realm,
+            runtime_id=valid_envelope.runtime_id,
+            bus_id=valid_envelope.bus_id,
+            trace_id=valid_envelope.trace_id,
+            emitted_at=datetime.now(UTC),
+            signature=valid_envelope.signature,
+            payload=circular_obj,
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            bad_envelope.verify_signature(key_provider)
+
+        assert (
+            exc_info.value.error_code
+            == EnumCoreErrorCode.ENVELOPE_PAYLOAD_SERIALIZATION_FAILED
+        )
+        # Verify the error message mentions serialization failure
+        assert "serialize payload" in str(exc_info.value).lower()
+
+
+@pytest.mark.unit
 class TestModelMessageEnvelopeSignatureVerification:
     """Tests for signature verification."""
 
-    def test_verify_valid_signature(self, keypair, key_provider) -> None:
+    def test_verify_valid_signature(
+        self, keypair: Ed25519KeyPair, key_provider: FileKeyProvider
+    ) -> None:
         """verify_signature returns True for valid signature."""
         envelope = ModelMessageEnvelope.create_signed(
             realm="dev",
@@ -286,7 +414,9 @@ class TestModelMessageEnvelopeSignatureVerification:
 
         assert envelope.verify_signature(key_provider) is True
 
-    def test_verify_unknown_runtime_raises(self, keypair, key_provider) -> None:
+    def test_verify_unknown_runtime_raises(
+        self, keypair: Ed25519KeyPair, key_provider: FileKeyProvider
+    ) -> None:
         """verify_signature raises for unknown runtime_id."""
         envelope = ModelMessageEnvelope.create_signed(
             realm="dev",
@@ -302,7 +432,9 @@ class TestModelMessageEnvelopeSignatureVerification:
         assert exc_info.value.error_code == EnumCoreErrorCode.ENVELOPE_KEY_NOT_FOUND
         assert "unknown-runtime" in str(exc_info.value)
 
-    def test_verify_wrong_key_returns_false(self, keypair, tmp_path) -> None:
+    def test_verify_wrong_key_returns_false(
+        self, keypair: Ed25519KeyPair, tmp_path: Path
+    ) -> None:
         """verify_signature returns False for wrong key."""
         # Create envelope with one keypair
         envelope = ModelMessageEnvelope.create_signed(
@@ -320,7 +452,9 @@ class TestModelMessageEnvelopeSignatureVerification:
 
         assert envelope.verify_signature(provider) is False
 
-    def test_tampered_envelope_fails_verification(self, keypair, key_provider) -> None:
+    def test_tampered_envelope_fails_verification(
+        self, keypair: Ed25519KeyPair, key_provider: FileKeyProvider
+    ) -> None:
         """Tampering with envelope fields after signing causes verification to fail."""
         envelope = ModelMessageEnvelope.create_signed(
             realm="dev",
@@ -348,7 +482,9 @@ class TestModelMessageEnvelopeSignatureVerification:
         # Tampered envelope should fail verification
         assert tampered_envelope.verify_signature(key_provider) is False
 
-    def test_tampered_payload_fails_verification(self, keypair, key_provider) -> None:
+    def test_tampered_payload_fails_verification(
+        self, keypair: Ed25519KeyPair, key_provider: FileKeyProvider
+    ) -> None:
         """Tampering with payload after signing causes verification to fail."""
         envelope = ModelMessageEnvelope.create_signed(
             realm="dev",
@@ -397,7 +533,7 @@ class TestModelMessageEnvelopeTimestampValidation:
 
         assert "timezone-aware" in str(exc_info.value).lower()
 
-    def test_timezone_aware_datetime_accepted(self, keypair) -> None:
+    def test_timezone_aware_datetime_accepted(self, keypair: Ed25519KeyPair) -> None:
         """Envelope with timezone-aware datetime is accepted."""
         aware_datetime = datetime.now(UTC)
         assert aware_datetime.tzinfo is not None  # Confirm it's aware
@@ -418,7 +554,7 @@ class TestModelMessageEnvelopeTimestampValidation:
 class TestModelMessageEnvelopeWithDictPayload:
     """Tests for envelope with dict payloads."""
 
-    def test_dict_payload(self, keypair) -> None:
+    def test_dict_payload(self, keypair: Ed25519KeyPair) -> None:
         """Envelope works with dict payload."""
         envelope = ModelMessageEnvelope[dict].create_signed(
             realm="dev",
@@ -430,7 +566,9 @@ class TestModelMessageEnvelopeWithDictPayload:
 
         assert envelope.payload == {"key": "value", "nested": {"a": 1}}
 
-    def test_dict_payload_signature_deterministic(self, keypair) -> None:
+    def test_dict_payload_signature_deterministic(
+        self, keypair: Ed25519KeyPair
+    ) -> None:
         """Dict payloads produce deterministic signatures regardless of key order."""
         # Create two envelopes with same data but different key order
         payload1 = {"b": 2, "a": 1}
@@ -466,7 +604,9 @@ class TestModelMessageEnvelopeWithDictPayload:
 class TestModelMessageEnvelopeFullFlow:
     """End-to-end tests for sign -> serialize -> verify flow."""
 
-    def test_full_roundtrip(self, keypair, key_provider) -> None:
+    def test_full_roundtrip(
+        self, keypair: Ed25519KeyPair, key_provider: FileKeyProvider
+    ) -> None:
         """Complete sign → serialize → deserialize → verify flow."""
         # Create and sign
         original = ModelMessageEnvelope.create_signed(

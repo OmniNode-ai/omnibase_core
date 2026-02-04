@@ -20,9 +20,14 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
+import stat
+import tempfile
 import threading
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class FileKeyProvider:
@@ -69,17 +74,7 @@ class FileKeyProvider:
             # Even though these are public keys (confidentiality not a concern), integrity
             # matters - an attacker who can write to a world-writable key file can inject
             # malicious runtime IDs
-            file_mode = self._key_file.stat().st_mode & 0o777
-            if file_mode > self._MAX_ALLOWED_MODE:
-                import logging
-
-                logging.warning(
-                    "Key file %s has insecure permissions %o (should be <= %o). "
-                    "This may allow unauthorized key modification.",
-                    self._key_file,
-                    file_mode,
-                    self._MAX_ALLOWED_MODE,
-                )
+            self._validate_file_permissions()
 
             try:
                 data = json.loads(self._key_file.read_text(encoding="utf-8"))
@@ -87,41 +82,153 @@ class FileKeyProvider:
                 # Validate and load only keys with correct length
                 loaded_keys: dict[str, bytes] = {}
                 for runtime_id, key_b64 in keys_data.items():
-                    key_bytes = base64.urlsafe_b64decode(key_b64)
-                    if len(key_bytes) == self.ED25519_PUBLIC_KEY_LENGTH:
-                        loaded_keys[runtime_id] = key_bytes
-                    # Skip invalid-length keys silently (corrupt data)
+                    try:
+                        key_bytes = base64.urlsafe_b64decode(key_b64)
+                        if len(key_bytes) == self.ED25519_PUBLIC_KEY_LENGTH:
+                            loaded_keys[runtime_id] = key_bytes
+                        else:
+                            logger.warning(
+                                "Skipping key for runtime '%s': invalid length %d "
+                                "(expected %d bytes)",
+                                runtime_id,
+                                len(key_bytes),
+                                self.ED25519_PUBLIC_KEY_LENGTH,
+                            )
+                    except (ValueError, TypeError) as e:
+                        logger.warning(
+                            "Skipping key for runtime '%s': base64 decode failed: %s",
+                            runtime_id,
+                            type(e).__name__,
+                        )
                 self._keys = loaded_keys
-            except (json.JSONDecodeError, KeyError, ValueError):
-                # Invalid file format - start fresh
+            except json.JSONDecodeError as e:
+                logger.warning(
+                    "Key file %s has invalid JSON format: %s. Starting with empty keys.",
+                    self._key_file,
+                    e.msg,
+                )
+                self._keys = {}
+            except (KeyError, ValueError) as e:
+                logger.warning(
+                    "Key file %s has invalid structure: %s. Starting with empty keys.",
+                    self._key_file,
+                    type(e).__name__,
+                )
                 self._keys = {}
 
+    def _validate_file_permissions(self) -> None:
+        """
+        Validate file permissions are restrictive enough.
+
+        Checks that group and other users have no access (mode & 0o077 == 0).
+        Logs warnings for unusual permission combinations but does not block.
+        """
+        file_stat = self._key_file.stat()
+        file_mode = file_stat.st_mode
+
+        # Extract permission bits only (ignore file type bits)
+        permission_bits = file_mode & 0o777
+
+        # Check for group/other access (security concern)
+        group_other_bits = permission_bits & 0o077
+        if group_other_bits != 0:
+            logger.warning(
+                "Key file %s has insecure permissions %04o: group/other access bits "
+                "are set (%04o). This may allow unauthorized key modification. "
+                "Recommended: chmod 600 %s",
+                self._key_file,
+                permission_bits,
+                group_other_bits,
+                self._key_file,
+            )
+
+        # Check for special bits (setuid, setgid, sticky) - unusual for key files
+        special_bits = file_mode & (stat.S_ISUID | stat.S_ISGID | stat.S_ISVTX)
+        if special_bits != 0:
+            special_names = []
+            if file_mode & stat.S_ISUID:
+                special_names.append("setuid")
+            if file_mode & stat.S_ISGID:
+                special_names.append("setgid")
+            if file_mode & stat.S_ISVTX:
+                special_names.append("sticky")
+            logger.warning(
+                "Key file %s has unusual special permission bits: %s. "
+                "This is unexpected for a key file.",
+                self._key_file,
+                ", ".join(special_names),
+            )
+
     def _save_keys(self) -> None:
-        """Save keys to the file."""
+        """
+        Save keys to the file atomically.
+
+        Uses atomic write pattern (temp file + rename) to prevent:
+        - Partial file exposure to concurrent readers
+        - Data corruption on crash during write
+
+        Uses os.open() with explicit mode flags instead of umask to ensure:
+        - Thread-safety (umask is process-wide, not thread-safe)
+        - Correct permissions from creation (no TOCTOU window)
+        """
         with self._lock:
             keys_data = {
                 runtime_id: base64.urlsafe_b64encode(key).decode("ascii")
                 for runtime_id, key in self._keys.items()
             }
             data: dict[str, dict[str, str]] = {"keys": keys_data}
+            content = json.dumps(data, indent=2, sort_keys=True)
 
-            # Set restrictive umask BEFORE any filesystem operations to prevent TOCTOU
-            # race condition where directories/files could be read by others during
-            # the window between creation and permission setting
-            old_umask = os.umask(0o077)  # Restrict to owner-only (rwx------)
+            # Create parent directory with restrictive permissions if needed
+            # Use os.makedirs with explicit mode - this is thread-safe
+            parent_dir = self._key_file.parent
+            if not parent_dir.exists():
+                # Create with owner-only permissions (0o700)
+                # exist_ok=True handles race where another thread creates it
+                parent_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+
+            # Atomic write: write to temp file, then rename
+            # This ensures readers never see partial content
+            fd = None
+            temp_path = None
             try:
-                # Create parent directory with restrictive permissions
-                self._key_file.parent.mkdir(parents=True, exist_ok=True)
-                # Write file with restrictive permissions
-                self._key_file.write_text(
-                    json.dumps(data, indent=2, sort_keys=True), encoding="utf-8"
+                # Create temp file in same directory (required for atomic rename)
+                # Use os.open() with explicit O_CREAT | O_EXCL | O_WRONLY for security:
+                # - O_EXCL ensures we create a new file (no symlink attacks)
+                # - Explicit mode=0o600 sets permissions at creation time (thread-safe)
+                fd, temp_path = tempfile.mkstemp(
+                    dir=parent_dir,
+                    prefix=".keys_",
+                    suffix=".tmp",
                 )
-                # Explicitly set permissions after write - ensures correct permissions
-                # even if the file already existed with insecure permissions (umask
-                # only affects newly created files)
-                self._key_file.chmod(self._MAX_ALLOWED_MODE)
-            finally:
-                os.umask(old_umask)  # Restore original umask
+                # mkstemp creates with 0o600 by default, but set explicitly for clarity
+                os.fchmod(fd, self._MAX_ALLOWED_MODE)
+
+                # Write content
+                os.write(fd, content.encode("utf-8"))
+                os.fsync(fd)  # Ensure data is flushed to disk before rename
+                os.close(fd)
+                fd = None  # Mark as closed
+
+                # Atomic rename - this is the commit point
+                # On POSIX, rename() is atomic within same filesystem
+                temp_path_obj = Path(temp_path)
+                temp_path_obj.rename(self._key_file)
+                temp_path = None  # Mark as renamed (no cleanup needed)
+
+            except OSError:
+                # Clean up temp file on failure
+                if fd is not None:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        pass  # cleanup-resilience-ok: best effort cleanup
+                if temp_path is not None:
+                    try:
+                        Path(temp_path).unlink()
+                    except OSError:
+                        pass  # cleanup-resilience-ok: best effort cleanup
+                raise
 
     def get_public_key(
         self,

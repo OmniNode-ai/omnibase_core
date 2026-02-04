@@ -191,6 +191,29 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
                 )
         return self
 
+    @model_validator(mode="after")
+    def validate_signer_matches_runtime_id(self) -> ModelMessageEnvelope[T]:
+        """
+        Validate that signature.signer matches runtime_id.
+
+        This is a security invariant: the signature's claimed signer must match
+        the envelope's runtime_id. A mismatch indicates either a configuration
+        error or an attempted signature replay attack.
+        """
+        if self.signature.signer != self.runtime_id:
+            raise ModelOnexError(
+                message=(
+                    f"Signer mismatch: signature.signer='{self.signature.signer}' "
+                    f"does not match runtime_id='{self.runtime_id}'"
+                ),
+                error_code=EnumCoreErrorCode.ENVELOPE_SIGNER_MISMATCH,
+                context={
+                    "signature_signer": self.signature.signer,
+                    "runtime_id": self.runtime_id,
+                },
+            )
+        return self
+
     @staticmethod
     def _build_signing_dict(
         realm: str,
@@ -240,12 +263,29 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
 
         This is the single source of truth for payload hash computation,
         used both during envelope creation and verification.
+
+        Payload Handling Strategy:
+            - BaseModel: Uses model_dump(mode="json") for deterministic serialization
+            - dict: Passed directly to canonical JSON serializer (keys sorted)
+            - Other types (str, int, list, etc.): Wrapped in {"value": payload}
+              This fallback ensures primitives and lists have a consistent dict
+              structure for canonical JSON hashing. The wrapper is intentional
+              to maintain hash determinism across all payload types.
+
+        Returns:
+            64-character lowercase hex Blake3 hash string.
+
+        Raises:
+            TypeError: If payload cannot be JSON serialized (e.g., circular refs).
+            ValueError: If serialization produces invalid JSON.
         """
         if isinstance(payload, BaseModel):
             payload_dict = payload.model_dump(mode="json")
         elif isinstance(payload, dict):
             payload_dict = payload
         else:
+            # Fallback: wrap primitives/lists in a dict for consistent hashing.
+            # This ensures hash determinism for payloads like "hello" or [1, 2, 3].
             payload_dict = {"value": payload}
         return hash_canonical_json(payload_dict)
 
@@ -287,7 +327,8 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
             True if signature is valid and payload is intact, False otherwise.
 
         Raises:
-            ModelOnexError: If runtime_id's public key is not found.
+            ModelOnexError: If runtime_id's public key is not found,
+                or if payload cannot be serialized for hash verification.
 
         Security:
             This method fails closed - unknown runtime_id = untrusted.
@@ -302,7 +343,19 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
             )
 
         # Step 1: Verify payload integrity - hash must match stored hash
-        computed_hash = self._compute_payload_hash()
+        try:
+            computed_hash = self._compute_payload_hash()
+        except (TypeError, ValueError) as e:
+            # Payload is not JSON-serializable (circular refs, custom objects, etc.)
+            raise ModelOnexError(
+                message=f"Failed to serialize payload for hash verification: {e}",
+                error_code=EnumCoreErrorCode.ENVELOPE_PAYLOAD_SERIALIZATION_FAILED,
+                context={
+                    "payload_type": type(self.payload).__name__,
+                    "runtime_id": self.runtime_id,
+                },
+            ) from e
+
         if computed_hash != self.signature.payload_hash:
             return False
 
