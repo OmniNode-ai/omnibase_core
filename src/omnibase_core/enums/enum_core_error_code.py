@@ -240,6 +240,13 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     REPLAY_SEQUENCE_EXHAUSTED = "ONEX_CORE_334_REPLAY_SEQUENCE_EXHAUSTED"
     REPLAY_ENFORCEMENT_BLOCKED = "ONEX_CORE_335_REPLAY_ENFORCEMENT_BLOCKED"
 
+    # Envelope and message signing errors (341-350)
+    ENVELOPE_IDENTITY_MISMATCH = "ONEX_CORE_341_ENVELOPE_IDENTITY_MISMATCH"
+    ENVELOPE_SIGNATURE_INVALID = "ONEX_CORE_342_ENVELOPE_SIGNATURE_INVALID"
+    ENVELOPE_KEY_NOT_FOUND = "ONEX_CORE_343_ENVELOPE_KEY_NOT_FOUND"
+    ENVELOPE_SIGNING_FAILED = "ONEX_CORE_344_ENVELOPE_SIGNING_FAILED"
+    ENVELOPE_VALIDATION_FAILED = "ONEX_CORE_345_ENVELOPE_VALIDATION_FAILED"
+
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         return "CORE"
@@ -393,6 +400,12 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.REPLAY_ENFORCEMENT_BLOCKED: EnumCLIExitCode.ERROR,
+    # Envelope and message signing errors -> ERROR
+    EnumCoreErrorCode.ENVELOPE_IDENTITY_MISMATCH: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ENVELOPE_SIGNATURE_INVALID: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ENVELOPE_KEY_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ENVELOPE_SIGNING_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ENVELOPE_VALIDATION_FAILED: EnumCLIExitCode.ERROR,
 }
 
 
@@ -547,5 +560,11 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: "Replay: effect_type must not be empty",
         EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED: "Replay: UUID/value sequence exhausted during replay",
         EnumCoreErrorCode.REPLAY_ENFORCEMENT_BLOCKED: "Replay: non-deterministic effect blocked in strict mode",
+        # Envelope and message signing errors
+        EnumCoreErrorCode.ENVELOPE_IDENTITY_MISMATCH: "Envelope: emitter_identity.env does not match envelope realm",
+        EnumCoreErrorCode.ENVELOPE_SIGNATURE_INVALID: "Envelope: signature verification failed",
+        EnumCoreErrorCode.ENVELOPE_KEY_NOT_FOUND: "Envelope: public key not found for runtime_id",
+        EnumCoreErrorCode.ENVELOPE_SIGNING_FAILED: "Envelope: signing operation failed",
+        EnumCoreErrorCode.ENVELOPE_VALIDATION_FAILED: "Envelope: validation failed",
     }
     return descriptions.get(error_code, "Unknown error")
