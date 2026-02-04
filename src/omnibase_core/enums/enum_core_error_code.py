@@ -240,6 +240,17 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     REPLAY_SEQUENCE_EXHAUSTED = "ONEX_CORE_334_REPLAY_SEQUENCE_EXHAUSTED"
     REPLAY_ENFORCEMENT_BLOCKED = "ONEX_CORE_335_REPLAY_ENFORCEMENT_BLOCKED"
 
+    # Envelope and message signing errors (341-350)
+    ENVELOPE_IDENTITY_MISMATCH = "ONEX_CORE_341_ENVELOPE_IDENTITY_MISMATCH"
+    ENVELOPE_SIGNATURE_INVALID = "ONEX_CORE_342_ENVELOPE_SIGNATURE_INVALID"
+    ENVELOPE_KEY_NOT_FOUND = "ONEX_CORE_343_ENVELOPE_KEY_NOT_FOUND"
+    ENVELOPE_SIGNING_FAILED = "ONEX_CORE_344_ENVELOPE_SIGNING_FAILED"
+    ENVELOPE_VALIDATION_FAILED = "ONEX_CORE_345_ENVELOPE_VALIDATION_FAILED"
+    ENVELOPE_PAYLOAD_SERIALIZATION_FAILED = (
+        "ONEX_CORE_346_ENVELOPE_PAYLOAD_SERIALIZATION_FAILED"
+    )
+    ENVELOPE_SIGNER_MISMATCH = "ONEX_CORE_347_ENVELOPE_SIGNER_MISMATCH"
+
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         return "CORE"
@@ -292,6 +303,8 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.REGISTRY_INITIALIZATION_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ITEM_NOT_REGISTERED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.DUPLICATE_REGISTRATION: EnumCLIExitCode.WARNING,
+    EnumCoreErrorCode.REGISTRY_VALIDATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED: EnumCLIExitCode.ERROR,
     # Runtime errors -> ERROR
     EnumCoreErrorCode.OPERATION_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.TIMEOUT_EXCEEDED: EnumCLIExitCode.ERROR,
@@ -310,6 +323,17 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.HANDLER_EXECUTION_ERROR: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.EVENT_BUS_ERROR: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR: EnumCLIExitCode.ERROR,
+    # Test and development errors -> ERROR
+    EnumCoreErrorCode.TEST_SETUP_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.TEST_ASSERTION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.MOCK_CONFIGURATION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.TEST_DATA_INVALID: EnumCLIExitCode.ERROR,
+    # Import and dependency errors -> ERROR
+    EnumCoreErrorCode.MODULE_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.VERSION_INCOMPATIBLE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.IMPORT_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DEPENDENCY_ERROR: EnumCLIExitCode.ERROR,
     # Database errors -> ERROR
     EnumCoreErrorCode.DATABASE_CONNECTION_ERROR: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.DATABASE_OPERATION_ERROR: EnumCLIExitCode.ERROR,
@@ -325,6 +349,9 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.TYPE_INTROSPECTION_ERROR: EnumCLIExitCode.ERROR,
     # Protocol configuration errors
     EnumCoreErrorCode.PROTOCOL_CONFIGURATION_ERROR: EnumCLIExitCode.ERROR,
+    # Abstract method and implementation errors -> ERROR
+    EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ABSTRACT_METHOD_CALLED: EnumCLIExitCode.ERROR,
     # Intelligence errors -> ERROR
     EnumCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.PATTERN_RECOGNITION_FAILED: EnumCLIExitCode.ERROR,
@@ -393,6 +420,14 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.REPLAY_ENFORCEMENT_BLOCKED: EnumCLIExitCode.ERROR,
+    # Envelope and message signing errors -> ERROR
+    EnumCoreErrorCode.ENVELOPE_IDENTITY_MISMATCH: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ENVELOPE_SIGNATURE_INVALID: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ENVELOPE_KEY_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ENVELOPE_SIGNING_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ENVELOPE_VALIDATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ENVELOPE_PAYLOAD_SERIALIZATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ENVELOPE_SIGNER_MISMATCH: EnumCLIExitCode.ERROR,
 }
 
 
@@ -547,5 +582,37 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: "Replay: effect_type must not be empty",
         EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED: "Replay: UUID/value sequence exhausted during replay",
         EnumCoreErrorCode.REPLAY_ENFORCEMENT_BLOCKED: "Replay: non-deterministic effect blocked in strict mode",
+        # Envelope and message signing errors
+        EnumCoreErrorCode.ENVELOPE_IDENTITY_MISMATCH: "Envelope: emitter_identity.env does not match envelope realm",
+        EnumCoreErrorCode.ENVELOPE_SIGNATURE_INVALID: "Envelope: signature verification failed",
+        EnumCoreErrorCode.ENVELOPE_KEY_NOT_FOUND: "Envelope: public key not found for runtime_id",
+        EnumCoreErrorCode.ENVELOPE_SIGNING_FAILED: "Envelope: signing operation failed",
+        EnumCoreErrorCode.ENVELOPE_VALIDATION_FAILED: "Envelope: validation failed",
+        EnumCoreErrorCode.ENVELOPE_PAYLOAD_SERIALIZATION_FAILED: "Envelope: payload serialization to JSON failed",
+        EnumCoreErrorCode.ENVELOPE_SIGNER_MISMATCH: "Envelope: signature.signer does not match runtime_id",
     }
     return descriptions.get(error_code, "Unknown error")
+
+
+def _validate_error_code_coverage() -> None:
+    """
+    Validate that all EnumCoreErrorCode values have exit code mappings.
+
+    This function is called at module load time to ensure completeness.
+    Raises AssertionError if any enum value is missing from CORE_ERROR_CODE_TO_EXIT_CODE.
+    """
+    all_codes = set(EnumCoreErrorCode)
+    mapped_codes = set(CORE_ERROR_CODE_TO_EXIT_CODE.keys())
+    missing = all_codes - mapped_codes
+
+    if missing:
+        missing_names = sorted(code.name for code in missing)
+        # error-ok: AssertionError is appropriate for module-load development-time validation
+        raise AssertionError(
+            f"EnumCoreErrorCode values missing from CORE_ERROR_CODE_TO_EXIT_CODE: "
+            f"{missing_names}. Add mappings for these error codes."
+        )
+
+
+# Validate coverage at module load time
+_validate_error_code_coverage()
