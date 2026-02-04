@@ -469,34 +469,9 @@ class OmniStructureValidator:
                     )
                 )
 
-            # Validate version structure
-            version_dir = node_dir / "v1_0_0"
-            if not version_dir.exists():
-                self.violations.append(
-                    StructureViolation(
-                        level=ViolationLevel.ERROR,
-                        category="Node Version",
-                        message="Missing version directory: v1_0_0",
-                        path=str(node_dir.relative_to(self.repo_path)),
-                        suggestion="Create v1_0_0 directory with node.py and contracts/",
-                    )
-                )
-                continue
-
-            # Check required node files
-            required_files = ["node.py"]
-            for req_file in required_files:
-                file_path = version_dir / req_file
-                if not file_path.exists():
-                    self.violations.append(
-                        StructureViolation(
-                            level=ViolationLevel.ERROR,
-                            category="Missing Node File",
-                            message=f"Missing required file: {req_file}",
-                            path=str(version_dir.relative_to(self.repo_path)),
-                            suggestion=f"Create {req_file} with proper node implementation",
-                        )
-                    )
+            # Modern node structure: nodes can have descriptive filenames
+            # (e.g., node_cross_repo_validation_orchestrator.py)
+            # No version subdirectory or specific node.py file required
 
     def validate_test_structure(self):
         """Validate test directory structure mirrors src/."""

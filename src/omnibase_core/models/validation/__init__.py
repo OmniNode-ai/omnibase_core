@@ -18,6 +18,11 @@ from .model_contract_validation_event import (
     ModelContractValidationEvent,
 )
 
+# Cross-repo validation models (OMN-1771)
+from .model_cross_repo_validation_orchestrator_result import (
+    CrossRepoValidationOrchestratorResult,
+)
+
 # Workflow validation models (OMN-176) - safe to import
 from .model_cycle_detection_result import ModelCycleDetectionResult
 from .model_dependency_validation_result import ModelDependencyValidationResult
@@ -53,8 +58,6 @@ from .model_topic_validation_result import ModelTopicValidationResult
 from .model_unique_name_result import ModelUniqueNameResult
 from .model_validation_base import ModelValidationBase
 from .model_validation_container import ModelValidationContainer
-
-# Cross-repo validation models (OMN-1771)
 from .model_validation_discovery_config import ModelValidationDiscoveryConfig
 from .model_validation_error import ModelValidationError
 from .model_validation_policy_contract import ModelValidationPolicyContract
@@ -71,6 +74,7 @@ __all__ = [
     "ContractValidationEventType",
     "ModelContractValidationEvent",
     # Cross-repo validation models (OMN-1771)
+    "CrossRepoValidationOrchestratorResult",
     "ModelValidationDiscoveryConfig",
     "ModelRuleConfigBase",
     "ModelRuleContractSchemaConfig",
