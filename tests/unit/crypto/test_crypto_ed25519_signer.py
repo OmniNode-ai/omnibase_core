@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from omnibase_core.crypto.ed25519_signer import (
+from omnibase_core.crypto.crypto_ed25519_signer import (
     Ed25519KeyPair,
     generate_keypair,
     sign,
@@ -14,6 +14,7 @@ from omnibase_core.crypto.ed25519_signer import (
 )
 
 
+@pytest.mark.unit
 class TestGenerateKeypair:
     """Tests for generate_keypair function."""
 
@@ -40,6 +41,7 @@ class TestGenerateKeypair:
         assert keypair1.public_key_bytes != keypair2.public_key_bytes
 
 
+@pytest.mark.unit
 class TestEd25519KeyPair:
     """Tests for Ed25519KeyPair class."""
 
@@ -67,6 +69,7 @@ class TestEd25519KeyPair:
         assert 40 <= len(b64) <= 48
 
 
+@pytest.mark.unit
 class TestSignAndVerify:
     """Tests for sign and verify functions."""
 
@@ -125,6 +128,7 @@ class TestSignAndVerify:
         assert verify(b"invalid", data, signature) is False
 
 
+@pytest.mark.unit
 class TestBase64Functions:
     """Tests for base64 sign/verify functions."""
 

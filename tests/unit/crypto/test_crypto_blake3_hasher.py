@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from omnibase_core.crypto.blake3_hasher import hash_bytes, hash_canonical_json
+from omnibase_core.crypto.crypto_blake3_hasher import hash_bytes, hash_canonical_json
 
 
+@pytest.mark.unit
 class TestHashBytes:
     """Tests for hash_bytes function."""
 
@@ -43,6 +44,7 @@ class TestHashBytes:
         assert len(result) == 64
 
 
+@pytest.mark.unit
 class TestHashCanonicalJson:
     """Tests for hash_canonical_json function."""
 

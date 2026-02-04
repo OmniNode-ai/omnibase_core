@@ -19,9 +19,10 @@ The signature does NOT cover emitter_identity because:
 
 from __future__ import annotations
 
+import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ModelEnvelopeSignature(BaseModel):
@@ -63,6 +64,16 @@ class ModelEnvelopeSignature(BaseModel):
         min_length=1,
         description="Base64-encoded Ed25519 signature.",
     )
+
+    @field_validator("payload_hash")
+    @classmethod
+    def validate_payload_hash_hex(cls, v: str) -> str:
+        """Validate that payload_hash contains only hex characters."""
+        if not re.fullmatch(r"[0-9a-f]{64}", v, re.IGNORECASE):
+            raise ValueError(
+                "payload_hash must be exactly 64 hex characters (0-9, a-f)"
+            )
+        return v.lower()  # Normalize to lowercase
 
 
 __all__ = ["ModelEnvelopeSignature"]

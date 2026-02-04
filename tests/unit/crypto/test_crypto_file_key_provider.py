@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.crypto.ed25519_signer import generate_keypair
-from omnibase_core.crypto.file_key_provider import FileKeyProvider
+from omnibase_core.crypto.crypto_ed25519_signer import generate_keypair
+from omnibase_core.crypto.crypto_file_key_provider import FileKeyProvider
 
 
 @pytest.fixture
@@ -23,6 +23,7 @@ def provider(temp_key_file: Path) -> FileKeyProvider:
     return FileKeyProvider(temp_key_file)
 
 
+@pytest.mark.unit
 class TestFileKeyProviderBasics:
     """Basic functionality tests."""
 
@@ -72,6 +73,7 @@ class TestFileKeyProviderBasics:
         assert set(runtime_ids) == {"runtime-001", "runtime-002"}
 
 
+@pytest.mark.unit
 class TestFileKeyProviderPersistence:
     """Persistence and file handling tests."""
 
@@ -147,6 +149,7 @@ class TestFileKeyProviderPersistence:
         assert provider.list_runtime_ids() == []
 
 
+@pytest.mark.unit
 class TestFileKeyProviderRemoval:
     """Key removal tests."""
 
@@ -162,6 +165,7 @@ class TestFileKeyProviderRemoval:
         assert provider.remove_key("unknown") is False
 
 
+@pytest.mark.unit
 class TestFileKeyProviderProtocolCompliance:
     """Verify ProtocolKeyProvider compliance."""
 
@@ -174,6 +178,7 @@ class TestFileKeyProviderProtocolCompliance:
         assert isinstance(provider, ProtocolKeyProvider)
 
 
+@pytest.mark.unit
 class TestFileKeyProviderThreadSafety:
     """Thread safety tests."""
 
@@ -216,6 +221,7 @@ class TestFileKeyProviderThreadSafety:
         assert len(runtime_ids) == expected_count
 
 
+@pytest.mark.unit
 class TestFileKeyProviderValidation:
     """Key validation tests."""
 

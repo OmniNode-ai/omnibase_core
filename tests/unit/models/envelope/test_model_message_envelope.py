@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
-from omnibase_core.crypto.ed25519_signer import generate_keypair
-from omnibase_core.crypto.file_key_provider import FileKeyProvider
+from omnibase_core.crypto.crypto_ed25519_signer import Ed25519KeyPair, generate_keypair
+from omnibase_core.crypto.crypto_file_key_provider import FileKeyProvider
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.envelope.model_envelope_signature import (
     ModelEnvelopeSignature,
@@ -29,19 +30,20 @@ class SamplePayload(BaseModel):
 
 
 @pytest.fixture
-def keypair():
+def keypair() -> Ed25519KeyPair:
     """Generate a keypair for testing."""
     return generate_keypair()
 
 
 @pytest.fixture
-def key_provider(tmp_path, keypair):
+def key_provider(tmp_path: Path, keypair: Ed25519KeyPair) -> FileKeyProvider:
     """Create a key provider with a registered key."""
     provider = FileKeyProvider(tmp_path / "keys.json")
     provider.register_key("runtime-dev-001", keypair.public_key_bytes)
     return provider
 
 
+@pytest.mark.unit
 class TestModelEmitterIdentity:
     """Tests for ModelEmitterIdentity model."""
 
@@ -66,15 +68,16 @@ class TestModelEmitterIdentity:
             node_name="my-handler",
             version="v1",
         )
-        with pytest.raises(Exception):  # ValidationError for frozen model
+        with pytest.raises(ValidationError):
             identity.env = "prod"  # type: ignore[misc]
 
     def test_identity_requires_all_fields(self) -> None:
         """All fields are required."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelEmitterIdentity(env="dev")  # type: ignore[call-arg]
 
 
+@pytest.mark.unit
 class TestModelEnvelopeSignature:
     """Tests for ModelEnvelopeSignature model."""
 
@@ -97,12 +100,12 @@ class TestModelEnvelopeSignature:
             payload_hash="a" * 64,
             signature="base64signature==",
         )
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             signature.signer = "other"  # type: ignore[misc]
 
     def test_payload_hash_must_be_64_chars(self) -> None:
         """Payload hash must be exactly 64 characters."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelEnvelopeSignature(
                 algorithm="ed25519",
                 signer="runtime-dev-001",
@@ -110,7 +113,29 @@ class TestModelEnvelopeSignature:
                 signature="base64signature==",
             )
 
+    def test_payload_hash_must_be_valid_hex(self) -> None:
+        """Payload hash must contain only hex characters."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEnvelopeSignature(
+                algorithm="ed25519",
+                signer="runtime-dev-001",
+                payload_hash="g" * 64,  # 'g' is not a valid hex character
+                signature="base64signature==",
+            )
+        assert "hex characters" in str(exc_info.value).lower()
 
+    def test_payload_hash_normalized_to_lowercase(self) -> None:
+        """Payload hash is normalized to lowercase."""
+        signature = ModelEnvelopeSignature(
+            algorithm="ed25519",
+            signer="runtime-dev-001",
+            payload_hash="ABCDEF" + "0" * 58,  # Uppercase hex
+            signature="base64signature==",
+        )
+        assert signature.payload_hash == "abcdef" + "0" * 58  # Should be lowercase
+
+
+@pytest.mark.unit
 class TestModelMessageEnvelopeCreation:
     """Tests for creating ModelMessageEnvelope."""
 
@@ -179,6 +204,24 @@ class TestModelMessageEnvelopeCreation:
         assert envelope.emitted_at == timestamp
 
 
+@pytest.mark.unit
+class TestModelMessageEnvelopeImmutability:
+    """Tests for envelope immutability."""
+
+    def test_envelope_is_frozen(self, keypair: Ed25519KeyPair) -> None:
+        """Envelope model is immutable after creation."""
+        envelope = ModelMessageEnvelope.create_signed(
+            realm="dev",
+            runtime_id="runtime-dev-001",
+            bus_id="kafka-cluster-a",
+            payload={"data": "test"},
+            private_key=keypair.private_key_bytes,
+        )
+        with pytest.raises(ValidationError):
+            envelope.realm = "prod"  # type: ignore[misc]
+
+
+@pytest.mark.unit
 class TestModelMessageEnvelopeIdentityValidation:
     """Tests for identity/realm mismatch validation."""
 
@@ -227,6 +270,7 @@ class TestModelMessageEnvelopeIdentityValidation:
         assert envelope.emitter_identity.env == envelope.realm
 
 
+@pytest.mark.unit
 class TestModelMessageEnvelopeSignatureVerification:
     """Tests for signature verification."""
 
@@ -332,15 +376,16 @@ class TestModelMessageEnvelopeSignatureVerification:
         assert tampered_envelope.verify_signature(key_provider) is False
 
 
+@pytest.mark.unit
 class TestModelMessageEnvelopeTimestampValidation:
     """Tests for timestamp validation."""
 
-    def test_naive_datetime_rejected(self, keypair) -> None:
+    def test_naive_datetime_rejected(self, keypair: Ed25519KeyPair) -> None:
         """Envelope with naive datetime (no timezone) is rejected."""
         naive_datetime = datetime(2025, 1, 1, 12, 0, 0)  # No tzinfo
         assert naive_datetime.tzinfo is None  # Confirm it's naive
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ValidationError) as exc_info:
             ModelMessageEnvelope.create_signed(
                 realm="dev",
                 runtime_id="runtime-dev-001",
@@ -350,7 +395,6 @@ class TestModelMessageEnvelopeTimestampValidation:
                 emitted_at=naive_datetime,
             )
 
-        # Pydantic wraps ValueError in ValidationError
         assert "timezone-aware" in str(exc_info.value).lower()
 
     def test_timezone_aware_datetime_accepted(self, keypair) -> None:
@@ -370,6 +414,7 @@ class TestModelMessageEnvelopeTimestampValidation:
         assert envelope.emitted_at == aware_datetime
 
 
+@pytest.mark.unit
 class TestModelMessageEnvelopeWithDictPayload:
     """Tests for envelope with dict payloads."""
 
@@ -417,8 +462,9 @@ class TestModelMessageEnvelopeWithDictPayload:
         assert envelope1.signature.payload_hash == envelope2.signature.payload_hash
 
 
+@pytest.mark.unit
 class TestModelMessageEnvelopeFullFlow:
-    """End-to-end tests for sign → serialize → verify flow."""
+    """End-to-end tests for sign -> serialize -> verify flow."""
 
     def test_full_roundtrip(self, keypair, key_provider) -> None:
         """Complete sign → serialize → deserialize → verify flow."""

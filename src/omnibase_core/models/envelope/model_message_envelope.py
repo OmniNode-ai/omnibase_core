@@ -29,8 +29,8 @@ from pydantic import (
     model_validator,
 )
 
-from omnibase_core.crypto.blake3_hasher import hash_canonical_json
-from omnibase_core.crypto.ed25519_signer import sign_base64, verify_base64
+from omnibase_core.crypto.crypto_blake3_hasher import hash_canonical_json
+from omnibase_core.crypto.crypto_ed25519_signer import sign_base64, verify_base64
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.envelope.model_emitter_identity import ModelEmitterIdentity
 from omnibase_core.models.envelope.model_envelope_signature import (
@@ -92,7 +92,7 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
         ... )
     """
 
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # Required routing fields
     realm: str = Field(
@@ -191,6 +191,64 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
                 )
         return self
 
+    @staticmethod
+    def _build_signing_dict(
+        realm: str,
+        runtime_id: str,  # string-id-ok: human-readable gateway identifier
+        bus_id: str,  # string-id-ok: named cluster identifier
+        trace_id: UUID,
+        emitted_at: datetime,
+        payload_hash: str,
+        causality_id: UUID | None = None,
+        tenant_id: str | None = None,  # string-id-ok: named tenant identifier
+    ) -> dict[str, str]:
+        """
+        Build canonical signing dictionary for signature computation.
+
+        This is the single source of truth for which fields are included
+        in the cryptographic signature. The dict is JSON-serialized with
+        sorted keys for deterministic signing.
+
+        Note: emitter_identity is deliberately excluded as it is untrusted
+        observability metadata, not part of the security envelope.
+        """
+        signing_dict: dict[str, str] = {
+            "realm": realm,
+            "runtime_id": runtime_id,
+            "bus_id": bus_id,
+            "trace_id": str(trace_id),
+            "emitted_at": emitted_at.isoformat(),
+            "payload_hash": payload_hash,
+        }
+        if causality_id:
+            signing_dict["causality_id"] = str(causality_id)
+        if tenant_id:
+            signing_dict["tenant_id"] = tenant_id
+        return signing_dict
+
+    @staticmethod
+    def _encode_signing_dict(signing_dict: dict[str, str]) -> bytes:
+        """Encode signing dict to canonical JSON bytes for signature operations."""
+        return json.dumps(signing_dict, sort_keys=True, separators=(",", ":")).encode(
+            "utf-8"
+        )
+
+    @staticmethod
+    def _compute_payload_hash_for(payload: T) -> str:
+        """
+        Compute Blake3 hash for any supported payload type.
+
+        This is the single source of truth for payload hash computation,
+        used both during envelope creation and verification.
+        """
+        if isinstance(payload, BaseModel):
+            payload_dict = payload.model_dump(mode="json")
+        elif isinstance(payload, dict):
+            payload_dict = payload
+        else:
+            payload_dict = {"value": payload}
+        return hash_canonical_json(payload_dict)
+
     def _get_signing_content(self) -> bytes:
         """
         Get the canonical bytes that are signed.
@@ -198,32 +256,21 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
         The signing content includes routing metadata and payload hash,
         but NOT emitter_identity (which is for observability only).
         """
-        signing_dict = {
-            "realm": self.realm,
-            "runtime_id": self.runtime_id,
-            "bus_id": self.bus_id,
-            "trace_id": str(self.trace_id),
-            "emitted_at": self.emitted_at.isoformat(),
-            "payload_hash": self.signature.payload_hash,
-        }
-        if self.causality_id:
-            signing_dict["causality_id"] = str(self.causality_id)
-        if self.tenant_id:
-            signing_dict["tenant_id"] = self.tenant_id
-
-        return json.dumps(signing_dict, sort_keys=True, separators=(",", ":")).encode(
-            "utf-8"
+        signing_dict = self._build_signing_dict(
+            realm=self.realm,
+            runtime_id=self.runtime_id,
+            bus_id=self.bus_id,
+            trace_id=self.trace_id,
+            emitted_at=self.emitted_at,
+            payload_hash=self.signature.payload_hash,
+            causality_id=self.causality_id,
+            tenant_id=self.tenant_id,
         )
+        return self._encode_signing_dict(signing_dict)
 
     def _compute_payload_hash(self) -> str:
         """Compute the Blake3 hash of the current payload."""
-        if isinstance(self.payload, BaseModel):
-            payload_dict = self.payload.model_dump(mode="json")
-        elif isinstance(self.payload, dict):
-            payload_dict = self.payload
-        else:
-            payload_dict = {"value": self.payload}
-        return hash_canonical_json(payload_dict)
+        return self._compute_payload_hash_for(self.payload)
 
     def verify_signature(self, key_provider: ProtocolKeyProvider) -> bool:
         """
@@ -316,16 +363,9 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
                 version=emitter_identity.version,
             )
 
-        # Compute payload hash
+        # Compute payload hash using shared helper
         try:
-            if isinstance(payload, BaseModel):
-                payload_dict = payload.model_dump(mode="json")
-            elif isinstance(payload, dict):
-                payload_dict = payload
-            else:
-                # For other types, attempt JSON serialization
-                payload_dict = {"value": payload}
-            payload_hash = hash_canonical_json(payload_dict)
+            payload_hash = cls._compute_payload_hash_for(payload)
         except (TypeError, ValueError) as e:
             raise ModelOnexError(
                 message=f"Failed to compute payload hash: {e}",
@@ -333,23 +373,18 @@ class ModelMessageEnvelope(BaseModel, Generic[T]):
                 context={"payload_type": type(payload).__name__},
             ) from e
 
-        # Build signing content
-        signing_dict: dict[str, str] = {
-            "realm": realm,
-            "runtime_id": runtime_id,
-            "bus_id": bus_id,
-            "trace_id": str(actual_trace_id),
-            "emitted_at": timestamp.isoformat(),
-            "payload_hash": payload_hash,
-        }
-        if causality_id:
-            signing_dict["causality_id"] = str(causality_id)
-        if tenant_id:
-            signing_dict["tenant_id"] = tenant_id
-
-        signing_content = json.dumps(
-            signing_dict, sort_keys=True, separators=(",", ":")
-        ).encode("utf-8")
+        # Build signing content using shared helpers
+        signing_dict = cls._build_signing_dict(
+            realm=realm,
+            runtime_id=runtime_id,
+            bus_id=bus_id,
+            trace_id=actual_trace_id,
+            emitted_at=timestamp,
+            payload_hash=payload_hash,
+            causality_id=causality_id,
+            tenant_id=tenant_id,
+        )
+        signing_content = cls._encode_signing_dict(signing_dict)
 
         # Sign
         try:
