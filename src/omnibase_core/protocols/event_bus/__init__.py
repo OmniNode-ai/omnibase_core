@@ -58,7 +58,7 @@ from omnibase_core.protocols.event_bus.protocol_event_bus_registry import (
     ProtocolEventBusRegistry,
 )
 from omnibase_core.protocols.event_bus.protocol_event_bus_subscriber import (
-    ConsumerGroupPurpose,
+    EnumConsumerGroupPurpose,
     ProtocolEventBusSubscriber,
 )
 from omnibase_core.protocols.event_bus.protocol_event_envelope import (
@@ -87,7 +87,7 @@ __all__ = [
     "ProtocolKafkaEventBusAdapter",
     # Node Identity (for subscription consumer group derivation)
     "ProtocolNodeIdentity",
-    "ConsumerGroupPurpose",
+    "EnumConsumerGroupPurpose",
     # Event Bus - ISP-compliant protocols (prefer these for minimal dependencies)
     "ProtocolEventBusPublisher",
     "ProtocolEventBusSubscriber",

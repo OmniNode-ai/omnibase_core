@@ -593,7 +593,7 @@ class TestISPIndependentImplementation:
         from collections.abc import Awaitable, Callable
 
         from omnibase_core.protocols.event_bus import (
-            ConsumerGroupPurpose,
+            EnumConsumerGroupPurpose,
             ProtocolEventBusSubscriber,
             ProtocolNodeIdentity,
         )
@@ -607,7 +607,7 @@ class TestISPIndependentImplementation:
                 node_identity: ProtocolNodeIdentity,
                 on_message: Callable[[ProtocolEventMessage], Awaitable[None]],
                 *,
-                purpose: ConsumerGroupPurpose = "consume",
+                purpose: EnumConsumerGroupPurpose = EnumConsumerGroupPurpose.CONSUME,
             ) -> Callable[[], Awaitable[None]]:
                 async def unsubscribe() -> None:
                     pass

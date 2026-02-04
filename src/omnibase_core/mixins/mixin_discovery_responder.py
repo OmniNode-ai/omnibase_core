@@ -28,7 +28,10 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEve
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.protocols import ProtocolEventBus
-from omnibase_core.protocols.event_bus import ProtocolNodeIdentity
+from omnibase_core.protocols.event_bus import (
+    EnumConsumerGroupPurpose,
+    ProtocolNodeIdentity,
+)
 from omnibase_core.types.typed_dict_discovery_stats import TypedDictDiscoveryStats
 
 # TypeAdapter for duck-typing validation of discovery request metadata
@@ -149,12 +152,12 @@ class MixinDiscoveryResponder:
 
         try:
             # Subscribe to discovery broadcast channel
-            # Consumer group is derived from node_identity with "introspection" purpose
+            # Consumer group is derived from node_identity with INTROSPECTION purpose
             self._discovery_unsubscribe = await event_bus.subscribe(
                 topic="onex.discovery.broadcast",
                 node_identity=node_identity,
                 on_message=self._on_discovery_message,
-                purpose="introspection",
+                purpose=EnumConsumerGroupPurpose.INTROSPECTION,
             )
 
             self._discovery_active = True

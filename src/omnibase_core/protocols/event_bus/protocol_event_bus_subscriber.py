@@ -18,24 +18,15 @@ Design Principles:
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import Literal, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
+from omnibase_core.enums.enum_consumer_group_purpose import EnumConsumerGroupPurpose
 from omnibase_core.protocols.event_bus.protocol_event_message import (
     ProtocolEventMessage,
 )
 from omnibase_core.protocols.event_bus.protocol_node_identity import (
     ProtocolNodeIdentity,
 )
-
-# Type alias for consumer group purpose classification
-ConsumerGroupPurpose = Literal[
-    "consume",
-    "introspection",
-    "replay",
-    "audit",
-    "backfill",
-    "contract-registry",
-]
 
 
 @runtime_checkable
@@ -87,7 +78,7 @@ class ProtocolEventBusSubscriber(Protocol):
         node_identity: ProtocolNodeIdentity,
         on_message: Callable[[ProtocolEventMessage], Awaitable[None]],
         *,
-        purpose: ConsumerGroupPurpose = "consume",
+        purpose: EnumConsumerGroupPurpose = EnumConsumerGroupPurpose.CONSUME,
     ) -> Callable[[], Awaitable[None]]:
         """
         Subscribe to a topic with a message handler.
@@ -104,10 +95,10 @@ class ProtocolEventBusSubscriber(Protocol):
             node_identity: Node identity used to derive the consumer group ID.
                 Contains env, service, node_name, and version components.
             on_message: Async callback invoked for each received message.
-            purpose: Consumer group purpose classification. Defaults to "consume".
-                Used in the consumer group ID derivation for disambiguation.
-                Valid values: "consume", "introspection", "replay", "audit",
-                "backfill", "contract-registry".
+            purpose: Consumer group purpose classification. Defaults to
+                ``EnumConsumerGroupPurpose.CONSUME``. Used in the consumer group
+                ID derivation for disambiguation. See ``EnumConsumerGroupPurpose``
+                for available values.
 
         Returns:
             An async function that, when called, unsubscribes from the topic.
@@ -154,4 +145,4 @@ class ProtocolEventBusSubscriber(Protocol):
         ...
 
 
-__all__ = ["ProtocolEventBusSubscriber", "ConsumerGroupPurpose"]
+__all__ = ["ProtocolEventBusSubscriber"]

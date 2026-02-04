@@ -54,6 +54,9 @@ from .enum_compute_capability import EnumComputeCapability
 
 # Compute step type enums (contract-driven NodeCompute v1.0)
 from .enum_compute_step_type import EnumComputeStepType
+
+# Consumer group purpose enum (event bus subscription - PR #476)
+from .enum_consumer_group_purpose import EnumConsumerGroupPurpose
 from .enum_contract_compliance import EnumContractCompliance
 
 # Contract diff change type enum (semantic contract diffing)
@@ -557,6 +560,8 @@ __all__ = [
     "EnumReducerCapability",
     # Computation and processing domain
     "EnumComputationType",
+    # Consumer group purpose domain (event bus subscription)
+    "EnumConsumerGroupPurpose",
     # Contract-driven NodeCompute v1.0 domain
     "EnumCaseMode",
     "EnumComputeStepType",
