@@ -37,12 +37,13 @@ if TYPE_CHECKING:
 
 
 class ModelBaseResult(BaseModel):
-    # Note: extra="ignore" allows result models to accept additional fields for flexibility
-    # (e.g., subclasses or external data may include extra fields like 'version')
-    model_config = ConfigDict(extra="ignore", from_attributes=True)
+    # Note: frozen=True makes instances immutable after creation; use model_copy() for modifications.
+    # extra="forbid" enforces strict schema; subclasses can override if needed.
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     exit_code: int
     success: bool
+    # NOTE(OMN-1765): Any used intentionally; errors can contain any ModelErrorDetails variant
     errors: list[ModelErrorDetails[Any]] = Field(default_factory=list)
     metadata: ModelGenericMetadata | None = None  # Typed metadata with compatibility
 

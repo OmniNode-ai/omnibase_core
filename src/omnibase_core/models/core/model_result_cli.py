@@ -38,6 +38,7 @@ from omnibase_core.models.results.model_simple_metadata import ModelGenericMetad
 
 class ModelResultCLI(ModelBaseResult):
     output: ModelCLIOutput | None = None
+    # NOTE(OMN-1765): Any used intentionally; CLI errors can contain any ModelErrorDetails variant
     errors: list[ModelErrorDetails[Any]] = Field(default_factory=list)
     # Use object instead of BaseModel to avoid PydanticUserError.
     # This allows any result type while avoiding Any type annotation.
