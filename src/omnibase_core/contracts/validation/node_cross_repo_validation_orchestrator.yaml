@@ -17,7 +17,7 @@
 node_type: ORCHESTRATOR_GENERIC
 contract_version: {major: 1, minor: 0, patch: 0}
 node_name: NodeCrossRepoValidationOrchestrator
-node_class: omnibase_core.nodes.node_validation_orchestrator.NodeCrossRepoValidationOrchestrator
+node_class: omnibase_core.nodes.node_validation_orchestrator.node_cross_repo_validation_orchestrator.NodeCrossRepoValidationOrchestrator
 
 # Contract description
 description: |
@@ -49,6 +49,7 @@ event_emission:
       description: Emitted for each batch of violations (default 50/batch)
       fields:
         - run_id
+        - repo_id
         - batch_index
         - batch_size
         - total_batches
@@ -58,6 +59,7 @@ event_emission:
       description: Emitted when a validation run completes
       fields:
         - run_id
+        - repo_id
         - is_valid
         - total_violations
         - error_count

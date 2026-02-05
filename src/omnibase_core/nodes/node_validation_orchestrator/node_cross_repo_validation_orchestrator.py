@@ -68,8 +68,11 @@ class NodeCrossRepoValidationOrchestrator:
         requiring the workflow execution machinery.
 
     Thread Safety:
-        This orchestrator is stateless and thread-safe for concurrent calls
-        to ``validate()``. Each call creates its own run_id and event sequence.
+        This orchestrator is stateless with respect to ``validate()`` calls -
+        each call uses only local variables and reads immutable instance state.
+        Multiple concurrent calls to ``validate()`` are safe. This differs from
+        general ONEX node guidance because this class does not inherit from
+        NodeOrchestrator and has no mutable request-scoped state.
 
     Example:
         >>> from pathlib import Path
@@ -111,6 +114,11 @@ class NodeCrossRepoValidationOrchestrator:
             event_emitter: Optional event emitter for streaming to Kafka.
                 If provided, events are emitted as they're created.
         """
+        if violations_per_batch < 1:
+            # error-ok: Simple boundary validation per CLAUDE.md ValueError guidelines
+            raise ValueError(
+                f"violations_per_batch must be >= 1, got {violations_per_batch}"
+            )
         self._engine = CrossRepoValidationEngine(policy)
         self._policy = policy
         self._violations_per_batch = violations_per_batch
@@ -156,6 +164,9 @@ class NodeCrossRepoValidationOrchestrator:
         started_at = datetime.now(UTC)
 
         # Determine enabled rules
+        # NOTE(OMN-1776): Empty rules list treated as "use all policy rules" for
+        # consistency with rules=None. Explicitly passing [] is a valid way to
+        # request default behavior.
         rules_enabled = rules if rules else list(self._policy.rules.keys())
         enabled_rule_ids = tuple(
             rule_id
@@ -177,7 +188,11 @@ class NodeCrossRepoValidationOrchestrator:
         events.append(started_event)
         await self._emit(started_event)
 
-        # Run validation with exception handling to ensure lifecycle completes
+        # NOTE(OMN-1776): Custom exception handling used here instead of
+        # @standard_error_handling because we must complete the event lifecycle
+        # (emit completed event) even when the engine raises an exception. The
+        # decorator would propagate the error, breaking the started->completed
+        # event guarantee that consumers depend on for replay/reconstruction.
         error_message: str | None = None
         try:
             result = self._engine.validate(root, rules, baseline)

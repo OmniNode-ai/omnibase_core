@@ -31,6 +31,9 @@ from omnibase_core.models.events.validation import (
     ModelViolationRecord,
 )
 
+# All tests in this module are unit tests
+pytestmark = pytest.mark.unit
+
 # =============================================================================
 # Base Event Model Tests
 # =============================================================================
@@ -78,6 +81,7 @@ class TestModelValidationEventBase:
     def test_base_event_run_id_required(self) -> None:
         """Test that run_id is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1776): Testing validation of required field run_id.
             ModelValidationEventBase(repo_id="test")  # type: ignore[call-arg]
 
         error_str = str(exc_info.value)
@@ -86,6 +90,7 @@ class TestModelValidationEventBase:
     def test_base_event_repo_id_required(self) -> None:
         """Test that repo_id is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1776): Testing validation of required field repo_id.
             ModelValidationEventBase(run_id=uuid4())  # type: ignore[call-arg]
 
         error_str = str(exc_info.value)
@@ -215,6 +220,7 @@ class TestModelValidationRunStartedEvent:
         )
 
         with pytest.raises(ValidationError):
+            # NOTE(OMN-1776): Testing frozen model immutability.
             event.repo_id = "new-id"  # type: ignore[misc]
 
 
@@ -298,6 +304,7 @@ class TestModelViolationRecord:
         )
 
         with pytest.raises(ValidationError):
+            # NOTE(OMN-1776): Testing frozen model immutability.
             record.message = "new message"  # type: ignore[misc]
 
 
@@ -530,6 +537,7 @@ class TestModelValidationRunCompletedEvent:
             kwargs[field_name] = invalid_value
 
             with pytest.raises(ValidationError) as exc_info:
+                # NOTE(OMN-1776): Dynamic kwargs construction for parameterized validation testing.
                 ModelValidationRunCompletedEvent(**kwargs)  # type: ignore[arg-type]
 
             error_str = str(exc_info.value)
