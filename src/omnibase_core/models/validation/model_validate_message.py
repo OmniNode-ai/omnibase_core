@@ -6,17 +6,17 @@ import datetime
 import hashlib
 import uuid
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums import EnumLogLevel
-from omnibase_core.models.core.model_base_error import ModelBaseError
 
 from .model_validate_message_context import ModelValidateMessageContext
 
 
-class ModelValidateMessage(ModelBaseError):
+class ModelValidateMessage(BaseModel):
     """Model for validation messages."""
 
+    message: str
     file: str | None = None
     line: int | None = None
     severity: EnumLogLevel = Field(
@@ -30,8 +30,6 @@ class ModelValidateMessage(ModelBaseError):
     timestamp: str = Field(
         default_factory=lambda: datetime.datetime.now(datetime.UTC).isoformat(),
     )
-    # message is inherited from ModelBaseError and must always be str (not Optional)
-    # All instantiations must provide a non-None str for message
 
     def compute_hash(self) -> str:
         # Compute a hash of the message content for integrity

@@ -107,7 +107,7 @@ class TestActionMetadataSerialization:
 
         # Test mark_failed on fresh model
         model2 = ModelActionMetadata()
-        from omnibase_core.models.services.model_error_details import ModelErrorDetails
+        from omnibase_core.models.core.model_error_details import ModelErrorDetails
 
         model2.mark_failed(
             ModelErrorDetails(

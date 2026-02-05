@@ -13,7 +13,8 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_reply_status import EnumOnexReplyStatus
-from omnibase_core.models.core.model_onex_error_details import ModelOnexErrorDetails
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.core.model_error_details import ModelErrorDetails
 from omnibase_core.models.core.model_onex_performance_metrics import (
     ModelOnexPerformanceMetrics,
 )
@@ -51,7 +52,7 @@ class ModelOnexReply(BaseModel):
     data_type: str | None = Field(default=None, description="Type of response data")
 
     # === ERROR INFORMATION ===
-    error: ModelOnexErrorDetails | None = Field(
+    error: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None,
         description="Error details if applicable",
     )
@@ -154,9 +155,9 @@ class ModelOnexReply(BaseModel):
     @classmethod
     def validate_error_consistency(
         cls,
-        v: ModelOnexErrorDetails | None,
+        v: ModelErrorDetails | None,  # type: ignore[type-arg]
         info: ValidationInfo,
-    ) -> ModelOnexErrorDetails | None:
+    ) -> ModelErrorDetails | None:  # type: ignore[type-arg]
         """Validate error details consistency with status."""
         status = info.data.get("status")
         success = info.data.get("success", True)
@@ -232,11 +233,19 @@ class ModelOnexReply(BaseModel):
         Returns:
             Onex reply indicating error
         """
-        error_details = ModelOnexErrorDetails(
+        # Convert additional_context dict[str, str] to context_data dict[str, ModelSchemaValue]
+        context_data: dict[str, ModelSchemaValue] = {}
+        if additional_context:
+            context_data = {
+                k: ModelSchemaValue.create_string(v)
+                for k, v in additional_context.items()
+            }
+
+        error_details = ModelErrorDetails(  # type: ignore[var-annotated]
             error_code=error_code or "UNKNOWN_ERROR",
             error_message=error_message,
             error_type=error_type,
-            additional_context=additional_context or {},
+            context_data=context_data,
         )
 
         return cls(

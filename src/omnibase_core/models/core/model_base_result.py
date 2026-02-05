@@ -30,7 +30,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.results.model_simple_metadata import ModelGenericMetadata
 
-from .model_base_error import ModelBaseError
+from .model_error_details import ModelErrorDetails
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 class ModelBaseResult(BaseModel):
     exit_code: int
     success: bool
-    errors: list[ModelBaseError] = Field(default_factory=list)
+    errors: list[ModelErrorDetails] = Field(default_factory=list)  # type: ignore[type-arg]
     metadata: ModelGenericMetadata | None = None  # Typed metadata with compatibility
 
     def model_dump(self, **kwargs: Any) -> SerializedDict:

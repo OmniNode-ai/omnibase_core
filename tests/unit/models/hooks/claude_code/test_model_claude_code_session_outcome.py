@@ -15,10 +15,10 @@ from pydantic import ValidationError
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_session_outcome import (
     EnumClaudeCodeSessionOutcome,
 )
+from omnibase_core.models.core.model_error_details import ModelErrorDetails
 from omnibase_core.models.hooks.claude_code.model_claude_code_session_outcome import (
     ModelClaudeCodeSessionOutcome,
 )
-from omnibase_core.models.services.model_error_details import ModelErrorDetails
 
 # =============================================================================
 # Fixtures

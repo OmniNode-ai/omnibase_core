@@ -22,18 +22,21 @@
 # === /OmniNode:Metadata ===
 
 
+from pydantic import BaseModel
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.models.core.model_base_error import ModelBaseError
 
 # Import separated models
 from .model_log_context import ModelLogContext
 from .model_log_markdown_row import ModelLogMarkdownRow
 
 
-class ModelLogEntry(ModelBaseError):
+class ModelLogEntry(BaseModel):
     """Main log entry model."""
 
     message: str
+    code: str = "unknown"
+    details: str = ""
     level: LogLevel = LogLevel.INFO
     context: ModelLogContext
 

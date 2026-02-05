@@ -73,7 +73,7 @@ class ResultFixtures(TestFixtureBase):
         """Create a failure result with errors.
 
         Note: This creates empty error list - use with errors override
-        to provide actual ModelBaseError instances if needed.
+        to provide actual ModelErrorDetails instances if needed.
 
         Args:
             _error_count: Number of placeholder errors (not populated)

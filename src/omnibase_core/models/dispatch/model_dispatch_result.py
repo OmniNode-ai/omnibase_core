@@ -54,7 +54,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
-from omnibase_core.models.services.model_error_details import ModelErrorDetails
+from omnibase_core.models.core.model_error_details import ModelErrorDetails
 
 
 class ModelDispatchResult(BaseModel):

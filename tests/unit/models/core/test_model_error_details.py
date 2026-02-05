@@ -19,7 +19,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.services.model_error_details import ModelErrorDetails
+from omnibase_core.models.core.model_error_details import ModelErrorDetails
 
 
 @pytest.mark.unit
