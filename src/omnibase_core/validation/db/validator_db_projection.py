@@ -96,8 +96,9 @@ def validate_db_projection(
                 )
             continue
 
-        # Compare projected columns with declared fields
-        projected_fields = set(sql_columns)
+        # Compare projected columns with declared fields (case-insensitive)
+        # SQL column names are case-insensitive, so lowercase both sides
+        projected_fields = {c.lower() for c in sql_columns}
 
         missing_in_sql = declared_fields - projected_fields
         extra_in_sql = projected_fields - declared_fields

@@ -2970,6 +2970,37 @@ class TestValidatorDbProjection:
             f"Expected valid with quoted alias, got: {result.errors}"
         )
 
+    def test_mixed_case_quoted_alias_matches(self) -> None:
+        """Mixed-case quoted aliases match case-insensitively.
+
+        SQL quoted identifiers preserve case (e.g., "UserId" stays as "UserId"),
+        but field comparison should be case-insensitive since SQL columns are
+        case-insensitive in most databases.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql='SELECT user_id AS "UserId" FROM test ORDER BY user_id',
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["userid"],  # Lowercase field matches "UserId" alias
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, (
+            f"Expected valid with mixed-case quoted alias, got: {result.errors}"
+        )
+
     def test_implicit_alias_match(self) -> None:
         """Implicit alias (without AS keyword) is recognized."""
         contract = ModelDbRepositoryContract(
