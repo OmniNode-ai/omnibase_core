@@ -9,6 +9,8 @@ Related ticket: OMN-1776
 
 from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict, Field, computed_field
+
 from omnibase_core.models.events.validation import (
     ModelValidationRunCompletedEvent,
     ModelValidationRunStartedEvent,
@@ -17,8 +19,15 @@ from omnibase_core.models.events.validation import (
 
 __all__ = ["CrossRepoValidationOrchestratorResult"]
 
+# Type alias for the union of event types
+ValidationEvent = (
+    ModelValidationRunStartedEvent
+    | ModelValidationViolationsBatchEvent
+    | ModelValidationRunCompletedEvent
+)
 
-class CrossRepoValidationOrchestratorResult:
+
+class CrossRepoValidationOrchestratorResult(BaseModel):
     """
     Result from orchestrator containing emitted events.
 
@@ -26,25 +35,22 @@ class CrossRepoValidationOrchestratorResult:
     and do not return typed business results. This result container
     holds the emitted events for inspection/testing.
 
+    This is a frozen Pydantic model to ensure immutability after creation
+    and enable JSON serialization for test fixtures and debugging.
+
     Attributes:
         run_id: Unique identifier for this validation run.
         events: Tuple of all events emitted during the run.
-        is_valid: Whether the validation passed (convenience accessor).
     """
 
-    def __init__(
-        self,
-        run_id: UUID,
-        events: tuple[
-            ModelValidationRunStartedEvent
-            | ModelValidationViolationsBatchEvent
-            | ModelValidationRunCompletedEvent,
-            ...,
-        ],
-    ) -> None:
-        self.run_id = run_id
-        self.events = events
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    run_id: UUID = Field(..., description="Unique identifier for this validation run.")
+    events: tuple[ValidationEvent, ...] = Field(
+        ..., description="All events emitted during the run."
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_valid(self) -> bool:
         """Return whether validation passed (from completed event)."""
@@ -52,6 +58,15 @@ class CrossRepoValidationOrchestratorResult:
             if isinstance(event, ModelValidationRunCompletedEvent):
                 return event.is_valid
         return False
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def total_violations(self) -> int:
+        """Return total violation count from completed event."""
+        for event in self.events:
+            if isinstance(event, ModelValidationRunCompletedEvent):
+                return event.total_violations
+        return 0
 
     @property
     def started_event(self) -> ModelValidationRunStartedEvent | None:
@@ -77,10 +92,3 @@ class CrossRepoValidationOrchestratorResult:
             for event in self.events
             if isinstance(event, ModelValidationViolationsBatchEvent)
         )
-
-    @property
-    def total_violations(self) -> int:
-        """Return total violation count from completed event."""
-        if self.completed_event:
-            return self.completed_event.total_violations
-        return 0

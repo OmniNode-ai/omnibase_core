@@ -60,6 +60,13 @@ class NodeCrossRepoValidationOrchestrator:
     Events are designed for Kafka streaming and dashboard reconstruction.
     A validation run can be fully replayed from events alone.
 
+    Architecture Note:
+        This class does not inherit from NodeOrchestrator because the contract
+        specifies ``requires_workflow_definition: false`` - it coordinates a
+        single-engine validation rather than a multi-node workflow DAG. It
+        follows orchestrator semantics (emit events, no typed results) without
+        requiring the workflow execution machinery.
+
     Thread Safety:
         This orchestrator is stateless and thread-safe for concurrent calls
         to ``validate()``. Each call creates its own run_id and event sequence.
@@ -135,8 +142,10 @@ class NodeCrossRepoValidationOrchestrator:
         Returns:
             CrossRepoValidationOrchestratorResult containing all emitted events.
 
-        Raises:
-            No exceptions raised - validation errors are captured in events.
+        Note:
+            Exceptions from the validation engine are caught and result in a
+            completed event with is_valid=False and error_message set. The
+            event lifecycle (started → completed) is always complete.
         """
         run_id = uuid4()
         events: list[
@@ -168,14 +177,31 @@ class NodeCrossRepoValidationOrchestrator:
         events.append(started_event)
         await self._emit(started_event)
 
-        # Run validation
-        result = self._engine.validate(root, rules, baseline)
+        # Run validation with exception handling to ensure lifecycle completes
+        error_message: str | None = None
+        try:
+            result = self._engine.validate(root, rules, baseline)
+            issues = result.issues
+            is_valid = result.is_valid
+            files_processed = (
+                (result.metadata.files_processed or 0) if result.metadata else 0
+            )
+            rules_applied = (
+                (result.metadata.rules_applied or 0) if result.metadata else 0
+            )
+        except Exception as exc:
+            # Capture exception - lifecycle must complete
+            error_message = f"{type(exc).__name__}: {exc}"
+            issues = []
+            is_valid = False
+            files_processed = 0
+            rules_applied = 0
 
         # Emit violation batches
         violation_batches = self._create_violation_batches(
             run_id=run_id,
             repo_id=repo_id,
-            issues=result.issues,
+            issues=issues,
             correlation_id=correlation_id,
         )
         for batch_event in violation_batches:
@@ -187,16 +213,16 @@ class NodeCrossRepoValidationOrchestrator:
         duration_ms = int((completed_at - started_at).total_seconds() * 1000)
 
         error_count = self._count_by_severity(
-            result.issues,
+            issues,
             {EnumSeverity.ERROR, EnumSeverity.CRITICAL, EnumSeverity.FATAL},
         )
         warning_count = self._count_by_severity(
-            result.issues,
+            issues,
             {EnumSeverity.WARNING},
         )
         suppressed_count = sum(
             1
-            for issue in result.issues
+            for issue in issues
             if issue.context and issue.context.get("suppressed") == "true"
         )
 
@@ -204,20 +230,17 @@ class NodeCrossRepoValidationOrchestrator:
         completed_event = ModelValidationRunCompletedEvent.create(
             run_id=run_id,
             repo_id=repo_id,
-            is_valid=result.is_valid,
-            total_violations=len(result.issues),
+            is_valid=is_valid,
+            total_violations=len(issues),
             error_count=error_count,
             warning_count=warning_count,
             suppressed_count=suppressed_count,
-            files_processed=(result.metadata.files_processed or 0)
-            if result.metadata
-            else 0,
-            rules_applied=(result.metadata.rules_applied or 0)
-            if result.metadata
-            else 0,
+            files_processed=files_processed,
+            rules_applied=rules_applied,
             duration_ms=duration_ms,
             completed_at=completed_at,
             correlation_id=correlation_id,
+            error_message=error_message,
         )
         events.append(completed_event)
         await self._emit(completed_event)

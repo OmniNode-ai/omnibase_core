@@ -146,6 +146,11 @@ class ModelValidationRunCompletedEvent(ModelValidationEventBase):
         description="When the validation run completed (UTC).",
     )
 
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if validation failed due to an exception.",
+    )
+
     @field_validator("event_type")
     @classmethod
     def validate_event_type(cls, v: str) -> str:
@@ -172,6 +177,7 @@ class ModelValidationRunCompletedEvent(ModelValidationEventBase):
         completed_at: datetime,
         *,
         correlation_id: UUID | None = None,
+        error_message: str | None = None,
     ) -> "ModelValidationRunCompletedEvent":
         """
         Factory method for creating a validation run completed event.
@@ -189,6 +195,7 @@ class ModelValidationRunCompletedEvent(ModelValidationEventBase):
             duration_ms: Validation duration in milliseconds.
             completed_at: When the validation completed.
             correlation_id: Optional correlation ID for tracing.
+            error_message: Optional error message if validation failed due to exception.
 
         Returns:
             A new ModelValidationRunCompletedEvent instance.
@@ -206,4 +213,5 @@ class ModelValidationRunCompletedEvent(ModelValidationEventBase):
             duration_ms=duration_ms,
             completed_at=completed_at,
             correlation_id=correlation_id,
+            error_message=error_message,
         )
