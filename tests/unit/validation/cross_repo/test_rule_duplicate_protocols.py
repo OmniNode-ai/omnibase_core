@@ -644,3 +644,38 @@ class GenericHandler(typing.Protocol[T]):
 
         assert len(issues) == 2
         assert all("GenericHandler" in i.message for i in issues)
+
+    def test_handles_file_not_under_root_directory(
+        self,
+        config: ModelRuleDuplicateProtocolsConfig,
+        tmp_path: Path,
+    ) -> None:
+        """Test that files not under root_directory are handled gracefully.
+
+        When a file path is not relative to root_directory, relative_to()
+        would raise ValueError. The rule should handle this gracefully.
+        """
+        # Create two separate directories (file not under root)
+        other_dir = tmp_path / "other"
+        other_dir.mkdir()
+        root_dir = tmp_path / "root"
+        root_dir.mkdir()
+
+        # Create duplicate protocols in the other directory (not under root)
+        file1 = other_dir / "module_a.py"
+        file1.write_text("class MyProtocol: pass")
+
+        file2 = other_dir / "module_b.py"
+        file2.write_text("class MyProtocol: pass")
+
+        rule = RuleDuplicateProtocols(config)
+        file_imports = {
+            file1: ModelFileImports(file_path=file1),
+            file2: ModelFileImports(file_path=file2),
+        }
+
+        # Should not raise ValueError, should still detect the duplicates
+        issues = rule.validate(file_imports, "test_repo", root_dir)
+
+        assert len(issues) == 2
+        assert all("MyProtocol" in i.message for i in issues)

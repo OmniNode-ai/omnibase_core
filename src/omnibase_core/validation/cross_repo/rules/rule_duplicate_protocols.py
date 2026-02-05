@@ -26,6 +26,25 @@ if TYPE_CHECKING:
     )
 
 
+def _get_relative_path_safe(file_path: Path, root_directory: Path | None) -> Path:
+    """Get relative path safely, falling back to file_path if not relative.
+
+    Args:
+        file_path: Absolute or relative path to process.
+        root_directory: Root directory for relative path calculation.
+
+    Returns:
+        Relative path if file is under root_directory, otherwise file_path as-is.
+    """
+    if root_directory is None:
+        return file_path
+    try:
+        return file_path.relative_to(root_directory)
+    except ValueError:
+        # File is not under root_directory, use as-is
+        return file_path
+
+
 class RuleDuplicateProtocols:
     """Detects protocol classes with the same name in multiple files.
 
@@ -85,11 +104,7 @@ class RuleDuplicateProtocols:
                 file_list = [str(loc[0]) for loc in locations]
                 for file_path, line_number in locations:
                     # Compute relative path for stable fingerprints across environments
-                    relative_path = (
-                        file_path.relative_to(root_directory)
-                        if root_directory
-                        else file_path
-                    )
+                    relative_path = _get_relative_path_safe(file_path, root_directory)
                     fingerprint = generate_fingerprint(
                         self.rule_id, str(relative_path), protocol_name
                     )
