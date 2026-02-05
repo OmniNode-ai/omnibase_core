@@ -136,6 +136,14 @@ allowed_files:
     added: "2026-02-04"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/cli/cli_db_migration.py"
+    reason: >-
+      Migration CLI tool that transforms arbitrary DB repository contract YAML from positional ($N) to
+      named (:param) parameters. Must parse raw YAML for transformation, not validation - the transformed
+      YAML is output for manual review or re-import. (OMN-1789)
+    added: "2026-02-05"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

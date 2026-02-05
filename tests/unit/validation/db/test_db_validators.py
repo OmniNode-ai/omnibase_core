@@ -1289,8 +1289,8 @@ class TestValidatorDbDeterministic:
 class TestValidatorDbParams:
     """Test parameter validator failure cases."""
 
-    def test_positional_params_rejected(self) -> None:
-        """Positional parameters ($1, $2) are not allowed."""
+    def test_positional_params_rejected_without_param_order(self) -> None:
+        """Positional parameters ($1, $2) without param_order are rejected with helpful hint."""
         contract = ModelDbRepositoryContract(
             name="test",
             engine=EnumDatabaseEngine.POSTGRES,
@@ -1312,7 +1312,9 @@ class TestValidatorDbParams:
         )
         result = validate_db_params(contract)
         assert not result.is_valid
-        assert any("Positional" in str(e) or "$1" in str(e) for e in result.errors)
+        # Error should mention param_order as a solution
+        assert any("param_order" in str(e) for e in result.errors)
+        assert any("$1" in str(e) for e in result.errors)
 
     def test_undefined_param(self) -> None:
         """All :params in SQL must be declared."""
@@ -1368,8 +1370,8 @@ class TestValidatorDbParams:
         assert not result.is_valid
         assert any("unused" in str(e).lower() for e in result.errors)
 
-    def test_multiple_positional_params(self) -> None:
-        """Multiple positional params are all reported."""
+    def test_multiple_positional_params_without_param_order(self) -> None:
+        """Multiple positional params without param_order are rejected."""
         contract = ModelDbRepositoryContract(
             name="test",
             engine=EnumDatabaseEngine.POSTGRES,
@@ -1394,9 +1396,10 @@ class TestValidatorDbParams:
         )
         result = validate_db_params(contract)
         assert not result.is_valid
-        # Should mention both $1 and $2
+        # Should mention both $1 and $2 and suggest param_order
         assert any("$1" in str(e) for e in result.errors)
         assert any("$2" in str(e) for e in result.errors)
+        assert any("param_order" in str(e) for e in result.errors)
 
     def test_empty_params_with_no_placeholders_passes(self) -> None:
         """No params required if SQL has no placeholders."""
@@ -1442,6 +1445,327 @@ class TestValidatorDbParams:
         result = validate_db_params(contract)
         # Should pass - ::text and ::integer are type casts, not parameters
         # Only :id should be detected as a parameter
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+
+# ============================================================================
+# Positional Parameters with param_order
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestPositionalParamsWithParamOrder:
+    """Test positional parameter support with param_order field."""
+
+    def test_valid_positional_params_with_param_order(self) -> None:
+        """Positional parameters with valid param_order should pass validation."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "positional_valid": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test WHERE id = $1 AND name = $2 ORDER BY id",
+                    params={
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                        "name": ModelDbParam(
+                            name="name", param_type=EnumParameterType.STRING
+                        ),
+                    },
+                    param_order=("id", "name"),
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_params(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_single_positional_param_with_param_order(self) -> None:
+        """Single positional parameter with param_order should pass."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "single_positional": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test WHERE id = $1 ORDER BY id",
+                    params={
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                    },
+                    param_order=("id",),
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_params(contract)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_index_gap_rejected(self) -> None:
+        """Positional indices must be contiguous (no gaps)."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "gap_indices": ModelDbOperation(
+                    mode="read",
+                    # Missing $2
+                    sql="SELECT * FROM test WHERE id = $1 AND active = $3 ORDER BY id",
+                    params={
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                        "skipped": ModelDbParam(
+                            name="skipped", param_type=EnumParameterType.STRING
+                        ),
+                        "active": ModelDbParam(
+                            name="active", param_type=EnumParameterType.BOOLEAN
+                        ),
+                    },
+                    param_order=("id", "skipped", "active"),
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_params(contract)
+        assert not result.is_valid
+        assert any("gap" in str(e).lower() or "$2" in str(e) for e in result.errors)
+
+    def test_param_order_length_mismatch(self) -> None:
+        """param_order length must match max positional index."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "length_mismatch": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test WHERE id = $1 AND name = $2 ORDER BY id",
+                    params={
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                        "name": ModelDbParam(
+                            name="name", param_type=EnumParameterType.STRING
+                        ),
+                        "extra": ModelDbParam(
+                            name="extra", param_type=EnumParameterType.STRING
+                        ),
+                    },
+                    # Only 2 positional params but 3 in param_order
+                    param_order=("id", "name", "extra"),
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_params(contract)
+        assert not result.is_valid
+        assert any(
+            "3 entries" in str(e) or "length" in str(e).lower() for e in result.errors
+        )
+
+    def test_param_order_too_short(self) -> None:
+        """param_order too short for SQL positional indices should fail."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "too_short": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test WHERE id = $1 AND name = $2 AND email = $3 ORDER BY id",
+                    params={
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                        "name": ModelDbParam(
+                            name="name", param_type=EnumParameterType.STRING
+                        ),
+                        "email": ModelDbParam(
+                            name="email", param_type=EnumParameterType.STRING
+                        ),
+                    },
+                    # Only 2 in param_order but SQL uses $3
+                    param_order=("id", "name"),
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_params(contract)
+        assert not result.is_valid
+        assert any("2 entries" in str(e) and "$3" in str(e) for e in result.errors)
+
+    def test_mixing_positional_and_named_rejected(self) -> None:
+        """Cannot mix positional ($N) and named (:param) in same SQL."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "mixed_params": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test WHERE id = $1 AND name = :name ORDER BY id",
+                    params={
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                        "name": ModelDbParam(
+                            name="name", param_type=EnumParameterType.STRING
+                        ),
+                    },
+                    param_order=("id",),
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_params(contract)
+        assert not result.is_valid
+        assert any("mix" in str(e).lower() for e in result.errors)
+
+    def test_param_order_invalid_reference_rejected_at_model_level(self) -> None:
+        """param_order referencing non-existent param fails at model validation."""
+        with pytest.raises(ValueError, match="not found in params"):
+            ModelDbOperation(
+                mode="read",
+                sql="SELECT * FROM test WHERE id = $1 ORDER BY id",
+                params={
+                    "id": ModelDbParam(name="id", param_type=EnumParameterType.INTEGER),
+                },
+                # References 'nonexistent' which doesn't exist in params
+                param_order=("id", "nonexistent"),
+                returns=ModelDbReturn(model_ref="test:Model", many=True),
+            )
+
+    def test_param_order_with_named_params_rejected(self) -> None:
+        """param_order should not be used with named parameters."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "named_with_order": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test WHERE id = :id ORDER BY id",
+                    params={
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                    },
+                    param_order=("id",),
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_params(contract)
+        assert not result.is_valid
+        assert any(
+            "param_order" in str(e) and "named" in str(e).lower() for e in result.errors
+        )
+
+    def test_positional_index_not_starting_at_one(self) -> None:
+        """Positional indices must start at $1."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "wrong_start": ModelDbOperation(
+                    mode="read",
+                    # Starts at $2 instead of $1
+                    sql="SELECT * FROM test WHERE id = $2 ORDER BY id",
+                    params={
+                        "placeholder": ModelDbParam(
+                            name="placeholder", param_type=EnumParameterType.STRING
+                        ),
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                    },
+                    param_order=("placeholder", "id"),
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_params(contract)
+        assert not result.is_valid
+        # Should mention starting at $1
+        assert any("$1" in str(e) or "start" in str(e).lower() for e in result.errors)
+
+    def test_unused_param_with_positional(self) -> None:
+        """Params declared but not in param_order should be flagged as unused."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "unused_with_positional": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test WHERE id = $1 ORDER BY id",
+                    params={
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                        "unused_param": ModelDbParam(
+                            name="unused_param", param_type=EnumParameterType.STRING
+                        ),
+                    },
+                    param_order=("id",),
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_params(contract)
+        assert not result.is_valid
+        assert any("unused" in str(e).lower() for e in result.errors)
+
+    def test_duplicate_param_in_param_order_allowed(self) -> None:
+        """Same param can be used multiple times in SQL via param_order."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "duplicate_usage": ModelDbOperation(
+                    mode="read",
+                    # Uses id twice via $1 and $2
+                    sql="SELECT * FROM test WHERE id = $1 OR parent_id = $2 ORDER BY id",
+                    params={
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                    },
+                    param_order=("id", "id"),  # Same param mapped twice
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_params(contract)
         assert result.is_valid, f"Expected valid, got errors: {result.errors}"
 
 

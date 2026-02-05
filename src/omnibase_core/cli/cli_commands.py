@@ -543,6 +543,11 @@ from omnibase_core.cli.cli_demo import demo
 
 cli.add_command(demo)
 
+# Register db command group from separate module
+from omnibase_core.cli.cli_db_migration import db
+
+cli.add_command(db)
+
 
 if __name__ == "__main__":
     cli()
