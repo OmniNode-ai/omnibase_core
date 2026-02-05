@@ -9,10 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
-from omnibase_core.validation.db.sql_utils import (
-    extract_select_columns,
-    normalize_sql,
-)
+from omnibase_core.validation.db.sql_utils import extract_select_columns
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_db_repository_contract import (
@@ -61,9 +58,8 @@ def validate_db_projection(
         if op.mode != "read":
             continue
 
-        # Extract columns from SQL
-        normalized_sql = normalize_sql(op.sql)
-        sql_columns, is_complex = extract_select_columns(normalized_sql)
+        # Extract columns from SQL (normalize_sql is called internally)
+        sql_columns, is_complex = extract_select_columns(op.sql)
 
         # Check for SELECT * or table.*
         if "*" in sql_columns:
