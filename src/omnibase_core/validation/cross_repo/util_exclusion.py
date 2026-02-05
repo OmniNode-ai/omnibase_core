@@ -49,6 +49,36 @@ def _get_relative_path(file_path: Path, root_directory: Path | None) -> Path:
         return file_path
 
 
+def _matches_exclusion_patterns(
+    path_str: str,
+    relative_path: Path,
+    exclude_patterns: list[str],
+) -> bool:
+    """Check if path matches any exclusion pattern.
+
+    Args:
+        path_str: POSIX-normalized path string.
+        relative_path: Path object for parent directory traversal.
+        exclude_patterns: Glob patterns for paths to exclude.
+
+    Returns:
+        True if any pattern matches.
+    """
+    for pattern in exclude_patterns:
+        # Direct pattern match
+        if fnmatch.fnmatch(path_str, pattern):
+            return True
+
+        # Also check if any parent directory matches
+        # This handles patterns like "tests/**" matching "tests/unit/test_foo.py"
+        for parent in relative_path.parents:
+            parent_str = _normalize_to_posix(parent)
+            if fnmatch.fnmatch(parent_str, pattern.removesuffix("/**")):
+                return True
+
+    return False
+
+
 def should_exclude_path(
     file_path: Path,
     root_directory: Path | None,
@@ -88,20 +118,7 @@ def should_exclude_path(
     """
     relative_path = _get_relative_path(file_path, root_directory)
     path_str = _normalize_to_posix(relative_path)
-
-    for pattern in exclude_patterns:
-        # Direct pattern match
-        if fnmatch.fnmatch(path_str, pattern):
-            return True
-
-        # Also check if any parent directory matches
-        # This handles patterns like "tests/**" matching "tests/unit/test_foo.py"
-        for parent in relative_path.parents:
-            parent_str = _normalize_to_posix(parent)
-            if fnmatch.fnmatch(parent_str, pattern.removesuffix("/**")):
-                return True
-
-    return False
+    return _matches_exclusion_patterns(path_str, relative_path, exclude_patterns)
 
 
 def _matches_module_segments(path_str: str, module: str) -> bool:
@@ -160,13 +177,13 @@ def should_exclude_path_with_modules(
         ... )
         True
     """
-    # First check standard exclusion patterns
-    if should_exclude_path(file_path, root_directory, exclude_patterns):
-        return True
-
-    # Get relative path and normalize to POSIX for module matching
+    # Calculate path once, reuse for both pattern and module matching
     relative_path = _get_relative_path(file_path, root_directory)
     path_str = _normalize_to_posix(relative_path)
+
+    # Check standard exclusion patterns
+    if _matches_exclusion_patterns(path_str, relative_path, exclude_patterns):
+        return True
 
     # Check allowlist modules using segment matching
     for allowlist_module in allowlist_modules:

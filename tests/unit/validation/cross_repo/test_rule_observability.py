@@ -1,4 +1,4 @@
-"""Tests for observability validator.
+"""Tests for observability rule.
 
 Related ticket: OMN-1906
 """
@@ -13,8 +13,8 @@ from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.validation.model_rule_configs import (
     ModelRuleObservabilityConfig,
 )
-from omnibase_core.validation.cross_repo.rules.validator_observability import (
-    ValidatorObservability,
+from omnibase_core.validation.cross_repo.rules.rule_observability import (
+    RuleObservability,
 )
 from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
     ModelFileImports,
@@ -22,8 +22,8 @@ from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
 
 
 @pytest.mark.unit
-class TestValidatorObservability:
-    """Tests for ValidatorObservability."""
+class TestRuleObservability:
+    """Tests for RuleObservability."""
 
     @pytest.fixture
     def config(self) -> ModelRuleObservabilityConfig:
@@ -60,7 +60,7 @@ def process_data(data):
 """
         )
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             source_file: ModelFileImports(file_path=source_file),
         }
@@ -90,7 +90,7 @@ def do_work():
 """
         )
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             source_file: ModelFileImports(file_path=source_file),
         }
@@ -117,7 +117,7 @@ logger = log.getLogger(__name__)
 """
         )
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             source_file: ModelFileImports(file_path=source_file),
         }
@@ -143,7 +143,7 @@ def process_data(data):
 """
         )
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             source_file: ModelFileImports(file_path=source_file),
         }
@@ -169,7 +169,7 @@ def test_something():
 """
         )
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             test_file: ModelFileImports(file_path=test_file),
         }
@@ -196,7 +196,7 @@ print("Deploying...")
 """
         )
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             script_file: ModelFileImports(file_path=script_file),
         }
@@ -222,7 +222,7 @@ def upgrade():
 """
         )
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             migration_file: ModelFileImports(file_path=migration_file),
         }
@@ -256,7 +256,7 @@ print("Bootstrapping...")
 """
         )
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             bootstrap_file: ModelFileImports(file_path=bootstrap_file),
         }
@@ -276,7 +276,7 @@ print("Bootstrapping...")
         source_file = tmp_src_dir / "handler.py"
         source_file.write_text('print("Hello")')
 
-        rule = ValidatorObservability(disabled_config)
+        rule = RuleObservability(disabled_config)
         file_imports = {
             source_file: ModelFileImports(file_path=source_file),
         }
@@ -300,7 +300,7 @@ print("Bootstrapping...")
         source_file = tmp_src_dir / "handler.py"
         source_file.write_text('print("Hello")')
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             source_file: ModelFileImports(file_path=source_file),
         }
@@ -329,7 +329,7 @@ logger = logging.getLogger(__name__)
 """
         )
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             source_file: ModelFileImports(file_path=source_file),
         }
@@ -348,7 +348,7 @@ logger = logging.getLogger(__name__)
         source_file = tmp_src_dir / "handler.py"
         source_file.write_text('print("Debug")')
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             source_file: ModelFileImports(file_path=source_file),
         }
@@ -373,7 +373,7 @@ logger = logging.getLogger(__name__)
         source_file = tmp_src_dir / "handler.py"
         source_file.write_text('print("Debug")')
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             source_file: ModelFileImports(file_path=source_file),
         }
@@ -404,7 +404,7 @@ def process():
 """
         )
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             source_file: ModelFileImports(file_path=source_file),
         }
@@ -427,7 +427,7 @@ def process():
         source_file = tmp_src_dir / "bad.py"
         source_file.write_text("print( syntax error")
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             source_file: ModelFileImports(
                 file_path=source_file, parse_error="Syntax error"
@@ -446,7 +446,7 @@ def process():
         """Test that missing files are handled gracefully."""
         missing_file = tmp_path / "nonexistent.py"
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             missing_file: ModelFileImports(file_path=missing_file),
         }
@@ -482,7 +482,7 @@ def process():
         client_file = tmp_src_dir / "public_client.py"
         client_file.write_text('print("Client code")')
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             cli_file: ModelFileImports(file_path=cli_file),
             client_file: ModelFileImports(file_path=client_file),
@@ -505,7 +505,7 @@ def process():
         # Write some binary content that will fail UTF-8 decoding
         source_file.write_bytes(b"\xff\xfe print('hello')")
 
-        rule = ValidatorObservability(config)
+        rule = RuleObservability(config)
         file_imports = {
             source_file: ModelFileImports(file_path=source_file),
         }
@@ -513,3 +513,33 @@ def process():
         # Should not raise
         issues = rule.validate(file_imports, "test_repo", tmp_path)
         assert len(issues) == 0
+
+    def test_handles_file_not_under_root_directory(
+        self,
+        config: ModelRuleObservabilityConfig,
+        tmp_path: Path,
+    ) -> None:
+        """Test that files not under root_directory are handled gracefully.
+
+        When a file path is not relative to root_directory, relative_to()
+        would raise ValueError. The rule should handle this gracefully.
+        """
+        # Create two separate directories (file not under root)
+        other_dir = tmp_path / "other"
+        other_dir.mkdir()
+        root_dir = tmp_path / "root"
+        root_dir.mkdir()
+
+        source_file = other_dir / "handler.py"
+        source_file.write_text('print("Hello")')
+
+        rule = RuleObservability(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        # Should not raise ValueError, should still detect the issue
+        issues = rule.validate(file_imports, "test_repo", root_dir)
+
+        assert len(issues) == 1
+        assert issues[0].code == "OBSERVABILITY_PRINT"

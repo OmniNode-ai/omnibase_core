@@ -308,10 +308,16 @@ class RuleAsyncPolicy:
         Returns:
             Validation issue if this is a blocking call, None otherwise.
         """
-        # Compute relative path for stable fingerprints across environments
-        relative_path = (
-            file_path.relative_to(root_directory) if root_directory else file_path
-        )
+        # Compute relative path for stable fingerprints across environments.
+        # ValueError can occur if file_path is not relative to root_directory
+        # (e.g., symlinks, absolute paths from different mount points).
+        try:
+            relative_path = (
+                file_path.relative_to(root_directory) if root_directory else file_path
+            )
+        except ValueError:
+            # Fall back to absolute path if relative computation fails
+            relative_path = file_path
 
         # Check ERROR severity blocking calls
         for blocked in self.config.blocking_calls_error:

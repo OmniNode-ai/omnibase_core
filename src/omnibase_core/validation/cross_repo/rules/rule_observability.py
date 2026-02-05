@@ -1,4 +1,4 @@
-"""Observability validator - flag print() and raw logging usage.
+"""Observability rule - flag print() and raw logging usage.
 
 Encourages use of ProtocolLogger for structured, consistent logging
 instead of direct print() or logging.getLogger() calls.
@@ -27,7 +27,26 @@ if TYPE_CHECKING:
     )
 
 
-class ValidatorObservability:
+def _get_relative_path_safe(file_path: Path, root_directory: Path | None) -> Path:
+    """Get relative path safely, falling back to file_path if not relative.
+
+    Args:
+        file_path: Absolute or relative path to process.
+        root_directory: Root directory for relative path calculation.
+
+    Returns:
+        Relative path if file is under root_directory, otherwise file_path as-is.
+    """
+    if root_directory is None:
+        return file_path
+    try:
+        return file_path.relative_to(root_directory)
+    except ValueError:
+        # File is not under root_directory, use as-is
+        return file_path
+
+
+class RuleObservability:
     """Flags direct print() and raw logging.getLogger() usage.
 
     Encourages consistent use of ProtocolLogger for structured logging
@@ -133,10 +152,11 @@ class ValidatorObservability:
         Returns:
             Validation issue if this is a forbidden call, None otherwise.
         """
-        # Compute repo-relative path for stable fingerprints across environments
-        relative_path = (
-            file_path.relative_to(root_directory) if root_directory else file_path
-        )
+        # Compute repo-relative path for stable fingerprints across environments.
+        # Using relative paths ensures fingerprints are consistent regardless of
+        # where the repository is checked out (e.g., /home/user/repo vs /tmp/repo).
+        # Uses safe helper to handle ValueError when file is not under root_directory.
+        relative_path = _get_relative_path_safe(file_path, root_directory)
 
         # Check for print() calls
         if self.config.flag_print and self._is_print_call(node):

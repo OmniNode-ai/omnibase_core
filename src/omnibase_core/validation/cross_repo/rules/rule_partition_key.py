@@ -1,4 +1,4 @@
-"""Partition key validator - require explicit partition_key in topic configs.
+"""Partition key rule - require explicit partition_key in topic configs.
 
 Enforces that Kafka topic configuration classes declare an explicit
 partition key strategy, preventing implicit/undefined partitioning.
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     )
 
 
-class ValidatorPartitionKey:
+class RulePartitionKey:
     """Requires explicit partition_key declaration in topic configurations.
 
     Flags topic config classes that don't declare a partition key strategy,
@@ -82,6 +82,32 @@ class ValidatorPartitionKey:
 
         return issues
 
+    def _compute_relative_path(
+        self, file_path: Path, root_directory: Path | None
+    ) -> Path:
+        """Compute repo-relative path for stable fingerprints.
+
+        Uses relative paths to ensure fingerprints are consistent regardless of
+        where the repository is checked out (e.g., /home/user/repo vs /tmp/repo).
+
+        Args:
+            file_path: Absolute path to the file.
+            root_directory: Root directory for computing relative paths.
+
+        Returns:
+            Repo-relative path if root_directory is provided and file_path is
+            under it, otherwise returns the original file_path.
+        """
+        if root_directory is None:
+            return file_path
+
+        try:
+            return file_path.relative_to(root_directory)
+        except ValueError:
+            # file_path is not under root_directory (e.g., symlinks, different mounts)
+            # Fall back to using the absolute path - less stable but functional
+            return file_path
+
     def _scan_file(
         self,
         file_path: Path,
@@ -108,11 +134,7 @@ class ValidatorPartitionKey:
             return issues
 
         # Compute repo-relative path for stable fingerprints across environments.
-        # Using relative paths ensures fingerprints are consistent regardless of
-        # where the repository is checked out (e.g., /home/user/repo vs /tmp/repo).
-        relative_path = (
-            file_path.relative_to(root_directory) if root_directory else file_path
-        )
+        relative_path = self._compute_relative_path(file_path, root_directory)
 
         for node in ast.walk(tree):
             if not isinstance(node, ast.ClassDef):
