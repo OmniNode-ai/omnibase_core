@@ -28,7 +28,6 @@ _POSITIONAL_PARAM_PATTERN = re.compile(r"\$(\d+)")
 def _validate_positional_params(
     op_name: str,
     op: ModelDbOperation,
-    sql_without_strings: str,
     positional_indices: list[str],
 ) -> list[str]:
     """Validate positional parameters when param_order is provided.
@@ -174,7 +173,7 @@ def validate_db_params(
 
             # Validate positional params with param_order
             positional_errors = _validate_positional_params(
-                op_name, op, sql_without_strings, positional_matches
+                op_name, op, positional_matches
             )
             errors.extend(positional_errors)
 
