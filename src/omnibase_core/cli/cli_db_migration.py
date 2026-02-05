@@ -53,14 +53,22 @@ def convert_positional_to_named(sql: str, param_order: list[str]) -> str:
 def migrate_operation(op_data: dict[str, object]) -> dict[str, object]:
     """Migrate a single operation from positional to named parameters.
 
+    Creates a new dict with SQL converted from positional ($1, $2) to named (:param)
+    parameters. The param_order field is always removed from the result, regardless
+    of whether migration occurred.
+
+    If the SQL contains no positional parameters, the operation is returned as-is
+    (minus param_order). Does not mutate the input dict.
+
     Args:
         op_data: Operation dict with 'sql', 'params', and optionally 'param_order'.
 
     Returns:
-        Migrated operation dict with named params and param_order removed.
+        New operation dict with named params and param_order removed.
 
     Raises:
-        ValueError: If operation uses positional params but lacks param_order.
+        ValueError: If SQL contains positional params but param_order is missing
+            or not a list/tuple.
     """
     sql_value = op_data.get("sql", "")
     sql = str(sql_value) if sql_value else ""
@@ -75,7 +83,7 @@ def migrate_operation(op_data: dict[str, object]) -> dict[str, object]:
         return result
 
     # Positional params found - need param_order to migrate
-    if not param_order_value or not isinstance(param_order_value, list):
+    if not param_order_value or not isinstance(param_order_value, (list, tuple)):
         msg = (
             "Operation uses positional parameters but has no param_order. "
             "Cannot migrate without knowing parameter names."
@@ -100,11 +108,19 @@ def migrate_operation(op_data: dict[str, object]) -> dict[str, object]:
 def migrate_contract(contract_data: dict[str, object]) -> dict[str, object]:
     """Migrate entire contract from positional to named parameters.
 
+    Iterates through all operations in the contract's 'ops' dict and converts
+    each from positional to named parameters. Does not mutate the input dict.
+
+    Edge cases:
+        - If 'ops' is missing or not a dict, returns contract unchanged.
+        - Non-dict operations are preserved as-is (not migrated).
+        - Individual operation migration errors propagate (not caught here).
+
     Args:
         contract_data: Full contract dict with 'ops' containing operations.
 
     Returns:
-        Migrated contract dict with all operations converted.
+        New contract dict with all dict-type operations migrated.
     """
     result = dict(contract_data)
     ops = result.get("ops", {})
