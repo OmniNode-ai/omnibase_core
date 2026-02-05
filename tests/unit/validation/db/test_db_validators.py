@@ -27,6 +27,7 @@ from omnibase_core.models.contracts.model_db_safety_policy import ModelDbSafetyP
 from omnibase_core.validation.db import (
     validate_db_deterministic,
     validate_db_params,
+    validate_db_projection,
     validate_db_sql_safety,
     validate_db_structural,
     validate_db_table_access,
@@ -1979,6 +1980,37 @@ class TestEdgeCases:
         assert not result.is_valid
         assert any("DROP" in str(e) for e in result.errors)
 
+    def test_column_names_with_sql_keywords_and_underscores(self) -> None:
+        """Column names containing SQL keywords with underscores should not confuse parser.
+
+        This tests that word boundary detection includes underscores.
+        For example: col_FROM, created_from, FROM_date should NOT be
+        mistaken for the FROM keyword.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "underscore_columns": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT col_FROM, created_from, FROM_date FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["col_from", "created_from", "from_date"],
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, (
+            f"Expected valid with underscore columns, got: {result.errors}"
+        )
+
 
 # ============================================================================
 # CTE Table Extraction Tests (OMN-1791)
@@ -2411,3 +2443,646 @@ class TestValidatorDbTableAccessParserIntegration:
         # Without parser, should fail with helpful message
         if not result.is_valid:
             assert any("sql-parser" in str(e) or "CTE" in str(e) for e in result.errors)
+
+
+# Field Projection Validator (OMN-1790)
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestValidatorDbProjection:
+    """Test field projection validator.
+
+    Validates that SQL SELECT projections match declared fields when
+    strict mode is enabled (default when fields are declared).
+    """
+
+    # === PASS CASES ===
+
+    def test_simple_match_passes(self) -> None:
+        """Simple column match passes validation."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id, name FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, f"Expected valid, got: {result.errors}"
+
+    def test_alias_match_passes(self) -> None:
+        """Alias in SELECT matches declared field."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT user_id AS id FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id"],
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, f"Expected valid, got: {result.errors}"
+
+    def test_table_prefix_stripped(self) -> None:
+        """Table prefix is stripped from columns."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT t.id, t.name FROM test t ORDER BY t.id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, f"Expected valid, got: {result.errors}"
+
+    def test_no_fields_skips_validation(self) -> None:
+        """No fields declared skips validation entirely."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_all": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        # fields=None (default) - no projection validation
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, f"Expected valid (skipped), got: {result.errors}"
+
+    def test_case_insensitive_match(self) -> None:
+        """Field matching is case-insensitive."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT ID, Name FROM test ORDER BY ID",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, (
+            f"Expected valid (case-insensitive), got: {result.errors}"
+        )
+
+    def test_case_insensitive_duplicate_fields_rejected(self) -> None:
+        """Fields with case-insensitive duplicates are rejected at model level.
+
+        Since SQL column names are case-insensitive, ['id', 'ID'] would collapse
+        to the same effective field during projection validation. We catch this
+        early at model instantiation to prevent configuration errors.
+        """
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDbReturn(
+                model_ref="test:Model",
+                many=True,
+                fields=["id", "ID"],  # Case-insensitive duplicates
+            )
+        assert "case-insensitive" in str(exc_info.value).lower()
+
+    # === STRICT MODE FAILURES ===
+
+    def test_select_star_strict_fails(self) -> None:
+        """SELECT * in strict mode fails."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_all": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],  # Strict mode enabled by default
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert not result.is_valid
+        assert any("SELECT *" in str(e) for e in result.errors)
+
+    def test_table_star_strict_fails(self) -> None:
+        """SELECT table.* in strict mode fails."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_all": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT t.* FROM test t ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],  # Strict mode enabled
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert not result.is_valid
+        assert any(
+            "SELECT *" in str(e) or "strict mode" in str(e) for e in result.errors
+        )
+
+    def test_missing_field_strict_fails(self) -> None:
+        """Missing declared field in SQL fails in strict mode."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],  # 'name' is missing in SQL
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert not result.is_valid
+        assert any("name" in str(e).lower() for e in result.errors)
+
+    def test_extra_field_strict_fails(self) -> None:
+        """Extra field in SQL not declared fails in strict mode."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id, name, age FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],  # 'age' is extra in SQL
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert not result.is_valid
+        assert any("age" in str(e).lower() for e in result.errors)
+
+    def test_complex_expression_strict_fails(self) -> None:
+        """Complex expression (function) in strict mode fails."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_count": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT COUNT(*), id FROM test GROUP BY id ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["count", "id"],
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert not result.is_valid
+        assert any("complex" in str(e).lower() for e in result.errors)
+
+    def test_case_expression_strict_fails(self) -> None:
+        """CASE expression in strict mode fails."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_status": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT CASE WHEN x > 0 THEN 'yes' ELSE 'no' END AS status FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["status"],
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert not result.is_valid
+        assert any("complex" in str(e).lower() for e in result.errors)
+
+    # === LENIENT MODE (strict=False) ===
+
+    def test_select_star_lenient_warns(self) -> None:
+        """SELECT * in lenient mode warns but passes."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_all": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],
+                        strict=False,  # Lenient mode
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, f"Expected valid in lenient mode, got: {result.errors}"
+        assert len(result.warnings) > 0
+        assert any("SELECT *" in str(w) for w in result.warnings)
+
+    def test_field_mismatch_lenient_warns(self) -> None:
+        """Field mismatch in lenient mode warns but passes."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],  # 'name' is missing
+                        strict=False,  # Lenient mode
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, f"Expected valid in lenient mode, got: {result.errors}"
+        assert len(result.warnings) > 0
+        assert any("mismatch" in str(w).lower() for w in result.warnings)
+
+    # === ESCAPE HATCH ===
+
+    def test_select_star_allowed_warns(self) -> None:
+        """SELECT * with allow_select_star=True warns but passes."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_all": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],
+                        allow_select_star=True,  # Escape hatch
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, (
+            f"Expected valid with escape hatch, got: {result.errors}"
+        )
+        assert len(result.warnings) > 0
+        assert any("allow_select_star" in str(w) for w in result.warnings)
+
+    # === EDGE CASES ===
+
+    def test_strict_true_no_fields_warns(self) -> None:
+        """strict=True with no fields declared emits warning."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_all": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        # fields=None (not declared)
+                        strict=True,  # Explicit strict but no fields
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, f"Expected valid (skipped), got: {result.errors}"
+        assert len(result.warnings) > 0
+        assert any(
+            "strict=True" in str(w) and "no fields" in str(w).lower()
+            for w in result.warnings
+        )
+
+    def test_write_operation_skipped(self) -> None:
+        """Write operations (INSERT/UPDATE/DELETE) are not validated."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "insert_user": ModelDbOperation(
+                    mode="write",
+                    sql="INSERT INTO test (id, name) VALUES (:id, :name)",
+                    params={
+                        "id": ModelDbParam(
+                            name="id", param_type=EnumParameterType.INTEGER
+                        ),
+                        "name": ModelDbParam(
+                            name="name", param_type=EnumParameterType.STRING
+                        ),
+                    },
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=False,
+                        fields=["id", "name"],  # Declared but ignored for write
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, f"Expected valid for write op, got: {result.errors}"
+
+    def test_multiple_operations_mixed(self) -> None:
+        """Multiple operations with mixed results are validated together."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "good_op": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id, name FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],
+                    ),
+                ),
+                "bad_op": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT * FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id"],  # SELECT * with fields = error
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert not result.is_valid
+        assert any("bad_op" in str(e) for e in result.errors)
+
+    def test_quoted_alias_case_preserved_in_extraction(self) -> None:
+        """Quoted aliases preserve case in SQL extraction.
+
+        Note: The validator lowercases declared fields for comparison, so
+        quoted aliases with non-lowercase names will only match if the
+        declared field is also specified with matching case.
+
+        Since the validator uses case-insensitive comparison (lowercases declared
+        fields), quoted aliases are effectively case-insensitive for matching.
+        """
+        # With lowercase declared field, it should match the lowercase version
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql='SELECT user_id AS "userid" FROM test ORDER BY user_id',
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["userid"],  # Lowercase to match
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, (
+            f"Expected valid with quoted alias, got: {result.errors}"
+        )
+
+    def test_mixed_case_quoted_alias_matches(self) -> None:
+        """Mixed-case quoted aliases match case-insensitively.
+
+        SQL quoted identifiers preserve case (e.g., "UserId" stays as "UserId"),
+        but field comparison should be case-insensitive since SQL columns are
+        case-insensitive in most databases.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql='SELECT user_id AS "UserId" FROM test ORDER BY user_id',
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["userid"],  # Lowercase field matches "UserId" alias
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, (
+            f"Expected valid with mixed-case quoted alias, got: {result.errors}"
+        )
+
+    def test_implicit_alias_match(self) -> None:
+        """Implicit alias (without AS keyword) is recognized."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT user_id uid FROM test ORDER BY uid",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["uid"],
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, (
+            f"Expected valid with implicit alias, got: {result.errors}"
+        )
+
+    def test_distinct_keyword_handled(self) -> None:
+        """SELECT DISTINCT is handled correctly."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_unique": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT DISTINCT id, name FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["id", "name"],
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, f"Expected valid with DISTINCT, got: {result.errors}"
+
+    def test_escaped_quote_in_string_handled(self) -> None:
+        """SQL-standard doubled quotes inside strings are handled correctly.
+
+        The string 'It''s FROM here' contains doubled quotes (SQL escape) and
+        the word FROM. Without proper handling, the FROM inside the string could
+        be detected as the FROM clause boundary, breaking column extraction.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "get_msg": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT 'It''s FROM here' AS msg, id FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["msg", "id"],
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        # String literals with explicit AS aliases are handled correctly.
+        # The alias 'msg' is extracted, so this passes validation.
+        # (String literals WITHOUT aliases would be marked as complex.)
+        assert result.is_valid, (
+            f"Expected valid (string literal with alias extracted), got: {result.errors}"
+        )

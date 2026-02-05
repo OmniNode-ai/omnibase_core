@@ -5,6 +5,7 @@ table access, deterministic ordering, and parameter validation.
 """
 
 from omnibase_core.validation.db.sql_utils import (
+    extract_select_columns,
     normalize_sql,
     strip_sql_strings,
 )
@@ -13,6 +14,9 @@ from omnibase_core.validation.db.validator_db_deterministic import (
 )
 from omnibase_core.validation.db.validator_db_params import (
     validate_db_params,
+)
+from omnibase_core.validation.db.validator_db_projection import (
+    validate_db_projection,
 )
 from omnibase_core.validation.db.validator_db_sql_safety import (
     validate_db_sql_safety,
@@ -25,10 +29,12 @@ from omnibase_core.validation.db.validator_db_table_access import (
 )
 
 __all__ = [
+    "extract_select_columns",
     "normalize_sql",
     "strip_sql_strings",
     "validate_db_deterministic",
     "validate_db_params",
+    "validate_db_projection",
     "validate_db_sql_safety",
     "validate_db_structural",
     "validate_db_table_access",

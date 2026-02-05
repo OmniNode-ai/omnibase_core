@@ -42,7 +42,7 @@ from omnibase_core.models.validation.model_validation_policy_contract import (
     ModelValidationPolicyContract,
 )
 from omnibase_core.nodes.node_validation_orchestrator import (
-    CrossRepoValidationOrchestratorResult,
+    ModelCrossRepoValidationOrchestratorResult,
     NodeCrossRepoValidationOrchestrator,
 )
 
@@ -96,8 +96,8 @@ def create_mock_validation_result(
 
 
 @pytest.mark.unit
-class TestCrossRepoValidationOrchestratorResult:
-    """Tests for CrossRepoValidationOrchestratorResult."""
+class TestModelCrossRepoValidationOrchestratorResult:
+    """Tests for ModelCrossRepoValidationOrchestratorResult."""
 
     def test_result_creation(self) -> None:
         """Test result creation with events."""
@@ -128,7 +128,7 @@ class TestCrossRepoValidationOrchestratorResult:
             completed_at=now,
         )
 
-        result = CrossRepoValidationOrchestratorResult(
+        result = ModelCrossRepoValidationOrchestratorResult(
             run_id=run_id,
             events=(started, completed),
         )
@@ -187,7 +187,7 @@ class TestCrossRepoValidationOrchestratorResult:
             completed_at=now,
         )
 
-        result = CrossRepoValidationOrchestratorResult(
+        result = ModelCrossRepoValidationOrchestratorResult(
             run_id=run_id,
             events=(started, batch1, batch2, completed),
         )
