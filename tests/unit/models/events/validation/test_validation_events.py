@@ -39,7 +39,6 @@ pytestmark = pytest.mark.unit
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestModelValidationEventBase:
     """Tests for the base event model."""
 
@@ -113,7 +112,6 @@ class TestModelValidationEventBase:
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestModelValidationRunStartedEvent:
     """Tests for ModelValidationRunStartedEvent."""
 
@@ -224,7 +222,6 @@ class TestModelValidationRunStartedEvent:
             event.repo_id = "new-id"  # type: ignore[misc]
 
 
-@pytest.mark.unit
 class TestModelValidationRunStartedEventSerialization:
     """Tests for started event serialization."""
 
@@ -254,7 +251,6 @@ class TestModelValidationRunStartedEventSerialization:
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestModelViolationRecord:
     """Tests for ModelViolationRecord."""
 
@@ -313,7 +309,6 @@ class TestModelViolationRecord:
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestModelValidationViolationsBatchEvent:
     """Tests for ModelValidationViolationsBatchEvent."""
 
@@ -413,7 +408,6 @@ class TestModelValidationViolationsBatchEvent:
         assert event.correlation_id == correlation_id
 
 
-@pytest.mark.unit
 class TestModelValidationViolationsBatchEventSerialization:
     """Tests for batch event serialization."""
 
@@ -452,7 +446,6 @@ class TestModelValidationViolationsBatchEventSerialization:
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestModelValidationRunCompletedEvent:
     """Tests for ModelValidationRunCompletedEvent."""
 
@@ -572,7 +565,6 @@ class TestModelValidationRunCompletedEvent:
         assert event.correlation_id == correlation_id
 
 
-@pytest.mark.unit
 class TestModelValidationRunCompletedEventSerialization:
     """Tests for completed event serialization."""
 
@@ -610,7 +602,6 @@ class TestModelValidationRunCompletedEventSerialization:
 # =============================================================================
 
 
-@pytest.mark.unit
 class TestEventTypeConstants:
     """Tests for event type constants."""
 
@@ -638,7 +629,6 @@ class TestEventTypeConstants:
         assert len(event_types) == len(set(event_types))
 
 
-@pytest.mark.unit
 class TestEventLifecycleCorrelation:
     """Tests for event lifecycle correlation via run_id."""
 
@@ -685,7 +675,6 @@ class TestEventLifecycleCorrelation:
         assert started.repo_id == batch.repo_id == completed.repo_id
 
 
-@pytest.mark.unit
 class TestEventImmutability:
     """Tests for immutability across all event types."""
 
