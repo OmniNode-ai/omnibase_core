@@ -17,7 +17,7 @@
 node_type: ORCHESTRATOR_GENERIC
 contract_version: {major: 1, minor: 0, patch: 0}
 node_name: NodeCrossRepoValidationOrchestrator
-node_class: omnibase_core.nodes.node_validation_orchestrator.node_cross_repo_validation_orchestrator.NodeCrossRepoValidationOrchestrator
+node_class: omnibase_core.nodes.node_validation_orchestrator.NodeCrossRepoValidationOrchestrator
 
 # Contract description
 description: |
@@ -85,8 +85,8 @@ dependencies:
 
 # Execution characteristics
 execution:
-  # This orchestrator is stateless and thread-safe
-  thread_safe: true
+  # Nodes are single-request scoped per CLAUDE.md - do NOT share across threads
+  thread_safe: false
 
   # No workflow definition needed - wraps existing engine
   requires_workflow_definition: false

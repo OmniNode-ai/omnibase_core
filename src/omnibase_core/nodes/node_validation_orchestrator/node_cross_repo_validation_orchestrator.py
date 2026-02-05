@@ -113,6 +113,11 @@ class NodeCrossRepoValidationOrchestrator:
             violations_per_batch: Number of violations per batch event (default: 50).
             event_emitter: Optional event emitter for streaming to Kafka.
                 If provided, events are emitted as they're created.
+
+        Note:
+            This class uses constructor injection rather than container-based DI.
+            It does not call super().__init__(container) because it does not inherit
+            from NodeOrchestrator - see class docstring for architectural rationale.
         """
         if violations_per_batch < 1:
             # error-ok: Simple boundary validation per CLAUDE.md ValueError guidelines
@@ -195,7 +200,10 @@ class NodeCrossRepoValidationOrchestrator:
         # event guarantee that consumers depend on for replay/reconstruction.
         error_message: str | None = None
         try:
-            result = self._engine.validate(root, rules, baseline)
+            # Pass the same rules we reported in the started event for consistency.
+            # Using list(enabled_rule_ids) ensures the engine validates exactly
+            # what we told consumers we would validate.
+            result = self._engine.validate(root, list(enabled_rule_ids), baseline)
             issues = result.issues
             is_valid = result.is_valid
             files_processed = (
