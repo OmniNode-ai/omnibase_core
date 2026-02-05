@@ -3078,9 +3078,9 @@ class TestValidatorDbProjection:
             },
         )
         result = validate_db_projection(contract)
-        # This should be marked as complex because of the string literal in SELECT
-        # but should NOT crash or misbehave due to escaped quotes
-        # The validator marks string literals as complex expressions
-        assert not result.is_valid or len(result.warnings) >= 0, (
-            f"Expected valid or complex handling, got: {result.errors}"
+        # String literals with explicit AS aliases are handled correctly.
+        # The alias 'msg' is extracted, so this passes validation.
+        # (String literals WITHOUT aliases would be marked as complex.)
+        assert result.is_valid, (
+            f"Expected valid (string literal with alias extracted), got: {result.errors}"
         )
