@@ -611,3 +611,100 @@ class TestNodeCrossRepoValidationOrchestratorEventEmitter:
         # Should complete without error
         assert result.is_valid is True
         assert len(result.events) == 3
+
+
+# =============================================================================
+# Exception Handling Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestNodeCrossRepoValidationOrchestratorExceptionHandling:
+    """Tests for exception handling and event lifecycle guarantee."""
+
+    @pytest.mark.asyncio
+    async def test_engine_exception_emits_completed_with_error_message(self) -> None:
+        """Test that engine exceptions result in completed event with error_message.
+
+        The orchestrator guarantees the started → completed event lifecycle even
+        when the validation engine raises an exception. This is critical for
+        consumers who need to reconstruct state from events.
+        """
+        policy = create_test_policy()
+        orchestrator = NodeCrossRepoValidationOrchestrator(policy)
+
+        with patch.object(
+            orchestrator._engine,
+            "validate",
+            side_effect=RuntimeError("Validation engine failed"),
+        ):
+            result = await orchestrator.validate(
+                root=Path("/workspace/test"),
+                repo_id="test_repo",
+            )
+
+        # Lifecycle should complete even on exception
+        assert result.started_event is not None
+        assert result.completed_event is not None
+        assert result.completed_event.is_valid is False
+        assert result.completed_event.error_message is not None
+        assert "RuntimeError" in result.completed_event.error_message
+        assert "Validation engine failed" in result.completed_event.error_message
+
+    @pytest.mark.asyncio
+    async def test_engine_exception_sets_zero_counts(self) -> None:
+        """Test that engine exceptions result in zero file/rule counts."""
+        policy = create_test_policy()
+        orchestrator = NodeCrossRepoValidationOrchestrator(policy)
+
+        with patch.object(
+            orchestrator._engine,
+            "validate",
+            side_effect=ValueError("Invalid configuration"),
+        ):
+            result = await orchestrator.validate(
+                root=Path("/workspace/test"),
+                repo_id="test_repo",
+            )
+
+        completed = result.completed_event
+        assert completed is not None
+        assert completed.files_processed == 0
+        assert completed.rules_applied == 0
+        assert completed.total_violations == 0
+        assert completed.error_count == 0
+        assert completed.warning_count == 0
+
+
+# =============================================================================
+# Constructor Validation Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestNodeCrossRepoValidationOrchestratorConstructor:
+    """Tests for constructor parameter validation."""
+
+    def test_violations_per_batch_minimum_validation(self) -> None:
+        """Test that violations_per_batch must be >= 1."""
+        policy = create_test_policy()
+
+        with pytest.raises(ValueError, match="violations_per_batch must be >= 1"):
+            NodeCrossRepoValidationOrchestrator(policy, violations_per_batch=0)
+
+    def test_violations_per_batch_negative_rejected(self) -> None:
+        """Test that negative violations_per_batch is rejected."""
+        policy = create_test_policy()
+
+        with pytest.raises(ValueError, match="violations_per_batch must be >= 1"):
+            NodeCrossRepoValidationOrchestrator(policy, violations_per_batch=-1)
+
+    def test_violations_per_batch_valid_minimum(self) -> None:
+        """Test that violations_per_batch=1 is valid."""
+        policy = create_test_policy()
+
+        # Should not raise
+        orchestrator = NodeCrossRepoValidationOrchestrator(
+            policy, violations_per_batch=1
+        )
+        assert orchestrator._violations_per_batch == 1
