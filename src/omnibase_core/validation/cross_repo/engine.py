@@ -18,9 +18,13 @@ from omnibase_core.models.common.model_validation_metadata import (
 )
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.validation.model_rule_configs import (
+    ModelRuleAsyncPolicyConfig,
     ModelRuleContractSchemaConfig,
+    ModelRuleDuplicateProtocolsConfig,
     ModelRuleErrorTaxonomyConfig,
     ModelRuleForbiddenImportsConfig,
+    ModelRuleObservabilityConfig,
+    ModelRulePartitionKeyConfig,
     ModelRuleRepoBoundariesConfig,
     ModelRuleTopicNamingConfig,
 )
@@ -30,14 +34,26 @@ from omnibase_core.models.validation.model_validation_policy_contract import (
 from omnibase_core.models.validation.model_violation_baseline import (
     ModelViolationBaseline,
 )
+from omnibase_core.validation.cross_repo.rules.rule_async_policy import (
+    RuleAsyncPolicy,
+)
 from omnibase_core.validation.cross_repo.rules.rule_contract_schema import (
     RuleContractSchema,
+)
+from omnibase_core.validation.cross_repo.rules.rule_duplicate_protocols import (
+    RuleDuplicateProtocols,
 )
 from omnibase_core.validation.cross_repo.rules.rule_error_taxonomy import (
     RuleErrorTaxonomy,
 )
 from omnibase_core.validation.cross_repo.rules.rule_forbidden_imports import (
     RuleForbiddenImports,
+)
+from omnibase_core.validation.cross_repo.rules.rule_observability import (
+    RuleObservability,
+)
+from omnibase_core.validation.cross_repo.rules.rule_partition_key import (
+    RulePartitionKey,
 )
 from omnibase_core.validation.cross_repo.rules.rule_repo_boundaries import (
     RuleRepoBoundaries,
@@ -317,6 +333,31 @@ class CrossRepoValidationEngine:
         elif rule_id == "topic_naming":
             if isinstance(config, ModelRuleTopicNamingConfig):
                 return RuleTopicNaming(config).validate(
+                    file_imports, self.policy.repo_id, root_directory
+                )
+
+        # Phase 3 rules (OMN-1906)
+        elif rule_id == "duplicate_protocols":
+            if isinstance(config, ModelRuleDuplicateProtocolsConfig):
+                return RuleDuplicateProtocols(config).validate(
+                    file_imports, self.policy.repo_id, root_directory
+                )
+
+        elif rule_id == "partition_key":
+            if isinstance(config, ModelRulePartitionKeyConfig):
+                return RulePartitionKey(config).validate(
+                    file_imports, self.policy.repo_id, root_directory
+                )
+
+        elif rule_id == "observability":
+            if isinstance(config, ModelRuleObservabilityConfig):
+                return RuleObservability(config).validate(
+                    file_imports, self.policy.repo_id, root_directory
+                )
+
+        elif rule_id == "async_policy":
+            if isinstance(config, ModelRuleAsyncPolicyConfig):
+                return RuleAsyncPolicy(config).validate(
                     file_imports, self.policy.repo_id, root_directory
                 )
 

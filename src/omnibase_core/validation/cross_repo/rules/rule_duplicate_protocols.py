@@ -1,0 +1,210 @@
+"""Duplicate protocols rule - detect protocol classes defined in multiple files.
+
+Catches DRY violations and copy-paste drift by flagging when the same
+protocol class name appears in multiple files within a repo.
+
+Related ticket: OMN-1906
+"""
+
+from __future__ import annotations
+
+import ast
+import fnmatch
+from collections import defaultdict
+from pathlib import Path
+from typing import TYPE_CHECKING, ClassVar
+
+from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
+from omnibase_core.models.validation.model_rule_configs import (
+    ModelRuleDuplicateProtocolsConfig,
+)
+from omnibase_core.validation.cross_repo.util_fingerprint import generate_fingerprint
+
+if TYPE_CHECKING:
+    from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
+        ModelFileImports,
+    )
+
+
+class RuleDuplicateProtocols:
+    """Detects protocol classes with the same name in multiple files.
+
+    Flags when a class ending in the configured suffix (default: 'Protocol')
+    is defined in multiple files, indicating potential DRY violations.
+    """
+
+    rule_id: ClassVar[str] = "duplicate_protocols"  # string-id-ok: rule registry key
+    requires_scanners: ClassVar[list[str]] = []  # Uses file discovery, parses AST
+
+    def __init__(self, config: ModelRuleDuplicateProtocolsConfig) -> None:
+        """Initialize with rule configuration.
+
+        Args:
+            config: Typed configuration for this rule.
+        """
+        self.config = config
+
+    def validate(
+        self,
+        file_imports: dict[Path, ModelFileImports],
+        repo_id: str,  # string-id-ok: human-readable repository identifier
+        root_directory: Path | None = None,
+    ) -> list[ModelValidationIssue]:
+        """Find duplicate protocol definitions across files.
+
+        Args:
+            file_imports: Map of file paths to their imports.
+            repo_id: The repository being validated.
+            root_directory: Root directory being validated.
+
+        Returns:
+            List of validation issues for duplicate protocols.
+        """
+        if not self.config.enabled:
+            return []
+
+        # Collect all protocol definitions: {protocol_name: [(file, line)]}
+        protocol_locations: dict[str, list[tuple[Path, int]]] = defaultdict(list)
+
+        for file_path in file_imports:
+            if self._should_exclude(file_path, root_directory):
+                continue
+
+            protocols = self._find_protocols_in_file(file_path)
+            for protocol_name, line_number in protocols:
+                protocol_locations[protocol_name].append((file_path, line_number))
+
+        # Generate issues for protocols defined in multiple files
+        issues: list[ModelValidationIssue] = []
+
+        for protocol_name, locations in protocol_locations.items():
+            if len(locations) > 1:
+                # Create an issue for each location
+                file_list = [str(loc[0]) for loc in locations]
+                for file_path, line_number in locations:
+                    fingerprint = generate_fingerprint(
+                        self.rule_id, str(file_path), protocol_name
+                    )
+                    other_files = [f for f in file_list if f != str(file_path)]
+
+                    issues.append(
+                        ModelValidationIssue(
+                            severity=self.config.severity,
+                            message=f"Protocol '{protocol_name}' is defined in {len(locations)} files",
+                            code="DUPLICATE_PROTOCOL",
+                            file_path=file_path,
+                            line_number=line_number,
+                            rule_name=self.rule_id,
+                            suggestion="Consider consolidating protocol definitions to avoid drift",
+                            context={
+                                "fingerprint": fingerprint,
+                                "protocol_name": protocol_name,
+                                "other_files": ", ".join(other_files),
+                                "total_definitions": str(len(locations)),
+                                "symbol": protocol_name,
+                            },
+                        )
+                    )
+
+        return issues
+
+    def _should_exclude(
+        self,
+        file_path: Path,
+        root_directory: Path | None,
+    ) -> bool:
+        """Check if a file should be excluded from validation.
+
+        Args:
+            file_path: Path to check.
+            root_directory: Root directory for relative path calculation.
+
+        Returns:
+            True if the file should be excluded.
+        """
+        # Get relative path for pattern matching
+        if root_directory:
+            try:
+                relative_path = file_path.relative_to(root_directory)
+            except ValueError:
+                relative_path = file_path
+        else:
+            relative_path = file_path
+
+        path_str = str(relative_path)
+
+        for pattern in self.config.exclude_patterns:
+            if fnmatch.fnmatch(path_str, pattern):
+                return True
+            # Also check if any parent directory matches
+            for parent in relative_path.parents:
+                if fnmatch.fnmatch(str(parent), pattern.removesuffix("/**")):
+                    return True
+
+        return False
+
+    def _find_protocols_in_file(
+        self,
+        file_path: Path,
+    ) -> list[tuple[str, int]]:
+        """Find all protocol class definitions in a file.
+
+        Args:
+            file_path: Path to the Python file.
+
+        Returns:
+            List of (protocol_name, line_number) tuples.
+        """
+        protocols: list[tuple[str, int]] = []
+
+        try:
+            source = file_path.read_text(encoding="utf-8")
+            tree = ast.parse(source, filename=str(file_path))
+        except (OSError, SyntaxError):
+            # Skip files that can't be read or parsed
+            return protocols
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ClassDef):
+                continue
+
+            if self._is_protocol_class(node):
+                protocols.append((node.name, node.lineno))
+
+        return protocols
+
+    def _is_protocol_class(self, node: ast.ClassDef) -> bool:
+        """Check if a class definition is a protocol class.
+
+        Args:
+            node: Class definition AST node.
+
+        Returns:
+            True if this is a protocol class.
+        """
+        # Check class name ends with configured suffix
+        if node.name.endswith(self.config.protocol_suffix):
+            return True
+
+        # Also check if it inherits from Protocol
+        for base in node.bases:
+            base_name = self._get_base_name(base)
+            if base_name == "Protocol":
+                return True
+
+        return False
+
+    def _get_base_name(self, base: ast.expr) -> str | None:
+        """Get the name of a base class from AST.
+
+        Args:
+            base: Base class AST expression.
+
+        Returns:
+            Name of the base class, or None if can't determine.
+        """
+        if isinstance(base, ast.Name):
+            return base.id
+        if isinstance(base, ast.Attribute):
+            return base.attr
+        return None
