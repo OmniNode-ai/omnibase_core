@@ -293,20 +293,31 @@ class TestModelValidateMessageWithHash:
     """Test ModelValidateMessage with_hash method."""
 
     def test_with_hash_sets_hash_field(self):
-        """Test with_hash sets the hash field."""
+        """Test with_hash sets the hash field on the returned instance.
+
+        NOTE: ModelValidateMessage has frozen=True, so with_hash() returns
+        a new instance via model_copy() rather than mutating the original.
+        """
         msg = ModelValidateMessage(message="Test")
         assert msg.hash is None
 
-        msg.with_hash()
-        assert msg.hash is not None
-        assert len(msg.hash) == 64
+        hashed_msg = msg.with_hash()
+        assert msg.hash is None  # Original unchanged (frozen model)
+        assert hashed_msg.hash is not None
+        assert len(hashed_msg.hash) == 64
 
-    def test_with_hash_returns_self(self):
-        """Test with_hash returns self for chaining."""
+    def test_with_hash_returns_new_instance(self):
+        """Test with_hash returns a new instance (frozen model cannot return self).
+
+        NOTE: ModelValidateMessage has frozen=True, so with_hash() uses
+        model_copy() which creates a new instance rather than mutating.
+        """
         msg = ModelValidateMessage(message="Test")
         result = msg.with_hash()
 
-        assert result is msg
+        assert result is not msg  # New instance (frozen model)
+        assert result.hash is not None  # Hash is set on new instance
+        assert result.message == msg.message  # Content preserved
 
     def test_with_hash_chaining(self):
         """Test with_hash can be chained during initialization."""

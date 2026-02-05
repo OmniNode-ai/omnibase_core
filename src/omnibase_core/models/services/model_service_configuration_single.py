@@ -11,7 +11,10 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.detection.model_service_detection_config import (
     ModelServiceDetectionConfig,
 )
-from omnibase_core.models.services.model_service_type import ModelServiceType
+
+# NOTE: Use relative import to avoid circular import issues when models/services/__init__.py
+# is partially initialized during pytest-split parallel execution (OMN-1765).
+from .model_service_type import ModelServiceType
 
 
 class ModelServiceConfiguration(BaseModel):

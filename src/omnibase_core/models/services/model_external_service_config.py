@@ -20,8 +20,11 @@ from omnibase_core.models.configuration.model_rest_api_connection_config import 
 )
 from omnibase_core.models.core.model_retry_config import ModelRetryConfig
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.services.model_masked_config import ModelMaskedConfig
 from omnibase_core.utils.util_security import UtilSecurity
+
+# NOTE: Use relative import to avoid circular import issues when models/services/__init__.py
+# is partially initialized during pytest-split parallel execution (OMN-1765).
+from .model_masked_config import ModelMaskedConfig
 
 
 class ModelExternalServiceConfig(BaseModel):

@@ -12,10 +12,13 @@ service definitions with YAML-driven configuration.
 # Import it directly from omnibase_core.models.registry.model_registry_config instead
 from omnibase_core.enums.enum_fallback_strategy_type import EnumFallbackStrategyType
 from omnibase_core.models.examples.model_fallback_strategy import ModelFallbackStrategy
-from omnibase_core.models.services.model_service_configuration_single import (
+
+# NOTE: Use relative imports to avoid circular import issues when models/services/__init__.py
+# is partially initialized during pytest-split parallel execution (OMN-1765).
+from .model_service_configuration_single import (
     ModelServiceConfiguration,
 )
-from omnibase_core.models.services.model_service_registry_config import (
+from .model_service_registry_config import (
     ModelServiceRegistryConfig,
 )
 
