@@ -2,7 +2,7 @@
 
 Defines a named operation with:
 - Read/write mode
-- SQL template with named parameters (:param)
+- SQL template with named parameters (:param) or positional ($N with param_order)
 - Parameter definitions
 - Return type specification
 - Safety policy overrides
@@ -10,7 +10,7 @@ Defines a named operation with:
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.contracts.model_db_param import ModelDbParam
 from omnibase_core.models.contracts.model_db_return import ModelDbReturn
@@ -22,7 +22,7 @@ class ModelDbOperation(BaseModel):
 
     Defines a named operation with:
     - Read/write mode
-    - SQL template with named parameters (:param)
+    - SQL template with named parameters (:param) or positional ($N with param_order)
     - Parameter definitions
     - Return type specification
     - Safety policy overrides
@@ -40,13 +40,22 @@ class ModelDbOperation(BaseModel):
     sql: str = Field(
         ...,
         min_length=1,
-        description="SQL template with named parameters (:param_name)",
+        description="SQL template with named parameters (:param_name) or positional ($1, $2)",
     )
 
     # Parameters
     params: dict[str, ModelDbParam] = Field(
         default_factory=dict,
         description="Parameter definitions keyed by name",
+    )
+
+    # Positional parameter ordering (required when using $N placeholders)
+    param_order: tuple[str, ...] | None = Field(
+        default=None,
+        description=(
+            "Maps positional indices to param names. Required when SQL uses $1, $2, etc. "
+            "Index 0 maps to $1, index 1 maps to $2, etc. All names must exist in params."
+        ),
     )
 
     # Return type
@@ -63,6 +72,22 @@ class ModelDbOperation(BaseModel):
 
     # Documentation
     description: str | None = Field(default=None, max_length=1000)
+
+    @model_validator(mode="after")
+    def _validate_param_order_references(self) -> "ModelDbOperation":
+        """Ensure param_order entries reference valid param names."""
+        if self.param_order is None:
+            return self
+
+        invalid_refs = [name for name in self.param_order if name not in self.params]
+        if invalid_refs:
+            msg = (
+                f"param_order contains names not found in params: {invalid_refs}. "
+                f"Valid param names: {list(self.params.keys())}"
+            )
+            raise ValueError(msg)
+
+        return self
 
 
 __all__ = ["ModelDbOperation"]
