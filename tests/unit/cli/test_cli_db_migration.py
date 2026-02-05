@@ -1,5 +1,7 @@
 """Unit tests for DB migration CLI commands."""
 
+from pathlib import Path
+
 import pytest
 
 from omnibase_core.cli.cli_db_migration import (
@@ -189,3 +191,259 @@ class TestMigrateContract:
 
         assert result["ops"] == {}
         assert result["name"] == "empty_repo"
+
+    def test_migrate_non_dict_ops_unchanged(self) -> None:
+        """Contract with non-dict ops is returned unchanged."""
+        contract_data = {
+            "name": "invalid_repo",
+            "engine": "postgres",
+            "ops": [
+                "not",
+                "a",
+                "dict",
+            ],  # Invalid but migrate_contract handles gracefully
+        }
+        result = migrate_contract(contract_data)
+
+        # Should return unchanged since ops isn't a dict
+        assert result["ops"] == ["not", "a", "dict"]
+
+
+@pytest.mark.unit
+class TestMigrateParamsCLI:
+    """Tests for the migrate-params CLI command."""
+
+    def test_dry_run_shows_preview(self, tmp_path: Path) -> None:
+        """Dry run shows what would be changed without modifying files."""
+        from click.testing import CliRunner
+
+        from omnibase_core.cli.cli_db_migration import db
+
+        # Create test contract file
+        contract_file = tmp_path / "contract.yaml"
+        contract_content = """
+name: test_repo
+engine: postgres
+database_ref: test_db
+tables: [users]
+models: {}
+ops:
+  get_user:
+    mode: read
+    sql: SELECT * FROM users WHERE id = $1
+    params:
+      user_id:
+        name: user_id
+        param_type: integer
+    param_order: [user_id]
+    returns:
+      model_ref: "test:User"
+      many: false
+"""
+        contract_file.write_text(contract_content)
+
+        runner = CliRunner()
+        result = runner.invoke(db, ["migrate-params", str(contract_file), "--dry-run"])
+
+        assert result.exit_code == 0
+        assert "Dry run" in result.output
+        assert "get_user" in result.output
+        # Original file should be unchanged
+        assert "$1" in contract_file.read_text()
+
+    def test_output_to_file(self, tmp_path: Path) -> None:
+        """Output to specified file preserves original."""
+        from click.testing import CliRunner
+
+        from omnibase_core.cli.cli_db_migration import db
+
+        contract_file = tmp_path / "contract.yaml"
+        output_file = tmp_path / "migrated.yaml"
+        contract_content = """
+name: test_repo
+engine: postgres
+database_ref: test_db
+tables: [users]
+models: {}
+ops:
+  get_user:
+    mode: read
+    sql: SELECT * FROM users WHERE id = $1
+    params:
+      user_id:
+        name: user_id
+        param_type: integer
+    param_order: [user_id]
+    returns:
+      model_ref: "test:User"
+      many: false
+"""
+        contract_file.write_text(contract_content)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            db, ["migrate-params", str(contract_file), "-o", str(output_file)]
+        )
+
+        assert result.exit_code == 0
+        # Original unchanged
+        assert "$1" in contract_file.read_text()
+        # Output has migrated SQL
+        output_content = output_file.read_text()
+        assert ":user_id" in output_content
+        assert "$1" not in output_content
+
+    def test_in_place_modifies_file(self, tmp_path: Path) -> None:
+        """In-place mode modifies the original file."""
+        from click.testing import CliRunner
+
+        from omnibase_core.cli.cli_db_migration import db
+
+        contract_file = tmp_path / "contract.yaml"
+        contract_content = """
+name: test_repo
+engine: postgres
+database_ref: test_db
+tables: [users]
+models: {}
+ops:
+  get_user:
+    mode: read
+    sql: SELECT * FROM users WHERE id = $1
+    params:
+      user_id:
+        name: user_id
+        param_type: integer
+    param_order: [user_id]
+    returns:
+      model_ref: "test:User"
+      many: false
+"""
+        contract_file.write_text(contract_content)
+
+        runner = CliRunner()
+        result = runner.invoke(db, ["migrate-params", str(contract_file), "--in-place"])
+
+        assert result.exit_code == 0
+        # File should be modified
+        modified_content = contract_file.read_text()
+        assert ":user_id" in modified_content
+        assert "$1" not in modified_content
+
+    def test_in_place_and_output_conflict(self, tmp_path: Path) -> None:
+        """Cannot use both --in-place and --output."""
+        from click.testing import CliRunner
+
+        from omnibase_core.cli.cli_db_migration import db
+
+        contract_file = tmp_path / "contract.yaml"
+        contract_file.write_text("name: test\nops: {}")
+
+        runner = CliRunner()
+        result = runner.invoke(
+            db,
+            [
+                "migrate-params",
+                str(contract_file),
+                "--in-place",
+                "-o",
+                str(tmp_path / "out.yaml"),
+            ],
+        )
+
+        assert result.exit_code != 0
+        assert "Cannot use both" in result.output
+
+    def test_no_migration_needed(self, tmp_path: Path) -> None:
+        """Reports when no positional params found."""
+        from click.testing import CliRunner
+
+        from omnibase_core.cli.cli_db_migration import db
+
+        contract_file = tmp_path / "contract.yaml"
+        contract_content = """
+name: test_repo
+engine: postgres
+database_ref: test_db
+ops:
+  get_user:
+    mode: read
+    sql: SELECT * FROM users WHERE id = :user_id
+    params:
+      user_id:
+        name: user_id
+        param_type: integer
+"""
+        contract_file.write_text(contract_content)
+
+        runner = CliRunner()
+        result = runner.invoke(db, ["migrate-params", str(contract_file)])
+
+        assert result.exit_code == 0
+        assert "No positional parameters found" in result.output
+
+    def test_invalid_ops_structure_error(self, tmp_path: Path) -> None:
+        """Reports error when ops is not a dict."""
+        from click.testing import CliRunner
+
+        from omnibase_core.cli.cli_db_migration import db
+
+        contract_file = tmp_path / "contract.yaml"
+        contract_content = """
+name: test_repo
+engine: postgres
+ops:
+  - not
+  - a
+  - dict
+"""
+        contract_file.write_text(contract_content)
+
+        runner = CliRunner()
+        result = runner.invoke(db, ["migrate-params", str(contract_file)])
+
+        assert result.exit_code != 0
+        assert "Invalid 'ops' structure" in result.output
+
+    def test_invalid_yaml_error(self, tmp_path: Path) -> None:
+        """Reports error for invalid YAML."""
+        from click.testing import CliRunner
+
+        from omnibase_core.cli.cli_db_migration import db
+
+        contract_file = tmp_path / "contract.yaml"
+        contract_file.write_text("invalid: yaml: content: [")
+
+        runner = CliRunner()
+        result = runner.invoke(db, ["migrate-params", str(contract_file)])
+
+        assert result.exit_code != 0
+        assert "YAML parsing error" in result.output
+
+    def test_missing_param_order_error(self, tmp_path: Path) -> None:
+        """Reports error when positional params lack param_order."""
+        from click.testing import CliRunner
+
+        from omnibase_core.cli.cli_db_migration import db
+
+        contract_file = tmp_path / "contract.yaml"
+        contract_content = """
+name: test_repo
+engine: postgres
+ops:
+  get_user:
+    mode: read
+    sql: SELECT * FROM users WHERE id = $1
+    params:
+      user_id:
+        name: user_id
+        param_type: integer
+    # Missing param_order!
+"""
+        contract_file.write_text(contract_content)
+
+        runner = CliRunner()
+        result = runner.invoke(db, ["migrate-params", str(contract_file)])
+
+        assert result.exit_code != 0
+        assert "no param_order" in result.output or "Validation errors" in result.output

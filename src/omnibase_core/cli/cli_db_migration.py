@@ -219,6 +219,10 @@ def migrate_params(
 
         # Check if migration is needed
         ops = contract_data.get("ops", {})
+        if not isinstance(ops, dict):
+            raise click.ClickException(
+                f"Invalid 'ops' structure in {input_file}: expected dict, got {type(ops).__name__}"
+            )
         needs_migration = False
         migration_ops: list[str] = []
 
