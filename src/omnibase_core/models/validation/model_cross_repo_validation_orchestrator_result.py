@@ -50,6 +50,7 @@ class CrossRepoValidationOrchestratorResult(BaseModel):
         ..., description="All events emitted during the run."
     )
 
+    # NOTE(OMN-1776): mypy/pydantic computed_field+property decorator interaction requires ignore.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def is_valid(self) -> bool:
@@ -59,6 +60,7 @@ class CrossRepoValidationOrchestratorResult(BaseModel):
                 return event.is_valid
         return False
 
+    # NOTE(OMN-1776): mypy/pydantic computed_field+property decorator interaction requires ignore.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def total_violations(self) -> int:
