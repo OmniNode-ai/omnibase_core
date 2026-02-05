@@ -20,7 +20,7 @@ from .model_contract_validation_event import (
 
 # Cross-repo validation models (OMN-1771)
 from .model_cross_repo_validation_orchestrator_result import (
-    CrossRepoValidationOrchestratorResult,
+    ModelResultCrossRepoValidationOrchestrator,
 )
 
 # Workflow validation models (OMN-176) - safe to import
@@ -74,7 +74,7 @@ __all__ = [
     "ContractValidationEventType",
     "ModelContractValidationEvent",
     # Cross-repo validation models (OMN-1771)
-    "CrossRepoValidationOrchestratorResult",
+    "ModelResultCrossRepoValidationOrchestrator",
     "ModelValidationDiscoveryConfig",
     "ModelRuleConfigBase",
     "ModelRuleContractSchemaConfig",
