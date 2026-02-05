@@ -72,9 +72,6 @@ from omnibase_core.models.runtime.model_handler_behavior import (
     ModelHandlerBehavior,
 )
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
-from omnibase_core.models.services.model_external_service_config import (
-    ModelExternalServiceConfig,
-)
 
 from . import subcontracts
 from .model_action_config_parameter import (
@@ -217,7 +214,7 @@ __all__ = [
     "ModelDescriptorCircuitBreaker",
     "ModelEventRegistryConfig",
     "ModelEventSubscription",
-    "ModelExternalServiceConfig",
+    # NOTE: ModelExternalServiceConfig removed - import from omnibase_core.models.services
     "ModelHandlerSpec",
     "ModelRuntimeHandlerConfig",
     "ModelInputValidationConfig",
