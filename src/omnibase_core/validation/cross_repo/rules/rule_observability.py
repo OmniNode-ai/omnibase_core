@@ -75,7 +75,7 @@ class RuleObservability:
             ):
                 continue
 
-            file_issues = self._scan_file(file_path, repo_id)
+            file_issues = self._scan_file(file_path, repo_id, root_directory)
             issues.extend(file_issues)
 
         return issues
@@ -84,12 +84,14 @@ class RuleObservability:
         self,
         file_path: Path,
         repo_id: str,  # string-id-ok: human-readable repository identifier
+        root_directory: Path | None = None,
     ) -> list[ModelValidationIssue]:
         """Scan a Python file for observability violations.
 
         Args:
             file_path: Path to the Python file.
             repo_id: The repository being validated.
+            root_directory: Root directory for computing relative paths.
 
         Returns:
             List of validation issues found.
@@ -107,7 +109,7 @@ class RuleObservability:
             if not isinstance(node, ast.Call):
                 continue
 
-            issue = self._check_call(node, file_path, repo_id)
+            issue = self._check_call(node, file_path, repo_id, root_directory)
             if issue:
                 issues.append(issue)
 
@@ -118,6 +120,7 @@ class RuleObservability:
         node: ast.Call,
         file_path: Path,
         repo_id: str,  # string-id-ok: human-readable repository identifier
+        root_directory: Path | None = None,
     ) -> ModelValidationIssue | None:
         """Check if a call is a forbidden observability pattern.
 
@@ -125,14 +128,20 @@ class RuleObservability:
             node: Call AST node.
             file_path: Path to the file.
             repo_id: The repository being validated.
+            root_directory: Root directory for computing relative paths.
 
         Returns:
             Validation issue if this is a forbidden call, None otherwise.
         """
+        # Compute relative path for stable fingerprints across environments
+        relative_path = (
+            file_path.relative_to(root_directory) if root_directory else file_path
+        )
+
         # Check for print() calls
         if self.config.flag_print and self._is_print_call(node):
             fingerprint = generate_fingerprint(
-                self.rule_id, str(file_path), f"print_{node.lineno}"
+                self.rule_id, str(relative_path), f"print_{node.lineno}"
             )
             return ModelValidationIssue(
                 severity=self.config.print_severity,
@@ -153,7 +162,7 @@ class RuleObservability:
         # Check for logging.getLogger() calls
         if self.config.flag_raw_logging and self._is_logging_get_logger(node):
             fingerprint = generate_fingerprint(
-                self.rule_id, str(file_path), f"logging_{node.lineno}"
+                self.rule_id, str(relative_path), f"logging_{node.lineno}"
             )
             return ModelValidationIssue(
                 severity=self.config.raw_logging_severity,

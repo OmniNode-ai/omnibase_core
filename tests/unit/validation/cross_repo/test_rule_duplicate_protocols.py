@@ -560,3 +560,87 @@ class Handler(typing.Protocol):
 
         assert len(issues) == 2
         assert all("Handler" in i.message for i in issues)
+
+    def test_detects_subscripted_protocol(
+        self,
+        config: ModelRuleDuplicateProtocolsConfig,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that subscripted Protocol[T] is detected."""
+        file1 = tmp_src_dir / "module_a.py"
+        file1.write_text(
+            """\
+from typing import Protocol, TypeVar
+
+T = TypeVar("T")
+
+class GenericHandler(Protocol[T]):
+    def handle(self, item: T) -> T: ...
+"""
+        )
+
+        file2 = tmp_src_dir / "module_b.py"
+        file2.write_text(
+            """\
+from typing import Protocol, TypeVar
+
+T = TypeVar("T")
+
+class GenericHandler(Protocol[T]):
+    def handle(self, item: T) -> T: ...
+"""
+        )
+
+        rule = RuleDuplicateProtocols(config)
+        file_imports = {
+            file1: ModelFileImports(file_path=file1),
+            file2: ModelFileImports(file_path=file2),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        assert len(issues) == 2
+        assert all("GenericHandler" in i.message for i in issues)
+
+    def test_detects_qualified_subscripted_protocol(
+        self,
+        config: ModelRuleDuplicateProtocolsConfig,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that qualified typing.Protocol[T] is detected."""
+        file1 = tmp_src_dir / "module_a.py"
+        file1.write_text(
+            """\
+import typing
+
+T = typing.TypeVar("T")
+
+class GenericHandler(typing.Protocol[T]):
+    def handle(self, item: T) -> T: ...
+"""
+        )
+
+        file2 = tmp_src_dir / "module_b.py"
+        file2.write_text(
+            """\
+import typing
+
+T = typing.TypeVar("T")
+
+class GenericHandler(typing.Protocol[T]):
+    def handle(self, item: T) -> T: ...
+"""
+        )
+
+        rule = RuleDuplicateProtocols(config)
+        file_imports = {
+            file1: ModelFileImports(file_path=file1),
+            file2: ModelFileImports(file_path=file2),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        assert len(issues) == 2
+        assert all("GenericHandler" in i.message for i in issues)

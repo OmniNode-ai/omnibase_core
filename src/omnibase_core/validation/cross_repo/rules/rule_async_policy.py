@@ -71,7 +71,7 @@ class RuleAsyncPolicy:
             ):
                 continue
 
-            file_issues = self._scan_file(file_path, repo_id)
+            file_issues = self._scan_file(file_path, repo_id, root_directory)
             issues.extend(file_issues)
 
         return issues
@@ -80,12 +80,14 @@ class RuleAsyncPolicy:
         self,
         file_path: Path,
         repo_id: str,  # string-id-ok: human-readable repository identifier
+        root_directory: Path | None = None,
     ) -> list[ModelValidationIssue]:
         """Scan a Python file for async policy violations.
 
         Args:
             file_path: Path to the Python file.
             repo_id: The repository being validated.
+            root_directory: Root directory for computing relative paths.
 
         Returns:
             List of validation issues found.
@@ -95,14 +97,16 @@ class RuleAsyncPolicy:
         try:
             source = file_path.read_text(encoding="utf-8")
             tree = ast.parse(source, filename=str(file_path))
-        except (OSError, SyntaxError):
+        except (OSError, SyntaxError, UnicodeDecodeError):
             # Skip files that can't be read or parsed
             return issues
 
         # Find all async function definitions
         for node in ast.walk(tree):
             if isinstance(node, ast.AsyncFunctionDef):
-                async_issues = self._check_async_function(node, file_path, repo_id)
+                async_issues = self._check_async_function(
+                    node, file_path, repo_id, root_directory
+                )
                 issues.extend(async_issues)
 
         return issues
@@ -112,6 +116,7 @@ class RuleAsyncPolicy:
         func_node: ast.AsyncFunctionDef,
         file_path: Path,
         repo_id: str,  # string-id-ok: human-readable repository identifier
+        root_directory: Path | None = None,
     ) -> list[ModelValidationIssue]:
         """Check an async function for blocking calls.
 
@@ -119,13 +124,20 @@ class RuleAsyncPolicy:
             func_node: Async function definition AST node.
             file_path: Path to the file.
             repo_id: The repository being validated.
+            root_directory: Root directory for computing relative paths.
 
         Returns:
             List of validation issues for this function.
         """
         issues: list[ModelValidationIssue] = []
         self._check_node_for_blocking_calls(
-            func_node, func_node.name, file_path, repo_id, issues, inside_wrapper=False
+            func_node,
+            func_node.name,
+            file_path,
+            repo_id,
+            issues,
+            inside_wrapper=False,
+            root_directory=root_directory,
         )
         return issues
 
@@ -154,6 +166,7 @@ class RuleAsyncPolicy:
         repo_id: str,  # string-id-ok: human-readable repository identifier
         issues: list[ModelValidationIssue],
         inside_wrapper: bool,
+        root_directory: Path | None = None,
     ) -> None:
         """Recursively check an AST node for blocking calls.
 
@@ -167,6 +180,7 @@ class RuleAsyncPolicy:
             repo_id: The repository being validated.
             issues: List to append found issues to.
             inside_wrapper: Whether we're inside an allowlisted wrapper call.
+            root_directory: Root directory for computing relative paths.
         """
         for child in ast.iter_child_nodes(node):
             if isinstance(child, ast.Call):
@@ -180,7 +194,12 @@ class RuleAsyncPolicy:
                 # Only check for blocking calls if not inside a wrapper
                 if not inside_wrapper and call_name is not None:
                     issue = self._check_blocking_call(
-                        child, call_name, async_func_name, file_path, repo_id
+                        child,
+                        call_name,
+                        async_func_name,
+                        file_path,
+                        repo_id,
+                        root_directory,
                     )
                     if issue:
                         issues.append(issue)
@@ -194,6 +213,7 @@ class RuleAsyncPolicy:
                     repo_id,
                     issues,
                     inside_wrapper=inside_wrapper or is_wrapper,
+                    root_directory=root_directory,
                 )
             else:
                 # Non-call nodes: continue recursion with same wrapper state
@@ -204,6 +224,7 @@ class RuleAsyncPolicy:
                     repo_id,
                     issues,
                     inside_wrapper=inside_wrapper,
+                    root_directory=root_directory,
                 )
 
     def _get_full_call_name(self, node: ast.Call) -> str | None:
@@ -244,6 +265,7 @@ class RuleAsyncPolicy:
         async_func_name: str,
         file_path: Path,
         repo_id: str,  # string-id-ok: human-readable repository identifier
+        root_directory: Path | None = None,
     ) -> ModelValidationIssue | None:
         """Check if a call is a blocking operation.
 
@@ -253,15 +275,21 @@ class RuleAsyncPolicy:
             async_func_name: Name of the containing async function.
             file_path: Path to the file.
             repo_id: The repository being validated.
+            root_directory: Root directory for computing relative paths.
 
         Returns:
             Validation issue if this is a blocking call, None otherwise.
         """
+        # Compute relative path for stable fingerprints across environments
+        relative_path = (
+            file_path.relative_to(root_directory) if root_directory else file_path
+        )
+
         # Check ERROR severity blocking calls
         for blocked in self.config.blocking_calls_error:
             if self._matches_call(call_name, blocked):
                 fingerprint = generate_fingerprint(
-                    self.rule_id, str(file_path), f"{call_name}_{node.lineno}"
+                    self.rule_id, str(relative_path), f"{call_name}_{node.lineno}"
                 )
                 return ModelValidationIssue(
                     severity=EnumSeverity.ERROR,
@@ -284,7 +312,7 @@ class RuleAsyncPolicy:
         for blocked in self.config.blocking_calls_warning:
             if self._matches_call(call_name, blocked):
                 fingerprint = generate_fingerprint(
-                    self.rule_id, str(file_path), f"{call_name}_{node.lineno}"
+                    self.rule_id, str(relative_path), f"{call_name}_{node.lineno}"
                 )
                 return ModelValidationIssue(
                     severity=EnumSeverity.WARNING,

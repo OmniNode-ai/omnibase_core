@@ -84,8 +84,14 @@ class RuleDuplicateProtocols:
                 # Create an issue for each location
                 file_list = [str(loc[0]) for loc in locations]
                 for file_path, line_number in locations:
+                    # Compute relative path for stable fingerprints across environments
+                    relative_path = (
+                        file_path.relative_to(root_directory)
+                        if root_directory
+                        else file_path
+                    )
                     fingerprint = generate_fingerprint(
-                        self.rule_id, str(file_path), protocol_name
+                        self.rule_id, str(relative_path), protocol_name
                     )
                     other_files = [f for f in file_list if f != str(file_path)]
 
@@ -127,7 +133,7 @@ class RuleDuplicateProtocols:
         try:
             source = file_path.read_text(encoding="utf-8")
             tree = ast.parse(source, filename=str(file_path))
-        except (OSError, SyntaxError):
+        except (OSError, SyntaxError, UnicodeDecodeError):
             # Skip files that can't be read or parsed
             return protocols
 
@@ -168,8 +174,8 @@ class RuleDuplicateProtocols:
     def _get_base_name(self, base: ast.expr) -> str | None:
         """Get the name of a base class from AST.
 
-        Handles both simple names (e.g., Protocol) and qualified names
-        (e.g., typing.Protocol, typing_extensions.Protocol).
+        Handles simple names (e.g., Protocol), qualified names
+        (e.g., typing.Protocol), and subscripted generics (e.g., Protocol[T]).
 
         Args:
             base: Base class AST expression.
@@ -186,4 +192,7 @@ class RuleDuplicateProtocols:
             if value_name:
                 return f"{value_name}.{base.attr}"
             return base.attr
+        if isinstance(base, ast.Subscript):
+            # Handle subscripted generics like Protocol[T] or typing.Protocol[T]
+            return self._get_base_name(base.value)
         return None

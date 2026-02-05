@@ -59,7 +59,8 @@ def should_exclude_path(
     else:
         relative_path = file_path
 
-    path_str = str(relative_path)
+    # Normalize to POSIX format for consistent pattern matching across platforms
+    path_str = str(relative_path).replace("\\", "/")
 
     for pattern in exclude_patterns:
         # Direct pattern match
@@ -69,7 +70,8 @@ def should_exclude_path(
         # Also check if any parent directory matches
         # This handles patterns like "tests/**" matching "tests/unit/test_foo.py"
         for parent in relative_path.parents:
-            if fnmatch.fnmatch(str(parent), pattern.removesuffix("/**")):
+            parent_str = str(parent).replace("\\", "/")
+            if fnmatch.fnmatch(parent_str, pattern.removesuffix("/**")):
                 return True
 
     return False
@@ -119,7 +121,8 @@ def should_exclude_path_with_modules(
     else:
         relative_path = file_path
 
-    path_str = str(relative_path)
+    # Normalize to POSIX format for consistent pattern matching across platforms
+    path_str = str(relative_path).replace("\\", "/")
 
     # Check allowlist modules using segment matching to avoid false positives.
     # Substring matching would cause "cli" to match "public_client.py".

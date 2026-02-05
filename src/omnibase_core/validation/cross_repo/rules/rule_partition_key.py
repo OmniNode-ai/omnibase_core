@@ -75,7 +75,7 @@ class RulePartitionKey:
             ):
                 continue
 
-            file_issues = self._scan_file(file_path, repo_id)
+            file_issues = self._scan_file(file_path, repo_id, root_directory)
             issues.extend(file_issues)
 
         return issues
@@ -84,12 +84,14 @@ class RulePartitionKey:
         self,
         file_path: Path,
         repo_id: str,  # string-id-ok: human-readable repository identifier
+        root_directory: Path | None = None,
     ) -> list[ModelValidationIssue]:
         """Scan a Python file for topic configs missing partition_key.
 
         Args:
             file_path: Path to the Python file.
             repo_id: The repository being validated.
+            root_directory: Root directory for computing relative paths.
 
         Returns:
             List of validation issues found.
@@ -103,6 +105,11 @@ class RulePartitionKey:
             # Skip files that can't be read or parsed
             return issues
 
+        # Compute relative path for stable fingerprints across environments
+        relative_path = (
+            file_path.relative_to(root_directory) if root_directory else file_path
+        )
+
         for node in ast.walk(tree):
             if not isinstance(node, ast.ClassDef):
                 continue
@@ -114,7 +121,7 @@ class RulePartitionKey:
             # Check if class has partition_key field
             if not self._has_partition_key_field(node):
                 fingerprint = generate_fingerprint(
-                    self.rule_id, str(file_path), node.name
+                    self.rule_id, str(relative_path), node.name
                 )
                 issues.append(
                     ModelValidationIssue(
