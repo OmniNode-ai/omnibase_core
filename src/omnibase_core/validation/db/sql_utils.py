@@ -415,8 +415,8 @@ def extract_select_columns(sql: str) -> tuple[list[str], bool]:
             is_complex = True
             continue
 
-        # CASE expression
-        if re.match(r"\bCASE\b", temp_expr, re.IGNORECASE):
+        # CASE expression (use search to find anywhere in expression, not just at start)
+        if re.search(r"\bCASE\b", temp_expr, re.IGNORECASE):
             is_complex = True
             continue
 
