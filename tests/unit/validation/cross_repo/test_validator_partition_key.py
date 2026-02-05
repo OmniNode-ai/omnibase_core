@@ -1,4 +1,4 @@
-"""Tests for partition_key rule.
+"""Tests for partition_key validator.
 
 Related ticket: OMN-1906
 """
@@ -13,8 +13,8 @@ from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.validation.model_rule_configs import (
     ModelRulePartitionKeyConfig,
 )
-from omnibase_core.validation.cross_repo.rules.rule_partition_key import (
-    RulePartitionKey,
+from omnibase_core.validation.cross_repo.rules.validator_partition_key import (
+    ValidatorPartitionKey,
 )
 from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
     ModelFileImports,
@@ -22,8 +22,8 @@ from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
 
 
 @pytest.mark.unit
-class TestRulePartitionKey:
-    """Tests for RulePartitionKey."""
+class TestValidatorPartitionKey:
+    """Tests for ValidatorPartitionKey."""
 
     @pytest.fixture
     def config(self) -> ModelRulePartitionKeyConfig:
@@ -61,7 +61,7 @@ class ModelEventTopicConfig(BaseModel):
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             topic_config: ModelFileImports(file_path=topic_config),
         }
@@ -90,7 +90,7 @@ class ModelEventTopicConfig(BaseModel):
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             topic_config: ModelFileImports(file_path=topic_config),
         }
@@ -117,7 +117,7 @@ class ModelEventTopicConfig(BaseModel):
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             topic_config: ModelFileImports(file_path=topic_config),
         }
@@ -142,7 +142,7 @@ class ModelCommandTopicConfig:
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             topic_config: ModelFileImports(file_path=topic_config),
         }
@@ -170,7 +170,7 @@ class ModelDatabaseConfig(BaseModel):
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             other_config: ModelFileImports(file_path=other_config),
         }
@@ -196,7 +196,7 @@ class ModelEventTopicConfig:
 """
         )
 
-        rule = RulePartitionKey(disabled_config)
+        rule = ValidatorPartitionKey(disabled_config)
         file_imports = {
             topic_config: ModelFileImports(file_path=topic_config),
         }
@@ -224,7 +224,7 @@ class ModelEventTopicConfig:
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             topic_config: ModelFileImports(file_path=topic_config),
         }
@@ -255,7 +255,7 @@ class EventsKafkaConfig:
 """
         )
 
-        rule = RulePartitionKey(custom_config)
+        rule = ValidatorPartitionKey(custom_config)
         file_imports = {
             topic_config: ModelFileImports(file_path=topic_config),
         }
@@ -280,7 +280,7 @@ class ModelEventTopicConfig:
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             topic_config: ModelFileImports(file_path=topic_config),
         }
@@ -310,7 +310,7 @@ class ModelEventTopicConfig:
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             topic_config: ModelFileImports(file_path=topic_config),
         }
@@ -348,7 +348,7 @@ class ModelResponseTopicConfig(BaseModel):
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             topic_config: ModelFileImports(file_path=topic_config),
         }
@@ -371,7 +371,7 @@ class ModelResponseTopicConfig(BaseModel):
         topic_config = tmp_src_dir / "bad_topic.py"
         topic_config.write_text("class ModelEventTopicConfig syntax error")
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             topic_config: ModelFileImports(
                 file_path=topic_config, parse_error="Syntax error"
@@ -390,7 +390,7 @@ class ModelResponseTopicConfig(BaseModel):
         """Test that missing files are handled gracefully."""
         missing_file = tmp_path / "nonexistent.py"
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             missing_file: ModelFileImports(file_path=missing_file),
         }
@@ -424,7 +424,7 @@ class ModelEventTopicConfig:
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             test_file: ModelFileImports(file_path=test_file),
         }
@@ -459,7 +459,7 @@ class ModelEventTopicConfig:
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             example_file: ModelFileImports(file_path=example_file),
         }
@@ -494,7 +494,7 @@ class ModelEventTopicConfig:
 """
         )
 
-        rule = RulePartitionKey(config)
+        rule = ValidatorPartitionKey(config)
         file_imports = {
             src_file: ModelFileImports(file_path=src_file),
         }

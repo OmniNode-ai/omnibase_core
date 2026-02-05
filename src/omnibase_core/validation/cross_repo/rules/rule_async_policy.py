@@ -147,6 +147,9 @@ class RuleAsyncPolicy:
         Allowlisted wrappers like asyncio.to_thread make blocking calls
         safe by running them in a thread pool.
 
+        Uses suffix matching to handle cases like self.loop.run_in_executor()
+        where the wrapper pattern is "loop.run_in_executor".
+
         Args:
             call_name: Full dotted call name.
 
@@ -154,8 +157,33 @@ class RuleAsyncPolicy:
             True if this is an allowlisted wrapper.
         """
         for wrapper in self.config.allowlist_wrappers:
-            if self._matches_call(call_name, wrapper):
+            if self._matches_wrapper(call_name, wrapper):
                 return True
+        return False
+
+    def _matches_wrapper(self, call_name: str, pattern: str) -> bool:
+        """Check if a call name matches an allowlisted wrapper pattern.
+
+        Uses suffix matching to handle prefixed calls like:
+        - "loop.run_in_executor" matches "self.loop.run_in_executor"
+        - "asyncio.to_thread" matches "asyncio.to_thread"
+
+        Args:
+            call_name: Full dotted call name from AST.
+            pattern: Wrapper pattern from allowlist.
+
+        Returns:
+            True if the call matches the wrapper pattern.
+        """
+        # Exact match
+        if call_name == pattern:
+            return True
+
+        # Suffix match: call ends with "." + pattern
+        # e.g., "self.loop.run_in_executor" ends with ".loop.run_in_executor"
+        if call_name.endswith("." + pattern):
+            return True
+
         return False
 
     def _check_node_for_blocking_calls(
@@ -334,28 +362,38 @@ class RuleAsyncPolicy:
         return None
 
     def _matches_call(self, call_name: str, pattern: str) -> bool:
-        """Check if a call name matches a blocking pattern.
+        """Check if a call name matches a blocking call pattern.
 
-        Supports exact matches and prefix matches (for module patterns only):
-        - "time.sleep" matches "time.sleep" (exact)
-        - "requests.get.something" matches "requests.get" (prefix, pattern has dot)
-        - "open" matches "open" (exact only, no prefix for simple names)
-        - "open_file" does NOT match "open" (no prefix for simple names)
+        Matching semantics designed to minimize false positives:
+
+        Exact match (always):
+        - "time.sleep" matches "time.sleep"
+        - "open" matches "open"
+
+        Prefix match (only for qualified patterns containing a dot):
+        - "requests.get.json" matches pattern "requests.get" (extends the call)
+        - This catches method chaining on blocking calls
+
+        NOT matched (by design to avoid false positives):
+        - "open_file" does NOT match "open" (simple patterns are exact-only)
+        - "my_subprocess.run" does NOT match "subprocess.run" (different module)
+        - "time.sleep_extended" does NOT match "time.sleep" (not dot-separated)
 
         Args:
-            call_name: Full dotted call name.
-            pattern: Pattern to match against.
+            call_name: Full dotted call name from AST (e.g., "time.sleep").
+            pattern: Blocking call pattern (e.g., "time.sleep", "subprocess.run").
 
         Returns:
-            True if the call matches the pattern.
+            True if the call matches the blocking pattern.
         """
         # Exact match always works
         if call_name == pattern:
             return True
 
-        # Prefix match only for module patterns (those containing a dot)
-        # This prevents "requests" from matching "requests_mock.get" or
-        # "open" from matching "open_file.something"
+        # Prefix match only for qualified patterns (those containing a dot)
+        # The pattern + "." requirement prevents partial string matches:
+        # - "time.sleep." prevents matching "time.sleepy" or "time.sleep_more"
+        # - Only matches true extensions like "time.sleep.attr"
         if "." in pattern and call_name.startswith(pattern + "."):
             return True
 

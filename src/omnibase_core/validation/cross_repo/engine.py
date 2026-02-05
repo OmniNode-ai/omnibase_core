@@ -49,17 +49,17 @@ from omnibase_core.validation.cross_repo.rules.rule_error_taxonomy import (
 from omnibase_core.validation.cross_repo.rules.rule_forbidden_imports import (
     RuleForbiddenImports,
 )
-from omnibase_core.validation.cross_repo.rules.rule_observability import (
-    RuleObservability,
-)
-from omnibase_core.validation.cross_repo.rules.rule_partition_key import (
-    RulePartitionKey,
-)
 from omnibase_core.validation.cross_repo.rules.rule_repo_boundaries import (
     RuleRepoBoundaries,
 )
 from omnibase_core.validation.cross_repo.rules.rule_topic_naming import (
     RuleTopicNaming,
+)
+from omnibase_core.validation.cross_repo.rules.validator_observability import (
+    ValidatorObservability,
+)
+from omnibase_core.validation.cross_repo.rules.validator_partition_key import (
+    ValidatorPartitionKey,
 )
 from omnibase_core.validation.cross_repo.scanners.scanner_file_discovery import (
     ScannerFileDiscovery,
@@ -345,13 +345,13 @@ class CrossRepoValidationEngine:
 
         elif rule_id == "partition_key":
             if isinstance(config, ModelRulePartitionKeyConfig):
-                return RulePartitionKey(config).validate(
+                return ValidatorPartitionKey(config).validate(
                     file_imports, self.policy.repo_id, root_directory
                 )
 
         elif rule_id == "observability":
             if isinstance(config, ModelRuleObservabilityConfig):
-                return RuleObservability(config).validate(
+                return ValidatorObservability(config).validate(
                     file_imports, self.policy.repo_id, root_directory
                 )
 

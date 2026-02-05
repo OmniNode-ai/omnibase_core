@@ -1,4 +1,4 @@
-"""Partition key rule - require explicit partition_key in topic configs.
+"""Partition key validator - require explicit partition_key in topic configs.
 
 Enforces that Kafka topic configuration classes declare an explicit
 partition key strategy, preventing implicit/undefined partitioning.
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     )
 
 
-class RulePartitionKey:
+class ValidatorPartitionKey:
     """Requires explicit partition_key declaration in topic configurations.
 
     Flags topic config classes that don't declare a partition key strategy,
@@ -56,7 +56,8 @@ class RulePartitionKey:
         Args:
             file_imports: Map of file paths to their imports.
             repo_id: The repository being validated.
-            root_directory: Root directory being validated.
+            root_directory: Root directory for computing repo-relative paths.
+                Used for: (1) exclusion pattern matching, (2) stable fingerprints.
 
         Returns:
             List of validation issues for missing partition keys.
@@ -70,6 +71,7 @@ class RulePartitionKey:
         issues: list[ModelValidationIssue] = []
 
         for file_path in file_imports:
+            # root_directory used here for exclusion pattern matching
             if should_exclude_path(
                 file_path, root_directory, self.config.exclude_patterns
             ):
@@ -91,7 +93,7 @@ class RulePartitionKey:
         Args:
             file_path: Path to the Python file.
             repo_id: The repository being validated.
-            root_directory: Root directory for computing relative paths.
+            root_directory: Root directory for computing repo-relative paths.
 
         Returns:
             List of validation issues found.
@@ -105,7 +107,9 @@ class RulePartitionKey:
             # Skip files that can't be read or parsed
             return issues
 
-        # Compute relative path for stable fingerprints across environments
+        # Compute repo-relative path for stable fingerprints across environments.
+        # Using relative paths ensures fingerprints are consistent regardless of
+        # where the repository is checked out (e.g., /home/user/repo vs /tmp/repo).
         relative_path = (
             file_path.relative_to(root_directory) if root_directory else file_path
         )
@@ -120,6 +124,7 @@ class RulePartitionKey:
 
             # Check if class has partition_key field
             if not self._has_partition_key_field(node):
+                # Use repo-relative path for fingerprint stability
                 fingerprint = generate_fingerprint(
                     self.rule_id, str(relative_path), node.name
                 )

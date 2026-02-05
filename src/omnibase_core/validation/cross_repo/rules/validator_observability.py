@@ -1,4 +1,4 @@
-"""Observability rule - flag print() and raw logging usage.
+"""Observability validator - flag print() and raw logging usage.
 
 Encourages use of ProtocolLogger for structured, consistent logging
 instead of direct print() or logging.getLogger() calls.
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     )
 
 
-class RuleObservability:
+class ValidatorObservability:
     """Flags direct print() and raw logging.getLogger() usage.
 
     Encourages consistent use of ProtocolLogger for structured logging
@@ -101,8 +101,8 @@ class RuleObservability:
         try:
             source = file_path.read_text(encoding="utf-8")
             tree = ast.parse(source, filename=str(file_path))
-        except (OSError, SyntaxError):
-            # Skip files that can't be read or parsed
+        except (OSError, SyntaxError, UnicodeDecodeError):
+            # Skip files that can't be read, parsed, or decoded
             return issues
 
         for node in ast.walk(tree):
@@ -133,7 +133,7 @@ class RuleObservability:
         Returns:
             Validation issue if this is a forbidden call, None otherwise.
         """
-        # Compute relative path for stable fingerprints across environments
+        # Compute repo-relative path for stable fingerprints across environments
         relative_path = (
             file_path.relative_to(root_directory) if root_directory else file_path
         )

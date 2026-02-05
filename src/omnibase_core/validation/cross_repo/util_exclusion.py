@@ -12,6 +12,43 @@ import fnmatch
 from pathlib import Path
 
 
+def _normalize_to_posix(path: Path) -> str:
+    """Normalize a path to POSIX format for cross-platform pattern matching.
+
+    Converts Windows-style backslashes to forward slashes to ensure
+    consistent behavior across platforms.
+
+    Args:
+        path: Path to normalize.
+
+    Returns:
+        POSIX-style path string with forward slashes.
+    """
+    return str(path).replace("\\", "/")
+
+
+def _get_relative_path(file_path: Path, root_directory: Path | None) -> Path:
+    """Calculate relative path from root directory.
+
+    Args:
+        file_path: Absolute or relative path to process.
+        root_directory: Root directory for relative path calculation.
+            If None or if file_path is not under root_directory,
+            returns file_path unchanged.
+
+    Returns:
+        Relative path if file is under root_directory, otherwise file_path as-is.
+    """
+    if root_directory is None:
+        return file_path
+
+    try:
+        return file_path.relative_to(root_directory)
+    except ValueError:
+        # File is not under root_directory, use as-is
+        return file_path
+
+
 def should_exclude_path(
     file_path: Path,
     root_directory: Path | None,
@@ -49,18 +86,8 @@ def should_exclude_path(
         ... )
         False
     """
-    # Get relative path for pattern matching
-    if root_directory:
-        try:
-            relative_path = file_path.relative_to(root_directory)
-        except ValueError:
-            # File is not under root_directory, use as-is
-            relative_path = file_path
-    else:
-        relative_path = file_path
-
-    # Normalize to POSIX format for consistent pattern matching across platforms
-    path_str = str(relative_path).replace("\\", "/")
+    relative_path = _get_relative_path(file_path, root_directory)
+    path_str = _normalize_to_posix(relative_path)
 
     for pattern in exclude_patterns:
         # Direct pattern match
@@ -70,9 +97,34 @@ def should_exclude_path(
         # Also check if any parent directory matches
         # This handles patterns like "tests/**" matching "tests/unit/test_foo.py"
         for parent in relative_path.parents:
-            parent_str = str(parent).replace("\\", "/")
+            parent_str = _normalize_to_posix(parent)
             if fnmatch.fnmatch(parent_str, pattern.removesuffix("/**")):
                 return True
+
+    return False
+
+
+def _matches_module_segments(path_str: str, module: str) -> bool:
+    """Check if module segments appear as contiguous segments in path.
+
+    Uses segment-based matching to avoid false positives (e.g., "cli"
+    won't match "public_client.py").
+
+    Args:
+        path_str: POSIX-normalized path string.
+        module: Module name with dot separators (e.g., "omnibase_core.bootstrap").
+
+    Returns:
+        True if module segments appear contiguously in path segments.
+    """
+    module_path = module.replace(".", "/")
+    module_segments = module_path.split("/")
+    path_segments = path_str.split("/")
+
+    # Check if module segments appear as contiguous segments anywhere in the path
+    for i in range(len(path_segments) - len(module_segments) + 1):
+        if path_segments[i : i + len(module_segments)] == module_segments:
+            return True
 
     return False
 
@@ -112,28 +164,14 @@ def should_exclude_path_with_modules(
     if should_exclude_path(file_path, root_directory, exclude_patterns):
         return True
 
-    # Get the path string for module matching
-    if root_directory:
-        try:
-            relative_path = file_path.relative_to(root_directory)
-        except ValueError:
-            relative_path = file_path
-    else:
-        relative_path = file_path
+    # Get relative path and normalize to POSIX for module matching
+    relative_path = _get_relative_path(file_path, root_directory)
+    path_str = _normalize_to_posix(relative_path)
 
-    # Normalize to POSIX format for consistent pattern matching across platforms
-    path_str = str(relative_path).replace("\\", "/")
-
-    # Check allowlist modules using segment matching to avoid false positives.
-    # Substring matching would cause "cli" to match "public_client.py".
+    # Check allowlist modules using segment matching
     for allowlist_module in allowlist_modules:
-        module_path = allowlist_module.replace(".", "/")
-        module_segments = module_path.split("/")
-        path_segments = path_str.split("/")
-        # Check if module segments appear as contiguous segments anywhere in the path
-        for i in range(len(path_segments) - len(module_segments) + 1):
-            if path_segments[i : i + len(module_segments)] == module_segments:
-                return True
+        if _matches_module_segments(path_str, allowlist_module):
+            return True
 
     return False
 

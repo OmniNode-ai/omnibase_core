@@ -711,3 +711,128 @@ async def fetch_data():
         # requests.get.something should match the "requests.get" pattern
         assert len(issues) == 1
         assert "requests.get.something" in issues[0].message
+
+    def test_allowlist_wrapper_suffix_matching(
+        self,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that wrapper patterns use suffix matching for prefixed calls.
+
+        This ensures patterns like 'loop.run_in_executor' match calls like
+        'self.loop.run_in_executor' where the object is prefixed.
+        """
+        config = ModelRuleAsyncPolicyConfig(
+            enabled=True,
+            blocking_calls_error=["time.sleep"],
+            # Pattern without 'self.' prefix should still match
+            allowlist_wrappers=["loop.run_in_executor"],
+        )
+
+        source_file = tmp_src_dir / "handler.py"
+        source_file.write_text(
+            """\
+import asyncio
+import time
+
+class AsyncHandler:
+    def __init__(self):
+        self.loop = asyncio.get_event_loop()
+
+    async def process_data(self):
+        # This should be allowed - blocking call inside self.loop.run_in_executor
+        # The wrapper pattern "loop.run_in_executor" should match via suffix matching
+        await self.loop.run_in_executor(None, time.sleep, 1)
+        return "done"
+"""
+        )
+
+        rule = RuleAsyncPolicy(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # self.loop.run_in_executor wraps the blocking call, so no issues
+        assert len(issues) == 0
+
+    def test_allowlist_wrapper_no_partial_suffix_match(
+        self,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that wrapper suffix matching requires dot separator.
+
+        Ensures 'run_in_executor' does not match 'not_run_in_executor'.
+        The wrapper matching should only match when the call ends with
+        '.' + pattern, not when pattern is a substring.
+        """
+        config = ModelRuleAsyncPolicyConfig(
+            enabled=True,
+            blocking_calls_error=["time.sleep"],
+            # Only 'run_in_executor' should be allowlisted, not 'not_run_in_executor'
+            allowlist_wrappers=["run_in_executor"],
+        )
+
+        source_file = tmp_src_dir / "handler.py"
+        source_file.write_text(
+            """\
+import time
+
+async def process_data():
+    # This should be flagged - time.sleep is not inside a valid wrapper
+    # Even though 'not_run_in_executor' contains 'run_in_executor' as substring,
+    # the suffix matching requires the exact pattern after a dot
+    time.sleep(1)
+    return "done"
+"""
+        )
+
+        rule = RuleAsyncPolicy(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # time.sleep is not wrapped, should be flagged
+        assert len(issues) == 1
+        assert "time.sleep" in issues[0].message
+
+    def test_matches_wrapper_method_directly(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Test the _matches_wrapper method for suffix matching correctness."""
+        config = ModelRuleAsyncPolicyConfig(enabled=True)
+        rule = RuleAsyncPolicy(config)
+
+        # Exact match should work
+        assert rule._matches_wrapper("run_in_executor", "run_in_executor") is True
+        assert rule._matches_wrapper("asyncio.to_thread", "asyncio.to_thread") is True
+
+        # Suffix match (call ends with "." + pattern) should work
+        assert (
+            rule._matches_wrapper("self.loop.run_in_executor", "loop.run_in_executor")
+            is True
+        )
+        assert rule._matches_wrapper("self.run_in_executor", "run_in_executor") is True
+        assert (
+            rule._matches_wrapper("obj.asyncio.to_thread", "asyncio.to_thread") is True
+        )
+
+        # Partial substring should NOT match
+        assert rule._matches_wrapper("not_run_in_executor", "run_in_executor") is False
+        assert (
+            rule._matches_wrapper("self.not_run_in_executor", "run_in_executor")
+            is False
+        )
+        assert rule._matches_wrapper("run_in_executor_v2", "run_in_executor") is False
+
+        # Different path should NOT match
+        assert rule._matches_wrapper("other.executor", "loop.run_in_executor") is False
+        assert (
+            rule._matches_wrapper("loop.run_in_executor", "self.loop.run_in_executor")
+            is False
+        )
