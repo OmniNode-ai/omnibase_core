@@ -224,7 +224,8 @@ def migrate_params(
 
         for op_name, op_data in ops.items():
             if isinstance(op_data, dict):
-                sql = op_data.get("sql", "")
+                sql_value = op_data.get("sql", "")
+                sql = str(sql_value) if sql_value else ""
                 if _POSITIONAL_PARAM_PATTERN.search(sql):
                     needs_migration = True
                     migration_ops.append(op_name)
@@ -257,7 +258,26 @@ def migrate_params(
                     click.echo(click.style(f"    Error: {e}", fg="red"))
             ctx.exit(EnumCLIExitCode.SUCCESS)
 
-        # Perform migration
+        # Validate all operations first before writing any output
+        validation_errors: list[tuple[str, str]] = []
+        for op_name in migration_ops:
+            op_data = ops[op_name]
+            if not isinstance(op_data, dict):
+                continue
+            try:
+                migrate_operation(op_data)
+            except ValueError as e:
+                validation_errors.append((op_name, str(e)))
+
+        if validation_errors:
+            click.echo(click.style("\nValidation errors:", fg="red"))
+            for op_name, error in validation_errors:
+                click.echo(f"  {op_name}: {error}")
+            raise click.ClickException(
+                f"Cannot migrate: {len(validation_errors)} operation(s) have errors"
+            )
+
+        # Perform migration (validation already passed)
         migrated_contract = migrate_contract(contract_data)
 
         # Generate output YAML
