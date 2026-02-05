@@ -17,7 +17,7 @@ from omnibase_core.models.events.validation import (
     ModelValidationViolationsBatchEvent,
 )
 
-__all__ = ["CrossRepoValidationOrchestratorResult"]
+__all__ = ["ModelCrossRepoValidationOrchestratorResult"]
 
 # Type alias for the union of event types
 ValidationEvent = (
@@ -27,7 +27,7 @@ ValidationEvent = (
 )
 
 
-class CrossRepoValidationOrchestratorResult(BaseModel):
+class ModelCrossRepoValidationOrchestratorResult(BaseModel):
     """
     Result from orchestrator containing emitted events.
 

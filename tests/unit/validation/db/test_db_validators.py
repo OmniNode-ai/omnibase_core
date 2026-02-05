@@ -2443,6 +2443,8 @@ class TestValidatorDbTableAccessParserIntegration:
         # Without parser, should fail with helpful message
         if not result.is_valid:
             assert any("sql-parser" in str(e) or "CTE" in str(e) for e in result.errors)
+
+
 # Field Projection Validator (OMN-1790)
 # ============================================================================
 
