@@ -162,19 +162,31 @@ _SQL_KEYWORDS = frozenset(
     {
         "ALL",
         "AND",
+        "ANY",  # comparison keyword (ANY/SOME)
         "AS",
         "ASC",
         "BETWEEN",
         "BY",
+        "CASE",  # CASE expression
+        "CAST",  # type casting
         "CROSS",
         "DEFAULT",
         "DESC",
         "DISTINCT",
+        "ELSE",  # CASE expression
+        "END",  # CASE expression
+        "EXCEPT",  # set operation
+        "EXISTS",  # subquery keyword
+        "FALSE",
+        "FILTER",  # aggregate function clause
+        "FOR",  # locking hint (FOR UPDATE/SHARE)
         "FROM",
+        "FULL",  # FULL OUTER JOIN
         "GROUP",
         "HAVING",
         "IN",
         "INNER",
+        "INTERSECT",  # set operation
         "INTO",
         "IS",
         "JOIN",
@@ -183,20 +195,29 @@ _SQL_KEYWORDS = frozenset(
         "LIMIT",
         "NATURAL",
         "NOT",
+        "NOWAIT",  # locking hint
         "NULL",
         "OFFSET",
         "ON",
         "OR",
         "ORDER",
         "OUTER",
+        "OVER",  # window function
+        "PARTITION",  # window function (PARTITION BY)
+        "RECURSIVE",  # recursive CTE
         "RIGHT",
         "SET",
+        "SHARE",  # locking hint (FOR SHARE)
+        "SOME",  # comparison keyword (ANY/SOME)
+        "THEN",  # CASE expression
         "TRUE",
-        "FALSE",
         "UNION",
+        "UPDATE",  # locking hint (FOR UPDATE)
         "USING",
         "VALUES",
+        "WHEN",  # CASE expression
         "WHERE",
+        "WITHIN",  # aggregate function (WITHIN GROUP)
     }
 )
 

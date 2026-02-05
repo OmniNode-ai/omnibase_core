@@ -30,8 +30,11 @@ def validate_db_projection(
     - Field mismatch in strict mode: ERROR
     - In lenient mode: issues become WARNINGs instead of ERRORs
     """
-    errors: list[str] = []
-    warnings: list[str] = []
+    # Create result early to use add_warning/add_error API consistently
+    result: ModelValidationResult[None] = ModelValidationResult.create_valid(
+        summary=f"Projection validation passed for {len(contract.ops)} operation(s)",
+    )
+    error_count = 0
 
     for op_name, op in contract.ops.items():
         returns = op.returns
@@ -46,7 +49,7 @@ def validate_db_projection(
         # Skip if no fields declared and not explicitly strict
         if returns.fields is None:
             if returns.strict is True:
-                warnings.append(
+                result.add_warning(
                     f"Operation '{op_name}': strict=True but no fields declared. "
                     "Strict validation requires fields to be specified."
                 )
@@ -64,18 +67,19 @@ def validate_db_projection(
         # Check for SELECT * or table.*
         if "*" in sql_columns:
             if returns.allow_select_star:
-                warnings.append(
+                result.add_warning(
                     f"Operation '{op_name}': SELECT * used with allow_select_star=True. "
                     "This bypasses field projection validation and may cause schema drift."
                 )
                 continue
             if is_strict:
-                errors.append(
+                result.add_error(
                     f"Operation '{op_name}': SELECT * is not allowed in strict mode. "
                     "Either enumerate fields explicitly or set allow_select_star=True."
                 )
+                error_count += 1
                 continue
-            warnings.append(
+            result.add_warning(
                 f"Operation '{op_name}': SELECT * detected. "
                 "Consider enumerating fields explicitly for deterministic projections."
             )
@@ -84,13 +88,14 @@ def validate_db_projection(
         # Check for complex expressions
         if is_complex:
             if is_strict:
-                errors.append(
+                result.add_error(
                     f"Operation '{op_name}': SQL projection contains complex expressions "
                     "(functions, CASE, subqueries) that cannot be reliably parsed. "
                     "Simplify projection or set strict=False for lenient validation."
                 )
+                error_count += 1
             else:
-                warnings.append(
+                result.add_warning(
                     f"Operation '{op_name}': SQL projection contains complex expressions. "
                     "Field validation skipped."
                 )
@@ -113,21 +118,15 @@ def validate_db_projection(
             full_msg = " ".join(msg_parts)
 
             if is_strict:
-                errors.append(full_msg)
+                result.add_error(full_msg)
+                error_count += 1
             else:
-                warnings.append(full_msg)
+                result.add_warning(full_msg)
 
-    if errors:
-        return ModelValidationResult.create_invalid(
-            errors=errors,
-            summary=f"Projection validation failed with {len(errors)} error(s)",
-        )
+    # Update summary if errors were found
+    if error_count > 0:
+        result.summary = f"Projection validation failed with {error_count} error(s)"
 
-    result: ModelValidationResult[None] = ModelValidationResult.create_valid(
-        summary=f"Projection validation passed for {len(contract.ops)} operation(s)",
-    )
-    # Add warnings to valid result
-    result.warnings = warnings
     return result
 
 
