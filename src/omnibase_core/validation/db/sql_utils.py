@@ -204,6 +204,8 @@ _SQL_KEYWORDS = frozenset(
 def _split_select_columns(select_clause: str) -> list[str]:
     """Split SELECT columns by comma, respecting parentheses and quotes.
 
+    Handles SQL-standard escaped quotes (doubled quotes: '' and "").
+
     Args:
         select_clause: The text between SELECT and FROM.
 
@@ -215,14 +217,28 @@ def _split_select_columns(select_clause: str) -> list[str]:
     depth = 0
     in_single_quote = False
     in_double_quote = False
+    i = 0
+    length = len(select_clause)
 
-    for char in select_clause:
+    while i < length:
+        char = select_clause[i]
+
         if char == "'" and not in_double_quote:
+            current.append(char)
+            # Check for escaped quote ('') - SQL standard doubled quote
+            if i + 1 < length and select_clause[i + 1] == "'":
+                current.append(select_clause[i + 1])
+                i += 2
+                continue
             in_single_quote = not in_single_quote
-            current.append(char)
         elif char == '"' and not in_single_quote:
-            in_double_quote = not in_double_quote
             current.append(char)
+            # Check for escaped quote ("") - SQL standard doubled quote
+            if i + 1 < length and select_clause[i + 1] == '"':
+                current.append(select_clause[i + 1])
+                i += 2
+                continue
+            in_double_quote = not in_double_quote
         elif not in_single_quote and not in_double_quote:
             if char == "(":
                 depth += 1
@@ -239,6 +255,7 @@ def _split_select_columns(select_clause: str) -> list[str]:
                 current.append(char)
         else:
             current.append(char)
+        i += 1
 
     # Add the last column
     col = "".join(current).strip()
@@ -307,6 +324,8 @@ def _extract_column_name(expr: str) -> str | None:
 def _find_from_keyword(sql: str, start: int) -> int:
     """Find the position of the FROM keyword, respecting quotes and parentheses.
 
+    Handles SQL-standard escaped quotes (doubled quotes: '' and "").
+
     Args:
         sql: SQL string to search.
         start: Position to start searching from.
@@ -324,8 +343,16 @@ def _find_from_keyword(sql: str, start: int) -> int:
         char = sql[i]
 
         if char == "'" and not in_double_quote:
+            # Check for escaped quote ('') - SQL standard doubled quote
+            if i + 1 < length and sql[i + 1] == "'":
+                i += 2
+                continue
             in_single_quote = not in_single_quote
         elif char == '"' and not in_single_quote:
+            # Check for escaped quote ("") - SQL standard doubled quote
+            if i + 1 < length and sql[i + 1] == '"':
+                i += 2
+                continue
             in_double_quote = not in_double_quote
         elif not in_single_quote and not in_double_quote:
             if char == "(":
@@ -411,8 +438,9 @@ def extract_select_columns(sql: str) -> tuple[list[str], bool]:
             return (["*"], False)
 
         # Remove quoted content to check for complexity indicators
-        temp_expr = re.sub(r'"[^"]*"', "", expr)  # Remove double-quoted identifiers
-        temp_expr = re.sub(r"'[^']*'", "", temp_expr)  # Remove single-quoted strings
+        # Use module-level patterns that handle escaped quotes ('' and "")
+        temp_expr = _DOUBLE_QUOTE_STRING_PATTERN.sub("", expr)
+        temp_expr = _SINGLE_QUOTE_STRING_PATTERN.sub("", temp_expr)
 
         # Function call (contains parentheses outside quotes)
         if "(" in temp_expr:
