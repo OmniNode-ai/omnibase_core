@@ -335,9 +335,13 @@ def _find_from_keyword(sql: str, start: int) -> int:
             elif depth == 0:
                 # Check for FROM keyword (case-insensitive)
                 if sql[i : i + 4].upper() == "FROM":
-                    # Verify it's a word boundary
-                    before_ok = i == 0 or not sql[i - 1].isalnum()
-                    after_ok = i + 4 >= length or not sql[i + 4].isalnum()
+                    # Verify it's a word boundary (underscore is valid in SQL identifiers)
+                    before_ok = i == 0 or not (
+                        sql[i - 1].isalnum() or sql[i - 1] == "_"
+                    )
+                    after_ok = i + 4 >= length or not (
+                        sql[i + 4].isalnum() or sql[i + 4] == "_"
+                    )
                     if before_ok and after_ok:
                         return i
         i += 1

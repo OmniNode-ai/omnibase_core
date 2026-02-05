@@ -1980,6 +1980,37 @@ class TestEdgeCases:
         assert not result.is_valid
         assert any("DROP" in str(e) for e in result.errors)
 
+    def test_column_names_with_sql_keywords_and_underscores(self) -> None:
+        """Column names containing SQL keywords with underscores should not confuse parser.
+
+        This tests that word boundary detection includes underscores.
+        For example: col_FROM, created_from, FROM_date should NOT be
+        mistaken for the FROM keyword.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["test"],
+            models={},
+            ops={
+                "underscore_columns": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT col_FROM, created_from, FROM_date FROM test ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                        fields=["col_from", "created_from", "from_date"],
+                    ),
+                ),
+            },
+        )
+        result = validate_db_projection(contract)
+        assert result.is_valid, (
+            f"Expected valid with underscore columns, got: {result.errors}"
+        )
+
 
 # ============================================================================
 # CTE Table Extraction Tests (OMN-1791)
