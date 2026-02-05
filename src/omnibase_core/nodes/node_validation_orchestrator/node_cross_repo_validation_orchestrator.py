@@ -68,11 +68,10 @@ class NodeCrossRepoValidationOrchestrator:
         requiring the workflow execution machinery.
 
     Thread Safety:
-        This orchestrator is stateless with respect to ``validate()`` calls -
-        each call uses only local variables and reads immutable instance state.
-        Multiple concurrent calls to ``validate()`` are safe. This differs from
-        general ONEX node guidance because this class does not inherit from
-        NodeOrchestrator and has no mutable request-scoped state.
+        Per ONEX guidance, do NOT share instances across threads. Each request
+        should use its own orchestrator instance. While this class does not
+        inherit from NodeOrchestrator, it follows the same thread-safety model
+        as standard ONEX nodes for consistency and defensive correctness.
 
     Example:
         >>> from pathlib import Path
