@@ -1,0 +1,109 @@
+---
+# Cross-Repo Validation Orchestrator Contract
+#
+# This contract defines the NodeCrossRepoValidationOrchestrator which wraps
+# the CrossRepoValidationEngine and emits lifecycle events for dashboard
+# integration and replay capabilities.
+#
+# Related ticket: OMN-1776
+#
+# Features:
+# - Wraps existing CrossRepoValidationEngine
+# - Emits lifecycle events (started, violations batch, completed)
+# - Supports deterministic replay from event stream
+# - Dashboard can reconstruct full validation run from events alone
+
+# Contract Metadata
+node_type: ORCHESTRATOR_GENERIC
+contract_version: {major: 1, minor: 0, patch: 0}
+node_name: NodeCrossRepoValidationOrchestrator
+node_class: omnibase_core.nodes.node_validation_orchestrator.node_cross_repo_validation_orchestrator.NodeCrossRepoValidationOrchestrator
+
+# Contract description
+description: |
+  Orchestrator node that wraps the CrossRepoValidationEngine and emits
+  lifecycle events for each validation run. This enables:
+
+  1. Dashboard Integration - Events can be consumed by omnidash for
+     real-time validation status display
+  2. Deterministic Replay - A validation run can be fully reconstructed
+     from the event stream alone
+  3. Audit Trail - All validation runs are tracked via events
+
+# Event emission configuration
+event_emission:
+  # Event types emitted by this orchestrator
+  event_types:
+    - event_type: onex.validation.cross_repo.run.started.v1
+      description: Emitted when a validation run begins
+      fields:
+        - run_id
+        - repo_id
+        - root_path
+        - policy_name
+        - rules_enabled
+        - baseline_applied
+        - started_at
+
+    - event_type: onex.validation.cross_repo.violations.batch.v1
+      description: Emitted for each batch of violations (default 50/batch)
+      fields:
+        - run_id
+        - repo_id
+        - batch_index
+        - batch_size
+        - total_batches
+        - violations
+
+    - event_type: onex.validation.cross_repo.run.completed.v1
+      description: Emitted when a validation run completes
+      fields:
+        - run_id
+        - repo_id
+        - is_valid
+        - total_violations
+        - error_count
+        - warning_count
+        - suppressed_count
+        - files_processed
+        - rules_applied
+        - duration_ms
+        - completed_at
+
+  # Batching configuration
+  batching:
+    violations_per_batch: 50
+    emit_empty_batch_on_no_violations: true
+
+# Dependencies
+dependencies:
+  required:
+    - CrossRepoValidationEngine
+    - ModelValidationPolicyContract
+  optional:
+    - ProtocolEventEmitter  # For streaming events to Kafka
+
+# Execution characteristics
+execution:
+  # Nodes are single-request scoped per CLAUDE.md - do NOT share across threads
+  thread_safe: false
+
+  # No workflow definition needed - wraps existing engine
+  requires_workflow_definition: false
+
+  # Events are emitted during validation, not returned
+  returns_typed_result: false
+
+# Metadata
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: ONEX Framework Team
+  created_at: "2026-02-04"
+  ticket: OMN-1776
+  description: Cross-repo validation orchestrator with event emission
+  tags:
+    - orchestrator
+    - validation
+    - cross-repo
+    - events
+    - dashboard-integration

@@ -310,11 +310,16 @@ class PythonASTValidator(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_arg(self, node: ast.arg):
-        """Visit function arguments."""
-        if node.annotation:
-            self._check_field_annotation(
-                node.arg, node.annotation, node.lineno, node.col_offset
-            )
+        """Visit function arguments - skip validation for parameters.
+
+        Function/method parameters are NOT persistence fields and should not be
+        subject to ID/version typing rules. Parameters like `repo_id: str` in
+        factory methods are legitimate - they accept string input that may be
+        converted to UUID inside the function.
+
+        Only class attributes and Field() definitions need ID/version validation.
+        """
+        # Skip validation - function parameters are not persistence fields
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call):
