@@ -267,6 +267,13 @@ class NodeCrossRepoValidationOrchestrator:
         events.append(completed_event)
         await self._emit(completed_event)
 
+        # NOTE(OMN-1776): This return is COMPLIANT with ONEX Four-Node Architecture.
+        # CrossRepoValidationOrchestratorResult is an EVENT ENVELOPE containing only
+        # (run_id, events[]) - the same events emitted via _emit(). It holds no
+        # additional business data. Computed properties (is_valid, total_violations)
+        # derive values from events. Contract specifies returns_typed_result: false
+        # because this is not a typed business result, just an event container for
+        # test inspection and synchronous callers. See model docstring for details.
         return CrossRepoValidationOrchestratorResult(
             run_id=run_id,
             events=tuple(events),
@@ -333,7 +340,6 @@ class NodeCrossRepoValidationOrchestrator:
 
     @staticmethod
     def _issue_to_record(issue: ModelValidationIssue) -> ModelViolationRecord:
-        """Convert a ModelValidationIssue to a ModelViolationRecord."""
         return ModelViolationRecord(
             severity=issue.severity.value,
             message=issue.message,
