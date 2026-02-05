@@ -147,7 +147,9 @@ class NodeCrossRepoValidationOrchestrator:
         Args:
             root: Root directory to validate.
             repo_id: Identifier of the repository being validated.
-            rules: Specific rule IDs to run (default: all enabled).
+            rules: Specific rule IDs to run. If None or empty list, all enabled
+                policy rules are executed. Pass an explicit list to run only
+                those rules.
             baseline: Optional baseline for suppressing known violations.
             correlation_id: Optional correlation ID for request tracing.
 
@@ -157,7 +159,11 @@ class NodeCrossRepoValidationOrchestrator:
         Note:
             Exceptions from the validation engine are caught and result in a
             completed event with is_valid=False and error_message set. The
-            event lifecycle (started → completed) is always complete.
+            event lifecycle (started → completed) is always complete for
+            engine failures. However, if the event_emitter itself raises an
+            exception (e.g., Kafka unavailable), that exception propagates
+            and may break the lifecycle guarantee. Callers requiring strict
+            lifecycle completion should provide a fault-tolerant emitter.
         """
         run_id = uuid4()
         events: list[
@@ -362,6 +368,15 @@ class NodeCrossRepoValidationOrchestrator:
         return sum(1 for issue in issues if issue.severity in severities)
 
     async def _emit(self, event: object) -> None:
-        """Emit an event if emitter is configured."""
+        """
+        Emit an event if emitter is configured.
+
+        Note:
+            Exceptions from the emitter are NOT caught here - they propagate
+            to the caller. This is intentional: early failure (e.g., on the
+            started event) provides immediate feedback. For mid-lifecycle
+            failures (batch/completed events), callers requiring strict
+            lifecycle completion should provide fault-tolerant emitters.
+        """
         if self._event_emitter:
             await self._event_emitter.emit(event)
