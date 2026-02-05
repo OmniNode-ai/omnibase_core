@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-02-05
+
+### Added
+
+- **Field Projection Validation for DB Repository Contracts** [OMN-1790]: Validate that SELECT column lists match contract field definitions
+  - Ensures type safety between SQL queries and return type specifications
+  - Detects mismatches between projected fields and model_ref schemas
+
+- **Positional Parameter Support ($N) for DB Repository Contracts** [OMN-1789]: Extend parameter validation to support PostgreSQL-style positional parameters
+  - Supports `$1`, `$2`, etc. alongside existing named `:param` syntax
+  - Full validation for parameter count and ordering
+
+- **CTE and Subquery Table Extraction** [OMN-1791]: Enhanced SQL parsing for complex queries
+  - Extract table references from Common Table Expressions (CTEs)
+  - Parse subqueries to identify all accessed tables
+  - Improves table access control validation accuracy
+
+- **Cross-Repo Validation Orchestrator** [OMN-1776]: Unified orchestration layer for running validators across multiple repositories
+  - Centralized configuration for multi-repo validation runs
+  - Aggregated reporting across repository boundaries
+  - Support for parallel validation execution
+
+- **Pydantic Models for Agent YAML Schema Validation** [OMN-1902]: Type-safe models for validating agent configuration files
+  - `ModelAgentYamlSchema` - Root schema for agent YAML files
+  - Validation for agent identity, capabilities, and routing configuration
+  - Integration with existing contract validation infrastructure
+
 ## [0.14.0] - 2026-02-04
 
 ### Added
