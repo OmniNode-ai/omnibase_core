@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_reply_status import EnumOnexReplyStatus
@@ -34,6 +34,8 @@ class ModelOnexReply(BaseModel):
     Wraps response data with standardized status, error information,
     and performance metrics for ONEX tool communication.
     """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # === CORE REPLY FIELDS ===
     reply_id: UUID = Field(default_factory=uuid4, description="Unique reply identifier")
@@ -156,7 +158,8 @@ class ModelOnexReply(BaseModel):
     @classmethod
     def validate_error_consistency(
         cls,
-        # NOTE(OMN-1765): Generic type arg omitted to accept any ModelErrorDetails variant
+        # NOTE(OMN-1765): Generic type arg omitted to accept any ModelErrorDetails variant.
+        # Both parameter and return type use type: ignore[type-arg] for the same reason.
         v: ModelErrorDetails | None,  # type: ignore[type-arg]
         info: ValidationInfo,
     ) -> ModelErrorDetails | None:  # type: ignore[type-arg]

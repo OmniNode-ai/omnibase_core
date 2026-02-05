@@ -16,9 +16,9 @@ from .model_validate_message_context import ModelValidateMessageContext
 class ModelValidateMessage(BaseModel):
     """Model for validation messages."""
 
-    # Note: Not using frozen=True because with_hash() uses model_copy(update=...)
-    # which requires mutability for the copy operation
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    # NOTE: frozen=True makes instances immutable; with_hash() uses model_copy()
+    # which creates new instances rather than mutating.
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     message: str
     file: str | None = None
