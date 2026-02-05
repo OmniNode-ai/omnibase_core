@@ -6,7 +6,7 @@ import datetime
 import hashlib
 import uuid
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums import EnumLogLevel
 
@@ -15,6 +15,8 @@ from .model_validate_message_context import ModelValidateMessageContext
 
 class ModelValidateMessage(BaseModel):
     """Model for validation messages."""
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     message: str
     file: str | None = None
@@ -45,8 +47,7 @@ class ModelValidateMessage(BaseModel):
         return h.hexdigest()
 
     def with_hash(self) -> "ModelValidateMessage":
-        self.hash = self.compute_hash()
-        return self
+        return self.model_copy(update={"hash": self.compute_hash()})
 
     def to_json(self) -> str:
         """Return the message as a JSON string."""

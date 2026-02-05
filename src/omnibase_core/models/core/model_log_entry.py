@@ -22,7 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
@@ -33,6 +33,8 @@ from .model_log_markdown_row import ModelLogMarkdownRow
 
 class ModelLogEntry(BaseModel):
     """Main log entry model."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     message: str
     code: str = "unknown"

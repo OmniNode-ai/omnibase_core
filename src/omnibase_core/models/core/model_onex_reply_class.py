@@ -52,6 +52,7 @@ class ModelOnexReply(BaseModel):
     data_type: str | None = Field(default=None, description="Type of response data")
 
     # === ERROR INFORMATION ===
+    # NOTE(OMN-1765): Generic type arg omitted; error field accepts any ModelErrorDetails variant
     error: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None,
         description="Error details if applicable",
@@ -155,6 +156,7 @@ class ModelOnexReply(BaseModel):
     @classmethod
     def validate_error_consistency(
         cls,
+        # NOTE(OMN-1765): Generic type arg omitted to accept any ModelErrorDetails variant
         v: ModelErrorDetails | None,  # type: ignore[type-arg]
         info: ValidationInfo,
     ) -> ModelErrorDetails | None:  # type: ignore[type-arg]
@@ -241,6 +243,7 @@ class ModelOnexReply(BaseModel):
                 for k, v in additional_context.items()
             }
 
+        # NOTE(OMN-1765): Type inference limited due to generic ModelErrorDetails[TContext]
         error_details = ModelErrorDetails(  # type: ignore[var-annotated]
             error_code=error_code or "UNKNOWN_ERROR",
             error_message=error_message,

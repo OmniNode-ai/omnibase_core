@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 class ModelBaseResult(BaseModel):
     exit_code: int
     success: bool
-    errors: list[ModelErrorDetails] = Field(default_factory=list)  # type: ignore[type-arg]
+    errors: list[ModelErrorDetails[Any]] = Field(default_factory=list)
     metadata: ModelGenericMetadata | None = None  # Typed metadata with compatibility
 
     def model_dump(self, **kwargs: Any) -> SerializedDict:

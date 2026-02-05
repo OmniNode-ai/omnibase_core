@@ -52,7 +52,7 @@ class ModelClaudeCodeSessionOutcome(BaseModel):
 
         Failed session with error details::
 
-            >>> from omnibase_core.models.services import ModelErrorDetails
+            >>> from omnibase_core.models.core import ModelErrorDetails
             >>> error = ModelErrorDetails(
             ...     error_code="TOOL_EXECUTION_FAILED",
             ...     error_type="runtime",
