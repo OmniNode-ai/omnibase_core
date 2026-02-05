@@ -35,10 +35,14 @@ from .model_isolated_step_result import ModelIsolatedStepResult
 from .model_lint_statistics import ModelLintStatistics
 from .model_migration_conflict_union import ModelMigrationConflictUnion
 from .model_rule_configs import (
+    ModelRuleAsyncPolicyConfig,
     ModelRuleConfigBase,
     ModelRuleContractSchemaConfig,
+    ModelRuleDuplicateProtocolsConfig,
     ModelRuleErrorTaxonomyConfig,
     ModelRuleForbiddenImportsConfig,
+    ModelRuleObservabilityConfig,
+    ModelRulePartitionKeyConfig,
     ModelRuleRepoBoundariesConfig,
     ModelRuleTopicNamingConfig,
 )
@@ -76,10 +80,14 @@ __all__ = [
     # Cross-repo validation models (OMN-1771)
     "ModelResultCrossRepoValidationOrchestrator",
     "ModelValidationDiscoveryConfig",
+    "ModelRuleAsyncPolicyConfig",
     "ModelRuleConfigBase",
     "ModelRuleContractSchemaConfig",
+    "ModelRuleDuplicateProtocolsConfig",
     "ModelRuleErrorTaxonomyConfig",
     "ModelRuleForbiddenImportsConfig",
+    "ModelRuleObservabilityConfig",
+    "ModelRulePartitionKeyConfig",
     "ModelRuleRepoBoundariesConfig",
     "ModelRuleTopicNamingConfig",
     "ModelValidationPolicyContract",

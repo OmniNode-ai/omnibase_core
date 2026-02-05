@@ -103,8 +103,8 @@ class ValidatorPartitionKey:
         try:
             source = file_path.read_text(encoding="utf-8")
             tree = ast.parse(source, filename=str(file_path))
-        except (OSError, SyntaxError):
-            # Skip files that can't be read or parsed
+        except (OSError, SyntaxError, UnicodeDecodeError):
+            # Skip files that can't be read, parsed, or decoded
             return issues
 
         # Compute repo-relative path for stable fingerprints across environments.
