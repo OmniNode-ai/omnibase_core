@@ -106,7 +106,7 @@ class ModelErrorDetails(BaseModel, Generic[TContext]):
     Example:
         Basic error details (backwards compatible)::
 
-            from omnibase_core.models.services import ModelErrorDetails
+            from omnibase_core.models.core import ModelErrorDetails
 
             error = ModelErrorDetails(
                 error_code="VALIDATION_ERROR",

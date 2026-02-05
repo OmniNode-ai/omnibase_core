@@ -26,15 +26,20 @@
 ModelResultCLI: Canonical Pydantic model for structured CLI output/results.
 """
 
-from omnibase_core.models.core.model_base_error import ModelBaseError
+from typing import Any
+
+from pydantic import Field
+
 from omnibase_core.models.core.model_base_result import ModelBaseResult
 from omnibase_core.models.core.model_cli_output import ModelCLIOutput
+from omnibase_core.models.core.model_error_details import ModelErrorDetails
 from omnibase_core.models.results.model_simple_metadata import ModelGenericMetadata
 
 
 class ModelResultCLI(ModelBaseResult):
     output: ModelCLIOutput | None = None
-    errors: list[ModelBaseError] = []
+    # NOTE(OMN-1765): Any used intentionally; CLI errors can contain any ModelErrorDetails variant
+    errors: list[ModelErrorDetails[Any]] = Field(default_factory=list)
     # Use object instead of BaseModel to avoid PydanticUserError.
     # This allows any result type while avoiding Any type annotation.
     result: object | None = None

@@ -16,11 +16,11 @@ from omnibase_core.enums.enum_general_status import EnumGeneralStatus
 from omnibase_core.models.core.model_core_performance_metrics import (
     ModelPerformanceMetrics,
 )
+from omnibase_core.models.core.model_error_details import ModelErrorDetails
 from omnibase_core.models.core.model_execution_context import ModelExecutionContext
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_security_context import ModelSecurityContext
-from omnibase_core.models.services.model_error_details import ModelErrorDetails
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 

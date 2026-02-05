@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_session_outcome import (
     EnumClaudeCodeSessionOutcome,
 )
-from omnibase_core.models.services.model_error_details import ModelErrorDetails
+from omnibase_core.models.core.model_error_details import ModelErrorDetails
 
 
 class ModelClaudeCodeSessionOutcome(BaseModel):
@@ -52,7 +52,7 @@ class ModelClaudeCodeSessionOutcome(BaseModel):
 
         Failed session with error details::
 
-            >>> from omnibase_core.models.services import ModelErrorDetails
+            >>> from omnibase_core.models.core import ModelErrorDetails
             >>> error = ModelErrorDetails(
             ...     error_code="TOOL_EXECUTION_FAILED",
             ...     error_type="runtime",

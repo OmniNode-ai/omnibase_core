@@ -1,8 +1,5 @@
 import json
 
-from omnibase_core.models.services.model_node_service_config import (
-    ModelNodeServiceConfig,
-)
 from omnibase_core.types.typed_dict_k8s_resources import (
     TypedDictK8sConfigMap,
     TypedDictK8sContainer,
@@ -20,6 +17,12 @@ from omnibase_core.types.typed_dict_k8s_resources import (
     TypedDictK8sServiceSpec,
 )
 from omnibase_core.utils.util_safe_yaml_loader import serialize_data_to_yaml
+
+# NOTE: Use relative import to avoid circular import issues when models/services/__init__.py
+# is partially initialized during pytest-split parallel execution (OMN-1765).
+from .model_node_service_config import (
+    ModelNodeServiceConfig,
+)
 
 
 class ModelKubernetesTemplateGenerator:

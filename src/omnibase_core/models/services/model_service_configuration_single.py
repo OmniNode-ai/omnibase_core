@@ -6,16 +6,21 @@ Extracted from the multi-model file for modular architecture compliance.
 
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.detection.model_service_detection_config import (
     ModelServiceDetectionConfig,
 )
-from omnibase_core.models.services.model_service_type import ModelServiceType
+
+# NOTE: Use relative import to avoid circular import issues when models/services/__init__.py
+# is partially initialized during pytest-split parallel execution (OMN-1765).
+from .model_service_type import ModelServiceType
 
 
 class ModelServiceConfiguration(BaseModel):
     """Configuration for a single service."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     type: ModelServiceType = Field(
         default=...,

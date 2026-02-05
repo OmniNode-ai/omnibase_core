@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from omnibase_core.constants.constants_field_limits import (
     MAX_IDENTIFIER_LENGTH,
@@ -20,8 +20,11 @@ from omnibase_core.models.configuration.model_rest_api_connection_config import 
 )
 from omnibase_core.models.core.model_retry_config import ModelRetryConfig
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.services.model_masked_config import ModelMaskedConfig
 from omnibase_core.utils.util_security import UtilSecurity
+
+# NOTE: Use relative import to avoid circular import issues when models/services/__init__.py
+# is partially initialized during pytest-split parallel execution (OMN-1765).
+from .model_masked_config import ModelMaskedConfig
 
 
 class ModelExternalServiceConfig(BaseModel):
@@ -38,6 +41,8 @@ class ModelExternalServiceConfig(BaseModel):
     - Environment override support
     - Performance monitoring integration
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     service_name: str = Field(
         default="unnamed_service",
@@ -153,6 +158,8 @@ class ModelExternalServiceConfig(BaseModel):
         # Build masked config
         # Type note: masked_connection contains only simple types (str, int, bool) after masking
         # Complex types are recursively masked to simple representations
+        # NOTE(OMN-1765): masked_connection is dict[str, str|int|bool] after masking,
+        # which is compatible with the expected types but mypy can't infer this.
         return ModelMaskedConfig(
             service_name=self.service_name,
             service_type=self.service_type,

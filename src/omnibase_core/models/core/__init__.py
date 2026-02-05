@@ -21,6 +21,9 @@ from .model_custom_properties import ModelCustomProperties
 from .model_envelope_metadata import ModelEnvelopeMetadata
 from .model_environment_accessor import ModelEnvironmentAccessor
 
+# Error details model
+from .model_error_details import ErrorContext, ModelErrorDetails, TContext
+
 # Feature flags pattern
 from .model_feature_flag_metadata import ModelFeatureFlagMetadata
 from .model_feature_flag_summary import ModelFeatureFlagSummary
@@ -134,6 +137,10 @@ __all__ = [
     "ModelTypedConfiguration",
     # Custom properties pattern
     "ModelCustomProperties",
+    # Error details model
+    "ErrorContext",
+    "ModelErrorDetails",
+    "TContext",
     # Feature flags pattern
     "ModelFeatureFlagMetadata",
     "ModelFeatureFlagSummary",

@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.constants import MAX_ERROR_MESSAGE_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+from omnibase_core.models.core.model_error_details import ModelErrorDetails
 from omnibase_core.models.core.model_error_summary import ModelErrorSummary
 from omnibase_core.models.core.model_monitoring_metrics import ModelMonitoringMetrics
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -20,7 +21,6 @@ from omnibase_core.models.primitives.model_semver import (
     default_model_version,
     parse_semver_from_string,
 )
-from omnibase_core.models.services.model_error_details import ModelErrorDetails
 
 from .model_event_bus_output_field import ModelEventBusOutputField
 

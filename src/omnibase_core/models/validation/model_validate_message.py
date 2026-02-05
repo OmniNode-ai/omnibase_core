@@ -6,17 +6,21 @@ import datetime
 import hashlib
 import uuid
 
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums import EnumLogLevel
-from omnibase_core.models.core.model_base_error import ModelBaseError
 
 from .model_validate_message_context import ModelValidateMessageContext
 
 
-class ModelValidateMessage(ModelBaseError):
+class ModelValidateMessage(BaseModel):
     """Model for validation messages."""
 
+    # NOTE: frozen=True makes instances immutable; with_hash() uses model_copy()
+    # which creates new instances rather than mutating.
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    message: str
     file: str | None = None
     line: int | None = None
     severity: EnumLogLevel = Field(
@@ -30,8 +34,6 @@ class ModelValidateMessage(ModelBaseError):
     timestamp: str = Field(
         default_factory=lambda: datetime.datetime.now(datetime.UTC).isoformat(),
     )
-    # message is inherited from ModelBaseError and must always be str (not Optional)
-    # All instantiations must provide a non-None str for message
 
     def compute_hash(self) -> str:
         # Compute a hash of the message content for integrity
@@ -47,8 +49,7 @@ class ModelValidateMessage(ModelBaseError):
         return h.hexdigest()
 
     def with_hash(self) -> "ModelValidateMessage":
-        self.hash = self.compute_hash()
-        return self
+        return self.model_copy(update={"hash": self.compute_hash()})
 
     def to_json(self) -> str:
         """Return the message as a JSON string."""

@@ -6,7 +6,7 @@ import datetime
 import hashlib
 import uuid
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
@@ -15,6 +15,10 @@ from .model_validate_message import ModelValidateMessage
 
 class ModelValidateResult(BaseModel):
     """Model for validation results."""
+
+    # NOTE: frozen=True makes instances immutable; with_hash() uses model_copy()
+    # which creates new instances rather than mutating.
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     messages: list[ModelValidateMessage]
     status: EnumOnexStatus = Field(
@@ -40,8 +44,7 @@ class ModelValidateResult(BaseModel):
         return h.hexdigest()
 
     def with_hash(self) -> "ModelValidateResult":
-        self.hash = self.compute_hash()
-        return self
+        return self.model_copy(update={"hash": self.compute_hash()})
 
     def to_json(self) -> str:
         """Return the result as a JSON string."""

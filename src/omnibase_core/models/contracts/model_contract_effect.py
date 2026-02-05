@@ -12,8 +12,10 @@ Specialized contract model for NodeEffect implementations providing:
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
+from __future__ import annotations
+
 import threading
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -56,12 +58,16 @@ from omnibase_core.models.contracts.subcontracts.model_routing_subcontract impor
     ModelRoutingSubcontract,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.models.services.model_external_service_config import (
-    ModelExternalServiceConfig,
-)
 from omnibase_core.models.utils.model_subcontract_constraint_validator import (
     ModelSubcontractConstraintValidator,
 )
+
+# TYPE_CHECKING import to break circular dependency:
+# model_external_service_config -> ... -> contracts/__init__ -> model_contract_effect
+if TYPE_CHECKING:
+    from omnibase_core.models.services.model_external_service_config import (
+        ModelExternalServiceConfig,
+    )
 
 # Import centralized conversion utilities
 
@@ -129,7 +135,13 @@ def _ensure_models_rebuilt(contract_effect_cls: type[BaseModel] | None = None) -
         # 3. ModelRoutingSubcontract uses ModelCircuitBreaker
         ModelRoutingSubcontract.model_rebuild()
 
-        # 4. Finally rebuild ModelContractEffect to pick up resolved types
+        # 4. Import ModelExternalServiceConfig for forward reference resolution
+        # This breaks the circular import: model_external_service_config -> contracts
+        from omnibase_core.models.services.model_external_service_config import (  # noqa: F401
+            ModelExternalServiceConfig,
+        )
+
+        # 5. Finally rebuild ModelContractEffect to pick up resolved types
         if contract_effect_cls is not None:
             contract_effect_cls.model_rebuild()
 
@@ -153,7 +165,7 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
     # Default node type for EFFECT contracts (used by MixinNodeTypeValidator)
     _DEFAULT_NODE_TYPE: ClassVar[EnumNodeType] = EnumNodeType.EFFECT_GENERIC
 
-    def __new__(cls, **_data: Any) -> "ModelContractEffect":
+    def __new__(cls, **_data: Any) -> ModelContractEffect:
         """Override __new__ to trigger lazy model rebuild before Pydantic validation.
 
         Pydantic validates model completeness before calling model_validator,
@@ -176,7 +188,7 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
         extra: str | None = None,  # Literal['allow', 'ignore', 'forbid']
         by_alias: bool | None = None,
         by_name: bool | None = None,
-    ) -> "ModelContractEffect":
+    ) -> ModelContractEffect:
         """Override model_validate to trigger lazy model rebuild before Pydantic validation.
 
         Pydantic's model_validate checks schema completeness BEFORE creating an instance,
@@ -539,7 +551,7 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
         )
 
     @classmethod
-    def from_yaml(cls, yaml_content: str) -> "ModelContractEffect":
+    def from_yaml(cls, yaml_content: str) -> ModelContractEffect:
         """
         Create contract model from YAML content with proper enum handling.
 

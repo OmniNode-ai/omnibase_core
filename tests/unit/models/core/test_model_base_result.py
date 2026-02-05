@@ -7,13 +7,9 @@ serialization, and error tracking.
 
 import pytest
 
-from omnibase_core.models.core.model_base_error import ModelBaseError
 from omnibase_core.models.core.model_base_result import ModelBaseResult
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.core.model_error_details import ModelErrorDetails
 from omnibase_core.models.results.model_simple_metadata import ModelGenericMetadata
-
-# Default version for test instances - required field after removing default_factory
-DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 @pytest.mark.unit
@@ -40,8 +36,16 @@ class TestModelBaseResult:
 
     def test_initialization_with_errors(self):
         """Test initialization with errors."""
-        error1 = ModelBaseError(message="Error 1", code="E001")
-        error2 = ModelBaseError(message="Error 2", code="E002")
+        error1 = ModelErrorDetails(
+            error_code="E001",
+            error_type="runtime",
+            error_message="Error 1",
+        )
+        error2 = ModelErrorDetails(
+            error_code="E002",
+            error_type="runtime",
+            error_message="Error 2",
+        )
 
         result = ModelBaseResult(exit_code=1, success=False, errors=[error1, error2])
 
@@ -151,13 +155,18 @@ class TestModelBaseResult:
     def test_multiple_errors(self):
         """Test handling multiple errors."""
         errors = [
-            ModelBaseError(message=f"Error {i}", code=f"E{i:03d}") for i in range(10)
+            ModelErrorDetails(
+                error_code=f"E{i:03d}",
+                error_type="runtime",
+                error_message=f"Error {i}",
+            )
+            for i in range(10)
         ]
 
         result = ModelBaseResult(exit_code=1, success=False, errors=errors)
 
         assert len(result.errors) == 10
-        assert all(isinstance(e, ModelBaseError) for e in result.errors)
+        assert all(isinstance(e, ModelErrorDetails) for e in result.errors)
 
     def test_exit_code_variations(self):
         """Test various exit codes."""
@@ -194,10 +203,15 @@ class TestModelBaseResultEdgeCases:
     def test_model_copy(self):
         """Test model copying."""
         original = ModelBaseResult(
-            version=DEFAULT_VERSION,
             exit_code=1,
             success=False,
-            errors=[ModelBaseError(message="Error", code="E001")],
+            errors=[
+                ModelErrorDetails(
+                    error_code="E001",
+                    error_type="runtime",
+                    error_message="Error",
+                )
+            ],
         )
 
         copy = original.model_copy()
@@ -208,22 +222,29 @@ class TestModelBaseResultEdgeCases:
         assert copy is not original
 
     def test_model_copy_deep(self):
-        """Test deep model copying."""
+        """Test deep model copying creates independent copy."""
         original = ModelBaseResult(
-            version=DEFAULT_VERSION,
             exit_code=1,
             success=False,
-            errors=[ModelBaseError(message="Error", code="E001")],
+            errors=[
+                ModelErrorDetails(
+                    error_code="E001",
+                    error_type="runtime",
+                    error_message="Error",
+                )
+            ],
         )
 
         copy = original.model_copy(deep=True)
 
-        # Modify copy
-        copy.errors.append(ModelBaseError(message="New", code="E002"))
+        # Verify deep copy creates independent objects
+        assert copy is not original
+        assert copy.errors is not original.errors
+        assert copy.errors[0] is not original.errors[0]
 
-        # Original should be unchanged
-        assert len(original.errors) == 1
-        assert len(copy.errors) == 2
+        # Verify values are equal
+        assert copy.exit_code == original.exit_code
+        assert len(copy.errors) == len(original.errors)
 
     def test_negative_exit_code(self):
         """Test with negative exit code."""
@@ -240,10 +261,15 @@ class TestModelBaseResultEdgeCases:
     def test_serialization_deserialization_roundtrip(self):
         """Test roundtrip serialization."""
         original = ModelBaseResult(
-            version=DEFAULT_VERSION,
             exit_code=1,
             success=False,
-            errors=[ModelBaseError(message="Error", code="E001")],
+            errors=[
+                ModelErrorDetails(
+                    error_code="E001",
+                    error_type="runtime",
+                    error_message="Error",
+                )
+            ],
         )
 
         # Serialize
@@ -267,12 +293,16 @@ class TestModelBaseResultEdgeCases:
 
     def test_errors_with_complex_messages(self):
         """Test errors with complex messages."""
-        error = ModelBaseError(message="Error with\nnewlines\tand\ttabs", code="E001")
+        error = ModelErrorDetails(
+            error_code="E001",
+            error_type="runtime",
+            error_message="Error with\nnewlines\tand\ttabs",
+        )
 
         result = ModelBaseResult(exit_code=1, success=False, errors=[error])
 
-        assert "\n" in result.errors[0].message
-        assert "\t" in result.errors[0].message
+        assert "\n" in result.errors[0].error_message
+        assert "\t" in result.errors[0].error_message
 
 
 @pytest.mark.unit

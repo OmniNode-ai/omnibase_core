@@ -26,7 +26,10 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_security_config import ModelSecurityConfig
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.models.services.model_network_config import ModelNetworkConfig
+
+# NOTE: Use relative import to avoid circular import issues when models/services/__init__.py
+# is partially initialized during pytest-split parallel execution (OMN-1765).
+from .model_network_config import ModelNetworkConfig
 
 
 class ModelNodeServiceConfig(BaseModel):

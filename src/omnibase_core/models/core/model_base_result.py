@@ -26,20 +26,25 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.results.model_simple_metadata import ModelGenericMetadata
 
-from .model_base_error import ModelBaseError
+from .model_error_details import ModelErrorDetails
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelBaseResult(BaseModel):
+    # Note: frozen=True makes instances immutable after creation; use model_copy() for modifications.
+    # extra="forbid" enforces strict schema; subclasses can override if needed.
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
     exit_code: int
     success: bool
-    errors: list[ModelBaseError] = Field(default_factory=list)
+    # NOTE(OMN-1765): Any used intentionally; errors can contain any ModelErrorDetails variant
+    errors: list[ModelErrorDetails[Any]] = Field(default_factory=list)
     metadata: ModelGenericMetadata | None = None  # Typed metadata with compatibility
 
     def model_dump(self, **kwargs: Any) -> SerializedDict:
