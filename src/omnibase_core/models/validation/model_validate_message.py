@@ -16,6 +16,8 @@ from .model_validate_message_context import ModelValidateMessageContext
 class ModelValidateMessage(BaseModel):
     """Model for validation messages."""
 
+    # Note: Not using frozen=True because with_hash() uses model_copy(update=...)
+    # which requires mutability for the copy operation
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     message: str

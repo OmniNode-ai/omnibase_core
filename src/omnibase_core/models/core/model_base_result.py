@@ -26,7 +26,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.results.model_simple_metadata import ModelGenericMetadata
 
@@ -37,6 +37,10 @@ if TYPE_CHECKING:
 
 
 class ModelBaseResult(BaseModel):
+    # Note: extra="ignore" allows result models to accept additional fields for flexibility
+    # (e.g., subclasses or external data may include extra fields like 'version')
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
+
     exit_code: int
     success: bool
     errors: list[ModelErrorDetails[Any]] = Field(default_factory=list)
