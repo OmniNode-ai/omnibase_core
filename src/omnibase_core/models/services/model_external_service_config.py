@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from omnibase_core.constants.constants_field_limits import (
     MAX_IDENTIFIER_LENGTH,
@@ -41,6 +41,8 @@ class ModelExternalServiceConfig(BaseModel):
     - Environment override support
     - Performance monitoring integration
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     service_name: str = Field(
         default="unnamed_service",
@@ -156,6 +158,8 @@ class ModelExternalServiceConfig(BaseModel):
         # Build masked config
         # Type note: masked_connection contains only simple types (str, int, bool) after masking
         # Complex types are recursively masked to simple representations
+        # NOTE(OMN-1765): masked_connection is dict[str, str|int|bool] after masking,
+        # which is compatible with the expected types but mypy can't infer this.
         return ModelMaskedConfig(
             service_name=self.service_name,
             service_type=self.service_type,

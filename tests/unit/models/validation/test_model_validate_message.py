@@ -636,19 +636,26 @@ class TestModelValidateResultWithHash:
     """Test ModelValidateResult with_hash method."""
 
     def test_with_hash_sets_hash_field(self):
-        """Test with_hash sets the hash field."""
+        """Test with_hash returns a new instance with hash field set."""
         result = ModelValidateResult(messages=[])
         assert result.hash is None
 
-        result.with_hash()
-        assert result.hash is not None
+        result_with_hash = result.with_hash()
+        assert result_with_hash.hash is not None
+        # Original instance remains unchanged (frozen model)
+        assert result.hash is None
 
-    def test_with_hash_returns_self(self):
-        """Test with_hash returns self for chaining."""
+    def test_with_hash_returns_new_instance(self):
+        """Test with_hash returns a new instance (frozen model pattern)."""
         result = ModelValidateResult(messages=[])
         returned = result.with_hash()
 
-        assert returned is result
+        # Returns a new instance, not the same object
+        assert returned is not result
+        # But values are equal except for the hash
+        assert returned.uid == result.uid
+        assert returned.status == result.status
+        assert returned.hash is not None
 
     def test_with_hash_chaining(self):
         """Test with_hash can be chained during initialization."""
