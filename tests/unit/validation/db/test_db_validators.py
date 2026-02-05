@@ -2548,6 +2548,23 @@ class TestValidatorDbProjection:
             f"Expected valid (case-insensitive), got: {result.errors}"
         )
 
+    def test_case_insensitive_duplicate_fields_rejected(self) -> None:
+        """Fields with case-insensitive duplicates are rejected at model level.
+
+        Since SQL column names are case-insensitive, ['id', 'ID'] would collapse
+        to the same effective field during projection validation. We catch this
+        early at model instantiation to prevent configuration errors.
+        """
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDbReturn(
+                model_ref="test:Model",
+                many=True,
+                fields=["id", "ID"],  # Case-insensitive duplicates
+            )
+        assert "case-insensitive" in str(exc_info.value).lower()
+
     # === STRICT MODE FAILURES ===
 
     def test_select_star_strict_fails(self) -> None:

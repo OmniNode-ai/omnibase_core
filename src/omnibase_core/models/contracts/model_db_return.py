@@ -58,12 +58,23 @@ class ModelDbReturn(BaseModel):
     @field_validator("fields", mode="after")
     @classmethod
     def validate_fields_unique(cls, v: list[str] | None) -> list[str] | None:
-        """Validate that fields list is non-empty and contains unique values."""
+        """Validate that fields list is non-empty and contains unique values.
+
+        Performs both case-sensitive and case-insensitive uniqueness checks
+        because SQL column names are case-insensitive in most databases and
+        the projection validator uses case-insensitive comparison.
+        """
         if v is not None:
             if len(v) == 0:
                 raise ValueError("fields list cannot be empty when provided")
             if len(v) != len(set(v)):
                 raise ValueError(f"fields must be unique, got duplicates: {v}")
+            # Case-insensitive uniqueness (SQL columns are case-insensitive)
+            lower_fields = [f.lower() for f in v]
+            if len(lower_fields) != len(set(lower_fields)):
+                raise ValueError(
+                    f"fields must be unique (case-insensitive), got duplicates: {v}"
+                )
         return v
 
 
