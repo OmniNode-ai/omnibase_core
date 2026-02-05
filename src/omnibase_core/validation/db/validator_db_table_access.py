@@ -1,7 +1,10 @@
 """Table access validation for DB repository contracts.
 
-Validates SQL only references declared tables. Fails closed on
-unrecognized patterns (CTEs, subqueries) for safety.
+Validates SQL only references declared tables using a tiered extraction
+architecture:
+- Fast path: Regex extraction for simple SQL (no CTEs, no subqueries)
+- Complex path: Parser-based extraction for CTEs and subqueries
+- Fail closed: Explicit errors when parser unavailable or fails
 
 Table Matching Rules:
 - Simple allowed table (e.g., "users"): Matches "users", "public.users", "schema.users"
@@ -64,11 +67,14 @@ _QUOTED_TABLE_PATTERNS = [
     re.compile(rf"\bDELETE\s+FROM\s+({_QUOTED_IDENTIFIER})", re.IGNORECASE),
 ]
 
-# Patterns that indicate unhandled complexity (fail closed)
-_UNSUPPORTED_PATTERNS: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(r"\bWITH\s+\w+\s+AS\s*\(", re.IGNORECASE), "CTE (WITH ... AS)"),
+# Patterns that indicate complex SQL requiring parser
+_COMPLEX_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\bWITH\s+\w+\s+AS\s*\(", re.IGNORECASE), "CTE"),
     (re.compile(r"\(\s*SELECT\b", re.IGNORECASE), "subquery"),
 ]
+
+# Pattern for recursive CTE (always fail closed - not supported in v2)
+_RECURSIVE_CTE_PATTERN = re.compile(r"\bWITH\s+RECURSIVE\b", re.IGNORECASE)
 
 
 def validate_db_table_access(
@@ -76,9 +82,10 @@ def validate_db_table_access(
 ) -> ModelValidationResult[None]:
     """Validate that SQL only accesses declared tables.
 
-    Extracts table references from SQL and verifies they're
-    in the contract's tables list. Fails closed on unrecognized
-    SQL patterns (CTEs, subqueries).
+    Uses tiered extraction:
+    - Simple SQL (no CTE/subquery): Fast regex-based extraction
+    - Complex SQL (CTE/subquery): Parser-based extraction if available
+    - Fail closed: Explicit errors when patterns can't be validated
 
     Table matching rules:
     - Simple allowed table (e.g., "users"): Matches "users", "public.users", "schema.users"
@@ -94,52 +101,18 @@ def validate_db_table_access(
 
     # Build two sets for different matching strategies
     # Schema-qualified tables require exact match, simple tables match any schema prefix
-    allowed_exact: set[str] = set()  # Schema-qualified (e.g., "public.users")
-    allowed_simple: set[str] = set()  # Simple names (e.g., "users")
-
-    for table in contract.tables:
-        table_lower = table.lower()
-        if "." in table:
-            allowed_exact.add(table_lower)
-        else:
-            allowed_simple.add(table_lower)
+    allowed_exact, allowed_simple = _build_allowed_sets(contract.tables)
 
     for op_name, op in contract.ops.items():
-        normalized_sql = normalize_sql(op.sql)
+        # Use tiered extraction
+        extracted_tables, extraction_errors = _extract_all_tables(op.sql, op_name)
 
-        # Strip all strings (single and double quoted) for unsupported pattern checks
-        sql_without_all_strings = strip_sql_strings(normalized_sql)
-
-        # Check for unsupported patterns (fail closed)
-        unsupported_found = False
-        for pattern, description in _UNSUPPORTED_PATTERNS:
-            if pattern.search(sql_without_all_strings):
-                errors.append(
-                    f"Operation '{op_name}': SQL contains {description} which cannot be "
-                    "reliably validated. Use simple table references or implement in v2 (OMN-1791)."
-                )
-                unsupported_found = True
-                break  # Only report first unsupported pattern per operation
-
-        if unsupported_found:
+        if extraction_errors:
+            errors.extend(extraction_errors)
             continue
 
-        # Extract quoted identifiers from normalized SQL (before any stripping)
-        quoted_tables = _extract_quoted_tables(normalized_sql)
-
-        # Strip only single-quoted strings for unquoted table extraction
-        # This preserves double-quoted identifiers so aliases after them
-        # aren't mistakenly matched as table names
-        sql_without_string_literals = _strip_single_quoted_strings(normalized_sql)
-
-        # Extract unquoted table references
-        unquoted_tables = _extract_tables(sql_without_string_literals)
-
-        # Combine all referenced tables
-        referenced_tables = unquoted_tables | quoted_tables
-
         # Check each table against allowed list
-        for table in referenced_tables:
+        for table in extracted_tables:
             if not _is_table_allowed(table, allowed_exact, allowed_simple):
                 errors.append(
                     f"Operation '{op_name}': Table '{table}' is not in allowed tables list. "
@@ -155,6 +128,137 @@ def validate_db_table_access(
     return ModelValidationResult.create_valid(
         summary="Table access validation passed: all operations use only declared tables",
     )
+
+
+def _build_allowed_sets(tables: list[str]) -> tuple[set[str], set[str]]:
+    """Build allowed table sets for matching.
+
+    Args:
+        tables: List of allowed table names from contract.
+
+    Returns:
+        Tuple of (allowed_exact, allowed_simple) where:
+        - allowed_exact: Schema-qualified tables (e.g., "public.users")
+        - allowed_simple: Simple table names (e.g., "users")
+    """
+    allowed_exact: set[str] = set()
+    allowed_simple: set[str] = set()
+
+    for table in tables:
+        table_lower = table.lower()
+        if "." in table:
+            allowed_exact.add(table_lower)
+        else:
+            allowed_simple.add(table_lower)
+
+    return allowed_exact, allowed_simple
+
+
+def _detect_complexity(sql: str) -> str | None:
+    """Detect if SQL contains complex patterns requiring parser.
+
+    Args:
+        sql: SQL string with string literals stripped.
+
+    Returns:
+        Description of complexity pattern found, or None if simple SQL.
+    """
+    for pattern, description in _COMPLEX_PATTERNS:
+        if pattern.search(sql):
+            return description
+    return None
+
+
+def _extract_all_tables(
+    sql: str,
+    op_name: str,
+) -> tuple[set[str], list[str]]:
+    """Extract tables using tiered approach.
+
+    Args:
+        sql: Raw SQL string from operation.
+        op_name: Operation name for error messages.
+
+    Returns:
+        Tuple of (extracted_tables, errors).
+        If errors is non-empty, validation should fail.
+    """
+    errors: list[str] = []
+    normalized_sql = normalize_sql(sql)
+    sql_stripped = strip_sql_strings(normalized_sql)
+
+    # Check for recursive CTE (always fail closed)
+    if _RECURSIVE_CTE_PATTERN.search(sql_stripped):
+        errors.append(
+            f"Operation '{op_name}': SQL contains WITH RECURSIVE which cannot be "
+            "reliably validated. Recursive CTEs are not supported (see OMN-1919)."
+        )
+        return set(), errors
+
+    # Check for complex patterns
+    complexity = _detect_complexity(sql_stripped)
+
+    if not complexity:
+        # Fast path: simple SQL, use regex
+        return _extract_tables_regex(normalized_sql), errors
+
+    # Complex path: try parser
+    # Import lazily to avoid dependency on sqlglot when not needed
+    from omnibase_core.validation.db.sql_parser_adapter import (
+        extract_tables_with_parser,
+        has_parser,
+    )
+
+    if not has_parser():
+        errors.append(
+            f"Operation '{op_name}': SQL contains {complexity} which requires "
+            "the sql-parser extra for validation. Install with: "
+            "pip install omnibase_core[sql-parser]"
+        )
+        return set(), errors
+
+    result = extract_tables_with_parser(normalized_sql)
+    if result is None:
+        # This shouldn't happen since we checked has_parser(), but be safe
+        errors.append(
+            f"Operation '{op_name}': Parser unexpectedly unavailable for {complexity}."
+        )
+        return set(), errors
+
+    if not result.success:
+        errors.append(
+            f"Operation '{op_name}': Failed to parse SQL containing {complexity}. "
+            f"Parser error: {result.error}"
+        )
+        return set(), errors
+
+    # Success: return tables minus CTE names
+    actual_tables = set(result.tables) - set(result.cte_names)
+    return actual_tables, errors
+
+
+def _extract_tables_regex(normalized_sql: str) -> set[str]:
+    """Extract tables using regex (fast path for simple SQL).
+
+    Args:
+        normalized_sql: Normalized SQL string.
+
+    Returns:
+        Set of extracted table names.
+    """
+    # Extract quoted identifiers from normalized SQL (before any stripping)
+    quoted_tables = _extract_quoted_tables(normalized_sql)
+
+    # Strip only single-quoted strings for unquoted table extraction
+    # This preserves double-quoted identifiers so aliases after them
+    # aren't mistakenly matched as table names
+    sql_without_string_literals = _strip_single_quoted_strings(normalized_sql)
+
+    # Extract unquoted table references
+    unquoted_tables = _extract_tables(sql_without_string_literals)
+
+    # Combine all referenced tables
+    return unquoted_tables | quoted_tables
 
 
 def _strip_single_quoted_strings(sql: str) -> str:

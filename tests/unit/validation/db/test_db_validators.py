@@ -684,8 +684,12 @@ class TestValidatorDbTableAccess:
         assert not result.is_valid
         assert any("orders" in str(e).lower() for e in result.errors)
 
-    def test_cte_fails_closed(self) -> None:
-        """CTEs are not supported and should fail closed."""
+    def test_cte_with_valid_tables_passes(self) -> None:
+        """CTEs with valid tables pass validation when parser is available.
+
+        In v2 (OMN-1791), CTEs are supported via sqlglot parser. The CTE body
+        tables are validated against the allowed list.
+        """
         contract = ModelDbRepositoryContract(
             name="test",
             engine=EnumDatabaseEngine.POSTGRES,
@@ -702,11 +706,16 @@ class TestValidatorDbTableAccess:
             },
         )
         result = validate_db_table_access(contract)
-        assert not result.is_valid
-        assert any("CTE" in str(e) for e in result.errors)
+        # With parser available (dev dependency), this passes
+        # 'cte' is filtered as CTE alias, 'test' is in allowed list
+        assert result.is_valid, f"CTE with valid table should pass: {result.errors}"
 
-    def test_subquery_fails_closed(self) -> None:
-        """Subqueries are not supported and should fail closed."""
+    def test_subquery_with_valid_tables_passes(self) -> None:
+        """Subqueries with valid tables pass validation when parser is available.
+
+        In v2 (OMN-1791), subqueries are supported via sqlglot parser. The
+        subquery body tables are validated against the allowed list.
+        """
         contract = ModelDbRepositoryContract(
             name="test",
             engine=EnumDatabaseEngine.POSTGRES,
@@ -723,8 +732,11 @@ class TestValidatorDbTableAccess:
             },
         )
         result = validate_db_table_access(contract)
-        assert not result.is_valid
-        assert any("subquery" in str(e).lower() for e in result.errors)
+        # With parser available (dev dependency), this passes
+        # 'sub' is filtered as subquery alias, 'test' is in allowed list
+        assert result.is_valid, (
+            f"Subquery with valid table should pass: {result.errors}"
+        )
 
     def test_multiple_declared_tables_pass(self) -> None:
         """Multiple tables can be declared and accessed."""
@@ -1642,3 +1654,436 @@ class TestEdgeCases:
         result = validate_db_sql_safety(contract)
         assert not result.is_valid
         assert any("DROP" in str(e) for e in result.errors)
+
+
+# ============================================================================
+# CTE Table Extraction Tests (OMN-1791)
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestValidatorDbTableAccessCTE:
+    """Test CTE table extraction with parser.
+
+    These tests verify that CTEs are properly handled when the sqlglot
+    parser is available. Tables inside CTE bodies are validated, while
+    CTE alias names are correctly filtered out.
+    """
+
+    def test_simple_cte_tables_validated(self) -> None:
+        """CTE tables are validated when parser available."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users"],
+            models={},
+            ops={
+                "cte_query": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        WITH active_users AS (
+                            SELECT * FROM users WHERE active = true
+                        )
+                        SELECT * FROM active_users ORDER BY id
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        # Should pass because 'users' is in allowed list
+        # and 'active_users' is a CTE name (not a table)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_cte_hidden_table_rejected(self) -> None:
+        """CTE accessing undeclared table is rejected."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users"],  # 'secret_table' not declared
+            models={},
+            ops={
+                "cte_query": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        WITH data AS (
+                            SELECT * FROM secret_table WHERE active = true
+                        )
+                        SELECT * FROM data ORDER BY id
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        # Should fail because 'secret_table' is not in allowed list
+        assert not result.is_valid
+        assert any("secret_table" in str(e) for e in result.errors)
+
+    def test_cte_name_not_validated_as_table(self) -> None:
+        """CTE alias names are not treated as tables.
+
+        The CTE alias 'temp_data' should not trigger a validation error
+        even though it's used in FROM clause - it's a CTE reference, not a table.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["real_table"],
+            models={},
+            ops={
+                "cte_query": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        WITH temp_data AS (
+                            SELECT * FROM real_table
+                        )
+                        SELECT * FROM temp_data ORDER BY id
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        # Should pass - 'temp_data' is CTE alias, 'real_table' is declared
+        assert result.is_valid, (
+            f"CTE alias should not be validated as table: {result.errors}"
+        )
+
+    def test_multiple_ctes_validated(self) -> None:
+        """Multiple CTEs in single query are all validated."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users", "orders"],
+            models={},
+            ops={
+                "multi_cte": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        WITH
+                            active_users AS (SELECT * FROM users WHERE active = true),
+                            recent_orders AS (SELECT * FROM orders WHERE date > '2024-01-01')
+                        SELECT u.name, o.total
+                        FROM active_users u
+                        JOIN recent_orders o ON u.id = o.user_id
+                        ORDER BY u.name
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert result.is_valid, f"Multiple CTEs should validate: {result.errors}"
+
+    def test_recursive_cte_fails_closed(self) -> None:
+        """WITH RECURSIVE always fails closed."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["employees"],
+            models={},
+            ops={
+                "recursive_cte": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        WITH RECURSIVE employee_tree AS (
+                            SELECT id, name, manager_id FROM employees WHERE manager_id IS NULL
+                            UNION ALL
+                            SELECT e.id, e.name, e.manager_id
+                            FROM employees e
+                            JOIN employee_tree et ON e.manager_id = et.id
+                        )
+                        SELECT * FROM employee_tree ORDER BY id
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        # Should fail closed on WITH RECURSIVE
+        assert not result.is_valid
+        assert any("RECURSIVE" in str(e) for e in result.errors)
+
+
+# ============================================================================
+# Subquery Table Extraction Tests (OMN-1791)
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestValidatorDbTableAccessSubquery:
+    """Test subquery table extraction with parser.
+
+    These tests verify that tables inside subqueries are properly
+    validated when the sqlglot parser is available.
+    """
+
+    def test_simple_subquery_tables_validated(self) -> None:
+        """Subquery tables are validated when parser available."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users"],
+            models={},
+            ops={
+                "subquery": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        SELECT * FROM (
+                            SELECT id, name FROM users WHERE active = true
+                        ) sub
+                        ORDER BY id
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        # Should pass because 'users' is in allowed list
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
+
+    def test_subquery_hidden_table_rejected(self) -> None:
+        """Subquery accessing undeclared table is rejected."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users"],  # 'secret_table' not declared
+            models={},
+            ops={
+                "subquery": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        SELECT * FROM (
+                            SELECT * FROM secret_table
+                        ) sub
+                        ORDER BY id
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        # Should fail because 'secret_table' is not in allowed list
+        assert not result.is_valid
+        assert any("secret_table" in str(e) for e in result.errors)
+
+    def test_subquery_alias_not_validated_as_table(self) -> None:
+        """Subquery aliases should not be validated as tables.
+
+        The subquery alias 'sub' should not trigger validation error.
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["real_table"],
+            models={},
+            ops={
+                "subquery": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        SELECT sub.id FROM (
+                            SELECT * FROM real_table
+                        ) sub
+                        ORDER BY sub.id
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert result.is_valid, (
+            f"Subquery alias should not be validated: {result.errors}"
+        )
+
+    def test_multiple_subqueries_validated(self) -> None:
+        """Multiple subqueries in single query are all validated."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users", "orders"],
+            models={},
+            ops={
+                "multi_subquery": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        SELECT u.name, o.total
+                        FROM (SELECT * FROM users WHERE active = true) u
+                        JOIN (SELECT * FROM orders WHERE status = 'completed') o
+                        ON u.id = o.user_id
+                        ORDER BY u.name
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert result.is_valid, f"Multiple subqueries should validate: {result.errors}"
+
+    def test_in_clause_subquery_validated(self) -> None:
+        """Tables in IN clause subqueries are validated."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users", "active_user_ids"],
+            models={},
+            ops={
+                "in_subquery": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        SELECT * FROM users
+                        WHERE id IN (SELECT user_id FROM active_user_ids)
+                        ORDER BY id
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert result.is_valid, f"IN clause subquery should validate: {result.errors}"
+
+    def test_in_clause_hidden_table_rejected(self) -> None:
+        """Hidden table in IN clause subquery is rejected."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users"],  # 'secret_ids' not declared
+            models={},
+            ops={
+                "in_subquery": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        SELECT * FROM users
+                        WHERE id IN (SELECT user_id FROM secret_ids)
+                        ORDER BY id
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        assert not result.is_valid
+        assert any("secret_ids" in str(e) for e in result.errors)
+
+
+# ============================================================================
+# Parser Fallback Tests (OMN-1791)
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestValidatorDbTableAccessParserIntegration:
+    """Test parser integration and fallback behavior.
+
+    These tests verify that simple SQL uses the fast regex path,
+    and that the validator provides helpful error messages when
+    complex SQL requires the parser.
+    """
+
+    def test_simple_sql_works_without_parser(self) -> None:
+        """Simple SQL (no CTE/subquery) works without parser."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users", "orders"],
+            models={},
+            ops={
+                "simple_join": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        SELECT u.name, o.total
+                        FROM users u
+                        JOIN orders o ON u.id = o.user_id
+                        ORDER BY u.name
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        # This should always work - uses regex fast path
+        result = validate_db_table_access(contract)
+        assert result.is_valid, f"Simple SQL should not need parser: {result.errors}"
+
+    def test_cte_with_parser_available(self) -> None:
+        """CTE validation succeeds when parser is available.
+
+        This test will pass when sqlglot is installed (dev dependencies).
+        """
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users"],
+            models={},
+            ops={
+                "cte_query": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        WITH active AS (SELECT * FROM users WHERE active = true)
+                        SELECT * FROM active ORDER BY id
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        # In dev environment with sqlglot installed, this should pass
+        # In production without sqlglot, this should fail with helpful message
+        if not result.is_valid:
+            # Verify the error message is helpful
+            assert any("sql-parser" in str(e) for e in result.errors)
+
+    def test_nested_cte_and_subquery(self) -> None:
+        """Complex SQL with both CTE and subquery validates correctly."""
+        contract = ModelDbRepositoryContract(
+            name="test",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="db",
+            tables=["users", "orders"],
+            models={},
+            ops={
+                "complex_query": ModelDbOperation(
+                    mode="read",
+                    sql="""
+                        WITH recent_users AS (
+                            SELECT * FROM users WHERE created_at > '2024-01-01'
+                        )
+                        SELECT u.name, (SELECT COUNT(*) FROM orders WHERE user_id = u.id) as order_count
+                        FROM recent_users u
+                        ORDER BY u.name
+                    """,
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=True),
+                ),
+            },
+        )
+        result = validate_db_table_access(contract)
+        # With parser, should pass (users and orders are declared)
+        # Without parser, should fail with helpful message
+        if not result.is_valid:
+            assert any("sql-parser" in str(e) or "CTE" in str(e) for e in result.errors)

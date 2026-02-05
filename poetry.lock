@@ -1803,6 +1803,22 @@ files = [
 ]
 
 [[package]]
+name = "sqlglot"
+version = "26.33.0"
+description = "An easily customizable SQL parser and transpiler"
+optional = false
+python-versions = ">=3.8"
+groups = ["main", "dev"]
+files = [
+    {file = "sqlglot-26.33.0-py3-none-any.whl", hash = "sha256:031cee20c0c796a83d26d079a47fdce667604df430598c7eabfa4e4dfd147033"},
+    {file = "sqlglot-26.33.0.tar.gz", hash = "sha256:2817278779fa51d6def43aa0d70690b93a25c83eb18ec97130fdaf707abc0d73"},
+]
+
+[package.extras]
+dev = ["duckdb (>=0.6)", "maturin (>=1.4,<2.0)", "mypy", "pandas", "pandas-stubs", "pdoc", "pre-commit", "pyperf", "python-dateutil", "pytz", "ruff (==0.7.2)", "types-python-dateutil", "types-pytz", "typing_extensions"]
+rs = ["sqlglotrs (==0.6.1)"]
+
+[[package]]
 name = "tabulate"
 version = "0.9.0"
 description = "Pretty-print tabular data"
@@ -1925,10 +1941,11 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [extras]
 cache = ["redis"]
 cli = ["psutil"]
-full = ["prometheus-client", "psutil", "redis"]
+full = ["prometheus-client", "psutil", "redis", "sqlglot"]
 metrics = ["prometheus-client"]
+sql-parser = ["sqlglot"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "409108cd9cd5a73b7c119ed8350119cce77d21908d4e1c399b34acf11dc3857d"
+content-hash = "9a87f43d23ef2c7b000591547589cbb855a7e6ccfe4772fec7d160db519d5c21"
