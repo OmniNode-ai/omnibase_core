@@ -9,7 +9,6 @@ Related ticket: OMN-1906
 from __future__ import annotations
 
 import ast
-import fnmatch
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
@@ -18,6 +17,7 @@ from omnibase_core.models.common.model_validation_issue import ModelValidationIs
 from omnibase_core.models.validation.model_rule_configs import (
     ModelRuleAsyncPolicyConfig,
 )
+from omnibase_core.validation.cross_repo.util_exclusion import should_exclude_path
 from omnibase_core.validation.cross_repo.util_fingerprint import generate_fingerprint
 
 if TYPE_CHECKING:
@@ -66,48 +66,15 @@ class RuleAsyncPolicy:
         issues: list[ModelValidationIssue] = []
 
         for file_path in file_imports:
-            if self._should_exclude(file_path, root_directory):
+            if should_exclude_path(
+                file_path, root_directory, self.config.exclude_patterns
+            ):
                 continue
 
             file_issues = self._scan_file(file_path, repo_id)
             issues.extend(file_issues)
 
         return issues
-
-    def _should_exclude(
-        self,
-        file_path: Path,
-        root_directory: Path | None,
-    ) -> bool:
-        """Check if a file should be excluded from validation.
-
-        Args:
-            file_path: Path to check.
-            root_directory: Root directory for relative path calculation.
-
-        Returns:
-            True if the file should be excluded.
-        """
-        # Get relative path for pattern matching
-        if root_directory:
-            try:
-                relative_path = file_path.relative_to(root_directory)
-            except ValueError:
-                relative_path = file_path
-        else:
-            relative_path = file_path
-
-        path_str = str(relative_path)
-
-        for pattern in self.config.exclude_patterns:
-            if fnmatch.fnmatch(path_str, pattern):
-                return True
-            # Also check if any parent directory matches
-            for parent in relative_path.parents:
-                if fnmatch.fnmatch(str(parent), pattern.removesuffix("/**")):
-                    return True
-
-        return False
 
     def _scan_file(
         self,
@@ -157,26 +124,87 @@ class RuleAsyncPolicy:
             List of validation issues for this function.
         """
         issues: list[ModelValidationIssue] = []
-
-        for node in ast.walk(func_node):
-            if not isinstance(node, ast.Call):
-                continue
-
-            call_name = self._get_full_call_name(node)
-            if call_name is None:
-                continue
-
-            # Skip if this call is inside an allowlisted wrapper
-            # (simplified check - we don't track nested context)
-
-            # Check for blocking calls
-            issue = self._check_blocking_call(
-                node, call_name, func_node.name, file_path, repo_id
-            )
-            if issue:
-                issues.append(issue)
-
+        self._check_node_for_blocking_calls(
+            func_node, func_node.name, file_path, repo_id, issues, inside_wrapper=False
+        )
         return issues
+
+    def _is_allowlisted_wrapper(self, call_name: str) -> bool:
+        """Check if a call is an allowlisted wrapper function.
+
+        Allowlisted wrappers like asyncio.to_thread make blocking calls
+        safe by running them in a thread pool.
+
+        Args:
+            call_name: Full dotted call name.
+
+        Returns:
+            True if this is an allowlisted wrapper.
+        """
+        for wrapper in self.config.allowlist_wrappers:
+            if self._matches_call(call_name, wrapper):
+                return True
+        return False
+
+    def _check_node_for_blocking_calls(
+        self,
+        node: ast.AST,
+        async_func_name: str,
+        file_path: Path,
+        repo_id: str,  # string-id-ok: human-readable repository identifier
+        issues: list[ModelValidationIssue],
+        inside_wrapper: bool,
+    ) -> None:
+        """Recursively check an AST node for blocking calls.
+
+        Tracks whether we're inside an allowlisted wrapper to avoid
+        false positives for properly wrapped blocking calls.
+
+        Args:
+            node: AST node to check.
+            async_func_name: Name of the containing async function.
+            file_path: Path to the file.
+            repo_id: The repository being validated.
+            issues: List to append found issues to.
+            inside_wrapper: Whether we're inside an allowlisted wrapper call.
+        """
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, ast.Call):
+                call_name = self._get_full_call_name(child)
+
+                # Check if this call is an allowlisted wrapper
+                is_wrapper = call_name is not None and self._is_allowlisted_wrapper(
+                    call_name
+                )
+
+                # Only check for blocking calls if not inside a wrapper
+                if not inside_wrapper and call_name is not None:
+                    issue = self._check_blocking_call(
+                        child, call_name, async_func_name, file_path, repo_id
+                    )
+                    if issue:
+                        issues.append(issue)
+
+                # Recurse into children, marking inside_wrapper if this is a wrapper
+                # This allows blocking calls as arguments to wrappers
+                self._check_node_for_blocking_calls(
+                    child,
+                    async_func_name,
+                    file_path,
+                    repo_id,
+                    issues,
+                    inside_wrapper=inside_wrapper or is_wrapper,
+                )
+            else:
+                # Non-call nodes: continue recursion with same wrapper state
+                self._check_node_for_blocking_calls(
+                    child,
+                    async_func_name,
+                    file_path,
+                    repo_id,
+                    issues,
+                    inside_wrapper=inside_wrapper,
+                )
 
     def _get_full_call_name(self, node: ast.Call) -> str | None:
         """Get the full dotted name of a function call.
@@ -280,10 +308,11 @@ class RuleAsyncPolicy:
     def _matches_call(self, call_name: str, pattern: str) -> bool:
         """Check if a call name matches a blocking pattern.
 
-        Supports exact matches and prefix matches:
-        - "time.sleep" matches "time.sleep"
-        - "requests.get" matches "requests.get"
-        - "open" matches "open"
+        Supports exact matches and prefix matches (for module patterns only):
+        - "time.sleep" matches "time.sleep" (exact)
+        - "requests.get.something" matches "requests.get" (prefix, pattern has dot)
+        - "open" matches "open" (exact only, no prefix for simple names)
+        - "open_file" does NOT match "open" (no prefix for simple names)
 
         Args:
             call_name: Full dotted call name.
@@ -292,13 +321,14 @@ class RuleAsyncPolicy:
         Returns:
             True if the call matches the pattern.
         """
-        # Exact match
+        # Exact match always works
         if call_name == pattern:
             return True
 
-        # Prefix match for module.* patterns
-        # e.g., "requests.get" starts with "requests."
-        if call_name.startswith(pattern + "."):
+        # Prefix match only for module patterns (those containing a dot)
+        # This prevents "requests" from matching "requests_mock.get" or
+        # "open" from matching "open_file.something"
+        if "." in pattern and call_name.startswith(pattern + "."):
             return True
 
         return False

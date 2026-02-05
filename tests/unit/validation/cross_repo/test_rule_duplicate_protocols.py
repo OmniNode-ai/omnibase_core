@@ -21,6 +21,7 @@ from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
 )
 
 
+@pytest.mark.unit
 class TestRuleDuplicateProtocols:
     """Tests for RuleDuplicateProtocols."""
 
@@ -445,3 +446,117 @@ class Handler(Protocol):
             # other_files is a comma-separated string with 2 files
             other_files = issue.context["other_files"].split(", ")
             assert len(other_files) == 2
+
+    def test_detects_protocol_by_qualified_typing_import(
+        self,
+        config: ModelRuleDuplicateProtocolsConfig,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that protocols are detected with qualified typing.Protocol import."""
+        file1 = tmp_src_dir / "module_a.py"
+        file1.write_text(
+            """\
+import typing
+
+class Handler(typing.Protocol):
+    def handle(self) -> None: ...
+"""
+        )
+
+        file2 = tmp_src_dir / "module_b.py"
+        file2.write_text(
+            """\
+import typing
+
+class Handler(typing.Protocol):
+    def handle(self) -> None: ...
+"""
+        )
+
+        rule = RuleDuplicateProtocols(config)
+        file_imports = {
+            file1: ModelFileImports(file_path=file1),
+            file2: ModelFileImports(file_path=file2),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        assert len(issues) == 2
+        assert all("Handler" in i.message for i in issues)
+
+    def test_detects_protocol_by_qualified_typing_extensions_import(
+        self,
+        config: ModelRuleDuplicateProtocolsConfig,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that protocols are detected with typing_extensions.Protocol import."""
+        file1 = tmp_src_dir / "module_a.py"
+        file1.write_text(
+            """\
+import typing_extensions
+
+class Handler(typing_extensions.Protocol):
+    def handle(self) -> None: ...
+"""
+        )
+
+        file2 = tmp_src_dir / "module_b.py"
+        file2.write_text(
+            """\
+import typing_extensions
+
+class Handler(typing_extensions.Protocol):
+    def handle(self) -> None: ...
+"""
+        )
+
+        rule = RuleDuplicateProtocols(config)
+        file_imports = {
+            file1: ModelFileImports(file_path=file1),
+            file2: ModelFileImports(file_path=file2),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        assert len(issues) == 2
+        assert all("Handler" in i.message for i in issues)
+
+    def test_detects_protocol_mixed_import_styles(
+        self,
+        config: ModelRuleDuplicateProtocolsConfig,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that protocols are detected with mixed import styles."""
+        file1 = tmp_src_dir / "module_a.py"
+        file1.write_text(
+            """\
+from typing import Protocol
+
+class Handler(Protocol):
+    def handle(self) -> None: ...
+"""
+        )
+
+        file2 = tmp_src_dir / "module_b.py"
+        file2.write_text(
+            """\
+import typing
+
+class Handler(typing.Protocol):
+    def handle(self) -> None: ...
+"""
+        )
+
+        rule = RuleDuplicateProtocols(config)
+        file_imports = {
+            file1: ModelFileImports(file_path=file1),
+            file2: ModelFileImports(file_path=file2),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        assert len(issues) == 2
+        assert all("Handler" in i.message for i in issues)

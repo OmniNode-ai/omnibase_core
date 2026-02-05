@@ -9,7 +9,6 @@ Related ticket: OMN-1906
 from __future__ import annotations
 
 import ast
-import fnmatch
 from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
@@ -18,6 +17,7 @@ from omnibase_core.models.common.model_validation_issue import ModelValidationIs
 from omnibase_core.models.validation.model_rule_configs import (
     ModelRuleDuplicateProtocolsConfig,
 )
+from omnibase_core.validation.cross_repo.util_exclusion import should_exclude_path
 from omnibase_core.validation.cross_repo.util_fingerprint import generate_fingerprint
 
 if TYPE_CHECKING:
@@ -67,7 +67,9 @@ class RuleDuplicateProtocols:
         protocol_locations: dict[str, list[tuple[Path, int]]] = defaultdict(list)
 
         for file_path in file_imports:
-            if self._should_exclude(file_path, root_directory):
+            if should_exclude_path(
+                file_path, root_directory, self.config.exclude_patterns
+            ):
                 continue
 
             protocols = self._find_protocols_in_file(file_path)
@@ -107,41 +109,6 @@ class RuleDuplicateProtocols:
                     )
 
         return issues
-
-    def _should_exclude(
-        self,
-        file_path: Path,
-        root_directory: Path | None,
-    ) -> bool:
-        """Check if a file should be excluded from validation.
-
-        Args:
-            file_path: Path to check.
-            root_directory: Root directory for relative path calculation.
-
-        Returns:
-            True if the file should be excluded.
-        """
-        # Get relative path for pattern matching
-        if root_directory:
-            try:
-                relative_path = file_path.relative_to(root_directory)
-            except ValueError:
-                relative_path = file_path
-        else:
-            relative_path = file_path
-
-        path_str = str(relative_path)
-
-        for pattern in self.config.exclude_patterns:
-            if fnmatch.fnmatch(path_str, pattern):
-                return True
-            # Also check if any parent directory matches
-            for parent in relative_path.parents:
-                if fnmatch.fnmatch(str(parent), pattern.removesuffix("/**")):
-                    return True
-
-        return False
 
     def _find_protocols_in_file(
         self,
@@ -186,10 +153,14 @@ class RuleDuplicateProtocols:
         if node.name.endswith(self.config.protocol_suffix):
             return True
 
-        # Also check if it inherits from Protocol
+        # Also check if it inherits from Protocol (including qualified imports)
+        # Handles: Protocol, typing.Protocol, typing_extensions.Protocol
         for base in node.bases:
             base_name = self._get_base_name(base)
-            if base_name == "Protocol":
+            if base_name is None:
+                continue
+            # Check for simple "Protocol" or qualified names ending with ".Protocol"
+            if base_name == "Protocol" or base_name.endswith(".Protocol"):
                 return True
 
         return False
@@ -197,14 +168,22 @@ class RuleDuplicateProtocols:
     def _get_base_name(self, base: ast.expr) -> str | None:
         """Get the name of a base class from AST.
 
+        Handles both simple names (e.g., Protocol) and qualified names
+        (e.g., typing.Protocol, typing_extensions.Protocol).
+
         Args:
             base: Base class AST expression.
 
         Returns:
-            Name of the base class, or None if can't determine.
+            Name of the base class (fully qualified for attribute access),
+            or None if can't determine.
         """
         if isinstance(base, ast.Name):
             return base.id
         if isinstance(base, ast.Attribute):
+            # Return fully qualified name (e.g., "typing.Protocol")
+            value_name = self._get_base_name(base.value)
+            if value_name:
+                return f"{value_name}.{base.attr}"
             return base.attr
         return None

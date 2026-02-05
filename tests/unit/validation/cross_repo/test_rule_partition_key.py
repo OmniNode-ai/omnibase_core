@@ -21,6 +21,7 @@ from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
 )
 
 
+@pytest.mark.unit
 class TestRulePartitionKey:
     """Tests for RulePartitionKey."""
 
@@ -397,3 +398,109 @@ class ModelResponseTopicConfig(BaseModel):
         # Should not raise
         issues = rule.validate(file_imports, "test_repo", tmp_path)
         assert len(issues) == 0
+
+    def test_excludes_test_files(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Test that test files are excluded from validation."""
+        # Create config with test exclusion patterns
+        config = ModelRulePartitionKeyConfig(
+            enabled=True,
+            severity=EnumSeverity.ERROR,
+            require_partition_key=True,
+            exclude_patterns=["tests/**"],
+        )
+
+        # Create a test file with a topic config missing partition_key
+        tests_dir = tmp_path / "tests"
+        tests_dir.mkdir()
+        test_file = tests_dir / "test_topic_config.py"
+        test_file.write_text(
+            """\
+class ModelEventTopicConfig:
+    topic_name = "events"
+    # Missing partition_key but in tests/
+"""
+        )
+
+        rule = RulePartitionKey(config)
+        file_imports = {
+            test_file: ModelFileImports(file_path=test_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # Should not report any issues for test files
+        assert len(issues) == 0
+
+    def test_excludes_examples_files(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Test that examples files are excluded from validation."""
+        # Create config with examples exclusion patterns
+        config = ModelRulePartitionKeyConfig(
+            enabled=True,
+            severity=EnumSeverity.ERROR,
+            require_partition_key=True,
+            exclude_patterns=["examples/**"],
+        )
+
+        # Create an example file with a topic config missing partition_key
+        examples_dir = tmp_path / "examples"
+        examples_dir.mkdir()
+        example_file = examples_dir / "topic_config_example.py"
+        example_file.write_text(
+            """\
+class ModelEventTopicConfig:
+    topic_name = "events"
+    # Missing partition_key but in examples/
+"""
+        )
+
+        rule = RulePartitionKey(config)
+        file_imports = {
+            example_file: ModelFileImports(file_path=example_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # Should not report any issues for example files
+        assert len(issues) == 0
+
+    def test_does_not_exclude_src_files(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Test that src files are not excluded by test exclusion patterns."""
+        # Create config with test exclusion patterns
+        config = ModelRulePartitionKeyConfig(
+            enabled=True,
+            severity=EnumSeverity.ERROR,
+            require_partition_key=True,
+            exclude_patterns=["tests/**", "examples/**"],
+        )
+
+        # Create a src file with a topic config missing partition_key
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        src_file = src_dir / "topic_config.py"
+        src_file.write_text(
+            """\
+class ModelEventTopicConfig:
+    topic_name = "events"
+    # Missing partition_key
+"""
+        )
+
+        rule = RulePartitionKey(config)
+        file_imports = {
+            src_file: ModelFileImports(file_path=src_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # Should report issue for src files
+        assert len(issues) == 1
+        assert issues[0].code == "MISSING_PARTITION_KEY"

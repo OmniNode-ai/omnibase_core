@@ -9,13 +9,15 @@ Related ticket: OMN-1906
 from __future__ import annotations
 
 import ast
-import fnmatch
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.validation.model_rule_configs import (
     ModelRuleObservabilityConfig,
+)
+from omnibase_core.validation.cross_repo.util_exclusion import (
+    should_exclude_path_with_modules,
 )
 from omnibase_core.validation.cross_repo.util_fingerprint import generate_fingerprint
 
@@ -65,55 +67,18 @@ class RuleObservability:
         issues: list[ModelValidationIssue] = []
 
         for file_path in file_imports:
-            if self._should_exclude(file_path, root_directory):
+            if should_exclude_path_with_modules(
+                file_path,
+                root_directory,
+                self.config.exclude_patterns,
+                self.config.allowlist_modules,
+            ):
                 continue
 
             file_issues = self._scan_file(file_path, repo_id)
             issues.extend(file_issues)
 
         return issues
-
-    def _should_exclude(
-        self,
-        file_path: Path,
-        root_directory: Path | None,
-    ) -> bool:
-        """Check if a file should be excluded from validation.
-
-        Args:
-            file_path: Path to check.
-            root_directory: Root directory for relative path calculation.
-
-        Returns:
-            True if the file should be excluded.
-        """
-        # Get relative path for pattern matching
-        if root_directory:
-            try:
-                relative_path = file_path.relative_to(root_directory)
-            except ValueError:
-                relative_path = file_path
-        else:
-            relative_path = file_path
-
-        path_str = str(relative_path)
-
-        # Check exclude patterns
-        for pattern in self.config.exclude_patterns:
-            if fnmatch.fnmatch(path_str, pattern):
-                return True
-            # Also check if any parent directory matches
-            for parent in relative_path.parents:
-                if fnmatch.fnmatch(str(parent), pattern.removesuffix("/**")):
-                    return True
-
-        # Check allowlist modules
-        for allowlist_module in self.config.allowlist_modules:
-            module_path = allowlist_module.replace(".", "/")
-            if module_path in path_str:
-                return True
-
-        return False
 
     def _scan_file(
         self,

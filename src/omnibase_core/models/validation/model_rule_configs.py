@@ -213,6 +213,11 @@ class ModelRulePartitionKeyConfig(ModelRuleConfigBase):
     Related ticket: OMN-1906
     """
 
+    exclude_patterns: list[str] = Field(
+        default_factory=lambda: ["tests/**", "examples/**", "migrations/**"],
+        description="Glob patterns for paths to exclude from partition key checks",
+    )
+
     require_partition_key: bool = Field(
         default=True,
         description="Whether topic configs must declare a partition key",

@@ -21,6 +21,7 @@ from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
 )
 
 
+@pytest.mark.unit
 class TestRuleObservability:
     """Tests for RuleObservability."""
 
@@ -453,3 +454,42 @@ def process():
         # Should not raise
         issues = rule.validate(file_imports, "test_repo", tmp_path)
         assert len(issues) == 0
+
+    def test_allowlist_no_substring_match(
+        self,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that allowlist uses segment matching, not substring matching.
+
+        Regression test for PR #488: "cli" should match "cli/commands.py"
+        but NOT "public_client.py" where "cli" is a substring of "client".
+        """
+        config = ModelRuleObservabilityConfig(
+            enabled=True,
+            flag_print=True,
+            flag_raw_logging=True,
+            allowlist_modules=["cli"],
+        )
+
+        # This file SHOULD be excluded (cli is a directory segment)
+        cli_dir = tmp_src_dir / "cli"
+        cli_dir.mkdir()
+        cli_file = cli_dir / "commands.py"
+        cli_file.write_text('print("CLI command")')
+
+        # This file should NOT be excluded (cli is substring of client)
+        client_file = tmp_src_dir / "public_client.py"
+        client_file.write_text('print("Client code")')
+
+        rule = RuleObservability(config)
+        file_imports = {
+            cli_file: ModelFileImports(file_path=cli_file),
+            client_file: ModelFileImports(file_path=client_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # Only client_file should have issues (cli_file is allowlisted)
+        assert len(issues) == 1
+        assert issues[0].file_path == client_file

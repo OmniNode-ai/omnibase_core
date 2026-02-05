@@ -21,6 +21,7 @@ from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
 )
 
 
+@pytest.mark.unit
 class TestRuleAsyncPolicy:
     """Tests for RuleAsyncPolicy."""
 
@@ -535,3 +536,178 @@ class Handler:
         assert len(issues) == 1
         assert issues[0].context is not None
         assert issues[0].context.get("async_function") == "process"
+
+    def test_allowlist_wrapper_asyncio_to_thread(
+        self,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that blocking calls inside asyncio.to_thread are allowed."""
+        config = ModelRuleAsyncPolicyConfig(
+            enabled=True,
+            blocking_calls_error=["time.sleep"],
+            allowlist_wrappers=["asyncio.to_thread"],
+        )
+
+        source_file = tmp_src_dir / "handler.py"
+        source_file.write_text(
+            """\
+import asyncio
+import time
+
+async def process_data():
+    # This should be allowed - blocking call inside to_thread
+    await asyncio.to_thread(time.sleep, 1)
+    return "done"
+"""
+        )
+
+        rule = RuleAsyncPolicy(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # asyncio.to_thread wraps the blocking call, so no issues
+        assert len(issues) == 0
+
+    def test_allowlist_wrapper_run_in_executor(
+        self,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that blocking calls inside loop.run_in_executor are allowed."""
+        config = ModelRuleAsyncPolicyConfig(
+            enabled=True,
+            blocking_calls_error=["time.sleep", "requests.get"],
+            allowlist_wrappers=["loop.run_in_executor"],
+        )
+
+        source_file = tmp_src_dir / "handler.py"
+        source_file.write_text(
+            """\
+import asyncio
+import time
+
+async def process_data():
+    loop = asyncio.get_event_loop()
+    # This should be allowed - blocking call inside run_in_executor
+    await loop.run_in_executor(None, time.sleep, 1)
+    return "done"
+"""
+        )
+
+        rule = RuleAsyncPolicy(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # run_in_executor wraps the blocking call, so no issues
+        assert len(issues) == 0
+
+    def test_blocking_call_without_wrapper_still_flagged(
+        self,
+        config: ModelRuleAsyncPolicyConfig,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that blocking calls without wrappers are still flagged."""
+        source_file = tmp_src_dir / "handler.py"
+        source_file.write_text(
+            """\
+import asyncio
+import time
+
+async def process_data():
+    # This should be flagged - no wrapper
+    time.sleep(1)
+    # This is fine - using asyncio.to_thread
+    await asyncio.to_thread(time.sleep, 2)
+    return "done"
+"""
+        )
+
+        rule = RuleAsyncPolicy(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # Only the unwrapped time.sleep(1) should be flagged
+        assert len(issues) == 1
+        assert "time.sleep" in issues[0].message
+
+    def test_matches_call_no_prefix_for_simple_names(
+        self,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that simple patterns don't match module names with similar prefix."""
+        config = ModelRuleAsyncPolicyConfig(
+            enabled=True,
+            # Use 'open' as a simple name (no dot)
+            blocking_calls_warning=["open"],
+            blocking_calls_error=[],
+        )
+
+        source_file = tmp_src_dir / "handler.py"
+        source_file.write_text(
+            """\
+import open_file_utils
+
+async def process_data():
+    # This should NOT be flagged - open_file_utils is different from open
+    result = open_file_utils.read("test.txt")
+    return result
+"""
+        )
+
+        rule = RuleAsyncPolicy(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # open_file_utils should NOT match the "open" pattern
+        assert len(issues) == 0
+
+    def test_matches_call_prefix_works_for_module_patterns(
+        self,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that module patterns (with dots) still support prefix matching."""
+        config = ModelRuleAsyncPolicyConfig(
+            enabled=True,
+            # requests.get is a module pattern (has dot)
+            blocking_calls_error=["requests.get"],
+            blocking_calls_warning=[],
+        )
+
+        source_file = tmp_src_dir / "handler.py"
+        source_file.write_text(
+            """\
+import requests
+
+async def fetch_data():
+    # This should be flagged - matches requests.get prefix
+    response = requests.get.something("http://example.com")
+    return response
+"""
+        )
+
+        rule = RuleAsyncPolicy(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # requests.get.something should match the "requests.get" pattern
+        assert len(issues) == 1
+        assert "requests.get.something" in issues[0].message

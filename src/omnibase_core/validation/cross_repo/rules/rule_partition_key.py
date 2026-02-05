@@ -17,6 +17,7 @@ from omnibase_core.models.common.model_validation_issue import ModelValidationIs
 from omnibase_core.models.validation.model_rule_configs import (
     ModelRulePartitionKeyConfig,
 )
+from omnibase_core.validation.cross_repo.util_exclusion import should_exclude_path
 from omnibase_core.validation.cross_repo.util_fingerprint import generate_fingerprint
 
 if TYPE_CHECKING:
@@ -69,6 +70,11 @@ class RulePartitionKey:
         issues: list[ModelValidationIssue] = []
 
         for file_path in file_imports:
+            if should_exclude_path(
+                file_path, root_directory, self.config.exclude_patterns
+            ):
+                continue
+
             file_issues = self._scan_file(file_path, repo_id)
             issues.extend(file_issues)
 
