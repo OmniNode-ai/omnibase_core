@@ -108,6 +108,8 @@ WHITELIST=(
     ".mypy_cache"   # Mypy cache directory is allowed (already in .gitignore)
     ".ruff_cache"   # Ruff cache directory is allowed (already in .gitignore)
     ".DS_Store"     # macOS directory metadata is allowed (already in .gitignore)
+    ".coverage"     # Coverage data files are allowed (already in .gitignore)
+    "htmlcov"       # Coverage HTML reports are allowed (already in .gitignore)
 )
 
 echo -e "${BLUE}🔍 Validating project root cleanliness...${NC}"
