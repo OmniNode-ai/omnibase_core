@@ -10,10 +10,14 @@ from __future__ import annotations
 from typing import ClassVar
 
 from omnibase_core.models.validation.model_rule_configs import (
+    ModelRuleAsyncPolicyConfig,
     ModelRuleConfigBase,
     ModelRuleContractSchemaConfig,
+    ModelRuleDuplicateProtocolsConfig,
     ModelRuleErrorTaxonomyConfig,
     ModelRuleForbiddenImportsConfig,
+    ModelRuleObservabilityConfig,
+    ModelRulePartitionKeyConfig,
     ModelRuleRepoBoundariesConfig,
     ModelRuleTopicNamingConfig,
 )
@@ -35,6 +39,12 @@ class RuleRegistry:
     RULE_ERROR_TAXONOMY: ClassVar[str] = "error_taxonomy"
     RULE_CONTRACT_SCHEMA: ClassVar[str] = "contract_schema_valid"
 
+    # Phase 3 rules (OMN-1906)
+    RULE_DUPLICATE_PROTOCOLS: ClassVar[str] = "duplicate_protocols"
+    RULE_PARTITION_KEY: ClassVar[str] = "partition_key"  # env-var-ok: rule ID constant
+    RULE_OBSERVABILITY: ClassVar[str] = "observability"
+    RULE_ASYNC_POLICY: ClassVar[str] = "async_policy"
+
     # The registry itself - maps rule_id to config model type
     _REGISTRY: ClassVar[dict[str, type[ModelRuleConfigBase]]] = {
         "repo_boundaries": ModelRuleRepoBoundariesConfig,
@@ -42,6 +52,11 @@ class RuleRegistry:
         "topic_naming": ModelRuleTopicNamingConfig,
         "error_taxonomy": ModelRuleErrorTaxonomyConfig,
         "contract_schema_valid": ModelRuleContractSchemaConfig,
+        # Phase 3 rules (OMN-1906)
+        "duplicate_protocols": ModelRuleDuplicateProtocolsConfig,
+        "partition_key": ModelRulePartitionKeyConfig,
+        "observability": ModelRuleObservabilityConfig,
+        "async_policy": ModelRuleAsyncPolicyConfig,
     }
 
     @classmethod
@@ -109,6 +124,20 @@ class RuleRegistry:
             cls.RULE_ERROR_TAXONOMY,
             cls.RULE_CONTRACT_SCHEMA,
             cls.RULE_TOPIC_NAMING,
+        ]
+
+    @classmethod
+    def get_phase_3_rules(cls) -> list[str]:
+        """Get rule IDs for Phase 3 (high-signal, low-argument rules).
+
+        Returns:
+            List of Phase 3 rule IDs.
+        """
+        return [
+            cls.RULE_DUPLICATE_PROTOCOLS,
+            cls.RULE_PARTITION_KEY,
+            cls.RULE_OBSERVABILITY,
+            cls.RULE_ASYNC_POLICY,
         ]
 
 

@@ -20,7 +20,7 @@ from .model_contract_validation_event import (
 
 # Cross-repo validation models (OMN-1771)
 from .model_cross_repo_validation_orchestrator_result import (
-    ModelCrossRepoValidationOrchestratorResult,
+    ModelResultCrossRepoValidationOrchestrator,
 )
 
 # Workflow validation models (OMN-176) - safe to import
@@ -35,10 +35,14 @@ from .model_isolated_step_result import ModelIsolatedStepResult
 from .model_lint_statistics import ModelLintStatistics
 from .model_migration_conflict_union import ModelMigrationConflictUnion
 from .model_rule_configs import (
+    ModelRuleAsyncPolicyConfig,
     ModelRuleConfigBase,
     ModelRuleContractSchemaConfig,
+    ModelRuleDuplicateProtocolsConfig,
     ModelRuleErrorTaxonomyConfig,
     ModelRuleForbiddenImportsConfig,
+    ModelRuleObservabilityConfig,
+    ModelRulePartitionKeyConfig,
     ModelRuleRepoBoundariesConfig,
     ModelRuleTopicNamingConfig,
 )
@@ -74,12 +78,16 @@ __all__ = [
     "ContractValidationEventType",
     "ModelContractValidationEvent",
     # Cross-repo validation models (OMN-1771)
-    "ModelCrossRepoValidationOrchestratorResult",
+    "ModelResultCrossRepoValidationOrchestrator",
     "ModelValidationDiscoveryConfig",
+    "ModelRuleAsyncPolicyConfig",
     "ModelRuleConfigBase",
     "ModelRuleContractSchemaConfig",
+    "ModelRuleDuplicateProtocolsConfig",
     "ModelRuleErrorTaxonomyConfig",
     "ModelRuleForbiddenImportsConfig",
+    "ModelRuleObservabilityConfig",
+    "ModelRulePartitionKeyConfig",
     "ModelRuleRepoBoundariesConfig",
     "ModelRuleTopicNamingConfig",
     "ModelValidationPolicyContract",

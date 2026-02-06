@@ -29,7 +29,7 @@ from omnibase_core.models.events.validation import (
     ModelViolationRecord,
 )
 from omnibase_core.models.validation.model_cross_repo_validation_orchestrator_result import (
-    ModelCrossRepoValidationOrchestratorResult,
+    ModelResultCrossRepoValidationOrchestrator,
 )
 from omnibase_core.models.validation.model_validation_policy_contract import (
     ModelValidationPolicyContract,
@@ -136,7 +136,7 @@ class NodeCrossRepoValidationOrchestrator:
         rules: list[str] | None = None,
         baseline: ModelViolationBaseline | None = None,
         correlation_id: UUID | None = None,
-    ) -> ModelCrossRepoValidationOrchestratorResult:
+    ) -> ModelResultCrossRepoValidationOrchestrator:
         """
         Run validation and emit lifecycle events.
 
@@ -154,7 +154,7 @@ class NodeCrossRepoValidationOrchestrator:
             correlation_id: Optional correlation ID for request tracing.
 
         Returns:
-            ModelCrossRepoValidationOrchestratorResult containing all emitted events.
+            ModelResultCrossRepoValidationOrchestrator containing all emitted events.
 
         Note:
             Exceptions from the validation engine are caught and result in a
@@ -274,13 +274,13 @@ class NodeCrossRepoValidationOrchestrator:
         await self._emit(completed_event)
 
         # NOTE(OMN-1776): This return is COMPLIANT with ONEX Four-Node Architecture.
-        # ModelCrossRepoValidationOrchestratorResult is an EVENT ENVELOPE containing only
+        # ModelResultCrossRepoValidationOrchestrator is an EVENT ENVELOPE containing only
         # (run_id, events[]) - the same events emitted via _emit(). It holds no
         # additional business data. Computed properties (is_valid, total_violations)
         # derive values from events. Contract specifies returns_typed_result: false
         # because this is not a typed business result, just an event container for
         # test inspection and synchronous callers. See model docstring for details.
-        return ModelCrossRepoValidationOrchestratorResult(
+        return ModelResultCrossRepoValidationOrchestrator(
             run_id=run_id,
             events=tuple(events),
         )

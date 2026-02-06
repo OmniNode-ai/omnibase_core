@@ -6,7 +6,9 @@ Rule IDs are fixed in core; repos supply parameters via these configs.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+import re
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumSeverity
 
@@ -181,11 +183,186 @@ class ModelRuleContractSchemaConfig(ModelRuleConfigBase):
     )
 
 
+# Phase 3 rules (OMN-1906)
+
+
+class ModelRuleDuplicateProtocolsConfig(ModelRuleConfigBase):
+    """Configuration for duplicate_protocols rule.
+
+    Detects protocol classes with the same name defined in multiple files.
+    Catches DRY violations and copy-paste drift.
+
+    Related ticket: OMN-1906
+    """
+
+    exclude_patterns: list[str] = Field(
+        default_factory=lambda: ["tests/**", "examples/**", "deprecated/**"],
+        description="Glob patterns for paths to exclude from duplicate detection",
+    )
+
+    protocol_suffix: str = Field(
+        default="Protocol",
+        description="Class name suffix that identifies protocol classes",
+    )
+
+
+class ModelRulePartitionKeyConfig(ModelRuleConfigBase):
+    """Configuration for partition_key rule.
+
+    Requires explicit partition_key declaration in topic configurations.
+    Forces explicitness without prescribing specific key strategies.
+
+    Related ticket: OMN-1906
+    """
+
+    exclude_patterns: list[str] = Field(
+        default_factory=lambda: ["tests/**", "examples/**", "migrations/**"],
+        description="Glob patterns for paths to exclude from partition key checks",
+    )
+
+    require_partition_key: bool = Field(
+        default=True,
+        description="Whether topic configs must declare a partition key",
+    )
+
+    allowed_strategies: list[str] = Field(
+        default_factory=lambda: [
+            "correlation_id",
+            "entity_id",
+            "tenant_id",
+            "none",
+        ],
+        description="Allowed partition key strategy values (or field references)",
+    )
+
+    allow_hash_expressions: bool = Field(
+        default=True,
+        description="Whether hash(...) expressions are allowed as partition keys",
+    )
+
+    topic_config_pattern: str = Field(
+        default=r"Model.*Topic.*Config",
+        description="Regex pattern to identify topic configuration classes",
+    )
+
+    @field_validator("topic_config_pattern")
+    @classmethod
+    def _validate_topic_config_pattern(cls, v: str) -> str:
+        try:
+            re.compile(v)
+        except re.error as e:
+            msg = f"Invalid regex for topic_config_pattern: {e}"
+            raise ValueError(msg) from e
+        return v
+
+
+class ModelRuleObservabilityConfig(ModelRuleConfigBase):
+    """Configuration for observability rule.
+
+    Flags direct print() and raw logging.getLogger() usage.
+    Encourages use of ProtocolLogger for structured logging.
+
+    Related ticket: OMN-1906
+    """
+
+    exclude_patterns: list[str] = Field(
+        default_factory=lambda: [
+            "tests/**",
+            "scripts/**",
+            "migrations/**",
+            "examples/**",
+        ],
+        description="Glob patterns for paths to exclude from observability checks",
+    )
+
+    flag_print: bool = Field(
+        default=True,
+        description="Whether to flag print() calls",
+    )
+
+    flag_raw_logging: bool = Field(
+        default=True,
+        description="Whether to flag logging.getLogger() calls",
+    )
+
+    print_severity: EnumSeverity = Field(
+        default=EnumSeverity.ERROR,
+        description="Severity for print() violations",
+    )
+
+    raw_logging_severity: EnumSeverity = Field(
+        default=EnumSeverity.WARNING,
+        description="Severity for raw logging violations",
+    )
+
+    allowlist_modules: list[str] = Field(
+        default_factory=list,
+        description="Module prefixes where raw logging is permitted (e.g., bootstrap)",
+    )
+
+
+class ModelRuleAsyncPolicyConfig(ModelRuleConfigBase):
+    """Configuration for async_policy rule.
+
+    Flags blocking I/O calls inside async functions.
+    Prevents event loop blocking and concurrency issues.
+
+    Related ticket: OMN-1906
+    """
+
+    exclude_patterns: list[str] = Field(
+        default_factory=lambda: [
+            "tests/**",
+            "scripts/**",
+            "migrations/**",
+            "examples/**",
+        ],
+        description="Glob patterns for paths to exclude from async policy checks",
+    )
+
+    blocking_calls_error: list[str] = Field(
+        default_factory=lambda: [
+            "time.sleep",
+            "requests.get",
+            "requests.post",
+            "requests.put",
+            "requests.delete",
+            "requests.patch",
+            "requests.head",
+            "requests.options",
+            "requests.request",
+            "subprocess.run",
+            "subprocess.call",
+            "subprocess.check_output",
+            "subprocess.check_call",
+        ],
+        description="Blocking calls that cause ERROR severity violations",
+    )
+
+    blocking_calls_warning: list[str] = Field(
+        default_factory=lambda: ["open"],
+        description="Blocking calls that cause WARNING severity violations",
+    )
+
+    allowlist_wrappers: list[str] = Field(
+        default_factory=lambda: [
+            "anyio.to_thread.run_sync",
+            "asyncio.to_thread",
+            "loop.run_in_executor",
+        ],
+        description="Wrapper functions that make sync calls safe in async context",
+    )
+
+
 __all__ = [
+    "ModelRuleAsyncPolicyConfig",
     "ModelRuleConfigBase",
     "ModelRuleContractSchemaConfig",
+    "ModelRuleDuplicateProtocolsConfig",
     "ModelRuleErrorTaxonomyConfig",
     "ModelRuleForbiddenImportsConfig",
+    "ModelRuleObservabilityConfig",
+    "ModelRulePartitionKeyConfig",
     "ModelRuleRepoBoundariesConfig",
     "ModelRuleTopicNamingConfig",
 ]
