@@ -6,7 +6,9 @@ Rule IDs are fixed in core; repos supply parameters via these configs.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+import re
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumSeverity
 
@@ -242,6 +244,16 @@ class ModelRulePartitionKeyConfig(ModelRuleConfigBase):
         default=r"Model.*Topic.*Config",
         description="Regex pattern to identify topic configuration classes",
     )
+
+    @field_validator("topic_config_pattern")
+    @classmethod
+    def _validate_topic_config_pattern(cls, v: str) -> str:
+        try:
+            re.compile(v)
+        except re.error as e:
+            msg = f"Invalid regex for topic_config_pattern: {e}"
+            raise ValueError(msg) from e
+        return v
 
 
 class ModelRuleObservabilityConfig(ModelRuleConfigBase):
