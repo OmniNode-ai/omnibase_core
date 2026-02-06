@@ -119,14 +119,6 @@ class RuleDuplicateProtocols:
         self,
         file_path: Path,
     ) -> list[tuple[str, int]]:
-        """Find all protocol class definitions in a file.
-
-        Args:
-            file_path: Path to the Python file.
-
-        Returns:
-            List of (protocol_name, line_number) tuples.
-        """
         protocols: list[tuple[str, int]] = []
 
         try:
@@ -146,14 +138,9 @@ class RuleDuplicateProtocols:
         return protocols
 
     def _is_protocol_class(self, node: ast.ClassDef) -> bool:
-        """Check if a class definition is a protocol class.
+        # Note: Aliased imports (e.g., "from typing import Protocol as P") are not
+        # detected. The suffix check (e.g., "FooProtocol") provides primary coverage.
 
-        Args:
-            node: Class definition AST node.
-
-        Returns:
-            True if this is a protocol class.
-        """
         # Check class name ends with configured suffix
         if node.name.endswith(self.config.protocol_suffix):
             return True

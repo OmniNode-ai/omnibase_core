@@ -1,7 +1,7 @@
 """Observability rule - flag print() and raw logging usage.
 
 Encourages use of ProtocolLogger for structured, consistent logging
-instead of direct print() or logging.getLogger() calls.
+instead of direct print(), logging.getLogger(), or logging.Logger() calls.
 
 Related ticket: OMN-1906
 """
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 
 class RuleObservability:
-    """Flags direct print() and raw logging.getLogger() usage.
+    """Flags direct print() and raw logging module usage.
 
     Encourages consistent use of ProtocolLogger for structured logging
     instead of ad-hoc print statements or raw logging module usage.
@@ -52,7 +52,7 @@ class RuleObservability:
         repo_id: str,  # string-id-ok: human-readable repository identifier
         root_directory: Path | None = None,
     ) -> list[ModelValidationIssue]:
-        """Find print() and logging.getLogger() calls.
+        """Find print() and raw logging module usage.
 
         Args:
             file_imports: Map of file paths to their imports.
@@ -161,14 +161,14 @@ class RuleObservability:
                 },
             )
 
-        # Check for logging.getLogger() calls
-        if self.config.flag_raw_logging and self._is_logging_get_logger(node):
+        # Check for raw logging module usage (getLogger, Logger)
+        if self.config.flag_raw_logging and self._is_raw_logging_call(node):
             fingerprint = generate_fingerprint(
                 self.rule_id, str(relative_path), f"logging_{node.lineno}"
             )
             return ModelValidationIssue(
                 severity=self.config.raw_logging_severity,
-                message="Direct logging.getLogger() call detected",
+                message="Direct logging module usage detected",
                 code="OBSERVABILITY_RAW_LOGGING",
                 file_path=file_path,
                 line_number=node.lineno,
@@ -176,43 +176,27 @@ class RuleObservability:
                 suggestion="Use ProtocolLogger instead of raw logging module",
                 context={
                     "fingerprint": fingerprint,
-                    "call_type": "logging.getLogger",
+                    "call_type": "raw_logging",
                     "repo_id": repo_id,
-                    "symbol": "logging.getLogger",
+                    "symbol": "logging",
                 },
             )
 
         return None
 
     def _is_print_call(self, node: ast.Call) -> bool:
-        """Check if a call is a print() call.
-
-        Args:
-            node: Call AST node.
-
-        Returns:
-            True if this is a print() call.
-        """
         if isinstance(node.func, ast.Name):
             return node.func.id == "print"
         return False
 
-    def _is_logging_get_logger(self, node: ast.Call) -> bool:
-        """Check if a call is logging.getLogger().
+    def _is_raw_logging_call(self, node: ast.Call) -> bool:
+        """Detect direct logging module usage: getLogger() and Logger().
 
-        Matches:
-        - logging.getLogger(...)
-        - log.getLogger(...)  (if imported as log)
-
-        Args:
-            node: Call AST node.
-
-        Returns:
-            True if this is a logging.getLogger() call.
+        Matches logging.getLogger(...), logging.Logger(...),
+        and aliased variants (e.g., log.getLogger, log.Logger).
         """
         if isinstance(node.func, ast.Attribute):
-            if node.func.attr == "getLogger":
-                # Check if it's called on 'logging' or similar
+            if node.func.attr in ("getLogger", "Logger"):
                 if isinstance(node.func.value, ast.Name):
                     return node.func.value.id in ("logging", "log")
         return False

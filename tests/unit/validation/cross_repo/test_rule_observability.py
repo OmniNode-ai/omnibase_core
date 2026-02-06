@@ -128,6 +128,33 @@ logger = log.getLogger(__name__)
         assert len(issues) == 1
         assert issues[0].code == "OBSERVABILITY_RAW_LOGGING"
 
+    def test_detects_logging_logger_instantiation(
+        self,
+        config: ModelRuleObservabilityConfig,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that logging.Logger() direct instantiation is flagged."""
+        source_file = tmp_src_dir / "service.py"
+        source_file.write_text(
+            """\
+import logging
+
+logger = logging.Logger(__name__)
+"""
+        )
+
+        rule = RuleObservability(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        assert len(issues) == 1
+        assert issues[0].code == "OBSERVABILITY_RAW_LOGGING"
+        assert issues[0].severity == EnumSeverity.WARNING
+
     def test_no_issues_for_clean_code(
         self,
         config: ModelRuleObservabilityConfig,

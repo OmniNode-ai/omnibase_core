@@ -840,6 +840,90 @@ async def process_data():
             is False
         )
 
+    def test_blocking_call_inside_wrapper_argument_is_flagged(
+        self,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that blocking calls evaluated as wrapper arguments ARE flagged.
+
+        When writing asyncio.to_thread(time.sleep(1)), time.sleep(1) is an
+        ast.Call that is evaluated BEFORE to_thread runs, so it blocks the
+        event loop. Only function references (ast.Name/ast.Attribute like
+        time.sleep without parens) are safely deferred by wrappers.
+        """
+        config = ModelRuleAsyncPolicyConfig(
+            enabled=True,
+            blocking_calls_error=["time.sleep"],
+            allowlist_wrappers=["asyncio.to_thread"],
+        )
+
+        source_file = tmp_src_dir / "handler.py"
+        source_file.write_text(
+            """\
+import asyncio
+import time
+
+async def process_data():
+    # BUG pattern: time.sleep(1) is CALLED first, then result passed to to_thread
+    await asyncio.to_thread(time.sleep(1))
+    return "done"
+"""
+        )
+
+        rule = RuleAsyncPolicy(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # time.sleep(1) is an ast.Call evaluated eagerly -- must be flagged
+        assert len(issues) == 1
+        assert "time.sleep" in issues[0].message
+        assert issues[0].severity == EnumSeverity.ERROR
+
+    def test_lambda_inside_wrapper_not_flagged(
+        self,
+        tmp_path: Path,
+        tmp_src_dir: Path,
+    ) -> None:
+        """Test that blocking calls inside a lambda in a wrapper are NOT flagged.
+
+        asyncio.to_thread(lambda: time.sleep(1)) is safe because the lambda
+        body is not evaluated until to_thread invokes it in a separate thread.
+        The ast.Lambda node is skipped during recursive traversal, so the
+        time.sleep call inside it is never inspected.
+        """
+        config = ModelRuleAsyncPolicyConfig(
+            enabled=True,
+            blocking_calls_error=["time.sleep"],
+            allowlist_wrappers=["asyncio.to_thread"],
+        )
+
+        source_file = tmp_src_dir / "handler.py"
+        source_file.write_text(
+            """\
+import asyncio
+import time
+
+async def process_data():
+    # Safe: lambda defers execution to the thread
+    await asyncio.to_thread(lambda: time.sleep(1))
+    return "done"
+"""
+        )
+
+        rule = RuleAsyncPolicy(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        issues = rule.validate(file_imports, "test_repo", tmp_path)
+
+        # Lambda body is deferred, so time.sleep inside it is safe
+        assert len(issues) == 0
+
     def test_handles_file_not_under_root_directory(
         self,
         config: ModelRuleAsyncPolicyConfig,

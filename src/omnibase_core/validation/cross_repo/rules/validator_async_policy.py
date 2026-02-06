@@ -121,17 +121,6 @@ class RuleAsyncPolicy:
         repo_id: str,  # string-id-ok: human-readable repository identifier
         root_directory: Path | None = None,
     ) -> list[ModelValidationIssue]:
-        """Check an async function for blocking calls.
-
-        Args:
-            func_node: Async function definition AST node.
-            file_path: Path to the file.
-            repo_id: The repository being validated.
-            root_directory: Root directory for computing relative paths.
-
-        Returns:
-            List of validation issues for this function.
-        """
         issues: list[ModelValidationIssue] = []
         self._check_node_for_blocking_calls(
             func_node,
@@ -218,7 +207,7 @@ class RuleAsyncPolicy:
             # and will be visited separately by ast.walk in _scan_file.
             # Without this, blocking calls in inner() would be falsely
             # attributed to outer() as well.
-            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
                 continue
 
             if isinstance(child, ast.Call):
@@ -229,8 +218,12 @@ class RuleAsyncPolicy:
                     call_name
                 )
 
-                # Only check for blocking calls if not inside a wrapper
-                if not inside_wrapper and call_name is not None:
+                # Always check for blocking calls, even inside wrapper argument trees.
+                # When a blocking call appears as an ast.Call inside a wrapper (e.g.,
+                # asyncio.to_thread(time.sleep(1))), it is evaluated BEFORE the wrapper
+                # runs, so it still blocks the event loop. Only function REFERENCES
+                # (ast.Name/ast.Attribute, not ast.Call) are safely deferred by wrappers.
+                if call_name is not None:
                     issue = self._check_blocking_call(
                         child,
                         call_name,
