@@ -836,3 +836,41 @@ async def process_data():
             rule._matches_wrapper("loop.run_in_executor", "self.loop.run_in_executor")
             is False
         )
+
+    def test_handles_file_not_under_root_directory(
+        self,
+        config: ModelRuleAsyncPolicyConfig,
+        tmp_path: Path,
+    ) -> None:
+        """Test that files not under root_directory are handled gracefully.
+
+        When a file path is not relative to root_directory, relative_to()
+        would raise ValueError. The rule should handle this gracefully.
+        """
+        # Create two separate directories (file not under root)
+        other_dir = tmp_path / "other"
+        other_dir.mkdir()
+        root_dir = tmp_path / "root"
+        root_dir.mkdir()
+
+        source_file = other_dir / "handler.py"
+        source_file.write_text(
+            """\
+import time
+
+async def process_data():
+    time.sleep(1)  # Blocking call in async function
+    return "done"
+"""
+        )
+
+        rule = RuleAsyncPolicy(config)
+        file_imports = {
+            source_file: ModelFileImports(file_path=source_file),
+        }
+
+        # Should not raise ValueError, should still detect the issue
+        issues = rule.validate(file_imports, "test_repo", root_dir)
+
+        assert len(issues) == 1
+        assert issues[0].code == "ASYNC_POLICY_BLOCKING_CALL"
