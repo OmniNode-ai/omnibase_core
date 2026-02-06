@@ -9,11 +9,13 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.validation.model_rule_configs import (
     ModelRuleDuplicateProtocolsConfig,
 )
-from omnibase_core.validation.cross_repo.rules.rule_duplicate_protocols import (
+from omnibase_core.validation.cross_repo.rules.validator_duplicate_protocols import (
     RuleDuplicateProtocols,
 )
 from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
@@ -21,7 +23,6 @@ from omnibase_core.validation.cross_repo.scanners.scanner_import_graph import (
 )
 
 
-@pytest.mark.unit
 class TestRuleDuplicateProtocols:
     """Tests for RuleDuplicateProtocols."""
 
