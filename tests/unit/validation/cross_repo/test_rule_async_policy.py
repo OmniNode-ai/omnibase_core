@@ -503,10 +503,12 @@ async def outer():
 
         issues = rule.validate(file_imports, "test_repo", tmp_path)
 
-        # Should detect the violation in inner function
-        # Note: Due to ast.walk behavior, it may detect in both outer and inner
-        assert len(issues) >= 1
-        assert any("inner" in i.context["async_function"] for i in issues if i.context)
+        # Should detect exactly one violation, attributed to inner (not outer).
+        # Nested function definitions define their own scope and are visited
+        # separately, so the blocking call is only reported for inner().
+        assert len(issues) == 1
+        assert issues[0].context is not None
+        assert issues[0].context["async_function"] == "inner"
 
     def test_async_method_in_class(
         self,

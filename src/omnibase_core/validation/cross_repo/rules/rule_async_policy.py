@@ -17,7 +17,10 @@ from omnibase_core.models.common.model_validation_issue import ModelValidationIs
 from omnibase_core.models.validation.model_rule_configs import (
     ModelRuleAsyncPolicyConfig,
 )
-from omnibase_core.validation.cross_repo.util_exclusion import should_exclude_path
+from omnibase_core.validation.cross_repo.util_exclusion import (
+    get_relative_path_safe,
+    should_exclude_path,
+)
 from omnibase_core.validation.cross_repo.util_fingerprint import generate_fingerprint
 
 if TYPE_CHECKING:
@@ -211,6 +214,13 @@ class RuleAsyncPolicy:
             root_directory: Root directory for computing relative paths.
         """
         for child in ast.iter_child_nodes(node):
+            # Skip nested function definitions — they define their own scope
+            # and will be visited separately by ast.walk in _scan_file.
+            # Without this, blocking calls in inner() would be falsely
+            # attributed to outer() as well.
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+
             if isinstance(child, ast.Call):
                 call_name = self._get_full_call_name(child)
 
@@ -309,15 +319,7 @@ class RuleAsyncPolicy:
             Validation issue if this is a blocking call, None otherwise.
         """
         # Compute relative path for stable fingerprints across environments.
-        # ValueError can occur if file_path is not relative to root_directory
-        # (e.g., symlinks, absolute paths from different mount points).
-        try:
-            relative_path = (
-                file_path.relative_to(root_directory) if root_directory else file_path
-            )
-        except ValueError:
-            # Fall back to absolute path if relative computation fails
-            relative_path = file_path
+        relative_path = get_relative_path_safe(file_path, root_directory)
 
         # Check ERROR severity blocking calls
         for blocked in self.config.blocking_calls_error:

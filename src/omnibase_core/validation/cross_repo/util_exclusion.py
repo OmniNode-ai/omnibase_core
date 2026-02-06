@@ -27,7 +27,7 @@ def _normalize_to_posix(path: Path) -> str:
     return str(path).replace("\\", "/")
 
 
-def _get_relative_path(file_path: Path, root_directory: Path | None) -> Path:
+def get_relative_path_safe(file_path: Path, root_directory: Path | None) -> Path:
     """Calculate relative path from root directory.
 
     Args:
@@ -116,7 +116,7 @@ def should_exclude_path(
         ... )
         False
     """
-    relative_path = _get_relative_path(file_path, root_directory)
+    relative_path = get_relative_path_safe(file_path, root_directory)
     path_str = _normalize_to_posix(relative_path)
     return _matches_exclusion_patterns(path_str, relative_path, exclude_patterns)
 
@@ -178,7 +178,7 @@ def should_exclude_path_with_modules(
         True
     """
     # Calculate path once, reuse for both pattern and module matching
-    relative_path = _get_relative_path(file_path, root_directory)
+    relative_path = get_relative_path_safe(file_path, root_directory)
     path_str = _normalize_to_posix(relative_path)
 
     # Check standard exclusion patterns
@@ -194,6 +194,7 @@ def should_exclude_path_with_modules(
 
 
 __all__ = [
+    "get_relative_path_safe",
     "should_exclude_path",
     "should_exclude_path_with_modules",
 ]
