@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Literal
-
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.ticket.enum_definition_format import EnumDefinitionFormat
+from omnibase_core.enums.ticket.enum_definition_location import EnumDefinitionLocation
 from omnibase_core.enums.ticket.enum_interface_kind import EnumInterfaceKind
 from omnibase_core.enums.ticket.enum_interface_surface import EnumInterfaceSurface
 
@@ -34,8 +33,9 @@ class ModelInterfaceProvided(BaseModel):
     definition_hash: str | None = Field(
         default=None, description="SHA256 of normalized definition"
     )
-    definition_location: Literal["inline", "file_ref"] = Field(
-        default="inline", description="Where the definition is stored"
+    definition_location: EnumDefinitionLocation = Field(
+        default=EnumDefinitionLocation.INLINE,
+        description="Where the definition is stored",
     )
     definition_ref: str | None = Field(
         default=None,
@@ -45,6 +45,18 @@ class ModelInterfaceProvided(BaseModel):
         default=None, description="Where the interface WILL live"
     )
     version: str | None = Field(default=None, description="SemVer if applicable")
+
+    @model_validator(mode="after")
+    def _validate_file_ref_requires_definition_ref(self) -> ModelInterfaceProvided:
+        """Ensure definition_ref is provided when definition_location is FILE_REF."""
+        if (
+            self.definition_location == EnumDefinitionLocation.FILE_REF
+            and self.definition_ref is None
+        ):
+            raise ValueError(
+                "definition_ref is required when definition_location is 'file_ref'"
+            )
+        return self
 
     model_config = ConfigDict(
         frozen=True,

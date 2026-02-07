@@ -5,7 +5,9 @@ Tests cover:
 - E2: EnumMockStrategy - all values, str(), uniqueness
 - E3: EnumDefinitionFormat - all values, str(), uniqueness
 - E4: EnumInterfaceSurface - all values, str(), uniqueness
-- M1: ModelInterfaceProvided - construction, immutability, extra fields, validation
+- E5: EnumDefinitionLocation - all values, str(), uniqueness
+- M1: ModelInterfaceProvided - construction, immutability, extra fields, validation,
+      cross-field validation (file_ref requires definition_ref)
 - M2: ModelInterfaceConsumed - construction, immutability, extra fields, validation
 - RT: YAML round-trip serialization for both models
 """
@@ -16,6 +18,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.ticket.enum_definition_format import EnumDefinitionFormat
+from omnibase_core.enums.ticket.enum_definition_location import EnumDefinitionLocation
 from omnibase_core.enums.ticket.enum_interface_kind import EnumInterfaceKind
 from omnibase_core.enums.ticket.enum_interface_surface import EnumInterfaceSurface
 from omnibase_core.enums.ticket.enum_mock_strategy import EnumMockStrategy
@@ -66,7 +69,7 @@ def full_provided_interface() -> ModelInterfaceProvided:
         definition_format=EnumDefinitionFormat.YAML,
         definition="type: object\nproperties:\n  user_id: {type: string}",
         definition_hash="abc123def456",
-        definition_location="file_ref",
+        definition_location=EnumDefinitionLocation.FILE_REF,
         definition_ref="src/models/events.py:ModelUserEvent",
         intended_module_path="omnibase_core.models.events",
         version="1.2.0",
@@ -271,7 +274,7 @@ class TestModelInterfaceProvided:
         assert iface.definition_format == EnumDefinitionFormat.YAML
         assert "user_id" in iface.definition
         assert iface.definition_hash == "abc123def456"
-        assert iface.definition_location == "file_ref"
+        assert iface.definition_location == EnumDefinitionLocation.FILE_REF
         assert iface.definition_ref == "src/models/events.py:ModelUserEvent"
         assert iface.intended_module_path == "omnibase_core.models.events"
         assert iface.version == "1.2.0"
@@ -288,8 +291,8 @@ class TestModelInterfaceProvided:
     def test_definition_location_defaults_to_inline(
         self, provided_interface: ModelInterfaceProvided
     ):
-        """definition_location defaults to 'inline'."""
-        assert provided_interface.definition_location == "inline"
+        """definition_location defaults to INLINE."""
+        assert provided_interface.definition_location == EnumDefinitionLocation.INLINE
 
     def test_frozen_immutability(self, provided_interface: ModelInterfaceProvided):
         """Frozen model raises ValidationError when mutating a field."""
@@ -392,7 +395,7 @@ class TestModelInterfaceProvided:
             )
 
     def test_definition_location_accepts_file_ref(self):
-        """definition_location accepts 'file_ref' as a valid value."""
+        """definition_location accepts FILE_REF as a valid value."""
         iface = ModelInterfaceProvided(
             id="iface-ref",
             name="FileRef",
@@ -400,10 +403,10 @@ class TestModelInterfaceProvided:
             surface=EnumInterfaceSurface.PUBLIC_API,
             definition_format=EnumDefinitionFormat.PYTHON,
             definition="...",
-            definition_location="file_ref",
+            definition_location=EnumDefinitionLocation.FILE_REF,
             definition_ref="src/protocols/entry.py:ProtocolEntryPoint",
         )
-        assert iface.definition_location == "file_ref"
+        assert iface.definition_location == EnumDefinitionLocation.FILE_REF
         assert iface.definition_ref == "src/protocols/entry.py:ProtocolEntryPoint"
 
     def test_all_interface_kinds_accepted(self):
@@ -444,6 +447,99 @@ class TestModelInterfaceProvided:
                 definition="...",
             )
             assert iface.definition_format == fmt
+
+    def test_file_ref_without_definition_ref_raises(self):
+        """definition_location=FILE_REF with definition_ref=None raises ValidationError."""
+        with pytest.raises(ValidationError, match="definition_ref is required"):
+            ModelInterfaceProvided(
+                id="iface-bad-ref",
+                name="MissingRef",
+                kind=EnumInterfaceKind.PROTOCOL,
+                surface=EnumInterfaceSurface.PUBLIC_API,
+                definition_format=EnumDefinitionFormat.PYTHON,
+                definition="...",
+                definition_location=EnumDefinitionLocation.FILE_REF,
+                definition_ref=None,
+            )
+
+    def test_file_ref_without_definition_ref_default_raises(self):
+        """definition_location=FILE_REF without explicit definition_ref raises ValidationError."""
+        with pytest.raises(ValidationError, match="definition_ref is required"):
+            ModelInterfaceProvided(
+                id="iface-bad-ref-default",
+                name="MissingRefDefault",
+                kind=EnumInterfaceKind.PROTOCOL,
+                surface=EnumInterfaceSurface.PUBLIC_API,
+                definition_format=EnumDefinitionFormat.PYTHON,
+                definition="...",
+                definition_location=EnumDefinitionLocation.FILE_REF,
+            )
+
+    def test_inline_without_definition_ref_is_valid(self):
+        """definition_location=INLINE with definition_ref=None is valid."""
+        iface = ModelInterfaceProvided(
+            id="iface-inline-no-ref",
+            name="InlineNoRef",
+            kind=EnumInterfaceKind.PROTOCOL,
+            surface=EnumInterfaceSurface.PUBLIC_API,
+            definition_format=EnumDefinitionFormat.PYTHON,
+            definition="...",
+            definition_location=EnumDefinitionLocation.INLINE,
+            definition_ref=None,
+        )
+        assert iface.definition_location == EnumDefinitionLocation.INLINE
+        assert iface.definition_ref is None
+
+    def test_all_definition_locations_accepted(self):
+        """Every EnumDefinitionLocation value is accepted when constraints are met."""
+        for loc in EnumDefinitionLocation:
+            kwargs: dict[str, object] = {
+                "id": f"iface-{loc.value}",
+                "name": f"Interface_{loc.value}",
+                "kind": EnumInterfaceKind.PROTOCOL,
+                "surface": EnumInterfaceSurface.PUBLIC_API,
+                "definition_format": EnumDefinitionFormat.PYTHON,
+                "definition": "...",
+                "definition_location": loc,
+            }
+            if loc == EnumDefinitionLocation.FILE_REF:
+                kwargs["definition_ref"] = "src/foo.py:Bar"
+            iface = ModelInterfaceProvided(**kwargs)  # type: ignore[arg-type]
+            assert iface.definition_location == loc
+
+
+# =============================================================================
+# E5: EnumDefinitionLocation Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestEnumDefinitionLocation:
+    """Test EnumDefinitionLocation enum values and behavior."""
+
+    def test_has_all_two_values(self):
+        """EnumDefinitionLocation has exactly 2 members."""
+        assert len(EnumDefinitionLocation) == 2
+
+    def test_expected_values(self):
+        """Each member has the expected string value."""
+        assert EnumDefinitionLocation.INLINE.value == "inline"
+        assert EnumDefinitionLocation.FILE_REF.value == "file_ref"
+
+    def test_str_returns_value(self):
+        """str() on each member returns its string value."""
+        for member in EnumDefinitionLocation:
+            assert str(member) == member.value
+
+    def test_is_str_subclass(self):
+        """EnumDefinitionLocation members are str instances for JSON serialization."""
+        for member in EnumDefinitionLocation:
+            assert isinstance(member, str)
+
+    def test_values_are_unique(self):
+        """All values are unique (enforced by @unique decorator)."""
+        values = [m.value for m in EnumDefinitionLocation]
+        assert len(values) == len(set(values))
 
 
 # =============================================================================

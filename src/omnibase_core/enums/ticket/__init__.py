@@ -4,6 +4,10 @@ from omnibase_core.enums.ticket.enum_definition_format import (
     DefinitionFormat,
     EnumDefinitionFormat,
 )
+from omnibase_core.enums.ticket.enum_definition_location import (
+    DefinitionLocation,
+    EnumDefinitionLocation,
+)
 from omnibase_core.enums.ticket.enum_interface_kind import (
     EnumInterfaceKind,
     InterfaceKind,
@@ -48,6 +52,8 @@ __all__ = [
     "MockStrategy",
     "EnumDefinitionFormat",
     "DefinitionFormat",
+    "EnumDefinitionLocation",
+    "DefinitionLocation",
     "EnumInterfaceSurface",
     "InterfaceSurface",
 ]
