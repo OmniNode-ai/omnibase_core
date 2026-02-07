@@ -25,6 +25,12 @@ from omnibase_core.models.ticket.model_clarifying_question import (
     ModelClarifyingQuestion,
 )
 from omnibase_core.models.ticket.model_gate import ModelGate
+from omnibase_core.models.ticket.model_interface_consumed import (
+    ModelInterfaceConsumed,
+)
+from omnibase_core.models.ticket.model_interface_provided import (
+    ModelInterfaceProvided,
+)
 from omnibase_core.models.ticket.model_requirement import ModelRequirement
 from omnibase_core.models.ticket.model_verification_step import ModelVerificationStep
 from omnibase_core.utils.util_decorators import allow_dict_str_any, allow_string_id
@@ -84,6 +90,16 @@ class ModelTicketContract(BaseModel):
     )
     gates: list[ModelGate] = Field(
         default_factory=list, description="Approval gates required"
+    )
+
+    # Interface contracts for parallel development
+    interfaces_provided: list[ModelInterfaceProvided] = Field(
+        default_factory=list,
+        description="Interfaces this ticket provides to other tickets",
+    )
+    interfaces_consumed: list[ModelInterfaceConsumed] = Field(
+        default_factory=list,
+        description="Interfaces this ticket consumes (may be mocked)",
     )
 
     # Fingerprinting and timestamps

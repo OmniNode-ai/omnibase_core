@@ -850,3 +850,475 @@ class TestYAMLRoundTrip:
         iface = ModelInterfaceConsumed.model_validate(data)
         assert iface.id == "attr-test"
         assert iface.mock_strategy == EnumMockStrategy.IN_MEMORY
+
+
+# =============================================================================
+# VERIFY_INTERFACE Enum Tests (OMN-1971)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestVerifyInterfaceEnum:
+    """Test VERIFY_INTERFACE enum value in EnumVerificationKind."""
+
+    def test_verify_interface_exists(self):
+        """EnumVerificationKind has VERIFY_INTERFACE member."""
+        from omnibase_core.enums.ticket.enum_ticket_types import EnumVerificationKind
+
+        assert hasattr(EnumVerificationKind, "VERIFY_INTERFACE")
+
+    def test_verify_interface_value(self):
+        """VERIFY_INTERFACE has expected string value."""
+        from omnibase_core.enums.ticket.enum_ticket_types import EnumVerificationKind
+
+        assert EnumVerificationKind.VERIFY_INTERFACE.value == "verify_interface"
+
+    def test_verify_interface_is_str(self):
+        """VERIFY_INTERFACE is a str instance for JSON serialization."""
+        from omnibase_core.enums.ticket.enum_ticket_types import EnumVerificationKind
+
+        assert isinstance(EnumVerificationKind.VERIFY_INTERFACE, str)
+
+    def test_verify_interface_str_returns_value(self):
+        """str(VERIFY_INTERFACE) returns the string value."""
+        from omnibase_core.enums.ticket.enum_ticket_types import EnumVerificationKind
+
+        assert str(EnumVerificationKind.VERIFY_INTERFACE) == "verify_interface"
+
+    def test_enum_count_includes_verify_interface(self):
+        """EnumVerificationKind now has 7 members (was 6)."""
+        from omnibase_core.enums.ticket.enum_ticket_types import EnumVerificationKind
+
+        assert len(EnumVerificationKind) == 7
+
+
+# =============================================================================
+# Integration: ModelTicketContract with Interfaces (OMN-1971)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestTicketContractInterfaceIntegration:
+    """Test interfaces_provided/consumed fields on ModelTicketContract."""
+
+    def test_contract_default_empty_interfaces(self):
+        """New contract has empty interfaces_provided and interfaces_consumed."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-INT-001",
+            title="Integration Test",
+        )
+        assert contract.interfaces_provided == []
+        assert contract.interfaces_consumed == []
+
+    def test_contract_with_interfaces_provided(
+        self, provided_interface: ModelInterfaceProvided
+    ):
+        """Contract accepts interfaces_provided list."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-INT-002",
+            title="With Provided",
+            interfaces_provided=[provided_interface],
+        )
+        assert len(contract.interfaces_provided) == 1
+        assert contract.interfaces_provided[0].id == "iface-001"
+        assert contract.interfaces_provided[0].name == "ProtocolRuntimeEntryPoint"
+
+    def test_contract_with_interfaces_consumed(
+        self, consumed_interface: ModelInterfaceConsumed
+    ):
+        """Contract accepts interfaces_consumed list."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-INT-003",
+            title="With Consumed",
+            interfaces_consumed=[consumed_interface],
+        )
+        assert len(contract.interfaces_consumed) == 1
+        assert contract.interfaces_consumed[0].id == "consume-001"
+        assert contract.interfaces_consumed[0].name == "ProtocolEventBus"
+
+    def test_contract_with_both_interfaces(
+        self,
+        provided_interface: ModelInterfaceProvided,
+        consumed_interface: ModelInterfaceConsumed,
+    ):
+        """Contract accepts both interfaces_provided and interfaces_consumed."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-INT-004",
+            title="Both Interfaces",
+            interfaces_provided=[provided_interface],
+            interfaces_consumed=[consumed_interface],
+        )
+        assert len(contract.interfaces_provided) == 1
+        assert len(contract.interfaces_consumed) == 1
+
+    def test_contract_with_multiple_interfaces(
+        self,
+        provided_interface: ModelInterfaceProvided,
+        full_provided_interface: ModelInterfaceProvided,
+        consumed_interface: ModelInterfaceConsumed,
+        full_consumed_interface: ModelInterfaceConsumed,
+    ):
+        """Contract accepts multiple interfaces in each list."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-INT-005",
+            title="Multiple Interfaces",
+            interfaces_provided=[provided_interface, full_provided_interface],
+            interfaces_consumed=[consumed_interface, full_consumed_interface],
+        )
+        assert len(contract.interfaces_provided) == 2
+        assert len(contract.interfaces_consumed) == 2
+
+    def test_contract_yaml_round_trip_with_interfaces(
+        self,
+        provided_interface: ModelInterfaceProvided,
+        consumed_interface: ModelInterfaceConsumed,
+    ):
+        """Interfaces survive YAML serialization round-trip."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-INT-RT",
+            title="YAML Round Trip",
+            interfaces_provided=[provided_interface],
+            interfaces_consumed=[consumed_interface],
+        )
+
+        yaml_str = contract.to_yaml()
+        restored = ModelTicketContract.from_yaml(yaml_str)
+
+        assert len(restored.interfaces_provided) == 1
+        assert restored.interfaces_provided[0].id == "iface-001"
+        assert restored.interfaces_provided[0].name == "ProtocolRuntimeEntryPoint"
+        assert restored.interfaces_provided[0].kind == EnumInterfaceKind.PROTOCOL
+        assert (
+            restored.interfaces_provided[0].surface == EnumInterfaceSurface.PUBLIC_API
+        )
+
+        assert len(restored.interfaces_consumed) == 1
+        assert restored.interfaces_consumed[0].id == "consume-001"
+        assert restored.interfaces_consumed[0].name == "ProtocolEventBus"
+        assert restored.interfaces_consumed[0].kind == EnumInterfaceKind.PROTOCOL
+        assert (
+            restored.interfaces_consumed[0].mock_strategy
+            == EnumMockStrategy.PROTOCOL_STUB
+        )
+
+    def test_contract_yaml_round_trip_with_full_interfaces(
+        self,
+        full_provided_interface: ModelInterfaceProvided,
+        full_consumed_interface: ModelInterfaceConsumed,
+    ):
+        """Fully-populated interfaces survive YAML round-trip."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-INT-FULL-RT",
+            title="Full YAML Round Trip",
+            interfaces_provided=[full_provided_interface],
+            interfaces_consumed=[full_consumed_interface],
+        )
+
+        yaml_str = contract.to_yaml()
+        restored = ModelTicketContract.from_yaml(yaml_str)
+
+        rp = restored.interfaces_provided[0]
+        assert rp.definition_hash == "abc123def456"
+        assert rp.definition_location == EnumDefinitionLocation.FILE_REF
+        assert rp.definition_ref == "src/models/events.py:ModelUserEvent"
+        assert rp.intended_module_path == "omnibase_core.models.events"
+        assert rp.version == "1.2.0"
+
+        rc = restored.interfaces_consumed[0]
+        assert rc.source_ticket == "OMN-1937"
+        assert rc.mock_strategy == EnumMockStrategy.IN_MEMORY
+        assert rc.required is False
+
+    def test_contract_model_dump_includes_interfaces(
+        self,
+        provided_interface: ModelInterfaceProvided,
+        consumed_interface: ModelInterfaceConsumed,
+    ):
+        """model_dump(mode='json') includes interface fields."""
+        import json
+
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-INT-DUMP",
+            title="Dump Test",
+            interfaces_provided=[provided_interface],
+            interfaces_consumed=[consumed_interface],
+        )
+
+        dumped = contract.model_dump(mode="json")
+
+        assert "interfaces_provided" in dumped
+        assert "interfaces_consumed" in dumped
+        assert len(dumped["interfaces_provided"]) == 1
+        assert len(dumped["interfaces_consumed"]) == 1
+
+        # Verify JSON serializable
+        json_str = json.dumps(dumped)
+        assert isinstance(json_str, str)
+
+    def test_contract_interfaces_in_yaml_output(
+        self,
+        provided_interface: ModelInterfaceProvided,
+    ):
+        """Interface data appears in YAML output as plain strings."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-INT-YAML",
+            title="YAML Output",
+            interfaces_provided=[provided_interface],
+        )
+
+        yaml_str = contract.to_yaml()
+
+        assert "interfaces_provided" in yaml_str
+        assert "ProtocolRuntimeEntryPoint" in yaml_str
+        assert "!!python" not in yaml_str
+
+
+# =============================================================================
+# Backward Compatibility Tests (OMN-1971)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestBackwardCompatibility:
+    """Existing contracts without interface fields still load correctly."""
+
+    def test_old_contract_without_interfaces_loads(self):
+        """YAML contract missing interfaces fields loads with empty defaults."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        old_yaml = """
+ticket_id: OMN-OLD
+title: Legacy Contract
+phase: intake
+description: ""
+context: {}
+questions: []
+requirements: []
+verification_steps: []
+gates: []
+"""
+        contract = ModelTicketContract.from_yaml(old_yaml)
+        assert contract.ticket_id == "OMN-OLD"
+        assert contract.interfaces_provided == []
+        assert contract.interfaces_consumed == []
+
+    def test_old_contract_dict_without_interfaces_validates(self):
+        """Dict input missing interfaces fields validates with defaults."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        data = {
+            "ticket_id": "OMN-OLD-DICT",
+            "title": "Legacy Dict Contract",
+        }
+        contract = ModelTicketContract.model_validate(data)
+        assert contract.interfaces_provided == []
+        assert contract.interfaces_consumed == []
+
+    def test_old_contract_round_trip_preserves_empty_interfaces(self):
+        """Contract created without interfaces round-trips with empty lists."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-OLD-RT",
+            title="Legacy Round Trip",
+        )
+        yaml_str = contract.to_yaml()
+        restored = ModelTicketContract.from_yaml(yaml_str)
+
+        assert restored.interfaces_provided == []
+        assert restored.interfaces_consumed == []
+
+
+# =============================================================================
+# Fingerprint Stability Tests (OMN-1971)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestFingerprintStability:
+    """Hash input is normalized — same content = same hash."""
+
+    def test_fingerprint_changes_with_interfaces(
+        self,
+        provided_interface: ModelInterfaceProvided,
+    ):
+        """Adding interfaces changes the fingerprint."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-FP-001",
+            title="Fingerprint Test",
+        )
+        fp_without = contract.compute_fingerprint()
+
+        contract.interfaces_provided = [provided_interface]
+        fp_with = contract.compute_fingerprint()
+
+        assert fp_without != fp_with
+
+    def test_fingerprint_deterministic_with_interfaces(
+        self,
+        provided_interface: ModelInterfaceProvided,
+        consumed_interface: ModelInterfaceConsumed,
+    ):
+        """Same interfaces produce the same fingerprint."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-FP-002",
+            title="Deterministic FP",
+            interfaces_provided=[provided_interface],
+            interfaces_consumed=[consumed_interface],
+        )
+        fp1 = contract.compute_fingerprint()
+        fp2 = contract.compute_fingerprint()
+
+        assert fp1 == fp2
+
+    def test_fingerprint_stable_after_yaml_round_trip(
+        self,
+        provided_interface: ModelInterfaceProvided,
+        consumed_interface: ModelInterfaceConsumed,
+    ):
+        """Fingerprint is identical before and after YAML round-trip."""
+        from omnibase_core.models.ticket.model_ticket_contract import (
+            ModelTicketContract,
+        )
+
+        contract = ModelTicketContract(
+            ticket_id="OMN-FP-003",
+            title="Stable FP",
+            interfaces_provided=[provided_interface],
+            interfaces_consumed=[consumed_interface],
+        )
+        fp_before = contract.compute_fingerprint()
+
+        yaml_str = contract.to_yaml()
+        restored = ModelTicketContract.from_yaml(yaml_str)
+        fp_after = restored.compute_fingerprint()
+
+        assert fp_before == fp_after
+
+
+# =============================================================================
+# definition_hash Tests (OMN-1971)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestDefinitionHash:
+    """definition_hash matches SHA256 of normalized definition content."""
+
+    def test_definition_hash_matches_sha256(self):
+        """definition_hash can be verified against SHA256 of definition."""
+        import hashlib
+
+        definition = "class ProtocolRuntimeEntryPoint(Protocol): ..."
+        expected_hash = hashlib.sha256(definition.encode()).hexdigest()
+
+        iface = ModelInterfaceProvided(
+            id="hash-test",
+            name="HashTest",
+            kind=EnumInterfaceKind.PROTOCOL,
+            surface=EnumInterfaceSurface.PUBLIC_API,
+            definition_format=EnumDefinitionFormat.PYTHON,
+            definition=definition,
+            definition_hash=expected_hash,
+        )
+        assert iface.definition_hash == expected_hash
+
+    def test_definition_hash_is_optional(self):
+        """definition_hash is optional and defaults to None."""
+        iface = ModelInterfaceProvided(
+            id="no-hash",
+            name="NoHash",
+            kind=EnumInterfaceKind.PROTOCOL,
+            surface=EnumInterfaceSurface.PUBLIC_API,
+            definition_format=EnumDefinitionFormat.PYTHON,
+            definition="...",
+        )
+        assert iface.definition_hash is None
+
+    def test_definition_hash_survives_round_trip(self):
+        """definition_hash is preserved through model_dump / model_validate."""
+        import hashlib
+
+        definition = "type: object\nproperties:\n  user_id: {type: string}"
+        expected_hash = hashlib.sha256(definition.encode()).hexdigest()
+
+        iface = ModelInterfaceProvided(
+            id="hash-rt",
+            name="HashRT",
+            kind=EnumInterfaceKind.PROTOCOL,
+            surface=EnumInterfaceSurface.PUBLIC_API,
+            definition_format=EnumDefinitionFormat.YAML,
+            definition=definition,
+            definition_hash=expected_hash,
+        )
+
+        dumped = iface.model_dump(mode="json")
+        restored = ModelInterfaceProvided.model_validate(dumped)
+
+        assert restored.definition_hash == expected_hash
+
+    def test_definition_hash_formatting_independent(self):
+        """Same logical content produces the same hash regardless of whitespace."""
+        import hashlib
+
+        # Normalize by stripping and collapsing whitespace
+        def normalize(s: str) -> str:
+            return " ".join(s.split())
+
+        definition_v1 = "class   Foo(Protocol):   pass"
+        definition_v2 = "class Foo(Protocol): pass"
+
+        hash_v1 = hashlib.sha256(normalize(definition_v1).encode()).hexdigest()
+        hash_v2 = hashlib.sha256(normalize(definition_v2).encode()).hexdigest()
+
+        assert hash_v1 == hash_v2
