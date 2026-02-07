@@ -300,7 +300,9 @@ class ModelTicketContract(BaseModel):
             f"questions={len(self.questions)}, "
             f"requirements={len(self.requirements)}, "
             f"verification={len(self.verification_steps)}, "
-            f"gates={len(self.gates)})"
+            f"gates={len(self.gates)}, "
+            f"interfaces_provided={len(self.interfaces_provided)}, "
+            f"interfaces_consumed={len(self.interfaces_consumed)})"
         )
 
     # =========================================================================
