@@ -61,6 +61,7 @@ class EnumVerificationKind(StrValueHelper, str, Enum):
     INTEGRATION = "integration"
     MANUAL_CHECK = "manual_check"
     SCRIPT = "script"
+    VERIFY_INTERFACE = "verify_interface"
 
 
 @unique
