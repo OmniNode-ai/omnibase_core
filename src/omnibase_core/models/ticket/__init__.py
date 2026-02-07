@@ -40,6 +40,14 @@ from omnibase_core.models.ticket.model_gate import (
     Gate,
     ModelGate,
 )
+from omnibase_core.models.ticket.model_interface_consumed import (
+    InterfaceConsumed,
+    ModelInterfaceConsumed,
+)
+from omnibase_core.models.ticket.model_interface_provided import (
+    InterfaceProvided,
+    ModelInterfaceProvided,
+)
 from omnibase_core.models.ticket.model_requirement import (
     ModelRequirement,
     Requirement,
@@ -68,11 +76,15 @@ __all__ = [
     "GateKind",
     # Sub-models (canonical names)
     "ModelClarifyingQuestion",
+    "ModelInterfaceConsumed",
+    "ModelInterfaceProvided",
     "ModelRequirement",
     "ModelVerificationStep",
     "ModelGate",
     # Aliases for cleaner API
     "ClarifyingQuestion",
+    "InterfaceConsumed",
+    "InterfaceProvided",
     "Requirement",
     "VerificationStep",
     "Gate",
