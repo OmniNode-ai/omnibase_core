@@ -31,18 +31,15 @@ from omnibase_core.models.events.model_intent_events import (
     ModelIntentExecutionResult,
 )
 from omnibase_core.models.events.model_intent_query_requested_event import (
-    INTENT_QUERY_REQUESTED_EVENT,
     ModelIntentQueryRequestedEvent,
 )
 from omnibase_core.models.events.model_intent_query_response_event import (
-    INTENT_QUERY_RESPONSE_EVENT,
     ModelIntentQueryResponseEvent,
 )
 from omnibase_core.models.events.model_intent_record_payload import (
     ModelIntentRecordPayload,
 )
 from omnibase_core.models.events.model_intent_stored_event import (
-    INTENT_STORED_EVENT,
     ModelIntentStoredEvent,
 )
 from omnibase_core.models.events.model_latency_breakdown_payload import (
@@ -92,11 +89,8 @@ __all__ = [
     "ModelIntentExecutionResult",
     "TOPIC_EVENT_PUBLISH_INTENT",
     # Intent storage events (WS-4)
-    "INTENT_STORED_EVENT",
     "ModelIntentStoredEvent",
-    "INTENT_QUERY_REQUESTED_EVENT",
     "ModelIntentQueryRequestedEvent",
-    "INTENT_QUERY_RESPONSE_EVENT",
     "ModelIntentRecordPayload",
     "ModelIntentQueryResponseEvent",
     # Topic naming and routing

@@ -24,7 +24,6 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.models.events.model_intent_query_requested_event import (
-    INTENT_QUERY_REQUESTED_EVENT,
     ModelIntentQueryRequestedEvent,
 )
 
@@ -56,7 +55,7 @@ class TestModelIntentQueryRequestedEventBasic:
 
         assert event.query_type == "distribution"
         # Check defaults
-        assert event.event_type == INTENT_QUERY_REQUESTED_EVENT
+        assert event.event_type == "onex.omnimemory.intent.query.requested.v1"
         assert isinstance(event.query_id, UUID)
         assert event.session_ref is None
         assert event.time_range_hours == 24
@@ -118,8 +117,7 @@ class TestModelIntentQueryRequestedEventBasic:
             query_type="distribution",
         )
 
-        assert event.event_type == "dev.omnimemory.intent.query.requested.v1"
-        assert event.event_type == INTENT_QUERY_REQUESTED_EVENT
+        assert event.event_type == "onex.omnimemory.intent.query.requested.v1"
 
 
 # ============================================================================
@@ -436,7 +434,7 @@ class TestModelIntentQueryRequestedEventSerialization:
         assert isinstance(json_str, str)
         assert "session-json-test" in json_str
         assert "json_test_client" in json_str
-        assert INTENT_QUERY_REQUESTED_EVENT in json_str
+        assert "onex.omnimemory.intent.query.requested.v1" in json_str
 
     def test_model_validate_from_dict(self) -> None:
         """Test that model can be validated from dict."""

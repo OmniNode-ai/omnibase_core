@@ -26,7 +26,6 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.models.events.model_intent_query_response_event import (
-    INTENT_QUERY_RESPONSE_EVENT,
     ModelIntentQueryResponseEvent,
 )
 from omnibase_core.models.events.model_intent_record_payload import (
@@ -108,7 +107,7 @@ class TestModelIntentQueryResponseEventBasic:
         assert event.query_id == sample_query_id
         assert event.query_type == "distribution"
         # Check defaults
-        assert event.event_type == INTENT_QUERY_RESPONSE_EVENT
+        assert event.event_type == "onex.omnimemory.intent.query.response.v1"
         assert event.status == "success"
         assert event.distribution == {}
         assert event.intents == []
@@ -186,8 +185,7 @@ class TestModelIntentQueryResponseEventBasic:
             query_type="distribution",
         )
 
-        assert event.event_type == "dev.omnimemory.intent.query.response.v1"
-        assert event.event_type == INTENT_QUERY_RESPONSE_EVENT
+        assert event.event_type == "onex.omnimemory.intent.query.response.v1"
 
 
 # ============================================================================
@@ -728,7 +726,7 @@ class TestModelIntentQueryResponseEventSerialization:
         assert isinstance(json_str, str)
         assert "distribution" in json_str
         assert "debugging" in json_str
-        assert INTENT_QUERY_RESPONSE_EVENT in json_str
+        assert "onex.omnimemory.intent.query.response.v1" in json_str
 
     def test_model_dump_json_with_intents(
         self,

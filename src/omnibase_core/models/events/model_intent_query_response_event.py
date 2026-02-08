@@ -24,9 +24,7 @@ from omnibase_core.models.events.model_runtime_event_base import (
     ModelRuntimeEventBase,
 )
 
-__all__ = ["ModelIntentQueryResponseEvent", "INTENT_QUERY_RESPONSE_EVENT"]
-
-INTENT_QUERY_RESPONSE_EVENT = "dev.omnimemory.intent.query.response.v1"
+__all__ = ["ModelIntentQueryResponseEvent"]
 
 
 class ModelIntentQueryResponseEvent(ModelRuntimeEventBase):
@@ -49,7 +47,7 @@ class ModelIntentQueryResponseEvent(ModelRuntimeEventBase):
     """
 
     event_type: str = Field(
-        default=INTENT_QUERY_RESPONSE_EVENT,
+        default="onex.omnimemory.intent.query.response.v1",
         description="Event type identifier",
     )
     query_id: UUID = Field(

@@ -23,7 +23,6 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.models.events.model_intent_stored_event import (
-    INTENT_STORED_EVENT,
     ModelIntentStoredEvent,
 )
 
@@ -69,7 +68,7 @@ class TestModelIntentStoredEventBasic:
         assert event.session_ref == "session-123"
         assert event.intent_category == "debugging"
         # Check defaults
-        assert event.event_type == INTENT_STORED_EVENT
+        assert event.event_type == "onex.omnimemory.intent.stored.v1"
         assert isinstance(event.intent_id, UUID)
         assert event.confidence == 0.0
         assert event.keywords == []
@@ -140,8 +139,7 @@ class TestModelIntentStoredEventBasic:
             intent_category="debugging",
         )
 
-        assert event.event_type == "dev.omnimemory.intent.stored.v1"
-        assert event.event_type == INTENT_STORED_EVENT
+        assert event.event_type == "onex.omnimemory.intent.stored.v1"
 
 
 # ============================================================================
@@ -451,7 +449,7 @@ class TestModelIntentStoredEventSerialization:
         assert isinstance(json_str, str)
         assert "session-json-test" in json_str
         assert "json_serialization" in json_str
-        assert INTENT_STORED_EVENT in json_str
+        assert "onex.omnimemory.intent.stored.v1" in json_str
 
     def test_model_validate_from_dict(self) -> None:
         """Test that model can be validated from dict."""
