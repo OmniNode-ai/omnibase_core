@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.ticket import (
@@ -115,11 +115,41 @@ class ModelTicketContract(BaseModel):
         description="When the contract was last updated (UTC)",
     )
 
-    # Allow extra fields for extensibility (YAML contracts may have additional fields)
+    # ConfigDict rationale:
+    # - extra="allow": YAML contracts may accumulate additional tool-specific or
+    #   plugin-specific fields during workflow execution. Using "allow" (rather than
+    #   the usual "forbid") ensures graceful deserialization when new optional fields
+    #   are added to persisted contracts.
+    # - NOT frozen: The contract is mutated in-place during workflow execution
+    #   (phase transitions, fingerprint updates, adding questions/requirements).
+    #   Callers must call update_fingerprint() after mutations.
+    # - from_attributes=True: Required for pytest-xdist where workers import classes
+    #   independently (see Pydantic Model Standards in CLAUDE.md).
     model_config = ConfigDict(
         extra="allow",
         from_attributes=True,
     )
+
+    # =========================================================================
+    # Validators
+    # =========================================================================
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def _enforce_utc_timezone(cls, v: Any) -> Any:
+        """Enforce UTC timezone on datetime fields during deserialization.
+
+        Naive datetimes (no timezone info) are assumed UTC and have the UTC
+        timezone attached. Datetimes with a non-UTC timezone are converted
+        to UTC. Already-UTC datetimes pass through unchanged.
+        """
+        if not isinstance(v, datetime):
+            return v
+
+        if v.tzinfo is None:
+            return v.replace(tzinfo=UTC)
+
+        return v.astimezone(UTC)
 
     # =========================================================================
     # research_notes as @property (derived from context)
@@ -132,15 +162,24 @@ class ModelTicketContract(BaseModel):
         This is a computed property that extracts research-related information
         from the context dict. It is NOT included in model_dump() output.
 
+        Handles strings, lists, tuples, sets, generators, and any other
+        iterable by joining elements with newlines. Non-iterable values
+        are coerced via ``str()``.
+
         Returns:
             Research notes as a string, or empty string if not present.
         """
         notes = self.context.get("research_notes", "")
         if isinstance(notes, str):
             return notes
-        if isinstance(notes, list):
+        if not notes:
+            return ""
+        # Handle any iterable (list, tuple, set, generator, etc.)
+        try:
             return "\n".join(str(n) for n in notes)
-        return str(notes) if notes else ""
+        except TypeError:
+            # Not iterable -- fall back to str coercion
+            return str(notes)
 
     # =========================================================================
     # Phase Enforcement Methods
@@ -163,8 +202,18 @@ class ModelTicketContract(BaseModel):
             action: The action to check (enum or string).
 
         Raises:
-            ModelOnexError: If the action is not allowed in the current phase.
+            ModelOnexError: If the action is not allowed in the current phase,
+                or if the action value is not a valid EnumTicketAction.
         """
+        # Reject non-str, non-enum types early to avoid AttributeError downstream
+        if not isinstance(action, (str, EnumTicketAction)):
+            raise ModelOnexError(
+                message=f"Invalid action type: expected str or EnumTicketAction, got {type(action).__name__}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                action=repr(action),
+                valid_actions=[a.value for a in EnumTicketAction],
+            )
+
         # Normalize string input to enum
         if isinstance(action, str):
             try:
@@ -281,6 +330,11 @@ class ModelTicketContract(BaseModel):
         """Compute a 16-character hex SHA256 fingerprint of the contract.
 
         The fingerprint excludes the contract_fingerprint field itself.
+
+        Collision resistance: 16 hex characters = 64 bits of entropy. By the
+        birthday paradox, collisions become probable around 2^32 (~4 billion)
+        contracts. This is acceptable for per-ticket change detection where
+        the practical corpus is orders of magnitude smaller.
         """
         data = self.model_dump(exclude={"contract_fingerprint"})
         canonical = json.dumps(data, sort_keys=True, default=str)

@@ -8,13 +8,16 @@ Tests cover all requirements from the ticket Definition of Done:
 - R5: Completion Check Tests
 - R6: Fingerprint Tests
 - R8: YAML Round-Trip Tests
+- UTC Timezone Enforcement (OMN-1819)
+- Validator unexpected-type behavior (OMN-1819)
+- Research notes iterable handling (OMN-1819)
 """
 
 from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
+from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 import yaml
@@ -1077,3 +1080,236 @@ class TestEdgeCases:
 
         # Extra field should be accessible
         assert getattr(contract, "custom_field", None) == "custom_value"
+
+
+# =============================================================================
+# UTC Timezone Enforcement Tests (OMN-1819)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestUTCTimezoneEnforcement:
+    """Test UTC timezone enforcement validator on created_at/updated_at."""
+
+    def test_naive_datetime_gets_utc_attached(self):
+        """Naive datetimes (no tzinfo) are assumed UTC."""
+        naive_dt = datetime(2026, 1, 15, 12, 0, 0)
+        assert naive_dt.tzinfo is None
+
+        contract = TicketContract(
+            ticket_id="OMN-NAIVE",
+            title="Naive TZ Test",
+            created_at=naive_dt,
+            updated_at=naive_dt,
+        )
+
+        assert contract.created_at.tzinfo is not None
+        assert contract.created_at.tzinfo == UTC
+        assert contract.updated_at.tzinfo is not None
+        assert contract.updated_at.tzinfo == UTC
+        # Time value should be preserved
+        assert contract.created_at.hour == 12
+        assert contract.created_at.minute == 0
+
+    def test_utc_datetime_passes_through(self):
+        """Already-UTC datetimes pass through unchanged."""
+        utc_dt = datetime(2026, 1, 15, 12, 0, 0, tzinfo=UTC)
+
+        contract = TicketContract(
+            ticket_id="OMN-UTC",
+            title="UTC TZ Test",
+            created_at=utc_dt,
+            updated_at=utc_dt,
+        )
+
+        assert contract.created_at == utc_dt
+        assert contract.updated_at == utc_dt
+
+    def test_non_utc_timezone_converted(self):
+        """Non-UTC datetimes are converted to UTC."""
+        est = timezone(timedelta(hours=-5))
+        est_dt = datetime(2026, 1, 15, 12, 0, 0, tzinfo=est)  # 12:00 EST = 17:00 UTC
+
+        contract = TicketContract(
+            ticket_id="OMN-EST",
+            title="EST TZ Test",
+            created_at=est_dt,
+        )
+
+        assert contract.created_at.tzinfo == UTC
+        assert contract.created_at.hour == 17  # Converted from EST
+
+    def test_default_factory_produces_utc(self):
+        """Default factory for created_at/updated_at produces UTC datetimes."""
+        contract = TicketContract(
+            ticket_id="OMN-DEFAULT-TZ",
+            title="Default TZ Test",
+        )
+
+        assert contract.created_at.tzinfo is not None
+        assert contract.updated_at.tzinfo is not None
+
+    def test_yaml_roundtrip_preserves_utc(self):
+        """UTC timezone is preserved through YAML round-trip."""
+        utc_dt = datetime(2026, 1, 15, 12, 30, 45, tzinfo=UTC)
+        contract = TicketContract(
+            ticket_id="OMN-YAML-TZ",
+            title="YAML TZ Test",
+            created_at=utc_dt,
+        )
+
+        yaml_str = contract.to_yaml()
+        restored = TicketContract.from_yaml(yaml_str)
+
+        assert restored.created_at.tzinfo is not None
+
+    def test_string_datetime_not_affected(self):
+        """Non-datetime values (e.g., ISO strings from YAML) are not modified by validator.
+
+        Pydantic's own type coercion handles string-to-datetime conversion before
+        the field_validator runs.
+        """
+        data = {
+            "ticket_id": "OMN-STR-DT",
+            "title": "String DT Test",
+            "created_at": "2026-01-15T12:00:00Z",
+        }
+        contract = TicketContract.model_validate(data)
+        assert isinstance(contract.created_at, datetime)
+        assert contract.created_at.tzinfo is not None
+
+
+# =============================================================================
+# Validator Unexpected Type Tests (OMN-1819)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestValidatorUnexpectedTypes:
+    """Test validator behavior with unexpected types (non-string, non-enum)."""
+
+    def test_assert_action_allowed_with_int_raises(
+        self, basic_contract: TicketContract
+    ):
+        """Passing an int to assert_action_allowed raises ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="Invalid action type"):
+            basic_contract.assert_action_allowed(42)  # type: ignore[arg-type]
+
+    def test_assert_action_allowed_with_none_raises(
+        self, basic_contract: TicketContract
+    ):
+        """Passing None to assert_action_allowed raises ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="Invalid action type"):
+            basic_contract.assert_action_allowed(None)  # type: ignore[arg-type]
+
+    def test_assert_action_allowed_with_bool_raises(
+        self, basic_contract: TicketContract
+    ):
+        """Passing a bool to assert_action_allowed raises ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="Invalid action type"):
+            basic_contract.assert_action_allowed(True)  # type: ignore[arg-type]
+
+    def test_phase_field_rejects_invalid_string(self):
+        """Phase field rejects strings that aren't valid EnumTicketPhase values."""
+        with pytest.raises(ValidationError):
+            TicketContract(
+                ticket_id="OMN-BAD-PHASE",
+                title="Bad Phase",
+                phase="not_a_phase",  # type: ignore[arg-type]
+            )
+
+    def test_phase_field_rejects_int(self):
+        """Phase field rejects non-string types."""
+        with pytest.raises(ValidationError):
+            TicketContract(
+                ticket_id="OMN-INT-PHASE",
+                title="Int Phase",
+                phase=42,  # type: ignore[arg-type]
+            )
+
+    def test_status_validator_rejects_non_string_non_enum(self):
+        """VerificationStep status rejects non-string/non-enum values."""
+        with pytest.raises((ValidationError, ModelOnexError)):
+            VerificationStep(
+                id="v1",
+                kind=VerificationKind.UNIT_TESTS,
+                status=42,  # type: ignore[arg-type]
+            )
+
+
+# =============================================================================
+# Research Notes Iterable Tests (OMN-1819)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestResearchNotesIterables:
+    """Test research_notes property with various iterable types (OMN-1819)."""
+
+    def test_research_notes_with_tuple(self):
+        """research_notes handles tuple iterables."""
+        contract = TicketContract(
+            ticket_id="OMN-TUPLE",
+            title="Tuple Notes",
+            context={"research_notes": ("Note A", "Note B")},
+        )
+        assert contract.research_notes == "Note A\nNote B"
+
+    def test_research_notes_with_set(self):
+        """research_notes handles set iterables (order may vary)."""
+        contract = TicketContract(
+            ticket_id="OMN-SET",
+            title="Set Notes",
+            context={"research_notes": {"Only Note"}},
+        )
+        assert contract.research_notes == "Only Note"
+
+    def test_research_notes_with_generator(self):
+        """research_notes handles generator iterables."""
+
+        def gen():
+            yield "Gen 1"
+            yield "Gen 2"
+
+        contract = TicketContract(
+            ticket_id="OMN-GEN",
+            title="Generator Notes",
+            context={"research_notes": gen()},
+        )
+        assert contract.research_notes == "Gen 1\nGen 2"
+
+    def test_research_notes_with_int_fallback(self):
+        """research_notes falls back to str() for non-iterable non-string values."""
+        contract = TicketContract(
+            ticket_id="OMN-INT",
+            title="Int Notes",
+            context={"research_notes": 42},
+        )
+        assert contract.research_notes == "42"
+
+    def test_research_notes_with_empty_list(self):
+        """research_notes returns empty string for empty list."""
+        contract = TicketContract(
+            ticket_id="OMN-EMPTY-LIST",
+            title="Empty List Notes",
+            context={"research_notes": []},
+        )
+        assert contract.research_notes == ""
+
+    def test_research_notes_with_empty_tuple(self):
+        """research_notes returns empty string for empty tuple."""
+        contract = TicketContract(
+            ticket_id="OMN-EMPTY-TUPLE",
+            title="Empty Tuple Notes",
+            context={"research_notes": ()},
+        )
+        assert contract.research_notes == ""
+
+    def test_research_notes_with_mixed_types_in_list(self):
+        """research_notes handles lists with mixed types via str coercion."""
+        contract = TicketContract(
+            ticket_id="OMN-MIXED",
+            title="Mixed Notes",
+            context={"research_notes": ["text", 42, True, None]},
+        )
+        assert contract.research_notes == "text\n42\nTrue\nNone"

@@ -39,15 +39,36 @@ class ProtocolLinearClient(Protocol):
         Fetch issue details from Linear.
 
         Args:
-            issue_id: Linear issue identifier (e.g., "OMN-1807")
+            issue_id: Linear issue identifier (e.g., "OMN-1807").
 
         Returns:
-            Issue data as dictionary containing at minimum:
-            - id: Issue UUID
-            - identifier: Human-readable ID (e.g., "OMN-1807")
-            - title: Issue title
-            - description: Issue description (may be None)
-            - state: Issue state information
+            dict[str, object]: Issue data dictionary with the following keys:
+
+            **Required keys** (always present):
+              - ``id`` (str): Issue UUID (Linear internal identifier).
+              - ``identifier`` (str): Human-readable ID (e.g., ``"OMN-1807"``).
+              - ``title`` (str): Issue title.
+              - ``description`` (str | None): Issue description in Markdown, or
+                ``None`` if no description is set.
+              - ``status`` (str): Current workflow state name
+                (e.g., ``"Backlog"``, ``"In Progress"``, ``"Done"``).
+
+            **Optional keys** (may be present depending on issue configuration):
+              - ``priority`` (dict): Priority info with ``value`` (int 0-4) and
+                ``name`` (str).
+              - ``labels`` (list[str]): Label names attached to the issue.
+              - ``assignee`` (str | None): Assignee display name.
+              - ``project`` (str | None): Project name.
+              - ``team`` (str): Team name.
+              - ``url`` (str): Linear web URL for the issue.
+              - ``gitBranchName`` (str): Suggested git branch name.
+              - ``createdAt`` (str): ISO-8601 creation timestamp.
+              - ``updatedAt`` (str): ISO-8601 last-update timestamp.
+
+        Raises:
+            Exception: If the Linear API request fails or the issue is not found.
+                Implementations should raise a descriptive exception rather than
+                returning an error dict.
         """
         ...
 
