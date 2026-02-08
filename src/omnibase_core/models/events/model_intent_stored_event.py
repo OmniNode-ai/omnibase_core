@@ -21,9 +21,7 @@ from omnibase_core.models.events.model_runtime_event_base import (
     ModelRuntimeEventBase,
 )
 
-__all__ = ["ModelIntentStoredEvent", "INTENT_STORED_EVENT"]
-
-INTENT_STORED_EVENT = "dev.omnimemory.intent.stored.v1"
+__all__ = ["ModelIntentStoredEvent"]
 
 
 class ModelIntentStoredEvent(ModelRuntimeEventBase):
@@ -45,7 +43,7 @@ class ModelIntentStoredEvent(ModelRuntimeEventBase):
     """
 
     event_type: str = Field(
-        default=INTENT_STORED_EVENT,
+        default="onex.omnimemory.intent.stored.v1",
         description="Event type identifier",
     )
     intent_id: UUID = Field(
