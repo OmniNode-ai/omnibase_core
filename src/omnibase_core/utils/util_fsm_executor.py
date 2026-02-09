@@ -757,7 +757,6 @@ def _find_reachable_states(fsm: ModelFSMSubcontract) -> set[str]:
 # Public API
 __all__ = [
     "FSMState",
-    "FSMTransitionResult",
     "execute_transition",
     "get_initial_state",
     "validate_fsm_contract",

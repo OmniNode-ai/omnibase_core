@@ -520,7 +520,6 @@ def test_fsm_package_no_circular_imports() -> None:
         ) from e
 
 
-@pytest.mark.unit
 def test_invariant_package_no_circular_imports() -> None:
     """
     Regression test: circular import in invariant package.
