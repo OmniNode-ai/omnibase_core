@@ -1,0 +1,33 @@
+name: Check Architecture Handshake
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - '.claude/architecture-handshake.md'
+      - 'architecture-handshakes/**'
+      - '.github/workflows/check-handshake.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - '.claude/architecture-handshake.md'
+      - 'architecture-handshakes/**'
+      - '.github/workflows/check-handshake.yml'
+  workflow_dispatch:
+
+jobs:
+  check-handshake:
+    name: Check architecture handshake
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # omnibase_core IS the source-of-truth for architecture handshakes.
+      # No separate checkout needed -- check-handshake.sh auto-detects
+      # the handshakes directory via its parent path (option 3).
+
+      - name: Check architecture handshake
+        run: bash architecture-handshakes/check-handshake.sh .

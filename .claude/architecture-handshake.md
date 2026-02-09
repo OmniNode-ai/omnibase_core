@@ -1,3 +1,11 @@
+<!-- HANDSHAKE_METADATA
+source: omnibase_core/architecture-handshakes/repos/omnibase_core.md
+source_version: 0.16.0
+source_sha256: 3553cfd0922697c12358831f9ad7a2f0c032794772de0c2e88185b547c7fa52a
+installed_at: 2026-02-09T22:02:46Z
+installed_by: jonah
+-->
+
 # OmniNode Architecture – Constraint Map (omnibase_core)
 
 > **Role**: Foundation layer – contracts, models, invariants, enums

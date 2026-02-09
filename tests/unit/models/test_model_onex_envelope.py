@@ -1859,8 +1859,8 @@ class TestModelOnexEnvelopeValidationWarnings:
                 error="Error with success",
             )
 
-    def test_validation_runs_on_assignment(self) -> None:
-        """Test that validation warnings are emitted on field assignment."""
+    def test_validation_runs_on_reconstruction(self) -> None:
+        """Test that validation warnings are emitted when reconstructing with inconsistent state."""
         # Create envelope with valid state (no warning expected for canonical failure)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -1877,10 +1877,26 @@ class TestModelOnexEnvelopeValidationWarnings:
                 error="Initial error",
             )
 
-        # Update to inconsistent state - should warn
-        # Note: validate_assignment triggers a full model validation
+        # Reconstruct via model_validate to trigger validators with inconsistent state
+        data = envelope.model_dump()
+        data["success"] = True
         with pytest.warns(UserWarning, match=r"error=.*success=True"):
-            envelope.success = True  # Now inconsistent with error
+            ModelOnexEnvelope.model_validate(data)
+
+    def test_frozen_model_rejects_assignment(self) -> None:
+        """Test that direct field assignment raises ValidationError (frozen model)."""
+        envelope = ModelOnexEnvelope(
+            envelope_id=FIXED_ENVELOPE_ID,
+            envelope_version=DEFAULT_VERSION,
+            correlation_id=FIXED_CORRELATION_ID,
+            source_node="test_service",
+            operation="TEST_OP",
+            payload={},
+            timestamp=FIXED_TIMESTAMP,
+        )
+
+        with pytest.raises(ValidationError):
+            envelope.success = True  # type: ignore[misc]
 
 
 # =============================================================================

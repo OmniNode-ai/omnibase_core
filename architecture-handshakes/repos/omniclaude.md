@@ -3,12 +3,23 @@
 > **Role**: Claude Code integration – hooks, skills, agent definitions
 > **Handshake Version**: 0.2.0
 
+## Platform-Wide Rules
+
+1. **No backwards compatibility** - Breaking changes always acceptable. No deprecation periods, shims, or migration paths.
+2. **Delete old code immediately** - Never leave deprecated code "for reference." If unused, delete it.
+3. **No speculative refactors** - Only make changes that are directly requested or clearly necessary.
+4. **No silent schema changes** - All schema changes must be explicit and deliberate.
+5. **Frozen event schemas** - All models crossing boundaries (events, intents, actions, envelopes, projections) must use `frozen=True`. Internal mutable state is fine.
+6. **Explicit timestamps** - Never use `datetime.now()` defaults. Inject timestamps explicitly.
+7. **No hardcoded configuration** - All config via `.env` or Pydantic Settings. No localhost defaults.
+8. **Kafka is required infrastructure** - Use async/non-blocking patterns. Never block the calling thread waiting for Kafka acks.
+9. **No `# type: ignore` without justification** - Requires explanation comment and ticket reference.
+
 ## Core Principles
 
 - Hooks never block Claude Code
 - Data loss acceptable; UI freeze is not
 - Graceful degradation on infrastructure failure
-- Explicit timestamps (no `datetime.now()` defaults)
 - Fail-fast configuration (services disabled by default)
 - Privacy-first event emission (public vs restricted topics)
 
@@ -70,10 +81,7 @@
 
 ## Non-Goals (DO NOT)
 
-- ❌ No backwards compatibility - schemas change without deprecation
 - ❌ No blocking operations in hooks
-- ❌ No hardcoded environment variables - use `.env` or Pydantic Settings
-- ❌ No localhost defaults in configuration
 - ❌ No sensitive data in `onex.evt.*` topics
 - ❌ No agent YAML without `schema_version`
 - ❌ No sequential Polly dispatch when parallel is possible

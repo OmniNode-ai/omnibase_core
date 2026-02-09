@@ -81,8 +81,9 @@ class ModelExtensionData(BaseModel):
 
     # Pydantic configuration
     model_config = ConfigDict(
-        extra="forbid",  # No arbitrary fields allowed - strict validation,
-        frozen=False,  # Allow mutation for practical use cases,
+        extra="forbid",  # No arbitrary fields allowed - strict validation
+        frozen=True,  # Immutable after creation - boundary-crossing model
+        from_attributes=True,  # pytest-xdist worker compatibility
     )
 
     @property

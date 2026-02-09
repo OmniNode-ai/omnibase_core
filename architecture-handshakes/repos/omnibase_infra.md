@@ -17,6 +17,18 @@
 - Handler implementations
 - Infrastructure adapters
 
+## Platform-Wide Rules
+
+1. **No backwards compatibility** - Breaking changes always acceptable. No deprecation periods, shims, or migration paths.
+2. **Delete old code immediately** - Never leave deprecated code "for reference." If unused, delete it.
+3. **No speculative refactors** - Only make changes that are directly requested or clearly necessary.
+4. **No silent schema changes** - All schema changes must be explicit and deliberate.
+5. **Frozen event schemas** - All models crossing boundaries (events, intents, actions, envelopes, projections) must use `frozen=True`. Internal mutable state is fine.
+6. **Explicit timestamps** - Never use `datetime.now()` defaults. Inject timestamps explicitly.
+7. **No hardcoded configuration** - All config via `.env` or Pydantic Settings. No localhost defaults.
+8. **Kafka is required infrastructure** - Use async/non-blocking patterns. Never block the calling thread waiting for Kafka acks.
+9. **No `# type: ignore` without justification** - Requires explanation comment and ticket reference.
+
 ## Rules the Agent Must Obey
 
 1. **Nodes MUST be declarative** - `node.py` extends base class with NO custom logic
@@ -25,11 +37,9 @@
 4. **Orchestrators emit, never return** - Cannot return `result`
 5. **Contracts are source of truth** - YAML contracts define behavior
 6. **Container injection required** - All services via `ModelONEXContainer`
-7. **Never block on Kafka** - Kafka is optional; operations must succeed without it
 
 ## Non-Goals (DO NOT)
 
-- ❌ No backwards compatibility - change freely, no deprecation periods
 - ❌ No versioned directories (`v1_0_0/`, `v2/`) - version through contract.yaml fields only
 - ❌ No convenience over correctness - contract violations fail loudly
 - ❌ No business logic in nodes - nodes coordinate, handlers compute
@@ -40,7 +50,6 @@
 - Custom logic in `node.py` beyond base class extension
 - Error handling in nodes (belongs in handlers)
 - Direct Kafka/Postgres calls in nodes (use effect handlers)
-- Leaving deprecated code "for reference" - DELETE IT
 
 ## Layer Boundaries
 
