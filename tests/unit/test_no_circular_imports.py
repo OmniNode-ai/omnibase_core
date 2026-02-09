@@ -520,6 +520,50 @@ def test_fsm_package_no_circular_imports() -> None:
         ) from e
 
 
+@pytest.mark.unit
+def test_invariant_package_no_circular_imports() -> None:
+    """
+    Regression test: circular import in invariant package.
+
+    The circular import chain was:
+        util_invariant_yaml_parser
+          -> models/invariant/model_invariant_set
+            -> models/invariant/__init__.py (during resolution)
+              -> util_invariant_yaml_parser  <- CIRCULAR
+
+    Fix: models/invariant/__init__.py defers the three YAML-parsing
+    function imports to a __getattr__ lazy-loading pattern so the
+    package init no longer eagerly imports util_invariant_yaml_parser.
+    """
+    # Clear module cache to test fresh imports
+    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
+    for module in modules_to_remove:
+        del sys.modules[module]
+
+    try:
+        # Import the module that was the cycle entry point
+        # Import the package init (would have triggered the cycle)
+        import omnibase_core.models.invariant as invariant_pkg
+        from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
+            load_invariant_set_from_file as _load_file,
+        )
+        from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
+            load_invariant_sets_from_directory as _load_dir,
+        )
+        from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
+            parse_invariant_set_from_yaml as _parse,
+        )
+
+        # Verify the lazy-loaded functions are accessible via the package
+        assert hasattr(invariant_pkg, "load_invariant_set_from_file")
+        assert callable(invariant_pkg.load_invariant_set_from_file)
+
+    except ImportError as e:
+        raise AssertionError(
+            f"Circular import detected in invariant package: {e}"
+        ) from e
+
+
 def test_util_fsm_executor_does_not_eagerly_import_transition_result() -> None:
     """
     Verify util_fsm_executor uses lazy import for ModelFSMTransitionResult.
