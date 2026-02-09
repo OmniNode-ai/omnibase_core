@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-02-09
+
+### Added
+
+- **EnumEvidenceTier for Evidence-Gated Promotion** [OMN-2043] (#494): New enum in the pattern_learning domain with four ordered tiers for threshold-based promotion decisions
+  - Tiers: `UNMEASURED < OBSERVED < MEASURED < VERIFIED` with numeric weight ordering
+  - Supports comparison operators (`__lt__`, `__le__`, `__gt__`, `__ge__`) via weight-based ordering
+  - Coerces string operands to enum values for correct comparison semantics (avoids lexicographic ordering bugs)
+
+- **Event Typing and Schema Versioning for ModelEventEnvelope** [OMN-2035] (#493): Three new optional fields for explicit event dispatch and payload version tracking
+  - `event_type: str | None` — dot-path routing key for event dispatch
+  - `payload_type: str | None` — Pydantic model class name for deserialization
+  - `payload_schema_version: ModelSemVer | None` — payload schema version for evolution
+  - Bumped `envelope_version` to 2.1.0; updated `TypedDictEventEnvelopeDict` and `to_dict_lazy()`
+  - Full backwards compatibility — all fields default to `None`
+
+- **Interface Models for ModelTicketContract** [OMN-1971] (#490): Integrate interface definitions into ticket contracts for mock-based parallel development
+  - Added `interfaces_provided` and `interfaces_consumed` fields to `ModelTicketContract`
+  - New `VERIFY_INTERFACE` variant in `EnumVerificationKind`
+  - Updated `__repr__` to include interface counts for debugging
+
+- **ModelInterfaceProvided/Consumed and Supporting Enums** [OMN-1968] (#489): Frozen Pydantic models for interface definitions enabling mock-based parallel development
+  - `ModelInterfaceProvided` and `ModelInterfaceConsumed` — typed interface contracts
+  - 4 new enums: `EnumInterfaceKind`, `EnumMockStrategy`, `EnumDefinitionFormat`, `EnumInterfaceSurface`
+  - `EnumDefinitionLocation` replaces `Literal["inline", "file_ref"]` per enum policy
+  - Cross-field validation: `definition_ref` required when `definition_location=FILE_REF`
+  - 69 unit tests covering immutability, validation, and YAML round-trip
+
+- **Phase 3 Cross-Repo Validation Rules** [OMN-1906] (#488): Four new AST-based validation rules with fingerprinting for baseline tracking
+  - `validator_duplicate_protocols` — detect protocol classes defined in multiple files
+  - `validator_partition_key` — require explicit `partition_key` in topic configs
+  - `validator_observability` — flag `print()`, raw `logging.getLogger()`, and `logging.Logger()` instantiation
+  - `validator_async_policy` — flag blocking calls (`time.sleep`, `requests`, `subprocess`) in async functions
+  - Shared `util_exclusion.py` for DRY path exclusion logic across all rules
+  - Wrapper suppression for `asyncio.to_thread()` and similar async wrappers
+  - Nested async function scope handling to prevent double-reporting
+  - Regex validation on `topic_config_pattern` at config parse time
+  - 243+ tests across all four rules
+
+### Fixed
+
+- **Remove Legacy dev.omnimemory Topic Constants** [OMN-1554] (#492): Delete hardcoded `dev.omnimemory.*` module-level constants using the old naming convention
+  - Removed `INTENT_STORED_EVENT`, `INTENT_QUERY_REQUESTED_EVENT`, `INTENT_QUERY_RESPONSE_EVENT`
+  - Replaced event_type defaults with ONEX-standard `onex.omnimemory.*` identifiers
+  - Updated all tests to use inline string values
+
+- **Harden ModelTicketContract** [OMN-1819] (#491): UTC enforcement, type guards, and iterable support for ticket contracts
+  - UTC timezone enforcement validator for `created_at`/`updated_at` on deserialization
+  - Type guard in `assert_action_allowed()` for non-str/non-enum inputs
+  - Extended `research_notes` property to handle arbitrary iterables (tuple, set, generator)
+  - Documented fingerprint collision resistance (16-char hex = ~2^32 birthday bound)
+  - 19 new tests covering UTC enforcement, unexpected types, and iterable handling
+
+### Refactored
+
+- **Consolidate Error Models into ModelErrorDetails** [OMN-1765] (#486): Single canonical error model replacing three overlapping implementations
+  - Moved `ModelErrorDetails` from `models/services/` to `models/core/`
+  - Removed `ModelBaseError` (simple string-based) and `ModelOnexErrorDetails` (medium complexity)
+  - Migrated `ModelLogEntry` and `ModelValidateMessage` from inheritance to direct fields
+  - Features: generic `TContext` support, inner error chaining, recovery info (`retry_after`, `suggestions`), correlation tracking, thread-safe immutability (`frozen=True`)
+  - Added `model_config` with `frozen=True` and `extra="forbid"` to `ModelBaseResult`, `ModelValidateResult`, `ModelServiceConfiguration`
+  - Resolved circular import chains in `models/services/` via relative imports
+
 ## [0.15.0] - 2026-02-05
 
 ### Added
