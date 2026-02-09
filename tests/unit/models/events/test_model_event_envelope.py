@@ -101,6 +101,9 @@ class TestModelEventEnvelopeInstantiation:
             request_id=request_id,
             trace_id=trace_id,
             span_id=span_id,
+            event_type="core.node.completed",
+            payload_type="SimplePayload",
+            payload_schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert envelope.payload == payload
@@ -115,6 +118,9 @@ class TestModelEventEnvelopeInstantiation:
         assert envelope.request_id == request_id
         assert envelope.trace_id == trace_id
         assert envelope.span_id == span_id
+        assert envelope.event_type == "core.node.completed"
+        assert envelope.payload_type == "SimplePayload"
+        assert envelope.payload_schema_version == ModelSemVer(major=1, minor=0, patch=0)
 
     def test_instantiation_with_onex_event_payload(self):
         """Test envelope wrapping ModelOnexEvent payload."""
