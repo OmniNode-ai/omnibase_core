@@ -270,6 +270,7 @@ class PythonASTValidator(ast.NodeVisitor):
             "target_node_id",  # TypedDict CLI target node ID (serialized UUID)
             "onex_version",  # TypedDict ONEX version (serialized ModelSemVer)
             "envelope_version",  # TypedDict envelope schema version (serialized ModelSemVer)
+            "payload_schema_version",  # TypedDict payload schema version (serialized ModelSemVer)
             # GENERIC_SERIALIZATION_FIELDS (used in TypedDicts for serialization)
             # NOTE: These generic names are allowed because:
             # 1. TypedDicts are serialization boundaries (JSON, logging, monitoring)

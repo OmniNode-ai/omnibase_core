@@ -25,6 +25,9 @@ class TypedDictEventEnvelopeDict(TypedDict, total=False):
         correlation_id: Correlation ID for request tracing (converted to string, or None)
         source_tool: Identifier of source tool (or None)
         target_tool: Identifier of target tool (or None)
+        event_type: Dot-path routing key (or None)
+        payload_type: Pydantic model class name (or None)
+        payload_schema_version: Schema version string (or None)
         priority: Request priority (1-10)
         timeout_seconds: Optional timeout in seconds (or None)
         retry_count: Number of retry attempts
@@ -43,6 +46,9 @@ class TypedDictEventEnvelopeDict(TypedDict, total=False):
     correlation_id: str | None
     source_tool: str | None
     target_tool: str | None
+    event_type: str | None
+    payload_type: str | None
+    payload_schema_version: str | None
     priority: int
     timeout_seconds: int | None
     retry_count: int

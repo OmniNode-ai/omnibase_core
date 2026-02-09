@@ -1110,5 +1110,162 @@ class TestModelEventEnvelopeInferCategory:
         assert envelope.infer_category() == EnumMessageCategory.EVENT
 
 
+@pytest.mark.unit
+class TestModelEventEnvelopeEventTyping:
+    """Tests for event_type, payload_type, and payload_schema_version fields."""
+
+    def test_new_fields_default_to_none(self):
+        """New fields should default to None for backwards compatibility."""
+        payload = SimplePayload(message="test", value=42)
+        envelope = ModelEventEnvelope(payload=payload)
+
+        assert envelope.event_type is None
+        assert envelope.payload_type is None
+        assert envelope.payload_schema_version is None
+
+    def test_event_type_set_explicitly(self):
+        """event_type can be set as a dot-path routing key."""
+        payload = SimplePayload(message="test", value=42)
+        envelope = ModelEventEnvelope(
+            payload=payload,
+            event_type="intelligence.claude-hook-event",
+        )
+
+        assert envelope.event_type == "intelligence.claude-hook-event"
+
+    def test_payload_type_set_explicitly(self):
+        """payload_type can be set to a Pydantic model class name."""
+        payload = SimplePayload(message="test", value=42)
+        envelope = ModelEventEnvelope(
+            payload=payload,
+            payload_type="SimplePayload",
+        )
+
+        assert envelope.payload_type == "SimplePayload"
+
+    def test_payload_schema_version_set_explicitly(self):
+        """payload_schema_version can be set to a ModelSemVer instance."""
+        payload = SimplePayload(message="test", value=42)
+        schema_version = ModelSemVer(major=2, minor=1, patch=0)
+        envelope = ModelEventEnvelope(
+            payload=payload,
+            payload_schema_version=schema_version,
+        )
+
+        assert envelope.payload_schema_version == schema_version
+        assert envelope.payload_schema_version.major == 2
+        assert envelope.payload_schema_version.minor == 1
+        assert envelope.payload_schema_version.patch == 0
+
+    def test_all_new_fields_together(self):
+        """All three new fields can be set together."""
+        payload = SimplePayload(message="test", value=42)
+        schema_version = ModelSemVer(major=1, minor=3, patch=0)
+        envelope = ModelEventEnvelope(
+            payload=payload,
+            event_type="core.node.start",
+            payload_type="SimplePayload",
+            payload_schema_version=schema_version,
+        )
+
+        assert envelope.event_type == "core.node.start"
+        assert envelope.payload_type == "SimplePayload"
+        assert envelope.payload_schema_version == schema_version
+
+    def test_new_fields_serialize_correctly(self):
+        """New fields should serialize and deserialize via model_dump/model_validate."""
+        payload = SimplePayload(message="test", value=42)
+        schema_version = ModelSemVer(major=1, minor=2, patch=3)
+        envelope = ModelEventEnvelope(
+            payload=payload,
+            event_type="intelligence.analysis",
+            payload_type="SimplePayload",
+            payload_schema_version=schema_version,
+        )
+
+        data = envelope.model_dump()
+        assert data["event_type"] == "intelligence.analysis"
+        assert data["payload_type"] == "SimplePayload"
+        assert data["payload_schema_version"]["major"] == 1
+        assert data["payload_schema_version"]["minor"] == 2
+        assert data["payload_schema_version"]["patch"] == 3
+
+    def test_new_fields_json_round_trip(self):
+        """New fields should survive JSON serialization round-trip."""
+        payload = SimplePayload(message="test", value=42)
+        schema_version = ModelSemVer(major=1, minor=0, patch=0)
+        envelope = ModelEventEnvelope(
+            payload=payload,
+            event_type="test.event",
+            payload_type="SimplePayload",
+            payload_schema_version=schema_version,
+        )
+
+        json_str = envelope.model_dump_json()
+        deserialized = ModelEventEnvelope[SimplePayload].model_validate_json(json_str)
+
+        assert deserialized.event_type == "test.event"
+        assert deserialized.payload_type == "SimplePayload"
+        assert deserialized.payload_schema_version == schema_version
+
+    def test_new_fields_none_json_round_trip(self):
+        """None-valued new fields should survive JSON round-trip."""
+        payload = SimplePayload(message="test", value=42)
+        envelope = ModelEventEnvelope(payload=payload)
+
+        json_str = envelope.model_dump_json()
+        deserialized = ModelEventEnvelope[SimplePayload].model_validate_json(json_str)
+
+        assert deserialized.event_type is None
+        assert deserialized.payload_type is None
+        assert deserialized.payload_schema_version is None
+
+    def test_new_fields_in_to_dict_lazy(self):
+        """New fields should appear in to_dict_lazy() output."""
+        payload = SimplePayload(message="test", value=42)
+        schema_version = ModelSemVer(major=2, minor=0, patch=1)
+        envelope = ModelEventEnvelope(
+            payload=payload,
+            event_type="test.lazy",
+            payload_type="SimplePayload",
+            payload_schema_version=schema_version,
+        )
+
+        lazy_dict = envelope.to_dict_lazy()
+
+        assert lazy_dict["event_type"] == "test.lazy"
+        assert lazy_dict["payload_type"] == "SimplePayload"
+        assert lazy_dict["payload_schema_version"] == str(schema_version)
+
+    def test_new_fields_none_in_to_dict_lazy(self):
+        """None-valued new fields should appear as None in to_dict_lazy()."""
+        payload = SimplePayload(message="test", value=42)
+        envelope = ModelEventEnvelope(payload=payload)
+
+        lazy_dict = envelope.to_dict_lazy()
+
+        assert lazy_dict["event_type"] is None
+        assert lazy_dict["payload_type"] is None
+        assert lazy_dict["payload_schema_version"] is None
+
+    def test_new_fields_preserved_by_model_copy(self):
+        """New fields should be preserved through model_copy operations."""
+        payload = SimplePayload(message="test", value=42)
+        schema_version = ModelSemVer(major=1, minor=0, patch=0)
+        envelope = ModelEventEnvelope(
+            payload=payload,
+            event_type="test.copy",
+            payload_type="SimplePayload",
+            payload_schema_version=schema_version,
+        )
+
+        copied = envelope.with_priority(9)
+
+        assert copied.event_type == "test.copy"
+        assert copied.payload_type == "SimplePayload"
+        assert copied.payload_schema_version == schema_version
+        assert copied.priority == 9
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
