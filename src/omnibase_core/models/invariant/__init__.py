@@ -52,6 +52,8 @@ Usage:
     >>> invariant_set = load_invariant_set_from_file("path/to/invariants.yaml")
 """
 
+from typing import Any
+
 from .model_cost_config import ModelCostConfig
 from .model_custom_invariant_config import ModelCustomInvariantConfig
 from .model_evaluation_summary import ModelEvaluationSummary
@@ -93,7 +95,7 @@ __all__ = [
 ]
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
     """Lazy-load YAML parsing functions to avoid circular imports.
 
     The util_invariant_yaml_parser module imports ModelInvariantSet from this
