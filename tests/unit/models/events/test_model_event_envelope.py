@@ -69,7 +69,7 @@ class TestModelEventEnvelopeInstantiation:
         assert envelope.trace_id is None
         assert envelope.span_id is None
         assert envelope.onex_version == ModelSemVer(major=1, minor=0, patch=0)
-        assert envelope.envelope_version == ModelSemVer(major=2, minor=0, patch=0)
+        assert envelope.envelope_version == ModelSemVer(major=2, minor=1, patch=0)
 
     def test_instantiation_with_all_fields(self):
         """Test envelope creation with all fields provided."""

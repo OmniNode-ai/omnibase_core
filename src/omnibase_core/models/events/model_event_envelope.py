@@ -40,6 +40,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
 
     Features:
     - Generic payload support (any event type)
+    - Event type metadata for payload routing and schema validation
     - Correlation tracking and distributed tracing
     - Quality of Service (priority, timeout, retry)
     - Security context
@@ -139,7 +140,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         description="ONEX standard version",
     )
     envelope_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=2, minor=0, patch=0),
+        default_factory=lambda: ModelSemVer(major=2, minor=1, patch=0),
         description="Envelope schema version",
     )
 
