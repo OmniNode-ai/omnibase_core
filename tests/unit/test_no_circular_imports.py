@@ -458,6 +458,7 @@ def test_contract_compute_uses_lazy_import() -> None:
         raise AssertionError(msg)
 
 
+@pytest.mark.unit
 def test_fsm_package_no_circular_imports() -> None:
     """
     Regression test for OMN-2048: circular import in fsm package.
@@ -520,6 +521,7 @@ def test_fsm_package_no_circular_imports() -> None:
         ) from e
 
 
+@pytest.mark.unit
 def test_invariant_package_no_circular_imports() -> None:
     """
     Regression test: circular import in invariant package.
@@ -563,6 +565,7 @@ def test_invariant_package_no_circular_imports() -> None:
         ) from e
 
 
+@pytest.mark.unit
 def test_util_fsm_executor_does_not_eagerly_import_transition_result() -> None:
     """
     Verify util_fsm_executor uses lazy import for ModelFSMTransitionResult.
@@ -590,13 +593,9 @@ def test_util_fsm_executor_does_not_eagerly_import_transition_result() -> None:
         if stripped.startswith("if TYPE_CHECKING"):
             in_type_checking = True
             continue
-        if (
-            in_type_checking
-            and stripped
-            and not stripped.startswith(("#", "from", "import", ")"))
-        ):
-            if not line.startswith(" ") and not line.startswith("\t"):
-                in_type_checking = False
+        # Any non-indented, non-empty line ends the TYPE_CHECKING block
+        if in_type_checking and stripped and not line.startswith((" ", "\t")):
+            in_type_checking = False
 
         # Module-level import check: not in TYPE_CHECKING and not indented
         if (

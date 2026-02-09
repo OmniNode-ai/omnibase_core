@@ -115,7 +115,9 @@ def __getattr__(name: str) -> Any:
             parse_invariant_set_from_yaml,
         )
 
-        return locals()[name]
+        value = locals()[name]
+        globals()[name] = value  # Cache for subsequent lookups
+        return value
     raise AttributeError(  # error-ok: __getattr__ protocol requires AttributeError
         f"module {__name__!r} has no attribute {name!r}"
     )
