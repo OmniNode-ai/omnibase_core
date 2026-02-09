@@ -40,6 +40,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
 
     Features:
     - Generic payload support (any event type)
+    - Event type metadata for payload routing and schema validation
     - Correlation tracking and distributed tracing
     - Quality of Service (priority, timeout, retry)
     - Security context
@@ -55,6 +56,11 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         target_tool: Optional identifier of the intended recipient tool
         metadata: Additional envelope metadata (tool version, environment, etc.)
         security_context: Optional security context for the event
+
+        # Event Typing
+        event_type: Optional dot-path routing key (e.g., "intelligence.claude-hook-event")
+        payload_type: Optional Pydantic model class name for the payload
+        payload_schema_version: Optional schema version for the payload type
 
         # QoS Features
         priority: Request priority (1-10, where 10 is highest)
@@ -95,6 +101,18 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
     security_context: ModelSecurityContext | None = Field(
         default=None, description="Security context for the event"
     )
+    event_type: str | None = Field(
+        default=None,
+        description="Dot-path routing key (e.g., 'intelligence.claude-hook-event')",
+    )
+    payload_type: str | None = Field(
+        default=None,
+        description="Pydantic model class name for the payload",
+    )
+    payload_schema_version: ModelSemVer | None = Field(
+        default=None,
+        description="Schema version for the payload type",
+    )
     priority: int = Field(
         default=5,
         ge=1,
@@ -122,7 +140,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         description="ONEX standard version",
     )
     envelope_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=2, minor=0, patch=0),
+        default_factory=lambda: ModelSemVer(major=2, minor=1, patch=0),
         description="Envelope schema version",
     )
 
@@ -434,6 +452,13 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             "correlation_id": str(self.correlation_id) if self.correlation_id else None,
             "source_tool": self.source_tool,
             "target_tool": self.target_tool,
+            "event_type": self.event_type,
+            "payload_type": self.payload_type,
+            "payload_schema_version": (
+                str(self.payload_schema_version)
+                if self.payload_schema_version
+                else None
+            ),
             "priority": self.priority,
             "timeout_seconds": self.timeout_seconds,
             "retry_count": self.retry_count,
