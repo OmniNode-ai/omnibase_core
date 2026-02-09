@@ -52,12 +52,7 @@ Usage:
     >>> invariant_set = load_invariant_set_from_file("path/to/invariants.yaml")
 """
 
-# YAML parsing functions are in utils/ to avoid circular imports
-from omnibase_core.utils.util_invariant_yaml_parser import (
-    load_invariant_set_from_file,
-    load_invariant_sets_from_directory,
-    parse_invariant_set_from_yaml,
-)
+from typing import Any
 
 from .model_cost_config import ModelCostConfig
 from .model_custom_invariant_config import ModelCustomInvariantConfig
@@ -93,8 +88,36 @@ __all__ = [
     "ModelCustomInvariantConfig",
     # Union type
     "InvariantConfigUnion",
-    # YAML parsing functions
+    # YAML parsing functions (lazy-loaded to avoid circular imports)
     "load_invariant_set_from_file",
     "load_invariant_sets_from_directory",
     "parse_invariant_set_from_yaml",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    """Lazy-load YAML parsing functions to avoid circular imports.
+
+    The util_invariant_yaml_parser module imports ModelInvariantSet from this
+    package. Eagerly importing those functions here would create a cycle:
+        models/invariant/__init__.py -> util_invariant_yaml_parser
+        -> models/invariant/model_invariant_set -> models/invariant/__init__.py
+    """
+    _lazy_imports = {
+        "load_invariant_set_from_file",
+        "load_invariant_sets_from_directory",
+        "parse_invariant_set_from_yaml",
+    }
+    if name in _lazy_imports:
+        from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
+            load_invariant_set_from_file,
+            load_invariant_sets_from_directory,
+            parse_invariant_set_from_yaml,
+        )
+
+        value = locals()[name]
+        globals()[name] = value  # Cache for subsequent lookups
+        return value
+    raise AttributeError(  # error-ok: __getattr__ protocol requires AttributeError
+        f"module {__name__!r} has no attribute {name!r}"
+    )

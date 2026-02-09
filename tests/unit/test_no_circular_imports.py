@@ -456,3 +456,158 @@ def test_contract_compute_uses_lazy_import() -> None:
             "at module level - this creates circular import! Use lazy import in field validator instead."
         )
         raise AssertionError(msg)
+
+
+@pytest.mark.unit
+def test_fsm_package_no_circular_imports() -> None:
+    """
+    Regression test for OMN-2048: circular import in fsm package.
+
+    The circular import chain was:
+        fsm/__init__.py
+          -> model_fsm_transition_result.py
+            -> reducer/__init__.py (ModelIntent)
+              -> model_reducer_input.py
+                -> common/__init__.py (ModelReducerMetadata)
+                  -> model_envelope.py
+                    -> validation/__init__.py
+                      -> model_migration_conflict_union.py
+                        -> validator_migration_types.py
+                          -> validation/__init__.py (ContractPatchValidator)
+                            -> validator_contract_patch.py
+                              -> contracts/__init__.py
+                                -> mixins/__init__.py (MixinNodeTypeValidator)
+                                  -> mixin_fsm_execution.py
+                                    -> util_fsm_executor.py
+                                      -> model_fsm_transition_result.py  <- CIRCULAR
+
+    Fix: util_fsm_executor.py defers ModelFSMTransitionResult import to
+    function scope (lazy import) and imports ModelFSMStateSnapshot from
+    its module directly rather than through fsm/__init__.py.
+    """
+    # Clear module cache to test fresh imports
+    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
+    for module in modules_to_remove:
+        del sys.modules[module]
+
+    try:
+        # Import through the fsm package init - this was the failing entry point
+        # Verify mixin can be imported
+        from omnibase_core.mixins.mixin_fsm_execution import (  # noqa: F401
+            MixinFSMExecution,
+        )
+        from omnibase_core.models.fsm import (  # noqa: F401
+            ModelFsmState,
+            ModelFSMStateSnapshot,
+            ModelFSMTransitionResult,
+        )
+
+        # Also verify the direct module import works
+        from omnibase_core.models.fsm.model_fsm_state import (  # noqa: F401
+            ModelFsmState as DirectState,
+        )
+
+        # Verify util_fsm_executor can be imported and used
+        from omnibase_core.utils.util_fsm_executor import (  # noqa: F401
+            FSMState,
+            execute_transition,
+            get_initial_state,
+            validate_fsm_contract,
+        )
+
+    except ImportError as e:
+        raise AssertionError(
+            f"Circular import detected in FSM package (OMN-2048 regression): {e}"
+        ) from e
+
+
+@pytest.mark.unit
+def test_invariant_package_no_circular_imports() -> None:
+    """
+    Regression test: circular import in invariant package.
+
+    The circular import chain was:
+        util_invariant_yaml_parser
+          -> models/invariant/model_invariant_set
+            -> models/invariant/__init__.py (during resolution)
+              -> util_invariant_yaml_parser  <- CIRCULAR
+
+    Fix: models/invariant/__init__.py defers the three YAML-parsing
+    function imports to a __getattr__ lazy-loading pattern so the
+    package init no longer eagerly imports util_invariant_yaml_parser.
+    """
+    # Clear module cache to test fresh imports
+    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
+    for module in modules_to_remove:
+        del sys.modules[module]
+
+    try:
+        # Import the module that was the cycle entry point
+        # Import the package init (would have triggered the cycle)
+        import omnibase_core.models.invariant as invariant_pkg
+        from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
+            load_invariant_set_from_file as _load_file,
+        )
+        from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
+            load_invariant_sets_from_directory as _load_dir,
+        )
+        from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
+            parse_invariant_set_from_yaml as _parse,
+        )
+
+        # Verify the lazy-loaded functions are accessible via the package
+        assert hasattr(invariant_pkg, "load_invariant_set_from_file")
+        assert callable(invariant_pkg.load_invariant_set_from_file)
+
+    except ImportError as e:
+        raise AssertionError(
+            f"Circular import detected in invariant package: {e}"
+        ) from e
+
+
+@pytest.mark.unit
+def test_util_fsm_executor_does_not_eagerly_import_transition_result() -> None:
+    """
+    Verify util_fsm_executor uses lazy import for ModelFSMTransitionResult.
+
+    ModelFSMTransitionResult must NOT be imported at module level in
+    util_fsm_executor, because that creates the circular dependency
+    fixed in OMN-2048. This test checks the source code structure
+    rather than manipulating sys.modules, which is fragile.
+    """
+    import inspect
+
+    import omnibase_core.utils.util_fsm_executor as executor_module
+
+    source = inspect.getsource(executor_module)
+
+    # Check that ModelFSMTransitionResult is NOT imported at module level.
+    # It should only appear in TYPE_CHECKING block or inside functions.
+    lines = source.split("\n")
+    in_type_checking = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Track TYPE_CHECKING block
+        if stripped.startswith("if TYPE_CHECKING"):
+            in_type_checking = True
+            continue
+        # Any non-indented, non-empty line ends the TYPE_CHECKING block
+        if in_type_checking and stripped and not line.startswith((" ", "\t")):
+            in_type_checking = False
+
+        # Module-level import check: not in TYPE_CHECKING and not indented
+        if (
+            not in_type_checking
+            and not line.startswith(" ")
+            and not line.startswith("\t")
+            and "model_fsm_transition_result" in line
+            and ("from" in line or "import" in line)
+        ):
+            raise AssertionError(
+                f"util_fsm_executor has module-level import of "
+                f"model_fsm_transition_result: {line.strip()}\n"
+                "This creates circular import (OMN-2048). "
+                "Use lazy import inside functions instead."
+            )
