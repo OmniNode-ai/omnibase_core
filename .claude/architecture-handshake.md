@@ -1,8 +1,8 @@
 <!-- HANDSHAKE_METADATA
 source: omnibase_core/architecture-handshakes/repos/omnibase_core.md
 source_version: 0.16.0
-source_sha256: a784f52813c3c5611cfca991011a145cd1f3382845ed3a2a98267783fbaff2f4
-installed_at: 2026-02-09T20:43:43Z
+source_sha256: 3553cfd0922697c12358831f9ad7a2f0c032794772de0c2e88185b547c7fa52a
+installed_at: 2026-02-09T22:02:46Z
 installed_by: jonah
 -->
 
@@ -37,22 +37,29 @@ installed_by: jonah
 7. **Reducers are pure** - `delta(state, event) -> (new_state, intents[])` with no I/O
 8. **Orchestrators emit, never return** - Cannot return `result`, only `events[]` and `intents[]`
 
+## Platform-Wide Rules
+
+1. **No backwards compatibility** - Breaking changes always acceptable. No deprecation periods, shims, or migration paths.
+2. **Delete old code immediately** - Never leave deprecated code "for reference." If unused, delete it.
+3. **No speculative refactors** - Only make changes that are directly requested or clearly necessary.
+4. **No silent schema changes** - All schema changes must be explicit and deliberate.
+5. **Frozen event schemas** - All models crossing boundaries (events, intents, actions, envelopes, projections) must use `frozen=True`. Internal mutable state is fine.
+6. **Explicit timestamps** - Never use `datetime.now()` defaults. Inject timestamps explicitly.
+7. **No hardcoded configuration** - All config via `.env` or Pydantic Settings. No localhost defaults.
+8. **Kafka is required infrastructure** - Use async/non-blocking patterns. Never block the calling thread waiting for Kafka acks.
+9. **No `# type: ignore` without justification** - Requires explanation comment and ticket reference.
+
 ## Non-Goals (DO NOT)
 
 - ❌ No concrete implementations (use `omnibase_infra`)
 - ❌ No "helpful" abstractions beyond what's requested
-- ❌ No speculative refactors
-- ❌ No silent schema changes
-- ❌ No backwards compatibility shims, deprecation warnings, or compatibility layers
 - ❌ No versioned directories (`v1/`, `v2/`) - version through contract fields only
 
 ## Patterns to Avoid
 
 - Business logic in nodes (put it in handlers)
-- `datetime.now()` in models (inject timestamps explicitly)
 - Dynamic runtime behavior not declared in contracts
 - Mutable default arguments in Pydantic models (use `default_factory`)
-- `# type: ignore` without explanation and ticket reference
 
 ## Layer Boundaries
 

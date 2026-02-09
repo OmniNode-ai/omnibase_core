@@ -168,43 +168,17 @@ class ModelOnexEnvelope(BaseModel):
             restored = ModelOnexEnvelope.model_validate_json(json_str)
 
     Thread Safety:
-        This model uses ``frozen=False`` (mutable) with ``validate_assignment=True``
-        to support testing, debugging, and scenarios where envelope modification
-        is required after creation.
+        This model uses ``frozen=True`` (immutable after creation). All fields
+        are read-only after construction. To create a modified copy, use
+        ``model_copy(update={...})``:
 
-        **Why not frozen=True?**
+        .. code-block:: python
 
-        - Testing often requires modifying envelope fields for different scenarios
-        - Some workflows involve building envelopes incrementally
-        - Response envelopes may need field updates before sending
-        - Debugging tools benefit from mutable state inspection
+            # Create a modified copy (original unchanged)
+            updated = envelope.model_copy(update={"success": True})
 
-        **Concurrent Access Guidelines:**
-
-        - **Read Access**: Thread-safe. Multiple threads can safely read
-          envelope fields simultaneously without synchronization.
-
-        - **Write Access**: NOT thread-safe. If multiple threads may modify
-          the same envelope instance, use external synchronization:
-
-          .. code-block:: python
-
-              import threading
-
-              envelope = ModelOnexEnvelope(...)
-              lock = threading.Lock()
-
-              def update_envelope(new_payload: dict) -> None:
-                  with lock:
-                      envelope.payload = new_payload
-
-        - **Best Practice**: Treat envelopes as effectively immutable after
-          creation. Create new envelope instances rather than modifying
-          existing ones when possible.
-
-        - **Shared Instance Warning**: Do NOT share envelope instances
-          across threads without synchronization. Create thread-local
-          copies or use locks.
+        **Concurrent Access:** Thread-safe for all read operations. No
+        synchronization needed since instances cannot be mutated.
 
         For comprehensive threading guidance, see: ``docs/guides/THREADING.md``
 
@@ -515,8 +489,8 @@ class ModelOnexEnvelope(BaseModel):
     # ==========================================================================
 
     model_config = ConfigDict(
-        frozen=False,  # Allow modification for testing/debugging
-        validate_assignment=True,  # Validate on attribute assignment
+        frozen=True,  # Immutable after creation - boundary-crossing model
+        from_attributes=True,  # pytest-xdist worker compatibility
     )
 
     # ==========================================================================

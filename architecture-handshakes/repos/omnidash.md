@@ -27,11 +27,22 @@
 5. **TypeScript strict mode** - No `any` types without justification
 6. **Three-directory monorepo**: `client/`, `server/`, `shared/`
 
+## Platform-Wide Rules
+
+1. **No backwards compatibility** - Breaking changes always acceptable. No deprecation periods, shims, or migration paths.
+2. **Delete old code immediately** - Never leave deprecated code "for reference." If unused, delete it.
+3. **No speculative refactors** - Only make changes that are directly requested or clearly necessary.
+4. **No silent schema changes** - All schema changes must be explicit and deliberate.
+5. **Frozen event schemas** - All models crossing boundaries (events, intents, actions, envelopes, projections) must use `frozen=True`. Internal mutable state is fine.
+6. **Explicit timestamps** - Never use `datetime.now()` defaults. Inject timestamps explicitly.
+7. **No hardcoded configuration** - All config via `.env` or Pydantic Settings. No localhost defaults.
+8. **Kafka is required infrastructure** - Use async/non-blocking patterns. Never block the calling thread waiting for Kafka acks.
+9. **No `# type: ignore` without justification** - Requires explanation comment and ticket reference.
+
 ## Non-Goals (DO NOT)
 
 - ❌ No Redux or Zustand - use TanStack Query for server state
 - ❌ No CSS-in-JS - use Tailwind CSS
-- ❌ No hardcoded configuration - read from `.env`
 - ❌ No blocking API calls without loading states
 
 ## Path Aliases

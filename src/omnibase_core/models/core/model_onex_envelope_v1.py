@@ -78,7 +78,8 @@ class ModelOnexEnvelopeV1(BaseModel):
         envelope2 = ModelOnexEnvelopeV1.model_validate_json(json_str)
 
     Thread Safety:
-        This model is immutable after creation. Safe for concurrent access.
+        This model uses ``frozen=True`` (immutable after creation). Safe for
+        concurrent access. Use ``model_copy(update={...})`` to create modified copies.
     """
 
     # Envelope metadata
@@ -112,8 +113,8 @@ class ModelOnexEnvelopeV1(BaseModel):
     )
 
     model_config = ConfigDict(
-        frozen=False,  # Allow modification for testing/debugging
-        validate_assignment=True,
+        frozen=True,  # Immutable after creation - boundary-crossing model
+        from_attributes=True,  # pytest-xdist worker compatibility
     )
 
     def __str__(self) -> str:

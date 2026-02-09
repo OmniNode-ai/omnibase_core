@@ -104,14 +104,8 @@ class ModelEnvelopeMetadata(BaseModel):
             minimal = ModelEnvelopeMetadata()
 
     Thread Safety:
-        This model uses ``frozen=False`` (mutable) with ``validate_assignment=True``
-        for consistency with ModelOnexEnvelope.
-
-        **Concurrent Access Guidelines:**
-
-        - **Read Access**: Thread-safe for simultaneous reads.
-        - **Write Access**: NOT thread-safe. Use external synchronization
-          if multiple threads may modify the same instance.
+        This model uses ``frozen=True`` (immutable after creation). Safe for
+        concurrent access. Use ``model_copy(update={...})`` to create modified copies.
 
     See Also:
         - :class:`~omnibase_core.models.core.model_onex_envelope.ModelOnexEnvelope`:
@@ -182,8 +176,8 @@ class ModelEnvelopeMetadata(BaseModel):
     # ==========================================================================
 
     model_config = ConfigDict(
-        frozen=False,  # Allow modification for consistency with envelope
-        validate_assignment=True,  # Validate on attribute assignment
+        frozen=True,  # Immutable after creation - boundary-crossing model
+        from_attributes=True,  # pytest-xdist worker compatibility
     )
 
     # ==========================================================================
