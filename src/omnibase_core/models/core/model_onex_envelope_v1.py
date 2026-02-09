@@ -113,6 +113,7 @@ class ModelOnexEnvelopeV1(BaseModel):
     )
 
     model_config = ConfigDict(
+        extra="ignore",  # Contract/external model - accept unknown fields gracefully
         frozen=True,  # Immutable after creation - boundary-crossing model
         from_attributes=True,  # pytest-xdist worker compatibility
     )

@@ -30,4 +30,4 @@ jobs:
       # the handshakes directory via its parent path (option 3).
 
       - name: Check architecture handshake
-        run: bash architecture-handshakes/check-handshake.sh
+        run: bash architecture-handshakes/check-handshake.sh .
