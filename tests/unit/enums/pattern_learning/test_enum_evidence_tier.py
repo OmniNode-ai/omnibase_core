@@ -208,3 +208,27 @@ class TestEnumEvidenceTier:
         """Test that all values are unique (enforced by @unique decorator)."""
         values = [e.value for e in EnumEvidenceTier]
         assert len(values) == len(set(values))
+
+    def test_comparison_against_raw_string(self):
+        """Test that comparing against raw strings uses weight ordering, not lexicographic."""
+        # "measured" < "observed" lexicographically, but MEASURED > OBSERVED by weight
+        assert EnumEvidenceTier.MEASURED > "observed"
+        assert EnumEvidenceTier.MEASURED >= "observed"
+        assert not (EnumEvidenceTier.MEASURED < "observed")
+        assert not (EnumEvidenceTier.MEASURED <= "observed")
+
+        # String coercion preserves correct tier ordering
+        assert EnumEvidenceTier.UNMEASURED < "verified"
+        assert EnumEvidenceTier.VERIFIED > "unmeasured"
+        assert EnumEvidenceTier.OBSERVED >= "observed"
+        assert EnumEvidenceTier.OBSERVED <= "observed"
+
+    def test_comparison_against_invalid_string_returns_not_implemented(self):
+        """Test that comparing against an invalid string returns NotImplemented."""
+        result = EnumEvidenceTier.MEASURED.__lt__("not_a_tier")
+        assert result is NotImplemented
+
+    def test_comparison_against_non_string_returns_not_implemented(self):
+        """Test that comparing against a non-string type returns NotImplemented."""
+        result = EnumEvidenceTier.MEASURED.__lt__(42)
+        assert result is NotImplemented

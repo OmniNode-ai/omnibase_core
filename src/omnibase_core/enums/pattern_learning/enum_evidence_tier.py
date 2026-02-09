@@ -109,26 +109,41 @@ class EnumEvidenceTier(StrValueHelper, str, Enum):
         """Return numeric weight for tier ordering (higher = stronger evidence)."""
         return _TIER_WEIGHTS[self.value]
 
-    def __lt__(self, other: str) -> bool:
-        """Enable evidence tier comparison."""
+    def _coerce_other(self, other: object) -> EnumEvidenceTier | None:
+        """Coerce other operand to EnumEvidenceTier, or return None."""
         if isinstance(other, EnumEvidenceTier):
-            return self.get_numeric_value() < other.get_numeric_value()
-        return super().__lt__(other)
+            return other
+        if isinstance(other, str):
+            try:
+                return EnumEvidenceTier(other)
+            except ValueError:
+                return None
+        return None
 
-    def __le__(self, other: str) -> bool:
-        """Enable evidence tier comparison."""
-        if isinstance(other, EnumEvidenceTier):
-            return self.get_numeric_value() <= other.get_numeric_value()
-        return super().__le__(other)
+    def __lt__(self, other: object) -> bool:
+        """Compare tiers by evidence weight, not lexicographic order."""
+        coerced = self._coerce_other(other)
+        if coerced is None:
+            return NotImplemented  # type: ignore[return-value]
+        return self.get_numeric_value() < coerced.get_numeric_value()
 
-    def __gt__(self, other: str) -> bool:
-        """Enable evidence tier comparison."""
-        if isinstance(other, EnumEvidenceTier):
-            return self.get_numeric_value() > other.get_numeric_value()
-        return super().__gt__(other)
+    def __le__(self, other: object) -> bool:
+        """Compare tiers by evidence weight, not lexicographic order."""
+        coerced = self._coerce_other(other)
+        if coerced is None:
+            return NotImplemented  # type: ignore[return-value]
+        return self.get_numeric_value() <= coerced.get_numeric_value()
 
-    def __ge__(self, other: str) -> bool:
-        """Enable evidence tier comparison."""
-        if isinstance(other, EnumEvidenceTier):
-            return self.get_numeric_value() >= other.get_numeric_value()
-        return super().__ge__(other)
+    def __gt__(self, other: object) -> bool:
+        """Compare tiers by evidence weight, not lexicographic order."""
+        coerced = self._coerce_other(other)
+        if coerced is None:
+            return NotImplemented  # type: ignore[return-value]
+        return self.get_numeric_value() > coerced.get_numeric_value()
+
+    def __ge__(self, other: object) -> bool:
+        """Compare tiers by evidence weight, not lexicographic order."""
+        coerced = self._coerce_other(other)
+        if coerced is None:
+            return NotImplemented  # type: ignore[return-value]
+        return self.get_numeric_value() >= coerced.get_numeric_value()
