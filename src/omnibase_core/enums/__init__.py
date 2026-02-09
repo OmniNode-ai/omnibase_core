@@ -330,7 +330,8 @@ from .hooks.claude_code.enum_claude_code_tool_name import (
 # Intelligence enums (OMN-1490)
 from .intelligence.enum_intent_category import EnumIntentCategory
 
-# Pattern learning enums (OMN-1683)
+# Pattern learning enums (OMN-1683, OMN-2043)
+from .pattern_learning.enum_evidence_tier import EnumEvidenceTier
 from .pattern_learning.enum_pattern_learning_status import EnumPatternLearningStatus
 from .pattern_learning.enum_pattern_lifecycle_state import EnumPatternLifecycleState
 from .pattern_learning.enum_pattern_type import EnumPatternType
@@ -655,7 +656,8 @@ __all__ = [
     "EnumDeregistrationReason",
     # Pattern extraction domain (OMN-1587)
     "EnumPatternKind",
-    # Pattern learning domain (OMN-1683)
+    # Pattern learning domain (OMN-1683, OMN-2043)
+    "EnumEvidenceTier",
     "EnumPatternLearningStatus",
     "EnumPatternLifecycleState",
     "EnumPatternType",
