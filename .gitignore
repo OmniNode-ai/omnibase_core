@@ -158,7 +158,10 @@ ipython_config.py
 # AI CODING ASSISTANTS
 # =============================================================================
 # Claude Code (local settings and session data)
-.claude/
+# Use .claude/* instead of .claude/ so negation rules can re-include specific files
+.claude/*
+# Track architecture handshake for CI verification (OMN-2083)
+!.claude/architecture-handshake.md
 *.db
 *.sqlite
 *.db-wal
