@@ -6,13 +6,21 @@ Enables nodes to execute state machines declaratively from ModelFSMSubcontract.
 Typing: Strongly typed with strategic object usage for mixin kwargs and runtime context.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.fsm.model_fsm_transition_result import (
+        ModelFSMTransitionResult as FSMTransitionResult,
+    )
+
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
 from omnibase_core.types.type_fsm_context import FSMContextType
 from omnibase_core.utils.util_fsm_executor import (
     FSMState,
-    FSMTransitionResult,
     execute_transition,
     get_initial_state,
     validate_fsm_contract,

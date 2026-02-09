@@ -9,12 +9,18 @@ Context dictionaries use FSMContextType (dict[str, object]) to allow dynamic exe
 while maintaining type clarity for FSM-specific usage.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Literal, cast
 from uuid import UUID
 
 if TYPE_CHECKING:
     from typing import SupportsFloat
+
+    from omnibase_core.models.fsm.model_fsm_transition_result import (
+        ModelFSMTransitionResult as FSMTransitionResult,
+    )
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
@@ -28,12 +34,11 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.fsm import ModelFSMStateSnapshot as FSMState
+from omnibase_core.models.fsm.model_fsm_state_snapshot import (
+    ModelFSMStateSnapshot as FSMState,
+)
 from omnibase_core.models.fsm.model_fsm_transition_condition import (
     ModelFSMTransitionCondition,
-)
-from omnibase_core.models.fsm.model_fsm_transition_result import (
-    ModelFSMTransitionResult as FSMTransitionResult,
 )
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.reducer.payloads import (
@@ -99,6 +104,13 @@ async def execute_transition(
             else:
                 print(f"Transition failed: {result.error}")
     """
+    # Lazy import to break circular dependency:
+    # fsm/__init__ → model_fsm_transition_result → reducer → ... → util_fsm_executor
+    # See OMN-2048 for the full import chain.
+    from omnibase_core.models.fsm.model_fsm_transition_result import (
+        ModelFSMTransitionResult as FSMTransitionResult,
+    )
+
     intents: list[ModelIntent] = []
 
     # 1. Validate current state exists
