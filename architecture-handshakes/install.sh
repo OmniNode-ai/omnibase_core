@@ -46,6 +46,11 @@ while IFS= read -r line; do
     SUPPORTED_REPOS+=("${line}")
 done < <(sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//' "${REPOS_CONF}" | grep -v '^\s*$')
 
+if [[ ${#SUPPORTED_REPOS[@]} -eq 0 ]]; then
+    echo "ERROR: repos.conf contains no repo entries" >&2
+    exit 2
+fi
+
 usage() {
     echo "Architecture Handshake Installer"
     echo ""
