@@ -44,8 +44,8 @@ while IFS= read -r line; do
     ACTIVE_REPOS+=("${line}")
 done < <(parse_repos_conf "${REPOS_CONF}")
 
+# Guard: parse_repos_conf already printed a descriptive error if it failed.
 if [[ ${#ACTIVE_REPOS[@]} -eq 0 ]]; then
-    echo "ERROR: no repos loaded from ${REPOS_CONF}" >&2
     exit 2
 fi
 
