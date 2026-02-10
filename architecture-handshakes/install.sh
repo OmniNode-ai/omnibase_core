@@ -41,6 +41,7 @@ if [[ ! -f "${REPOS_CONF}" ]]; then
 fi
 
 # Read repos.conf into array (portable — works on bash 3.2+ for macOS).
+# NOTE: Parsing logic duplicated in check-policy-gate.sh — keep both in sync.
 SUPPORTED_REPOS=()
 while IFS= read -r line; do
     SUPPORTED_REPOS+=("${line}")

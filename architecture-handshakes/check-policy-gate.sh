@@ -42,6 +42,7 @@ if [[ ! -f "${REPOS_CONF}" ]]; then
 fi
 
 # Read repos.conf into array (portable — works on bash 3.2+ for macOS).
+# NOTE: Parsing logic duplicated in install.sh — keep both in sync.
 ACTIVE_REPOS=()
 while IFS= read -r line; do
     ACTIVE_REPOS+=("${line}")
@@ -112,8 +113,7 @@ check_repo() {
     local api_output api_exit
     local api_stderr
     api_stderr=$(mktemp) || { echo "error"; return 0; }
-    # Ensure the temp file is always cleaned up, even on unexpected exit.
-    # shellcheck disable=SC2064
+    # shellcheck disable=SC2064  # Early expansion intentional: captures current api_stderr path.
     trap "rm -f '${api_stderr}'" RETURN
 
     # Determine the repo's actual default branch via the API.
