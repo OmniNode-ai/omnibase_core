@@ -21,11 +21,6 @@
 # Requirements:
 #   - GitHub CLI (gh) authenticated with access to OmniNode-ai org repos
 #
-# Token scope:
-#   Some OmniNode repos are private. The GH_TOKEN must have `actions:read`
-#   scope across all org repos. In CI, set POLICY_GATE_TOKEN to an org-level
-#   PAT or GitHub App token (GITHUB_TOKEN is scoped to the current repo only).
-#
 # Non-success conclusions (cancelled, skipped, timed_out, etc.) are treated
 # as failures. Manually cancelled runs will show as FAIL.
 
@@ -57,12 +52,10 @@ STRICT=false
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 NC='\033[0m'
 
 log_pass()  { echo -e "  ${GREEN}PASS${NC}  $1"; }
 log_fail()  { echo -e "  ${RED}FAIL${NC}  $1"; }
-log_warn()  { echo -e "  ${YELLOW}WARN${NC}  $1"; }
 log_info()  {
     if [[ "${QUIET}" != "true" ]]; then
         echo "INFO: $1"
@@ -105,29 +98,43 @@ check_repo() {
     local repo="$1"
     local full_repo="${GITHUB_ORG}/${repo}"
 
+    # Capture stderr separately so we can inspect the HTTP error without
+    # polluting the stdout-based conclusion value.
+    local api_output api_exit
+    local api_stderr
+    api_stderr=$(mktemp) || { echo "error"; return 0; }
+    # Ensure the temp file is always cleaned up, even on unexpected exit.
+    # shellcheck disable=SC2064
+    trap "rm -f '${api_stderr}'" RETURN
+
     # Query the latest workflow run conclusion for check-handshake.yml
     # on main/master in a single jq expression.
-    local conclusion
-    conclusion=$(gh api \
+    api_output=$(gh api \
         "repos/${full_repo}/actions/workflows/${WORKFLOW_FILENAME}/runs" \
         --jq '[.workflow_runs[] | select(.head_branch == "main" or .head_branch == "master")] | first | .conclusion // empty' \
-        2>&1) || {
-        # Workflow file not found (404) or other API error
-        if echo "${conclusion}" | grep -qi "not found\|could not find\|404"; then
+        2>"${api_stderr}") && api_exit=0 || api_exit=$?
+
+    if [[ ${api_exit} -ne 0 ]]; then
+        local stderr_content
+        stderr_content=$(<"${api_stderr}")
+
+        # gh api returns exit code 1 for HTTP 4xx/5xx errors.
+        # A 404 means the workflow file does not exist in the repo.
+        if [[ "${stderr_content}" == *"404"* ]] || [[ "${stderr_content}" == *"Not Found"* ]]; then
             echo "no_workflow"
-            return 0
+        else
+            echo "error"
         fi
-        echo "error"
         return 0
-    }
+    fi
 
     # No runs on default branch
-    if [[ -z "${conclusion}" ]]; then
+    if [[ -z "${api_output}" ]]; then
         echo "no_runs"
         return 0
     fi
 
-    case "${conclusion}" in
+    case "${api_output}" in
         success)  echo "pass" ;;
         *)        echo "fail" ;;
     esac
@@ -135,6 +142,7 @@ check_repo() {
 
 # --- Main --------------------------------------------------------------------
 
+# Entry point: parse args, verify prerequisites, run compliance checks for all active repos.
 main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -179,7 +187,6 @@ main() {
 
     local pass_count=0
     local fail_count=0
-    local warn_count=0
     local failed_repos=()
 
     for repo in "${ACTIVE_REPOS[@]}"; do
@@ -202,19 +209,21 @@ main() {
                 failed_repos+=("${repo}")
                 ;;
             no_runs)
-                log_warn "${repo} — check-handshake workflow exists but has no runs"
-                warn_count=$((warn_count + 1))
+                log_fail "${repo} — check-handshake workflow exists but has no runs"
+                fail_count=$((fail_count + 1))
+                failed_repos+=("${repo}")
                 ;;
             error)
-                log_warn "${repo} — could not query workflow status (API error)"
-                warn_count=$((warn_count + 1))
+                log_fail "${repo} — could not query workflow status (API error)"
+                fail_count=$((fail_count + 1))
+                failed_repos+=("${repo}")
                 ;;
         esac
     done
 
     echo ""
     echo "=========================================="
-    echo "Results: ${pass_count} pass, ${fail_count} fail, ${warn_count} warn"
+    echo "Results: ${pass_count} pass, ${fail_count} fail"
     echo ""
 
     if [[ ${fail_count} -gt 0 ]]; then

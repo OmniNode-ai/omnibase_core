@@ -95,11 +95,10 @@ Handshakes are versioned with omnibase_core releases. After upgrading omnibase_c
 ## Adding a New Repo
 
 1. Create `repos/<repo-name>.md` following the template
-2. Add repo name to `SUPPORTED_REPOS` array in `install.sh`
-3. Add repo name to `ACTIVE_REPOS` array in `check-policy-gate.sh`
-4. Install handshake to the repo: `./install.sh <repo-name>`
-5. Add `check-handshake.yml` CI workflow to the repo (see [CI Integration](#ci-integration))
-6. Release omnibase_core with the new handshake
+2. Add repo name to `architecture-handshakes/repos.conf`
+3. Install handshake to the repo: `./install.sh <repo-name>`
+4. Add `check-handshake.yml` CI workflow to the repo (see [CI Integration](#ci-integration))
+5. Release omnibase_core with the new handshake
 
 ## Policy Gate
 
@@ -112,12 +111,11 @@ The policy gate queries the GitHub API for each active repo's `check-handshake` 
 | Status | Meaning |
 |--------|---------|
 | **PASS** | `check-handshake` workflow exists and latest run on main succeeded |
-| **FAIL** | Workflow missing or latest run failed |
-| **WARN** | Workflow exists but has no runs, or API error |
+| **FAIL** | Workflow missing, latest run failed, no runs, or API error |
 
 ### Running Locally
 
-Requires `gh auth login` with access to all OmniNode-ai org repos (some are private).
+Requires `gh auth login` with access to OmniNode-ai org repos.
 
 ```bash
 # Report-only mode (default)
@@ -135,8 +133,6 @@ Non-`success` workflow conclusions (cancelled, skipped, timed_out) are treated a
 ### Scheduled Workflow
 
 The policy gate runs automatically weekly (Monday 08:00 UTC) via `.github/workflows/handshake-policy-gate.yml`. It can also be triggered manually via `workflow_dispatch`.
-
-**Token requirement**: The workflow needs `POLICY_GATE_TOKEN` (org-level PAT with `actions:read`) to access private repos. Without it, only public repo checks will succeed.
 
 ## CI Integration
 

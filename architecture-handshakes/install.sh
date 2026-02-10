@@ -99,17 +99,17 @@ calculate_sha256() {
     fi
 }
 
-# Get current ISO 8601 timestamp
+# Return current UTC time in ISO 8601 format.
 get_iso_timestamp() {
     date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-# Get current user
+# Return the username of the current shell user.
 get_current_user() {
     whoami
 }
 
-# Generate metadata block
+# Generate the HANDSHAKE_METADATA HTML comment block prepended to installed handshakes.
 generate_metadata_block() {
     local repo_name="$1"
     local source_file="$2"
@@ -130,7 +130,7 @@ generate_metadata_block() {
     printf -- '-->\n\n'
 }
 
-# Validate repo name
+# Check if the given repo name is in the supported repos list. Returns 0 if supported, 1 otherwise.
 is_supported_repo() {
     local repo="$1"
     for supported in "${SUPPORTED_REPOS[@]}"; do
@@ -141,6 +141,7 @@ is_supported_repo() {
     return 1
 }
 
+# Entry point: validate args, install handshake file with metadata to target repo.
 main() {
     # Check arguments
     if [[ $# -lt 1 ]]; then
