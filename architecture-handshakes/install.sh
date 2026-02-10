@@ -32,17 +32,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOS_DIR="${SCRIPT_DIR}/repos"
 PYPROJECT_TOML="${SCRIPT_DIR}/../pyproject.toml"
 
-# Supported repos
-SUPPORTED_REPOS=(
-    "omnibase_core"
-    "omnibase_infra"
-    "omnibase_spi"
-    "omniclaude"
-    "omnidash"
-    "omniintelligence"
-    "omnimemory"
-    "omninode_infra"
-)
+# Supported repos - loaded from shared config.
+REPOS_CONF="${SCRIPT_DIR}/repos.conf"
+
+if [[ ! -f "${REPOS_CONF}" ]]; then
+    echo "ERROR: repos.conf not found at ${REPOS_CONF}" >&2
+    exit 2
+fi
+
+mapfile -t SUPPORTED_REPOS < <(grep -v '^\s*$\|^\s*#' "${REPOS_CONF}")
 
 usage() {
     echo "Architecture Handshake Installer"

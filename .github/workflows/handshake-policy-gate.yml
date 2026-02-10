@@ -1,4 +1,8 @@
 name: Handshake Policy Gate
+# Checks that every active OmniNode repo has the architecture-handshake
+# CI workflow installed and passing on its default branch.
+# Runs weekly and on manual dispatch; requires POLICY_GATE_TOKEN for
+# cross-repo visibility (see token note below).
 
 on:
   schedule:
@@ -24,6 +28,14 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Verify token scope
+        env:
+          HAS_POLICY_TOKEN: ${{ secrets.POLICY_GATE_TOKEN != '' }}
+        run: |
+          if [[ "${HAS_POLICY_TOKEN}" != "true" ]]; then
+            echo "::warning::POLICY_GATE_TOKEN not configured. Falling back to GITHUB_TOKEN which cannot access private repos. Set POLICY_GATE_TOKEN as an org-level PAT or GitHub App token with actions:read scope."
+          fi
 
       - name: Run policy gate check
         env:

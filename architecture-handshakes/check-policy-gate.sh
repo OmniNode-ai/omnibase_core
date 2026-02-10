@@ -37,18 +37,16 @@ GITHUB_ORG="OmniNode-ai"
 WORKFLOW_FILENAME="check-handshake.yml"
 
 # Active repos requiring handshake compliance.
-# To add a new repo: append to this array and add its constraint map
-# to architecture-handshakes/repos/<repo-name>.md
-ACTIVE_REPOS=(
-    "omnibase_core"
-    "omnibase_infra"
-    "omnibase_spi"
-    "omniclaude"
-    "omnidash"
-    "omniintelligence"
-    "omnimemory"
-    "omninode_infra"
-)
+# Shared list: edit repos.conf to add/remove repos.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPOS_CONF="${SCRIPT_DIR}/repos.conf"
+
+if [[ ! -f "${REPOS_CONF}" ]]; then
+    echo "ERROR: repos.conf not found at ${REPOS_CONF}" >&2
+    exit 2
+fi
+
+mapfile -t ACTIVE_REPOS < <(grep -v '^\s*$\|^\s*#' "${REPOS_CONF}")
 
 # --- Options -----------------------------------------------------------------
 
@@ -92,7 +90,7 @@ Adding a new repo:
   1. Add constraint map: architecture-handshakes/repos/<repo-name>.md
   2. Install handshake:  ./install.sh <repo-name>
   3. Add CI workflow:    .github/workflows/check-handshake.yml
-  4. Add repo name to ACTIVE_REPOS array in this script
+  4. Add repo name to architecture-handshakes/repos.conf
 
 Exit codes:
   0 - All repos compliant (or report-only mode)
