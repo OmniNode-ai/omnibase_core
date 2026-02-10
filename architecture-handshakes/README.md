@@ -95,8 +95,44 @@ Handshakes are versioned with omnibase_core releases. After upgrading omnibase_c
 ## Adding a New Repo
 
 1. Create `repos/<repo-name>.md` following the template
-2. Add repo name to `SUPPORTED_REPOS` array in `install.sh`
-3. Release omnibase_core with the new handshake
+2. Add repo name to `architecture-handshakes/repos.conf`
+3. Install handshake to the repo: `./install.sh <repo-name>`
+4. Add `check-handshake.yml` CI workflow to the repo (see [CI Integration](#ci-integration))
+5. Release omnibase_core with the new handshake
+
+## Policy Gate
+
+The **Handshake Policy Gate** is a meta-check that verifies all active repos have handshake CI enforcement enabled and passing. It runs as a scheduled GitHub Actions workflow in omnibase_core.
+
+### How It Works
+
+The policy gate queries the GitHub API for each active repo's `check-handshake` workflow status on its default branch. Repos are reported as:
+
+| Status | Meaning |
+|--------|---------|
+| **PASS** | `check-handshake.yml` workflow exists and latest completed run on default branch succeeded |
+| **FAIL** | Workflow missing, latest run failed, no runs, or API error |
+
+### Running Locally
+
+Requires `gh auth login` with access to OmniNode-ai org repos. `jq` is used to URL-encode branch names; the script falls back to the raw name if `jq` is absent (safe for simple branch names like `main`).
+
+```bash
+# Report-only mode (default)
+./architecture-handshakes/check-policy-gate.sh
+
+# Strict mode (exit non-zero if any repo fails)
+./architecture-handshakes/check-policy-gate.sh --strict
+
+# Quiet mode (suppress INFO messages)
+./architecture-handshakes/check-policy-gate.sh -q --strict
+```
+
+Non-`success` workflow conclusions (cancelled, skipped, timed_out) are treated as failures. Manually cancelled runs will show as FAIL.
+
+### Scheduled Workflow
+
+The policy gate runs automatically weekly (Monday 08:00 UTC) via `.github/workflows/handshake-policy-gate.yml`. It can also be triggered manually via `workflow_dispatch`.
 
 ## CI Integration
 
@@ -104,7 +140,7 @@ Downstream repos should add CI checks to ensure their handshake stays current wi
 
 ### GitHub Actions
 
-Add this job to your `.github/workflows/ci.yml`:
+Create a `.github/workflows/check-handshake.yml` file in your repo (the policy gate checks for this exact filename):
 
 ```yaml
 jobs:

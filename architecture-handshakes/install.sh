@@ -32,17 +32,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOS_DIR="${SCRIPT_DIR}/repos"
 PYPROJECT_TOML="${SCRIPT_DIR}/../pyproject.toml"
 
-# Supported repos
-SUPPORTED_REPOS=(
-    "omnibase_core"
-    "omnibase_infra"
-    "omnibase_spi"
-    "omniclaude"
-    "omnidash"
-    "omniintelligence"
-    "omnimemory"
-    "omninode_infra"
-)
+# Supported repos - loaded from shared config.
+REPOS_CONF="${SCRIPT_DIR}/repos.conf"
+
+# shellcheck source=_parse_repos_conf.sh
+source "${SCRIPT_DIR}/_parse_repos_conf.sh"
+
+SUPPORTED_REPOS=()
+while IFS= read -r line; do
+    SUPPORTED_REPOS+=("${line}")
+done < <(parse_repos_conf "${REPOS_CONF}")
+
+# Guard: parse_repos_conf already printed a descriptive error if it failed.
+if [[ ${#SUPPORTED_REPOS[@]} -eq 0 ]]; then
+    exit 2
+fi
 
 usage() {
     echo "Architecture Handshake Installer"
@@ -101,17 +105,17 @@ calculate_sha256() {
     fi
 }
 
-# Get current ISO 8601 timestamp
+# Return current UTC time in ISO 8601 format.
 get_iso_timestamp() {
     date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-# Get current user
+# Return the username of the current shell user.
 get_current_user() {
     whoami
 }
 
-# Generate metadata block
+# Generate the HANDSHAKE_METADATA HTML comment block prepended to installed handshakes.
 generate_metadata_block() {
     local repo_name="$1"
     local source_file="$2"
@@ -132,7 +136,7 @@ generate_metadata_block() {
     printf -- '-->\n\n'
 }
 
-# Validate repo name
+# Check if the given repo name is in the supported repos list. Returns 0 if supported, 1 otherwise.
 is_supported_repo() {
     local repo="$1"
     for supported in "${SUPPORTED_REPOS[@]}"; do
@@ -143,6 +147,7 @@ is_supported_repo() {
     return 1
 }
 
+# Entry point: validate args, install handshake file with metadata to target repo.
 main() {
     # Check arguments
     if [[ $# -lt 1 ]]; then

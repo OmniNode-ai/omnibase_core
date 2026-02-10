@@ -1,0 +1,41 @@
+name: Handshake Policy Gate
+# Checks that every active OmniNode repo has the architecture-handshake
+# CI workflow installed and passing on its default branch.
+# Runs weekly and on manual dispatch.
+
+on:
+  schedule:
+    # Weekly on Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  policy-gate:
+    name: Check handshake compliance across repos
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Validate POLICY_GATE_TOKEN
+        env:
+          GH_TOKEN: ${{ secrets.POLICY_GATE_TOKEN }}
+        run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::POLICY_GATE_TOKEN secret is not configured. Add a fine-grained PAT with Actions:Read scope to the repo secrets."
+            exit 1
+          fi
+
+      - name: Run policy gate check
+        env:
+          # POLICY_GATE_TOKEN: fine-grained PAT scoped to OmniNode-ai org
+          # with Actions:Read on private repos. GITHUB_TOKEN cannot read
+          # workflow runs from private repos in the same org.
+          GH_TOKEN: ${{ secrets.POLICY_GATE_TOKEN }}
+        run: bash architecture-handshakes/check-policy-gate.sh --strict
