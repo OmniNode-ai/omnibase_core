@@ -35,22 +35,13 @@ PYPROJECT_TOML="${SCRIPT_DIR}/../pyproject.toml"
 # Supported repos - loaded from shared config.
 REPOS_CONF="${SCRIPT_DIR}/repos.conf"
 
-if [[ ! -f "${REPOS_CONF}" ]]; then
-    echo "ERROR: repos.conf not found at ${REPOS_CONF}" >&2
-    exit 2
-fi
+# shellcheck source=_parse_repos_conf.sh
+source "${SCRIPT_DIR}/_parse_repos_conf.sh"
 
-# Read repos.conf into array (portable — works on bash 3.2+ for macOS).
-# NOTE: Parsing logic duplicated in check-policy-gate.sh — keep both in sync.
 SUPPORTED_REPOS=()
 while IFS= read -r line; do
     SUPPORTED_REPOS+=("${line}")
-done < <(sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//' "${REPOS_CONF}" | grep -v '^$')
-
-if [[ ${#SUPPORTED_REPOS[@]} -eq 0 ]]; then
-    echo "ERROR: repos.conf contains no repo entries" >&2
-    exit 2
-fi
+done < <(parse_repos_conf "${REPOS_CONF}")
 
 usage() {
     echo "Architecture Handshake Installer"

@@ -36,22 +36,13 @@ WORKFLOW_FILENAME="check-handshake.yml"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOS_CONF="${SCRIPT_DIR}/repos.conf"
 
-if [[ ! -f "${REPOS_CONF}" ]]; then
-    echo "ERROR: repos.conf not found at ${REPOS_CONF}" >&2
-    exit 2
-fi
+# shellcheck source=_parse_repos_conf.sh
+source "${SCRIPT_DIR}/_parse_repos_conf.sh"
 
-# Read repos.conf into array (portable — works on bash 3.2+ for macOS).
-# NOTE: Parsing logic duplicated in install.sh — keep both in sync.
 ACTIVE_REPOS=()
 while IFS= read -r line; do
     ACTIVE_REPOS+=("${line}")
-done < <(sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//' "${REPOS_CONF}" | grep -v '^$')
-
-if [[ ${#ACTIVE_REPOS[@]} -eq 0 ]]; then
-    echo "ERROR: repos.conf contains no repo entries" >&2
-    exit 2
-fi
+done < <(parse_repos_conf "${REPOS_CONF}")
 
 # --- Options -----------------------------------------------------------------
 
@@ -64,8 +55,8 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
-log_pass()  { echo -e "  ${GREEN}PASS${NC}  $1"; }
-log_fail()  { echo -e "  ${RED}FAIL${NC}  $1"; }
+log_pass()  { printf "  ${GREEN}PASS${NC}  %s\n" "$1"; }
+log_fail()  { printf "  ${RED}FAIL${NC}  %s\n" "$1"; }
 log_info()  {
     if [[ "${QUIET}" != "true" ]]; then
         echo "INFO: $1"
@@ -120,12 +111,14 @@ check_repo() {
     local branch
     branch=$(gh api "repos/${full_repo}" --jq '.default_branch // empty' 2>"${api_stderr}") || true
     if [[ -z "${branch}" ]]; then
+        log_info "Could not detect default branch for ${repo}, falling back to main"
         branch="main"
     fi
 
-    # Query the latest workflow run conclusion for check-handshake.yml.
+    # Query the latest *completed* workflow run conclusion for check-handshake.yml.
+    # The status=completed filter excludes in-progress runs whose conclusion is null.
     api_output=$(gh api \
-        "repos/${full_repo}/actions/workflows/${WORKFLOW_FILENAME}/runs?branch=${branch}&per_page=1" \
+        "repos/${full_repo}/actions/workflows/${WORKFLOW_FILENAME}/runs?branch=${branch}&status=completed&per_page=1" \
         --jq '.workflow_runs[0].conclusion // empty' \
         2>"${api_stderr}") && api_exit=0 || api_exit=$?
 

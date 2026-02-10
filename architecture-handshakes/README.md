@@ -110,7 +110,7 @@ The policy gate queries the GitHub API for each active repo's `check-handshake` 
 
 | Status | Meaning |
 |--------|---------|
-| **PASS** | `check-handshake` workflow exists and latest run on main succeeded |
+| **PASS** | `check-handshake.yml` workflow exists and latest completed run on default branch succeeded |
 | **FAIL** | Workflow missing, latest run failed, no runs, or API error |
 
 ### Running Locally
@@ -140,7 +140,7 @@ Downstream repos should add CI checks to ensure their handshake stays current wi
 
 ### GitHub Actions
 
-Add this job to your `.github/workflows/ci.yml`:
+Create a `.github/workflows/check-handshake.yml` file in your repo (the policy gate checks for this exact filename):
 
 ```yaml
 jobs:
