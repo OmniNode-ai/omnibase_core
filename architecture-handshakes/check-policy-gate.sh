@@ -41,7 +41,11 @@ if [[ ! -f "${REPOS_CONF}" ]]; then
     exit 2
 fi
 
-mapfile -t ACTIVE_REPOS < <(grep -v '^\s*$\|^\s*#' "${REPOS_CONF}")
+# Read repos.conf into array (portable — works on bash 3.2+ for macOS).
+ACTIVE_REPOS=()
+while IFS= read -r line; do
+    ACTIVE_REPOS+=("${line}")
+done < <(grep -v '^\s*$\|^\s*#' "${REPOS_CONF}")
 
 # --- Options -----------------------------------------------------------------
 

@@ -40,7 +40,11 @@ if [[ ! -f "${REPOS_CONF}" ]]; then
     exit 2
 fi
 
-mapfile -t SUPPORTED_REPOS < <(grep -v '^\s*$\|^\s*#' "${REPOS_CONF}")
+# Read repos.conf into array (portable — works on bash 3.2+ for macOS).
+SUPPORTED_REPOS=()
+while IFS= read -r line; do
+    SUPPORTED_REPOS+=("${line}")
+done < <(grep -v '^\s*$\|^\s*#' "${REPOS_CONF}")
 
 usage() {
     echo "Architecture Handshake Installer"
