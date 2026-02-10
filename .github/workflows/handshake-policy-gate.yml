@@ -25,5 +25,8 @@ jobs:
 
       - name: Run policy gate check
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # POLICY_GATE_TOKEN: fine-grained PAT scoped to OmniNode-ai org
+          # with Actions:Read on private repos. GITHUB_TOKEN cannot read
+          # workflow runs from private repos in the same org.
+          GH_TOKEN: ${{ secrets.POLICY_GATE_TOKEN }}
         run: bash architecture-handshakes/check-policy-gate.sh --strict
