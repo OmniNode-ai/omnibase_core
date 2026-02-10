@@ -106,7 +106,7 @@ check_repo() {
     local api_stderr
     api_stderr=$(mktemp) || { echo "error"; return 0; }
     # shellcheck disable=SC2064  # Early expansion intentional: captures current api_stderr path.
-    trap "rm -f '${api_stderr}'" RETURN
+    trap "rm -f \"${api_stderr}\"" RETURN
 
     # Determine the repo's actual default branch via the API.
     local branch
@@ -116,10 +116,14 @@ check_repo() {
         branch="main"
     fi
 
+    # URL-encode the branch name in case it contains special characters.
+    local encoded_branch
+    encoded_branch=$(printf '%s' "${branch}" | jq -sRr @uri 2>/dev/null || printf '%s' "${branch}")
+
     # Query the latest *completed* workflow run conclusion for check-handshake.yml.
     # The status=completed filter excludes in-progress runs whose conclusion is null.
     api_output=$(gh api \
-        "repos/${full_repo}/actions/workflows/${WORKFLOW_FILENAME}/runs?branch=${branch}&status=completed&per_page=1" \
+        "repos/${full_repo}/actions/workflows/${WORKFLOW_FILENAME}/runs?branch=${encoded_branch}&status=completed&per_page=1" \
         --jq '.workflow_runs[0].conclusion // empty' \
         2>"${api_stderr}") && api_exit=0 || api_exit=$?
 
