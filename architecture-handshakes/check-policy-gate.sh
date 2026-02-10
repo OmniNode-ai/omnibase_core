@@ -44,6 +44,11 @@ while IFS= read -r line; do
     ACTIVE_REPOS+=("${line}")
 done < <(parse_repos_conf "${REPOS_CONF}")
 
+if [[ ${#ACTIVE_REPOS[@]} -eq 0 ]]; then
+    echo "ERROR: no repos loaded from ${REPOS_CONF}" >&2
+    exit 2
+fi
+
 # --- Options -----------------------------------------------------------------
 
 QUIET=false
@@ -51,15 +56,11 @@ STRICT=false
 
 # --- Output helpers ----------------------------------------------------------
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
-
-log_pass()  { printf "  ${GREEN}PASS${NC}  %s\n" "$1"; }
-log_fail()  { printf "  ${RED}FAIL${NC}  %s\n" "$1"; }
+log_pass()  { printf '  \033[0;32mPASS\033[0m  %s\n' "$1"; }
+log_fail()  { printf '  \033[0;31mFAIL\033[0m  %s\n' "$1"; }
 log_info()  {
     if [[ "${QUIET}" != "true" ]]; then
-        echo "INFO: $1"
+        echo "INFO: $1" >&2
     fi
 }
 

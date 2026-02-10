@@ -43,6 +43,11 @@ while IFS= read -r line; do
     SUPPORTED_REPOS+=("${line}")
 done < <(parse_repos_conf "${REPOS_CONF}")
 
+if [[ ${#SUPPORTED_REPOS[@]} -eq 0 ]]; then
+    echo "ERROR: no repos loaded from ${REPOS_CONF}" >&2
+    exit 2
+fi
+
 usage() {
     echo "Architecture Handshake Installer"
     echo ""
