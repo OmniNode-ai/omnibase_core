@@ -20,6 +20,7 @@
 #
 # Requirements:
 #   - GitHub CLI (gh) authenticated with access to OmniNode-ai org repos
+#   - jq (for URL-encoding branch names; falls back to raw name if absent)
 #
 # Non-success conclusions (cancelled, skipped, timed_out, etc.) are treated
 # as failures. Manually cancelled runs will show as FAIL.

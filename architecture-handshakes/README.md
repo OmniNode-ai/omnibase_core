@@ -115,7 +115,7 @@ The policy gate queries the GitHub API for each active repo's `check-handshake` 
 
 ### Running Locally
 
-Requires `gh auth login` with access to OmniNode-ai org repos.
+Requires `gh auth login` with access to OmniNode-ai org repos. `jq` is used to URL-encode branch names; the script falls back to the raw name if `jq` is absent (safe for simple branch names like `main`).
 
 ```bash
 # Report-only mode (default)
