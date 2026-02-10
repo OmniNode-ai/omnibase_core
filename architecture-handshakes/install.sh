@@ -44,7 +44,7 @@ fi
 SUPPORTED_REPOS=()
 while IFS= read -r line; do
     SUPPORTED_REPOS+=("${line}")
-done < <(sed 's/#.*//' "${REPOS_CONF}" | sed 's/[[:space:]]*$//' | grep -v '^\s*$')
+done < <(sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//' "${REPOS_CONF}" | grep -v '^\s*$')
 
 usage() {
     echo "Architecture Handshake Installer"

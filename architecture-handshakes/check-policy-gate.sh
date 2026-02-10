@@ -45,7 +45,12 @@ fi
 ACTIVE_REPOS=()
 while IFS= read -r line; do
     ACTIVE_REPOS+=("${line}")
-done < <(sed 's/#.*//' "${REPOS_CONF}" | sed 's/[[:space:]]*$//' | grep -v '^\s*$')
+done < <(sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//' "${REPOS_CONF}" | grep -v '^\s*$')
+
+if [[ ${#ACTIVE_REPOS[@]} -eq 0 ]]; then
+    echo "ERROR: repos.conf contains no repo entries" >&2
+    exit 2
+fi
 
 # --- Options -----------------------------------------------------------------
 
