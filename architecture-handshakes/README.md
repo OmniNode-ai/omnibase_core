@@ -96,7 +96,43 @@ Handshakes are versioned with omnibase_core releases. After upgrading omnibase_c
 
 1. Create `repos/<repo-name>.md` following the template
 2. Add repo name to `SUPPORTED_REPOS` array in `install.sh`
-3. Release omnibase_core with the new handshake
+3. Add repo name to `ACTIVE_REPOS` array in `check-policy-gate.sh`
+4. Install handshake to the repo: `./install.sh <repo-name>`
+5. Add `check-handshake.yml` CI workflow to the repo (see [CI Integration](#ci-integration))
+6. Release omnibase_core with the new handshake
+
+## Policy Gate
+
+The **Handshake Policy Gate** is a meta-check that verifies all active repos have handshake CI enforcement enabled and passing. It runs as a scheduled GitHub Actions workflow in omnibase_core.
+
+### How It Works
+
+The policy gate queries the GitHub API for each active repo's `check-handshake` workflow status on its default branch. Repos are reported as:
+
+| Status | Meaning |
+|--------|---------|
+| **PASS** | `check-handshake` workflow exists and latest run on main succeeded |
+| **FAIL** | Workflow missing or latest run failed |
+| **WARN** | Workflow exists but has no runs, or API error |
+
+### Running Locally
+
+```bash
+# Report-only mode (default)
+./architecture-handshakes/check-policy-gate.sh
+
+# Strict mode (exit non-zero if any repo fails)
+./architecture-handshakes/check-policy-gate.sh --strict
+
+# Quiet mode (suppress INFO messages)
+./architecture-handshakes/check-policy-gate.sh -q --strict
+```
+
+### Scheduled Workflow
+
+The policy gate runs automatically weekly (Monday 08:00 UTC) via `.github/workflows/handshake-policy-gate.yml`. It can also be triggered manually via `workflow_dispatch`.
+
+Results are displayed in the GitHub Actions step summary as a compliance table.
 
 ## CI Integration
 

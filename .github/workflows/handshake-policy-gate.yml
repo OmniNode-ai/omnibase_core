@@ -1,0 +1,61 @@
+name: Handshake Policy Gate
+
+on:
+  schedule:
+    # Weekly on Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  policy-gate:
+    name: Check handshake compliance across repos
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run policy gate check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash architecture-handshakes/check-policy-gate.sh --strict
+
+      - name: Generate compliance summary
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "## Handshake Policy Gate Results" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Repo | Status |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "|------|--------|" >> "${GITHUB_STEP_SUMMARY}"
+
+          repos=(
+            omnibase_core
+            omnibase_infra
+            omnibase_spi
+            omniclaude
+            omnidash
+            omniintelligence
+            omnimemory
+            omninode_infra
+          )
+
+          for repo in "${repos[@]}"; do
+            result=$(gh api \
+              "repos/OmniNode-ai/${repo}/actions/workflows/check-handshake.yml/runs" \
+              --jq '.workflow_runs | map(select(.head_branch == "main" or .head_branch == "master")) | first | .conclusion // "no_runs"' \
+              2>/dev/null) || result="no_workflow"
+
+            case "${result}" in
+              success)  echo "| ${repo} | :white_check_mark: Pass |" >> "${GITHUB_STEP_SUMMARY}" ;;
+              no_workflow) echo "| ${repo} | :x: No workflow |" >> "${GITHUB_STEP_SUMMARY}" ;;
+              no_runs)  echo "| ${repo} | :warning: No runs |" >> "${GITHUB_STEP_SUMMARY}" ;;
+              *)        echo "| ${repo} | :x: ${result} |" >> "${GITHUB_STEP_SUMMARY}" ;;
+            esac
+          done
