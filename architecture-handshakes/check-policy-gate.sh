@@ -45,7 +45,7 @@ fi
 ACTIVE_REPOS=()
 while IFS= read -r line; do
     ACTIVE_REPOS+=("${line}")
-done < <(sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//' "${REPOS_CONF}" | grep -v '^\s*$')
+done < <(sed 's/#.*//; s/^[[:space:]]*//; s/[[:space:]]*$//' "${REPOS_CONF}" | grep -v '^$')
 
 if [[ ${#ACTIVE_REPOS[@]} -eq 0 ]]; then
     echo "ERROR: repos.conf contains no repo entries" >&2
@@ -116,26 +116,18 @@ check_repo() {
     # shellcheck disable=SC2064
     trap "rm -f '${api_stderr}'" RETURN
 
-    # Query the latest workflow run conclusion for check-handshake.yml.
-    # Try main first, then fall back to master.
+    # Determine the repo's actual default branch via the API.
     local branch
-    for branch in main master; do
-        api_output=$(gh api \
-            "repos/${full_repo}/actions/workflows/${WORKFLOW_FILENAME}/runs?branch=${branch}&per_page=1" \
-            --jq '.workflow_runs[0].conclusion // empty' \
-            2>"${api_stderr}") && api_exit=0 || api_exit=$?
+    branch=$(gh api "repos/${full_repo}" --jq '.default_branch // empty' 2>"${api_stderr}") || true
+    if [[ -z "${branch}" ]]; then
+        branch="main"
+    fi
 
-        # If we got a non-404 error or found a result, stop trying branches.
-        if [[ ${api_exit} -eq 0 && -n "${api_output}" ]]; then
-            break
-        fi
-        # On 404, the workflow itself doesn't exist — no point trying another branch.
-        local stderr_content
-        stderr_content=$(<"${api_stderr}")
-        if [[ "${stderr_content}" == *"404"* ]] || [[ "${stderr_content}" == *"Not Found"* ]]; then
-            break
-        fi
-    done
+    # Query the latest workflow run conclusion for check-handshake.yml.
+    api_output=$(gh api \
+        "repos/${full_repo}/actions/workflows/${WORKFLOW_FILENAME}/runs?branch=${branch}&per_page=1" \
+        --jq '.workflow_runs[0].conclusion // empty' \
+        2>"${api_stderr}") && api_exit=0 || api_exit=$?
 
     if [[ ${api_exit} -ne 0 ]]; then
         local err_content
