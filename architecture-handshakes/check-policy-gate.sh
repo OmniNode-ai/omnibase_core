@@ -20,6 +20,14 @@
 #
 # Requirements:
 #   - GitHub CLI (gh) authenticated with access to OmniNode-ai org repos
+#
+# Token scope:
+#   Some OmniNode repos are private. The GH_TOKEN must have `actions:read`
+#   scope across all org repos. In CI, set POLICY_GATE_TOKEN to an org-level
+#   PAT or GitHub App token (GITHUB_TOKEN is scoped to the current repo only).
+#
+# Non-success conclusions (cancelled, skipped, timed_out, etc.) are treated
+# as failures. Manually cancelled runs will show as FAIL.
 
 set -euo pipefail
 

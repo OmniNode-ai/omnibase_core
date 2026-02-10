@@ -117,6 +117,8 @@ The policy gate queries the GitHub API for each active repo's `check-handshake` 
 
 ### Running Locally
 
+Requires `gh auth login` with access to all OmniNode-ai org repos (some are private).
+
 ```bash
 # Report-only mode (default)
 ./architecture-handshakes/check-policy-gate.sh
@@ -128,11 +130,13 @@ The policy gate queries the GitHub API for each active repo's `check-handshake` 
 ./architecture-handshakes/check-policy-gate.sh -q --strict
 ```
 
+Non-`success` workflow conclusions (cancelled, skipped, timed_out) are treated as failures. Manually cancelled runs will show as FAIL.
+
 ### Scheduled Workflow
 
 The policy gate runs automatically weekly (Monday 08:00 UTC) via `.github/workflows/handshake-policy-gate.yml`. It can also be triggered manually via `workflow_dispatch`.
 
-Results are displayed in the GitHub Actions step summary as a compliance table.
+**Token requirement**: The workflow needs `POLICY_GATE_TOKEN` (org-level PAT with `actions:read`) to access private repos. Without it, only public repo checks will succeed.
 
 ## CI Integration
 
