@@ -45,7 +45,7 @@ fi
 ACTIVE_REPOS=()
 while IFS= read -r line; do
     ACTIVE_REPOS+=("${line}")
-done < <(grep -v '^\s*$\|^\s*#' "${REPOS_CONF}")
+done < <(sed 's/#.*//' "${REPOS_CONF}" | sed 's/[[:space:]]*$//' | grep -v '^\s*$')
 
 # --- Options -----------------------------------------------------------------
 
@@ -111,20 +111,34 @@ check_repo() {
     # shellcheck disable=SC2064
     trap "rm -f '${api_stderr}'" RETURN
 
-    # Query the latest workflow run conclusion for check-handshake.yml
-    # on main/master in a single jq expression.
-    api_output=$(gh api \
-        "repos/${full_repo}/actions/workflows/${WORKFLOW_FILENAME}/runs" \
-        --jq '[.workflow_runs[] | select(.head_branch == "main" or .head_branch == "master")] | first | .conclusion // empty' \
-        2>"${api_stderr}") && api_exit=0 || api_exit=$?
+    # Query the latest workflow run conclusion for check-handshake.yml.
+    # Try main first, then fall back to master.
+    local branch
+    for branch in main master; do
+        api_output=$(gh api \
+            "repos/${full_repo}/actions/workflows/${WORKFLOW_FILENAME}/runs?branch=${branch}&per_page=1" \
+            --jq '.workflow_runs[0].conclusion // empty' \
+            2>"${api_stderr}") && api_exit=0 || api_exit=$?
 
-    if [[ ${api_exit} -ne 0 ]]; then
+        # If we got a non-404 error or found a result, stop trying branches.
+        if [[ ${api_exit} -eq 0 && -n "${api_output}" ]]; then
+            break
+        fi
+        # On 404, the workflow itself doesn't exist — no point trying another branch.
         local stderr_content
         stderr_content=$(<"${api_stderr}")
+        if [[ "${stderr_content}" == *"404"* ]] || [[ "${stderr_content}" == *"Not Found"* ]]; then
+            break
+        fi
+    done
+
+    if [[ ${api_exit} -ne 0 ]]; then
+        local err_content
+        err_content=$(<"${api_stderr}")
 
         # gh api returns exit code 1 for HTTP 4xx/5xx errors.
         # A 404 means the workflow file does not exist in the repo.
-        if [[ "${stderr_content}" == *"404"* ]] || [[ "${stderr_content}" == *"Not Found"* ]]; then
+        if [[ "${err_content}" == *"404"* ]] || [[ "${err_content}" == *"Not Found"* ]]; then
             echo "no_workflow"
         else
             echo "error"

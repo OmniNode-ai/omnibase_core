@@ -23,6 +23,15 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Validate POLICY_GATE_TOKEN
+        env:
+          GH_TOKEN: ${{ secrets.POLICY_GATE_TOKEN }}
+        run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::POLICY_GATE_TOKEN secret is not configured. Add a fine-grained PAT with Actions:Read scope to the repo secrets."
+            exit 1
+          fi
+
       - name: Run policy gate check
         env:
           # POLICY_GATE_TOKEN: fine-grained PAT scoped to OmniNode-ai org
