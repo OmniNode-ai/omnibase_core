@@ -45,6 +45,7 @@ class ModelConflictResolutionResult(BaseModel):
         frozen=True,
         extra="forbid",
         from_attributes=True,
+        validate_assignment=True,
     )
 
     details: ModelGeometricConflictDetails = Field(
