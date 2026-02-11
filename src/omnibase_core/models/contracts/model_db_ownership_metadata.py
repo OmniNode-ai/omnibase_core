@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ModelDbOwnershipMetadata(BaseModel):
@@ -49,26 +49,35 @@ class ModelDbOwnershipMetadata(BaseModel):
         description="UTC timestamp when the ownership record was written.",
     )
 
+    @field_validator("created_at")
+    @classmethod
+    def _require_timezone_aware(cls, v: datetime) -> datetime:
+        if v.tzinfo is None or v.tzinfo.utcoffset(v) is None:
+            raise ValueError(
+                "created_at must be timezone-aware (use datetime with tz=UTC)"
+            )
+        return v
+
 
 # ---------------------------------------------------------------------------
 # Migration SQL
 # ---------------------------------------------------------------------------
 
-DB_METADATA_CREATE_SQL = (  # env-var-ok: constant SQL definition
+DB_METADATA_CREATE_SQL = (  # env-var-ok: static SQL, not an env variable
     "CREATE TABLE IF NOT EXISTS db_metadata (\n"
-    "    id          INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+    "    id          INTEGER PRIMARY KEY CHECK (id = 1),\n"
     "    owner_service   TEXT    NOT NULL,\n"
     "    schema_version  TEXT    NOT NULL,\n"
     "    created_at      TEXT    NOT NULL\n"
     ");\n"
 )
 
-DB_METADATA_INSERT_SQL = (  # env-var-ok: constant SQL definition
-    "INSERT INTO db_metadata (owner_service, schema_version, created_at)\n"
-    "VALUES (:owner_service, :schema_version, :created_at);\n"
+DB_METADATA_INSERT_SQL = (  # env-var-ok: static SQL, not an env variable
+    "INSERT OR REPLACE INTO db_metadata (id, owner_service, schema_version, created_at)\n"
+    "VALUES (1, :owner_service, :schema_version, :created_at);\n"
 )
 
-DB_METADATA_QUERY_SQL = (  # env-var-ok: constant SQL definition
+DB_METADATA_QUERY_SQL = (  # env-var-ok: static SQL, not an env variable
     "SELECT owner_service, schema_version, created_at\n"
     "FROM db_metadata\n"
     "ORDER BY id DESC\n"

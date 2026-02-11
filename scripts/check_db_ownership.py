@@ -57,11 +57,6 @@ def _log(msg: str, *, verbose: bool) -> None:
         print(f"  {msg}")
 
 
-def _fail(msg: str) -> int:
-    print(f"FAIL: {msg}", file=sys.stderr)
-    return 1
-
-
 # ---------------------------------------------------------------------------
 # Core checks
 # ---------------------------------------------------------------------------
