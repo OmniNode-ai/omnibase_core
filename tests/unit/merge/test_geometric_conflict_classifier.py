@@ -187,12 +187,12 @@ class TestClassifyConflicting:
     """Tests for CONFLICTING classification (moderate similarity)."""
 
     def test_partial_overlap(self, classifier: GeometricConflictClassifier) -> None:
-        """Same keys, some values match, some differ -> CONFLICTING (0.5-0.85)."""
+        """Same keys, majority of values match, one differs -> CONFLICTING (0.5-0.85)."""
         result = classifier.classify(
-            base_value={"a": 1, "b": 2, "c": 3},
+            base_value={"a": 1, "b": 2, "c": 3, "d": 4},
             values=[
-                ("agent-1", {"a": 1, "b": 20, "c": 30}),
-                ("agent-2", {"a": 1, "b": 200, "c": 300}),
+                ("agent-1", {"a": 1, "b": 2, "c": 3, "d": 40}),
+                ("agent-2", {"a": 1, "b": 2, "c": 3, "d": 400}),
             ],
         )
         assert result.conflict_type == EnumMergeConflictType.CONFLICTING
@@ -559,6 +559,116 @@ class TestEdgeCases:
             values=[("agent-1", None), ("agent-2", None)],
         )
         assert result.conflict_type == EnumMergeConflictType.IDENTICAL
+
+
+class TestDeepNesting:
+    """Regression tests for deeply nested dict similarity convergence."""
+
+    def test_deeply_nested_different_leaves_not_identical(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        """Deeply nested dicts with different leaf values must NOT be IDENTICAL."""
+
+        def nest(value: object, depth: int) -> dict[str, object]:
+            result: dict[str, object] = {"leaf": value}
+            for _ in range(depth):
+                result = {"nested": result}
+            return result
+
+        a = nest(1, 15)
+        b = nest(999, 15)
+        score = classifier.compute_similarity(a, b)
+        assert score < 0.99, f"Deeply nested dicts converged to {score}"
+
+    def test_deeply_nested_classify_not_identical(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        """classify() should not report IDENTICAL for deeply nested differing dicts."""
+
+        def nest(value: object, depth: int) -> dict[str, object]:
+            result: dict[str, object] = {"leaf": value}
+            for _ in range(depth):
+                result = {"nested": result}
+            return result
+
+        base = nest("original", 10)
+        result = classifier.classify(
+            base_value=base,
+            values=[
+                ("agent-1", nest("changed-a", 10)),
+                ("agent-2", nest("changed-b", 10)),
+            ],
+        )
+        assert result.conflict_type != EnumMergeConflictType.IDENTICAL
+
+
+class TestMultisetListSimilarity:
+    """Tests verifying Counter-based multiset Jaccard for list similarity."""
+
+    def test_duplicate_counts_affect_similarity(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        """Lists with same elements but different counts should NOT score 1.0."""
+        score = classifier.compute_similarity([1, 1, 1, 2], [1, 2, 2, 2])
+        assert score < 1.0, (
+            f"Multiset Jaccard should distinguish duplicates, got {score}"
+        )
+
+    def test_identical_duplicates_score_1(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        assert classifier.compute_similarity([1, 1, 2, 2], [1, 1, 2, 2]) == 1.0
+
+
+class TestOrthogonalNonDict:
+    """Tests for recommend_resolution ORTHOGONAL with non-dict values."""
+
+    def test_orthogonal_non_dict_picks_first(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        details = ModelGeometricConflictDetails(
+            conflict_type=EnumMergeConflictType.ORTHOGONAL,
+            similarity_score=0.9,
+            confidence=0.9,
+            explanation="Orthogonal non-dict",
+        )
+        value, explanation = classifier.recommend_resolution(
+            details,
+            [("agent-1", "text-a"), ("agent-2", "text-b")],
+        )
+        assert value == "text-a"
+        assert "non-dict" in explanation.lower()
+
+    def test_orthogonal_overlapping_keys_raises(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        """ORTHOGONAL merge with overlapping dict keys should raise ValueError."""
+        details = ModelGeometricConflictDetails(
+            conflict_type=EnumMergeConflictType.ORTHOGONAL,
+            similarity_score=0.9,
+            confidence=0.9,
+            explanation="Orthogonal",
+        )
+        with pytest.raises(ValueError, match="disjoint keys"):
+            classifier.recommend_resolution(
+                details,
+                [("agent-1", {"shared": "first"}), ("agent-2", {"shared": "second"})],
+            )
+
+
+class TestMixedTypeAgents:
+    """Tests for >2 agents with mixed value types."""
+
+    def test_three_agents_mixed_types(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        """Three agents with mixed types should classify without crashing."""
+        result = classifier.classify(
+            base_value="original",
+            values=[("a1", "modified"), ("a2", 42), ("a3", {"key": "value"})],
+        )
+        assert result.conflict_type is not None
+        assert 0.0 <= result.similarity_score <= 1.0
 
 
 class TestModuleExports:

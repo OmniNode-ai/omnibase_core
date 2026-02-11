@@ -328,7 +328,11 @@ class GeometricConflictClassifier:
     def _dict_similarity(
         self, dict_a: dict[str, object], dict_b: dict[str, object]
     ) -> float:
-        """Compute similarity between two dicts using key overlap + value comparison."""
+        """Compute similarity between two dicts using key overlap + value comparison.
+
+        When all keys match (key_similarity=1.0), returns pure value similarity
+        to prevent convergence to 1.0 for deeply nested dicts with differing leaves.
+        """
         all_keys = set(dict_a.keys()) | set(dict_b.keys())
         if not all_keys:
             return 1.0
@@ -348,25 +352,39 @@ class GeometricConflictClassifier:
         else:
             value_similarity = 0.0
 
-        # Weighted combination (50% structure, 50% content)
+        # When keys are identical, structural info is trivial - use value similarity
+        # directly to prevent convergence to 1.0 for deeply nested dicts.
+        if key_similarity == 1.0:
+            return value_similarity
+
+        # Mixed: weight structure (key overlap) and content equally
         return 0.5 * key_similarity + 0.5 * value_similarity
 
     def _string_similarity(self, str_a: str, str_b: str) -> float:
-        """Compute string similarity using Dice coefficient on character bigrams."""
+        """Compute string similarity using multiset Dice coefficient on character bigrams.
+
+        Uses Counter-based comparison so repeated bigrams affect the score
+        (consistent with _list_similarity multiset approach).
+        """
         if str_a == str_b:
             return 1.0
         if not str_a or not str_b:
             return 0.0
 
-        bigrams_a = {str_a[i : i + 2] for i in range(len(str_a) - 1)}
-        bigrams_b = {str_b[i : i + 2] for i in range(len(str_b) - 1)}
+        bigrams_a = Counter(str_a[i : i + 2] for i in range(len(str_a) - 1))
+        bigrams_b = Counter(str_b[i : i + 2] for i in range(len(str_b) - 1))
 
         if not bigrams_a and not bigrams_b:
             # Single-char strings that differ
             return 0.0
 
-        intersection = bigrams_a & bigrams_b
-        return 2 * len(intersection) / (len(bigrams_a) + len(bigrams_b))
+        # Multiset Dice: 2 * sum(min counts) / (total_a + total_b)
+        intersection_size = sum(
+            min(bigrams_a[k], bigrams_b.get(k, 0)) for k in bigrams_a
+        )
+        return (
+            2 * intersection_size / (sum(bigrams_a.values()) + sum(bigrams_b.values()))
+        )
 
     def _list_similarity(self, list_a: list[object], list_b: list[object]) -> float:
         """Compute list similarity using multiset Jaccard index on serialized elements.
