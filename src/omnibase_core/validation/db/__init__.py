@@ -1,7 +1,7 @@
 """Database repository contract validators.
 
 Validators for ModelDbRepositoryContract: structural, SQL safety,
-table access, deterministic ordering, and parameter validation.
+table access, deterministic ordering, parameter, and ownership validation.
 """
 
 from omnibase_core.validation.db.sql_utils import (
@@ -11,6 +11,9 @@ from omnibase_core.validation.db.sql_utils import (
 )
 from omnibase_core.validation.db.validator_db_deterministic import (
     validate_db_deterministic,
+)
+from omnibase_core.validation.db.validator_db_ownership import (
+    validate_db_ownership,
 )
 from omnibase_core.validation.db.validator_db_params import (
     validate_db_params,
@@ -33,6 +36,7 @@ __all__ = [
     "normalize_sql",
     "strip_sql_strings",
     "validate_db_deterministic",
+    "validate_db_ownership",
     "validate_db_params",
     "validate_db_projection",
     "validate_db_sql_safety",
