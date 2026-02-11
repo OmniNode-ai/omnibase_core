@@ -148,10 +148,28 @@ def check_pydantic_model_roundtrip(
 
     owner_service, schema_version, created_at_str = row
     try:
+        parsed_dt = datetime.fromisoformat(created_at_str)
+    except (TypeError, ValueError) as exc:
+        print(
+            f"FAIL: Cannot parse created_at value {created_at_str!r}: {exc}. "
+            f"Expected timezone-aware ISO-8601 format "
+            f"(e.g. '2025-01-01T00:00:00+00:00')."
+        )
+        return False
+
+    if parsed_dt.tzinfo is None:
+        print(
+            f"FAIL: created_at value {created_at_str!r} is a naive datetime "
+            f"(missing timezone). The Pydantic model requires timezone-aware "
+            f"ISO-8601 format (e.g. '2025-01-01T00:00:00+00:00')."
+        )
+        return False
+
+    try:
         model = ModelDbOwnershipMetadata(
             owner_service=owner_service,
             schema_version=schema_version,
-            created_at=datetime.fromisoformat(created_at_str),
+            created_at=parsed_dt,
         )
     except Exception as exc:
         print(f"FAIL: Pydantic model validation failed: {exc}")

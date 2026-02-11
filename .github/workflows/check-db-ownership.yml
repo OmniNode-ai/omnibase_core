@@ -66,6 +66,9 @@ jobs:
       - name: Run DB ownership CI twin
         run: poetry run python scripts/check_db_ownership.py --verbose
 
+      - name: Run DB ownership unit tests
+        run: poetry run pytest tests/unit/validation/db/test_db_ownership.py -xvs
+
       - name: DB ownership summary
         if: always()
         run: |

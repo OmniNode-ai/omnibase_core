@@ -55,7 +55,7 @@ def validate_db_ownership(
 
     # Check 2: at least one operation references db_metadata
     has_metadata_op = False
-    for _, op in contract.ops.items():
+    for op_name, op in contract.ops.items():
         sql_lower = op.sql.lower()
         if "db_metadata" in sql_lower:
             has_metadata_op = True
