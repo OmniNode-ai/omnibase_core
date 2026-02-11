@@ -32,10 +32,7 @@ from pathlib import Path
 # We import the SQL strings rather than duplicating them so that any drift
 # between the model and the CI twin is impossible.
 
-_REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(_REPO_ROOT / "src"))
-
-from omnibase_core.models.contracts.model_db_ownership_metadata import (  # noqa: E402
+from omnibase_core.models.contracts.model_db_ownership_metadata import (
     DB_METADATA_CREATE_SQL,
     DB_METADATA_INSERT_SQL,
     DB_METADATA_QUERY_SQL,
@@ -166,7 +163,6 @@ def check_pydantic_model_roundtrip(
 
 
 def check_wrong_owner_detected(
-    conn: sqlite3.Connection,
     *,
     verbose: bool,
 ) -> bool:
@@ -264,7 +260,7 @@ def main() -> int:
                 checks.append(("Pydantic model roundtrip", ok3))
 
             # Negative checks
-            ok4 = check_wrong_owner_detected(conn, verbose=args.verbose)
+            ok4 = check_wrong_owner_detected(verbose=args.verbose)
             checks.append(("Wrong owner detection", ok4))
 
             ok5 = check_missing_table_detected(verbose=args.verbose)

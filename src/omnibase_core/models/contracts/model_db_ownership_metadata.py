@@ -36,6 +36,8 @@ class ModelDbOwnershipMetadata(BaseModel):
         ),
     )
 
+    # Strict MAJOR.MINOR.PATCH only -- pre-release and build metadata suffixes
+    # (e.g. "1.0.0-rc.1+build.42") are intentionally rejected.
     schema_version: str = Field(
         ...,
         min_length=1,
@@ -72,6 +74,9 @@ DB_METADATA_CREATE_SQL = (  # env-var-ok: static SQL, not an env variable
     ");\n"
 )
 
+# SQLite-only: INSERT OR REPLACE is used exclusively by the CI twin's SQLite
+# provisioning (scripts/check_db_ownership.py).  Production PostgreSQL uses its
+# own migration tooling and does not execute this SQL.
 DB_METADATA_INSERT_SQL = (  # env-var-ok: static SQL, not an env variable
     "INSERT OR REPLACE INTO db_metadata (id, owner_service, schema_version, created_at)\n"
     "VALUES (1, :owner_service, :schema_version, :created_at);\n"
