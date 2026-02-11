@@ -16,7 +16,7 @@ class TestEnumMergeConflictType:
 
     @pytest.mark.unit
     def test_enum_values(self) -> None:
-        """Test that all expected enum values exist."""
+        """Test that all expected traditional enum values exist."""
         assert EnumMergeConflictType.TYPE_MISMATCH.value == "type_mismatch"
         assert EnumMergeConflictType.INCOMPATIBLE.value == "incompatible"
         assert EnumMergeConflictType.REQUIRED_MISSING.value == "required_missing"
@@ -26,9 +26,19 @@ class TestEnumMergeConflictType:
         assert EnumMergeConflictType.CONSTRAINT_CONFLICT.value == "constraint_conflict"
 
     @pytest.mark.unit
+    def test_geometric_enum_values(self) -> None:
+        """Test that all geometric conflict types exist with correct values."""
+        assert EnumMergeConflictType.ORTHOGONAL.value == "orthogonal"
+        assert EnumMergeConflictType.LOW_CONFLICT.value == "low_conflict"
+        assert EnumMergeConflictType.IDENTICAL.value == "identical"
+        assert EnumMergeConflictType.OPPOSITE.value == "opposite"
+        assert EnumMergeConflictType.CONFLICTING.value == "conflicting"
+        assert EnumMergeConflictType.AMBIGUOUS.value == "ambiguous"
+
+    @pytest.mark.unit
     def test_enum_count(self) -> None:
-        """Test that we have exactly 7 conflict types."""
-        assert len(EnumMergeConflictType) == 7
+        """Test that we have exactly 13 conflict types (7 traditional + 6 geometric)."""
+        assert len(EnumMergeConflictType) == 13
 
     @pytest.mark.unit
     def test_str_representation(self) -> None:
@@ -55,6 +65,35 @@ class TestEnumMergeConflictType:
         """Test that invalid values raise ValueError."""
         with pytest.raises(ValueError):
             EnumMergeConflictType("invalid_type")
+
+    @pytest.mark.unit
+    def test_geometric_str_representation(self) -> None:
+        """Test string representation of geometric types returns value."""
+        assert str(EnumMergeConflictType.ORTHOGONAL) == "orthogonal"
+        assert str(EnumMergeConflictType.OPPOSITE) == "opposite"
+        assert str(EnumMergeConflictType.AMBIGUOUS) == "ambiguous"
+
+    @pytest.mark.unit
+    def test_geometric_repr_representation(self) -> None:
+        """Test repr of geometric types returns detailed format."""
+        assert (
+            repr(EnumMergeConflictType.ORTHOGONAL) == "EnumMergeConflictType.ORTHOGONAL"
+        )
+        assert (
+            repr(EnumMergeConflictType.AMBIGUOUS) == "EnumMergeConflictType.AMBIGUOUS"
+        )
+
+    @pytest.mark.unit
+    def test_geometric_from_value(self) -> None:
+        """Test creating geometric enum members from string value."""
+        assert EnumMergeConflictType("orthogonal") == EnumMergeConflictType.ORTHOGONAL
+        assert (
+            EnumMergeConflictType("low_conflict") == EnumMergeConflictType.LOW_CONFLICT
+        )
+        assert EnumMergeConflictType("identical") == EnumMergeConflictType.IDENTICAL
+        assert EnumMergeConflictType("opposite") == EnumMergeConflictType.OPPOSITE
+        assert EnumMergeConflictType("conflicting") == EnumMergeConflictType.CONFLICTING
+        assert EnumMergeConflictType("ambiguous") == EnumMergeConflictType.AMBIGUOUS
 
 
 @pytest.mark.unit
