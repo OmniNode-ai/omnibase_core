@@ -200,6 +200,16 @@ class TestModelDbOwnershipMetadata:
             )
             assert model.schema_version == version
 
+    @pytest.mark.unit
+    def test_naive_datetime_rejected(self) -> None:
+        """Reject naive (timezone-unaware) datetimes to enforce UTC contract."""
+        with pytest.raises(ValueError, match="timezone-aware"):
+            ModelDbOwnershipMetadata(
+                owner_service="test",
+                schema_version="1.0.0",
+                created_at=datetime(2024, 1, 1),
+            )
+
 
 # ============================================================================
 # validate_db_ownership - Contract Validator Tests
