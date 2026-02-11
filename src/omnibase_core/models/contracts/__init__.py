@@ -107,6 +107,14 @@ from .model_contract_version import ModelContractVersion
 
 # Database repository contract models (OMN-1782)
 from .model_db_operation import ModelDbOperation
+
+# Database ownership metadata (OMN-2150)
+from .model_db_ownership_metadata import (
+    DB_METADATA_CREATE_SQL,
+    DB_METADATA_INSERT_SQL,
+    DB_METADATA_QUERY_SQL,
+    ModelDbOwnershipMetadata,
+)
 from .model_db_param import ModelDbParam
 from .model_db_repository_contract import ModelDbRepositoryContract
 from .model_db_return import ModelDbReturn
@@ -249,6 +257,11 @@ __all__ = [
     "ModelDbRepositoryContract",
     "ModelDbReturn",
     "ModelDbSafetyPolicy",
+    # Database ownership metadata (OMN-2150)
+    "ModelDbOwnershipMetadata",
+    "DB_METADATA_CREATE_SQL",
+    "DB_METADATA_INSERT_SQL",
+    "DB_METADATA_QUERY_SQL",
     # Handler routing models (OMN-1295)
     "ModelHandlerRoutingEntry",
     "ModelHandlerRoutingSubcontract",
