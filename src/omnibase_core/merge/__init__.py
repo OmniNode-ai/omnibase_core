@@ -39,6 +39,9 @@ See Also:
 from __future__ import annotations
 
 from omnibase_core.merge.contract_merge_engine import ContractMergeEngine
+from omnibase_core.merge.geometric_conflict_classifier import (
+    GeometricConflictClassifier,
+)
 from omnibase_core.merge.merge_rules import (
     apply_list_add,
     apply_list_operations,
@@ -51,6 +54,8 @@ from omnibase_core.merge.merge_rules import (
 __all__ = [
     # Contract Merge Engine (OMN-1127)
     "ContractMergeEngine",
+    # Geometric Conflict Classifier (OMN-1854)
+    "GeometricConflictClassifier",
     # Merge rules
     "apply_list_add",
     "apply_list_operations",
