@@ -296,4 +296,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Exception as exc:
+        print(f"SCRIPT ERROR: {exc}", file=sys.stderr)
+        sys.exit(2)

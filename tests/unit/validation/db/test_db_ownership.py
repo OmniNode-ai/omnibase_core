@@ -147,7 +147,9 @@ def in_memory_db() -> sqlite3.Connection:
 class TestModelDbOwnershipMetadata:
     """Tests for the ownership metadata Pydantic model."""
 
+    @pytest.mark.unit
     def test_valid_model(self) -> None:
+        """Construct a valid ownership record and verify field assignment."""
         model = ModelDbOwnershipMetadata(
             owner_service="omnibase_core",
             schema_version="1.0.0",
@@ -156,7 +158,9 @@ class TestModelDbOwnershipMetadata:
         assert model.owner_service == "omnibase_core"
         assert model.schema_version == "1.0.0"
 
+    @pytest.mark.unit
     def test_frozen(self) -> None:
+        """Verify the model is immutable after construction (frozen=True)."""
         model = ModelDbOwnershipMetadata(
             owner_service="test",
             schema_version="1.0.0",
@@ -165,7 +169,9 @@ class TestModelDbOwnershipMetadata:
         with pytest.raises(Exception):
             model.owner_service = "changed"  # type: ignore[misc]
 
+    @pytest.mark.unit
     def test_empty_owner_rejected(self) -> None:
+        """Reject empty-string owner_service to prevent unattributed rows."""
         with pytest.raises(ValueError):
             ModelDbOwnershipMetadata(
                 owner_service="",
@@ -173,7 +179,9 @@ class TestModelDbOwnershipMetadata:
                 created_at=datetime.now(tz=UTC),
             )
 
+    @pytest.mark.unit
     def test_invalid_schema_version_rejected(self) -> None:
+        """Reject non-semver schema_version strings at the Pydantic boundary."""
         with pytest.raises(ValueError):
             ModelDbOwnershipMetadata(
                 owner_service="test",
@@ -181,7 +189,9 @@ class TestModelDbOwnershipMetadata:
                 created_at=datetime.now(tz=UTC),
             )
 
+    @pytest.mark.unit
     def test_semver_pattern_valid_cases(self) -> None:
+        """Accept several well-formed semver strings including multi-digit components."""
         for version in ("0.0.1", "1.0.0", "10.20.30"):
             model = ModelDbOwnershipMetadata(
                 owner_service="test",
@@ -200,38 +210,48 @@ class TestModelDbOwnershipMetadata:
 class TestValidateDbOwnership:
     """Tests for the ownership contract validator."""
 
+    @pytest.mark.unit
     def test_golden_contract_passes(
         self, ownership_golden_contract: ModelDbRepositoryContract
     ) -> None:
+        """A well-formed contract with db_metadata table and operation passes cleanly."""
         result = validate_db_ownership(ownership_golden_contract)
         assert result.is_valid, f"Expected valid, got errors: {result.errors}"
 
+    @pytest.mark.unit
     def test_missing_db_metadata_table(
         self, no_metadata_contract: ModelDbRepositoryContract
     ) -> None:
+        """Fail when the contract omits db_metadata from its tables list."""
         result = validate_db_ownership(no_metadata_contract)
         assert not result.is_valid
         assert any("db_metadata" in e and "tables" in e for e in result.errors)
 
+    @pytest.mark.unit
     def test_no_metadata_operation(
         self, metadata_table_no_op_contract: ModelDbRepositoryContract
     ) -> None:
+        """Fail when db_metadata is listed but no operation queries it."""
         result = validate_db_ownership(metadata_table_no_op_contract)
         assert not result.is_valid
         assert any("operation" in e.lower() for e in result.errors)
 
+    @pytest.mark.unit
     def test_expected_owner_match(
         self, ownership_golden_contract: ModelDbRepositoryContract
     ) -> None:
+        """Pass when expected_owner_service matches the contract's repository name prefix."""
         result = validate_db_ownership(
             ownership_golden_contract,
             expected_owner_service="omnibase_core",
         )
         assert result.is_valid
 
+    @pytest.mark.unit
     def test_expected_owner_mismatch(
         self, ownership_golden_contract: ModelDbRepositoryContract
     ) -> None:
+        """Fail and surface the mismatched service name in errors."""
         result = validate_db_ownership(
             ownership_golden_contract,
             expected_owner_service="wrong_service",
@@ -249,14 +269,18 @@ class TestValidateDbOwnership:
 class TestCITwinLogic:
     """Tests for the CI twin database provisioning and verification logic."""
 
+    @pytest.mark.unit
     def test_migration_creates_table(self, in_memory_db: sqlite3.Connection) -> None:
+        """Verify the CREATE SQL actually provisions the db_metadata table."""
         in_memory_db.executescript(DB_METADATA_CREATE_SQL)
         cursor = in_memory_db.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='db_metadata'"
         )
         assert cursor.fetchone() is not None
 
+    @pytest.mark.unit
     def test_insert_and_read_roundtrip(self, in_memory_db: sqlite3.Connection) -> None:
+        """Write an ownership row via INSERT_SQL and read it back via QUERY_SQL."""
         in_memory_db.executescript(DB_METADATA_CREATE_SQL)
         now = datetime.now(tz=UTC).isoformat()
         in_memory_db.execute(
@@ -275,7 +299,9 @@ class TestCITwinLogic:
         assert row[0] == "omnibase_core"
         assert row[1] == "1.0.0"
 
+    @pytest.mark.unit
     def test_pydantic_roundtrip(self, in_memory_db: sqlite3.Connection) -> None:
+        """Ensure a DB row can hydrate into ModelDbOwnershipMetadata without loss."""
         in_memory_db.executescript(DB_METADATA_CREATE_SQL)
         now = datetime.now(tz=UTC)
         in_memory_db.execute(
@@ -299,7 +325,9 @@ class TestCITwinLogic:
         )
         assert model.owner_service == "omnibase_core"
 
+    @pytest.mark.unit
     def test_wrong_owner_detected(self, in_memory_db: sqlite3.Connection) -> None:
+        """Detect a foreign owner_service value in the CI twin database."""
         in_memory_db.executescript(DB_METADATA_CREATE_SQL)
         in_memory_db.execute(
             DB_METADATA_INSERT_SQL,
@@ -316,7 +344,9 @@ class TestCITwinLogic:
         assert row is not None
         assert row[0] != "omnibase_core"
 
+    @pytest.mark.unit
     def test_missing_table_detected(self) -> None:
+        """Confirm a fresh database has no db_metadata table before migration."""
         conn = sqlite3.connect(":memory:")
         cursor = conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='db_metadata'"
@@ -324,6 +354,7 @@ class TestCITwinLogic:
         assert cursor.fetchone() is None
         conn.close()
 
+    @pytest.mark.unit
     def test_idempotent_migration(self, in_memory_db: sqlite3.Connection) -> None:
         """Migration uses IF NOT EXISTS and can be run multiple times."""
         in_memory_db.executescript(DB_METADATA_CREATE_SQL)

@@ -1,7 +1,7 @@
 """Ownership validation for DB repository contracts.
 
 Validates that a DB repository contract declares ``db_metadata`` in its
-table list and includes a ``get_ownership`` operation that reads from it.
+table list and includes at least one operation that queries it.
 This mirrors runtime assertion B1 at the contract level: if the contract
 does not declare ownership access, the service cannot verify database
 ownership at boot time.
@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from omnibase_core.decorators.decorator_error_handling import validation_error_handling
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 
 if TYPE_CHECKING:
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
     )
 
 
+@validation_error_handling("DB ownership validation")
 def validate_db_ownership(
     contract: ModelDbRepositoryContract,
     *,
