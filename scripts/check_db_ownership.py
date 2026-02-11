@@ -252,34 +252,31 @@ def main() -> int:
 
     checks: list[tuple[str, bool]] = []
 
-    # Use a temp file so the DB is automatically cleaned up
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=True) as tmp:
-        db_path = tmp.name
+    # Use a temp directory so the DB path is safe from TOCTOU races
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = str(Path(tmpdir) / "ownership_test.db")
+        conn = sqlite3.connect(db_path)
+        try:
+            # Positive checks
+            ok = check_migration_creates_table(conn, verbose=args.verbose)
+            checks.append(("Migration creates db_metadata table", ok))
 
-    conn = sqlite3.connect(db_path)
-    try:
-        # Positive checks
-        ok = check_migration_creates_table(conn, verbose=args.verbose)
-        checks.append(("Migration creates db_metadata table", ok))
+            if ok:
+                ok2 = check_ownership_insert_and_read(conn, verbose=args.verbose)
+                checks.append(("Ownership INSERT/SELECT roundtrip", ok2))
 
-        if ok:
-            ok2 = check_ownership_insert_and_read(conn, verbose=args.verbose)
-            checks.append(("Ownership INSERT/SELECT roundtrip", ok2))
+                ok3 = check_pydantic_model_roundtrip(conn, verbose=args.verbose)
+                checks.append(("Pydantic model roundtrip", ok3))
 
-            ok3 = check_pydantic_model_roundtrip(conn, verbose=args.verbose)
-            checks.append(("Pydantic model roundtrip", ok3))
+            # Negative checks
+            ok4 = check_wrong_owner_detected(conn, verbose=args.verbose)
+            checks.append(("Wrong owner detection", ok4))
 
-        # Negative checks
-        ok4 = check_wrong_owner_detected(conn, verbose=args.verbose)
-        checks.append(("Wrong owner detection", ok4))
+            ok5 = check_missing_table_detected(verbose=args.verbose)
+            checks.append(("Missing table detection", ok5))
 
-        ok5 = check_missing_table_detected(verbose=args.verbose)
-        checks.append(("Missing table detection", ok5))
-
-    finally:
-        conn.close()
-        # Clean up temp DB
-        Path(db_path).unlink(missing_ok=True)
+        finally:
+            conn.close()
 
     # Summary
     print()
