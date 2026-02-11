@@ -10,7 +10,7 @@ Tests cover:
 - Resolution recommendation (advisory only, ValueError for OPPOSITE/AMBIGUOUS)
 - Edge cases (empty dicts, single-char strings, deeply nested values)
 
-Related: OMN-1854, PR #TBD
+Related: OMN-1854, PR #502
 """
 
 from typing import Any

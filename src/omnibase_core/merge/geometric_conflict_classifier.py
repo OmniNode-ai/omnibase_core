@@ -21,6 +21,7 @@ See Also:
 from __future__ import annotations
 
 import json
+from collections import Counter
 
 from omnibase_core.enums.enum_merge_conflict_type import EnumMergeConflictType
 from omnibase_core.models.merge.model_geometric_conflict_details import (
@@ -55,7 +56,6 @@ class GeometricConflictClassifier:
         IDENTICAL_THRESHOLD (0.99): Values are effectively the same.
         HIGH_SIMILARITY_THRESHOLD (0.85): Values are very similar.
         CONFLICTING_THRESHOLD (0.50): Partial overlap, needs resolution.
-        LOW_SIMILARITY_THRESHOLD (0.30): Below this + contradictory = OPPOSITE.
 
     .. versionadded:: 0.16.1
         Added as part of geometric conflict analysis (OMN-1854)
@@ -64,7 +64,6 @@ class GeometricConflictClassifier:
     IDENTICAL_THRESHOLD: float = 0.99
     HIGH_SIMILARITY_THRESHOLD: float = 0.85
     CONFLICTING_THRESHOLD: float = 0.50
-    LOW_SIMILARITY_THRESHOLD: float = 0.30
 
     def classify(
         self,
@@ -99,7 +98,6 @@ class GeometricConflictClassifier:
                 pairwise.append(sim)
 
         avg_similarity = sum(pairwise) / len(pairwise)
-        min_similarity = min(pairwise)
 
         # Multi-axis analysis
         structural = self._compute_structural_similarity(values)
@@ -227,10 +225,16 @@ class GeometricConflictClassifier:
             return values[0][1], "All agents produced identical output"
 
         if details.conflict_type == EnumMergeConflictType.ORTHOGONAL:
-            # Merge non-overlapping dict changes
+            # Merge non-overlapping dict changes (guard: keys must be disjoint)
             if all(isinstance(v, dict) for _, v in values):
                 merged: dict[str, object] = {}
-                for _, value in values:
+                for agent_name, value in values:
+                    overlap = set(merged.keys()) & set(value.keys())  # type: ignore[attr-defined]
+                    if overlap:
+                        raise ValueError(  # error-ok: API boundary guard against data loss
+                            f"ORTHOGONAL merge requires disjoint keys, but "
+                            f"agent '{agent_name}' overlaps on: {sorted(overlap)}"
+                        )
                     merged.update(value)  # type: ignore[call-overload]
                 return merged, "Merged non-overlapping changes from all agents"
             return (
@@ -365,22 +369,33 @@ class GeometricConflictClassifier:
         return 2 * len(intersection) / (len(bigrams_a) + len(bigrams_b))
 
     def _list_similarity(self, list_a: list[object], list_b: list[object]) -> float:
-        """Compute list similarity using Jaccard index on serialized elements."""
+        """Compute list similarity using multiset Jaccard index on serialized elements.
+
+        Uses Counter-based comparison so duplicate counts affect similarity
+        (e.g. [1,1,2] vs [1,2,2] are not identical).
+        """
         if not list_a and not list_b:
             return 1.0
         if not list_a or not list_b:
             return 0.0
 
-        # Serialize elements for set comparison
-        set_a = {self._to_json_str(x) for x in list_a}
-        set_b = {self._to_json_str(x) for x in list_b}
+        # Serialize elements for multiset comparison
+        counter_a = Counter(self._to_json_str(x) for x in list_a)
+        counter_b = Counter(self._to_json_str(x) for x in list_b)
 
-        union = set_a | set_b
-        if not union:
+        # Multiset Jaccard: sum(min counts) / sum(max counts)
+        all_keys = set(counter_a.keys()) | set(counter_b.keys())
+        intersection_size = sum(
+            min(counter_a.get(k, 0), counter_b.get(k, 0)) for k in all_keys
+        )
+        union_size = sum(
+            max(counter_a.get(k, 0), counter_b.get(k, 0)) for k in all_keys
+        )
+
+        if union_size == 0:
             return 1.0
 
-        intersection = set_a & set_b
-        return len(intersection) / len(union)
+        return intersection_size / union_size
 
     def _to_json_str(self, value: object) -> str:
         """Deterministic JSON serialization for set-based comparison."""
