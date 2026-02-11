@@ -247,7 +247,7 @@ class GeometricConflictClassifier:
                 # Pre-compute all pairwise overlaps so the error message names
                 # both agents involved, not just the one accumulated last.
                 agent_keys: list[tuple[str, set[str]]] = [
-                    (name, set(v.keys()))  # type: ignore[union-attr]
+                    (name, set(v.keys()))  # type: ignore[attr-defined]
                     for name, v in values
                 ]
                 for i in range(len(agent_keys)):
