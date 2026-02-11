@@ -35,6 +35,15 @@ HUMAN_APPROVAL_REQUIRED_TYPES = frozenset(
     }
 )
 
+# Conflict types that permit fully automated resolution (no human approval needed).
+AUTO_RESOLVABLE_TYPES = frozenset(
+    {
+        EnumMergeConflictType.IDENTICAL,
+        EnumMergeConflictType.ORTHOGONAL,
+        EnumMergeConflictType.LOW_CONFLICT,
+    }
+)
+
 
 class ModelGeometricConflictDetails(BaseModel):
     """
@@ -110,7 +119,11 @@ class ModelGeometricConflictDetails(BaseModel):
 
     recommended_value: Any = Field(
         default=None,
-        description="ADVISORY suggested resolved value (GI-3: not authoritative)",
+        description=(
+            "ADVISORY suggested resolved value (GI-3: not authoritative). "
+            "Callers must not mutate this value in-place; frozen=True prevents "
+            "reassignment but not deep mutation of mutable payloads."
+        ),
     )
 
     def requires_human_approval(self) -> bool:
@@ -119,11 +132,7 @@ class ModelGeometricConflictDetails(BaseModel):
 
     def is_auto_resolvable(self) -> bool:
         """Whether this conflict type permits fully automated resolution."""
-        return self.conflict_type in {
-            EnumMergeConflictType.IDENTICAL,
-            EnumMergeConflictType.ORTHOGONAL,
-            EnumMergeConflictType.LOW_CONFLICT,
-        }
+        return self.conflict_type in AUTO_RESOLVABLE_TYPES
 
     def __str__(self) -> str:
         return (
@@ -143,6 +152,7 @@ class ModelGeometricConflictDetails(BaseModel):
 
 
 __all__ = [
+    "AUTO_RESOLVABLE_TYPES",
     "HUMAN_APPROVAL_REQUIRED_TYPES",
     "ModelGeometricConflictDetails",
 ]

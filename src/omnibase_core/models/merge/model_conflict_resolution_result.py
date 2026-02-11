@@ -54,7 +54,11 @@ class ModelConflictResolutionResult(BaseModel):
 
     resolved_value: Any = Field(
         ...,
-        description="The final resolved value",
+        description=(
+            "The final resolved value. Callers must not mutate this value "
+            "in-place; frozen=True prevents reassignment but not deep mutation "
+            "of mutable payloads."
+        ),
     )
 
     resolution_strategy: str = Field(
