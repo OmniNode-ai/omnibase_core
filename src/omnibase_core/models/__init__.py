@@ -31,6 +31,7 @@ __all__ = [
     "infrastructure",
     "intelligence",  # AI/ML intelligence models (OMN-1490)
     "mcp",  # MCP (Model Context Protocol) models (OMN-1286)
+    "merge",  # Contract merge and geometric conflict models (OMN-1127, OMN-1853)
     "metadata",
     "nodes",
     "notifications",
