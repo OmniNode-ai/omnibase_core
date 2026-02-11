@@ -655,6 +655,26 @@ class TestOrthogonalNonDict:
                 [("agent-1", {"shared": "first"}), ("agent-2", {"shared": "second"})],
             )
 
+    def test_orthogonal_overlap_names_both_agents(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        """Overlap error message should name both agents involved."""
+        details = ModelGeometricConflictDetails(
+            conflict_type=EnumMergeConflictType.ORTHOGONAL,
+            similarity_score=0.9,
+            confidence=0.9,
+            explanation="Orthogonal",
+        )
+        with pytest.raises(ValueError, match=r"agent-1.*agent-3|agent-3.*agent-1"):
+            classifier.recommend_resolution(
+                details,
+                [
+                    ("agent-1", {"shared": "first", "a": 1}),
+                    ("agent-2", {"b": 2}),
+                    ("agent-3", {"shared": "third", "c": 3}),
+                ],
+            )
+
 
 class TestMixedTypeAgents:
     """Tests for >2 agents with mixed value types."""
@@ -669,6 +689,78 @@ class TestMixedTypeAgents:
         )
         assert result.conflict_type is not None
         assert 0.0 <= result.similarity_score <= 1.0
+
+
+class TestMixedDictAndNonDict:
+    """Tests for mixed dict/non-dict values across agents."""
+
+    def test_classify_mixed_dict_and_non_dict_values(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        """One agent returns a dict, another returns a string for the same field."""
+        result = classifier.classify(
+            base_value={"key": "original"},
+            values=[
+                ("agent-1", {"key": "updated"}),
+                ("agent-2", "just a string"),
+            ],
+        )
+        # Different types should not be IDENTICAL or ORTHOGONAL
+        assert result.conflict_type not in {
+            EnumMergeConflictType.IDENTICAL,
+            EnumMergeConflictType.ORTHOGONAL,
+        }
+        assert 0.0 <= result.similarity_score <= 1.0
+
+
+class TestConflictingAutoResolvable:
+    """Tests that CONFLICTING classification is NOT auto-resolvable."""
+
+    def test_conflicting_not_auto_resolvable(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        """CONFLICTING classification must have auto_resolvable=False."""
+        details = ModelGeometricConflictDetails(
+            conflict_type=EnumMergeConflictType.CONFLICTING,
+            similarity_score=0.55,
+            confidence=0.6,
+            explanation="Partial overlap",
+        )
+        assert details.is_auto_resolvable() is False
+        assert details.requires_human_approval() is False
+
+
+class TestNumericProximitySimilarity:
+    """Tests for numeric proximity in compute_similarity()."""
+
+    def test_close_numbers_higher_than_distant(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        """Close numbers should score higher than distant numbers."""
+        close_score = classifier.compute_similarity(100, 101)
+        distant_score = classifier.compute_similarity(100, 999999)
+        assert close_score > distant_score
+
+    def test_identical_numbers_score_1(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        assert classifier.compute_similarity(42, 42) == 1.0
+        assert classifier.compute_similarity(0.5, 0.5) == 1.0
+
+    def test_both_zero_score_1(self, classifier: GeometricConflictClassifier) -> None:
+        assert classifier.compute_similarity(0, 0) == 1.0
+        assert classifier.compute_similarity(0.0, 0.0) == 1.0
+
+    def test_numeric_proximity_range(
+        self, classifier: GeometricConflictClassifier
+    ) -> None:
+        """Numeric similarity should be in [0.0, 1.0]."""
+        score = classifier.compute_similarity(1, 1000)
+        assert 0.0 <= score <= 1.0
+
+    def test_float_proximity(self, classifier: GeometricConflictClassifier) -> None:
+        score = classifier.compute_similarity(1.0, 1.1)
+        assert score > 0.8
 
 
 class TestModuleExports:

@@ -30,6 +30,8 @@ from omnibase_core.models.merge.model_geometric_conflict_details import (
 )
 
 # Semantic contradiction pairs for _are_contradictory detection.
+# Typed as frozenset[frozenset[object]] because pairs mix booleans and strings;
+# a Union-based generic would add complexity without safety benefit here.
 _CONTRADICTORY_PAIRS: frozenset[frozenset[object]] = frozenset(
     {
         frozenset({True, False}),
@@ -52,7 +54,7 @@ class GeometricConflictClassifier:
     All classification is deterministic: identical inputs always produce
     identical outputs (Invariant D4). No randomness, no ordering sensitivity.
 
-    Thresholds:
+    Class-level thresholds (override via subclass):
         IDENTICAL_THRESHOLD (0.99): Values are effectively the same.
         HIGH_SIMILARITY_THRESHOLD (0.85): Values are very similar.
         CONFLICTING_THRESHOLD (0.50): Partial overlap, needs resolution.
@@ -109,23 +111,24 @@ class GeometricConflictClassifier:
         # Classify based on semantic signals and thresholds (cascading).
         #
         # Priority order:
-        # 1. IDENTICAL: near-perfect match overrides everything
-        # 2. OPPOSITE: contradiction is a semantic signal that dominates similarity
+        # 1. OPPOSITE: contradiction dominates - checked first so high-similarity
+        #    dicts with a contradictory field are never silently classified IDENTICAL
+        # 2. IDENTICAL: near-perfect match (only if no contradictions)
         # 3. ORTHOGONAL: structural non-overlap is independent of value similarity
         # 4. LOW_CONFLICT / CONFLICTING / AMBIGUOUS: threshold-based fallbacks
         contradictory = self._are_contradictory(values)
         orthogonal = self._are_orthogonal(base_value, values)
 
-        if avg_similarity >= self.IDENTICAL_THRESHOLD:
-            conflict_type = EnumMergeConflictType.IDENTICAL
-            explanation = (
-                f"All {len(values)} agents produced effectively identical output "
-                f"(similarity={avg_similarity:.3f})"
-            )
-        elif contradictory:
+        if contradictory:
             conflict_type = EnumMergeConflictType.OPPOSITE
             explanation = (
                 f"Agents produced contradictory conclusions "
+                f"(similarity={avg_similarity:.3f})"
+            )
+        elif avg_similarity >= self.IDENTICAL_THRESHOLD:
+            conflict_type = EnumMergeConflictType.IDENTICAL
+            explanation = (
+                f"All {len(values)} agents produced effectively identical output "
                 f"(similarity={avg_similarity:.3f})"
             )
         elif orthogonal:
@@ -183,6 +186,20 @@ class GeometricConflictClassifier:
         if isinstance(norm_a, dict) and isinstance(norm_b, dict):
             return self._dict_similarity(norm_a, norm_b)
 
+        # Numeric proximity: close numbers score higher than distant numbers.
+        # Check before string branch; bool is excluded (subclass of int).
+        if (
+            isinstance(norm_a, (int, float))
+            and isinstance(norm_b, (int, float))
+            and not isinstance(norm_a, bool)
+            and not isinstance(norm_b, bool)
+        ):
+            if norm_a == 0 and norm_b == 0:
+                return 1.0
+            return 1.0 - min(
+                abs(norm_a - norm_b) / max(abs(norm_a), abs(norm_b), 1), 1.0
+            )
+
         if isinstance(norm_a, str) and isinstance(norm_b, str):
             return self._string_similarity(norm_a, norm_b)
 
@@ -227,14 +244,23 @@ class GeometricConflictClassifier:
         if details.conflict_type == EnumMergeConflictType.ORTHOGONAL:
             # Merge non-overlapping dict changes (guard: keys must be disjoint)
             if all(isinstance(v, dict) for _, v in values):
+                # Pre-compute all pairwise overlaps so the error message names
+                # both agents involved, not just the one accumulated last.
+                agent_keys: list[tuple[str, set[str]]] = [
+                    (name, set(v.keys()))  # type: ignore[union-attr]
+                    for name, v in values
+                ]
+                for i in range(len(agent_keys)):
+                    for j in range(i + 1, len(agent_keys)):
+                        overlap = agent_keys[i][1] & agent_keys[j][1]
+                        if overlap:
+                            raise ValueError(  # error-ok: API boundary guard against data loss
+                                f"ORTHOGONAL merge requires disjoint keys, but "
+                                f"agents '{agent_keys[i][0]}' and '{agent_keys[j][0]}' "
+                                f"overlap on: {sorted(overlap)}"
+                            )
                 merged: dict[str, object] = {}
-                for agent_name, value in values:
-                    overlap = set(merged.keys()) & set(value.keys())  # type: ignore[attr-defined]
-                    if overlap:
-                        raise ValueError(  # error-ok: API boundary guard against data loss
-                            f"ORTHOGONAL merge requires disjoint keys, but "
-                            f"agent '{agent_name}' overlaps on: {sorted(overlap)}"
-                        )
+                for _, value in values:
                     merged.update(value)  # type: ignore[call-overload]
                 return merged, "Merged non-overlapping changes from all agents"
             return (
@@ -279,6 +305,12 @@ class GeometricConflictClassifier:
             changed = {k for k in all_keys if base_value.get(k) != value.get(k)}
             changed_key_sets.append(changed)
 
+        # If all agents made zero changes, that is IDENTICAL, not orthogonal.
+        # Empty sets are trivially disjoint, so without this guard the
+        # pairwise check below would incorrectly return True.
+        if all(len(cs) == 0 for cs in changed_key_sets):
+            return False
+
         # All pairs must have disjoint change sets
         for i in range(len(changed_key_sets)):
             for j in range(i + 1, len(changed_key_sets)):
@@ -307,10 +339,22 @@ class GeometricConflictClassifier:
             if pair in _CONTRADICTORY_PAIRS:
                 return True
 
-        # Dict value contradictions (check common keys recursively)
+        # Dict value contradictions (check common keys recursively).
+        # Ratio-based: for small dicts (<=2 common keys) any contradiction
+        # suffices; for larger dicts, >50% of common keys must contradict
+        # to avoid false positives where one field out of many differs.
         if isinstance(a, dict) and isinstance(b, dict):
             common_keys = sorted(set(a.keys()) & set(b.keys()))
-            return any(self._values_contradict(a[k], b[k]) for k in common_keys)
+            if not common_keys:
+                return False
+            contradictions = sum(
+                1 for k in common_keys if self._values_contradict(a[k], b[k])
+            )
+            if contradictions == 0:
+                return False
+            if len(common_keys) <= 2:
+                return True
+            return contradictions / len(common_keys) > 0.5
 
         return False
 
