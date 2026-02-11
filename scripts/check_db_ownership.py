@@ -31,7 +31,6 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # We import the SQL strings rather than duplicating them so that any drift
 # between the model and the CI twin is impossible.
-
 from omnibase_core.models.contracts.model_db_ownership_metadata import (
     DB_METADATA_CREATE_SQL,
     DB_METADATA_INSERT_SQL,
