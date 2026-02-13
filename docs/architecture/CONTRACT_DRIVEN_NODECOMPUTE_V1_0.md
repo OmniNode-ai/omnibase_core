@@ -1,11 +1,11 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Contract-Driven NodeCompute v1.0
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Contract-Driven NodeCompute v1.0
 
 # Contract-Driven NodeCompute v1.0 Specification
 
 > **Version**: 1.0.0
 > **Date**: 2025-12-07
 > **Status**: DRAFT - Ready for Implementation
-> **Full Roadmap**: [NODECOMPUTE_VERSIONING_ROADMAP.md](./NODECOMPUTE_VERSIONING_ROADMAP.md)
+> **Full Roadmap**: Versioning roadmap completed and archived (v0.17.0)
 
 ---
 
@@ -86,7 +86,7 @@ The core pipeline executor and transformation functions are designed to be **pur
 | **Cancellation** | v1.3 | Requires cooperative cancellation infrastructure |
 | **Transformation Versioning** | v1.3 | Not needed until transformations evolve |
 
-See [NODECOMPUTE_VERSIONING_ROADMAP.md](./NODECOMPUTE_VERSIONING_ROADMAP.md) for full roadmap.
+See CLAUDE.md for current architecture details.
 
 ---
 
@@ -1006,7 +1006,7 @@ class NodeTextProcessor(NodeCompute):
 ## References
 
 <!-- TODO(v1.1+): Add link to NODECOMPUTE_FULL_DESIGN_V1X_TARGET.md when available -->
-- **Versioning Roadmap**: [NODECOMPUTE_VERSIONING_ROADMAP.md](./NODECOMPUTE_VERSIONING_ROADMAP.md)
+- **Versioning Roadmap**: Completed and archived (v0.17.0)
 - **Example Contract**: [user_profile_normalizer.yaml](../../examples/contracts/compute/user_profile_normalizer.yaml)
 - **NodeReducer Pattern**: [node_reducer.py](../../src/omnibase_core/nodes/node_reducer.py)
 - **NodeOrchestrator Pattern**: [node_orchestrator.py](../../src/omnibase_core/nodes/node_orchestrator.py)
