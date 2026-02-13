@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Reference > API Documentation
+> **Navigation**: [Home](../INDEX.md) > Reference > API Documentation
 
 # ONEX Contract Models API Documentation
 

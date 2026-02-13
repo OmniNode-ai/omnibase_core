@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Execution Corpus Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > Execution Corpus Guide
 
 # Execution Corpus Guide
 

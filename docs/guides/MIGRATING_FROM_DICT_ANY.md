@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Migrating from dict[str, Any] to Typed Models
+> **Navigation**: [Home](../INDEX.md) > Guides > Migrating from dict[str, Any] to Typed Models
 
 # Migrating from dict[str, Any] to Typed Models
 

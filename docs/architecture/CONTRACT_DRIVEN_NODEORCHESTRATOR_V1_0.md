@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Contract-Driven NodeOrchestrator v1.0
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Contract-Driven NodeOrchestrator v1.0
 
 # Contract-Driven NodeOrchestrator v1.0 Specification
 

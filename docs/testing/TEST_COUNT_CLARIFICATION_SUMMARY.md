@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Testing > Test Count Clarification
+> **Navigation**: [Home](../INDEX.md) > Testing > Test Count Clarification
 
 # Test Count Clarification Summary
 
@@ -61,7 +61,7 @@ All test count references have been updated to reflect the accurate count of **1
    - Line 584: ✅ "All 12,000+ tests passing"
    - Line 876: ✅ "Total tests: 12,198"
 
-6. **`docs/architecture/decisions/ADR-001-protocol-based-di-architecture.md`**
+6. **`docs/decisions/ADR-001-protocol-based-di-architecture.md`**
    - Line 514: ✅ "12,000+ tests cover framework functionality"
 
 7. **`docs/release-notes/RELEASE_NOTES_v0.1.1.md`**

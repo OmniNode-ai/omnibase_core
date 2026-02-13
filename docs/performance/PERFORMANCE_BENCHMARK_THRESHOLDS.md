@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Performance > Benchmark Thresholds
+> **Navigation**: [Home](../INDEX.md) > Performance > Benchmark Thresholds
 
 # Performance Benchmark Thresholds
 

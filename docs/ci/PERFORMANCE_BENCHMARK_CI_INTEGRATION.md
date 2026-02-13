@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > CI > Performance Benchmark CI Integration Guide
+> **Navigation**: [Home](../INDEX.md) > CI > Performance Benchmark CI Integration Guide
 
 # Performance Benchmark CI Integration Guide
 

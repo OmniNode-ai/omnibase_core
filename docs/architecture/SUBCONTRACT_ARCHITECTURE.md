@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Subcontract Architecture
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Subcontract Architecture
 
 # ONEX Subcontract Package Architecture
 

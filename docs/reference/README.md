@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Reference
+> **Navigation**: [Home](../INDEX.md) > Reference
 
 # Reference Documentation
 

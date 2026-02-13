@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Execution Shape Examples
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Execution Shape Examples
 
 # Execution Shape Examples
 

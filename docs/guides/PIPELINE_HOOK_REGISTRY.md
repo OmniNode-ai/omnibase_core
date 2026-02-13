@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Pipeline Hook Registry
+> **Navigation**: [Home](../INDEX.md) > Guides > Pipeline Hook Registry
 
 # Pipeline Runner and Hook Registry Guide
 

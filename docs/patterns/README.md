@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Patterns
+> **Navigation**: [Home](../INDEX.md) > Patterns
 
 # ONEX Patterns Documentation
 

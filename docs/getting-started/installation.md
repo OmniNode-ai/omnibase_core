@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Getting Started > Installation
+> **Navigation**: [Home](../INDEX.md) > Getting Started > Installation
 
 > **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
 

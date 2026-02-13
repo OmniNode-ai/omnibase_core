@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > Replay > Replay Safety Integration
+> **Navigation**: [Home](../../INDEX.md) > [Guides](../README.md) > Replay > Replay Safety Integration
 
 # Replay Safety Integration Guide
 

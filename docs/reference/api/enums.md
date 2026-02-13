@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Reference](../README.md) > API > Enums
+> **Navigation**: [Home](../../INDEX.md) > [Reference](../README.md) > API > Enums
 
 # Enums API Reference - omnibase_core
 

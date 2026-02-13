@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Mixin-Subcontract Mapping Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > Mixin-Subcontract Mapping Guide
 
 # Mixin-Subcontract Mapping Guide
 

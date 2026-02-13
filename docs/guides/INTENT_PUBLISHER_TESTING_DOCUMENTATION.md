@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Intent Publisher Testing Documentation
+> **Navigation**: [Home](../INDEX.md) > Guides > Intent Publisher Testing Documentation
 
 # Intent Publisher Testing Documentation - Complete Guide
 

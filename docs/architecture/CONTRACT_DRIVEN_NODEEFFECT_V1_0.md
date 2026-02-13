@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Contract-Driven NodeEffect v1.0
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Contract-Driven NodeEffect v1.0
 
 # Contract-Driven NodeEffect Specification v1.0
 

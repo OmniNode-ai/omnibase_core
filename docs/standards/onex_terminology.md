@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Standards > Terminology
+> **Navigation**: [Home](../INDEX.md) > Standards > Terminology
 
 # ONEX Core Terminology
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Effect Boundary Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > Effect Boundary Guide
 
 # Effect Boundary Guide
 
