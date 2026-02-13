@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Decisions](README.md) > ADR-001
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > ADR-001
 
 # ADR-001: Protocol-Based Dependency Injection Architecture
 

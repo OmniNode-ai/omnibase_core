@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Contracts > Introspection Subcontract Guide
+> **Navigation**: [Home](../INDEX.md) > Contracts > Introspection Subcontract Guide
 
 # Introspection Subcontract Guide
 

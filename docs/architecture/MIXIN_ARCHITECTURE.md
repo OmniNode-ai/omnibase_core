@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Mixin Architecture
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Mixin Architecture
 
 # ONEX Mixin Architecture
 

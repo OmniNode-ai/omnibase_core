@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Patterns](./README.md) > Circuit Breaker Pattern
+> **Navigation**: [Home](../INDEX.md) > [Patterns](./README.md) > Circuit Breaker Pattern
 
 # Circuit Breaker Pattern for External Dependencies
 

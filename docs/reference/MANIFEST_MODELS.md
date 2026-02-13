@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Reference > Manifest Models
+> **Navigation**: [Home](../INDEX.md) > Reference > Manifest Models
 
 # Manifest Models
 

@@ -43,7 +43,7 @@ Rationale:
 Reference:
     - OMN-1745: Block direct Kafka consumer imports in omnibase_core
     - OMN-1747: Remove listener management from omnibase_core
-    - docs/architecture/adr/ADR-005-core-infra-dependency-boundary.md
+    - docs/decisions/ADR-005-core-infra-dependency-boundary.md
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > Architecture Research > ONEX Mixin System Research
+> **Navigation**: [Home](../../INDEX.md) > [Architecture](../overview.md) > Architecture Research > ONEX Mixin System Research
 
 # ONEX Mixin System Research Report
 

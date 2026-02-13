@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Reference > Contract Validator API
+> **Navigation**: [Home](../INDEX.md) > Reference > Contract Validator API
 
 # Contract Validator API
 

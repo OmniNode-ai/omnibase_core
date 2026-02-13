@@ -109,7 +109,6 @@ def _validate_string_input(value: object, transform_name: str) -> str:
 # - Enable more precise error handling in pipeline execution
 # - Allow callers to distinguish transformation failures from other error types
 # - Support structured transformation-specific error context (e.g., step_name, input_type)
-# See: docs/architecture/NODECOMPUTE_VERSIONING_ROADMAP.md
 
 
 def transform_identity[T](

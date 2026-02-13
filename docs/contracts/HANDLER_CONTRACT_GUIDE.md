@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Contracts > Handler Contract Guide
+> **Navigation**: [Home](../INDEX.md) > Contracts > Handler Contract Guide
 
 # Handler Contract Guide
 

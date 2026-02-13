@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > ModelAction Architecture
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > ModelAction Architecture
 
 # ModelAction Architecture
 

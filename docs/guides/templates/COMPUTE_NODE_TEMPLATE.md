@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > Templates > COMPUTE Node Template
+> **Navigation**: [Home](../../INDEX.md) > [Guides](../README.md) > Templates > COMPUTE Node
 
 # COMPUTE Node Template
 
@@ -73,7 +73,6 @@ import time
 from contextlib import asynccontextmanager
 
 from pydantic import ValidationError
-
 # v0.4.0 unified node imports
 from omnibase_core.nodes import (
     NodeCompute,
@@ -939,36 +938,36 @@ class Enum{DomainCamelCase}{MicroserviceCamelCase}OperationType(str, Enum):
     def get_expected_performance_ms(self) -> float:
         """Get expected performance threshold for this operation type."""
         performance_map = {
-            cls.CALCULATE: 1000.0,
-            cls.TRANSFORM: 500.0,
-            cls.ANALYZE: 2000.0,
-            cls.OPTIMIZE: 5000.0,
-            cls.VALIDATE: 200.0,
-            cls.AGGREGATE: 1500.0,
-            cls.FILTER: 300.0,
-            cls.SORT: 800.0,
-            cls.BATCH_PROCESS: 10000.0,
-            cls.HEALTH_CHECK: 100.0
+            type(self).CALCULATE: 1000.0,
+            type(self).TRANSFORM: 500.0,
+            type(self).ANALYZE: 2000.0,
+            type(self).OPTIMIZE: 5000.0,
+            type(self).VALIDATE: 200.0,
+            type(self).AGGREGATE: 1500.0,
+            type(self).FILTER: 300.0,
+            type(self).SORT: 800.0,
+            type(self).BATCH_PROCESS: 10000.0,
+            type(self).HEALTH_CHECK: 100.0
         }
         return performance_map.get(self, 1000.0)
 
     def requires_high_precision(self) -> bool:
         """Check if this operation requires high numerical precision."""
         return self in [
-            cls.CALCULATE,
-            cls.ANALYZE,
-            cls.OPTIMIZE
+            type(self).CALCULATE,
+            type(self).ANALYZE,
+            type(self).OPTIMIZE
         ]
 
     def supports_parallel_processing(self) -> bool:
         """Check if this operation supports parallel processing."""
         return self in [
-            cls.CALCULATE,
-            cls.TRANSFORM,
-            cls.BATCH_PROCESS,
-            cls.AGGREGATE,
-            cls.FILTER,
-            cls.SORT
+            type(self).CALCULATE,
+            type(self).TRANSFORM,
+            type(self).BATCH_PROCESS,
+            type(self).AGGREGATE,
+            type(self).FILTER,
+            type(self).SORT
         ]
 ```
 

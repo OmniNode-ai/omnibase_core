@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > ModelAction Typed Payloads
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > ModelAction Typed Payloads
 
 # ModelAction Typed Payloads
 

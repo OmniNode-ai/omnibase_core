@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Performance Benchmarks
+> **Navigation**: [Home](../INDEX.md) > Guides > Performance Benchmarks
 
 # ONEX Performance Testing Suite
 

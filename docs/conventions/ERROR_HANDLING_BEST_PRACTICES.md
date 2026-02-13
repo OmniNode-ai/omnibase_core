@@ -1779,7 +1779,7 @@ class ModelReducerOutput(BaseModel):
 
 **Migration Strategy**:
 - **If Pydantic v3 breaks compatibility**: Use adapter pattern (`to_pydantic_error`)
-- **See**: [ADR-012: Validator Error Handling](../architecture/adr/ADR-012-VALIDATOR-ERROR-HANDLING.md)
+- **See**: [ADR-012: Validator Error Handling](../decisions/ADR-012-VALIDATOR-ERROR-HANDLING.md)
 
 **Reference Implementation**:
 - `model_reducer_output.py` - Sentinel value validation
@@ -1813,7 +1813,7 @@ All error handling follows ONEX principles with:
 - [Centralized Error Pattern](../../src/omnibase_core/constants/constants_error.py) - Single source of truth for error code validation
 - [Centralized Exception Groups](../../src/omnibase_core/errors/exception_groups.py) - Standardized exception type tuples
 - [Error Handling Decorators](../../src/omnibase_core/decorators/decorator_error_handling.py) - Boilerplate-eliminating decorators
-- [ADR-012: Validator Error Handling](../architecture/adr/ADR-012-VALIDATOR-ERROR-HANDLING.md) - Decision rationale and Pydantic compatibility
+- [ADR-012: Validator Error Handling](../decisions/ADR-012-VALIDATOR-ERROR-HANDLING.md) - Decision rationale and Pydantic compatibility
 - [Node Building Guide](../guides/node-building/README.md) - Node validation patterns
 - [Reducer Output Model](../../src/omnibase_core/models/reducer/model_reducer_output.py) - Reference implementation
 

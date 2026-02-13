@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Mixin Classification
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Mixin Classification
 
 # Mixin Classification Reference
 

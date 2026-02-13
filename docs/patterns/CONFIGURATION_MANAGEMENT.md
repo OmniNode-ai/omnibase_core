@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Patterns](./README.md) > Configuration Management
+> **Navigation**: [Home](../INDEX.md) > [Patterns](./README.md) > Configuration Management
 
 # Environment-Based Configuration Management
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Dependency Inversion
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Dependency Inversion
 
 # Dependency Inversion in ONEX Architecture
 

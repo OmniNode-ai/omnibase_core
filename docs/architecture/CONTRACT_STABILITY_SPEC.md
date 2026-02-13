@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Contract Stability Specification
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Contract Stability Specification
 
 # Contract Stability Specification
 
@@ -339,6 +339,5 @@ CONTRACT_UNSUPPORTED_CAPABILITY: Capability not available (capabilities[0])
 
 ## References
 
-- [MVP Plan](../MVP_PLAN.md) - Comprehensive refactoring plan including contract stability work
 - [ONEX Four-Node Architecture](./ONEX_FOUR_NODE_ARCHITECTURE.md)
 - [scripts/README.md](../../scripts/README.md) - CLI documentation for fingerprint tools

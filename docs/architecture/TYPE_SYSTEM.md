@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Type System
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Type System
 
 # Type System - omnibase_core
 

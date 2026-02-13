@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Contract System
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Contract System
 
 # Contract System - omnibase_core
 

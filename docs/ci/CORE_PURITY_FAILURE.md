@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > CI > Node Purity Check Failure Guide
+> **Navigation**: [Home](../INDEX.md) > CI > Node Purity Check Failure Guide
 
 # Node Purity Check Failure Guide
 

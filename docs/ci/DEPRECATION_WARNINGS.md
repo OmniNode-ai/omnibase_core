@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > CI > Deprecation Warning Configuration
+> **Navigation**: [Home](../INDEX.md) > CI > Deprecation Warning Configuration
 
 # Deprecation Warning Configuration
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Mixin Development](README.md) > Best Practices
+> **Navigation**: [Home](../../INDEX.md) > [Guides](../README.md) > [Mixin Development](README.md) > Best Practices
 
 # Mixin Development Best Practices
 

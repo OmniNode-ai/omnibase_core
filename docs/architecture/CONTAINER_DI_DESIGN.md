@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Container DI Design
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Container DI Design
 
 # Container Dependency Injection Design
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Declarative Node Import Rules
+> **Navigation**: [Home](../INDEX.md) > Guides > Declarative Node Import Rules
 
 # Declarative Node Import Rules
 

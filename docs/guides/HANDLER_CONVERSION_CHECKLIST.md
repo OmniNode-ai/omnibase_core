@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Handler Conversion Checklist
+> **Navigation**: [Home](../INDEX.md) > Guides > Handler Conversion Checklist
 
 # Handler Conversion Checklist
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Import Compatibility Matrix
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Import Compatibility Matrix
 
 # Import Compatibility Matrix
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Decisions](README.md) > ADR-003
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > ADR-003
 
 # ADR-003: Reducer Output Exception Consistency
 

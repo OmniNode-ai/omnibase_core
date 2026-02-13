@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Message Topic Mapping
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Message Topic Mapping
 
 # Message Category to Topic Mapping
 

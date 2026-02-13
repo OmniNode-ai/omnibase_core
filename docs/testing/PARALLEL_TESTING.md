@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Testing > Parallel Testing Architecture
+> **Navigation**: [Home](../INDEX.md) > Testing > Parallel Testing Architecture
 
 # Parallel Testing Architecture and Resource Management
 

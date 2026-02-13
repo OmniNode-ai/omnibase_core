@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Performance > ModelReducerOutput Benchmarks
+> **Navigation**: [Home](../INDEX.md) > Performance > ModelReducerOutput Benchmarks
 
 # ModelReducerOutput Performance Benchmarks
 

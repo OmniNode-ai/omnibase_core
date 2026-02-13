@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Decisions](README.md) > ADR-002
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > ADR-002
 
 # ADR-002: Centralized Field Limit Constants
 

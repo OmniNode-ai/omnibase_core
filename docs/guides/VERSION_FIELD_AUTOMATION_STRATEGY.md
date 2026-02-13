@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Version Field Automation Strategy
+> **Navigation**: [Home](../INDEX.md) > Guides > Version Field Automation Strategy
 
 # Version Field Automation Strategy
 

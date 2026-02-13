@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > CI > CI Monitoring Guide
+> **Navigation**: [Home](../INDEX.md) > CI > CI Monitoring Guide
 
 # CI Monitoring Guide - omnibase_core
 

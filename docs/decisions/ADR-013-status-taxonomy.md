@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Decisions](README.md) > ADR-013
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > ADR-013
 
 # ADR-013: Status Taxonomy
 

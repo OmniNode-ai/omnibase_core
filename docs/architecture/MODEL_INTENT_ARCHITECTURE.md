@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > ModelIntent Architecture
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > ModelIntent Architecture
 
 # ModelIntent Architecture
 

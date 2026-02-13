@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > Architecture Research > 4-Node Architecture Research
+> **Navigation**: [Home](../../INDEX.md) > [Architecture](../overview.md) > Architecture Research > 4-Node Architecture Research
 
 # Comprehensive Research Report: ONEX 4-Node Architecture Pattern
 

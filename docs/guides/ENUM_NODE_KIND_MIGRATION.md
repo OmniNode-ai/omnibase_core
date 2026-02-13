@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > EnumNodeKind Migration Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > EnumNodeKind Migration Guide
 
 # EnumNodeKind Migration Guide
 
