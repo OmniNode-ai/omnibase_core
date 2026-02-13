@@ -1,0 +1,83 @@
+---
+# Required Status Checks for omnibase_core `main` branch
+#
+# Source of truth for branch protection configuration.
+# Apply via:
+#   gh api -X PUT repos/OmniNode-ai/omnibase_core/branches/main/protection \
+#     --input - <<'EOF'
+#   {
+#     "required_status_checks": {
+#       "strict": true,
+#       "contexts": [
+#         "Code Quality",
+#         "Pyright Type Checking",
+#         "Exports Validation",
+#         "Mypy Validation Scripts",
+#         "Core-Infra Boundary",
+#         "Enum Governance Check",
+#         "Tests Gate"
+#       ]
+#     },
+#     "enforce_admins": true,
+#     "required_pull_request_reviews": {"required_approving_review_count": 1},
+#     "restrictions": null
+#   }
+#   EOF
+# Docs: https://docs.github.com/en/rest/branches/branch-protection#update-branch-protection
+#
+# Last verified: 2026-02-13
+# Ticket: OMN-2183
+# Pattern: OMN-1876 (omniclaude)
+
+required_checks:
+  # Phase 1 — Validation (always run on PRs, no path filters)
+  - name: "Code Quality"
+    workflow: test.yml
+    rationale: "ruff format + ruff check + mypy strict"
+
+  - name: "Pyright Type Checking"
+    workflow: test.yml
+    rationale: "Complementary type checking to mypy"
+
+  - name: "Exports Validation"
+    workflow: test.yml
+    rationale: "__all__ exports correctness"
+
+  - name: "Mypy Validation Scripts"
+    workflow: test.yml
+    rationale: "Type check CI scripts + transport import validation (ADR-005)"
+
+  - name: "Core-Infra Boundary"
+    workflow: test.yml
+    rationale: "ADR-005 — no transport/I/O imports in omnibase_core"
+
+  - name: "Enum Governance Check"
+    workflow: test.yml
+    rationale: "OMN-1313 — enum architectural standards"
+
+  # Phase 2 — Test Matrix Gate
+  - name: "Tests Gate"
+    workflow: test.yml
+    rationale: "Aggregator for 20-split test matrix. Never require individual shards."
+
+excluded_checks:
+  - name: "Tests (Split N/20)"
+    reason: "Matrix shards — use Tests Gate aggregator instead"
+
+  - name: "Test Summary"
+    reason: "Reporting/aggregation job, not a gate. Depends on Tests Gate."
+
+  - name: "Node Purity Check"
+    reason: "continue-on-error: true — always passes from GitHub perspective. Fix tech debt first."
+
+  - name: "Documentation Validation"
+    reason: "High-noise, external link rot. Runs but doesn't block merging."
+
+  - name: "Check architecture handshake"
+    reason: "Path-filtered (check-handshake.yml) — skips on most PRs, would block merging."
+
+  - name: "DB ownership CI twin (B1)"
+    reason: "Path-filtered (check-db-ownership.yml) — skips on most PRs, would block merging."
+
+  - name: "Check handshake compliance across repos"
+    reason: "Schedule/dispatch only (handshake-policy-gate.yml) — never runs on PRs."
