@@ -6,14 +6,14 @@
 
 # CI/CD workflow changes require platform team review
 # CRITICAL: Protects transport import validation on protected branches
-# See: docs/architecture/decisions/RISK-009-ci-workflow-modification-risk.md
+# See: docs/decisions/RISK-009-ci-workflow-modification-risk.md
 /.github/workflows/ @OmniNode-ai/platform-team
 
 # GitHub configuration (dependabot, issue templates, etc.)
 /.github/ @OmniNode-ai/platform-team
 
 # Architecture decisions require architecture review
-/docs/architecture/decisions/ @OmniNode-ai/architecture-team @OmniNode-ai/core-team
+/docs/decisions/ @OmniNode-ai/architecture-team @OmniNode-ai/core-team
 
 # Core infrastructure changes require careful review
 /src/omnibase_core/container/ @OmniNode-ai/core-team

@@ -73,7 +73,7 @@ v1.0 Limitations:
     - No filters: `$.items[?(@.active)]` not supported
     - Step paths only support `.output` access (no `.metadata`, `.duration_ms`)
 
-    These features are planned for v1.2. See: docs/architecture/NODECOMPUTE_VERSIONING_ROADMAP.md
+    These features are planned for v1.2.
 
 Example:
     >>> from omnibase_core.utils.util_compute_path_resolver import resolve_path

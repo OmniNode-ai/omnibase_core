@@ -420,8 +420,6 @@ fi
 ## References
 
 - **Container Types Guide**: `docs/architecture/CONTAINER_TYPES.md`
-- **Terminology Audit**: `docs/quality/TERMINOLOGY_AUDIT_REPORT.md`
-- **Fix Checklist**: `docs/quality/TERMINOLOGY_FIXES_CHECKLIST.md`
 - **Node Building Guide**: `docs/guides/node-building/README.md`
 - **Protocol Architecture**: `docs/architecture/PROTOCOL_ARCHITECTURE.md`
 
