@@ -1,6 +1,6 @@
 # CLAUDE.md - Omnibase Core
 
-> **Python**: 3.12+ | **Framework**: ONEX Core | **Shared Infrastructure**: See **`~/.claude/CLAUDE.md`** for PostgreSQL, Kafka/Redpanda, Docker networking, and environment variables.
+> **Python**: 3.12+ | **Framework**: ONEX Core | **Shared Standards**: See **`~/.claude/CLAUDE.md`** for shared development standards (Python, Poetry, Git, testing, architecture principles) and infrastructure configuration (PostgreSQL, Kafka/Redpanda, Docker networking, environment variables).
 
 ---
 
@@ -76,30 +76,11 @@ pre-commit run --all-files                  # All hooks
 
 ## Python Development - Poetry
 
-**CRITICAL**: This project uses Poetry for all Python package management.
+> **Shared rules** (Poetry usage, `--no-verify` prohibition, pre-commit hook policy) are in `~/.claude/CLAUDE.md`. Below are repo-specific additions only.
 
-### Required Patterns
+### Additional Git Commit Rules
 
-```bash
-# ✅ CORRECT - Always use Poetry:
-poetry run pytest tests/unit/
-poetry run mypy src/omnibase_core/
-poetry run python -m module.name
-poetry install
-poetry add package-name
-
-# ❌ WRONG - Never use pip or python directly:
-python -m pip install -e .          # NEVER
-pip install package                 # NEVER
-python -m pytest tests/             # NEVER
-```
-
-### Git Commit Rules
-
-⚠️ **ABSOLUTELY FORBIDDEN**:
-- **NEVER use `--no-verify`** when committing. Pre-commit hooks exist for a reason.
 - **NEVER use `--no-gpg-sign`** unless explicitly requested by the user.
-- **NEVER skip hooks** - if hooks fail, fix the issues instead of bypassing them.
 - **NEVER run git commits in background mode** - always foreground.
 
 ### Agent Instructions
@@ -755,12 +736,11 @@ Node instances are **single-request scoped** by the runtime:
 ### Test Markers
 
 ```python
-@pytest.mark.unit          # Unit tests
-@pytest.mark.integration   # Integration tests
-@pytest.mark.slow          # Slow tests (>1s)
-@pytest.mark.performance   # Performance tests
+# Shared markers (unit, integration, slow) are in ~/.claude/CLAUDE.md
+# Repo-specific markers:
+@pytest.mark.performance       # Performance tests
 @pytest.mark.memory_intensive  # Memory-heavy tests
-@pytest.mark.isolated      # Requires fresh module state
+@pytest.mark.isolated          # Requires fresh module state
 ```
 
 ### Running Tests
@@ -851,16 +831,6 @@ def validate_input(self) -> bool:
 - Obvious from signature (`def add(a: int, b: int) -> int`)
 - Private helpers
 
-### Type Annotation Style (PEP 604)
-
-```python
-# ✅ Correct - PEP 604 union syntax
-def process(value: str | None) -> int | str: ...
-
-# ❌ Wrong - Legacy syntax
-def process(value: Optional[str]) -> Union[int, str]: ...  # Don't use
-```
-
 ### Enum vs Literal Policy
 
 | Context | Use | Example |
@@ -904,25 +874,10 @@ class BadModel(BaseModel):
    return ModelHandlerOutput.for_orchestrator(result={"status": "done"})  # ValueError!
    ```
 
-4. **Use pip instead of Poetry**
-   ```bash
-   pip install package  # WRONG - use poetry add
-   ```
-
-5. **Share nodes across threads**
+4. **Share nodes across threads**
    ```python
    threading.Thread(target=node.process).start()  # UNSAFE
    ```
-
-6. **Add backwards-compatibility hacks**
-   ```python
-   # WRONG - No deprecation shims
-   old_name = new_name  # re-export for "backwards compatibility"
-   _deprecated_field: str | None = None  # "keep for old consumers"
-   # WRONG - No compatibility comments
-   # Removed: keeping comment for backwards compatibility
-   ```
-   If something is unused, delete it completely. No shims, no re-exports, no `# removed` comments.
 
 ### ✅ Do
 
