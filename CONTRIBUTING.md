@@ -27,7 +27,7 @@ Thank you for your interest in contributing to omnibase_core! This document prov
 1. **Read the documentation**:
    - [ONEX Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
    - [Node Building Guide](docs/guides/node-building/README.md)
-   - Development Workflow (coming soon)
+   - [CLAUDE.md](CLAUDE.md) for coding standards and rules
 
 2. **Explore the codebase**:
    - Review existing node implementations in `src/omnibase_core/`
@@ -281,8 +281,8 @@ git checkout -b fix/bug-description
 poetry run pytest tests/
 poetry run mypy src/
 poetry run ruff check src/
-poetry run black src/ --check
-poetry run isort src/ --check
+poetry run ruff check src/ tests/
+poetry run ruff format src/ tests/ --check
 ```
 
 ### 4. Commit Changes

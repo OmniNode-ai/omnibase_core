@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Linting: ruff](https://img.shields.io/badge/linting-ruff-261230.svg)](https://github.com/astral-sh/ruff)
 [![Type checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy.readthedocs.io/)
 [![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![Framework: Core](https://img.shields.io/badge/framework-core-purple.svg)](https://github.com/OmniNode-ai/omnibase_core)
@@ -104,13 +104,23 @@ poetry run pytest
 
 ```text
 src/omnibase_core/
+├── backends/           # Cache (Redis) and metrics backends
 ├── container/          # DI container
-├── infrastructure/     # NodeCoreBase, ModelService*
-├── models/             # Pydantic models
-├── nodes/              # EFFECT, COMPUTE, REDUCER, ORCHESTRATOR
-├── events/             # Event system
+├── crypto/             # Blake3 hashing, Ed25519 signing
+├── enums/              # Core enumerations (300+ enums)
 ├── errors/             # Structured errors
-└── mixins/             # Declarative behaviors
+├── infrastructure/     # NodeCoreBase, ModelService*
+├── merge/              # Contract merge engine
+├── mixins/             # Reusable behavior mixins (40+)
+├── models/             # Pydantic models (80+ subdirectories)
+├── nodes/              # EFFECT, COMPUTE, REDUCER, ORCHESTRATOR
+├── protocols/          # Protocol interfaces
+├── rendering/          # Report renderers (CLI, HTML, JSON, Markdown)
+├── resolution/         # Dependency resolvers
+├── schemas/            # JSON Schema definitions
+├── services/           # Service implementations
+├── validation/         # Validation framework + cross-repo validators
+└── tools/              # Mypy plugins
 ```
 
 **See**: [Architecture Overview](docs/architecture/overview.md)
@@ -138,8 +148,8 @@ Uses Poetry for all package management.
 poetry install
 poetry run pytest tests/
 poetry run mypy src/omnibase_core/
-poetry run black src/ tests/
-poetry run isort src/ tests/
+poetry run ruff check src/ tests/
+poetry run ruff format src/ tests/
 ```
 
 **See**: [CONTRIBUTING.md](CONTRIBUTING.md) for PR requirements.
