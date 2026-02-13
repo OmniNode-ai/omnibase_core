@@ -668,51 +668,59 @@ jobs:
 
     steps:
       - name: Check test results
+        env:
+          # Required checks (failures cause test-summary to fail)
+          RESULT_PARALLEL: ${{ needs.test-parallel.result }}
+          RESULT_TESTS_GATE: ${{ needs.tests-gate.result }}
+          RESULT_LINT: ${{ needs.lint.result }}
+          RESULT_PYRIGHT: ${{ needs.pyright.result }}
+          RESULT_EXPORTS: ${{ needs.exports-validation.result }}
+          RESULT_MYPY_SCRIPTS: ${{ needs.mypy-validation-scripts.result }}
+          RESULT_CORE_INFRA: ${{ needs.core-infra-boundary.result }}
+          RESULT_ENUM_GOV: ${{ needs.enum-governance.result }}
+          # Excluded checks (informational only, per .github/required-checks.yaml)
+          # Kept in needs: for visibility in summary output, but failures here
+          # do NOT block merging or cause test-summary to fail.
+          RESULT_DOCS: ${{ needs.docs-validation.result }}
+          RESULT_PURITY: ${{ needs.node-purity-check.result }}
         run: |
-          parallel="${{ needs.test-parallel.result }}"
-          tests_gate="${{ needs.tests-gate.result }}"
-          lint="${{ needs.lint.result }}"
-          pyright="${{ needs.pyright.result }}"
-          exports="${{ needs.exports-validation.result }}"
-          mypy_scripts="${{ needs.mypy-validation-scripts.result }}"
-          core_infra="${{ needs.core-infra-boundary.result }}"
-          docs="${{ needs.docs-validation.result }}"
-          purity="${{ needs.node-purity-check.result }}"
-          enum_gov="${{ needs.enum-governance.result }}"
+          echo "=== Required Checks ==="
+          echo "Parallel Tests (20 splits): $RESULT_PARALLEL"
+          echo "Tests Gate: $RESULT_TESTS_GATE"
+          echo "Code Quality: $RESULT_LINT"
+          echo "Pyright Type Checking: $RESULT_PYRIGHT"
+          echo "Exports Validation: $RESULT_EXPORTS"
+          echo "Mypy Validation Scripts: $RESULT_MYPY_SCRIPTS"
+          echo "Core-Infra Boundary: $RESULT_CORE_INFRA"
+          echo "Enum Governance: $RESULT_ENUM_GOV"
 
-          if [[ "$parallel" == "success" ]] && \
-             [[ "$tests_gate" == "success" ]] && \
-             [[ "$lint" == "success" ]] && \
-             [[ "$pyright" == "success" ]] && \
-             [[ "$exports" == "success" ]] && \
-             [[ "$mypy_scripts" == "success" ]] && \
-             [[ "$core_infra" == "success" ]] && \
-             [[ "$docs" == "success" ]] && \
-             [[ "$purity" == "success" ]] && \
-             [[ "$enum_gov" == "success" ]]; then
-            echo "All tests passed successfully"
-            echo "Parallel Tests (20 splits): Passed"
-            echo "Tests Gate: Passed"
-            echo "Code Quality: Passed"
-            echo "Pyright Type Checking: Passed"
-            echo "Exports Validation: Passed"
-            echo "Mypy Validation Scripts: Passed"
-            echo "Core-Infra Boundary: Passed"
-            echo "Documentation: Passed"
-            echo "Node Purity: Passed"
-            echo "Enum Governance: Passed"
+          echo ""
+          echo "=== Excluded Checks (informational, non-blocking) ==="
+          echo "Documentation Validation: $RESULT_DOCS"
+          echo "Node Purity Check: $RESULT_PURITY"
+
+          # Warn on excluded check failures (do not affect exit code)
+          if [[ "$RESULT_DOCS" != "success" ]]; then
+            echo "::warning::Documentation Validation did not succeed (result: $RESULT_DOCS) — non-blocking per required-checks.yaml"
+          fi
+          if [[ "$RESULT_PURITY" != "success" ]]; then
+            echo "::warning::Node Purity Check did not succeed (result: $RESULT_PURITY) — non-blocking per required-checks.yaml"
+          fi
+
+          # Only required checks determine pass/fail
+          if [[ "$RESULT_PARALLEL" == "success" ]] && \
+             [[ "$RESULT_TESTS_GATE" == "success" ]] && \
+             [[ "$RESULT_LINT" == "success" ]] && \
+             [[ "$RESULT_PYRIGHT" == "success" ]] && \
+             [[ "$RESULT_EXPORTS" == "success" ]] && \
+             [[ "$RESULT_MYPY_SCRIPTS" == "success" ]] && \
+             [[ "$RESULT_CORE_INFRA" == "success" ]] && \
+             [[ "$RESULT_ENUM_GOV" == "success" ]]; then
+            echo ""
+            echo "All required checks passed."
             exit 0
           else
-            echo "Tests failed"
-            echo "Parallel Tests: $parallel"
-            echo "Tests Gate: $tests_gate"
-            echo "Lint: $lint"
-            echo "Pyright: $pyright"
-            echo "Exports: $exports"
-            echo "Mypy Scripts: $mypy_scripts"
-            echo "Core-Infra Boundary: $core_infra"
-            echo "Documentation: $docs"
-            echo "Node Purity: $purity"
-            echo "Enum Governance: $enum_gov"
+            echo ""
+            echo "::error::One or more required checks failed — see details above."
             exit 1
           fi

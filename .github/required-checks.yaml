@@ -2,7 +2,28 @@
 # Required Status Checks for omnibase_core `main` branch
 #
 # Source of truth for branch protection configuration.
-# Apply via: gh api -X PUT repos/OmniNode-ai/omnibase_core/branches/main/protection
+# Apply via:
+#   gh api -X PUT repos/OmniNode-ai/omnibase_core/branches/main/protection \
+#     --input - <<'EOF'
+#   {
+#     "required_status_checks": {
+#       "strict": true,
+#       "contexts": [
+#         "Code Quality",
+#         "Pyright Type Checking",
+#         "Exports Validation",
+#         "Mypy Validation Scripts",
+#         "Core-Infra Boundary",
+#         "Enum Governance Check",
+#         "Tests Gate"
+#       ]
+#     },
+#     "enforce_admins": true,
+#     "required_pull_request_reviews": null,
+#     "restrictions": null
+#   }
+#   EOF
+# Docs: https://docs.github.com/en/rest/branches/branch-protection#update-branch-protection
 #
 # Last verified: 2026-02-13
 # Ticket: OMN-2183
