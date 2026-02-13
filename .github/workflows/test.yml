@@ -651,7 +651,7 @@ jobs:
           TESTS_RESULT: ${{ needs.test-parallel.result }}
         run: |
           if [ "$TESTS_RESULT" != "success" ]; then
-            echo "::error::One or more test splits failed or were cancelled"
+            echo "::error::One or more test splits failed, were cancelled, or were skipped"
             echo "Test matrix result: $TESTS_RESULT"
             exit 1
           fi
