@@ -167,16 +167,19 @@ Implementation patterns and best practices.
 
 ### Decisions (ADRs)
 
-Architecture Decision Records explaining why things work the way they do. [Full index](architecture/decisions/INDEX.md).
+Architecture Decision Records explaining why things work the way they do. [Full index](decisions/README.md).
 
 | Document | Description |
 |----------|-------------|
-| [ADR Index](architecture/decisions/INDEX.md) | All ADRs with categories |
-| [ADR-001: Protocol-Based DI](architecture/decisions/ADR-001-protocol-based-di-architecture.md) | Dependency injection architecture |
-| [ADR-002: Context Mutability](architecture/decisions/ADR-002-context-mutability-design-decision.md) | Context design decisions |
-| [ADR-003: Reducer Output Consistency](architecture/decisions/ADR-003-reducer-output-exception-consistency.md) | Exception handling strategy |
-| [ADR-012: Validator Error Handling](architecture/adr/ADR-012-VALIDATOR-ERROR-HANDLING.md) | Error handling in validators |
-| [ADR-013: Status Taxonomy](architecture/adr/ADR-013-status-taxonomy.md) | Canonical status enums |
+| [ADR Index](decisions/README.md) | All ADRs with categories |
+| [ADR-001: Protocol-Based DI](decisions/ADR-001-protocol-based-di-architecture.md) | Dependency injection architecture |
+| [ADR-002: Field Limit Constants](decisions/ADR-002-field-limit-constants.md) | Pydantic field limit constants |
+| [ADR-003: Reducer Output Consistency](decisions/ADR-003-reducer-output-exception-consistency.md) | Exception handling strategy |
+| [ADR-005: Core-Infra Boundary](decisions/ADR-005-core-infra-dependency-boundary.md) | Core-infra dependency boundary |
+| [ADR-006: Status Taxonomy](decisions/ADR-006-status-taxonomy.md) | Status enum organization |
+| [ADR-007: Context Mutability](decisions/ADR-007-context-mutability-design-decision.md) | Context design decisions |
+| [ADR-012: Validator Error Handling](decisions/ADR-012-VALIDATOR-ERROR-HANDLING.md) | Error handling in validators |
+| [ADR-013: Status Taxonomy](decisions/ADR-013-status-taxonomy.md) | Canonical status enums |
 
 ### Conventions
 
@@ -283,34 +286,35 @@ All behavior is declared in YAML contracts:
 
 ```text
 src/omnibase_core/
+├── backends/               # Cache (Redis) and metrics (Prometheus, in-memory)
+├── cli/                    # CLI commands
 ├── constants/              # Project constants
 ├── container/              # DI container implementation
+├── context/                # Application context
+├── contracts/              # Contract management
+├── crypto/                 # Blake3 hashing, Ed25519 signing
 ├── decorators/             # Utility decorators (@standard_error_handling)
-├── discovery/              # Service discovery mechanisms
-├── enums/                  # Core enumerations
+├── enums/                  # Core enumerations (300+ enums, 6 subdirectories)
 ├── errors/                 # Error handling (ModelOnexError)
-├── events/                 # Event system
+├── factories/              # Contract and profile factories
 ├── infrastructure/         # Base node classes
-├── mixins/                 # Reusable behavior mixins
-├── models/                 # Pydantic models (40+ subdirectories)
-│   ├── base/               # Base model classes
-│   ├── container/          # ModelONEXContainer
-│   ├── contracts/          # Contract models
-│   ├── core/               # Core models (ModelContainer)
-│   ├── errors/             # Error models
-│   ├── events/             # Event envelope models
-│   └── ...                 # Many more model categories
-├── nodes/                  # Node implementations (v0.4.0+)
-│   ├── node_compute.py     # COMPUTE node base
-│   ├── node_effect.py      # EFFECT node base
-│   ├── node_reducer.py     # REDUCER node base
-│   └── node_orchestrator.py # ORCHESTRATOR node base
-├── primitives/             # Primitive types
+├── integrations/           # External integrations
+├── logging/                # Structured logging
+├── merge/                  # Contract merge engine, conflict classifier
+├── mixins/                 # Reusable behavior mixins (40+)
+├── models/                 # Pydantic models (80+ subdirectories)
+├── nodes/                  # EFFECT, COMPUTE, REDUCER, ORCHESTRATOR
+├── pipeline/               # Execution plan builders, runners
 ├── protocols/              # Protocol definitions
+├── rendering/              # Report renderers (CLI, HTML, JSON, Markdown, Diff)
+├── resolution/             # Execution, handler, protocol dependency resolvers
 ├── runtime/                # Runtime components (FileRegistry)
+├── schemas/                # JSON Schema definitions
+├── services/               # Service implementations
+├── tools/                  # Mypy plugins
 ├── types/                  # TypedDict definitions
 ├── utils/                  # Utility functions
-└── validation/             # Validation framework
+└── validation/             # Validation framework + cross-repo validators + DB validators
 ```
 
 ---
@@ -330,10 +334,11 @@ src/omnibase_core/
 |---------|--------|-------|
 | Getting Started | Complete | 3 guides available |
 | Node Building | Complete | 10 tutorials |
-| Architecture | Complete | 18+ documents |
-| Reference | Complete | API docs, templates |
+| Architecture | Complete | 12+ documents |
+| Contracts | Complete | 3 contract guides |
+| Reference | Complete | API docs |
 | Patterns | Complete | 8 pattern documents |
-| Decisions | Complete | 6+ ADRs |
+| Decisions | Complete | 9 ADRs in `decisions/` |
 | Conventions | Complete | 5 convention docs |
-| Standards | Complete | 2 normative specs |
+| Standards | Complete | 3 normative specs |
 | Testing | Complete | 6 testing guides |

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Decisions](README.md) > RISK-009
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > RISK-009
 
 # RISK-009: CI Workflow Modification Risk
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Decisions](README.md) > ADR-007
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > ADR-007
 
 # ADR-007: Context Mutability Design Decision
 

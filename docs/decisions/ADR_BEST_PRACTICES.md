@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Decisions](README.md) > ADR Best Practices
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > ADR Best Practices
 
 # ADR Best Practices
 

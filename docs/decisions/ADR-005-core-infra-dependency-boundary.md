@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Decisions](README.md) > ADR-005
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > ADR-005
 
 # ADR-005: Core-Infra Dependency Boundary
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Architecture](../overview.md) > [Decisions](./INDEX.md) > ADR Fixes Summary
+> **Navigation**: [Home](../INDEX.md) > [Decisions](./README.md) > ADR Fixes Summary
 
 # ADR Document Fixes Summary
 
@@ -19,15 +19,15 @@ This document summarizes the fixes applied to Architecture Decision Records (ADR
 ### 1. Inconsistent Status Markers
 
 **Problem**: ADR documents used inconsistent status formats:
-- ADR-001: `Accepted ✅`
+- ADR-001: `Accepted`
 - ADR-002: `Accepted` (no emoji)
-- REDUCER_OUTPUT analysis: `🟢 **IMPLEMENTED**`
+- REDUCER_OUTPUT analysis: `IMPLEMENTED`
 
-**Solution**: Standardized all status markers to use emoji indicators per ADR_BEST_PRACTICES.md:
-- 🟢 **IMPLEMENTED** - For fully implemented decisions
-- 🟡 **IN PROGRESS** - For decisions being implemented
-- 🔴 **REJECTED** - For rejected alternatives
-- ⚪ **SUPERSEDED** - For superseded decisions
+**Solution**: Standardized all status markers to use consistent indicators per ADR_BEST_PRACTICES.md:
+- **IMPLEMENTED** - For fully implemented decisions
+- **IN PROGRESS** - For decisions being implemented
+- **REJECTED** - For rejected alternatives
+- **SUPERSEDED** - For superseded decisions
 
 ### 2. Missing ADR Number
 
@@ -51,7 +51,7 @@ This document summarizes the fixes applied to Architecture Decision Records (ADR
 
 **Problem**: No single place to find all ADRs and their current status
 
-**Solution**: Created INDEX.md with:
+**Solution**: Created central index (now maintained in [README.md](./README.md)) with:
 - Complete ADR registry
 - Status indicators
 - Topic-based navigation
@@ -71,37 +71,37 @@ This document summarizes the fixes applied to Architecture Decision Records (ADR
 
 | File | Old Status | New Status | Reason |
 |------|-----------|-----------|--------|
-| ADR-001 | `Accepted ✅` | `🟢 **IMPLEMENTED**` | Standardize format |
-| ADR-002 | `Accepted` | `🟢 **IMPLEMENTED**` | Standardize format |
-| ADR-003 | `🟢 **IMPLEMENTED**` | (no change) | Already correct |
-| RISK-009 | `Mitigated` | `🟢 **MITIGATED**` | Standardize format |
+| ADR-001 | `Accepted` | `IMPLEMENTED` | Standardize format |
+| ADR-002 | `Accepted` | `IMPLEMENTED` | Standardize format |
+| ADR-003 | `IMPLEMENTED` | (no change) | Already correct |
+| RISK-009 | `Mitigated` | `MITIGATED` | Standardize format |
 
 ### Content Updates
 
 #### ADR-001: Protocol-Based DI Architecture
-- ✅ Updated status marker to `🟢 **IMPLEMENTED**`
-- ✅ Changed "Approval" section to "Implementation Sign-offs"
-- ✅ Updated sign-off language from "Approved" to "Implemented/Complete"
+- Updated status marker to `IMPLEMENTED`
+- Changed "Approval" section to "Implementation Sign-offs"
+- Updated sign-off language from "Approved" to "Implemented/Complete"
 
 #### ADR-002: Context Mutability Design Decision
-- ✅ Updated status marker to `🟢 **IMPLEMENTED**`
+- Updated status marker to `IMPLEMENTED`
 
 #### ADR-003: Reducer Output Exception Consistency
-- ✅ Updated document title to include ADR number
-- ✅ Added "Document Number" field to metadata table
-- ✅ Status already correct (`🟢 **IMPLEMENTED**`)
+- Updated document title to include ADR number
+- Added "Document Number" field to metadata table
+- Status already correct (`IMPLEMENTED`)
 
 #### ADR_BEST_PRACTICES.md
-- ✅ Added ADR-002 to examples section
-- ✅ Updated ADR-003 reference (formerly REDUCER_OUTPUT...)
-- ✅ Added ADR-002 to related documents
+- Added ADR-002 to examples section
+- Updated ADR-003 reference (formerly REDUCER_OUTPUT...)
+- Added ADR-002 to related documents
 
 #### RISK-009: CI Workflow Modification Risk
-- ✅ Updated status marker to `🟢 **MITIGATED**`
+- Updated status marker to `MITIGATED`
 
 ### New Files Created
 
-#### INDEX.md
+#### Central Index (now README.md)
 - Central registry of all ADRs
 - Status indicators for quick scanning
 - Topic-based navigation
@@ -113,11 +113,11 @@ This document summarizes the fixes applied to Architecture Decision Records (ADR
 ## Verification
 
 All ADR files now:
-- ✅ Follow consistent status marker format
-- ✅ Use ADR-NNN numbering convention
-- ✅ Have accurate cross-references
-- ✅ Are listed in INDEX.md
-- ✅ Match ADR_BEST_PRACTICES.md guidelines
+- Follow consistent status marker format
+- Use ADR-NNN numbering convention
+- Have accurate cross-references
+- Are listed in the central index (README.md)
+- Match ADR_BEST_PRACTICES.md guidelines
 
 ---
 
@@ -128,23 +128,14 @@ All ADR files now:
 3. `ADR-003-reducer-output-exception-consistency.md` - Renamed and updated title
 4. `ADR_BEST_PRACTICES.md` - Added ADR-002 and ADR-003 references
 5. `RISK-009-ci-workflow-modification-risk.md` - Status update
-6. `INDEX.md` - Created new central index
-
----
-
-## Next Steps
-
-1. **Review**: Validate all changes meet PR #205 requirements
-2. **Update CLAUDE.md**: Add reference to ADR INDEX.md if appropriate
-3. **Future ADRs**: Use INDEX.md to track next ADR number
-4. **Maintenance**: Update INDEX.md when new ADRs are created
+6. `README.md` - Central index for all ADRs
 
 ---
 
 ## Related Documentation
 
 - [ADR Best Practices Guide](./ADR_BEST_PRACTICES.md)
-- [ADR Index](./INDEX.md)
+- [ADR Index](./README.md)
 - All individual ADRs referenced above
 
 ---
