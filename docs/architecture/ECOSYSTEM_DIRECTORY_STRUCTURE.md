@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Ecosystem Directory Structure
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Ecosystem Directory Structure
 
 # ONEX Ecosystem Directory Structure
 

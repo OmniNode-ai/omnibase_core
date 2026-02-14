@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Patterns](./README.md) > Custom Bool Pattern
+> **Navigation**: [Home](../INDEX.md) > [Patterns](./README.md) > Custom Bool Pattern
 
 # Custom `__bool__` Pattern for Result Models
 

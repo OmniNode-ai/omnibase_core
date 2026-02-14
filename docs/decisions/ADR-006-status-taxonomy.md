@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Decisions](README.md) > ADR-006
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > ADR-006
 
 # ADR-006: Status Taxonomy and Categorical Organization
 

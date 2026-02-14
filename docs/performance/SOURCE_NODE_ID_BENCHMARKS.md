@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Performance > Source Node ID Benchmarks
+> **Navigation**: [Home](../INDEX.md) > Performance > Source Node ID Benchmarks
 
 # Performance Benchmarks: source_node_id Field Overhead
 

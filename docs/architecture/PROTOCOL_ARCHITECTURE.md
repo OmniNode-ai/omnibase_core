@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Protocol Architecture
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Protocol Architecture
 
 # Protocol Architecture Analysis
 **Phase 0.2: Protocol Architecture Audit**

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Templates > Linear Issue Template
+> **Navigation**: [Home](../INDEX.md) > Templates > Linear Issue Template
 
 # Linear Issue Template - Omninode MVP Development
 
@@ -29,7 +29,7 @@
 
 ## Cross-Repo Impact
 
-Impact scope for coordinated changes across repositories (see [MVP_PLAN.md](../MVP_PLAN.md) for sync points):
+Impact scope for coordinated changes across repositories:
 
 - **core-only** - No cross-repo dependencies, changes isolated to one repository
 - **core+spi** - Requires SPI protocol alignment, updates to both omnibase_core and omnibase_spi
@@ -37,7 +37,7 @@ Impact scope for coordinated changes across repositories (see [MVP_PLAN.md](../M
 
 *core-only / core+spi / core+spi+infra*
 
-> **Note**: For `core+spi` or `core+spi+infra` issues, check the Cross-Repo Synchronization Points section in MVP_PLAN.md to understand blocking dependencies and release sequencing.
+> **Note**: For `core+spi` or `core+spi+infra` issues, check cross-repo synchronization points to understand blocking dependencies and release sequencing.
 
 ## TDD
 

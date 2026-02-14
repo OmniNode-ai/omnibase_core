@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Reference > Contracts
+> **Navigation**: [Home](../INDEX.md) > Reference > Contracts
 
 > **Note**: For authoritative coding rules, see [CLAUDE.md](../../CLAUDE.md).
 
@@ -664,7 +664,7 @@ nodes/my_node/
 | Node architecture | [ONEX Four-Node Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
 | Node kind enum | [EnumNodeKind Migration Guide](../guides/ENUM_NODE_KIND_MIGRATION.md) |
 | Node building | [Node Building Guide](../guides/node-building/README.md) |
-| Node templates | [COMPUTE Template](templates/COMPUTE_NODE_TEMPLATE.md) / [EFFECT Template](templates/EFFECT_NODE_TEMPLATE.md) / [REDUCER Template](templates/REDUCER_NODE_TEMPLATE.md) / [ORCHESTRATOR Template](templates/ORCHESTRATOR_NODE_TEMPLATE.md) |
+| Node templates | [COMPUTE Template](../guides/templates/COMPUTE_NODE_TEMPLATE.md) / [EFFECT Template](../guides/templates/EFFECT_NODE_TEMPLATE.md) / [REDUCER Template](../guides/templates/REDUCER_NODE_TEMPLATE.md) / [ORCHESTRATOR Template](../guides/templates/ORCHESTRATOR_NODE_TEMPLATE.md) |
 
 ---
 

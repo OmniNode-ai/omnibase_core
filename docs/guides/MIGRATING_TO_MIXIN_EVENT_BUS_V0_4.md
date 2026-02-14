@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Migrating to MixinEventBus v0.4
+> **Navigation**: [Home](../INDEX.md) > Guides > Migrating to MixinEventBus v0.4
 
 # Migrating to MixinEventBus v0.4 and v1.0 Deprecation Guide
 

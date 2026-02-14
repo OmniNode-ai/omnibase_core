@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Decisions](README.md) > ADR-004
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > ADR-004
 
 # ADR-004: Registration Trigger Architecture
 

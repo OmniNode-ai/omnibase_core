@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Reference > Mixin Discovery API
+> **Navigation**: [Home](../INDEX.md) > Reference > Mixin Discovery API
 
 # Mixin Discovery API
 

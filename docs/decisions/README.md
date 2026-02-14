@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Decisions (ADRs)
+> **Navigation**: [Home](../INDEX.md) > Decisions (ADRs)
 
 # Architecture Decision Records (ADRs)
 
@@ -17,23 +17,23 @@ ADRs are immutable once accepted. Superseded decisions are marked but not delete
 
 ## ADR Index
 
-| ID | Title | Status | Category |
-|----|-------|--------|----------|
-| [ADR-001](ADR-001-protocol-based-di-architecture.md) | Protocol-Based Dependency Injection Architecture | Implemented | Architecture |
-| [ADR-002](ADR-002-field-limit-constants.md) | Centralized Field Limit Constants | Accepted | Validation |
-| [ADR-003](ADR-003-reducer-output-exception-consistency.md) | Reducer Output Exception Consistency | Implemented | Error Handling |
-| [ADR-004](ADR-004-registration-trigger-architecture.md) | Registration Trigger Architecture | Accepted | Architecture |
-| [ADR-005](ADR-005-core-infra-dependency-boundary.md) | Core-Infra Dependency Boundary | Implemented | Architecture |
-| [ADR-006](ADR-006-status-taxonomy.md) | Status Taxonomy and Categorical Organization | Accepted | Type System |
-| [ADR-007](ADR-007-context-mutability-design-decision.md) | Context Mutability Design Decision | Implemented | API Design |
-| [ADR-012](ADR-012-VALIDATOR-ERROR-HANDLING.md) | Validator Error Handling with ModelOnexError | Accepted | Error Handling |
-| [ADR-013](ADR-013-status-taxonomy.md) | Status Taxonomy (Canonical Enums) | Accepted | Type System |
+| ID | Title | Status | Date | Category | Key Topics |
+|----|-------|--------|------|----------|------------|
+| [ADR-001](ADR-001-protocol-based-di-architecture.md) | Protocol-Based Dependency Injection Architecture | Implemented | 2025-10-30 | Architecture | DI, ServiceRegistry, Protocols, Pydantic |
+| [ADR-002](ADR-002-field-limit-constants.md) | Centralized Field Limit Constants | Accepted | 2025-12-15 | Validation | Field Limits, Constants, Pydantic |
+| [ADR-003](ADR-003-reducer-output-exception-consistency.md) | Reducer Output Exception Consistency | Implemented | 2025-12-16 | Error Handling | Validation, Sentinel Pattern |
+| [ADR-004](ADR-004-registration-trigger-architecture.md) | Registration Trigger Architecture | Accepted | 2025-12-19 | Architecture | Registration, Events, Commands, Orchestrator |
+| [ADR-005](ADR-005-core-infra-dependency-boundary.md) | Core-Infra Dependency Boundary | Implemented | 2025-12-26 | Architecture | Dependency Inversion, Transport Libraries |
+| [ADR-006](ADR-006-status-taxonomy.md) | Status Taxonomy and Categorical Organization | Accepted | 2026-01-12 | Type System | Status Enums, Taxonomy, Severity, Health |
+| [ADR-007](ADR-007-context-mutability-design-decision.md) | Context Mutability Design Decision | Implemented | 2025-12-15 | API Design | Immutability, Workflow State, FSM Snapshots |
+| [ADR-012](ADR-012-VALIDATOR-ERROR-HANDLING.md) | Validator Error Handling with ModelOnexError | Accepted | 2026-01-18 | Error Handling | Pydantic Validators, ModelOnexError |
+| [ADR-013](ADR-013-status-taxonomy.md) | Status Taxonomy (Canonical Enums) | Accepted | 2026-01-18 | Type System | Canonical Enums, Status Categories |
 
 ## Risk Records
 
-| ID | Title | Status | Category |
-|----|-------|--------|----------|
-| [RISK-009](RISK-009-ci-workflow-modification-risk.md) | CI Workflow Modification Risk | Mitigated | Security |
+| ID | Title | Status | Date | Category | Key Topics |
+|----|-------|--------|------|----------|------------|
+| [RISK-009](RISK-009-ci-workflow-modification-risk.md) | CI Workflow Modification Risk | Mitigated | 2025-12-10 | Security | CI/CD, Transport Imports, Dependency Inversion |
 
 ## Categories
 
@@ -128,9 +128,10 @@ What was decided?
 ## Supporting Documents
 
 - [ADR Best Practices Guide](ADR_BEST_PRACTICES.md) - How to write and maintain ADRs
+- [ADR Fixes Summary](ADR_FIXES_SUMMARY.md) - Summary of fixes applied to ADR documents (PR #205)
 
 ---
 
-**Last Updated**: 2026-01-18
+**Last Updated**: 2026-02-13
 **Total ADRs**: 9
 **Total Risk Records**: 1

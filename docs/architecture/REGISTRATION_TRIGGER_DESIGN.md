@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Registration Trigger Design
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Registration Trigger Design
 
 # Registration Trigger Design
 
@@ -6,7 +6,7 @@
 > **Ticket**: OMN-943
 > **Status**: Specification
 > **Last Updated**: 2025-12-19
-> **Related ADR**: [ADR-004: Registration Trigger Architecture](decisions/ADR-004-registration-trigger-architecture.md)
+> **Related ADR**: [ADR-004: Registration Trigger Architecture](../decisions/ADR-004-registration-trigger-architecture.md)
 
 ---
 
@@ -30,7 +30,7 @@
 
 ONEX node registration supports **two distinct trigger paths** that initiate the registration workflow. This design supports both automatic discovery and controlled administrative registration. It maintains architectural purity through the Event/Command to Orchestrator execution shapes.
 
-For the architectural decision rationale behind this design, see [ADR-004: Registration Trigger Architecture](decisions/ADR-004-registration-trigger-architecture.md).
+For the architectural decision rationale behind this design, see [ADR-004: Registration Trigger Architecture](../decisions/ADR-004-registration-trigger-architecture.md).
 
 ### Design Principles
 
@@ -1020,7 +1020,7 @@ Effect Node (Executes Intents):
 | `ModelRegistrationRecordBase` | `src/omnibase_core/models/intents/model_registration_record_base.py` | Implemented |
 | `ProtocolRegistrationRecord` | `src/omnibase_core/protocols/intents/protocol_registration_record.py` | Implemented |
 | Topic taxonomy | `docs/standards/onex_topic_taxonomy.md` | Documented |
-| ADR-004 | `docs/architecture/decisions/ADR-004-registration-trigger-architecture.md` | Documented |
+| ADR-004 | `docs/decisions/ADR-004-registration-trigger-architecture.md` | Documented |
 
 ### Planned / Reserved
 
@@ -1080,7 +1080,7 @@ Failures are handled by:
 
 | Document | Purpose |
 |----------|---------|
-| [ADR-004: Registration Trigger Architecture](decisions/ADR-004-registration-trigger-architecture.md) | Architectural decision rationale |
+| [ADR-004: Registration Trigger Architecture](../decisions/ADR-004-registration-trigger-architecture.md) | Architectural decision rationale |
 | [Canonical Execution Shapes](CANONICAL_EXECUTION_SHAPES.md) | Allowed data flow patterns |
 | [ONEX Topic Taxonomy](../standards/onex_topic_taxonomy.md) | Kafka topic naming standard |
 | [ONEX Terminology](../standards/onex_terminology.md) | Core concept definitions |

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > Templates > Enhanced Node Patterns
+> **Navigation**: [Home](../../INDEX.md) > [Guides](../README.md) > Templates > Enhanced Node Patterns
 
 # Enhanced ONEX Node Patterns - Canary Integration
 

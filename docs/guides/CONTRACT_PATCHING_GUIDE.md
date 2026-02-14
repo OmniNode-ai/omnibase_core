@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Contract Patching Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > Contract Patching Guide
 
 # Contract Patching Guide
 

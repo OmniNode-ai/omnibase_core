@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides
+> **Navigation**: [Home](../INDEX.md) > Guides
 
 # Guides
 

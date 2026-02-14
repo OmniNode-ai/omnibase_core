@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Node Building](./README.md) > Testing Intent Publisher
+> **Navigation**: [Home](../../INDEX.md) > [Guides](../README.md) > [Node Building](./README.md) > Testing Intent Publisher
 
 > **Note**: For authoritative coding standards, see [CLAUDE.md](../../../CLAUDE.md).
 

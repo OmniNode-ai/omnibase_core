@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-02-12
+
+### Added
+
+- **GeometricConflictClassifier for Parallel Agent Output Analysis** [OMN-1854] (#502): Deterministic classifier that analyzes parallel agent outputs and classifies conflicts geometrically using similarity metrics
+  - `classify()` is DETERMINISTIC (D4): same inputs always produce same output
+  - `recommend_resolution()` is ADVISORY ONLY (GI-3): raises ValueError for OPPOSITE/AMBIGUOUS conflicts requiring human approval
+  - Similarity engine handles dicts, strings, lists, and primitives
+  - Contradiction detection for boolean and semantic opposites
+  - Orthogonality detection for non-overlapping dict changes
+  - 49 unit tests covering all classification thresholds
+
+- **DB Ownership CI Twin for Runtime Assertion B1** [OMN-2150] (#501): CI workflow that provisions a temporary SQLite database, runs migrations, and verifies owner_service matches expectations
+  - `ModelDbOwnershipMetadata`: Pydantic model for db_metadata table schema with naive datetime rejection
+  - `validate_db_ownership`: contract-level ownership validator with `@validation_error_handling`
+  - `scripts/check_db_ownership.py`: CI twin script (5 checks) with single-row constraint (`CHECK(id=1)`)
+  - `check-db-ownership.yml`: GitHub Actions workflow
+  - 16 unit tests covering model, validator, and CI twin logic
+
+- **Geometric Conflict Detail Models** [OMN-1853] (#500): Rich conflict analysis models for parallel agent output classification
+  - `ModelGeometricConflictDetails`: similarity metrics, multi-axis analysis, and advisory recommendations
+  - `ModelConflictResolutionResult`: resolution tracking with GI-3 enforcement (OPPOSITE/AMBIGUOUS require human approval)
+  - `AUTO_RESOLVABLE_TYPES` frozenset for consistent conflict resolution routing
+  - `validate_assignment=True` for merge package consistency
+
+- **Geometric Conflict Types in EnumMergeConflictType** [OMN-1852] (#499): 6 geometric conflict types from the Neumann pattern for classifying parallel agent output relationships
+  - ORTHOGONAL, LOW_CONFLICT, IDENTICAL, OPPOSITE, CONFLICTING, AMBIGUOUS
+  - GI-3 invariant: OPPOSITE and AMBIGUOUS require human approval
+
+- **Handshake Policy Gate for Cross-Repo Compliance** [OMN-2086] (#498): Scheduled workflow and script that queries GitHub API to verify all active repos have check-handshake CI enforcement passing
+  - Shared `repos.conf` for DRY repo list management
+  - `_parse_repos_conf.sh` helper for portable parsing (bash 3.2+)
+  - `POLICY_GATE_TOKEN` for cross-repo private workflow access
+  - Server-side branch filtering, URL-encoded branch names, `jq` dependency documented
+
+- **Handshake Self-Check Enforcement** [OMN-2083] (#497): CI workflow so omnibase_core verifies its own installed handshake matches the canonical source
+  - `.gitignore` updated for `.claude/*` with negation for `architecture-handshake.md`
+  - 9 universal platform-wide rules added to all 8 architecture handshakes
+  - Frozen 4 boundary-crossing models (`ModelOnexEnvelope`, `ModelOnexEnvelopeV1`, `ModelEnvelopeMetadata`, `ModelExtensionData`) with `frozen=True` + `from_attributes=True`
+
+### Fixed
+
+- **Break Circular Import in FSM Package** [OMN-2048] (#496): Resolved circular import chain (`fsm/__init__` → `model_fsm_transition_result` → `reducer/__init__` → ... → `model_fsm_transition_result`)
+  - Deferred `ModelFSMTransitionResult` import to `TYPE_CHECKING` + function-local import in `util_fsm_executor.py`
+  - Replaced eager re-exports in `models/invariant/__init__.py` with `__getattr__` lazy-loading pattern
+  - Cached lazy-loaded YAML functions in `globals()` to avoid repeated `__getattr__` calls
+  - 2 regression tests to prevent recurrence
+
 ## [0.16.0] - 2026-02-09
 
 ### Added

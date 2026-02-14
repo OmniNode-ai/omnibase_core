@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Protocol Discovery Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > Protocol Discovery Guide
 
 # Protocol Discovery Guide
 

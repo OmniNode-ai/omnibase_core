@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Getting Started > Quick Start
+> **Navigation**: [Home](../INDEX.md) > Getting Started > Quick Start
 
 > **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
 

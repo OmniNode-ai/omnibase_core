@@ -13,6 +13,7 @@
 # 3. The `gates` list is the only operational contract. The `checks` section
 #    is documentation only.
 #
+# Supersedes: v1 (OMN-2183) -- flat required_checks list
 # Added: OMN-2226
 # Last verified: 2026-02-14
 # Schema version: v2
@@ -103,6 +104,9 @@ checks:
 excluded_checks:
   - name: "Tests (Split 1/20) through Tests (Split 20/20)"
     reason: "Individual matrix legs -- aggregated by Tests Gate"
+
+  - name: "Test Summary"
+    reason: "Renamed to Tests Gate in v2 (OMN-2226)"
 
   - name: "Check architecture handshake"
     workflow_file: check-handshake.yml

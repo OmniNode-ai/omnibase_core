@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Validation > Regex Pattern Improvements
+> **Navigation**: [Home](../INDEX.md) > Validation > Regex Pattern Improvements
 
 # Regex Pattern Improvements - Backward Compatibility Detection
 

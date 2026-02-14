@@ -16,7 +16,7 @@
 - Express backend (minimal API surface)
 - TanStack Query for server state
 - shadcn/ui components (New York variant)
-- 9 dashboard routes
+- 40+ dashboard routes (core, preview, effectiveness)
 
 ## Rules the Agent Must Obey
 
@@ -49,7 +49,7 @@
 
 | Alias | Path | Usage |
 |-------|------|-------|
-| `@/` | `client/` | React components |
+| `@/` | `client/src/` | React components |
 | `@shared/` | `shared/` | Shared types/schemas |
 
 ## API Endpoints (port 3000)

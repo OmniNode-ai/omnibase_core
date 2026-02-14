@@ -272,8 +272,7 @@ def execute_validation_step[ValidationT](
 
     Note:
         A warning is logged when this function is called, as validation is
-        not yet implemented. See docs/architecture/NODECOMPUTE_VERSIONING_ROADMAP.md
-        for the v1.1 validation implementation plan.
+        not yet implemented. Validation will be implemented in v1.1.
     """
     if step.validation_config is None:
         raise ModelOnexError(
@@ -286,7 +285,6 @@ def execute_validation_step[ValidationT](
     # - Integrate with schema registry for schema resolution
     # - Support JSON Schema validation
     # - Add validation error messages with path information
-    # See: docs/architecture/NODECOMPUTE_VERSIONING_ROADMAP.md
 
     # Emit UserWarning for validation steps (Python warnings module deduplicates automatically)
     warnings.warn(

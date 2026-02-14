@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > Node Building Guide
+> **Navigation**: [Home](../../INDEX.md) > [Guides](../README.md) > Node Building Guide
 
 > **Note**: For authoritative coding standards, see [CLAUDE.md](../../../CLAUDE.md).
 

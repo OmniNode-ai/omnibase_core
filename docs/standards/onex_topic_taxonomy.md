@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Standards > Topic Taxonomy
+> **Navigation**: [Home](../INDEX.md) > Standards > Topic Taxonomy
 
 # ONEX Kafka Topic Naming Standard
 

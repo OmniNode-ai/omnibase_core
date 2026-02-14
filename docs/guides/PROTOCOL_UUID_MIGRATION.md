@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Protocol UUID Migration Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > Protocol UUID Migration Guide
 
 # Protocol UUID Migration Guide
 

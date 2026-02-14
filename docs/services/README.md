@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Services
+> **Navigation**: [Home](../INDEX.md) > Services
 
 # Services Documentation
 

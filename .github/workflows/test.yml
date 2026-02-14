@@ -268,7 +268,7 @@ jobs:
       #   - Protected branches (main/develop): Full scan mode (comprehensive validation)
       #
       # WARNING: Do not modify the branch detection logic without understanding RISK-009.
-      # See: docs/architecture/decisions/RISK-009-ci-workflow-modification-risk.md
+      # See: docs/decisions/RISK-009-ci-workflow-modification-risk.md
       - name: Check for transport import violations (OMN-220)
         id: transport-check
         run: |
@@ -394,7 +394,7 @@ jobs:
           echo "- No Message queues (pika, kombu, celery)" >> $GITHUB_STEP_SUMMARY
           echo "- No gRPC or WebSocket libraries" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "See: docs/architecture/decisions/ADR-005-core-infra-dependency-boundary.md" >> $GITHUB_STEP_SUMMARY
+          echo "See: docs/decisions/ADR-005-core-infra-dependency-boundary.md" >> $GITHUB_STEP_SUMMARY
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Quick documentation check (not blocking test-parallel)

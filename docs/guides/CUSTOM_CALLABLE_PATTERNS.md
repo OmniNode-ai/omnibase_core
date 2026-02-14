@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Custom Callable Patterns
+> **Navigation**: [Home](../INDEX.md) > Guides > Custom Callable Patterns
 
 # Custom Callable Patterns for Invariant Evaluation
 

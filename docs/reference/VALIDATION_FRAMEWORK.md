@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Reference > Validation Framework
+> **Navigation**: [Home](../INDEX.md) > Reference > Validation Framework
 
 # Omnibase Core Validation Tools
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Registration FSM Contract
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Registration FSM Contract
 
 # Registration FSM Contract v1.0.0
 

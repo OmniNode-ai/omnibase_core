@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Architecture Overview
+> **Navigation**: [Home](../INDEX.md) > Architecture Overview
 > **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
 
 # Architecture Overview - omnibase_core

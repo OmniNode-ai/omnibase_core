@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Request Tracing
+> **Navigation**: [Home](../INDEX.md) > Guides > Request Tracing
 
 # Request Tracing in ONEX
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Contract-Driven NodeReducer v1.0
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Contract-Driven NodeReducer v1.0
 
 # Contract-Driven NodeReducer v1.0 Specification
 

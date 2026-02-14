@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Reference](../README.md) > API > Nodes
+> **Navigation**: [Home](../../INDEX.md) > [Reference](../README.md) > API > Nodes
 
 # Nodes API Reference - omnibase_core
 

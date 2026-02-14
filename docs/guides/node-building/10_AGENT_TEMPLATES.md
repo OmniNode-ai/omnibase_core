@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Node Building](./README.md) > Agent Templates
+> **Navigation**: [Home](../../INDEX.md) > [Guides](../README.md) > [Node Building](./README.md) > Agent Templates
 
 > **Note**: For authoritative coding standards, see [CLAUDE.md](../../../CLAUDE.md).
 

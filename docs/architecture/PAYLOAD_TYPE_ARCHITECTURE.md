@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Payload Type Architecture
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Payload Type Architecture
 
 # Payload Type Architecture (OMN-1008)
 

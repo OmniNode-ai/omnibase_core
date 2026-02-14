@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Migrating to v0.4.0 Node Architecture
+> **Navigation**: [Home](../INDEX.md) > Guides > Migrating to v0.4.0 Node Architecture
 
 # Migrating to v0.4.0 Node Architecture
 

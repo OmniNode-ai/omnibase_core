@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Testing Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > Testing Guide
 
 # Testing Guide - omnibase_core
 

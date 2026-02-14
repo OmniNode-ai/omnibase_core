@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Canonical Execution Shapes
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Canonical Execution Shapes
 > **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
 
 # ONEX Canonical Execution Shapes
@@ -1009,7 +1009,7 @@ The **gated registration path** is reserved for administrative or exceptional re
 
 > **See Also**:
 > - [Registration Trigger Design](REGISTRATION_TRIGGER_DESIGN.md) for detailed implementation, FSM states, and sequence diagrams
-> - [ADR-004: Registration Trigger Architecture](decisions/ADR-004-registration-trigger-architecture.md) for architectural decision rationale
+> - [ADR-004: Registration Trigger Architecture](../decisions/ADR-004-registration-trigger-architecture.md) for architectural decision rationale
 
 ---
 
@@ -1025,7 +1025,7 @@ The **gated registration path** is reserved for administrative or exceptional re
 | [Node Types Guide](../guides/node-building/02_NODE_TYPES.md) | When to use each node type |
 | [Node Building Guide](../guides/node-building/README.md) | How to implement nodes |
 | [Registration Trigger Design](REGISTRATION_TRIGGER_DESIGN.md) | Registration workflow implementation details |
-| [ADR-004: Registration Trigger Architecture](decisions/ADR-004-registration-trigger-architecture.md) | Architectural decision for registration triggers |
+| [ADR-004: Registration Trigger Architecture](../decisions/ADR-004-registration-trigger-architecture.md) | Architectural decision for registration triggers |
 
 ### See Also
 

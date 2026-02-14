@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > Mixin Development
+> **Navigation**: [Home](../../INDEX.md) > [Guides](../README.md) > Mixin Development
 
 # Mixin Development Guide
 

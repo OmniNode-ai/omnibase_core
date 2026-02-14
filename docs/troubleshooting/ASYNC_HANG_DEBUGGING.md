@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Troubleshooting > Async Hang Debugging
+> **Navigation**: [Home](../INDEX.md) > Troubleshooting > Async Hang Debugging
 
 # Async Hang Debugging Guide
 

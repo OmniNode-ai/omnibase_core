@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Testing > Performance Testing Guide
+> **Navigation**: [Home](../INDEX.md) > Testing > Performance Testing Guide
 
 # Performance Testing Guide
 

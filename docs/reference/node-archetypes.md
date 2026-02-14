@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Reference > Node Archetypes
+> **Navigation**: [Home](../INDEX.md) > Reference > Node Archetypes
 
 # Node Archetypes Reference
 

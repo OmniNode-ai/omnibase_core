@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Envelope Flow Architecture
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Envelope Flow Architecture
 
 # Envelope Flow Architecture
 

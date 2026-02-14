@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Contract-Driven NodeReducer v1.0 Delta
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Contract-Driven NodeReducer v1.0 Delta
 
 # Contract-Driven NodeReducer v1.0 – Delta Corrections (v1.0.4 / v1.0.5)
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Decisions](README.md) > ADR-012
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > ADR-012
 
 # ADR-012: Validator Error Handling with ModelOnexError
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Production Cache Tuning
+> **Navigation**: [Home](../INDEX.md) > Guides > Production Cache Tuning
 
 # Cache Tuning for Production Deployment
 

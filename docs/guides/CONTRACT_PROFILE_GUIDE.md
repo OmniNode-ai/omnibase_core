@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Contract Profile Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > Contract Profile Guide
 
 # Contract Profile Guide
 

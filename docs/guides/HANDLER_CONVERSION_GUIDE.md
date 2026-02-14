@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Guides > Handler Conversion Guide
+> **Navigation**: [Home](../INDEX.md) > Guides > Handler Conversion Guide
 
 # Handler Conversion Guide
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../../index.md) > [Guides](../README.md) > [Mixin Development](README.md) > YAML Schema Reference
+> **Navigation**: [Home](../../INDEX.md) > [Guides](../README.md) > [Mixin Development](README.md) > YAML Schema Reference
 
 # Mixin YAML Schema Reference
 

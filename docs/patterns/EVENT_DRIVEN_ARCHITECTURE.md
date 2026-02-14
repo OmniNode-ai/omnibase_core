@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Patterns](./README.md) > Event-Driven Architecture
+> **Navigation**: [Home](../INDEX.md) > [Patterns](./README.md) > Event-Driven Architecture
 
 # Event-Driven Architecture - omnibase_core
 

@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Testing > Testmon Usage Guide
+> **Navigation**: [Home](../INDEX.md) > Testing > Testmon Usage Guide
 
 # pytest-testmon Usage Guide
 

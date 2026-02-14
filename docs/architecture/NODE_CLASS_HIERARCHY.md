@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > [Architecture](./overview.md) > Node Class Hierarchy
+> **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Node Class Hierarchy
 
 # Node Class Hierarchy Guide
 
@@ -1445,7 +1445,7 @@ from omnibase_core.nodes import (
 
 **Note**: Legacy imperative nodes were removed in v0.4.0. All nodes now use declarative YAML contracts.
 
-See [MVP_PLAN.md](../MVP_PLAN.md) for full migration details.
+Migration to declarative nodes was completed in v0.4.0.
 
 ---
 

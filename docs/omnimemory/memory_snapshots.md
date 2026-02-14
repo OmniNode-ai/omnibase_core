@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../index.md) > Omnimemory > Memory Snapshots
+> **Navigation**: [Home](../INDEX.md) > Omnimemory > Memory Snapshots
 
 # Memory Snapshots Architecture - omnimemory
 
