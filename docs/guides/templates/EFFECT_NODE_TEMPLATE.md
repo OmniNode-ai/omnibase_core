@@ -12,7 +12,7 @@ Template for building ONEX EFFECT nodes. EFFECT nodes handle **external I/O oper
 - Handlers own ALL business logic
 - YAML contracts define behavior
 - Handlers are resolved via the container (DI), never directly instantiated
-- EFFECT nodes emit `events[]` via `ModelHandlerOutput.for_effect(events=[...])`
+- EFFECT nodes emit `events[]` via `ModelHandlerOutput.for_effect(events=(...))`
 - EFFECT nodes CANNOT emit `intents[]`, `projections[]`, or return `result`
 
 ## When to Use
@@ -198,10 +198,11 @@ class HandlerStorage:
         Returns:
             ModelHandlerOutput with events describing what happened.
         """
-        result = await self._db.upsert(
-            table="users",
-            record=record,
-            correlation_id=correlation_id,
+        rows = await self._db.execute(
+            "INSERT INTO users (user_id, email) VALUES ($1, $2) "
+            "ON CONFLICT (user_id) DO UPDATE SET email = $2 RETURNING user_id",
+            record.get("user_id"),
+            record.get("email"),
         )
 
         # EFFECT nodes emit events, never return result
@@ -209,14 +210,14 @@ class HandlerStorage:
             input_envelope_id=input_envelope_id,
             correlation_id=correlation_id,
             handler_id="handler-storage-store",
-            events=[
+            events=(
                 {
                     "event_type": "user.stored",
                     "user_id": record.get("user_id"),
                     "correlation_id": str(correlation_id),
-                    "rows_affected": result.rows_affected,
-                }
-            ],
+                    "rows_affected": len(rows),
+                },
+            ),
         )
 
     async def handle_query(
@@ -235,22 +236,22 @@ class HandlerStorage:
         Returns:
             ModelHandlerOutput with events describing the query result.
         """
-        record = await self._db.query_one(
-            table="users",
-            filters={"user_id": user_id},
+        rows = await self._db.execute(
+            "SELECT * FROM users WHERE user_id = $1",
+            user_id,
         )
 
         return ModelHandlerOutput.for_effect(
             input_envelope_id=input_envelope_id,
             correlation_id=correlation_id,
             handler_id="handler-storage-query",
-            events=[
+            events=(
                 {
                     "event_type": "user.queried",
                     "user_id": user_id,
-                    "found": record is not None,
-                }
-            ],
+                    "found": len(rows) > 0,
+                },
+            ),
         )
 ```
 
@@ -330,7 +331,7 @@ output = ModelHandlerOutput.for_effect(
     input_envelope_id=input_envelope_id,
     correlation_id=correlation_id,
     handler_id="handler-storage",
-    events=[{"event_type": "user.stored", "user_id": "u123"}],
+    events=({"event_type": "user.stored", "user_id": "u123"},),
 )
 
 # WRONG -- EFFECT cannot return result (raises ModelOnexError)
@@ -346,7 +347,7 @@ output = ModelHandlerOutput.for_effect(
     input_envelope_id=input_envelope_id,
     correlation_id=correlation_id,
     handler_id="handler-storage",
-    intents=[some_intent],  # ModelOnexError!
+    intents=(some_intent,),  # ModelOnexError!
 )
 ```
 
@@ -408,7 +409,7 @@ class TestHandlerStorage:
 
     async def test_store_emits_event(self) -> None:
         mock_db = AsyncMock()
-        mock_db.upsert.return_value = AsyncMock(rows_affected=1)
+        mock_db.execute.return_value = [{"user_id": "u1"}]
 
         handler = HandlerStorage(db_client=mock_db)
         result = await handler.handle_store(
@@ -423,7 +424,7 @@ class TestHandlerStorage:
 
     async def test_query_emits_found_event(self) -> None:
         mock_db = AsyncMock()
-        mock_db.query_one.return_value = {"user_id": "u1"}
+        mock_db.execute.return_value = [{"user_id": "u1"}]
 
         handler = HandlerStorage(db_client=mock_db)
         result = await handler.handle_query(

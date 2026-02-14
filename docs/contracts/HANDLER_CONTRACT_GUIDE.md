@@ -86,7 +86,7 @@ return ModelHandlerOutput.for_effect(
     input_envelope_id=envelope.metadata.envelope_id,
     correlation_id=envelope.metadata.correlation_id,
     handler_id="effect.notify",
-    events=[event],
+    events=(event,),
 )
 
 # REDUCER handler may return projections
@@ -94,7 +94,7 @@ return ModelHandlerOutput.for_reducer(
     input_envelope_id=envelope.metadata.envelope_id,
     correlation_id=envelope.metadata.correlation_id,
     handler_id="reducer.state",
-    projections=[projection],
+    projections=(projection,),
 )
 
 # ORCHESTRATOR handler may return events and intents
@@ -102,8 +102,8 @@ return ModelHandlerOutput.for_orchestrator(
     input_envelope_id=envelope.metadata.envelope_id,
     correlation_id=envelope.metadata.correlation_id,
     handler_id="orchestrator.workflow",
-    events=[event],
-    intents=[intent],
+    events=(event,),
+    intents=(intent,),
 )
 ```
 

@@ -118,14 +118,19 @@ class MetricsReducerNode(NodeReducer):
 #### Key Methods
 
 - `__init__(container: ModelONEXContainer)` - Initialize with dependency injection container
-- `async process(input_data)` - Delegates to handler for state transitions
-- `get_current_state() -> str` - Get current FSM state
-- `emit_intent(intent: ModelIntent)` - Emit intent for side effects (import from `omnibase_core.models.reducer.model_intent`)
+- `async process(input_data: ModelReducerInput[T_Input]) -> ModelReducerOutput[T_Output]` - Process input using FSM-driven state transitions
+- `get_current_state() -> str | None` - Get current FSM state name, or `None` if FSM not initialized
+- `get_state_history() -> list[str]` - Get FSM state transition history in chronological order
+- `is_complete() -> bool` - Check if FSM has reached a terminal state
+- `async validate_contract() -> list[str]` - Validate FSM contract for correctness (empty list if valid)
+- `snapshot_state(*, deep_copy: bool = False) -> ModelFSMStateSnapshot | None` - Return current FSM state as a strongly-typed snapshot model
+- `restore_state(snapshot: ModelFSMStateSnapshot, *, validate: bool = True, allow_terminal_state: bool = False) -> None` - Restore FSM state from a snapshot
+- `get_state_snapshot(*, deep_copy: bool = False) -> dict[str, object] | None` - Return FSM state as a JSON-serializable dictionary
 
 #### Properties
 
 - `container: ModelONEXContainer` - Dependency injection container
-- `state_history: list[str]` - FSM state change history
+- `fsm_contract: ModelFSMSubcontract | None` - Loaded FSM subcontract reference
 
 ### NodeOrchestrator
 
@@ -156,14 +161,18 @@ class WorkflowOrchestratorNode(NodeOrchestrator):
 #### Key Methods
 
 - `__init__(container: ModelONEXContainer)` - Initialize with dependency injection container
-- `async process(input_data)` - Delegates to handler for workflow coordination
-- `async coordinate_workflow(workflow_data)` - Coordinate workflow execution
-- `get_workflow_status(workflow_id: str) -> dict[str, Any]` - Get workflow status
+- `async process(input_data: ModelOrchestratorInput) -> ModelOrchestratorOutput` - Process workflow using workflow-driven coordination
+- `async validate_contract() -> list[str]` - Validate workflow contract for correctness (empty list if valid)
+- `async validate_workflow_steps(steps: list[ModelWorkflowStep]) -> list[str]` - Validate workflow steps against contract
+- `get_execution_order_for_steps(steps: list[ModelWorkflowStep]) -> list[UUID]` - Get topological execution order for workflow steps
+- `snapshot_workflow_state(*, deep_copy: bool = False) -> ModelWorkflowStateSnapshot | None` - Return current workflow state as a strongly-typed snapshot model
+- `restore_workflow_state(snapshot: ModelWorkflowStateSnapshot) -> None` - Restore workflow state from a snapshot (validates schema version, timestamps, step ID overlaps)
+- `get_workflow_snapshot(*, deep_copy: bool = False) -> dict[str, object] | None` - Return workflow state as a JSON-serializable dictionary
 
 #### Properties
 
 - `container: ModelONEXContainer` - Dependency injection container
-- `active_workflows: dict[str, Any]` - Active workflow instances
+- `workflow_definition: ModelWorkflowDefinition | None` - Injected workflow definition for coordination
 
 ## Service Wrapper Classes
 
