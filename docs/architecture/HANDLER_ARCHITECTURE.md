@@ -538,16 +538,17 @@ class TestHandlerOutputConstraints:
             )
 
     def test_orchestrator_forbids_result(self) -> None:
-        with pytest.raises(ModelOnexError, match="ORCHESTRATOR cannot set result"):
-            ModelHandlerOutput.for_orchestrator(
-                input_envelope_id=uuid4(),
-                correlation_id=uuid4(),
-                handler_id="test",
-                # Manually constructing to bypass builder:
-            )
-            # Direct construction to test constraint:
-            from omnibase_core.enums.enum_node_kind import EnumNodeKind
+        from omnibase_core.enums.enum_node_kind import EnumNodeKind
 
+        # Valid orchestrator output (no result) -- should NOT raise
+        ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
+            handler_id="test",
+        )
+
+        # Direct construction with result= must raise
+        with pytest.raises(ModelOnexError, match="ORCHESTRATOR cannot set result"):
             ModelHandlerOutput(
                 input_envelope_id=uuid4(),
                 correlation_id=uuid4(),
@@ -704,10 +705,10 @@ from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Handler contract model
-from omnibase_core.models.contracts import ModelHandlerContract
+from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
 
-# Behavior descriptor
-from omnibase_core.models.runtime import ModelHandlerBehaviorDescriptor
+# Handler behavior model
+from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
 
 # Structured version
 from omnibase_core.models.primitives import ModelSemVer
