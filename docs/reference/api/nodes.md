@@ -276,6 +276,7 @@ class MyBusinessLogicNode(NodeCompute):
 **Handler** (`handlers/handler_business_logic.py`):
 ```python
 from typing import Any
+from uuid import UUID
 
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -285,14 +286,14 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 class HandlerBusinessLogic:
     """COMPUTE handler -- returns result (required)."""
 
-    async def handle(self, input_data: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
+    async def handle(self, input_data: dict[str, Any], input_envelope_id: UUID, correlation_id: UUID) -> ModelHandlerOutput[dict[str, Any]]:
         """Process business logic and return result."""
         try:
             validated = self._validate(input_data)
             result = self._execute(validated)
             return ModelHandlerOutput.for_compute(
-                input_envelope_id=input_envelope_id,  # from handler args
-                correlation_id=correlation_id,         # from handler args
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
                 result=result,
             )
         except ValueError as e:
@@ -313,17 +314,21 @@ class HandlerBusinessLogic:
 ### Error Handling Pattern
 
 ```python
+from typing import Any
+from uuid import UUID
+
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 
 class HandlerWithErrors:
-    async def handle(self, input_data: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
+    async def handle(self, input_data: dict[str, Any], input_envelope_id: UUID, correlation_id: UUID) -> ModelHandlerOutput[dict[str, Any]]:
         try:
             result = self._process(input_data)
             return ModelHandlerOutput.for_compute(
-                input_envelope_id=input_envelope_id,  # from handler args
-                correlation_id=correlation_id,         # from handler args
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
                 result=result,
             )
         except ValueError as e:

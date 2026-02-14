@@ -73,10 +73,15 @@ class HandlerFileBackup:
 
     async def execute(
         self,
+        envelope: ModelOnexEnvelope,
         input_data: ModelFileBackupInput,
     ) -> ModelHandlerOutput:
         """
         Execute file backup and return events describing what happened.
+
+        Args:
+            envelope: The incoming ONEX envelope (provides IDs for tracing)
+            input_data: File backup input configuration
 
         Returns:
             ModelHandlerOutput with events (EFFECT constraint).
@@ -97,8 +102,8 @@ class HandlerFileBackup:
         )
 
         return ModelHandlerOutput.for_effect(
-            input_envelope_id=input_envelope_id,  # from handler args
-            correlation_id=correlation_id,         # from handler args
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             events=[backup_event],
         )
 
@@ -108,6 +113,8 @@ class NodeFileBackupEffect(NodeEffect):
 
     def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
+        # Production code should resolve the handler via container DI:
+        #   self._handler = container.get_service(ProtocolFileBackupHandler)
         self._handler = HandlerFileBackup()
 
     async def process(self, input_data):
@@ -366,6 +373,8 @@ class ModelFileBackupOutput(BaseModel):
 For **95% of use cases**, use the production-ready `ModelServiceEffect` wrapper that includes all standard features:
 
 **File**: `src/your_project/nodes/node_file_backup_effect.py`
+
+> **Tutorial Simplification**: The example below places logic directly in the node class for clarity. In production, always use the [handler delegation pattern](#handler-architecture) shown above -- nodes must be thin shells that delegate to handlers.
 
 ```python
 """

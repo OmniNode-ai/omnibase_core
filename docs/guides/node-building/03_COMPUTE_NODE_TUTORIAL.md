@@ -57,7 +57,6 @@ In production ONEX code, the node delegates to a handler. The handler performs t
 
 ```python
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
-from omnibase_core.enums.enum_node_kind import EnumNodeKind
 
 
 class HandlerPriceCalculator:
@@ -65,10 +64,15 @@ class HandlerPriceCalculator:
 
     def execute(
         self,
+        envelope: ModelOnexEnvelope,
         input_data: ModelPriceCalculatorInput,
     ) -> ModelHandlerOutput:
         """
         Pure computation -- no I/O allowed.
+
+        Args:
+            envelope: The incoming ONEX envelope (provides IDs for tracing)
+            input_data: Price calculator input configuration
 
         Returns:
             ModelHandlerOutput with result set (COMPUTE constraint).
@@ -92,8 +96,8 @@ class HandlerPriceCalculator:
 
         # COMPUTE nodes MUST return result; events/intents/projections forbidden
         return ModelHandlerOutput.for_compute(
-            input_envelope_id=input_envelope_id,  # from handler args
-            correlation_id=correlation_id,         # from handler args
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             result=result,
         )
 
@@ -109,6 +113,8 @@ class NodePriceCalculatorCompute(NodeCompute):
 
     def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
+        # Production code should resolve the handler via container DI:
+        #   self._handler = container.get_service(ProtocolPriceCalculatorHandler)
         self._handler = HandlerPriceCalculator()
 
     async def process(self, input_data):
@@ -333,6 +339,8 @@ Now build the actual node.
 For **95% of use cases**, use the production-ready `ModelServiceCompute` wrapper that includes all standard features:
 
 **File**: `src/your_project/nodes/node_price_calculator_compute.py`
+
+> **Tutorial Simplification**: The example below places logic directly in the node class for clarity. In production, always use the [handler delegation pattern](#handler-architecture) shown above -- nodes must be thin shells that delegate to handlers.
 
 ```
 """COMPUTE node for price calculation with tax and discounts."""

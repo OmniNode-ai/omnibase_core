@@ -121,6 +121,7 @@ class HandlerPipelineOrchestrator:
 
         # ORCHESTRATOR: events + intents only, result MUST be None
         return ModelHandlerOutput.for_orchestrator(
+            handler_id="handler_pipeline_orchestrator",
             input_envelope_id=envelope.metadata.envelope_id,
             correlation_id=envelope.metadata.correlation_id,
             events=events,
@@ -133,6 +134,8 @@ class NodePipelineOrchestrator(NodeOrchestrator):
 
     def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
+        # Production code should resolve the handler via container DI:
+        #   self._handler = container.get_service(ProtocolPipelineOrchestratorHandler)
         self._handler = HandlerPipelineOrchestrator()
 
     async def process(self, input_data):
@@ -536,6 +539,8 @@ For workflow-driven orchestration, use `NodeOrchestrator` which provides all sta
 
 **File**: `src/your_project/nodes/node_pipeline_orchestrator.py`
 
+> **Tutorial Simplification**: The example below places logic directly in the node class for clarity. In production, always use the [handler delegation pattern](#handler-architecture) shown above -- nodes must be thin shells that delegate to handlers.
+
 ```python
 """
 Data Processing Pipeline Orchestrator Node.
@@ -819,6 +824,8 @@ Extend the orchestrator to support conditional execution:
 
 **File**: `src/your_project/nodes/node_conditional_pipeline_orchestrator.py`
 
+> **Tutorial Simplification**: The example below places logic directly in the node class for clarity. In production, always use the [handler delegation pattern](#handler-architecture) shown above -- nodes must be thin shells that delegate to handlers.
+
 ```python
 """
 Conditional Pipeline Orchestrator with branching logic.
@@ -1024,6 +1031,8 @@ result = await orchestrator.process_pipeline(input_data)
 ## Step 5: Error Handling and Recovery
 
 Add robust error handling with compensation logic:
+
+> **Tutorial Simplification**: The example below places logic directly in the node class for clarity. In production, always use the [handler delegation pattern](#handler-architecture) shown above -- nodes must be thin shells that delegate to handlers.
 
 ```python
 from omnibase_core.nodes import EnumWorkflowStatus

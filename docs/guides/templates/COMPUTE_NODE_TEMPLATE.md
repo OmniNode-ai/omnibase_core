@@ -326,6 +326,8 @@ output = ModelHandlerOutput.for_compute(
 ```python
 """Tests for the data validator compute node."""
 
+from uuid import uuid4
+
 import pytest
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 
@@ -350,7 +352,10 @@ class TestHandlerValidation:
             }
         ]
         result = await handler.handle(
-            {"user_id": "u1", "email": "a@b.com"}, rules
+            {"user_id": "u1", "email": "a@b.com"},
+            rules,
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
         )
         assert result.result["valid"] is True
         assert result.result["errors"] == []
@@ -366,7 +371,12 @@ class TestHandlerValidation:
                 },
             }
         ]
-        result = await handler.handle({}, rules)
+        result = await handler.handle(
+            {},
+            rules,
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
+        )
         assert result.result["valid"] is False
         assert len(result.result["errors"]) == 1
 ```

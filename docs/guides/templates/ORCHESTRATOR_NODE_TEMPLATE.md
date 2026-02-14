@@ -433,6 +433,8 @@ self._step_executor = StepExecutor()
 ```python
 """Tests for the order workflow orchestrator handlers."""
 
+from uuid import uuid4
+
 import pytest
 
 from myapp.nodes.node_order_workflow_orchestrator.handlers.handler_order_placed import (
@@ -446,11 +448,15 @@ class TestHandlerOrderPlaced:
 
     async def test_valid_order_emits_events_and_intents(self) -> None:
         handler = HandlerOrderPlaced()
-        result = await handler.handle({
-            "order_id": "o1",
-            "customer_id": "c1",
-            "items": [{"price": 10.0, "quantity": 2}],
-        })
+        result = await handler.handle(
+            {
+                "order_id": "o1",
+                "customer_id": "c1",
+                "items": [{"price": 10.0, "quantity": 2}],
+            },
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
+        )
 
         # Orchestrator output has events and intents, never result
         assert result.result is None
@@ -461,7 +467,11 @@ class TestHandlerOrderPlaced:
 
     async def test_missing_items_emits_failure_event(self) -> None:
         handler = HandlerOrderPlaced()
-        result = await handler.handle({"order_id": "o1"})
+        result = await handler.handle(
+            {"order_id": "o1"},
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
+        )
 
         assert result.result is None
         assert result.events[0]["event_type"] == "order.validation_failed"

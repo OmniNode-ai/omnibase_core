@@ -393,6 +393,7 @@ The container resolves handlers based on the contract's `handler_routing` sectio
 """Tests for the user storage effect handler."""
 
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 
@@ -412,6 +413,8 @@ class TestHandlerStorage:
         handler = HandlerStorage(db_client=mock_db)
         result = await handler.handle_store(
             record={"user_id": "u1", "email": "a@b.com"},
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
         )
 
         assert len(result.events) == 1
@@ -423,7 +426,11 @@ class TestHandlerStorage:
         mock_db.query_one.return_value = {"user_id": "u1"}
 
         handler = HandlerStorage(db_client=mock_db)
-        result = await handler.handle_query(user_id="u1")
+        result = await handler.handle_query(
+            user_id="u1",
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
+        )
 
         assert result.events[0]["found"] is True
 ```
