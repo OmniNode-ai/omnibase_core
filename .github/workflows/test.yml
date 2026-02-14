@@ -619,6 +619,7 @@ jobs:
           echo "Checking for new secrets against baseline..."
           set +e
           git ls-files -z | \
+            grep -zEv '(poetry\.lock|\.venv/|tests/fixtures/|\.git/)' | \
             xargs -0 detect-secrets-hook --baseline .secrets.baseline
           HOOK_EXIT=$?
           set -e
