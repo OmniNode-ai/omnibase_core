@@ -614,17 +614,39 @@ jobs:
             exit 1
           fi
 
-          # Baseline exists: compare scan results against baseline to find NEW secrets
-          # Uses detect-secrets-hook which returns non-zero only for secrets not in baseline
-          echo "Checking for new secrets against baseline..."
+          # Baseline exists: compare scan results against baseline using hash-based diff
+          # This is O(secrets) not O(files) — completes in seconds vs minutes
+          echo "Comparing scan results against baseline..."
           set +e
-          git ls-files -z | \
-            grep -zEv '(poetry\.lock|\.venv/|tests/fixtures/|\.git/)' | \
-            xargs -0 detect-secrets-hook --baseline .secrets.baseline
-          HOOK_EXIT=$?
+          python3 -c "
+          import json, sys
+
+          with open('.secrets-results.json') as f:
+              scan = json.load(f)
+          with open('.secrets.baseline') as f:
+              baseline = json.load(f)
+
+          new_secrets = []
+          for filepath, secrets in scan.get('results', {}).items():
+              baseline_secrets = baseline.get('results', {}).get(filepath, [])
+              baseline_hashes = {s.get('hashed_secret') for s in baseline_secrets}
+              for s in secrets:
+                  if s.get('hashed_secret') not in baseline_hashes:
+                      new_secrets.append(f'  {filepath}:{s[\"line_number\"]} - {s[\"type\"]}')
+
+          if new_secrets:
+              print(f'Found {len(new_secrets)} NEW secret(s) not in baseline:')
+              for ns in new_secrets:
+                  print(ns)
+              sys.exit(1)
+          else:
+              print(f'All {sum(len(v) for v in scan[\"results\"].values())} findings are in baseline.')
+              sys.exit(0)
+          "
+          DIFF_EXIT=$?
           set -e
 
-          if [[ $HOOK_EXIT -ne 0 ]]; then
+          if [[ $DIFF_EXIT -ne 0 ]]; then
             echo "## New Secrets Detected" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Found secrets not present in .secrets.baseline." >> $GITHUB_STEP_SUMMARY
