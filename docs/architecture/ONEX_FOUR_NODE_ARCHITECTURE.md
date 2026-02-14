@@ -845,7 +845,7 @@ output = ModelHandlerOutput[dict](
 
 If you attempt to set `result` on an ORCHESTRATOR output, you'll receive:
 ```python
-ValueError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
+ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
 Only COMPUTE nodes return typed results.
 ```
 

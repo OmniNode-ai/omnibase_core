@@ -145,14 +145,14 @@ from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutpu
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 
 
-# This will raise ValueError at construction time
+# This will raise ModelOnexError at construction time
 output = ModelHandlerOutput.for_orchestrator(
     input_envelope_id=envelope_id,
     correlation_id=correlation_id,
     handler_id="workflow-handler",
     result={"status": "done"},  # WRONG: ORCHESTRATOR cannot set result
 )
-# Raises: ValueError: ORCHESTRATOR cannot set result
+# Raises: ModelOnexError: ORCHESTRATOR cannot set result
 ```
 
 ### Why It Is Wrong

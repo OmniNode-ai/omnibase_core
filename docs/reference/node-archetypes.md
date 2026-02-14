@@ -26,7 +26,7 @@ Each node kind has strict constraints on which output fields are allowed. These 
 | **REDUCER** | Forbidden | Forbidden | Forbidden | Allowed |
 | **ORCHESTRATOR** | Forbidden | Allowed | Allowed | Forbidden |
 
-Setting a forbidden field raises `ValueError` at construction time. See [Handler Output Constraints](../../CLAUDE.md#handler-output-constraints).
+Setting a forbidden field raises `ModelOnexError` at construction time. See [Handler Output Constraints](../../CLAUDE.md#handler-output-constraints).
 
 ## Data Flow Architecture
 
@@ -567,7 +567,7 @@ output = ModelHandlerOutput[dict](
     node_kind=EnumNodeKind.ORCHESTRATOR,
     result={"status": "done"},  # ERROR: ORCHESTRATOR cannot set result!
 )
-# Raises: ValueError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
+# Raises: ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
 ```
 
 ### Example Implementation

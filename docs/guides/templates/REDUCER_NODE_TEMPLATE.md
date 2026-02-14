@@ -27,7 +27,7 @@ This template provides the unified architecture pattern for ONEX REDUCER nodes. 
 | `intents[]` | -- | Yes |
 | `result` | -- | Yes |
 
-REDUCER nodes return `projections[]` only. All other output fields are forbidden and will raise `ValueError` at construction time. See [Handler Output Constraints](../../../CLAUDE.md#handler-output-constraints).
+REDUCER nodes return `projections[]` only. All other output fields are forbidden and will raise `ModelOnexError` at construction time. See [Handler Output Constraints](../../../CLAUDE.md#handler-output-constraints).
 
 ## Directory Structure
 

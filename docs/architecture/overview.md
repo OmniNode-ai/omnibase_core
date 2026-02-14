@@ -182,7 +182,7 @@ db_service = container.get_service("DatabaseService")
 ### Event System
 
 ```
-from omnibase_core.models.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Emit event
 event = ModelEventEnvelope(

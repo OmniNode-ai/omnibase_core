@@ -183,11 +183,13 @@ the event bus distribute work:
 
 ```python
 # Orchestrator emits events; the bus delivers to independent node instances.
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
 async def execute_orchestration(self, input_data):
     events = [
-        ModelEvent(type="validate_schema", payload=input_data.schema),
-        ModelEvent(type="validate_permissions", payload=input_data.auth),
-        ModelEvent(type="validate_quota", payload=input_data.usage),
+        ModelEventEnvelope(event_type="validate_schema", payload=input_data.schema),
+        ModelEventEnvelope(event_type="validate_permissions", payload=input_data.auth),
+        ModelEventEnvelope(event_type="validate_quota", payload=input_data.usage),
     ]
     return ModelHandlerOutput.for_orchestrator(
         input_envelope_id=input_envelope_id,  # from handler args

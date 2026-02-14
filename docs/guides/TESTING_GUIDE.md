@@ -379,7 +379,7 @@ async def test_container_service_resolution(integration_container):
 
 ```
 import pytest
-from omnibase_core.models.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 class TestEventNode(NodeCompute):
     """Test node that emits events."""

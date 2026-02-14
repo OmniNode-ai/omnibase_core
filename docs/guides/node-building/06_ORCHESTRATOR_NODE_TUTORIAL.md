@@ -55,7 +55,7 @@ return ModelHandlerOutput[dict](
 
 **Validation Error:**
 ```
-ValueError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
+ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
 Only COMPUTE nodes return typed results.
 ```
 

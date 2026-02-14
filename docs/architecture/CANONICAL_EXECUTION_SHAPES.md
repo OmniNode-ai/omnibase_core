@@ -721,12 +721,12 @@ async def get_user(user_id: UUID):
 
 **Validation Enforcement**:
 ```python
-# This will raise ValueError at runtime
+# This will raise ModelOnexError at runtime
 output = ModelHandlerOutput[dict](
     node_kind=EnumNodeKind.ORCHESTRATOR,
     result={"workflow_status": "completed"},  # ERROR!
 )
-# ValueError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
+# ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
 # Only COMPUTE nodes return typed results.
 ```
 
