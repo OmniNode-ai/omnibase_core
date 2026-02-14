@@ -195,7 +195,7 @@ realtime_aggregation = ModelAggregationSubcontract(
 Nodes are thin coordination shells. Business logic lives in handlers:
 
 ```
-from omnibase_core.core.node_reducer import NodeReducer
+from omnibase_core.nodes.node_reducer import NodeReducer
 
 class AggregationReducerNode(NodeReducer):
     """REDUCER node -- delegates aggregation logic to handler."""
@@ -375,7 +375,7 @@ pipeline_fsm = ModelFSMSubcontract(
 Nodes are thin coordination shells. Business logic lives in handlers:
 
 ```
-from omnibase_core.core.node_orchestrator import NodeOrchestrator
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 
 class FSMOrchestratorNode(NodeOrchestrator):
     """ORCHESTRATOR node -- delegates FSM workflow to handler."""
@@ -497,7 +497,7 @@ microservice_routing = ModelRoutingSubcontract(
 Nodes are thin coordination shells. Business logic lives in handlers:
 
 ```
-from omnibase_core.core.node_effect import NodeEffect
+from omnibase_core.nodes.node_effect import NodeEffect
 
 class RoutingEffectNode(NodeEffect):
     """EFFECT node -- delegates routing to handler."""

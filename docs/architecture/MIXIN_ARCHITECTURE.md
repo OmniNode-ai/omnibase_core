@@ -383,7 +383,7 @@ subcontracts:
 Nodes are thin coordination shells. Business logic lives in handlers:
 
 ```python
-from omnibase_core.core.node_compute import NodeCompute
+from omnibase_core.nodes.node_compute import NodeCompute
 
 class MyComputeNode(NodeCompute):
     """Thin node shell -- delegates to handler for business logic."""

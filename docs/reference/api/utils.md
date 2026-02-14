@@ -193,41 +193,25 @@ Provides centralized management of field conversion strategies.
 
 ## Logging Utilities
 
-### ServiceLogging
+### Structured Logging
 
 **Location**: `omnibase_core.logging.logging_structured`
 
-**Purpose**: Registry-based logging service implementation.
+**Purpose**: Structured logging with standardized JSON formats.
 
-Provides a protocol-based logging interface for consistent logging across ONEX services.
+Provides module-level functions for consistent structured logging across ONEX services.
 
 ```
-from omnibase_core.utils.util_service_logging import ServiceLogging
+from omnibase_core.logging.logging_structured import emit_log_event_sync
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
-# Initialize with logger protocol
-logger = ServiceLogging(protocol=my_logger_protocol)
-
-# Emit log events
-logger.emit_log_event(message="Operation started", level="INFO")
-logger.emit_log_event_sync(message="Synchronous log")
-await logger.emit_log_event_async(message="Asynchronous log")
-
-# Trace function lifecycle
-@logger.trace_function_lifecycle
-def my_function():
-    # Function logic
-    pass
-
-# Get performance metrics
-metrics = logger.tool_logger_performance_metrics(operation_name="data_processing")
+# Emit structured log events
+emit_log_event_sync(level=LogLevel.INFO, message="Operation started")
+emit_log_event_sync(level=LogLevel.ERROR, message="Operation failed", context={"error": "details"})
 ```
 
-**Methods**:
-- `emit_log_event(*args, **kwargs)` - Emit log event via protocol
-- `emit_log_event_sync(*args, **kwargs)` - Emit log event synchronously
-- `emit_log_event_async(*args, **kwargs)` - Emit log event asynchronously
-- `trace_function_lifecycle(func)` - Decorator to trace function lifecycle
-- `tool_logger_performance_metrics(*args, **kwargs)` - Get performance metrics
+**Functions**:
+- `emit_log_event_sync(level, message, context=None)` - Emit a structured log event synchronously
 
 ### ToolLoggerCodeBlock
 

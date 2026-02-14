@@ -401,7 +401,8 @@ class ModelErrorHandlingSubcontract(BaseModel):
 # tests/model/subcontracts/test_model_error_handling_subcontract.py
 import pytest
 from pydantic import ValidationError
-from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract
+# Tutorial example - you create this class as part of the exercise above
+from model_error_handling_subcontract import ModelErrorHandlingSubcontract
 
 def test_error_handling_subcontract_defaults():
     """Test default values."""
@@ -447,7 +448,8 @@ def test_error_handling_subcontract_custom_error_types():
 import pytest
 from omnibase_core.nodes import NodeCompute
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
-from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract
+# Tutorial example - you create this class as part of the exercise above
+from model_error_handling_subcontract import ModelErrorHandlingSubcontract
 
 class TestNodeWithErrorHandling(NodeCompute):
     """Test node with error handling mixin."""
@@ -530,7 +532,8 @@ subcontracts:
 ### Advanced Configuration
 
 ```
-from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract
+# Tutorial example - you create this class as part of the exercise above
+from model_error_handling_subcontract import ModelErrorHandlingSubcontract
 
 error_config = ModelErrorHandlingSubcontract(
     enable_circuit_breaker=True,

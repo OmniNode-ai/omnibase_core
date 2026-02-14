@@ -154,9 +154,10 @@ Error: Integration field 'error_handling_configuration' used multiple times
 ```
 # src/your_project/nodes/node_api_client_effect.py
 
-from omnibase_core.core.node_effect import NodeEffect
+from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
-from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract
+# Tutorial example - you create this class as part of the exercise above
+from model_error_handling_subcontract import ModelErrorHandlingSubcontract
 ```
 
 ### Access Configuration in Node
@@ -536,7 +537,8 @@ class NodeAggregatorReducer(NodeReducer):
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
-from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract
+# Tutorial example - you create this class as part of the exercise above
+from model_error_handling_subcontract import ModelErrorHandlingSubcontract
 from your_project.nodes import NodeApiClientEffect
 
 @pytest.fixture
