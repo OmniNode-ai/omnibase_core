@@ -99,6 +99,7 @@ class NodeDatabaseEffect(NodeEffect):
 **Handler** (`handlers/handler_database.py`):
 ```python
 from typing import Any
+from uuid import UUID
 
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
@@ -117,19 +118,24 @@ class HandlerDatabase:
         self.db_pool = db_pool
         self.logger = logger
 
-    async def handle(self, contract: Any) -> ModelHandlerOutput[None]:
+    async def handle(
+        self,
+        contract: Any,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[None]:
         """Execute database operation and emit completion event."""
         try:
             result = await self._execute_with_retry(contract)
             return ModelHandlerOutput.for_effect(
                 input_envelope_id=input_envelope_id,
                 correlation_id=correlation_id,
-                events=[
+                events=(
                     ModelEventEnvelope(
                         event_type="database.operation.completed",
                         payload={"result": result},
                     ),
-                ],
+                ),
             )
         except Exception as e:
             raise ModelOnexError(
@@ -203,6 +209,7 @@ class NodeDataTransformationCompute(NodeCompute):
 **Handler** (`handlers/handler_data_transformation.py`):
 ```python
 from typing import Any
+from uuid import UUID
 
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -219,7 +226,12 @@ class HandlerDataTransformation:
     def __init__(self, algorithm_registry: Any) -> None:
         self.algorithm_registry = algorithm_registry
 
-    async def handle(self, contract: Any) -> ModelHandlerOutput[dict[str, Any]]:
+    async def handle(
+        self,
+        contract: Any,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[dict[str, Any]]:
         """Execute computational processing based on contract spec."""
         try:
             algorithm = self.algorithm_registry.get_algorithm(
@@ -333,7 +345,7 @@ class NodeMetricsAggregationReducer(NodeReducer):
 
 # Usage Example:
 async def example_fsm_reducer_usage():
-    from omnibase_core.models.model_reducer_input import ModelReducerInput
+    from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
     from omnibase_core.enums.enum_reducer_types import EnumReductionType
 
     # Create node from container
@@ -441,14 +453,21 @@ sequenceDiagram
 
 ### ModelIntent Structure
 
+> **Note**: The simplified `ModelIntent` below is an illustrative conceptual model used
+> throughout the examples in this section. The actual production implementation lives at
+> `omnibase_core.models.reducer.model_intent.ModelIntent` and uses string-based `intent_type`
+> with typed payloads implementing `ProtocolIntentPayload`. The simplified version below uses
+> enum types and dict payloads for readability.
+
 ```python
 from uuid import UUID
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
+# Illustrative enums for documentation examples (not part of omnibase_core)
 class EnumIntentType(str, Enum):
     """Intent types for side effect execution."""
     DATABASE_WRITE = "database_write"
@@ -468,11 +487,16 @@ class EnumIntentPriority(str, Enum):
 
 class ModelIntent(BaseModel):
     """
-    Declarative side effect specification emitted by Reducer.
+    Simplified illustrative intent model for documentation examples.
 
     The Reducer describes WHAT should happen, the Effect node
     determines HOW to execute it.
+
+    See omnibase_core.models.reducer.model_intent.ModelIntent for the
+    production implementation with typed payloads.
     """
+    model_config = ConfigDict(frozen=True)  # Intents are immutable
+
     intent_id: UUID = Field(
         description="Unique identifier for this intent"
     )
@@ -504,20 +528,32 @@ class ModelIntent(BaseModel):
         default_factory=dict,
         description="Additional execution context"
     )
-
-    class Config:
-        frozen = True  # Intents are immutable
 ```
 
 ### Reducer Intent Emission Pattern
 
 **Pure Reducer Implementation**:
 
-```
+```python
+from uuid import uuid4
+from datetime import UTC, datetime
+from typing import NamedTuple
+
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
-from omnibase_core.models.model_intent import ModelIntent, EnumIntentType, EnumIntentPriority
-from uuid import uuid4
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+# NOTE: This example uses the simplified illustrative ModelIntent, EnumIntentType,
+# and EnumIntentPriority defined in the "ModelIntent Structure" section above.
+# The production ModelIntent lives at omnibase_core.models.reducer.model_intent.
+
+
+# Example domain types (illustrative - not part of omnibase_core)
+class FSMTransitionResult(NamedTuple):
+    """Result of a pure FSM transition: new state + intents to execute."""
+    new_state: dict
+    intents: list
+
 
 class OrderProcessingReducerService(NodeReducer):
     """
@@ -576,7 +612,7 @@ class OrderProcessingReducerService(NodeReducer):
         elif action == "SHIP_ORDER":
             return self._transition_ship_order(state, payload)
         else:
-            raise ValueError(f"Unknown action: {action}")
+            raise ModelOnexError(message=f"Unknown action: {action}")
 
     def _transition_place_order(self, state: dict, payload: dict):
         """
@@ -657,9 +693,11 @@ class OrderProcessingReducerService(NodeReducer):
 
 **Intent Executor Implementation**:
 
-```
+```python
 from omnibase_core.nodes.node_effect import NodeEffect
-from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
+
+# NOTE: This example uses the simplified illustrative ModelIntent and EnumIntentType
+# defined in the "ModelIntent Structure" section above.
 
 class IntentExecutorEffectService(NodeEffect):
     """
@@ -713,7 +751,7 @@ class IntentExecutorEffectService(NodeEffect):
         elif intent.intent_type == EnumIntentType.MESSAGE_PUBLISH:
             return await self._execute_message_publish(intent)
         else:
-            raise ValueError(f"Unsupported intent type: {intent.intent_type}")
+            raise ModelOnexError(message=f"Unsupported intent type: {intent.intent_type}")
 
     async def _execute_database_write(self, intent: ModelIntent):
         """Execute database write intent."""
@@ -819,23 +857,29 @@ def execute_reduction(self, contract):
 Orchestrator nodes coordinate workflows by emitting **events** and **intents**, but they **CANNOT return typed results** like COMPUTE nodes. This architectural constraint ensures clear separation of concerns:
 
 ```python
-# ✅ CORRECT - Orchestrator emits events and intents
-output = ModelHandlerOutput[None](
-    node_kind=EnumNodeKind.ORCHESTRATOR,
-    events=[
+from uuid import uuid4
+
+# ✅ CORRECT - Use for_orchestrator() factory with causality tracking
+output = ModelHandlerOutput.for_orchestrator(
+    input_envelope_id=uuid4(),  # From the input envelope that triggered this handler
+    correlation_id=uuid4(),     # Copied from the input envelope
+    handler_id="workflow-handler",
+    events=(
         ModelEventEnvelope(...),  # Workflow state change event
-    ],
-    intents=[
+    ),
+    intents=(
         ModelIntent(...),  # Side effect request
-    ],
-    result=None,  # Must be None for ORCHESTRATOR
+    ),
 )
 
 # ❌ WRONG - Orchestrator cannot return result
-output = ModelHandlerOutput[dict](
-    node_kind=EnumNodeKind.ORCHESTRATOR,
-    result={"workflow_status": "completed"},  # ERROR: ORCHESTRATOR cannot set result!
+output = ModelHandlerOutput.for_orchestrator(
+    input_envelope_id=uuid4(),
+    correlation_id=uuid4(),
+    handler_id="workflow-handler",
 )
+# Setting result on an ORCHESTRATOR raises ModelOnexError:
+# "ORCHESTRATOR cannot set result - use events[] and intents[] only."
 ```
 
 **Why This Constraint Exists:**
@@ -853,38 +897,50 @@ ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only
 Only COMPUTE nodes return typed results.
 ```
 
-**Correct Pattern:**
+**Correct Pattern** (business logic in handler, node is a thin shell):
 
 ```python
-class NodeWorkflowOrchestrator(NodeOrchestrator):
-    async def process(self, input_data: ModelOrchestratorInput) -> ModelHandlerOutput[None]:
+from uuid import UUID, uuid4
+from typing import Any
+
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
+
+class HandlerWorkflowOrchestrator:
+    """Handler for workflow orchestration logic.
+
+    ORCHESTRATOR output constraints:
+        - Allowed: events[], intents[]
+        - Forbidden: projections[], result
+    """
+
+    async def handle(
+        self,
+        input_data: Any,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[None]:
+        """Coordinate workflow and emit events/intents."""
         # Execute workflow steps
         workflow_result = await self._execute_workflow(input_data)
 
-        # Emit events about workflow completion
-        events = [
-            ModelEventEnvelope(
-                event_type="workflow.completed",
-                payload={"workflow_id": input_data.workflow_id},
-            )
-        ]
-
-        # Emit intents for side effects
-        intents = [
-            ModelIntent(
-                intent_type=EnumIntentType.NOTIFICATION,
-                target="email_service",
-                payload={"message": "Workflow completed"},
-            )
-        ]
-
-        # Return with events and intents, NO result
-        return ModelHandlerOutput[None](
-            node_kind=EnumNodeKind.ORCHESTRATOR,
-            events=events,
-            intents=intents,
-            result=None,  # REQUIRED: Must be None
+        # Emit events about workflow completion and intents for side effects
+        return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="workflow-orchestrator",
+            events=(
+                ModelEventEnvelope(
+                    event_type="workflow.completed",
+                    payload={"workflow_id": input_data.workflow_id},
+                ),
+            ),
         )
+
+    async def _execute_workflow(self, input_data: Any) -> dict:
+        """Execute workflow steps (implementation details omitted)."""
+        ...
 ```
 
 **See Also**:
@@ -1091,7 +1147,7 @@ from enum import Enum
 from typing import Any
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EnumActionType(str, Enum):
@@ -1160,8 +1216,7 @@ class ModelAction(BaseModel):
         description="Additional orchestration context"
     )
 
-    class Config:
-        frozen = True  # Actions are immutable once issued
+    model_config = ConfigDict(frozen=True)  # Actions are immutable once issued
 ```
 
 ### Lease Management
@@ -1331,7 +1386,7 @@ class ActionValidator:
         elif action.target_node == "reducer":
             result = await self._execute_reducer_action(action)
         else:
-            raise ValueError(f"Unknown target node: {action.target_node}")
+            raise ModelOnexError(message=f"Unknown target node: {action.target_node}")
 
         # Increment epoch after successful execution
         await self.state_manager.increment_epoch(action.correlation_id)

@@ -118,32 +118,46 @@ The ONEX pattern enforces left-to-right data flow:
 ```python
 # Event arrives from Kafka topic and is routed to the orchestrator's handler.
 # The handler coordinates the workflow; the node is a thin shell.
+#
+# Note: ModelPaymentPayload is an illustrative example type implementing
+# ProtocolIntentPayload. In real code, use a typed payload from
+# omnibase_core.models.reducer.payloads or define your own.
+
+from uuid import UUID
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.reducer.model_intent import ModelIntent
+
 
 class HandlerOrderProcessing:
     """Handler that owns the orchestration logic."""
 
     async def execute_orchestration(
-        self, input_data: ModelOrchestratorInput
+        self,
+        event: ModelEventEnvelope[object],
+        input_envelope_id: UUID,
+        correlation_id: UUID,
     ) -> ModelHandlerOutput[None]:
-        order_id = input_data.metadata["order_id"]
+        order_id = event.payload.get("order_id", "unknown")  # type: ignore[union-attr]
 
-        # Emit actions to downstream Effect nodes
+        # Emit events and intents to downstream nodes
         return ModelHandlerOutput.for_orchestrator(
             input_envelope_id=input_envelope_id,
             correlation_id=correlation_id,
-            events=[
+            handler_id="orchestrator.order.processing",
+            events=(
                 ModelEventEnvelope(
                     event_type="order.processing_started",
                     payload={"order_id": order_id},
-                )
-            ],
-            intents=[
+                ),
+            ),
+            intents=(
                 ModelIntent(
-                    intent_type=EnumIntentType.EFFECT,
+                    intent_type="effect.payment.process",
                     target="NodePaymentProcessorEffect",
                     payload=ModelPaymentPayload(order_id=order_id),
-                )
-            ],
+                ),
+            ),
         )
 ```
 
@@ -214,9 +228,11 @@ class HandlerOrderState:
 
         new_state = event_action
 
+        # Note: ModelOrderStatePayload and ModelNotifyPayload are illustrative
+        # example types implementing ProtocolIntentPayload.
         intents = [
             ModelIntent(
-                intent_type=EnumIntentType.DATABASE_WRITE,
+                intent_type="persist_state",
                 target="orders_table",
                 payload=ModelOrderStatePayload(
                     order_id=event_payload["order_id"],
@@ -224,7 +240,7 @@ class HandlerOrderState:
                 ),
             ),
             ModelIntent(
-                intent_type=EnumIntentType.NOTIFICATION,
+                intent_type="notify",
                 target="email_service",
                 payload=ModelNotifyPayload(template="order_status_update"),
             ),
@@ -275,25 +291,44 @@ Where:
 
 **Example**:
 ```python
-# Effect node processes Intents from queue
-class NodeIntentExecutorEffect(NodeEffect):
-    async def execute_intents(self, intents: list[ModelIntent]) -> list[IntentResult]:
-        results = []
+# The handler owns the business logic for intent execution.
+# The node (NodeIntentExecutorEffect) is a thin shell that delegates to this handler.
+
+class HandlerIntentExecutor:
+    """Handler that routes intents to the appropriate execution strategy."""
+
+    async def execute_effect(
+        self,
+        intents: list[ModelIntent],
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[None]:
+        events = []
 
         # Sort by priority (higher first)
         sorted_intents = sorted(intents, key=lambda i: i.priority, reverse=True)
 
         for intent in sorted_intents:
-            if intent.intent_type == EnumIntentType.DATABASE_WRITE:
-                result = await self._execute_database_write(intent)
-            elif intent.intent_type == EnumIntentType.NOTIFICATION:
-                result = await self._execute_notification(intent)
-            elif intent.intent_type == EnumIntentType.API_CALL:
-                result = await self._execute_api_call(intent)
+            if intent.intent_type == "persist_state":
+                await self._execute_database_write(intent)
+            elif intent.intent_type == "notify":
+                await self._execute_notification(intent)
+            elif intent.intent_type == "http":
+                await self._execute_api_call(intent)
 
-            results.append(IntentResult(intent_id=intent.intent_id, status="completed"))
+            events.append(
+                ModelEventEnvelope(
+                    event_type="intent.executed",
+                    payload={"intent_id": str(intent.intent_id), "status": "completed"},
+                )
+            )
 
-        return results
+        return ModelHandlerOutput.for_effect(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="effect.intent.executor",
+            events=tuple(events),
+        )
 ```
 
 ---
@@ -345,37 +380,50 @@ class NodeIntentExecutorEffect(NodeEffect):
 # the workflow is defined in a YAML contract with dependency ordering.
 # The handler emits events and intents rather than calling downstream
 # nodes directly.
+#
+# Note: ModelFetchPayload and ModelTransformPayload are illustrative
+# example types implementing ProtocolIntentPayload.
+
+from uuid import UUID, uuid4
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.reducer.model_intent import ModelIntent
+
 
 class HandlerDataImport:
     """Handler that coordinates data import via events and intents."""
 
     async def execute_orchestration(
-        self, input_data: ModelOrchestratorInput
+        self,
+        event: ModelEventEnvelope[object],
+        input_envelope_id: UUID,
+        correlation_id: UUID,
     ) -> ModelHandlerOutput[None]:
         workflow_id = str(uuid4())
-        source_url = input_data.metadata["source_url"]
+        source_url = event.payload.get("source_url", "")  # type: ignore[union-attr]
 
         return ModelHandlerOutput.for_orchestrator(
             input_envelope_id=input_envelope_id,
             correlation_id=correlation_id,
-            events=[
+            handler_id="orchestrator.data.import",
+            events=(
                 ModelEventEnvelope(
                     event_type="import.started",
                     payload={"workflow_id": workflow_id, "source_url": source_url},
-                )
-            ],
-            intents=[
+                ),
+            ),
+            intents=(
                 ModelIntent(
-                    intent_type=EnumIntentType.EFFECT,
+                    intent_type="effect.api.fetch",
                     target="NodeAPIFetcherEffect",
                     payload=ModelFetchPayload(source_url=source_url),
                 ),
                 ModelIntent(
-                    intent_type=EnumIntentType.COMPUTE,
+                    intent_type="compute.data.transform",
                     target="NodeDataTransformerCompute",
                     payload=ModelTransformPayload(workflow_id=workflow_id),
                 ),
-            ],
+            ),
         )
 ```
 
@@ -753,7 +801,7 @@ return ModelHandlerOutput[None](
     ],
     intents=[
         ModelIntent(
-            intent_type=EnumIntentType.NOTIFICATION,
+            intent_type="notify",
             target="email_service",
             payload={"message": "Workflow completed"}
         )
@@ -821,8 +869,8 @@ def test_order_placed_transition():
 
     # Assert on emitted intents (not execution)
     assert len(result.intents) == 2
-    assert result.intents[0].intent_type == EnumIntentType.DATABASE_WRITE
-    assert result.intents[1].intent_type == EnumIntentType.NOTIFICATION
+    assert result.intents[0].intent_type == "persist_state"
+    assert result.intents[1].intent_type == "notify"
 ```
 
 ### 3. Clear Separation of Concerns

@@ -106,7 +106,7 @@ class HandlerUserFetcher:
     def __init__(self, db: ProtocolDatabase) -> None:
         self.db = db
 
-    async def execute(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput:
+    async def execute(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput[None]:
         """Fetch user by ID from PostgreSQL."""
         user_id = envelope.payload.get("user_id")
 
@@ -119,7 +119,8 @@ class HandlerUserFetcher:
         return ModelHandlerOutput.for_effect(
             input_envelope_id=envelope.metadata.envelope_id,
             correlation_id=envelope.metadata.correlation_id,
-            events=[ModelEventEnvelope(event_type="user_fetched", payload=dict(user_data) if user_data else {})]
+            handler_id="user-fetcher-effect",
+            events=(ModelEventEnvelope(event_type="user_fetched", payload=dict(user_data) if user_data else {}),),
         )
 ```
 
@@ -211,7 +212,7 @@ class NodeDataValidatorCompute(NodeCompute):
 class HandlerDataValidator:
     """Handler: validates data structure and business rules."""
 
-    async def execute(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput:
+    async def execute(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput[dict]:
         """Validate user registration data."""
         data = envelope.payload.get("data", {})
         errors: list[str] = []
@@ -229,14 +230,15 @@ class HandlerDataValidator:
         return ModelHandlerOutput.for_compute(
             input_envelope_id=envelope.metadata.envelope_id,
             correlation_id=envelope.metadata.correlation_id,
-            result={"valid": len(errors) == 0, "errors": errors}
+            handler_id="data-validator-compute",
+            result={"valid": len(errors) == 0, "errors": errors},
         )
 
 # Handler: price calculation
 class HandlerPriceCalculator:
     """Handler: calculates total price with tax and discounts."""
 
-    async def execute(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput:
+    async def execute(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput[dict]:
         """Calculate final price -- pure computation, no I/O."""
         cart = envelope.payload.get("cart_items", [])
         discount_code = envelope.payload.get("discount_code")
@@ -249,12 +251,13 @@ class HandlerPriceCalculator:
         return ModelHandlerOutput.for_compute(
             input_envelope_id=envelope.metadata.envelope_id,
             correlation_id=envelope.metadata.correlation_id,
+            handler_id="price-calculator-compute",
             result={
                 "subtotal": subtotal,
                 "discount": discount,
                 "tax": tax,
                 "total": total,
-            }
+            },
         )
 ```
 
@@ -262,6 +265,7 @@ class HandlerPriceCalculator:
 
 **Caching**:
 ```python
+from uuid import uuid4
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes import ModelComputeOutput
 
@@ -275,22 +279,36 @@ def __init__(self, container: ModelONEXContainer):
 
 async def process(self, input_data):
     cache_key = self._generate_cache_key(input_data)
+    operation_id = uuid4()
 
     # Check cache first
     cached = self.computation_cache.get(cache_key)
     if cached:
-        return ModelComputeOutput(result=cached, cache_hit=True)
+        return ModelComputeOutput(
+            result=cached,
+            operation_id=operation_id,
+            computation_type="cached_lookup",
+            processing_time_ms=0.0,
+            cache_hit=True,
+        )
 
     # Compute and cache
     result = await self._compute(input_data)
     self.computation_cache.set(cache_key, result)
 
-    return ModelComputeOutput(result=result, cache_hit=False)
+    return ModelComputeOutput(
+        result=result,
+        operation_id=operation_id,
+        computation_type="full_compute",
+        processing_time_ms=elapsed_ms,
+        cache_hit=False,
+    )
 ```
 
 **Parallel Processing**:
 ```python
 import asyncio
+from uuid import uuid4
 from omnibase_core.nodes import ModelComputeOutput
 
 async def process(self, input_data):
@@ -303,7 +321,10 @@ async def process(self, input_data):
 
     return ModelComputeOutput(
         result=results,
-        parallel_execution_used=True
+        operation_id=uuid4(),
+        computation_type="parallel_process",
+        processing_time_ms=elapsed_ms,
+        parallel_execution_used=True,
     )
 ```
 
@@ -357,7 +378,9 @@ Use a REDUCER node when you need to:
 
 ```python
 from omnibase_core.nodes import NodeReducer
-from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
+from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.models.fsm.model_fsm_transition_result import ModelFSMTransitionResult
+from omnibase_core.models.reducer.payloads import ModelPayloadExtension
 
 class NodeOrderProcessingReducer(NodeReducer):
     """Pure FSM reducer for order processing."""
@@ -366,11 +389,11 @@ class NodeOrderProcessingReducer(NodeReducer):
         """
         Pure state transition with intent emission.
 
-        Returns: (new_state, intents[])
+        Returns: ModelFSMTransitionResult with new_state and intents[]
         """
         if action == "PLACE_ORDER":
             # Compute new state (pure)
-            new_state = {
+            new_state_data = {
                 **state,
                 "status": "ORDER_PLACED",
                 "order_id": str(uuid4()),
@@ -378,21 +401,33 @@ class NodeOrderProcessingReducer(NodeReducer):
                 "total": self._calculate_total(payload.get("items"))
             }
 
-            # Emit intents for side effects
-            intents = [
+            # Emit intents for side effects (string-based intent_type routing)
+            intents = (
                 ModelIntent(
-                    intent_type=EnumIntentType.DATABASE_WRITE,
+                    intent_type="database_write",
                     target="orders_table",
-                    payload={"operation": "insert", "data": new_state}
+                    payload=ModelPayloadExtension(
+                        extension_type="database_write",
+                        data={"operation": "insert", "data": new_state_data},
+                    ),
                 ),
                 ModelIntent(
-                    intent_type=EnumIntentType.NOTIFICATION,
+                    intent_type="notification",
                     target="email_service",
-                    payload={"template": "order_confirmation"}
-                )
-            ]
+                    payload=ModelPayloadExtension(
+                        extension_type="notification",
+                        data={"template": "order_confirmation"},
+                    ),
+                ),
+            )
 
-            return FSMTransitionResult(new_state=new_state, intents=intents)
+            return ModelFSMTransitionResult(
+                success=True,
+                new_state="ORDER_PLACED",
+                old_state=state.get("status", "INITIAL"),
+                transition_name="PLACE_ORDER",
+                intents=intents,
+            )
 ```
 
 > **Learn More**: See [ONEX_FOUR_NODE_ARCHITECTURE.md](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md#modelintent-architecture) for complete Intent/Action patterns and FSM implementation details.
@@ -405,60 +440,61 @@ class NodeOrderProcessingReducer(NodeReducer):
 
 #### Aggregation Examples
 
+In the handler delegation pattern, the node is a thin shell. The handler contains the aggregation logic.
+
 ```python
-from omnibase_core.nodes import NodeReducer, ModelReducerInput, ModelReducerOutput
+from uuid import uuid4
+from omnibase_core.nodes import NodeReducer
+from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
+from omnibase_core.enums.enum_reducer_types import EnumReductionType
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-# Example 1: Aggregate user statistics
+# Node: thin shell
 class NodeUserStatsReducer(NodeReducer):
-    """Aggregate user activity statistics using FSM-driven reducer."""
+    """Thin shell for user statistics aggregation. Handler owns the logic."""
 
-    async def process(
-        self,
-        input_data: ModelReducerInput
-    ) -> ModelReducerOutput:
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+
+# Handler 1: Aggregate user statistics
+class HandlerUserStats:
+    """Handler: reduces user events into statistics."""
+
+    async def execute(self, events: list) -> ModelReducerOutput:
         """Reduce user events into statistics."""
-        events = input_data.events
-
-        # Aggregate operations
         stats = {
             "total_events": len(events),
             "unique_users": len(set(e.user_id for e in events)),
             "events_by_type": {},
-            "events_by_hour": {}
+            "events_by_hour": {},
         }
 
-        # Reduce: Count by type
         for event in events:
             event_type = event.event_type
-            stats["events_by_type"][event_type] = \
+            stats["events_by_type"][event_type] = (
                 stats["events_by_type"].get(event_type, 0) + 1
-
-        # Reduce: Count by hour
-        for event in events:
+            )
             hour = event.timestamp.hour
-            stats["events_by_hour"][hour] = \
+            stats["events_by_hour"][hour] = (
                 stats["events_by_hour"].get(hour, 0) + 1
+            )
 
         return ModelReducerOutput(
             result=stats,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=elapsed_ms,
             items_processed=len(events),
-            reduction_ratio=len(events) / len(stats)
         )
 
-# Example 2: Merge data from multiple sources
-class NodeDataMergerReducer(NodeReducer):
-    """Merge user data from multiple systems using FSM-driven reducer."""
+# Handler 2: Merge data from multiple sources
+class HandlerDataMerger:
+    """Handler: merges user data from multiple systems."""
 
-    async def process(
-        self,
-        input_data: ModelReducerInput
-    ) -> ModelReducerOutput:
+    async def execute(self, user_id: str, sources: list[dict]) -> ModelReducerOutput:
         """Merge user profiles from CRM, billing, support."""
-        user_id = input_data.user_id
-        sources = input_data.data_sources
-
-        # Merge with conflict resolution
-        merged_profile = {}
+        merged_profile: dict = {}
+        conflicts = 0
 
         for source in sources:
             for key, value in source.items():
@@ -466,34 +502,48 @@ class NodeDataMergerReducer(NodeReducer):
                     merged_profile[key] = value
                 elif self._should_override(merged_profile[key], value):
                     merged_profile[key] = value
-                    # Conflict resolution logic
+                    conflicts += 1
 
         return ModelReducerOutput(
             result=merged_profile,
-            sources_processed=len(sources),
-            conflicts_resolved=self.conflicts_count
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.MERGE,
+            processing_time_ms=elapsed_ms,
+            items_processed=len(sources),
+            conflicts_resolved=conflicts,
         )
 ```
 
 ### Key Patterns
 
-**Streaming Reduction**:
+**Streaming Reduction** (handler pattern):
 ```python
-from omnibase_core.nodes import ModelReducerOutput
+from uuid import uuid4
+from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
+from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
 
-async def process(self, input_data):
-    """Process large dataset incrementally."""
-    stream = input_data.data_stream
-    accumulator = self._initialize_accumulator()
+class HandlerStreamingReducer:
+    """Handler: processes large datasets incrementally."""
 
-    # Process in chunks to manage memory
-    async for chunk in stream.chunks(size=1000):
-        accumulator = self._reduce_chunk(accumulator, chunk)
+    async def execute(self, input_data):
+        """Process large dataset incrementally."""
+        stream = input_data.data_stream
+        accumulator = self._initialize_accumulator()
+        items = 0
 
-    return ModelReducerOutput(
-        result=accumulator,
-        streaming_mode=True
-    )
+        # Process in chunks to manage memory
+        async for chunk in stream.chunks(size=1000):
+            accumulator = self._reduce_chunk(accumulator, chunk)
+            items += len(chunk)
+
+        return ModelReducerOutput(
+            result=accumulator,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=elapsed_ms,
+            items_processed=items,
+            streaming_mode=EnumStreamingMode.CONTINUOUS,
+        )
 ```
 
 **Conflict Resolution**:
@@ -556,10 +606,12 @@ Use an ORCHESTRATOR node when you need to:
 
 ```python
 from omnibase_core.nodes import NodeOrchestrator
-from omnibase_core.models.model_action import ModelAction, EnumActionType
+from omnibase_core.models.orchestrator.model_action import ModelAction
+from omnibase_core.enums.enum_orchestrator_types import EnumActionType
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
+from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.models.reducer.payloads import ModelPayloadExtension
 
 class NodeWorkflowOrchestrator(NodeOrchestrator):
     """Orchestrator with lease-based coordination."""
@@ -590,19 +642,23 @@ class NodeWorkflowOrchestrator(NodeOrchestrator):
             return ModelHandlerOutput.for_orchestrator(
                 input_envelope_id=envelope.metadata.envelope_id,
                 correlation_id=envelope.metadata.correlation_id,
-                events=[
+                handler_id="workflow-orchestrator",
+                events=(
                     ModelEventEnvelope(
                         event_type="workflow_started",
                         payload={"workflow_id": envelope.payload.get("workflow_id"), "action_id": str(action.action_id)},
-                    )
-                ],
-                intents=[
+                    ),
+                ),
+                intents=(
                     ModelIntent(
-                        intent_type=EnumIntentType.DATABASE_WRITE,
+                        intent_type="database_write",
                         target="reducer",
-                        payload={"workflow_type": "order_processing"},
-                    )
-                ],
+                        payload=ModelPayloadExtension(
+                            extension_type="database_write",
+                            data={"workflow_type": "order_processing"},
+                        ),
+                    ),
+                ),
             )
 
         finally:
@@ -626,7 +682,7 @@ from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 class HandlerUserRegistration:
     """Handler: orchestrates user registration via intents."""
 
-    async def execute_orchestration(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput:
+    async def execute_orchestration(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput[None]:
         """Emit intents to coordinate registration steps."""
         user_data = envelope.payload
 
@@ -634,26 +690,36 @@ class HandlerUserRegistration:
         return ModelHandlerOutput.for_orchestrator(
             input_envelope_id=envelope.metadata.envelope_id,
             correlation_id=envelope.metadata.correlation_id,
-            events=[
-                ModelEventEnvelope(event_type="registration_started", payload=user_data)
-            ],
-            intents=[
+            handler_id="user-registration-orchestrator",
+            events=(
+                ModelEventEnvelope(event_type="registration_started", payload=user_data),
+            ),
+            intents=(
                 ModelIntent(
-                    intent_type=EnumIntentType.VALIDATE,
+                    intent_type="validate",
                     target="data_validator",
-                    payload=user_data,
+                    payload=ModelPayloadExtension(
+                        extension_type="validate",
+                        data=user_data,
+                    ),
                 ),
                 ModelIntent(
-                    intent_type=EnumIntentType.DATABASE_WRITE,
+                    intent_type="database_write",
                     target="user_saver",
-                    payload=user_data,
+                    payload=ModelPayloadExtension(
+                        extension_type="database_write",
+                        data=user_data,
+                    ),
                 ),
                 ModelIntent(
-                    intent_type=EnumIntentType.NOTIFICATION,
+                    intent_type="notification",
                     target="email_sender",
-                    payload={"email": user_data["email"], "template": "welcome"},
+                    payload=ModelPayloadExtension(
+                        extension_type="notification",
+                        data={"email": user_data["email"], "template": "welcome"},
+                    ),
                 ),
-            ],
+            ),
         )
 
 # Example 2: Parallel data aggregation
@@ -661,30 +727,40 @@ class HandlerUserRegistration:
 class HandlerDataAggregator:
     """Handler: emits intents to fetch from multiple sources in parallel."""
 
-    async def execute_orchestration(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput:
+    async def execute_orchestration(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput[None]:
         """Emit parallel fetch intents."""
         user_id = envelope.payload["user_id"]
 
         return ModelHandlerOutput.for_orchestrator(
             input_envelope_id=envelope.metadata.envelope_id,
             correlation_id=envelope.metadata.correlation_id,
-            intents=[
+            handler_id="data-aggregator-orchestrator",
+            intents=(
                 ModelIntent(
-                    intent_type=EnumIntentType.FETCH,
+                    intent_type="fetch",
                     target="user_fetcher",
-                    payload={"user_id": user_id},
+                    payload=ModelPayloadExtension(
+                        extension_type="fetch",
+                        data={"user_id": user_id},
+                    ),
                 ),
                 ModelIntent(
-                    intent_type=EnumIntentType.FETCH,
+                    intent_type="fetch",
                     target="orders_fetcher",
-                    payload={"user_id": user_id},
+                    payload=ModelPayloadExtension(
+                        extension_type="fetch",
+                        data={"user_id": user_id},
+                    ),
                 ),
                 ModelIntent(
-                    intent_type=EnumIntentType.FETCH,
+                    intent_type="fetch",
                     target="analytics_fetcher",
-                    payload={"user_id": user_id},
+                    payload=ModelPayloadExtension(
+                        extension_type="fetch",
+                        data={"user_id": user_id},
+                    ),
                 ),
-            ],
+            ),
         )
 ```
 
@@ -694,7 +770,8 @@ class HandlerDataAggregator:
 ```python
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
+from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.models.reducer.payloads import ModelPayloadExtension
 
 async def process(self, envelope: ModelEventEnvelope):
     """Emit intents for sequential workflow steps.
@@ -705,26 +782,36 @@ async def process(self, envelope: ModelEventEnvelope):
     return ModelHandlerOutput.for_orchestrator(
         input_envelope_id=envelope.metadata.envelope_id,
         correlation_id=envelope.metadata.correlation_id,
-        events=[
+        handler_id="sequential-workflow",
+        events=(
             ModelEventEnvelope(event_type="sequential_workflow_started", payload=envelope.payload),
-        ],
-        intents=[
+        ),
+        intents=(
             ModelIntent(
-                intent_type=EnumIntentType.EXECUTE,
+                intent_type="execute",
                 target="step_1",
-                payload={"input": envelope.payload, "sequence_order": 1},
+                payload=ModelPayloadExtension(
+                    extension_type="execute",
+                    data={"input": envelope.payload, "sequence_order": 1},
+                ),
             ),
             ModelIntent(
-                intent_type=EnumIntentType.EXECUTE,
+                intent_type="execute",
                 target="step_2",
-                payload={"depends_on": "step_1", "sequence_order": 2},
+                payload=ModelPayloadExtension(
+                    extension_type="execute",
+                    data={"depends_on": "step_1", "sequence_order": 2},
+                ),
             ),
             ModelIntent(
-                intent_type=EnumIntentType.EXECUTE,
+                intent_type="execute",
                 target="step_3",
-                payload={"depends_on": "step_2", "sequence_order": 3},
+                payload=ModelPayloadExtension(
+                    extension_type="execute",
+                    data={"depends_on": "step_2", "sequence_order": 3},
+                ),
             ),
-        ],
+        ),
     )
 ```
 
@@ -732,7 +819,8 @@ async def process(self, envelope: ModelEventEnvelope):
 ```python
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
+from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.models.reducer.payloads import ModelPayloadExtension
 
 async def process(self, envelope: ModelEventEnvelope):
     """Emit parallel intents for concurrent operations.
@@ -743,26 +831,36 @@ async def process(self, envelope: ModelEventEnvelope):
     return ModelHandlerOutput.for_orchestrator(
         input_envelope_id=envelope.metadata.envelope_id,
         correlation_id=envelope.metadata.correlation_id,
-        events=[
+        handler_id="parallel-workflow",
+        events=(
             ModelEventEnvelope(event_type="parallel_workflow_started", payload=envelope.payload),
-        ],
-        intents=[
+        ),
+        intents=(
             ModelIntent(
-                intent_type=EnumIntentType.EXECUTE,
+                intent_type="execute",
                 target="operation_a",
-                payload={"input": envelope.payload},
+                payload=ModelPayloadExtension(
+                    extension_type="execute",
+                    data={"input": envelope.payload},
+                ),
             ),
             ModelIntent(
-                intent_type=EnumIntentType.EXECUTE,
+                intent_type="execute",
                 target="operation_b",
-                payload={"input": envelope.payload},
+                payload=ModelPayloadExtension(
+                    extension_type="execute",
+                    data={"input": envelope.payload},
+                ),
             ),
             ModelIntent(
-                intent_type=EnumIntentType.EXECUTE,
+                intent_type="execute",
                 target="operation_c",
-                payload={"input": envelope.payload},
+                payload=ModelPayloadExtension(
+                    extension_type="execute",
+                    data={"input": envelope.payload},
+                ),
             ),
-        ],
+        ),
     )
 ```
 
@@ -770,7 +868,8 @@ async def process(self, envelope: ModelEventEnvelope):
 ```python
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
+from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.models.reducer.payloads import ModelPayloadExtension
 
 async def process(self, envelope: ModelEventEnvelope):
     """Emit intents with compensation strategy for error recovery.
@@ -781,24 +880,31 @@ async def process(self, envelope: ModelEventEnvelope):
     return ModelHandlerOutput.for_orchestrator(
         input_envelope_id=envelope.metadata.envelope_id,
         correlation_id=envelope.metadata.correlation_id,
-        events=[
+        handler_id="error-recovery-workflow",
+        events=(
             ModelEventEnvelope(event_type="workflow_with_compensation_started", payload=envelope.payload),
-        ],
-        intents=[
+        ),
+        intents=(
             ModelIntent(
-                intent_type=EnumIntentType.EXECUTE,
+                intent_type="execute",
                 target="step_1",
-                payload={"input": envelope.payload},
+                payload=ModelPayloadExtension(
+                    extension_type="execute",
+                    data={"input": envelope.payload},
+                ),
             ),
             ModelIntent(
-                intent_type=EnumIntentType.EXECUTE,
+                intent_type="execute",
                 target="step_2",
-                payload={
-                    "depends_on": "step_1",
-                    "on_failure": {"compensate": "step_1_compensate"},
-                },
+                payload=ModelPayloadExtension(
+                    extension_type="execute",
+                    data={
+                        "depends_on": "step_1",
+                        "on_failure": {"compensate": "step_1_compensate"},
+                    },
+                ),
             ),
-        ],
+        ),
     )
 ```
 
@@ -1005,11 +1111,16 @@ from omnibase_core.nodes import NodeEffect, NodeCompute, NodeReducer, NodeOrches
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 
 # Example: FSM-driven REDUCER (PRIMARY)
+from omnibase_core.models.fsm.model_fsm_transition_result import ModelFSMTransitionResult
+
 class MyOrderReducer(NodeReducer):
     """FSM reducer with intent emission."""
     def _apply_fsm_transition(self, state, action, payload):
         # Pure state transition logic
-        return FSMTransitionResult(new_state=new_state, intents=intents)
+        return ModelFSMTransitionResult(
+            success=True, new_state=new_state, old_state=old_state,
+            transition_name=action, intents=intents,
+        )
 
 # Example: Workflow-driven ORCHESTRATOR (PRIMARY)
 class MyWorkflowOrchestrator(NodeOrchestrator):
@@ -1019,8 +1130,9 @@ class MyWorkflowOrchestrator(NodeOrchestrator):
         return ModelHandlerOutput.for_orchestrator(
             input_envelope_id=envelope.metadata.envelope_id,
             correlation_id=envelope.metadata.correlation_id,
-            events=[...],
-            intents=[...],
+            handler_id="my-workflow-orchestrator",
+            events=(...,),
+            intents=(...,),
         )
 
 # SERVICE WRAPPERS: For production with standard mixins
