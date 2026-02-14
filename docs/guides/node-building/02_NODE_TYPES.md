@@ -978,6 +978,7 @@ flowchart TD
 ```python
 # v0.4.0 PRIMARY NODE IMPLEMENTATIONS (top-level API)
 from omnibase_core.nodes import NodeEffect, NodeCompute, NodeReducer, NodeOrchestrator
+from omnibase_core.models.handler.model_handler_output import ModelHandlerOutput
 
 # Example: FSM-driven REDUCER (PRIMARY)
 class MyOrderReducer(NodeReducer):
@@ -990,8 +991,8 @@ class MyOrderReducer(NodeReducer):
 class MyWorkflowOrchestrator(NodeOrchestrator):
     """Orchestrator with lease-based coordination."""
     async def execute_orchestration(self, contract):
-        # Workflow coordination with ModelAction
-        return result
+        # Workflow coordination — returns events/intents, never a typed result
+        return ModelHandlerOutput.for_orchestrator(events=[...], intents=[...])
 
 # SERVICE WRAPPERS: For production with standard mixins
 from omnibase_core.models.services.model_service_effect import ModelServiceEffect

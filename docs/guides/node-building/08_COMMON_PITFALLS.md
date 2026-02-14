@@ -198,7 +198,7 @@ class GoodNode(NodeCompute):
 **Bad Practice**: Using the wrong container type for dependency injection
 
 ```python
-from omnibase_core.models.container.model_container import ModelContainer
+from omnibase_core.models.core.model_container import ModelContainer
 
 class BadNode(NodeCompute):
     """BAD: Wrong container type."""
