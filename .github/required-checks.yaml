@@ -1,0 +1,117 @@
+---
+# Required Status Checks for `main` Branch Protection (v2)
+#
+# This manifest is the SINGLE SOURCE OF TRUTH for branch protection configuration.
+# The `gates` list defines the only operational contract -- these are the API-stable
+# check_names that branch protection rules reference.
+#
+# INVARIANTS:
+# 1. Gate check_name values are API-stable. Renames require coordinated branch
+#    protection update (temp dual-require, merge, remove old).
+# 2. Individual job names inside gates can change freely without updating
+#    branch protection rules.
+# 3. The `gates` list is the only operational contract. The `checks` section
+#    is documentation only.
+#
+# Added: OMN-2226
+# Last verified: 2026-02-14
+# Schema version: v2
+
+schema_version: 2
+
+# ── Gates (operational contract for branch protection) ────────────────────────
+# These check_names are required in GitHub branch protection settings.
+# They are API-stable -- do NOT rename without the migration safety procedure.
+gates:
+  - check_name: "Quality Gate"
+    workflow_file: test.yml
+    workflow_job_key: quality-gate
+    rationale: >
+      Aggregates all Phase 1 quality checks: lint (ruff + mypy), pyright, exports validation, mypy validation
+      scripts, core-infra boundary (ADR-005), documentation validation, node purity check, enum governance,
+      detect-secrets. Replaces 6+ individual branch protection checks with a single stable gate. #magic___^_^___line
+  - check_name: "Tests Gate"
+    workflow_file: test.yml
+    workflow_job_key: tests-gate
+    rationale: >
+      Aggregates the 20-shard parallel test matrix. Shard count can change without updating branch protection
+      rules. #magic___^_^___line
+  - check_name: "CI Summary"
+    workflow_file: test.yml
+    workflow_job_key: ci-summary
+    rationale: >
+      Final aggregator for all gates (Quality Gate + Tests Gate). Added for uniformity across OmniNode
+      repos. Not strictly required for omnibase_core since no path filtering exists on Tier A gates, but
+      ensures consistent reporting across the organization. #magic___^_^___line
+# ── Checks (documentation only -- not used for branch protection) ─────────────
+# These are the individual Phase 1 jobs aggregated by Quality Gate.
+# Listed here for documentation and cross-referencing purposes only.
+checks:
+  - name: "Code Quality"
+    workflow_file: test.yml
+    workflow_job_key: lint
+    aggregated_by: "Quality Gate"
+
+  - name: "Pyright Type Checking"
+    workflow_file: test.yml
+    workflow_job_key: pyright
+    aggregated_by: "Quality Gate"
+
+  - name: "Exports Validation"
+    workflow_file: test.yml
+    workflow_job_key: exports-validation
+    aggregated_by: "Quality Gate"
+
+  - name: "Mypy Validation Scripts"
+    workflow_file: test.yml
+    workflow_job_key: mypy-validation-scripts
+    aggregated_by: "Quality Gate"
+
+  - name: "Core-Infra Boundary"
+    workflow_file: test.yml
+    workflow_job_key: core-infra-boundary
+    aggregated_by: "Quality Gate"
+
+  - name: "Documentation Validation"
+    workflow_file: test.yml
+    workflow_job_key: docs-validation
+    aggregated_by: "Quality Gate"
+
+  - name: "Node Purity Check"
+    workflow_file: test.yml
+    workflow_job_key: node-purity-check
+    aggregated_by: "Quality Gate"
+    note: "Non-blocking (continue-on-error: true) until tech debt resolved"
+
+  - name: "Enum Governance Check"
+    workflow_file: test.yml
+    workflow_job_key: enum-governance
+    aggregated_by: "Quality Gate"
+
+  - name: "Detect Secrets"
+    workflow_file: test.yml
+    workflow_job_key: detect-secrets
+    aggregated_by: "Quality Gate"
+
+  - name: "Tests (Split N/20)"
+    workflow_file: test.yml
+    workflow_job_key: test-parallel
+    aggregated_by: "Tests Gate"
+    note: "Matrix job -- 20 splits, aggregated by Tests Gate"
+
+# ── Explicitly excluded ───────────────────────────────────────────────────────
+excluded_checks:
+  - name: "Tests (Split 1/20) through Tests (Split 20/20)"
+    reason: "Individual matrix legs -- aggregated by Tests Gate"
+
+  - name: "Check architecture handshake"
+    workflow_file: check-handshake.yml
+    reason: "paths: filter skips this on most PRs -- requiring it would block unrelated PRs"
+
+  - name: "Handshake Policy Gate"
+    workflow_file: handshake-policy-gate.yml
+    reason: "paths: filter skips this on most PRs"
+
+  - name: "DB Ownership CI Twin"
+    workflow_file: check-db-ownership.yml
+    reason: "paths: filter skips this on most PRs"
