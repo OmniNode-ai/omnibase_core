@@ -570,7 +570,7 @@ jobs:
 
       - name: Run detect-secrets scan
         run: |
-          # Scan all files for hardcoded secrets
+          # Scan codebase for hardcoded secrets
           # Excludes: poetry.lock (dependency hashes), test fixtures, .venv
           detect-secrets scan \
             --all-files \
@@ -581,51 +581,62 @@ jobs:
             --force-use-all-plugins \
             > .secrets-results.json
 
-          # Check if any secrets were found
+          # Count findings in scan results
           SECRETS_COUNT=$(python3 -c "
-          import json, sys
+          import json
           with open('.secrets-results.json') as f:
               data = json.load(f)
           count = sum(len(v) for v in data.get('results', {}).values())
           print(count)
           ")
 
-          if [[ "$SECRETS_COUNT" -gt 0 ]]; then
+          if [[ "$SECRETS_COUNT" -eq 0 ]]; then
+            echo "## Secrets Scan" >> $GITHUB_STEP_SUMMARY
+            echo "No secrets detected." >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+
+          echo "Found $SECRETS_COUNT potential secret(s) in scan."
+
+          if [[ ! -f ".secrets.baseline" ]]; then
             echo "## Secrets Detected" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Found $SECRETS_COUNT potential secret(s)." >> $GITHUB_STEP_SUMMARY
-
-            # If a baseline exists, audit against it (allows known false positives)
-            if [[ -f ".secrets.baseline" ]]; then
-              echo "Auditing against baseline..."
-              detect-secrets scan \
-                --all-files \
-                --exclude-files 'poetry\.lock' \
-                --exclude-files '\.venv/' \
-                --exclude-files 'tests/fixtures/' \
-                --exclude-files '\.git/' \
-                --force-use-all-plugins \
-                --baseline .secrets.baseline
-              exit $?
-            else
-              echo "No .secrets.baseline found. All $SECRETS_COUNT finding(s) are new."
-              echo "To create a baseline: detect-secrets scan --all-files > .secrets.baseline"
-              echo ""
-              # Show which files have findings
-              python3 -c "
+            echo "Found $SECRETS_COUNT potential secret(s) and no baseline exists." >> $GITHUB_STEP_SUMMARY
+            echo "To create a baseline: \`detect-secrets scan --all-files > .secrets.baseline\`" >> $GITHUB_STEP_SUMMARY
+            python3 -c "
           import json
           with open('.secrets-results.json') as f:
               data = json.load(f)
-          for filepath, secrets in data.get('results', {}).items():
+          for fp, secrets in data.get('results', {}).items():
               for s in secrets:
-                  print(f'  {filepath}:{s[\"line_number\"]} - {s[\"type\"]}')
+                  print(f'  {fp}:{s[\"line_number\"]} - {s[\"type\"]}')
           "
-              exit 1
-            fi
-          else
-            echo "## Secrets Scan" >> $GITHUB_STEP_SUMMARY
-            echo "No secrets detected." >> $GITHUB_STEP_SUMMARY
+            exit 1
           fi
+
+          # Baseline exists: compare scan results against baseline to find NEW secrets
+          # Uses detect-secrets-hook which returns non-zero only for secrets not in baseline
+          echo "Checking for new secrets against baseline..."
+          set +e
+          git ls-files -z | \
+            xargs -0 detect-secrets-hook --baseline .secrets.baseline
+          HOOK_EXIT=$?
+          set -e
+
+          if [[ $HOOK_EXIT -ne 0 ]]; then
+            echo "## New Secrets Detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Found secrets not present in .secrets.baseline." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "If these are false positives, regenerate the baseline:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo 'detect-secrets scan --all-files --exclude-files "poetry\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          echo "## Secrets Scan" >> $GITHUB_STEP_SUMMARY
+          echo "All $SECRETS_COUNT finding(s) are in baseline (known false positives)." >> $GITHUB_STEP_SUMMARY
 
       - name: Detect secrets summary
         if: always()

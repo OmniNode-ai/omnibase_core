@@ -29,20 +29,20 @@ gates:
     rationale: >
       Aggregates all Phase 1 quality checks: lint (ruff + mypy), pyright, exports validation, mypy validation
       scripts, core-infra boundary (ADR-005), documentation validation, node purity check, enum governance,
-      detect-secrets. Replaces 6+ individual branch protection checks with a single stable gate. #magic___^_^___line
+      detect-secrets. Replaces 6+ individual branch protection checks with a single stable gate.
   - check_name: "Tests Gate"
     workflow_file: test.yml
     workflow_job_key: tests-gate
     rationale: >
       Aggregates the 20-shard parallel test matrix. Shard count can change without updating branch protection
-      rules. #magic___^_^___line
+      rules.
   - check_name: "CI Summary"
     workflow_file: test.yml
     workflow_job_key: ci-summary
     rationale: >
       Final aggregator for all gates (Quality Gate + Tests Gate). Added for uniformity across OmniNode
       repos. Not strictly required for omnibase_core since no path filtering exists on Tier A gates, but
-      ensures consistent reporting across the organization. #magic___^_^___line
+      ensures consistent reporting across the organization.
 # ── Checks (documentation only -- not used for branch protection) ─────────────
 # These are the individual Phase 1 jobs aggregated by Quality Gate.
 # Listed here for documentation and cross-referencing purposes only.
