@@ -32,7 +32,7 @@ class ModelProjectionBase(BaseModel):
 
     Example:
         ```python
-        # Concrete implementation in omninode_bridge
+        # Concrete implementation in omnibase_infra
         class ModelWorkflowProjection(ModelProjectionBase):
             tag: str  # PENDING, PROCESSING, COMPLETED (indexed)
             namespace: str  # Multi-tenant isolation (indexed)

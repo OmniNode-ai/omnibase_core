@@ -2,7 +2,7 @@
 
 # ONEX Ecosystem Directory Structure
 
-**Status**: Current as of 2025-11-27  
+**Status**: Current as of 2026-02-14
 **Purpose**: Document the actual directory structure and manifest patterns across the ONEX ecosystem  
 
 ## Overview
@@ -71,75 +71,21 @@ omnibase_core/
 - `MixinCircuitBreaker` - Circuit breaker pattern
 - `MixinStateManagement` - State management
 
-### Bridge Repository: `omninode_bridge`
+### Intelligence Repository: `omniintelligence`
 
-**Purpose**: Bridge between ONEX framework and external services  
-**Location**: `/Volumes/PRO-G40/Code/omninode_bridge`
-**Package Name**: `omninode_bridge`
-**Version**: `0.1.0`
+**Purpose**: AI coding assistant intelligence platform
+**Location**: `/Volumes/PRO-G40/Code/omniintelligence`
+**Package Name**: `omniintelligence`
 
-```
-omninode_bridge/
-├── src/
-│   └── omninode_bridge/
-│       ├── nodes/              # Bridge-specific nodes
-│       │   ├── deployment_receiver_effect/
-│       │   │   └── v1_0_0/
-│       │   │       ├── node.py
-│       │   │       └── models/
-│       │   ├── database_adapter_effect/
-│       │   ├── reducer/
-│       │   ├── orchestrator/
-│       │   └── mixins/         # Bridge-specific mixins
-│       │       ├── health_mixin.py
-│       │       └── introspection_mixin.py
-│       ├── mixins/             # Custom bridge mixins
-│       │   └── mixin_intent_publisher.py
-│       ├── services/           # Bridge services
-│       ├── events/             # Event definitions
-│       └── models/             # Bridge models
-├── FOR_OMNIBASE_CORE/         # Mixins for core integration
-├── tests/
-├── docs/
-├── pyproject.toml
-└── BRIDGE_MIGRATION_PLAN.md   # Migration strategy
-```
+> **Note**: The detailed directory tree for this repository is maintained in the
+> omniintelligence repository itself. See that repository's documentation for
+> current structure details.
 
-**Bridge Node Patterns**:
-- `NodeDeploymentReceiverEffect(NodeEffect)` - Docker deployment
-- `NodeBridgeDatabaseAdapterEffect(NodeEffect, HealthCheckMixin)` - DB operations
-- `NodeBridgeReducer(NodeReducer, HealthCheckMixin, IntrospectionMixin)` - Bridge operations
-- `NodeBridgeOrchestrator(NodeOrchestrator, HealthCheckMixin, IntrospectionMixin)` - Bridge coordination
-
-### Intelligence Repository: `omniarchon`
-
-**Purpose**: AI coding assistant intelligence platform  
-**Location**: `/Volumes/PRO-G40/Code/omniarchon`
-**Package Name**: `archon`
-**Version**: `0.1.0`
-
-```
-omniarchon/
-├── python/                     # Main Python package
-│   ├── src/
-│   │   ├── intelligence/       # Intelligence services
-│   │   ├── mcp_server/         # MCP server implementation
-│   │   ├── omninode_bridge/    # Bridge integration
-│   │   └── server/             # Server components
-│   └── pyproject.toml
-├── agents/                     # AI agents
-├── claude_hooks/              # Claude integration
-├── consumers/                 # Event consumers
-├── deployment/                # Deployment configs
-├── docs/                      # Documentation
-├── monitoring/                # Monitoring setup
-├── scripts/                   # Utility scripts
-├── services/                  # Service implementations
-├── shared_lib/                # Shared libraries
-├── skills/                    # AI skills
-├── tests/                     # Test suite
-└── README.md
-```
+**Key capabilities**:
+- Intelligence services (code analysis, pattern discovery)
+- Claude Code hooks and agent integration
+- Event consumers for Kafka-based intelligence pipeline
+- Skills and agent configurations
 
 **Note**: Uses `omnibase_core` as dependency via Git repository
 
@@ -252,9 +198,8 @@ pydantic = "^2.11.7"
 
 ```
 omnibase_core (core framework)
-├── omninode_bridge (depends on omnibase_core)
 ├── omnibase_infra (depends on omnibase_core)
-├── omniarchon (depends on omnibase_core via Git)
+├── omniintelligence (depends on omnibase_core via Git)
 └── omnimemory (standalone)
 ```
 
@@ -279,25 +224,7 @@ class MyComputeNode(ModelServiceCompute):
 - ✅ Event publishing capabilities
 - ✅ Standardized initialization
 
-### 2. Bridge Pattern (Legacy/Compatibility)
-
-**Location**: `omninode_bridge/src/omninode_bridge/nodes/`
-
-```
-from omnibase_core.nodes.node_effect import NodeEffect
-from omninode_bridge.nodes.mixins.health_mixin import HealthCheckMixin
-
-class MyBridgeEffect(NodeEffect, HealthCheckMixin):
-    """Bridge-style node with custom mixin composition."""
-    pass
-```
-
-**Use Cases**:
-- Legacy compatibility
-- Custom mixin combinations not available in wrappers
-- Bridge-specific capabilities
-
-### 3. Infrastructure Pattern (Legacy)
+### 2. Infrastructure Pattern
 
 **Location**: `omnibase_infra/src/omnibase_infra/nodes/`
 
@@ -305,7 +232,7 @@ class MyBridgeEffect(NodeEffect, HealthCheckMixin):
 from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
 
 class MyInfraEffect(ModelServiceEffect):
-    """Legacy infrastructure node."""
+    """Infrastructure node for external system integration."""
     pass
 ```
 
@@ -325,17 +252,12 @@ class MyInfraEffect(ModelServiceEffect):
 - `MixinCircuitBreaker` - Circuit breaker
 - `MixinStateManagement` - State management
 
-### Bridge Mixins (omninode_bridge)
-- `HealthCheckMixin` - Custom health check implementation
-- `IntrospectionMixin` - Custom introspection implementation
-- `MixinIntentPublisher` - Bridge-specific intent publishing
-
 ### Missing Mixins Identified
 Based on ecosystem analysis, these capabilities may need to be added to core:
 
-1. **Database Connection Management** - Used in bridge and infra
-2. **Custom Authentication Mixins** - Used in bridge nodes
-3. **Docker Integration Mixins** - Used in bridge deployment nodes
+1. **Database Connection Management** - Used in infrastructure nodes
+2. **Custom Authentication Mixins** - Used in infrastructure nodes
+3. **Docker Integration Mixins** - Used in infrastructure deployment nodes
 4. **Kafka Integration Mixins** - Used in infrastructure nodes
 5. **PostgreSQL Adapter Mixins** - Used in infrastructure nodes
 
@@ -344,14 +266,12 @@ Based on ecosystem analysis, these capabilities may need to be added to core:
 ### Immediate Actions
 1. **Update Documentation** - Use service wrapper patterns in all examples
 2. **Add Missing Mixins** - Implement identified missing capabilities in core
-3. **Create Bridge Wrappers** - Add bridge-specific service wrappers
-4. **Consolidate Import Paths** - Prefer `omnibase_core.models.services` imports
+3. **Consolidate Import Paths** - Prefer `omnibase_core.models.services` imports
 
 ### Long-term Strategy
 1. **Standardize on Wrappers** - All new nodes use `ModelService*` wrappers
-2. **Migrate Bridge Nodes** - Gradually migrate bridge nodes to wrappers
-3. **Consolidate Mixins** - Move bridge-specific mixins to core
-4. **Unify Patterns** - Ensure consistent patterns across all repositories
+2. **Migrate Infrastructure Nodes** - Gradually migrate infrastructure nodes to handler-based patterns
+3. **Unify Patterns** - Ensure consistent patterns across all repositories
 
 ## File Naming Conventions
 
@@ -392,6 +312,6 @@ tests/
 
 ---
 
-**Last Updated**: 2025-11-27  
+**Last Updated**: 2026-02-14
 **Maintainer**: OmniNode Development Team  
 **Next Review**: After migration plan implementation

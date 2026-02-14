@@ -37,21 +37,11 @@ Part of omnibase_core framework - provides coordination I/O for all ONEX nodes
 """
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 if TYPE_CHECKING:
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-
-
-@runtime_checkable
-class ProtocolKafkaClient(Protocol):
-    """Protocol for Kafka client used by intent publisher."""
-
-    async def publish(self, topic: str, key: str, value: str) -> None:
-        """Publish a message to a Kafka topic."""
-        ...
-
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
@@ -62,6 +52,9 @@ from omnibase_core.models.events.model_intent_events import (
 from omnibase_core.models.events.payloads import ModelEventPayloadUnion
 from omnibase_core.models.reducer.model_intent_publish_result import (
     ModelIntentPublishResult,
+)
+from omnibase_core.protocols.event_bus.protocol_kafka_client import (
+    ProtocolKafkaClient,
 )
 
 
@@ -235,7 +228,7 @@ class MixinIntentPublisher:
                 envelope_id=intent_id,
                 envelope_version=ModelSemVer(major=1, minor=0, patch=0),
                 correlation_id=correlation_id,
-                source_node=f"omninode_bridge.{self.__class__.__name__}",
+                source_node=f"omnibase_core.{self.__class__.__name__}",
                 operation="EVENT_PUBLISH_INTENT",
                 payload=intent.model_dump(),
                 timestamp=published_at,
