@@ -370,6 +370,8 @@ class HandlerPaymentOrchestrator:
 
         # Orchestrators emit events/intents -- they never do I/O directly
         return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
             events=[
                 ModelEventEnvelope(
                     event_type="payment.requested",

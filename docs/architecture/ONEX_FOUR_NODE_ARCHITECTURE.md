@@ -122,6 +122,8 @@ class HandlerDatabase:
         try:
             result = await self._execute_with_retry(contract)
             return ModelHandlerOutput.for_effect(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
                 events=[
                     ModelEventEnvelope(
                         event_type="database.operation.completed",
@@ -226,6 +228,8 @@ class HandlerDataTransformation:
             result = await algorithm.process(contract.input_data)
 
             return ModelHandlerOutput.for_compute(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
                 result={
                     "processed_data": result,
                     "algorithm_type": contract.algorithm_config.algorithm_type,

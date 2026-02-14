@@ -341,6 +341,8 @@ class NodePipelineOrchestrator(NodeOrchestrator):
 
         # Emit events and intents (orchestrators never return results)
         return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             events=[
                 ModelEventEnvelope(
                     event_type="workflow.started",

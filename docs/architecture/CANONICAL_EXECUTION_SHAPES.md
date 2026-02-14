@@ -129,6 +129,8 @@ class HandlerOrderProcessing:
 
         # Emit actions to downstream Effect nodes
         return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
             events=[
                 ModelEventEnvelope(
                     event_type="order.processing_started",
@@ -354,6 +356,8 @@ class HandlerDataImport:
         source_url = input_data.metadata["source_url"]
 
         return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
             events=[
                 ModelEventEnvelope(
                     event_type="import.started",

@@ -147,11 +147,13 @@ class Handler{DomainCamelCase}{MicroserviceCamelCase}Reducer:
 
     async def handle(
         self,
+        envelope: ModelOnexEnvelope,
         input_data: ModelReducerInput[dict[str, Any]],
     ) -> ModelHandlerOutput[None]:
         """Execute FSM-driven reduction and return projections.
 
         Args:
+            envelope: The incoming ONEX envelope (provides IDs for tracing)
             input_data: Reducer input with data, reduction type, and metadata
 
         Returns:
@@ -165,6 +167,8 @@ class Handler{DomainCamelCase}{MicroserviceCamelCase}Reducer:
         processing_time_ms = (time.perf_counter() - start_time) * 1000
 
         return ModelHandlerOutput.for_reducer(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             projections=projections,
         )
 
@@ -1491,12 +1495,15 @@ class HandlerMetricsAggregator:
 
     async def handle(
         self,
+        envelope: ModelOnexEnvelope,
         input_data: ModelReducerInput[dict[str, Any]],
     ) -> ModelHandlerOutput[None]:
         """Aggregate metrics and return projections."""
         projections = self._aggregate(input_data.data)
 
         return ModelHandlerOutput.for_reducer(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             projections=projections,
         )
 

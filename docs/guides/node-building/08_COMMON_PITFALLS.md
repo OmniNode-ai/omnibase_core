@@ -65,12 +65,14 @@ class NodePriceCalculatorCompute(NodeCompute):
 class HandlerPriceCalculator:
     """GOOD: Handler owns the business logic."""
 
-    async def execute(self, input_data: dict[str, Any]) -> ModelHandlerOutput:
+    async def execute(self, envelope: ModelOnexEnvelope, input_data: dict[str, Any]) -> ModelHandlerOutput:
         subtotal = sum(item["price"] * item["qty"] for item in input_data["items"])
         tax = subtotal * 0.08
         discount = self._calculate_discount(subtotal, input_data.get("code"))
         return ModelHandlerOutput.for_compute(
-            result={"total": subtotal - discount + tax}
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
+            result={"total": subtotal - discount + tax},
         )
 
     def _calculate_discount(self, subtotal: float, code: str | None) -> float:

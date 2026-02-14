@@ -89,10 +89,15 @@ class HandlerPipelineOrchestrator:
 
     async def execute(
         self,
+        envelope: ModelOnexEnvelope,
         input_data: ModelPipelineOrchestratorInput,
     ) -> ModelHandlerOutput:
         """
         Coordinate workflow steps and emit events + intents.
+
+        Args:
+            envelope: The incoming ONEX envelope (provides IDs for tracing)
+            input_data: Pipeline orchestrator input configuration
 
         Returns:
             ModelHandlerOutput with events and intents (ORCHESTRATOR constraint).
@@ -116,6 +121,8 @@ class HandlerPipelineOrchestrator:
 
         # ORCHESTRATOR: events + intents only, result MUST be None
         return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             events=events,
             intents=intents,
         )

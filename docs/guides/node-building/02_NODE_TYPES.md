@@ -106,9 +106,9 @@ class HandlerUserFetcher:
     def __init__(self, db: ProtocolDatabase) -> None:
         self.db = db
 
-    async def execute(self, input_data: ModelEffectInput) -> ModelHandlerOutput:
+    async def execute(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput:
         """Fetch user by ID from PostgreSQL."""
-        user_id = input_data.user_id
+        user_id = envelope.payload.get("user_id")
 
         async with self.db.acquire() as conn:
             user_data = await conn.fetchrow(
@@ -117,6 +117,8 @@ class HandlerUserFetcher:
             )
 
         return ModelHandlerOutput.for_effect(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             events=[ModelEventEnvelope(event_type="user_fetched", payload=dict(user_data) if user_data else {})]
         )
 ```
@@ -209,9 +211,9 @@ class NodeDataValidatorCompute(NodeCompute):
 class HandlerDataValidator:
     """Handler: validates data structure and business rules."""
 
-    async def execute(self, input_data: ModelComputeInput) -> ModelHandlerOutput:
+    async def execute(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput:
         """Validate user registration data."""
-        data = input_data.data
+        data = envelope.payload.get("data", {})
         errors: list[str] = []
 
         if not self._valid_email(data.get("email")):
@@ -225,6 +227,8 @@ class HandlerDataValidator:
 
         # COMPUTE handlers must return result
         return ModelHandlerOutput.for_compute(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             result={"valid": len(errors) == 0, "errors": errors}
         )
 
@@ -232,17 +236,19 @@ class HandlerDataValidator:
 class HandlerPriceCalculator:
     """Handler: calculates total price with tax and discounts."""
 
-    async def execute(self, input_data: ModelComputeInput) -> ModelHandlerOutput:
+    async def execute(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput:
         """Calculate final price -- pure computation, no I/O."""
-        cart = input_data.cart_items
-        discount_code = input_data.discount_code
+        cart = envelope.payload.get("cart_items", [])
+        discount_code = envelope.payload.get("discount_code")
 
-        subtotal = sum(item.price * item.quantity for item in cart)
+        subtotal = sum(item["price"] * item["quantity"] for item in cart)
         discount = self._calculate_discount(subtotal, discount_code)
         tax = (subtotal - discount) * 0.08  # 8% tax
         total = subtotal - discount + tax
 
         return ModelHandlerOutput.for_compute(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             result={
                 "subtotal": subtotal,
                 "discount": discount,
@@ -558,10 +564,10 @@ from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 class NodeWorkflowOrchestrator(NodeOrchestrator):
     """Orchestrator with lease-based coordination."""
 
-    async def execute_orchestration(self, contract):
+    async def execute_orchestration(self, envelope: ModelEventEnvelope):
         # Acquire exclusive lease
         lease = await self._acquire_workflow_lease(
-            workflow_id=contract.workflow_id,
+            workflow_id=envelope.payload.get("workflow_id"),
             lease_duration=timedelta(minutes=10)
         )
 
@@ -574,7 +580,7 @@ class NodeWorkflowOrchestrator(NodeOrchestrator):
                 epoch=lease.epoch,  # Optimistic concurrency
                 target_node="reducer",
                 command_payload={"workflow_type": "order_processing"},
-                correlation_id=contract.correlation_id
+                correlation_id=envelope.metadata.correlation_id
             )
 
             # Validate and prepare the action
@@ -582,10 +588,12 @@ class NodeWorkflowOrchestrator(NodeOrchestrator):
 
             # ORCHESTRATOR emits events and intents, NEVER returns result
             return ModelHandlerOutput.for_orchestrator(
+                input_envelope_id=envelope.metadata.envelope_id,
+                correlation_id=envelope.metadata.correlation_id,
                 events=[
                     ModelEventEnvelope(
                         event_type="workflow_started",
-                        payload={"workflow_id": str(contract.workflow_id), "action_id": str(action.action_id)},
+                        payload={"workflow_id": envelope.payload.get("workflow_id"), "action_id": str(action.action_id)},
                     )
                 ],
                 intents=[
@@ -618,12 +626,14 @@ from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 class HandlerUserRegistration:
     """Handler: orchestrates user registration via intents."""
 
-    async def execute_orchestration(self, contract) -> ModelHandlerOutput:
+    async def execute_orchestration(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput:
         """Emit intents to coordinate registration steps."""
-        user_data = contract.payload
+        user_data = envelope.payload
 
         # Emit intents for each workflow step (no direct node calls)
         return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             events=[
                 ModelEventEnvelope(event_type="registration_started", payload=user_data)
             ],
@@ -651,11 +661,13 @@ class HandlerUserRegistration:
 class HandlerDataAggregator:
     """Handler: emits intents to fetch from multiple sources in parallel."""
 
-    async def execute_orchestration(self, contract) -> ModelHandlerOutput:
+    async def execute_orchestration(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput:
         """Emit parallel fetch intents."""
-        user_id = contract.payload["user_id"]
+        user_id = envelope.payload["user_id"]
 
         return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             intents=[
                 ModelIntent(
                     intent_type=EnumIntentType.FETCH,
@@ -684,21 +696,23 @@ from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutpu
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
-async def process(self, input_data):
+async def process(self, envelope: ModelEventEnvelope):
     """Emit intents for sequential workflow steps.
 
     ORCHESTRATOR nodes coordinate by emitting ordered intents.
     The runtime handles execution order based on dependencies.
     """
     return ModelHandlerOutput.for_orchestrator(
+        input_envelope_id=envelope.metadata.envelope_id,
+        correlation_id=envelope.metadata.correlation_id,
         events=[
-            ModelEventEnvelope(event_type="sequential_workflow_started", payload={"input": input_data}),
+            ModelEventEnvelope(event_type="sequential_workflow_started", payload=envelope.payload),
         ],
         intents=[
             ModelIntent(
                 intent_type=EnumIntentType.EXECUTE,
                 target="step_1",
-                payload={"input": input_data, "sequence_order": 1},
+                payload={"input": envelope.payload, "sequence_order": 1},
             ),
             ModelIntent(
                 intent_type=EnumIntentType.EXECUTE,
@@ -720,31 +734,33 @@ from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutpu
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
-async def process(self, input_data):
+async def process(self, envelope: ModelEventEnvelope):
     """Emit parallel intents for concurrent operations.
 
     ORCHESTRATOR emits intents; the runtime handles parallelism.
     All intents without dependencies can execute concurrently.
     """
     return ModelHandlerOutput.for_orchestrator(
+        input_envelope_id=envelope.metadata.envelope_id,
+        correlation_id=envelope.metadata.correlation_id,
         events=[
-            ModelEventEnvelope(event_type="parallel_workflow_started", payload={"input": input_data}),
+            ModelEventEnvelope(event_type="parallel_workflow_started", payload=envelope.payload),
         ],
         intents=[
             ModelIntent(
                 intent_type=EnumIntentType.EXECUTE,
                 target="operation_a",
-                payload={"input": input_data},
+                payload={"input": envelope.payload},
             ),
             ModelIntent(
                 intent_type=EnumIntentType.EXECUTE,
                 target="operation_b",
-                payload={"input": input_data},
+                payload={"input": envelope.payload},
             ),
             ModelIntent(
                 intent_type=EnumIntentType.EXECUTE,
                 target="operation_c",
-                payload={"input": input_data},
+                payload={"input": envelope.payload},
             ),
         ],
     )
@@ -756,21 +772,23 @@ from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutpu
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
-async def process(self, input_data):
+async def process(self, envelope: ModelEventEnvelope):
     """Emit intents with compensation strategy for error recovery.
 
     ORCHESTRATOR declares the workflow and its compensation steps.
     The runtime handles execution and triggers compensation on failure.
     """
     return ModelHandlerOutput.for_orchestrator(
+        input_envelope_id=envelope.metadata.envelope_id,
+        correlation_id=envelope.metadata.correlation_id,
         events=[
-            ModelEventEnvelope(event_type="workflow_with_compensation_started", payload={"input": input_data}),
+            ModelEventEnvelope(event_type="workflow_with_compensation_started", payload=envelope.payload),
         ],
         intents=[
             ModelIntent(
                 intent_type=EnumIntentType.EXECUTE,
                 target="step_1",
-                payload={"input": input_data},
+                payload={"input": envelope.payload},
             ),
             ModelIntent(
                 intent_type=EnumIntentType.EXECUTE,
@@ -996,9 +1014,14 @@ class MyOrderReducer(NodeReducer):
 # Example: Workflow-driven ORCHESTRATOR (PRIMARY)
 class MyWorkflowOrchestrator(NodeOrchestrator):
     """Orchestrator with lease-based coordination."""
-    async def execute_orchestration(self, contract):
+    async def execute_orchestration(self, envelope: ModelEventEnvelope):
         # Workflow coordination — returns events/intents, never a typed result
-        return ModelHandlerOutput.for_orchestrator(events=[...], intents=[...])
+        return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
+            events=[...],
+            intents=[...],
+        )
 
 # SERVICE WRAPPERS: For production with standard mixins
 from omnibase_core.models.services.model_service_effect import ModelServiceEffect

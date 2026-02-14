@@ -224,6 +224,8 @@ class HandlerPriceCalculator:
         total = discounted_subtotal + tax
 
         return ModelHandlerOutput.for_compute(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
             result={
                 "subtotal": round(subtotal, 2),
                 "discount": round(discount, 2),
@@ -310,6 +312,8 @@ class HandlerDatabaseWriter:
         result = await self.db.insert_many(table_name, records)
 
         return ModelHandlerOutput.for_effect(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
             events=[
                 ModelEventEnvelope(
                     event_type="database.write.completed",

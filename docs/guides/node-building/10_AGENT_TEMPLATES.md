@@ -213,11 +213,12 @@ class Handler{DOMAIN}Compute:
       - projections[]: Forbidden
     """
 
-    def execute(self, data: {INPUT_MODEL}) -> ModelHandlerOutput:
+    def execute(self, envelope: ModelOnexEnvelope, data: {INPUT_MODEL}) -> ModelHandlerOutput:
         """
         Pure computation -- no I/O allowed.
 
         Args:
+            envelope: The incoming ONEX envelope (provides IDs for tracing)
             data: Input data to transform
 
         Returns:
@@ -232,7 +233,11 @@ class Handler{DOMAIN}Compute:
         result: {OUTPUT_MODEL} = self._compute(data)
 
         # COMPUTE nodes MUST set result; events/intents/projections forbidden
-        return ModelHandlerOutput.for_compute(result=result)
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
+            result=result,
+        )
 
     def _compute(self, data: {INPUT_MODEL}) -> {OUTPUT_MODEL}:
         """Pure computation logic."""
@@ -478,11 +483,12 @@ class Handler{DOMAIN}Effect:
       - projections[]: Forbidden
     """
 
-    async def execute(self, data: {INPUT_MODEL}) -> ModelHandlerOutput:
+    async def execute(self, envelope: ModelOnexEnvelope, data: {INPUT_MODEL}) -> ModelHandlerOutput:
         """
         Execute external effect and return events.
 
         Args:
+            envelope: The incoming ONEX envelope (provides IDs for tracing)
             data: Input data for the effect
 
         Returns:
@@ -502,6 +508,8 @@ class Handler{DOMAIN}Effect:
         # EFFECT nodes return events describing what happened
         # result is FORBIDDEN for EFFECT nodes
         return ModelHandlerOutput.for_effect(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
             events=[
                 # ModelEventEnvelope(
                 #     event_type="{DOMAIN}.completed",
