@@ -147,7 +147,7 @@ state_transitions:
 | Subcontract Composition | Complete | ModelContractReducer |
 | FSM Runtime Executor | Complete | util_fsm_executor.py with MixinFSMExecution |
 | NodeReducer | **PRIMARY** | FSM-driven implementation (v0.4.0+) |
-| Legacy Classes | Available | `NodeReducerLegacy` in `nodes/legacy/` for backwards compatibility |
+| Legacy Classes | **Removed** | Removed in v0.4.0; all nodes use declarative contract-driven pattern |
 | Documentation | Complete | Full tutorial and migration guides available |
 
 ---
@@ -158,7 +158,7 @@ This tutorial demonstrates **two implementation approaches**:
 1. **Manual FSM Implementation** (Current pattern): Custom Python code with pure FSM principles and Intent emission
 2. **YAML-Driven FSM** (Recommended for new nodes): YAML-driven state machines using `NodeReducer`
 
-> **Note (v0.4.0)**: `NodeReducer` is the PRIMARY FSM-driven implementation. Import directly from `omnibase_core.nodes`. Legacy imperative implementations are available in `nodes/legacy/NodeReducerLegacy` for backwards compatibility.
+> **Note (v0.4.0)**: `NodeReducer` is the PRIMARY FSM-driven implementation. Import directly from `omnibase_core.nodes`. Legacy imperative implementations were removed in v0.4.0. All nodes now use the declarative contract-driven pattern.
 
 **Both approaches are production-ready and fully supported.**
 

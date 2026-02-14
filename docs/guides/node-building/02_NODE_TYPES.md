@@ -550,6 +550,8 @@ Use an ORCHESTRATOR node when you need to:
 ```python
 from omnibase_core.nodes import NodeOrchestrator
 from omnibase_core.models.model_action import ModelAction, EnumActionType
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
 class NodeWorkflowOrchestrator(NodeOrchestrator):
     """Orchestrator with lease-based coordination."""
@@ -573,10 +575,25 @@ class NodeWorkflowOrchestrator(NodeOrchestrator):
                 correlation_id=contract.correlation_id
             )
 
-            # Execute with validation
-            result = await self._execute_validated_action(action)
+            # Validate and prepare the action
+            await self._validate_action(action)
 
-            return ModelOrchestratorOutput(result=result)
+            # ORCHESTRATOR emits events and intents, NEVER returns result
+            return ModelHandlerOutput.for_orchestrator(
+                events=[
+                    ModelEvent(
+                        type="workflow_started",
+                        payload={"workflow_id": str(contract.workflow_id), "action_id": str(action.action_id)},
+                    )
+                ],
+                intents=[
+                    ModelIntent(
+                        intent_type=EnumIntentType.DATABASE_WRITE,
+                        target="reducer",
+                        payload={"workflow_type": "order_processing"},
+                    )
+                ],
+            )
 
         finally:
             # Release lease on completion
@@ -660,56 +677,105 @@ class HandlerDataAggregator:
 
 **Sequential Workflow**:
 ```python
-from omnibase_core.nodes import ModelOrchestratorOutput
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
 async def process(self, input_data):
-    """Execute steps in sequence with dependency management."""
-    # Step 1
-    result_1 = await self.step_1.process(input_data)
+    """Emit intents for sequential workflow steps.
 
-    # Step 2 depends on Step 1
-    result_2 = await self.step_2.process(result_1)
-
-    # Step 3 depends on Step 2
-    result_3 = await self.step_3.process(result_2)
-
-    return ModelOrchestratorOutput(result=result_3)
+    ORCHESTRATOR nodes coordinate by emitting ordered intents.
+    The runtime handles execution order based on dependencies.
+    """
+    return ModelHandlerOutput.for_orchestrator(
+        events=[
+            ModelEvent(type="sequential_workflow_started", payload={"input": input_data}),
+        ],
+        intents=[
+            ModelIntent(
+                intent_type=EnumIntentType.EXECUTE,
+                target="step_1",
+                payload={"input": input_data, "sequence_order": 1},
+            ),
+            ModelIntent(
+                intent_type=EnumIntentType.EXECUTE,
+                target="step_2",
+                payload={"depends_on": "step_1", "sequence_order": 2},
+            ),
+            ModelIntent(
+                intent_type=EnumIntentType.EXECUTE,
+                target="step_3",
+                payload={"depends_on": "step_2", "sequence_order": 3},
+            ),
+        ],
+    )
 ```
 
 **Parallel Workflow**:
 ```python
-import asyncio
-from omnibase_core.nodes import ModelOrchestratorOutput
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
 async def process(self, input_data):
-    """Execute independent operations in parallel."""
-    # All these can run concurrently
-    results = await asyncio.gather(
-        self.operation_a.process(input_data),
-        self.operation_b.process(input_data),
-        self.operation_c.process(input_data)
-    )
+    """Emit parallel intents for concurrent operations.
 
-    return ModelOrchestratorOutput(results=results)
+    ORCHESTRATOR emits intents; the runtime handles parallelism.
+    All intents without dependencies can execute concurrently.
+    """
+    return ModelHandlerOutput.for_orchestrator(
+        events=[
+            ModelEvent(type="parallel_workflow_started", payload={"input": input_data}),
+        ],
+        intents=[
+            ModelIntent(
+                intent_type=EnumIntentType.EXECUTE,
+                target="operation_a",
+                payload={"input": input_data},
+            ),
+            ModelIntent(
+                intent_type=EnumIntentType.EXECUTE,
+                target="operation_b",
+                payload={"input": input_data},
+            ),
+            ModelIntent(
+                intent_type=EnumIntentType.EXECUTE,
+                target="operation_c",
+                payload={"input": input_data},
+            ),
+        ],
+    )
 ```
 
 **Error Recovery**:
 ```python
-from omnibase_core.nodes import ModelOrchestratorOutput
-from omnibase_core.errors import ModelOnexError
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
 async def process(self, input_data):
-    """Workflow with error handling and compensation."""
-    try:
-        # Main workflow
-        result_1 = await self.step_1.process(input_data)
-        result_2 = await self.step_2.process(result_1)
-        return ModelOrchestratorOutput(result=result_2)
+    """Emit intents with compensation strategy for error recovery.
 
-    except Step2Error as e:
-        # Compensate for step 1 (undo)
-        await self.step_1_compensate.process(result_1)
-        raise ModelOnexError("Workflow failed, compensated")
+    ORCHESTRATOR declares the workflow and its compensation steps.
+    The runtime handles execution and triggers compensation on failure.
+    """
+    return ModelHandlerOutput.for_orchestrator(
+        events=[
+            ModelEvent(type="workflow_with_compensation_started", payload={"input": input_data}),
+        ],
+        intents=[
+            ModelIntent(
+                intent_type=EnumIntentType.EXECUTE,
+                target="step_1",
+                payload={"input": input_data},
+            ),
+            ModelIntent(
+                intent_type=EnumIntentType.EXECUTE,
+                target="step_2",
+                payload={
+                    "depends_on": "step_1",
+                    "on_failure": {"compensate": "step_1_compensate"},
+                },
+            ),
+        ],
+    )
 ```
 
 ---

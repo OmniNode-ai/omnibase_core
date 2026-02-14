@@ -41,7 +41,7 @@ The framework uses Pydantic models for:
 Nodes communicate through:
 - `ModelEventEnvelope` for inter-node messaging
 - `ModelIntent` for side effect requests
-- `ModelAction` for state transitions
+- `ModelAction` for orchestrator-issued workflow commands
 - Asynchronous processing
 
 ## System Architecture

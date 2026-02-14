@@ -97,7 +97,7 @@ class HandlerPriceCalculator:
 ### WRONG -- Using ModelContainer in node init
 
 ```python
-from omnibase_core.models.container.model_container import ModelContainer
+from omnibase_core.models.core.model_container import ModelContainer
 
 
 class NodeBadExample(NodeCompute):

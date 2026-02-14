@@ -18,7 +18,7 @@ This guide shows all four node kinds using this pattern.
 
 ## Prerequisites
 
-- [Installation completed](INSTALLATION.md)
+- [Installation completed](installation.md)
 - Python 3.12+
 
 ## Output Constraints
@@ -637,7 +637,7 @@ No backwards dependencies are allowed.
 ---
 
 **Related Documentation**:
-- [Installation Guide](INSTALLATION.md)
+- [Installation Guide](installation.md)
 - [Build Your First Node](FIRST_NODE.md)
 - [Node Archetypes Reference](../reference/node-archetypes.md)
 - [ONEX Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)

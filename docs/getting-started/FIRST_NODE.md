@@ -23,7 +23,7 @@ A temperature converter COMPUTE node that:
 
 ## Prerequisites
 
-- Completed [Installation](INSTALLATION.md)
+- Completed [Installation](installation.md)
 - Basic Python 3.12+ knowledge
 - Familiarity with Pydantic models
 
