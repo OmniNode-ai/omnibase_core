@@ -414,6 +414,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Validate documentation links
+        id: validate-doc-links
         run: |
           python3 scripts/validation/validate-doc-links.py --fix-case
 
@@ -421,7 +422,11 @@ jobs:
         if: always()
         run: |
           echo "## Documentation Validation" >> $GITHUB_STEP_SUMMARY
-          echo "All documentation links validated" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.validate-doc-links.outcome }}" = "success" ]; then
+            echo "All documentation links validated successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Documentation link validation failed - check logs above for details" >> $GITHUB_STEP_SUMMARY
+          fi
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Node Purity Validation (OMN-203) - not blocking test-parallel
@@ -550,7 +555,7 @@ jobs:
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Baseline security scan using detect-secrets (OMN-2226)
-  # Scans for hardcoded secrets, API keys, passwords, tokens
+  # Uses detect-secrets-hook for proper baseline comparison (handles type+hash equality)
   detect-secrets:
     name: Detect Secrets
     runs-on: ubuntu-latest
@@ -568,113 +573,42 @@ jobs:
       - name: Install detect-secrets
         run: pip install detect-secrets==1.5.0
 
-      - name: Run detect-secrets scan
+      - name: Run detect-secrets-hook
         run: |
-          # Scan codebase for hardcoded secrets
-          # Excludes: poetry.lock (dependency hashes), test fixtures, .venv,
-          # .secrets.baseline (contains hashed_secret hex values that trigger false positives),
-          # .secrets-results.json (scan output), workflow YAML (references "secret" in config)
-          detect-secrets scan \
-            --all-files \
+          # Use detect-secrets-hook with baseline for proper CI enforcement.
+          # detect-secrets-hook compares findings against the baseline using the
+          # full equality model (hashed_secret + type), and exits non-zero only
+          # for NEW secrets not already baselined.
+          #
+          # Excludes: poetry.lock (dependency hashes), .venv/, test fixtures,
+          # .git/, .secrets.baseline (contains hashed values that self-trigger),
+          # workflow YAML (references "secret" in config context)
+          set +e
+          git ls-files -z | xargs -0 detect-secrets-hook \
+            --baseline .secrets.baseline \
             --exclude-files 'poetry\.lock' \
             --exclude-files '\.venv/' \
             --exclude-files 'tests/fixtures/' \
             --exclude-files '\.git/' \
             --exclude-files '\.secrets\.baseline' \
-            --exclude-files '\.secrets-results\.json' \
-            --exclude-files '\.github/workflows/.*\.yml' \
-            --force-use-all-plugins \
-            > .secrets-results.json
-
-          # Count findings in scan results
-          SECRETS_COUNT=$(python3 -c "
-          import json
-          with open('.secrets-results.json') as f:
-              data = json.load(f)
-          count = sum(len(v) for v in data.get('results', {}).values())
-          print(count)
-          ")
-
-          if [[ "$SECRETS_COUNT" -eq 0 ]]; then
-            echo "## Secrets Scan" >> $GITHUB_STEP_SUMMARY
-            echo "No secrets detected." >> $GITHUB_STEP_SUMMARY
-            exit 0
-          fi
-
-          echo "Found $SECRETS_COUNT potential secret(s) in scan."
-
-          if [[ ! -f ".secrets.baseline" ]]; then
-            echo "## Secrets Detected" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Found $SECRETS_COUNT potential secret(s) and no baseline exists." >> $GITHUB_STEP_SUMMARY
-            echo "To create a baseline: \`detect-secrets scan --all-files > .secrets.baseline\`" >> $GITHUB_STEP_SUMMARY
-            python3 -c "
-          import json
-          with open('.secrets-results.json') as f:
-              data = json.load(f)
-          for fp, secrets in data.get('results', {}).items():
-              for s in secrets:
-                  print(f'  {fp}:{s[\"line_number\"]} - {s[\"type\"]}')
-          "
-            exit 1
-          fi
-
-          # Baseline exists: compare scan results against baseline using hash-based diff
-          # This is O(secrets) not O(files) — completes in seconds vs minutes
-          echo "Comparing scan results against baseline..."
-          set +e
-          python3 -c "
-          import json, sys
-
-          with open('.secrets-results.json') as f:
-              scan = json.load(f)
-          with open('.secrets.baseline') as f:
-              baseline = json.load(f)
-
-          new_secrets = []
-          for filepath, secrets in scan.get('results', {}).items():
-              baseline_secrets = baseline.get('results', {}).get(filepath, [])
-              baseline_hashes = {s.get('hashed_secret') for s in baseline_secrets}
-              for s in secrets:
-                  if s.get('hashed_secret') not in baseline_hashes:
-                      new_secrets.append(f'  {filepath}:{s[\"line_number\"]} - {s[\"type\"]}')
-
-          if new_secrets:
-              print(f'Found {len(new_secrets)} NEW secret(s) not in baseline:')
-              for ns in new_secrets:
-                  print(ns)
-              sys.exit(1)
-          else:
-              print(f'All {sum(len(v) for v in scan[\"results\"].values())} findings are in baseline.')
-              sys.exit(0)
-          "
-          DIFF_EXIT=$?
+            --exclude-files '\.github/workflows/.*\.yml'
+          HOOK_EXIT=$?
           set -e
 
-          if [[ $DIFF_EXIT -ne 0 ]]; then
+          if [[ $HOOK_EXIT -eq 0 ]]; then
+            echo "## Secrets Scan" >> $GITHUB_STEP_SUMMARY
+            echo "No new secrets detected (all findings are baselined)." >> $GITHUB_STEP_SUMMARY
+          else
             echo "## New Secrets Detected" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Found secrets not present in .secrets.baseline." >> $GITHUB_STEP_SUMMARY
+            echo "detect-secrets-hook found secrets not present in .secrets.baseline." >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "If these are false positives, regenerate the baseline:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            echo 'detect-secrets scan --all-files --exclude-files "poetry\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --exclude-files "\.secrets\.baseline" --exclude-files "\.secrets-results\.json" --exclude-files "\.github/workflows/.*\.yml" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
+            echo 'detect-secrets scan --all-files --exclude-files "poetry\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --exclude-files "\.secrets\.baseline" --exclude-files "\.github/workflows/.*\.yml" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-
-          echo "## Secrets Scan" >> $GITHUB_STEP_SUMMARY
-          echo "All $SECRETS_COUNT finding(s) are in baseline (known false positives)." >> $GITHUB_STEP_SUMMARY
-
-      - name: Detect secrets summary
-        if: always()
-        run: |
-          echo "## Baseline Security Scan (detect-secrets)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Scans for hardcoded secrets using detect-secrets==1.5.0:" >> $GITHUB_STEP_SUMMARY
-          echo "- API keys, tokens, passwords" >> $GITHUB_STEP_SUMMARY
-          echo "- AWS credentials, private keys" >> $GITHUB_STEP_SUMMARY
-          echo "- High-entropy strings" >> $GITHUB_STEP_SUMMARY
 
   # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
