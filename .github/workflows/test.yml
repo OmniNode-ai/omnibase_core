@@ -652,14 +652,13 @@ jobs:
           echo "| Detect Secrets | $secrets |" >> $GITHUB_STEP_SUMMARY
 
           # Gate logic: all must pass
-          # Note: node-purity-check uses continue-on-error, so its result is always "success"
+          # Note: node-purity-check is non-blocking (continue-on-error) — reported for visibility only
           if [[ "$lint" == "success" ]] && \
              [[ "$pyright" == "success" ]] && \
              [[ "$exports" == "success" ]] && \
              [[ "$mypy_scripts" == "success" ]] && \
              [[ "$core_infra" == "success" ]] && \
              [[ "$docs" == "success" ]] && \
-             [[ "$purity" == "success" ]] && \
              [[ "$enum_gov" == "success" ]] && \
              [[ "$secrets" == "success" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
