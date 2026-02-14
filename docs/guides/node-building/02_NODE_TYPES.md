@@ -88,6 +88,7 @@ In the handler delegation pattern, the node is a thin shell. The handler contain
 ```python
 from omnibase_core.nodes import NodeEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # The node is a thin shell -- it delegates to its handler
 class NodeUserFetcherEffect(NodeEffect):
@@ -116,7 +117,7 @@ class HandlerUserFetcher:
             )
 
         return ModelHandlerOutput.for_effect(
-            events=[ModelEvent(type="user_fetched", payload=dict(user_data) if user_data else {})]
+            events=[ModelEventEnvelope(event_type="user_fetched", payload=dict(user_data) if user_data else {})]
         )
 ```
 
@@ -551,6 +552,7 @@ Use an ORCHESTRATOR node when you need to:
 from omnibase_core.nodes import NodeOrchestrator
 from omnibase_core.models.model_action import ModelAction, EnumActionType
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
 class NodeWorkflowOrchestrator(NodeOrchestrator):
@@ -581,8 +583,8 @@ class NodeWorkflowOrchestrator(NodeOrchestrator):
             # ORCHESTRATOR emits events and intents, NEVER returns result
             return ModelHandlerOutput.for_orchestrator(
                 events=[
-                    ModelEvent(
-                        type="workflow_started",
+                    ModelEventEnvelope(
+                        event_type="workflow_started",
                         payload={"workflow_id": str(contract.workflow_id), "action_id": str(action.action_id)},
                     )
                 ],
@@ -609,6 +611,7 @@ Orchestrators coordinate workflows by emitting events and intents. They do **not
 ```python
 from omnibase_core.nodes import NodeOrchestrator
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Example 1: User registration workflow
 # The handler emits intents to trigger downstream nodes
@@ -622,7 +625,7 @@ class HandlerUserRegistration:
         # Emit intents for each workflow step (no direct node calls)
         return ModelHandlerOutput.for_orchestrator(
             events=[
-                ModelEvent(type="registration_started", payload=user_data)
+                ModelEventEnvelope(event_type="registration_started", payload=user_data)
             ],
             intents=[
                 ModelIntent(
@@ -678,6 +681,7 @@ class HandlerDataAggregator:
 **Sequential Workflow**:
 ```python
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
 async def process(self, input_data):
@@ -688,7 +692,7 @@ async def process(self, input_data):
     """
     return ModelHandlerOutput.for_orchestrator(
         events=[
-            ModelEvent(type="sequential_workflow_started", payload={"input": input_data}),
+            ModelEventEnvelope(event_type="sequential_workflow_started", payload={"input": input_data}),
         ],
         intents=[
             ModelIntent(
@@ -713,6 +717,7 @@ async def process(self, input_data):
 **Parallel Workflow**:
 ```python
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
 async def process(self, input_data):
@@ -723,7 +728,7 @@ async def process(self, input_data):
     """
     return ModelHandlerOutput.for_orchestrator(
         events=[
-            ModelEvent(type="parallel_workflow_started", payload={"input": input_data}),
+            ModelEventEnvelope(event_type="parallel_workflow_started", payload={"input": input_data}),
         ],
         intents=[
             ModelIntent(
@@ -748,6 +753,7 @@ async def process(self, input_data):
 **Error Recovery**:
 ```python
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
 async def process(self, input_data):
@@ -758,7 +764,7 @@ async def process(self, input_data):
     """
     return ModelHandlerOutput.for_orchestrator(
         events=[
-            ModelEvent(type="workflow_with_compensation_started", payload={"input": input_data}),
+            ModelEventEnvelope(event_type="workflow_with_compensation_started", payload={"input": input_data}),
         ],
         intents=[
             ModelIntent(
@@ -978,7 +984,7 @@ flowchart TD
 ```python
 # v0.4.0 PRIMARY NODE IMPLEMENTATIONS (top-level API)
 from omnibase_core.nodes import NodeEffect, NodeCompute, NodeReducer, NodeOrchestrator
-from omnibase_core.models.handler.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 
 # Example: FSM-driven REDUCER (PRIMARY)
 class MyOrderReducer(NodeReducer):

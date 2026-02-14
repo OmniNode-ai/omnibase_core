@@ -64,8 +64,8 @@ EFFECT nodes return **events** describing what happened (e.g., "file backed up",
 In production ONEX code, the EFFECT node delegates I/O execution to a handler. The handler returns `ModelHandlerOutput.for_effect(events=[...])`:
 
 ```python
-from omnibase_core.models.handler.model_handler_output import ModelHandlerOutput
-from omnibase_core.models.event.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 
 class HandlerFileBackup:
@@ -96,7 +96,11 @@ class HandlerFileBackup:
             },
         )
 
-        return ModelHandlerOutput.for_effect(events=[backup_event])
+        return ModelHandlerOutput.for_effect(
+            input_envelope_id=input_envelope_id,  # from handler args
+            correlation_id=correlation_id,         # from handler args
+            events=[backup_event],
+        )
 
 
 class NodeFileBackupEffect(NodeEffect):

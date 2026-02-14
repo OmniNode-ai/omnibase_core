@@ -101,7 +101,7 @@ class NodeDatabaseEffect(NodeEffect):
 from typing import Any
 
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
-from omnibase_core.models.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 

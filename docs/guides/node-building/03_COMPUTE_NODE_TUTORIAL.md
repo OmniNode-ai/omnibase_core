@@ -56,7 +56,7 @@ COMPUTE is the **only** node kind that returns a typed `result`.
 In production ONEX code, the node delegates to a handler. The handler performs the computation and returns `ModelHandlerOutput.for_compute(result=...)`:
 
 ```python
-from omnibase_core.models.handler.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 
 
@@ -91,7 +91,11 @@ class HandlerPriceCalculator:
         )
 
         # COMPUTE nodes MUST return result; events/intents/projections forbidden
-        return ModelHandlerOutput.for_compute(result=result)
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=input_envelope_id,  # from handler args
+            correlation_id=correlation_id,         # from handler args
+            result=result,
+        )
 
     def _calculate_discount(self, subtotal: float, code: str | None) -> float:
         if not code:

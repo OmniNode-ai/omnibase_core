@@ -452,7 +452,7 @@ __all__ = ["NodeOrderReducer"]
 
 ## ORCHESTRATOR -- Workflow Coordination
 
-ORCHESTRATOR nodes coordinate multi-step workflows. They emit events and intents but never return typed results. Only orchestrators can publish events to the message bus.
+ORCHESTRATOR nodes coordinate multi-step workflows. They emit events and intents but never return typed results. Orchestrators and effects can publish events to the message bus.
 
 **When to use**: Multi-handler workflows, event coordination, routing intents to effects, parallel execution.
 
@@ -575,7 +575,7 @@ class NodeOrderWorkflowOrchestrator(NodeOrchestrator):
     Coordinates multi-step order processing.
     All logic in handler_workflow:handle_order_workflow.
 
-    Only orchestrators can publish events to the message bus.
+    Orchestrators and effects can publish events to the message bus.
     Cannot return typed results -- use events[] and intents[] only.
     """
 

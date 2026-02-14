@@ -79,8 +79,8 @@ ORCHESTRATOR nodes emit **events** and **intents** only. They coordinate workflo
 In production ONEX code, the ORCHESTRATOR node delegates workflow coordination to a handler. The handler returns `ModelHandlerOutput.for_orchestrator(events=[...], intents=[...])`:
 
 ```python
-from omnibase_core.models.handler.model_handler_output import ModelHandlerOutput
-from omnibase_core.models.event.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.reducer.model_intent import ModelIntent
 
 

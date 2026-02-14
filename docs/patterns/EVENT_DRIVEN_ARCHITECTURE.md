@@ -761,15 +761,20 @@ def test_reducer_emits_payment_intent() -> None:
 ### Testing Orchestrator Output Constraints
 
 ```python
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.enums.enum_node_kind import EnumNodeKind
+
+
 @pytest.mark.unit
 def test_orchestrator_cannot_return_result() -> None:
     """Verify ModelHandlerOutput rejects result for ORCHESTRATOR."""
-    with pytest.raises(ValueError, match="ORCHESTRATOR cannot set result"):
-        ModelHandlerOutput.for_orchestrator(
+    with pytest.raises(ModelOnexError, match="ORCHESTRATOR cannot set result"):
+        ModelHandlerOutput(
+            node_kind=EnumNodeKind.ORCHESTRATOR,
             input_envelope_id=uuid4(),
             correlation_id=uuid4(),
             handler_id="orchestrator.test",
-            result={"status": "done"},  # Forbidden
+            result={"status": "done"},  # Forbidden for ORCHESTRATOR
         )
 ```
 

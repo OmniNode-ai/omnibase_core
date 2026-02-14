@@ -177,7 +177,7 @@ from pydantic import BaseModel
 
 from omnibase_core.nodes import NodeCompute, ModelComputeInput, ModelComputeOutput
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.handler.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -442,7 +442,7 @@ from pydantic import BaseModel
 
 from omnibase_core.nodes import NodeEffect, ModelEffectInput, ModelEffectOutput
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.handler.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumEffectType
