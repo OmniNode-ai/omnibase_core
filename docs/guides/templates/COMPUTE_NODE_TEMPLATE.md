@@ -144,6 +144,7 @@ from __future__ import annotations
 
 import re
 from typing import Any
+from uuid import UUID
 
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 
@@ -159,12 +160,16 @@ class HandlerValidation:
         self,
         input_data: dict[str, Any],
         contract_rules: list[dict[str, Any]],
+        input_envelope_id: UUID,
+        correlation_id: UUID,
     ) -> ModelHandlerOutput:
         """Execute validation against contract-defined rules.
 
         Args:
             input_data: The data to validate.
             contract_rules: Validation rules from contract.yaml.
+            input_envelope_id: ID of the input envelope that triggered this handler.
+            correlation_id: Correlation ID copied from the input envelope.
 
         Returns:
             ModelHandlerOutput with result containing validation findings.
@@ -198,8 +203,9 @@ class HandlerValidation:
 
         # COMPUTE nodes MUST return result
         return ModelHandlerOutput.for_compute(
-            input_envelope_id=input_envelope_id,  # from handler args
-            correlation_id=correlation_id,         # from handler args
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="handler-validation",
             result={
                 "valid": len(errors) == 0,
                 "errors": errors,
@@ -288,8 +294,9 @@ COMPUTE is the **only** node kind that returns a typed `result`.
 ```python
 # CORRECT -- COMPUTE returns result
 output = ModelHandlerOutput.for_compute(
-    input_envelope_id=input_envelope_id,  # from handler args
-    correlation_id=correlation_id,         # from handler args
+    input_envelope_id=input_envelope_id,
+    correlation_id=correlation_id,
+    handler_id="handler-validation",
     result={"valid": True, "errors": []},
 )
 
@@ -297,6 +304,7 @@ output = ModelHandlerOutput.for_compute(
 output = ModelHandlerOutput.for_compute(
     input_envelope_id=input_envelope_id,
     correlation_id=correlation_id,
+    handler_id="handler-validation",
     result={"valid": True},
     events=[some_event],  # ModelOnexError!
 )

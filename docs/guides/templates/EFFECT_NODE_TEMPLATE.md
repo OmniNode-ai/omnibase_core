@@ -185,13 +185,15 @@ class HandlerStorage:
     async def handle_store(
         self,
         record: dict[str, Any],
-        correlation_id: UUID | None = None,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
     ) -> ModelHandlerOutput:
         """Store a user record in the database.
 
         Args:
             record: User record data to persist.
-            correlation_id: Optional correlation ID for tracing.
+            input_envelope_id: ID of the input envelope that triggered this handler.
+            correlation_id: Correlation ID copied from the input envelope.
 
         Returns:
             ModelHandlerOutput with events describing what happened.
@@ -204,13 +206,14 @@ class HandlerStorage:
 
         # EFFECT nodes emit events, never return result
         return ModelHandlerOutput.for_effect(
-            input_envelope_id=input_envelope_id,  # from handler args
-            correlation_id=correlation_id,         # from handler args
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="handler-storage-store",
             events=[
                 {
                     "event_type": "user.stored",
                     "user_id": record.get("user_id"),
-                    "correlation_id": str(correlation_id) if correlation_id else None,
+                    "correlation_id": str(correlation_id),
                     "rows_affected": result.rows_affected,
                 }
             ],
@@ -219,11 +222,15 @@ class HandlerStorage:
     async def handle_query(
         self,
         user_id: str,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
     ) -> ModelHandlerOutput:
         """Query a user record from the database.
 
         Args:
             user_id: The user ID to look up.
+            input_envelope_id: ID of the input envelope that triggered this handler.
+            correlation_id: Correlation ID copied from the input envelope.
 
         Returns:
             ModelHandlerOutput with events describing the query result.
@@ -234,8 +241,9 @@ class HandlerStorage:
         )
 
         return ModelHandlerOutput.for_effect(
-            input_envelope_id=input_envelope_id,  # from handler args
-            correlation_id=correlation_id,         # from handler args
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="handler-storage-query",
             events=[
                 {
                     "event_type": "user.queried",
@@ -319,8 +327,9 @@ EFFECT nodes emit **events** describing what external I/O occurred.
 ```python
 # CORRECT -- EFFECT emits events
 output = ModelHandlerOutput.for_effect(
-    input_envelope_id=input_envelope_id,  # from handler args
-    correlation_id=correlation_id,         # from handler args
+    input_envelope_id=input_envelope_id,
+    correlation_id=correlation_id,
+    handler_id="handler-storage",
     events=[{"event_type": "user.stored", "user_id": "u123"}],
 )
 
@@ -328,6 +337,7 @@ output = ModelHandlerOutput.for_effect(
 output = ModelHandlerOutput.for_effect(
     input_envelope_id=input_envelope_id,
     correlation_id=correlation_id,
+    handler_id="handler-storage",
     result={"user_id": "u123"},  # ModelOnexError!
 )
 
@@ -335,6 +345,7 @@ output = ModelHandlerOutput.for_effect(
 output = ModelHandlerOutput.for_effect(
     input_envelope_id=input_envelope_id,
     correlation_id=correlation_id,
+    handler_id="handler-storage",
     intents=[some_intent],  # ModelOnexError!
 )
 ```

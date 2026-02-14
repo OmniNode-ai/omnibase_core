@@ -88,7 +88,9 @@ In the handler delegation pattern, the node is a thin shell. The handler contain
 ```python
 from omnibase_core.nodes import NodeEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.protocols.infrastructure import ProtocolDatabaseConnection
 
 # The node is a thin shell -- it delegates to its handler
 class NodeUserFetcherEffect(NodeEffect):
@@ -97,13 +99,13 @@ class NodeUserFetcherEffect(NodeEffect):
     def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
         # Resolve services via protocol-based DI, not direct attribute access
-        self.db = container.get_service(ProtocolDatabase)
+        self.db = container.get_service(ProtocolDatabaseConnection)
 
 # The handler contains the actual business logic
 class HandlerUserFetcher:
     """Handler: fetches user data from database."""
 
-    def __init__(self, db: ProtocolDatabase) -> None:
+    def __init__(self, db: ProtocolDatabaseConnection) -> None:
         self.db = db
 
     async def execute(self, envelope: ModelEventEnvelope) -> ModelHandlerOutput[None]:
@@ -129,11 +131,13 @@ class HandlerUserFetcher:
 **Protocol-Based Dependency Injection**:
 ```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.protocols.infrastructure import ProtocolDatabaseConnection
+from omnibase_core.protocols.http.protocol_http_client import ProtocolHttpClient
 
 def __init__(self, container: ModelONEXContainer) -> None:
     super().__init__(container)
     # Resolve services via protocol, not direct attribute access
-    self.db = container.get_service(ProtocolDatabase)
+    self.db = container.get_service(ProtocolDatabaseConnection)
     self.http_client = container.get_service(ProtocolHttpClient)
 ```
 
@@ -267,7 +271,8 @@ class HandlerPriceCalculator:
 ```python
 from uuid import uuid4
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.nodes import ModelComputeOutput
+from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
+from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
 
 def __init__(self, container: ModelONEXContainer):
     super().__init__(container)
@@ -309,7 +314,7 @@ async def process(self, input_data):
 ```python
 import asyncio
 from uuid import uuid4
-from omnibase_core.nodes import ModelComputeOutput
+from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
 
 async def process(self, input_data):
     """Process items in parallel for performance."""
@@ -607,7 +612,7 @@ Use an ORCHESTRATOR node when you need to:
 ```python
 from omnibase_core.nodes import NodeOrchestrator
 from omnibase_core.models.orchestrator.model_action import ModelAction
-from omnibase_core.enums.enum_orchestrator_types import EnumActionType
+from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.reducer.model_intent import ModelIntent
@@ -627,7 +632,7 @@ class NodeWorkflowOrchestrator(NodeOrchestrator):
             # Issue action with lease proof
             action = ModelAction(
                 action_id=uuid4(),
-                action_type=EnumActionType.START_WORKFLOW,
+                action_type=EnumActionType.ORCHESTRATE,
                 lease_id=lease.lease_id,  # Proves ownership
                 epoch=lease.epoch,  # Optimistic concurrency
                 target_node="reducer",

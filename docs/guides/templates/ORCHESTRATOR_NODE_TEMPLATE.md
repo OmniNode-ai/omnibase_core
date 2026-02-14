@@ -188,6 +188,7 @@ All business logic lives in the handler. The handler emits events and intents --
 from __future__ import annotations
 
 from typing import Any
+from uuid import UUID
 
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 
@@ -205,11 +206,15 @@ class HandlerOrderPlaced:
     async def handle(
         self,
         event: dict[str, Any],
+        input_envelope_id: UUID,
+        correlation_id: UUID,
     ) -> ModelHandlerOutput:
         """Process an order-placed event.
 
         Args:
             event: The order-placed event payload.
+            input_envelope_id: ID of the input envelope that triggered this handler.
+            correlation_id: Correlation ID copied from the input envelope.
 
         Returns:
             ModelHandlerOutput with events and intents. No result.
@@ -221,8 +226,9 @@ class HandlerOrderPlaced:
         # Validate order data
         if not order_id or not items:
             return ModelHandlerOutput.for_orchestrator(
-                input_envelope_id=input_envelope_id,  # from handler args
-                correlation_id=correlation_id,         # from handler args
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="handler-order-placed",
                 events=[
                     {
                         "event_type": "order.validation_failed",
@@ -237,8 +243,9 @@ class HandlerOrderPlaced:
 
         # Emit events (what happened) and intents (what should happen next)
         return ModelHandlerOutput.for_orchestrator(
-            input_envelope_id=input_envelope_id,  # from handler args
-            correlation_id=correlation_id,         # from handler args
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="handler-order-placed",
             events=[
                 {
                     "event_type": "order.validated",
@@ -269,6 +276,7 @@ class HandlerOrderPlaced:
 from __future__ import annotations
 
 from typing import Any
+from uuid import UUID
 
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 
@@ -283,11 +291,15 @@ class HandlerOrderFulfilled:
     async def handle(
         self,
         event: dict[str, Any],
+        input_envelope_id: UUID,
+        correlation_id: UUID,
     ) -> ModelHandlerOutput:
         """Process an order-fulfilled event.
 
         Args:
             event: The order-fulfilled event payload.
+            input_envelope_id: ID of the input envelope that triggered this handler.
+            correlation_id: Correlation ID copied from the input envelope.
 
         Returns:
             ModelHandlerOutput with completion events. No result.
@@ -295,8 +307,9 @@ class HandlerOrderFulfilled:
         order_id = event.get("order_id")
 
         return ModelHandlerOutput.for_orchestrator(
-            input_envelope_id=input_envelope_id,  # from handler args
-            correlation_id=correlation_id,         # from handler args
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="handler-order-fulfilled",
             events=[
                 {
                     "event_type": "order.completed",
@@ -321,8 +334,9 @@ ORCHESTRATOR nodes coordinate workflows via events and intents. They **CANNOT** 
 ```python
 # CORRECT -- orchestrator emits events and intents
 output = ModelHandlerOutput.for_orchestrator(
-    input_envelope_id=input_envelope_id,  # from handler args
-    correlation_id=correlation_id,         # from handler args
+    input_envelope_id=input_envelope_id,
+    correlation_id=correlation_id,
+    handler_id="handler-order-placed",
     events=[{"event_type": "order.validated", "order_id": "o123"}],
     intents=[{"intent_type": "payment.process", "payload": {...}}],
 )
@@ -331,6 +345,7 @@ output = ModelHandlerOutput.for_orchestrator(
 output = ModelHandlerOutput.for_orchestrator(
     input_envelope_id=input_envelope_id,
     correlation_id=correlation_id,
+    handler_id="handler-order-placed",
     result={"status": "done"},  # ModelOnexError!
 )
 # Raises: ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
@@ -339,6 +354,7 @@ output = ModelHandlerOutput.for_orchestrator(
 output = ModelHandlerOutput.for_orchestrator(
     input_envelope_id=input_envelope_id,
     correlation_id=correlation_id,
+    handler_id="handler-order-placed",
     projections=[some_projection],  # ModelOnexError!
 )
 ```
@@ -379,8 +395,9 @@ def _create_timeout_output(self, input_data):
 
 # CORRECT -- emit a failure event instead
 output = ModelHandlerOutput.for_orchestrator(
-    input_envelope_id=input_envelope_id,  # from handler args
-    correlation_id=correlation_id,         # from handler args
+    input_envelope_id=input_envelope_id,
+    correlation_id=correlation_id,
+    handler_id="handler-order-timeout",
     events=[{
         "event_type": "workflow.timeout",
         "workflow_id": str(workflow_id),

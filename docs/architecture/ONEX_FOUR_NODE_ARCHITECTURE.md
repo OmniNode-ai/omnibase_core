@@ -534,13 +534,34 @@ class ModelIntent(BaseModel):
 
 **Pure Reducer Implementation**:
 
+Nodes are thin shells. FSM transition logic and intent emission belong in handlers.
+
+**Node** (`node.py`):
 ```python
-from uuid import uuid4
-from datetime import UTC, datetime
-from typing import NamedTuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from omnibase_core.nodes.node_reducer import NodeReducer
-from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+
+class NodeOrderProcessingReducer(NodeReducer):
+    """REDUCER node for order processing. Logic lives in handler."""
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+```
+
+**Handler** (`handlers/handler_order_processing.py`):
+```python
+from uuid import UUID, uuid4
+from datetime import UTC, datetime
+from typing import Any, NamedTuple
+
+from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # NOTE: This example uses the simplified illustrative ModelIntent, EnumIntentType,
@@ -555,22 +576,31 @@ class FSMTransitionResult(NamedTuple):
     intents: list
 
 
-class OrderProcessingReducerService(NodeReducer):
-    """
-    Pure FSM Reducer that emits intents for side effects.
+class HandlerOrderProcessing:
+    """Handler for order processing with pure FSM transitions.
 
+    Pure FSM Reducer that emits intents for side effects.
     NO direct database writes, API calls, or I/O operations.
     ALL side effects are declared as intents.
+
+    REDUCER output constraints:
+        - Allowed: projections[]
+        - Forbidden: events[], intents[], result
     """
 
-    async def execute_reduction(self, contract: ModelContractReducer) -> ModelReducerOutput:
+    async def handle(
+        self,
+        contract: Any,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelReducerOutput:
         """
         Execute pure state transition with intent emission.
 
-        Pattern: δ(state, action) → (new_state, intents[])
+        Pattern: delta(state, action) -> (new_state, intents[])
         """
         # Load current state (read-only)
-        current_state = await self._load_current_state(contract)
+        current_state = contract.input_data.get("current_state", {})
 
         # Parse incoming action
         action = contract.input_data.get("action")
@@ -580,7 +610,7 @@ class OrderProcessingReducerService(NodeReducer):
         transition_result = self._apply_fsm_transition(
             current_state,
             action,
-            action_payload
+            action_payload,
         )
 
         # Extract new state and intents
@@ -588,23 +618,21 @@ class OrderProcessingReducerService(NodeReducer):
         intents = transition_result.intents
 
         return ModelReducerOutput(
-            correlation_id=contract.correlation_id,
+            correlation_id=correlation_id,
             aggregated_data=new_state,
             state_metadata={
                 "previous_state": current_state.get("status"),
                 "new_state": new_state.get("status"),
                 "transition": action,
-                "intents_emitted": len(intents)
+                "intents_emitted": len(intents),
             },
-            intents=intents  # Intents passed to Effect node for execution
+            intents=intents,  # Intents passed to Effect node for execution
         )
 
-    def _apply_fsm_transition(self, state: dict, action: str, payload: dict):
-        """
-        Pure FSM transition logic.
-
-        Returns: (new_state, intents[])
-        """
+    def _apply_fsm_transition(
+        self, state: dict, action: str, payload: dict
+    ) -> FSMTransitionResult:
+        """Pure FSM transition logic."""
         if action == "PLACE_ORDER":
             return self._transition_place_order(state, payload)
         elif action == "CONFIRM_PAYMENT":
@@ -614,9 +642,11 @@ class OrderProcessingReducerService(NodeReducer):
         else:
             raise ModelOnexError(message=f"Unknown action: {action}")
 
-    def _transition_place_order(self, state: dict, payload: dict):
+    def _transition_place_order(
+        self, state: dict, payload: dict
+    ) -> FSMTransitionResult:
         """
-        Transition: IDLE → ORDER_PLACED
+        Transition: IDLE -> ORDER_PLACED
 
         Emits intents for:
         1. Persist order to database
@@ -630,7 +660,7 @@ class OrderProcessingReducerService(NodeReducer):
             "order_id": str(uuid4()),
             "items": payload.get("items"),
             "total": self._calculate_total(payload.get("items")),
-            "placed_at": datetime.now(UTC).isoformat()
+            "placed_at": datetime.now(UTC).isoformat(),
         }
 
         # Emit intents for side effects
@@ -640,15 +670,11 @@ class OrderProcessingReducerService(NodeReducer):
                 intent_id=uuid4(),
                 intent_type=EnumIntentType.DATABASE_WRITE,
                 target="orders_table",
-                payload={
-                    "operation": "insert",
-                    "data": new_state
-                },
+                payload={"operation": "insert", "data": new_state},
                 priority=EnumIntentPriority.CRITICAL,
                 correlation_id=state.get("correlation_id"),
-                idempotency_key=f"order_{new_state['order_id']}"
+                idempotency_key=f"order_{new_state['order_id']}",
             ),
-
             # Intent 2: Send confirmation email
             ModelIntent(
                 intent_id=uuid4(),
@@ -660,13 +686,12 @@ class OrderProcessingReducerService(NodeReducer):
                     "data": {
                         "order_id": new_state["order_id"],
                         "items": new_state["items"],
-                        "total": new_state["total"]
-                    }
+                        "total": new_state["total"],
+                    },
                 },
                 priority=EnumIntentPriority.HIGH,
-                correlation_id=state.get("correlation_id")
+                correlation_id=state.get("correlation_id"),
             ),
-
             # Intent 3: Publish order event
             ModelIntent(
                 intent_id=uuid4(),
@@ -675,11 +700,11 @@ class OrderProcessingReducerService(NodeReducer):
                 payload={
                     "event_type": "ORDER_PLACED",
                     "order_id": new_state["order_id"],
-                    "timestamp": new_state["placed_at"]
+                    "timestamp": new_state["placed_at"],
                 },
                 priority=EnumIntentPriority.NORMAL,
-                correlation_id=state.get("correlation_id")
-            )
+                correlation_id=state.get("correlation_id"),
+            ),
         ]
 
         return FSMTransitionResult(new_state=new_state, intents=intents)
@@ -693,55 +718,100 @@ class OrderProcessingReducerService(NodeReducer):
 
 **Intent Executor Implementation**:
 
+Nodes are thin shells. Intent execution logic (priority scheduling, routing, retry) belongs in handlers.
+
+**Node** (`node.py`):
 ```python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from omnibase_core.nodes.node_effect import NodeEffect
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+
+class NodeIntentExecutorEffect(NodeEffect):
+    """EFFECT node for intent execution. Logic lives in handler."""
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+```
+
+**Handler** (`handlers/handler_intent_executor.py`):
+```python
+from typing import Any
+from uuid import UUID
+
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # NOTE: This example uses the simplified illustrative ModelIntent and EnumIntentType
 # defined in the "ModelIntent Structure" section above.
 
-class IntentExecutorEffectService(NodeEffect):
-    """
-    Effect node that executes intents emitted by Reducers.
 
-    Translates declarative intents into concrete side effects.
+class HandlerIntentExecutor:
+    """Handler that executes intents emitted by Reducers.
+
+    Translates declarative intents into concrete side effects
+    with priority-based scheduling, routing, and retry logic.
+
+    EFFECT output constraints:
+        - Allowed: events[]
+        - Forbidden: intents[], projections[], result
     """
 
-    async def execute_intents(self, intents: list[ModelIntent]) -> list[IntentExecutionResult]:
-        """
-        Execute all intents with priority-based scheduling.
-        """
+    def __init__(self, db_pool: Any) -> None:
+        self.db_pool = db_pool
+
+    async def handle(
+        self,
+        intents: list,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[None]:
+        """Execute all intents with priority-based scheduling."""
         # Sort by priority
         sorted_intents = sorted(
             intents,
-            key=lambda i: self._priority_value(i.priority)
+            key=lambda i: self._priority_value(i.priority),
         )
 
         results = []
         for intent in sorted_intents:
             try:
                 result = await self._execute_single_intent(intent)
-                results.append(IntentExecutionResult(
-                    intent_id=intent.intent_id,
-                    status="completed",
-                    result=result
-                ))
+                results.append({
+                    "intent_id": str(intent.intent_id),
+                    "status": "completed",
+                    "result": result,
+                })
             except Exception as e:
                 if intent.retry_policy:
                     result = await self._retry_intent_execution(intent)
                     results.append(result)
                 else:
-                    results.append(IntentExecutionResult(
-                        intent_id=intent.intent_id,
-                        status="failed",
-                        error=str(e)
-                    ))
+                    results.append({
+                        "intent_id": str(intent.intent_id),
+                        "status": "failed",
+                        "error": str(e),
+                    })
 
-        return results
+        return ModelHandlerOutput.for_effect(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            events=(
+                ModelEventEnvelope(
+                    event_type="intents.execution.completed",
+                    payload={"results": results},
+                ),
+            ),
+        )
 
-    async def _execute_single_intent(self, intent: ModelIntent):
-        """
-        Execute single intent based on type.
-        """
+    async def _execute_single_intent(self, intent: Any) -> Any:
+        """Execute single intent based on type."""
         if intent.intent_type == EnumIntentType.DATABASE_WRITE:
             return await self._execute_database_write(intent)
         elif intent.intent_type == EnumIntentType.API_CALL:
@@ -751,9 +821,11 @@ class IntentExecutorEffectService(NodeEffect):
         elif intent.intent_type == EnumIntentType.MESSAGE_PUBLISH:
             return await self._execute_message_publish(intent)
         else:
-            raise ModelOnexError(message=f"Unsupported intent type: {intent.intent_type}")
+            raise ModelOnexError(
+                message=f"Unsupported intent type: {intent.intent_type}"
+            )
 
-    async def _execute_database_write(self, intent: ModelIntent):
+    async def _execute_database_write(self, intent: Any) -> Any:
         """Execute database write intent."""
         async with self.db_pool.acquire() as conn:
             operation = intent.payload.get("operation")
@@ -774,14 +846,14 @@ class IntentExecutorEffectService(NodeEffect):
 
 **Testability**:
 ```
-# Test Reducer without mocking external dependencies
+# Test handler without mocking external dependencies
 def test_place_order_transition():
-    reducer = OrderProcessingReducerService()
+    handler = HandlerOrderProcessing()
     state = {"status": "IDLE", "correlation_id": uuid4()}
     action = "PLACE_ORDER"
     payload = {"items": [{"price": 10, "quantity": 2}]}
 
-    result = reducer._apply_fsm_transition(state, action, payload)
+    result = handler._apply_fsm_transition(state, action, payload)
 
     # Assert state transition
     assert result.new_state["status"] == "ORDER_PLACED"
@@ -964,9 +1036,6 @@ from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
 from uuid import uuid4
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
-    ModelWorkflowDefinition,
-)
 
 class NodeDataPipelineOrchestrator(NodeOrchestrator):
     """
@@ -1016,7 +1085,7 @@ class NodeDataPipelineOrchestrator(NodeOrchestrator):
 
 # Usage Example:
 async def example_workflow_orchestrator_usage():
-    from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
+    from omnibase_core.models.orchestrator.model_orchestrator_input import ModelOrchestratorInput
     from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 
     # Create node from container
@@ -1225,7 +1294,7 @@ class ModelAction(BaseModel):
 
 ```
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-from omnibase_core.models.model_action import ModelAction, EnumActionType
+from omnibase_core.models.orchestrator.model_action import ModelAction, EnumActionType
 from uuid import uuid4
 from datetime import datetime, timedelta, UTC
 
