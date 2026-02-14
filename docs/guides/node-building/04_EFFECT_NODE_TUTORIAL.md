@@ -104,6 +104,7 @@ class HandlerFileBackup:
         return ModelHandlerOutput.for_effect(
             input_envelope_id=envelope.metadata.envelope_id,
             correlation_id=envelope.metadata.correlation_id,
+            handler_id="handler_file_backup",
             events=[backup_event],
         )
 

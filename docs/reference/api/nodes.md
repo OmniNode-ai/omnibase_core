@@ -294,6 +294,7 @@ class HandlerBusinessLogic:
             return ModelHandlerOutput.for_compute(
                 input_envelope_id=input_envelope_id,
                 correlation_id=correlation_id,
+                handler_id="handler-business-logic",
                 result=result,
             )
         except ValueError as e:
@@ -329,6 +330,7 @@ class HandlerWithErrors:
             return ModelHandlerOutput.for_compute(
                 input_envelope_id=input_envelope_id,
                 correlation_id=correlation_id,
+                handler_id="handler-with-errors",
                 result=result,
             )
         except ValueError as e:

@@ -98,6 +98,7 @@ class HandlerPriceCalculator:
         return ModelHandlerOutput.for_compute(
             input_envelope_id=envelope.metadata.envelope_id,
             correlation_id=envelope.metadata.correlation_id,
+            handler_id="handler_price_calculator",
             result=result,
         )
 
