@@ -310,7 +310,11 @@ class HandlerMyCompute:
 
     async def handle(self, input_data: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
         result = self._process(input_data)
-        return ModelHandlerOutput.for_compute(result=result)
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=input_envelope_id,  # from handler args
+            correlation_id=correlation_id,         # from handler args
+            result=result,
+        )
 
     def _process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # Your business logic here
@@ -327,7 +331,11 @@ class HandlerMyCompute:
     async def handle(self, input_data: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
         try:
             result = self._process(input_data)
-            return ModelHandlerOutput.for_compute(result=result)
+            return ModelHandlerOutput.for_compute(
+                input_envelope_id=input_envelope_id,  # from handler args
+                correlation_id=correlation_id,         # from handler args
+                result=result,
+            )
         except Exception as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.PROCESSING_ERROR,

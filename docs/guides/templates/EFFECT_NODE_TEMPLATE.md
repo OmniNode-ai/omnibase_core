@@ -204,6 +204,8 @@ class HandlerStorage:
 
         # EFFECT nodes emit events, never return result
         return ModelHandlerOutput.for_effect(
+            input_envelope_id=input_envelope_id,  # from handler args
+            correlation_id=correlation_id,         # from handler args
             events=[
                 {
                     "event_type": "user.stored",
@@ -211,7 +213,7 @@ class HandlerStorage:
                     "correlation_id": str(correlation_id) if correlation_id else None,
                     "rows_affected": result.rows_affected,
                 }
-            ]
+            ],
         )
 
     async def handle_query(
@@ -232,13 +234,15 @@ class HandlerStorage:
         )
 
         return ModelHandlerOutput.for_effect(
+            input_envelope_id=input_envelope_id,  # from handler args
+            correlation_id=correlation_id,         # from handler args
             events=[
                 {
                     "event_type": "user.queried",
                     "user_id": user_id,
                     "found": record is not None,
                 }
-            ]
+            ],
         )
 ```
 
@@ -315,17 +319,23 @@ EFFECT nodes emit **events** describing what external I/O occurred.
 ```python
 # CORRECT -- EFFECT emits events
 output = ModelHandlerOutput.for_effect(
-    events=[{"event_type": "user.stored", "user_id": "u123"}]
+    input_envelope_id=input_envelope_id,  # from handler args
+    correlation_id=correlation_id,         # from handler args
+    events=[{"event_type": "user.stored", "user_id": "u123"}],
 )
 
-# WRONG -- EFFECT cannot return result
+# WRONG -- EFFECT cannot return result (raises ModelOnexError)
 output = ModelHandlerOutput.for_effect(
-    result={"user_id": "u123"},  # ValueError!
+    input_envelope_id=input_envelope_id,
+    correlation_id=correlation_id,
+    result={"user_id": "u123"},  # ModelOnexError!
 )
 
-# WRONG -- EFFECT cannot emit intents
+# WRONG -- EFFECT cannot emit intents (raises ModelOnexError)
 output = ModelHandlerOutput.for_effect(
-    intents=[some_intent],  # ValueError!
+    input_envelope_id=input_envelope_id,
+    correlation_id=correlation_id,
+    intents=[some_intent],  # ModelOnexError!
 )
 ```
 

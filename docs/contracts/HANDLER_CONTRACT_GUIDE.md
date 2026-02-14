@@ -59,7 +59,7 @@ contract = ModelHandlerContract(
 
 ## ModelHandlerOutput Constraints
 
-Handlers return `ModelHandlerOutput`, which enforces strict field constraints based on node kind. Attempting to populate a forbidden field raises a `ValueError` at construction time.
+Handlers return `ModelHandlerOutput`, which enforces strict field constraints based on node kind. Attempting to populate a forbidden field raises a `ModelOnexError` at construction time.
 
 | Field | COMPUTE | EFFECT | REDUCER | ORCHESTRATOR |
 |-------|---------|--------|---------|--------------|
@@ -74,16 +74,33 @@ Handlers return `ModelHandlerOutput`, which enforces strict field constraints ba
 
 ```python
 # COMPUTE handler must return result, nothing else
-return ModelHandlerOutput.for_compute(result={"transformed": data})
+return ModelHandlerOutput.for_compute(
+    input_envelope_id=envelope.metadata.envelope_id,
+    correlation_id=envelope.metadata.correlation_id,
+    result={"transformed": data},
+)
 
 # EFFECT handler may return events
-return ModelHandlerOutput.for_effect(events=[event])
+return ModelHandlerOutput.for_effect(
+    input_envelope_id=envelope.metadata.envelope_id,
+    correlation_id=envelope.metadata.correlation_id,
+    events=[event],
+)
 
 # REDUCER handler may return projections
-return ModelHandlerOutput.for_reducer(projections=[projection])
+return ModelHandlerOutput.for_reducer(
+    input_envelope_id=envelope.metadata.envelope_id,
+    correlation_id=envelope.metadata.correlation_id,
+    projections=[projection],
+)
 
 # ORCHESTRATOR handler may return events and intents
-return ModelHandlerOutput.for_orchestrator(events=[event], intents=[intent])
+return ModelHandlerOutput.for_orchestrator(
+    input_envelope_id=envelope.metadata.envelope_id,
+    correlation_id=envelope.metadata.correlation_id,
+    events=[event],
+    intents=[intent],
+)
 ```
 
 ---

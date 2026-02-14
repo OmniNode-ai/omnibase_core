@@ -577,7 +577,7 @@ Contracts enforce strict output constraints based on node kind. These are valida
 | **EFFECT** | `events[]` | `intents[]`, `projections[]`, `result` |
 | **COMPUTE** | `result` (required) | `events[]`, `intents[]`, `projections[]` |
 
-These constraints are not optional. Returning `result` from an ORCHESTRATOR handler raises `ValueError` at construction time.
+These constraints are not optional. Returning `result` from an ORCHESTRATOR handler raises `ModelOnexError` at construction time.
 
 ---
 

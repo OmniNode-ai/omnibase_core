@@ -189,7 +189,11 @@ async def execute_orchestration(self, input_data):
         ModelEvent(type="validate_permissions", payload=input_data.auth),
         ModelEvent(type="validate_quota", payload=input_data.usage),
     ]
-    return ModelHandlerOutput.for_orchestrator(events=events)
+    return ModelHandlerOutput.for_orchestrator(
+        input_envelope_id=input_envelope_id,  # from handler args
+        correlation_id=correlation_id,         # from handler args
+        events=events,
+    )
 ```
 
 Each event is handled by its own node instance -- no shared state, no locks.
@@ -208,7 +212,11 @@ async def execute_orchestration(self, input_data):
             payload={"task": "compress_dataset", "data_ref": input_data.data_ref},
         ),
     ]
-    return ModelHandlerOutput.for_orchestrator(intents=intents)
+    return ModelHandlerOutput.for_orchestrator(
+        input_envelope_id=input_envelope_id,  # from handler args
+        correlation_id=correlation_id,         # from handler args
+        intents=intents,
+    )
 ```
 
 The worker process creates its own node instances. No state is shared across the

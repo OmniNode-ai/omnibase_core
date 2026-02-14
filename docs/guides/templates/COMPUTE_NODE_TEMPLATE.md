@@ -198,12 +198,14 @@ class HandlerValidation:
 
         # COMPUTE nodes MUST return result
         return ModelHandlerOutput.for_compute(
+            input_envelope_id=input_envelope_id,  # from handler args
+            correlation_id=correlation_id,         # from handler args
             result={
                 "valid": len(errors) == 0,
                 "errors": errors,
                 "warnings": warnings,
                 "rules_checked": len(contract_rules),
-            }
+            },
         )
 ```
 
@@ -286,13 +288,17 @@ COMPUTE is the **only** node kind that returns a typed `result`.
 ```python
 # CORRECT -- COMPUTE returns result
 output = ModelHandlerOutput.for_compute(
-    result={"valid": True, "errors": []}
+    input_envelope_id=input_envelope_id,  # from handler args
+    correlation_id=correlation_id,         # from handler args
+    result={"valid": True, "errors": []},
 )
 
-# WRONG -- COMPUTE cannot emit events
+# WRONG -- COMPUTE cannot emit events (raises ModelOnexError)
 output = ModelHandlerOutput.for_compute(
+    input_envelope_id=input_envelope_id,
+    correlation_id=correlation_id,
     result={"valid": True},
-    events=[some_event],  # ValueError!
+    events=[some_event],  # ModelOnexError!
 )
 ```
 

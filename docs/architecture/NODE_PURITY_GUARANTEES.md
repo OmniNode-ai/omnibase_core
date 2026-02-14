@@ -324,7 +324,11 @@ class HandlerDataTransform:
 
     async def handle(self, data: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
         result = self._transform(data)
-        return ModelHandlerOutput.for_compute(result=result)
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=input_envelope_id,  # from handler args
+            correlation_id=correlation_id,         # from handler args
+            result=result,
+        )
 
     def _transform(self, data: dict[str, Any]) -> dict[str, Any]:
         """Pure transformation -- no side effects."""

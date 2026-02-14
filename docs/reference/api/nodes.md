@@ -290,7 +290,11 @@ class HandlerBusinessLogic:
         try:
             validated = self._validate(input_data)
             result = self._execute(validated)
-            return ModelHandlerOutput.for_compute(result=result)
+            return ModelHandlerOutput.for_compute(
+                input_envelope_id=input_envelope_id,  # from handler args
+                correlation_id=correlation_id,         # from handler args
+                result=result,
+            )
         except ValueError as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -317,7 +321,11 @@ class HandlerWithErrors:
     async def handle(self, input_data: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
         try:
             result = self._process(input_data)
-            return ModelHandlerOutput.for_compute(result=result)
+            return ModelHandlerOutput.for_compute(
+                input_envelope_id=input_envelope_id,  # from handler args
+                correlation_id=correlation_id,         # from handler args
+                result=result,
+            )
         except ValueError as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
