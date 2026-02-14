@@ -265,59 +265,94 @@ except CircuitBreakerOpenException:
 - **ORCHESTRATOR**: For workflow coordination
 
 ### 2. Implement Your Node
+
+Nodes are thin shells. Business logic belongs in handlers.
+
 Prefer a service wrapper to eliminate boilerplate and ensure correct mixin ordering:
-```
+```python
 from omnibase_core.models.services import ModelServiceCompute
 
-class MyComputeService(ModelServiceCompute):
+class MyComputeNode(ModelServiceCompute):
+    """Thin shell -- logic lives in handler."""
     pass
 ```
 
 Or compose manually only when you need specialized capabilities:
-```
-from omnibase_core.nodes.node_compute import NodeCompute
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+```python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from omnibase_core.nodes import NodeCompute
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
 
 class MyComputeNode(NodeCompute):
-    def __init__(self, container: ModelONEXContainer):
-        super().__init__(container)
+    """Thin shell -- business logic belongs in a handler."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+```
+
+### 3. Implement Your Handler
+
+Handlers contain the business logic, separated from the node for testability:
+```python
+from typing import Any
+
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+
+
+class HandlerMyCompute:
+    """COMPUTE handler -- must return result."""
+
+    async def handle(self, input_data: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
+        result = self._process(input_data)
+        return ModelHandlerOutput.for_compute(result=result)
+
+    def _process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # Your business logic here
         return {"result": "processed"}
 ```
 
-### 3. Add Error Handling
-```
-from omnibase_core.utils.standard_error_handling import standard_error_handling
+### 4. Add Error Handling
+```python
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
-@standard_error_handling(
-    error_class=ModelOnexError,
-    component="MyComputeNode",
-    operation="process"
-)
-async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-    # Your logic here
-    return {"result": "processed"}
+
+class HandlerMyCompute:
+    async def handle(self, input_data: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
+        try:
+            result = self._process(input_data)
+            return ModelHandlerOutput.for_compute(result=result)
+        except Exception as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.PROCESSING_ERROR,
+                message=f"Processing failed: {e}",
+            ) from e
 ```
 
-### 4. Add Testing
-```
+### 5. Add Testing
+
+Test handlers directly for unit tests (no container required):
+```python
 import pytest
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+from your_project.handlers import HandlerMyCompute
+
 
 @pytest.fixture
-def container():
-    return ModelONEXContainer()
+def handler():
+    return HandlerMyCompute()
 
-@pytest.fixture
-def node(container):
-    return MyComputeNode(container)
 
 @pytest.mark.asyncio
-async def test_process(node):
-    result = await node.process({"input": "test"})
-    assert result["result"] == "processed"
+async def test_handle(handler):
+    output = await handler.handle({"input": "test"})
+    assert output.result["result"] == "processed"
 ```
 
 ## Related Documentation

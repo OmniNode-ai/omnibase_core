@@ -39,7 +39,7 @@ class TestComputeNode(NodeCompute):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         """Simple doubling operation for testing."""
         value = input_data.get("value", 0)
         return {"result": value * 2}
@@ -92,7 +92,7 @@ class TestEffectNode(NodeEffect):
         super().__init__(container)
         self.external_service = None
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         """Test effect operation."""
         if self.external_service:
             result = await self.external_service.call(input_data)
@@ -143,7 +143,7 @@ class TestReducerNode(NodeReducer):
         super().__init__(container)
         self.state = {"count": 0, "items": []}
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         """Test reducer operation."""
         action = input_data.get("action")
 
@@ -205,7 +205,7 @@ class TestErrorHandlingNode(NodeCompute):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         """Test error handling."""
         value = input_data.get("value")
 
@@ -328,7 +328,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 class MockDatabaseService:
     """Mock database service for testing."""
 
-    async def query(self, sql: str) -> List[Dict[str, Any]]:
+    async def query(self, sql: str) -> list[dict[str, Any]]:
         """Mock database query."""
         return [{"id": 1, "name": "test"}]
 
@@ -338,7 +338,7 @@ class MockCacheService:
     def __init__(self):
         self.cache = {}
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Mock cache get."""
         return self.cache.get(key)
 
@@ -393,7 +393,7 @@ class TestEventNode(NodeCompute):
         self.emitted_events.append(event)
         await super().emit_event(event)
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         """Process and emit event."""
         result = {"processed": True}
 
@@ -553,7 +553,7 @@ def mock_services():
 
 ```
 import pytest
-from typing import Dict, Any, List
+from typing import Any
 
 class TestHelper:
     """Helper class for common test operations."""
@@ -561,9 +561,9 @@ class TestHelper:
     @staticmethod
     async def run_concurrent_operations(
         node: NodeCompute,
-        operations: List[Dict[str, Any]],
+        operations: list[dict[str, Any]],
         max_concurrency: int = 10
-    ) -> List[Any]:
+    ) -> list[Any]:
         """Run operations concurrently with limited concurrency."""
         semaphore = asyncio.Semaphore(max_concurrency)
 
@@ -581,7 +581,7 @@ class TestHelper:
         assert error.error_code == expected_code
 
     @staticmethod
-    def assert_performance_metrics(metrics: Dict[str, Any], max_time: float):
+    def assert_performance_metrics(metrics: dict[str, Any], max_time: float):
         """Assert performance metrics are within limits."""
         assert "processing_time" in metrics
         assert metrics["processing_time"] < max_time
@@ -629,15 +629,12 @@ markers =
 
 ```
 import pytest
-import asyncio
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async tests."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+# Note: With pytest-asyncio and --asyncio-mode=auto, there is no need
+# to define an event_loop fixture. pytest-asyncio manages the event
+# loop automatically. The deprecated session-scoped event_loop fixture
+# pattern has been removed.
 
 @pytest.fixture
 def container():
@@ -765,7 +762,7 @@ The project uses a sophisticated CI pipeline with parallel test execution for op
 **Jobs**:
 1. **Smoke Tests** (5-10s) - Fast-fail basic validation
 2. **Parallel Tests** (12 splits, 3-5 min each) - Full test suite with optimal resource usage
-3. **Code Quality** - Black, isort, mypy strict type checking
+3. **Code Quality** - ruff (lint + format), mypy strict type checking
 4. **Documentation Validation** - Link validation and documentation checks
 5. **Coverage Report** (main branch only) - Comprehensive coverage analysis
 

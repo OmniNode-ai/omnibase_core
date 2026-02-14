@@ -90,7 +90,7 @@ Adopt **discriminated unions with Pydantic's `Field(discriminator="...")`** patt
 ### Key Design Choices
 
 1. **Discriminator-first field ordering** - Place discriminator field first in models for optimal union resolution performance
-2. **Annotated union aliases** - Define type aliases using `Annotated[Union[...], Field(discriminator="...")]`
+2. **Annotated union aliases** - Define type aliases using `Annotated[A | B | ..., Field(discriminator="...")]`
 3. **Closed sets for core types** - Known, finite payload types per model
 4. **Open extension points** - Keep string-based routing for plugins/extensions where needed
 
@@ -594,8 +594,11 @@ The ONEX codebase already successfully uses discriminated unions:
 
 ## Historical Context (Pre-v0.4.0)
 
-> **Note**: This section documents the PREVIOUS state of these models for historical context.
-> As of v0.4.0, `dict[str, Any]` has been **REMOVED** from all these models.
+> **Note**: This section documents the PREVIOUS state of these models for historical
+> context only. As of v0.4.0, `dict[str, Any]` has been **REMOVED** from all these
+> models. The "Recommendation" sections below describe work that has already been
+> completed. See the [Implementation by Model](#implementation-by-model) section for
+> the current state.
 
 ### ModelIntent (Extension Intents)
 
@@ -846,8 +849,8 @@ class ModelScheduleEffectPayload(BaseModel):
 class ModelEnqueueHandlerPayload(BaseModel):
     kind: Literal["enqueue_handler"] = "enqueue_handler"
     handler_id: str
-    args: dict[str, Any] = {}
-    kwargs: dict[str, Any] = {}
+    args: dict[str, Any] = Field(default_factory=dict)
+    kwargs: dict[str, Any] = Field(default_factory=dict)
 
 class ModelRetryWithBackoffPayload(BaseModel):
     kind: Literal["retry_with_backoff"] = "retry_with_backoff"

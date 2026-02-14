@@ -44,6 +44,76 @@ In this tutorial, you'll build a production-ready **File Backup Node** that:
 
 ---
 
+## Handler Architecture
+
+> **Architectural Rule**: Nodes are thin coordination shells. Business logic belongs in **handlers**, not in the node class itself. The node delegates to a handler, and the handler returns a `ModelHandlerOutput`.
+
+### EFFECT Output Constraints
+
+| Field | COMPUTE | EFFECT | REDUCER | ORCHESTRATOR |
+|-------|---------|--------|---------|--------------|
+| `result` | Required | **Forbidden** | Forbidden | Forbidden |
+| `events[]` | Forbidden | **Allowed** | Forbidden | Allowed |
+| `intents[]` | Forbidden | Forbidden | Forbidden | Allowed |
+| `projections[]` | Forbidden | Forbidden | Allowed | Forbidden |
+
+EFFECT nodes return **events** describing what happened (e.g., "file backed up", "API called"). They do NOT return a typed `result` -- that is exclusive to COMPUTE nodes.
+
+### Handler-Based Pattern (Recommended)
+
+In production ONEX code, the EFFECT node delegates I/O execution to a handler. The handler returns `ModelHandlerOutput.for_effect(events=[...])`:
+
+```python
+from omnibase_core.models.handler.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.event.model_event_envelope import ModelEventEnvelope
+
+
+class HandlerFileBackup:
+    """Handler containing the actual I/O logic for file backups."""
+
+    async def execute(
+        self,
+        input_data: ModelFileBackupInput,
+    ) -> ModelHandlerOutput:
+        """
+        Execute file backup and return events describing what happened.
+
+        Returns:
+            ModelHandlerOutput with events (EFFECT constraint).
+        """
+        # Perform actual I/O
+        source_content = input_data.source_path.read_bytes()
+        input_data.backup_path.parent.mkdir(parents=True, exist_ok=True)
+        input_data.backup_path.write_bytes(source_content)
+
+        # EFFECT nodes return events, NOT result
+        backup_event = ModelEventEnvelope(
+            event_type="file.backed_up",
+            payload={
+                "source_path": str(input_data.source_path),
+                "backup_path": str(input_data.backup_path),
+                "size_bytes": len(source_content),
+            },
+        )
+
+        return ModelHandlerOutput.for_effect(events=[backup_event])
+
+
+class NodeFileBackupEffect(NodeEffect):
+    """Thin shell -- delegates to handler."""
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+        self._handler = HandlerFileBackup()
+
+    async def process(self, input_data):
+        return await self._handler.execute(input_data)
+```
+
+The tutorial below shows I/O logic inline for teaching clarity. In production, always extract logic into a handler.
+
+---
+
 **Why EFFECT Nodes?**
 
 EFFECT nodes handle all external interactions in the ONEX architecture:

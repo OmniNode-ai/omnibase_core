@@ -82,12 +82,17 @@ Intents represent **declarative side effect descriptions** from pure Reducer FSM
 **Example**:
 ```python
 from omnibase_core.models.reducer import ModelIntent
+from omnibase_core.models.reducer.payloads import ModelPayloadLogEvent
 
-# Intent describes side effect declaratively
+# Intent describes side effect declaratively using a typed payload
 intent = ModelIntent(
-    intent_type="log_metric",
+    intent_type="log_event",
     target="metrics_service",
-    payload={"metric": "processing_time", "value": 123.45},
+    payload=ModelPayloadLogEvent(
+        level="INFO",
+        message="processing_time",
+        context={"value": 123.45},
+    ),
     priority=3,
 )
 # Publish to: dev.omninode-bridge.intents.event-publish.v1
@@ -296,17 +301,23 @@ print(category)  # None
 Effect nodes subscribe to intent topics and execute the described side effects:
 
 ```python
-class NodeEffect(NodeCoreBase):
-    async def start(self):
+class NodeIntentExecutorEffect(NodeEffect):
+    """Effect node that subscribes to intent topics.
+
+    The node is a thin shell; intent execution logic lives in the handler.
+    """
+
+    async def start(self) -> None:
         intent_topic = ModelTopicNaming.for_intents(
             domain="omninode-bridge",
             environment=self.environment,
         )
-        await self.subscribe(intent_topic.topic_name, self.handle_intent)
+        await self.subscribe(intent_topic.topic_name, self._on_message)
 
-    async def handle_intent(self, message: ProtocolEventMessage):
+    async def _on_message(self, message: ProtocolEventMessage) -> None:
         intent = ModelEventPublishIntent.model_validate_json(message.value)
-        await self.execute_intent(intent)
+        # Delegate to handler for actual I/O execution
+        await self.handler.execute_intent(intent)
 ```
 
 ### Reducer Purity and Intent Emission
@@ -314,18 +325,31 @@ class NodeEffect(NodeCoreBase):
 Reducers emit intents to maintain purity (no direct I/O):
 
 ```python
-class NodeReducer(NodeCoreBase):
-    async def process(self, input_data) -> ModelReducerOutput:
-        result = self._reduce(input_data)
+class HandlerMetricsReducer:
+    """Handler containing pure reduction logic."""
 
-        # Emit intent instead of direct logging
+    def execute_reduction(
+        self, input_data: list[MetricItem]
+    ) -> tuple[ReducedState, list[ModelIntent]]:
+        reduced_state = self._aggregate(input_data)
+
+        # Emit intent instead of direct logging (Reducer never does I/O)
         intent = ModelIntent(
-            intent_type="log_metric",
+            intent_type="log_event",
             target="metrics_service",
-            payload={"metric": "items_processed", "value": len(input_data)},
+            payload=ModelPayloadLogEvent(
+                level="INFO",
+                message="items_processed",
+                context={"value": len(input_data)},
+            ),
         )
 
-        return ModelReducerOutput(result=result, intents=[intent])
+        return reduced_state, [intent]
+
+
+class NodeMetricsReducer(NodeReducer):
+    """Thin shell -- delegates to HandlerMetricsReducer."""
+    pass
 ```
 
 ### Orchestrator and Command Dispatch
@@ -333,15 +357,31 @@ class NodeReducer(NodeCoreBase):
 Orchestrators dispatch commands to coordinate workflows:
 
 ```python
-class NodeOrchestrator(NodeCoreBase):
-    async def start_workflow(self, workflow_id: UUID):
+class HandlerPaymentOrchestrator:
+    """Handler that emits events and intents for workflow coordination."""
+
+    async def execute_orchestration(
+        self, input_data: ModelOrchestratorInput
+    ) -> ModelHandlerOutput[None]:
         command_topic = ModelTopicNaming.for_commands(
             domain="payment-service",
-            environment=self.environment,
+            environment=input_data.metadata.get("environment", "dev"),
         )
 
-        command = ProcessPaymentCommand(order_id=order_id, amount=amount)
-        await self.publish(command_topic.topic_name, command)
+        # Orchestrators emit events/intents -- they never do I/O directly
+        return ModelHandlerOutput.for_orchestrator(
+            events=[
+                ModelEventEnvelope(
+                    event_type="payment.requested",
+                    payload={"order_id": input_data.metadata["order_id"]},
+                )
+            ],
+        )
+
+
+class NodePaymentOrchestrator(NodeOrchestrator):
+    """Thin shell -- delegates to HandlerPaymentOrchestrator."""
+    pass
 ```
 
 ---

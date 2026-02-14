@@ -45,6 +45,20 @@ These principles apply to v1.0 and all future versions:
 4. **Pure Functions**: All transformation and execution logic in utility module for testability
 5. **Typed Boundaries**: All public surfaces use Pydantic models
 6. **Deterministic**: Same input always produces same output
+7. **Nodes are thin shells**: Business logic lives in handlers, not in the node class itself. The node coordinates; the handler computes.
+
+### Output Constraints (COMPUTE)
+
+`ModelHandlerOutput` enforces strict field constraints per node kind. For COMPUTE nodes:
+
+| Field | Status |
+|-------|--------|
+| `result` | **Required** |
+| `events[]` | Forbidden |
+| `intents[]` | Forbidden |
+| `projections[]` | Forbidden |
+
+**Enforcement**: `ModelHandlerOutput` Pydantic validator + CI `node-purity-check`.
 
 ### Thread Safety and State Management
 
@@ -466,20 +480,18 @@ class ModelValidationStepConfig(BaseModel):
 ### ModelTransformationConfig (Union)
 
 ```python
-from typing import Annotated, Union
+from typing import Annotated
 from pydantic import Field
 
 # v1.0 Discriminated union - only 5 types (IDENTITY has no config)
 ModelTransformationConfig = Annotated[
-    Union[
-        ModelTransformRegexConfig,
-        ModelTransformCaseConfig,
-        ModelTransformTrimConfig,
-        ModelTransformUnicodeConfig,
-        ModelTransformJsonPathConfig,
-        # IDENTITY has no config - handled separately
-        # VALIDATION uses ModelValidationStepConfig on step, not here
-    ],
+    ModelTransformRegexConfig
+    | ModelTransformCaseConfig
+    | ModelTransformTrimConfig
+    | ModelTransformUnicodeConfig
+    | ModelTransformJsonPathConfig,
+    # IDENTITY has no config - handled separately
+    # VALIDATION uses ModelValidationStepConfig on step, not here
     Field(discriminator="config_type"),
 ]
 ```

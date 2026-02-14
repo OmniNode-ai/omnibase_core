@@ -2,14 +2,20 @@
 
 # Comprehensive Research Report: ONEX 4-Node Architecture Pattern
 
-**Research Date**: January 30, 2025  
-**Research Scope**: Comprehensive analysis of proper 4-node architecture implementation  
-**Target Systems**: omnibase_core vs omnibase_3 reference implementation  
-**Status**: Complete  
+> **HISTORICAL DOCUMENT**: This research report was written on January 30, 2025 and
+> reflects the state of the codebase at that time. Some references (e.g., `omnibase_3`)
+> refer to a predecessor repository that has been superseded by `omnibase_core`.
+> The architectural findings remain valid, but specific file paths and class names
+> may have changed since this report was authored.
+
+**Research Date**: January 30, 2025
+**Research Scope**: Comprehensive analysis of proper 4-node architecture implementation
+**Target Systems**: omnibase_core vs omnibase_3 (historical predecessor) reference implementation
+**Status**: Complete (Historical)
 
 ## Executive Summary
 
-This research provides a comprehensive analysis of the proper 4-node architecture pattern by examining both the reference implementation (omnibase_3) and the current implementation (omnibase_core). The analysis covers node patterns, service architecture, contract systems, and mixin composition to understand the complete architectural framework.
+This research provides a comprehensive analysis of the proper 4-node architecture pattern by examining both the historical reference implementation (omnibase_3, now superseded) and the current implementation (omnibase_core). The analysis covers node patterns, service architecture, contract systems, and mixin composition to understand the complete architectural framework.
 
 **Key Findings:**
 - Current implementation successfully implements all 4 specialized node types
@@ -20,9 +26,9 @@ This research provides a comprehensive analysis of the proper 4-node architectur
 
 ## 1. Node Architecture Analysis
 
-### 1.1 Reference Implementation Standards (omnibase_3)
+### 1.1 Reference Implementation Standards (omnibase_3 -- Historical)
 
-**Source**: `/Volumes/PRO-G40/Code/omnibase_3/.cursor/rules/node_standards.mdc`
+**Source**: `/Volumes/PRO-G40/Code/omnibase_3/.cursor/rules/node_standards.mdc` *(historical path, no longer available)*
 
 The reference documentation defines a clear 4-node classification system:
 
@@ -222,8 +228,8 @@ class NodeDatabaseWriter(ModelServiceEffect):
 
 **Lifecycle Mixins:**
 - `MixinNodeService`: Service mode and event loop
-- `MixinNodeLifecycle`: Startup/shutdown coordination  
-- `MixinAutoConnect`: Automatic service connection
+- `MixinNodeLifecycle`: Startup/shutdown coordination
+- `MixinNodeSetup`: Standard node initialization
 
 **Contract Integration Mixins:**
 - `MixinNodeIdFromContract`: Contract-based configuration
@@ -233,7 +239,7 @@ class NodeDatabaseWriter(ModelServiceEffect):
 **Event System Mixins:**
 - `MixinEventDrivenNode`: Event subscription patterns
 - `MixinEventHandler`: Event handling utilities
-- `MixinEventListener`: Event listener registration
+- `MixinEventBus`: Event bus connection management
 
 **Development Mixins:**
 - `MixinHealthCheck`: Health monitoring and reporting
@@ -258,7 +264,7 @@ class NodeTypeService(
 class EventDrivenNode(
     NodeType,
     MixinEventDrivenNode,       # Event handling
-    MixinEventListener,         # Event subscription
+    MixinEventHandler,          # Event handler registration
     MixinIntrospection,         # Runtime introspection
 ):
     """Event-driven node with introspection capabilities."""

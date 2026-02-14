@@ -35,11 +35,11 @@ Node Implementation (Usage)
 
 ### Create Model File
 
-**Location**: `src/omnibase_core/model/subcontracts/`
+**Location**: `src/omnibase_core/models/contracts/subcontracts/`
 **Naming**: `model_[capability_name]_subcontract.py`
 
 ```
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/model/subcontracts/
+cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/contracts/subcontracts/
 
 # Create your model file
 touch model_error_handling_subcontract.py
@@ -55,7 +55,7 @@ Generated from mixin_error_handling subcontract following ONEX patterns.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional, Dict, Any, Union
+from typing import Any
 from pydantic import BaseModel, Field, field_validator, model_validator
 from uuid import UUID
 ```
@@ -110,11 +110,11 @@ class ModelErrorHandlingResult(BaseModel):
         ...,
         description="Whether recovery is possible"
     )
-    recovery_suggestions: List[str] = Field(
+    recovery_suggestions: list[str] = Field(
         default_factory=list,
         description="Suggested recovery actions"
     )
-    error_context: Dict[str, Any] = Field(
+    error_context: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional error context"
     )
@@ -150,11 +150,11 @@ class ModelCircuitBreakerStatus(BaseModel):
         le=1.0,
         description="Failure rate (0.0-1.0)"
     )
-    last_failure_time: Optional[datetime] = Field(
+    last_failure_time: datetime | None = Field(
         default=None,
         description="Timestamp of last failure"
     )
-    next_retry_time: Optional[datetime] = Field(
+    next_retry_time: datetime | None = Field(
         default=None,
         description="When to attempt next retry"
     )
@@ -204,7 +204,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
         default="1.0.0",
         description="Subcontract version"
     )
-    applicable_node_types: List[str] = Field(
+    applicable_node_types: list[str] = Field(
         default=["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"],
         description="Node types where this mixin is applicable"
     )
@@ -260,7 +260,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
     )
 
     # === ERROR CATEGORIZATION ===
-    retriable_error_types: List[str] = Field(
+    retriable_error_types: list[str] = Field(
         default_factory=lambda: [
             "TimeoutError",
             "ConnectionError",
@@ -268,7 +268,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
         ],
         description="Error types that can be retried"
     )
-    fatal_error_types: List[str] = Field(
+    fatal_error_types: list[str] = Field(
         default_factory=lambda: [
             "AuthenticationError",
             "ValidationError",
@@ -393,7 +393,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
 ### Update __init__.py
 
 ```
-# src/omnibase_core/model/subcontracts/__init__.py
+# src/omnibase_core/models/contracts/subcontracts/__init__.py
 
 from .model_error_handling_subcontract import (
     ModelErrorHandlingSubcontract,
@@ -425,7 +425,7 @@ __all__ = [
 
 import pytest
 from pydantic import ValidationError
-from omnibase_core.model.subcontracts import (
+from omnibase_core.models.contracts.subcontracts import (
     ModelErrorHandlingSubcontract,
     EnumErrorCategory,
     EnumCircuitBreakerState,
@@ -595,7 +595,7 @@ class ModelOptionalConfig(BaseModel):
     """Model with optional fields."""
 
     required_field: str = Field(..., description="This field is required")
-    optional_field: Optional[str] = Field(None, description="This field is optional")
+    optional_field: str | None = Field(None, description="This field is optional")
     optional_with_default: str = Field("default", description="Optional with default")
 ```
 
@@ -646,7 +646,7 @@ class ModelStrategyB(BaseModel):
 
 class ModelMainWithStrategy(BaseModel):
     """Model with strategy selection."""
-    strategy: Union[ModelStrategyA, ModelStrategyB] = Field(..., discriminator="type")
+    strategy: ModelStrategyA | ModelStrategyB = Field(..., discriminator="type")
 ```
 
 ## Best Practices
@@ -724,7 +724,7 @@ class Config:
 **Symptom**: `ImportError: cannot import ModelYourSubcontract`
 
 **Solutions**:
-1. Verify file in `model/subcontracts/`
+1. Verify file in `models/contracts/subcontracts/`
 2. Check `__init__.py` exports model
 3. Run `poetry install` to update package
 

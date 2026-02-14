@@ -24,7 +24,6 @@ Code templates and patterns for rapid node development.
 | [EFFECT Node Template](./templates/EFFECT_NODE_TEMPLATE.md) | Production-ready template for EFFECT nodes |
 | [REDUCER Node Template](./templates/REDUCER_NODE_TEMPLATE.md) | Production-ready template for REDUCER nodes |
 | [ORCHESTRATOR Node Template](./templates/ORCHESTRATOR_NODE_TEMPLATE.md) | Production-ready template for ORCHESTRATOR nodes |
-| [Enhanced Node Patterns](./templates/ENHANCED_NODE_PATTERNS.md) | Advanced patterns for complex node implementations |
 
 ### Mixin Development
 

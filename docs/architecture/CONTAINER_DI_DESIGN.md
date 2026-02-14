@@ -613,7 +613,7 @@ Content:
 - [ ] All 30+ services migrated to registry
 - [ ] Backward compatibility maintained
 - [ ] All tests passing
-- [ ] Pre-commit hooks passing (ruff, mypy, black, isort)
+- [ ] Pre-commit hooks passing (ruff, mypy)
 
 ### Performance Requirements
 - [ ] Service resolution <5ms (99th percentile)

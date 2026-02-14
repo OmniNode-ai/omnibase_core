@@ -154,9 +154,9 @@ Error: Integration field 'error_handling_configuration' used multiple times
 ```
 # src/your_project/nodes/node_api_client_effect.py
 
-from omnibase_core.nodes import NodeEffect
-from omnibase_core.model.contracts import ModelContractEffect
-from omnibase_core.model.subcontracts import ModelErrorHandlingSubcontract
+from omnibase_core.core.node_effect import NodeEffect
+from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
+from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract
 ```
 
 ### Access Configuration in Node
@@ -291,9 +291,9 @@ class NodeApiClientEffect(NodeEffect):
 
 ```
 from datetime import datetime, timedelta
-from omnibase_core.model.subcontracts import (
+from omnibase_core.models.contracts.subcontracts.model_circuit_breaker_subcontract import (
     ModelCircuitBreakerStatus,
-    EnumCircuitBreakerState
+    EnumCircuitBreakerState,
 )
 
 class NodeApiClientEffect(NodeEffect):
@@ -398,7 +398,7 @@ class NodeApiClientEffect(NodeEffect):
 ### Pattern 3: Health Check Mixin
 
 ```
-from omnibase_core.model.subcontracts import ModelHealthCheckSubcontract
+from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract import ModelHealthCheckSubcontract
 
 class NodeDataProcessorCompute(NodeCompute):
     """COMPUTE node with health check mixin."""
@@ -456,7 +456,7 @@ class NodeDataProcessorCompute(NodeCompute):
 
 ```
 import time
-from omnibase_core.model.subcontracts import ModelPerformanceMonitoringSubcontract
+from omnibase_core.models.contracts.subcontracts.model_observability_subcontract import ModelObservabilitySubcontract
 
 class NodeAggregatorReducer(NodeReducer):
     """REDUCER node with performance monitoring."""
@@ -535,8 +535,8 @@ class NodeAggregatorReducer(NodeReducer):
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from omnibase_core.model.contracts import ModelContractEffect
-from omnibase_core.model.subcontracts import ModelErrorHandlingSubcontract
+from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
+from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract
 from your_project.nodes import NodeApiClientEffect
 
 @pytest.fixture

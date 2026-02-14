@@ -297,18 +297,6 @@ The operation succeeded before any retry was needed.
 ```text
 Configuration: operation_timeout_ms=10000, retry_enabled=true, max_retries=3
 
-Time 0ms:      Check timeout (OK, elapsed=0ms)
-               -> Start HTTP call
-Time 8000ms:   HTTP call fails (server error)
-               -> Record failure
-               -> Calculate backoff: 1000ms base + jitter ~= 1100ms
-Time 9100ms:   Check timeout (OK, elapsed=9100ms < 10000ms)
-               -> Start HTTP call (retry #1)
-Time 17000ms:  HTTP call fails again
-               -> Check timeout (FAIL, elapsed=17000ms > 10000ms)
-
-Wait... that's not quite right. Let me clarify:
-
 Time 0ms:      Check timeout (OK) -> Start HTTP call
 Time 8000ms:   HTTP call fails -> Wait ~1100ms backoff
 Time 9100ms:   Check timeout (OK, 9100ms < 10000ms) -> Start retry #1

@@ -2,8 +2,8 @@
 
 # Mixin-Subcontract Mapping Guide
 
-**Version**: 1.0.0
-**Last Updated**: 2025-11-19
+**Version**: 1.1.0
+**Last Updated**: 2026-02-14
 **Status**: Comprehensive Architecture Reference
 
 ## Overview
@@ -632,9 +632,20 @@ class EventDrivenNode(NodeEffect, MixinEventHandler):
 
 ---
 
-## Imperative Mixins (30 Total)
+## Imperative Mixins (32 Total)
 
-These mixins provide runtime behavior **without** dedicated subcontracts:
+These mixins provide runtime behavior **without** dedicated subcontracts.
+
+> **Note**: The list below reflects the actual mixin classes in
+> `src/omnibase_core/mixins/`. Some mixins listed in previous versions
+> of this document (e.g., `MixinRetry`, `MixinTimeout`, `MixinCircuitBreaker`,
+> `MixinRateLimiter`, `MixinBulkhead`, `MixinValidation`, `MixinSecurity`,
+> `MixinLogging`, `MixinTelemetry`, `MixinObservability`, `MixinResourceManager`,
+> `MixinTransactionManager`, `MixinStateManager`, `MixinDependencyResolver`,
+> `MixinWorkflowStep`, `MixinParallelExecution`, `MixinDataTransformation`,
+> `MixinAlgorithmRegistry`, `MixinPerformanceOptimization`) do not exist as
+> Python classes. Some of these capabilities are referenced in
+> `mixin_metadata.yaml` as planned mixins.
 
 ### Why No Subcontract?
 
@@ -648,36 +659,39 @@ Imperative mixins typically:
 
 | Mixin | Purpose | Node Types | Example Usage |
 |-------|---------|------------|---------------|
-| `MixinRetry` | Automatic retry with exponential backoff | ALL | Retry failed operations |
-| `MixinTimeout` | Timeout enforcement for operations | ALL | Prevent hanging operations |
-| `MixinCircuitBreaker` | Circuit breaker pattern | EFFECT | Protect external services |
-| `MixinRateLimiter` | Rate limiting and throttling | EFFECT | Limit API call rates |
-| `MixinBulkhead` | Bulkhead isolation pattern | ALL | Resource isolation |
-| `MixinEventBus` | Event bus publication | ALL | Publish events |
-| `MixinEventListener` | Event subscription | ALL | Subscribe to events |
+| `MixinCanonicalYAMLSerializer` | Canonical YAML serialization | ALL | Deterministic serialization |
+| `MixinCLIHandler` | CLI argument parsing/handling | ALL | Command-line interface |
+| `MixinComputeExecution` | Compute node execution logic | COMPUTE | Compute pipeline |
+| `MixinContractMetadata` | Contract metadata extraction | ALL | Access contract metadata |
+| `MixinContractPublisher` | Contract event publishing | ALL | Publish contract events |
+| `MixinContractStateReducer` | Contract-driven state reduction | REDUCER | FSM state reduction |
+| `MixinDebugDiscoveryLogging` | Debug logging for discovery | ALL | Debug and audit |
+| `MixinDiscovery` | Service discovery client | ALL | Find services |
+| `MixinEffectExecution` | Effect node execution logic | EFFECT | Effect pipeline |
+| `MixinEventBus` | Event bus connection management | ALL | Publish events |
 | `MixinEventDrivenNode` | Event-driven coordination | ORCHESTRATOR | Event-based workflows |
+| `MixinFailFast` | Fail-fast validation patterns | ALL | Input validation |
+| `MixinFSMExecution` | FSM execution (also has subcontract) | REDUCER | State machine execution |
+| `MixinHandlerRouting` | Route to appropriate handler | ALL | Handler selection |
+| `MixinHashComputation` | SHA256 hash for metadata | ALL | Content hashing |
+| `MixinIntentPublisher` | Publishes ModelIntent events | ALL | Intent emission |
+| `MixinIntrospectFromContract` | Load introspection from contract | ALL | Contract introspection |
+| `MixinIntrospectionPublisher` | Publish introspection events | ALL | Introspection events |
+| `MixinLazyEvaluation` | Lazy evaluation patterns | ALL | Deferred computation |
+| `MixinLazyValue` | Lazy evaluation wrapper | ALL | Deferred values |
+| `MixinNodeExecutor` | Persistent executor mode | ALL | Execution boilerplate |
+| `MixinNodeIdFromContract` | Load node ID from contract | ALL | Node identity |
+| `MixinNodeLifecycle` | Lifecycle hooks | ALL | Startup/shutdown |
+| `MixinNodeService` | Service interface for nodes | ALL | Service mode |
+| `MixinNodeSetup` | Standard node initialization | ALL | Node setup |
+| `MixinNodeTypeValidator` | Validates node type constraints | ALL | Type enforcement |
+| `MixinRedaction` | Sensitive field redaction | ALL | Data scrubbing |
 | `MixinRequestResponseIntrospection` | Request/response logging | ALL | Debug and audit |
-| `MixinNodeLifecycle` | Lifecycle hooks | ALL | Startup/shutdown logic |
-| `MixinNodeExecutor` | Node execution wrapper | ALL | Execution boilerplate |
-| `MixinHybridExecution` | Sync/async execution | ALL | Mixed execution modes |
-| `MixinSerializable` | Serialization helpers | ALL | JSON/YAML serialization |
-| `MixinCanonicalSerialization` | Canonical form serialization | ALL | Deterministic serialization |
-| `MixinLazyValue` | Lazy evaluation | ALL | Deferred computation |
-| `MixinCLIHandler` | CLI command handling | ALL | Command-line interface |
-| `MixinValidation` | Input validation | ALL | Data validation |
-| `MixinSecurity` | Security utilities | ALL | Auth/authz helpers |
-| `MixinLogging` | Logging utilities | ALL | Structured logging |
-| `MixinTelemetry` | Telemetry collection | ALL | Distributed tracing |
-| `MixinObservability` | Observability hooks | ALL | Monitoring integration |
-| `MixinResourceManager` | Resource pooling | EFFECT | Connection pools |
-| `MixinTransactionManager` | Transaction coordination | REDUCER | ACID guarantees |
-| `MixinStateManager` | State persistence | REDUCER | State storage |
-| `MixinDependencyResolver` | Dependency injection | ORCHESTRATOR | Service resolution |
-| `MixinWorkflowStep` | Workflow step definition | ORCHESTRATOR | Step execution |
-| `MixinParallelExecution` | Parallel processing | COMPUTE | Data parallelism |
-| `MixinDataTransformation` | Data mapping | COMPUTE | ETL operations |
-| `MixinAlgorithmRegistry` | Algorithm selection | COMPUTE | Dynamic algorithms |
-| `MixinPerformanceOptimization` | Performance tuning | ALL | Optimization hints |
+| `MixinSerializable` | Serialization protocol | ALL | JSON/YAML serialization |
+| `MixinServiceRegistry` | Service registry maintenance | ALL | Service registration |
+| `MixinToolExecution` | Tool execution event handling | ALL | Tool execution |
+| `MixinTruncationValidation` | Truncation boundary validation | ALL | Field length checks |
+| `MixinYAMLSerialization` | YAML serialization with comments | ALL | YAML output |
 
 ---
 
@@ -1067,7 +1081,7 @@ class MyNode(NodeCompute, MixinCaching):
 
 | Total Count | Declarative (Subcontracts) | Imperative (No Subcontract) |
 |-------------|----------------------------|------------------------------|
-| **38 Mixins** | **8 Mixins** | **30 Mixins** |
+| **40 Mixins** | **8 Mixins** | **32 Mixins** |
 
 **Declarative Mixins** (8):
 1. MixinFSMExecution → ModelFSMSubcontract
@@ -1081,7 +1095,7 @@ class MyNode(NodeCompute, MixinCaching):
 
 **Key Takeaways**:
 - **Subcontracts** = Declarative YAML configuration (8 mixins)
-- **Mixins** = Runtime behavior (all 38 mixins)
+- **Mixins** = Runtime behavior (all 40 mixins)
 - Use subcontracts for **complex, reusable, validated** configuration
 - Use imperative mixins for **simple utilities** and **context-dependent** behavior
 - The three-layer architecture (YAML → Pydantic → Python) ensures type safety and validation
@@ -1098,6 +1112,6 @@ class MyNode(NodeCompute, MixinCaching):
 
 ---
 
-**Last Updated**: 2025-11-19
-**Version**: 1.0.0
+**Last Updated**: 2026-02-14
+**Version**: 1.1.0
 **Correlation ID**: `fbe7a832-7fc8-4d12-9e92-5a8d0b8e6c4a`

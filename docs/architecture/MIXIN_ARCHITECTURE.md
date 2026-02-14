@@ -3,7 +3,7 @@
 # ONEX Mixin Architecture
 
 **Status**: Active
-**Last Updated**: 2025-01-18
+**Last Updated**: 2026-02-14
 **Related Documents**: [Subcontract Architecture](SUBCONTRACT_ARCHITECTURE.md), [Mixin Development Guide](../guides/mixin-development/README.md)
 
 ## Overview
@@ -34,20 +34,26 @@ The ONEX framework implements a sophisticated mixin system (also called "subcont
 
 The ONEX mixin system uses a three-layer architecture that separates concerns while maintaining type safety:
 
-### Layer 1: YAML Contract Files
+### Layer 1: YAML Contract Files (Planned)
 
-**Location**: `src/omnibase_core/nodes/canary/mixins/` or `subcontracts/`
+> **Note**: YAML mixin contract files are a **planned feature**, not yet implemented.
+> The directory `src/omnibase_core/nodes/canary/mixins/` does not currently exist.
+> A metadata file exists at `src/omnibase_core/mixins/mixin_metadata.yaml` for reference,
+> but individual YAML mixin contracts have not been created yet. Currently, the Pydantic
+> subcontract models (Layer 2) serve as the primary contract definitions.
+
+**Planned Location**: `src/omnibase_core/nodes/canary/mixins/` or `subcontracts/`
 **Purpose**: Define mixin capabilities, actions, configuration, and schema
 **Format**: Structured YAML following ONEX contract schema
 
-**Key Characteristics**:
+**Planned Characteristics**:
 - Human-readable contract definitions
 - Version-controlled capabilities
 - Declarative action specifications
 - Configuration schema with defaults
 - Dependency declarations
 
-**Example Structure**:
+**Planned Structure**:
 ```
 mixin_name: "mixin_health_check"
 mixin_version: {major: 1, minor: 0, patch: 0}
@@ -70,7 +76,7 @@ health_check_config:
 
 ### Layer 2: Pydantic Model Files
 
-**Location**: `src/omnibase_core/model/subcontracts/`
+**Location**: `src/omnibase_core/models/contracts/subcontracts/`
 **Purpose**: Provide runtime type safety and validation
 **Format**: Python Pydantic models with strong typing
 
@@ -84,14 +90,13 @@ health_check_config:
 **Example Structure**:
 ```
 from pydantic import BaseModel, Field
-from typing import List
 
 class ModelHealthCheckSubcontract(BaseModel):
     """Health check mixin Pydantic backing model."""
 
     subcontract_name: str = Field(default="mixin_health_check")
     subcontract_version: str = Field(default="1.0.0")
-    applicable_node_types: List[str] = Field(default=["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"])
+    applicable_node_types: list[str] = Field(default=["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"])
 
     interval_seconds: int = Field(default=30, ge=5, le=300)
     timeout_ms: int = Field(default=5000, ge=100, le=60000)
@@ -205,30 +210,44 @@ Specialized mixins enforce architectural boundaries:
 
 ```
 src/omnibase_core/
-├── nodes/canary/
-│   ├── mixins/                          # Mixin contract definitions
-│   │   ├── mixin_health_check.yaml
-│   │   ├── mixin_performance_monitoring.yaml
-│   │   ├── mixin_event_handling.yaml
-│   │   ├── mixin_introspection.yaml
-│   │   ├── mixin_service_resolution.yaml
-│   │   └── mixin_request_response.yaml
-│   │
-│   ├── subcontracts/                    # Alternative location for subcontracts
-│   │   ├── health_check_subcontract.yaml
-│   │   ├── performance_monitoring_subcontract.yaml
-│   │   └── ...
-│   │
-│   └── [node_name]/v1_0_0/
-│       └── contract.yaml                # Node contract with mixin references
+├── mixins/                                    # Python mixin implementations
+│   ├── mixin_caching.py
+│   ├── mixin_compute_execution.py
+│   ├── mixin_effect_execution.py
+│   ├── mixin_event_bus.py
+│   ├── mixin_event_handler.py
+│   ├── mixin_fsm_execution.py
+│   ├── mixin_handler_routing.py
+│   ├── mixin_health_check.py
+│   ├── mixin_introspection.py
+│   ├── mixin_metadata.yaml               # Mixin metadata reference
+│   ├── mixin_metrics.py
+│   ├── mixin_node_lifecycle.py
+│   ├── mixin_node_service.py
+│   ├── mixin_workflow_execution.py
+│   └── ...                                # (~40 mixin files total)
 │
-└── model/subcontracts/                  # Pydantic backing models
-    ├── __init__.py
-    ├── model_health_check_subcontract.py
-    ├── model_performance_monitoring_subcontract.py
-    ├── model_event_handling_subcontract.py
-    └── ...
+├── models/contracts/subcontracts/             # Pydantic subcontract models
+│   ├── __init__.py
+│   ├── model_health_check_subcontract.py
+│   ├── model_metrics_subcontract.py
+│   ├── model_fsm_subcontract.py
+│   ├── model_caching_subcontract.py
+│   ├── model_event_handling_subcontract.py
+│   ├── model_introspection_subcontract.py
+│   ├── model_discovery_subcontract.py
+│   ├── model_workflow_coordination_subcontract.py
+│   └── ...                                # (~100+ subcontract model files)
+│
+└── nodes/canary/
+    └── [node_name]/v1_0_0/
+        └── contract.yaml                  # Node contract with mixin references
 ```
+
+> **Note**: YAML mixin contract files (e.g., `mixin_health_check.yaml`) in a
+> `nodes/canary/mixins/` directory are a planned feature. Currently, the Pydantic
+> subcontract models in `models/contracts/subcontracts/` serve as the contract
+> definitions, and the Python mixins in `mixins/` provide the runtime behavior.
 
 ### Naming Conventions
 
@@ -361,30 +380,19 @@ subcontracts:
 
 **Node Implementation**:
 
+Nodes are thin coordination shells. Business logic lives in handlers:
+
 ```
-from omnibase_core.nodes import NodeCompute
-from omnibase_core.model.contracts import ModelContractCompute
+from omnibase_core.core.node_compute import NodeCompute
 
 class MyComputeNode(NodeCompute):
-    """Node with mixin capabilities."""
+    """Thin node shell -- delegates to handler for business logic."""
 
-    async def execute_compute(self, contract: ModelContractCompute):
-        # Access mixin configuration
-        health_config = contract.health_check_configuration
-        perf_config = contract.performance_monitoring_configuration
-
-        # Use mixin capabilities
-        if health_config.enabled:
-            await self._check_health(health_config)
-
-        # Execute core computation
-        result = await self._compute(contract)
-
-        # Record performance metrics
-        if perf_config.enabled:
-            await self._record_metrics(result, perf_config)
-
-        return result
+    async def execute_compute(self, input_data, **kwargs):
+        # Node delegates to handler; mixin configuration is
+        # accessed through the contract by the handler.
+        handler = self.container.get_service("MyComputeHandler")
+        return await handler.handle(input_data, contract=self.contract)
 ```
 
 ## Architectural Principles
@@ -523,4 +531,4 @@ Use wrappers unless you need a specialized composition; if so, inherit directly 
 **Next Steps**:
 - Read the [Mixin Development Guide](../guides/mixin-development/README.md) to learn how to create mixins
 - See the [Subcontract Architecture](SUBCONTRACT_ARCHITECTURE.md) for implementation patterns
-- Review existing mixins in `src/omnibase_core/nodes/canary/mixins/`
+- Review existing mixins in `src/omnibase_core/mixins/`

@@ -16,7 +16,7 @@ The ONEX ecosystem consists of multiple repositories with distinct purposes and 
 **Purpose**: Core framework providing base classes, mixins, and essential implementations
 **Location**: `/Volumes/PRO-G40/Code/omnibase_core`
 **Package Name**: `omnibase_core`
-**Version**: `0.2.0`
+**Version**: `0.17.0`
 
 ```
 omnibase_core/
@@ -27,11 +27,11 @@ omnibase_core/
 │       ├── container/           # Dependency injection
 │       ├── decorators/          # Framework decorators
 │       ├── discovery/           # Service discovery
-│       ├── enums/              # Core enumerations (310 files)
+│       ├── enums/              # Core enumerations (388 files)
 │       ├── errors/             # Error handling
 │       ├── infrastructure/     # Infrastructure components
 │       ├── logging/            # Structured logging
-│       ├── mixins/             # Reusable mixins (49 files)
+│       ├── mixins/             # Reusable mixins (41 files)
 │       │   ├── mixin_caching.py
 │       │   ├── mixin_health_check.py
 │       │   ├── mixin_event_bus.py
@@ -39,7 +39,7 @@ omnibase_core/
 │       │   ├── mixin_metrics.py
 │       │   ├── mixin_node_service.py
 │       │   └── ... (43 more mixins)
-│       ├── models/             # Data models (60 directories)
+│       ├── models/             # Data models (80 directories)
 │       │   ├── service/        # Service wrapper classes
 │       │   │   ├── model_service_compute.py
 │       │   │   ├── model_service_effect.py
@@ -49,7 +49,7 @@ omnibase_core/
 │       │   ├── primitives/     # Primitive type models
 │       │   └── ... (other model categories)
 │       ├── nodes/              # Base node classes
-│       ├── types/              # Type definitions (93 files)
+│       ├── types/              # Type definitions (206 files)
 │       ├── utils/              # Utility functions
 │       ├── validation/         # Validation framework
 │       └── validators/         # Custom validators
@@ -168,7 +168,7 @@ omnibase_infra/
 ```
 
 **Infrastructure Node Patterns**:
-- `ModelServiceEffect` - Legacy service base class
+- `ModelServiceEffect` - Service wrapper base class (re-exported from `omnibase_core.models.services`)
 - Custom mixin compositions for infrastructure needs
 - Direct integration with external systems (PostgreSQL, Kafka, Consul)
 
@@ -309,7 +309,7 @@ class MyInfraEffect(ModelServiceEffect):
     pass
 ```
 
-**Note**: `ModelServiceEffect` is deprecated in favor of `ModelService*` wrappers
+**Note**: Import `ModelServiceEffect` from `omnibase_core.models.services` (or via `omnibase_core.infrastructure.infra_bases` re-export)
 
 ## Mixin Distribution
 
@@ -345,7 +345,7 @@ Based on ecosystem analysis, these capabilities may need to be added to core:
 1. **Update Documentation** - Use service wrapper patterns in all examples
 2. **Add Missing Mixins** - Implement identified missing capabilities in core
 3. **Create Bridge Wrappers** - Add bridge-specific service wrappers
-4. **Deprecate Legacy Patterns** - Mark `ModelServiceEffect` as deprecated
+4. **Consolidate Import Paths** - Prefer `omnibase_core.models.services` imports
 
 ### Long-term Strategy
 1. **Standardize on Wrappers** - All new nodes use `ModelService*` wrappers
@@ -370,7 +370,7 @@ Based on ecosystem analysis, these capabilities may need to be added to core:
 
 ## Version Management
 
-All repositories use semantic versioning with `0.1.0` as the current version. Dependencies are managed through:
+All repositories use semantic versioning. `omnibase_core` is currently at `0.17.0`; other repositories vary. Dependencies are managed through:
 
 1. **Git Dependencies** - For development dependencies
 2. **PyPI Dependencies** - For stable releases

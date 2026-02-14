@@ -55,7 +55,7 @@ class ModelAlgorithmConfig(BaseModel):
             execution speed and resource usage. Options: "low" (minimal
             optimization), "medium" (balanced), "high" (maximum performance).
             Default: "medium".
-        factor_config (Optional[ModelAlgorithmFactorConfig]): Advanced factor
+        factor_config (ModelAlgorithmFactorConfig | None): Advanced factor
             configuration for complex algorithms requiring multi-dimensional
             parameter tuning. None for simple algorithms.
         performance_monitoring (bool): Whether to collect detailed performance
@@ -128,7 +128,7 @@ class ModelAlgorithmConfig(BaseModel):
     algorithm_type: str
     parameters: dict[str, Any]
     optimization_level: str = "medium"
-    factor_config: Optional[ModelAlgorithmFactorConfig] = None
+    factor_config: ModelAlgorithmFactorConfig | None = None
     performance_monitoring: bool = False
 
     model_config = ConfigDict(
@@ -166,7 +166,7 @@ class ModelBackupConfig(BaseModel):
             defining how long backups are kept and cleanup policies.
             Structure: {"max_backups": int, "retention_days": int,
             "compression_enabled": bool}.
-        encryption_config (Optional[dict[str, str]]): Encryption settings for
+        encryption_config (dict[str, str] | None): Encryption settings for
             backup data. Structure: {"encryption_key": str, "algorithm": str}.
             None for unencrypted backups (not recommended for production).
         compression_level (int): Backup compression level from 0 (no compression)
@@ -255,7 +255,7 @@ class ModelBackupConfig(BaseModel):
     backup_strategy: str = "incremental"
     storage_location: str
     retention_policy: dict[str, Any]
-    encryption_config: Optional[dict[str, str]] = None
+    encryption_config: dict[str, str] | None = None
     compression_level: int = 6
     verification_enabled: bool = True
 
@@ -292,13 +292,13 @@ class ModelEventDescriptor(BaseModel):
             Supports pattern matching and hierarchical routing structures.
         priority_level (int): Event processing priority from 1 (lowest) to
             10 (highest). Higher priority events are processed first.
-        correlation_patterns (List[str]): Patterns for correlating related
+        correlation_patterns (list[str]): Patterns for correlating related
             events. Supports regex patterns and field-based correlation.
-        timeout_seconds (Optional[int]): Maximum time to wait for event
+        timeout_seconds (int | None): Maximum time to wait for event
             processing completion. None for no timeout. Default: None.
-        retry_policy (Optional[dict[str, Any]]): Retry configuration for
+        retry_policy (dict[str, Any] | None): Retry configuration for
             failed event processing. Structure: {"max_retries": int,
-            "backoff_strategy": str, "retry_conditions": List[str]}.
+            "backoff_strategy": str, "retry_conditions": list[str]}.
 
     Example:
         ```python
@@ -384,9 +384,9 @@ class ModelEventDescriptor(BaseModel):
     event_version: str
     routing_key: str
     priority_level: int = 5
-    correlation_patterns: List[str] = Field(default_factory=list)
-    timeout_seconds: Optional[int] = None
-    retry_policy: Optional[dict[str, Any]] = None
+    correlation_patterns: list[str] = Field(default_factory=list)
+    timeout_seconds: int | None = None
+    retry_policy: dict[str, Any] | None = None
 
     model_config = ConfigDict(
         extra="forbid",
@@ -414,7 +414,7 @@ class ModelAggregationSubcontract(BaseModel):
     both batch and streaming data processing scenarios.
 
     Attributes:
-        aggregation_functions (List[ModelAggregationFunction]): List of
+        aggregation_functions (list[ModelAggregationFunction]): List of
             aggregation operations to perform on the input data. Each function
             defines the operation type, target fields, and output specifications.
             Supports chaining multiple aggregations on the same dataset.
@@ -424,7 +424,7 @@ class ModelAggregationSubcontract(BaseModel):
         performance_config (ModelAggregationPerformance): Performance
             optimization settings including batch sizes, parallel processing
             configuration, memory limits, and caching strategies.
-        circuit_breaker (Optional[ModelCircuitBreaker]): Circuit breaker
+        circuit_breaker (ModelCircuitBreaker | None): Circuit breaker
             configuration for fault tolerance during high-load scenarios.
             Prevents cascade failures and maintains system stability. None
             to disable circuit breaker protection.
@@ -541,10 +541,10 @@ class ModelAggregationSubcontract(BaseModel):
         and debugging capabilities.
     """
 
-    aggregation_functions: List[ModelAggregationFunction]
+    aggregation_functions: list[ModelAggregationFunction]
     data_grouping: ModelDataGrouping
     performance_config: ModelAggregationPerformance
-    circuit_breaker: Optional[ModelCircuitBreaker] = None
+    circuit_breaker: ModelCircuitBreaker | None = None
     correlation_id: UUID = Field(default_factory=uuid4)
 
     model_config = ConfigDict(
@@ -576,20 +576,20 @@ class ModelFSMSubcontract(BaseModel):
             definition of all available states in the FSM. Each state includes
             metadata, allowed operations, timeout configurations, and exit
             conditions. Keys are state names, values are state definitions.
-        transitions (List[ModelFSMStateTransition]): All valid state transitions
+        transitions (list[ModelFSMStateTransition]): All valid state transitions
             with conditions, actions, and metadata. Defines the complete state
             transition graph with conditional logic and automated actions.
         initial_state (str): Starting state name for FSM execution. Must exist
             in state_definitions. This state is entered when FSM is initialized.
-        final_states (List[str]): Terminal states that end FSM processing.
+        final_states (list[str]): Terminal states that end FSM processing.
             All states in this list must exist in state_definitions. FSM
             execution completes when any final state is reached.
-        operations (List[ModelFSMOperation]): Operations available within
+        operations (list[ModelFSMOperation]): Operations available within
             FSM states. Defines what actions can be performed in each state
             and their execution parameters.
         correlation_id (UUID): Unique identifier for request correlation and
             FSM execution tracking across distributed systems.
-        timeout_config (Optional[dict[str, int]]): Global timeout configuration
+        timeout_config (dict[str, int] | None): Global timeout configuration
             for FSM execution. Structure: {"global_timeout": seconds,
             "state_timeout": seconds, "operation_timeout": seconds}.
 
@@ -812,12 +812,12 @@ class ModelFSMSubcontract(BaseModel):
     """
 
     state_definitions: dict[str, ModelFSMStateDefinition]
-    transitions: List[ModelFSMStateTransition]
+    transitions: list[ModelFSMStateTransition]
     initial_state: str
-    final_states: List[str]
-    operations: List[ModelFSMOperation] = Field(default_factory=list)
+    final_states: list[str]
+    operations: list[ModelFSMOperation] = Field(default_factory=list)
     correlation_id: UUID = Field(default_factory=uuid4)
-    timeout_config: Optional[dict[str, int]] = None
+    timeout_config: dict[str, int] | None = None
 
     model_config = ConfigDict(
         extra="forbid",
@@ -849,7 +849,7 @@ class TypedDictPerformanceMetricData(TypedDict):
             metric being measured. Should follow hierarchical naming convention
             (e.g., "node.compute.execution_time", "pipeline.throughput").
             Used for metric aggregation and dashboard visualization.
-        value (Union[int, float]): Numeric value of the performance metric.
+        value (int | float): Numeric value of the performance metric.
             Supports both integer counters and floating-point measurements.
             Must be finite and non-NaN for proper metric processing.
         timestamp (datetime): UTC timestamp when the metric was recorded.
@@ -1000,7 +1000,7 @@ class TypedDictPerformanceMetricData(TypedDict):
     """
 
     metric_name: str
-    value: Union[int, float]
+    value: int | float
     timestamp: datetime
     component_id: UUID
     unit: NotRequired[str]

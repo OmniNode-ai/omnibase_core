@@ -583,7 +583,9 @@ class MyNodeContract(BaseModel):
     state_transitions: ModelFSMSubcontract  # Add this field
 
 # OR manually load contract
-node.fsm_contract = ModelFSMSubcontract.parse_file("contract.yaml")
+node.fsm_contract = ModelFSMSubcontract.model_validate(
+    yaml.safe_load(Path("contract.yaml").read_text())
+)
 ```
 
 #### Issue 2: "Workflow definition not loaded"
@@ -598,7 +600,9 @@ class MyNodeContract(BaseModel):
     workflow_coordination: ModelWorkflowCoordination  # Add this field
 
 # OR manually load definition
-node.workflow_definition = ModelWorkflowDefinition.parse_file("workflow.yaml")
+node.workflow_definition = ModelWorkflowDefinition.model_validate(
+    yaml.safe_load(Path("workflow.yaml").read_text())
+)
 ```
 
 #### Issue 3: "Condition expression failed"

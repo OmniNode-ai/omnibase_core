@@ -500,86 +500,54 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
 
 ### Processing Intents (Effect Node)
 
+Effect nodes are thin coordination shells that delegate Intent execution to handlers
+resolved from the DI container. The node does not contain inline routing logic.
+
 **Intent Consumption Pattern**:
 
 ```
 from omnibase_core.models.model_intent import ModelIntent
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-class NodeEffect(NodeCoreBase):
+class NodeIntentExecutor(NodeCoreBase):
+    """Effect node that delegates Intent execution to registered handlers."""
+
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+        # Resolve the handler registry -- handlers own the execution logic
+        self.handler_registry = container.get_service("intent_handler_registry")
+
     async def execute_intents(
         self,
-        intents: list[ModelIntent]
+        intents: list[ModelIntent],
     ) -> dict[UUID, Any]:
         """
         Execute list of Intents with priority-based ordering.
 
         Returns:
-            Dict mapping intent_id to execution result
+            Dict mapping intent_id to execution result.
         """
-        results = {}
+        results: dict[UUID, Any] = {}
 
         # Sort by priority (highest first)
         sorted_intents = sorted(intents, key=lambda i: i.priority, reverse=True)
 
         for intent in sorted_intents:
             try:
-                result = await self._execute_single_intent(intent)
+                # Delegate to the appropriate handler from registry
+                handler = self.handler_registry.get(intent.intent_type)
+                result = await handler.execute(intent)
                 results[intent.intent_id] = result
             except Exception as e:
-                # Handle Intent execution failure
                 await self._handle_intent_failure(intent, e)
                 results[intent.intent_id] = {"error": str(e)}
 
         return results
-
-    async def _execute_single_intent(self, intent: ModelIntent) -> Any:
-        """Execute a single Intent based on its type and target."""
-
-        # Route to appropriate handler
-        if intent.intent_type == "log_metric":
-            return await self._execute_metric_intent(intent)
-        elif intent.intent_type == "log_event":
-            return await self._execute_logging_intent(intent)
-        elif intent.intent_type == "write":
-            return await self._execute_write_intent(intent)
-        elif intent.intent_type == "notify":
-            return await self._execute_notification_intent(intent)
-        else:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Unknown intent type: {intent.intent_type}",
-            )
-
-    async def _execute_metric_intent(self, intent: ModelIntent) -> bool:
-        """Execute metrics logging Intent."""
-        metrics_service = self.container.get_service(intent.target)
-        await metrics_service.record_metric(**intent.payload)
-        return True
-
-    async def _execute_logging_intent(self, intent: ModelIntent) -> bool:
-        """Execute logging Intent."""
-        logger = self.container.get_service(intent.target)
-        level = intent.payload["level"]
-        message = intent.payload["message"]
-        context = intent.payload.get("context", {})
-
-        await logger.log(level=level, message=message, context=context)
-        return True
-
-    async def _execute_write_intent(self, intent: ModelIntent) -> dict[str, Any]:
-        """Execute database write Intent with transaction support."""
-        db_service = self.container.get_service(intent.target)
-
-        # Use transaction for write Intents
-        async with self.transaction_context() as tx:
-            result = await db_service.write(
-                collection=intent.payload["collection"],
-                data=intent.payload["data"],
-            )
-            tx.add_operation("write", intent.payload, lambda: db_service.delete(...))
-
-        return {"written": True, "result": result}
 ```
+
+Each Intent type (e.g., `log_metric`, `log_event`, `write`, `notify`) has a
+corresponding handler registered in the `intent_handler_registry`. The node
+coordinates execution order and error handling; the handlers own the business logic.
 
 **Error Handling for Failed Intents**:
 

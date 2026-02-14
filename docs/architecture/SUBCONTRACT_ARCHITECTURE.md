@@ -2,6 +2,8 @@
 
 # ONEX Subcontract Package Architecture
 
+**Last Updated**: 2026-02-14
+
 ## Overview
 
 The ONEX Subcontract Package provides specialized contract models for complex operations within the Four-Node Architecture. Subcontracts enable sophisticated processing patterns including finite state machines, data aggregation, routing, workflow coordination, introspection, discovery, event handling, lifecycle management, observability, and tool execution while maintaining ONEX compliance and correlation tracking.
@@ -190,35 +192,17 @@ realtime_aggregation = ModelAggregationSubcontract(
 
 **Integration with REDUCER Nodes**:
 
+Nodes are thin coordination shells. Business logic lives in handlers:
+
 ```
-from omnibase_core.models.services.model_service_reducer import ModelServiceReducer
-from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
+from omnibase_core.core.node_reducer import NodeReducer
 
-class AggregationReducerService(ModelServiceReducer):
-    """REDUCER node with aggregation subcontract support."""
+class AggregationReducerNode(NodeReducer):
+    """REDUCER node -- delegates aggregation logic to handler."""
 
-    async def execute_reduction(self, contract: ModelContractReducer) -> ModelReducerOutput:
-        """Execute reduction with aggregation subcontract."""
-        # Extract aggregation subcontract
-        aggregation_subcontract = contract.get_subcontract(ModelAggregationSubcontract)
-
-        if aggregation_subcontract:
-            # Execute aggregation operations
-            aggregation_result = await self._execute_aggregation_subcontract(
-                aggregation_subcontract
-            )
-
-            # Integrate results into reducer output
-            return ModelReducerOutput(
-                correlation_id=contract.correlation_id,
-                aggregated_data=aggregation_result.data,
-                subcontract_results={
-                    "aggregation": aggregation_result.metadata
-                }
-            )
-
-        # Fallback to standard reduction
-        return await super().execute_reduction(contract)
+    async def execute_reduction(self, input_data, **kwargs):
+        handler = self.container.get_service("AggregationHandler")
+        return await handler.handle(input_data, contract=self.contract)
 ```
 
 ### 2. Finite State Machine (FSM) Subcontract
@@ -388,36 +372,17 @@ pipeline_fsm = ModelFSMSubcontract(
 
 **Integration with ORCHESTRATOR Nodes**:
 
+Nodes are thin coordination shells. Business logic lives in handlers:
+
 ```
-from omnibase_core.models.services.model_service_orchestrator import ModelServiceOrchestrator
+from omnibase_core.core.node_orchestrator import NodeOrchestrator
 
-class FSMOrchestratorService(ModelServiceOrchestrator):
-    """ORCHESTRATOR node with FSM subcontract support."""
+class FSMOrchestratorNode(NodeOrchestrator):
+    """ORCHESTRATOR node -- delegates FSM workflow to handler."""
 
-    async def execute_orchestration(self, contract: ModelContractOrchestrator):
-        """Execute orchestration with FSM subcontract."""
-        fsm_subcontract = contract.get_subcontract(ModelFSMSubcontract)
-
-        if fsm_subcontract:
-            # Initialize FSM execution engine
-            fsm_engine = FSMExecutionEngine(fsm_subcontract)
-
-            # Execute FSM workflow
-            fsm_result = await fsm_engine.execute()
-
-            return ModelOrchestratorOutput(
-                correlation_id=contract.correlation_id,
-                orchestration_result=fsm_result,
-                subcontract_results={
-                    "fsm": {
-                        "final_state": fsm_result.final_state,
-                        "transitions_executed": fsm_result.transition_count,
-                        "execution_time": fsm_result.total_time
-                    }
-                }
-            )
-
-        return await super().execute_orchestration(contract)
+    async def execute_orchestration(self, input_data, **kwargs):
+        handler = self.container.get_service("FSMOrchestrationHandler")
+        return await handler.handle(input_data, contract=self.contract)
 ```
 
 ### 3. Routing Subcontract
@@ -529,42 +494,17 @@ microservice_routing = ModelRoutingSubcontract(
 
 **Integration with EFFECT Nodes**:
 
+Nodes are thin coordination shells. Business logic lives in handlers:
+
 ```
-from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
+from omnibase_core.core.node_effect import NodeEffect
 
-class RoutingEffectService(ModelServiceEffect):
-    """EFFECT node with routing subcontract support."""
+class RoutingEffectNode(NodeEffect):
+    """EFFECT node -- delegates routing to handler."""
 
-    async def execute_effect(self, contract: ModelContractEffect):
-        """Execute effect with routing subcontract."""
-        routing_subcontract = contract.get_subcontract(ModelRoutingSubcontract)
-
-        if routing_subcontract:
-            # Initialize routing engine
-            routing_engine = RoutingEngine(routing_subcontract)
-
-            # Route request based on configuration
-            route_result = await routing_engine.route_request(
-                request_path=contract.request_path,
-                request_data=contract.request_data,
-                correlation_id=contract.correlation_id
-            )
-
-            # Execute routed request
-            response = await self._execute_routed_request(route_result)
-
-            return ModelEffectOutput(
-                correlation_id=contract.correlation_id,
-                operation_result=response,
-                routing_metadata={
-                    "selected_route": route_result.route_id,
-                    "target_service": route_result.target_service,
-                    "routing_time": route_result.routing_time,
-                    "transformations_applied": route_result.transformations
-                }
-            )
-
-        return await super().execute_effect(contract)
+    async def execute_effect(self, input_data, **kwargs):
+        handler = self.container.get_service("RoutingHandler")
+        return await handler.handle(input_data, contract=self.contract)
 ```
 
 ### 4. Caching Subcontract
@@ -1021,7 +961,7 @@ class SubcontractMetricsCollector:
         self,
         subcontract: ModelAggregationSubcontract,
         execution_result: AggregationResult
-    ) -> List[TypedDictPerformanceMetricData]:
+    ) -> list[TypedDictPerformanceMetricData]:
         """Collect metrics from aggregation subcontract execution."""
         metrics = []
 
@@ -1066,7 +1006,7 @@ class SubcontractMetricsCollector:
         self,
         subcontract: ModelFSMSubcontract,
         execution_result: FSMResult
-    ) -> List[TypedDictPerformanceMetricData]:
+    ) -> list[TypedDictPerformanceMetricData]:
         """Collect metrics from FSM subcontract execution."""
         metrics = []
 

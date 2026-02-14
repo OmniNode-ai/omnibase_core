@@ -67,7 +67,7 @@ All ONEX errors inherit from the `ModelOnexError` base class which provides stru
 ```
 # ModelOnexError class definition (from omnibase_core.models.errors.model_onex_error)
 from uuid import UUID
-from typing import Optional, Dict, Any
+from typing import Any
 from datetime import UTC, datetime
 
 class ModelOnexError(Exception):
@@ -79,9 +79,9 @@ class ModelOnexError(Exception):
 
     Attributes:
         message (str): Human-readable error description
-        correlation_id (Optional[UUID]): Request correlation identifier
+        correlation_id (UUID | None): Request correlation identifier
         error_code (str): Machine-readable error classification
-        error_context (Dict[str, Any]): Additional error context and metadata
+        error_context (dict[str, Any]): Additional error context and metadata
         timestamp (datetime): When the error occurred
         component (str): Component where the error originated
         operation (str): Operation that was being performed
@@ -91,11 +91,11 @@ class ModelOnexError(Exception):
     def __init__(
         self,
         message: str,
-        correlation_id: Optional[UUID] = None,
+        correlation_id: UUID | None = None,
         error_code: str = "ONEX_ERROR",
-        error_context: Optional[Dict[str, Any]] = None,
-        component: Optional[str] = None,
-        operation: Optional[str] = None,
+        error_context: dict[str, Any] | None = None,
+        component: str | None = None,
+        operation: str | None = None,
         recoverable: bool = False
     ):
         super().__init__(message)
@@ -108,7 +108,7 @@ class ModelOnexError(Exception):
         self.operation = operation
         self.recoverable = recoverable
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert error to dictionary for serialization."""
         return {
             "message": self.message,
@@ -143,9 +143,9 @@ class ContractValidationError(ModelOnexError):
     def __init__(
         self,
         message: str,
-        correlation_id: Optional[UUID] = None,
-        validation_errors: Optional[List[Dict[str, Any]]] = None,
-        contract_type: Optional[str] = None,
+        correlation_id: UUID | None = None,
+        validation_errors: list[dict[str, Any]] | None = None,
+        contract_type: str | None = None,
         **kwargs
     ):
         super().__init__(
@@ -199,10 +199,10 @@ class NodeOperationError(ModelOnexError):
     def __init__(
         self,
         message: str,
-        correlation_id: Optional[UUID] = None,
-        node_type: Optional[str] = None,
-        operation_type: Optional[str] = None,
-        node_metadata: Optional[Dict[str, Any]] = None,
+        correlation_id: UUID | None = None,
+        node_type: str | None = None,
+        operation_type: str | None = None,
+        node_metadata: dict[str, Any] | None = None,
         **kwargs
     ):
         super().__init__(
@@ -224,7 +224,7 @@ class NodeOperationError(ModelOnexError):
 class EffectNodeError(NodeOperationError):
     """Error in EFFECT node operations."""
 
-    def __init__(self, message: str, correlation_id: Optional[UUID] = None, **kwargs):
+    def __init__(self, message: str, correlation_id: UUID | None = None, **kwargs):
         super().__init__(
             message=message,
             correlation_id=correlation_id,
@@ -235,7 +235,7 @@ class EffectNodeError(NodeOperationError):
 class ComputeNodeError(NodeOperationError):
     """Error in COMPUTE node operations."""
 
-    def __init__(self, message: str, correlation_id: Optional[UUID] = None, **kwargs):
+    def __init__(self, message: str, correlation_id: UUID | None = None, **kwargs):
         super().__init__(
             message=message,
             correlation_id=correlation_id,
@@ -246,7 +246,7 @@ class ComputeNodeError(NodeOperationError):
 class ReducerNodeError(NodeOperationError):
     """Error in REDUCER node operations."""
 
-    def __init__(self, message: str, correlation_id: Optional[UUID] = None, **kwargs):
+    def __init__(self, message: str, correlation_id: UUID | None = None, **kwargs):
         super().__init__(
             message=message,
             correlation_id=correlation_id,
@@ -257,7 +257,7 @@ class ReducerNodeError(NodeOperationError):
 class OrchestratorNodeError(NodeOperationError):
     """Error in ORCHESTRATOR node operations."""
 
-    def __init__(self, message: str, correlation_id: Optional[UUID] = None, **kwargs):
+    def __init__(self, message: str, correlation_id: UUID | None = None, **kwargs):
         super().__init__(
             message=message,
             correlation_id=correlation_id,
@@ -280,10 +280,10 @@ class SubcontractExecutionError(ModelOnexError):
     def __init__(
         self,
         message: str,
-        correlation_id: Optional[UUID] = None,
-        subcontract_type: Optional[str] = None,
-        execution_phase: Optional[str] = None,
-        subcontract_config: Optional[Dict[str, Any]] = None,
+        correlation_id: UUID | None = None,
+        subcontract_type: str | None = None,
+        execution_phase: str | None = None,
+        subcontract_config: dict[str, Any] | None = None,
         **kwargs
     ):
         super().__init__(
@@ -305,7 +305,7 @@ class SubcontractExecutionError(ModelOnexError):
 class AggregationError(SubcontractExecutionError):
     """Error in aggregation subcontract execution."""
 
-    def __init__(self, message: str, correlation_id: Optional[UUID] = None, **kwargs):
+    def __init__(self, message: str, correlation_id: UUID | None = None, **kwargs):
         super().__init__(
             message=message,
             correlation_id=correlation_id,
@@ -319,9 +319,9 @@ class FSMExecutionError(SubcontractExecutionError):
     def __init__(
         self,
         message: str,
-        correlation_id: Optional[UUID] = None,
-        current_state: Optional[str] = None,
-        target_state: Optional[str] = None,
+        correlation_id: UUID | None = None,
+        current_state: str | None = None,
+        target_state: str | None = None,
         **kwargs
     ):
         error_context = kwargs.get("error_context", {})
@@ -344,9 +344,9 @@ class RoutingError(SubcontractExecutionError):
     def __init__(
         self,
         message: str,
-        correlation_id: Optional[UUID] = None,
-        route_id: Optional[str] = None,
-        target_service: Optional[str] = None,
+        correlation_id: UUID | None = None,
+        route_id: str | None = None,
+        target_service: str | None = None,
         **kwargs
     ):
         error_context = kwargs.get("error_context", {})
@@ -568,7 +568,8 @@ finally:
 
 ```
 from functools import wraps
-from typing import Callable, Any
+from typing import Any
+from collections.abc import Callable
 import logging
 import traceback
 
@@ -711,8 +712,8 @@ def standard_error_handling(
     return decorator
 
 # Usage Examples
-class DatabaseEffectService(ModelServiceEffect):
-    """EFFECT node with standardized error handling."""
+class DatabaseEffectHandler:
+    """EFFECT node handler with standardized error handling."""
 
     @standard_error_handling(
         error_class=EffectNodeError,
@@ -723,9 +724,9 @@ class DatabaseEffectService(ModelServiceEffect):
     async def execute_database_query(
         self,
         query: str,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
         correlation_id: UUID
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute database query with error handling."""
         async with self.connection_pool.acquire() as conn:
             cursor = await conn.execute(query, parameters)
@@ -739,7 +740,7 @@ class DatabaseEffectService(ModelServiceEffect):
     )
     async def execute_transaction(
         self,
-        operations: List[Dict[str, Any]],
+        operations: list[dict[str, Any]],
         correlation_id: UUID
     ) -> bool:
         """Execute database transaction with error handling."""
@@ -757,7 +758,8 @@ from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import asyncio
-from typing import Callable, Any, Optional
+from typing import Any
+from collections.abc import Callable
 
 class CircuitBreakerState(Enum):
     """Circuit breaker states."""
@@ -786,7 +788,7 @@ class CircuitBreaker:
         self,
         name: str,
         config: CircuitBreakerConfig,
-        correlation_id: Optional[UUID] = None
+        correlation_id: UUID | None = None
     ):
         self.name = name
         self.config = config
@@ -794,8 +796,8 @@ class CircuitBreaker:
         self.state = CircuitBreakerState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time: Optional[datetime] = None
-        self.last_success_time: Optional[datetime] = None
+        self.last_failure_time: datetime | None = None
+        self.last_success_time: datetime | None = None
 
     async def call(self, func: Callable, *args, **kwargs) -> Any:
         """
@@ -917,7 +919,7 @@ class CircuitBreaker:
 class CircuitBreakerError(ModelOnexError):
     """Base class for circuit breaker errors."""
 
-    def __init__(self, message: str, correlation_id: Optional[UUID] = None, **kwargs):
+    def __init__(self, message: str, correlation_id: UUID | None = None, **kwargs):
         super().__init__(
             message=message,
             correlation_id=correlation_id,
@@ -928,7 +930,7 @@ class CircuitBreakerError(ModelOnexError):
 class CircuitBreakerOpenError(CircuitBreakerError):
     """Error when circuit breaker is open."""
 
-    def __init__(self, message: str, correlation_id: Optional[UUID] = None, **kwargs):
+    def __init__(self, message: str, correlation_id: UUID | None = None, **kwargs):
         super().__init__(
             message=message,
             correlation_id=correlation_id,
@@ -940,7 +942,7 @@ class CircuitBreakerOpenError(CircuitBreakerError):
 class CircuitBreakerTimeoutError(CircuitBreakerError):
     """Error when operation times out in circuit breaker."""
 
-    def __init__(self, message: str, correlation_id: Optional[UUID] = None, **kwargs):
+    def __init__(self, message: str, correlation_id: UUID | None = None, **kwargs):
         super().__init__(
             message=message,
             correlation_id=correlation_id,
@@ -950,10 +952,10 @@ class CircuitBreakerTimeoutError(CircuitBreakerError):
         )
 
 # Usage Example
-class ExternalServiceEffectNode(ModelServiceEffect):
-    """EFFECT node with circuit breaker protection."""
+class ExternalServiceEffectHandler:
+    """EFFECT node handler with circuit breaker protection."""
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self.circuit_breaker = CircuitBreaker(
             name="external_api_service",
@@ -968,9 +970,9 @@ class ExternalServiceEffectNode(ModelServiceEffect):
     async def call_external_api(
         self,
         endpoint: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         correlation_id: UUID
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Call external API with circuit breaker protection."""
         self.circuit_breaker.correlation_id = correlation_id
 
@@ -984,9 +986,9 @@ class ExternalServiceEffectNode(ModelServiceEffect):
     async def _make_api_call(
         self,
         endpoint: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         correlation_id: UUID
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Make the actual API call."""
         # Implementation of API call
         pass
@@ -998,7 +1000,7 @@ class ExternalServiceEffectNode(ModelServiceEffect):
 import asyncio
 import logging
 import random
-from typing import List, Optional, Type, Union
+from typing import Any
 
 class RetryConfig:
     """Configuration for retry logic."""
@@ -1010,7 +1012,7 @@ class RetryConfig:
         max_delay: float = 60.0,
         backoff_multiplier: float = 2.0,
         jitter: bool = True,
-        retryable_exceptions: Optional[List[Type[Exception]]] = None
+        retryable_exceptions: list[type[Exception]] | None = None
     ):
         self.max_attempts = max_attempts
         self.initial_delay = initial_delay
@@ -1022,7 +1024,7 @@ class RetryConfig:
 async def retry_with_backoff(
     func: Callable,
     config: RetryConfig,
-    correlation_id: Optional[UUID] = None,
+    correlation_id: UUID | None = None,
     *args,
     **kwargs
 ) -> Any:
@@ -1127,7 +1129,7 @@ def with_retry(
     max_delay: float = 60.0,
     backoff_multiplier: float = 2.0,
     jitter: bool = True,
-    retryable_exceptions: Optional[List[Type[Exception]]] = None
+    retryable_exceptions: list[type[Exception]] | None = None
 ):
     """
     Decorator for automatic retry with exponential backoff.
@@ -1181,8 +1183,8 @@ def with_retry(
     return decorator
 
 # Usage Example
-class ReliableEffectService(ModelServiceEffect):
-    """EFFECT node with retry logic."""
+class ReliableEffectHandler:
+    """EFFECT node handler with retry logic."""
 
     @with_retry(
         max_attempts=3,
@@ -1192,9 +1194,9 @@ class ReliableEffectService(ModelServiceEffect):
     async def call_external_api(
         self,
         url: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         correlation_id: UUID
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Call external API with automatic retry."""
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -1222,16 +1224,16 @@ class GracefulDegradationMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.degraded_services: Set[str] = set()
-        self.degradation_reasons: Dict[str, str] = {}
+        self.degraded_services: set[str] = set()
+        self.degradation_reasons: dict[str, str] = {}
 
     async def with_graceful_degradation(
         self,
         service_name: str,
         func: Callable,
-        fallback_func: Optional[Callable] = None,
+        fallback_func: Callable | None = None,
         critical: bool = False,
-        correlation_id: Optional[UUID] = None,
+        correlation_id: UUID | None = None,
         *args,
         **kwargs
     ) -> Any:
@@ -1353,8 +1355,8 @@ class GracefulDegradationMixin:
     def _create_degraded_response(
         self,
         service_name: str,
-        correlation_id: Optional[UUID] = None
-    ) -> Dict[str, Any]:
+        correlation_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Create response indicating service degradation."""
         return {
             "degraded": True,
@@ -1364,7 +1366,7 @@ class GracefulDegradationMixin:
             "timestamp": datetime.now(UTC).isoformat()
         }
 
-    def get_service_health(self) -> Dict[str, Any]:
+    def get_service_health(self) -> dict[str, Any]:
         """Get current service health status."""
         return {
             "degraded_services": list(self.degraded_services),
@@ -1374,14 +1376,14 @@ class GracefulDegradationMixin:
         }
 
 # Usage Example
-class ResilientComputeService(ModelServiceCompute, GracefulDegradationMixin):
-    """COMPUTE node with graceful degradation."""
+class ResilientComputeHandler(GracefulDegradationMixin):
+    """COMPUTE node handler with graceful degradation."""
 
     async def process_data(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         correlation_id: UUID
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Process data with graceful degradation for non-critical services."""
 
         # Critical processing (must succeed)
@@ -1518,11 +1520,11 @@ class ErrorMetricsCollector:
 class ErrorAlertManager:
     """Manage error alerts and notifications."""
 
-    def __init__(self, alert_service, thresholds: Dict[str, int]):
+    def __init__(self, alert_service, thresholds: dict[str, int]):
         self.alert_service = alert_service
         self.thresholds = thresholds
-        self.error_counts: Dict[str, int] = {}
-        self.last_alert_times: Dict[str, datetime] = {}
+        self.error_counts: dict[str, int] = {}
+        self.last_alert_times: dict[str, datetime] = {}
 
     async def process_error(self, error: ModelOnexError, component: str):
         """Process error and trigger alerts if thresholds are exceeded."""

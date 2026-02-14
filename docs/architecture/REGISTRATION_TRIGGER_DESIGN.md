@@ -360,13 +360,13 @@ The `NodeRegistrationOrchestrator` is the single entry point for all registratio
 |  |  |                  WORKFLOW DEFINITION                           | | |
 |  |  |                                                                | | |
 |  |  |  Step 1: Validate ----> Step 2: Register ----> Step 3:        | | |
-|  |  |  (COMPUTE)               Consul (EFFECT)        Register       | | |
-|  |  |                              |                  Postgres       | | |
+|  |  |  (COMPUTE)               Postgres (EFFECT)     Register       | | |
+|  |  |                              |                  Consul         | | |
 |  |  |                              |                  (EFFECT)       | | |
 |  |  |                              v                      |          | | |
-|  |  |                    +-------------------+            |          | | |
-|  |  |                    | Parallel Execution|<-----------+          | | |
-|  |  |                    +---------+---------+                       | | |
+|  |  |                    +--------------------+           |          | | |
+|  |  |                    |Sequential: PG then |<----------+          | | |
+|  |  |                    |Consul (see FSM doc)|                      | | |
 |  |  |                              |                                 | | |
 |  |  |                              v                                 | | |
 |  |  |                    Step 4: Emit NodeRegistered EVENT           | | |
@@ -414,7 +414,16 @@ triggers:
 workflow:
   name: registration_workflow
   description: Node registration workflow handling both canonical and gated paths
-  execution_mode: parallel  # Consul and Postgres run in parallel
+  execution_mode: sequential  # PostgreSQL first, then Consul (see note below)
+
+  # NOTE: Registration order is sequential per the Registration FSM Contract
+  # (REGISTRATION_FSM_CONTRACT.md).  PostgreSQL is registered first as the
+  # source of truth.  If PostgreSQL fails, Consul registration is not
+  # attempted.  If Consul fails after PostgreSQL succeeds, the FSM enters
+  # partial_registered state for targeted retry.
+  #
+  # Deregistration, by contrast, runs both targets in parallel because
+  # ordering is not safety-critical during teardown.
 
   steps:
     - step_id: validate
@@ -424,19 +433,19 @@ workflow:
       required: true
       timeout_ms: 5000
 
-    - step_id: consul_register
-      step_name: RegisterWithConsul
-      step_type: effect
-      target_node_type: NodeConsulRegistrarEffect
-      dependencies: [validate]
-      required: true
-      timeout_ms: 10000
-
     - step_id: postgres_upsert
       step_name: UpsertToPostgres
       step_type: effect
       target_node_type: NodePostgresRegistrarEffect
-      dependencies: [validate]  # Parallel with consul_register
+      dependencies: [validate]  # PostgreSQL first (source of truth)
+      required: true
+      timeout_ms: 10000
+
+    - step_id: consul_register
+      step_name: RegisterWithConsul
+      step_type: effect
+      target_node_type: NodeConsulRegistrarEffect
+      dependencies: [postgres_upsert]  # Only after PostgreSQL succeeds
       required: true
       timeout_ms: 10000
 
@@ -444,7 +453,7 @@ workflow:
       step_name: EmitCompletedEvent
       step_type: effect
       target_node_type: NodeEventPublisherEffect
-      dependencies: [consul_register, postgres_upsert]
+      dependencies: [consul_register]
       required: true
       timeout_ms: 5000
 
@@ -677,17 +686,15 @@ sequenceDiagram
 
     Reducer->>Reducer: FSM: VALIDATING -> REGISTERING
 
-    Note over Orch: Parallel Execution
+    Note over Orch: Sequential Execution (PG first, then Consul)
 
-    par Consul Registration
-        Orch->>ConsulEff: Action(register_consul)
-        ConsulEff->>ConsulEff: execute(ModelConsulRegisterIntent)
-        ConsulEff-->>Orch: success
-    and Postgres Registration
-        Orch->>PgEff: Action(register_postgres)
-        PgEff->>PgEff: execute(ModelPostgresUpsertRegistrationIntent)
-        PgEff-->>Orch: success
-    end
+    Orch->>PgEff: Action(register_postgres)
+    PgEff->>PgEff: execute(ModelPostgresUpsertRegistrationIntent)
+    PgEff-->>Orch: success
+
+    Orch->>ConsulEff: Action(register_consul)
+    ConsulEff->>ConsulEff: execute(ModelConsulRegisterIntent)
+    ConsulEff-->>Orch: success
 
     Orch->>Reducer: process(RegistrationCompleteAction)
     Reducer->>Reducer: FSM: REGISTERING -> REGISTERED
@@ -740,15 +747,13 @@ sequenceDiagram
         Orch->>Reducer: process(ValidationPassedAction)
         Reducer->>Reducer: FSM: IDLE -> VALIDATING -> REGISTERING
 
-        Note over Orch: Same registration workflow as canonical path
+        Note over Orch: Same sequential workflow as canonical path
 
-        par Consul Registration
-            Orch->>ConsulEff: Action(register_consul)
-            ConsulEff-->>Orch: success
-        and Postgres Registration
-            Orch->>PgEff: Action(register_postgres)
-            PgEff-->>Orch: success
-        end
+        Orch->>PgEff: Action(register_postgres)
+        PgEff-->>Orch: success
+
+        Orch->>ConsulEff: Action(register_consul)
+        ConsulEff-->>Orch: success
 
         Orch->>Reducer: process(RegistrationCompleteAction)
         Reducer->>Reducer: FSM: REGISTERING -> REGISTERED

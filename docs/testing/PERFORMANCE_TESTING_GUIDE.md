@@ -642,12 +642,14 @@ def benchmark_with_gc_control(func, iterations=100):
 **Why**: Parallel tests interfere with each other
 
 ```bash
-# Run performance tests serially (no parallel execution)
+# Run performance tests without parallel execution (-n 0 disables xdist)
 poetry run pytest tests/performance/ -n 0 -v
 
-# Or mark tests as serial-only
-@pytest.mark.serial  # Requires pytest-xdist
+# Or mark tests as isolated to prevent parallel interference
+@pytest.mark.isolated
 ```
+
+> **Valid test markers**: `unit`, `integration`, `slow`, `performance`, `memory_intensive`, `isolated`. There is no `serial` marker -- use `-n 0` for sequential execution or `@pytest.mark.isolated` for test-level isolation.
 
 ### Handling Variance
 
@@ -1116,6 +1118,6 @@ class TestPerformanceRegression:
 
 ---
 
-**Last Updated**: 2025-12-16
+**Last Updated**: 2026-02-14
 **Status**: Active - performance testing framework
 **Contact**: @omnibase_core-maintainers

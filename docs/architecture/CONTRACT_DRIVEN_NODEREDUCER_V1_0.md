@@ -27,6 +27,19 @@ All side effects are emitted as Intents for Effect nodes to execute. This mainta
 
 **v1.0.4+ Clarification**: The purity guarantee applies to the **FSM executor functions**, not to `NodeReducer` instances. See [Purity Boundary](#purity-boundary-v104-normative) for details.
 
+### Output Constraints (REDUCER)
+
+`ModelHandlerOutput` enforces strict field constraints per node kind. For REDUCER nodes:
+
+| Field | Status |
+|-------|--------|
+| `result` | Forbidden |
+| `events[]` | Forbidden |
+| `intents[]` | Forbidden |
+| `projections[]` | **Allowed** |
+
+**Enforcement**: `ModelHandlerOutput` Pydantic validator + CI `node-purity-check`.
+
 ---
 
 ## Table of Contents

@@ -230,6 +230,8 @@ Are you writing a node class?
 
 ### Example 1: Node Implementation (Use ModelONEXContainer)
 
+Nodes are thin coordination shells. Business logic belongs in handlers, not in `process()`.
+
 ```
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -237,20 +239,28 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.protocols import ProtocolLogger, ProtocolEventBus
 
 class NodeDataProcessor(NodeCoreBase):
-    """Example node showing correct container usage."""
+    """Example node showing correct container usage with handler delegation."""
 
     def __init__(self, container: ModelONEXContainer):  # ✅ Correct
         super().__init__(container)
 
-        # Resolve dependencies
+        # Resolve dependencies via DI container
         self.logger = container.get_service(ProtocolLogger)
         self.event_bus = container.get_service(ProtocolEventBus)
 
-    async def process(self, input_data: Any) -> Any:
-        self.logger.info("Processing data")
-        # Process data...
-        return result
+        # Resolve handler from registry -- handler owns the business logic
+        self.handler = container.get_service("handler_registry").get(
+            self.contract.handler_id
+        )
+
+    async def process(self, input_data: ModelComputeInput) -> ModelHandlerOutput:
+        # Node coordinates; handler computes
+        return await self.handler.execute(input_data)
 ```
+
+**Key principle**: The node resolves services from `ModelONEXContainer` and delegates
+execution to its handler. The handler contains the actual business logic. See the
+[Handler Contract Guide](../contracts/HANDLER_CONTRACT_GUIDE.md) for handler authoring details.
 
 ### Example 2: Configuration Value (Use ModelContainer[T])
 

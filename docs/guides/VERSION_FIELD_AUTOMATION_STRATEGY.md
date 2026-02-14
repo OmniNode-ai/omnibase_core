@@ -388,7 +388,7 @@ class VersionFieldFixer(ast.NodeVisitor):
         self.source = source
         self.filename = filename
         self.lines = source.splitlines(keepends=True)
-        self.calls_to_fix: List[Tuple[int, int, int, int]] = []  # (start_line, end_line, start_col, end_col)
+        self.calls_to_fix: list[tuple[int, int, int, int]] = []  # (start_line, end_line, start_col, end_col)
         self.needs_version: Set[str] = set()
 
     def visit_Call(self, node: ast.Call) -> None:

@@ -5,7 +5,7 @@
 # Pure FSM Reducer Pattern
 
 **Status**: Recommended Pattern
-**First Introduced**: October 2025
+**First Introduced**: 2025-10
 **Applies To**: NodeReducer implementations in ONEX architecture
 
 ## Table of Contents
@@ -1433,19 +1433,17 @@ fsm_guarantees:
 
 ## Related Documentation
 
-- **NodeReducer API**: `/src/omnibase_core/nodes/node_reducer.py`
-- **ModelReducerOutput**: `/src/omnibase_core/nodes/model_reducer_output.py`
-- **ModelIntent**: `/src/omnibase_core/nodes/model_intent.py`
-- **ONEX 4-Node Architecture**: `/docs/architecture/FOUR_NODE_ARCHITECTURE.md`
-- **Anti-Patterns**: `/docs/patterns/ANTI_PATTERNS.md`
-- **Testing Patterns**: `/docs/testing/REDUCER_TESTING.md`
+- **ONEX 4-Node Architecture**: [ONEX_FOUR_NODE_ARCHITECTURE.md](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
+- **Anti-Patterns**: [ANTI_PATTERNS.md](./ANTI_PATTERNS.md)
+- **Canonical Execution Shapes**: [CANONICAL_EXECUTION_SHAPES.md](../architecture/CANONICAL_EXECUTION_SHAPES.md)
+- **Error Handling Best Practices**: [ERROR_HANDLING_BEST_PRACTICES.md](../conventions/ERROR_HANDLING_BEST_PRACTICES.md)
 
 ---
 
 ## Document Metadata
 
-- **Version**: 1.0.0
-- **Last Updated**: October 20, 2025
+- **Version**: 1.0.1
+- **Last Updated**: 2026-02-14
 - **Maintainer**: ONEX Core Team
 - **Status**: Active
 - **Applicability**: All NodeReducer implementations

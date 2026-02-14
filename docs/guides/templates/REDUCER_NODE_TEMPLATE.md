@@ -16,6 +16,18 @@ This template provides the unified architecture pattern for ONEX REDUCER nodes. 
 - **Intent-Based Architecture**: `delta(state, action) -> (new_state, intents[])`
 - **Type Safety**: Full Pydantic validation with generic typing
 - **Zero Custom Code**: Entirely YAML-driven state machine behavior
+- **Thin Nodes, Fat Handlers**: Nodes are coordination shells; business logic lives in handlers
+
+## ModelHandlerOutput Constraints (REDUCER)
+
+| Field | Allowed | Forbidden |
+|-------|---------|-----------|
+| `projections[]` | Yes | -- |
+| `events[]` | -- | Yes |
+| `intents[]` | -- | Yes |
+| `result` | -- | Yes |
+
+REDUCER nodes return `projections[]` only. All other output fields are forbidden and will raise `ValueError` at construction time. See [Handler Output Constraints](../../../CLAUDE.md#handler-output-constraints).
 
 ## Directory Structure
 
@@ -61,262 +73,112 @@ This template provides the unified architecture pattern for ONEX REDUCER nodes. 
 
 ### 1. Node Implementation (`node.py`)
 
+Nodes are **thin coordination shells**. All business logic lives in handlers.
+
 ```python
 """ONEX REDUCER node for {DOMAIN} {MICROSERVICE_NAME} state management."""
 
-from typing import Any
-from uuid import UUID
-import time
+from __future__ import annotations
 
-# v0.4.0 unified node imports
-from omnibase_core.nodes import (
-    NodeReducer,
-    ModelReducerInput,
-    ModelReducerOutput,
-    EnumReductionType,
-    EnumConflictResolution,
-    EnumStreamingMode,
-)
-from omnibase_core.models.reducer.model_intent import ModelIntent
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from typing import TYPE_CHECKING
 
-from .enums.enum_{DOMAIN}_{MICROSERVICE_NAME}_state import Enum{DomainCamelCase}{MicroserviceCamelCase}State
+from omnibase_core.nodes import NodeReducer
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
-class Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(
-    NodeReducer[
-        dict[str, Any],  # T_Input: Type of input data items
-        dict[str, Any],  # T_Output: Type of output result
-    ]
-):
+class Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(NodeReducer):
     """REDUCER node for {DOMAIN} {MICROSERVICE_NAME} FSM-driven state management.
 
-    This node provides pure FSM-based state aggregation for {DOMAIN} domain
-    operations, focusing on {MICROSERVICE_NAME} state transitions and data reduction.
+    This node is a thin shell. All reduction logic, metrics tracking, and
+    intent emission live in the handler (see handler_{DOMAIN}_{MICROSERVICE_NAME}_reducer.py).
 
     Architecture Pattern:
-        - Pure FSM: delta(state, action) -> (new_state, intents[])
-        - No direct side effects - all effects emitted as ModelIntent
-        - Effect nodes consume and execute intents
-
-    Key Features:
-        - FSM-driven state transitions via YAML contract
-        - Type-safe input/output validation
-        - Conflict resolution strategies
-        - Streaming mode support (BATCH, WINDOWED, CONTINUOUS)
-        - Intent emission for downstream Effect nodes
+        - Pure FSM: delta(state, action) -> (new_state, projections[])
+        - No direct side effects
+        - FSM contract auto-loaded from contract.yaml
 
     Thread Safety:
         NodeReducer instances are NOT thread-safe due to mutable FSM state.
-        Each thread should have its own instance. See docs/guides/THREADING.md.
-
-    Example:
-        ```python
-        node = Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(container)
-
-        # Initialize FSM state
-        node.initialize_fsm_state(
-            node.contract.state_machine,
-            context={"batch_size": 1000}
-        )
-
-        # Execute reduction with FSM transition
-        result = await node.process(input_data)
-
-        # Check FSM state and emitted intents
-        print(f"New state: {result.metadata['fsm_state']}")
-        print(f"Intents emitted: {len(result.intents)}")
-        ```
+        Each request should use its own instance. See docs/guides/THREADING.md.
     """
 
     def __init__(self, container: ModelONEXContainer) -> None:
-        """Initialize the REDUCER node with container.
-
-        Args:
-            container: ONEX container for dependency injection
-
-        Raises:
-            ModelOnexError: If container is invalid or initialization fails
-        """
+        """Initialize the REDUCER node with container."""
         super().__init__(container)
+        # FSM contract is automatically loaded by base class.
+        # No business logic here -- that belongs in the handler.
 
-        # Node-specific initialization (non-FSM components)
-        # FSM contract is automatically loaded by base class
 
-        # Performance tracking
-        self._reduction_metrics: list[dict[str, Any]] = []
-        self._state_transition_count: int = 0
+__all__ = ["Node{DomainCamelCase}{MicroserviceCamelCase}Reducer"]
+```
 
-    async def process(
+### 1b. Handler Implementation (`handlers/handler_{DOMAIN}_{MICROSERVICE_NAME}_reducer.py`)
+
+All business logic lives in the handler, not the node.
+
+```python
+"""Handler for {DOMAIN} {MICROSERVICE_NAME} REDUCER operations."""
+
+from typing import Any
+import time
+
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.nodes import ModelReducerInput, ModelReducerOutput
+
+
+class Handler{DomainCamelCase}{MicroserviceCamelCase}Reducer:
+    """Handler containing reduction business logic.
+
+    Pure FSM pattern: delta(state, action) -> (new_state, projections[])
+
+    REDUCER output constraints:
+        - Allowed: projections[]
+        - Forbidden: events[], intents[], result
+
+    Example:
+        ```python
+        handler = Handler{DomainCamelCase}{MicroserviceCamelCase}Reducer()
+        output = await handler.handle(input_data)
+        ```
+    """
+
+    async def handle(
         self,
         input_data: ModelReducerInput[dict[str, Any]],
-    ) -> ModelReducerOutput[dict[str, Any]]:
-        """Process input using FSM-driven state transitions.
-
-        Pure FSM pattern: Executes transition, emits intents for side effects.
-        The base class handles FSM contract execution; override only for
-        custom pre/post processing.
+    ) -> ModelHandlerOutput[None]:
+        """Execute FSM-driven reduction and return projections.
 
         Args:
             input_data: Reducer input with data, reduction type, and metadata
 
         Returns:
-            Reducer output with reduced result, FSM state, and intents
-
-        Raises:
-            ModelOnexError: If FSM contract not loaded or transition fails
-
-        Example:
-            ```python
-            input_data = ModelReducerInput(
-                data=[{"user": "alice", "score": 100}, {"user": "bob", "score": 85}],
-                reduction_type=EnumReductionType.AGGREGATE,
-                metadata={
-                    "trigger": "aggregate_scores",
-                    "group_by": "user",
-                }
-            )
-
-            result = await node.process(input_data)
-            print(f"Aggregated result: {result.result}")
-            print(f"Items processed: {result.items_processed}")
-            ```
+            ModelHandlerOutput with projections[] only
         """
         start_time = time.perf_counter()
 
-        # Execute base FSM-driven processing
-        result = await super().process(input_data)
+        # Execute pure state transition logic
+        projections = self._compute_projections(input_data)
 
-        # Track metrics
         processing_time_ms = (time.perf_counter() - start_time) * 1000
-        self._reduction_metrics.append({
-            "reduction_type": input_data.reduction_type.value,
-            "items_processed": result.items_processed,
-            "processing_time_ms": processing_time_ms,
-            "timestamp": time.time(),
-        })
-        self._state_transition_count += 1
 
-        return result
-
-    def emit_intent(
-        self,
-        intent_type: str,
-        target: str,
-        payload: dict[str, Any],
-        priority: int = 1,
-    ) -> ModelIntent:
-        """Create an intent for side effect execution by Effect nodes.
-
-        Reducer nodes are pure - they don't execute side effects directly.
-        Instead, they emit intents describing what should happen.
-
-        Args:
-            intent_type: Type of intent (log, emit_event, write, notify)
-            target: Target for intent execution (service, channel, topic)
-            payload: Intent payload data
-            priority: Execution priority (1-10, higher = more urgent)
-
-        Returns:
-            ModelIntent ready for emission
-
-        Example:
-            ```python
-            # Intent to emit an event
-            intent = self.emit_intent(
-                intent_type="emit_event",
-                target="user.score_updated",
-                payload={"user_id": "123", "new_score": 250},
-                priority=5,
-            )
-            ```
-        """
-        return ModelIntent(
-            intent_type=intent_type,
-            target=target,
-            payload=payload,
-            priority=priority,
+        return ModelHandlerOutput.for_reducer(
+            projections=projections,
         )
 
-    async def get_reduction_metrics(self) -> dict[str, Any]:
-        """Get current reduction performance metrics.
+    def _compute_projections(
+        self,
+        input_data: ModelReducerInput[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Compute projections from input data.
 
-        Returns:
-            Dictionary with performance statistics
+        Pure function -- no I/O, no side effects.
         """
-        if not self._reduction_metrics:
-            return {
-                "total_reductions": 0,
-                "average_processing_time_ms": 0.0,
-                "state_transitions": 0,
-                "current_state": self.get_current_state(),
-            }
-
-        total_reductions = len(self._reduction_metrics)
-        average_time = sum(
-            m["processing_time_ms"] for m in self._reduction_metrics
-        ) / total_reductions
-
-        return {
-            "total_reductions": total_reductions,
-            "average_processing_time_ms": round(average_time, 2),
-            "max_processing_time_ms": max(
-                m["processing_time_ms"] for m in self._reduction_metrics
-            ),
-            "total_items_processed": sum(
-                m["items_processed"] for m in self._reduction_metrics
-            ),
-            "state_transitions": self._state_transition_count,
-            "current_state": self.get_current_state(),
-            "state_history": list(self.get_state_history()),
-            "is_terminal": self.is_complete(),
-        }
-
-    async def health_check(self) -> dict[str, Any]:
-        """Perform comprehensive health check.
-
-        Returns:
-            Health status information
-        """
-        try:
-            # Validate FSM contract
-            contract_errors = await self.validate_contract()
-
-            # Get recent metrics
-            recent_metrics = [
-                m for m in self._reduction_metrics
-                if time.time() - m["timestamp"] < 300  # Last 5 minutes
-            ]
-
-            avg_processing_time = (
-                sum(m["processing_time_ms"] for m in recent_metrics) / len(recent_metrics)
-                if recent_metrics else 0.0
-            )
-
-            return {
-                "status": "healthy" if not contract_errors else "degraded",
-                "fsm": {
-                    "current_state": self.get_current_state(),
-                    "is_terminal": self.is_complete(),
-                    "contract_valid": len(contract_errors) == 0,
-                    "contract_errors": contract_errors,
-                },
-                "performance": {
-                    "average_processing_time_ms": round(avg_processing_time, 2),
-                    "recent_reductions": len(recent_metrics),
-                    "total_state_transitions": self._state_transition_count,
-                },
-                "timestamp": time.time(),
-            }
-
-        except Exception as e:
-            return {
-                "status": "unhealthy",
-                "error": str(e),
-                "timestamp": time.time(),
-            }
+        # Domain-specific reduction logic goes here.
+        # This is a placeholder for template users to fill in.
+        return []
 ```
 
 ### 2. FSM State Enum (`enum_{DOMAIN}_{MICROSERVICE_NAME}_state.py`)
@@ -1587,72 +1449,80 @@ Replace the following placeholders throughout all files:
 
 ### Example: Creating a Metrics Aggregator Reducer
 
+The node is a thin shell. The handler contains the reduction logic.
+
+**Node** (`node.py`):
 ```python
-from omnibase_core.nodes import (
-    NodeReducer,
-    ModelReducerInput,
-    ModelReducerOutput,
-    EnumReductionType,
-)
-from omnibase_core.models.reducer.model_intent import ModelIntent
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from omnibase_core.nodes import NodeReducer
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
-class NodeMetricsAggregatorReducer(NodeReducer[dict, dict]):
-    """Reducer for aggregating system metrics.
-
-    FSM States:
-        idle -> collecting -> validating -> aggregating -> completed
-
-    Intents Emitted:
-        - emit_event: Publish aggregated metrics
-        - write: Persist metrics to storage
-        - notify: Alert on threshold breaches
-    """
+class NodeMetricsAggregatorReducer(NodeReducer):
+    """Thin shell for metrics aggregation. Logic lives in handler."""
 
     def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
 
-    async def process(
+
+__all__ = ["NodeMetricsAggregatorReducer"]
+```
+
+**Handler** (`handlers/handler_metrics_aggregator.py`):
+```python
+from typing import Any
+
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.nodes import ModelReducerInput
+
+
+class HandlerMetricsAggregator:
+    """Handler for aggregating system metrics.
+
+    REDUCER output constraints:
+        - Allowed: projections[]
+        - Forbidden: events[], intents[], result
+    """
+
+    async def handle(
         self,
-        input_data: ModelReducerInput[dict],
-    ) -> ModelReducerOutput[dict]:
-        """Process metrics with FSM-driven aggregation."""
-        # Base class handles FSM transitions
-        result = await super().process(input_data)
+        input_data: ModelReducerInput[dict[str, Any]],
+    ) -> ModelHandlerOutput[None]:
+        """Aggregate metrics and return projections."""
+        projections = self._aggregate(input_data.data)
 
-        # Add domain-specific intents
-        if result.metadata.get("fsm_state") == "completed":
-            # Emit notification if aggregated value exceeds threshold
-            aggregated_value = result.result.get("total", 0)
-            if aggregated_value > 1000:
-                # Intent for notification - Effect node will execute
-                notify_intent = ModelIntent(
-                    intent_type="notify",
-                    target="alerts.metrics_threshold",
-                    payload={
-                        "metric": "aggregated_total",
-                        "value": aggregated_value,
-                        "threshold": 1000,
-                    },
-                    priority=8,
-                )
-                # Add intent to result (immutable, so create new tuple)
-                result = result.model_copy(
-                    update={"intents": result.intents + (notify_intent,)}
-                )
+        return ModelHandlerOutput.for_reducer(
+            projections=projections,
+        )
 
-        return result
+    def _aggregate(self, data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Pure aggregation logic -- no I/O."""
+        totals: dict[str, float] = {}
+        counts: dict[str, int] = {}
+        for item in data:
+            metric = item.get("metric", "unknown")
+            value = item.get("value", 0.0)
+            totals[metric] = totals.get(metric, 0.0) + value
+            counts[metric] = counts.get(metric, 0) + 1
 
+        return [
+            {"metric": k, "total": totals[k], "count": counts[k]}
+            for k in totals
+        ]
+```
 
-# Usage
+**Usage**:
+```python
+from omnibase_core.nodes import ModelReducerInput, EnumReductionType
+
 container = ModelONEXContainer(...)
 node = NodeMetricsAggregatorReducer(container)
 
-# Initialize FSM
-node.initialize_fsm_state(node.contract.state_machine, context={})
-
-# Process input
 input_data = ModelReducerInput(
     data=[
         {"metric": "cpu", "value": 45.2},
@@ -1664,8 +1534,6 @@ input_data = ModelReducerInput(
 )
 
 result = await node.process(input_data)
-print(f"FSM State: {result.metadata['fsm_state']}")
-print(f"Intents: {len(result.intents)}")
 ```
 
 This template ensures all REDUCER nodes follow the unified ONEX architecture while maintaining FSM-driven state management with pure intent-based side effect emission.

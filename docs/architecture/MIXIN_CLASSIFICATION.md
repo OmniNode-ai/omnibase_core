@@ -2,8 +2,8 @@
 
 # Mixin Classification Reference
 
-> **Version**: 1.0.0
-> **Last Updated**: 2025-12-03
+> **Version**: 1.1.0
+> **Last Updated**: 2026-02-14
 
 ---
 
@@ -49,7 +49,7 @@ Pure computation with no side effects or runtime dependencies.
 - Easily unit testable in isolation
 - Framework-agnostic
 
-**Migration Target**: `omnibase_core/utils/` or `omnibase_core/domain/`
+**Migration Target**: `omnibase_core/utils/`
 
 ---
 
@@ -57,10 +57,10 @@ Pure computation with no side effects or runtime dependencies.
 
 | Classification | Mixins | Data Models | Total |
 |----------------|--------|-------------|-------|
-| **Runtime (R)** | 20 | 1 | 21 |
+| **Runtime (R)** | 22 | 1 | 23 |
 | **Handler (H)** | 3 | 0 | 3 |
-| **Domain (D)** | 14 | 2 | 16 |
-| **Total** | **37** | **3** | **40** |
+| **Domain (D)** | 15 | 2 | 17 |
+| **Total** | **40** | **3** | **43** |
 
 > **Data Models in `models/mixins/`**: `ModelCompletionData` (R), `ModelLogData` (D), `ModelNodeIntrospectionData` (D)
 
@@ -88,11 +88,11 @@ Pure computation with no side effects or runtime dependencies.
 | 16 | `MixinEventBus` | Event bus connection management | R | `NodeRuntime.event_bus` |
 | 17 | `MixinEventDrivenNode` | Base event-driven node behavior | R | `NodeRuntime` (core) |
 | 18 | `MixinEventHandler` | Event handler registration | R | `NodeRuntime.event_handlers` |
-| 19 | `MixinEventListener` | Event subscription management | R | `NodeRuntime.subscriptions` |
+| 19 | `MixinComputeExecution` | Compute node execution logic | R | `NodeRuntime.compute_executor` |
 | 20 | `MixinFailFast` | Fail-fast validation patterns | D | `utils/fail_fast.py` |
 | 21 | `MixinHashComputation` | SHA256 hash for metadata blocks | D | `utils/hash.py` |
 | 22 | `MixinHealthCheck` | Health check implementation | R | `NodeRuntime.health_service` |
-| 23 | `MixinHybridExecution` | Direct/workflow/orchestrated modes | R | `NodeRuntime.execution_mode_resolver` |
+| 23 | `MixinEffectExecution` | Effect node execution logic | R | `NodeRuntime.effect_executor` |
 | 24 | `MixinIntrospectFromContract` | Load introspection from contract | D | `utils/contract_introspection.py` |
 | 25 | `MixinIntrospection` | Node introspection response | R | `NodeRuntime.introspection_service` |
 | 26 | `MixinIntrospectionPublisher` | Publish introspection events | R | `NodeRuntime.introspection_publisher` |
@@ -107,31 +107,35 @@ Pure computation with no side effects or runtime dependencies.
 | 35 | `MixinRequestResponseIntrospection` | Real-time introspection | R | `NodeRuntime.realtime_introspection` |
 | 36 | `MixinServiceRegistry` | Service registry maintenance | H | `omnibase_infra/handlers/service_registry_handler.py` |
 | 37 | `MixinToolExecution` | Tool execution event handling | R | `NodeRuntime.tool_executor` |
-| 38 | `MixinUtils` | Utility functions (canonicalize) | D | `utils/canonical.py` |
+| 38 | `MixinContractPublisher` | Contract event publishing | R | `NodeRuntime.contract_publisher` |
 | 39 | `MixinWorkflowExecution` | Workflow execution from contracts | R | `NodeRuntime.workflow_executor` |
 | 40 | `MixinYAMLSerialization` | YAML serialization with comments | D | `utils/yaml_serialization.py` |
+| 41 | `MixinNodeTypeValidator` | Validates node type constraints | D | `utils/node_type_validation.py` |
+| 42 | `MixinTruncationValidation` | Truncation boundary validation | D | `utils/truncation.py` |
+| 43 | `MixinContractStateReducer` | Contract-driven state reduction | D | `domain/fsm/contract_reducer.py` |
 
 ---
 
 ## Mixins by Classification
 
-### Runtime (R) - 20 Mixins + 1 Data Model
+### Runtime (R) - 22 Mixins + 1 Data Model
 
 | Mixin | Target |
 |-------|--------|
 | `MixinCaching` | `NodeRuntime.cache_service` |
 | `ModelCompletionData` *(Data Model)* | `models/mixins/model_completion_data.py` |
+| `MixinComputeExecution` | `NodeRuntime.compute_executor` |
+| `MixinContractPublisher` | `NodeRuntime.contract_publisher` |
 | `MixinMetrics` | `NodeRuntime.metrics_service` |
 | `MixinNodeSetup` | `NodeRuntime.__init__()` |
 | `MixinIntentPublisher` | `NodeRuntime.intent_emitter` |
 | `MixinDebugDiscoveryLogging` | `NodeRuntime.logger` |
 | `MixinDiscoveryResponder` | `NodeRuntime.discovery_responder` |
+| `MixinEffectExecution` | `NodeRuntime.effect_executor` |
 | `MixinEventBus` | `NodeRuntime.event_bus` |
 | `MixinEventDrivenNode` | `NodeRuntime` (core) |
 | `MixinEventHandler` | `NodeRuntime.event_handlers` |
-| `MixinEventListener` | `NodeRuntime.subscriptions` |
 | `MixinHealthCheck` | `NodeRuntime.health_service` |
-| `MixinHybridExecution` | `NodeRuntime.execution_mode_resolver` |
 | `MixinIntrospection` | `NodeRuntime.introspection_service` |
 | `MixinIntrospectionPublisher` | `NodeRuntime.introspection_publisher` |
 | `MixinNodeExecutor` | `NodeRuntime.executor_service` |
@@ -149,7 +153,7 @@ Pure computation with no side effects or runtime dependencies.
 | `MixinCLIHandler` | `omnibase_infra/handlers/cli_handler.py` |
 | `MixinServiceRegistry` | `omnibase_infra/handlers/service_registry_handler.py` |
 
-### Domain (D) - 14 Mixins + 2 Data Models
+### Domain (D) - 15 Mixins + 2 Data Models
 
 | Mixin | Target |
 |-------|--------|
@@ -159,14 +163,15 @@ Pure computation with no side effects or runtime dependencies.
 | `MixinCanonicalSerialization` | `utils/canonical_yaml.py` |
 | `MixinYAMLSerialization` | `utils/yaml_serialization.py` |
 | `MixinContractMetadata` | `utils/contract_metadata.py` |
+| `MixinContractStateReducer` | `domain/fsm/contract_reducer.py` |
 | `MixinIntrospectFromContract` | `utils/contract_introspection.py` |
 | `MixinFailFast` | `utils/fail_fast.py` |
 | `MixinHashComputation` | `utils/hash.py` |
 | `MixinRedaction` | `utils/redaction.py` |
 | `MixinNodeIdFromContract` | `utils/node_id.py` |
-| `MixinUtils` | `utils/canonical.py` |
+| `MixinNodeTypeValidator` | `utils/node_type_validation.py` |
+| `MixinTruncationValidation` | `utils/truncation.py` |
 | `MixinFSMExecution` | `domain/fsm/executor.py` |
-| `MixinContractStateReducer` | `domain/fsm/contract_reducer.py` |
 | `ModelLogData` *(Data Model)* | `models/mixins/model_log_data.py` |
 | `ModelNodeIntrospectionData` *(Data Model)* | `models/mixins/model_node_introspection_data.py` |
 

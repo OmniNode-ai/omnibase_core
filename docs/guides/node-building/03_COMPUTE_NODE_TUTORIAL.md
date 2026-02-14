@@ -36,6 +36,85 @@ See [Node Class Hierarchy Guide](../../architecture/NODE_CLASS_HIERARCHY.md) for
 
 ---
 
+## Handler Architecture
+
+> **Architectural Rule**: Nodes are thin coordination shells. Business logic belongs in **handlers**, not in the node class itself. The node delegates to a handler, and the handler returns a `ModelHandlerOutput`.
+
+### COMPUTE Output Constraints
+
+| Field | COMPUTE | EFFECT | REDUCER | ORCHESTRATOR |
+|-------|---------|--------|---------|--------------|
+| `result` | **Required** | Forbidden | Forbidden | Forbidden |
+| `events[]` | Forbidden | Allowed | Forbidden | Allowed |
+| `intents[]` | Forbidden | Forbidden | Forbidden | Allowed |
+| `projections[]` | Forbidden | Forbidden | Allowed | Forbidden |
+
+COMPUTE is the **only** node kind that returns a typed `result`.
+
+### Handler-Based Pattern (Recommended)
+
+In production ONEX code, the node delegates to a handler. The handler performs the computation and returns `ModelHandlerOutput.for_compute(result=...)`:
+
+```python
+from omnibase_core.models.handler.model_handler_output import ModelHandlerOutput
+from omnibase_core.enums.enum_node_kind import EnumNodeKind
+
+
+class HandlerPriceCalculator:
+    """Handler containing the actual computation logic."""
+
+    def execute(
+        self,
+        input_data: ModelPriceCalculatorInput,
+    ) -> ModelHandlerOutput:
+        """
+        Pure computation -- no I/O allowed.
+
+        Returns:
+            ModelHandlerOutput with result set (COMPUTE constraint).
+        """
+        subtotal = sum(
+            item.price * item.quantity for item in input_data.items
+        )
+        discount = self._calculate_discount(subtotal, input_data.discount_code)
+        discounted = subtotal - discount
+        tax = discounted * input_data.tax_rate
+        total = discounted + tax
+
+        result = ModelPriceCalculatorOutput(
+            subtotal=round(subtotal, 2),
+            discount=round(discount, 2),
+            tax=round(tax, 2),
+            total=round(total, 2),
+            discount_code_applied=input_data.discount_code,
+            items_count=len(input_data.items),
+        )
+
+        # COMPUTE nodes MUST return result; events/intents/projections forbidden
+        return ModelHandlerOutput.for_compute(result=result)
+
+    def _calculate_discount(self, subtotal: float, code: str | None) -> float:
+        if not code:
+            return 0.0
+        # ... discount logic ...
+        return 0.0
+
+
+class NodePriceCalculatorCompute(NodeCompute):
+    """Thin shell -- delegates to handler."""
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+        self._handler = HandlerPriceCalculator()
+
+    async def process(self, input_data):
+        return self._handler.execute(input_data)
+```
+
+The tutorial below shows computation logic inline for teaching clarity. In production, always extract logic into a handler.
+
+---
+
 ## Overview
 
 In this tutorial, you'll build a complete COMPUTE node that calculates prices with tax and discounts. You'll learn:
@@ -117,7 +196,6 @@ First, define what data your node accepts.
 ```
 """Input model for price calculator."""
 
-from typing import List
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -132,7 +210,7 @@ class CartItem(BaseModel):
 class ModelPriceCalculatorInput(BaseModel):
     """Input for price calculation."""
 
-    items: List[CartItem] = Field(
+    items: list[CartItem] = Field(
         min_items=1,
         description="Cart items to calculate price for"
     )
@@ -192,7 +270,6 @@ Define what your node returns.
 ```
 """Output model for price calculator."""
 
-from typing import Optional
 from pydantic import BaseModel, Field
 
 
@@ -257,7 +334,6 @@ For **95% of use cases**, use the production-ready `ModelServiceCompute` wrapper
 """COMPUTE node for price calculation with tax and discounts."""
 
 import time
-from typing import Dict
 from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -284,7 +360,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
     """
 
     # Discount codes (in production, fetch from database)
-    DISCOUNT_CODES: Dict[str, float] = {
+    DISCOUNT_CODES: dict[str, float] = {
         "SAVE10": 0.10,   # 10% off
         "SAVE20": 0.20,   # 20% off
         "SAVE30": 0.30,   # 30% off
@@ -301,7 +377,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
         super().__init__(container)
 
         # Simple in-memory cache (in production, use Redis)
-        self._cache: Dict[str, ModelPriceCalculatorOutput] = {}
+        self._cache: dict[str, ModelPriceCalculatorOutput] = {}
 
         # Performance tracking
         self.computation_count = 0
@@ -486,7 +562,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
 
         return f"{items_key}|{input_data.discount_code}|{input_data.tax_rate}"
 
-    def get_metrics(self) -> Dict[str, float]:
+    def get_metrics(self) -> dict[str, float]:
         """
         Get node performance metrics.
 
@@ -887,8 +963,8 @@ async def process(self, input_data):
 ```
 async def process_batch(
     self,
-    inputs: List[ModelPriceCalculatorInput]
-) -> List[ModelPriceCalculatorOutput]:
+    inputs: list[ModelPriceCalculatorInput]
+) -> list[ModelPriceCalculatorOutput]:
     """Process multiple calculations in parallel."""
     tasks = [self.process(input_data) for input_data in inputs]
     results = await asyncio.gather(*tasks)

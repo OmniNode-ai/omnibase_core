@@ -32,9 +32,42 @@ from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrches
 
 > **Terminology Reference**: For canonical definitions of ONEX concepts (Event, Intent, Action, Reducer, Orchestrator, Effect, Handler, Projection, Runtime), see [ONEX Terminology Guide](../../standards/onex_terminology.md).
 
+## Fundamental Concept: Nodes Are Thin Shells
+
+Before diving into tutorials, understand this core principle:
+
+**Nodes are coordination shells. Handlers own the business logic.**
+
+A node receives input, delegates to a handler, and returns the handler's output. The node itself should contain no business logic -- it is a thin wrapper that provides lifecycle management, dependency injection, and contract enforcement. All domain logic lives in **handlers**, which are defined and selected by **YAML contracts**.
+
+```
+Node (thin shell)
+  |
+  +-- receives input
+  +-- resolves handler from YAML contract
+  +-- delegates to handler
+  +-- returns handler output
+```
+
+For a deep dive into this architecture, see the [Handler Architecture Guide](../../architecture/HANDLER_ARCHITECTURE.md).
+
+### Handler Output Constraints
+
+Each node type enforces strict output constraints on what its handler may return:
+
+| Node Kind | Allowed Output | Forbidden Output |
+|-----------|---------------|-----------------|
+| **EFFECT** | `events[]` | `intents[]`, `projections[]`, `result` |
+| **COMPUTE** | `result` (required) | `events[]`, `intents[]`, `projections[]` |
+| **REDUCER** | `projections[]` | `events[]`, `intents[]`, `result` |
+| **ORCHESTRATOR** | `events[]`, `intents[]` | `projections[]`, `result` |
+
+These constraints are enforced at the `ModelHandlerOutput` constructor via Pydantic validators and at runtime.
+
 ## What You'll Learn
 
 - **Fundamentals**: What nodes are and their role in the ONEX ecosystem
+- **Handler Architecture**: How nodes delegate to handlers via YAML contracts
 - **Node Types**: When to use EFFECT, COMPUTE, REDUCER, or ORCHESTRATOR
 - **Step-by-Step Tutorials**: Build each node type from scratch
 - **Patterns Library**: Reusable patterns for common scenarios
@@ -47,6 +80,7 @@ from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrches
 
 - [01. What is a Node?](01_WHAT_IS_A_NODE.md) - Definition, purpose, and role in ONEX
 - [02. Node Types](02_NODE_TYPES.md) - EFFECT, COMPUTE, REDUCER, ORCHESTRATOR explained
+- [Handler Architecture](../../architecture/HANDLER_ARCHITECTURE.md) - How nodes delegate to handlers via YAML contracts
 
 ### 2. Step-by-Step Tutorials
 

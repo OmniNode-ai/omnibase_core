@@ -14,6 +14,27 @@ The ONEX framework defines **four fundamental node types**, each designed for a 
 
 > **v0.4.0 Architecture Update**: `NodeReducer` and `NodeOrchestrator` are now the PRIMARY implementations using FSM-driven state management and workflow-driven coordination respectively. The "Declarative" suffix has been removed. Legacy implementations have been removed from the codebase.
 
+## Handler Delegation
+
+All four node types follow the same fundamental pattern: **nodes are thin shells that delegate to handlers**. The handler contains the business logic. The node provides lifecycle management, dependency injection, and contract enforcement.
+
+```text
+Node (thin shell)  -->  Handler (business logic)  -->  Output
+        ^                        ^
+        |                        |
+   ModelONEXContainer       YAML Contract
+   (dependency injection)   (declares behavior + handler)
+```
+
+Each node type enforces strict output constraints on its handler:
+
+| Node Kind | Allowed Output | Forbidden Output |
+|-----------|---------------|-----------------|
+| **EFFECT** | `events[]` | `intents[]`, `projections[]`, `result` |
+| **COMPUTE** | `result` (required) | `events[]`, `intents[]`, `projections[]` |
+| **REDUCER** | `projections[]` | `events[]`, `intents[]`, `result` |
+| **ORCHESTRATOR** | `events[]`, `intents[]` | `projections[]`, `result` |
+
 ## The Four Node Types
 
 ```text
@@ -62,68 +83,54 @@ Use an EFFECT node when you need to:
 
 ### Real-World Examples
 
+In the handler delegation pattern, the node is a thin shell. The handler contains the I/O logic.
+
 ```python
-from omnibase_core.nodes import NodeEffect, ModelEffectInput, ModelEffectOutput
+from omnibase_core.nodes import NodeEffect
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-# Example 1: Database read operation
+# The node is a thin shell -- it delegates to its handler
 class NodeUserFetcherEffect(NodeEffect):
-    """Fetch user data from database."""
+    """Thin shell for user fetching. Handler owns the database logic."""
 
-    async def process(
-        self,
-        input_data: ModelEffectInput
-    ) -> ModelEffectOutput:
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+        # Resolve services via protocol-based DI, not direct attribute access
+        self.db = container.get_service(ProtocolDatabase)
+
+# The handler contains the actual business logic
+class HandlerUserFetcher:
+    """Handler: fetches user data from database."""
+
+    def __init__(self, db: ProtocolDatabase) -> None:
+        self.db = db
+
+    async def execute(self, input_data: ModelEffectInput) -> ModelHandlerOutput:
         """Fetch user by ID from PostgreSQL."""
         user_id = input_data.user_id
 
-        # External I/O: Database query
-        async with self.db_pool.acquire() as conn:
+        async with self.db.acquire() as conn:
             user_data = await conn.fetchrow(
                 "SELECT * FROM users WHERE id = $1",
                 user_id
             )
 
-        return ModelEffectOutput(
-            result=dict(user_data) if user_data else None,
-            success=user_data is not None
-        )
-
-# Example 2: External API call
-class NodeWeatherFetcherEffect(NodeEffect):
-    """Fetch weather data from external API."""
-
-    async def process(
-        self,
-        input_data: ModelEffectInput
-    ) -> ModelEffectOutput:
-        """Get weather for location."""
-        location = input_data.location
-
-        # External I/O: HTTP API call
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"https://api.weather.com/forecast",
-                params={"location": location}
-            ) as response:
-                weather_data = await response.json()
-
-        return ModelEffectOutput(
-            result=weather_data,
-            success=response.status == 200
+        return ModelHandlerOutput.for_effect(
+            events=[ModelEvent(type="user_fetched", payload=dict(user_data) if user_data else {})]
         )
 ```
 
 ### Key Patterns
 
-**Connection Pooling**:
+**Protocol-Based Dependency Injection**:
 ```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-def __init__(self, container: ModelONEXContainer):
+def __init__(self, container: ModelONEXContainer) -> None:
     super().__init__(container)
-    # Use connection pooling for efficiency
-    self.db_pool = container.db_pool
-    self.http_client = container.http_client
+    # Resolve services via protocol, not direct attribute access
+    self.db = container.get_service(ProtocolDatabase)
+    self.http_client = container.get_service(ProtocolHttpClient)
 ```
 
 **Retry Logic**:
@@ -184,23 +191,28 @@ Use a COMPUTE node when you need to:
 
 ### Real-World Examples
 
+COMPUTE nodes delegate pure computation to their handlers. The handler returns a `result` (required for COMPUTE).
+
 ```python
-from omnibase_core.nodes import NodeCompute, ModelComputeInput, ModelComputeOutput
+from omnibase_core.nodes import NodeCompute
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-# Example 1: Data validation
+# Node: thin shell
 class NodeDataValidatorCompute(NodeCompute):
-    """Validate data structure and business rules."""
+    """Thin shell for data validation. Handler owns validation logic."""
 
-    async def process(
-        self,
-        input_data: ModelComputeInput
-    ) -> ModelComputeOutput:
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+
+# Handler: business logic
+class HandlerDataValidator:
+    """Handler: validates data structure and business rules."""
+
+    async def execute(self, input_data: ModelComputeInput) -> ModelHandlerOutput:
         """Validate user registration data."""
         data = input_data.data
+        errors: list[str] = []
 
-        errors = []
-
-        # Validation computations (no I/O)
         if not self._valid_email(data.get("email")):
             errors.append("Invalid email format")
 
@@ -210,38 +222,32 @@ class NodeDataValidatorCompute(NodeCompute):
         if data.get("age", 0) < 18:
             errors.append("Must be 18+")
 
-        return ModelComputeOutput(
-            result={"valid": len(errors) == 0, "errors": errors},
-            success=True
+        # COMPUTE handlers must return result
+        return ModelHandlerOutput.for_compute(
+            result={"valid": len(errors) == 0, "errors": errors}
         )
 
-# Example 2: Price calculation
-class NodePriceCalculatorCompute(NodeCompute):
-    """Calculate total price with tax and discounts."""
+# Handler: price calculation
+class HandlerPriceCalculator:
+    """Handler: calculates total price with tax and discounts."""
 
-    async def process(
-        self,
-        input_data: ModelComputeInput
-    ) -> ModelComputeOutput:
-        """Calculate final price."""
+    async def execute(self, input_data: ModelComputeInput) -> ModelHandlerOutput:
+        """Calculate final price -- pure computation, no I/O."""
         cart = input_data.cart_items
         discount_code = input_data.discount_code
 
-        # Pure computation
         subtotal = sum(item.price * item.quantity for item in cart)
         discount = self._calculate_discount(subtotal, discount_code)
         tax = (subtotal - discount) * 0.08  # 8% tax
         total = subtotal - discount + tax
 
-        return ModelComputeOutput(
+        return ModelHandlerOutput.for_compute(
             result={
                 "subtotal": subtotal,
                 "discount": discount,
                 "tax": tax,
-                "total": total
-            },
-            processing_time_ms=5.2,
-            cache_hit=False
+                "total": total,
+            }
         )
 ```
 
@@ -581,104 +587,72 @@ class NodeWorkflowOrchestrator(NodeOrchestrator):
 
 ### Real-World Examples
 
+Orchestrators coordinate workflows by emitting events and intents. They do **not** return `result` -- that is forbidden for ORCHESTRATOR nodes. Instead, they emit `events[]` and `intents[]`.
+
 ```python
+from omnibase_core.nodes import NodeOrchestrator
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
 # Example 1: User registration workflow
-class NodeUserRegistrationOrchestrator(NodeOrchestrator):
-    """Orchestrate complete user registration flow."""
+# The handler emits intents to trigger downstream nodes
+class HandlerUserRegistration:
+    """Handler: orchestrates user registration via intents."""
 
-    def __init__(self, container: ModelONEXContainer):
-        super().__init__(container)
-        # Inject dependent nodes
-        self.validator = NodeDataValidatorCompute(container)
-        self.email_sender = NodeEmailSenderEffect(container)
-        self.db_saver = NodeUserSaverEffect(container)
+    async def execute_orchestration(self, contract) -> ModelHandlerOutput:
+        """Emit intents to coordinate registration steps."""
+        user_data = contract.payload
 
-    async def process(
-        self,
-        input_data: ModelOrchestratorInput
-    ) -> ModelOrchestratorOutput:
-        """Orchestrate user registration."""
-        user_data = input_data.user_data
-
-        # Step 1: Validate data
-        validation = await self.validator.process(
-            ModelComputeInput(data=user_data)
+        # Emit intents for each workflow step (no direct node calls)
+        return ModelHandlerOutput.for_orchestrator(
+            events=[
+                ModelEvent(type="registration_started", payload=user_data)
+            ],
+            intents=[
+                ModelIntent(
+                    intent_type=EnumIntentType.VALIDATE,
+                    target="data_validator",
+                    payload=user_data,
+                ),
+                ModelIntent(
+                    intent_type=EnumIntentType.DATABASE_WRITE,
+                    target="user_saver",
+                    payload=user_data,
+                ),
+                ModelIntent(
+                    intent_type=EnumIntentType.NOTIFICATION,
+                    target="email_sender",
+                    payload={"email": user_data["email"], "template": "welcome"},
+                ),
+            ],
         )
 
-        if not validation.result["valid"]:
-            return ModelOrchestratorOutput(
-                success=False,
-                errors=validation.result["errors"]
-            )
+# Example 2: Parallel data aggregation
+# The orchestrator emits intents; the runtime handles parallelism
+class HandlerDataAggregator:
+    """Handler: emits intents to fetch from multiple sources in parallel."""
 
-        # Step 2: Save to database
-        save_result = await self.db_saver.process(
-            ModelEffectInput(user=user_data)
-        )
+    async def execute_orchestration(self, contract) -> ModelHandlerOutput:
+        """Emit parallel fetch intents."""
+        user_id = contract.payload["user_id"]
 
-        # Step 3: Send welcome email (don't block on this)
-        asyncio.create_task(
-            self.email_sender.process(
-                ModelEffectInput(
-                    email=user_data.email,
-                    template="welcome"
-                )
-            )
-        )
-
-        return ModelOrchestratorOutput(
-            success=True,
-            user_id=save_result.result["user_id"],
-            steps_completed=["validation", "database", "email_queued"]
-        )
-
-# Example 2: Parallel data fetching
-class NodeDataAggregatorOrchestrator(NodeOrchestrator):
-    """Fetch and combine data from multiple sources in parallel."""
-
-    def __init__(self, container: ModelONEXContainer):
-        super().__init__(container)
-        self.user_fetcher = NodeUserFetcherEffect(container)
-        self.orders_fetcher = NodeOrdersFetcherEffect(container)
-        self.analytics_fetcher = NodeAnalyticsFetcherEffect(container)
-        self.merger = NodeDataMergerReducer(container)
-
-    async def process(
-        self,
-        input_data: ModelOrchestratorInput
-    ) -> ModelOrchestratorOutput:
-        """Fetch all data in parallel and merge."""
-        user_id = input_data.user_id
-
-        # Execute in parallel for performance
-        user_task = self.user_fetcher.process(
-            ModelEffectInput(user_id=user_id)
-        )
-        orders_task = self.orders_fetcher.process(
-            ModelEffectInput(user_id=user_id)
-        )
-        analytics_task = self.analytics_fetcher.process(
-            ModelEffectInput(user_id=user_id)
-        )
-
-        # Wait for all to complete
-        user, orders, analytics = await asyncio.gather(
-            user_task,
-            orders_task,
-            analytics_task
-        )
-
-        # Merge all data
-        merged = await self.merger.process(
-            ModelReducerInput(
-                data_sources=[user.result, orders.result, analytics.result]
-            )
-        )
-
-        return ModelOrchestratorOutput(
-            result=merged.result,
-            sources_fetched=3,
-            parallel_execution=True
+        return ModelHandlerOutput.for_orchestrator(
+            intents=[
+                ModelIntent(
+                    intent_type=EnumIntentType.FETCH,
+                    target="user_fetcher",
+                    payload={"user_id": user_id},
+                ),
+                ModelIntent(
+                    intent_type=EnumIntentType.FETCH,
+                    target="orders_fetcher",
+                    payload={"user_id": user_id},
+                ),
+                ModelIntent(
+                    intent_type=EnumIntentType.FETCH,
+                    target="analytics_fetcher",
+                    payload={"user_id": user_id},
+                ),
+            ],
         )
 ```
 

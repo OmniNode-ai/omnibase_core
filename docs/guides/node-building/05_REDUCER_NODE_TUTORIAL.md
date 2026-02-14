@@ -188,6 +188,19 @@ In this tutorial, you'll build a production-ready **Metrics Aggregation Node** a
 
 See also [Node Purity Guarantees](../../architecture/NODE_PURITY_GUARANTEES.md) for enforcement details.
 
+### REDUCER Output Constraints
+
+| Field | COMPUTE | EFFECT | REDUCER | ORCHESTRATOR |
+|-------|---------|--------|---------|--------------|
+| `result` | Required | Forbidden | **Forbidden** | Forbidden |
+| `events[]` | Forbidden | Allowed | **Forbidden** | Allowed |
+| `intents[]` | Forbidden | Forbidden | **Forbidden** | Allowed |
+| `projections[]` | Forbidden | Forbidden | **Allowed** | Forbidden |
+
+REDUCER nodes return **projections** (state snapshots). They do NOT return typed results, events, or intents via `ModelHandlerOutput`. Side effects are described as `ModelIntent` objects within the output model and routed to EFFECT nodes by an ORCHESTRATOR.
+
+> **Handler Note**: As with all ONEX node kinds, reducers are thin coordination shells. In production, extract aggregation logic into a dedicated handler that returns `ModelHandlerOutput.for_reducer(projections=[...])`. The tutorial below shows logic inline for teaching clarity.
+
 ---
 
 **Why Pure FSM REDUCER Nodes?**

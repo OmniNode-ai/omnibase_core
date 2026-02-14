@@ -13,15 +13,16 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Handler ID Convention](#handler-id-convention)
+2. [ModelHandlerOutput Constraints](#modelhandleroutput-constraints)
+3. [Handler ID Convention](#handler-id-convention)
    - [Prefix Naming Rules](#prefix-naming-rules)
    - [Valid and Invalid Examples](#valid-and-invalid-examples)
-3. [Contract Structure](#contract-structure)
-4. [Creating Handler Contracts](#creating-handler-contracts)
-5. [Capability Dependencies](#capability-dependencies)
-6. [Execution Constraints](#execution-constraints)
-7. [Best Practices](#best-practices)
-8. [Troubleshooting](#troubleshooting)
+4. [Contract Structure](#contract-structure)
+5. [Creating Handler Contracts](#creating-handler-contracts)
+6. [Capability Dependencies](#capability-dependencies)
+7. [Execution Constraints](#execution-constraints)
+8. [Best Practices](#best-practices)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -52,6 +53,37 @@ contract = ModelHandlerContract(
     input_model="myapp.models.JsonInput",
     output_model="myapp.models.JsonOutput",
 )
+```
+
+---
+
+## ModelHandlerOutput Constraints
+
+Handlers return `ModelHandlerOutput`, which enforces strict field constraints based on node kind. Attempting to populate a forbidden field raises a `ValueError` at construction time.
+
+| Field | COMPUTE | EFFECT | REDUCER | ORCHESTRATOR |
+|-------|---------|--------|---------|--------------|
+| `result` | **Required** | Forbidden | Forbidden | Forbidden |
+| `events[]` | Forbidden | **Allowed** | Forbidden | **Allowed** |
+| `intents[]` | Forbidden | Forbidden | Forbidden | **Allowed** |
+| `projections[]` | Forbidden | Forbidden | **Allowed** | Forbidden |
+
+**Enforcement**: `ModelHandlerOutput` Pydantic validator at construction time + CI `node-purity-check` job.
+
+**Example** -- returning the correct output for a COMPUTE handler:
+
+```python
+# COMPUTE handler must return result, nothing else
+return ModelHandlerOutput.for_compute(result={"transformed": data})
+
+# EFFECT handler may return events
+return ModelHandlerOutput.for_effect(events=[event])
+
+# REDUCER handler may return projections
+return ModelHandlerOutput.for_reducer(projections=[projection])
+
+# ORCHESTRATOR handler may return events and intents
+return ModelHandlerOutput.for_orchestrator(events=[event], intents=[intent])
 ```
 
 ---

@@ -116,24 +116,33 @@ The ONEX pattern enforces left-to-right data flow:
 
 **Example**:
 ```python
-# Event arrives from Kafka topic
-@event_handler("order.created")
-async def handle_order_created(event: OrderCreatedEvent):
-    # Orchestrator coordinates the workflow
-    orchestrator = NodeOrderProcessingOrchestrator(container)
+# Event arrives from Kafka topic and is routed to the orchestrator's handler.
+# The handler coordinates the workflow; the node is a thin shell.
 
-    # Acquire lease for single-writer semantics
-    lease = await orchestrator.acquire_lease(event.order_id)
+class HandlerOrderProcessing:
+    """Handler that owns the orchestration logic."""
 
-    # Emit actions to downstream nodes
-    action = ModelAction(
-        action_type=EnumActionType.EFFECT,
-        target_node_type="NodePaymentProcessorEffect",
-        lease_id=lease.lease_id,
-        epoch=lease.epoch,
-        payload={"order_id": event.order_id}
-    )
-    await orchestrator.emit_action(action)
+    async def execute_orchestration(
+        self, input_data: ModelOrchestratorInput
+    ) -> ModelHandlerOutput[None]:
+        order_id = input_data.metadata["order_id"]
+
+        # Emit actions to downstream Effect nodes
+        return ModelHandlerOutput.for_orchestrator(
+            events=[
+                ModelEventEnvelope(
+                    event_type="order.processing_started",
+                    payload={"order_id": order_id},
+                )
+            ],
+            intents=[
+                ModelIntent(
+                    intent_type=EnumIntentType.EFFECT,
+                    target="NodePaymentProcessorEffect",
+                    payload=ModelPaymentPayload(order_id=order_id),
+                )
+            ],
+        )
 ```
 
 ---
@@ -173,36 +182,53 @@ async def handle_order_created(event: OrderCreatedEvent):
 
 **Example**:
 ```python
-# Domain event triggers state transition
-async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
-    current_state = input_data.state
-    event = input_data.event
+# Domain event triggers a pure state transition in the handler.
+# The handler contains all FSM logic; the node is a thin shell.
 
-    # Pure FSM transition
-    transition_result = self._apply_fsm_transition(
-        current_state,
-        event.action,
-        event.payload
-    )
+class HandlerOrderState:
+    """Handler that owns pure FSM transition logic."""
 
-    # Emit intents for side effects (DB write, notification)
-    intents = [
-        ModelIntent(
-            intent_type=EnumIntentType.DATABASE_WRITE,
-            target="orders_table",
-            payload={"data": transition_result.new_state}
-        ),
-        ModelIntent(
-            intent_type=EnumIntentType.NOTIFICATION,
-            target="email_service",
-            payload={"template": "order_status_update"}
-        )
-    ]
+    # Valid FSM transitions
+    VALID_TRANSITIONS: dict[str, list[str]] = {
+        "PENDING": ["PAID", "CANCELLED"],
+        "PAID": ["SHIPPED", "CANCELLED"],
+        "SHIPPED": ["DELIVERED"],
+    }
 
-    return ModelReducerOutput(
-        result=transition_result.new_state,
-        intents=intents
-    )
+    def execute_reduction(
+        self,
+        current_state: str,
+        event_action: str,
+        event_payload: dict[str, str],
+    ) -> tuple[str, list[ModelIntent]]:
+        """
+        Pure FSM: delta(state, event) -> (new_state, intents[])
+
+        No I/O -- the handler describes WHAT should happen via intents.
+        Effect nodes determine HOW to execute them.
+        """
+        if event_action not in self.VALID_TRANSITIONS.get(current_state, []):
+            return current_state, []
+
+        new_state = event_action
+
+        intents = [
+            ModelIntent(
+                intent_type=EnumIntentType.DATABASE_WRITE,
+                target="orders_table",
+                payload=ModelOrderStatePayload(
+                    order_id=event_payload["order_id"],
+                    status=new_state,
+                ),
+            ),
+            ModelIntent(
+                intent_type=EnumIntentType.NOTIFICATION,
+                target="email_service",
+                payload=ModelNotifyPayload(template="order_status_update"),
+            ),
+        ]
+
+        return new_state, intents
 ```
 
 ---
@@ -313,37 +339,40 @@ class NodeIntentExecutorEffect(NodeEffect):
 
 **Example**:
 ```python
-# Command triggers orchestrator
-@api_endpoint("/api/import", methods=["POST"])
-async def start_import(request: ImportRequest):
-    orchestrator = NodeDataImportOrchestrator(container)
+# Command triggers orchestrator. The orchestrator node is a thin shell;
+# the workflow is defined in a YAML contract with dependency ordering.
+# The handler emits events and intents rather than calling downstream
+# nodes directly.
 
-    # Acquire exclusive lease
-    lease = await orchestrator.acquire_lease(
-        workflow_id=uuid4(),
-        lease_duration=timedelta(minutes=30)
-    )
+class HandlerDataImport:
+    """Handler that coordinates data import via events and intents."""
 
-    # Define workflow steps with dependencies
-    fetch_action = ModelAction(
-        action_id=uuid4(),
-        action_type=EnumActionType.EFFECT,
-        target_node_type="NodeAPIFetcherEffect",
-        lease_id=lease.lease_id,
-        epoch=0
-    )
+    async def execute_orchestration(
+        self, input_data: ModelOrchestratorInput
+    ) -> ModelHandlerOutput[None]:
+        workflow_id = str(uuid4())
+        source_url = input_data.metadata["source_url"]
 
-    transform_action = ModelAction(
-        action_id=uuid4(),
-        action_type=EnumActionType.COMPUTE,
-        target_node_type="NodeDataTransformerCompute",
-        dependencies=[fetch_action.action_id],
-        lease_id=lease.lease_id,
-        epoch=1
-    )
-
-    # Execute workflow
-    await orchestrator.execute_workflow([fetch_action, transform_action])
+        return ModelHandlerOutput.for_orchestrator(
+            events=[
+                ModelEventEnvelope(
+                    event_type="import.started",
+                    payload={"workflow_id": workflow_id, "source_url": source_url},
+                )
+            ],
+            intents=[
+                ModelIntent(
+                    intent_type=EnumIntentType.EFFECT,
+                    target="NodeAPIFetcherEffect",
+                    payload=ModelFetchPayload(source_url=source_url),
+                ),
+                ModelIntent(
+                    intent_type=EnumIntentType.COMPUTE,
+                    target="NodeDataTransformerCompute",
+                    payload=ModelTransformPayload(workflow_id=workflow_id),
+                ),
+            ],
+        )
 ```
 
 ---

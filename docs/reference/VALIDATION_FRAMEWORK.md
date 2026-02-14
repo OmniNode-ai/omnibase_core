@@ -18,7 +18,7 @@ Comprehensive validation framework for ONEX compliance across the omni* ecosyste
 Since this is part of `omnibase_core`, install the package:
 
 ```
-pip install omnibase_core
+poetry install
 ```
 
 ## Quick Start
@@ -211,8 +211,8 @@ Add to your GitHub Actions workflow:
 ```
 - name: ONEX Validation
   run: |
-    pip install omnibase_core
-    python -m omnibase_core.validation all --strict
+    poetry install
+    poetry run python -m omnibase_core.validation all --strict
 ```
 
 ### Custom Validation Scripts
