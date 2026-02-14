@@ -232,7 +232,7 @@ Are you writing a node class?
 
 Nodes are thin coordination shells. Business logic belongs in handlers, not in `process()`.
 
-```
+```python
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 # v0.3.6+: Core-native protocol imports
@@ -264,7 +264,7 @@ execution to its handler. The handler contains the actual business logic. See th
 
 ### Example 2: Configuration Value (Use ModelContainer[T])
 
-```
+```python
 from omnibase_core.models.core.model_container import ModelContainer
 
 class ConfigManager:

@@ -703,11 +703,10 @@ mapping.  This is a known bug that should be fixed in the implementation
 
 ```python
 original = {"code": "ERR", "message": "msg"}
-error = ModelErrorDetails.from_dict(original)
-# 'original' has been modified!
 
-# WORKAROUND: Pass a copy
+# WORKAROUND: Pass a copy to prevent mutation
 error = ModelErrorDetails.from_dict(original.copy())
+# 'original' is NOT modified
 ```
 
 > **TODO(OMN-TBD)**: Fix `ModelErrorDetails.from_dict()` to copy the input dict
@@ -726,6 +725,6 @@ error = ModelErrorDetails.from_dict(original.copy())
 
 ---
 
-**Last Updated**: 2025-12-25
+**Last Updated**: 2025-12-26
 **Version**: 0.4.0
 **Maintainer**: ONEX Framework Team

@@ -197,7 +197,7 @@ See also [Node Purity Guarantees](../../architecture/NODE_PURITY_GUARANTEES.md) 
 | `intents[]` | Forbidden | Forbidden | **Forbidden** | Allowed |
 | `projections[]` | Forbidden | Forbidden | **Allowed** | Forbidden |
 
-REDUCER nodes return **projections** (state snapshots). They do NOT return typed results, events, or intents via `ModelHandlerOutput`. Side effects are described as `ModelIntent` objects within the output model and routed to EFFECT nodes by an ORCHESTRATOR.
+REDUCER nodes return **projections** (state snapshots) via `ModelHandlerOutput.projections[]`. They do NOT return typed results, events, or intents in the `ModelHandlerOutput` fields directly. Instead, side effects are described as `ModelIntent` objects in reducer-specific output models (e.g., `ModelMetricsAggregationOutput.intents`) and routed to EFFECT nodes by an ORCHESTRATOR.
 
 > **Handler Note**: As with all ONEX node kinds, reducers are thin coordination shells. In production, extract aggregation logic into a dedicated handler that returns `ModelHandlerOutput.for_reducer(projections=[...])`. The tutorial below shows logic inline for teaching clarity.
 

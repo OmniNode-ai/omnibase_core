@@ -551,7 +551,7 @@ coordinates execution order and error handling; the handlers own the business lo
 
 **Error Handling for Failed Intents**:
 
-```
+```python
 async def _handle_intent_failure(
     self,
     intent: ModelIntent,
@@ -575,7 +575,8 @@ async def _handle_intent_failure(
     if intent.priority >= 8:
         try:
             await asyncio.sleep(1.0)  # Backoff
-            await self._execute_single_intent(intent)
+            handler = self.handler_registry.get(intent.intent_type)
+            await handler.execute(intent)
         except Exception as retry_error:
             emit_log_event(
                 LogLevel.CRITICAL,

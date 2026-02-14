@@ -155,7 +155,7 @@ Every tutorial or template that shows a node **must** include the constraints ta
 
 This document does not exist yet. It is the single most important missing piece. Suggested outline:
 
-```
+```text
 # Handler Architecture Guide
 
 ## 1. Goal and Invariants

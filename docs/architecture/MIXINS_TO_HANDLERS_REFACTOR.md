@@ -67,7 +67,14 @@ contract = ModelHandlerContract(
 
 # DESCRIPTOR: Runtime representation (produced by parsing contracts)
 # Used for discovery, routing, and instantiation
-from omnibase_core.models.handlers import ModelHandlerDescriptor
+from omnibase_core.models.handlers import (
+    ModelHandlerDescriptor,
+    ModelIdentifier,
+    ModelSemVer,
+    EnumHandlerRole,
+    EnumHandlerType,
+    EnumHandlerTypeCategory,
+)
 
 descriptor = ModelHandlerDescriptor(
     handler_name=ModelIdentifier(namespace="onex", name="kafka-ingress"),

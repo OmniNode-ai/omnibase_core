@@ -72,7 +72,7 @@ The `ModelONEXContainer` is the primary DI container for all ONEX applications. 
 
 ### Architecture
 
-```
+```text
 ModelONEXContainer
     |
     +-- _BaseModelONEXContainer (dependency-injector based)
@@ -261,7 +261,7 @@ cache = container.get_service_optional(ProtocolComputeCache)
 
 ### Resolution Flow
 
-```
+```text
 container.get_service(ProtocolLogger)
     |
     +-- Check _service_cache["ProtocolLogger:default"]

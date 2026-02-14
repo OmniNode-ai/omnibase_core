@@ -914,8 +914,9 @@ fsm_subcontract:
 ```
 
 ```
-# Imperative: Retry logic (no subcontract needed)
-from omnibase_core.mixins.mixin_retry import MixinRetry
+# Hypothetical example - MixinRetry is contract-only, not a Python class.
+# This illustrates how a declarative+imperative hybrid *would* look.
+from omnibase_core.mixins.mixin_retry import MixinRetry  # hypothetical import
 
 class HybridNode(NodeReducer, MixinFSMExecution, MixinRetry):
     async def execute_reduction(self, contract):

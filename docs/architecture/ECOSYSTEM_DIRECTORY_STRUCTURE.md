@@ -228,7 +228,7 @@ class MyComputeNode(ModelServiceCompute):
 
 **Location**: `omnibase_infra/src/omnibase_infra/nodes/`
 
-```
+```python
 from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
 
 class MyInfraEffect(ModelServiceEffect):

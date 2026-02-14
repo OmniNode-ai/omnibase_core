@@ -138,8 +138,12 @@ class NodePipelineOrchestrator(NodeOrchestrator):
         #   self._handler = container.get_service(ProtocolPipelineOrchestratorHandler)
         self._handler = HandlerPipelineOrchestrator()
 
-    async def process(self, input_data):
-        return await self._handler.execute(input_data)
+    async def process(
+        self,
+        envelope: ModelOnexEnvelope,
+        input_data: ModelPipelineOrchestratorInput,
+    ) -> ModelHandlerOutput:
+        return await self._handler.execute(envelope, input_data)
 ```
 
 The tutorial below shows coordination logic inline for teaching clarity. In production, always extract logic into a handler.

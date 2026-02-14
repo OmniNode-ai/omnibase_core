@@ -62,7 +62,7 @@ from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutpu
 class HandlerPriceCalculator:
     """Handler containing the actual computation logic."""
 
-    def execute(
+    async def execute(
         self,
         envelope: ModelOnexEnvelope,
         input_data: ModelPriceCalculatorInput,
@@ -118,8 +118,12 @@ class NodePriceCalculatorCompute(NodeCompute):
         #   self._handler = container.get_service(ProtocolPriceCalculatorHandler)
         self._handler = HandlerPriceCalculator()
 
-    async def process(self, input_data):
-        return self._handler.execute(input_data)
+    async def process(
+        self,
+        envelope: ModelOnexEnvelope,
+        input_data: ModelPriceCalculatorInput,
+    ) -> ModelHandlerOutput:
+        return await self._handler.execute(envelope, input_data)
 ```
 
 The tutorial below shows computation logic inline for teaching clarity. In production, always extract logic into a handler.

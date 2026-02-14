@@ -583,9 +583,15 @@ class HandlerOrderProcessing:
     NO direct database writes, API calls, or I/O operations.
     ALL side effects are declared as intents.
 
-    REDUCER output constraints:
+    REDUCER output constraints (ModelHandlerOutput fields):
         - Allowed: projections[]
         - Forbidden: events[], intents[], result
+
+    Note: The ModelReducerOutput returned here carries intent
+    descriptions in its own ``intents`` field. These are domain-level
+    side-effect declarations routed by an Orchestrator or Effect node
+    -- they are NOT the same as ModelHandlerOutput.intents[], which
+    is forbidden for REDUCER nodes.
     """
 
     async def handle(

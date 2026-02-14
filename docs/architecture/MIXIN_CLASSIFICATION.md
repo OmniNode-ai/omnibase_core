@@ -49,7 +49,7 @@ Pure computation with no side effects or runtime dependencies.
 - Easily unit testable in isolation
 - Framework-agnostic
 
-**Migration Target**: `omnibase_core/utils/`
+**Migration Target**: `omnibase_core/utils/` and `omnibase_core/domain/`
 
 ---
 
@@ -59,8 +59,8 @@ Pure computation with no side effects or runtime dependencies.
 |----------------|--------|-------------|-------|
 | **Runtime (R)** | 22 | 1 | 23 |
 | **Handler (H)** | 3 | 0 | 3 |
-| **Domain (D)** | 15 | 2 | 17 |
-| **Total** | **40** | **3** | **43** |
+| **Domain (D)** | 14 | 2 | 16 |
+| **Total** | **39** | **3** | **42** |
 
 > **Data Models in `models/mixins/`**: `ModelCompletionData` (R), `ModelLogData` (D), `ModelNodeIntrospectionData` (D)
 
@@ -112,7 +112,6 @@ Pure computation with no side effects or runtime dependencies.
 | 40 | `MixinYAMLSerialization` | YAML serialization with comments | D | `utils/yaml_serialization.py` |
 | 41 | `MixinNodeTypeValidator` | Validates node type constraints | D | `utils/node_type_validation.py` |
 | 42 | `MixinTruncationValidation` | Truncation boundary validation | D | `utils/truncation.py` |
-| 43 | `MixinContractStateReducer` | Contract-driven state reduction | D | `domain/fsm/contract_reducer.py` |
 
 ---
 

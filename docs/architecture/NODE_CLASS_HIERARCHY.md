@@ -179,6 +179,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
 """Handler containing price calculation business logic."""
 
 from typing import Any
+from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
@@ -200,7 +201,13 @@ class HandlerPriceCalculator:
         - Forbidden: events[], intents[], projections[]
     """
 
-    async def handle(self, operation: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
+    async def handle(
+        self,
+        operation: dict[str, Any],
+        *,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[dict[str, Any]]:
         """Calculate price with tax and discounts."""
         items = operation.get("items", [])
         discount_code = operation.get("discount_code")
@@ -279,6 +286,7 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 """Handler for database write operations."""
 
 from typing import Any
+from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
@@ -297,7 +305,13 @@ class HandlerDatabaseWriter:
     def __init__(self, db: Any) -> None:
         self.db = db
 
-    async def handle(self, operation: dict[str, Any]) -> ModelHandlerOutput[None]:
+    async def handle(
+        self,
+        operation: dict[str, Any],
+        *,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[None]:
         """Write records to database and emit completion event."""
         records = operation.get("records", [])
         table_name = operation.get("table", "default")

@@ -77,19 +77,19 @@ Error Handling Actions:
 > models in `models/contracts/subcontracts/` serve as the contract definitions.
 > The YAML structure below shows the planned target format.
 
-```
+```bash
 # Planned mixin location (not yet created)
-# cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/nodes/canary/mixins/
+# cd src/omnibase_core/nodes/canary/mixins/
 # touch mixin_error_handling.yaml
 
 # Current approach: create Pydantic model directly
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/contracts/subcontracts/
+cd src/omnibase_core/models/contracts/subcontracts/
 touch model_error_handling_subcontract.py
 ```
 
 ### Write Basic Structure
 
-```
+```yaml
 # mixin_error_handling.yaml
 mixin_name: "mixin_error_handling"
 mixin_version:

@@ -98,6 +98,11 @@ intent = ModelIntent(
 # Publish to: dev.omninode-bridge.intents.event-publish.v1
 ```
 
+> **Note**: The `omninode-bridge` domain name is intentionally retained in Kafka topic
+> names for infrastructure topics. Topic domain names are independent of Python package
+> names (`omnibase_core`, `omnibase_infra`) and follow the Kafka topic naming convention
+> defined below.
+
 ---
 
 ## Topic Naming Convention

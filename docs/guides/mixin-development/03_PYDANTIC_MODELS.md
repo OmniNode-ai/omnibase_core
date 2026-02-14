@@ -38,8 +38,8 @@ Node Implementation (Usage)
 **Location**: `src/omnibase_core/models/contracts/subcontracts/`
 **Naming**: `model_[capability_name]_subcontract.py`
 
-```
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/contracts/subcontracts/
+```bash
+cd src/omnibase_core/models/contracts/subcontracts/
 
 # Create your model file
 touch model_error_handling_subcontract.py
@@ -47,7 +47,7 @@ touch model_error_handling_subcontract.py
 
 ### Basic Imports
 
-```
+```python
 """
 Model backing for Error Handling Subcontract.
 Generated from mixin_error_handling subcontract following ONEX patterns.

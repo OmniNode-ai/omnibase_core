@@ -80,7 +80,7 @@ This comprehensive guide teaches you how to create production-ready mixins (subc
 poetry run python -c "from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract import ModelHealthCheckSubcontract; print('Mixin system ready')"
 
 # Check existing mixins
-ls /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixins/
+ls src/omnibase_core/mixins/
 ```
 
 ## Learning Path

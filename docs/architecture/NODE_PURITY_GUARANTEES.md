@@ -312,6 +312,7 @@ class NodeDataCompute(NodeCompute):
 
 ```python
 from typing import Any
+from uuid import UUID
 
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 
@@ -322,11 +323,18 @@ class HandlerDataTransform:
     Data was already fetched by an Effect node upstream.
     """
 
-    async def handle(self, data: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
+    async def handle(
+        self,
+        data: dict[str, Any],
+        *,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[dict[str, Any]]:
         result = self._transform(data)
         return ModelHandlerOutput.for_compute(
-            input_envelope_id=input_envelope_id,  # from handler args
-            correlation_id=correlation_id,         # from handler args
+            handler_id="handler_pure_compute",
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
             result=result,
         )
 

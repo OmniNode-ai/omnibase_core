@@ -118,8 +118,12 @@ class NodeFileBackupEffect(NodeEffect):
         #   self._handler = container.get_service(ProtocolFileBackupHandler)
         self._handler = HandlerFileBackup()
 
-    async def process(self, input_data):
-        return await self._handler.execute(input_data)
+    async def process(
+        self,
+        envelope: ModelOnexEnvelope,
+        input_data: ModelFileBackupInput,
+    ) -> ModelHandlerOutput:
+        return await self._handler.execute(envelope, input_data)
 ```
 
 The tutorial below shows I/O logic inline for teaching clarity. In production, always extract logic into a handler.

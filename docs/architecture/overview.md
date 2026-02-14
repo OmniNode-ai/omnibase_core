@@ -301,6 +301,7 @@ class MyComputeNode(NodeCompute):
 Handlers contain the business logic, separated from the node for testability:
 ```python
 from typing import Any
+from uuid import UUID
 
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 
@@ -308,11 +309,17 @@ from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutpu
 class HandlerMyCompute:
     """COMPUTE handler -- must return result."""
 
-    async def handle(self, input_data: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
+    async def handle(
+        self,
+        input_data: dict[str, Any],
+        *,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[dict[str, Any]]:
         result = self._process(input_data)
         return ModelHandlerOutput.for_compute(
-            input_envelope_id=input_envelope_id,  # from handler args
-            correlation_id=correlation_id,         # from handler args
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
             result=result,
         )
 
@@ -323,17 +330,25 @@ class HandlerMyCompute:
 
 ### 4. Add Error Handling
 ```python
+from uuid import UUID
+
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 
 class HandlerMyCompute:
-    async def handle(self, input_data: dict[str, Any]) -> ModelHandlerOutput[dict[str, Any]]:
+    async def handle(
+        self,
+        input_data: dict[str, Any],
+        *,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[dict[str, Any]]:
         try:
             result = self._process(input_data)
             return ModelHandlerOutput.for_compute(
-                input_envelope_id=input_envelope_id,  # from handler args
-                correlation_id=correlation_id,         # from handler args
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
                 result=result,
             )
         except Exception as e:
