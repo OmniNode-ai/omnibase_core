@@ -42,13 +42,13 @@ class MyComputeNode(NodeCompute):
 
 - `__init__(container: ModelONEXContainer)` - Initialize with dependency injection container
 - `async process(input_data)` - Delegates to handler for computation
-- `get_metrics() -> dict[str, Any]` - Get performance metrics
-- `health_check() -> dict[str, Any]` - Health status check
+- `async get_computation_metrics() -> dict[str, dict[str, float]]` - Get detailed computation performance metrics
+- `register_computation(computation_type: str, computation_func: Callable) -> None` - Register custom computation function
 
 #### Properties
 
 - `container: ModelONEXContainer` - Dependency injection container
-- `computation_cache: ModelComputeCache` - LRU cache for results
+- `computation_cache: ProtocolComputeCache` - Computation cache (lazily created via protocol injection)
 
 ### NodeEffect
 
@@ -80,14 +80,14 @@ class DatabaseEffectNode(NodeEffect):
 
 - `__init__(container: ModelONEXContainer)` - Initialize with dependency injection container
 - `async process(input_data)` - Delegates to handler for I/O operations
-- `async transaction_context(operation_id: UUID)` - Transaction management context
-- `get_circuit_breaker_status() -> dict[str, Any]` - Circuit breaker status
+- `get_circuit_breaker(operation_id: UUID) -> ModelCircuitBreaker` - Get or create circuit breaker for an operation
+- `reset_circuit_breakers() -> None` - Reset all circuit breakers to closed state
 
 #### Properties
 
 - `container: ModelONEXContainer` - Dependency injection container
-- `circuit_breakers: dict[str, ModelCircuitBreaker]` - Circuit breaker instances
-- `transaction_manager: ModelEffectTransaction` - Transaction management
+- `_circuit_breakers: dict[UUID, ModelCircuitBreaker]` - Circuit breaker instances keyed by operation ID
+- `effect_subcontract: ModelEffectSubcontract | None` - Effect subcontract for contract-driven execution
 
 ### NodeReducer
 

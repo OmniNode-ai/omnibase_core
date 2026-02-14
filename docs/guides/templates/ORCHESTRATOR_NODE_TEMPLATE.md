@@ -4,7 +4,7 @@
 
 ## Overview
 
-Template for building ONEX ORCHESTRATOR nodes. ORCHESTRATOR nodes coordinate **workflows** by routing events to handlers and managing multi-step execution. They are the **only** node type that publishes events to the message bus.
+Template for building ONEX ORCHESTRATOR nodes. ORCHESTRATOR nodes coordinate **workflows** by routing events to handlers and managing multi-step execution. They can publish events to the message bus (EFFECT nodes also emit events).
 
 **Architectural invariants**:
 
@@ -19,7 +19,7 @@ Template for building ONEX ORCHESTRATOR nodes. ORCHESTRATOR nodes coordinate **w
 
 - Multi-handler workflows
 - Event coordination
-- Publishing events to the message bus (ONLY orchestrators can publish)
+- Publishing events to the message bus
 - Routing intents to effect nodes
 - Parallel execution coordination
 
@@ -341,22 +341,32 @@ output = ModelHandlerOutput.for_orchestrator(
     intents=[{"intent_type": "payment.process", "payload": {...}}],
 )
 
-# WRONG -- orchestrator CANNOT return result (raises ModelOnexError)
+# WRONG -- for_orchestrator() does not accept result= (TypeError at call site)
 output = ModelHandlerOutput.for_orchestrator(
     input_envelope_id=input_envelope_id,
     correlation_id=correlation_id,
     handler_id="handler-order-placed",
-    result={"status": "done"},  # ModelOnexError!
+    result={"status": "done"},  # TypeError: unexpected keyword argument 'result'
+)
+
+# WRONG -- for_orchestrator() does not accept projections= (TypeError at call site)
+output = ModelHandlerOutput.for_orchestrator(
+    input_envelope_id=input_envelope_id,
+    correlation_id=correlation_id,
+    handler_id="handler-order-placed",
+    projections=[some_projection],  # TypeError: unexpected keyword argument 'projections'
+)
+
+# WRONG -- direct construction with result triggers the Pydantic model validator
+# This is where ModelOnexError is actually raised:
+output = ModelHandlerOutput(
+    input_envelope_id=input_envelope_id,
+    correlation_id=correlation_id,
+    handler_id="handler-order-placed",
+    node_kind=EnumNodeKind.ORCHESTRATOR,
+    result={"status": "done"},  # ModelOnexError from validator!
 )
 # Raises: ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
-
-# WRONG -- orchestrator CANNOT emit projections (raises ModelOnexError)
-output = ModelHandlerOutput.for_orchestrator(
-    input_envelope_id=input_envelope_id,
-    correlation_id=correlation_id,
-    handler_id="handler-order-placed",
-    projections=[some_projection],  # ModelOnexError!
-)
 ```
 
 ## Common Anti-Patterns to Avoid
@@ -422,7 +432,7 @@ self._step_executor = StepExecutor()
 2. **Handler owns logic**: All workflow coordination logic lives in handler classes.
 3. **NO result field**: Orchestrators emit events (what happened) and intents (what should happen next). Only COMPUTE nodes return results.
 4. **Contract drives behavior**: Workflow definitions, handler routing, event publishing, and intent routing are all in YAML.
-5. **Only orchestrators publish events**: To the message bus. Other node types return events to the orchestrator.
+5. **Orchestrators and effects publish events**: Both ORCHESTRATOR and EFFECT nodes can emit events to the message bus via `ModelHandlerOutput`.
 6. **PEP 604 types**: Use `X | None` not `Optional[X]`, `list[str]` not `List[str]`.
 7. **Pydantic v2**: Use `model_config = ConfigDict(...)` not `class Config:`. Use `pattern=` not `regex=`.
 8. **`ModelONEXContainer`**: Always use `ModelONEXContainer` for DI, never `ModelContainer`.

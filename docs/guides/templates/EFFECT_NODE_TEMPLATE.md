@@ -162,7 +162,7 @@ from uuid import UUID
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 
 if TYPE_CHECKING:
-    from omnibase_core.protocols.protocol_database import ProtocolDatabase
+    from omnibase_core.protocols.infrastructure import ProtocolDatabaseConnection
 
 
 class HandlerStorage:
@@ -172,13 +172,13 @@ class HandlerStorage:
     never instantiated directly in the handler or the node.
     """
 
-    def __init__(self, db_client: ProtocolDatabase) -> None:
+    def __init__(self, db_client: ProtocolDatabaseConnection) -> None:
         """Initialize with injected dependencies.
 
         Args:
             db_client: Database client resolved from the container.
                        Never do ``DatabaseHandler()`` -- always resolve
-                       via ``container.get_service(ProtocolDatabase)``.
+                       via ``container.get_service(ProtocolDatabaseConnection)``.
         """
         self._db = db_client
 

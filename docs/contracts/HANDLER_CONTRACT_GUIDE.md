@@ -77,6 +77,7 @@ Handlers return `ModelHandlerOutput`, which enforces strict field constraints ba
 return ModelHandlerOutput.for_compute(
     input_envelope_id=envelope.metadata.envelope_id,
     correlation_id=envelope.metadata.correlation_id,
+    handler_id="compute.transform",
     result={"transformed": data},
 )
 
@@ -84,6 +85,7 @@ return ModelHandlerOutput.for_compute(
 return ModelHandlerOutput.for_effect(
     input_envelope_id=envelope.metadata.envelope_id,
     correlation_id=envelope.metadata.correlation_id,
+    handler_id="effect.notify",
     events=[event],
 )
 
@@ -91,6 +93,7 @@ return ModelHandlerOutput.for_effect(
 return ModelHandlerOutput.for_reducer(
     input_envelope_id=envelope.metadata.envelope_id,
     correlation_id=envelope.metadata.correlation_id,
+    handler_id="reducer.state",
     projections=[projection],
 )
 
@@ -98,6 +101,7 @@ return ModelHandlerOutput.for_reducer(
 return ModelHandlerOutput.for_orchestrator(
     input_envelope_id=envelope.metadata.envelope_id,
     correlation_id=envelope.metadata.correlation_id,
+    handler_id="orchestrator.workflow",
     events=[event],
     intents=[intent],
 )
