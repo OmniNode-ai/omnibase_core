@@ -157,7 +157,7 @@ Branch protection in OmniNode repositories uses exactly four gate names. These n
 
 ### Gate vs. Individual Check
 
-```
+```text
 Branch Protection          Gate (aggregator)           Individual Checks
 ─────────────────          ─────────────────           ─────────────────
 requires: "Tests Gate" --> tests-gate job      ------> Tests (Split 1/20)
@@ -307,7 +307,7 @@ checks:
 | `checks[].name` | Yes | `string` | Human-readable check name. |
 | `checks[].tier` | Yes | `string` | One of: `A-Org`, `A-Runtime`, `B`, `C`. |
 | `checks[].workflow` | Yes | `string` | Workflow file that runs this check. |
-| `checks[].gate` | Yes | `string | null` | Which gate aggregates this check, or `null` if not gated. |
+| `checks[].gate` | Yes | `string \| null` | Which gate aggregates this check, or `null` if not gated. |
 | `checks[].rationale` | Yes | `string` | Why this check exists or why it is excluded. |
 | `checks[].paths` | No | `list[string]` | Path filters (Tier B only). |
 
@@ -451,7 +451,7 @@ The `CI Summary` job serves a specific purpose: it is the safety net for path-fi
 
 ### What CI Summary Must Do
 
-```
+```text
 For each gate in required-checks.yaml.gates:
   status = lookup_gate_status(gate.name)
 
