@@ -2,7 +2,7 @@
 
 # Claude Code Hooks Architecture
 
-> **Why in core?** These hook models are part of the shared contract surface used by multiple repos (omniclaude, omniarchon, etc.). They define the canonical event types for Claude Code integration.
+> **Why in core?** These hook models are part of the shared contract surface consumed by omniclaude. They define the canonical event types for Claude Code integration.
 
 ---
 

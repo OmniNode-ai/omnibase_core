@@ -179,11 +179,12 @@ class OrderState(BaseModel):
     tracking_number: str | None = None
 
 
-class NodeOrderStateReducer(NodeReducer):
+class HandlerOrderState:
     """
-    Manages order state transitions via pure FSM logic.
+    Handler that owns pure FSM logic for order state transitions.
 
     This is Shape 2: Event -> Reducer
+    The node (NodeOrderStateReducer) is a thin shell that delegates here.
     """
 
     # Valid FSM transitions
@@ -195,97 +196,91 @@ class NodeOrderStateReducer(NodeReducer):
         "CANCELLED": [],  # Terminal state
     }
 
-    def __init__(self, container: ModelONEXContainer) -> None:
-        super().__init__(container)
-        self.logger = container.get_service("ProtocolLogger")
-
-    async def handle_shipment_event(
-        self, event: ModelEventEnvelope
+    def execute_reduction(
+        self,
+        current_state: OrderState,
+        event_payload: dict[str, str],
     ) -> tuple[OrderState, list[ModelIntent]]:
         """
-        Handle shipment.created event and transition order state.
+        Pure FSM: delta(state, event) -> (new_state, intents[])
 
-        Returns:
-            Tuple of (new_state, intents_to_execute)
+        No I/O -- current_state is provided by the runtime.
+        Side effects are described via intents, not executed directly.
         """
-        order_id = event.payload.get("order_id")
-        tracking_number = event.payload.get("tracking_number")
-        shipped_at = event.payload.get("shipped_at")
-
-        # Load current state (via intent in real implementation)
-        current_state = await self._load_state(order_id)
+        order_id = event_payload["order_id"]
+        tracking_number = event_payload.get("tracking_number", "")
+        shipped_at = event_payload.get("shipped_at", "")
 
         # Validate transition
         if "SHIPPED" not in self.VALID_TRANSITIONS.get(current_state.status, []):
-            self.logger.warning(
-                f"Invalid transition: {current_state.status} -> SHIPPED"
-            )
             return current_state, []
 
-        # Pure state transition
+        # Pure state transition (no I/O)
         new_state = OrderState(
             order_id=order_id,
             status="SHIPPED",
             shipped_at=shipped_at,
-            tracking_number=tracking_number
+            tracking_number=tracking_number,
         )
 
-        # Emit intents for side effects (Reducer doesn't execute I/O)
+        # Emit intents for side effects (Reducer never executes I/O)
         intents = [
             # Persist the new state
             ModelIntent(
                 intent_type=EnumIntentType.DATABASE_WRITE,
                 target="orders_table",
                 priority=10,
-                payload={
-                    "order_id": order_id,
-                    "status": "SHIPPED",
-                    "shipped_at": shipped_at,
-                    "tracking_number": tracking_number
-                }
+                payload=ModelOrderPersistPayload(
+                    order_id=order_id,
+                    status="SHIPPED",
+                    shipped_at=shipped_at,
+                    tracking_number=tracking_number,
+                ),
             ),
             # Send notification email
             ModelIntent(
                 intent_type=EnumIntentType.NOTIFICATION,
                 target="email_service",
                 priority=5,
-                payload={
-                    "template": "order_shipped",
-                    "order_id": order_id,
-                    "tracking_number": tracking_number
-                }
+                payload=ModelNotifyPayload(
+                    template="order_shipped",
+                    order_id=order_id,
+                    tracking_number=tracking_number,
+                ),
             ),
             # Update analytics
             ModelIntent(
                 intent_type=EnumIntentType.EVENT_PUBLISH,
                 target="analytics_topic",
                 priority=1,
-                payload={
-                    "event_type": "order.shipped",
-                    "order_id": order_id
-                }
-            )
+                payload=ModelAnalyticsPayload(
+                    event_type="order.shipped",
+                    order_id=order_id,
+                ),
+            ),
         ]
 
-        self.logger.info(f"Order {order_id} transitioned to SHIPPED")
         return new_state, intents
 
-    async def _load_state(self, order_id: str) -> OrderState:
-        """Load current state (simplified for example)."""
-        # In production, this would emit an intent to load from DB
-        return OrderState(order_id=order_id, status="PAID")
+
+class NodeOrderStateReducer(NodeReducer):
+    """Thin shell -- all FSM logic lives in HandlerOrderState."""
+    pass  # Driven by YAML contract + handler
 
 
-# Event handler registration
+# Event handler registration -- the runtime routes the event to the
+# reducer node, which delegates to HandlerOrderState.  Intents emitted
+# by the handler are automatically queued for Effect node execution.
 @event_handler("shipment.created")
 async def on_shipment_created(event: ModelEventEnvelope) -> None:
     """Route shipment events to the order state reducer."""
     container = get_container()
     reducer = NodeOrderStateReducer(container)
-    new_state, intents = await reducer.handle_shipment_event(event)
-
-    # Intents are queued for Effect nodes to execute
-    await publish_intents(intents)
+    # The node's process() method loads current state from the FSM
+    # runtime (no I/O in the handler) and delegates to the handler.
+    result = await reducer.process(event)
+    # Intents from result are queued for Effect nodes to execute
+    await publish_intents(result.intents)
 ```
 
 ### Why This Shape
@@ -495,7 +490,7 @@ class ImportRequest(BaseModel):
     """API request for data import."""
     source_url: str
     target_table: str
-    options: dict[str, Any] = {}
+    options: dict[str, Any] = Field(default_factory=dict)
 
 
 class ImportResponse(BaseModel):

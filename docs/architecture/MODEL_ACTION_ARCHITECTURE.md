@@ -467,49 +467,60 @@ from omnibase_core.models.model_action import ModelAction
 from omnibase_core.enums.enum_orchestrator_types import EnumActionType
 
 class NodeWorkflowOrchestrator(NodeCoreBase):
-    def __init__(self, container):
+    """Orchestrator node -- thin shell that delegates to a handler."""
+
+    def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self.lease_id = uuid4()  # Claim ownership
         self.current_epoch = 0   # Initialize version
 
-    async def process_data_workflow(self, input_data: dict):
-        """Orchestrate multi-step data processing workflow."""
-
-        # Step 1: Emit COMPUTE action for data transformation
-        compute_action = ModelAction(
-            action_id=uuid4(),
-            action_type=EnumActionType.COMPUTE,
-            target_node_type="NodeDataTransformerCompute",
-            payload={
-                "data": input_data,
-                "transformation": "normalize",
-            },
-            lease_id=self.lease_id,  # Prove ownership
-            epoch=self.current_epoch,  # Version 0
-            priority=5,
-            timeout_ms=10000,  # 10 second timeout
+        # Resolve handler from DI container -- handler owns workflow logic
+        self.handler = container.get_service("handler_registry").get(
+            self.contract.handler_id
         )
 
-        await self.event_bus.publish(compute_action)
-        self.current_epoch += 1  # Increment to version 1
+    async def process(self, input_data: ModelOrchestratorInput) -> ModelHandlerOutput:
+        """Delegate workflow orchestration to handler."""
+        return await self.handler.execute(input_data)
 
-        # Step 2: Emit EFFECT action for database write
-        effect_action = ModelAction(
-            action_id=uuid4(),
-            action_type=EnumActionType.EFFECT,
-            target_node_type="NodeDatabaseWriterEffect",
-            payload={
-                "table": "processed_data",
-                "operation": "insert",
-            },
-            dependencies=[compute_action.action_id],  # Wait for compute
-            lease_id=self.lease_id,
-            epoch=self.current_epoch,  # Version 1
-            priority=7,  # Higher priority
-        )
+# The handler builds and emits actions. Example action construction:
 
-        await self.event_bus.publish(effect_action)
-        self.current_epoch += 1  # Increment to version 2
+def build_workflow_actions(
+    input_data: dict,
+    lease_id: UUID,
+    epoch: int,
+) -> list[ModelAction]:
+    """Pure function that builds workflow actions (lives in handler)."""
+
+    compute_action = ModelAction(
+        action_id=uuid4(),
+        action_type=EnumActionType.COMPUTE,
+        target_node_type="NodeDataTransformerCompute",
+        payload={
+            "data": input_data,
+            "transformation": "normalize",
+        },
+        lease_id=lease_id,
+        epoch=epoch,
+        priority=5,
+        timeout_ms=10000,
+    )
+
+    effect_action = ModelAction(
+        action_id=uuid4(),
+        action_type=EnumActionType.EFFECT,
+        target_node_type="NodeDatabaseWriterEffect",
+        payload={
+            "table": "processed_data",
+            "operation": "insert",
+        },
+        dependencies=[compute_action.action_id],
+        lease_id=lease_id,
+        epoch=epoch + 1,
+        priority=7,
+    )
+
+    return [compute_action, effect_action]
 ```
 
 **Action with Metadata**:
@@ -563,51 +574,45 @@ async def emit_conditional_action(self, condition: bool, payload: dict):
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 class NodeDataTransformerCompute(NodeCoreBase):
-    def __init__(self, container):
+    """Compute node -- thin shell that validates actions then delegates to handler."""
+
+    def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self.active_leases: dict[UUID, int] = {}  # workflow_id -> last_epoch
 
-    async def process_action(self, action: ModelAction):
-        """Process action with comprehensive lease validation."""
+        # Resolve handler -- handler owns the computation logic
+        self.handler = container.get_service("handler_registry").get(
+            self.contract.handler_id
+        )
+
+    async def process_action(self, action: ModelAction) -> ModelHandlerOutput:
+        """Validate action lease/epoch, then delegate to handler."""
 
         # Step 1: Validate lease_id (ownership proof)
-        if not self._validate_lease_id(action):
+        if action.lease_id != self.current_workflow_lease_id:
             raise ModelOnexError(
                 f"Invalid lease_id: {action.lease_id} not authorized "
                 f"for workflow"
             )
 
         # Step 2: Validate epoch (stale action detection)
-        if not self._validate_epoch(action):
-            raise ModelOnexError(
-                f"Stale action detected: epoch {action.epoch} < "
-                f"last processed {self.active_leases.get(action.payload.get('workflow_id'), -1)}"
-            )
+        workflow_id = action.payload.get("workflow_id")
+        if workflow_id:
+            last_epoch = self.active_leases.get(workflow_id, -1)
+            if action.epoch < last_epoch:
+                raise ModelOnexError(
+                    f"Stale action detected: epoch {action.epoch} < "
+                    f"last processed {last_epoch}"
+                )
 
-        # Step 3: Execute action
-        result = await self._execute_action(action)
+        # Step 3: Delegate to handler -- handler owns the business logic
+        result = await self.handler.execute(action)
 
         # Step 4: Update last processed epoch
-        workflow_id = action.payload.get("workflow_id")
         if workflow_id:
             self.active_leases[workflow_id] = action.epoch
 
         return result
-
-    def _validate_lease_id(self, action: ModelAction) -> bool:
-        """Validate lease_id proves ownership."""
-        # Implementation: Check against known active leases
-        # For example, query distributed lease registry
-        return True  # Simplified for example
-
-    def _validate_epoch(self, action: ModelAction) -> bool:
-        """Validate epoch is not stale."""
-        workflow_id = action.payload.get("workflow_id")
-        if not workflow_id:
-            return True  # No epoch tracking without workflow_id
-
-        last_epoch = self.active_leases.get(workflow_id, -1)
-        return action.epoch >= last_epoch
 ```
 
 **Stale Action Detection**:

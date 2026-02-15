@@ -12,10 +12,10 @@ This guide identifies common mistakes and pitfalls when building ONEX nodes, alo
 
 ## Table of Contents
 
-1. [Architecture Pitfalls](#architecture-pitfalls)
+1. [Architecture Pitfalls](#architecture-pitfalls) -- includes handler delegation, container types
 2. [Error Handling Pitfalls](#error-handling-pitfalls)
 3. [Performance Pitfalls](#performance-pitfalls)
-4. [Threading Pitfalls](#threading-pitfalls)
+4. [Threading Pitfalls](#threading-pitfalls) -- per-request instances, not locks
 5. [Testing Pitfalls](#testing-pitfalls)
 6. [Configuration Pitfalls](#configuration-pitfalls)
 7. [Memory Management Pitfalls](#memory-management-pitfalls)
@@ -23,7 +23,71 @@ This guide identifies common mistakes and pitfalls when building ONEX nodes, alo
 
 ## Architecture Pitfalls
 
-### 1. Mixing Node Responsibilities
+### 1. Putting Business Logic in Nodes Instead of Handlers
+
+**This is the most common and most critical mistake.**
+
+Nodes are thin coordination shells. All business logic belongs in **handlers**, which are resolved from YAML contracts. If you find yourself writing domain logic inside a node class, you are violating the fundamental architecture.
+
+**Bad Practice**: Business logic directly in the node
+
+```python
+class NodePriceCalculatorCompute(NodeCompute):
+    """BAD: Business logic lives in the node."""
+
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
+        # BAD: This computation logic belongs in a handler
+        subtotal = sum(item["price"] * item["qty"] for item in input_data["items"])
+        tax = subtotal * 0.08
+        discount = self._calculate_discount(subtotal, input_data.get("code"))
+        return {"total": subtotal - discount + tax}
+
+    def _calculate_discount(self, subtotal: float, code: str | None) -> float:
+        # BAD: Domain logic in the node
+        if code == "SAVE20":
+            return subtotal * 0.20
+        return 0.0
+```
+
+**Good Practice**: Node delegates to handler; handler owns the logic
+
+```python
+class NodePriceCalculatorCompute(NodeCompute):
+    """GOOD: Thin shell -- delegates to handler."""
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+
+    # The node resolves a handler from its YAML contract.
+    # The handler contains all price calculation logic.
+
+
+class HandlerPriceCalculator:
+    """GOOD: Handler owns the business logic."""
+
+    async def execute(self, envelope: ModelOnexEnvelope, input_data: dict[str, Any]) -> ModelHandlerOutput:
+        subtotal = sum(item["price"] * item["qty"] for item in input_data["items"])
+        tax = subtotal * 0.08
+        discount = self._calculate_discount(subtotal, input_data.get("code"))
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
+            result={"total": subtotal - discount + tax},
+        )
+
+    def _calculate_discount(self, subtotal: float, code: str | None) -> float:
+        if code == "SAVE20":
+            return subtotal * 0.20
+        return 0.0
+```
+
+**Why this matters**:
+- Handlers are independently testable without node lifecycle overhead
+- YAML contracts can swap handlers without changing the node
+- Handler output constraints are enforced by `ModelHandlerOutput` validators
+- Nodes remain reusable across different domains
+
+### 2. Mixing Node Responsibilities
 
 **❌ Bad Practice**: Combining multiple node types in one class
 
@@ -31,7 +95,7 @@ This guide identifies common mistakes and pitfalls when building ONEX nodes, alo
 class BadNode(NodeCompute):
     """BAD: Mixing COMPUTE and EFFECT responsibilities."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # COMPUTE: Calculate result
         result = input_data["value"] * 2
 
@@ -50,14 +114,14 @@ class BadNode(NodeCompute):
 class GoodComputeNode(NodeCompute):
     """GOOD: Pure computation only."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         result = input_data["value"] * 2
         return {"result": result}
 
 class GoodEffectNode(NodeEffect):
     """GOOD: Handle side effects separately."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         result = input_data["result"]
 
         # Save to database
@@ -69,7 +133,7 @@ class GoodEffectNode(NodeEffect):
         return {"status": "saved"}
 ```
 
-### 2. Ignoring Node Type Contracts
+### 3. Ignoring Node Type Contracts
 
 **❌ Bad Practice**: Not following node type contracts
 
@@ -77,7 +141,7 @@ class GoodEffectNode(NodeEffect):
 class BadComputeNode(NodeCompute):
     """BAD: COMPUTE node with side effects."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # This violates COMPUTE contract (no side effects)
         self.global_state["last_result"] = input_data["value"]
         return {"result": input_data["value"] * 2}
@@ -89,13 +153,13 @@ class BadComputeNode(NodeCompute):
 class GoodComputeNode(NodeCompute):
     """GOOD: Pure computation following COMPUTE contract."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # Pure computation only
         result = input_data["value"] * 2
         return {"result": result}
 ```
 
-### 3. Tight Coupling Between Nodes
+### 4. Tight Coupling Between Nodes
 
 **❌ Bad Practice**: Direct dependencies between nodes
 
@@ -108,7 +172,7 @@ class BadNode(NodeCompute):
         # Direct dependency on specific implementation
         self.database_node = DatabaseEffectNode(container)
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # Direct call to another node
         result = await self.database_node.process(input_data)
         return result
@@ -125,11 +189,44 @@ class GoodNode(NodeCompute):
         # Resolve by protocol, not concrete implementation
         self.database_service = container.get_service("DatabaseService")
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # Use service interface
         result = await self.database_service.query(input_data["query"])
         return {"result": result}
 ```
+
+### 5. Using ModelContainer Instead of ModelONEXContainer
+
+**Bad Practice**: Using the wrong container type for dependency injection
+
+```python
+from omnibase_core.models.core.model_container import ModelContainer
+
+class BadNode(NodeCompute):
+    """BAD: Wrong container type."""
+
+    def __init__(self, container: ModelContainer):  # WRONG
+        super().__init__(container)
+```
+
+**Good Practice**: Always use `ModelONEXContainer` for node constructors
+
+```python
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+class GoodNode(NodeCompute):
+    """GOOD: Correct container type."""
+
+    def __init__(self, container: ModelONEXContainer) -> None:  # CORRECT
+        super().__init__(container)
+        # ModelONEXContainer provides protocol-based service resolution
+        self.logger = container.get_service(ProtocolLoggerLike)
+```
+
+**Why this matters**:
+- `ModelContainer[T]` is a generic value wrapper -- it is never used in node `__init__`
+- `ModelONEXContainer` is the dependency injection container with `get_service()` for protocol-based resolution
+- Mixing them up causes type errors and breaks DI resolution
 
 ## Error Handling Pitfalls
 
@@ -141,7 +238,7 @@ class GoodNode(NodeCompute):
 class BadNode(NodeCompute):
     """BAD: Swallowing exceptions silently."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         try:
             result = await self.risky_operation(input_data)
             return {"result": result}
@@ -159,7 +256,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 class GoodNode(NodeCompute):
     """GOOD: Proper error handling."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         try:
             result = await self.risky_operation(input_data)
             return {"result": result}
@@ -185,7 +282,7 @@ class GoodNode(NodeCompute):
 class BadNode(NodeCompute):
     """BAD: Generic error messages."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         if not input_data.get("value"):
             raise ValueError("Error")  # BAD: Too generic
 
@@ -199,7 +296,7 @@ class BadNode(NodeCompute):
 class GoodNode(NodeCompute):
     """GOOD: Specific error messages."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         if not input_data.get("value"):
             raise ValueError("Value is required but not provided")
 
@@ -215,7 +312,7 @@ class GoodNode(NodeCompute):
 class BadNode(NodeCompute):
     """BAD: Not handling async exceptions."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # BAD: No handling of asyncio.TimeoutError, CancelledError, etc.
         result = await self.async_operation(input_data)
         return {"result": result}
@@ -230,7 +327,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 class GoodNode(NodeCompute):
     """GOOD: Proper async exception handling."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         try:
             result = await self.async_operation(input_data)
             return {"result": result}
@@ -261,7 +358,7 @@ import requests
 class BadNode(NodeCompute):
     """BAD: Blocking operations in async code."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # BAD: Blocking HTTP request
         response = requests.get("https://api.example.com/data")
 
@@ -280,7 +377,7 @@ import asyncio
 class GoodNode(NodeCompute):
     """GOOD: Async operations."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # GOOD: Async HTTP request
         async with aiohttp.ClientSession() as session:
             async with session.get("https://api.example.com/data") as response:
@@ -304,7 +401,7 @@ class BadNode(NodeCompute):
         super().__init__(container)
         self.processed_data = []  # BAD: Never cleared
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         result = input_data["value"] * 2
         self.processed_data.append(result)  # BAD: Keeps growing
         return {"result": result}
@@ -321,7 +418,7 @@ class GoodNode(NodeCompute):
         self.processed_data = []
         self.max_data_size = 1000
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         result = input_data["value"] * 2
 
         # GOOD: Limit data size
@@ -348,7 +445,7 @@ class BadNode(NodeCompute):
         super().__init__(container)
         self.cache = {}  # BAD: No size limit, no TTL
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         cache_key = str(input_data)  # BAD: Inefficient key generation
 
         if cache_key in self.cache:
@@ -376,7 +473,7 @@ class GoodNode(NodeCompute):
         self.max_cache_size = 1000
         self.cache_ttl = 300  # 5 minutes
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         cache_key = self._generate_cache_key(input_data)
 
         # GOOD: Check cache with TTL
@@ -404,7 +501,7 @@ class GoodNode(NodeCompute):
 
         return result
 
-    def _generate_cache_key(self, input_data: Dict[str, Any]) -> str:
+    def _generate_cache_key(self, input_data: dict[str, Any]) -> str:
         """GOOD: Efficient cache key generation."""
         sorted_data = json.dumps(input_data, sort_keys=True)
         return hashlib.md5(sorted_data.encode()).hexdigest()
@@ -412,71 +509,72 @@ class GoodNode(NodeCompute):
 
 ## Threading Pitfalls
 
-### 1. Sharing Mutable State
+### 1. Sharing Node Instances Across Threads
 
-**❌ Bad Practice**: Sharing mutable state between threads
+**Nodes are single-request scoped.** Do not share node instances across threads. Instead, create a separate node instance per thread or per request.
 
-```
+**Bad Practice**: Sharing a node instance across threads
+
+```python
 class BadNode(NodeCompute):
-    """BAD: Sharing mutable state."""
+    """BAD: Sharing mutable state across threads."""
 
-    def __init__(self, container: ModelONEXContainer):
+    def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
-        self.shared_data = {}  # BAD: Shared mutable state
+        self.shared_data: dict[str, Any] = {}  # BAD: Shared mutable state
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        # BAD: Modifying shared state
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
+        # BAD: Race condition when called from multiple threads
         self.shared_data[input_data["key"]] = input_data["value"]
         return {"result": "processed"}
+
+# BAD: Sharing the same instance
+shared_node = BadNode(container)
+threading.Thread(target=lambda: asyncio.run(shared_node.process(data1))).start()
+threading.Thread(target=lambda: asyncio.run(shared_node.process(data2))).start()
 ```
 
-**✅ Good Practice**: Use thread-safe patterns
+**Good Practice**: Create per-request or per-thread instances
 
-```
-import threading
-from typing import Dict, Any
-
+```python
 class GoodNode(NodeCompute):
-    """GOOD: Thread-safe implementation."""
+    """GOOD: Designed for single-request scope."""
 
-    def __init__(self, container: ModelONEXContainer):
+    def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
-        self._lock = threading.Lock()
-        self._thread_local = threading.local()
+        self.request_data: dict[str, Any] = {}  # Safe: one instance per request
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        # GOOD: Use thread-local storage
-        if not hasattr(self._thread_local, 'data'):
-            self._thread_local.data = {}
-
-        self._thread_local.data[input_data["key"]] = input_data["value"]
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
+        self.request_data[input_data["key"]] = input_data["value"]
         return {"result": "processed"}
 
-    def get_thread_local_data(self) -> Dict[str, Any]:
-        """GOOD: Access thread-local data safely."""
-        if hasattr(self._thread_local, 'data'):
-            return self._thread_local.data.copy()
-        return {}
+# GOOD: Each thread/request gets its own instance
+def handle_request(container: ModelONEXContainer, data: dict[str, Any]):
+    node = GoodNode(container)  # Fresh instance per request
+    return asyncio.run(node.process(data))
+
+threading.Thread(target=handle_request, args=(container, data1)).start()
+threading.Thread(target=handle_request, args=(container, data2)).start()
 ```
 
-### 2. Not Handling Thread Safety in Circuit Breakers
+### 2. Sharing Circuit Breaker State Across Threads
 
-**❌ Bad Practice**: Circuit breaker not thread-safe
+Circuit breaker state (failure counts, timestamps) should not be shared across threads via a shared node instance. Instead, use a shared circuit breaker service resolved through the container, or use per-request node instances.
 
-```
+**Bad Practice**: Circuit breaker with shared mutable state on a node instance
+
+```python
 class BadNode(NodeEffect):
-    """BAD: Non-thread-safe circuit breaker."""
+    """BAD: Circuit breaker state on a shared node instance."""
 
-    def __init__(self, container: ModelONEXContainer):
+    def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
-        self.failure_count = 0  # BAD: Not thread-safe
-        self.last_failure_time = 0
+        self.failure_count = 0  # BAD: Race condition if node is shared
+        self.last_failure_time = 0.0
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        # BAD: Race condition on failure_count
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         if self.failure_count >= 5:
             return {"error": "Circuit breaker open"}
-
         try:
             result = await self.risky_operation(input_data)
             self.failure_count = 0  # BAD: Race condition
@@ -486,49 +584,30 @@ class BadNode(NodeEffect):
             raise
 ```
 
-**✅ Good Practice**: Thread-safe circuit breaker
+**Good Practice**: Resolve a shared circuit breaker service via the container
 
-```
-import threading
-import time
-
+```python
 class GoodNode(NodeEffect):
-    """GOOD: Thread-safe circuit breaker."""
+    """GOOD: Circuit breaker resolved as a shared service via DI."""
 
-    def __init__(self, container: ModelONEXContainer):
+    def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
-        self._lock = threading.Lock()
-        self.failure_count = 0
-        self.last_failure_time = 0
-        self.failure_threshold = 5
-        self.recovery_timeout = 60
+        # The circuit breaker service is designed for concurrent access
+        self.circuit_breaker = container.get_service(ProtocolCircuitBreaker)
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        with self._lock:
-            if self._is_circuit_open():
-                return {"error": "Circuit breaker open"}
-
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
+        if self.circuit_breaker.is_open():
+            return {"error": "Circuit breaker open"}
         try:
             result = await self.risky_operation(input_data)
-            with self._lock:
-                self.failure_count = 0  # GOOD: Thread-safe
+            self.circuit_breaker.record_success()
             return result
         except Exception:
-            with self._lock:
-                self.failure_count += 1  # GOOD: Thread-safe
-                self.last_failure_time = time.time()
+            self.circuit_breaker.record_failure()
             raise
-
-    def _is_circuit_open(self) -> bool:
-        """GOOD: Thread-safe circuit check."""
-        if self.failure_count >= self.failure_threshold:
-            if time.time() - self.last_failure_time > self.recovery_timeout:
-                # Reset circuit breaker
-                self.failure_count = 0
-                return False
-            return True
-        return False
 ```
+
+**Key principle**: Nodes are single-request scoped. If you need shared state (like circuit breaker counters), put it in a service resolved through `ModelONEXContainer`, not on the node instance itself.
 
 ## Testing Pitfalls
 
@@ -664,7 +743,7 @@ class BadNode(NodeCompute):
 class GoodNode(NodeCompute):
     """GOOD: Configurable parameters."""
 
-    def __init__(self, container: ModelONEXContainer, config: Dict[str, Any] = None):
+    def __init__(self, container: ModelONEXContainer, config: dict[str, Any] = None):
         super().__init__(container)
         config = config or {}
 
@@ -682,7 +761,7 @@ class GoodNode(NodeCompute):
 class BadNode(NodeCompute):
     """BAD: No configuration validation."""
 
-    def __init__(self, container: ModelONEXContainer, config: Dict[str, Any]):
+    def __init__(self, container: ModelONEXContainer, config: dict[str, Any]):
         super().__init__(container)
         # BAD: No validation
         self.timeout = config["timeout"]
@@ -695,7 +774,7 @@ class BadNode(NodeCompute):
 class GoodNode(NodeCompute):
     """GOOD: Configuration validation."""
 
-    def __init__(self, container: ModelONEXContainer, config: Dict[str, Any]):
+    def __init__(self, container: ModelONEXContainer, config: dict[str, Any]):
         super().__init__(container)
 
         # GOOD: Validate configuration
@@ -733,7 +812,7 @@ class BadNode(NodeEffect):
         super().__init__(container)
         self.session = aiohttp.ClientSession()  # BAD: Never closed
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # BAD: Session never closed
         async with self.session.get("https://api.example.com") as response:
             return await response.json()
@@ -749,7 +828,7 @@ class GoodNode(NodeEffect):
         super().__init__(container)
         self.session = None
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # GOOD: Create session per operation or use context manager
         async with aiohttp.ClientSession() as session:
             async with session.get("https://api.example.com") as response:
@@ -778,7 +857,7 @@ class BadNode(NodeReducer):
         super().__init__(container)
         self.state_history = []  # BAD: Never cleared
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # BAD: Keeps growing indefinitely
         self.state_history.append({
             "timestamp": time.time(),
@@ -798,7 +877,7 @@ class GoodNode(NodeReducer):
         self.state_history = []
         self.max_history_size = 1000
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # GOOD: Bounded accumulation
         self.state_history.append({
             "timestamp": time.time(),
@@ -816,9 +895,11 @@ class GoodNode(NodeReducer):
 
 ### 1. Architecture Best Practices
 
+- **Handlers Own Logic**: Business logic belongs in handlers, not nodes. Nodes are thin shells.
 - **Separate Concerns**: Use appropriate node types for their intended purpose
-- **Follow Contracts**: Respect node type contracts (COMPUTE = pure, EFFECT = side effects, etc.)
-- **Loose Coupling**: Use dependency injection and protocols instead of direct dependencies
+- **Follow Contracts**: Respect node type output constraints (COMPUTE = result, EFFECT = events, etc.)
+- **Use ModelONEXContainer**: Always use `ModelONEXContainer` for DI, never `ModelContainer`
+- **Loose Coupling**: Use protocol-based dependency injection instead of direct dependencies
 - **Single Responsibility**: Each node should have one clear responsibility
 
 ### 2. Error Handling Best Practices
@@ -837,10 +918,10 @@ class GoodNode(NodeReducer):
 
 ### 4. Threading Best Practices
 
-- **Thread Safety**: Be aware that most ONEX components are not thread-safe
-- **Use Thread-Local Storage**: For per-thread data
-- **Protect Shared State**: Use locks for shared mutable state
-- **Avoid Race Conditions**: Be careful with concurrent access to shared resources
+- **Per-Request Instances**: Create a new node instance per request or per thread -- nodes are single-request scoped
+- **Never Share Node Instances**: Do not pass node instances across threads
+- **Shared Services via DI**: If you need shared state (circuit breakers, connection pools), resolve it as a service through `ModelONEXContainer`, not as node instance state
+- **Avoid Locks on Nodes**: If you need a lock, you are probably sharing a node instance incorrectly
 
 ### 5. Testing Best Practices
 

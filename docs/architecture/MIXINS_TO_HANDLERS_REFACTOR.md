@@ -2,9 +2,9 @@
 
 # Mixins to Handlers Refactor
 
-**Status**: Draft
-**Version**: 0.1.0
-**Last Updated**: 2025-12-30
+**Status**: In Progress (Phase 1 partially complete)
+**Version**: 0.2.0
+**Last Updated**: 2026-02-14
 **Related Tickets**: OMN-1113, OMN-1114, OMN-1116, OMN-1117, OMN-1162
 
 ---
@@ -67,7 +67,14 @@ contract = ModelHandlerContract(
 
 # DESCRIPTOR: Runtime representation (produced by parsing contracts)
 # Used for discovery, routing, and instantiation
-from omnibase_core.models.handlers import ModelHandlerDescriptor
+from omnibase_core.models.handlers import (
+    ModelHandlerDescriptor,
+    ModelIdentifier,
+    ModelSemVer,
+    EnumHandlerRole,
+    EnumHandlerType,
+    EnumHandlerTypeCategory,
+)
 
 descriptor = ModelHandlerDescriptor(
     handler_name=ModelIdentifier(namespace="onex", name="kafka-ingress"),
@@ -138,23 +145,29 @@ Currently, there are **no deprecations**. The handler contract model is additive
 
 ### Overview
 
-The current ONEX system uses Python mixins for cross-cutting concerns:
+The current ONEX system uses Python mixins for cross-cutting concerns. There are
+approximately 40 mixin files in `src/omnibase_core/mixins/`. Key examples include:
 
 ```text
 src/omnibase_core/mixins/
-├── mixin_circuit_breaker.py
+├── mixin_caching.py
+├── mixin_compute_execution.py
 ├── mixin_discovery_responder.py
+├── mixin_effect_execution.py
+├── mixin_event_bus.py
 ├── mixin_event_handler.py
-├── mixin_event_listener.py
+├── mixin_fsm_execution.py
+├── mixin_handler_routing.py
 ├── mixin_health_check.py
 ├── mixin_introspection.py
 ├── mixin_metrics.py
 ├── mixin_node_executor.py
 ├── mixin_node_lifecycle.py
+├── mixin_node_service.py
 ├── mixin_request_response_introspection.py
-├── mixin_retry.py
-├── mixin_service_resolution.py
-└── mixin_workflow_execution.py
+├── mixin_tool_execution.py
+├── mixin_workflow_execution.py
+└── ... (~40 files total)
 ```
 
 ### Pain Points
@@ -201,13 +214,19 @@ result = await pipeline.execute(node, envelope)
 
 ## Section 3: Migration Strategy
 
-### Phase 1: Infrastructure (Current)
+### Phase 1: Infrastructure (In Progress)
 
-**Tickets**: OMN-1114 (Pipeline Runner & Hook Registry)
+**Tickets**: OMN-1114 (Pipeline Runner & Hook Registry), OMN-1117 (Handler Contract Model)
 
+**Completed**:
+- `ModelHandlerContract` defined at `src/omnibase_core/models/contracts/model_handler_contract.py`
+- `ModelHandlerDescriptor` defined at `src/omnibase_core/models/handlers/model_handler_descriptor.py`
+- `ModelPipelineHook` defined at `src/omnibase_core/models/pipeline/model_pipeline_hook.py`
+- `ModelExecutionPlan` defined at `src/omnibase_core/models/execution/model_execution_plan.py`
+
+**Remaining**:
 - Implement `PipelineRunner` core execution engine
-- Implement `HookRegistry` for hook discovery and ordering
-- Define `ModelPipelineHook` and `ModelExecutionPlan`
+- Implement `HookRegistry` for hook discovery and ordering (error type `HookRegistryFrozenError` exists)
 - Integration with `ModelExecutionProfile`
 
 ### Phase 2: Handler Abstractions
@@ -438,10 +457,11 @@ class ModelActivationSource(BaseModel):
 
 ## Section 9: The Manifest
 
-> **Note**: The models described in this section are **planned for future implementation**
-> as part of OMN-1113: Manifest Generation & Observability. They are not yet available
-> in the current codebase and represent the target architecture for execution manifest
-> tracking and observability.
+> **Note**: The models described in this section are **target architecture** for
+> OMN-1113: Manifest Generation & Observability. Some foundational models
+> (`ModelExecutionPlan`, `ModelPipelineHook`) have been implemented, but the
+> full `ModelExecutionManifest` and its dependent models are not yet available
+> in the codebase.
 
 **Reference Ticket**: OMN-1113 (Manifest Generation & Observability)
 

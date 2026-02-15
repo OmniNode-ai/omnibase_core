@@ -3,7 +3,7 @@
 # Utils API Reference - omnibase_core
 
 **Status**: ✅ Complete
-**Last Updated**: 2025-10-25
+**Last Updated**: 2026-02-14
 
 ## Overview
 
@@ -70,12 +70,12 @@ def validate_user_input(self, user_data):
 
 ### UtilUUID
 
-**Location**: `omnibase_core.utils.uuid_service`
+**Location**: `omnibase_core.utils.util_uuid_service`
 
 **Purpose**: Centralized UUID generation and validation service.
 
 ```
-from omnibase_core.utils.uuid_service import UtilUUID
+from omnibase_core.utils.util_uuid_service import UtilUUID
 
 # Generate UUID4
 correlation_id = UtilUUID.generate()
@@ -116,7 +116,7 @@ session_id = UtilUUID.generate_session_id()
 
 ### load_and_validate_yaml_model
 
-**Location**: `omnibase_core.utils.safe_yaml_loader`
+**Location**: `omnibase_core.utils.util_safe_yaml_loader`
 
 **Purpose**: Load YAML file and validate against Pydantic model class using `yaml.safe_load`.
 
@@ -124,7 +124,7 @@ This function provides type-safe YAML loading with Pydantic model validation for
 
 ```
 from pathlib import Path
-from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 from pydantic import BaseModel
 
 class MyConfig(BaseModel):
@@ -156,14 +156,14 @@ print(f"Database: {config.database_host}:{config.database_port}")
 
 ### FieldConverter
 
-**Location**: `omnibase_core.utils.field_converter`
+**Location**: `omnibase_core.utils.util_field_converter`
 
 **Purpose**: Represents a field conversion strategy.
 
 This replaces hardcoded if/elif chains with a declarative, extensible converter registry pattern.
 
 ```
-from omnibase_core.utils.field_converter import FieldConverter
+from omnibase_core.utils.util_field_converter import FieldConverter
 
 # Define a field converter
 converter = FieldConverter(
@@ -183,7 +183,7 @@ converter = FieldConverter(
 
 ### ModelFieldConverterRegistry
 
-**Location**: `omnibase_core.utils.model_field_converter_registry`
+**Location**: `omnibase_core.utils.util_field_converter`
 
 **Purpose**: Registry for field converters.
 
@@ -193,45 +193,29 @@ Provides centralized management of field conversion strategies.
 
 ## Logging Utilities
 
-### ServiceLogging
+### Structured Logging
 
-**Location**: `omnibase_core.utils.service_logging`
+**Location**: `omnibase_core.logging.logging_structured`
 
-**Purpose**: Registry-based logging service implementation.
+**Purpose**: Structured logging with standardized JSON formats.
 
-Provides a protocol-based logging interface for consistent logging across ONEX services.
+Provides module-level functions for consistent structured logging across ONEX services.
 
 ```
-from omnibase_core.utils.service_logging import ServiceLogging
+from omnibase_core.logging.logging_structured import emit_log_event_sync
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
-# Initialize with logger protocol
-logger = ServiceLogging(protocol=my_logger_protocol)
-
-# Emit log events
-logger.emit_log_event(message="Operation started", level="INFO")
-logger.emit_log_event_sync(message="Synchronous log")
-await logger.emit_log_event_async(message="Asynchronous log")
-
-# Trace function lifecycle
-@logger.trace_function_lifecycle
-def my_function():
-    # Function logic
-    pass
-
-# Get performance metrics
-metrics = logger.tool_logger_performance_metrics(operation_name="data_processing")
+# Emit structured log events
+emit_log_event_sync(level=LogLevel.INFO, message="Operation started")
+emit_log_event_sync(level=LogLevel.ERROR, message="Operation failed", context={"error": "details"})
 ```
 
-**Methods**:
-- `emit_log_event(*args, **kwargs)` - Emit log event via protocol
-- `emit_log_event_sync(*args, **kwargs)` - Emit log event synchronously
-- `emit_log_event_async(*args, **kwargs)` - Emit log event asynchronously
-- `trace_function_lifecycle(func)` - Decorator to trace function lifecycle
-- `tool_logger_performance_metrics(*args, **kwargs)` - Get performance metrics
+**Functions**:
+- `emit_log_event_sync(level, message, context=None)` - Emit a structured log event synchronously
 
 ### ToolLoggerCodeBlock
 
-**Location**: `omnibase_core.utils.tool_logger_code_block`
+**Location**: `omnibase_core.utils.util_tool_logger_code_block`
 
 **Purpose**: Logging tool for code blocks.
 
@@ -267,7 +251,7 @@ Provides functions for loading contract definitions from YAML files and validati
 
 ### singleton_holders
 
-**Location**: `omnibase_core.utils.singleton_holders`
+**Location**: `omnibase_core.utils.util_singleton_holders`
 
 **Purpose**: Singleton pattern helpers.
 
@@ -279,7 +263,7 @@ Provides utilities for implementing singleton pattern in ONEX services.
 
 ### decorators.py
 
-**Location**: `omnibase_core.utils.decorators`
+**Location**: `omnibase_core.utils.util_decorators`
 
 **Purpose**: Various utility decorators.
 
@@ -307,7 +291,7 @@ class MyNode(NodeCoreBase):
 ### UUID Generation Pattern
 
 ```
-from omnibase_core.utils.uuid_service import UtilUUID
+from omnibase_core.utils.util_uuid_service import UtilUUID
 
 class MyNode(NodeCoreBase):
     async def process(self, input_data):
@@ -324,7 +308,7 @@ class MyNode(NodeCoreBase):
 
 ```
 from pathlib import Path
-from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 from pydantic import BaseModel
 
 class DatabaseConfig(BaseModel):
@@ -345,9 +329,9 @@ class MyNode(NodeCoreBase):
 
 ## Related Documentation
 
-- [Nodes API](NODES.md) - Node class reference
-- [Models API](MODELS.md) - Model class reference
-- [Enums API](ENUMS.md) - Enumeration reference
+- [Nodes API](nodes.md) - Node class reference
+- [Models API](models.md) - Model class reference
+- [Enums API](enums.md) - Enumeration reference
 - [Error Handling Best Practices](../../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error handling patterns
 - [Node Building Guide](../../guides/node-building/README.md) - Usage examples
 
@@ -366,5 +350,5 @@ class MyNode(NodeCoreBase):
 
 ---
 
-**Last Updated**: 2025-10-25
-**Framework Version**: omnibase_core 0.1.0
+**Last Updated**: 2026-02-14
+**Framework Version**: omnibase_core 0.17.0

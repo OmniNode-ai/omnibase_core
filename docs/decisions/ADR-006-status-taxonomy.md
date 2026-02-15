@@ -9,7 +9,7 @@
 | **Document Type** | Architecture Decision Record (ADR) |
 | **Status** | 🟢 ACCEPTED |
 | **Created** | 2026-01-12 |
-| **Last Updated** | 2026-01-14 |
+| **Last Updated** | 2026-02-14 |
 | **Author** | ONEX Framework Team |
 | **Related Issue** | OMN-1296 |
 | **Correlation ID** | `b8f4e2c1-7d3a-4f9e-a5b6-8c1d2e3f4a5b` |
@@ -361,6 +361,10 @@ This ADR explicitly **does not** cover:
 
 ---
 
+## Superseded Documents
+
+**ADR-013** has been superseded and its content merged into this document. ADR-006 is the canonical and authoritative reference for the ONEX status taxonomy. Any references to ADR-013 in other documents should be redirected here.
+
 ## Future Work
 
 | ADR | Topic | Dependency |
@@ -400,7 +404,8 @@ This ADR explicitly **does not** cover:
 |------|---------|--------|---------|
 | 2026-01-12 | 1.0 | ONEX Team | Initial taxonomy proposal |
 | 2026-01-14 | 1.1 | ONEX Team | Enhanced severity enum documentation with clearer distinctions between EnumSeverity, EnumSeverityLevel, and EnumImpactSeverity (PR #378 review) |
+| 2026-02-14 | 1.2 | ONEX Team | Added supersession note: ADR-013 merged into this document. ADR-006 is now the canonical status taxonomy reference |
 
 ---
 
-**Next Review**: 2026-02-12
+**Next Review**: 2026-04-14

@@ -36,22 +36,15 @@ Dependencies:
 Part of omnibase_core framework - provides coordination I/O for all ONEX nodes
 """
 
+import logging
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-
-
-@runtime_checkable
-class ProtocolKafkaClient(Protocol):
-    """Protocol for Kafka client used by intent publisher."""
-
-    async def publish(self, topic: str, key: str, value: str) -> None:
-        """Publish a message to a Kafka topic."""
-        ...
-
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
@@ -62,6 +55,9 @@ from omnibase_core.models.events.model_intent_events import (
 from omnibase_core.models.events.payloads import ModelEventPayloadUnion
 from omnibase_core.models.reducer.model_intent_publish_result import (
     ModelIntentPublishResult,
+)
+from omnibase_core.protocols.event_bus.protocol_kafka_client import (
+    ProtocolKafkaClient,
 )
 
 
@@ -159,6 +155,13 @@ class MixinIntentPublisher:
                 "Ensure kafka_client is registered before initializing nodes.",
             )
 
+        if not isinstance(kafka_client, ProtocolKafkaClient):
+            logger.warning(
+                "kafka_client service does not satisfy ProtocolKafkaClient protocol "
+                "(got %s). This may cause errors at publish time.",
+                type(kafka_client).__name__,
+            )
+
         self._intent_kafka_client: ProtocolKafkaClient = kafka_client  # type: ignore[assignment]  # Runtime protocol validation; object assigned after None check
 
         # Store container for access to other services if needed
@@ -235,7 +238,7 @@ class MixinIntentPublisher:
                 envelope_id=intent_id,
                 envelope_version=ModelSemVer(major=1, minor=0, patch=0),
                 correlation_id=correlation_id,
-                source_node=f"omninode_bridge.{self.__class__.__name__}",
+                source_node=f"omnibase_core.{self.__class__.__name__}",
                 operation="EVENT_PUBLISH_INTENT",
                 payload=intent.model_dump(),
                 timestamp=published_at,
@@ -245,6 +248,12 @@ class MixinIntentPublisher:
 
         except ImportError:
             # Fallback if ModelOnexEnvelope not available (should not happen)
+            logger.warning(
+                "Failed to import ModelOnexEnvelope; falling back to raw intent JSON "
+                "without envelope wrapper. This changes the message format on the wire "
+                "and may cause downstream parsing issues. intent_id=%s",
+                intent_id,
+            )
             envelope_json = intent.model_dump_json()
 
         # Publish to intent topic (coordination I/O)

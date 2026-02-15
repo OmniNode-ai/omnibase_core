@@ -219,7 +219,7 @@ Examples:
 
 ## Related Decisions
 
-- **ADR-001**: (Reserved for future use)
+- **[ADR-001](ADR-001-protocol-based-di-architecture.md)**: Protocol-Based Dependency Injection Architecture
 - **ONEX Node Architecture**: Field limits align with node contract validation requirements
 
 ---

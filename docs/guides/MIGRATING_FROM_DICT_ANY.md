@@ -695,16 +695,23 @@ if value.is_number():
 
 ### Issue 4: from_dict Modifies Original
 
-**Cause**: `from_dict()` modifies the input dict.
+**Cause**: `from_dict()` modifies the input dict via `dict.pop()` during field
+mapping.  This is a known bug that should be fixed in the implementation
+(the method should copy the input dict internally before mutating it).
+
+**Workaround**: Pass a copy until the code fix lands.
 
 ```python
 original = {"code": "ERR", "message": "msg"}
-error = ModelErrorDetails.from_dict(original)
-# 'original' has been modified!
 
-# CORRECT: Pass a copy
+# WORKAROUND: Pass a copy to prevent mutation
 error = ModelErrorDetails.from_dict(original.copy())
+# 'original' is NOT modified
 ```
+
+> **TODO(OMN-TBD)**: Fix `ModelErrorDetails.from_dict()` to copy the input dict
+> internally so callers do not need to defensively copy. This is a code change,
+> not a documentation change.
 
 ---
 
@@ -718,6 +725,6 @@ error = ModelErrorDetails.from_dict(original.copy())
 
 ---
 
-**Last Updated**: 2025-12-25
+**Last Updated**: 2025-12-26
 **Version**: 0.4.0
 **Maintainer**: ONEX Framework Team

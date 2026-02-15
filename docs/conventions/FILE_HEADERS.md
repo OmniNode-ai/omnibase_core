@@ -293,7 +293,7 @@ pre-commit run --all-files
 | Import before docstring | Move docstring to line 1 |
 | Missing `from __future__ import annotations` | Add after docstring |
 | Unsorted imports | Run `ruff check --fix` |
-| Missing blank line between import groups | Run `isort` or `ruff check --fix` |
+| Missing blank line between import groups | Run `ruff check --fix` |
 
 ---
 

@@ -48,6 +48,19 @@ This document specifies the contract-driven `NodeEffect` implementation for ONEX
 | **Handler Contract** | Handlers receive fully-resolved context, never raw templates |
 | **Operation-Level Timeout** | `operation_timeout_ms` prevents retry stacking from exceeding intended limits |
 
+### Output Constraints (EFFECT)
+
+`ModelHandlerOutput` enforces strict field constraints per node kind. For EFFECT nodes:
+
+| Field | Status |
+|-------|--------|
+| `result` | Forbidden |
+| `events[]` | **Allowed** |
+| `intents[]` | Forbidden |
+| `projections[]` | Forbidden |
+
+**Enforcement**: `ModelHandlerOutput` Pydantic validator + CI `node-purity-check`.
+
 ### Pattern Alignment
 
 ```

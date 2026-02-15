@@ -3,7 +3,7 @@
 # ADR-012: Validator Error Handling with ModelOnexError
 
 **Status**: Accepted
-**Date**: 2025-12-16
+**Date**: 2026-01-18
 **Context**: PR #205 (OMN-594) - Reducer Output Validation Enhancement
 **Correlation ID**: `adr-012-validator-errors`
 
@@ -862,7 +862,7 @@ def test_pydantic_version_compatibility():
 
 ---
 
-**Last Updated**: 2025-12-16
+**Last Updated**: 2026-01-18
 **Author**: Claude Code (Polymorphic Agent)
 **Reviewers**: PR #205 (OMN-594)
 **Status**: Accepted ✅

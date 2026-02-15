@@ -116,24 +116,49 @@ The ONEX pattern enforces left-to-right data flow:
 
 **Example**:
 ```python
-# Event arrives from Kafka topic
-@event_handler("order.created")
-async def handle_order_created(event: OrderCreatedEvent):
-    # Orchestrator coordinates the workflow
-    orchestrator = NodeOrderProcessingOrchestrator(container)
+# Event arrives from Kafka topic and is routed to the orchestrator's handler.
+# The handler coordinates the workflow; the node is a thin shell.
+#
+# Note: ModelPaymentPayload is an illustrative example type implementing
+# ProtocolIntentPayload. In real code, use a typed payload from
+# omnibase_core.models.reducer.payloads or define your own.
 
-    # Acquire lease for single-writer semantics
-    lease = await orchestrator.acquire_lease(event.order_id)
+from uuid import UUID
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.reducer.model_intent import ModelIntent
 
-    # Emit actions to downstream nodes
-    action = ModelAction(
-        action_type=EnumActionType.EFFECT,
-        target_node_type="NodePaymentProcessorEffect",
-        lease_id=lease.lease_id,
-        epoch=lease.epoch,
-        payload={"order_id": event.order_id}
-    )
-    await orchestrator.emit_action(action)
+
+class HandlerOrderProcessing:
+    """Handler that owns the orchestration logic."""
+
+    async def execute_orchestration(
+        self,
+        event: ModelEventEnvelope[object],
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[None]:
+        order_id = event.payload.get("order_id", "unknown")  # type: ignore[union-attr]
+
+        # Emit events and intents to downstream nodes
+        return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="orchestrator.order.processing",
+            events=(
+                ModelEventEnvelope(
+                    event_type="order.processing_started",
+                    payload={"order_id": order_id},
+                ),
+            ),
+            intents=(
+                ModelIntent(
+                    intent_type="effect.payment.process",
+                    target="NodePaymentProcessorEffect",
+                    payload=ModelPaymentPayload(order_id=order_id),
+                ),
+            ),
+        )
 ```
 
 ---
@@ -173,36 +198,55 @@ async def handle_order_created(event: OrderCreatedEvent):
 
 **Example**:
 ```python
-# Domain event triggers state transition
-async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
-    current_state = input_data.state
-    event = input_data.event
+# Domain event triggers a pure state transition in the handler.
+# The handler contains all FSM logic; the node is a thin shell.
 
-    # Pure FSM transition
-    transition_result = self._apply_fsm_transition(
-        current_state,
-        event.action,
-        event.payload
-    )
+class HandlerOrderState:
+    """Handler that owns pure FSM transition logic."""
 
-    # Emit intents for side effects (DB write, notification)
-    intents = [
-        ModelIntent(
-            intent_type=EnumIntentType.DATABASE_WRITE,
-            target="orders_table",
-            payload={"data": transition_result.new_state}
-        ),
-        ModelIntent(
-            intent_type=EnumIntentType.NOTIFICATION,
-            target="email_service",
-            payload={"template": "order_status_update"}
-        )
-    ]
+    # Valid FSM transitions
+    VALID_TRANSITIONS: dict[str, list[str]] = {
+        "PENDING": ["PAID", "CANCELLED"],
+        "PAID": ["SHIPPED", "CANCELLED"],
+        "SHIPPED": ["DELIVERED"],
+    }
 
-    return ModelReducerOutput(
-        result=transition_result.new_state,
-        intents=intents
-    )
+    def execute_reduction(
+        self,
+        current_state: str,
+        event_action: str,
+        event_payload: dict[str, str],
+    ) -> tuple[str, list[ModelIntent]]:
+        """
+        Pure FSM: delta(state, event) -> (new_state, intents[])
+
+        No I/O -- the handler describes WHAT should happen via intents.
+        Effect nodes determine HOW to execute them.
+        """
+        if event_action not in self.VALID_TRANSITIONS.get(current_state, []):
+            return current_state, []
+
+        new_state = event_action
+
+        # Note: ModelOrderStatePayload and ModelNotifyPayload are illustrative
+        # example types implementing ProtocolIntentPayload.
+        intents = [
+            ModelIntent(
+                intent_type="persist_state",
+                target="orders_table",
+                payload=ModelOrderStatePayload(
+                    order_id=event_payload["order_id"],
+                    status=new_state,
+                ),
+            ),
+            ModelIntent(
+                intent_type="notify",
+                target="email_service",
+                payload=ModelNotifyPayload(template="order_status_update"),
+            ),
+        ]
+
+        return new_state, intents
 ```
 
 ---
@@ -247,25 +291,44 @@ Where:
 
 **Example**:
 ```python
-# Effect node processes Intents from queue
-class NodeIntentExecutorEffect(NodeEffect):
-    async def execute_intents(self, intents: list[ModelIntent]) -> list[IntentResult]:
-        results = []
+# The handler owns the business logic for intent execution.
+# The node (NodeIntentExecutorEffect) is a thin shell that delegates to this handler.
+
+class HandlerIntentExecutor:
+    """Handler that routes intents to the appropriate execution strategy."""
+
+    async def execute_effect(
+        self,
+        intents: list[ModelIntent],
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[None]:
+        events = []
 
         # Sort by priority (higher first)
         sorted_intents = sorted(intents, key=lambda i: i.priority, reverse=True)
 
         for intent in sorted_intents:
-            if intent.intent_type == EnumIntentType.DATABASE_WRITE:
-                result = await self._execute_database_write(intent)
-            elif intent.intent_type == EnumIntentType.NOTIFICATION:
-                result = await self._execute_notification(intent)
-            elif intent.intent_type == EnumIntentType.API_CALL:
-                result = await self._execute_api_call(intent)
+            if intent.intent_type == "persist_state":
+                await self._execute_database_write(intent)
+            elif intent.intent_type == "notify":
+                await self._execute_notification(intent)
+            elif intent.intent_type == "http":
+                await self._execute_api_call(intent)
 
-            results.append(IntentResult(intent_id=intent.intent_id, status="completed"))
+            events.append(
+                ModelEventEnvelope(
+                    event_type="intent.executed",
+                    payload={"intent_id": str(intent.intent_id), "status": "completed"},
+                )
+            )
 
-        return results
+        return ModelHandlerOutput.for_effect(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="effect.intent.executor",
+            events=tuple(events),
+        )
 ```
 
 ---
@@ -313,37 +376,55 @@ class NodeIntentExecutorEffect(NodeEffect):
 
 **Example**:
 ```python
-# Command triggers orchestrator
-@api_endpoint("/api/import", methods=["POST"])
-async def start_import(request: ImportRequest):
-    orchestrator = NodeDataImportOrchestrator(container)
+# Command triggers orchestrator. The orchestrator node is a thin shell;
+# the workflow is defined in a YAML contract with dependency ordering.
+# The handler emits events and intents rather than calling downstream
+# nodes directly.
+#
+# Note: ModelFetchPayload and ModelTransformPayload are illustrative
+# example types implementing ProtocolIntentPayload.
 
-    # Acquire exclusive lease
-    lease = await orchestrator.acquire_lease(
-        workflow_id=uuid4(),
-        lease_duration=timedelta(minutes=30)
-    )
+from uuid import UUID, uuid4
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.reducer.model_intent import ModelIntent
 
-    # Define workflow steps with dependencies
-    fetch_action = ModelAction(
-        action_id=uuid4(),
-        action_type=EnumActionType.EFFECT,
-        target_node_type="NodeAPIFetcherEffect",
-        lease_id=lease.lease_id,
-        epoch=0
-    )
 
-    transform_action = ModelAction(
-        action_id=uuid4(),
-        action_type=EnumActionType.COMPUTE,
-        target_node_type="NodeDataTransformerCompute",
-        dependencies=[fetch_action.action_id],
-        lease_id=lease.lease_id,
-        epoch=1
-    )
+class HandlerDataImport:
+    """Handler that coordinates data import via events and intents."""
 
-    # Execute workflow
-    await orchestrator.execute_workflow([fetch_action, transform_action])
+    async def execute_orchestration(
+        self,
+        event: ModelEventEnvelope[object],
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[None]:
+        workflow_id = str(uuid4())
+        source_url = event.payload.get("source_url", "")  # type: ignore[union-attr]
+
+        return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="orchestrator.data.import",
+            events=(
+                ModelEventEnvelope(
+                    event_type="import.started",
+                    payload={"workflow_id": workflow_id, "source_url": source_url},
+                ),
+            ),
+            intents=(
+                ModelIntent(
+                    intent_type="effect.api.fetch",
+                    target="NodeAPIFetcherEffect",
+                    payload=ModelFetchPayload(source_url=source_url),
+                ),
+                ModelIntent(
+                    intent_type="compute.data.transform",
+                    target="NodeDataTransformerCompute",
+                    payload=ModelTransformPayload(workflow_id=workflow_id),
+                ),
+            ),
+        )
 ```
 
 ---
@@ -692,12 +773,12 @@ async def get_user(user_id: UUID):
 
 **Validation Enforcement**:
 ```python
-# This will raise ValueError at runtime
+# This will raise ModelOnexError at runtime
 output = ModelHandlerOutput[dict](
     node_kind=EnumNodeKind.ORCHESTRATOR,
     result={"workflow_status": "completed"},  # ERROR!
 )
-# ValueError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
+# ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
 # Only COMPUTE nodes return typed results.
 ```
 
@@ -720,7 +801,7 @@ return ModelHandlerOutput[None](
     ],
     intents=[
         ModelIntent(
-            intent_type=EnumIntentType.NOTIFICATION,
+            intent_type="notify",
             target="email_service",
             payload={"message": "Workflow completed"}
         )
@@ -788,8 +869,8 @@ def test_order_placed_transition():
 
     # Assert on emitted intents (not execution)
     assert len(result.intents) == 2
-    assert result.intents[0].intent_type == EnumIntentType.DATABASE_WRITE
-    assert result.intents[1].intent_type == EnumIntentType.NOTIFICATION
+    assert result.intents[0].intent_type == "persist_state"
+    assert result.intents[1].intent_type == "notify"
 ```
 
 ### 3. Clear Separation of Concerns

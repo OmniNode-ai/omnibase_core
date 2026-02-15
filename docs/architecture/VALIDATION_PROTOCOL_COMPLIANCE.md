@@ -95,7 +95,7 @@ All existing methods remain unchanged and fully functional:
 All existing methods remain unchanged and fully functional:
 
 - `check_current_repository()` - Audit current repository
-- `check_against_spi()` - Check against SPI for duplicates
+- `check_against_spi()` - Check against Core-native protocols for duplicates (historical name retained for backward compatibility; SPI dependency was removed in v0.3.6)
 - `audit_ecosystem()` - Comprehensive ecosystem audit
 
 ## Usage Examples
@@ -171,14 +171,15 @@ uv run pytest tests/unit/validation/ -v
 
 ## Implementation Status
 
-### Current State (v0.1.0)
+### Current State
 
-- ✅ Protocol interfaces implemented
-- ✅ Protocol attributes added
-- ✅ Configuration methods implemented
-- ✅ Backward compatibility maintained
-- ✅ Comprehensive tests added
-- ⏳ Protocol methods are stubs (NotImplementedError)
+- Protocol interfaces implemented
+- Protocol attributes added
+- Configuration methods implemented
+- Backward compatibility maintained
+- Comprehensive tests added
+- Protocol methods are stubs (NotImplementedError) -- implementations will be
+  added incrementally in future releases
 
 ### Future Enhancements
 

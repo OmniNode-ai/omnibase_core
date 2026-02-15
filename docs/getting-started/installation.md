@@ -14,23 +14,26 @@ This guide walks you through setting up your development environment for buildin
 ## Prerequisites
 
 - **Python 3.12+** (required for modern async features)
-- **[uv](https://docs.astral.sh/uv/)** (package manager)
+- **Poetry** (recommended package manager)
 - **Git** (for version control)
 
 ## Installation Methods
 
-### Method 1: uv (Recommended)
+### Method 1: Poetry (Recommended)
 
-uv provides fast, reliable dependency management with deterministic lockfiles.
+Poetry provides better dependency management and virtual environment handling.
 
-#### 1. Install uv
+#### 1. Install Poetry
 
 ```
-# Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install Poetry
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Add to PATH (add to your shell profile)
+export PATH="$HOME/.local/bin:$PATH"
 
 # Verify installation
-uv --version
+poetry --version
 ```
 
 #### 2. Install omnibase_core
@@ -38,7 +41,7 @@ uv --version
 **Option A: As a dependency in your project**
 ```
 # In your project directory
-uv add omnibase_core
+poetry add omnibase_core
 ```
 
 **Option B: For development**
@@ -47,8 +50,11 @@ uv add omnibase_core
 git clone https://github.com/OmniNode-ai/omnibase_core.git
 cd omnibase_core
 
-# Install all dependencies (including dev and optional extras)
-uv sync --all-extras
+# Install dependencies
+poetry install
+
+# Activate virtual environment
+poetry shell
 ```
 
 ### Method 2: pip (Alternative)
@@ -73,7 +79,11 @@ pip install -e .
 ### 1. Basic Import Test
 
 ```
-uv run python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('Installation successful!')"
+# With Poetry
+uv run python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('✅ Installation successful!')"
+
+# With pip
+python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('✅ Installation successful!')"
 ```
 
 ### 2. All Node Types Test
@@ -84,7 +94,7 @@ from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-print('All node types imported successfully!')
+print('✅ All node types imported successfully!')
 "
 ```
 
@@ -93,24 +103,33 @@ print('All node types imported successfully!')
 ### 1. Install Development Dependencies
 
 ```
-# With uv (dev group is installed by default)
-uv sync --all-extras
+# With Poetry
+poetry install --with dev
 
 # With pip
-pip install -e ".[full]"
+pip install -e ".[dev]"
 ```
 
 ### 2. Run Tests
 
 ```
+# With Poetry
 uv run pytest
+
+# With pip
+pytest
 ```
 
 ### 3. Run Linting
 
 ```
-uv run ruff check src/ tests/
-uv run mypy src/omnibase_core
+# With Poetry
+uv run ruff check .
+uv run mypy .
+
+# With pip
+ruff check .
+mypy .
 ```
 
 ## IDE Setup
@@ -119,16 +138,21 @@ uv run mypy src/omnibase_core
 
 1. Install the Python extension
 2. Install the Pylance extension for type checking
-3. Configure settings:
+3. Install the [Ruff extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff) (`charliermarsh.ruff`)
+4. Configure settings:
 
 ```json
 {
-    "python.defaultInterpreterPath": "./.venv/bin/python",
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": false,
-    "python.linting.flake8Enabled": false,
-    "python.linting.mypyEnabled": true,
-    "python.formatting.provider": "black"
+    "python.defaultInterpreterPath": "./venv/bin/python",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
+    },
+    "mypy.enabled": true
 }
 ```
 
@@ -146,10 +170,10 @@ uv run mypy src/omnibase_core
 
 ```
 # If you see import errors, ensure you're in the virtual environment
-source .venv/bin/activate  # or source venv/bin/activate
+poetry shell  # or source venv/bin/activate
 
 # Reinstall if needed
-uv sync --force
+poetry install --force
 ```
 
 #### Python Version Issues

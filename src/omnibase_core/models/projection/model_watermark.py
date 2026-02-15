@@ -67,7 +67,9 @@ class ModelProjectionWatermark(BaseModel):
     """
 
     model_config = ConfigDict(
-        validate_assignment=True,
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
         str_strip_whitespace=True,
         use_enum_values=False,
         populate_by_name=True,

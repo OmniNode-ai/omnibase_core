@@ -582,8 +582,11 @@ def test_orchestrator_workflow_execution():
 class MyNodeContract(BaseModel):
     state_transitions: ModelFSMSubcontract  # Add this field
 
-# OR manually load contract
-node.fsm_contract = ModelFSMSubcontract.parse_file("contract.yaml")
+# OR manually load contract from the nested key
+from pathlib import Path
+import yaml
+data = yaml.safe_load(Path("contract.yaml").read_text())
+node.fsm_contract = ModelFSMSubcontract.model_validate(data["state_transitions"])
 ```
 
 #### Issue 2: "Workflow definition not loaded"
@@ -597,8 +600,13 @@ node.fsm_contract = ModelFSMSubcontract.parse_file("contract.yaml")
 class MyNodeContract(BaseModel):
     workflow_coordination: ModelWorkflowCoordination  # Add this field
 
-# OR manually load definition
-node.workflow_definition = ModelWorkflowDefinition.parse_file("workflow.yaml")
+# OR manually load definition from the nested key
+from pathlib import Path
+import yaml
+data = yaml.safe_load(Path("workflow.yaml").read_text())
+node.workflow_definition = ModelWorkflowDefinition.model_validate(
+    data["workflow_coordination"]["workflow_definition"]
+)
 ```
 
 #### Issue 3: "Condition expression failed"

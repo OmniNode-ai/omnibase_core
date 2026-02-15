@@ -297,7 +297,7 @@ node = NodeCompute(container)
 
 ### Phase 2: External State Stores (Planned)
 
-**Target**: v0.5.0+
+**Target**: Future release (post-v0.17.0)
 
 **Scope**:
 - FSM state persistence to external store (Redis, PostgreSQL)
@@ -338,7 +338,7 @@ class ProtocolStateStore(Protocol):
 
 ### Phase 3: Lease-Based Coordination (Planned)
 
-**Target**: v0.6.0+
+**Target**: Future release (post-v0.17.0)
 
 **Scope**:
 - Lease-based single-writer semantics for orchestrators
@@ -376,7 +376,7 @@ class ProtocolLeaseManager(Protocol):
 
 ### Phase 4: Event-Sourced State (Future)
 
-**Target**: v1.0.0+
+**Target**: Future release (post-v0.17.0)
 
 **Scope**:
 - Full event sourcing for state changes
@@ -427,7 +427,7 @@ When production improvements are implemented, the migration path follows these p
 Current APIs remain stable. Existing code continues to work without modification.
 
 ```python
-# v0.4.0 code continues to work in v0.5.0+
+# v0.4.0 code continues to work in future versions
 from omnibase_core.nodes import NodeCompute
 
 node = NodeCompute(container)
@@ -439,7 +439,7 @@ result = await node.process(input_data)
 New capabilities are available via configuration, not required.
 
 ```python
-# v0.5.0+ - opt-in to external state store
+# Future release - opt-in to external state store
 from omnibase_core.state import RedisStateStore
 
 container.register_service("ProtocolStateStore", RedisStateStore(redis_url))
@@ -460,13 +460,8 @@ reducer_node = NodeReducer(container)  # External state (if configured)
 
 ### 4. Documentation Updates
 
-Migration guides will be provided for each phase:
-
-| Phase | Migration Guide (Planned) |
-|-------|---------------------------|
-| Phase 2 | `docs/guides/MIGRATING_TO_EXTERNAL_STATE.md` |
-| Phase 3 | `docs/guides/MIGRATING_TO_LEASE_COORDINATION.md` |
-| Phase 4 | `docs/guides/MIGRATING_TO_EVENT_SOURCING.md` |
+Migration guides will be provided when each phase is implemented. These guides
+do not exist yet and will be created alongside the corresponding feature work.
 
 ---
 

@@ -156,8 +156,8 @@ uv run pytest --testmon-noselect
 uv run pytest --testmon --cov --cov-fail-under=60
 
 # Format and lint
-uv run black src/ tests/
-uv run isort src/ tests/
+uv run ruff format src/ tests/
+uv run ruff check src/ tests/
 uv run mypy src/omnibase_core
 ```
 
@@ -230,13 +230,13 @@ uv run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 - ✅ 20 parallel splits for optimal speed
 - ✅ Smoke tests for fail-fast validation
 
-### Phase 2: Planned (Q2 2025)
+### Phase 2: Planned
 - ⏳ Differential testing on PRs (testmon in CI)
 - ⏳ Test result caching between runs
 - ⏳ Flaky test detection and retry
 - ⏳ Performance regression testing
 
-### Phase 3: Future (Q3 2025)
+### Phase 3: Future
 - 🔮 ML-based test selection
 - 🔮 Predictive test prioritization
 - 🔮 Intelligent coverage sampling
@@ -299,6 +299,6 @@ For operational guidance on monitoring CI health, detecting performance regressi
 
 ---
 
-**Last Updated**: 2025-12-13
-**Test Suite Version**: 0.4.0 (12,198 tests)
+**Last Updated**: 2026-02-14
+**Test Suite Version**: 0.17.0 (12,198 tests)
 **CI Strategy Version**: v2.1 (20 splits + conditional coverage + monitoring)

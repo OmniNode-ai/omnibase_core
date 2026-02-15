@@ -1,47 +1,52 @@
 > **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Declarative Workflow Findings
 
-# Declarative Workflow Architecture - Findings and Recommendations
+# Declarative Workflow Architecture - Historical Findings
 
-> **Date**: 2025-12-06
-> **Version**: v0.4.0
-> **Correlation ID**: `doc-review-declarative-workflows-2025-11-16`
-> **Status**: COMPLETED - DECLARATIVE NODES ARE NOW PRIMARY
-> **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed because these ARE the standard.
+> **HISTORICAL**: This document captures findings from the initial declarative workflow research conducted in late 2025. The methods and patterns described here have been superseded by the current handler + contract architecture. See [Handler Contract Guide](../contracts/HANDLER_CONTRACT_GUIDE.md) for current patterns.
 
 ---
 
-## Executive Summary
+## Current State
 
-This document summarizes findings from a comprehensive review of omnibase_core's declarative workflow and FSM capabilities. **UPDATED (v0.4.0)**: The review confirms that **declarative node implementations are now the PRIMARY pattern** - `NodeReducer` and `NodeOrchestrator` are FSM/workflow-driven by default.
+The declarative architecture described in this research is now fully implemented. Key outcomes:
 
-### Key Finding: Declarative Nodes Are Now Primary (v0.4.0)
+- **Nodes are thin shells** that call `super().__init__(container)` and delegate all logic to handlers.
+- **YAML contracts** define FSM state machines, workflow definitions, effect subcontracts, and handler routing.
+- **Mixins** (`MixinFSMExecution`, `MixinWorkflowExecution`, `MixinEffectExecution`, `MixinHandlerRouting`) provide execution capabilities driven by contract configuration.
+- **Imperative methods** referenced below (e.g., `orchestrate_rsd_ticket_lifecycle`, `aggregate_rsd_tickets`) no longer exist. They were replaced by contract-driven execution.
 
-✅ **Infrastructure EXISTS**: Complete Pydantic models for FSM and workflow subcontracts
-✅ **Runtime IMPLEMENTED**: Mixin-based execution via `MixinFSMExecution` and `MixinWorkflowExecution`
-✅ **Adoption COMPLETE**: `NodeReducer` and `NodeOrchestrator` are now FSM/workflow-driven by default
-✅ **Backwards Compatibility**: Nodes support both declarative YAML contracts and imperative Python code
-📝 **Naming Convention**: "Declarative" suffix removed - these ARE the standard implementations now
+The canonical entry points are:
+
+```python
+from omnibase_core.nodes import (
+    NodeCompute,
+    NodeEffect,
+    NodeOrchestrator,
+    NodeReducer,
+)
+```
+
+Each node type is contract-driven by default. Subclasses typically require zero custom Python code.
 
 ---
 
-## Table of Contents
+## Original Research Date
 
-1. [Infrastructure Review](#infrastructure-review)
-2. [Current Node Implementations](#current-node-implementations)
-3. [Mixin System Review](#mixin-system-review)
-4. [Gap Analysis](#gap-analysis)
-5. [Recommendations](#recommendations)
-6. [Implementation Roadmap](#implementation-roadmap)
+- **Date**: 2025-11-16 (initial review), 2025-12-06 (final update)
+- **Versions Reviewed**: v0.3.2 through v0.4.0
+- **Correlation ID**: `doc-review-declarative-workflows-2025-11-16`
 
 ---
 
-## Infrastructure Review
+## Historical Findings
 
-### ✅ YAML Contract System - COMPLETE
+The sections below preserve the original research findings for reference.
 
-The omnibase_core codebase has **comprehensive YAML contract support** for declarative workflows and FSMs:
+### Infrastructure Review
 
-#### 1. FSM Subcontract Infrastructure
+#### FSM Subcontract Infrastructure
+
+At the time of review, the codebase had comprehensive YAML contract support for declarative workflows and FSMs.
 
 **File**: `src/omnibase_core/models/contracts/subcontracts/model_fsm_subcontract.py`
 
@@ -49,9 +54,6 @@ The omnibase_core codebase has **comprehensive YAML contract support** for decla
 class ModelFSMSubcontract(BaseModel):
     """FSM (Finite State Machine) subcontract model."""
 
-    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
-
-    # Complete FSM definition
     state_machine_name: str
     states: list[ModelFSMStateDefinition]
     initial_state: str
@@ -60,34 +62,22 @@ class ModelFSMSubcontract(BaseModel):
     transitions: list[ModelFSMStateTransition]
     operations: list[ModelFSMOperation]
 
-    # Persistence and recovery
     persistence_enabled: bool = True
     recovery_enabled: bool = True
     rollback_enabled: bool = True
     checkpoint_interval_ms: int = 30000
     max_checkpoints: int = 10
 
-    # Conflict resolution
     conflict_resolution_strategy: str = "priority_based"
     concurrent_transitions_allowed: bool = False
     transition_timeout_ms: int = 5000
 
-    # Validation and monitoring
     strict_validation_enabled: bool = True
     state_monitoring_enabled: bool = True
     event_logging_enabled: bool = True
 ```
 
-**Capabilities**:
-- Complete state machine definitions
-- State entry/exit actions
-- Transition conditions and guards
-- Atomic operations with rollback support
-- Persistence and checkpoint management
-- Conflict resolution strategies
-- Comprehensive validation
-
-#### 2. Workflow Coordination Subcontract
+#### Workflow Coordination Subcontract
 
 **File**: `src/omnibase_core/models/contracts/subcontracts/model_workflow_definition.py`
 
@@ -100,21 +90,12 @@ class ModelWorkflowDefinition(BaseModel):
     coordination_rules: ModelCoordinationRules
 ```
 
-**Supporting Models**:
-- `ModelWorkflowConfig` - Execution modes (sequential, parallel, mixed)
-- `ModelExecutionGraph` - DAG of workflow steps
-- `ModelCoordinationRules` - Inter-step coordination
-- `ModelWorkflowStep` - Individual step definitions
+#### Subcontract Composition Pattern
 
-#### 3. Subcontract Composition Pattern
-
-**File**: `src/omnibase_core/models/contracts/model_contract_reducer.py`
+Contracts composed subcontracts for clean separation of concerns:
 
 ```python
 class ModelContractReducer(ModelContractBase):
-    """Contract model for NodeReducer implementations."""
-
-    # Subcontract composition - CLEAN SEPARATION
     state_transitions: object | None  # FSM subcontract
     event_type: ModelEventTypeSubcontract | None
     aggregation: ModelAggregationSubcontract | None
@@ -123,86 +104,31 @@ class ModelContractReducer(ModelContractBase):
     workflow_coordination: ModelWorkflowCoordinationSubcontract | None
 ```
 
-**Pattern**: Nodes compose subcontracts instead of implementing custom logic.
+### Node Implementations at Time of Review
 
-### ✅ Validation and Type Safety
+At the time of initial review (v0.3.2), both `NodeOrchestrator` and `NodeReducer` contained significant imperative Python code:
 
-All subcontract models include:
-- **Pydantic v2 validation** with strict mode
-- **Interface versioning** (INTERFACE_VERSION) for code generation stability
-- **Zero tolerance for Any types** - strong typing throughout
-- **UUID correlation tracking** for full traceability
-- **Comprehensive error handling** with ModelOnexError
+**NodeOrchestrator** had hardcoded methods including:
+- `_execute_sequential_workflow()`
+- `_execute_parallel_workflow()`
+- `_execute_batch_workflow()`
+- `orchestrate_rsd_ticket_lifecycle()` (domain-specific)
+- `emit_action()`
+- `register_condition_function()`
 
----
+**NodeReducer** had hardcoded methods including:
+- `aggregate_rsd_tickets()` (domain-specific)
+- `normalize_priority_scores()`
+- `resolve_dependency_cycles()`
+- `register_reduction_function()`
+- `_process_batch()`, `_process_incremental()`, `_process_windowed()`
 
-## Current Node Implementations
+These methods were all removed during the v0.4.0 refactor to the current contract-driven architecture.
 
-### ⚠️ NodeOrchestrator - CODE-HEAVY IMPLEMENTATION
+### Mixin System at Time of Review
 
-**File**: `src/omnibase_core/nodes/node_orchestrator.py`
+The following mixins were identified as available:
 
-**Current State**: Primarily imperative Python code
-
-**Key Methods**:
-```python
-async def process(self, input_data: ModelOrchestratorInput) -> ModelOrchestratorOutput:
-    """Execute workflow coordination with thunk emission."""
-    # Lines 142-267: Imperative workflow execution
-    if input_data.execution_mode == EnumExecutionMode.SEQUENTIAL:
-        result = await self._execute_sequential_workflow(...)
-    elif input_data.execution_mode == EnumExecutionMode.PARALLEL:
-        result = await self._execute_parallel_workflow(...)
-    # ...
-```
-
-**Built-in Methods** (Hardcoded Logic):
-- `_execute_sequential_workflow()` (lines 651-753)
-- `_execute_parallel_workflow()` (lines 755-900)
-- `_execute_batch_workflow()` (lines 902-935)
-- `orchestrate_rsd_ticket_lifecycle()` (lines 274-331)
-- `emit_action()` (lines 333-404)
-- `register_condition_function()` (lines 406-447)
-
-**Observation**: While the infrastructure exists for declarative workflows, NodeOrchestrator currently implements workflow logic imperatively in Python.
-
-### ⚠️ NodeReducer - CODE-HEAVY IMPLEMENTATION
-
-**File**: `src/omnibase_core/nodes/node_reducer.py`
-
-**Current State**: Primarily imperative Python code with custom reduction functions
-
-**Key Patterns**:
-```python
-def __init__(self, container: ModelONEXContainer) -> None:
-    """PURE FSM PATTERN: No mutable instance state."""
-    super().__init__(container)
-
-    # Configuration
-    self.reduction_functions: dict[EnumReductionType, Callable] = {}
-    self.reduction_metrics: dict[str, dict[str, float]] = defaultdict(...)
-```
-
-**Built-in Methods** (Hardcoded Logic):
-- `aggregate_rsd_tickets()` (lines 254-297)
-- `normalize_priority_scores()` (lines 299-330)
-- `resolve_dependency_cycles()` (lines 332-358)
-- `register_reduction_function()` (lines 360-401)
-- `_process_batch()`, `_process_incremental()`, `_process_windowed()` (lines 505-677)
-
-**Positive**: Uses ModelIntent pattern (lines 164-220) for side effect emission - shows FSM thinking!
-
-**Observation**: While reduction logic is more generic, it still requires custom Python functions instead of YAML-driven configuration.
-
----
-
-## Mixin System Review
-
-### ✅ Mixins Provide Cross-Cutting Concerns
-
-**File**: `src/omnibase_core/mixins/mixin_metadata.yaml` (2463 lines)
-
-**Available Mixins**:
 - `MixinRetry` - Retry logic with backoff strategies
 - `MixinHealthCheck` - Health monitoring
 - `MixinCaching` - Caching with TTL and eviction
@@ -212,347 +138,45 @@ def __init__(self, container: ModelONEXContainer) -> None:
 - `MixinMetrics` - Performance tracking
 - `MixinSecurity` - Security and validation
 - `MixinSerialization` - Data serialization
+- `MixinDagSupport` - Workflow event participation
 
-**File**: `src/omnibase_core/mixins/mixin_workflow_support.py`
+The FSM and Workflow execution mixins (`MixinFSMExecution`, `MixinWorkflowExecution`) were implemented in v0.3.2 and became the primary execution mechanism in v0.4.0.
 
-```python
-class MixinDagSupport:
-    """Mixin providing Workflow event support for ONEX tools."""
+### Gap Analysis at Time of Review
 
-    def emit_dag_completion_event(self, result, status, error_message=None):
-        """Emit Workflow completion event for workflow coordination."""
-```
+| Component | v0.3.2 Status | v0.4.0 Resolution |
+|-----------|---------------|-------------------|
+| FSM Subcontracts | Infrastructure complete, adoption partial | Primary pattern |
+| Workflow Subcontracts | Infrastructure complete, adoption partial | Primary pattern |
+| FSM Runtime | Implemented via mixin | Integrated into NodeReducer |
+| Workflow Runtime | Implemented via mixin | Integrated into NodeOrchestrator |
+| Declarative Examples | Limited | Available in contract YAML files |
+| Documentation | Partial | Updated across guides |
 
-### ✅ FSM/Workflow Execution Mixins - IMPLEMENTED (v0.3.2)
+### Key Recommendations (Historical)
 
-**Implemented** (Mixin-based approach):
-- ✅ `MixinFSMExecution` - FSM execution from subcontract (`mixins/mixin_fsm_execution.py`)
-- ✅ `MixinWorkflowExecution` - Workflow execution from subcontract (`mixins/mixin_workflow_execution.py`)
-- FSM Runtime - Pure functions in `utils/util_fsm_executor.py`
-- Workflow Runtime - Pure functions in `utils/util_workflow_executor.py`
+The following recommendations were made during the research. All critical items have been addressed:
 
-**Pattern**: Mixins delegate to pure utility functions for execution. Nodes compose mixins instead of implementing custom FSM/workflow logic.
+1. **Runtime Execution** (COMPLETED v0.3.2): Created `MixinFSMExecution` and `MixinWorkflowExecution` with pure utility functions.
 
-**Also Available**: `MixinDagSupport` for workflow EVENT participation.
+2. **Update Node Implementations** (COMPLETED v0.4.0): `NodeReducer` and `NodeOrchestrator` became the primary declarative implementations. The "Declarative" suffix was removed.
 
----
-
-## Gap Analysis
-
-### Current Implementation Status (v0.4.0)
-
-| Component | Infrastructure | Implementation | Status |
-|-----------|---------------|----------------|--------|
-| **FSM Subcontracts** | ✅ Complete | ✅ Primary (v0.4.0) | COMPLETE |
-| **Workflow Subcontracts** | ✅ Complete | ✅ Primary (v0.4.0) | COMPLETE |
-| **Pydantic Validation** | ✅ Complete | ✅ Working | COMPLETE |
-| **Contract Composition** | ✅ Complete | ✅ Integrated | COMPLETE |
-| **FSM Runtime** | ✅ Complete | ✅ Mixin-based | COMPLETE |
-| **Workflow Runtime** | ✅ Complete | ✅ Mixin-based | COMPLETE |
-| **Declarative Examples** | ⚠️ Limited | ⚠️ Limited | IN PROGRESS |
-| **Documentation** | ⚠️ Partial | ⚠️ Needs Updates | IN PROGRESS |
-
-**Note**: FSM and Workflow runtimes implemented via mixin-based approach (`MixinFSMExecution`, `MixinWorkflowExecution`) with pure utility functions (`utils/util_fsm_executor.py`, `utils/util_workflow_executor.py`).
-
-<details>
-<summary><strong>Historical Status (2025-11-16 snapshot)</strong></summary>
-
-The following table reflects the status at the time of initial review (v0.3.2):
-
-| Component | Infrastructure | Implementation | Gap |
-|-----------|---------------|----------------|-----|
-| **FSM Subcontracts** | ✅ Complete | ⚠️ Available (v0.3.2) | MEDIUM |
-| **Workflow Subcontracts** | ✅ Complete | ⚠️ Available (v0.3.2) | MEDIUM |
-| **Contract Composition** | ✅ Complete | ⚠️ Partial | MEDIUM |
-| **FSM Runtime** | ✅ IMPLEMENTED (v0.3.2) | ✅ Mixin-based | LOW |
-| **Workflow Runtime** | ✅ IMPLEMENTED (v0.3.2) | ✅ Mixin-based | LOW |
-
-These gaps were addressed in v0.4.0 with `NodeReducer` and `NodeOrchestrator` becoming the primary declarative implementations.
-
-</details>
-
-### ✅ Implemented Components (v0.3.2)
-
-#### 1. FSM Runtime - IMPLEMENTED via Mixin Pattern
-
-**Status**: ✅ **COMPLETE** (Mixin-based approach)
-
-**Implementation**:
-```python
-# src/omnibase_core/mixins/mixin_fsm_execution.py
-class MixinFSMExecution:
-    """Mixin providing FSM execution from YAML contracts."""
-
-    # Uses pure functions from utils/util_fsm_executor.py
-    # Delegates to: execute_transition(), validate_fsm_contract(), etc.
-```
-
-**Runtime Functions** (`utils/util_fsm_executor.py`):
-```python
-def execute_transition(
-    fsm: ModelFSMSubcontract,
-    current_state: str,
-    trigger: str,
-    context: dict[str, Any]
-) -> FSMTransitionResult:
-    """Execute FSM transition declaratively (pure function)."""
-```
-
-#### 2. Workflow Runtime - IMPLEMENTED via Mixin Pattern
-
-**Status**: ✅ **COMPLETE** (Mixin-based approach)
-
-**Implementation**:
-```python
-# src/omnibase_core/mixins/mixin_workflow_execution.py
-class MixinWorkflowExecution:
-    """Mixin providing workflow execution from YAML contracts."""
-
-    # Uses pure functions from utils/util_workflow_executor.py
-    # Delegates to workflow execution logic
-```
-
-**Runtime Functions** (`utils/util_workflow_executor.py`):
-```python
-# Pure functions for workflow execution
-# Handles sequential, parallel, and mixed execution modes
-```
-
-#### 3. Remaining Gaps
-
-**COMPLETED (v0.4.0)**: Declarative Node Base Classes
-
-**Current (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` ARE the declarative implementations
-
-```python
-# v0.4.0+ RECOMMENDED: Top-level API
-from omnibase_core.nodes import (
-    NodeCompute,
-    NodeEffect,
-    NodeOrchestrator,
-    NodeReducer,
-    # Input/Output models also available
-    ModelComputeInput,
-    ModelComputeOutput,
-    ModelEffectInput,
-    ModelEffectOutput,
-    ModelOrchestratorInput,
-    ModelOrchestratorOutput,
-    ModelReducerInput,
-    ModelReducerOutput,
-)
-
-class NodeMyReducer(NodeReducer):
-    """Reducer with FSM-driven execution by default."""
-    pass  # All logic from YAML contract
-
-class NodeMyOrchestrator(NodeOrchestrator):
-    """Orchestrator with workflow-driven execution by default."""
-    pass  # All logic from YAML contract
-```
-
-**Import Patterns**:
-
-| Pattern | Import | Status |
-|---------|--------|--------|
-| **Top-level API** | `from omnibase_core.nodes import NodeReducer, ...` | **RECOMMENDED** |
-| **Direct module** | `from omnibase_core.nodes.node_reducer import NodeReducer` | Supported (internal) |
-
-**Note**: The top-level import `from omnibase_core.nodes import ...` is the recommended pattern. All four node types (`NodeCompute`, `NodeEffect`, `NodeReducer`, `NodeOrchestrator`) and their input/output models are available from this single import. Legacy implementations were removed in v0.4.0.
-
----
-
-## Recommendations
-
-### 1. ✅ Runtime Execution - COMPLETE (v0.3.2)
-
-**Priority**: ~~CRITICAL~~ **COMPLETED**
-**Status**: ✅ Implemented via mixin pattern
-
-**Completed** (v0.3.2):
-- ✅ Implemented `MixinFSMExecution` for FSM runtime
-- ✅ Implemented `MixinWorkflowExecution` for workflow runtime
-- Pure utility functions in `utils/util_fsm_executor.py` and `utils/util_workflow_executor.py`
-- ✅ Unit tests for runtime functions
-
-### 2. ✅ Update Node Implementations - COMPLETE (v0.4.0)
-
-**Priority**: ~~HIGH~~ **COMPLETED**
-**Status**: ✅ Implemented
-
-**Completed (v0.4.0)**:
-- ✅ `NodeReducer` is now the primary FSM-driven implementation
-- ✅ `NodeOrchestrator` is now the primary workflow-driven implementation
-- ✅ "Declarative" suffix removed - these ARE the standard
-- ✅ Top-level API: `from omnibase_core.nodes import NodeReducer, NodeOrchestrator`
-- ✅ Import paths updated throughout codebase
-
-### 3. Add Declarative Examples
-
-**Priority**: HIGH
-**Timeline**: Sprint 2
-
-**Tasks**:
-- [ ] Create example YAML contracts for orchestrator workflows
-- [ ] Create example YAML contracts for reducer FSMs
-- [ ] Add examples to `docs/examples/`
-- [ ] Update tutorials to show YAML-first approach
-
-### 4. Update Documentation
-
-**Priority**: HIGH
-**Timeline**: Sprint 2
-
-**Tasks**:
-- [ ] Update `docs/guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md`
-  - Emphasize YAML workflow contracts
-  - Minimize custom Python code examples
-  - Show declarative pattern first
-- [ ] Update `docs/guides/node-building/05_REDUCER_NODE_TUTORIAL.md`
-  - Emphasize FSM subcontracts
-  - Show YAML-driven state management
-  - Minimize custom reduction functions
-- [ ] Create `docs/guides/DECLARATIVE_WORKFLOWS.md`
-- [ ] Create `docs/guides/FSM_SUBCONTRACTS.md`
-
-### 5. ✅ Workflow/FSM Mixins - COMPLETE (v0.3.2)
-
-**Priority**: ~~MEDIUM~~ **COMPLETED**
-**Status**: ✅ Implemented and available
-
-**Completed** (v0.3.2):
-- ✅ Created `MixinFSMExecution` for FSM-driven nodes
-- ✅ Created `MixinWorkflowExecution` for workflow-driven nodes
-- ✅ Updated mixin_metadata.yaml with new mixins
-- ⚠️ Mixin examples - needs more documentation
-
----
-
-## Implementation Roadmap
-
-### ✅ Sprint 1: Runtime Services - COMPLETE (v0.3.2)
-
-**Goal**: ~~Create the missing runtime interpreters~~ **COMPLETED**
-
-**Status**: ✅ Implemented via mixin-based approach
-
-1. **✅ FSM Execution - COMPLETE**
-   ```python
-   # src/omnibase_core/utils/util_fsm_executor.py
-   def execute_transition(fsm: ModelFSMSubcontract, ...):
-       # ✅ Validate current state
-       # ✅ Check transition conditions
-       # ✅ Execute entry/exit actions
-       # ✅ Update state
-       # ✅ Handle rollback on failure (via intents)
-   ```
-
-2. **✅ Workflow Execution - COMPLETE**
-   ```python
-   # src/omnibase_core/utils/util_workflow_executor.py
-   # Build execution graph
-   # ✅ Execute steps based on mode (sequential, parallel, mixed)
-   # ✅ Handle dependencies
-   # ✅ Coordinate with FSM executor for stateful steps
-   ```
-
-3. **✅ Mixin Pattern Implementation**
-   ```python
-   # Mixins provide execution capabilities
-   # src/omnibase_core/mixins/mixin_fsm_execution.py
-   # src/omnibase_core/mixins/mixin_workflow_execution.py
-   ```
-
-### ✅ Sprint 2: Declarative Nodes & Documentation - COMPLETE (v0.4.0)
-
-**Goal**: ~~Create declarative base classes and update docs~~ **COMPLETED**
-
-1. **✅ Declarative Base Classes - COMPLETE**
-   - ✅ `NodeOrchestrator` - Primary workflow-driven implementation (no "Declarative" suffix)
-   - ✅ `NodeReducer` - Primary FSM-driven implementation (no "Declarative" suffix)
-   - ✅ Top-level API: `from omnibase_core.nodes import NodeReducer, NodeOrchestrator`
-
-2. **Documentation Updates**
-   - Emphasize declarative patterns FIRST
-   - Show imperative patterns as "advanced customization"
-   - Add YAML contract examples to all tutorials
-
-3. **Example YAML Contracts**
-   ```yaml
-   # examples/contracts/workflow_data_processing.yaml
-   node_type: ORCHESTRATOR
-   workflow_coordination:
-     execution_mode: sequential
-     steps:
-       - step_name: fetch_data
-         action_type: EFFECT
-         target_node_type: NodeEffect
-       - step_name: transform_data
-         action_type: COMPUTE
-         target_node_type: NodeCompute
-       - step_name: aggregate_results
-         action_type: REDUCE
-         target_node_type: NodeReducer
-   ```
-
-### Sprint 3: Advanced Features & Examples (Week 5-6)
-
-**Goal**: Complete the declarative ecosystem
-
-1. **✅ Execution Mixins - COMPLETE (v0.3.2)**
-   - ✅ `MixinFSMExecution`
-   - ✅ `MixinWorkflowExecution`
-
-2. **⚠️ Advanced Examples - IN PROGRESS**
-   - [ ] Complex multi-branch workflows
-   - [ ] FSM with conditional transitions
-   - [ ] Parallel workflow execution
-
-3. **⚠️ Testing & Validation - PARTIAL**
-   - ✅ Unit tests for runtime functions
-   - [ ] Integration tests for declarative patterns
-   - [ ] Performance benchmarks
-   - [ ] Migration guide for existing code
+3. **Workflow/FSM Mixins** (COMPLETED v0.3.2): Created and integrated into the node base classes.
 
 ---
 
 ## Conclusion
 
-The omnibase_core codebase has **excellent infrastructure** for declarative workflows and FSMs:
-- ✅ Complete FSM subcontract models
-- ✅ Complete workflow coordination models
-- ✅ Subcontract composition pattern
-- ✅ Pydantic validation and type safety
+This research identified the gap between existing contract infrastructure and its adoption in node implementations. The gap was closed in v0.4.0 when all nodes transitioned to contract-driven execution. The imperative methods documented here no longer exist in the codebase.
 
-**UPDATED (v0.3.2)**: Runtime execution is now **IMPLEMENTED** via mixin-based approach:
-- FSM runtime via `MixinFSMExecution` + `utils/util_fsm_executor.py`
-- Workflow runtime via `MixinWorkflowExecution` + `utils/util_workflow_executor.py`
-- ✅ Pure function approach for execution logic
-- ✅ Intent-based pattern for side effects
-
-**Remaining Gaps**:
-- ⚠️ Nodes can use mixins but still often write imperative Python code
-- ⚠️ Limited examples demonstrating declarative patterns
-- ⚠️ Documentation needs updates to emphasize mixin-based approach
-
-**Impact**: Developers now have **mixin-based declarative execution available**, but adoption needs:
-- More comprehensive examples showing mixin usage
-- Documentation updates emphasizing declarative YAML-first approach
-- Integration tests validating declarative patterns
-
-**Recommendation**: Prioritize creating declarative examples, updating documentation to show mixin-based patterns, and migrating existing nodes to use `MixinFSMExecution` and `MixinWorkflowExecution`.
+For current architecture documentation, see:
+- [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md)
+- [Contract System](CONTRACT_SYSTEM.md)
+- [Handler Contract Guide](../contracts/HANDLER_CONTRACT_GUIDE.md)
+- [Node Building Guide](../guides/node-building/README.md)
 
 ---
 
-**Last Updated**: 2025-12-06
-**Version**: v0.4.0
-**Status**: COMPLETED - Declarative nodes are now the primary implementations
-**Related Documents**:
-- [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md)
-- [Contract System](CONTRACT_SYSTEM.md)
-- [Node Building Guide](../guides/node-building/README.md)
-- Mixin implementations:
-  - `src/omnibase_core/mixins/mixin_fsm_execution.py`
-  - `src/omnibase_core/mixins/mixin_workflow_execution.py`
-  - `src/omnibase_core/utils/util_fsm_executor.py`
-  - `src/omnibase_core/utils/util_workflow_executor.py`
+**Originally Written**: 2025-11-16
+**Last Substantive Update**: 2025-12-06
+**Archived**: 2026-02-14

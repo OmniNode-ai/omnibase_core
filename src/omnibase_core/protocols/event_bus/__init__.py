@@ -68,6 +68,9 @@ from omnibase_core.protocols.event_bus.protocol_event_message import (
     ProtocolEventMessage,
 )
 from omnibase_core.protocols.event_bus.protocol_from_event import ProtocolFromEvent
+from omnibase_core.protocols.event_bus.protocol_kafka_client import (
+    ProtocolKafkaClient,
+)
 from omnibase_core.protocols.event_bus.protocol_kafka_event_bus_adapter import (
     ProtocolKafkaEventBusAdapter,
 )
@@ -83,7 +86,8 @@ __all__ = [
     "ProtocolEventMessage",
     # Headers
     "ProtocolEventBusHeaders",
-    # Adapters
+    # Kafka Protocols
+    "ProtocolKafkaClient",
     "ProtocolKafkaEventBusAdapter",
     # Node Identity (for subscription consumer group derivation)
     "ProtocolNodeIdentity",

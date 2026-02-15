@@ -4,7 +4,7 @@
 
 **Purpose**: Comprehensive guide for integrating performance benchmarks into CI pipeline with threshold enforcement and regression detection
 
-**Last Updated**: 2025-12-16
+**Last Updated**: 2026-02-14
 
 **Related Documents**:
 - [Performance Benchmark Thresholds](../performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md)
@@ -93,12 +93,13 @@ test-parallel:
 
 ### Pytest Markers
 
-**Configuration** (tests/pytest.ini):
+**Configuration** (pyproject.toml `[tool.pytest.ini_options]`):
 
-```ini
-markers =
-    performance: marks tests as performance tests
-    slow: marks tests as slow (deselect with '-m "not slow"')
+```toml
+markers = [
+    "performance: marks tests as performance tests",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
 ```
 
 **Usage in Benchmarks**:
@@ -894,11 +895,11 @@ def test_memory_usage(self) -> None:
 
 ## Future Enhancements
 
+> **Note**: These phases were originally proposed in late 2025. Timelines are stale and should be re-evaluated against current project priorities. None of the phases below have been implemented as of v0.17.0.
+
 ### Phase 1: Dedicated CI Job (Priority: High)
 
-**Status**: ⚠️ Proposed
-
-**Timeline**: Q1 2025
+**Status**: Not yet implemented (originally proposed Q4 2025)
 
 **Deliverables**:
 - Dedicated `performance-benchmarks` job in test.yml
@@ -909,22 +910,18 @@ def test_memory_usage(self) -> None:
 
 ### Phase 2: Environment-Aware Thresholds (Priority: High)
 
-**Status**: ⚠️ Documented, not implemented
-
-**Timeline**: Q1 2025
+**Status**: Documented, not yet implemented (originally proposed Q4 2025)
 
 **Deliverables**:
 - `tests/performance/conftest.py` with `threshold_multiplier` fixture
 - Update all benchmarks to use multiplier
-- CI auto-detection (`CI=true` → 2x thresholds)
+- CI auto-detection (`CI=true` -> 2x thresholds)
 
 **Benefits**: Reduce flakiness, maintain strict local thresholds
 
 ### Phase 3: Performance Dashboard (Priority: Medium)
 
-**Status**: ⚠️ Proposed
-
-**Timeline**: Q2 2025
+**Status**: Not yet implemented
 
 **Deliverables**:
 - GitHub Pages performance dashboard
@@ -935,9 +932,7 @@ def test_memory_usage(self) -> None:
 
 ### Phase 4: Statistical Significance Testing (Priority: Low)
 
-**Status**: ⚠️ Research phase
-
-**Timeline**: Q3 2025
+**Status**: Not yet implemented
 
 **Deliverables**:
 - Statistical significance tests (t-test, Mann-Whitney U)
@@ -996,7 +991,7 @@ uv run pytest tests/performance/ -k "slow_test" -v -s --durations=10
 
 ---
 
-**Last Updated**: 2025-12-16
+**Last Updated**: 2026-02-14
 **Related PR**: #205
-**Status**: Active - enhancements planned for Q1 2025
+**Status**: Active - enhancements not yet implemented (see Future Enhancements)
 **Contact**: @omnibase_core-maintainers

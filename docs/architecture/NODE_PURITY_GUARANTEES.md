@@ -290,28 +290,58 @@ class NodeDataCompute(NodeCoreBase):
 
 ### After (Pure)
 
+The node is a thin shell. Transformation logic lives in the handler.
+
 ```python
-from omnibase_core.infrastructure.node_core_base import NodeCoreBase
-from omnibase_core.logging.logging_structured import emit_log_event_sync as emit_log_event
+from __future__ import annotations
 
-class NodeDataCompute(NodeCoreBase):
-    def __init__(self, container: ModelONEXContainer):
+from typing import TYPE_CHECKING
+
+from omnibase_core.nodes import NodeCompute
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+
+class NodeDataCompute(NodeCompute):
+    """Thin shell -- transformation logic lives in handler."""
+
+    def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
-        self.cache = container.compute_cache_config  # Container-provided
+```
 
-    async def process(self, input_data: ModelComputeInput) -> ModelComputeOutput:
-        # Pure transformation - no I/O in this node
-        # Network fetching would be done by an Effect node before this
-        data = input_data.data  # Already fetched by Effect node
+```python
+from typing import Any
+from uuid import UUID
+
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+
+
+class HandlerDataTransform:
+    """Pure transformation handler -- no I/O.
+
+    Data was already fetched by an Effect node upstream.
+    """
+
+    async def handle(
+        self,
+        data: dict[str, Any],
+        *,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[dict[str, Any]]:
         result = self._transform(data)
-
-        emit_log_event(
-            LogLevel.INFO,
-            "Data processed",
-            {"node_id": str(self.node_id)}
+        return ModelHandlerOutput.for_compute(
+            handler_id="handler_pure_compute",
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            result=result,
         )
 
-        return ModelComputeOutput(result=result, ...)
+    def _transform(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Pure transformation -- no side effects."""
+        # Domain-specific transformation logic
+        return data
 ```
 
 ## Related Documentation

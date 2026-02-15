@@ -8,7 +8,7 @@
 > **Status**: Complete
 > **Purpose**: Structured, copy-paste-ready templates for node development
 > **Format**: Machine-parseable with explicit parameters and validation checklists
-> **Last Updated**: 2025-12-05
+> **Last Updated**: 2026-02-14
 
 ---
 
@@ -177,6 +177,7 @@ from pydantic import BaseModel
 
 from omnibase_core.nodes import NodeCompute, ModelComputeInput, ModelComputeOutput
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -198,14 +199,60 @@ class {OUTPUT_MODEL}(BaseModel):
 
 # === NODE IMPLEMENTATION ===
 
+class Handler{DOMAIN}Compute:
+    """
+    Handler containing the actual computation logic.
+
+    Business logic lives HERE, not in the node class.
+    Nodes are thin coordination shells.
+
+    Output Constraints (COMPUTE):
+      - result: REQUIRED
+      - events[]: Forbidden
+      - intents[]: Forbidden
+      - projections[]: Forbidden
+    """
+
+    def execute(self, envelope: ModelOnexEnvelope, data: {INPUT_MODEL}) -> ModelHandlerOutput:
+        """
+        Pure computation -- no I/O allowed.
+
+        Args:
+            envelope: The incoming ONEX envelope (provides IDs for tracing)
+            data: Input data to transform
+
+        Returns:
+            ModelHandlerOutput with result (COMPUTE constraint)
+        """
+        # === YOUR COMPUTATION LOGIC HERE ===
+        # IMPORTANT: No I/O operations allowed
+        # - No API calls
+        # - No database queries
+        # - No file operations
+
+        result: {OUTPUT_MODEL} = self._compute(data)
+
+        # COMPUTE nodes MUST set result; events/intents/projections forbidden
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
+            result=result,
+        )
+
+    def _compute(self, data: {INPUT_MODEL}) -> {OUTPUT_MODEL}:
+        """Pure computation logic."""
+        # TODO: Implement your computation logic
+        # Example:
+        # return {OUTPUT_MODEL}(result=data.data.upper())
+        raise NotImplementedError("Implement _compute method")
+
+
 class {NODE_NAME}(NodeCompute[{INPUT_MODEL}, {OUTPUT_MODEL}]):
     """
     {COMPUTATION_DESCRIPTION}
 
-    This is a COMPUTE node - pure transformation with no side effects.
-
-    Attributes:
-        container: ONEX dependency injection container
+    This is a COMPUTE node - thin coordination shell.
+    Business logic is in Handler{DOMAIN}Compute.
 
     Example:
         ```python
@@ -228,16 +275,14 @@ class {NODE_NAME}(NodeCompute[{INPUT_MODEL}, {OUTPUT_MODEL}]):
             container: ONEX container for dependency injection
         """
         super().__init__(container)  # MANDATORY - do not remove
-
-        # Initialize any computation-specific configuration
-        # Example: self.config = container.get_service("ConfigService")
+        self._handler = Handler{DOMAIN}Compute()
 
     async def process(
         self,
         input_data: ModelComputeInput[{INPUT_MODEL}],
     ) -> ModelComputeOutput[{OUTPUT_MODEL}]:
         """
-        Execute pure computation.
+        Delegate to handler for pure computation.
 
         Args:
             input_data: Compute input with {INPUT_MODEL} data
@@ -249,26 +294,9 @@ class {NODE_NAME}(NodeCompute[{INPUT_MODEL}, {OUTPUT_MODEL}]):
             ModelOnexError: If computation fails
         """
         try:
-            # Extract input
             data: {INPUT_MODEL} = input_data.data
-
-            # === YOUR COMPUTATION LOGIC HERE ===
-            # IMPORTANT: No I/O operations allowed
-            # - No API calls
-            # - No database queries
-            # - No file operations
-
-            result: {OUTPUT_MODEL} = self._compute(data)
-
-            # Return result
-            return ModelComputeOutput(
-                result=result,
-                operation_id=input_data.operation_id,
-                metadata={
-                    "node_type": "{NODE_NAME}",
-                    "computation": "success",
-                },
-            )
+            handler_output = self._handler.execute(data)
+            return handler_output.result
 
         except Exception as e:
             raise ModelOnexError(
@@ -276,21 +304,6 @@ class {NODE_NAME}(NodeCompute[{INPUT_MODEL}, {OUTPUT_MODEL}]):
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 context={"input": str(input_data.data)},
             ) from e
-
-    def _compute(self, data: {INPUT_MODEL}) -> {OUTPUT_MODEL}:
-        """
-        Pure computation logic.
-
-        Args:
-            data: Input data to transform
-
-        Returns:
-            Transformed output data
-        """
-        # TODO: Implement your computation logic
-        # Example:
-        # return {OUTPUT_MODEL}(result=data.data.upper())
-        raise NotImplementedError("Implement _compute method")
 
 
 # === TEST TEMPLATE ===
@@ -434,6 +447,7 @@ from pydantic import BaseModel
 
 from omnibase_core.nodes import NodeEffect, ModelEffectInput, ModelEffectOutput
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumEffectType
@@ -455,15 +469,63 @@ class {OUTPUT_MODEL}(BaseModel):
 
 # === NODE IMPLEMENTATION ===
 
+class Handler{DOMAIN}Effect:
+    """
+    Handler containing the actual I/O logic.
+
+    Business logic lives HERE, not in the node class.
+    Nodes are thin coordination shells.
+
+    Output Constraints (EFFECT):
+      - result: Forbidden
+      - events[]: ALLOWED (describe what happened)
+      - intents[]: Forbidden
+      - projections[]: Forbidden
+    """
+
+    async def execute(self, envelope: ModelOnexEnvelope, data: {INPUT_MODEL}) -> ModelHandlerOutput:
+        """
+        Execute external effect and return events.
+
+        Args:
+            envelope: The incoming ONEX envelope (provides IDs for tracing)
+            data: Input data for the effect
+
+        Returns:
+            ModelHandlerOutput with events (EFFECT constraint)
+        """
+        # === YOUR EFFECT LOGIC HERE ===
+        # This is where I/O operations happen:
+        # - API calls
+        # - Database queries
+        # - File operations
+        # - Message publishing
+
+        # TODO: Implement your effect logic
+        # Example API call:
+        # response = await self.http_client.post(url, json=data.model_dump())
+
+        # EFFECT nodes return events describing what happened
+        # result is FORBIDDEN for EFFECT nodes
+        return ModelHandlerOutput.for_effect(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
+            events=[
+                # ModelEventEnvelope(
+                #     event_type="{DOMAIN}.completed",
+                #     payload={"status": "success"},
+                # ),
+            ],
+        )
+
+
 class {NODE_NAME}(NodeEffect[{INPUT_MODEL}, {OUTPUT_MODEL}]):
     """
     {EFFECT_DESCRIPTION}
 
-    This is an EFFECT node - handles external I/O operations.
+    This is an EFFECT node - thin coordination shell.
+    Business logic is in Handler{DOMAIN}Effect.
     Effect Type: {EFFECT_TYPE}
-
-    Attributes:
-        container: ONEX dependency injection container
 
     Example:
         ```python
@@ -487,6 +549,7 @@ class {NODE_NAME}(NodeEffect[{INPUT_MODEL}, {OUTPUT_MODEL}]):
             container: ONEX container for dependency injection
         """
         super().__init__(container)  # MANDATORY - do not remove
+        self._handler = Handler{DOMAIN}Effect()
 
         # Initialize effect-specific resources via DI
         # Example: self.http_client = container.get_service("HttpClient")
@@ -497,41 +560,20 @@ class {NODE_NAME}(NodeEffect[{INPUT_MODEL}, {OUTPUT_MODEL}]):
         input_data: ModelEffectInput[{INPUT_MODEL}],
     ) -> ModelEffectOutput[{OUTPUT_MODEL}]:
         """
-        Execute external effect operation.
+        Delegate to handler for effect execution.
 
         Args:
             input_data: Effect input with operation data
 
         Returns:
-            Effect output with operation result
+            Effect output with events
 
         Raises:
             ModelOnexError: If effect execution fails
         """
         try:
-            # Extract operation data
             data: {INPUT_MODEL} = input_data.operation_data
-
-            # === YOUR EFFECT LOGIC HERE ===
-            # This is where I/O operations happen:
-            # - API calls
-            # - Database queries
-            # - File operations
-            # - Message publishing
-
-            result: {OUTPUT_MODEL} = await self._execute_effect(data)
-
-            # Return result
-            return ModelEffectOutput(
-                result=result,
-                operation_id=input_data.operation_id,
-                effect_type=input_data.effect_type,
-                success=True,
-                metadata={
-                    "node_type": "{NODE_NAME}",
-                    "effect_type": "{EFFECT_TYPE}",
-                },
-            )
+            return await self._handler.execute(data)
 
         except Exception as e:
             raise ModelOnexError(
@@ -542,22 +584,6 @@ class {NODE_NAME}(NodeEffect[{INPUT_MODEL}, {OUTPUT_MODEL}]):
                     "input": str(input_data.operation_data),
                 },
             ) from e
-
-    async def _execute_effect(self, data: {INPUT_MODEL}) -> {OUTPUT_MODEL}:
-        """
-        Execute the external effect.
-
-        Args:
-            data: Input data for the effect
-
-        Returns:
-            Result from external operation
-        """
-        # TODO: Implement your effect logic
-        # Example API call:
-        # response = await self.http_client.post(url, json=data.model_dump())
-        # return {OUTPUT_MODEL}(result=response.json())
-        raise NotImplementedError("Implement _execute_effect method")
 
 
 # === TEST TEMPLATE ===
@@ -1314,12 +1340,12 @@ items:
     command: "uv run mypy {file_path}"
 
   - id: "U004"
-    check: "Code formatting correct"
-    command: "uv run black --check {file_path}"
+    check: "Code formatting and linting correct"
+    command: "uv run ruff check {file_path}"
 
   - id: "U005"
-    check: "Import sorting correct"
-    command: "uv run isort --check {file_path}"
+    check: "Code formatting applied"
+    command: "uv run ruff format --check {file_path}"
 
   - id: "U006"
     check: "Unit tests pass"
@@ -1331,8 +1357,8 @@ items:
 ```bash
 # Validate single node file
 uv run mypy src/path/to/node.py
-uv run black --check src/path/to/node.py
-uv run isort --check src/path/to/node.py
+uv run ruff check src/path/to/node.py
+uv run ruff format --check src/path/to/node.py
 
 # Run node-specific tests
 uv run pytest tests/unit/nodes/test_your_node.py -v
@@ -1474,5 +1500,5 @@ uv run mypy src/your_module/your_node.py --show-error-codes
 ---
 
 **Document Version**: 1.0.0
-**Last Updated**: 2025-12-05
+**Last Updated**: 2026-02-14
 **Status**: Complete

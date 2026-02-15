@@ -10,15 +10,16 @@ The configuration system is built around the `ModelEnvironmentConfig` base class
 
 ### Key Features
 
-- **Environment Variable Auto-Discovery**: Automatically maps environment variables to model fields
-- **Type Conversion**: Intelligent conversion from strings to appropriate Python types
-- **Validation**: Full Pydantic validation with custom validators
-- **Hierarchical Overrides**: Environment variables can be overridden by direct parameters
-- **Production Safety**: Built-in production environment detection and security
-- **Configuration Registry**: Centralized registry for managing multiple configurations
-- **Documentation Generation**: Auto-generated documentation for environment variables
+- **[IMPLEMENTED]** **Pydantic Model Validation**: Full Pydantic validation with custom validators
+- **[IMPLEMENTED]** **Environment Variable Loading**: Standard `os.environ` and `.env` file loading
+- **[IMPLEMENTED]** **Type Conversion**: Manual conversion from strings to appropriate Python types
+- **[IMPLEMENTED]** **Hierarchical Overrides**: Environment variables can be overridden by direct parameters
+- **[PLANNED]** **Environment Variable Auto-Discovery**: Automatically maps environment variables to model fields via `ModelEnvironmentConfig`
+- **[PLANNED]** **Production Safety**: Built-in production environment detection and security utilities
+- **[PLANNED]** **Configuration Registry**: Centralized registry for managing multiple configurations
+- **[PLANNED]** **Documentation Generation**: Auto-generated documentation for environment variables
 
-## Quick Start
+## Quick Start [IMPLEMENTED]
 
 ### Basic Usage
 
@@ -49,7 +50,9 @@ config = MyDatabaseConfig(
 print(f"Connecting to: {config.host}:{config.port}")
 ```
 
-## Core Classes
+## Core Classes [PLANNED]
+
+> **Note**: `ModelEnvironmentConfig` and its `from_environment()` method are planned for a future release. Currently, use standard Pydantic `BaseModel` with manual `os.environ` access as shown in the Quick Start section.
 
 ### ModelEnvironmentConfig
 
@@ -60,8 +63,8 @@ class ModelEnvironmentConfig(BaseModel):
     @classmethod
     def from_environment(
         cls: Type[T],
-        prefix: Optional[str] = None,
-        env_file: Optional[Path] = None,
+        prefix: str | None = None,
+        env_file: Path | None = None,
         strict: bool = True,
         **overrides: Any
     ) -> T:
@@ -85,7 +88,7 @@ prefix = ModelEnvironmentPrefix(prefix="MYAPP", separator="_")
 key = prefix.format_key("database_host")  # -> "MYAPP_DATABASE_HOST"
 ```
 
-### Configuration Registry
+### Configuration Registry [PLANNED]
 
 Centralized management for multiple configurations.
 
@@ -106,7 +109,7 @@ configs = config_registry.list_configs()
 config_registry.reload_all()
 ```
 
-## Environment Variable Mapping
+## Environment Variable Mapping [PLANNED]
 
 ### Automatic Key Generation
 
@@ -161,7 +164,7 @@ export FEATURES=auth,logging,metrics
 export SETTINGS=key1=value1,key2=value2
 ```
 
-## Advanced Features
+## Advanced Features [PLANNED]
 
 ### Nested Configuration
 
@@ -228,14 +231,12 @@ for doc in docs:
     print(f"Required: {doc['required']}")
 ```
 
-## Utility Functions
+## Utility Functions [IMPLEMENTED as manual helpers]
 
 ### Quick Environment Helpers
 
 ```
 import os
-from typing import List
-
 # Manual environment variable helpers (utility functions planned for future release)
 def get_env_bool(key: str, default: bool) -> bool:
     """Get boolean environment variable."""
@@ -258,7 +259,7 @@ def get_env_float(key: str, default: float) -> float:
     except ValueError:
         return default
 
-def get_env_list(key: str, default: List[str]) -> List[str]:
+def get_env_list(key: str, default: list[str]) -> list[str]:
     """Get list environment variable (comma-separated)."""
     value = os.getenv(key)
     if value is None:
@@ -272,7 +273,7 @@ timeout = get_env_float('TIMEOUT', 30.0)
 features = get_env_list('FEATURES', ['default'])
 ```
 
-## Best Practices
+## Best Practices [IMPLEMENTED]
 
 ### 1. Use Descriptive Prefixes
 
@@ -337,7 +338,7 @@ def get_database_connection():
 class ModelSecureConfig(ModelEnvironmentConfig):
     api_key: str = Field(..., description="API key")
 
-    def get_env_summary(self, mask_sensitive: bool = True) -> Dict[str, Any]:
+    def get_env_summary(self, mask_sensitive: bool = True) -> dict[str, Any]:
         summary = super().get_env_summary(mask_sensitive)
         # Custom masking logic
         if mask_sensitive:
@@ -345,7 +346,7 @@ class ModelSecureConfig(ModelEnvironmentConfig):
         return summary
 ```
 
-## Environment File Support
+## Environment File Support [IMPLEMENTED]
 
 ### Loading from .env Files
 
@@ -371,7 +372,7 @@ else:
     config = ModelConfig.from_environment(env_file=Path('.env.dev'))
 ```
 
-## Error Handling
+## Error Handling [IMPLEMENTED]
 
 ### Strict vs Non-Strict Mode
 
@@ -408,7 +409,7 @@ config = ModelConfig.from_environment(api_key="fallback-key")
 port = get_env_int('PORT', 8000)  # Uses 8000 if PORT is invalid
 ```
 
-## Integration Examples
+## Integration Examples [IMPLEMENTED]
 
 ### FastAPI Integration
 
@@ -464,7 +465,7 @@ async def get_db_pool():
     return await asyncpg.create_pool(db_config.get_dsn())
 ```
 
-## Migration Guide
+## Migration Guide [PLANNED]
 
 ### From Direct Environment Access
 

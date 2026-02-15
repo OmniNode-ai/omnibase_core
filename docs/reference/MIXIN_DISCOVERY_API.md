@@ -78,7 +78,7 @@ Main discovery API class:
 #### Initialization
 
 ```
-discovery = MixinDiscovery(mixins_path: Optional[Path] = None)
+discovery = MixinDiscovery(mixins_path: Path | None = None)
 ```
 
 - `mixins_path`: Optional custom path to mixins directory (defaults to src/omnibase_core/mixins)

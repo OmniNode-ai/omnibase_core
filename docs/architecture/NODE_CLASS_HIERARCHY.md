@@ -74,13 +74,17 @@ omnibase_core provides **three tiers** of node base classes, each optimized for 
 └──────────────────────────────────────────────────────────┘
 ```
 
+### Architectural Invariant: Thin Nodes, Fat Handlers
+
+Regardless of which tier you use, **nodes are thin coordination shells**. Business logic belongs in handlers, not in the node class. Nodes wire up handlers via the container; handlers contain the domain logic. This separation makes handlers independently testable and keeps nodes focused on lifecycle and infrastructure concerns.
+
 ### Quick Decision Guide
 
 | If you need... | Use Tier |
 |----------------|----------|
-| **Production node with standard features** | ⭐ **Tier 1** (ModelService*) |
-| **Custom mixin composition** | 🔧 **Tier 2** (Node*) |
-| **Completely new node type** | 🛠️ **Tier 3** (NodeCoreBase) |
+| **Production node with standard features** | Tier 1 (ModelService*) |
+| **Custom mixin composition** | Tier 2 (Node*) |
+| **Completely new node type** | Tier 3 (NodeCoreBase) |
 
 ---
 
@@ -139,222 +143,201 @@ Each tier inherits from the one below, **adding features without removing flexib
 
 ### Complete Example: COMPUTE Node
 
-**File**: `src/your_project/nodes/node_price_calculator_compute.py`
+**Architecture note**: Nodes are thin shells. Business logic belongs in handlers. The node wires up the handler; the handler contains the computation.
+
+**File**: `src/your_project/nodes/node_price_calculator_compute/node.py`
 
 ```python
-"""Price calculator using Tier 1 ModelServiceCompute wrapper."""
+"""Price calculator node - thin shell."""
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.nodes import ModelComputeInput, ModelComputeOutput
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
 class NodePriceCalculatorCompute(ModelServiceCompute):
-    """
-    Price calculator with automatic caching and metrics.
+    """Price calculator with automatic caching and metrics.
 
     Built-in features from ModelServiceCompute:
-    - MixinNodeService: Persistent service mode, tool invocation handling
-    - MixinHealthCheck: Health monitoring endpoints
-    - MixinCaching: Result caching with configurable TTL
-    - MixinMetrics: Performance tracking and monitoring
+    - MixinNodeService, MixinHealthCheck, MixinCaching, MixinMetrics.
 
-    All features are pre-configured and ready to use.
+    Business logic lives in HandlerPriceCalculator.
     """
 
     def __init__(self, container: ModelONEXContainer):
-        # Initialize all mixins and base classes automatically
-        super().__init__(container)  # MANDATORY - handles ALL boilerplate
+        super().__init__(container)
+```
 
-        # Your business-specific initialization only
-        self.discount_rates = {
-            "SAVE10": 0.10,
-            "SAVE20": 0.20,
-            "VIP": 0.25,
-        }
+**File**: `src/your_project/nodes/node_price_calculator_compute/handlers/handler_price_calculator.py`
 
-    async def execute_compute(
+```python
+"""Handler containing price calculation business logic."""
+
+from typing import Any
+from uuid import UUID
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+
+DISCOUNT_RATES: dict[str, float] = {
+    "SAVE10": 0.10,
+    "SAVE20": 0.20,
+    "VIP": 0.25,
+}
+
+
+class HandlerPriceCalculator:
+    """COMPUTE handler - must return result (required).
+
+    COMPUTE output constraints:
+        - Allowed: result (required)
+        - Forbidden: events[], intents[], projections[]
+    """
+
+    async def handle(
         self,
-        input_data: ModelComputeInput
-    ) -> ModelComputeOutput:
-        """
-        Calculate price with tax and discounts.
+        operation: dict[str, Any],
+        *,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[dict[str, Any]]:
+        """Calculate price with tax and discounts."""
+        items = operation.get("items", [])
+        discount_code = operation.get("discount_code")
+        tax_rate = operation.get("tax_rate", 0.08)
 
-        Automatic features:
-        - Result caching (via MixinCaching)
-        - Performance metrics (via MixinMetrics)
-        - Health monitoring (via MixinHealthCheck)
-        """
-        try:
-            # Extract operation data
-            operation = input_data.operation_data
-            items = operation.get("items", [])
-            discount_code = operation.get("discount_code")
-            tax_rate = operation.get("tax_rate", 0.08)
-
-            # Validate inputs
-            if not items:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Cart must contain at least one item",
-                    context={"items_count": len(items)}
-                )
-
-            # Calculate subtotal
-            subtotal = sum(
-                item["price"] * item["quantity"]
-                for item in items
-            )
-
-            # Apply discount
-            discount = 0.0
-            if discount_code and discount_code in self.discount_rates:
-                discount_rate = self.discount_rates[discount_code]
-                discount = subtotal * discount_rate
-
-            # Calculate tax on discounted amount
-            discounted_subtotal = subtotal - discount
-            tax = discounted_subtotal * tax_rate
-
-            # Calculate total
-            total = discounted_subtotal + tax
-
-            # Return result (automatically cached and tracked by metrics)
-            return ModelComputeOutput(
-                success=True,
-                result={
-                    "subtotal": round(subtotal, 2),
-                    "discount": round(discount, 2),
-                    "discount_code": discount_code,
-                    "tax": round(tax, 2),
-                    "tax_rate": tax_rate,
-                    "total": round(total, 2),
-                },
-                metadata={
-                    "items_count": len(items),
-                    "calculation_timestamp": input_data.timestamp.isoformat()
-                }
-            )
-
-        except ModelOnexError:
-            # Let structured errors propagate
-            raise
-        except Exception as e:
-            # Convert unexpected errors to structured errors
+        if not items:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                message=f"Price calculation failed: {str(e)}",
-                context={
-                    "original_error": str(e),
-                    "error_type": type(e).__name__
-                }
-            ) from e
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Cart must contain at least one item",
+                context={"items_count": 0},
+            )
+
+        subtotal = sum(item["price"] * item["quantity"] for item in items)
+
+        discount = 0.0
+        if discount_code and discount_code in DISCOUNT_RATES:
+            discount = subtotal * DISCOUNT_RATES[discount_code]
+
+        discounted_subtotal = subtotal - discount
+        tax = discounted_subtotal * tax_rate
+        total = discounted_subtotal + tax
+
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            result={
+                "subtotal": round(subtotal, 2),
+                "discount": round(discount, 2),
+                "discount_code": discount_code,
+                "tax": round(tax, 2),
+                "tax_rate": tax_rate,
+                "total": round(total, 2),
+            },
+        )
 ```
 
 **Key Benefits**:
-- ✅ **3 lines of setup** - Just inherit, call `super().__init__()`, done
-- ✅ **Automatic caching** - Results cached without manual cache key generation
-- ✅ **Built-in metrics** - Performance automatically tracked
-- ✅ **Health checks** - Service health exposed automatically
-- ✅ **Type safety** - Pydantic validation on all inputs/outputs
+- Thin node with zero business logic
+- Handler is independently testable without container setup
+- Output constraints enforced by `ModelHandlerOutput.for_compute()`
+- Built-in caching, metrics, and health checks from ModelServiceCompute
 
 ### Complete Example: EFFECT Node
 
-**File**: `src/your_project/nodes/node_database_writer_effect.py`
+**File**: `src/your_project/nodes/node_database_writer_effect/node.py`
 
 ```python
-"""Database writer using Tier 1 ModelServiceEffect wrapper."""
+"""Database writer effect node - thin shell."""
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.nodes import ModelEffectInput, ModelEffectOutput
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
 class NodeDatabaseWriterEffect(ModelServiceEffect):
-    """
-    Database writer with transaction management and event publishing.
+    """Database writer with transaction management and event publishing.
 
     Built-in features from ModelServiceEffect:
-    - MixinNodeService: Persistent service mode
-    - MixinHealthCheck: Health monitoring
-    - MixinEventBus: Event publishing with correlation tracking
-    - MixinMetrics: Performance metrics
+    - MixinNodeService, MixinHealthCheck, MixinEventBus, MixinMetrics.
 
-    Additional EFFECT-specific features:
-    - Transaction management with automatic rollback
-    - Circuit breaker for fault tolerance
-    - Retry logic with exponential backoff
+    Business logic lives in HandlerDatabaseWriter.
     """
 
     def __init__(self, container: ModelONEXContainer):
-        super().__init__(container)  # All mixins initialized automatically
+        super().__init__(container)
+```
 
-        # Get database connection from container
-        self.db = container.get_service("ProtocolDatabase")
+**File**: `src/your_project/nodes/node_database_writer_effect/handlers/handler_database_writer.py`
 
-    async def execute_effect(
+```python
+"""Handler for database write operations."""
+
+from typing import Any
+from uuid import UUID
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
+
+class HandlerDatabaseWriter:
+    """EFFECT handler - returns events[].
+
+    EFFECT output constraints:
+        - Allowed: events[]
+        - Forbidden: intents[], projections[], result
+    """
+
+    def __init__(self, db: Any) -> None:
+        self.db = db
+
+    async def handle(
         self,
-        input_data: ModelEffectInput
-    ) -> ModelEffectOutput:
-        """
-        Write data to database with automatic transaction management.
+        operation: dict[str, Any],
+        *,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[None]:
+        """Write records to database and emit completion event."""
+        records = operation.get("records", [])
+        table_name = operation.get("table", "default")
 
-        Automatic features:
-        - Transaction begin/commit/rollback
-        - Event publishing on completion
-        - Circuit breaker protection
-        - Retry on transient failures
-        """
-        try:
-            # Extract operation data
-            operation = input_data.operation_data
-            records = operation.get("records", [])
-            table_name = operation.get("table", "default")
-
-            # Validate
-            if not records:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="No records to write",
-                    context={"table": table_name}
-                )
-
-            # Perform I/O operation (transaction handled by NodeEffect)
-            result = await self.db.insert_many(table_name, records)
-
-            # Publish event (correlation tracked automatically)
-            await self.publish_event(
-                event_type="database.write.completed",
-                payload={
-                    "table": table_name,
-                    "records_written": result["count"],
-                    "timestamp": input_data.timestamp.isoformat()
-                },
-                correlation_id=str(input_data.correlation_id)
-            )
-
-            # Return success
-            return ModelEffectOutput(
-                success=True,
-                result={
-                    "status": "completed",
-                    "records_written": result["count"],
-                    "table": table_name
-                }
-            )
-
-        except ModelOnexError:
-            raise
-        except Exception as e:
+        if not records:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                message=f"Database write failed: {str(e)}",
-                context={"table": table_name, "records_count": len(records)}
-            ) from e
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="No records to write",
+                context={"table": table_name},
+            )
+
+        result = await self.db.insert_many(table_name, records)
+
+        return ModelHandlerOutput.for_effect(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            events=[
+                ModelEventEnvelope(
+                    event_type="database.write.completed",
+                    payload={
+                        "table": table_name,
+                        "records_written": result["count"],
+                    },
+                ),
+            ],
+        )
 ```
 
 ### Testing Tier 1 Nodes
@@ -693,16 +676,14 @@ class MyNode(
 
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from pydantic import BaseModel
-from typing import Any, Dict
+from typing import Any
 
 
 class ValidatorInput(BaseModel):
     """Input for validator node."""
-    data: Dict[str, Any]
-    schema: str
+    data: dict[str, Any]
+    schema_name: str
     strict_mode: bool = False
 
 
@@ -718,104 +699,62 @@ class NodeCustomValidator(NodeCoreBase):
     Custom VALIDATOR node type - not part of standard 4-node architecture.
 
     Built directly on NodeCoreBase for complete control.
+    The node is a thin shell; validation logic belongs in a handler.
 
     Why NodeCoreBase?
     - New node type (VALIDATOR) not in standard architecture
     - Need complete control over validation logic
     - Want minimal overhead (no caching, no events)
     - Framework experimentation
-
-    Features:
-    - Only what NodeCoreBase provides:
-      * Container DI
-      * Basic lifecycle
-      * Node metadata
-      * Error handling foundation
-
-    Must implement manually:
-    - Input/output models
-    - Validation logic
-    - Error handling specifics
-    - Performance monitoring (if needed)
     """
 
     def __init__(self, container: ModelONEXContainer):
-        # Initialize NodeCoreBase foundation
         super().__init__(container)
+        # Wire up handler - business logic lives there
+        self.handler = ValidatorHandler(
+            validator=container.get_service("ProtocolValidator"),
+            schema_registry=container.get_service("ProtocolSchemaRegistry"),
+        )
 
-        # ALL initialization is manual - no mixins, no helpers
-        self.validator = container.get_service("ProtocolValidator")
-        self.schema_registry = container.get_service("ProtocolSchemaRegistry")
+    async def validate(self, input_data: ValidatorInput) -> ValidatorOutput:
+        """Delegate to handler for validation logic."""
+        return await self.handler.handle(input_data)
 
-        # Must manually track metrics if needed
-        self.validation_count = 0
-        self.error_count = 0
 
-    async def validate(
-        self,
-        input_data: ValidatorInput
-    ) -> ValidatorOutput:
-        """
-        Validate data against schema.
+class ValidatorHandler:
+    """Handler containing validation business logic.
 
-        No automatic features - everything is manual:
-        - No automatic caching
-        - No automatic metrics
-        - No automatic health checks
-        - No automatic error wrapping
-        """
-        try:
-            # Manual metrics tracking
-            self.validation_count += 1
+    Separated from the node so the node remains a thin coordination shell.
+    """
 
-            # Get schema
-            schema = await self.schema_registry.get_schema(input_data.schema)
-            if not schema:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Schema not found: {input_data.schema}",
-                    context={"schema_name": input_data.schema}
-                )
+    def __init__(self, validator: Any, schema_registry: Any) -> None:
+        self.validator = validator
+        self.schema_registry = schema_registry
 
-            # Perform validation
-            result = await self.validator.validate(
-                data=input_data.data,
-                schema=schema,
-                strict=input_data.strict_mode
-            )
+    async def handle(self, input_data: ValidatorInput) -> ValidatorOutput:
+        """Validate data against schema."""
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
-            # Manual error tracking
-            if not result.is_valid:
-                self.error_count += 1
-
-            # Return result (must manually construct)
-            return ValidatorOutput(
-                is_valid=result.is_valid,
-                errors=result.errors,
-                warnings=result.warnings
-            )
-
-        except ModelOnexError:
-            self.error_count += 1
-            raise
-        except Exception as e:
-            self.error_count += 1
+        schema = await self.schema_registry.get_schema(input_data.schema_name)
+        if not schema:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                message=f"Validation failed: {str(e)}",
-                context={"error_type": type(e).__name__}
-            ) from e
-
-    def get_metrics(self) -> Dict[str, int]:
-        """Manually expose metrics (no MixinMetrics)."""
-        return {
-            "total_validations": self.validation_count,
-            "total_errors": self.error_count,
-            "success_rate": (
-                (self.validation_count - self.error_count) / self.validation_count
-                if self.validation_count > 0 else 0.0
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Schema not found: {input_data.schema_name}",
+                context={"schema_name": input_data.schema_name},
             )
-        }
+
+        result = await self.validator.validate(
+            data=input_data.data,
+            schema=schema,
+            strict=input_data.strict_mode,
+        )
+
+        return ValidatorOutput(
+            is_valid=result.is_valid,
+            errors=result.errors,
+            warnings=result.warnings,
+        )
 ```
 
 ### Adding Features to NodeCoreBase

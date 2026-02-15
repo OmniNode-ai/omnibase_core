@@ -41,14 +41,14 @@ The framework uses Pydantic models for:
 Nodes communicate through:
 - `ModelEventEnvelope` for inter-node messaging
 - `ModelIntent` for side effect requests
-- `ModelAction` for state transitions
+- `ModelAction` for orchestrator-issued workflow commands
 - Asynchronous processing
 
 ## System Architecture
 
 ### High-Level Components
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    ONEX Framework                           │
 ├─────────────────────────────────────────────────────────────┤
@@ -168,7 +168,7 @@ Nodes communicate through:
 
 ### Dependency Injection Container
 
-```
+```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 container = ModelONEXContainer()
@@ -181,8 +181,8 @@ db_service = container.get_service("DatabaseService")
 
 ### Event System
 
-```
-from omnibase_core.models.model_event_envelope import ModelEventEnvelope
+```python
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Emit event
 event = ModelEventEnvelope(
@@ -196,7 +196,7 @@ await node.emit_event(event)
 
 ### Error Handling
 
-```
+```python
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -212,17 +212,22 @@ except Exception as e:
 
 ### Circuit Breaker Pattern
 
-```
-from omnibase_core.utils.circuit_breaker import CircuitBreaker
+```python
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
-breaker = CircuitBreaker(
+breaker = ModelCircuitBreaker(
     failure_threshold=5,
-    recovery_timeout=60
+    timeout_seconds=60
 )
 
-try:
-    result = await breaker.call(risky_operation)
-except CircuitBreakerOpenException:
+if breaker.should_allow_request():
+    try:
+        result = await risky_operation()
+        breaker.record_success()
+    except Exception:
+        breaker.record_failure()
+        result = fallback_operation()
+else:
     result = fallback_operation()
 ```
 
@@ -265,59 +270,123 @@ except CircuitBreakerOpenException:
 - **ORCHESTRATOR**: For workflow coordination
 
 ### 2. Implement Your Node
-Prefer a service wrapper to eliminate boilerplate and ensure correct mixin ordering:
-```
-from omnibase_core.models.services import ModelServiceCompute
 
-class MyComputeService(ModelServiceCompute):
+Nodes are thin shells. Business logic belongs in handlers.
+
+Prefer a service wrapper to eliminate boilerplate and ensure correct mixin ordering:
+```python
+from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
+
+class MyComputeNode(ModelServiceCompute):
+    """Thin shell -- logic lives in handler."""
     pass
 ```
 
 Or compose manually only when you need specialized capabilities:
-```
-from omnibase_core.nodes.node_compute import NodeCompute
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+```python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from omnibase_core.nodes import NodeCompute
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
 
 class MyComputeNode(NodeCompute):
-    def __init__(self, container: ModelONEXContainer):
-        super().__init__(container)
+    """Thin shell -- business logic belongs in a handler."""
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+```
+
+### 3. Implement Your Handler
+
+Handlers contain the business logic, separated from the node for testability:
+```python
+from typing import Any
+from uuid import UUID
+
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+
+
+class HandlerMyCompute:
+    """COMPUTE handler -- must return result."""
+
+    async def handle(
+        self,
+        input_data: dict[str, Any],
+        *,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[dict[str, Any]]:
+        result = self._process(input_data)
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            result=result,
+        )
+
+    def _process(self, input_data: dict[str, Any]) -> dict[str, Any]:
         # Your business logic here
         return {"result": "processed"}
 ```
 
-### 3. Add Error Handling
-```
-from omnibase_core.utils.standard_error_handling import standard_error_handling
+### 4. Add Error Handling
+```python
+from uuid import UUID
 
-@standard_error_handling(
-    error_class=ModelOnexError,
-    component="MyComputeNode",
-    operation="process"
-)
-async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-    # Your logic here
-    return {"result": "processed"}
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+
+class HandlerMyCompute:
+    async def handle(
+        self,
+        input_data: dict[str, Any],
+        *,
+        input_envelope_id: UUID,
+        correlation_id: UUID,
+    ) -> ModelHandlerOutput[dict[str, Any]]:
+        try:
+            result = self._process(input_data)
+            return ModelHandlerOutput.for_compute(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                result=result,
+            )
+        except Exception as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.PROCESSING_ERROR,
+                message=f"Processing failed: {e}",
+            ) from e
 ```
 
-### 4. Add Testing
-```
+### 5. Add Testing
+
+Test handlers directly for unit tests (no container required):
+```python
+from uuid import uuid4
+
 import pytest
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+from your_project.handlers import HandlerMyCompute
+
 
 @pytest.fixture
-def container():
-    return ModelONEXContainer()
+def handler():
+    return HandlerMyCompute()
 
-@pytest.fixture
-def node(container):
-    return MyComputeNode(container)
 
 @pytest.mark.asyncio
-async def test_process(node):
-    result = await node.process({"input": "test"})
-    assert result["result"] == "processed"
+async def test_handle(handler):
+    output = await handler.handle(
+        {"input": "test"},
+        input_envelope_id=uuid4(),
+        correlation_id=uuid4(),
+    )
+    assert output.result["result"] == "processed"
 ```
 
 ## Related Documentation

@@ -728,7 +728,7 @@ if check_health(node.health_status):
 ```python
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
-def get_all_action_types() -> List[str]:
+def get_all_action_types() -> list[str]:
     """Get all available action types."""
     return [action_type.value for action_type in EnumActionType]
 
@@ -770,7 +770,7 @@ class EnumCustomStatus(str, Enum):
     PENDING = "pending"
 
     @classmethod
-    def get_active_statuses(cls) -> List[str]:
+    def get_active_statuses(cls) -> list[str]:
         """Get all active statuses."""
         return [cls.ACTIVE.value]
 

@@ -7,10 +7,10 @@ API documentation and reference materials for omnibase_core.
 ## Contents
 
 - **api/** - API documentation for all modules and classes
-  - `ENUMS.md` - Enumeration types and constants
-  - `MODELS.md` - Pydantic models and data structures
-  - `NODES.md` - Node base classes and interfaces
-  - `UTILS.md` - Utility functions and helpers
+  - [`enums.md`](api/enums.md) - Enumeration types and constants
+  - [`models.md`](api/models.md) - Pydantic models and data structures
+  - [`nodes.md`](api/nodes.md) - Node base classes and interfaces
+  - [`utils.md`](api/utils.md) - Utility functions and helpers
 
 ## API Documentation
 
@@ -41,8 +41,8 @@ from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 ### Container and Models
 ```
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_compute_input import ModelComputeInput
-from omnibase_core.models.model_compute_output import ModelComputeOutput
+from omnibase_core.models.compute.model_compute_input import ModelComputeInput
+from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
 ```
 
 ### Error Handling

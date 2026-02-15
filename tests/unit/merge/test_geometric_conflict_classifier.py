@@ -14,6 +14,7 @@ Related: OMN-1854, PR #502
 """
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_merge_conflict_type import EnumMergeConflictType
 from omnibase_core.merge.geometric_conflict_classifier import (
@@ -477,7 +478,7 @@ class TestEdgeCases:
             base_value={"key": "value"},
             values=[("agent-1", {"key": "value"}), ("agent-2", {"key": "value"})],
         )
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             result.conflict_type = EnumMergeConflictType.AMBIGUOUS  # type: ignore[misc]
 
     def test_affected_fields_populated_for_dict_changes(

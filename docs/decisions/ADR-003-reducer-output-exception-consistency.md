@@ -17,6 +17,8 @@
 | **Correlation ID** | `95cac850-05a3-43e2-9e57-ccbbef683f43` |
 | **Implementation** | `src/omnibase_core/models/reducer/model_reducer_output.py` |
 
+> **Related**: [ADR-012](ADR-012-VALIDATOR-ERROR-HANDLING.md) covers validator error handling patterns that complement this decision, generalizing the `ModelOnexError` approach to all 200+ validators across the codebase.
+
 ---
 
 ## Document Purpose
@@ -580,6 +582,8 @@ Concurrency tests in separate file `tests/unit/models/reducer/test_model_reducer
 ## References
 
 ### Related Documentation
+
+> **Note**: This ADR overlaps with [ADR-012](ADR-012-VALIDATOR-ERROR-HANDLING.md) which generalizes the `ModelOnexError` in validators pattern across the entire codebase. ADR-003 documents the original decision for `ModelReducerOutput`; ADR-012 extends it to all 200+ validators.
 
 - **CLAUDE.md**: Project-level guidelines (Error Handling section)
 - **ERROR_HANDLING_BEST_PRACTICES.md**: Error handling conventions
