@@ -155,6 +155,13 @@ class MixinIntentPublisher:
                 "Ensure kafka_client is registered before initializing nodes.",
             )
 
+        if not isinstance(kafka_client, ProtocolKafkaClient):
+            logger.warning(
+                "kafka_client service does not satisfy ProtocolKafkaClient protocol "
+                "(got %s). This may cause errors at publish time.",
+                type(kafka_client).__name__,
+            )
+
         self._intent_kafka_client: ProtocolKafkaClient = kafka_client  # type: ignore[assignment]  # Runtime protocol validation; object assigned after None check
 
         # Store container for access to other services if needed

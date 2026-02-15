@@ -186,6 +186,13 @@ class GeometricConflictClassifier:
         Handles dicts (recursive key+value comparison), strings (Dice bigram
         coefficient), lists (Jaccard index via JSON serialization), and
         primitives (exact match).
+
+        Args:
+            value_a: First value to compare.
+            value_b: Second value to compare.
+            _depth: Internal recursion depth guard. Do not set manually;
+                this is managed by recursive calls to prevent stack overflow
+                on deeply nested structures (capped at _MAX_RECURSION_DEPTH).
         """
         norm_a = self._normalize(value_a, _depth=_depth)
         norm_b = self._normalize(value_b, _depth=_depth)
