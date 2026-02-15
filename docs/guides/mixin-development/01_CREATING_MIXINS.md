@@ -306,9 +306,10 @@ touch src/omnibase_core/models/contracts/subcontracts/model_error_handling_subco
 poetry run python -c "from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract; print(ModelErrorHandlingSubcontract())"
 
 # Run unit tests (see Step 5)
-# NOTE: This is a tutorial example path. Real subcontract tests live under:
+# NOTE: This test file is what you would create as part of this tutorial.
+# Real subcontract tests follow the same pattern under:
 # tests/unit/models/contracts/subcontracts/
-poetry run pytest tests/unit/models/contracts/subcontracts/test_model_event_handling_subcontract.py
+poetry run pytest tests/unit/models/contracts/subcontracts/test_model_error_handling_subcontract.py
 ```
 
 ### Common Validation Errors
