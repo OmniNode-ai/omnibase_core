@@ -299,7 +299,7 @@ def handler_orchestrator_example(
 
 Attempting to set `result` on an ORCHESTRATOR output raises:
 
-```
+```text
 ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
 Only COMPUTE nodes return typed results.
 ```

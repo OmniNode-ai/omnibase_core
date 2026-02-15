@@ -390,7 +390,7 @@ The primary dependency injection container for the ONEX framework. All nodes acc
 
 ```python
 container = await create_model_onex_container()
-service = await container.get_service_async(ProtocolLogger)
+service = await container.get_service_async(ProtocolLoggerLike)
 ```
 
 Key capabilities:
@@ -420,7 +420,7 @@ Implementation of `ProtocolServiceRegistry` for omnibase_core. Provides service 
 ```python
 registry = ServiceRegistry(config)
 reg_id = await registry.register_instance(
-    interface=ProtocolLogger,
+    interface=ProtocolLoggerLike,
     instance=logger,
     scope=EnumInjectionScope.GLOBAL,
 )

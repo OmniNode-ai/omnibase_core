@@ -79,7 +79,7 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 #### Usage:
 
 ```
-from omnibase_core.models.services import ModelServiceCompute
+from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
 class NodeDataTransformerCompute(ModelServiceCompute):
@@ -426,7 +426,7 @@ class TestMyDatabaseWriter:
 ### Integration Testing with Real Mixins
 ```
 import pytest
-from omnibase_core.models.services import ModelServiceCompute
+from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 class TestDataTransformerIntegration:

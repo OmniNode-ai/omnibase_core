@@ -23,7 +23,7 @@ This guide teaches you how to create strongly-typed Pydantic backing models for 
 
 ### Relationship to YAML Contracts
 
-```
+```text
 YAML Contract (Definition)
     ↓ [Contract Loader]
 Pydantic Model (Runtime)
@@ -66,7 +66,7 @@ from uuid import UUID
 
 Create enums for constrained string values:
 
-```
+```python
 class EnumErrorCategory(str, Enum):
     """Error category classification."""
     TRANSIENT = "transient"           # Temporary errors (retry possible)
@@ -94,7 +94,7 @@ class EnumHandlingStrategy(str, Enum):
 
 Create models for action outputs:
 
-```
+```python
 class ModelErrorHandlingResult(BaseModel):
     """Error handling result model."""
 
@@ -186,7 +186,7 @@ class ModelRetryDecision(BaseModel):
 
 ### Basic Structure
 
-```
+```python
 class ModelErrorHandlingSubcontract(BaseModel):
     """
     Error handling subcontract Pydantic backing model.
@@ -308,7 +308,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
 
 ### Adding Validators
 
-```
+```python
     @field_validator("error_log_level")
     @classmethod
     def validate_log_level(cls, v: str) -> str:
@@ -366,7 +366,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
 
 ### Helper Methods
 
-```
+```python
     def is_error_retriable(self, error_type: str) -> bool:
         """Check if error type is retriable."""
         return error_type in self.retriable_error_types
@@ -392,7 +392,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
 
 ### Update __init__.py
 
-```
+```python
 # src/omnibase_core/models/contracts/subcontracts/__init__.py
 
 from .model_error_handling_subcontract import (
@@ -420,7 +420,7 @@ __all__ = [
 
 ### Unit Tests
 
-```
+```python
 # tests/model/subcontracts/test_model_error_handling_subcontract.py
 
 import pytest
@@ -590,7 +590,7 @@ class TestModelErrorHandlingSubcontract:
 
 ### Pattern 1: Optional Fields
 
-```
+```python
 class ModelOptionalConfig(BaseModel):
     """Model with optional fields."""
 
@@ -601,7 +601,7 @@ class ModelOptionalConfig(BaseModel):
 
 ### Pattern 2: Constrained Values
 
-```
+```python
 class ModelConstrainedValues(BaseModel):
     """Model with constrained values."""
 
@@ -614,7 +614,7 @@ class ModelConstrainedValues(BaseModel):
 
 ### Pattern 3: Complex Nested Models
 
-```
+```python
 class ModelNestedConfig(BaseModel):
     """Inner nested configuration."""
     setting1: str = Field(default="value1")
@@ -631,7 +631,7 @@ class ModelMainConfig(BaseModel):
 
 ### Pattern 4: Discriminated Unions
 
-```
+```python
 from typing import Union, Literal
 
 class ModelStrategyA(BaseModel):
@@ -655,7 +655,7 @@ class ModelMainWithStrategy(BaseModel):
 
 Always provide clear descriptions:
 
-```
+```python
 timeout_ms: int = Field(
     default=5000,
     ge=100,
@@ -668,7 +668,7 @@ timeout_ms: int = Field(
 
 Add validators for complex logic:
 
-```
+```python
 @field_validator("max_connections")
 @classmethod
 def validate_connections(cls, v: int, info) -> int:
@@ -682,7 +682,7 @@ def validate_connections(cls, v: int, info) -> int:
 
 Add convenience methods:
 
-```
+```python
 def is_enabled(self) -> bool:
     """Check if feature is enabled."""
     return self.enabled and self.threshold > 0
@@ -696,7 +696,7 @@ def get_timeout_seconds(self) -> float:
 
 Provide realistic examples in Config:
 
-```
+```python
 class Config:
     json_schema_extra = {
         "example": {

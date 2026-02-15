@@ -72,13 +72,13 @@ registry = ServiceRegistry(config)
 
 # Register service by protocol interface
 await registry.register_instance(
-    interface=ProtocolLogger,
+    interface=ProtocolLoggerLike,
     instance=logger_instance,
     scope="global"
 )
 
 # Resolve service by protocol
-logger = await registry.resolve_service(ProtocolLogger)
+logger = await registry.resolve_service(ProtocolLoggerLike)
 ```
 
 **Integration with Container**:
@@ -87,7 +87,7 @@ logger = await registry.resolve_service(ProtocolLogger)
 self._service_registry = ServiceRegistry(registry_config)
 
 # Service resolution with fallback
-service = await self.get_service_async(ProtocolLogger)
+service = await self.get_service_async(ProtocolLoggerLike)
 ```
 
 **Files**:
@@ -148,18 +148,18 @@ These are **NOT dependency injection registries** - they serve business logic pu
 User Code
     │
     ▼
-container.get_service(ProtocolLogger)
+container.get_service(ProtocolLoggerLike)
     │
     ▼
-ServiceRegistry.resolve_service(ProtocolLogger)
+ServiceRegistry.resolve_service(ProtocolLoggerLike)
     │
-    ├─→ Check interface_map for ProtocolLogger
+    ├─→ Check interface_map for ProtocolLoggerLike
     │
     ├─→ Get registration metadata (Pydantic validated)
     │
     ├─→ Resolve by lifecycle (singleton/transient)
     │
-    └─→ Return typed instance: logger (type: ProtocolLogger)
+    └─→ Return typed instance: logger (type: ProtocolLoggerLike)
 ```
 
 ### Business Registry (Action Discovery)
@@ -235,14 +235,14 @@ Store in self.service_registry[tool_id]
 ```python
 # Register singleton
 await registry.register_instance(
-    interface=ProtocolLogger,
+    interface=ProtocolLoggerLike,
     instance=logger,
     scope="global"
 )
 
 # All resolutions return same instance
-logger1 = await registry.resolve_service(ProtocolLogger)
-logger2 = await registry.resolve_service(ProtocolLogger)
+logger1 = await registry.resolve_service(ProtocolLoggerLike)
+logger2 = await registry.resolve_service(ProtocolLoggerLike)
 assert logger1 is logger2  # Same instance
 ```
 
@@ -378,9 +378,9 @@ logger = registry.resolve("logger")
 
 **Pattern**:
 ```python
-@injectable(ProtocolLogger)
+@injectable(ProtocolLoggerLike)
 class MyService:
-    def __init__(self, logger: ProtocolLogger):
+    def __init__(self, logger: ProtocolLoggerLike):
         self.logger = logger
 ```
 

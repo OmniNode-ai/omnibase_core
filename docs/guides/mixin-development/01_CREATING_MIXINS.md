@@ -43,7 +43,7 @@ Before writing code, clearly define your mixin:
 
 Determine which node types your mixin should support:
 
-```
+```yaml
 # Core mixin (all nodes)
 applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 
@@ -60,7 +60,7 @@ applicable_node_types: ["REDUCER", "ORCHESTRATOR"]
 
 Define what actions your mixin provides:
 
-```
+```text
 Error Handling Actions:
 1. handle_error - Process and categorize errors
 2. circuit_breaker_check - Check circuit breaker status
@@ -104,7 +104,7 @@ applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 
 Add each action with complete specifications:
 
-```
+```yaml
 actions:
   - name: "handle_error"
     description: "Process and categorize errors with appropriate handling strategy"
@@ -156,7 +156,7 @@ actions:
 
 Define configuration parameters with defaults:
 
-```
+```yaml
 error_handling_config:
   # Circuit breaker settings
   enable_circuit_breaker: true
@@ -190,7 +190,7 @@ error_handling_config:
 
 Specify the structure of action outputs:
 
-```
+```yaml
 output_models:
   error_handling_result:
     error_category: "string"
@@ -217,7 +217,7 @@ output_models:
 
 Specify what your mixin provides and requires:
 
-```
+```yaml
 dependencies:
   - name: "error_handling"
     type: "capability"
@@ -243,7 +243,7 @@ requires_dependencies:
 
 Define metrics this mixin collects:
 
-```
+```yaml
 metrics:
   - name: "errors_total"
     type: "counter"
@@ -278,7 +278,7 @@ metrics:
 
 ### Use Contract Validator
 
-```
+```bash
 # Validate your mixin contract
 poetry run onex run contract_validator --contract src/omnibase_core/mixins/mixin_error_handling.yaml
 
@@ -293,7 +293,7 @@ poetry run onex run contract_validator --contract src/omnibase_core/mixins/mixin
 ### Common Validation Errors
 
 **Missing Required Fields**:
-```
+```yaml
 # ❌ Missing description
 mixin_name: "mixin_example"
 mixin_version: {major: 1, minor: 0, patch: 0}
@@ -306,7 +306,7 @@ description: "Example mixin description"
 ```
 
 **Invalid Node Types**:
-```
+```yaml
 # ❌ Invalid node type
 applicable_node_types: ["COMPUTE", "INVALID_TYPE"]
 # Error: 'INVALID_TYPE' not in [COMPUTE, EFFECT, REDUCER, ORCHESTRATOR]
@@ -316,7 +316,7 @@ applicable_node_types: ["COMPUTE", "EFFECT"]
 ```
 
 **Incomplete Actions**:
-```
+```yaml
 # ❌ Missing outputs
 actions:
   - name: "process_data"
@@ -338,7 +338,7 @@ See [03_PYDANTIC_MODELS.md](03_PYDANTIC_MODELS.md) for detailed instructions.
 
 ### Quick Example
 
-```
+```python
 # model_error_handling_subcontract.py
 from pydantic import BaseModel, Field
 from typing import Any
@@ -397,7 +397,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
 
 ### Unit Test the Pydantic Model
 
-```
+```python
 # tests/model/subcontracts/test_model_error_handling_subcontract.py
 import pytest
 from pydantic import ValidationError
@@ -443,7 +443,7 @@ def test_error_handling_subcontract_custom_error_types():
 
 ### Integration Test with Node
 
-```
+```python
 # tests/integration/test_error_handling_mixin_integration.py
 import pytest
 from omnibase_core.nodes import NodeCompute
@@ -523,7 +523,7 @@ Provides standardized error handling, circuit breaker patterns, and retry logic 
 
 ### Basic Configuration
 
-```
+```yaml
 subcontracts:
   - path: "../../mixins/mixin_error_handling.yaml"
     integration_field: "error_handling_configuration"
@@ -531,7 +531,7 @@ subcontracts:
 
 ### Advanced Configuration
 
-```
+```python
 # Tutorial example - you create this class as part of the exercise above
 from model_error_handling_subcontract import ModelErrorHandlingSubcontract
 
@@ -555,7 +555,7 @@ error_config = ModelErrorHandlingSubcontract(
 
 ### Pattern 1: Core Mixin (All Nodes)
 
-```
+```yaml
 applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 ```
 
@@ -563,7 +563,7 @@ applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 
 ### Pattern 2: EFFECT-Specific Mixin
 
-```
+```yaml
 applicable_node_types: ["EFFECT"]
 ```
 
@@ -571,7 +571,7 @@ applicable_node_types: ["EFFECT"]
 
 ### Pattern 3: REDUCER-Specific Mixin
 
-```
+```yaml
 applicable_node_types: ["REDUCER"]
 ```
 
@@ -579,7 +579,7 @@ applicable_node_types: ["REDUCER"]
 
 ### Pattern 4: ORCHESTRATOR-Specific Mixin
 
-```
+```yaml
 applicable_node_types: ["ORCHESTRATOR"]
 ```
 

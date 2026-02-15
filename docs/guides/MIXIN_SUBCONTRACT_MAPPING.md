@@ -29,7 +29,7 @@ This guide explains the relationship between **mixins** (runtime behavior) and *
 
 The ONEX framework uses a three-layer architecture for mixing declarative and imperative programming:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ Layer 1: YAML Contract (Declarative)                       │
 │ ─────────────────────────────────────────────────────────── │
@@ -80,7 +80,7 @@ These mixins have dedicated subcontracts for YAML-based configuration:
 
 **Configuration Example**:
 
-```
+```yaml
 fsm_subcontract:
   state_machine_name: "OrderLifecycle"
   state_machine_version: {major: 1, minor: 0, patch: 0}
@@ -128,7 +128,7 @@ fsm_subcontract:
 
 **Runtime Behavior**:
 
-```
+```python
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 
 class OrderReducer(NodeReducer, MixinFSMExecution):
@@ -163,7 +163,7 @@ class OrderReducer(NodeReducer, MixinFSMExecution):
 
 **Configuration Example**:
 
-```
+```yaml
 caching_subcontract:
   caching_enabled: true
   cache_strategy: "lru"  # lru, lfu, fifo, ttl
@@ -195,7 +195,7 @@ caching_subcontract:
 
 **Runtime Behavior**:
 
-```
+```python
 from omnibase_core.mixins.mixin_caching import MixinCaching
 
 class FastComputeNode(NodeCompute, MixinCaching):
@@ -238,7 +238,7 @@ class FastComputeNode(NodeCompute, MixinCaching):
 
 **Configuration Example**:
 
-```
+```yaml
 workflow_coordination_subcontract:
   max_concurrent_workflows: 10
   default_workflow_timeout_ms: 600000  # 10 minutes
@@ -256,7 +256,7 @@ workflow_coordination_subcontract:
 
 **Runtime Behavior**:
 
-```
+```python
 from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
 
 class WorkflowOrchestrator(NodeOrchestrator, MixinWorkflowExecution):
@@ -297,7 +297,7 @@ class WorkflowOrchestrator(NodeOrchestrator, MixinWorkflowExecution):
 
 **Configuration Example**:
 
-```
+```yaml
 health_check_subcontract:
   check_interval_ms: 30000
   failure_threshold: 3
@@ -311,7 +311,7 @@ health_check_subcontract:
 
 **Runtime Behavior**:
 
-```
+```python
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 
 class MonitoredNode(NodeCompute, MixinHealthCheck):
@@ -342,7 +342,7 @@ class MonitoredNode(NodeCompute, MixinHealthCheck):
 
 **Configuration Example**:
 
-```
+```yaml
 metrics_subcontract:
   metrics_enabled: true
   metrics_backend: "prometheus"  # prometheus, statsd, none
@@ -367,7 +367,7 @@ metrics_subcontract:
 
 **Runtime Behavior**:
 
-```
+```python
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 
 class MetricCollectingNode(NodeEffect, MixinMetrics):
@@ -406,7 +406,7 @@ class MetricCollectingNode(NodeEffect, MixinMetrics):
 
 **Configuration Example**:
 
-```
+```yaml
 discovery_subcontract:
   enabled: true
   auto_start: true
@@ -444,7 +444,7 @@ discovery_subcontract:
 
 **Runtime Behavior**:
 
-```
+```python
 from omnibase_core.mixins.mixin_discovery_responder import MixinDiscoveryResponder
 
 class DiscoverableNode(NodeCompute, MixinDiscoveryResponder):
@@ -465,7 +465,7 @@ class DiscoverableNode(NodeCompute, MixinDiscoveryResponder):
 
 ---
 
-### 7. MixinIntrospection ↔ ModelIntrospectionSubcontract
+### 7. MixinNodeIntrospection ↔ ModelIntrospectionSubcontract
 
 **Purpose**: Node metadata exposure and schema export
 
@@ -475,7 +475,7 @@ class DiscoverableNode(NodeCompute, MixinDiscoveryResponder):
 
 **Configuration Example**:
 
-```
+```yaml
 introspection_subcontract:
   introspection_enabled: true
 
@@ -518,10 +518,10 @@ introspection_subcontract:
 
 **Runtime Behavior**:
 
-```
-from omnibase_core.mixins.mixin_introspection import MixinIntrospection
+```python
+from omnibase_core.mixins.mixin_introspection import MixinNodeIntrospection
 
-class IntrospectableNode(NodeReducer, MixinIntrospection):
+class IntrospectableNode(NodeReducer, MixinNodeIntrospection):
     """Node with introspection capabilities."""
 
     async def get_introspection_data(self):
@@ -550,7 +550,7 @@ class IntrospectableNode(NodeReducer, MixinIntrospection):
 
 **Configuration Example**:
 
-```
+```yaml
 event_handling_subcontract:
   enabled: true
 
@@ -599,7 +599,7 @@ event_handling_subcontract:
 
 **Runtime Behavior**:
 
-```
+```python
 from omnibase_core.mixins.mixin_event_handler import MixinEventHandler
 
 class EventDrivenNode(NodeEffect, MixinEventHandler):
@@ -632,7 +632,7 @@ class EventDrivenNode(NodeEffect, MixinEventHandler):
 
 ---
 
-## Imperative Mixins (32 Total)
+## Imperative Mixins (33 Total)
 
 These mixins provide runtime behavior **without** dedicated subcontracts.
 
@@ -685,7 +685,7 @@ Imperative mixins typically:
 | `MixinNodeService` | Service interface for nodes | ALL | Service mode |
 | `MixinNodeSetup` | Standard node initialization | ALL | Node setup |
 | `MixinNodeTypeValidator` | Validates node type constraints | ALL | Type enforcement |
-| `MixinRedaction` | Sensitive field redaction | ALL | Data scrubbing |
+| `MixinSensitiveFieldRedaction` | Sensitive field redaction | ALL | Data scrubbing |
 | `MixinRequestResponseIntrospection` | Request/response logging | ALL | Debug and audit |
 | `MixinSerializable` | Serialization protocol | ALL | JSON/YAML serialization |
 | `MixinServiceRegistry` | Service registry maintenance | ALL | Service registration |
@@ -699,7 +699,7 @@ Imperative mixins typically:
 
 Use this decision tree when considering whether a new mixin needs a subcontract:
 
-```
+```text
 ┌─────────────────────────────────────┐
 │ Does the mixin require runtime     │
 │ configuration from YAML contracts?  │
@@ -755,7 +755,7 @@ Use this decision tree when considering whether a new mixin needs a subcontract:
 
 ### EFFECT Node Example
 
-```
+```yaml
 # EFFECT node contract
 effect_contract:
   node_type: "EFFECT"
@@ -779,7 +779,7 @@ effect_contract:
     advertise_capabilities: true
 ```
 
-```
+```python
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.mixins.mixin_caching import MixinCaching
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
@@ -810,7 +810,7 @@ class MyEffectNode(
 
 ### COMPUTE Node Example
 
-```
+```yaml
 compute_contract:
   node_type: "COMPUTE"
 
@@ -828,12 +828,12 @@ compute_contract:
     include_output_schema: true
 ```
 
-```
+```python
 class MyComputeNode(
     NodeCompute,
     MixinCaching,
     MixinMetrics,
-    MixinIntrospection
+    MixinNodeIntrospection
 ):
     """COMPUTE node with multi-level caching and introspection."""
     pass
@@ -841,7 +841,7 @@ class MyComputeNode(
 
 ### REDUCER Node Example
 
-```
+```yaml
 reducer_contract:
   node_type: "REDUCER"
 
@@ -860,7 +860,7 @@ reducer_contract:
     max_retries: 3
 ```
 
-```
+```python
 class MyReducerNode(
     NodeReducer,
     MixinFSMExecution,
@@ -872,7 +872,7 @@ class MyReducerNode(
 
 ### ORCHESTRATOR Node Example
 
-```
+```yaml
 orchestrator_contract:
   node_type: "ORCHESTRATOR"
 
@@ -887,7 +887,7 @@ orchestrator_contract:
       - "WORKFLOW_FAILED"
 ```
 
-```
+```python
 class MyOrchestratorNode(
     NodeOrchestrator,
     MixinWorkflowExecution,
@@ -903,7 +903,7 @@ class MyOrchestratorNode(
 
 ### Pattern 1: Declarative + Imperative Hybrid
 
-```
+```yaml
 # Declarative: FSM configuration
 fsm_subcontract:
   state_machine_name: "DataProcessing"
@@ -913,7 +913,7 @@ fsm_subcontract:
       to_state: "processed"
 ```
 
-```
+```python
 # Hypothetical example - MixinRetry is contract-only, not a Python class.
 # This illustrates how a declarative+imperative hybrid *would* look.
 from omnibase_core.mixins.mixin_retry import MixinRetry  # hypothetical import
@@ -940,7 +940,7 @@ class HybridNode(NodeReducer, MixinFSMExecution, MixinRetry):
 Start simple (imperative) → Add complexity (declarative):
 
 **Phase 1 - Imperative**:
-```
+```python
 class SimpleNode(NodeCompute):
     async def execute_compute(self, contract):
         # Hardcoded caching
@@ -954,14 +954,14 @@ class SimpleNode(NodeCompute):
 ```
 
 **Phase 2 - Declarative** (when complexity grows):
-```
+```yaml
 caching_subcontract:
   cache_strategy: "lru"
   max_entries: 10000
   multi_level_enabled: true
 ```
 
-```
+```python
 from omnibase_core.mixins.mixin_caching import MixinCaching
 
 class AdvancedNode(NodeCompute, MixinCaching):
@@ -986,7 +986,7 @@ class AdvancedNode(NodeCompute, MixinCaching):
 
 **DON'T DO THIS**:
 
-```
+```yaml
 # Overkill for a single boolean
 retry_subcontract:
   enabled: true
@@ -994,7 +994,7 @@ retry_subcontract:
 
 **DO THIS INSTEAD**:
 
-```
+```yaml
 # Simple config field
 retry_enabled: true
 max_retries: 3
@@ -1004,7 +1004,7 @@ max_retries: 3
 
 **DON'T DO THIS**:
 
-```
+```python
 class MixinCaching:
     def __init__(self):
         self.max_entries = 1000  # HARDCODED!
@@ -1012,7 +1012,7 @@ class MixinCaching:
 
 **DO THIS INSTEAD**:
 
-```
+```python
 class MixinCaching:
     async def get_from_cache(self, key, config: ModelCachingSubcontract):
         max_entries = config.max_entries  # From subcontract
@@ -1022,7 +1022,7 @@ class MixinCaching:
 
 **DON'T DO THIS**:
 
-```
+```yaml
 # Kitchen sink subcontract
 mega_subcontract:
   caching_enabled: true
@@ -1033,7 +1033,7 @@ mega_subcontract:
 
 **DO THIS INSTEAD**:
 
-```
+```yaml
 # Separate concerns
 caching_subcontract: {...}
 metrics_subcontract: {...}
@@ -1049,7 +1049,7 @@ workflow_coordination_subcontract: {...}
 
 **Before** (Imperative):
 
-```
+```python
 class MyNode(NodeCompute):
     def __init__(self, container):
         super().__init__(container)
@@ -1059,7 +1059,7 @@ class MyNode(NodeCompute):
 
 **After** (Declarative):
 
-```
+```yaml
 # node_contract.yaml
 caching_subcontract:
   cache_strategy: "lru"
@@ -1068,7 +1068,7 @@ caching_subcontract:
     default_ttl_seconds: 3600
 ```
 
-```
+```python
 from omnibase_core.mixins.mixin_caching import MixinCaching
 
 class MyNode(NodeCompute, MixinCaching):
@@ -1082,7 +1082,7 @@ class MyNode(NodeCompute, MixinCaching):
 
 | Total Count | Declarative (Subcontracts) | Imperative (No Subcontract) |
 |-------------|----------------------------|------------------------------|
-| **40 Mixins** | **8 Mixins** | **32 Mixins** |
+| **41 Mixins** | **8 Mixins** | **33 Mixins** |
 
 **Declarative Mixins** (8):
 1. MixinFSMExecution → ModelFSMSubcontract
@@ -1091,12 +1091,12 @@ class MyNode(NodeCompute, MixinCaching):
 4. MixinHealthCheck → ModelHealthCheckSubcontract
 5. MixinMetrics → ModelMetricsSubcontract
 6. MixinDiscoveryResponder → ModelDiscoverySubcontract
-7. MixinIntrospection → ModelIntrospectionSubcontract
+7. MixinNodeIntrospection → ModelIntrospectionSubcontract
 8. MixinEventHandler → ModelEventHandlingSubcontract
 
 **Key Takeaways**:
 - **Subcontracts** = Declarative YAML configuration (8 mixins)
-- **Mixins** = Runtime behavior (all 40 mixins)
+- **Mixins** = Runtime behavior (all 41 mixins)
 - Use subcontracts for **complex, reusable, validated** configuration
 - Use imperative mixins for **simple utilities** and **context-dependent** behavior
 - The three-layer architecture (YAML → Pydantic → Python) ensures type safety and validation

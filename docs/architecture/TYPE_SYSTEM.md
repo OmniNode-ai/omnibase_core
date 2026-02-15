@@ -244,7 +244,7 @@ from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
-class ProtocolLogger(Protocol):
+class ProtocolLoggerLike(Protocol):
     """Logging interface for DI resolution."""
 
     def info(self, message: str) -> None: ...
@@ -263,7 +263,7 @@ class ProtocolCache(Protocol):
 ### Using Protocols as Type Hints
 
 ```python
-def create_service(logger: ProtocolLogger, cache: ProtocolCache) -> MyService:
+def create_service(logger: ProtocolLoggerLike, cache: ProtocolCache) -> MyService:
     """Both parameters are protocol-typed -- any conforming object works."""
     return MyService(logger=logger, cache=cache)
 ```
@@ -274,7 +274,7 @@ def create_service(logger: ProtocolLogger, cache: ProtocolCache) -> MyService:
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # The container resolves protocols to concrete implementations
-logger = container.get_service(ProtocolLogger)      # Returns concrete impl
+logger = container.get_service(ProtocolLoggerLike)      # Returns concrete impl
 cache = container.get_service_optional(ProtocolCache)  # Returns impl or None
 ```
 
@@ -400,13 +400,13 @@ def process(items: list[str | int]) -> str:
 from typing import TypeGuard
 
 
-def is_logger(obj: object) -> TypeGuard[ProtocolLogger]:
+def is_logger(obj: object) -> TypeGuard[ProtocolLoggerLike]:
     return hasattr(obj, "info") and hasattr(obj, "error") and hasattr(obj, "warning")
 
 
 def maybe_log(obj: object, message: str) -> None:
     if is_logger(obj):
-        obj.info(message)  # mypy knows obj is ProtocolLogger
+        obj.info(message)  # mypy knows obj is ProtocolLoggerLike
 ```
 
 ### assert_never for Exhaustive Matching

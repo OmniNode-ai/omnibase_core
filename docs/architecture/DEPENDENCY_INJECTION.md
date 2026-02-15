@@ -52,7 +52,7 @@ ONEX has two container types that serve **completely different purposes**. Confu
 
 ### Decision Rule
 
-```
+```text
 Writing a node class?
     YES --> ModelONEXContainer in __init__
     NO  --> Wrapping a value with metadata?
@@ -190,7 +190,7 @@ from omnibase_core.enums import EnumInjectionScope, EnumServiceLifecycle
 
 # Register by interface + implementation class
 reg_id = await registry.register_service(
-    interface=ProtocolLogger,
+    interface=ProtocolLoggerLike,
     implementation=ConcreteLogger,
     lifecycle=EnumServiceLifecycle.SINGLETON,
     scope=EnumInjectionScope.GLOBAL,
@@ -198,7 +198,7 @@ reg_id = await registry.register_service(
 
 # Register existing instance (always singleton)
 reg_id = await registry.register_instance(
-    interface=ProtocolLogger,
+    interface=ProtocolLoggerLike,
     instance=logger_instance,
     scope=EnumInjectionScope.GLOBAL,
 )
@@ -208,16 +208,16 @@ reg_id = await registry.register_instance(
 
 ```python
 # Resolve by interface (raises ModelOnexError if not found)
-logger = await registry.resolve_service(ProtocolLogger)
+logger = await registry.resolve_service(ProtocolLoggerLike)
 
 # Try resolve (returns None if not found)
-logger = await registry.try_resolve_service(ProtocolLogger)
+logger = await registry.try_resolve_service(ProtocolLoggerLike)
 
 # Resolve by name
-logger = await registry.resolve_named_service(ProtocolLogger, "ConsoleLogger")
+logger = await registry.resolve_named_service(ProtocolLoggerLike, "ConsoleLogger")
 
 # Resolve all implementations of an interface
-loggers = await registry.resolve_all_services(ProtocolLogger)
+loggers = await registry.resolve_all_services(ProtocolLoggerLike)
 ```
 
 ### Registry Status
@@ -251,7 +251,7 @@ cache = container.get_service_optional(ProtocolComputeCache)
 
 ### How Resolution Works
 
-1. The container receives a protocol type (e.g., `ProtocolLogger`).
+1. The container receives a protocol type (e.g., `ProtocolLoggerLike`).
 2. It checks the internal `_service_cache` for a cached instance.
 3. If not cached, it delegates to `ServiceRegistry.resolve_service()`.
 4. The registry looks up the protocol name in `_interface_map`.
@@ -262,16 +262,16 @@ cache = container.get_service_optional(ProtocolComputeCache)
 ### Resolution Flow
 
 ```text
-container.get_service(ProtocolLogger)
+container.get_service(ProtocolLoggerLike)
     |
-    +-- Check _service_cache["ProtocolLogger:default"]
+    +-- Check _service_cache["ProtocolLoggerLike:default"]
     |       |
     |       +-- HIT: return cached instance
     |       +-- MISS: continue
     |
-    +-- registry.resolve_service(ProtocolLogger)
+    +-- registry.resolve_service(ProtocolLoggerLike)
     |       |
-    |       +-- _interface_map["ProtocolLogger"] -> [registration_id]
+    |       +-- _interface_map["ProtocolLoggerLike"] -> [registration_id]
     |       +-- _resolve_by_lifecycle(registration_id, ...)
     |       +-- return instance
     |
@@ -291,14 +291,14 @@ Services registered via `register_instance` are always singletons. The same inst
 ```python
 logger = ConcreteLogger(level="INFO")
 await registry.register_instance(
-    interface=ProtocolLogger,
+    interface=ProtocolLoggerLike,
     instance=logger,
     scope=EnumInjectionScope.GLOBAL,
 )
 
 # Same instance every time
-resolved_1 = await registry.resolve_service(ProtocolLogger)
-resolved_2 = await registry.resolve_service(ProtocolLogger)
+resolved_1 = await registry.resolve_service(ProtocolLoggerLike)
+resolved_2 = await registry.resolve_service(ProtocolLoggerLike)
 assert resolved_1 is resolved_2
 ```
 
@@ -308,7 +308,7 @@ Register an interface with its implementation class. The registry creates the in
 
 ```python
 await registry.register_service(
-    interface=ProtocolLogger,
+    interface=ProtocolLoggerLike,
     implementation=ConcreteLogger,
     lifecycle=EnumServiceLifecycle.SINGLETON,
     scope=EnumInjectionScope.GLOBAL,
@@ -321,19 +321,19 @@ Multiple implementations can be registered for the same interface:
 
 ```python
 await registry.register_instance(
-    interface=ProtocolLogger,
+    interface=ProtocolLoggerLike,
     instance=ConsoleLogger(),
 )
 await registry.register_instance(
-    interface=ProtocolLogger,
+    interface=ProtocolLoggerLike,
     instance=FileLogger("/var/log/app.log"),
 )
 
 # resolve_service returns the first registration
-primary = await registry.resolve_service(ProtocolLogger)
+primary = await registry.resolve_service(ProtocolLoggerLike)
 
 # resolve_all_services returns all implementations
-all_loggers = await registry.resolve_all_services(ProtocolLogger)
+all_loggers = await registry.resolve_all_services(ProtocolLoggerLike)
 assert len(all_loggers) == 2
 ```
 
@@ -353,7 +353,7 @@ ONEX supports both resolution styles but enforces consistency rules.
 
 ```python
 # Pass the protocol type directly
-logger = container.get_service(ProtocolLogger)
+logger = container.get_service(ProtocolLoggerLike)
 event_bus = await container.get_service_async(ProtocolEventBusBase)
 ```
 
@@ -525,7 +525,7 @@ class MockLogger:
 @pytest.fixture
 async def container_with_mocks(container: ModelONEXContainer) -> ModelONEXContainer:
     await container.service_registry.register_instance(
-        interface=ProtocolLogger,
+        interface=ProtocolLoggerLike,
         instance=MockLogger(),
     )
     return container
@@ -545,7 +545,7 @@ async def test_node_initialization(container_with_mocks: ModelONEXContainer) -> 
 ```python
 @pytest.mark.unit
 async def test_service_resolution(container_with_mocks: ModelONEXContainer) -> None:
-    logger = await container_with_mocks.get_service_async(ProtocolLogger)
+    logger = await container_with_mocks.get_service_async(ProtocolLoggerLike)
     assert logger is not None
     assert isinstance(logger, MockLogger)
 ```
@@ -595,11 +595,11 @@ class MyNode(NodeCoreBase):
 
 ```python
 # WRONG -- mixing string-based and type-based in one module
-logger = container.get_service(ProtocolLogger)
+logger = container.get_service(ProtocolLoggerLike)
 cache = container.get_service(object, service_name="cache_registry")
 
 # CORRECT -- pick one style per module (prefer type-based)
-logger = container.get_service(ProtocolLogger)
+logger = container.get_service(ProtocolLoggerLike)
 cache = container.get_service(ProtocolComputeCache)
 ```
 
@@ -632,11 +632,11 @@ class NodePriceCalculator(NodeCoreBase):
 ```python
 # WRONG -- blocks the event loop
 async def my_async_function(container: ModelONEXContainer) -> None:
-    logger = container.get_service(ProtocolLogger)  # Calls asyncio.run() internally
+    logger = container.get_service(ProtocolLoggerLike)  # Calls asyncio.run() internally
 
 # CORRECT -- use async variant
 async def my_async_function(container: ModelONEXContainer) -> None:
-    logger = await container.get_service_async(ProtocolLogger)
+    logger = await container.get_service_async(ProtocolLoggerLike)
 ```
 
 ---

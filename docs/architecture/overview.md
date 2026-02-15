@@ -48,7 +48,7 @@ Nodes communicate through:
 
 ### High-Level Components
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    ONEX Framework                           │
 ├─────────────────────────────────────────────────────────────┤
@@ -168,7 +168,7 @@ Nodes communicate through:
 
 ### Dependency Injection Container
 
-```
+```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 container = ModelONEXContainer()
@@ -181,7 +181,7 @@ db_service = container.get_service("DatabaseService")
 
 ### Event System
 
-```
+```python
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Emit event
@@ -196,7 +196,7 @@ await node.emit_event(event)
 
 ### Error Handling
 
-```
+```python
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -212,17 +212,22 @@ except Exception as e:
 
 ### Circuit Breaker Pattern
 
-```
-from omnibase_core.utils.circuit_breaker import CircuitBreaker
+```python
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
-breaker = CircuitBreaker(
+breaker = ModelCircuitBreaker(
     failure_threshold=5,
-    recovery_timeout=60
+    timeout_seconds=60
 )
 
-try:
-    result = await breaker.call(risky_operation)
-except CircuitBreakerOpenException:
+if breaker.should_allow_request():
+    try:
+        result = await risky_operation()
+        breaker.record_success()
+    except Exception:
+        breaker.record_failure()
+        result = fallback_operation()
+else:
     result = fallback_operation()
 ```
 
@@ -270,7 +275,7 @@ Nodes are thin shells. Business logic belongs in handlers.
 
 Prefer a service wrapper to eliminate boilerplate and ensure correct mixin ordering:
 ```python
-from omnibase_core.models.services import ModelServiceCompute
+from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 
 class MyComputeNode(ModelServiceCompute):
     """Thin shell -- logic lives in handler."""
@@ -362,6 +367,8 @@ class HandlerMyCompute:
 
 Test handlers directly for unit tests (no container required):
 ```python
+from uuid import uuid4
+
 import pytest
 
 from your_project.handlers import HandlerMyCompute
@@ -374,7 +381,11 @@ def handler():
 
 @pytest.mark.asyncio
 async def test_handle(handler):
-    output = await handler.handle({"input": "test"})
+    output = await handler.handle(
+        {"input": "test"},
+        input_envelope_id=uuid4(),
+        correlation_id=uuid4(),
+    )
     assert output.result["result"] == "processed"
 ```
 

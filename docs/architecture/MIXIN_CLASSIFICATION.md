@@ -57,9 +57,9 @@ Pure computation with no side effects or runtime dependencies.
 
 | Classification | Mixins | Data Models | Total |
 |----------------|--------|-------------|-------|
-| **Runtime (R)** | 22 | 1 | 23 |
+| **Runtime (R)** | 21 | 1 | 22 |
 | **Handler (H)** | 3 | 0 | 3 |
-| **Domain (D)** | 14 | 2 | 16 |
+| **Domain (D)** | 15 | 2 | 17 |
 | **Total** | **39** | **3** | **42** |
 
 > **Data Models in `models/mixins/`**: `ModelCompletionData` (R), `ModelLogData` (D), `ModelNodeIntrospectionData` (D)
@@ -79,7 +79,7 @@ Pure computation with no side effects or runtime dependencies.
 | 7 | `MixinFSMExecution` | Finite state machine execution | D | `domain/fsm/executor.py` |
 | 8 | `MixinIntentPublisher` | Publishes ModelIntent events | R | `NodeRuntime.intent_emitter` |
 | 9 | `MixinSerializable` | Basic serialization interface | D | `utils/serialization.py` |
-| 10 | `MixinCanonicalSerialization` | Canonical YAML serialization | D | `utils/canonical_yaml.py` |
+| 10 | `MixinCanonicalYAMLSerializer` | Canonical YAML serialization | D | `utils/canonical_yaml.py` |
 | 11 | `MixinCLIHandler` | CLI argument parsing/handling | H | `omnibase_infra/handlers/cli_handler.py` |
 | 12 | `MixinContractMetadata` | Contract metadata extraction | D | `utils/contract_metadata.py` |
 | 13 | `MixinContractStateReducer` | Contract-driven state reduction | D | `domain/fsm/contract_reducer.py` |
@@ -94,7 +94,7 @@ Pure computation with no side effects or runtime dependencies.
 | 22 | `MixinHealthCheck` | Health check implementation | R | `NodeRuntime.health_service` |
 | 23 | `MixinEffectExecution` | Effect node execution logic | R | `NodeRuntime.effect_executor` |
 | 24 | `MixinIntrospectFromContract` | Load introspection from contract | D | `utils/contract_introspection.py` |
-| 25 | `MixinIntrospection` | Node introspection response | R | `NodeRuntime.introspection_service` |
+| 25 | `MixinNodeIntrospection` | Node introspection response | R | `NodeRuntime.introspection_service` |
 | 26 | `MixinIntrospectionPublisher` | Publish introspection events | R | `NodeRuntime.introspection_publisher` |
 | 27 | `MixinLazyEvaluation` | Lazy evaluation patterns | D | `utils/lazy.py` |
 | 28 | `ModelLogData` | Structured log data model *(Data Model)* | D | `models/mixins/model_log_data.py` |
@@ -103,7 +103,7 @@ Pure computation with no side effects or runtime dependencies.
 | 31 | `ModelNodeIntrospectionData` | Introspection data container *(Data Model)* | D | `models/mixins/model_node_introspection_data.py` |
 | 32 | `MixinNodeLifecycle` | Node lifecycle events | R | `NodeRuntime.lifecycle_manager` |
 | 33 | `MixinNodeService` | Service interface for nodes | R | `NodeRuntime.service_interface` |
-| 34 | `MixinRedaction` | Sensitive field redaction | D | `utils/redaction.py` |
+| 34 | `MixinSensitiveFieldRedaction` | Sensitive field redaction | D | `utils/redaction.py` |
 | 35 | `MixinRequestResponseIntrospection` | Real-time introspection | R | `NodeRuntime.realtime_introspection` |
 | 36 | `MixinServiceRegistry` | Service registry maintenance | H | `omnibase_infra/handlers/service_registry_handler.py` |
 | 37 | `MixinToolExecution` | Tool execution event handling | R | `NodeRuntime.tool_executor` |
@@ -117,7 +117,7 @@ Pure computation with no side effects or runtime dependencies.
 
 ## Mixins by Classification
 
-### Runtime (R) - 22 Mixins + 1 Data Model
+### Runtime (R) - 21 Mixins + 1 Data Model
 
 | Mixin | Target |
 |-------|--------|
@@ -135,7 +135,7 @@ Pure computation with no side effects or runtime dependencies.
 | `MixinEventDrivenNode` | `NodeRuntime` (core) |
 | `MixinEventHandler` | `NodeRuntime.event_handlers` |
 | `MixinHealthCheck` | `NodeRuntime.health_service` |
-| `MixinIntrospection` | `NodeRuntime.introspection_service` |
+| `MixinNodeIntrospection` | `NodeRuntime.introspection_service` |
 | `MixinIntrospectionPublisher` | `NodeRuntime.introspection_publisher` |
 | `MixinNodeExecutor` | `NodeRuntime.executor_service` |
 | `MixinNodeLifecycle` | `NodeRuntime.lifecycle_manager` |
@@ -159,14 +159,14 @@ Pure computation with no side effects or runtime dependencies.
 | `MixinLazyValue` | `utils/lazy.py` |
 | `MixinLazyEvaluation` | `utils/lazy.py` |
 | `MixinSerializable` | `utils/serialization.py` |
-| `MixinCanonicalSerialization` | `utils/canonical_yaml.py` |
+| `MixinCanonicalYAMLSerializer` | `utils/canonical_yaml.py` |
 | `MixinYAMLSerialization` | `utils/yaml_serialization.py` |
 | `MixinContractMetadata` | `utils/contract_metadata.py` |
 | `MixinContractStateReducer` | `domain/fsm/contract_reducer.py` |
 | `MixinIntrospectFromContract` | `utils/contract_introspection.py` |
 | `MixinFailFast` | `utils/fail_fast.py` |
 | `MixinHashComputation` | `utils/hash.py` |
-| `MixinRedaction` | `utils/redaction.py` |
+| `MixinSensitiveFieldRedaction` | `utils/redaction.py` |
 | `MixinNodeIdFromContract` | `utils/node_id.py` |
 | `MixinNodeTypeValidator` | `utils/node_type_validation.py` |
 | `MixinTruncationValidation` | `utils/truncation.py` |
@@ -180,7 +180,7 @@ Pure computation with no side effects or runtime dependencies.
 
 All mixins are located in:
 
-```
+```text
 src/omnibase_core/mixins/
 ```
 

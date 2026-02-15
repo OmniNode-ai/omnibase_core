@@ -32,7 +32,7 @@ omnibase_core uses TWO distinct container types that serve completely different 
 - Type-safe value passing with context
 
 **Example**:
-```
+```python
 from omnibase_core.models.core.model_container import ModelContainer
 
 # Create a value container
@@ -77,10 +77,10 @@ config_value.validate_with(
 - Service caching and performance monitoring
 
 **Example**:
-```
+```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 # v0.3.6+: Core-native protocol imports
-from omnibase_core.protocols import ProtocolLogger
+from omnibase_core.protocols import ProtocolLoggerLike
 
 # Create DI container
 container = ModelONEXContainer(
@@ -89,7 +89,7 @@ container = ModelONEXContainer(
 )
 
 # Resolve services by protocol
-logger = container.get_service(ProtocolLogger)
+logger = container.get_service(ProtocolLoggerLike)
 
 # Use in node initialization
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -99,7 +99,7 @@ class MyNode(NodeCoreBase):
         super().__init__(container)  # ✅ Correct usage
 
         # Resolve dependencies
-        self.logger = container.get_service(ProtocolLogger)
+        self.logger = container.get_service(ProtocolLoggerLike)
 ```
 
 **Key Characteristics**:
@@ -132,7 +132,7 @@ class MyNode(NodeCoreBase):
 
 ### ❌ WRONG: Using ModelContainer in Node Constructor
 
-```
+```python
 from omnibase_core.models.core.model_container import ModelContainer
 
 class MyNode(NodeCoreBase):
@@ -146,7 +146,7 @@ class MyNode(NodeCoreBase):
 
 ### ✅ CORRECT: Using ModelONEXContainer in Node Constructor
 
-```
+```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 class MyNode(NodeCoreBase):
@@ -158,7 +158,7 @@ class MyNode(NodeCoreBase):
 
 ### ❌ WRONG: Using ModelONEXContainer as Value Wrapper
 
-```
+```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Trying to wrap a value
@@ -172,7 +172,7 @@ container.value = "my_data"  # ❌ WRONG!
 
 ### ✅ CORRECT: Using ModelContainer for Value Wrapping
 
-```
+```python
 from omnibase_core.models.core.model_container import ModelContainer
 
 # Wrap a value with metadata
@@ -187,7 +187,7 @@ wrapped_value = ModelContainer.create(
 
 ## Decision Tree: Which Container to Use?
 
-```
+```text
 Are you writing a node class?
 ├─ Yes → Use ModelONEXContainer in __init__
 │         def __init__(self, container: ModelONEXContainer)
@@ -198,7 +198,7 @@ Are you writing a node class?
         │
         └─ No → Are you resolving services?
                 ├─ Yes → Use ModelONEXContainer
-                │         container.get_service(ProtocolLogger)
+                │         container.get_service(ProtocolLoggerLike)
                 │
                 └─ No → You probably don't need either container type
 ```
@@ -236,7 +236,7 @@ Nodes are thin coordination shells. Business logic belongs in handlers, not in `
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 # v0.3.6+: Core-native protocol imports
-from omnibase_core.protocols import ProtocolLogger, ProtocolEventBus
+from omnibase_core.protocols import ProtocolLoggerLike, ProtocolEventBus
 
 class NodeDataProcessor(NodeCoreBase):
     """Example node showing correct container usage with handler delegation."""
@@ -245,7 +245,7 @@ class NodeDataProcessor(NodeCoreBase):
         super().__init__(container)
 
         # Resolve dependencies via DI container
-        self.logger = container.get_service(ProtocolLogger)
+        self.logger = container.get_service(ProtocolLoggerLike)
         self.event_bus = container.get_service(ProtocolEventBus)
 
         # Resolve handler from registry -- handler owns the business logic
@@ -292,7 +292,7 @@ class ConfigManager:
 
 ### Example 3: Service Factory (Use ModelONEXContainer)
 
-```
+```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 async def create_service_layer(
@@ -301,7 +301,7 @@ async def create_service_layer(
     """Create service layer with dependency injection."""
 
     # Resolve all services from container
-    logger = container.get_service(ProtocolLogger)
+    logger = container.get_service(ProtocolLoggerLike)
     event_bus = container.get_service(ProtocolEventBus)
 
     return {
@@ -320,7 +320,7 @@ async def create_service_layer(
 **Symptom**: Node initialization fails with `AttributeError: 'ModelContainer' object has no attribute 'get_service'`
 
 **Fix**:
-```
+```python
 # Before (❌ Wrong)
 from omnibase_core.models.core.model_container import ModelContainer
 
@@ -342,7 +342,7 @@ class MyNode(NodeCoreBase):
 
 ### Correct Type Hints
 
-```
+```python
 from typing import TypeVar
 from omnibase_core.models.core.model_container import ModelContainer
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -371,7 +371,7 @@ Both container types are fully compatible with `mypy --strict`:
 
 ### Testing with ModelContainer[T]
 
-```
+```python
 def test_value_container():
     """Test value container functionality."""
 
@@ -393,7 +393,7 @@ def test_value_container():
 
 ### Testing with ModelONEXContainer
 
-```
+```python
 async def test_service_resolution():
     """Test DI container functionality."""
 
@@ -401,7 +401,7 @@ async def test_service_resolution():
     container = ModelONEXContainer()
 
     # Resolve service
-    logger = container.get_service(ProtocolLogger)
+    logger = container.get_service(ProtocolLoggerLike)
     assert logger is not None
 
     # Create node with container

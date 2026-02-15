@@ -381,7 +381,7 @@ These mixins maintain purity and are allowed:
 | `MixinComputeExecution` | Computation execution | Pure computation patterns |
 | `MixinContractMetadata` | Contract access | Read-only metadata |
 | `MixinDiscoveryResponder` | Service discovery responses | Read-only discovery metadata |
-| `MixinIntrospection` | Node introspection | Read-only reflection |
+| `MixinNodeIntrospection` | Node introspection | Read-only reflection |
 | `MixinHashComputation` | Deterministic hashing | Pure computation |
 | `MixinNodeLifecycle` | Node lifecycle management | Lifecycle coordination |
 | `MixinNodeExecutor` | Node execution patterns | Execution coordination |

@@ -220,7 +220,7 @@ class GoodNode(NodeCompute):
     def __init__(self, container: ModelONEXContainer) -> None:  # CORRECT
         super().__init__(container)
         # ModelONEXContainer provides protocol-based service resolution
-        self.logger = container.get_service(ProtocolLogger)
+        self.logger = container.get_service(ProtocolLoggerLike)
 ```
 
 **Why this matters**:

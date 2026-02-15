@@ -528,6 +528,7 @@ CRITICAL: This is a PURE FUNCTION node:
 """
 
 import time
+from datetime import UTC, datetime
 
 # v0.4.0: Import NodeReducer directly from omnibase_core.nodes
 from omnibase_core.nodes import NodeReducer, ModelReducerInput, EnumReductionType
@@ -737,7 +738,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
                         "metadata": {
                             "sources_count": len(input_data.data_sources),
                             "strategy": input_data.aggregation_strategy.value,
-                            "completed_at": reducer_output.completed_at.isoformat() if hasattr(reducer_output, 'completed_at') else None,
+                            "completed_at": datetime.now(UTC).isoformat(),
                         },
                     },
                     priority=1,  # Highest priority for persistence
@@ -758,18 +759,19 @@ class NodeMetricsAggregatorReducer(NodeReducer):
         """
 
         # Map aggregation strategy to conflict resolution
+        # EnumConflictResolution members: FIRST_WINS, LAST_WINS, MERGE, ERROR, CUSTOM
         conflict_resolution_map = {
-            EnumAggregationStrategy.SUM: EnumConflictResolution.SUM,
-            EnumAggregationStrategy.AVERAGE: EnumConflictResolution.AVERAGE,
-            EnumAggregationStrategy.MAX: EnumConflictResolution.TAKE_MAX,
-            EnumAggregationStrategy.MIN: EnumConflictResolution.TAKE_MIN,
-            EnumAggregationStrategy.LATEST: EnumConflictResolution.TAKE_LATEST,
+            EnumAggregationStrategy.SUM: EnumConflictResolution.MERGE,
+            EnumAggregationStrategy.AVERAGE: EnumConflictResolution.MERGE,
+            EnumAggregationStrategy.MAX: EnumConflictResolution.LAST_WINS,
+            EnumAggregationStrategy.MIN: EnumConflictResolution.FIRST_WINS,
+            EnumAggregationStrategy.LATEST: EnumConflictResolution.LAST_WINS,
             EnumAggregationStrategy.MERGE_LISTS: EnumConflictResolution.MERGE,
         }
 
         conflict_resolution = conflict_resolution_map.get(
             input_data.aggregation_strategy,
-            EnumConflictResolution.SUM,
+            EnumConflictResolution.LAST_WINS,
         )
 
         # Determine reduction type
@@ -807,7 +809,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
 - **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
 - **Reduction Functions**: Registry for different reduction types (fold, aggregate, merge)
 - **Streaming Support**: Batch, incremental, and windowed processing modes
-- **Conflict Resolution**: Built-in strategies (sum, average, max, min, latest, merge)
+- **Conflict Resolution**: Built-in strategies (first_wins, last_wins, merge, error, custom)
 - **Streaming Windows**: Window management for time-based aggregation
 - **Performance Tracking**: Built-in metrics for reduction operations
 - **Configuration Support**: Automatic config loading from `NodeConfigProvider`
@@ -1364,12 +1366,11 @@ INTENT_TYPES = {
 # Available strategies (import from omnibase_core.nodes)
 from omnibase_core.nodes import EnumConflictResolution
 
-EnumConflictResolution.SUM          # Add values together
-EnumConflictResolution.AVERAGE      # Average conflicting values
-EnumConflictResolution.TAKE_MAX     # Keep maximum value
-EnumConflictResolution.TAKE_MIN     # Keep minimum value
-EnumConflictResolution.TAKE_LATEST  # Use latest value
-EnumConflictResolution.MERGE        # Merge lists/objects
+EnumConflictResolution.FIRST_WINS   # Keep first encountered value
+EnumConflictResolution.LAST_WINS    # Keep last encountered value
+EnumConflictResolution.MERGE        # Attempt to merge values
+EnumConflictResolution.ERROR        # Raise error on conflict
+EnumConflictResolution.CUSTOM       # Use custom resolution function
 ```
 
 ---

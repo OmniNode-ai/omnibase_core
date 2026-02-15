@@ -28,7 +28,7 @@ This guide provides comprehensive testing strategies for ONEX nodes and the omni
 
 #### COMPUTE Node Testing
 
-```
+```python
 from typing import Any
 
 import pytest
@@ -82,7 +82,7 @@ async def test_compute_node_edge_cases(compute_node):
 
 #### EFFECT Node Testing
 
-```
+```python
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from omnibase_core.nodes.node_effect import NodeEffect
@@ -134,7 +134,7 @@ async def test_effect_node_failure(effect_node):
 
 #### REDUCER Node Testing
 
-```
+```python
 import pytest
 from omnibase_core.nodes.node_reducer import NodeReducer
 
@@ -196,7 +196,7 @@ async def test_reducer_node_state_persistence(reducer_node):
 
 ### Error Handling Testing
 
-```
+```python
 import pytest
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -255,75 +255,66 @@ async def test_processing_error(error_node):
 
 ### Circuit Breaker Testing
 
-```
+```python
+import asyncio
 import pytest
-from unittest.mock import AsyncMock
-from omnibase_core.utils.circuit_breaker import CircuitBreaker
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 @pytest.fixture
 def circuit_breaker():
     """Create test circuit breaker."""
-    return CircuitBreaker(
+    return ModelCircuitBreaker(
         failure_threshold=3,
-        recovery_timeout=1.0
+        timeout_seconds=1,
+        minimum_request_threshold=1,
     )
 
-@pytest.mark.asyncio
-async def test_circuit_breaker_success(circuit_breaker):
+def test_circuit_breaker_success(circuit_breaker):
     """Test successful circuit breaker operation."""
-    mock_func = AsyncMock(return_value="success")
+    assert circuit_breaker.should_allow_request()
+    circuit_breaker.record_success()
+    assert circuit_breaker.get_current_state() == "closed"
 
-    result = await circuit_breaker.call(mock_func)
-
-    assert result == "success"
-    assert circuit_breaker.get_state() == "CLOSED"
-
-@pytest.mark.asyncio
-async def test_circuit_breaker_failure_threshold(circuit_breaker):
+def test_circuit_breaker_failure_threshold(circuit_breaker):
     """Test circuit breaker opening after failure threshold."""
-    mock_func = AsyncMock(side_effect=Exception("Service error"))
-
     # First few failures should not open circuit
     for _ in range(2):
-        with pytest.raises(Exception):
-            await circuit_breaker.call(mock_func)
+        circuit_breaker.record_failure()
 
-    assert circuit_breaker.get_state() == "CLOSED"
+    assert circuit_breaker.get_current_state() == "closed"
 
     # Third failure should open circuit
-    with pytest.raises(Exception):
-        await circuit_breaker.call(mock_func)
-
-    assert circuit_breaker.get_state() == "OPEN"
+    circuit_breaker.record_failure()
+    assert circuit_breaker.get_current_state() == "open"
 
 @pytest.mark.asyncio
 async def test_circuit_breaker_recovery(circuit_breaker):
     """Test circuit breaker recovery."""
     # Open the circuit
-    mock_func = AsyncMock(side_effect=Exception("Service error"))
     for _ in range(3):
-        with pytest.raises(Exception):
-            await circuit_breaker.call(mock_func)
+        circuit_breaker.record_failure()
 
-    assert circuit_breaker.get_state() == "OPEN"
+    assert circuit_breaker.get_current_state() == "open"
 
     # Wait for recovery timeout
     await asyncio.sleep(1.1)
 
-    # Test recovery
-    mock_func.side_effect = None
-    mock_func.return_value = "recovered"
+    # Circuit should transition to half-open after timeout
+    assert circuit_breaker.should_allow_request()
+    assert circuit_breaker.get_current_state() == "half_open"
 
-    result = await circuit_breaker.call(mock_func)
-    assert result == "recovered"
-    assert circuit_breaker.get_state() == "CLOSED"
+    # Successful requests close the circuit
+    for _ in range(circuit_breaker.success_threshold):
+        circuit_breaker.record_success()
+
+    assert circuit_breaker.get_current_state() == "closed"
 ```
 
 ## Integration Testing
 
 ### Container Integration Testing
 
-```
+```python
 import pytest
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -379,7 +370,7 @@ async def test_container_service_resolution(integration_container):
 
 ### Event System Integration Testing
 
-```
+```python
 import pytest
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
@@ -434,7 +425,7 @@ async def test_event_emission(event_node):
 
 ### Load Testing
 
-```
+```python
 import pytest
 import asyncio
 import time
@@ -486,7 +477,7 @@ async def test_memory_usage(compute_node):
 
 ### Stress Testing
 
-```
+```python
 import pytest
 import asyncio
 import random
@@ -521,7 +512,7 @@ async def test_stress_conditions(compute_node):
 
 ### Test Fixtures
 
-```
+```python
 import pytest
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -553,7 +544,7 @@ def mock_services():
 
 ### Test Helpers
 
-```
+```python
 import pytest
 from typing import Any
 
@@ -629,7 +620,7 @@ markers =
 
 ### conftest.py
 
-```
+```python
 import pytest
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -655,7 +646,7 @@ def reset_container(container):
 
 ### 1. Test Organization
 
-```
+```python
 # tests/unit/test_compute_node.py
 class TestComputeNode:
     """Test class for COMPUTE node functionality."""
@@ -687,7 +678,7 @@ class TestNodeIntegration:
 
 ### 2. Test Data Management
 
-```
+```python
 # tests/fixtures/test_data.py
 VALID_INPUTS = [
     {"value": 1},
@@ -710,7 +701,7 @@ EXPECTED_OUTPUTS = [
 
 ### 3. Mocking Strategies
 
-```
+```python
 from unittest.mock import AsyncMock, MagicMock, patch
 
 # Mock external dependencies
@@ -731,7 +722,7 @@ async def test_with_async_mock():
 
 ### 4. Test Coverage
 
-```
+```toml
 # Run tests with coverage
 # pytest --cov=omnibase_core --cov-report=html
 
@@ -780,7 +771,7 @@ The project uses a sophisticated CI pipeline with parallel test execution for op
 
 **Split Configuration**:
 
-```
+```bash
 # Each split runs a subset of tests using pytest-split
 poetry run pytest tests/ \
   --splits 12 \
@@ -800,7 +791,7 @@ poetry run pytest tests/ \
 #### Local Testing Commands
 
 **Standard local testing** (matches pyproject.toml config):
-```
+```bash
 # Run all tests with 4 workers (default)
 poetry run pytest tests/
 
@@ -815,7 +806,7 @@ poetry run pytest tests/unit/test_specific.py -n 0 -xvs
 ```
 
 **CI-equivalent local testing** (12 splits):
-```
+```bash
 # Run specific split locally (e.g., split 1 of 12)
 poetry run pytest tests/ --splits 12 --group 1 -n auto
 
@@ -843,7 +834,7 @@ done
 
 **Status**: ✅ Enabled with strict configuration
 
-```
+```bash
 # CI runs strict mypy (0 errors required)
 poetry run mypy src/omnibase_core/
 ```
@@ -857,7 +848,7 @@ poetry run mypy src/omnibase_core/
 
 **Target**: 60% minimum coverage (configured in pyproject.toml)
 
-```
+```bash
 # Run coverage locally
 poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing --cov-report=html
 

@@ -576,7 +576,7 @@ class MyNode:
     async def initialize(self) -> None:
         """Initialize by resolving dependencies."""
         self.event_bus = await self.registry.resolve_service(ProtocolEventBus)
-        self.logger = await self.registry.resolve_service(ProtocolLogger)
+        self.logger = await self.registry.resolve_service(ProtocolLoggerLike)
 
     async def process(self, data: dict) -> None:
         """Process data using resolved services."""

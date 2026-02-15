@@ -243,7 +243,7 @@ class NodeDatabaseWriter(ModelServiceEffect):
 
 **Development Mixins:**
 - `MixinHealthCheck`: Health monitoring and reporting
-- `MixinIntrospection`: Runtime introspection capabilities
+- `MixinNodeIntrospection`: Runtime introspection capabilities
 - `MixinDebugDiscoveryLogging`: Debug logging utilities
 
 ### 4.2 Mixin Composition Patterns
@@ -265,7 +265,7 @@ class EventDrivenNode(
     NodeType,
     MixinEventDrivenNode,       # Event handling
     MixinEventHandler,          # Event handler registration
-    MixinIntrospection,         # Runtime introspection
+    MixinNodeIntrospection,      # Runtime introspection
 ):
     """Event-driven node with introspection capabilities."""
 ```

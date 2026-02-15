@@ -12,7 +12,7 @@
 
 The Reducer node implements a pure function that transforms state without performing I/O or side effects:
 
-```
+```text
 δ(state, action) → (new_state, intents[])
 ```
 
@@ -43,7 +43,7 @@ This separation enables:
 
 The Reducer implements a pure finite state machine:
 
-```
+```text
 δ(state, action) → (new_state, intents[])
 ```
 
@@ -79,7 +79,7 @@ A pure Reducer FSM guarantees:
 5. **Testability**: Easy to test without mocks or infrastructure
 
 **Impure Code (Anti-Pattern)**:
-```
+```python
 async def process(self, input_data):
     result = self._reduce(input_data.items)
 
@@ -92,7 +92,7 @@ async def process(self, input_data):
 ```
 
 **Pure Code (Intent Pattern)**:
-```
+```python
 async def process(self, input_data):
     result = self._reduce(input_data.items)
 
@@ -142,7 +142,7 @@ async def process(self, input_data):
 
 Pure functions with Intents are trivially testable:
 
-```
+```python
 def test_reducer_emits_metric_intent():
     reducer = NodeReducer(container)
     input_data = ModelReducerInput(data=[1, 2, 3], reduction_type=EnumReductionType.SUM)
@@ -164,7 +164,7 @@ No mocks, no infrastructure, no external dependencies.
 
 Pure functions always produce the same output for the same input:
 
-```
+```python
 # Called twice with same input
 output1 = await reducer.process(input_data)
 output2 = await reducer.process(input_data)
@@ -178,7 +178,7 @@ assert output1.intents == output2.intents
 
 Intents can be filtered, transformed, or composed before execution:
 
-```
+```python
 # Filter high-priority Intents
 high_priority = [i for i in output.intents if i.priority >= 8]
 
@@ -198,7 +198,7 @@ for intent in sorted_intents:
 
 All side effect errors are handled in one place (Effect node):
 
-```
+```python
 # Effect node handles retries, circuit breakers, rollbacks
 async def execute_intent(self, intent: ModelIntent):
     try:
@@ -214,7 +214,7 @@ async def execute_intent(self, intent: ModelIntent):
 
 **Guarantee 1: No Hidden State**
 
-```
+```python
 class NodeReducer(NodeCoreBase):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
@@ -231,7 +231,7 @@ class NodeReducer(NodeCoreBase):
 
 **Guarantee 2: Referential Transparency**
 
-```
+```python
 # Function call can be replaced with its value
 output = await reducer.process(input_data)
 
@@ -247,7 +247,7 @@ output = ModelReducerOutput(
 
 **Guarantee 3: No Side Effects During Execution**
 
-```
+```python
 async def process(self, input_data):
     # ✅ Pure computation only
     result = self._reduce(input_data.items)
@@ -270,7 +270,7 @@ async def process(self, input_data):
 
 ### Field Specification
 
-```
+```python
 class ModelIntent(BaseModel):
     """Intent declaration for side effects from pure Reducer FSM."""
 
@@ -373,8 +373,8 @@ class ModelIntent(BaseModel):
 
 **Basic Pattern**:
 
-```
-from omnibase_core.models.model_intent import ModelIntent
+```python
+from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.model_reducer_output import ModelReducerOutput
 
 async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
@@ -431,7 +431,7 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
 
 **Advanced Pattern: Conditional Intents**:
 
-```
+```python
 async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
     result = self._reduce(input_data.items)
     intents = []
@@ -481,7 +481,7 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
 
 **Pattern: Lease-Tracked Intents**:
 
-```
+```python
 async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
     result = self._reduce(input_data.items)
 
@@ -505,8 +505,8 @@ resolved from the DI container. The node does not contain inline routing logic.
 
 **Intent Consumption Pattern**:
 
-```
-from omnibase_core.models.model_intent import ModelIntent
+```python
+from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 class NodeIntentExecutor(NodeCoreBase):
@@ -605,7 +605,7 @@ async def _handle_intent_failure(
 
 Records metrics for monitoring and observability.
 
-```
+```python
 ModelIntent(
     intent_type="log_metric",
     target="metrics_service",
@@ -631,7 +631,7 @@ ModelIntent(
 
 Logs structured events for debugging and audit trails.
 
-```
+```python
 ModelIntent(
     intent_type="log_event",
     target="logging_service",
@@ -659,7 +659,7 @@ ModelIntent(
 
 Persists data to storage (database, file system, cache).
 
-```
+```python
 ModelIntent(
     intent_type="write",
     target="database_service",
@@ -683,7 +683,7 @@ ModelIntent(
 
 Sends notifications to external systems or users.
 
-```
+```python
 ModelIntent(
     intent_type="notify",
     target="notification_service",
@@ -711,7 +711,7 @@ ModelIntent(
 **Rule**: Never perform side effects directly in Reducer. Always emit Intents.
 
 **❌ Anti-Pattern**:
-```
+```python
 async def process(self, input_data):
     result = self._reduce(input_data.items)
 
@@ -723,7 +723,7 @@ async def process(self, input_data):
 ```
 
 **✅ Best Practice**:
-```
+```python
 async def process(self, input_data):
     result = self._reduce(input_data.items)
 
@@ -743,7 +743,7 @@ async def process(self, input_data):
 **Rule**: Reducer must be pure - no I/O operations (files, network, database).
 
 **❌ Anti-Pattern**:
-```
+```python
 async def process(self, input_data):
     result = self._reduce(input_data.items)
 
@@ -756,7 +756,7 @@ async def process(self, input_data):
 ```
 
 **✅ Best Practice**:
-```
+```python
 async def process(self, input_data):
     result = self._reduce(input_data.items)
 
@@ -791,7 +791,7 @@ async def process(self, input_data):
 - **1-2**: Debug logs, optional metrics
 
 **Example**:
-```
+```python
 intents = [
     # Critical alert - execute first
     ModelIntent(
@@ -826,7 +826,7 @@ intents = [
 **Rule**: Link Intents to workflows via `lease_id` for traceability and conflict resolution.
 
 **Example**:
-```
+```python
 async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
     result = self._reduce(input_data.items)
 
@@ -859,7 +859,7 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
 **Rule**: Test Intent emission, not Intent execution. Effect node tests handle execution.
 
 **✅ Best Practice**:
-```
+```python
 async def test_reducer_emits_completion_intent():
     """Test that Reducer emits completion log intent."""
     reducer = NodeReducer(container)
@@ -895,7 +895,7 @@ async def test_reducer_emits_completion_intent():
 - **target**: Service name or identifier (e.g., `metrics_service`, `event_bus`, `slack_notifier`)
 
 **❌ Anti-Pattern**:
-```
+```python
 ModelIntent(
     intent_type="do_thing",  # Vague
     target="service1",        # Non-descriptive
@@ -904,7 +904,7 @@ ModelIntent(
 ```
 
 **✅ Best Practice**:
-```
+```python
 ModelIntent(
     intent_type="log_metric",      # Clear action
     target="prometheus_exporter",   # Specific target

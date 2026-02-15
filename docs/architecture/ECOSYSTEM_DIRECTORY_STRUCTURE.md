@@ -18,7 +18,7 @@ The ONEX ecosystem consists of multiple repositories with distinct purposes and 
 **Package Name**: `omnibase_core`
 **Version**: `0.17.0`
 
-```
+```text
 omnibase_core/
 ├── src/
 │   └── omnibase_core/
@@ -64,7 +64,7 @@ omnibase_core/
 - `MixinHealthCheck` - Health monitoring
 - `MixinEventBus` - Event publishing/subscribing
 - `MixinCaching` - Caching capabilities
-- `MixinIntrospection` - Node introspection
+- `MixinNodeIntrospection` - Node introspection
 - `MixinMetrics` - Performance metrics
 - `MixinIntentPublisher` - Intent publishing
 - `MixinWorkflowSupport` - Workflow management
@@ -96,7 +96,7 @@ omnibase_core/
 **Package Name**: `omnibase_infra`
 **Version**: `0.1.0`
 
-```
+```text
 omnibase_infra/
 ├── src/
 │   └── omnibase_infra/
@@ -125,7 +125,7 @@ omnibase_infra/
 **Package Name**: `omnimemory`
 **Version**: `0.1.0`
 
-```
+```text
 omnimemory/
 ├── src/
 │   └── omnimemory/
@@ -144,7 +144,7 @@ omnimemory/
 **Package Name**: `omnibase`
 **Version**: `0.1.0`
 
-```
+```text
 omnibase_3/
 ├── src/
 │   └── omnibase/               # Legacy core implementation
@@ -196,7 +196,7 @@ pydantic = "^2.11.7"
 
 ### Dependency Relationships
 
-```
+```text
 omnibase_core (core framework)
 ├── omnibase_infra (depends on omnibase_core)
 ├── omniintelligence (depends on omnibase_core via Git)
@@ -209,8 +209,8 @@ omnibase_core (core framework)
 
 **Location**: `omnibase_core/src/omnibase_core/models/services/`
 
-```
-from omnibase_core.models.services import ModelServiceCompute
+```python
+from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 
 class MyComputeNode(ModelServiceCompute):
     """Production-ready compute node with all capabilities."""
@@ -245,7 +245,7 @@ class MyInfraEffect(ModelServiceEffect):
 - `MixinHealthCheck` - Health monitoring
 - `MixinEventBus` - Event system
 - `MixinCaching` - Caching
-- `MixinIntrospection` - Introspection
+- `MixinNodeIntrospection` - Introspection
 - `MixinMetrics` - Metrics collection
 - `MixinIntentPublisher` - Intent publishing
 - `MixinWorkflowSupport` - Workflow management
@@ -300,7 +300,7 @@ All repositories use semantic versioning. `omnibase_core` is currently at `0.17.
 
 Each repository follows a consistent testing pattern:
 
-```
+```text
 tests/
 ├── unit/                       # Unit tests
 │   ├── mixins/                # Mixin tests

@@ -75,12 +75,12 @@ This comprehensive guide teaches you how to create production-ready mixins (subc
 
 ### Verification
 
-```
+```bash
 # Verify environment
 poetry run python -c "from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract import ModelHealthCheckSubcontract; print('Mixin system ready')"
 
-# Check existing mixins
-ls src/omnibase_core/mixins/
+# Check existing mixins (run from repo root)
+ls ./src/omnibase_core/mixins/
 ```
 
 ## Learning Path
@@ -213,7 +213,7 @@ Applicable to all node types:
 
 ### Adding Mixins to Your Project
 
-```
+```bash
 # In your project directory
 mkdir -p src/your_project/mixins
 mkdir -p src/your_project/models/contracts/subcontracts
@@ -227,7 +227,7 @@ touch src/your_project/models/contracts/subcontracts/model_your_feature_subcontr
 
 ### Project Structure
 
-```
+```text
 your_project/
 ├── pyproject.toml
 ├── src/
@@ -255,7 +255,7 @@ your_project/
 
 ### Contract Validation
 
-```
+```bash
 # Validate mixin contract
 poetry run onex run contract_validator --contract src/your_project/mixins/mixin_your_feature.yaml
 
@@ -265,7 +265,7 @@ poetry run onex run contract_validator --contract src/your_project/nodes/your_no
 
 ### Testing Mixins
 
-```
+```python
 # Test mixin Pydantic model
 import pytest
 from your_project.model.subcontracts import ModelYourFeatureSubcontract
