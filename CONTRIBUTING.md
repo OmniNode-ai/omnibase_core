@@ -18,7 +18,7 @@ Thank you for your interest in contributing to omnibase_core! This document prov
 ### Prerequisites
 
 - Python 3.12+
-- Poetry (for package management)
+- [uv](https://docs.astral.sh/uv/) (for package management)
 - Git
 - Basic understanding of ONEX architecture
 
@@ -48,11 +48,8 @@ cd omnibase_core
 ### 2. Install Dependencies
 
 ```bash
-# Install with Poetry
-poetry install
-
-# Activate virtual environment
-poetry shell
+# Install all dependencies with uv
+uv sync --all-extras
 ```
 
 ### 3. Set Up Git Hooks

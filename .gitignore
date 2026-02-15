@@ -72,12 +72,12 @@ __pypackages__/
 # =============================================================================
 # DEPENDENCY MANAGEMENT
 # =============================================================================
-# Poetry: We COMMIT poetry.lock for reproducible CI builds
+# uv: We COMMIT uv.lock for reproducible CI builds
 # (uncomment to ignore if treating as library)
-#poetry.lock
-
-# UV lock file (uncommit if needed for reproducibility)
 #uv.lock
+
+# Poetry lock file (migrated to uv in OMN-2232)
+poetry.lock
 
 # PDM configuration (project-specific, not version-controlled)
 .pdm.toml

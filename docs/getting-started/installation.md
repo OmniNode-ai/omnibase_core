@@ -14,26 +14,23 @@ This guide walks you through setting up your development environment for buildin
 ## Prerequisites
 
 - **Python 3.12+** (required for modern async features)
-- **Poetry** (recommended package manager)
+- **[uv](https://docs.astral.sh/uv/)** (package manager)
 - **Git** (for version control)
 
 ## Installation Methods
 
-### Method 1: Poetry (Recommended)
+### Method 1: uv (Recommended)
 
-Poetry provides better dependency management and virtual environment handling.
+uv provides fast, reliable dependency management with deterministic lockfiles.
 
-#### 1. Install Poetry
+#### 1. Install uv
 
 ```
-# Install Poetry
-curl -sSL https://install.python-poetry.org | python3 -
-
-# Add to PATH (add to your shell profile)
-export PATH="$HOME/.local/bin:$PATH"
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Verify installation
-poetry --version
+uv --version
 ```
 
 #### 2. Install omnibase_core
@@ -41,7 +38,7 @@ poetry --version
 **Option A: As a dependency in your project**
 ```
 # In your project directory
-poetry add omnibase_core
+uv add omnibase_core
 ```
 
 **Option B: For development**
@@ -50,11 +47,8 @@ poetry add omnibase_core
 git clone https://github.com/OmniNode-ai/omnibase_core.git
 cd omnibase_core
 
-# Install dependencies
-poetry install
-
-# Activate virtual environment
-poetry shell
+# Install all dependencies (including dev and optional extras)
+uv sync --all-extras
 ```
 
 ### Method 2: pip (Alternative)
@@ -79,22 +73,18 @@ pip install -e .
 ### 1. Basic Import Test
 
 ```
-# With Poetry
-poetry run python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('✅ Installation successful!')"
-
-# With pip
-python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('✅ Installation successful!')"
+uv run python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('Installation successful!')"
 ```
 
 ### 2. All Node Types Test
 
 ```
-poetry run python -c "
+uv run python -c "
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-print('✅ All node types imported successfully!')
+print('All node types imported successfully!')
 "
 ```
 
@@ -103,33 +93,24 @@ print('✅ All node types imported successfully!')
 ### 1. Install Development Dependencies
 
 ```
-# With Poetry
-poetry install --with dev
+# With uv (dev group is installed by default)
+uv sync --all-extras
 
 # With pip
-pip install -e ".[dev]"
+pip install -e ".[full]"
 ```
 
 ### 2. Run Tests
 
 ```
-# With Poetry
-poetry run pytest
-
-# With pip
-pytest
+uv run pytest
 ```
 
 ### 3. Run Linting
 
 ```
-# With Poetry
-poetry run ruff check .
-poetry run mypy .
-
-# With pip
-ruff check .
-mypy .
+uv run ruff check src/ tests/
+uv run mypy src/omnibase_core
 ```
 
 ## IDE Setup

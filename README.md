@@ -65,7 +65,7 @@ OmniBase Core is the execution engine used by all ONEX-compatible nodes and serv
 
 Install:
 ```bash
-poetry add omnibase_core
+uv add omnibase_core
 ```
 
 Minimal example:
@@ -88,7 +88,7 @@ class NodeCalculator(NodeCompute):
 
 Run tests:
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
 **Next**: [Node Building Guide](docs/guides/node-building/README.md)
