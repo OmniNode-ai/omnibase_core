@@ -7,7 +7,7 @@ and TTL enforcement.
 
 Requirements:
     The redis package is an optional dependency. Install with:
-    poetry install -E cache
+    uv sync --extra cache
 
     Or add to pyproject.toml:
     [project.optional-dependencies]
@@ -124,7 +124,7 @@ def _get_redis_module() -> ModuleType:
         if not REDIS_AVAILABLE:
             # error-ok: RuntimeError appropriate for missing optional dependency
             raise RuntimeError(
-                "Redis package not installed. Install with: poetry install -E cache"
+                "Redis package not installed. Install with: uv sync --extra cache"
             )
         _redis_module = importlib.import_module("redis.asyncio")
     return _redis_module
@@ -341,7 +341,7 @@ class BackendCacheRedis:
         if not REDIS_AVAILABLE:
             # error-ok: RuntimeError appropriate for missing optional dependency
             raise RuntimeError(
-                "Redis package not installed. Install with: poetry install -E cache"
+                "Redis package not installed. Install with: uv sync --extra cache"
             )
 
         self._url = url
@@ -429,7 +429,7 @@ class BackendCacheRedis:
         if not REDIS_AVAILABLE:
             # error-ok: RuntimeError appropriate for missing optional dependency
             raise RuntimeError(
-                "Redis package not installed. Install with: poetry install -E cache"
+                "Redis package not installed. Install with: uv sync --extra cache"
             )
 
         redis_module = _get_redis_module()

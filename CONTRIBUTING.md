@@ -111,13 +111,13 @@ pre-commit run mypy-type-check --all-files --hook-stage pre-push
 
 ```bash
 # Run tests
-poetry run pytest tests/
+uv run pytest tests/
 
 # Run type checking
-poetry run mypy src/
+uv run mypy src/
 
 # Run linting
-poetry run ruff check src/
+uv run ruff check src/
 ```
 
 ## Contributing Guidelines
@@ -227,13 +227,13 @@ async def test_my_node():
 
 ```bash
 # Run all tests
-poetry run pytest tests/
+uv run pytest tests/
 
 # Run with coverage
-poetry run pytest tests/ --cov=src --cov-report=html
+uv run pytest tests/ --cov=src --cov-report=html
 
 # Run specific test
-poetry run pytest tests/unit/test_my_node.py -v
+uv run pytest tests/unit/test_my_node.py -v
 ```
 
 ## Documentation
@@ -275,11 +275,11 @@ git checkout -b fix/bug-description
 
 ```bash
 # Run all quality checks
-poetry run pytest tests/
-poetry run mypy src/
-poetry run ruff check src/
-poetry run ruff check src/ tests/
-poetry run ruff format src/ tests/ --check
+uv run pytest tests/
+uv run mypy src/
+uv run ruff check src/
+uv run ruff check src/ tests/
+uv run ruff format src/ tests/ --check
 ```
 
 ### 4. Commit Changes

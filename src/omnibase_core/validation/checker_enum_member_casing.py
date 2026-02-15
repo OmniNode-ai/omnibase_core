@@ -15,15 +15,15 @@ Key Features:
 Usage Examples:
     As a module (validates src/omnibase_core by default)::
 
-        poetry run python -m omnibase_core.validation.checker_enum_member_casing
+        uv run python -m omnibase_core.validation.checker_enum_member_casing
 
     With specific files (for pre-commit integration)::
 
-        poetry run python -m omnibase_core.validation.checker_enum_member_casing file1.py file2.py
+        uv run python -m omnibase_core.validation.checker_enum_member_casing file1.py file2.py
 
     With verbose output::
 
-        poetry run python -m omnibase_core.validation.checker_enum_member_casing -v
+        uv run python -m omnibase_core.validation.checker_enum_member_casing -v
 
     Programmatic usage::
 

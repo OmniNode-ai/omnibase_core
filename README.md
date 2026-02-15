@@ -142,14 +142,14 @@ Most ONEX nodes are not thread-safe. See [THREADING.md](docs/guides/THREADING.md
 
 ## Development
 
-Uses Poetry for all package management.
+Uses [uv](https://docs.astral.sh/uv/) for package management.
 
 ```bash
-poetry install
-poetry run pytest tests/
-poetry run mypy src/omnibase_core/
-poetry run ruff check src/ tests/
-poetry run ruff format src/ tests/
+uv sync --all-extras
+uv run pytest tests/
+uv run mypy src/omnibase_core/
+uv run ruff check src/ tests/
+uv run ruff format src/ tests/
 ```
 
 **See**: [CONTRIBUTING.md](CONTRIBUTING.md) for PR requirements.

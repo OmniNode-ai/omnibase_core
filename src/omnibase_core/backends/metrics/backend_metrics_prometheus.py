@@ -6,9 +6,9 @@ It supports gauges, counters, and histograms with optional push gateway support.
 
 Dependencies:
     This module requires the prometheus-client package to be installed:
-        poetry add prometheus-client
+        uv add prometheus-client
     or install with the metrics extra:
-        poetry install --extras metrics
+        uv sync --extra metrics
 
 Thread Safety:
     The prometheus-client library handles thread safety for metric operations.
@@ -203,8 +203,8 @@ class BackendMetricsPrometheus:
         if not PROMETHEUS_AVAILABLE:
             msg = (
                 "prometheus-client is required for BackendMetricsPrometheus. "
-                "Install with: poetry add prometheus-client "
-                "or: poetry install --extras metrics"
+                "Install with: uv add prometheus-client "
+                "or: uv sync --extra metrics"
             )
             raise ImportError(msg)  # error-ok: standard pattern for optional imports
 
