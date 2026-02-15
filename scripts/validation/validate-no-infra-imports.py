@@ -31,11 +31,11 @@ provides defense in depth against accidental violations.
 
 Usage:
     # Directory mode (recursive scan)
-    poetry run python scripts/validation/validate-no-infra-imports.py [path]
-    poetry run python scripts/validation/validate-no-infra-imports.py src/omnibase_core
+    uv run python scripts/validation/validate-no-infra-imports.py [path]
+    uv run python scripts/validation/validate-no-infra-imports.py src/omnibase_core
 
     # Pre-commit mode (pass_filenames)
-    poetry run python scripts/validation/validate-no-infra-imports.py file1.py file2.py ...
+    uv run python scripts/validation/validate-no-infra-imports.py file1.py file2.py ...
 
 Exit Codes:
     0: No violations found

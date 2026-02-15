@@ -946,10 +946,10 @@ obj: ProtocolSerializable = some_object  # type: ignore
 ### Static Type Checking
 ```bash
 # Run mypy with protocol checks
-poetry run mypy src/omnibase_core --strict-optional --check-untyped-defs
+uv run mypy src/omnibase_core --strict-optional --check-untyped-defs
 
 # Protocol-specific checks
-poetry run mypy src/omnibase_core --warn-redundant-casts --warn-unreachable
+uv run mypy src/omnibase_core --warn-redundant-casts --warn-unreachable
 ```
 
 ### Runtime Validation

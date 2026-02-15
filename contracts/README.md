@@ -138,7 +138,7 @@ Target benchmarks for runtime operations:
 Benchmark tooling:
 ```bash
 # Run performance benchmarks
-poetry run pytest tests/integration/benchmarks/ -v --benchmark-only
+uv run pytest tests/integration/benchmarks/ -v --benchmark-only
 ```
 
 ## Operational Monitoring

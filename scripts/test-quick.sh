@@ -4,7 +4,7 @@
 set -e
 
 echo "🚀 Running affected tests with pytest-testmon..."
-poetry run pytest \
+uv run pytest \
   --testmon \
   --testmon-noselect \
   -n auto \

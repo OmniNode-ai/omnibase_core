@@ -132,15 +132,15 @@ Before building nodes, ensure you have:
 ### Required
 
 - **Python 3.12+**: `python --version`
-- **Poetry**: `poetry --version`
-- **omnibase_core installed**: `poetry add omnibase_core` (or local editable install)
+- **Poetry**: `uv --version`
+- **omnibase_core installed**: `uv add omnibase_core` (or local editable install)
 - **Basic async/await knowledge**: Understanding of Python async patterns
 
 ### Recommended
 
 - **Git**: For version control
-- **pytest**: For testing (`poetry add --group dev pytest`)
-- **mypy**: For type checking (`poetry add --group dev mypy`)
+- **pytest**: For testing (`uv add --group dev pytest`)
+- **mypy**: For type checking (`uv add --group dev mypy`)
 - **IDE with Python support**: VSCode, PyCharm, or similar
 
 ### Verification
@@ -152,13 +152,13 @@ Verify your environment:
 python --version  # Should be 3.12+
 
 # Check Poetry
-poetry --version  # Should be 1.0+
+uv --version  # Should be 1.0+
 
 # Install omnibase_core (if not already installed)
-poetry add omnibase_core
+uv add omnibase_core
 
 # Verify installation (v0.4.0+ with primary node implementations)
-poetry run python -c "from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator; print('✓ omnibase_core ready!')"
+uv run python -c "from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator; print('✓ omnibase_core ready!')"
 ```
 
 ## Learning Path
@@ -215,7 +215,7 @@ poetry run python -c "from omnibase_core.nodes import NodeCompute, NodeReducer, 
 
 ```
 # In your project directory
-poetry add omnibase_core
+uv add omnibase_core
 
 # Create node structure
 mkdir -p src/your_project/nodes

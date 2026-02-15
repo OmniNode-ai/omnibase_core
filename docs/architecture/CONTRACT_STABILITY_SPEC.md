@@ -172,7 +172,7 @@ The 12-character (48-bit) hash truncation balances:
 For high-security scenarios, use `--verbose` flag to access the complete 64-character SHA256:
 
 ```bash
-poetry run python scripts/compute_contract_fingerprint.py contract.yaml --verbose
+uv run python scripts/compute_contract_fingerprint.py contract.yaml --verbose
 ```
 
 **Recommended for**:
@@ -200,11 +200,11 @@ When contract content changes, fingerprints MUST be regenerated:
 
 ```bash
 # Compute new fingerprint
-poetry run python scripts/compute_contract_fingerprint.py path/to/contract.yaml
+uv run python scripts/compute_contract_fingerprint.py path/to/contract.yaml
 
 # Update contract YAML with new fingerprint value
 # Then validate
-poetry run python scripts/compute_contract_fingerprint.py path/to/contract.yaml --validate
+uv run python scripts/compute_contract_fingerprint.py path/to/contract.yaml --validate
 ```
 
 See [scripts/README.md](../../scripts/README.md) for detailed regeneration procedures.

@@ -645,7 +645,7 @@ def test_schema_value_round_trip():
 Run mypy to verify type correctness:
 
 ```bash
-poetry run mypy src/omnibase_core/
+uv run mypy src/omnibase_core/
 ```
 
 ---

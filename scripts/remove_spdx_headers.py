@@ -7,13 +7,13 @@ files should have docstring-first format with NO SPDX headers.
 
 Usage:
     # Remove from omnibase_core (default target)
-    poetry run python scripts/remove_spdx_headers.py [--dry-run] [--verbose]
+    uv run python scripts/remove_spdx_headers.py [--dry-run] [--verbose]
 
     # Remove from entire src/ directory
-    poetry run python scripts/remove_spdx_headers.py --path src/
+    uv run python scripts/remove_spdx_headers.py --path src/
 
     # Remove from specific subdirectory
-    poetry run python scripts/remove_spdx_headers.py --path src/some_package/
+    uv run python scripts/remove_spdx_headers.py --path src/some_package/
 
 Default Path:
     The default is src/omnibase_core because this script was originally created

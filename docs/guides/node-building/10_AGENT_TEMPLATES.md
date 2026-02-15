@@ -382,7 +382,7 @@ items:
   - id: "C007"
     check: "Type hints on all parameters and returns"
     severity: "MEDIUM"
-    verify: "poetry run mypy {file}"
+    verify: "uv run mypy {file}"
 ```
 
 ---
@@ -1333,38 +1333,38 @@ items:
 
   - id: "U002"
     check: "Imports resolve correctly"
-    command: "poetry run python -c 'from {module} import {class}'"
+    command: "uv run python -c 'from {module} import {class}'"
 
   - id: "U003"
     check: "Type checking passes"
-    command: "poetry run mypy {file_path}"
+    command: "uv run mypy {file_path}"
 
   - id: "U004"
     check: "Code formatting and linting correct"
-    command: "poetry run ruff check {file_path}"
+    command: "uv run ruff check {file_path}"
 
   - id: "U005"
     check: "Code formatting applied"
-    command: "poetry run ruff format --check {file_path}"
+    command: "uv run ruff format --check {file_path}"
 
   - id: "U006"
     check: "Unit tests pass"
-    command: "poetry run pytest tests/unit/nodes/ -v"
+    command: "uv run pytest tests/unit/nodes/ -v"
 ```
 
 ### Quick Validation Commands
 
 ```bash
 # Validate single node file
-poetry run mypy src/path/to/node.py
-poetry run ruff check src/path/to/node.py
-poetry run ruff format --check src/path/to/node.py
+uv run mypy src/path/to/node.py
+uv run ruff check src/path/to/node.py
+uv run ruff format --check src/path/to/node.py
 
 # Run node-specific tests
-poetry run pytest tests/unit/nodes/test_your_node.py -v
+uv run pytest tests/unit/nodes/test_your_node.py -v
 
 # Full validation suite
-poetry run pytest tests/unit/nodes/ --cov=src/omnibase_core/nodes
+uv run pytest tests/unit/nodes/ --cov=src/omnibase_core/nodes
 ```
 
 ---
@@ -1473,16 +1473,16 @@ errors:
 
 ```bash
 # Check if node can be imported
-poetry run python -c "from omnibase_core.nodes import NodeCompute; print('OK')"
+uv run python -c "from omnibase_core.nodes import NodeCompute; print('OK')"
 
 # Check if your node can be imported
-poetry run python -c "from your_module import YourNode; print('OK')"
+uv run python -c "from your_module import YourNode; print('OK')"
 
 # Run with verbose logging
-ONEX_LOG_LEVEL=DEBUG poetry run pytest tests/unit/nodes/test_your_node.py -v
+ONEX_LOG_LEVEL=DEBUG uv run pytest tests/unit/nodes/test_your_node.py -v
 
 # Check mypy errors in detail
-poetry run mypy src/your_module/your_node.py --show-error-codes
+uv run mypy src/your_module/your_node.py --show-error-codes
 ```
 
 ---

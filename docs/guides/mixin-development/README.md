@@ -77,7 +77,7 @@ This comprehensive guide teaches you how to create production-ready mixins (subc
 
 ```bash
 # Verify environment
-poetry run python -c "from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract import ModelHealthCheckSubcontract; print('Mixin system ready')"
+uv run python -c "from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract import ModelHealthCheckSubcontract; print('Mixin system ready')"
 
 # Check existing mixins (run from repo root)
 ls ./src/omnibase_core/mixins/
@@ -257,10 +257,10 @@ your_project/
 
 ```bash
 # Validate mixin contract
-poetry run onex run contract_validator --contract src/your_project/mixins/mixin_your_feature.yaml
+uv run onex run contract_validator --contract src/your_project/mixins/mixin_your_feature.yaml
 
 # Validate complete node contract (with mixins)
-poetry run onex run contract_validator --contract src/your_project/nodes/your_node/v1_0_0/contract.yaml
+uv run onex run contract_validator --contract src/your_project/nodes/your_node/v1_0_0/contract.yaml
 ```
 
 ### Testing Mixins

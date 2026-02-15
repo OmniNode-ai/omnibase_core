@@ -480,7 +480,7 @@ The purity linter runs automatically on every pre-push. The script internally di
 # .pre-commit-config.yaml (excerpt)
 - id: check-node-purity
   name: ONEX Node Purity Validation
-  entry: poetry run python scripts/check_node_purity.py
+  entry: uv run python scripts/check_node_purity.py
   language: system
   pass_filenames: false
   always_run: true
@@ -496,7 +496,7 @@ The linter runs in CI via GitHub Actions:
 ```yaml
 # .github/workflows/test.yml (excerpt)
 - name: Run purity linter
-  run: poetry run python scripts/check_node_purity.py --verbose
+  run: uv run python scripts/check_node_purity.py --verbose
 ```
 
 ### Error Codes
@@ -530,19 +530,19 @@ Run the linter to find all violations:
 
 ```bash
 # Check specific file
-poetry run python scripts/check_node_purity.py --file src/omnibase_core/nodes/node_my_compute.py
+uv run python scripts/check_node_purity.py --file src/omnibase_core/nodes/node_my_compute.py
 
 # Check all nodes (default: src/omnibase_core)
-poetry run python scripts/check_node_purity.py
+uv run python scripts/check_node_purity.py
 
 # Check with verbose output
-poetry run python scripts/check_node_purity.py --verbose
+uv run python scripts/check_node_purity.py --verbose
 
 # Generate JSON report
-poetry run python scripts/check_node_purity.py --json
+uv run python scripts/check_node_purity.py --json
 
 # Strict mode (treat warnings as errors)
-poetry run python scripts/check_node_purity.py --strict
+uv run python scripts/check_node_purity.py --strict
 ```
 
 ### Step 2: Replace `Any` with Typed Alternatives
@@ -651,13 +651,13 @@ After migration, verify:
 
 ```bash
 # Run linter - should pass (scans all node files automatically)
-poetry run python scripts/check_node_purity.py
+uv run python scripts/check_node_purity.py
 
 # Run tests - should pass
-poetry run pytest tests/unit/nodes/ -v
+uv run pytest tests/unit/nodes/ -v
 
 # Run type checker - should pass
-poetry run mypy src/omnibase_core/nodes/
+uv run mypy src/omnibase_core/nodes/
 ```
 
 ---

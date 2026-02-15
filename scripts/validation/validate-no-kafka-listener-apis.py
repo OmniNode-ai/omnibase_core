@@ -21,13 +21,13 @@ Detected Patterns:
 
 Usage:
     # Check specific files (pre-commit mode)
-    poetry run python scripts/validation/validate-no-kafka-listener-apis.py <file1> [file2] ...
+    uv run python scripts/validation/validate-no-kafka-listener-apis.py <file1> [file2] ...
 
     # Check entire src/ directory (default)
-    poetry run python scripts/validation/validate-no-kafka-listener-apis.py
+    uv run python scripts/validation/validate-no-kafka-listener-apis.py
 
     # Check specific directory
-    poetry run python scripts/validation/validate-no-kafka-listener-apis.py src/omnibase_core/
+    uv run python scripts/validation/validate-no-kafka-listener-apis.py src/omnibase_core/
 
     To allow listener APIs or Kafka imports in specific files (rare cases), add comment:
     # listener-api-ok: reason for exception

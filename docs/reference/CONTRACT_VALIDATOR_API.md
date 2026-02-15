@@ -287,7 +287,7 @@ Comprehensive test suite with 19 test cases covering:
 
 Run tests:
 ```
-poetry run pytest tests/unit/validation/test_contract_validator.py -v
+uv run pytest tests/unit/validation/test_contract_validator.py -v
 ```
 
 ## Version Information

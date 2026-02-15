@@ -110,7 +110,7 @@ When disabled (the default):
 ```bash
 # Development / CI
 export ONEX_DEBUG_THREAD_SAFETY=1
-poetry run pytest tests/
+uv run pytest tests/
 
 # Disable (default -- zero overhead)
 unset ONEX_DEBUG_THREAD_SAFETY
@@ -122,7 +122,7 @@ GitHub Actions example:
 - name: Run tests with thread safety validation
   env:
     ONEX_DEBUG_THREAD_SAFETY: "1"
-  run: poetry run pytest tests/
+  run: uv run pytest tests/
 ```
 
 ### Error Output

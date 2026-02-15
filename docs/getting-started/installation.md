@@ -80,7 +80,7 @@ pip install -e .
 
 ```
 # With Poetry
-poetry run python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('✅ Installation successful!')"
+uv run python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('✅ Installation successful!')"
 
 # With pip
 python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('✅ Installation successful!')"
@@ -89,7 +89,7 @@ python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('✅ 
 ### 2. All Node Types Test
 
 ```
-poetry run python -c "
+uv run python -c "
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_reducer import NodeReducer
@@ -114,7 +114,7 @@ pip install -e ".[dev]"
 
 ```
 # With Poetry
-poetry run pytest
+uv run pytest
 
 # With pip
 pytest
@@ -124,8 +124,8 @@ pytest
 
 ```
 # With Poetry
-poetry run ruff check .
-poetry run mypy .
+uv run ruff check .
+uv run mypy .
 
 # With pip
 ruff check .
@@ -201,7 +201,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 
 ```
 # Check installation
-poetry run python -c "
+uv run python -c "
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_reducer import NodeReducer
@@ -210,7 +210,7 @@ print('✅ All node types imported successfully!')
 "
 
 # Check version
-poetry run python -c "import omnibase_core; print(f'omnibase_core version: {omnibase_core.__version__}')"
+uv run python -c "import omnibase_core; print(f'omnibase_core version: {omnibase_core.__version__}')"
 ```
 
 ## Next Steps

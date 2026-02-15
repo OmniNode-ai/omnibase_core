@@ -42,7 +42,7 @@ Usage:
 
 Requirements:
     The redis package is an optional dependency. Install with:
-    poetry install -E cache
+    uv sync --extra cache
 
 .. versionadded:: 0.5.0
 """

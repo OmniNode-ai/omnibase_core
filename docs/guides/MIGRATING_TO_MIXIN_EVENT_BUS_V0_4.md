@@ -335,10 +335,10 @@ Use this checklist to ensure your code is ready for v1.0:
 
 ```bash
 # Run type checker to find protocol violations
-poetry run mypy src/your_package/
+uv run mypy src/your_package/
 
 # Run tests with deprecation warnings enabled
-poetry run pytest tests/ -W default::DeprecationWarning
+uv run pytest tests/ -W default::DeprecationWarning
 ```
 
 ---

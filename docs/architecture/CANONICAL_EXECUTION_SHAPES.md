@@ -981,10 +981,10 @@ Purity checks are enforced via AST analysis:
 
 ```bash
 # Check node purity (COMPUTE and REDUCER)
-poetry run python scripts/check_node_purity.py
+uv run python scripts/check_node_purity.py
 
 # Violations block CI/CD
-poetry run python scripts/check_node_purity.py --strict
+uv run python scripts/check_node_purity.py --strict
 ```
 
 ### Runtime Validation

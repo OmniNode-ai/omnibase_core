@@ -11,11 +11,11 @@ This ensures:
 3. Consistent exports across all Python files
 
 Usage:
-    poetry run python scripts/validation/validate-all-exports.py
-    poetry run python scripts/validation/validate-all-exports.py --verbose
-    poetry run python scripts/validation/validate-all-exports.py --warn-missing
-    poetry run python scripts/validation/validate-all-exports.py --fail-on-star
-    poetry run python scripts/validation/validate-all-exports.py src/omnibase_core/models/
+    uv run python scripts/validation/validate-all-exports.py
+    uv run python scripts/validation/validate-all-exports.py --verbose
+    uv run python scripts/validation/validate-all-exports.py --warn-missing
+    uv run python scripts/validation/validate-all-exports.py --fail-on-star
+    uv run python scripts/validation/validate-all-exports.py src/omnibase_core/models/
 
 Exit Codes:
     0: All validations passed

@@ -80,7 +80,7 @@ class ManifestLogger:
             import yaml
         except ImportError as e:
             raise ModelOnexError(
-                message="PyYAML is required for YAML output. Install with: poetry add pyyaml",
+                message="PyYAML is required for YAML output. Install with: uv add pyyaml",
                 error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                 dependency="pyyaml",
                 operation="to_yaml",

@@ -207,19 +207,19 @@ Purity is enforced by `scripts/check_node_purity.py`:
 
 ```bash
 # Run purity checks
-poetry run python scripts/check_node_purity.py
+uv run python scripts/check_node_purity.py
 
 # Verbose output
-poetry run python scripts/check_node_purity.py --verbose
+uv run python scripts/check_node_purity.py --verbose
 
 # Strict mode (warnings as errors)
-poetry run python scripts/check_node_purity.py --strict
+uv run python scripts/check_node_purity.py --strict
 
 # JSON output for CI
-poetry run python scripts/check_node_purity.py --json
+uv run python scripts/check_node_purity.py --json
 
 # Check specific file
-poetry run python scripts/check_node_purity.py --file src/omnibase_core/nodes/node_compute.py
+uv run python scripts/check_node_purity.py --file src/omnibase_core/nodes/node_compute.py
 ```
 
 ### Exit Codes
@@ -233,7 +233,7 @@ Add to `.github/workflows/test.yml`:
 
 ```yaml
 - name: Check Node Purity
-  run: poetry run python scripts/check_node_purity.py
+  run: uv run python scripts/check_node_purity.py
 ```
 
 ### Test Suite
@@ -241,7 +241,7 @@ Add to `.github/workflows/test.yml`:
 Comprehensive tests in `tests/unit/nodes/test_node_purity.py`:
 
 ```bash
-poetry run pytest tests/unit/nodes/test_node_purity.py -v
+uv run pytest tests/unit/nodes/test_node_purity.py -v
 ```
 
 ## Violation Types

@@ -284,7 +284,7 @@ metrics:
 
 ```bash
 # PLANNED: Validate your mixin contract (not yet available)
-# poetry run onex run contract_validator --contract src/omnibase_core/mixins/mixin_error_handling.yaml
+# uv run onex run contract_validator --contract src/omnibase_core/mixins/mixin_error_handling.yaml
 
 # Expected output (when implemented):
 # ✓ YAML syntax valid
@@ -303,13 +303,13 @@ Until YAML support is implemented, validate by creating and testing the Pydantic
 touch src/omnibase_core/models/contracts/subcontracts/model_error_handling_subcontract.py
 
 # Validate through Python import and instantiation
-poetry run python -c "from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract; print(ModelErrorHandlingSubcontract())"
+uv run python -c "from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract; print(ModelErrorHandlingSubcontract())"
 
 # Run unit tests (see Step 5)
 # NOTE: This test file is what you would create as part of this tutorial.
 # Real subcontract tests follow the same pattern under:
 # tests/unit/models/contracts/subcontracts/
-poetry run pytest tests/unit/models/contracts/subcontracts/test_model_error_handling_subcontract.py
+uv run pytest tests/unit/models/contracts/subcontracts/test_model_error_handling_subcontract.py
 ```
 
 ### Common Validation Errors

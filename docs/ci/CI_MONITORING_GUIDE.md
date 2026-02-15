@@ -207,10 +207,10 @@ gh run list --workflow=test.yml --limit 10
 **Command**:
 ```
 # Collect tests in specific split (local simulation)
-poetry run pytest --collect-only --splits=20 --group=12
+uv run pytest --collect-only --splits=20 --group=12
 
 # Count tests per split
-poetry run pytest --collect-only --quiet | wc -l
+uv run pytest --collect-only --quiet | wc -l
 ```
 
 **Questions to Answer**:
@@ -234,14 +234,14 @@ Variance: +43 tests (+7%)
 **Command**:
 ```
 # Run slow split with duration reporting
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits=20 --group=12 \
   --durations=20 \
   --timeout=60 \
   -v
 
 # Alternative: Run with detailed timing
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits=20 --group=12 \
   --durations=0 | sort -t: -k2 -n | tail -20
 ```
@@ -344,7 +344,7 @@ gh run view <run-id> --log | grep "split-12"
 **Verification**:
 ```
 # Run affected split locally to verify fix
-poetry run pytest tests/ --splits=20 --group=12 --durations=10
+uv run pytest tests/ --splits=20 --group=12 --durations=10
 
 # Push fix and monitor next CI run
 git push && gh run watch
@@ -366,8 +366,8 @@ git push && gh run watch
 **Investigation**:
 ```
 # Identify slow tests in split 12
-poetry run pytest --collect-only --splits=20 --group=12 | grep integration
-poetry run pytest tests/ --splits=20 --group=12 --durations=20
+uv run pytest --collect-only --splits=20 --group=12 | grep integration
+uv run pytest tests/ --splits=20 --group=12 --durations=20
 ```
 
 **Resolution**:
@@ -414,7 +414,7 @@ gh run list --workflow=test.yml --limit 5
 # Track test count over time
 git log --all --pretty=format:"%h %ad" --date=short | while read commit date; do
   git checkout $commit 2>/dev/null
-  count=$(poetry run pytest --collect-only --quiet 2>/dev/null | grep "test" | wc -l)
+  count=$(uv run pytest --collect-only --quiet 2>/dev/null | grep "test" | wc -l)
   echo "$date,$commit,$count"
 done > test_growth.csv
 ```
@@ -437,7 +437,7 @@ done > test_growth.csv
 **Investigation**:
 ```
 # Run with detailed async debugging
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits=20 --group=12 \
   --log-cli-level=DEBUG \
   --capture=no \
@@ -465,10 +465,10 @@ grep "Event loop" <ci-log-file>
 **Investigation**:
 ```
 # Run with reduced workers
-poetry run pytest tests/ --splits=20 --group=12 -n 2
+uv run pytest tests/ --splits=20 --group=12 -n 2
 
 # Profile memory usage (local)
-poetry run pytest tests/ --memray --splits=20 --group=12
+uv run pytest tests/ --memray --splits=20 --group=12
 ```
 
 **Resolution**:
@@ -544,20 +544,20 @@ gh run rerun <run-id>
 
 ```
 # Simulate specific split locally
-poetry run pytest tests/ --splits=20 --group=12
+uv run pytest tests/ --splits=20 --group=12
 
 # Profile slowest tests in split
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits=20 --group=12 \
   --durations=20 \
   --timeout=60
 
 # Collect tests in split (no execution)
-poetry run pytest --collect-only \
+uv run pytest --collect-only \
   --splits=20 --group=12
 
 # Run with detailed timing
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits=20 --group=12 \
   -v --tb=short \
   --durations=0 | tee split_12_timing.log
@@ -735,7 +735,7 @@ if __name__ == "__main__":
 gh run view $(gh run list --workflow=test.yml --limit 1 --json databaseId --jq '.[0].databaseId')
 
 # Run slow split locally with profiling
-poetry run pytest tests/ --splits=20 --group=12 --durations=20
+uv run pytest tests/ --splits=20 --group=12 --durations=20
 
 # Monitor CI in real-time
 gh run watch

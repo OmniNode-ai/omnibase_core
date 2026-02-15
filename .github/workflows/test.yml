@@ -14,9 +14,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  POETRY_VERSION: "2.2.1"
+  UV_VERSION: "0.8.3"
   PYTHON_VERSION: "3.12"
-  CACHE_VERSION: "0.1.5"
 
 jobs:
   # =============================================================================
@@ -74,44 +73,25 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      # Note: omnibase_spi is now public - no auth required
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Check ruff formatting
-        run: poetry run ruff format --check src/ tests/
+        run: uv run ruff format --check src/ tests/
 
       - name: Check ruff linting (includes import sorting)
-        run: poetry run ruff check src/ tests/
+        run: uv run ruff check src/ tests/
 
       - name: Run mypy type checking (strict)
-        run: poetry run mypy src/omnibase_core
+        run: uv run mypy src/omnibase_core
 
   # Phase 1 validation job - runs in parallel with lint, exports-validation
   # Must complete before test-parallel starts (fail-fast optimization)
@@ -129,36 +109,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Run pyright type checking
-        run: poetry run pyright src/omnibase_core
+        run: uv run pyright src/omnibase_core
 
   # Phase 1 validation job - runs in parallel with lint, pyright
   # Must complete before test-parallel starts (fail-fast optimization)
@@ -176,36 +139,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Validate __all__ exports
-        run: poetry run python scripts/validation/validate-all-exports.py
+        run: uv run python scripts/validation/validate-all-exports.py
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Separate job for validation scripts mypy (not blocking test-parallel)
@@ -223,37 +169,20 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Run mypy on architectural validation scripts (strict)
         run: |
-          poetry run mypy --strict \
+          uv run mypy --strict \
             scripts/validation/validate-no-direct-io.py \
             scripts/validation/validate-all-exports.py \
             scripts/validation/validate-no-infra-imports.py \
@@ -304,12 +233,12 @@ jobs:
           FULL_SCAN_EXIT=0
 
           if [[ "$RUN_CHANGED_FILES" == "true" ]]; then
-            poetry run python scripts/check_transport_imports.py --changed-files --verbose
+            uv run python scripts/check_transport_imports.py --changed-files --verbose
             CHANGED_FILES_EXIT=$?
           fi
 
           if [[ "$RUN_FULL_SCAN" == "true" ]]; then
-            poetry run python scripts/check_transport_imports.py --verbose
+            uv run python scripts/check_transport_imports.py --verbose
             FULL_SCAN_EXIT=$?
           fi
 
@@ -445,33 +374,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Run Node Purity Check
         run: |
@@ -479,7 +391,7 @@ jobs:
           # Validates declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
           # TECH DEBT NOTE: Existing 'Any' type violations in node_compute.py and node_reducer.py
           # are tracked tech debt. Once fixed, remove --continue-on-error and make blocking.
-          poetry run python scripts/check_node_purity.py --verbose
+          uv run python scripts/check_node_purity.py --verbose
         continue-on-error: true  # Non-blocking until tech debt resolved
 
       - name: Node purity check summary
@@ -512,36 +424,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Run enum governance validator
-        run: poetry run python -m omnibase_core.validation.checker_enum_governance src/omnibase_core/
+        run: uv run python -m omnibase_core.validation.checker_enum_governance src/omnibase_core/
 
       - name: Enum governance summary
         if: always()
@@ -580,13 +475,13 @@ jobs:
           # full equality model (hashed_secret + type), and exits non-zero only
           # for NEW secrets not already baselined.
           #
-          # Excludes: poetry.lock (dependency hashes), .venv/, test fixtures,
+          # Excludes: uv.lock (dependency hashes), .venv/, test fixtures,
           # .git/, .secrets.baseline (contains hashed values that self-trigger),
           # workflow YAML (references "secret" in config context)
           set +e
           git ls-files -z | xargs -0 detect-secrets-hook \
             --baseline .secrets.baseline \
-            --exclude-files 'poetry\.lock' \
+            --exclude-files 'uv\.lock' \
             --exclude-files '\.venv/' \
             --exclude-files 'tests/fixtures/' \
             --exclude-files '\.git/' \
@@ -605,7 +500,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "If these are false positives, regenerate the baseline:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            echo 'detect-secrets scan --all-files --exclude-files "poetry\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --exclude-files "\.secrets\.baseline" --exclude-files "\.github/workflows/.*\.yml" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
+            echo 'detect-secrets scan --all-files --exclude-files "uv\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --exclude-files "\.secrets\.baseline" --exclude-files "\.github/workflows/.*\.yml" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
@@ -708,47 +603,20 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      # Note: omnibase_spi is now public - no auth required
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: |
-          poetry install --no-interaction --no-root || {
-            echo "Dependency install failed"
-            exit 1
-          }
-
-      - name: Install project
-        run: |
-          poetry install --no-interaction || {
-            echo "Project install failed"
-            exit 1
-          }
+        run: uv sync --all-extras
 
       - name: Run test split ${{ matrix.split }}/20
         run: |
-          poetry run pytest tests/ \
+          uv run pytest tests/ \
             --splits 20 \
             --group ${{ matrix.split }} \
             -n auto \

@@ -11,8 +11,8 @@ This ensures:
 3. Consistent exports across all protocol files
 
 Usage:
-    poetry run python scripts/check_protocol_exports.py
-    poetry run python scripts/check_protocol_exports.py --verbose
+    uv run python scripts/check_protocol_exports.py
+    uv run python scripts/check_protocol_exports.py --verbose
 """
 
 from __future__ import annotations

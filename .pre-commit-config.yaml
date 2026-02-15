@@ -59,7 +59,7 @@ repos:
       # to match CI behavior and prevent "works locally, fails in CI" issues.
       - id: ruff-format
         name: ruff format (auto-format entire codebase)
-        entry: poetry run ruff format src/ tests/
+        entry: uv run ruff format src/ tests/
         language: system
         pass_filenames: false
         always_run: true
@@ -67,7 +67,7 @@ repos:
 
       - id: ruff-fix
         name: ruff check (auto-fix entire codebase)
-        entry: poetry run ruff check --fix --exit-non-zero-on-fix src/ tests/
+        entry: uv run ruff check --fix --exit-non-zero-on-fix src/ tests/
         language: system
         pass_filenames: false
         always_run: true
@@ -77,7 +77,7 @@ repos:
 
       - id: mypy-type-check
         name: mypy (type checking - strict)
-        entry: bash -c 'poetry run mypy "$@" --show-error-codes --no-error-summary' --
+        entry: bash -c 'uv run mypy "$@" --show-error-codes --no-error-summary' --
         language: system
         types: [python]
         files: ^src/omnibase_core/.*\.py$
@@ -105,7 +105,7 @@ repos:
       # CI runs both on full codebase for comprehensive coverage.
       - id: pyright-type-check
         name: pyright (type checking - basic)
-        entry: poetry run pyright
+        entry: uv run pyright
         language: system
         types: [python]
         files: ^src/omnibase_core/.*\.py$
@@ -130,7 +130,7 @@ repos:
       # ONEX Core Framework Validation (SHARED HOOKS)
       - id: validate-repository-structure
         name: ONEX Repository Structure Validation
-        entry: poetry run python scripts/validation/validate_structure.py
+        entry: uv run python scripts/validation/validate_structure.py
         args: ['.', 'omnibase_core']
         language: system
         always_run: true
@@ -142,7 +142,7 @@ repos:
       # - validate-file-naming-conventions: FILE naming (model_user.py, enum_status.py)
       - id: validate-naming-conventions
         name: ONEX Naming Convention Validation
-        entry: poetry run python scripts/validation/validate_naming.py
+        entry: uv run python scripts/validation/validate_naming.py
         args: ['src/']
         language: system
         pass_filenames: false
@@ -158,7 +158,7 @@ repos:
       # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: validate-file-naming-conventions
         name: ONEX File Naming Convention Validation (Warning Mode)
-        entry: bash -c 'poetry run python -m omnibase_core.validation.checker_naming_convention || true'
+        entry: bash -c 'uv run python -m omnibase_core.validation.checker_naming_convention || true'
         language: system
         pass_filenames: false
         always_run: true
@@ -166,7 +166,7 @@ repos:
 
       - id: validate-file-locations
         name: ONEX File Location Enforcement
-        entry: poetry run python scripts/validation/validate-file-locations.py
+        entry: uv run python scripts/validation/validate-file-locations.py
         language: system
         pass_filenames: false
         files: ^src/.*\.py$
@@ -175,7 +175,7 @@ repos:
 
       - id: validate-no-duplicate-dirs
         name: ONEX Duplicate Directory Detection
-        entry: poetry run python scripts/validation/validate-no-duplicate-dirs.py
+        entry: uv run python scripts/validation/validate-no-duplicate-dirs.py
         language: system
         pass_filenames: false
         always_run: true
@@ -183,7 +183,7 @@ repos:
 
       - id: validate-no-duplicate-models
         name: ONEX Duplicate Model Filename Prevention
-        entry: poetry run python scripts/validation/validate-no-duplicate-models.py
+        entry: uv run python scripts/validation/validate-no-duplicate-models.py
         language: system
         pass_filenames: false
         always_run: true
@@ -191,7 +191,7 @@ repos:
 
       - id: validate-no-empty-directories
         name: ONEX Empty Directory Prevention
-        entry: poetry run python scripts/validation/validate-no-empty-directories.py
+        entry: uv run python scripts/validation/validate-no-empty-directories.py
         language: system
         pass_filenames: false
         always_run: true
@@ -212,7 +212,7 @@ repos:
       # - typed_dict_demo.py: sample_id and ticket_id are external corpus identifiers, not internal UUIDs (OMN-1396)
       - id: validate-string-versions
         name: ONEX String Version Anti-Pattern Detection
-        entry: poetry run python scripts/validation/validate-string-versions.py
+        entry: uv run python scripts/validation/validate-string-versions.py
         language: system
         pass_filenames: true
         files: ^.*\.(py|yaml|yml)$
@@ -221,7 +221,7 @@ repos:
 
       - id: validate-archived-imports
         name: ONEX Archived Path Import Prevention
-        entry: poetry run python scripts/validation/validate-archived-imports.py
+        entry: uv run python scripts/validation/validate-archived-imports.py
         args: ['src/']
         language: system
         pass_filenames: false
@@ -231,7 +231,7 @@ repos:
 
       - id: validate-no-backward-compatibility
         name: ONEX Backward Compatibility Anti-Pattern Detection
-        entry: poetry run python scripts/validation/validate-no-backward-compatibility.py
+        entry: uv run python scripts/validation/validate-no-backward-compatibility.py
         args: ['-d', 'src/']
         language: system
         pass_filenames: false
@@ -243,7 +243,7 @@ repos:
       # - cli_demo.py: Loads dynamic corpus/mock data for demo execution, not contract validation (OMN-1396)
       - id: validate-no-manual-yaml
         name: ONEX Manual YAML Prevention
-        entry: poetry run python scripts/validation/validate-no-manual-yaml.py
+        entry: uv run python scripts/validation/validate-no-manual-yaml.py
         language: system
         pass_filenames: true
         files: ^.*\.py$
@@ -253,7 +253,7 @@ repos:
       # AST-based validators - accept file arguments for fast pre-commit
       - id: validate-pydantic-patterns
         name: ONEX Pydantic Pattern Validation
-        entry: poetry run python scripts/validation/validate-pydantic-patterns.py
+        entry: uv run python scripts/validation/validate-pydantic-patterns.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -268,7 +268,7 @@ repos:
       # - Mutable defaults must use default_factory
       - id: validate-pydantic-conventions
         name: Validate Pydantic conventions
-        entry: poetry run python -m omnibase_core.validation.validator_pydantic_conventions
+        entry: uv run python -m omnibase_core.validation.validator_pydantic_conventions
         language: system
         types: [python]
         files: ^src/omnibase_core/
@@ -282,7 +282,7 @@ repos:
       # PrimitiveValue, ToolParameterValue), fixed any_contaminated and overly_broad patterns.
       - id: validate-union-usage
         name: ONEX Union Usage Validation
-        entry: poetry run python scripts/validation/validate-union-usage.py
+        entry: uv run python scripts/validation/validate-union-usage.py
         args: ['--allow-invalid', '160']
         language: system
         pass_filenames: true
@@ -293,7 +293,7 @@ repos:
       # Repository-specific validation (omnibase_core only)
       - id: validate-contracts
         name: ONEX Contract Validation
-        entry: poetry run python scripts/validation/validate-contracts.py
+        entry: uv run python scripts/validation/validate-contracts.py
         language: system
         pass_filenames: false
         files: ^src/omnibase_core/(nodes|protocol|core).*\.py$
@@ -301,7 +301,7 @@ repos:
 
       - id: audit-optional-usage
         name: ONEX Optional Type Usage Audit
-        entry: poetry run python scripts/validation/audit_optional.py
+        entry: uv run python scripts/validation/audit_optional.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -310,7 +310,7 @@ repos:
 
       - id: check-stub-implementations
         name: ONEX Stub Implementation Detector
-        entry: poetry run python scripts/validation/check_stub_implementations.py
+        entry: uv run python scripts/validation/check_stub_implementations.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -319,7 +319,7 @@ repos:
 
       - id: check-no-fallbacks
         name: ONEX No Fallback Patterns Validation
-        entry: poetry run python scripts/validation/check_no_fallbacks.py
+        entry: uv run python scripts/validation/check_no_fallbacks.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -328,7 +328,7 @@ repos:
 
       - id: check-error-raising
         name: ONEX Error Raising Validation
-        entry: poetry run python scripts/validation/check_error_raising.py
+        entry: uv run python scripts/validation/check_error_raising.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -343,7 +343,7 @@ repos:
       #   - *example* files (demo/documentation files)
       - id: check-no-print-statements
         name: ONEX Print Statement Prevention
-        entry: poetry run python scripts/validation/check_no_print_statements.py
+        entry: uv run python scripts/validation/check_no_print_statements.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -352,7 +352,7 @@ repos:
 
       - id: validate-no-enhancement-prefixes
         name: ONEX Enhancement Prefix Anti-Pattern Detection
-        entry: poetry run python scripts/validation/validate-no-enhancement-prefixes.py
+        entry: uv run python scripts/validation/validate-no-enhancement-prefixes.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -366,7 +366,7 @@ repos:
       # See: docs/conventions/FILE_HEADERS.md for canonical header format
       - id: validate-no-spdx-headers
         name: ONEX SPDX Header Prevention
-        entry: poetry run python scripts/validation/validate-no-spdx-headers.py
+        entry: uv run python scripts/validation/validate-no-spdx-headers.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -379,7 +379,7 @@ repos:
       # See: scripts/validation/validate-union-usage.py module docstring for rationale.
       - id: onex-single-class-per-file
         name: ONEX Single Class Per File
-        entry: poetry run python scripts/validation/validate-single-class-per-file.py
+        entry: uv run python scripts/validation/validate-single-class-per-file.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -399,7 +399,7 @@ repos:
 
       - id: validate-enum-model-imports
         name: ONEX Enum/Model Import Prevention
-        entry: poetry run python scripts/validation/validate-enum-model-imports.py
+        entry: uv run python scripts/validation/validate-enum-model-imports.py
         language: system
         pass_filenames: true
         files: ^src/omnibase_core/enums/.*\.py$
@@ -412,7 +412,7 @@ repos:
       # Allows: ACTIVE, HTTP_2, V1_BETA, SHA256 (UPPER_SNAKE_CASE)
       - id: check-enum-member-casing
         name: ONEX Enum Member Casing Validation
-        entry: poetry run python -m omnibase_core.validation.checker_enum_member_casing
+        entry: uv run python -m omnibase_core.validation.checker_enum_member_casing
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -421,7 +421,7 @@ repos:
 
       - id: validate-typeddict-patterns
         name: ONEX TypedDict Pattern Validation
-        entry: poetry run python scripts/validation/validate-typeddict-patterns.py
+        entry: uv run python scripts/validation/validate-typeddict-patterns.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -434,7 +434,7 @@ repos:
       # In directory mode (CI), compares against --max-violations threshold
       - id: validate-dict-any-usage
         name: ONEX dict[str, Any] Anti-Pattern Detection
-        entry: poetry run python scripts/validation/validate-dict-any-usage.py
+        entry: uv run python scripts/validation/validate-dict-any-usage.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -443,7 +443,7 @@ repos:
 
       - id: no-pydantic-bypass-in-prod
         name: ONEX Pydantic Bypass Prevention
-        entry: poetry run python scripts/validation/validate-no-pydantic-bypass.py
+        entry: uv run python scripts/validation/validate-no-pydantic-bypass.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -453,7 +453,7 @@ repos:
       # Security: Secret Detection (prevents hardcoded secrets)
       - id: validate-secrets
         name: ONEX Secret Detection
-        entry: poetry run python scripts/validation/validate-secrets.py
+        entry: uv run python scripts/validation/validate-secrets.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -463,7 +463,7 @@ repos:
       # Security: Hardcoded Environment Variable Prevention
       - id: validate-hardcoded-env-vars
         name: ONEX Hardcoded Environment Variable Prevention
-        entry: poetry run python scripts/validation/validate-hardcoded-env-vars.py
+        entry: uv run python scripts/validation/validate-hardcoded-env-vars.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -472,7 +472,7 @@ repos:
 
       - id: validate-exception-handling
         name: ONEX Exception Handling Validation
-        entry: poetry run python scripts/validation/validate-exception-handling.py
+        entry: uv run python scripts/validation/validate-exception-handling.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -497,7 +497,7 @@ repos:
       # See: docs/decisions/ADR-005-core-infra-dependency-boundary.md
       - id: validate-no-transport-imports
         name: ONEX Transport Import Prevention
-        entry: poetry run python scripts/validate_no_transport_imports.py
+        entry: uv run python scripts/validate_no_transport_imports.py
         language: system
         pass_filenames: false
         always_run: true
@@ -511,7 +511,7 @@ repos:
       #          ModelEventBusListenerHandle class and imports, Kafka-specific APIs
       - id: validate-no-kafka-listener-apis
         name: Prevent Kafka/listener APIs in omnibase_core
-        entry: poetry run python scripts/validation/validate-no-kafka-listener-apis.py
+        entry: uv run python scripts/validation/validate-no-kafka-listener-apis.py
         language: system
         pass_filenames: true
         files: ^src/omnibase_core/.*\.py$
@@ -522,7 +522,7 @@ repos:
       # Configuration: .markdown-link-check.json (ignore patterns, exclude files)
       - id: validate-doc-links
         name: ONEX Documentation Link Validation
-        entry: poetry run python scripts/validation/validate-doc-links.py
+        entry: uv run python scripts/validation/validate-doc-links.py
         args: [--fix-case]
         language: system
         pass_filenames: false
@@ -534,7 +534,7 @@ repos:
       # Configuration: .markdown-link-check.json (ignore patterns, exclude files)
       - id: validate-markdown-links
         name: ONEX Markdown Link Validation
-        entry: poetry run python scripts/validation/validate_markdown_links.py
+        entry: uv run python scripts/validation/validate_markdown_links.py
         language: system
         types: [markdown]
         pass_filenames: false
@@ -550,7 +550,7 @@ repos:
       # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-protocol-runtime-checkable
         name: ONEX Protocol @runtime_checkable Validation
-        entry: poetry run python scripts/validation/check_protocol_runtime_checkable.py
+        entry: uv run python scripts/validation/check_protocol_runtime_checkable.py
         language: system
         pass_filenames: false
         always_run: true
@@ -562,7 +562,7 @@ repos:
       # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-protocol-exports
         name: ONEX Protocol __all__ Exports Validation
-        entry: poetry run python scripts/check_protocol_exports.py
+        entry: uv run python scripts/check_protocol_exports.py
         language: system
         pass_filenames: false
         always_run: true
@@ -574,7 +574,7 @@ repos:
       # ~6s runtime - acceptable for pre-push but too slow for every commit
       - id: pytest-protocol-uuid-enforcement
         name: Protocol UUID Enforcement Check
-        entry: poetry run pytest
+        entry: uv run pytest
         language: system
         pass_filenames: false
         always_run: true
@@ -602,7 +602,7 @@ repos:
       # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-enum-governance
         name: ONEX Enum Governance Validation (Warning Mode)
-        entry: bash -c 'poetry run python -m omnibase_core.validation.checker_enum_governance || true'
+        entry: bash -c 'uv run python -m omnibase_core.validation.checker_enum_governance || true'
         language: system
         pass_filenames: false
         always_run: true
@@ -623,7 +623,7 @@ repos:
       # Any usages that need cleanup in a separate ticket
       - id: check-node-purity
         name: ONEX Node Purity Validation
-        entry: poetry run python scripts/check_node_purity.py
+        entry: uv run python scripts/check_node_purity.py
         language: system
         pass_filenames: false
         always_run: true

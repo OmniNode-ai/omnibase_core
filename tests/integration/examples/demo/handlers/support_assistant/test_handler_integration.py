@@ -12,7 +12,7 @@ Note:
     Default endpoint: http://localhost:8200 (configurable via LLM_LOCAL_URL env var).
 
     To run these tests:
-        poetry run pytest tests/integration/examples/demo/handlers/support_assistant/ -v
+        uv run pytest tests/integration/examples/demo/handlers/support_assistant/ -v
 
     To skip if server unavailable:
         These tests will be automatically skipped if the local server is not reachable.

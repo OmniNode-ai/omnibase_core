@@ -13,19 +13,19 @@ across the codebase. It enforces consistent naming patterns for:
 - TypedDicts: Must start with 'TypedDict' (e.g., TypedDictUserParams)
 
 Usage:
-    poetry run python scripts/validation/validate_naming.py /path/to/repo
-    poetry run python scripts/validation/validate_naming.py . --verbose
-    poetry run python scripts/validation/validate_naming.py . --fail-on-warnings
+    uv run python scripts/validation/validate_naming.py /path/to/repo
+    uv run python scripts/validation/validate_naming.py . --verbose
+    uv run python scripts/validation/validate_naming.py . --fail-on-warnings
 
 Examples:
     # Validate current repository
-    poetry run python scripts/validation/validate_naming.py .
+    uv run python scripts/validation/validate_naming.py .
 
     # Validate with verbose output
-    poetry run python scripts/validation/validate_naming.py . -v
+    uv run python scripts/validation/validate_naming.py . -v
 
     # Fail on warnings (for CI)
-    poetry run python scripts/validation/validate_naming.py . --fail-on-warnings
+    uv run python scripts/validation/validate_naming.py . --fail-on-warnings
 
 Exit Codes:
     0 - All naming conventions are compliant

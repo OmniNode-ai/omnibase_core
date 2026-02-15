@@ -87,10 +87,10 @@ Run the test suite and review deprecation warnings in the output:
 
 ```bash
 # Run all tests and observe warnings
-poetry run pytest tests/
+uv run pytest tests/
 
 # Run with verbose warnings
-poetry run pytest tests/ -W default::DeprecationWarning
+uv run pytest tests/ -W default::DeprecationWarning
 ```
 
 ### Step 2: Categorize Warnings
@@ -195,7 +195,7 @@ filterwarnings = [
 
 This checklist was completed during the v0.5.0 release:
 
-- [x] Run full test suite: `poetry run pytest tests/`
+- [x] Run full test suite: `uv run pytest tests/`
 - [x] Review all `DeprecationWarning` output
 - [x] Update code to resolve internal deprecations
 - [x] Update dependencies where possible
@@ -206,7 +206,7 @@ This checklist was completed during the v0.5.0 release:
 
 ```bash
 # Treat deprecations as errors (this is now the default behavior since v0.5.0)
-poetry run pytest tests/ -W error::DeprecationWarning -W error::PendingDeprecationWarning
+uv run pytest tests/ -W error::DeprecationWarning -W error::PendingDeprecationWarning
 ```
 
 This validation is now enforced by default in `pyproject.toml` since v0.5.0.

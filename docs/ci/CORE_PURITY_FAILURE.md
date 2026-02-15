@@ -314,19 +314,19 @@ The base node files (`node_compute.py`, `node_reducer.py`) are automatically exe
 
 ```bash
 # Check all node files
-poetry run python scripts/check_node_purity.py
+uv run python scripts/check_node_purity.py
 
 # Verbose output with code snippets
-poetry run python scripts/check_node_purity.py --verbose
+uv run python scripts/check_node_purity.py --verbose
 
 # Check specific file
-poetry run python scripts/check_node_purity.py --file src/omnibase_core/nodes/node_compute.py
+uv run python scripts/check_node_purity.py --file src/omnibase_core/nodes/node_compute.py
 
 # Strict mode (warnings become errors)
-poetry run python scripts/check_node_purity.py --strict
+uv run python scripts/check_node_purity.py --strict
 
 # JSON output (for tooling)
-poetry run python scripts/check_node_purity.py --json
+uv run python scripts/check_node_purity.py --json
 ```
 
 ## Exit Codes
@@ -347,7 +347,7 @@ node-purity-check:
   runs-on: ubuntu-latest
   steps:
     - name: Run Node Purity Check
-      run: poetry run python scripts/check_node_purity.py --verbose
+      run: uv run python scripts/check_node_purity.py --verbose
       continue-on-error: true  # Non-blocking until tech debt resolved
 ```
 

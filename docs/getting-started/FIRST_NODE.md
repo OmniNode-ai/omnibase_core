@@ -521,7 +521,7 @@ class TestTemperatureConversionHandler:
 Run the tests:
 
 ```bash
-poetry run pytest tests/nodes/test_temperature_converter.py -v
+uv run pytest tests/nodes/test_temperature_converter.py -v
 ```
 
 ---

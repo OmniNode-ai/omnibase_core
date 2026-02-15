@@ -620,7 +620,7 @@ No backwards dependencies are allowed.
 | No `contract.yaml` | Missing source of truth | Always start with the YAML contract |
 | Returning `dict` from handler | Untyped, no constraint enforcement | Return `ModelHandlerOutput.for_*(...)` |
 | `ModelContainer` | Wrong container type | `ModelONEXContainer` |
-| `pip install` or `python script.py` | Direct execution | `poetry run pytest`, `poetry run python` |
+| `pip install` or `python script.py` | Direct execution | `uv run pytest`, `uv run python` |
 
 ---
 

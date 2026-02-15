@@ -277,10 +277,10 @@ Run the following to check compliance:
 
 ```bash
 # Check import ordering
-poetry run ruff check src/omnibase_core/ --select=I
+uv run ruff check src/omnibase_core/ --select=I
 
 # Auto-fix import issues
-poetry run ruff check src/omnibase_core/ --select=I --fix
+uv run ruff check src/omnibase_core/ --select=I --fix
 
 # Run all pre-commit hooks
 pre-commit run --all-files

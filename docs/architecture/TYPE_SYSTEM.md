@@ -553,13 +553,13 @@ disallow_untyped_defs = true
 
 ```bash
 # Check all source code
-poetry run mypy src/omnibase_core/
+uv run mypy src/omnibase_core/
 
 # Check specific module
-poetry run mypy src/omnibase_core/models/container/
+uv run mypy src/omnibase_core/models/container/
 
 # With verbose output
-poetry run mypy src/omnibase_core/ --verbose
+uv run mypy src/omnibase_core/ --verbose
 ```
 
 ### type: ignore Policy
