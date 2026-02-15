@@ -40,7 +40,7 @@ See Also:
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelIntentPublishResult(BaseModel):
@@ -53,6 +53,8 @@ class ModelIntentPublishResult(BaseModel):
         target_topic: Topic where event will be published
         correlation_id: Correlation ID for tracing
     """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     intent_id: UUID = Field(
         ...,

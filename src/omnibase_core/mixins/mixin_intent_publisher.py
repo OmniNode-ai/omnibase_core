@@ -36,9 +36,12 @@ Dependencies:
 Part of omnibase_core framework - provides coordination I/O for all ONEX nodes
 """
 
+import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -238,6 +241,12 @@ class MixinIntentPublisher:
 
         except ImportError:
             # Fallback if ModelOnexEnvelope not available (should not happen)
+            logger.warning(
+                "Failed to import ModelOnexEnvelope; falling back to raw intent JSON "
+                "without envelope wrapper. This changes the message format on the wire "
+                "and may cause downstream parsing issues. intent_id=%s",
+                intent_id,
+            )
             envelope_json = intent.model_dump_json()
 
         # Publish to intent topic (coordination I/O)

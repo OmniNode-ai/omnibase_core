@@ -14,7 +14,7 @@ The ONEX ecosystem consists of multiple repositories with distinct purposes and 
 ### Core Repository: `omnibase_core`
 
 **Purpose**: Core framework providing base classes, mixins, and essential implementations
-**Location**: `/Volumes/PRO-G40/Code/omnibase_core`
+**Location**: `<workspace>/omnibase_core`
 **Package Name**: `omnibase_core`
 **Version**: `0.17.0`
 
@@ -27,19 +27,19 @@ omnibase_core/
 │       ├── container/           # Dependency injection
 │       ├── decorators/          # Framework decorators
 │       ├── discovery/           # Service discovery
-│       ├── enums/              # Core enumerations (388 files)
+│       ├── enums/              # Core enumerations
 │       ├── errors/             # Error handling
 │       ├── infrastructure/     # Infrastructure components
 │       ├── logging/            # Structured logging
-│       ├── mixins/             # Reusable mixins (41 files)
+│       ├── mixins/             # Reusable mixins
 │       │   ├── mixin_caching.py
 │       │   ├── mixin_health_check.py
 │       │   ├── mixin_event_bus.py
 │       │   ├── mixin_introspection.py
 │       │   ├── mixin_metrics.py
 │       │   ├── mixin_node_service.py
-│       │   └── ... (43 more mixins)
-│       ├── models/             # Data models (80 directories)
+│       │   └── ...
+│       ├── models/             # Data models
 │       │   ├── service/        # Service wrapper classes
 │       │   │   ├── model_service_compute.py
 │       │   │   ├── model_service_effect.py
@@ -49,7 +49,7 @@ omnibase_core/
 │       │   ├── primitives/     # Primitive type models
 │       │   └── ... (other model categories)
 │       ├── nodes/              # Base node classes
-│       ├── types/              # Type definitions (206 files)
+│       ├── types/              # Type definitions
 │       ├── utils/              # Utility functions
 │       ├── validation/         # Validation framework
 │       └── validators/         # Custom validators
@@ -74,7 +74,7 @@ omnibase_core/
 ### Intelligence Repository: `omniintelligence`
 
 **Purpose**: AI coding assistant intelligence platform
-**Location**: `/Volumes/PRO-G40/Code/omniintelligence`
+**Location**: `<workspace>/omniintelligence`
 **Package Name**: `omniintelligence`
 
 > **Note**: The detailed directory tree for this repository is maintained in the
@@ -91,8 +91,8 @@ omnibase_core/
 
 ### Infrastructure Repository: `omnibase_infra`
 
-**Purpose**: Infrastructure-specific nodes and services  
-**Location**: `/Volumes/PRO-G40/Code/omnibase_infra`
+**Purpose**: Infrastructure-specific nodes and services
+**Location**: `<workspace>/omnibase_infra`
 **Package Name**: `omnibase_infra`
 **Version**: `0.1.0`
 
@@ -120,8 +120,8 @@ omnibase_infra/
 
 ### Memory Repository: `omnimemory`
 
-**Purpose**: Memory and persistence layer  
-**Location**: `/Volumes/PRO-G40/Code/omnimemory`
+**Purpose**: Memory and persistence layer
+**Location**: `<workspace>/omnimemory`
 **Package Name**: `omnimemory`
 **Version**: `0.1.0`
 
@@ -139,8 +139,8 @@ omnimemory/
 
 ### Legacy Repository: `omnibase_3`
 
-**Purpose**: Legacy implementation and reference  
-**Location**: `/Volumes/PRO-G40/Code/omnibase_3`
+**Purpose**: Legacy implementation and reference
+**Location**: `<workspace>/omnibase_3`
 **Package Name**: `omnibase`
 **Version**: `0.1.0`
 

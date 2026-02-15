@@ -276,18 +276,39 @@ metrics:
 
 ## Step 3: Validate YAML Contract
 
-### Use Contract Validator
+> **Note**: YAML contract validation is a planned feature for when YAML mixin files are supported.
+> Currently, validation occurs through Pydantic model creation in Step 4 (see below).
+> The examples below show the planned validation workflow for future reference.
+
+### Use Contract Validator (Planned)
 
 ```bash
-# Validate your mixin contract
-poetry run onex run contract_validator --contract src/omnibase_core/mixins/mixin_error_handling.yaml
+# PLANNED: Validate your mixin contract (not yet available)
+# poetry run onex run contract_validator --contract src/omnibase_core/mixins/mixin_error_handling.yaml
 
-# Expected output:
+# Expected output (when implemented):
 # ✓ YAML syntax valid
 # ✓ Schema validation passed
 # ✓ All required fields present
 # ✓ Node type constraints valid
 # ✓ Action definitions complete
+```
+
+### Current Validation Approach
+
+Until YAML support is implemented, validate by creating and testing the Pydantic model:
+
+```bash
+# Create Pydantic model file at full path (Step 4)
+touch src/omnibase_core/models/contracts/subcontracts/model_error_handling_subcontract.py
+
+# Validate through Python import and instantiation
+poetry run python -c "from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract; print(ModelErrorHandlingSubcontract())"
+
+# Run unit tests (see Step 5)
+# NOTE: This is a tutorial example path. Real subcontract tests live under:
+# tests/unit/models/contracts/subcontracts/
+poetry run pytest tests/unit/models/contracts/subcontracts/test_model_event_handling_subcontract.py
 ```
 
 ### Common Validation Errors
@@ -398,7 +419,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
 ### Unit Test the Pydantic Model
 
 ```python
-# tests/model/subcontracts/test_model_error_handling_subcontract.py
+# tests/unit/models/contracts/subcontracts/test_model_error_handling_subcontract.py
 import pytest
 from pydantic import ValidationError
 # Tutorial example - you create this class as part of the exercise above

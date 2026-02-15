@@ -637,18 +637,19 @@ class TestModelIntentPublishResultEdgeCases:
         assert result.intent_id == result.correlation_id
         assert result.intent_id == same_id
 
-    def test_extra_fields_ignored(self):
-        """Test that extra fields are ignored by default."""
-        result = ModelIntentPublishResult(
-            intent_id=uuid4(),
-            published_at=datetime.now(UTC),
-            target_topic="test.topic",
-            correlation_id=uuid4(),
-            extra_field="ignored",  # type: ignore[call-arg]
-        )
+    def test_extra_fields_forbidden(self):
+        """Test that extra fields raise ValidationError (extra='forbid')."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelIntentPublishResult(
+                intent_id=uuid4(),
+                published_at=datetime.now(UTC),
+                target_topic="test.topic",
+                correlation_id=uuid4(),
+                extra_field="forbidden",  # type: ignore[call-arg]
+            )
 
-        assert not hasattr(result, "extra_field")
-        assert "extra_field" not in result.model_dump()
+        errors = exc_info.value.errors()
+        assert any(error["type"] == "extra_forbidden" for error in errors)
 
 
 @pytest.mark.unit
