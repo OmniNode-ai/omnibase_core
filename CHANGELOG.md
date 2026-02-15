@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-02-15
+
+### Added
+
+- **Migrate from Poetry to uv** [OMN-2232] (#512): Full build system migration from Poetry to uv for faster dependency resolution and simpler tooling
+  - Replaced `poetry.lock` with `uv.lock`
+  - Updated all CI workflows and developer commands to use `uv run`
+  - Consolidated `pyproject.toml` configuration for uv compatibility
+
+- **Quality Gate, detect-secrets, and CI Summary** [OMN-2226] (#510): Enhanced CI pipeline with automated quality enforcement
+  - Added quality gate workflow for merge-blocking checks
+  - Integrated detect-secrets for credential leak prevention
+  - CI summary report for at-a-glance pipeline status
+
+- **Required Status Checks for Branch Protection** [OMN-2183] (#504): Added required status checks to branch protection rules for stricter merge enforcement
+
+### Changed
+
+- **CI/CD Standards Document** [OMN-2224] (#511): Added comprehensive CI/CD standards documentation for cross-repo consistency
+
+- **Comprehensive Documentation Audit** (#509): Reviewed 141 documentation files for accuracy and consistency
+  - Consolidated and removed stale documentation
+  - Refactored CLAUDE.md to reference shared standards (#505, #506)
+
+- **Handshake Documentation Update** (#507): Updated omnidash route count and path alias in architecture handshake
+
 ## [0.17.0] - 2026-02-12
 
 ### Added
