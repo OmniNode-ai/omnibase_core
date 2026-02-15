@@ -40,9 +40,9 @@ flowchart LR
     C -.->|Emits Intents| Intents[Intent Queue]
     D -.->|Issues Actions| Actions[Action Queue]
 
-    style External fill:#fff,stroke:#999,stroke-dasharray: 5 5
-    style Intents fill:#fff,stroke:#999,stroke-dasharray: 5 5
-    style Actions fill:#fff,stroke:#999,stroke-dasharray: 5 5
+    style External fill:#fff,stroke:#999,stroke-dasharray:5 5
+    style Intents fill:#fff,stroke:#999,stroke-dasharray:5 5
+    style Actions fill:#fff,stroke:#999,stroke-dasharray:5 5
 ```
 
 ### Data Flow Direction
@@ -1186,7 +1186,7 @@ sequenceDiagram
 
     Orch2->>LeaseMgr: acquire_lease(workflow_id)
     activate LeaseMgr
-    LeaseMgr-->>Orch2: ❌ LeaseConflictError
+    LeaseMgr-->>Orch2: DENIED - LeaseConflictError
     deactivate LeaseMgr
     Note over Orch2: Single-writer enforcement
 
@@ -1196,14 +1196,14 @@ sequenceDiagram
     Executor->>Validator: validate_action()
     activate Validator
     Validator->>LeaseMgr: verify_lease(lease_a)
-    LeaseMgr-->>Validator: ✅ Valid
+    LeaseMgr-->>Validator: Valid
     Validator->>StateStore: get_current_epoch()
     StateStore-->>Validator: epoch=0
     Note over Validator: Optimistic<br/>Concurrency Check
-    Validator-->>Executor: ✅ Valid
+    Validator-->>Executor: Valid
     deactivate Validator
 
-    Executor->>StateStore: update_state(epoch=0→1)
+    Executor->>StateStore: update_state(epoch=0->1)
     activate StateStore
     StateStore-->>Executor: success
     deactivate StateStore

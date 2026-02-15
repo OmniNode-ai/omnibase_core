@@ -662,11 +662,11 @@ sequenceDiagram
     participant Node as Node (Startup)
     participant Mixin as MixinIntrospectionPublisher
     participant Kafka as Kafka (onex.registration.events)
-    participant Orch as Registration Orchestrator [O]
-    participant Reducer as Registration Reducer [R]
-    participant ConsulEff as Consul Effect [E]
-    participant PgEff as Postgres Effect [E]
-    participant EventEff as Event Publisher [E]
+    participant Orch as Registration Orchestrator (O)
+    participant Reducer as Registration Reducer (R)
+    participant ConsulEff as Consul Effect (E)
+    participant PgEff as Postgres Effect (E)
+    participant EventEff as Event Publisher (E)
 
     Note over Node,EventEff: CANONICAL PATH - Event-Driven (Shape 1)
 
@@ -712,12 +712,12 @@ sequenceDiagram
 sequenceDiagram
     participant Admin as Admin System
     participant Kafka as Kafka (onex.registration.commands)
-    participant Orch as Registration Orchestrator [O]
+    participant Orch as Registration Orchestrator (O)
     participant Gate as Gate Policy Evaluator
-    participant Reducer as Registration Reducer [R]
-    participant ConsulEff as Consul Effect [E]
-    participant PgEff as Postgres Effect [E]
-    participant EventEff as Event Publisher [E]
+    participant Reducer as Registration Reducer (R)
+    participant ConsulEff as Consul Effect (E)
+    participant PgEff as Postgres Effect (E)
+    participant EventEff as Event Publisher (E)
 
     Note over Admin,EventEff: GATED PATH - Command-Driven (Shape 4)
 
@@ -770,11 +770,11 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Trigger as Trigger (Event/Command)
-    participant Orch as Registration Orchestrator [O]
-    participant Reducer as Registration Reducer [R]
-    participant Effect as Effect Node [E]
+    participant Orch as Registration Orchestrator (O)
+    participant Reducer as Registration Reducer (R)
+    participant Effect as Effect Node (E)
     participant DLQ as Dead Letter Queue
-    participant EventEff as Event Publisher [E]
+    participant EventEff as Event Publisher (E)
 
     Note over Trigger,EventEff: FAILURE HANDLING
 

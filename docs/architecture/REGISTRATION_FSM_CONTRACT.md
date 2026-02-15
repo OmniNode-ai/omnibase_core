@@ -1986,13 +1986,13 @@ stateDiagram-v2
     partial_registered --> registering_consul : RETRY [postgres_applied=true]
     partial_registered --> registering_postgres : RETRY_POSTGRES [consul_applied=true]
     partial_registered --> registered : RECOVERY_COMPLETE
-    partial_registered --> failed : RETRY_EXHAUSTED [retry_count >= 3]
+    partial_registered --> failed : RETRY_EXHAUSTED [max retries reached]
 
     registered --> deregistering : DEREGISTER
 
     deregistering --> deregistered : DEREGISTRATION_COMPLETE
 
-    failed --> validating : RETRY [retry_count < 3]
+    failed --> validating : RETRY [retries remaining]
     failed --> deregistered : ABANDON
 
     note right of registered
