@@ -218,7 +218,7 @@ class GeometricConflictClassifier:
             return self._string_similarity(norm_a, norm_b)
 
         if isinstance(norm_a, list) and isinstance(norm_b, list):
-            return self._list_similarity(norm_a, norm_b)
+            return self._list_similarity(norm_a, norm_b, _depth=_depth)
 
         # Different types or non-comparable primitives
         if type(norm_a) is not type(norm_b):
@@ -236,9 +236,15 @@ class GeometricConflictClassifier:
         ADVISORY ONLY (GI-3). Raises ValueError for OPPOSITE/AMBIGUOUS conflicts
         that require human approval.
 
+        Note: For LOW_CONFLICT and CONFLICTING classifications, this method
+        selects ``values[0]`` (the first agent's value) as the resolution.
+        Callers should be aware that input ordering matters: the agent listed
+        first in the ``values`` list is preferred when no merge is possible.
+
         Args:
             details: Classification result from classify().
-            values: Original (agent_name, value) pairs.
+            values: Original (agent_name, value) pairs. Ordering matters for
+                contested results (see note above).
 
         Returns:
             Tuple of (resolved_value, explanation_string).
@@ -456,7 +462,9 @@ class GeometricConflictClassifier:
             2 * intersection_size / (sum(bigrams_a.values()) + sum(bigrams_b.values()))
         )
 
-    def _list_similarity(self, list_a: list[object], list_b: list[object]) -> float:
+    def _list_similarity(
+        self, list_a: list[object], list_b: list[object], _depth: int = 0
+    ) -> float:
         """Compute list similarity using multiset Jaccard index on serialized elements.
 
         Uses Counter-based comparison so duplicate counts affect similarity
@@ -468,8 +476,8 @@ class GeometricConflictClassifier:
             return 0.0
 
         # Serialize elements for multiset comparison
-        counter_a = Counter(self._to_json_str(x) for x in list_a)
-        counter_b = Counter(self._to_json_str(x) for x in list_b)
+        counter_a = Counter(self._to_json_str(x, _depth=_depth) for x in list_a)
+        counter_b = Counter(self._to_json_str(x, _depth=_depth) for x in list_b)
 
         # Multiset Jaccard: sum(min counts) / sum(max counts)
         all_keys = set(counter_a.keys()) | set(counter_b.keys())
@@ -485,9 +493,11 @@ class GeometricConflictClassifier:
 
         return intersection_size / union_size
 
-    def _to_json_str(self, value: object) -> str:
+    def _to_json_str(self, value: object, _depth: int = 0) -> str:
         """Deterministic JSON serialization for set-based comparison."""
-        return json.dumps(self._normalize(value), sort_keys=True, default=str)
+        return json.dumps(
+            self._normalize(value, _depth=_depth), sort_keys=True, default=str
+        )
 
     def _compute_structural_similarity(
         self,
