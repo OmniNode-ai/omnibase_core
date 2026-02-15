@@ -9,9 +9,9 @@ imports inside TYPE_CHECKING blocks, which are legal per ADR-005 since they
 create no runtime dependencies.
 
 Usage:
-    poetry run python scripts/validate_no_transport_imports.py
-    poetry run python scripts/validate_no_transport_imports.py --verbose
-    poetry run python scripts/validate_no_transport_imports.py --exclude path/to/file.py
+    uv run python scripts/validate_no_transport_imports.py
+    uv run python scripts/validate_no_transport_imports.py --verbose
+    uv run python scripts/validate_no_transport_imports.py --exclude path/to/file.py
 
 Exit codes:
     0 = no violations
@@ -484,16 +484,16 @@ def main() -> int:
 
     Example Usage:
         # Basic validation
-        poetry run python scripts/validate_no_transport_imports.py
+        uv run python scripts/validate_no_transport_imports.py
 
         # Verbose output with import snippets
-        poetry run python scripts/validate_no_transport_imports.py --verbose
+        uv run python scripts/validate_no_transport_imports.py --verbose
 
         # Exclude specific paths
-        poetry run python scripts/validate_no_transport_imports.py --exclude tests/
+        uv run python scripts/validate_no_transport_imports.py --exclude tests/
 
         # Scan different directory
-        poetry run python scripts/validate_no_transport_imports.py --src-dir src/other
+        uv run python scripts/validate_no_transport_imports.py --src-dir src/other
     """
     parser = argparse.ArgumentParser(
         description="Validate no banned transport/I/O imports in omnibase_core",

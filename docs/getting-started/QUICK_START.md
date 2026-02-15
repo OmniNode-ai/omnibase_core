@@ -259,7 +259,7 @@ async def test_non_numeric_value_raises_error(doubler_node):
 
 ```bash
 # Run the tests
-poetry run pytest tests/test_doubler.py -v
+uv run pytest tests/test_doubler.py -v
 
 # Expected output:
 # tests/test_doubler.py::test_double_positive_number PASSED
@@ -315,7 +315,7 @@ if __name__ == "__main__":
 Run it:
 
 ```bash
-poetry run python example_usage.py
+uv run python example_usage.py
 
 # Expected output:
 # Doubler Node Demo
@@ -431,17 +431,17 @@ async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
 poetry shell
 
 # Check installation (v0.4.0 import style)
-poetry run python -c "from omnibase_core.nodes import NodeCompute; print('OK')"
+uv run python -c "from omnibase_core.nodes import NodeCompute; print('OK')"
 ```
 
 ### Test Failures
 
 ```bash
 # Run with verbose output
-poetry run pytest tests/test_doubler.py -vvs
+uv run pytest tests/test_doubler.py -vvs
 
 # Run specific test
-poetry run pytest tests/test_doubler.py::test_double_positive_number -v
+uv run pytest tests/test_doubler.py::test_double_positive_number -v
 ```
 
 ### Type Checking
@@ -451,7 +451,7 @@ poetry run pytest tests/test_doubler.py::test_double_positive_number -v
 poetry add --group dev mypy
 
 # Run type checking
-poetry run mypy src/my_project/nodes/node_doubler_compute.py
+uv run mypy src/my_project/nodes/node_doubler_compute.py
 ```
 
 ## Summary

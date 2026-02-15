@@ -30,7 +30,7 @@ class TestTransportImportCheckerIntegration:
     def test_script_runs_successfully_on_codebase(self, project_root: Path) -> None:
         """Test that the script runs without errors on the actual codebase."""
         result = subprocess.run(
-            ["poetry", "run", "python", "scripts/check_transport_imports.py"],
+            ["uv", "run", "python", "scripts/check_transport_imports.py"],
             check=False,
             capture_output=True,
             text=True,
@@ -42,7 +42,7 @@ class TestTransportImportCheckerIntegration:
     def test_json_output_is_valid(self, project_root: Path) -> None:
         """Test that --json produces valid JSON output."""
         result = subprocess.run(
-            ["poetry", "run", "python", "scripts/check_transport_imports.py", "--json"],
+            ["uv", "run", "python", "scripts/check_transport_imports.py", "--json"],
             check=False,
             capture_output=True,
             text=True,
@@ -56,7 +56,7 @@ class TestTransportImportCheckerIntegration:
     def test_json_output_contains_expected_fields(self, project_root: Path) -> None:
         """Test that JSON output contains all expected summary fields."""
         result = subprocess.run(
-            ["poetry", "run", "python", "scripts/check_transport_imports.py", "--json"],
+            ["uv", "run", "python", "scripts/check_transport_imports.py", "--json"],
             check=False,
             capture_output=True,
             text=True,
@@ -82,7 +82,7 @@ class TestTransportImportCheckerIntegration:
         """Test that --verbose shows additional information."""
         result = subprocess.run(
             [
-                "poetry",
+                "uv",
                 "run",
                 "python",
                 "scripts/check_transport_imports.py",
@@ -100,7 +100,7 @@ class TestTransportImportCheckerIntegration:
         """Test --changed-files mode runs without error."""
         result = subprocess.run(
             [
-                "poetry",
+                "uv",
                 "run",
                 "python",
                 "scripts/check_transport_imports.py",
@@ -118,7 +118,7 @@ class TestTransportImportCheckerIntegration:
     def test_help_output(self, project_root: Path) -> None:
         """Test that --help produces help text."""
         result = subprocess.run(
-            ["poetry", "run", "python", "scripts/check_transport_imports.py", "--help"],
+            ["uv", "run", "python", "scripts/check_transport_imports.py", "--help"],
             check=False,
             capture_output=True,
             text=True,
@@ -130,7 +130,7 @@ class TestTransportImportCheckerIntegration:
     def test_script_reports_allowlisted_files_count(self, project_root: Path) -> None:
         """Test that the script correctly reports allowlisted file count in summary."""
         result = subprocess.run(
-            ["poetry", "run", "python", "scripts/check_transport_imports.py", "--json"],
+            ["uv", "run", "python", "scripts/check_transport_imports.py", "--json"],
             check=False,
             capture_output=True,
             text=True,
@@ -153,7 +153,7 @@ class TestTransportImportCheckerIntegration:
     ) -> None:
         """Test that exit code is 0 when only allowlisted violations exist."""
         result = subprocess.run(
-            ["poetry", "run", "python", "scripts/check_transport_imports.py", "--json"],
+            ["uv", "run", "python", "scripts/check_transport_imports.py", "--json"],
             check=False,
             capture_output=True,
             text=True,
@@ -169,7 +169,7 @@ class TestTransportImportCheckerIntegration:
         """Test that --json and --verbose can be used together."""
         result = subprocess.run(
             [
-                "poetry",
+                "uv",
                 "run",
                 "python",
                 "scripts/check_transport_imports.py",
@@ -191,7 +191,7 @@ class TestTransportImportCheckerIntegration:
     ) -> None:
         """Test that results include information about allowlisted files when present."""
         result = subprocess.run(
-            ["poetry", "run", "python", "scripts/check_transport_imports.py", "--json"],
+            ["uv", "run", "python", "scripts/check_transport_imports.py", "--json"],
             check=False,
             capture_output=True,
             text=True,

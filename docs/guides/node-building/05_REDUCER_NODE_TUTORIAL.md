@@ -307,7 +307,7 @@ pwd  # Should end with /omnibase_core
 poetry install
 
 # Run existing reducer tests
-poetry run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1
+uv run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1
 ```
 
 ---

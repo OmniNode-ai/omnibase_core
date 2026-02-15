@@ -116,7 +116,7 @@ echo -e "${YELLOW}🚀 Launching test splits (batches of ${MAX_CONCURRENT_SPLITS
 run_split() {
   local split_num=$1
   echo "[Split $split_num/20] Starting..."
-  COVERAGE_FILE=.coverage.$split_num poetry run pytest tests/ \
+  COVERAGE_FILE=.coverage.$split_num uv run pytest tests/ \
     --splits 20 \
     --group $split_num \
     --cov="$ONEX_SRC_DIR" \
@@ -183,16 +183,16 @@ echo -e "${GREEN}✅ All splits complete in ${MINUTES}m ${SECONDS}s${NC}"
 
 # Combine coverage data
 echo -e "${BLUE}🔗 Combining coverage data from all splits...${NC}"
-poetry run coverage combine
+uv run coverage combine
 
 # Generate reports
 echo -e "${BLUE}📊 Generating coverage reports...${NC}"
 echo ""
-poetry run coverage report --fail-under=60
+uv run coverage report --fail-under=60
 echo ""
 
 # Generate HTML report
-poetry run coverage html
+uv run coverage html
 
 echo ""
 echo -e "${GREEN}✅ Coverage report complete!${NC}"

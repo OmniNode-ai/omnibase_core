@@ -84,8 +84,8 @@ class TestHandlerCapabilityExample:
 ### 4. Run Validation
 
 ```bash
-poetry run pytest tests/unit/pipeline/handlers/test_capability_example.py -v
-poetry run mypy src/omnibase_core/pipeline/handlers/handler_capability_example.py
+uv run pytest tests/unit/pipeline/handlers/test_capability_example.py -v
+uv run mypy src/omnibase_core/pipeline/handlers/handler_capability_example.py
 ```
 
 ---
@@ -546,10 +546,10 @@ Ensure the handler provides the same functionality as the original mixin:
 
 ```bash
 # Run handler tests
-poetry run pytest tests/unit/pipeline/handlers/test_capability_metrics.py -v
+uv run pytest tests/unit/pipeline/handlers/test_capability_metrics.py -v
 
 # Run original mixin tests (should still pass)
-poetry run pytest tests/unit/mixins/test_mixin_metrics.py -v
+uv run pytest tests/unit/mixins/test_mixin_metrics.py -v
 ```
 
 ### Step 6: Document in Conversion Checklist
@@ -874,16 +874,16 @@ async def test_handler_in_pipeline():
 
 ```bash
 # Run all capability handler tests
-poetry run pytest tests/unit/pipeline/handlers/ -v
+uv run pytest tests/unit/pipeline/handlers/ -v
 
 # Run specific handler tests
-poetry run pytest tests/unit/pipeline/handlers/test_capability_metrics.py -v
+uv run pytest tests/unit/pipeline/handlers/test_capability_metrics.py -v
 
 # Run with coverage
-poetry run pytest tests/unit/pipeline/handlers/ --cov=src/omnibase_core/pipeline/handlers
+uv run pytest tests/unit/pipeline/handlers/ --cov=src/omnibase_core/pipeline/handlers
 
 # Run both mixin and handler tests (verify compatibility)
-poetry run pytest tests/unit/mixins/ tests/unit/pipeline/handlers/ -v
+uv run pytest tests/unit/mixins/ tests/unit/pipeline/handlers/ -v
 ```
 
 ---

@@ -12,7 +12,7 @@ Exit codes:
     2 - Script error (setup / unexpected exception)
 
 Usage:
-    poetry run python scripts/check_db_ownership.py [--verbose]
+    uv run python scripts/check_db_ownership.py [--verbose]
 
 See: OMN-2150 -- Handshake hardening: CI twin for DB ownership test script
 """

@@ -100,7 +100,7 @@ Updated existing edge case tests to document the inheritance mode being tested.
 All tests pass (36/36 excluding pre-existing unrelated failure):
 
 ```
-poetry run pytest tests/unit/models/contracts/subcontracts/test_model_environment_validation_rules.py -k "not test_validation_rules_with_all_rule_types"
+uv run pytest tests/unit/models/contracts/subcontracts/test_model_environment_validation_rules.py -k "not test_validation_rules_with_all_rule_types"
 ```
 
 **Result**: ✅ 36 passed, 1 deselected, 2 warnings (expected - from tests that intentionally trigger warnings)
@@ -110,7 +110,7 @@ poetry run pytest tests/unit/models/contracts/subcontracts/test_model_environmen
 Mypy type checking passes with strict mode:
 
 ```
-poetry run mypy src/omnibase_core/models/contracts/subcontracts/model_environment_validation_rules.py
+uv run mypy src/omnibase_core/models/contracts/subcontracts/model_environment_validation_rules.py
 ```
 
 **Result**: ✅ Success: no issues found in 1 source file

@@ -280,16 +280,16 @@ async def test_kafka_failure_handling():
 
 ```
 # All intent publisher tests
-poetry run pytest tests/ -k "intent" -v
+uv run pytest tests/ -k "intent" -v
 
 # Specific test file
-poetry run pytest tests/unit/nodes/test_my_reducer.py -v
+uv run pytest tests/unit/nodes/test_my_reducer.py -v
 
 # With coverage
-poetry run pytest tests/ --cov=src/omnibase_core/mixins/mixin_intent_publisher.py --cov-report=term-missing
+uv run pytest tests/ --cov=src/omnibase_core/mixins/mixin_intent_publisher.py --cov-report=term-missing
 
 # Fast tests only (no integration)
-poetry run pytest tests/ -m "not integration" -v
+uv run pytest tests/ -m "not integration" -v
 ```
 
 ---

@@ -17,19 +17,19 @@ Fingerprint Format:
 
 Usage:
     # Regenerate fingerprint for a single contract
-    poetry run python scripts/regenerate_fingerprints.py contracts/my_contract.yaml
+    uv run python scripts/regenerate_fingerprints.py contracts/my_contract.yaml
 
     # Regenerate fingerprints for all contracts in a directory
-    poetry run python scripts/regenerate_fingerprints.py contracts/ --recursive
+    uv run python scripts/regenerate_fingerprints.py contracts/ --recursive
 
     # Dry-run mode (show changes without modifying files)
-    poetry run python scripts/regenerate_fingerprints.py contracts/ --dry-run
+    uv run python scripts/regenerate_fingerprints.py contracts/ --dry-run
 
     # Verbose output showing before/after fingerprints
-    poetry run python scripts/regenerate_fingerprints.py contracts/ -v
+    uv run python scripts/regenerate_fingerprints.py contracts/ -v
 
     # Output results as JSON for CI/CD integration
-    poetry run python scripts/regenerate_fingerprints.py contracts/ --json
+    uv run python scripts/regenerate_fingerprints.py contracts/ --json
 
 Exit Codes:
     0 - Success (fingerprints regenerated or already up-to-date)
@@ -739,16 +739,16 @@ def main() -> int:
         epilog="""
 Examples:
     # Regenerate single contract
-    poetry run python scripts/regenerate_fingerprints.py contracts/my_contract.yaml
+    uv run python scripts/regenerate_fingerprints.py contracts/my_contract.yaml
 
     # Regenerate all contracts in directory
-    poetry run python scripts/regenerate_fingerprints.py contracts/ --recursive
+    uv run python scripts/regenerate_fingerprints.py contracts/ --recursive
 
     # Dry-run (preview changes)
-    poetry run python scripts/regenerate_fingerprints.py contracts/ --dry-run -v
+    uv run python scripts/regenerate_fingerprints.py contracts/ --dry-run -v
 
     # CI/CD: check if fingerprints are current
-    poetry run python scripts/regenerate_fingerprints.py contracts/ --dry-run --json
+    uv run python scripts/regenerate_fingerprints.py contracts/ --dry-run --json
 """,
     )
     parser.add_argument(

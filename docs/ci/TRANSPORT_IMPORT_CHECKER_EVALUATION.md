@@ -140,7 +140,7 @@ Replace the current transport check step in `.github/workflows/test.yml`:
 ```yaml
 - name: Check for transport import violations (OMN-220)
   run: |
-    poetry run python scripts/check_transport_imports.py
+    uv run python scripts/check_transport_imports.py
 ```
 
 **Updated**:
@@ -180,12 +180,12 @@ Replace the current transport check step in `.github/workflows/test.yml`:
     FULL_SCAN_EXIT=0
 
     if [[ "$RUN_CHANGED_FILES" == "true" ]]; then
-      poetry run python scripts/check_transport_imports.py --changed-files --verbose
+      uv run python scripts/check_transport_imports.py --changed-files --verbose
       CHANGED_FILES_EXIT=$?
     fi
 
     if [[ "$RUN_FULL_SCAN" == "true" ]]; then
-      poetry run python scripts/check_transport_imports.py --verbose
+      uv run python scripts/check_transport_imports.py --verbose
       FULL_SCAN_EXIT=$?
     fi
 

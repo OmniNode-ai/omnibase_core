@@ -7,7 +7,7 @@ not be committed to the repository. It's designed to catch common patterns of
 files generated during development and analysis.
 
 Usage:
-    poetry run python scripts/cleanup.py [--dry-run] [--verbose] [--remove-from-git] [--tmp-only]
+    uv run python scripts/cleanup.py [--dry-run] [--verbose] [--remove-from-git] [--tmp-only]
 
 Options:
     --dry-run           Show what would be removed without removing

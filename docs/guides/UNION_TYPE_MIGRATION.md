@@ -303,19 +303,19 @@ Search for patterns that match the type aliases:
 
 ```bash
 # Find potential JsonPrimitive candidates
-poetry run grep -rn "str | int | float | bool | None" src/
+uv run grep -rn "str | int | float | bool | None" src/
 
 # Find potential JsonValue candidates
-poetry run grep -rn "list\[Any\] | dict\[str, Any\]" src/
+uv run grep -rn "list\[Any\] | dict\[str, Any\]" src/
 
 # Find primitive unions without None
-poetry run grep -rn "str | int | float | bool[^|]" src/
+uv run grep -rn "str | int | float | bool[^|]" src/
 ```
 
 Or use the validation script:
 
 ```bash
-poetry run python scripts/validation/validate-union-usage.py --report
+uv run python scripts/validation/validate-union-usage.py --report
 ```
 
 ### Step 2: Analyze Each Occurrence
@@ -345,13 +345,13 @@ def get_config(key: str) -> JsonPrimitive:
 
 ```bash
 # Run type checker
-poetry run mypy src/omnibase_core/
+uv run mypy src/omnibase_core/
 
 # Run tests
-poetry run pytest tests/unit/
+uv run pytest tests/unit/
 
 # Run union validation
-poetry run python scripts/validation/validate-union-usage.py
+uv run python scripts/validation/validate-union-usage.py
 ```
 
 ## Suppression Comments: When and How
@@ -447,13 +447,13 @@ The union usage validation script helps maintain consistency:
 
 ```bash
 # Check for unaddressed inline unions
-poetry run python scripts/validation/validate-union-usage.py
+uv run python scripts/validation/validate-union-usage.py
 
 # Generate detailed report
-poetry run python scripts/validation/validate-union-usage.py --report
+uv run python scripts/validation/validate-union-usage.py --report
 
 # Check specific file
-poetry run python scripts/validation/validate-union-usage.py --file src/omnibase_core/models/config.py
+uv run python scripts/validation/validate-union-usage.py --file src/omnibase_core/models/config.py
 ```
 
 The script:

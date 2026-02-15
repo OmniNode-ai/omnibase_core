@@ -9,8 +9,8 @@ Checks for:
 - Broken cross-references
 
 Usage:
-    poetry run python scripts/validate-doc-links.py
-    poetry run python scripts/validate-doc-links.py --fix-case
+    uv run python scripts/validate-doc-links.py
+    uv run python scripts/validate-doc-links.py --fix-case
 """
 
 import argparse

@@ -213,14 +213,14 @@ To verify the configuration is working:
 
 ```bash
 # Check that legacy modules are exempted
-poetry run mypy src/omnibase_core/models/ --show-error-codes 2>&1 | grep explicit-any
+uv run mypy src/omnibase_core/models/ --show-error-codes 2>&1 | grep explicit-any
 # Should show: (no output or very few errors)
 
 # Check that new code is caught
 echo 'from typing import Any
 def test(x: dict[str, Any]) -> Any:
     pass' > /tmp/test_any.py
-poetry run mypy /tmp/test_any.py --show-error-codes
+uv run mypy /tmp/test_any.py --show-error-codes
 # Should show: Explicit "Any" is not allowed [explicit-any]
 ```
 

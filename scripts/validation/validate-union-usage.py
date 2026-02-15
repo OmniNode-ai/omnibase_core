@@ -1369,11 +1369,11 @@ INVALID PATTERNS:
 The validator focuses on type safety and semantic coherence rather than arbitrary limits.
 
 Examples:
-    poetry run python scripts/validation/validate-union-usage.py                              # Check current directory
-    poetry run python scripts/validation/validate-union-usage.py src/                         # Check src directory
-    poetry run python scripts/validation/validate-union-usage.py --strict --show-statistics   # Strict mode with stats
-    poetry run python scripts/validation/validate-union-usage.py file1.py file2.py file3.py   # Check specific files (pre-commit)
-    poetry run python scripts/validation/validate-union-usage.py --allow-invalid 5 file1.py   # Mix options and files
+    uv run python scripts/validation/validate-union-usage.py                              # Check current directory
+    uv run python scripts/validation/validate-union-usage.py src/                         # Check src directory
+    uv run python scripts/validation/validate-union-usage.py --strict --show-statistics   # Strict mode with stats
+    uv run python scripts/validation/validate-union-usage.py file1.py file2.py file3.py   # Check specific files (pre-commit)
+    uv run python scripts/validation/validate-union-usage.py --allow-invalid 5 file1.py   # Mix options and files
         """,
     )
     parser.add_argument(

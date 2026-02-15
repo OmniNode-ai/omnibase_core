@@ -204,11 +204,11 @@ These mixins are tightly coupled to node introspection protocols and will remain
 
 ```bash
 # Run all handler tests
-poetry run pytest tests/unit/pipeline/handlers/ -v
+uv run pytest tests/unit/pipeline/handlers/ -v
 
 # Run specific handler tests
-poetry run pytest tests/unit/pipeline/handlers/test_capability_metrics.py -v
-poetry run pytest tests/unit/pipeline/handlers/test_capability_caching.py -v
+uv run pytest tests/unit/pipeline/handlers/test_capability_metrics.py -v
+uv run pytest tests/unit/pipeline/handlers/test_capability_caching.py -v
 ```
 
 ### Verify No Mixin Dependencies in Handlers
@@ -232,10 +232,10 @@ grep -r "HandlerCapability" src/omnibase_core/pipeline/handlers/__init__.py
 
 ```bash
 # Run all tests with coverage
-poetry run pytest tests/ --cov=src/omnibase_core/pipeline/handlers -v
+uv run pytest tests/ --cov=src/omnibase_core/pipeline/handlers -v
 
 # Type checking
-poetry run mypy src/omnibase_core/pipeline/handlers/
+uv run mypy src/omnibase_core/pipeline/handlers/
 ```
 
 ---

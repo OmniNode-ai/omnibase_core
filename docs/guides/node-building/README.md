@@ -124,7 +124,7 @@ poetry --version  # Should be 1.0+
 poetry add omnibase_core
 
 # Verify installation (v0.4.0+ with primary node implementations)
-poetry run python -c "from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator; print('✓ omnibase_core ready!')"
+uv run python -c "from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator; print('✓ omnibase_core ready!')"
 ```
 
 ## Learning Path

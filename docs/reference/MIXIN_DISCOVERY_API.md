@@ -321,7 +321,7 @@ Common errors:
 Run unit tests:
 
 ```
-poetry run pytest tests/unit/discovery/test_mixin_discovery.py -xvs
+uv run pytest tests/unit/discovery/test_mixin_discovery.py -xvs
 ```
 
 Test coverage:

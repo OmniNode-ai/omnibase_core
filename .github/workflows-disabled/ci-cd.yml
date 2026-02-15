@@ -101,7 +101,7 @@ jobs:
 
             # Verify omnibase_spi is installed
             echo "🔍 Verifying omnibase_spi installation..."
-            poetry run python -c "import omnibase_spi; print(f'✅ omnibase_spi imported successfully from {omnibase_spi.__file__}')" || echo "❌ Failed to import omnibase_spi"
+            uv run python -c "import omnibase_spi; print(f'✅ omnibase_spi imported successfully from {omnibase_spi.__file__}')" || echo "❌ Failed to import omnibase_spi"
           else
             echo "❌ Failed to install dependencies due to private repository access"
             echo "⚠️  This is likely due to missing OMNINODE_PAT secret or insufficient permissions"
@@ -227,7 +227,7 @@ jobs:
               echo "🔍 Running 7-gate validation on: $model_file"
 
               # Pass branch context to validation script for intelligent test requirements
-              if poetry run python scripts/run_7_gate_validation.py "$model_file" --branch-context="$BRANCH_NAME" --no-rollback $VALIDATION_MODE; then
+              if uv run python scripts/run_7_gate_validation.py "$model_file" --branch-context="$BRANCH_NAME" --no-rollback $VALIDATION_MODE; then
                 echo "✅ Validation passed: $model_file"
                 VALIDATED_COUNT=$((VALIDATED_COUNT + 1))
               else

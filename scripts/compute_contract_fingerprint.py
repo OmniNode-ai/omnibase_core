@@ -17,19 +17,19 @@ The fingerprint serves two purposes:
 
 Usage:
     # Compute fingerprint for a YAML contract
-    poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml
+    uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml
 
     # Compute fingerprint with full hash output
-    poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --verbose
+    uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --verbose
 
     # Validate existing fingerprint in contract file
-    poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --validate
+    uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --validate
 
     # Output as JSON for machine processing
-    poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --json
+    uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --json
 
     # Process multiple contract files
-    poetry run python scripts/compute_contract_fingerprint.py contracts/*.yaml
+    uv run python scripts/compute_contract_fingerprint.py contracts/*.yaml
 
 Exit Codes:
     0 - Success (fingerprint computed or validation passed)
@@ -915,16 +915,16 @@ def main() -> int:
         epilog="""
 Examples:
     # Compute fingerprint for a contract
-    poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml
+    uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml
 
     # Show full hash and details
-    poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --verbose
+    uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --verbose
 
     # Validate existing fingerprint
-    poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --validate
+    uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --validate
 
     # Output as JSON
-    poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --json
+    uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --json
 """,
     )
     parser.add_argument(

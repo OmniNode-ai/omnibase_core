@@ -783,7 +783,7 @@ The project uses a sophisticated CI pipeline with parallel test execution for op
 
 ```
 # Each split runs a subset of tests using pytest-split
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits 12 \
   --group $SPLIT_NUMBER \
   -n auto \
@@ -803,26 +803,26 @@ poetry run pytest tests/ \
 **Standard local testing** (matches pyproject.toml config):
 ```
 # Run all tests with 4 workers (default)
-poetry run pytest tests/
+uv run pytest tests/
 
 # Run specific test file
-poetry run pytest tests/unit/models/test_model.py -v
+uv run pytest tests/unit/models/test_model.py -v
 
 # Run with full parallelism (for powerful machines)
-poetry run pytest tests/ -n 8
+uv run pytest tests/ -n 8
 
 # Debug single test (disable parallelism)
-poetry run pytest tests/unit/test_specific.py -n 0 -xvs
+uv run pytest tests/unit/test_specific.py -n 0 -xvs
 ```
 
 **CI-equivalent local testing** (12 splits):
 ```
 # Run specific split locally (e.g., split 1 of 12)
-poetry run pytest tests/ --splits 12 --group 1 -n auto
+uv run pytest tests/ --splits 12 --group 1 -n auto
 
 # Run all splits sequentially (full CI simulation)
 for i in {1..12}; do
-  poetry run pytest tests/ --splits 12 --group $i -n auto
+  uv run pytest tests/ --splits 12 --group $i -n auto
 done
 ```
 
@@ -846,7 +846,7 @@ done
 
 ```
 # CI runs strict mypy (0 errors required)
-poetry run mypy src/omnibase_core/
+uv run mypy src/omnibase_core/
 ```
 
 **Strict Mode**:
@@ -860,7 +860,7 @@ poetry run mypy src/omnibase_core/
 
 ```
 # Run coverage locally
-poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing --cov-report=html
+uv run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing --cov-report=html
 
 # View HTML report
 open htmlcov/index.html

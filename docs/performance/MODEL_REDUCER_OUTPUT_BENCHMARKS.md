@@ -18,13 +18,13 @@ Comprehensive performance benchmarks for `ModelReducerOutput[T]` operations acro
 
 ```bash
 # Run all performance benchmarks
-poetry run pytest -m performance tests/performance/test_model_reducer_output_benchmarks.py -v
+uv run pytest -m performance tests/performance/test_model_reducer_output_benchmarks.py -v
 
 # Run specific benchmark
-poetry run pytest tests/performance/test_model_reducer_output_benchmarks.py::TestModelReducerOutputPerformance::test_model_creation_performance -v
+uv run pytest tests/performance/test_model_reducer_output_benchmarks.py::TestModelReducerOutputPerformance::test_model_creation_performance -v
 
 # Run with detailed output
-poetry run pytest -m performance tests/performance/test_model_reducer_output_benchmarks.py -v -s
+uv run pytest -m performance tests/performance/test_model_reducer_output_benchmarks.py -v -s
 ```
 
 ---
@@ -283,7 +283,7 @@ Performance benchmarks run in CI with `@pytest.mark.performance`:
 ```yaml
 # .github/workflows/test.yml
 - name: Run performance benchmarks
-  run: poetry run pytest -m performance --tb=short
+  run: uv run pytest -m performance --tb=short
 ```
 
 ### Regression Detection

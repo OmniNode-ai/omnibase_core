@@ -568,13 +568,13 @@ if __name__ == "__main__":
 
 ```bash
 # Dry run (preview changes) - SCRIPT REMOVED
-# poetry run python scripts/fix_version_field_pattern2.py --dry-run -v
+# uv run python scripts/fix_version_field_pattern2.py --dry-run -v
 
 # Apply changes - SCRIPT REMOVED
-# poetry run python scripts/fix_version_field_pattern2.py
+# uv run python scripts/fix_version_field_pattern2.py
 
 # Verbose output - SCRIPT REMOVED
-# poetry run python scripts/fix_version_field_pattern2.py -v
+# uv run python scripts/fix_version_field_pattern2.py -v
 ```
 
 ### Important Notes
@@ -672,7 +672,7 @@ done
 # bash scripts/fix_version_field_pattern1.sh
 
 # Verify tests pass
-poetry run pytest tests/unit/models/contracts/subcontracts/ -x --tb=short
+uv run pytest tests/unit/models/contracts/subcontracts/ -x --tb=short
 ```
 
 ### Step 3: Run Pattern 2 Automation (30 minutes) - COMPLETED
@@ -681,39 +681,39 @@ poetry run pytest tests/unit/models/contracts/subcontracts/ -x --tb=short
 
 ```bash
 # Dry run - SCRIPT REMOVED
-# poetry run python scripts/fix_version_field_pattern2.py --dry-run -v | head -100
+# uv run python scripts/fix_version_field_pattern2.py --dry-run -v | head -100
 
 # Apply - SCRIPT REMOVED
-# poetry run python scripts/fix_version_field_pattern2.py
+# uv run python scripts/fix_version_field_pattern2.py
 
 # Verify tests pass
-poetry run pytest tests/unit/models/contracts/subcontracts/ -x --tb=short
+uv run pytest tests/unit/models/contracts/subcontracts/ -x --tb=short
 ```
 
 ### Step 4: Manual Fixes (60 minutes)
 
 ```bash
 # Find remaining failures
-poetry run pytest tests/unit/models/contracts/subcontracts/ --tb=line -q 2>&1 | \
+uv run pytest tests/unit/models/contracts/subcontracts/ --tb=line -q 2>&1 | \
   grep "FAILED" | head -20
 
 # Fix manually using the patterns documented above
 
 # Verify after each fix
-poetry run pytest tests/unit/models/contracts/subcontracts/test_XXX.py -x --tb=short
+uv run pytest tests/unit/models/contracts/subcontracts/test_XXX.py -x --tb=short
 ```
 
 ### Step 5: Full Test Suite Verification (30 minutes)
 
 ```bash
 # Run full subcontracts tests
-poetry run pytest tests/unit/models/contracts/subcontracts/ --tb=short
+uv run pytest tests/unit/models/contracts/subcontracts/ --tb=short
 
 # Run FSM and workflow tests
-poetry run pytest tests/unit/utils/test_fsm_executor.py tests/unit/models/contracts/subcontracts/test_mixin_fsm_execution.py -x --tb=short
+uv run pytest tests/unit/utils/test_fsm_executor.py tests/unit/models/contracts/subcontracts/test_mixin_fsm_execution.py -x --tb=short
 
 # Run full test suite (all splits)
-poetry run pytest tests/ --tb=short -q
+uv run pytest tests/ --tb=short -q
 ```
 
 ---
@@ -780,48 +780,48 @@ git checkout tests/unit/models/contracts/subcontracts/
 
 ```bash
 # Quick check
-poetry run pytest tests/unit/models/contracts/subcontracts/test_model_routing_subcontract.py -x
+uv run pytest tests/unit/models/contracts/subcontracts/test_model_routing_subcontract.py -x
 
 # Full subcontracts
-poetry run pytest tests/unit/models/contracts/subcontracts/ --tb=no -q
+uv run pytest tests/unit/models/contracts/subcontracts/ --tb=no -q
 ```
 
 ### After Pattern 2 (AST Script)
 
 ```bash
 # Check main failing files
-poetry run pytest tests/unit/models/contracts/subcontracts/test_model_event_mapping_rule.py -x
-poetry run pytest tests/unit/models/contracts/subcontracts/test_model_action_config_parameter.py -x
+uv run pytest tests/unit/models/contracts/subcontracts/test_model_event_mapping_rule.py -x
+uv run pytest tests/unit/models/contracts/subcontracts/test_model_action_config_parameter.py -x
 
 # Full subcontracts
-poetry run pytest tests/unit/models/contracts/subcontracts/ --tb=no -q
+uv run pytest tests/unit/models/contracts/subcontracts/ --tb=no -q
 ```
 
 ### After Pattern 3 (Manual)
 
 ```bash
 # FSM tests
-poetry run pytest tests/unit/utils/test_fsm_executor.py -x
-poetry run pytest tests/unit/models/contracts/subcontracts/test_mixin_fsm_execution.py -x
+uv run pytest tests/unit/utils/test_fsm_executor.py -x
+uv run pytest tests/unit/models/contracts/subcontracts/test_mixin_fsm_execution.py -x
 
 # Declarative nodes
-poetry run pytest tests/unit/models/workflow/ -x
+uv run pytest tests/unit/models/workflow/ -x
 
 # Full test suite
-poetry run pytest tests/ --tb=short -q
+uv run pytest tests/ --tb=short -q
 ```
 
 ### Final Verification
 
 ```bash
 # Count remaining failures (should be 0)
-poetry run pytest tests/ --tb=no -q 2>&1 | grep "failed"
+uv run pytest tests/ --tb=no -q 2>&1 | grep "failed"
 
 # Run with coverage
-poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing --tb=short -q
+uv run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing --tb=short -q
 
 # Verify type checking
-poetry run mypy src/omnibase_core/ --strict
+uv run mypy src/omnibase_core/ --strict
 ```
 
 ---
@@ -873,16 +873,16 @@ git checkout tests/unit/models/contracts/subcontracts/test_model_XXX.py
 ```bash
 # Count failures in each category
 echo "=== Subcontracts ===" && \
-poetry run pytest tests/unit/models/contracts/subcontracts/ --tb=no -q 2>&1 | tail -1 && \
+uv run pytest tests/unit/models/contracts/subcontracts/ --tb=no -q 2>&1 | tail -1 && \
 echo "=== FSM/Workflow ===" && \
-poetry run pytest tests/unit/utils/test_fsm_executor.py tests/unit/models/contracts/subcontracts/test_mixin_fsm_execution.py tests/unit/models/workflow/ --tb=no -q 2>&1 | tail -1
+uv run pytest tests/unit/utils/test_fsm_executor.py tests/unit/models/contracts/subcontracts/test_mixin_fsm_execution.py tests/unit/models/workflow/ --tb=no -q 2>&1 | tail -1
 ```
 
 ### Find Remaining Failures
 
 ```bash
 # Shows which models still need fixing
-poetry run pytest tests/unit/models/contracts/subcontracts/ --tb=line -v 2>&1 | \
+uv run pytest tests/unit/models/contracts/subcontracts/ --tb=line -v 2>&1 | \
   grep "FAILED" | sed 's/.*FAILED //' | sed 's/ .*//' | sort | uniq -c | sort -rn
 ```
 
@@ -897,7 +897,7 @@ python -m py_compile tests/unit/models/contracts/subcontracts/test_model_*.py
 
 ```bash
 # Full report with categories
-poetry run pytest tests/ --tb=no -v 2>&1 | tee test_report.txt && \
+uv run pytest tests/ --tb=no -v 2>&1 | tee test_report.txt && \
 echo "" && \
 echo "=== SUMMARY ===" && \
 tail -20 test_report.txt

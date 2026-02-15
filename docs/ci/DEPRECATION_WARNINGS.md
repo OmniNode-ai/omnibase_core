@@ -84,10 +84,10 @@ Run the test suite and review deprecation warnings in the output:
 
 ```bash
 # Run all tests and observe warnings
-poetry run pytest tests/
+uv run pytest tests/
 
 # Run with verbose warnings
-poetry run pytest tests/ -W default::DeprecationWarning
+uv run pytest tests/ -W default::DeprecationWarning
 ```
 
 ### Step 2: Categorize Warnings
@@ -192,7 +192,7 @@ filterwarnings = [
 
 Before v0.5.0 release, ensure:
 
-- [ ] Run full test suite: `poetry run pytest tests/`
+- [ ] Run full test suite: `uv run pytest tests/`
 - [ ] Review all `DeprecationWarning` output
 - [ ] Update code to resolve internal deprecations
 - [ ] Update dependencies where possible
@@ -203,7 +203,7 @@ Before v0.5.0 release, ensure:
 
 ```bash
 # Temporarily treat deprecations as errors to validate readiness
-poetry run pytest tests/ -W error::DeprecationWarning -W error::PendingDeprecationWarning
+uv run pytest tests/ -W error::DeprecationWarning -W error::PendingDeprecationWarning
 ```
 
 If this command passes, the codebase is ready for v0.5.0.

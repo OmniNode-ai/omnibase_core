@@ -273,7 +273,7 @@ metrics:
 
 ```
 # Validate your mixin contract
-poetry run onex run contract_validator --contract src/omnibase_core/nodes/canary/mixins/mixin_error_handling.yaml
+uv run onex run contract_validator --contract src/omnibase_core/nodes/canary/mixins/mixin_error_handling.yaml
 
 # Expected output:
 # ✓ YAML syntax valid

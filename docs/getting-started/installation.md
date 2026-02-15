@@ -123,7 +123,7 @@ uv run mypy src/omnibase_core
 
 ```json
 {
-    "python.defaultInterpreterPath": "./venv/bin/python",
+    "python.defaultInterpreterPath": "./.venv/bin/python",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
     "python.linting.flake8Enabled": false,
@@ -177,7 +177,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 
 ```
 # Check installation
-poetry run python -c "
+uv run python -c "
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_reducer import NodeReducer
@@ -186,7 +186,7 @@ print('✅ All node types imported successfully!')
 "
 
 # Check version
-poetry run python -c "import omnibase_core; print(f'omnibase_core version: {omnibase_core.__version__}')"
+uv run python -c "import omnibase_core; print(f'omnibase_core version: {omnibase_core.__version__}')"
 ```
 
 ## Next Steps

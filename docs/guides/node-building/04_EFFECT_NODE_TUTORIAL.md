@@ -76,7 +76,7 @@ pwd  # Should end with /omnibase_core
 poetry install
 
 # Run a quick test to ensure everything works
-poetry run pytest tests/unit/nodes/test_node_effect.py -v -k "test_file_operation" --maxfail=1
+uv run pytest tests/unit/nodes/test_node_effect.py -v -k "test_file_operation" --maxfail=1
 ```
 
 If tests pass, you're ready to begin!

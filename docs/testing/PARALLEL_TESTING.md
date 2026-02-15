@@ -75,7 +75,7 @@ done
 export WORKERS_PER_SPLIT=4  # Only 4 workers per split
 
 # Script passes explicit -n value instead of auto
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits 12 \
   --group $split_num \
   -n $WORKERS_PER_SPLIT \  # Explicit control, not auto-detection
@@ -96,7 +96,7 @@ poetry run pytest tests/ \
 export MAX_FAILURES=10
 
 # Script passes --maxfail to pytest
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --maxfail=$MAX_FAILURES \  # Stop after 10 failures
   ...
 ```
@@ -322,7 +322,7 @@ To test a specific split exactly as CI runs it:
 ```
 # CI runs each split in isolation with -n auto
 # Replicate this locally:
-COVERAGE_FILE=.coverage.1 poetry run pytest tests/ \
+COVERAGE_FILE=.coverage.1 uv run pytest tests/ \
   --splits 20 \
   --group 1 \
   -n auto \
@@ -417,7 +417,7 @@ ps aux | grep pytest | awk '{sum+=$6} END {print sum/1024 " MB total"}'
 **Diagnosis**:
 ```
 # Run failing split sequentially
-COVERAGE_FILE=.coverage.6 poetry run pytest tests/ \
+COVERAGE_FILE=.coverage.6 uv run pytest tests/ \
   --splits 12 \
   --group 6 \
   -v  # No -n flag = sequential
@@ -482,10 +482,10 @@ To identify memory-heavy tests:
 poetry add --dev memory-profiler
 
 # Profile specific test
-poetry run python -m memory_profiler -m pytest tests/unit/specific_test.py -v
+uv run python -m memory_profiler -m pytest tests/unit/specific_test.py -v
 
 # Find memory-heavy fixtures
-poetry run pytest tests/ --memprof --memprof-csv=memory.csv
+uv run pytest tests/ --memprof --memprof-csv=memory.csv
 ```
 
 ### Custom Split Distribution
@@ -510,7 +510,7 @@ To replicate CI behavior exactly in local environment (for debugging):
 # Create wrapper script that mimics CI matrix execution
 for split in {1..12}; do
   echo "=== Running Split $split/12 (CI mode) ==="
-  COVERAGE_FILE=.coverage.$split poetry run pytest tests/ \
+  COVERAGE_FILE=.coverage.$split uv run pytest tests/ \
     --splits 12 \
     --group $split \
     -n auto \

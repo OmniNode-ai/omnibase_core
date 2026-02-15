@@ -16,9 +16,9 @@ ONEX Naming Conventions:
 - Mixin*     - Mixin classes (in mixins/, mixin_*.py)
 
 Usage:
-    poetry run python scripts/validate_class_naming.py
-    poetry run python scripts/validate_class_naming.py --verbose
-    poetry run python scripts/validate_class_naming.py --fix-suggestions
+    uv run python scripts/validate_class_naming.py
+    uv run python scripts/validate_class_naming.py --verbose
+    uv run python scripts/validate_class_naming.py --fix-suggestions
 
 Exit Codes:
     0 - All class names conform to conventions

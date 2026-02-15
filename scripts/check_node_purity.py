@@ -34,10 +34,10 @@ ALLOWED PATTERNS:
 - Container-based dependency injection
 
 Usage:
-    poetry run python scripts/check_node_purity.py
-    poetry run python scripts/check_node_purity.py --verbose
-    poetry run python scripts/check_node_purity.py --strict
-    poetry run python scripts/check_node_purity.py --file src/omnibase_core/nodes/node_compute.py
+    uv run python scripts/check_node_purity.py
+    uv run python scripts/check_node_purity.py --verbose
+    uv run python scripts/check_node_purity.py --strict
+    uv run python scripts/check_node_purity.py --file src/omnibase_core/nodes/node_compute.py
 
 Exit Codes:
     0 - All nodes pass purity checks

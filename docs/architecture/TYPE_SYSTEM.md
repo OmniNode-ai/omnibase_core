@@ -112,13 +112,13 @@ disallow_untyped_defs = true
 
 ```
 # Check all code
-poetry run mypy src/
+uv run mypy src/
 
 # Check with verbose output
-poetry run mypy src/ --verbose
+uv run mypy src/ --verbose
 
 # Check specific file
-poetry run mypy src/my_module.py
+uv run mypy src/my_module.py
 ```
 
 ## Best Practices

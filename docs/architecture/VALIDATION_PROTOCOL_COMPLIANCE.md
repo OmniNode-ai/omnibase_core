@@ -166,7 +166,7 @@ print(f"Duplicates: {result.duplicates_found}")
 
 ```bash
 # Run all validation tests (verify backward compatibility)
-poetry run pytest tests/unit/validation/ -v
+uv run pytest tests/unit/validation/ -v
 ```
 
 ## Implementation Status

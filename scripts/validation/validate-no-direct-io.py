@@ -22,10 +22,10 @@ ALLOWED:
 
 Usage:
     # Check declarative nodes
-    poetry run python scripts/validation/validate-no-direct-io.py
+    uv run python scripts/validation/validate-no-direct-io.py
 
     # Check with verbose output
-    poetry run python scripts/validation/validate-no-direct-io.py --verbose
+    uv run python scripts/validation/validate-no-direct-io.py --verbose
 
 Exit Codes:
     0: No violations found

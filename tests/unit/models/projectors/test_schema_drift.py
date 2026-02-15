@@ -8,7 +8,7 @@ generated from the ModelProjectorContract Pydantic model. If these diverge,
 either the model changed unexpectedly or the schema file needs regeneration.
 
 Regenerate the schema file with:
-    poetry run python -c "
+    uv run python -c "
     import json
     from omnibase_core.models.projectors import ModelProjectorContract
     schema = ModelProjectorContract.model_json_schema()
@@ -74,7 +74,7 @@ class TestSchemaDrift:
         # Verify schema file exists
         assert schema_path.exists(), (
             f"Schema file not found: {schema_path}\n"
-            'Generate it with: poetry run python -c "import json; '
+            'Generate it with: uv run python -c "import json; '
             "from omnibase_core.models.projectors import ModelProjectorContract; "
             "schema = ModelProjectorContract.model_json_schema(); "
             "open('src/omnibase_core/schemas/projector_contract.schema.json', 'w').write("
@@ -89,7 +89,7 @@ class TestSchemaDrift:
         assert generated == committed, (
             "Schema drift detected! The generated schema differs from the committed file.\n\n"
             "If this change is intentional, regenerate the schema file:\n"
-            '    poetry run python -c "\n'
+            '    uv run python -c "\n'
             "    import json\n"
             "    from omnibase_core.models.projectors import ModelProjectorContract\n"
             "    schema = ModelProjectorContract.model_json_schema()\n"

@@ -525,7 +525,7 @@ async def test_emitter_publishes_events():
 
 - [ ] **Audit dependencies**: Identify which components use `ProtocolEventBus`
   ```bash
-  poetry run grep -r "ProtocolEventBus" src/
+  uv run grep -r "ProtocolEventBus" src/
   ```
 
 - [ ] **Classify by usage**: For each component, determine:
@@ -563,12 +563,12 @@ async def test_emitter_publishes_events():
 
 - [ ] **Run tests**: Ensure all tests pass
   ```bash
-  poetry run pytest tests/ -x
+  uv run pytest tests/ -x
   ```
 
 - [ ] **Type check**: Verify type compatibility
   ```bash
-  poetry run mypy src/
+  uv run mypy src/
   ```
 
 ---
