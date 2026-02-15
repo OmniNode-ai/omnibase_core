@@ -13,8 +13,6 @@ Tests cover:
 Related: OMN-1854, PR #502
 """
 
-from typing import Any
-
 import pytest
 
 from omnibase_core.enums.enum_merge_conflict_type import EnumMergeConflictType
@@ -239,7 +237,7 @@ class TestDeterminism:
     ) -> None:
         """Complex nested input should still be deterministic."""
         base = {"config": {"level": 1, "tags": ["a", "b"]}, "name": "test"}
-        vals: list[tuple[str, Any]] = [
+        vals: list[tuple[str, object]] = [
             ("a1", {"config": {"level": 2, "tags": ["a", "c"]}, "name": "test"}),
             ("a2", {"config": {"level": 3, "tags": ["b", "d"]}, "name": "modified"}),
         ]

@@ -1,83 +1,123 @@
 ---
-# Required Status Checks for omnibase_core `main` branch
+# Required Status Checks for `main` Branch Protection (v2)
 #
-# Source of truth for branch protection configuration.
-# Apply via:
-#   gh api -X PUT repos/OmniNode-ai/omnibase_core/branches/main/protection \
-#     --input - <<'EOF'
-#   {
-#     "required_status_checks": {
-#       "strict": true,
-#       "contexts": [
-#         "Code Quality",
-#         "Pyright Type Checking",
-#         "Exports Validation",
-#         "Mypy Validation Scripts",
-#         "Core-Infra Boundary",
-#         "Enum Governance Check",
-#         "Tests Gate"
-#       ]
-#     },
-#     "enforce_admins": true,
-#     "required_pull_request_reviews": {"required_approving_review_count": 1},
-#     "restrictions": null
-#   }
-#   EOF
-# Docs: https://docs.github.com/en/rest/branches/branch-protection#update-branch-protection
+# This manifest is the SINGLE SOURCE OF TRUTH for branch protection configuration.
+# The `gates` list defines the only operational contract -- these are the API-stable
+# check_names that branch protection rules reference.
 #
-# Last verified: 2026-02-13
-# Ticket: OMN-2183
-# Pattern: OMN-1876 (omniclaude)
+# INVARIANTS:
+# 1. Gate check_name values are API-stable. Renames require coordinated branch
+#    protection update (temp dual-require, merge, remove old).
+# 2. Individual job names inside gates can change freely without updating
+#    branch protection rules.
+# 3. The `gates` list is the only operational contract. The `checks` section
+#    is documentation only.
+#
+# Supersedes: v1 (OMN-2183) -- flat required_checks list
+# Added: OMN-2226
+# Last verified: 2026-02-14
+# Schema version: v2
 
-required_checks:
-  # Phase 1 — Validation (always run on PRs, no path filters)
+schema_version: 2
+
+# ── Gates (operational contract for branch protection) ────────────────────────
+# These check_names are required in GitHub branch protection settings.
+# They are API-stable -- do NOT rename without the migration safety procedure.
+gates:
+  - check_name: "Quality Gate"
+    workflow_file: test.yml
+    workflow_job_key: quality-gate
+    rationale: >
+      Aggregates all Phase 1 quality checks: lint (ruff + mypy), pyright, exports validation, mypy validation
+      scripts, core-infra boundary (ADR-005), documentation validation, enum governance, detect-secrets.
+      Node purity check is reported by this gate but non-blocking (continue-on-error: true). Replaces
+      6+ individual branch protection checks with a single stable gate.
+  - check_name: "Tests Gate"
+    workflow_file: test.yml
+    workflow_job_key: tests-gate
+    rationale: >
+      Aggregates the 20-shard parallel test matrix. Shard count can change without updating branch protection
+      rules.
+  - check_name: "CI Summary"
+    workflow_file: test.yml
+    workflow_job_key: ci-summary
+    rationale: >
+      Final aggregator for all gates (Quality Gate + Tests Gate). Added for uniformity across OmniNode
+      repos. Not strictly required for omnibase_core since no path filtering exists on Tier A gates, but
+      ensures consistent reporting across the organization.
+# ── Checks (documentation only -- not used for branch protection) ─────────────
+# These are the individual Phase 1 jobs aggregated by Quality Gate.
+# Listed here for documentation and cross-referencing purposes only.
+checks:
   - name: "Code Quality"
-    workflow: test.yml
-    rationale: "ruff format + ruff check + mypy strict"
+    workflow_file: test.yml
+    workflow_job_key: lint
+    aggregated_by: "Quality Gate"
 
   - name: "Pyright Type Checking"
-    workflow: test.yml
-    rationale: "Complementary type checking to mypy"
+    workflow_file: test.yml
+    workflow_job_key: pyright
+    aggregated_by: "Quality Gate"
 
   - name: "Exports Validation"
-    workflow: test.yml
-    rationale: "__all__ exports correctness"
+    workflow_file: test.yml
+    workflow_job_key: exports-validation
+    aggregated_by: "Quality Gate"
 
   - name: "Mypy Validation Scripts"
-    workflow: test.yml
-    rationale: "Type check CI scripts + transport import validation (ADR-005)"
+    workflow_file: test.yml
+    workflow_job_key: mypy-validation-scripts
+    aggregated_by: "Quality Gate"
 
   - name: "Core-Infra Boundary"
-    workflow: test.yml
-    rationale: "ADR-005 — no transport/I/O imports in omnibase_core"
-
-  - name: "Enum Governance Check"
-    workflow: test.yml
-    rationale: "OMN-1313 — enum architectural standards"
-
-  # Phase 2 — Test Matrix Gate
-  - name: "Tests Gate"
-    workflow: test.yml
-    rationale: "Aggregator for 20-split test matrix. Never require individual shards."
-
-excluded_checks:
-  - name: "Tests (Split N/20)"
-    reason: "Matrix shards — use Tests Gate aggregator instead"
-
-  - name: "Test Summary"
-    reason: "Reporting/aggregation job, not a gate. Depends on Tests Gate."
-
-  - name: "Node Purity Check"
-    reason: "continue-on-error: true — always passes from GitHub perspective. Fix tech debt first."
+    workflow_file: test.yml
+    workflow_job_key: core-infra-boundary
+    aggregated_by: "Quality Gate"
 
   - name: "Documentation Validation"
-    reason: "High-noise, external link rot. Runs but doesn't block merging."
+    workflow_file: test.yml
+    workflow_job_key: docs-validation
+    aggregated_by: "Quality Gate"
+
+  - name: "Node Purity Check"
+    workflow_file: test.yml
+    workflow_job_key: node-purity-check
+    reported_by: "Quality Gate"
+    note: "Non-blocking (continue-on-error: true) until tech debt resolved -- reported but excluded from
+      pass/fail"
+
+  - name: "Enum Governance Check"
+    workflow_file: test.yml
+    workflow_job_key: enum-governance
+    aggregated_by: "Quality Gate"
+
+  - name: "Detect Secrets"
+    workflow_file: test.yml
+    workflow_job_key: detect-secrets
+    aggregated_by: "Quality Gate"
+
+  - name: "Tests (Split N/20)"
+    workflow_file: test.yml
+    workflow_job_key: test-parallel
+    aggregated_by: "Tests Gate"
+    note: "Matrix job -- 20 splits, aggregated by Tests Gate"
+
+# ── Explicitly excluded ───────────────────────────────────────────────────────
+excluded_checks:
+  - name: "Tests (Split 1/20) through Tests (Split 20/20)"
+    reason: "Individual matrix legs -- aggregated by Tests Gate"
+
+  - name: "Test Summary"
+    reason: "Renamed to Tests Gate in v2 (OMN-2226)"
 
   - name: "Check architecture handshake"
-    reason: "Path-filtered (check-handshake.yml) — skips on most PRs, would block merging."
+    workflow_file: check-handshake.yml
+    reason: "paths: filter skips this on most PRs -- requiring it would block unrelated PRs"
 
-  - name: "DB ownership CI twin (B1)"
-    reason: "Path-filtered (check-db-ownership.yml) — skips on most PRs, would block merging."
+  - name: "Handshake Policy Gate"
+    workflow_file: handshake-policy-gate.yml
+    reason: "paths: filter skips this on most PRs"
 
-  - name: "Check handshake compliance across repos"
-    reason: "Schedule/dispatch only (handshake-policy-gate.yml) — never runs on PRs."
+  - name: "DB Ownership CI Twin"
+    workflow_file: check-db-ownership.yml
+    reason: "paths: filter skips this on most PRs"
