@@ -65,7 +65,12 @@ In production ONEX code, the EFFECT node delegates I/O execution to a handler. T
 
 ```python
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes import NodeEffect
+
+from your_project.nodes.model_file_backup_input import ModelFileBackupInput
 
 
 class HandlerFileBackup:

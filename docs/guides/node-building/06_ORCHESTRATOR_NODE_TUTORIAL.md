@@ -54,7 +54,7 @@ return ModelHandlerOutput[dict](
 - **Orchestrators communicate via events and intents, not direct results**
 
 **Validation Error:**
-```
+```text
 ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
 Only COMPUTE nodes return typed results.
 ```
@@ -80,8 +80,15 @@ In production ONEX code, the ORCHESTRATOR node delegates workflow coordination t
 
 ```python
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes import NodeOrchestrator
+
+from your_project.nodes.model_pipeline_orchestrator_input import (
+    ModelPipelineOrchestratorInput,
+)
 
 
 class HandlerPipelineOrchestrator:

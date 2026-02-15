@@ -57,6 +57,12 @@ In production ONEX code, the node delegates to a handler. The handler performs t
 
 ```python
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes import NodeCompute
+
+from your_project.nodes.model_price_calculator_input import ModelPriceCalculatorInput
+from your_project.nodes.model_price_calculator_output import ModelPriceCalculatorOutput
 
 
 class HandlerPriceCalculator:
@@ -144,7 +150,7 @@ In this tutorial, you'll build a complete COMPUTE node that calculates prices wi
 
 ## What We're Building
 
-```
+```python
 # Usage example
 calculator = NodePriceCalculatorCompute(container)
 
@@ -172,7 +178,7 @@ print(result.result)
 
 ### 1. Create Project Structure
 
-```
+```bash
 # Navigate to your project
 cd your_project
 
@@ -188,7 +194,7 @@ touch tests/nodes/test_node_price_calculator.py
 
 ### 2. Install Dependencies
 
-```
+```bash
 # Ensure you have omnibase_core
 poetry add omnibase_core
 
@@ -198,7 +204,7 @@ poetry add --group dev pytest pytest-asyncio
 
 ### 3. Verify Installation
 
-```
+```bash
 poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ Ready!')"
 ```
 
@@ -208,7 +214,7 @@ First, define what data your node accepts.
 
 **File**: `src/your_project/nodes/model_price_calculator_input.py`
 
-```
+```python
 """Input model for price calculator."""
 
 from pydantic import BaseModel, Field, field_validator
@@ -282,7 +288,7 @@ Define what your node returns.
 
 **File**: `src/your_project/nodes/model_price_calculator_output.py`
 
-```
+```python
 """Output model for price calculator."""
 
 from pydantic import BaseModel, Field
@@ -347,7 +353,7 @@ For **95% of use cases**, use the production-ready `ModelServiceCompute` wrapper
 
 > **Tutorial Simplification**: The example below places logic directly in the node class for clarity. In production, always use the [handler delegation pattern](#handler-architecture) shown above -- nodes must be thin shells that delegate to handlers.
 
-```
+```python
 """COMPUTE node for price calculation with tax and discounts."""
 
 import time
@@ -690,7 +696,7 @@ Always test your nodes!
 
 **File**: `tests/nodes/test_node_price_calculator.py`
 
-```
+```python
 """Tests for price calculator node."""
 
 import pytest
@@ -857,7 +863,7 @@ async def test_metrics(calculator):
 
 ## Step 5: Run Tests
 
-```
+```bash
 # Run all tests
 poetry run pytest tests/nodes/test_node_price_calculator.py -v
 
@@ -869,7 +875,7 @@ poetry run pytest tests/nodes/test_node_price_calculator.py --cov=src/your_proje
 ```
 
 **Expected output**:
-```
+```text
 tests/nodes/test_node_price_calculator.py::test_basic_calculation PASSED
 tests/nodes/test_node_price_calculator.py::test_percentage_discount PASSED
 tests/nodes/test_node_price_calculator.py::test_flat_discount PASSED
@@ -886,7 +892,7 @@ tests/nodes/test_node_price_calculator.py::test_metrics PASSED
 
 Now use it in your application!
 
-```
+```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from your_project.nodes.node_price_calculator_compute import NodePriceCalculatorCompute
 from your_project.nodes.model_price_calculator_input import (
@@ -933,7 +939,7 @@ print(f"Processing time: {result.processing_time_ms:.2f}ms")
 
 ### 1. Add Logging
 
-```
+```python
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 
 async def process(self, input_data):
@@ -950,7 +956,7 @@ async def process(self, input_data):
 
 ### 2. Add Redis Caching
 
-```
+```python
 import redis.asyncio as redis
 
 def __init__(self, container):
@@ -977,7 +983,7 @@ async def process(self, input_data):
 
 ### 3. Add Parallel Processing
 
-```
+```python
 async def process_batch(
     self,
     inputs: list[ModelPriceCalculatorInput]
@@ -1009,7 +1015,7 @@ You've successfully built a COMPUTE node! Now:
 
 ### Import Errors
 
-```
+```bash
 # If you see import errors
 poetry install
 poetry run python -c "from omnibase_core.nodes import NodeCompute"
@@ -1017,14 +1023,14 @@ poetry run python -c "from omnibase_core.nodes import NodeCompute"
 
 ### Type Checking Failures
 
-```
+```bash
 # Run mypy to check types
 poetry run mypy src/your_project/nodes/node_price_calculator_compute.py
 ```
 
 ### Test Failures
 
-```
+```bash
 # Run tests with verbose output
 poetry run pytest tests/nodes/test_node_price_calculator.py -vvs
 ```
