@@ -203,6 +203,7 @@ Normative specifications and canonical references.
 
 | Document | Description |
 |----------|-------------|
+| [CI/CD Standards](standards/CI_CD_STANDARDS.md) | CI/CD tier system, gate contracts, required-checks.yaml v2 schema |
 | [ONEX Terminology](standards/onex_terminology.md) | Canonical ONEX definitions |
 | [ONEX Topic Taxonomy](standards/onex_topic_taxonomy.md) | Kafka topic naming convention |
 
