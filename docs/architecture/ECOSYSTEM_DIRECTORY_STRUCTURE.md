@@ -47,7 +47,7 @@ omnibase_core/
 │       │   │   └── model_service_orchestrator.py
 │       │   ├── events/         # Event models
 │       │   ├── primitives/     # Primitive type models
-│       │   └── ... (other model categories)
+│       │   └── ...
 │       ├── nodes/              # Base node classes
 │       ├── types/              # Type definitions
 │       ├── utils/              # Utility functions

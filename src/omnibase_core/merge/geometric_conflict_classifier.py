@@ -102,9 +102,9 @@ class GeometricConflictClassifier:
 
         # Compute all pairwise similarities (deterministic order)
         pairwise: list[float] = []
-        for i in range(len(values)):
-            for j in range(i + 1, len(values)):
-                sim = self.compute_similarity(values[i][1], values[j][1])
+        for i, (_, val_i) in enumerate(values):
+            for _, val_j in values[i + 1 :]:
+                sim = self.compute_similarity(val_i, val_j)
                 pairwise.append(sim)
 
         avg_similarity = sum(pairwise) / len(pairwise)

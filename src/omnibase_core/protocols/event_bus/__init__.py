@@ -86,7 +86,7 @@ __all__ = [
     "ProtocolEventMessage",
     # Headers
     "ProtocolEventBusHeaders",
-    # Adapters
+    # Kafka Protocols
     "ProtocolKafkaClient",
     "ProtocolKafkaEventBusAdapter",
     # Node Identity (for subscription consumer group derivation)
