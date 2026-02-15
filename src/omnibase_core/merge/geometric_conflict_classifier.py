@@ -32,6 +32,9 @@ from omnibase_core.models.merge.model_geometric_conflict_details import (
 # Semantic contradiction pairs for _are_contradictory detection.
 # Typed as frozenset[frozenset[object]] because pairs mix booleans and strings;
 # a Union-based generic would add complexity without safety benefit here.
+# Note: boolean True/False contradictions are handled separately via isinstance
+# checks in _values_contradict, so the {"true", "false"} pair below only
+# catches *string* representations (e.g., "true" vs "false").
 _CONTRADICTORY_PAIRS: frozenset[frozenset[object]] = frozenset(
     {
         frozenset({"enable", "disable"}),
@@ -57,6 +60,11 @@ class GeometricConflictClassifier:
         IDENTICAL_THRESHOLD (0.99): Values are effectively the same.
         HIGH_SIMILARITY_THRESHOLD (0.85): Values are very similar.
         CONFLICTING_THRESHOLD (0.50): Partial overlap, needs resolution.
+
+    Recursion guard:
+        _MAX_RECURSION_DEPTH (50) caps recursive traversal in _normalize,
+        _dict_similarity, and _values_contradict to prevent stack overflow
+        on deeply nested or cyclic-like structures.
 
     .. versionadded:: 0.17.0
         Added as part of geometric conflict analysis (OMN-1854)
@@ -196,6 +204,12 @@ class GeometricConflictClassifier:
             and not isinstance(norm_a, bool)
             and not isinstance(norm_b, bool)
         ):
+            # The floor of 1 in the denominator prevents division-by-zero and
+            # means values in (-1, 1) are compared by absolute difference
+            # rather than relative difference.  E.g. 0.001 vs 0.002 yields
+            # ~0.999 similarity despite a 2x relative gap.  This is intentional:
+            # sub-unit quantities are treated as "close to zero" where absolute
+            # distance matters more than ratio.
             return 1.0 - min(
                 abs(norm_a - norm_b) / max(abs(norm_a), abs(norm_b), 1), 1.0
             )
