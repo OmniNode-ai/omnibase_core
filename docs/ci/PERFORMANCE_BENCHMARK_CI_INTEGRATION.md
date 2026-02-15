@@ -181,10 +181,10 @@ performance-benchmarks:
 
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction --no-root
+      run: uv sync --no-interaction --no-root
 
     - name: Install project
-      run: poetry install --no-interaction
+      run: uv sync --no-interaction
 
     - name: Run performance benchmarks
       run: |
@@ -849,12 +849,11 @@ class TestModelReducerOutputPerformance:
 # 1. Check Python version matches CI
 python --version  # Should be 3.12
 
-# 2. Check Poetry version matches CI
-poetry --version  # Should be 2.2.1
+# 2. Check uv version
+uv --version
 
 # 3. Run in clean environment
-poetry env remove python3.12
-poetry install
+rm -rf .venv && uv sync
 uv run pytest tests/performance/ -v
 
 # 4. Simulate CI load (run in parallel)

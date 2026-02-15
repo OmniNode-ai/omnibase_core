@@ -595,7 +595,7 @@ applicable_node_types: ["ORCHESTRATOR"]
 1. Verify model file in correct location: `model/subcontracts/`
 2. Check model class name matches pattern
 3. Ensure `__init__.py` exports your model
-4. Run `poetry install` to update package
+4. Run `uv sync` to update package
 
 ### Issue: Node Can't Find Mixin Configuration
 

@@ -89,9 +89,9 @@ mkdir my-first-onex-node
 cd my-first-onex-node
 
 # Initialize with Poetry
-poetry init --no-interaction
-poetry add omnibase_core
-poetry add --group dev pytest pytest-asyncio
+uv init --no-interaction
+uv add omnibase_core
+uv add --group dev pytest pytest-asyncio
 
 # Create project structure
 mkdir -p src/my_project/nodes
@@ -428,7 +428,7 @@ async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
 
 ```bash
 # Ensure you're in the virtual environment
-poetry shell
+source .venv/bin/activate
 
 # Check installation (v0.4.0 import style)
 uv run python -c "from omnibase_core.nodes import NodeCompute; print('OK')"
@@ -448,7 +448,7 @@ uv run pytest tests/test_doubler.py::test_double_positive_number -v
 
 ```bash
 # Install mypy
-poetry add --group dev mypy
+uv add --group dev mypy
 
 # Run type checking
 uv run mypy src/my_project/nodes/node_doubler_compute.py

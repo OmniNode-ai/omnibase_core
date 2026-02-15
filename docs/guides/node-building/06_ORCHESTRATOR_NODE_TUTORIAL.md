@@ -186,11 +186,11 @@ Most orchestrator workflows require **ZERO custom Python code**. Custom code is 
 
 ```bash
 # Verify Poetry and environment
-poetry --version
+uv --version
 pwd  # Should end with /omnibase_core
 
 # Install dependencies
-poetry install
+uv sync
 
 # Run existing orchestrator tests
 uv run pytest tests/unit/nodes/test_node_orchestrator.py -v --maxfail=1

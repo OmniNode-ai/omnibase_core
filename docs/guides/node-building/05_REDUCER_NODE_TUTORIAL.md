@@ -300,11 +300,11 @@ class NodeMetricsAggregatorReducer(NodeReducer):
 
 ```bash
 # Verify Poetry and environment
-poetry --version
+uv --version
 pwd  # Should end with /omnibase_core
 
 # Install dependencies
-poetry install
+uv sync
 
 # Run existing reducer tests
 uv run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1

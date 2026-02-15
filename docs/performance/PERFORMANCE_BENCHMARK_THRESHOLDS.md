@@ -603,7 +603,7 @@ def retry_performance_tests(request):
 **Alternatively**, use `pytest-rerunfailures`:
 
 ```bash
-poetry add --group dev pytest-rerunfailures
+uv add --group dev pytest-rerunfailures
 
 # Run with automatic retries
 uv run pytest tests/performance/ -v --reruns 2 --reruns-delay 1

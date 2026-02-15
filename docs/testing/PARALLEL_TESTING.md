@@ -479,7 +479,7 @@ To identify memory-heavy tests:
 
 ```
 # Install memory profiler
-poetry add --dev memory-profiler
+uv add --dev memory-profiler
 
 # Profile specific test
 uv run python -m memory_profiler -m pytest tests/unit/specific_test.py -v

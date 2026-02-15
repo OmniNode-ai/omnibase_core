@@ -146,10 +146,10 @@ uv run mypy src/omnibase_core
 
 ```
 # If you see import errors, ensure you're in the virtual environment
-poetry shell  # or source venv/bin/activate
+source .venv/bin/activate  # or source venv/bin/activate
 
 # Reinstall if needed
-poetry install --force
+uv sync --force
 ```
 
 #### Python Version Issues

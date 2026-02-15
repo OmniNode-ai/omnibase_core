@@ -791,7 +791,7 @@ uv run pytest tests/integration/test_file.py::TestClass::test_method -n 0 -xvs
 **Solution**:
 ```bash
 # Verify package installation
-poetry install
+uv sync
 
 # Check import path
 uv run python -c "from tests.integration.conftest import ComputeContextFactory"

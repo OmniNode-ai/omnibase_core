@@ -61,7 +61,7 @@ This comprehensive guide teaches you how to create production-ready mixins (subc
 
 ### Required Tools
 
-- **Poetry**: `poetry --version` (1.0+)
+- **Poetry**: `uv --version` (1.0+)
 - **omnibase_core**: Installed in your project
 - **Text editor**: VSCode, PyCharm, or similar with YAML support
 

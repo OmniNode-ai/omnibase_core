@@ -37,9 +37,9 @@ mkdir temperature-converter
 cd temperature-converter
 
 # Initialize Poetry project
-poetry init --no-interaction
-poetry add omnibase_core
-poetry add --group dev pytest pytest-asyncio mypy
+uv init --no-interaction
+uv add omnibase_core
+uv add --group dev pytest pytest-asyncio mypy
 
 # Create project structure
 mkdir -p src/temperature_converter/{nodes,models,enums}
@@ -699,7 +699,7 @@ Try these enhancements:
 #### Import Errors
 ```
 # Ensure you're in the virtual environment
-poetry shell
+source .venv/bin/activate
 
 # Check imports
 uv run python -c "from temperature_converter.nodes.temperature_converter_compute import TemperatureConverterCompute"

@@ -96,10 +96,10 @@ touch tests/nodes/test_node_price_calculator.py
 
 ```
 # Ensure you have omnibase_core
-poetry add omnibase_core
+uv add omnibase_core
 
 # Add dev dependencies for testing
-poetry add --group dev pytest pytest-asyncio
+uv add --group dev pytest pytest-asyncio
 ```
 
 ### 3. Verify Installation
@@ -918,7 +918,7 @@ You've successfully built a COMPUTE node! Now:
 
 ```
 # If you see import errors
-poetry install
+uv sync
 uv run python -c "from omnibase_core.nodes import NodeCompute"
 ```
 

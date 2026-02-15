@@ -22,7 +22,7 @@ The Mixin Discovery API provides programmatic access to mixin metadata, enabling
 The discovery API is included in omnibase_core. No additional installation required.
 
 ```
-poetry install
+uv sync
 ```
 
 ## Quick Start

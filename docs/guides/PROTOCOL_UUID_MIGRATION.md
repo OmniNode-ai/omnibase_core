@@ -800,7 +800,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install poetry
-          poetry install
+          uv sync
       - name: Run mypy on protocols (strict)
         run: uv run mypy src/your_project/protocols/ --strict
       - name: Run mypy on full codebase

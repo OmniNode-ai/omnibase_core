@@ -67,13 +67,13 @@ Before starting, verify your environment:
 
 ```bash
 # Check Poetry is installed
-poetry --version
+uv --version
 
 # Verify you're in the omnibase_core directory
 pwd  # Should end with /omnibase_core
 
 # Install dependencies
-poetry install
+uv sync
 
 # Run a quick test to ensure everything works
 uv run pytest tests/unit/nodes/test_node_effect.py -v -k "test_file_operation" --maxfail=1
