@@ -188,7 +188,7 @@ This document does not exist yet. It is the single most important missing piece.
    - Before: logic in process()
    - After: logic in handler, node delegates
    - Checklist
-```text
+```
 
 ---
 

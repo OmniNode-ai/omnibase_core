@@ -28,7 +28,7 @@ This research provides a comprehensive analysis of the proper 4-node architectur
 
 ### 1.1 Reference Implementation Standards (omnibase_3 -- Historical)
 
-**Source**: `/Volumes/PRO-G40/Code/omnibase_3/.cursor/rules/node_standards.mdc` *(historical path, no longer available)*
+**Source**: `<historical-repo>/omnibase_3/.cursor/rules/node_standards.mdc` *(historical path, no longer available)*
 
 The reference documentation defines a clear 4-node classification system:
 
@@ -56,7 +56,7 @@ The reference documentation defines a clear 4-node classification system:
 
 ### 1.2 Current Implementation Analysis (omnibase_core)
 
-**Location**: `/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/core/`
+**Location**: `<repo-root>/src/omnibase_core/core/`
 
 #### NodeCoreBase Foundation
 All specialized nodes inherit from `NodeCoreBase` providing:
