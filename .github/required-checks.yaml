@@ -29,8 +29,9 @@ gates:
     workflow_job_key: quality-gate
     rationale: >
       Aggregates all Phase 1 quality checks: lint (ruff + mypy), pyright, exports validation, mypy validation
-      scripts, core-infra boundary (ADR-005), documentation validation, node purity check, enum governance,
-      detect-secrets. Replaces 6+ individual branch protection checks with a single stable gate.
+      scripts, core-infra boundary (ADR-005), documentation validation, enum governance, detect-secrets.
+      Node purity check is reported by this gate but non-blocking (continue-on-error: true). Replaces
+      6+ individual branch protection checks with a single stable gate.
   - check_name: "Tests Gate"
     workflow_file: test.yml
     workflow_job_key: tests-gate
@@ -81,8 +82,9 @@ checks:
   - name: "Node Purity Check"
     workflow_file: test.yml
     workflow_job_key: node-purity-check
-    aggregated_by: "Quality Gate"
-    note: "Non-blocking (continue-on-error: true) until tech debt resolved"
+    reported_by: "Quality Gate"
+    note: "Non-blocking (continue-on-error: true) until tech debt resolved -- reported but excluded from
+      pass/fail"
 
   - name: "Enum Governance Check"
     workflow_file: test.yml
