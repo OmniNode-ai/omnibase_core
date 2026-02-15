@@ -10,16 +10,16 @@ pytest-testmon is an intelligent test selection tool that tracks code dependenci
 
 ```bash
 # Run only tests affected by recent changes
-poetry run pytest --testmon
+uv run pytest --testmon
 
 # Reset testmon database and run all tests
-poetry run pytest --testmon-noselect
+uv run pytest --testmon-noselect
 
 # Temporarily disable testmon
-poetry run pytest --testmon-off
+uv run pytest --testmon-off
 
 # Run testmon with coverage on affected tests
-poetry run pytest --testmon --cov=src/omnibase_core --cov-report=term-missing
+uv run pytest --testmon --cov=src/omnibase_core --cov-report=term-missing
 ```
 
 ## How It Works
@@ -38,10 +38,10 @@ pytest-testmon:
 
 ```bash
 # Fast iteration: Run only affected tests
-poetry run pytest --testmon
+uv run pytest --testmon
 
 # When testmon seems off, reset and rebuild
-poetry run pytest --testmon-noselect
+uv run pytest --testmon-noselect
 ```
 
 **Speedup**: 10x-100x faster for small changes (12,198 tests → often <100 tests)
@@ -50,14 +50,14 @@ poetry run pytest --testmon-noselect
 
 ```bash
 # Validate your changes before commit
-poetry run pytest --testmon --cov --cov-fail-under=60
+uv run pytest --testmon --cov --cov-fail-under=60
 ```
 
 ### Full Suite (Periodic)
 
 ```bash
 # Run full suite periodically to catch integration issues
-poetry run pytest tests/
+uv run pytest tests/
 ```
 
 ## CI/CD Integration Strategy
@@ -88,14 +88,14 @@ See [CI_TEST_STRATEGY.md](./CI_TEST_STRATEGY.md) for recommended CI test approac
 ```bash
 # Clear database and rebuild
 rm .testmondata
-poetry run pytest --testmon-noselect
+uv run pytest --testmon-noselect
 ```
 
 ### Testmon not detecting changes
 
 ```bash
-# Ensure you're using poetry run
-poetry run pytest --testmon  # Correct
+# Ensure you're using uv run
+uv run pytest --testmon  # Correct
 pytest --testmon              # Wrong (uses system pytest)
 ```
 
@@ -104,7 +104,7 @@ pytest --testmon              # Wrong (uses system pytest)
 ```bash
 # Testmon database may be corrupt
 rm .testmondata
-poetry run pytest --testmon-noselect
+uv run pytest --testmon-noselect
 ```
 
 ## Performance Comparison

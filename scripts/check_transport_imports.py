@@ -24,10 +24,10 @@ ALLOWED PATTERNS:
 - Test mocks and fixtures
 
 Usage:
-    poetry run python scripts/check_transport_imports.py
-    poetry run python scripts/check_transport_imports.py --verbose
-    poetry run python scripts/check_transport_imports.py --json
-    poetry run python scripts/check_transport_imports.py --file src/omnibase_core/some_file.py
+    uv run python scripts/check_transport_imports.py
+    uv run python scripts/check_transport_imports.py --verbose
+    uv run python scripts/check_transport_imports.py --json
+    uv run python scripts/check_transport_imports.py --file src/omnibase_core/some_file.py
 
 Exit Codes:
     0 - No transport import violations found

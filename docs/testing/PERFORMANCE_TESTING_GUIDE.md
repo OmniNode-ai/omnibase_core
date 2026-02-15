@@ -643,7 +643,7 @@ def benchmark_with_gc_control(func, iterations=100):
 
 ```bash
 # Run performance tests serially (no parallel execution)
-poetry run pytest tests/performance/ -n 0 -v
+uv run pytest tests/performance/ -n 0 -v
 
 # Or mark tests as serial-only
 @pytest.mark.serial  # Requires pytest-xdist
@@ -796,7 +796,7 @@ git bisect bad HEAD  # Current commit is slow
 git bisect good v0.3.6  # Known good version
 
 # Git checks out commits for testing
-poetry run pytest tests/performance/test_model_reducer_output_benchmarks.py \
+uv run pytest tests/performance/test_model_reducer_output_benchmarks.py \
     -k "test_model_creation_performance" -x
 
 # Mark each commit
@@ -1012,7 +1012,7 @@ class TestPerformanceRegression:
 # .github/workflows/test.yml
 - name: Run Performance Tests
   run: |
-    poetry run pytest tests/performance/ \
+    uv run pytest tests/performance/ \
       -m "performance and not manual" \
       -n 0 \  # No parallelism for performance tests
       --timeout=300 \

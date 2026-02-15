@@ -50,19 +50,19 @@ Compute fingerprints without modifying files:
 
 ```bash
 # Compute fingerprint for a single contract
-poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml
+uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml
 
 # Verbose output with full hash
-poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --verbose
+uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --verbose
 
 # Validate existing fingerprint matches computed
-poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --validate
+uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --validate
 
 # Output as JSON for CI/CD
-poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --json
+uv run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --json
 
 # Process multiple files
-poetry run python scripts/compute_contract_fingerprint.py contracts/*.yaml
+uv run python scripts/compute_contract_fingerprint.py contracts/*.yaml
 ```
 
 **Exit Codes:**
@@ -78,16 +78,16 @@ Update fingerprints in-place when contract content changes:
 
 ```bash
 # Regenerate single contract
-poetry run python scripts/regenerate_fingerprints.py contracts/my_contract.yaml
+uv run python scripts/regenerate_fingerprints.py contracts/my_contract.yaml
 
 # Regenerate all contracts in directory
-poetry run python scripts/regenerate_fingerprints.py contracts/ --recursive
+uv run python scripts/regenerate_fingerprints.py contracts/ --recursive
 
 # Dry-run: preview changes without modifying files
-poetry run python scripts/regenerate_fingerprints.py contracts/ --dry-run -v
+uv run python scripts/regenerate_fingerprints.py contracts/ --dry-run -v
 
 # CI/CD: check if fingerprints are current (exits 1 if changes needed)
-poetry run python scripts/regenerate_fingerprints.py contracts/ --dry-run --json
+uv run python scripts/regenerate_fingerprints.py contracts/ --dry-run --json
 ```
 
 **Exit Codes:**
@@ -109,22 +109,22 @@ Comprehensive contract validation with fingerprint checking:
 
 ```bash
 # Lint single contract
-poetry run python scripts/lint_contract.py contracts/my_contract.yaml
+uv run python scripts/lint_contract.py contracts/my_contract.yaml
 
 # Lint directory recursively
-poetry run python scripts/lint_contract.py contracts/ --recursive
+uv run python scripts/lint_contract.py contracts/ --recursive
 
 # Lint with baseline for drift detection
-poetry run python scripts/lint_contract.py contracts/ --baseline fingerprints.json
+uv run python scripts/lint_contract.py contracts/ --baseline fingerprints.json
 
 # Update baseline with current fingerprints
-poetry run python scripts/lint_contract.py contracts/ --baseline fingerprints.json --update-baseline
+uv run python scripts/lint_contract.py contracts/ --baseline fingerprints.json --update-baseline
 
 # Only compute fingerprints (skip other checks)
-poetry run python scripts/lint_contract.py contracts/ --compute-fingerprint
+uv run python scripts/lint_contract.py contracts/ --compute-fingerprint
 
 # Output as JSON
-poetry run python scripts/lint_contract.py contracts/ --json
+uv run python scripts/lint_contract.py contracts/ --json
 ```
 
 **Validation Checks:**
@@ -149,43 +149,43 @@ Located in `scripts/validation/`. See `scripts/validation/README.md` for details
 
 ```bash
 # Detect hardcoded secrets
-poetry run python scripts/validation/validate-secrets.py src/
+uv run python scripts/validation/validate-secrets.py src/
 
 # Detect hardcoded environment variables
-poetry run python scripts/validation/validate-hardcoded-env-vars.py src/
+uv run python scripts/validation/validate-hardcoded-env-vars.py src/
 ```
 
 ### Code Quality Validators
 
 ```bash
 # Check for stubbed functionality
-poetry run python scripts/validation/check_stub_implementations.py
+uv run python scripts/validation/check_stub_implementations.py
 
 # Validate protocol exports
-poetry run python scripts/check_protocol_exports.py
+uv run python scripts/check_protocol_exports.py
 
 # Validate class naming conventions (OMN-1071)
-poetry run python scripts/validate_class_naming.py
+uv run python scripts/validate_class_naming.py
 # With fix suggestions:
-poetry run python scripts/validate_class_naming.py --fix-suggestions
+uv run python scripts/validate_class_naming.py --fix-suggestions
 # JSON output for CI:
-poetry run python scripts/validate_class_naming.py --json
+uv run python scripts/validate_class_naming.py --json
 
 # Check for circular imports
-poetry run python scripts/validation/test_circular_imports.py
+uv run python scripts/validation/test_circular_imports.py
 
 # Validate ONEX error compliance
-poetry run python scripts/validation/validate-onex-error-compliance.py src/
+uv run python scripts/validation/validate-onex-error-compliance.py src/
 ```
 
 ### Contract Validators
 
 ```bash
 # Validate contract YAML structure
-poetry run python scripts/validation/validate-contracts.py contracts/
+uv run python scripts/validation/validate-contracts.py contracts/
 
 # Validate markdown documentation links
-poetry run python scripts/validation/validate_markdown_links.py docs/
+uv run python scripts/validation/validate_markdown_links.py docs/
 ```
 
 ---
@@ -196,32 +196,32 @@ poetry run python scripts/validation/validate_markdown_links.py docs/
 
 ```bash
 # Clean temporary files (preserves caches)
-poetry run python scripts/cleanup.py --tmp-only
+uv run python scripts/cleanup.py --tmp-only
 
 # Full cleanup (removes ALL caches - slow rebuild!)
-poetry run python scripts/cleanup.py
+uv run python scripts/cleanup.py
 
 # Preview cleanup actions
-poetry run python scripts/cleanup.py --dry-run
+uv run python scripts/cleanup.py --dry-run
 
 # Remove tracked tmp files from git
-poetry run python scripts/cleanup.py --remove-from-git --tmp-only
+uv run python scripts/cleanup.py --remove-from-git --tmp-only
 ```
 
 ### Protocol Checking
 
 ```bash
 # Check protocol exports
-poetry run python scripts/check_protocol_exports.py
+uv run python scripts/check_protocol_exports.py
 
 # Check node purity (no side effects in COMPUTE nodes)
-poetry run python scripts/check_node_purity.py
+uv run python scripts/check_node_purity.py
 
 # Check transport imports
-poetry run python scripts/check_transport_imports.py
+uv run python scripts/check_transport_imports.py
 
 # Check class naming conventions
-poetry run python scripts/validate_class_naming.py
+uv run python scripts/validate_class_naming.py
 ```
 
 ---
@@ -234,10 +234,10 @@ poetry run python scripts/validate_class_naming.py
 # 1. Modify contract YAML
 
 # 2. Regenerate fingerprint
-poetry run python scripts/regenerate_fingerprints.py contracts/my_contract.yaml
+uv run python scripts/regenerate_fingerprints.py contracts/my_contract.yaml
 
 # 3. Verify with lint
-poetry run python scripts/lint_contract.py contracts/my_contract.yaml
+uv run python scripts/lint_contract.py contracts/my_contract.yaml
 
 # 4. Commit changes
 git add contracts/my_contract.yaml
@@ -248,7 +248,7 @@ git commit -m "Update contract and fingerprint"
 
 ```bash
 # Check fingerprints are current (fails if drift detected)
-poetry run python scripts/regenerate_fingerprints.py contracts/ -r --dry-run
+uv run python scripts/regenerate_fingerprints.py contracts/ -r --dry-run
 if [ $? -eq 1 ]; then
     echo "ERROR: Fingerprints out of date. Run regenerate_fingerprints.py"
     exit 1
@@ -257,7 +257,7 @@ fi
 
 ```bash
 # Full contract validation
-poetry run python scripts/lint_contract.py contracts/ -r --json
+uv run python scripts/lint_contract.py contracts/ -r --json
 ```
 
 ### Pre-commit Hook Integration
@@ -269,7 +269,7 @@ Add to `.pre-commit-config.yaml`:
   hooks:
     - id: regenerate-fingerprints
       name: Regenerate Contract Fingerprints
-      entry: poetry run python scripts/regenerate_fingerprints.py
+      entry: uv run python scripts/regenerate_fingerprints.py
       language: system
       files: ^contracts/.*\.yaml$
       pass_filenames: true

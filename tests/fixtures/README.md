@@ -257,7 +257,7 @@ def parse_api_response(data: dict) -> Model:
 ```yaml
 - id: no-pydantic-bypass-in-prod
   name: ONEX Pydantic Bypass Prevention
-  entry: poetry run python scripts/validation/validate_no_pydantic_bypass.py
+  entry: uv run python scripts/validation/validate_no_pydantic_bypass.py
   language: system
   files: ^src/.*\.py$
   exclude: ^tests/.*$
@@ -282,11 +282,11 @@ These are NOT flagged:
 
 ```bash
 # Should pass (no violations in src/)
-poetry run pre-commit run no-pydantic-bypass-in-prod --all-files
+uv run pre-commit run no-pydantic-bypass-in-prod --all-files
 
 # Should fail if bypass patterns found in src/
 echo "x = Model.model_construct()" > src/test_violation.py
-poetry run pre-commit run no-pydantic-bypass-in-prod --files src/test_violation.py
+uv run pre-commit run no-pydantic-bypass-in-prod --files src/test_violation.py
 ```
 
 ## Migration Guide

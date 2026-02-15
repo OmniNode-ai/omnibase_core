@@ -37,7 +37,7 @@ jobs:
 
       - name: Validate repository structure
         run: |
-          poetry run python scripts/validate-pydantic-patterns.py
+          uv run python scripts/validate-pydantic-patterns.py
 
       - name: Upload structure validation report
         if: failure()
@@ -78,7 +78,7 @@ jobs:
 
       - name: Validate naming conventions
         run: |
-          poetry run python scripts/validate-string-versions.py
+          uv run python scripts/validate-string-versions.py
 
   optional-audit:
     name: Optional Type Usage Audit
@@ -107,7 +107,7 @@ jobs:
 
       - name: Audit Optional type usage
         run: |
-          poetry run python scripts/validate-union-usage.py
+          uv run python scripts/validate-union-usage.py
 
   type-safety:
     name: Type Safety Validation
@@ -146,7 +146,7 @@ jobs:
 
       - name: Run MyPy type checking
         run: |
-          poetry run mypy src/ --config-file=mypy.ini || true
+          uv run mypy src/ --config-file=mypy.ini || true
           # Note: Continue on MyPy errors for now during transition period
 
   onex-compliance:
@@ -214,7 +214,7 @@ jobs:
 
       - name: Run migration dry-run
         run: |
-          poetry run python -c "
+          uv run python -c "
           from omnibase_core.validation import audit_protocols
           result = audit_protocols('.')
           print(f'Protocols found: {result.protocols_found}')
@@ -239,19 +239,19 @@ jobs:
           echo "" >> compliance-report.md
 
           echo "## Structure Validation" >> compliance-report.md
-          cd $GITHUB_WORKSPACE && poetry run python scripts/validate-pydantic-patterns.py >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
+          cd $GITHUB_WORKSPACE && uv run python scripts/validate-pydantic-patterns.py >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
 
           echo "" >> /tmp/compliance-reports/compliance-report.md
           echo "## Naming Conventions" >> /tmp/compliance-reports/compliance-report.md
-          cd $GITHUB_WORKSPACE && poetry run python scripts/validate-string-versions.py --dir . >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
+          cd $GITHUB_WORKSPACE && uv run python scripts/validate-string-versions.py --dir . >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
 
           echo "" >> /tmp/compliance-reports/compliance-report.md
           echo "## Backward Compatibility" >> /tmp/compliance-reports/compliance-report.md
-          cd $GITHUB_WORKSPACE && poetry run python scripts/validate-no-backward-compatibility.py -d src >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
+          cd $GITHUB_WORKSPACE && uv run python scripts/validate-no-backward-compatibility.py -d src >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
 
           echo "" >> /tmp/compliance-reports/compliance-report.md
           echo "## Optional Usage Audit" >> /tmp/compliance-reports/compliance-report.md
-          cd $GITHUB_WORKSPACE && poetry run python scripts/validate-union-usage.py >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
+          cd $GITHUB_WORKSPACE && uv run python scripts/validate-union-usage.py >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
 
       - name: Upload compliance report
         uses: actions/upload-artifact@v4

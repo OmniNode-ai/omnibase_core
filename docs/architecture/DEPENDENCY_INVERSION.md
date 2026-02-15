@@ -225,19 +225,19 @@ The `scripts/check_transport_imports.py` script validates these constraints:
 
 ```bash
 # Check all files
-poetry run python scripts/check_transport_imports.py
+uv run python scripts/check_transport_imports.py
 
 # Check with verbose output
-poetry run python scripts/check_transport_imports.py --verbose
+uv run python scripts/check_transport_imports.py --verbose
 
 # Check specific file
-poetry run python scripts/check_transport_imports.py --file src/omnibase_core/some_file.py
+uv run python scripts/check_transport_imports.py --file src/omnibase_core/some_file.py
 
 # Output as JSON (for CI integration)
-poetry run python scripts/check_transport_imports.py --json
+uv run python scripts/check_transport_imports.py --json
 
 # Check only changed files (faster CI)
-poetry run python scripts/check_transport_imports.py --changed-files
+uv run python scripts/check_transport_imports.py --changed-files
 ```
 
 ### CI Integration

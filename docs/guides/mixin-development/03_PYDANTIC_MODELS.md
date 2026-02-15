@@ -726,7 +726,7 @@ class Config:
 **Solutions**:
 1. Verify file in `model/subcontracts/`
 2. Check `__init__.py` exports model
-3. Run `poetry install` to update package
+3. Run `uv sync` to update package
 
 ### Issue: Validator Not Running
 

@@ -453,13 +453,13 @@ If overhead becomes a concern (unlikely):
 
 ```bash
 # Run complete benchmark suite
-poetry run pytest tests/performance/test_source_node_id_overhead.py -v
+uv run pytest tests/performance/test_source_node_id_overhead.py -v
 
 # Run with verbose output
-poetry run pytest tests/performance/test_source_node_id_overhead.py -v -s
+uv run pytest tests/performance/test_source_node_id_overhead.py -v -s
 
 # Run specific test
-poetry run pytest tests/performance/test_source_node_id_overhead.py::TestSourceNodeIdOverhead::test_creation_time_overhead -v
+uv run pytest tests/performance/test_source_node_id_overhead.py::TestSourceNodeIdOverhead::test_creation_time_overhead -v
 ```
 
 ### Expected Output

@@ -279,7 +279,7 @@ All behavior is declared in YAML contracts:
 | Use protocol names for DI | `container.get_service("ProtocolLogger")` not `"LoggerService"` |
 | No `dict[str, Any]` | Use TypedDict or Pydantic models for type safety |
 | ORCHESTRATOR cannot return results | Only COMPUTE nodes return typed results |
-| Always use Poetry | `poetry run pytest`, never `python -m pytest` |
+| Always use Poetry | `uv run pytest`, never `python -m pytest` |
 
 ---
 

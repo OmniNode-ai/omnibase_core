@@ -88,7 +88,7 @@ Handshakes are injected into agent context at:
 Handshakes are versioned with omnibase_core releases. After upgrading omnibase_core, re-run the installer to get updated constraints:
 
 ```bash
-# After poetry update omnibase_core
+# After uv sync (upgrading omnibase_core)
 ../omnibase_core/architecture-handshakes/install.sh $(basename $(pwd))
 ```
 

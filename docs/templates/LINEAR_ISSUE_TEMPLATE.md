@@ -16,7 +16,7 @@
 
 - [ ] *Specific, testable criterion 1*
 - [ ] *Specific, testable criterion 2*
-- [ ] Type checking passes (`poetry run mypy --strict` or `poetry run pyright`)
+- [ ] Type checking passes (`uv run mypy --strict` or `uv run pyright`)
 - [ ] Tests pass with appropriate coverage
 
 ## Location

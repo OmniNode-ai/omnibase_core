@@ -329,7 +329,7 @@ If the improved patterns detect new violations:
 ### Test Results
 
 ```bash
-poetry run pytest tests/validation/test_backward_compat_patterns.py -v
+uv run pytest tests/validation/test_backward_compat_patterns.py -v
 ```
 
 ```text
@@ -339,7 +339,7 @@ poetry run pytest tests/validation/test_backward_compat_patterns.py -v
 ### Script Verification
 
 ```bash
-poetry run python scripts/validation/validate-no-backward-compatibility.py --dir src/
+uv run python scripts/validation/validate-no-backward-compatibility.py --dir src/
 ```
 
 ```text

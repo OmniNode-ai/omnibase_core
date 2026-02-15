@@ -79,7 +79,7 @@ test-parallel:
   steps:
     - name: Run test split ${{ matrix.split }}/20
       run: |
-        poetry run pytest tests/ \
+        uv run pytest tests/ \
           --splits 20 \
           --group ${{ matrix.split }} \
           -n auto \
@@ -181,14 +181,14 @@ performance-benchmarks:
 
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction --no-root
+      run: uv sync --no-interaction --no-root
 
     - name: Install project
-      run: poetry install --no-interaction
+      run: uv sync --no-interaction
 
     - name: Run performance benchmarks
       run: |
-        poetry run pytest tests/performance/ \
+        uv run pytest tests/performance/ \
           -m performance \
           -v \
           --tb=short \
@@ -428,7 +428,7 @@ AssertionError: Model creation for 1000 items took 15.32ms, expected < 10ms (thr
 
 ```bash
 # Run the specific failing benchmark
-poetry run pytest tests/performance/test_model_reducer_output_benchmarks.py \
+uv run pytest tests/performance/test_model_reducer_output_benchmarks.py \
   -k "test_model_creation_performance[large_1000_items]" \
   -v -s
 
@@ -440,7 +440,7 @@ poetry run pytest tests/performance/test_model_reducer_output_benchmarks.py \
 
 ```bash
 # Profile with cProfile
-poetry run pytest tests/performance/test_model_reducer_output_benchmarks.py \
+uv run pytest tests/performance/test_model_reducer_output_benchmarks.py \
   -k "test_model_creation_performance" \
   -v -s \
   --profile \
@@ -459,7 +459,7 @@ git bisect bad HEAD  # Current commit is slow
 git bisect good v0.3.6  # Known good commit
 
 # Git will checkout commits for testing
-poetry run pytest tests/performance/ -k "test_model_creation_performance" -x
+uv run pytest tests/performance/ -k "test_model_creation_performance" -x
 
 # Mark each commit as good or bad
 git bisect good  # or git bisect bad
@@ -481,7 +481,7 @@ git revert <commit-sha>
 # ... code changes ...
 
 # Re-run benchmarks to verify fix
-poetry run pytest tests/performance/ -v
+uv run pytest tests/performance/ -v
 ```
 
 **Option B: Adjust Threshold (If Justified)**
@@ -693,7 +693,7 @@ COMMIT=$(git rev-parse --short HEAD)
 mkdir -p "$RESULTS_DIR"
 
 echo "Running performance benchmarks..."
-poetry run pytest tests/performance/ \
+uv run pytest tests/performance/ \
   -m performance \
   -v \
   --tb=short \
@@ -849,16 +849,15 @@ class TestModelReducerOutputPerformance:
 # 1. Check Python version matches CI
 python --version  # Should be 3.12
 
-# 2. Check Poetry version matches CI
-poetry --version  # Should be 2.2.1
+# 2. Check uv version
+uv --version
 
 # 3. Run in clean environment
-poetry env remove python3.12
-poetry install
-poetry run pytest tests/performance/ -v
+rm -rf .venv && uv sync
+uv run pytest tests/performance/ -v
 
 # 4. Simulate CI load (run in parallel)
-poetry run pytest tests/performance/ -n auto -v
+uv run pytest tests/performance/ -n auto -v
 ```
 
 ### Problem: Memory Benchmark Failures
@@ -969,18 +968,18 @@ def test_memory_usage(self) -> None:
 
 **Run benchmarks locally**:
 ```bash
-poetry run pytest tests/performance/ -m performance -v
+uv run pytest tests/performance/ -m performance -v
 ```
 
 **Run specific benchmark**:
 ```bash
-poetry run pytest tests/performance/test_model_reducer_output_benchmarks.py \
+uv run pytest tests/performance/test_model_reducer_output_benchmarks.py \
   -k "test_model_creation_performance" -v
 ```
 
 **Debug slow benchmark**:
 ```bash
-poetry run pytest tests/performance/ -k "slow_test" -v -s --durations=10
+uv run pytest tests/performance/ -k "slow_test" -v -s --durations=10
 ```
 
 **Adjust threshold (when justified)**:

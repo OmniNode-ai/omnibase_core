@@ -128,16 +128,16 @@ Run validators manually on specific files or directories:
 
 ```bash
 # Validate secrets in a directory
-poetry run python scripts/validation/validate-secrets.py src/
+uv run python scripts/validation/validate-secrets.py src/
 
 # Validate a specific file
-poetry run python scripts/validation/validate-secrets.py src/mymodule/myfile.py
+uv run python scripts/validation/validate-secrets.py src/mymodule/myfile.py
 
 # Validate environment variables
-poetry run python scripts/validation/validate-hardcoded-env-vars.py src/
+uv run python scripts/validation/validate-hardcoded-env-vars.py src/
 
 # Multiple files
-poetry run python scripts/validation/validate-secrets.py file1.py file2.py file3.py
+uv run python scripts/validation/validate-secrets.py file1.py file2.py file3.py
 ```
 
 **Exit Codes**:
@@ -169,7 +169,7 @@ pre-commit run validate-hardcoded-env-vars --all-files
 # Security: Secret Detection
 - id: validate-secrets
   name: ONEX Secret Detection
-  entry: poetry run python scripts/validation/validate-secrets.py
+  entry: uv run python scripts/validation/validate-secrets.py
   language: system
   pass_filenames: true
   files: ^src/.*\.py$
@@ -179,7 +179,7 @@ pre-commit run validate-hardcoded-env-vars --all-files
 # Security: Hardcoded Environment Variable Prevention
 - id: validate-hardcoded-env-vars
   name: ONEX Hardcoded Environment Variable Prevention
-  entry: poetry run python scripts/validation/validate-hardcoded-env-vars.py
+  entry: uv run python scripts/validation/validate-hardcoded-env-vars.py
   language: system
   pass_filenames: true
   files: ^src/.*\.py$
@@ -637,7 +637,7 @@ class Environment(Enum):
 
 1. **Syntax errors in Python file**: Validators skip files with syntax errors gracefully
    - Fix syntax errors first
-   - Check with: `poetry run python -m py_compile yourfile.py`
+   - Check with: `uv run python -m py_compile yourfile.py`
 
 2. **File encoding issues**: Validators expect UTF-8
    - Check file encoding: `file -i yourfile.py`
@@ -721,13 +721,13 @@ class Environment(Enum):
 Run validator tests:
 ```bash
 # Test secret validator
-poetry run pytest tests/unit/validation/test_validate_secrets.py -v
+uv run pytest tests/unit/validation/test_validate_secrets.py -v
 
 # Test env var validator
-poetry run pytest tests/unit/validation/test_validate_hardcoded_env_vars.py -v
+uv run pytest tests/unit/validation/test_validate_hardcoded_env_vars.py -v
 
 # All validation tests
-poetry run pytest tests/unit/validation/ -v
+uv run pytest tests/unit/validation/ -v
 ```
 
 ---
@@ -738,8 +738,8 @@ poetry run pytest tests/unit/validation/ -v
 
 ```bash
 # Manual validation
-poetry run python scripts/validation/validate-secrets.py src/
-poetry run python scripts/validation/validate-hardcoded-env-vars.py src/
+uv run python scripts/validation/validate-secrets.py src/
+uv run python scripts/validation/validate-hardcoded-env-vars.py src/
 
 # Pre-commit
 pre-commit install
@@ -748,7 +748,7 @@ pre-commit run validate-secrets --all-files
 pre-commit run validate-hardcoded-env-vars --all-files
 
 # Testing
-poetry run pytest tests/unit/validation/ -v
+uv run pytest tests/unit/validation/ -v
 ```
 
 ### Bypass Comments

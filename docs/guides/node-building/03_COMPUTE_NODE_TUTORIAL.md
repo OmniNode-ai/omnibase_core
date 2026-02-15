@@ -96,16 +96,16 @@ touch tests/nodes/test_node_price_calculator.py
 
 ```
 # Ensure you have omnibase_core
-poetry add omnibase_core
+uv add omnibase_core
 
 # Add dev dependencies for testing
-poetry add --group dev pytest pytest-asyncio
+uv add --group dev pytest pytest-asyncio
 ```
 
 ### 3. Verify Installation
 
 ```
-poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ Ready!')"
+uv run python -c "from omnibase_core.nodes import NodeCompute; print('✓ Ready!')"
 ```
 
 ## Step 1: Define Input Model
@@ -766,13 +766,13 @@ async def test_metrics(calculator):
 
 ```
 # Run all tests
-poetry run pytest tests/nodes/test_node_price_calculator.py -v
+uv run pytest tests/nodes/test_node_price_calculator.py -v
 
 # Run specific test
-poetry run pytest tests/nodes/test_node_price_calculator.py::test_basic_calculation -v
+uv run pytest tests/nodes/test_node_price_calculator.py::test_basic_calculation -v
 
 # Run with coverage
-poetry run pytest tests/nodes/test_node_price_calculator.py --cov=src/your_project/nodes --cov-report=term-missing
+uv run pytest tests/nodes/test_node_price_calculator.py --cov=src/your_project/nodes --cov-report=term-missing
 ```
 
 **Expected output**:
@@ -918,22 +918,22 @@ You've successfully built a COMPUTE node! Now:
 
 ```
 # If you see import errors
-poetry install
-poetry run python -c "from omnibase_core.nodes import NodeCompute"
+uv sync
+uv run python -c "from omnibase_core.nodes import NodeCompute"
 ```
 
 ### Type Checking Failures
 
 ```
 # Run mypy to check types
-poetry run mypy src/your_project/nodes/node_price_calculator_compute.py
+uv run mypy src/your_project/nodes/node_price_calculator_compute.py
 ```
 
 ### Test Failures
 
 ```
 # Run tests with verbose output
-poetry run pytest tests/nodes/test_node_price_calculator.py -vvs
+uv run pytest tests/nodes/test_node_price_calculator.py -vvs
 ```
 
 ## Summary

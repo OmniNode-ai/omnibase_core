@@ -110,7 +110,7 @@ integration_field: "error_config"  # Missing '_configuration' suffix
 
 ```
 # Validate node contract (including mixins)
-poetry run onex run contract_validator \
+uv run onex run contract_validator \
     --contract src/your_project/nodes/api_client_effect/v1_0_0/contract.yaml
 
 # Expected output:

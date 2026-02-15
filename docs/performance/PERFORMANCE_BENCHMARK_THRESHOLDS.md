@@ -441,7 +441,7 @@ def get_threshold_multiplier() -> float:
 ```bash
 # Run benchmarks locally 10 times
 for i in {1..10}; do
-    poetry run pytest tests/performance/test_model_reducer_output_benchmarks.py \
+    uv run pytest tests/performance/test_model_reducer_output_benchmarks.py \
         -k "test_model_creation_performance" -v -s | tee benchmark_$i.log
 done
 
@@ -541,7 +541,7 @@ Related: OMN-594
 
 ```bash
 # Run benchmark locally
-poetry run pytest tests/performance/test_model_reducer_output_benchmarks.py \
+uv run pytest tests/performance/test_model_reducer_output_benchmarks.py \
     -k "test_model_creation_performance" -v -s --durations=10
 
 # If fast locally but slow in CI → environment issue
@@ -552,7 +552,7 @@ poetry run pytest tests/performance/test_model_reducer_output_benchmarks.py \
 
 ```bash
 # Profile with cProfile
-poetry run pytest tests/performance/test_model_reducer_output_benchmarks.py \
+uv run pytest tests/performance/test_model_reducer_output_benchmarks.py \
     -k "test_model_creation_performance" -v -s \
     --profile --profile-svg
 
@@ -568,7 +568,7 @@ git bisect bad HEAD  # Current commit is slow
 git bisect good v0.3.6  # Known good commit
 
 # Git will checkout commits for testing
-poetry run pytest tests/performance/ -k "test_model_creation_performance" -x
+uv run pytest tests/performance/ -k "test_model_creation_performance" -x
 
 # Mark each commit as good or bad
 git bisect good  # or git bisect bad
@@ -603,10 +603,10 @@ def retry_performance_tests(request):
 **Alternatively**, use `pytest-rerunfailures`:
 
 ```bash
-poetry add --group dev pytest-rerunfailures
+uv add --group dev pytest-rerunfailures
 
 # Run with automatic retries
-poetry run pytest tests/performance/ -v --reruns 2 --reruns-delay 1
+uv run pytest tests/performance/ -v --reruns 2 --reruns-delay 1
 ```
 
 ---
@@ -690,7 +690,7 @@ poetry run pytest tests/performance/ -v --reruns 2 --reruns-delay 1
 ```bash
 # Run locally 10 times
 for i in {1..10}; do
-    poetry run pytest tests/performance/test_new_benchmark.py -v -s
+    uv run pytest tests/performance/test_new_benchmark.py -v -s
 done
 ```
 

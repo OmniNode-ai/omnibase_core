@@ -221,7 +221,7 @@ The script uses `set -e` to fail fast on errors:
 ls -la .coverage.*
 
 # Run a single split manually to debug
-COVERAGE_FILE=.coverage.test poetry run pytest tests/ \
+COVERAGE_FILE=.coverage.test uv run pytest tests/ \
   --splits 12 \
   --group 1 \
   --cov=src/omnibase_core \
@@ -236,10 +236,10 @@ COVERAGE_FILE=.coverage.test poetry run pytest tests/ \
 **Solution**:
 ```
 # Identify uncovered files
-poetry run coverage report --show-missing
+uv run coverage report --show-missing
 
 # Check which tests cover specific files
-poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
+uv run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 ```
 
 ### Issue: Script hangs or doesn't complete

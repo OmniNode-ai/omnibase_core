@@ -37,9 +37,9 @@ mkdir temperature-converter
 cd temperature-converter
 
 # Initialize Poetry project
-poetry init --no-interaction
-poetry add omnibase_core
-poetry add --group dev pytest pytest-asyncio mypy
+uv init --no-interaction
+uv add omnibase_core
+uv add --group dev pytest pytest-asyncio mypy
 
 # Create project structure
 mkdir -p src/temperature_converter/{nodes,models,enums}
@@ -568,13 +568,13 @@ async def test_processing_time_tracking(converter):
 
 ```
 # Run tests
-poetry run pytest tests/ -v
+uv run pytest tests/ -v
 
 # Run type checking
-poetry run mypy src/
+uv run mypy src/
 
 # Run linting
-poetry run ruff check src/ tests/
+uv run ruff check src/ tests/
 ```
 
 ### Step 8: Create Usage Example
@@ -626,7 +626,7 @@ if __name__ == "__main__":
 Run it:
 
 ```
-poetry run python example_usage.py
+uv run python example_usage.py
 
 # Expected output:
 # Temperature Converter Demo
@@ -699,25 +699,25 @@ Try these enhancements:
 #### Import Errors
 ```
 # Ensure you're in the virtual environment
-poetry shell
+source .venv/bin/activate
 
 # Check imports
-poetry run python -c "from temperature_converter.nodes.temperature_converter_compute import TemperatureConverterCompute"
+uv run python -c "from temperature_converter.nodes.temperature_converter_compute import TemperatureConverterCompute"
 ```
 
 #### Test Failures
 ```
 # Run with verbose output
-poetry run pytest tests/ -vvs
+uv run pytest tests/ -vvs
 
 # Run specific test
-poetry run pytest tests/nodes/test_temperature_converter.py::test_celsius_to_fahrenheit -v
+uv run pytest tests/nodes/test_temperature_converter.py::test_celsius_to_fahrenheit -v
 ```
 
 #### Type Checking Issues
 ```
 # Run MyPy with more details
-poetry run mypy src/ --show-error-codes
+uv run mypy src/ --show-error-codes
 ```
 
 ## Summary

@@ -1627,7 +1627,7 @@ Set the `ONEX_DEBUG_THREAD_SAFETY` environment variable to enable runtime checks
 export ONEX_DEBUG_THREAD_SAFETY=1
 
 # Run your application/tests
-poetry run pytest tests/
+uv run pytest tests/
 
 # Disable (default - zero overhead)
 unset ONEX_DEBUG_THREAD_SAFETY
@@ -1725,7 +1725,7 @@ Add to your CI configuration to catch threading issues early:
 - name: Run tests with thread safety validation
   env:
     ONEX_DEBUG_THREAD_SAFETY: "1"
-  run: poetry run pytest tests/
+  run: uv run pytest tests/
 ```
 
 ## Runtime Thread Safety Checks (Custom)

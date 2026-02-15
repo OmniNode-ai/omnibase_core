@@ -61,7 +61,7 @@ This comprehensive guide teaches you how to create production-ready mixins (subc
 
 ### Required Tools
 
-- **Poetry**: `poetry --version` (1.0+)
+- **Poetry**: `uv --version` (1.0+)
 - **omnibase_core**: Installed in your project
 - **Text editor**: VSCode, PyCharm, or similar with YAML support
 
@@ -69,7 +69,7 @@ This comprehensive guide teaches you how to create production-ready mixins (subc
 
 ```
 # Verify environment
-poetry run python -c "from omnibase_core.model.subcontracts import ModelHealthCheckSubcontract; print('✓ Mixin system ready!')"
+uv run python -c "from omnibase_core.model.subcontracts import ModelHealthCheckSubcontract; print('✓ Mixin system ready!')"
 
 # Check existing mixins
 ls /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/nodes/canary/mixins/
@@ -249,10 +249,10 @@ your_project/
 
 ```
 # Validate mixin contract
-poetry run onex run contract_validator --contract src/your_project/mixins/mixin_your_feature.yaml
+uv run onex run contract_validator --contract src/your_project/mixins/mixin_your_feature.yaml
 
 # Validate complete node contract (with mixins)
-poetry run onex run contract_validator --contract src/your_project/nodes/your_node/v1_0_0/contract.yaml
+uv run onex run contract_validator --contract src/your_project/nodes/your_node/v1_0_0/contract.yaml
 ```
 
 ### Testing Mixins

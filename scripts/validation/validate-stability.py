@@ -120,7 +120,7 @@ class GenericStabilityValidator:
         try:
             result = subprocess.run(
                 [
-                    "poetry",
+                    "uv",
                     "run",
                     "mypy",
                     f"src/{self.package_name}/",
@@ -157,7 +157,7 @@ class GenericStabilityValidator:
 
         try:
             result = subprocess.run(
-                ["poetry", "run", "ruff", "check", f"src/{self.package_name}/"],
+                ["uv", "run", "ruff", "check", f"src/{self.package_name}/"],
                 capture_output=True,
                 text=True,
                 cwd=Path.cwd(),
@@ -204,7 +204,7 @@ class GenericStabilityValidator:
 
         try:
             result = subprocess.run(
-                ["poetry", "run", "pytest", str(test_dir), "-v"],
+                ["uv", "run", "pytest", str(test_dir), "-v"],
                 capture_output=True,
                 text=True,
                 cwd=Path.cwd(),

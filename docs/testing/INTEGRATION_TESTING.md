@@ -253,42 +253,42 @@ class TestComplexWorkflows:
 
 ```bash
 # Run all integration tests
-poetry run pytest tests/integration/ -v
+uv run pytest tests/integration/ -v
 
 # Run with integration marker filter
-poetry run pytest tests/ -m integration -v
+uv run pytest tests/ -m integration -v
 
 # Run specific integration test file
-poetry run pytest tests/integration/test_compute_pipeline_integration.py -v
+uv run pytest tests/integration/test_compute_pipeline_integration.py -v
 
 # Run specific test class
-poetry run pytest tests/integration/test_service_orchestration.py::TestServiceHealthLifecycle -v
+uv run pytest tests/integration/test_service_orchestration.py::TestServiceHealthLifecycle -v
 
 # Run with timeout protection (recommended for CI)
-poetry run pytest tests/integration/ --timeout=60 -v
+uv run pytest tests/integration/ --timeout=60 -v
 ```
 
 ### Debug Mode
 
 ```bash
 # Disable parallelism for debugging
-poetry run pytest tests/integration/test_multi_module_workflows.py -n 0 -xvs
+uv run pytest tests/integration/test_multi_module_workflows.py -n 0 -xvs
 
 # Run with verbose output and stop on first failure
-poetry run pytest tests/integration/ -xvs --tb=long
+uv run pytest tests/integration/ -xvs --tb=long
 
 # Run with logging output
-poetry run pytest tests/integration/ -v --log-cli-level=DEBUG
+uv run pytest tests/integration/ -v --log-cli-level=DEBUG
 ```
 
 ### Performance Testing
 
 ```bash
 # Run slow/performance integration tests
-poetry run pytest tests/integration/ -m "integration and slow" -v
+uv run pytest tests/integration/ -m "integration and slow" -v
 
 # Run with duration reporting
-poetry run pytest tests/integration/ --durations=10 -v
+uv run pytest tests/integration/ --durations=10 -v
 ```
 
 ## Writing New Integration Tests
@@ -738,7 +738,7 @@ From `.github/workflows/test.yml`:
 ```yaml
 - name: Run Tests (Split ${{ matrix.split }})
   run: |
-    poetry run pytest tests/ \
+    uv run pytest tests/ \
       --splits 20 --group ${{ matrix.split }} \
       -n auto --timeout=60 --tb=short
 ```
@@ -764,10 +764,10 @@ See [CI Monitoring Guide](../ci/CI_MONITORING_GUIDE.md) for detailed monitoring 
 **Solution**:
 ```bash
 # Run with timeout protection
-poetry run pytest tests/integration/ --timeout=60 -v
+uv run pytest tests/integration/ --timeout=60 -v
 
 # Debug specific test without parallelism
-poetry run pytest tests/integration/test_file.py::TestClass::test_method -n 0 -xvs
+uv run pytest tests/integration/test_file.py::TestClass::test_method -n 0 -xvs
 ```
 
 **Common Causes**:
@@ -791,10 +791,10 @@ poetry run pytest tests/integration/test_file.py::TestClass::test_method -n 0 -x
 **Solution**:
 ```bash
 # Verify package installation
-poetry install
+uv sync
 
 # Check import path
-poetry run python -c "from tests.integration.conftest import ComputeContextFactory"
+uv run python -c "from tests.integration.conftest import ComputeContextFactory"
 ```
 
 #### 4. Async Test Failures

@@ -28,10 +28,10 @@ Run the demo in 30 seconds:
 cd /path/to/omnibase_core
 
 # List available demos
-poetry run onex demo list
+uv run onex demo list
 
 # Run the model-validate demo (mock mode - no API key required)
-poetry run onex demo run --scenario model-validate
+uv run onex demo run --scenario model-validate
 ```
 
 Expected output:
@@ -336,7 +336,7 @@ To run with real LLM API calls instead of mock responses:
 export OPENAI_API_KEY="sk-..."
 
 # Run in live mode
-poetry run onex demo run --scenario model-validate --live
+uv run onex demo run --scenario model-validate --live
 ```
 
 ### Live Mode Differences
@@ -372,16 +372,16 @@ poetry run onex demo run --scenario model-validate --live
 
 ```bash
 # List available demo scenarios
-poetry run onex demo list
+uv run onex demo list
 
 # List with verbose details
-poetry run onex demo list --verbose
+uv run onex demo list --verbose
 ```
 
 ### Run Demo
 
 ```bash
-poetry run onex demo run --scenario <name> [OPTIONS]
+uv run onex demo run --scenario <name> [OPTIONS]
 ```
 
 ### CLI Flags
@@ -405,22 +405,22 @@ poetry run onex demo run --scenario <name> [OPTIONS]
 
 ```bash
 # Basic run
-poetry run onex demo run --scenario model-validate
+uv run onex demo run --scenario model-validate
 
 # Live mode with real LLMs
-poetry run onex demo run --scenario model-validate --live
+uv run onex demo run --scenario model-validate --live
 
 # Custom output directory
-poetry run onex demo run --scenario model-validate --output ./my-results
+uv run onex demo run --scenario model-validate --output ./my-results
 
 # Reproducible run with seed
-poetry run onex demo run --scenario model-validate --seed 42
+uv run onex demo run --scenario model-validate --seed 42
 
 # Stress test with 3x corpus
-poetry run onex demo run --scenario model-validate --repeat 3
+uv run onex demo run --scenario model-validate --repeat 3
 
 # Combine options
-poetry run onex demo run \
+uv run onex demo run \
   --scenario model-validate \
   --live \
   --output ./prod-eval \
@@ -491,7 +491,7 @@ Create JSON files in `mock-responses/`:
 
 ```bash
 # Verify scenario is discovered
-poetry run onex demo list
+uv run onex demo list
 
 # Should show:
 # my-scenario    My custom demo scenario
@@ -500,7 +500,7 @@ poetry run onex demo list
 ### Step 6: Run Your Scenario
 
 ```bash
-poetry run onex demo run --scenario my-scenario
+uv run onex demo run --scenario my-scenario
 ```
 
 ### Scenario Requirements
@@ -574,7 +574,7 @@ Warning: No mock response for sample_001
 ### Getting Help
 
 - **Documentation**: This guide and `examples/demo/model-validate/README.md`
-- **CLI Help**: `poetry run onex demo --help`
+- **CLI Help**: `uv run onex demo --help`
 - **Ticket**: Report issues referencing OMN-1398
 
 ---

@@ -261,7 +261,7 @@ Enable runtime thread safety validation during development:
 
 ```bash
 export ONEX_DEBUG_THREAD_SAFETY=1
-poetry run pytest tests/
+uv run pytest tests/
 ```
 
 When enabled, accessing a node instance from a different thread than its creator raises `ModelOnexError` with `THREAD_SAFETY_VIOLATION` error code.
