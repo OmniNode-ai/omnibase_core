@@ -1965,6 +1965,8 @@ fsm_context = {
 ## State Diagram
 
 > **Rendering Note**: This diagram uses Mermaid `stateDiagram-v2` syntax, which renders correctly in GitHub's Markdown viewer. If rendering issues occur in other viewers, refer to the [Simplified Flow Diagram](#simplified-flow-diagram) below as a fallback.
+>
+> **Guard Label Note**: Mermaid stateDiagram syntax does not support `<` or `>=` characters in transition labels (they break rendering). The diagram uses `gte` and `lt` as shorthand: `retry_count gte 3` maps to the formal guard `retry_count >= 3` (`retry_limit_reached`), and `retry_count lt 3` maps to `retry_count < 3` (`retry_count_valid`). See [Guards](#guards) for the full guard definitions.
 
 ```mermaid
 stateDiagram-v2
@@ -1986,13 +1988,13 @@ stateDiagram-v2
     partial_registered --> registering_consul : RETRY [postgres_applied=true]
     partial_registered --> registering_postgres : RETRY_POSTGRES [consul_applied=true]
     partial_registered --> registered : RECOVERY_COMPLETE
-    partial_registered --> failed : RETRY_EXHAUSTED [max retries reached]
+    partial_registered --> failed : RETRY_EXHAUSTED [retry_count gte 3]
 
     registered --> deregistering : DEREGISTER
 
     deregistering --> deregistered : DEREGISTRATION_COMPLETE
 
-    failed --> validating : RETRY [retries remaining]
+    failed --> validating : RETRY [retry_count lt 3]
     failed --> deregistered : ABANDON
 
     note right of registered
