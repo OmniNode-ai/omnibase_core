@@ -59,10 +59,10 @@ omninode-runtime-host-dev = "omnibase_core.cli.cli_runtime_host:main"
 
 [project.optional-dependencies]
 cli = ["psutil>=7.2.1"]
-cache = ["redis>=5.0.0,<6.0.0"]
+cache = ["redis>=5.0.0,<8.0.0"]
 metrics = ["prometheus-client>=0.21.0,<1.0.0"]
 sql-parser = ["sqlglot>=26.0.0,<29.0.0"]
-full = ["psutil>=7.2.1", "redis>=5.0.0,<6.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<29.0.0"]
+full = ["psutil>=7.2.1", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<29.0.0"]
 
 [dependency-groups]
 dev = [
