@@ -35,4 +35,4 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${PROJECT_ROOT}"
 
 # Pass all arguments to the Python script
-exec poetry run python scripts/validate_class_naming.py "$@"
+exec uv run python scripts/validate_class_naming.py "$@"

@@ -296,12 +296,20 @@ class NodeMetricsReducer(NodeReducer):
             trace=trace_envelope,
         )
 
-        # Each intent carries the trace envelope fields
-        for intent in intents:
-            intent.correlation_id = trace_envelope.correlation_id
-            intent.causation_id = trace_envelope.message_id
+        # Each intent carries the trace envelope fields.
+        # Since models are frozen, create new instances with the
+        # correlation context rather than mutating in place.
+        traced_intents = [
+            intent.model_copy(
+                update={
+                    "correlation_id": trace_envelope.correlation_id,
+                    "causation_id": trace_envelope.message_id,
+                }
+            )
+            for intent in intents
+        ]
 
-        return new_state, intents
+        return new_state, traced_intents
 ```
 
 ### Stage 4: ORCHESTRATOR Node (Coordination)
@@ -310,12 +318,16 @@ The ORCHESTRATOR coordinates workflows using `ModelEventEnvelope` for full event
 
 ```python
 class NodePipelineOrchestrator(NodeOrchestrator):
-    """ORCHESTRATOR node with lease-based action emission."""
+    """ORCHESTRATOR node with lease-based action emission.
+
+    Note: Orchestrators emit events and intents -- they never return
+    a typed result.  Only COMPUTE nodes return typed results.
+    """
 
     async def execute_orchestration(
         self,
         envelope: ModelEventEnvelope[WorkflowRequest]
-    ) -> ModelEventEnvelope[WorkflowResult]:
+    ) -> ModelHandlerOutput[None]:
         # Acquire lease for workflow
         lease = await self._acquire_lease(envelope.correlation_id)
 
@@ -325,22 +337,28 @@ class NodePipelineOrchestrator(NodeOrchestrator):
             lease_id=lease.lease_id,
             epoch=lease.epoch,
             correlation_id=envelope.correlation_id,
-            # ... other fields
         )
 
-        # Execute workflow steps with trace propagation
-        result = await self._execute_workflow(
-            action=action,
-            trace_id=envelope.trace_id,
-            span_id=envelope.span_id,
-        )
-
-        # Return result with preserved correlation
-        return ModelEventEnvelope(
-            payload=result,
-            correlation_id=envelope.correlation_id,
-            trace_id=envelope.trace_id,
-            span_id=uuid4(),  # New span for orchestration
+        # Emit events and intents (orchestrators never return results)
+        return ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
+            events=[
+                ModelEventEnvelope(
+                    event_type="workflow.started",
+                    payload={"workflow_id": str(action.action_id)},
+                    correlation_id=envelope.correlation_id,
+                    trace_id=envelope.trace_id,
+                    span_id=uuid4(),
+                )
+            ],
+            intents=[
+                ModelIntent(
+                    intent_type=EnumIntentType.EFFECT,
+                    target="downstream_effect_node",
+                    payload=action,
+                )
+            ],
         )
 ```
 

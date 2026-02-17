@@ -23,7 +23,7 @@ This guide teaches you how to create strongly-typed Pydantic backing models for 
 
 ### Relationship to YAML Contracts
 
-```
+```text
 YAML Contract (Definition)
     ↓ [Contract Loader]
 Pydantic Model (Runtime)
@@ -35,11 +35,11 @@ Node Implementation (Usage)
 
 ### Create Model File
 
-**Location**: `src/omnibase_core/model/subcontracts/`
+**Location**: `src/omnibase_core/models/contracts/subcontracts/`
 **Naming**: `model_[capability_name]_subcontract.py`
 
-```
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/model/subcontracts/
+```bash
+cd src/omnibase_core/models/contracts/subcontracts/
 
 # Create your model file
 touch model_error_handling_subcontract.py
@@ -47,7 +47,7 @@ touch model_error_handling_subcontract.py
 
 ### Basic Imports
 
-```
+```python
 """
 Model backing for Error Handling Subcontract.
 Generated from mixin_error_handling subcontract following ONEX patterns.
@@ -55,7 +55,7 @@ Generated from mixin_error_handling subcontract following ONEX patterns.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional, Dict, Any, Union
+from typing import Any
 from pydantic import BaseModel, Field, field_validator, model_validator
 from uuid import UUID
 ```
@@ -66,7 +66,7 @@ from uuid import UUID
 
 Create enums for constrained string values:
 
-```
+```python
 class EnumErrorCategory(str, Enum):
     """Error category classification."""
     TRANSIENT = "transient"           # Temporary errors (retry possible)
@@ -94,7 +94,7 @@ class EnumHandlingStrategy(str, Enum):
 
 Create models for action outputs:
 
-```
+```python
 class ModelErrorHandlingResult(BaseModel):
     """Error handling result model."""
 
@@ -110,11 +110,11 @@ class ModelErrorHandlingResult(BaseModel):
         ...,
         description="Whether recovery is possible"
     )
-    recovery_suggestions: List[str] = Field(
+    recovery_suggestions: list[str] = Field(
         default_factory=list,
         description="Suggested recovery actions"
     )
-    error_context: Dict[str, Any] = Field(
+    error_context: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional error context"
     )
@@ -150,11 +150,11 @@ class ModelCircuitBreakerStatus(BaseModel):
         le=1.0,
         description="Failure rate (0.0-1.0)"
     )
-    last_failure_time: Optional[datetime] = Field(
+    last_failure_time: datetime | None = Field(
         default=None,
         description="Timestamp of last failure"
     )
-    next_retry_time: Optional[datetime] = Field(
+    next_retry_time: datetime | None = Field(
         default=None,
         description="When to attempt next retry"
     )
@@ -186,7 +186,7 @@ class ModelRetryDecision(BaseModel):
 
 ### Basic Structure
 
-```
+```python
 class ModelErrorHandlingSubcontract(BaseModel):
     """
     Error handling subcontract Pydantic backing model.
@@ -204,7 +204,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
         default="1.0.0",
         description="Subcontract version"
     )
-    applicable_node_types: List[str] = Field(
+    applicable_node_types: list[str] = Field(
         default=["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"],
         description="Node types where this mixin is applicable"
     )
@@ -260,7 +260,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
     )
 
     # === ERROR CATEGORIZATION ===
-    retriable_error_types: List[str] = Field(
+    retriable_error_types: list[str] = Field(
         default_factory=lambda: [
             "TimeoutError",
             "ConnectionError",
@@ -268,7 +268,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
         ],
         description="Error types that can be retried"
     )
-    fatal_error_types: List[str] = Field(
+    fatal_error_types: list[str] = Field(
         default_factory=lambda: [
             "AuthenticationError",
             "ValidationError",
@@ -308,7 +308,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
 
 ### Adding Validators
 
-```
+```python
     @field_validator("error_log_level")
     @classmethod
     def validate_log_level(cls, v: str) -> str:
@@ -366,7 +366,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
 
 ### Helper Methods
 
-```
+```python
     def is_error_retriable(self, error_type: str) -> bool:
         """Check if error type is retriable."""
         return error_type in self.retriable_error_types
@@ -392,8 +392,8 @@ class ModelErrorHandlingSubcontract(BaseModel):
 
 ### Update __init__.py
 
-```
-# src/omnibase_core/model/subcontracts/__init__.py
+```python
+# src/omnibase_core/models/contracts/subcontracts/__init__.py
 
 from .model_error_handling_subcontract import (
     ModelErrorHandlingSubcontract,
@@ -420,12 +420,12 @@ __all__ = [
 
 ### Unit Tests
 
-```
+```python
 # tests/model/subcontracts/test_model_error_handling_subcontract.py
 
 import pytest
 from pydantic import ValidationError
-from omnibase_core.model.subcontracts import (
+from omnibase_core.models.contracts.subcontracts import (
     ModelErrorHandlingSubcontract,
     EnumErrorCategory,
     EnumCircuitBreakerState,
@@ -590,18 +590,18 @@ class TestModelErrorHandlingSubcontract:
 
 ### Pattern 1: Optional Fields
 
-```
+```python
 class ModelOptionalConfig(BaseModel):
     """Model with optional fields."""
 
     required_field: str = Field(..., description="This field is required")
-    optional_field: Optional[str] = Field(None, description="This field is optional")
+    optional_field: str | None = Field(None, description="This field is optional")
     optional_with_default: str = Field("default", description="Optional with default")
 ```
 
 ### Pattern 2: Constrained Values
 
-```
+```python
 class ModelConstrainedValues(BaseModel):
     """Model with constrained values."""
 
@@ -614,7 +614,7 @@ class ModelConstrainedValues(BaseModel):
 
 ### Pattern 3: Complex Nested Models
 
-```
+```python
 class ModelNestedConfig(BaseModel):
     """Inner nested configuration."""
     setting1: str = Field(default="value1")
@@ -631,7 +631,7 @@ class ModelMainConfig(BaseModel):
 
 ### Pattern 4: Discriminated Unions
 
-```
+```python
 from typing import Union, Literal
 
 class ModelStrategyA(BaseModel):
@@ -646,7 +646,7 @@ class ModelStrategyB(BaseModel):
 
 class ModelMainWithStrategy(BaseModel):
     """Model with strategy selection."""
-    strategy: Union[ModelStrategyA, ModelStrategyB] = Field(..., discriminator="type")
+    strategy: ModelStrategyA | ModelStrategyB = Field(..., discriminator="type")
 ```
 
 ## Best Practices
@@ -655,7 +655,7 @@ class ModelMainWithStrategy(BaseModel):
 
 Always provide clear descriptions:
 
-```
+```python
 timeout_ms: int = Field(
     default=5000,
     ge=100,
@@ -668,7 +668,7 @@ timeout_ms: int = Field(
 
 Add validators for complex logic:
 
-```
+```python
 @field_validator("max_connections")
 @classmethod
 def validate_connections(cls, v: int, info) -> int:
@@ -682,7 +682,7 @@ def validate_connections(cls, v: int, info) -> int:
 
 Add convenience methods:
 
-```
+```python
 def is_enabled(self) -> bool:
     """Check if feature is enabled."""
     return self.enabled and self.threshold > 0
@@ -696,7 +696,7 @@ def get_timeout_seconds(self) -> float:
 
 Provide realistic examples in Config:
 
-```
+```python
 class Config:
     json_schema_extra = {
         "example": {
@@ -724,9 +724,9 @@ class Config:
 **Symptom**: `ImportError: cannot import ModelYourSubcontract`
 
 **Solutions**:
-1. Verify file in `model/subcontracts/`
+1. Verify file in `models/contracts/subcontracts/`
 2. Check `__init__.py` exports model
-3. Run `poetry install` to update package
+3. Run `uv sync` to update package
 
 ### Issue: Validator Not Running
 

@@ -31,6 +31,19 @@ All side effects are emitted as Actions for target nodes (NodeCompute, NodeEffec
 
 **v1.0.5 Clarification**: The purity guarantee applies to the **workflow executor functions**, not to `NodeOrchestrator` instances. See [Purity Boundary](#purity-boundary-v105-normative) for details.
 
+### Output Constraints (ORCHESTRATOR)
+
+`ModelHandlerOutput` enforces strict field constraints per node kind. For ORCHESTRATOR nodes:
+
+| Field | Status |
+|-------|--------|
+| `result` | Forbidden |
+| `events[]` | **Allowed** |
+| `intents[]` | **Allowed** |
+| `projections[]` | Forbidden |
+
+**Enforcement**: `ModelHandlerOutput` Pydantic validator + CI `node-purity-check`.
+
 ---
 
 ## Table of Contents

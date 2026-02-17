@@ -58,37 +58,37 @@ This suite addresses PR feedback requirements for performance benchmarks at scal
 ### Full Performance Suite
 ```
 # Run all performance tests
-poetry run python -m pytest tests/performance/ -v
+uv run python -m pytest tests/performance/ -v
 
 # Run with performance output
-poetry run python -m pytest tests/performance/ -v -s
+uv run python -m pytest tests/performance/ -v -s
 ```
 
 ### Specific Test Categories
 ```
 # Run only ModelWorkflowDependency tests
-poetry run python -m pytest tests/performance/core/contracts/test_model_workflow_dependency_performance.py -v -s
+uv run python -m pytest tests/performance/core/contracts/test_model_workflow_dependency_performance.py -v -s
 
 # Run only ModelDependency tests
-poetry run python -m pytest tests/performance/core/contracts/test_model_dependency_performance.py -v -s
+uv run python -m pytest tests/performance/core/contracts/test_model_dependency_performance.py -v -s
 ```
 
 ### Individual Performance Tests
 ```
 # Test single dependency validation speed
-poetry run python -m pytest tests/performance/core/contracts/test_model_workflow_dependency_performance.py::TestModelWorkflowDependencyPerformance::test_single_dependency_validation_performance -v -s
+uv run python -m pytest tests/performance/core/contracts/test_model_workflow_dependency_performance.py::TestModelWorkflowDependencyPerformance::test_single_dependency_validation_performance -v -s
 
 # Test regex performance
-poetry run python -m pytest tests/performance/core/contracts/test_model_dependency_performance.py::TestModelDependencyPerformance::test_regex_compilation_performance -v -s
+uv run python -m pytest tests/performance/core/contracts/test_model_dependency_performance.py::TestModelDependencyPerformance::test_regex_compilation_performance -v -s
 ```
 
 ### Slow Tests (Memory and Stress Tests)
 ```
 # Run slow tests (may take several seconds each)
-poetry run python -m pytest tests/performance/ -m slow -v -s
+uv run python -m pytest tests/performance/ -m slow -v -s
 
 # Skip slow tests for faster runs
-poetry run python -m pytest tests/performance/ -m "not slow" -v -s
+uv run python -m pytest tests/performance/ -m "not slow" -v -s
 ```
 
 ## Performance Metrics Output
@@ -181,10 +181,10 @@ Performance tests can be integrated into CI to detect regressions:
 
 ```
 # Run performance tests in CI
-poetry run python -m pytest tests/performance/ --tb=short --disable-warnings
+uv run python -m pytest tests/performance/ --tb=short --disable-warnings
 
 # Performance regression detection (future enhancement)
-poetry run python -m pytest tests/performance/ --benchmark-json=performance-results.json
+uv run python -m pytest tests/performance/ --benchmark-json=performance-results.json
 ```
 
 ### Performance Monitoring

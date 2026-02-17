@@ -12,13 +12,12 @@
 
 A **node** in the ONEX framework is a **self-contained, reusable component** that performs a specific type of operation within a microservices architecture. Think of nodes as specialized workers, each designed to excel at one particular kind of task.
 
-> **📘 Terminology Note: Service Wrappers vs Custom Nodes**
-> You'll encounter several related terms in ONEX documentation:
-> - **Service Wrapper**: Pre-configured node implementations like `ModelServiceCompute` that combine a base node with common mixins. These are production-ready and recommended for most use cases.
-> - **Custom Node**: A node you build by directly inheriting from `NodeCoreBase` when you need specialized composition or unique mixin combinations.
-> - **ModelService\***: The family of service wrapper classes (`ModelServiceEffect`, `ModelServiceCompute`, `ModelServiceReducer`, `ModelServiceOrchestrator`).
-> **Rule of thumb**: Start with service wrappers (`ModelService*`) for standard implementations. Only create custom nodes when you need specialized behavior.
-> See [MIXIN_ARCHITECTURE.md](../../architecture/MIXIN_ARCHITECTURE.md#service-wrappers-and-mixin-mapping) for complete details.
+> **Key Concept: Nodes and Handlers**
+> Nodes in ONEX are **thin coordination shells**. They do not contain business logic. Instead, they delegate to **handlers**, which are resolved from YAML contracts at runtime. This separation ensures testability, reusability, and contract-driven behavior.
+> - **Node**: Coordination shell that manages lifecycle, dependency injection, and contract enforcement.
+> - **Handler**: Contains the actual business logic. Selected by the node's YAML contract.
+> - **YAML Contract**: Declares the node's behavior, including which handler to use and what output constraints apply.
+> See [Handler Architecture](../../architecture/HANDLER_ARCHITECTURE.md) and [MIXIN_ARCHITECTURE.md](../../architecture/MIXIN_ARCHITECTURE.md) for complete details.
 
 ### Simple Analogy
 
@@ -35,15 +34,23 @@ Each has a specific role. Together, they create a complete system.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                         ONEX Node                             │
+│                     ONEX Node (thin shell)                    │
 │                                                               │
-│  ┌────────┐      ┌───────────┐      ┌────────┐              │
-│  │ Input  │ ───▶ │ Process() │ ───▶ │ Output │              │
-│  └────────┘      └───────────┘      └────────┘              │
+│  ┌────────┐    ┌─────────────────┐    ┌────────┐            │
+│  │ Input  │ ──▶│ Handler         │──▶ │ Output │            │
+│  └────────┘    │ (business logic)│    └────────┘            │
+│                └─────────────────┘                            │
+│                        ^                                      │
+│                        |                                      │
+│                ┌───────────────┐                              │
+│                │ YAML Contract │                              │
+│                │ (declares     │                              │
+│                │  behavior)    │                              │
+│                └───────────────┘                              │
 │                                                               │
 │  • Strongly typed input/output                               │
-│  • Single responsibility                                     │
-│  • Dependency injection via container                        │
+│  • Node delegates to handler (no logic in node)              │
+│  • Dependency injection via ModelONEXContainer                │
 │  • Error handling built-in                                   │
 │  • Performance tracking                                      │
 └──────────────────────────────────────────────────────────────┘
@@ -323,11 +330,11 @@ class NodeCompute(NodeCoreBase):
 ```
 
 **Notice**:
-- ✅ Single responsibility: Pure computation
-- ✅ Typed input/output
-- ✅ Dependency injection via container
-- ✅ Built-in caching
-- ✅ Performance tracking
+- The node itself is a thin shell -- it manages caching, validation, and metrics
+- Business logic (the actual computation) lives in `_execute_computation()`, which is the handler's responsibility
+- The node coordinates lifecycle; the handler owns the domain logic
+- Dependency injection via `ModelONEXContainer`
+- Typed input/output with Pydantic models
 
 ## When to Create a Node
 
@@ -349,11 +356,12 @@ Don't create a node when:
 ## Summary
 
 **A node is**:
-- A specialized, reusable component in the ONEX framework
-- Strongly typed with clear input/output contracts
+- A thin coordination shell that delegates business logic to handlers
+- Strongly typed with clear input/output contracts defined in YAML
 - Follows single responsibility principle
-- Uses dependency injection for flexibility
+- Uses dependency injection via `ModelONEXContainer`
 - Includes built-in error handling and performance tracking
+- Never contains business logic directly -- handlers own the logic
 
 **Four node types** (v0.4.0):
 1. **EFFECT**: External interactions (APIs, databases, files)
@@ -379,38 +387,34 @@ Now that you understand what nodes are, learn about the **four node types** and 
 # v0.4.0: Import nodes directly from omnibase_core.nodes
 from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator
 
-# Preferred: production-ready compute via service wrapper
-from omnibase_core.models.services.model_service_compute import ModelServiceCompute
+# Nodes are thin shells -- business logic belongs in handlers.
+# A node delegates to its handler, which is resolved from its YAML contract.
 
-class MyComputeService(ModelServiceCompute):
-    pass
-
-# Or: minimal custom node when you need specialized composition
+# Example: Custom compute node (thin shell pattern)
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 class NodeMyServiceCompute(NodeCoreBase):
-    """My custom compute node."""
+    """Custom compute node -- delegates to handler for business logic."""
 
-    def __init__(self, container: ModelONEXContainer):
+    def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
-        # Your initialization here
+        # Resolve services via protocol-based DI
+        # Business logic lives in the handler, not here
 
     async def process(self, input_data):
-        """Your processing logic here."""
-        # Validate input
-        # Execute operation
-        # Return output
-        pass
+        """Delegate to handler resolved from YAML contract."""
+        handler = self._resolve_handler()
+        return await handler.execute(input_data)
 ```
 
 **Essential imports** (v0.4.0):
 - `from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator` - Primary node implementations
 - `NodeCoreBase` - Base class for custom nodes
-- `ModelONEXContainer` - Dependency injection container
+- `ModelONEXContainer` - Dependency injection container (not `ModelContainer`)
 - `ModelOnexError` - Structured error handling
 - `EnumCoreErrorCode` - Error code enumeration
 
-> **Note**: In v0.4.0, `NodeReducer` and `NodeOrchestrator` are the primary implementations (FSM-driven and workflow-driven respectively). Legacy implementations have been moved to `nodes/legacy/`.
+> **Note**: In v0.4.0, `NodeReducer` and `NodeOrchestrator` are the primary implementations (FSM-driven and workflow-driven respectively). Legacy implementations have been removed from the codebase.
 
-**Next step**: [Learn about the four node types →](02_NODE_TYPES.md)
+**Next step**: [Learn about the four node types -->](02_NODE_TYPES.md)

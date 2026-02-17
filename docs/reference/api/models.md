@@ -36,7 +36,7 @@ service = container.get_service("MyService")
 - `register_service(name: str, service: Any)` - Register a service
 - `get_service(name: str) -> Any` - Resolve service by name
 - `has_service(name: str) -> bool` - Check if service exists
-- `get_all_services() -> Dict[str, Any]` - Get all registered services
+- `get_all_services() -> dict[str, Any]` - Get all registered services
 
 ### Input/Output Models
 
@@ -96,9 +96,9 @@ error = ModelOnexError(
 
 - `error_code: EnumCoreErrorCode` - Error classification
 - `message: str` - Human-readable error message
-- `context: Dict[str, Any]` - Additional error context
+- `context: dict[str, Any]` - Additional error context
 - `timestamp: float` - Error timestamp
-- `correlation_id: Optional[str]` - Request correlation ID
+- `correlation_id: str | None` - Request correlation ID
 
 ### Event Models
 
@@ -188,11 +188,11 @@ exists = cache.contains("key")
 
 #### Key Methods
 
-- `put(key: str, value: Any, ttl_minutes: Optional[int])` - Store value
-- `get(key: str) -> Optional[Any]` - Retrieve value
+- `put(key: str, value: Any, ttl_minutes: int | None)` - Store value
+- `get(key: str) -> Any | None` - Retrieve value
 - `contains(key: str) -> bool` - Check existence
 - `clear()` - Clear all entries
-- `get_stats() -> Dict[str, Any]` - Get cache statistics
+- `get_stats() -> dict[str, Any]` - Get cache statistics
 
 ### Circuit Breaker Models
 
@@ -258,15 +258,14 @@ async with ModelEffectTransaction() as transaction:
 
 ```
 from pydantic import BaseModel, Field, field_validator
-from typing import List, Optional
 
 class MyInputModel(BaseModel):
     """Example input model with validation."""
 
     name: str = Field(description="User name", min_length=1, max_length=100)
     age: int = Field(description="User age", ge=0, le=150)
-    email: str = Field(description="Email address", regex=r'^[\w\.-]+@[\w\.-]+\.\w+$')
-    tags: List[str] = Field(description="User tags", max_items=10)
+    email: str = Field(description="Email address", pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$')
+    tags: list[str] = Field(description="User tags", max_length=10)
 
     @field_validator('name')
     @classmethod
@@ -292,8 +291,8 @@ class MyOutputModel(BaseModel):
     """Example output model with validation."""
 
     success: bool = Field(description="Operation success status")
-    result: Optional[Dict[str, Any]] = Field(description="Operation result")
-    error_message: Optional[str] = Field(description="Error message if failed")
+    result: dict[str, Any] | None = Field(description="Operation result")
+    error_message: str | None = Field(description="Error message if failed")
     processing_time_ms: float = Field(description="Processing time", ge=0)
 
     @field_validator('error_message')
@@ -343,14 +342,14 @@ class CustomModel(BaseModel):
     )
 
     timestamp: datetime = Field(default_factory=datetime.now)
-    data: Dict[str, Any] = Field(default_factory=dict)
+    data: dict[str, Any] = Field(default_factory=dict)
 
     @field_serializer('timestamp')
     def serialize_timestamp(self, value: datetime) -> str:
         """Custom timestamp serialization."""
         return value.isoformat()
 
-    def to_api_dict(self) -> Dict[str, Any]:
+    def to_api_dict(self) -> dict[str, Any]:
         """Custom serialization for API responses."""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -388,7 +387,7 @@ except ValidationError as e:
 ### Model Error Conversion
 
 ```
-def convert_to_onex_error(error: Exception, context: Dict[str, Any]) -> ModelOnexError:
+def convert_to_onex_error(error: Exception, context: dict[str, Any]) -> ModelOnexError:
     """Convert any exception to ModelOnexError."""
 
     if isinstance(error, ValidationError):
@@ -418,30 +417,32 @@ def convert_to_onex_error(error: Exception, context: Dict[str, Any]) -> ModelOne
 ```
 from functools import lru_cache
 
+# Note: @lru_cache requires hashable arguments. dict is not hashable,
+# so convert to a frozenset of items or use a tuple-based key instead.
 @lru_cache(maxsize=128)
-def create_model_from_dict(model_class: type, data: Dict[str, Any]) -> BaseModel:
-    """Cache model creation for performance."""
-    return model_class(**data)
+def create_model_from_tuple(model_class: type, data_key: tuple[tuple[str, Any], ...]) -> BaseModel:
+    """Cache model creation for performance using hashable key."""
+    return model_class(**dict(data_key))
+
+# Usage: create_model_from_tuple(MyModel, tuple(sorted(data.items())))
 ```
 
 ### Lazy Loading
 
 ```
-from typing import Optional
-
 class LazyModel(BaseModel):
     """Model with lazy-loaded fields."""
 
-    _cached_data: Optional[Dict[str, Any]] = None
+    _cached_data: dict[str, Any] | None = None
 
     @property
-    def expensive_data(self) -> Dict[str, Any]:
+    def expensive_data(self) -> dict[str, Any]:
         """Lazy-loaded expensive data."""
         if self._cached_data is None:
             self._cached_data = self._load_expensive_data()
         return self._cached_data
 
-    def _load_expensive_data(self) -> Dict[str, Any]:
+    def _load_expensive_data(self) -> dict[str, Any]:
         """Load expensive data."""
         # Expensive operation here
         return {"loaded": "data"}

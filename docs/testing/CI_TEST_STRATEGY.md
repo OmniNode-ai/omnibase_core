@@ -35,7 +35,7 @@ This document outlines the comprehensive CI/CD test strategy for omnibase_core, 
 **Trigger**: All pushes and PRs
 **Configuration**:
 ```
-poetry run pytest tests/unit/enums tests/unit/errors \
+uv run pytest tests/unit/enums tests/unit/errors \
   --maxfail=5 -x --tb=short
 ```
 
@@ -51,7 +51,7 @@ poetry run pytest tests/unit/enums tests/unit/errors \
 **Trigger**: All pushes and PRs
 **Configuration**:
 ```
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits 20 --group ${{ matrix.split }} \
   -n auto --timeout=60 --tb=short
 ```
@@ -79,7 +79,7 @@ poetry run pytest tests/ \
 if: github.ref == 'refs/heads/main' ||
     (github.event_name == 'pull_request' && github.base_ref == 'main')
 
-poetry run pytest tests/ \
+uv run pytest tests/ \
   -n auto \
   --cov=src/omnibase_core \
   --cov-report=term-missing \
@@ -107,9 +107,9 @@ poetry run pytest tests/ \
 **Trigger**: All pushes and PRs
 **Configuration**:
 ```
-poetry run ruff format --check src/ tests/
-poetry run ruff check src/ tests/
-poetry run mypy src/omnibase_core  # Strict mode: 0 errors across 1865 files
+uv run ruff format --check src/ tests/
+uv run ruff check src/ tests/
+uv run mypy src/omnibase_core  # Strict mode: 0 errors across 1865 files
 ```
 
 #### Why always lint?
@@ -139,13 +139,13 @@ python3 scripts/validation/validate-doc-links.py --fix-case
 ### Fast Iteration (Recommended)
 ```
 # 1. Run only affected tests (10x-100x faster)
-poetry run pytest --testmon
+uv run pytest --testmon
 
 # 2. Add coverage if needed
-poetry run pytest --testmon --cov --cov-report=term-missing
+uv run pytest --testmon --cov --cov-report=term-missing
 
 # 3. Reset testmon after major refactor
-poetry run pytest --testmon-noselect
+uv run pytest --testmon-noselect
 ```
 
 **Speedup Example**: 10,987 tests → ~50 tests for small changes (~220x faster)
@@ -153,21 +153,21 @@ poetry run pytest --testmon-noselect
 ### Pre-Commit Validation
 ```
 # Run affected tests with coverage
-poetry run pytest --testmon --cov --cov-fail-under=60
+uv run pytest --testmon --cov --cov-fail-under=60
 
 # Format and lint
-poetry run black src/ tests/
-poetry run isort src/ tests/
-poetry run mypy src/omnibase_core
+uv run ruff format src/ tests/
+uv run ruff check src/ tests/
+uv run mypy src/omnibase_core
 ```
 
 ### Full Suite (Before Push to Main)
 ```
 # Run complete test suite
-poetry run pytest tests/
+uv run pytest tests/
 
 # With coverage
-poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
+uv run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 ```
 
 ## Test Selection Strategy
@@ -230,13 +230,13 @@ poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 - ✅ 20 parallel splits for optimal speed
 - ✅ Smoke tests for fail-fast validation
 
-### Phase 2: Planned (Q2 2025)
+### Phase 2: Planned
 - ⏳ Differential testing on PRs (testmon in CI)
 - ⏳ Test result caching between runs
 - ⏳ Flaky test detection and retry
 - ⏳ Performance regression testing
 
-### Phase 3: Future (Q3 2025)
+### Phase 3: Future
 - 🔮 ML-based test selection
 - 🔮 Predictive test prioritization
 - 🔮 Intelligent coverage sampling
@@ -299,6 +299,6 @@ For operational guidance on monitoring CI health, detecting performance regressi
 
 ---
 
-**Last Updated**: 2025-12-13
-**Test Suite Version**: 0.4.0 (12,198 tests)
+**Last Updated**: 2026-02-14
+**Test Suite Version**: 0.17.0 (12,198 tests)
 **CI Strategy Version**: v2.1 (20 splits + conditional coverage + monitoring)

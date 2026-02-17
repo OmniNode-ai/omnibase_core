@@ -124,6 +124,7 @@ Understand how ONEX works.
 | [Contract System](architecture/CONTRACT_SYSTEM.md) | Contract architecture |
 | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design |
 | [Protocol Architecture](architecture/PROTOCOL_ARCHITECTURE.md) | Protocol design and compliance |
+| [Handler Architecture](architecture/HANDLER_ARCHITECTURE.md) | Handler system design and routing |
 | [Mixin Architecture](architecture/MIXIN_ARCHITECTURE.md) | Mixin system design |
 | [Message Topic Mapping](architecture/MESSAGE_TOPIC_MAPPING.md) | Event/Command/Intent routing |
 
@@ -148,6 +149,9 @@ Comprehensive reference documentation.
 | [Models API](reference/api/models.md) | Model class APIs |
 | [Enums API](reference/api/enums.md) | Enumeration reference |
 | [Utils API](reference/api/utils.md) | Utility function reference |
+| [Service Wrappers](reference/SERVICE_WRAPPERS.md) | Pre-composed node classes |
+| [Validation Framework](reference/VALIDATION_FRAMEWORK.md) | Validation tools reference |
+| [Contract Validator API](reference/CONTRACT_VALIDATOR_API.md) | Contract validation API |
 | [CLAUDE.md](../CLAUDE.md) | Coding standards and rules |
 
 ### Patterns
@@ -179,7 +183,7 @@ Architecture Decision Records explaining why things work the way they do. [Full 
 | [ADR-006: Status Taxonomy](decisions/ADR-006-status-taxonomy.md) | Status enum organization |
 | [ADR-007: Context Mutability](decisions/ADR-007-context-mutability-design-decision.md) | Context design decisions |
 | [ADR-012: Validator Error Handling](decisions/ADR-012-VALIDATOR-ERROR-HANDLING.md) | Error handling in validators |
-| [ADR-013: Status Taxonomy](decisions/ADR-013-status-taxonomy.md) | Canonical status enums |
+| ADR-013: Status Taxonomy | Superseded — merged into ADR-006 |
 
 ### Conventions
 
@@ -199,6 +203,7 @@ Normative specifications and canonical references.
 
 | Document | Description |
 |----------|-------------|
+| [CI/CD Standards](standards/CI_CD_STANDARDS.md) | CI/CD tier system, gate contracts, required-checks.yaml v2 schema |
 | [ONEX Terminology](standards/onex_terminology.md) | Canonical ONEX definitions |
 | [ONEX Topic Taxonomy](standards/onex_topic_taxonomy.md) | Kafka topic naming convention |
 
@@ -278,7 +283,7 @@ All behavior is declared in YAML contracts:
 | Use protocol names for DI | `container.get_service("ProtocolLogger")` not `"LoggerService"` |
 | No `dict[str, Any]` | Use TypedDict or Pydantic models for type safety |
 | ORCHESTRATOR cannot return results | Only COMPUTE nodes return typed results |
-| Always use Poetry | `poetry run pytest`, never `python -m pytest` |
+| Always use Poetry | `uv run pytest`, never `python -m pytest` |
 
 ---
 
@@ -334,11 +339,11 @@ src/omnibase_core/
 |---------|--------|-------|
 | Getting Started | Complete | 3 guides available |
 | Node Building | Complete | 10 tutorials |
-| Architecture | Complete | 12+ documents |
+| Architecture | Active | 40+ documents, growing with new subsystems |
 | Contracts | Complete | 3 contract guides |
-| Reference | Complete | API docs |
+| Reference | Active | API docs, service wrappers, validation framework |
 | Patterns | Complete | 8 pattern documents |
-| Decisions | Complete | 9 ADRs in `decisions/` |
+| Decisions | Active | 9+ ADRs in `decisions/` |
 | Conventions | Complete | 5 convention docs |
 | Standards | Complete | 3 normative specs |
-| Testing | Complete | 6 testing guides |
+| Testing | Complete | 7 testing guides |

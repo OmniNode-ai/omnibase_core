@@ -150,12 +150,12 @@ node_type: COMPUTE_GENERIC  # Explicit implementation type
 
 - [ ] **Run tests**: Ensure all tests pass with updated code
   ```bash
-  poetry run pytest tests/ -x
+  uv run pytest tests/ -x
   ```
 
 - [ ] **Check deprecation warnings**: Run with `-W default` to see deprecation warnings
   ```bash
-  poetry run pytest tests/ -W default 2>&1 | grep -i deprecat
+  uv run pytest tests/ -W default 2>&1 | grep -i deprecat
   ```
 
 ---

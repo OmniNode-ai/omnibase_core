@@ -2,6 +2,8 @@
 
 # ONEX Subcontract Package Architecture
 
+**Last Updated**: 2026-02-14
+
 ## Overview
 
 The ONEX Subcontract Package provides specialized contract models for complex operations within the Four-Node Architecture. Subcontracts enable sophisticated processing patterns including finite state machines, data aggregation, routing, workflow coordination, introspection, discovery, event handling, lifecycle management, observability, and tool execution while maintaining ONEX compliance and correlation tracking.
@@ -63,7 +65,7 @@ The package includes **25 specialized subcontracts** organized by functional dom
 
 ### Package Structure
 
-```
+```text
 src/omnibase_core/models/contracts/subcontracts/
 ├── __init__.py                                 # Package exports and registry
 ├── model_aggregation_subcontract.py          # Data aggregation operations
@@ -105,7 +107,7 @@ src/omnibase_core/models/contracts/subcontracts/
 
 **Usage Pattern**:
 
-```
+```python
 from omnibase_core.models.contracts.subcontracts.model_aggregation_subcontract import ModelAggregationSubcontract
 from omnibase_core.models.contracts.subcontracts.model_aggregation_function import ModelAggregationFunction
 from omnibase_core.models.contracts.subcontracts.model_data_grouping import ModelDataGrouping
@@ -190,35 +192,17 @@ realtime_aggregation = ModelAggregationSubcontract(
 
 **Integration with REDUCER Nodes**:
 
-```
-from omnibase_core.models.services.model_service_reducer import ModelServiceReducer
-from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
+Nodes are thin coordination shells. Business logic lives in handlers:
 
-class AggregationReducerService(ModelServiceReducer):
-    """REDUCER node with aggregation subcontract support."""
+```python
+from omnibase_core.nodes.node_reducer import NodeReducer
 
-    async def execute_reduction(self, contract: ModelContractReducer) -> ModelReducerOutput:
-        """Execute reduction with aggregation subcontract."""
-        # Extract aggregation subcontract
-        aggregation_subcontract = contract.get_subcontract(ModelAggregationSubcontract)
+class AggregationReducerNode(NodeReducer):
+    """REDUCER node -- delegates aggregation logic to handler."""
 
-        if aggregation_subcontract:
-            # Execute aggregation operations
-            aggregation_result = await self._execute_aggregation_subcontract(
-                aggregation_subcontract
-            )
-
-            # Integrate results into reducer output
-            return ModelReducerOutput(
-                correlation_id=contract.correlation_id,
-                aggregated_data=aggregation_result.data,
-                subcontract_results={
-                    "aggregation": aggregation_result.metadata
-                }
-            )
-
-        # Fallback to standard reduction
-        return await super().execute_reduction(contract)
+    async def execute_reduction(self, input_data, **kwargs):
+        handler = self.container.get_service("AggregationHandler")
+        return await handler.handle(input_data, contract=self.contract)
 ```
 
 ### 2. Finite State Machine (FSM) Subcontract
@@ -236,7 +220,7 @@ class AggregationReducerService(ModelServiceReducer):
 
 **Usage Pattern**:
 
-```
+```python
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import ModelFSMSubcontract
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import ModelFSMStateDefinition
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_transition import ModelFSMStateTransition
@@ -388,36 +372,17 @@ pipeline_fsm = ModelFSMSubcontract(
 
 **Integration with ORCHESTRATOR Nodes**:
 
-```
-from omnibase_core.models.services.model_service_orchestrator import ModelServiceOrchestrator
+Nodes are thin coordination shells. Business logic lives in handlers:
 
-class FSMOrchestratorService(ModelServiceOrchestrator):
-    """ORCHESTRATOR node with FSM subcontract support."""
+```python
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 
-    async def execute_orchestration(self, contract: ModelContractOrchestrator):
-        """Execute orchestration with FSM subcontract."""
-        fsm_subcontract = contract.get_subcontract(ModelFSMSubcontract)
+class FSMOrchestratorNode(NodeOrchestrator):
+    """ORCHESTRATOR node -- delegates FSM workflow to handler."""
 
-        if fsm_subcontract:
-            # Initialize FSM execution engine
-            fsm_engine = FSMExecutionEngine(fsm_subcontract)
-
-            # Execute FSM workflow
-            fsm_result = await fsm_engine.execute()
-
-            return ModelOrchestratorOutput(
-                correlation_id=contract.correlation_id,
-                orchestration_result=fsm_result,
-                subcontract_results={
-                    "fsm": {
-                        "final_state": fsm_result.final_state,
-                        "transitions_executed": fsm_result.transition_count,
-                        "execution_time": fsm_result.total_time
-                    }
-                }
-            )
-
-        return await super().execute_orchestration(contract)
+    async def execute_orchestration(self, input_data, **kwargs):
+        handler = self.container.get_service("FSMOrchestrationHandler")
+        return await handler.handle(input_data, contract=self.contract)
 ```
 
 ### 3. Routing Subcontract
@@ -435,7 +400,7 @@ class FSMOrchestratorService(ModelServiceOrchestrator):
 
 **Usage Pattern**:
 
-```
+```python
 from omnibase_core.models.contracts.subcontracts.model_routing_subcontract import ModelRoutingSubcontract
 from omnibase_core.models.contracts.subcontracts.model_route_definition import ModelRouteDefinition
 from omnibase_core.models.contracts.subcontracts.model_load_balancing import ModelLoadBalancing
@@ -529,42 +494,17 @@ microservice_routing = ModelRoutingSubcontract(
 
 **Integration with EFFECT Nodes**:
 
-```
-from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
+Nodes are thin coordination shells. Business logic lives in handlers:
 
-class RoutingEffectService(ModelServiceEffect):
-    """EFFECT node with routing subcontract support."""
+```python
+from omnibase_core.nodes.node_effect import NodeEffect
 
-    async def execute_effect(self, contract: ModelContractEffect):
-        """Execute effect with routing subcontract."""
-        routing_subcontract = contract.get_subcontract(ModelRoutingSubcontract)
+class RoutingEffectNode(NodeEffect):
+    """EFFECT node -- delegates routing to handler."""
 
-        if routing_subcontract:
-            # Initialize routing engine
-            routing_engine = RoutingEngine(routing_subcontract)
-
-            # Route request based on configuration
-            route_result = await routing_engine.route_request(
-                request_path=contract.request_path,
-                request_data=contract.request_data,
-                correlation_id=contract.correlation_id
-            )
-
-            # Execute routed request
-            response = await self._execute_routed_request(route_result)
-
-            return ModelEffectOutput(
-                correlation_id=contract.correlation_id,
-                operation_result=response,
-                routing_metadata={
-                    "selected_route": route_result.route_id,
-                    "target_service": route_result.target_service,
-                    "routing_time": route_result.routing_time,
-                    "transformations_applied": route_result.transformations
-                }
-            )
-
-        return await super().execute_effect(contract)
+    async def execute_effect(self, input_data, **kwargs):
+        handler = self.container.get_service("RoutingHandler")
+        return await handler.handle(input_data, contract=self.contract)
 ```
 
 ### 4. Caching Subcontract
@@ -582,7 +522,7 @@ class RoutingEffectService(ModelServiceEffect):
 
 **Usage Pattern**:
 
-```
+```python
 from omnibase_core.models.contracts.subcontracts.model_caching_subcontract import ModelCachingSubcontract
 
 # Multi-tier caching strategy
@@ -632,7 +572,7 @@ caching_strategy = ModelCachingSubcontract(
 
 Combining multiple subcontracts for complex operations:
 
-```
+```python
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
 # Complex data processing with multiple subcontracts
@@ -682,7 +622,7 @@ complex_reducer_contract = ModelContractReducer(
 
 Using events to coordinate subcontract execution:
 
-```
+```python
 from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract import ModelEventTypeSubcontract
 
 # Event-driven processing pipeline
@@ -720,7 +660,7 @@ event_driven_processing = ModelEventTypeSubcontract(
 
 Optimizing subcontract execution for high-performance scenarios:
 
-```
+```python
 # High-performance trading system subcontract
 trading_subcontract_chain = [
     # Ultra-fast caching for market data
@@ -778,7 +718,7 @@ trading_subcontract_chain = [
 
 ### Unit Testing Individual Subcontracts
 
-```
+```python
 import pytest
 from unittest.mock import Mock, AsyncMock
 from uuid import uuid4
@@ -866,7 +806,7 @@ class TestAggregationSubcontract:
 
 ### Integration Testing with Node Services
 
-```
+```python
 class TestSubcontractIntegration:
     """Integration tests for subcontracts with ONEX nodes."""
 
@@ -939,7 +879,7 @@ class TestSubcontractIntegration:
 
 ### 1. Memory Management
 
-```
+```python
 # Efficient memory usage in aggregation subcontracts
 memory_optimized_aggregation = ModelAggregationSubcontract(
     aggregation_functions=[
@@ -963,7 +903,7 @@ memory_optimized_aggregation = ModelAggregationSubcontract(
 
 ### 2. Parallel Processing
 
-```
+```python
 # Optimized parallel processing configuration
 parallel_processing_config = ModelAggregationPerformance(
     parallel_workers=multiprocessing.cpu_count(),  # Use all available cores
@@ -977,7 +917,7 @@ parallel_processing_config = ModelAggregationPerformance(
 
 ### 3. Caching Optimization
 
-```
+```python
 # High-performance caching configuration
 performance_caching = ModelCachingSubcontract(
     cache_levels=[
@@ -1011,7 +951,7 @@ performance_caching = ModelCachingSubcontract(
 
 ### Subcontract Metrics Collection
 
-```
+```python
 from omnibase_core.types.typed_dict_performance_metric_data import TypedDictPerformanceMetricData
 
 class SubcontractMetricsCollector:
@@ -1021,7 +961,7 @@ class SubcontractMetricsCollector:
         self,
         subcontract: ModelAggregationSubcontract,
         execution_result: AggregationResult
-    ) -> List[TypedDictPerformanceMetricData]:
+    ) -> list[TypedDictPerformanceMetricData]:
         """Collect metrics from aggregation subcontract execution."""
         metrics = []
 
@@ -1066,7 +1006,7 @@ class SubcontractMetricsCollector:
         self,
         subcontract: ModelFSMSubcontract,
         execution_result: FSMResult
-    ) -> List[TypedDictPerformanceMetricData]:
+    ) -> list[TypedDictPerformanceMetricData]:
         """Collect metrics from FSM subcontract execution."""
         metrics = []
 
@@ -1093,7 +1033,7 @@ class SubcontractMetricsCollector:
 
 ### Health Monitoring
 
-```
+```python
 class SubcontractHealthMonitor:
     """Monitor health of subcontract operations."""
 
@@ -1202,7 +1142,7 @@ class SubcontractHealthMonitor:
 
 **Usage Pattern**:
 
-```
+```python
 from omnibase_core.models.contracts.subcontracts.model_introspection_subcontract import ModelIntrospectionSubcontract
 
 # Production introspection with security controls
@@ -1242,7 +1182,7 @@ production_introspection = ModelIntrospectionSubcontract(
 
 **YAML Contract Example**:
 
-```
+```yaml
 introspection:
   introspection_enabled: true
 
@@ -1343,7 +1283,7 @@ introspection:
 
 **YAML Contract Example**:
 
-```
+```yaml
 discovery:
   enabled: true
   auto_start: true
@@ -1429,7 +1369,7 @@ discovery:
 
 **YAML Contract Example**:
 
-```
+```yaml
 event_handling:
   enabled: true
 
@@ -1513,7 +1453,7 @@ event_handling:
 
 **YAML Contract Example**:
 
-```
+```yaml
 lifecycle:
   # Startup
   startup_timeout_seconds: 60.0
@@ -1591,7 +1531,7 @@ lifecycle:
 
 **YAML Contract Example**:
 
-```
+```yaml
 observability:
   enabled: true
 
@@ -1672,7 +1612,7 @@ observability:
 
 **YAML Contract Example**:
 
-```
+```yaml
 tool_execution:
   enabled: true
   timeout_seconds: 60.0
@@ -1708,7 +1648,7 @@ This table shows which mixins are designed to work with which subcontracts:
 | **MixinDiscoveryResponder** | ModelDiscoverySubcontract | Service discovery broadcast response |
 | **MixinEventHandler** | ModelEventHandlingSubcontract | Event subscription and filtering |
 | **MixinNodeLifecycle** | ModelLifecycleSubcontract | Startup/shutdown management |
-| **MixinIntrospection** | ModelIntrospectionSubcontract | Node metadata and schema exposure |
+| **MixinNodeIntrospection** | ModelIntrospectionSubcontract | Node metadata and schema exposure |
 | **MixinToolExecution** | ModelToolExecutionSubcontract | Tool execution and resource management |
 | **MixinMetrics** | ModelObservabilitySubcontract | Performance metrics collection |
 | **MixinFSMExecution** | ModelFSMSubcontract | State machine execution |

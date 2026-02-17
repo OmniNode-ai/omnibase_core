@@ -65,7 +65,7 @@ OmniBase Core is the execution engine used by all ONEX-compatible nodes and serv
 
 Install:
 ```bash
-poetry add omnibase_core
+uv add omnibase_core
 ```
 
 Minimal example:
@@ -88,7 +88,7 @@ class NodeCalculator(NodeCompute):
 
 Run tests:
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
 **Next**: [Node Building Guide](docs/guides/node-building/README.md)
@@ -142,14 +142,14 @@ Most ONEX nodes are not thread-safe. See [THREADING.md](docs/guides/THREADING.md
 
 ## Development
 
-Uses Poetry for all package management.
+Uses [uv](https://docs.astral.sh/uv/) for package management.
 
 ```bash
-poetry install
-poetry run pytest tests/
-poetry run mypy src/omnibase_core/
-poetry run ruff check src/ tests/
-poetry run ruff format src/ tests/
+uv sync --all-extras
+uv run pytest tests/
+uv run mypy src/omnibase_core/
+uv run ruff check src/ tests/
+uv run ruff format src/ tests/
 ```
 
 **See**: [CONTRIBUTING.md](CONTRIBUTING.md) for PR requirements.

@@ -44,6 +44,97 @@ In this tutorial, you'll build a production-ready **File Backup Node** that:
 
 ---
 
+## Handler Architecture
+
+> **Architectural Rule**: Nodes are thin coordination shells. Business logic belongs in **handlers**, not in the node class itself. The node delegates to a handler, and the handler returns a `ModelHandlerOutput`.
+
+### EFFECT Output Constraints
+
+| Field | COMPUTE | EFFECT | REDUCER | ORCHESTRATOR |
+|-------|---------|--------|---------|--------------|
+| `result` | Required | **Forbidden** | Forbidden | Forbidden |
+| `events[]` | Forbidden | **Allowed** | Forbidden | Allowed |
+| `intents[]` | Forbidden | Forbidden | Forbidden | Allowed |
+| `projections[]` | Forbidden | Forbidden | Allowed | Forbidden |
+
+EFFECT nodes return **events** describing what happened (e.g., "file backed up", "API called"). They do NOT return a typed `result` -- that is exclusive to COMPUTE nodes.
+
+### Handler-Based Pattern (Recommended)
+
+In production ONEX code, the EFFECT node delegates I/O execution to a handler. The handler returns `ModelHandlerOutput.for_effect(events=[...])`:
+
+```python
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes import NodeEffect
+
+from your_project.nodes.model_file_backup_input import ModelFileBackupInput
+
+
+class HandlerFileBackup:
+    """Handler containing the actual I/O logic for file backups."""
+
+    async def execute(
+        self,
+        envelope: ModelOnexEnvelope,
+        input_data: ModelFileBackupInput,
+    ) -> ModelHandlerOutput:
+        """
+        Execute file backup and return events describing what happened.
+
+        Args:
+            envelope: The incoming ONEX envelope (provides IDs for tracing)
+            input_data: File backup input configuration
+
+        Returns:
+            ModelHandlerOutput with events (EFFECT constraint).
+        """
+        # Perform actual I/O
+        source_content = input_data.source_path.read_bytes()
+        input_data.backup_path.parent.mkdir(parents=True, exist_ok=True)
+        input_data.backup_path.write_bytes(source_content)
+
+        # EFFECT nodes return events, NOT result
+        backup_event = ModelEventEnvelope(
+            event_type="file.backed_up",
+            payload={
+                "source_path": str(input_data.source_path),
+                "backup_path": str(input_data.backup_path),
+                "size_bytes": len(source_content),
+            },
+        )
+
+        return ModelHandlerOutput.for_effect(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
+            handler_id="handler_file_backup",
+            events=[backup_event],
+        )
+
+
+class NodeFileBackupEffect(NodeEffect):
+    """Thin shell -- delegates to handler."""
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+        # Production code should resolve the handler via container DI:
+        #   self._handler = container.get_service(ProtocolFileBackupHandler)
+        self._handler = HandlerFileBackup()
+
+    async def process(
+        self,
+        envelope: ModelOnexEnvelope,
+        input_data: ModelFileBackupInput,
+    ) -> ModelHandlerOutput:
+        return await self._handler.execute(envelope, input_data)
+```
+
+The tutorial below shows I/O logic inline for teaching clarity. In production, always extract logic into a handler.
+
+---
+
 **Why EFFECT Nodes?**
 
 EFFECT nodes handle all external interactions in the ONEX architecture:
@@ -67,16 +158,16 @@ Before starting, verify your environment:
 
 ```bash
 # Check Poetry is installed
-poetry --version
+uv --version
 
 # Verify you're in the omnibase_core directory
 pwd  # Should end with /omnibase_core
 
 # Install dependencies
-poetry install
+uv sync
 
 # Run a quick test to ensure everything works
-poetry run pytest tests/unit/nodes/test_node_effect.py -v -k "test_file_operation" --maxfail=1
+uv run pytest tests/unit/nodes/test_node_effect.py -v -k "test_file_operation" --maxfail=1
 ```
 
 If tests pass, you're ready to begin!
@@ -292,6 +383,8 @@ class ModelFileBackupOutput(BaseModel):
 For **95% of use cases**, use the production-ready `ModelServiceEffect` wrapper that includes all standard features:
 
 **File**: `src/your_project/nodes/node_file_backup_effect.py`
+
+> **Tutorial Simplification**: The example below places logic directly in the node class for clarity. In production, always use the [handler delegation pattern](#handler-architecture) shown above -- nodes must be thin shells that delegate to handlers.
 
 ```python
 """

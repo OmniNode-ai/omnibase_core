@@ -32,7 +32,7 @@ class ModelProjectionBase(BaseModel):
 
     Example:
         ```python
-        # Concrete implementation in omninode_bridge
+        # Concrete implementation in omnibase_infra
         class ModelWorkflowProjection(ModelProjectionBase):
             tag: str  # PENDING, PROCESSING, COMPLETED (indexed)
             namespace: str  # Multi-tenant isolation (indexed)
@@ -57,7 +57,9 @@ class ModelProjectionBase(BaseModel):
     """
 
     model_config = ConfigDict(
-        validate_assignment=True,
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
         str_strip_whitespace=True,
         use_enum_values=False,
         populate_by_name=True,

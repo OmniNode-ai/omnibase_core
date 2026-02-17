@@ -12,7 +12,7 @@ which is essential for:
 3. Protocol-based type checking in production code
 
 Usage:
-    poetry run python scripts/validation/check_protocol_runtime_checkable.py
+    uv run python scripts/validation/check_protocol_runtime_checkable.py
 
 Exit Codes:
     0 - All protocols have @runtime_checkable

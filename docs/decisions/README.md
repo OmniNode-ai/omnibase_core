@@ -20,14 +20,13 @@ ADRs are immutable once accepted. Superseded decisions are marked but not delete
 | ID | Title | Status | Date | Category | Key Topics |
 |----|-------|--------|------|----------|------------|
 | [ADR-001](ADR-001-protocol-based-di-architecture.md) | Protocol-Based Dependency Injection Architecture | Implemented | 2025-10-30 | Architecture | DI, ServiceRegistry, Protocols, Pydantic |
-| [ADR-002](ADR-002-field-limit-constants.md) | Centralized Field Limit Constants | Accepted | 2025-12-15 | Validation | Field Limits, Constants, Pydantic |
+| [ADR-002](ADR-002-field-limit-constants.md) | Centralized Field Limit Constants | Accepted | 2025-12-27 | Validation | Field Limits, Constants, Pydantic |
 | [ADR-003](ADR-003-reducer-output-exception-consistency.md) | Reducer Output Exception Consistency | Implemented | 2025-12-16 | Error Handling | Validation, Sentinel Pattern |
 | [ADR-004](ADR-004-registration-trigger-architecture.md) | Registration Trigger Architecture | Accepted | 2025-12-19 | Architecture | Registration, Events, Commands, Orchestrator |
 | [ADR-005](ADR-005-core-infra-dependency-boundary.md) | Core-Infra Dependency Boundary | Implemented | 2025-12-26 | Architecture | Dependency Inversion, Transport Libraries |
 | [ADR-006](ADR-006-status-taxonomy.md) | Status Taxonomy and Categorical Organization | Accepted | 2026-01-12 | Type System | Status Enums, Taxonomy, Severity, Health |
 | [ADR-007](ADR-007-context-mutability-design-decision.md) | Context Mutability Design Decision | Implemented | 2025-12-15 | API Design | Immutability, Workflow State, FSM Snapshots |
 | [ADR-012](ADR-012-VALIDATOR-ERROR-HANDLING.md) | Validator Error Handling with ModelOnexError | Accepted | 2026-01-18 | Error Handling | Pydantic Validators, ModelOnexError |
-| [ADR-013](ADR-013-status-taxonomy.md) | Status Taxonomy (Canonical Enums) | Accepted | 2026-01-18 | Type System | Canonical Enums, Status Categories |
 
 ## Risk Records
 
@@ -41,7 +40,7 @@ ADRs are immutable once accepted. Superseded decisions are marked but not delete
 |----------|-------------|-------|
 | **Architecture** | Node types, handlers, protocols, dependency boundaries | 3 |
 | **Error Handling** | Error patterns, validation, exception handling | 2 |
-| **Type System** | Type safety, enums, status taxonomy | 2 |
+| **Type System** | Type safety, enums, status taxonomy | 1 |
 | **Validation** | Field limits, validation rules | 1 |
 | **API Design** | Context mutability, immutability patterns | 1 |
 | **Security** | CI/CD security, risk mitigation | 1 |
@@ -58,7 +57,6 @@ ADRs are immutable once accepted. Superseded decisions are marked but not delete
 
 ### Status & Type Architecture
 - [ADR-006](ADR-006-status-taxonomy.md): Status Taxonomy - Six canonical status categories
-- [ADR-013](ADR-013-status-taxonomy.md): Status Taxonomy (Canonical Enums) - Canonical enum definitions per category
 
 ### State Management & Immutability
 - [ADR-007](ADR-007-context-mutability-design-decision.md): Context Mutability - Convention-based immutability for context dicts
@@ -81,7 +79,7 @@ New ADRs should:
 ### ADR Numbering
 
 When creating a new ADR:
-1. Check this index for the next available number (currently: **ADR-014**)
+1. Check this index for the next available number (currently: **ADR-014**; note ADR-013 was superseded and merged into ADR-006)
 2. Use format: `ADR-NNN-descriptive-title.md`
 3. Update this README with your new ADR
 4. Follow the template in [ADR_BEST_PRACTICES.md](ADR_BEST_PRACTICES.md)
@@ -132,6 +130,6 @@ What was decided?
 
 ---
 
-**Last Updated**: 2026-02-13
-**Total ADRs**: 9
+**Last Updated**: 2026-02-14
+**Total ADRs**: 8
 **Total Risk Records**: 1

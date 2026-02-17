@@ -18,15 +18,15 @@ Key Features:
 Usage Examples:
     As a module (validates src/omnibase_core by default)::
 
-        poetry run python -m omnibase_core.validation.checker_naming_convention
+        uv run python -m omnibase_core.validation.checker_naming_convention
 
     With a specific directory::
 
-        poetry run python -m omnibase_core.validation.checker_naming_convention /path/to/dir
+        uv run python -m omnibase_core.validation.checker_naming_convention /path/to/dir
 
     With verbose output::
 
-        poetry run python -m omnibase_core.validation.checker_naming_convention -v
+        uv run python -m omnibase_core.validation.checker_naming_convention -v
 
     Programmatic usage::
 

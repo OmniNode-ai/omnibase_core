@@ -3,8 +3,9 @@
 # CI Monitoring Guide - omnibase_core
 
 > **Purpose**: Operational guidance for detecting, investigating, and resolving CI performance anomalies
-> **Last Updated**: 2025-11-01
+> **Last Updated**: 2026-02-14
 > **Baseline Source**: [CI Run #18997947041](https://github.com/OmniNode-ai/omnibase_core/actions/runs/18997947041)
+> **Note**: Baseline metrics below are from 2025-11-01 and may not reflect current performance. Update baselines when test count or CI configuration changes significantly.
 
 ---
 
@@ -46,18 +47,22 @@ The omnibase_core test suite runs across **20 parallel splits** in GitHub Action
 
 **Configuration**: 20 parallel splits, GitHub Actions runners, ~12,198 tests total
 
-### Current Baseline (2025-11-01)
+### Historical Baseline (2025-11-01)
+
+> **Note**: These baseline metrics are from 2025-11-01 (15+ months ago) and may not reflect current CI performance. Test count, runner hardware, and dependency versions have likely changed. These values should be re-measured from a recent CI run and updated accordingly.
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| **Average Runtime** | 2m58s per split | CI Run #18997947041 |
-| **Fastest Split** | 2m35s (Split 6/20) | CI Run #18997947041 |
-| **Slowest Split** | 3m35s (Split 12/20) | CI Run #18997947041 |
-| **Runtime Range** | 60s variation | CI Run #18997947041 |
-| **Total CI Time** | ~3-4 minutes (parallel) | CI Run #18997947041 |
-| **Tests per Split** | ~610 tests (12,198 ÷ 20) | Test collection |
+| **Average Runtime** | 2m58s per split | CI Run #18997947041 (2025-11-01) |
+| **Fastest Split** | 2m35s (Split 6/20) | CI Run #18997947041 (2025-11-01) |
+| **Slowest Split** | 3m35s (Split 12/20) | CI Run #18997947041 (2025-11-01) |
+| **Runtime Range** | 60s variation | CI Run #18997947041 (2025-11-01) |
+| **Total CI Time** | ~3-4 minutes (parallel) | CI Run #18997947041 (2025-11-01) |
+| **Tests per Split** | ~610 tests (12,198 ÷ 20) | Test collection (2025-11-01) |
 
-### Split-by-Split Baseline
+### Split-by-Split Baseline (Historical - 2025-11-01)
+
+> **Stale data**: The split-by-split timings below are from 2025-11-01. Re-run benchmarks to establish current baselines.
 
 ```
 Split  1/20: 2m49s    Split 11/20: 2m52s
@@ -72,7 +77,7 @@ Split  9/20: 3m5s     Split 19/20: 3m1s
 Split 10/20: 2m56s    Split 20/20: 2m58s
 ```
 
-**Interpretation**:
+**Interpretation** (as of 2025-11-01):
 - **Normal Range**: 2m35s - 3m35s (60s spread)
 - **Average**: 2m58s ± 15s
 - **Outliers**: Split 12 consistently slower (heavier test distribution)
@@ -138,7 +143,7 @@ Split 10/20: 2m56s    Split 20/20: 2m58s
 
 ### Severity Levels
 
-Based on baseline metrics (2m58s average, 2m35s-3m35s range):
+Based on historical baseline metrics from 2025-11-01 (2m58s average, 2m35s-3m35s range). Re-measure if CI configuration has changed:
 
 | Severity | Duration | Action | Response Time |
 |----------|----------|--------|---------------|
@@ -202,10 +207,10 @@ gh run list --workflow=test.yml --limit 10
 **Command**:
 ```
 # Collect tests in specific split (local simulation)
-poetry run pytest --collect-only --splits=20 --group=12
+uv run pytest --collect-only --splits=20 --group=12
 
 # Count tests per split
-poetry run pytest --collect-only --quiet | wc -l
+uv run pytest --collect-only --quiet | wc -l
 ```
 
 **Questions to Answer**:
@@ -229,14 +234,14 @@ Variance: +43 tests (+7%)
 **Command**:
 ```
 # Run slow split with duration reporting
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits=20 --group=12 \
   --durations=20 \
   --timeout=60 \
   -v
 
 # Alternative: Run with detailed timing
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits=20 --group=12 \
   --durations=0 | sort -t: -k2 -n | tail -20
 ```
@@ -339,7 +344,7 @@ gh run view <run-id> --log | grep "split-12"
 **Verification**:
 ```
 # Run affected split locally to verify fix
-poetry run pytest tests/ --splits=20 --group=12 --durations=10
+uv run pytest tests/ --splits=20 --group=12 --durations=10
 
 # Push fix and monitor next CI run
 git push && gh run watch
@@ -361,8 +366,8 @@ git push && gh run watch
 **Investigation**:
 ```
 # Identify slow tests in split 12
-poetry run pytest --collect-only --splits=20 --group=12 | grep integration
-poetry run pytest tests/ --splits=20 --group=12 --durations=20
+uv run pytest --collect-only --splits=20 --group=12 | grep integration
+uv run pytest tests/ --splits=20 --group=12 --durations=20
 ```
 
 **Resolution**:
@@ -409,7 +414,7 @@ gh run list --workflow=test.yml --limit 5
 # Track test count over time
 git log --all --pretty=format:"%h %ad" --date=short | while read commit date; do
   git checkout $commit 2>/dev/null
-  count=$(poetry run pytest --collect-only --quiet 2>/dev/null | grep "test" | wc -l)
+  count=$(uv run pytest --collect-only --quiet 2>/dev/null | grep "test" | wc -l)
   echo "$date,$commit,$count"
 done > test_growth.csv
 ```
@@ -432,7 +437,7 @@ done > test_growth.csv
 **Investigation**:
 ```
 # Run with detailed async debugging
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits=20 --group=12 \
   --log-cli-level=DEBUG \
   --capture=no \
@@ -460,10 +465,10 @@ grep "Event loop" <ci-log-file>
 **Investigation**:
 ```
 # Run with reduced workers
-poetry run pytest tests/ --splits=20 --group=12 -n 2
+uv run pytest tests/ --splits=20 --group=12 -n 2
 
 # Profile memory usage (local)
-poetry run pytest tests/ --memray --splits=20 --group=12
+uv run pytest tests/ --memray --splits=20 --group=12
 ```
 
 **Resolution**:
@@ -539,20 +544,20 @@ gh run rerun <run-id>
 
 ```
 # Simulate specific split locally
-poetry run pytest tests/ --splits=20 --group=12
+uv run pytest tests/ --splits=20 --group=12
 
 # Profile slowest tests in split
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits=20 --group=12 \
   --durations=20 \
   --timeout=60
 
 # Collect tests in split (no execution)
-poetry run pytest --collect-only \
+uv run pytest --collect-only \
   --splits=20 --group=12
 
 # Run with detailed timing
-poetry run pytest tests/ \
+uv run pytest tests/ \
   --splits=20 --group=12 \
   -v --tb=short \
   --durations=0 | tee split_12_timing.log
@@ -668,7 +673,7 @@ if __name__ == "__main__":
    - Runner upgrades
 
 2. **Quarterly Reviews**:
-   - Jan 1, Apr 1, Jul 1, Oct 1
+   - Scheduled quarterly (next review overdue -- last baseline is from 2025-11-01)
    - Compare current vs. baseline
    - Update CLAUDE.md if significant drift (>20%)
 
@@ -692,7 +697,7 @@ if __name__ == "__main__":
 | 2024-11-01 | ~10,000 | 10 splits | ~4m30s | Initial configuration |
 | 2024-12-15 | ~10,987 | 12 splits | ~3m45s | First optimization |
 | 2025-01-15 | ~11,500 | 16 splits | ~3m10s | Event loop fixes |
-| 2025-11-01 | 12,198 | 20 splits | 2m58s | **Current baseline** |
+| 2025-11-01 | 12,198 | 20 splits | 2m58s | **Last measured baseline** (needs re-measurement) |
 
 **Growth Trend**: +2,198 tests over 6 months (~366 tests/month)
 
@@ -730,7 +735,7 @@ if __name__ == "__main__":
 gh run view $(gh run list --workflow=test.yml --limit 1 --json databaseId --jq '.[0].databaseId')
 
 # Run slow split locally with profiling
-poetry run pytest tests/ --splits=20 --group=12 --durations=20
+uv run pytest tests/ --splits=20 --group=12 --durations=20
 
 # Monitor CI in real-time
 gh run watch
@@ -743,13 +748,13 @@ gh run watch
 - **[CLAUDE.md](../../CLAUDE.md#ci-performance-benchmarks)** - CI Performance Benchmarks section
 - **[CI_TEST_STRATEGY.md](../testing/CI_TEST_STRATEGY.md)** - Overall CI test strategy
 - **[PARALLEL_TESTING.md](../testing/PARALLEL_TESTING.md)** - Parallel testing configuration
-- **[DEPRECATION_WARNINGS.md](DEPRECATION_WARNINGS.md)** - Deprecation warning configuration and v0.5.0 migration
+- **[DEPRECATION_WARNINGS.md](DEPRECATION_WARNINGS.md)** - Deprecation warning configuration (historical, v0.5.0 migration completed)
 - **GitHub Actions Workflow**: [`.github/workflows/test.yml`](../../.github/workflows/test.yml)
 - **GitHub CLI Docs**: https://cli.github.com/manual/
 
 ---
 
-**Last Updated**: 2025-11-01
-**Baseline Version**: v1.0 (Run #18997947041)
-**Next Review**: 2025-12-01 or when avg runtime exceeds 3m30s
+**Last Updated**: 2026-02-14
+**Baseline Version**: v1.0 (Run #18997947041, from 2025-11-01)
+**Next Review**: When avg runtime exceeds 3m30s or test count changes significantly
 **Correlation ID**: `95cac850-05a3-43e2-9e57-ccbbef683f43`

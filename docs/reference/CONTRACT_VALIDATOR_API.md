@@ -21,7 +21,7 @@ The Contract Validator API provides programmatic validation of YAML contracts an
 ## Installation
 
 ```
-from omnibase_core.validation import ContractValidator, ContractValidationResult
+from omnibase_core.validation import ServiceContractValidator, ModelContractValidationResult
 ```
 
 ## Quick Start
@@ -29,9 +29,9 @@ from omnibase_core.validation import ContractValidator, ContractValidationResult
 ### Validate YAML Contract
 
 ```
-from omnibase_core.validation import ContractValidator
+from omnibase_core.validation import ServiceContractValidator
 
-validator = ContractValidator()
+validator = ServiceContractValidator()
 
 contract_yaml = """
 name: DatabaseWriterEffect
@@ -97,40 +97,40 @@ if result.is_valid:
 
 ## API Reference
 
-### ContractValidator
+### ServiceContractValidator
 
 Main validator class for contract validation.
 
 #### Methods
 
-##### `validate_contract_yaml(contract_content: str, contract_type: Literal["effect", "compute", "reducer", "orchestrator"]) -> ContractValidationResult`
+##### `validate_contract_yaml(contract_content: str, contract_type: Literal["effect", "compute", "reducer", "orchestrator"]) -> ModelContractValidationResult`
 
 Validates a YAML contract against ONEX standards.
 
 - **Parameters:**
   - `contract_content`: YAML contract content as string
   - `contract_type`: Type of contract to validate against
-- **Returns:** `ContractValidationResult` with validation details
+- **Returns:** `ModelContractValidationResult` with validation details
 
-##### `validate_model_compliance(model_code: str, contract_yaml: str) -> ContractValidationResult`
+##### `validate_model_compliance(model_code: str, contract_yaml: str) -> ModelContractValidationResult`
 
 Validates Pydantic model code against a contract.
 
 - **Parameters:**
   - `model_code`: Python code containing Pydantic model definition
   - `contract_yaml`: YAML contract content as string
-- **Returns:** `ContractValidationResult` with compliance details
+- **Returns:** `ModelContractValidationResult` with compliance details
 
-##### `validate_contract_file(file_path: str | Path, contract_type: Literal["effect", "compute", "reducer", "orchestrator"]) -> ContractValidationResult`
+##### `validate_contract_file(file_path: str | Path, contract_type: Literal["effect", "compute", "reducer", "orchestrator"]) -> ModelContractValidationResult`
 
 Validates a YAML contract file.
 
 - **Parameters:**
   - `file_path`: Path to YAML contract file
   - `contract_type`: Type of contract to validate against
-- **Returns:** `ContractValidationResult` with validation details
+- **Returns:** `ModelContractValidationResult` with validation details
 
-### ContractValidationResult
+### ModelContractValidationResult
 
 Validation result model with scoring and feedback.
 
@@ -250,7 +250,7 @@ def generate_contract_autonomously(requirements):
     contract_yaml = generate_from_requirements(requirements)
 
     # Validate contract
-    validator = ContractValidator()
+    validator = ServiceContractValidator()
     result = validator.validate_contract_yaml(contract_yaml, "effect")
 
     # Auto-fix if score is good but has warnings
@@ -287,7 +287,7 @@ Comprehensive test suite with 19 test cases covering:
 
 Run tests:
 ```
-poetry run pytest tests/unit/validation/test_contract_validator.py -v
+uv run pytest tests/unit/validation/test_contract_validator.py -v
 ```
 
 ## Version Information
@@ -306,5 +306,5 @@ For issues or questions:
 
 ---
 
-**Last Updated**: 2025-10-14
+**Last Updated**: 2026-02-14
 **Status**: Interface Stable

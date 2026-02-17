@@ -14,12 +14,12 @@ Features:
     - Support for baseline fingerprint files
 
 Usage:
-    poetry run python scripts/lint_contract.py <contract.yaml>
-    poetry run python scripts/lint_contract.py <contract.yaml> --verbose
-    poetry run python scripts/lint_contract.py <directory> --recursive
-    poetry run python scripts/lint_contract.py <contract.yaml> --baseline fingerprints.json
-    poetry run python scripts/lint_contract.py <contract.yaml> --json
-    poetry run python scripts/lint_contract.py <contract.yaml> --compute-fingerprint
+    uv run python scripts/lint_contract.py <contract.yaml>
+    uv run python scripts/lint_contract.py <contract.yaml> --verbose
+    uv run python scripts/lint_contract.py <directory> --recursive
+    uv run python scripts/lint_contract.py <contract.yaml> --baseline fingerprints.json
+    uv run python scripts/lint_contract.py <contract.yaml> --json
+    uv run python scripts/lint_contract.py <contract.yaml> --compute-fingerprint
 
 Exit Codes:
     0 - Contract validation passed, no issues found
@@ -1037,11 +1037,11 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  poetry run python scripts/lint_contract.py contract.yaml
-  poetry run python scripts/lint_contract.py contracts/ --recursive
-  poetry run python scripts/lint_contract.py contract.yaml --baseline fingerprints.json
-  poetry run python scripts/lint_contract.py contract.yaml --compute-fingerprint
-  poetry run python scripts/lint_contract.py contract.yaml --json
+  uv run python scripts/lint_contract.py contract.yaml
+  uv run python scripts/lint_contract.py contracts/ --recursive
+  uv run python scripts/lint_contract.py contract.yaml --baseline fingerprints.json
+  uv run python scripts/lint_contract.py contract.yaml --compute-fingerprint
+  uv run python scripts/lint_contract.py contract.yaml --json
         """,
     )
     parser.add_argument(

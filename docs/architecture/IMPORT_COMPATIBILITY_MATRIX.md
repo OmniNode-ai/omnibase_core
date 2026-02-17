@@ -2,8 +2,10 @@
 
 # Import Compatibility Matrix
 
+> **HISTORICAL**: This compatibility matrix was created during the v0.4.0 migration.
+>
 > **Version**: 0.4.0
-> **Status**: Phase 0 - Repository Stabilization (OMN-151)
+> **Status**: Migration completed
 > **Last Updated**: 2025-12-09
 > **Purpose**: Document all current import paths for compatibility during v0.4.0 migration
 
@@ -636,18 +638,10 @@ from omnibase_core.mixins import MixinEventBus, MixinHealthCheck
 
 #### NodeReducer/NodeOrchestrator Rename
 
-| Old Name | New Name | Status | Shim Required |
-|----------|----------|--------|---------------|
-| `NodeReducerDeclarative` | `NodeReducer` | Removed in v0.4.0 | **YES** - alias needed |
-| `NodeOrchestratorDeclarative` | `NodeOrchestrator` | Removed in v0.4.0 | **YES** - alias needed |
-
-**Shim Implementation:**
-
-```python
-# In omnibase_core/nodes/__init__.py (if needed for backwards compat)
-NodeReducerDeclarative = NodeReducer  # DEPRECATED alias
-NodeOrchestratorDeclarative = NodeOrchestrator  # DEPRECATED alias
-```
+| Old Name | New Name | Status |
+|----------|----------|--------|
+| `NodeReducerDeclarative` | `NodeReducer` | Completed -- legacy name removed |
+| `NodeOrchestratorDeclarative` | `NodeOrchestrator` | Completed -- legacy name removed |
 
 #### Protocol Migration Shims
 
@@ -656,14 +650,14 @@ NodeOrchestratorDeclarative = NodeOrchestrator  # DEPRECATED alias
 ProtocolRegistryWithBus = ProtocolEventBusRegistry  # Legacy name alias
 ```
 
-### Required Pre-Migration Verification
+### Post-Migration Verification (Completed)
 
-Before v0.4.0 release, verify these import paths work:
+These import paths were verified during the v0.4.0 migration:
 
 1. All `from omnibase_core.nodes import X` patterns
 2. All `from omnibase_core.infrastructure import X` patterns
 3. Consumer repos compile without errors
-4. Deprecation warnings are emitted for legacy patterns
+4. Deprecation warnings emitted for legacy patterns
 
 ---
 
@@ -690,11 +684,11 @@ Before v0.4.0 release, verify these import paths work:
 
 ### Migration Checklist
 
-- [ ] Update imports from `NodeReducerDeclarative` to `NodeReducer`
-- [ ] Update imports from `NodeOrchestratorDeclarative` to `NodeOrchestrator`
-- [ ] Replace SPI protocol imports with Core-native protocols
-- [ ] Verify `ProtocolEventBusRegistry` instead of `ProtocolRegistryWithBus`
-- [ ] Update any direct file imports to use top-level module imports
+- [x] Update imports from `NodeReducerDeclarative` to `NodeReducer`
+- [x] Update imports from `NodeOrchestratorDeclarative` to `NodeOrchestrator`
+- [x] Replace SPI protocol imports with Core-native protocols
+- [x] Verify `ProtocolEventBusRegistry` instead of `ProtocolRegistryWithBus`
+- [x] Update any direct file imports to use top-level module imports
 
 ---
 

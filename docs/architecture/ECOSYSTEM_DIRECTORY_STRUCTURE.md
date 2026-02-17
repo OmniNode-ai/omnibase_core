@@ -2,7 +2,7 @@
 
 # ONEX Ecosystem Directory Structure
 
-**Status**: Current as of 2025-11-27  
+**Status**: Current as of 2026-02-14
 **Purpose**: Document the actual directory structure and manifest patterns across the ONEX ecosystem  
 
 ## Overview
@@ -14,11 +14,11 @@ The ONEX ecosystem consists of multiple repositories with distinct purposes and 
 ### Core Repository: `omnibase_core`
 
 **Purpose**: Core framework providing base classes, mixins, and essential implementations
-**Location**: `/Volumes/PRO-G40/Code/omnibase_core`
+**Location**: `<workspace>/omnibase_core`
 **Package Name**: `omnibase_core`
-**Version**: `0.2.0`
+**Version**: `0.17.0`
 
-```
+```text
 omnibase_core/
 ├── src/
 │   └── omnibase_core/
@@ -27,19 +27,19 @@ omnibase_core/
 │       ├── container/           # Dependency injection
 │       ├── decorators/          # Framework decorators
 │       ├── discovery/           # Service discovery
-│       ├── enums/              # Core enumerations (310 files)
+│       ├── enums/              # Core enumerations
 │       ├── errors/             # Error handling
 │       ├── infrastructure/     # Infrastructure components
 │       ├── logging/            # Structured logging
-│       ├── mixins/             # Reusable mixins (49 files)
+│       ├── mixins/             # Reusable mixins
 │       │   ├── mixin_caching.py
 │       │   ├── mixin_health_check.py
 │       │   ├── mixin_event_bus.py
 │       │   ├── mixin_introspection.py
 │       │   ├── mixin_metrics.py
 │       │   ├── mixin_node_service.py
-│       │   └── ... (43 more mixins)
-│       ├── models/             # Data models (60 directories)
+│       │   └── ...
+│       ├── models/             # Data models
 │       │   ├── service/        # Service wrapper classes
 │       │   │   ├── model_service_compute.py
 │       │   │   ├── model_service_effect.py
@@ -47,9 +47,9 @@ omnibase_core/
 │       │   │   └── model_service_orchestrator.py
 │       │   ├── events/         # Event models
 │       │   ├── primitives/     # Primitive type models
-│       │   └── ... (other model categories)
+│       │   └── ...
 │       ├── nodes/              # Base node classes
-│       ├── types/              # Type definitions (93 files)
+│       ├── types/              # Type definitions
 │       ├── utils/              # Utility functions
 │       ├── validation/         # Validation framework
 │       └── validators/         # Custom validators
@@ -64,93 +64,39 @@ omnibase_core/
 - `MixinHealthCheck` - Health monitoring
 - `MixinEventBus` - Event publishing/subscribing
 - `MixinCaching` - Caching capabilities
-- `MixinIntrospection` - Node introspection
+- `MixinNodeIntrospection` - Node introspection
 - `MixinMetrics` - Performance metrics
 - `MixinIntentPublisher` - Intent publishing
 - `MixinWorkflowSupport` - Workflow management
 - `MixinCircuitBreaker` - Circuit breaker pattern
 - `MixinStateManagement` - State management
 
-### Bridge Repository: `omninode_bridge`
+### Intelligence Repository: `omniintelligence`
 
-**Purpose**: Bridge between ONEX framework and external services  
-**Location**: `/Volumes/PRO-G40/Code/omninode_bridge`
-**Package Name**: `omninode_bridge`
-**Version**: `0.1.0`
+**Purpose**: AI coding assistant intelligence platform
+**Location**: `<workspace>/omniintelligence`
+**Package Name**: `omniintelligence`
 
-```
-omninode_bridge/
-├── src/
-│   └── omninode_bridge/
-│       ├── nodes/              # Bridge-specific nodes
-│       │   ├── deployment_receiver_effect/
-│       │   │   └── v1_0_0/
-│       │   │       ├── node.py
-│       │   │       └── models/
-│       │   ├── database_adapter_effect/
-│       │   ├── reducer/
-│       │   ├── orchestrator/
-│       │   └── mixins/         # Bridge-specific mixins
-│       │       ├── health_mixin.py
-│       │       └── introspection_mixin.py
-│       ├── mixins/             # Custom bridge mixins
-│       │   └── mixin_intent_publisher.py
-│       ├── services/           # Bridge services
-│       ├── events/             # Event definitions
-│       └── models/             # Bridge models
-├── FOR_OMNIBASE_CORE/         # Mixins for core integration
-├── tests/
-├── docs/
-├── pyproject.toml
-└── BRIDGE_MIGRATION_PLAN.md   # Migration strategy
-```
+> **Note**: The detailed directory tree for this repository is maintained in the
+> omniintelligence repository itself. See that repository's documentation for
+> current structure details.
 
-**Bridge Node Patterns**:
-- `NodeDeploymentReceiverEffect(NodeEffect)` - Docker deployment
-- `NodeBridgeDatabaseAdapterEffect(NodeEffect, HealthCheckMixin)` - DB operations
-- `NodeBridgeReducer(NodeReducer, HealthCheckMixin, IntrospectionMixin)` - Bridge operations
-- `NodeBridgeOrchestrator(NodeOrchestrator, HealthCheckMixin, IntrospectionMixin)` - Bridge coordination
-
-### Intelligence Repository: `omniarchon`
-
-**Purpose**: AI coding assistant intelligence platform  
-**Location**: `/Volumes/PRO-G40/Code/omniarchon`
-**Package Name**: `archon`
-**Version**: `0.1.0`
-
-```
-omniarchon/
-├── python/                     # Main Python package
-│   ├── src/
-│   │   ├── intelligence/       # Intelligence services
-│   │   ├── mcp_server/         # MCP server implementation
-│   │   ├── omninode_bridge/    # Bridge integration
-│   │   └── server/             # Server components
-│   └── pyproject.toml
-├── agents/                     # AI agents
-├── claude_hooks/              # Claude integration
-├── consumers/                 # Event consumers
-├── deployment/                # Deployment configs
-├── docs/                      # Documentation
-├── monitoring/                # Monitoring setup
-├── scripts/                   # Utility scripts
-├── services/                  # Service implementations
-├── shared_lib/                # Shared libraries
-├── skills/                    # AI skills
-├── tests/                     # Test suite
-└── README.md
-```
+**Key capabilities**:
+- Intelligence services (code analysis, pattern discovery)
+- Claude Code hooks and agent integration
+- Event consumers for Kafka-based intelligence pipeline
+- Skills and agent configurations
 
 **Note**: Uses `omnibase_core` as dependency via Git repository
 
 ### Infrastructure Repository: `omnibase_infra`
 
-**Purpose**: Infrastructure-specific nodes and services  
-**Location**: `/Volumes/PRO-G40/Code/omnibase_infra`
+**Purpose**: Infrastructure-specific nodes and services
+**Location**: `<workspace>/omnibase_infra`
 **Package Name**: `omnibase_infra`
 **Version**: `0.1.0`
 
-```
+```text
 omnibase_infra/
 ├── src/
 │   └── omnibase_infra/
@@ -168,18 +114,18 @@ omnibase_infra/
 ```
 
 **Infrastructure Node Patterns**:
-- `ModelServiceEffect` - Legacy service base class
+- `ModelServiceEffect` - Service wrapper base class (re-exported from `omnibase_core.models.services`)
 - Custom mixin compositions for infrastructure needs
 - Direct integration with external systems (PostgreSQL, Kafka, Consul)
 
 ### Memory Repository: `omnimemory`
 
-**Purpose**: Memory and persistence layer  
-**Location**: `/Volumes/PRO-G40/Code/omnimemory`
+**Purpose**: Memory and persistence layer
+**Location**: `<workspace>/omnimemory`
 **Package Name**: `omnimemory`
 **Version**: `0.1.0`
 
-```
+```text
 omnimemory/
 ├── src/
 │   └── omnimemory/
@@ -193,12 +139,12 @@ omnimemory/
 
 ### Legacy Repository: `omnibase_3`
 
-**Purpose**: Legacy implementation and reference  
-**Location**: `/Volumes/PRO-G40/Code/omnibase_3`
+**Purpose**: Legacy implementation and reference
+**Location**: `<workspace>/omnibase_3`
 **Package Name**: `omnibase`
 **Version**: `0.1.0`
 
-```
+```text
 omnibase_3/
 ├── src/
 │   └── omnibase/               # Legacy core implementation
@@ -250,11 +196,10 @@ pydantic = "^2.11.7"
 
 ### Dependency Relationships
 
-```
+```text
 omnibase_core (core framework)
-├── omninode_bridge (depends on omnibase_core)
 ├── omnibase_infra (depends on omnibase_core)
-├── omniarchon (depends on omnibase_core via Git)
+├── omniintelligence (depends on omnibase_core via Git)
 └── omnimemory (standalone)
 ```
 
@@ -264,8 +209,8 @@ omnibase_core (core framework)
 
 **Location**: `omnibase_core/src/omnibase_core/models/services/`
 
-```
-from omnibase_core.models.services import ModelServiceCompute
+```python
+from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 
 class MyComputeNode(ModelServiceCompute):
     """Production-ready compute node with all capabilities."""
@@ -279,37 +224,19 @@ class MyComputeNode(ModelServiceCompute):
 - ✅ Event publishing capabilities
 - ✅ Standardized initialization
 
-### 2. Bridge Pattern (Legacy/Compatibility)
-
-**Location**: `omninode_bridge/src/omninode_bridge/nodes/`
-
-```
-from omnibase_core.nodes.node_effect import NodeEffect
-from omninode_bridge.nodes.mixins.health_mixin import HealthCheckMixin
-
-class MyBridgeEffect(NodeEffect, HealthCheckMixin):
-    """Bridge-style node with custom mixin composition."""
-    pass
-```
-
-**Use Cases**:
-- Legacy compatibility
-- Custom mixin combinations not available in wrappers
-- Bridge-specific capabilities
-
-### 3. Infrastructure Pattern (Legacy)
+### 2. Infrastructure Pattern
 
 **Location**: `omnibase_infra/src/omnibase_infra/nodes/`
 
-```
+```python
 from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
 
 class MyInfraEffect(ModelServiceEffect):
-    """Legacy infrastructure node."""
+    """Infrastructure node for external system integration."""
     pass
 ```
 
-**Note**: `ModelServiceEffect` is deprecated in favor of `ModelService*` wrappers
+**Note**: Import `ModelServiceEffect` from `omnibase_core.models.services` (or via `omnibase_core.infrastructure.infra_bases` re-export)
 
 ## Mixin Distribution
 
@@ -318,24 +245,19 @@ class MyInfraEffect(ModelServiceEffect):
 - `MixinHealthCheck` - Health monitoring
 - `MixinEventBus` - Event system
 - `MixinCaching` - Caching
-- `MixinIntrospection` - Introspection
+- `MixinNodeIntrospection` - Introspection
 - `MixinMetrics` - Metrics collection
 - `MixinIntentPublisher` - Intent publishing
 - `MixinWorkflowSupport` - Workflow management
 - `MixinCircuitBreaker` - Circuit breaker
 - `MixinStateManagement` - State management
 
-### Bridge Mixins (omninode_bridge)
-- `HealthCheckMixin` - Custom health check implementation
-- `IntrospectionMixin` - Custom introspection implementation
-- `MixinIntentPublisher` - Bridge-specific intent publishing
-
 ### Missing Mixins Identified
 Based on ecosystem analysis, these capabilities may need to be added to core:
 
-1. **Database Connection Management** - Used in bridge and infra
-2. **Custom Authentication Mixins** - Used in bridge nodes
-3. **Docker Integration Mixins** - Used in bridge deployment nodes
+1. **Database Connection Management** - Used in infrastructure nodes
+2. **Custom Authentication Mixins** - Used in infrastructure nodes
+3. **Docker Integration Mixins** - Used in infrastructure deployment nodes
 4. **Kafka Integration Mixins** - Used in infrastructure nodes
 5. **PostgreSQL Adapter Mixins** - Used in infrastructure nodes
 
@@ -344,14 +266,12 @@ Based on ecosystem analysis, these capabilities may need to be added to core:
 ### Immediate Actions
 1. **Update Documentation** - Use service wrapper patterns in all examples
 2. **Add Missing Mixins** - Implement identified missing capabilities in core
-3. **Create Bridge Wrappers** - Add bridge-specific service wrappers
-4. **Deprecate Legacy Patterns** - Mark `ModelServiceEffect` as deprecated
+3. **Consolidate Import Paths** - Prefer `omnibase_core.models.services` imports
 
 ### Long-term Strategy
 1. **Standardize on Wrappers** - All new nodes use `ModelService*` wrappers
-2. **Migrate Bridge Nodes** - Gradually migrate bridge nodes to wrappers
-3. **Consolidate Mixins** - Move bridge-specific mixins to core
-4. **Unify Patterns** - Ensure consistent patterns across all repositories
+2. **Migrate Infrastructure Nodes** - Gradually migrate infrastructure nodes to handler-based patterns
+3. **Unify Patterns** - Ensure consistent patterns across all repositories
 
 ## File Naming Conventions
 
@@ -370,7 +290,7 @@ Based on ecosystem analysis, these capabilities may need to be added to core:
 
 ## Version Management
 
-All repositories use semantic versioning with `0.1.0` as the current version. Dependencies are managed through:
+All repositories use semantic versioning. `omnibase_core` is currently at `0.17.0`; other repositories vary. Dependencies are managed through:
 
 1. **Git Dependencies** - For development dependencies
 2. **PyPI Dependencies** - For stable releases
@@ -380,7 +300,7 @@ All repositories use semantic versioning with `0.1.0` as the current version. De
 
 Each repository follows a consistent testing pattern:
 
-```
+```text
 tests/
 ├── unit/                       # Unit tests
 │   ├── mixins/                # Mixin tests
@@ -392,6 +312,6 @@ tests/
 
 ---
 
-**Last Updated**: 2025-11-27  
+**Last Updated**: 2026-02-14
 **Maintainer**: OmniNode Development Team  
 **Next Review**: After migration plan implementation

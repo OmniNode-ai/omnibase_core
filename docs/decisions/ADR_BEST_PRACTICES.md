@@ -284,11 +284,14 @@ See these ADRs for reference implementations:
 
 ---
 
-**Last Updated**: 2025-12-16
+**Last Updated**: 2026-02-14
 **Related Documents**:
 - ADR-001: Protocol-Based DI Architecture
 - ADR-002: Centralized Field Limit Constants
 - ADR-003: Reducer Output Exception Consistency
 - ADR-007: Context Mutability Design Decision
+- ADR-012: Validator Error Handling with ModelOnexError
+
+**Note**: ADR-013 (Status Taxonomy - Canonical Enums) has been superseded and deleted. See ADR-006 for the active status taxonomy decision.
 
 **Correlation ID**: `95cac850-05a3-43e2-9e57-ccbbef683f43`

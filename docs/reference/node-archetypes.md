@@ -15,6 +15,19 @@ ONEX organizes all processing into four node archetypes. This reference provides
 | **REDUCER** | `REDUCER_GENERIC` | `NodeReducer` | FSM state + intent emission | None |
 | **ORCHESTRATOR** | `ORCHESTRATOR_GENERIC` | `NodeOrchestrator` | Workflow coordination | Publishes events |
 
+## ModelHandlerOutput Constraints
+
+Each node kind has strict constraints on which output fields are allowed. These are enforced at construction time by `ModelHandlerOutput`.
+
+| Node Kind | `result` | `events[]` | `intents[]` | `projections[]` |
+|-----------|----------|------------|-------------|------------------|
+| **COMPUTE** | Required | Forbidden | Forbidden | Forbidden |
+| **EFFECT** | Forbidden | Allowed | Forbidden | Forbidden |
+| **REDUCER** | Forbidden | Forbidden | Forbidden | Allowed |
+| **ORCHESTRATOR** | Forbidden | Allowed | Allowed | Forbidden |
+
+Setting a forbidden field raises `ModelOnexError` at construction time. See [Handler Output Constraints](../../CLAUDE.md#handler-output-constraints).
+
 ## Data Flow Architecture
 
 ```mermaid
@@ -182,6 +195,8 @@ __all__ = ["NodeUserStorageEffect"]
 |------|------|------------|
 | `NodeEffect` | `omnibase_core/nodes/node_effect.py` | Base class for all EFFECT nodes |
 
+For production EFFECT node implementations, see `omnibase_infra` repository (database writers, API clients, message publishers).
+
 ---
 
 ## COMPUTE Archetype
@@ -300,6 +315,8 @@ __all__ = ["NodeDataValidator"]
 | Node | Path | Purpose |
 |------|------|---------|
 | `NodeCompute` | `omnibase_core/nodes/node_compute.py` | Base class for all COMPUTE nodes |
+
+For production COMPUTE node implementations, see `omnibase_infra` repository (data validators, format converters, rule engines).
 
 ---
 
@@ -505,6 +522,8 @@ class ModelOrderState(BaseModel):
 |------|------|-----|
 | `NodeReducer` | `omnibase_core/nodes/node_reducer.py` | Base class with FSM support |
 
+For production REDUCER node implementations, see `omnibase_infra` repository (order processing reducers, metrics aggregators, workflow state machines).
+
 ---
 
 ## ORCHESTRATOR Archetype
@@ -548,7 +567,7 @@ output = ModelHandlerOutput[dict](
     node_kind=EnumNodeKind.ORCHESTRATOR,
     result={"status": "done"},  # ERROR: ORCHESTRATOR cannot set result!
 )
-# Raises: ValueError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
+# Raises: ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
 ```
 
 ### Example Implementation
@@ -701,6 +720,8 @@ __all__ = ["NodeOrderWorkflowOrchestrator"]
 | Node | Path | Workflow |
 |------|------|----------|
 | `NodeOrchestrator` | `omnibase_core/nodes/node_orchestrator.py` | Base class with workflow support |
+
+For production ORCHESTRATOR node implementations, see `omnibase_infra` repository (pipeline orchestrators, saga coordinators).
 
 ---
 

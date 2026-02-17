@@ -129,7 +129,7 @@ config_dict = {
 introspection = ModelIntrospectionSubcontract(**config_dict)
 ```
 
-### Integration with MixinIntrospection
+### Integration with MixinNodeIntrospection
 
 ```python
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase

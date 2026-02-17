@@ -13,9 +13,8 @@ Tests cover:
 Related: OMN-1854, PR #502
 """
 
-from typing import Any
-
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_merge_conflict_type import EnumMergeConflictType
 from omnibase_core.merge.geometric_conflict_classifier import (
@@ -239,7 +238,7 @@ class TestDeterminism:
     ) -> None:
         """Complex nested input should still be deterministic."""
         base = {"config": {"level": 1, "tags": ["a", "b"]}, "name": "test"}
-        vals: list[tuple[str, Any]] = [
+        vals: list[tuple[str, object]] = [
             ("a1", {"config": {"level": 2, "tags": ["a", "c"]}, "name": "test"}),
             ("a2", {"config": {"level": 3, "tags": ["b", "d"]}, "name": "modified"}),
         ]
@@ -479,7 +478,7 @@ class TestEdgeCases:
             base_value={"key": "value"},
             values=[("agent-1", {"key": "value"}), ("agent-2", {"key": "value"})],
         )
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             result.conflict_type = EnumMergeConflictType.AMBIGUOUS  # type: ignore[misc]
 
     def test_affected_fields_populated_for_dict_changes(

@@ -448,7 +448,37 @@ name: node_data_transformer_compute
 
 ### File Naming
 
-Model files follow `model_<name>.py` convention:
+All Python source files **MUST** follow the directory-specific prefix convention. This ensures consistent naming across the codebase and enables automated validation.
+
+**Exceptions**: `__init__.py`, `conftest.py`, and `py.typed` are always allowed regardless of directory.
+
+#### Complete File Naming Convention Table
+
+| Directory | Required Prefix | Example |
+|-----------|----------------|---------|
+| `cli/` | `cli_*` | `cli_commands.py` |
+| `constants/` | `constants_*` | `constants_event_types.py` |
+| `container/` | `container_*` | `container_service_registry.py` |
+| `context/` | `context_*` | `context_application.py` |
+| `contracts/` | `contract_*` | `contract_hash_registry.py` |
+| `decorators/` | `decorator_*` | `decorator_error_handling.py` |
+| `enums/` | `enum_*` | `enum_node_kind.py` |
+| `errors/` | `error_*` or `exception_*` | `exception_groups.py` |
+| `factories/` | `factory_*` | `factory_contract_profile.py` |
+| `infrastructure/` | `node_*` or `infra_*` | `node_base.py` |
+| `logging/` | `logging_*` | `logging_structured.py` |
+| `mixins/` | `mixin_*` | `mixin_handler_routing.py` |
+| `models/` | `model_*` | `model_event_envelope.py` |
+| `nodes/` | `node_*` | `node_compute.py` |
+| `pipeline/` | `builder_*`, `runner_*`, `manifest_*`, `handler_*` | `builder_execution_plan.py` |
+| `protocols/` | `protocol_*` | `protocol_event_bus.py` |
+| `runtime/` | `runtime_*`, `handler_*` | `runtime_file_registry.py` |
+| `services/` | `service_*` | `service_handler_registry.py` |
+| `types/` | `typed_dict_*`, `type_*`, `converter_*` | `type_compute_pipeline.py` |
+| `utils/` | `util_*` | `util_datetime_parser.py` |
+| `validation/` | `validator_*` or `checker_*` | `validator_contracts.py` |
+
+#### Example Directory Structure
 
 ```text
 models/
@@ -458,6 +488,12 @@ models/
   contracts/
     model_contract_compute.py
     model_contract_fingerprint.py
+enums/
+    enum_node_kind.py
+    enum_execution_status.py
+protocols/
+    protocol_event_bus.py
+    protocol_handler.py
 ```
 
 ---
@@ -472,5 +508,5 @@ models/
 
 ---
 
-**Last Updated**: 2025-12-14
-**Project**: omnibase_core v0.4.0
+**Last Updated**: 2026-02-14
+**Project**: omnibase_core

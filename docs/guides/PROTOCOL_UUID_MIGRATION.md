@@ -604,12 +604,12 @@ class LegacyMigrationHelper:
 
 - [ ] **Run type checker**: Ensure mypy passes
   ```bash
-  poetry run mypy src/
+  uv run mypy src/
   ```
 
 - [ ] **Run tests**: Ensure all tests pass
   ```bash
-  poetry run pytest tests/ -x
+  uv run pytest tests/ -x
   ```
 
 ---
@@ -767,10 +767,10 @@ Add a dedicated CI step to run strict type checking on protocol implementations:
 
 ```bash
 # Run strict type checking specifically on protocols
-poetry run mypy src/your_project/protocols/ --strict
+uv run mypy src/your_project/protocols/ --strict
 
 # For omnibase_core specifically
-poetry run mypy src/omnibase_core/protocols/ --strict
+uv run mypy src/omnibase_core/protocols/ --strict
 ```
 
 ### Benefits
@@ -800,11 +800,11 @@ jobs:
       - name: Install dependencies
         run: |
           pip install poetry
-          poetry install
+          uv sync
       - name: Run mypy on protocols (strict)
-        run: poetry run mypy src/your_project/protocols/ --strict
+        run: uv run mypy src/your_project/protocols/ --strict
       - name: Run mypy on full codebase
-        run: poetry run mypy src/
+        run: uv run mypy src/
 ```
 
 ### Recommended Mypy Settings for Protocol Enforcement

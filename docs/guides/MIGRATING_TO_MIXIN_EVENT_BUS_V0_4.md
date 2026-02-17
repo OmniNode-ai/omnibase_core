@@ -57,8 +57,8 @@ This guide documents the v1.0 deprecations planned for `MixinEventBus` and provi
 - Violates explicit-over-implicit design principles
 
 **Source Locations**:
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 245-261 (`_event_bus_runtime_state`)
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 266-277 (`_event_bus_listener_handle`)
+- `src/omnibase_core/mixins/mixin_event_bus.py`, property `_event_bus_runtime_state`
+- `src/omnibase_core/mixins/mixin_event_bus.py`, property `_event_bus_listener_handle`
 
 #### Before (v0.4.0 - Deprecated Pattern)
 
@@ -128,13 +128,13 @@ class MyNode(BaseEventBusNode):
 - `hasattr` checks add runtime overhead
 - Protocol-based type checking provides compile-time safety
 
-**Source Locations**:
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 535-554 (`_get_event_bus`)
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 715-735 (`publish_event`)
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 781-794 (`publish_completion_event`)
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 830-856 (`apublish_completion_event`)
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 1160-1174 (`stop_event_listener`)
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 1389-1399 (`_event_listener_loop`)
+**Source Locations** (search for `TODO(v1.0)` comments in the file):
+- `src/omnibase_core/mixins/mixin_event_bus.py`, method `_get_event_bus`
+- `src/omnibase_core/mixins/mixin_event_bus.py`, method `publish_event`
+- `src/omnibase_core/mixins/mixin_event_bus.py`, method `publish_completion_event`
+- `src/omnibase_core/mixins/mixin_event_bus.py`, method `apublish_completion_event`
+- `src/omnibase_core/mixins/mixin_event_bus.py`, method `stop_event_listener`
+- `src/omnibase_core/mixins/mixin_event_bus.py`, method `_event_listener_loop`
 
 #### Before (v0.4.0 - Deprecated Pattern)
 
@@ -204,7 +204,7 @@ node.bind_event_bus(bus)
 - Removes need for runtime `getattr` calls
 
 **Source Location**:
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 1583-1590 (`_event_to_input_state`)
+- `src/omnibase_core/mixins/mixin_event_bus.py`, method `_event_to_input_state`
 
 #### Before (v0.4.0 - Deprecated Pattern)
 
@@ -275,10 +275,10 @@ class ProtocolFromEvent(Protocol):
 - Prevents misconfiguration (e.g., events on command topics)
 - Provides runtime validation of event routing
 
-**Source Locations** (future implementation points):
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 724-726 (`publish_event`)
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 781-783 (`publish_completion_event`)
-- `src/omnibase_core/mixins/mixin_event_bus.py` lines 844-846 (`apublish_completion_event`)
+**Source Locations** (future implementation points -- search for `TODO(v1.0)` in the file):
+- `src/omnibase_core/mixins/mixin_event_bus.py`, method `publish_event`
+- `src/omnibase_core/mixins/mixin_event_bus.py`, method `publish_completion_event`
+- `src/omnibase_core/mixins/mixin_event_bus.py`, method `apublish_completion_event`
 
 #### Current (v0.4.0)
 
@@ -300,10 +300,10 @@ async def publish_event(self, event_type: str, payload: ModelOnexEvent | None = 
     await bus.publish_async(envelope)
 ```
 
-**Topic Naming Convention**:
+**Topic Naming Convention** (per [MESSAGE_TOPIC_MAPPING.md](../architecture/MESSAGE_TOPIC_MAPPING.md)):
 - Events: `*.events.*` (e.g., `dev.user.events.v1`)
 - Commands: `*.commands.*` (e.g., `dev.user.commands.v1`)
-- Queries: `*.queries.*` (e.g., `dev.user.queries.v1`)
+- Intents: `*.intents.*` (e.g., `dev.payment.intents.v1`)
 
 **Message Category Alignment**:
 
@@ -311,7 +311,7 @@ async def publish_event(self, event_type: str, payload: ModelOnexEvent | None = 
 |-----------------|---------------|---------|
 | `EVENT` | `*.events.*` | `dev.user.events.v1` |
 | `COMMAND` | `*.commands.*` | `dev.user.commands.v1` |
-| `QUERY` | `*.queries.*` | `dev.user.queries.v1` |
+| `INTENT` | `*.intents.*` | `dev.payment.intents.v1` |
 
 ---
 
@@ -335,10 +335,10 @@ Use this checklist to ensure your code is ready for v1.0:
 
 ```bash
 # Run type checker to find protocol violations
-poetry run mypy src/your_package/
+uv run mypy src/your_package/
 
 # Run tests with deprecation warnings enabled
-poetry run pytest tests/ -W default::DeprecationWarning
+uv run pytest tests/ -W default::DeprecationWarning
 ```
 
 ---
@@ -349,19 +349,19 @@ All `TODO(v1.0)` comments are located in:
 
 **File**: `src/omnibase_core/mixins/mixin_event_bus.py`
 
-| Lines | Category | Description |
-|-------|----------|-------------|
-| 245-250 | Lazy Init | Runtime state lazy initialization fallback |
-| 266-270 | Lazy Init | Listener handle lazy initialization fallback |
-| 535-539 | hasattr | Event bus binding hasattr fallbacks |
-| 711-714 | hasattr | `publish_async` method check |
-| 724-726 | Feature | Topic validation placeholder |
-| 781-786 | hasattr/Feature | `publish` method check and topic validation |
-| 830-834 | hasattr | `publish_async` method check (async) |
-| 844-846 | Feature | Topic validation placeholder (async) |
-| 1160-1161 | hasattr | `unsubscribe` method check |
-| 1389-1390 | hasattr | `subscribe` method check |
-| 1583-1586 | Fallback | `from_event` getattr fallback |
+| Location | Category | Description |
+|----------|----------|-------------|
+| `_event_bus_runtime_state` property | Lazy Init | Runtime state lazy initialization fallback |
+| `_event_bus_listener_handle` property | Lazy Init | Listener handle lazy initialization fallback |
+| `_get_event_bus` method | hasattr | Event bus binding hasattr fallbacks |
+| `publish_event` method | hasattr | `publish_async` method check |
+| `publish_event` method | Feature | Topic validation placeholder |
+| `publish_completion_event` method | hasattr/Feature | `publish` method check and topic validation |
+| `apublish_completion_event` method | hasattr | `publish_async` method check (async) |
+| `apublish_completion_event` method | Feature | Topic validation placeholder (async) |
+| `stop_event_listener` method | hasattr | `unsubscribe` method check |
+| `_event_listener_loop` method | hasattr | `subscribe` method check |
+| `_event_to_input_state` method | Fallback | `from_event` getattr fallback |
 
 ---
 

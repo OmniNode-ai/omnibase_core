@@ -27,6 +27,26 @@ All side effects are emitted as Intents for Effect nodes to execute. This mainta
 
 **v1.0.4+ Clarification**: The purity guarantee applies to the **FSM executor functions**, not to `NodeReducer` instances. See [Purity Boundary](#purity-boundary-v104-normative) for details.
 
+### Output Constraints (REDUCER)
+
+`ModelHandlerOutput` enforces strict field constraints per node kind. For REDUCER nodes:
+
+| Field | Status |
+|-------|--------|
+| `result` | Forbidden |
+| `events[]` | Forbidden |
+| `intents[]` | Forbidden |
+| `projections[]` | **Allowed** |
+
+**Enforcement**: `ModelHandlerOutput` Pydantic validator + CI `node-purity-check`.
+
+**Clarification -- Two Output Layers**: The `intents[]` field is **Forbidden** on `ModelHandlerOutput` for REDUCER nodes. However, the FSM executor produces intents via `ModelReducerOutput.intents` (the reducer-specific output model), which is a separate type from `ModelHandlerOutput`. REDUCER handlers return `ModelHandlerOutput.for_reducer(projections=[...])` to the node framework, while the FSM execution result (including intents) is carried in `ModelReducerOutput` within the handler's internal logic. These are distinct boundaries:
+
+- `ModelHandlerOutput.intents` -- Forbidden for REDUCER (enforced by Pydantic validator)
+- `ModelReducerOutput.intents` -- Allowed; this is how FSM executors declare side effects for Effect nodes
+
+The `output.intents` references in the API mapping table and spec text refer to `ModelReducerOutput.intents`, not `ModelHandlerOutput.intents`.
+
 ---
 
 ## Table of Contents

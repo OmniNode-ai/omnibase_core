@@ -20,7 +20,7 @@ run_split() {
     local split_num=$1
     echo "[Split $split_num/$TOTAL_SPLITS] Starting..."
 
-    poetry run pytest tests/ \
+    uv run pytest tests/ \
         --splits $TOTAL_SPLITS \
         --group $split_num \
         --tb=short \

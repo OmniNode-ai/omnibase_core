@@ -8,6 +8,8 @@ The ONEX Circuit Breaker Pattern provides fault tolerance and cascading failure 
 
 The Circuit Breaker pattern prevents an application from repeatedly trying to execute an operation that's likely to fail, allowing it to continue without waiting for the fault to be rectified or wasting CPU cycles while it determines that the fault is long-lasting.
 
+> **Architectural Note**: In the ONEX Four-Node Architecture, circuit breakers are an **EFFECT node concern**. They guard I/O operations (HTTP calls, database queries, message queue publishing) which are the exclusive domain of EFFECT nodes. COMPUTE and REDUCER nodes must remain pure and should never directly interact with circuit breakers. If a COMPUTE or REDUCER node needs fault tolerance for an external dependency, that dependency access should be delegated to an EFFECT node that applies circuit breaker protection.
+
 ### Key Features
 
 - **State Management**: CLOSED → OPEN → HALF_OPEN state transitions
@@ -51,6 +53,8 @@ async def process_payment(amount: float):
 
 ## Core Components
 
+> **Note**: The class names `ExternalDependencyCircuitBreaker` and `CircuitBreakerFactory` in the examples below are illustrative pattern implementations. The actual configuration model is `ModelCircuitBreaker` (from `omnibase_core.models.configuration.model_circuit_breaker`). Implement your own circuit breaker wrapper or use a third-party library (e.g., `circuitbreaker`, `aiobreaker`) with `ModelCircuitBreaker` for configuration.
+
 ### ExternalDependencyCircuitBreaker
 
 The main circuit breaker implementation with comprehensive features.
@@ -60,7 +64,7 @@ class ExternalDependencyCircuitBreaker:
     def __init__(
         self,
         service_name: str,
-        config: Optional[ModelCircuitBreakerConfig] = None
+        config: ModelCircuitBreakerConfig | None = None
     ):
         """Initialize circuit breaker for a service."""
         ...
@@ -68,8 +72,8 @@ class ExternalDependencyCircuitBreaker:
     async def call(
         self,
         func: Callable[[], Awaitable[T]],
-        fallback: Optional[Callable[[], Awaitable[T]]] = None,
-        timeout: Optional[float] = None
+        fallback: Callable[[], Awaitable[T]] | None = None,
+        timeout: float | None = None
     ) -> T:
         """Execute function through circuit breaker."""
         ...

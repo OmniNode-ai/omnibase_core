@@ -43,7 +43,7 @@ Before writing code, clearly define your mixin:
 
 Determine which node types your mixin should support:
 
-```
+```yaml
 # Core mixin (all nodes)
 applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 
@@ -60,7 +60,7 @@ applicable_node_types: ["REDUCER", "ORCHESTRATOR"]
 
 Define what actions your mixin provides:
 
-```
+```text
 Error Handling Actions:
 1. handle_error - Process and categorize errors
 2. circuit_breaker_check - Check circuit breaker status
@@ -72,17 +72,24 @@ Error Handling Actions:
 
 ### Choose File Location
 
-```
-# Core mixin location
-cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/nodes/canary/mixins/
+> **Note**: YAML mixin contract files are a planned feature. The directory
+> `nodes/canary/mixins/` does not yet exist. Currently, the Pydantic subcontract
+> models in `models/contracts/subcontracts/` serve as the contract definitions.
+> The YAML structure below shows the planned target format.
 
-# Create your mixin file
-touch mixin_error_handling.yaml
+```bash
+# Planned mixin location (not yet created)
+# cd src/omnibase_core/nodes/canary/mixins/
+# touch mixin_error_handling.yaml
+
+# Current approach: create Pydantic model directly
+cd src/omnibase_core/models/contracts/subcontracts/
+touch model_error_handling_subcontract.py
 ```
 
 ### Write Basic Structure
 
-```
+```yaml
 # mixin_error_handling.yaml
 mixin_name: "mixin_error_handling"
 mixin_version:
@@ -97,7 +104,7 @@ applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 
 Add each action with complete specifications:
 
-```
+```yaml
 actions:
   - name: "handle_error"
     description: "Process and categorize errors with appropriate handling strategy"
@@ -149,7 +156,7 @@ actions:
 
 Define configuration parameters with defaults:
 
-```
+```yaml
 error_handling_config:
   # Circuit breaker settings
   enable_circuit_breaker: true
@@ -183,7 +190,7 @@ error_handling_config:
 
 Specify the structure of action outputs:
 
-```
+```yaml
 output_models:
   error_handling_result:
     error_category: "string"
@@ -210,7 +217,7 @@ output_models:
 
 Specify what your mixin provides and requires:
 
-```
+```yaml
 dependencies:
   - name: "error_handling"
     type: "capability"
@@ -236,7 +243,7 @@ requires_dependencies:
 
 Define metrics this mixin collects:
 
-```
+```yaml
 metrics:
   - name: "errors_total"
     type: "counter"
@@ -269,13 +276,17 @@ metrics:
 
 ## Step 3: Validate YAML Contract
 
-### Use Contract Validator
+> **Note**: YAML contract validation is a planned feature for when YAML mixin files are supported.
+> Currently, validation occurs through Pydantic model creation in Step 4 (see below).
+> The examples below show the planned validation workflow for future reference.
 
-```
-# Validate your mixin contract
-poetry run onex run contract_validator --contract src/omnibase_core/nodes/canary/mixins/mixin_error_handling.yaml
+### Use Contract Validator (Planned)
 
-# Expected output:
+```bash
+# PLANNED: Validate your mixin contract (not yet available)
+# uv run onex run contract_validator --contract src/omnibase_core/mixins/mixin_error_handling.yaml
+
+# Expected output (when implemented):
 # ✓ YAML syntax valid
 # ✓ Schema validation passed
 # ✓ All required fields present
@@ -283,10 +294,28 @@ poetry run onex run contract_validator --contract src/omnibase_core/nodes/canary
 # ✓ Action definitions complete
 ```
 
+### Current Validation Approach
+
+Until YAML support is implemented, validate by creating and testing the Pydantic model:
+
+```bash
+# Create Pydantic model file at full path (Step 4)
+touch src/omnibase_core/models/contracts/subcontracts/model_error_handling_subcontract.py
+
+# Validate through Python import and instantiation
+uv run python -c "from omnibase_core.models.contracts.subcontracts.model_error_handling_subcontract import ModelErrorHandlingSubcontract; print(ModelErrorHandlingSubcontract())"
+
+# Run unit tests (see Step 5)
+# NOTE: This test file is what you would create as part of this tutorial.
+# Real subcontract tests follow the same pattern under:
+# tests/unit/models/contracts/subcontracts/
+uv run pytest tests/unit/models/contracts/subcontracts/test_model_error_handling_subcontract.py
+```
+
 ### Common Validation Errors
 
 **Missing Required Fields**:
-```
+```yaml
 # ❌ Missing description
 mixin_name: "mixin_example"
 mixin_version: {major: 1, minor: 0, patch: 0}
@@ -299,7 +328,7 @@ description: "Example mixin description"
 ```
 
 **Invalid Node Types**:
-```
+```yaml
 # ❌ Invalid node type
 applicable_node_types: ["COMPUTE", "INVALID_TYPE"]
 # Error: 'INVALID_TYPE' not in [COMPUTE, EFFECT, REDUCER, ORCHESTRATOR]
@@ -309,7 +338,7 @@ applicable_node_types: ["COMPUTE", "EFFECT"]
 ```
 
 **Incomplete Actions**:
-```
+```yaml
 # ❌ Missing outputs
 actions:
   - name: "process_data"
@@ -331,10 +360,10 @@ See [03_PYDANTIC_MODELS.md](03_PYDANTIC_MODELS.md) for detailed instructions.
 
 ### Quick Example
 
-```
+```python
 # model_error_handling_subcontract.py
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any
+from typing import Any
 from enum import Enum
 
 class EnumCircuitBreakerState(str, Enum):
@@ -348,14 +377,14 @@ class ModelErrorHandlingResult(BaseModel):
     error_category: str = Field(..., description="Error classification")
     handling_action: str = Field(..., description="Action taken")
     recovery_possible: bool = Field(..., description="Whether recovery is possible")
-    recovery_suggestions: List[str] = Field(default_factory=list)
+    recovery_suggestions: list[str] = Field(default_factory=list)
 
 class ModelErrorHandlingSubcontract(BaseModel):
     """Error handling mixin Pydantic backing model."""
 
     subcontract_name: str = Field(default="mixin_error_handling")
     subcontract_version: str = Field(default="1.0.0")
-    applicable_node_types: List[str] = Field(
+    applicable_node_types: list[str] = Field(
         default=["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
     )
 
@@ -369,10 +398,10 @@ class ModelErrorHandlingSubcontract(BaseModel):
     error_retry_delay_ms: int = Field(default=1000, ge=100, le=60000)
 
     # Error categorization
-    retriable_error_types: List[str] = Field(
+    retriable_error_types: list[str] = Field(
         default=["TimeoutError", "ConnectionError", "TemporaryFailure"]
     )
-    fatal_error_types: List[str] = Field(
+    fatal_error_types: list[str] = Field(
         default=["AuthenticationError", "ValidationError", "ConfigurationError"]
     )
 
@@ -390,11 +419,12 @@ class ModelErrorHandlingSubcontract(BaseModel):
 
 ### Unit Test the Pydantic Model
 
-```
-# tests/model/subcontracts/test_model_error_handling_subcontract.py
+```python
+# tests/unit/models/contracts/subcontracts/test_model_error_handling_subcontract.py
 import pytest
 from pydantic import ValidationError
-from omnibase_core.model.subcontracts import ModelErrorHandlingSubcontract
+# Tutorial example - you create this class as part of the exercise above
+from model_error_handling_subcontract import ModelErrorHandlingSubcontract
 
 def test_error_handling_subcontract_defaults():
     """Test default values."""
@@ -435,12 +465,13 @@ def test_error_handling_subcontract_custom_error_types():
 
 ### Integration Test with Node
 
-```
+```python
 # tests/integration/test_error_handling_mixin_integration.py
 import pytest
 from omnibase_core.nodes import NodeCompute
-from omnibase_core.model.contracts import ModelContractCompute
-from omnibase_core.model.subcontracts import ModelErrorHandlingSubcontract
+from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
+# Tutorial example - you create this class as part of the exercise above
+from model_error_handling_subcontract import ModelErrorHandlingSubcontract
 
 class TestNodeWithErrorHandling(NodeCompute):
     """Test node with error handling mixin."""
@@ -514,7 +545,7 @@ Provides standardized error handling, circuit breaker patterns, and retry logic 
 
 ### Basic Configuration
 
-```
+```yaml
 subcontracts:
   - path: "../../mixins/mixin_error_handling.yaml"
     integration_field: "error_handling_configuration"
@@ -522,8 +553,9 @@ subcontracts:
 
 ### Advanced Configuration
 
-```
-from omnibase_core.model.subcontracts import ModelErrorHandlingSubcontract
+```python
+# Tutorial example - you create this class as part of the exercise above
+from model_error_handling_subcontract import ModelErrorHandlingSubcontract
 
 error_config = ModelErrorHandlingSubcontract(
     enable_circuit_breaker=True,
@@ -545,7 +577,7 @@ error_config = ModelErrorHandlingSubcontract(
 
 ### Pattern 1: Core Mixin (All Nodes)
 
-```
+```yaml
 applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 ```
 
@@ -553,7 +585,7 @@ applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 
 ### Pattern 2: EFFECT-Specific Mixin
 
-```
+```yaml
 applicable_node_types: ["EFFECT"]
 ```
 
@@ -561,7 +593,7 @@ applicable_node_types: ["EFFECT"]
 
 ### Pattern 3: REDUCER-Specific Mixin
 
-```
+```yaml
 applicable_node_types: ["REDUCER"]
 ```
 
@@ -569,7 +601,7 @@ applicable_node_types: ["REDUCER"]
 
 ### Pattern 4: ORCHESTRATOR-Specific Mixin
 
-```
+```yaml
 applicable_node_types: ["ORCHESTRATOR"]
 ```
 
@@ -592,7 +624,7 @@ applicable_node_types: ["ORCHESTRATOR"]
 **Symptom**: `ImportError: cannot import ModelYourMixinSubcontract`
 
 **Solution**:
-1. Verify model file in correct location: `model/subcontracts/`
+1. Verify model file in correct location: `models/contracts/subcontracts/`
 2. Check model class name matches pattern
 3. Ensure `__init__.py` exports your model
 4. Run `poetry install` to update package

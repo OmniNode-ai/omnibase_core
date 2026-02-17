@@ -1,6 +1,6 @@
 # CLAUDE.md - Omnibase Core
 
-> **Python**: 3.12+ | **Framework**: ONEX Core | **Shared Standards**: See **`~/.claude/CLAUDE.md`** for shared development standards (Python, Poetry, Git, testing, architecture principles) and infrastructure configuration (PostgreSQL, Kafka/Redpanda, Docker networking, environment variables).
+> **Python**: 3.12+ | **Framework**: ONEX Core | **Package Manager**: uv | **Shared Standards**: See **`~/.claude/CLAUDE.md`** for shared development standards (Python, Git, testing, architecture principles) and infrastructure configuration (PostgreSQL, Kafka/Redpanda, Docker networking, environment variables).
 
 ---
 
@@ -9,7 +9,7 @@
 1. [Repo Invariants](#repo-invariants)
 2. [Non-Goals](#non-goals)
 3. [Quick Reference](#quick-reference)
-4. [Python Development - Poetry](#python-development---poetry)
+4. [Python Development - uv](#python-development---uv)
 5. [Handler Output Constraints](#handler-output-constraints)
 6. [Forbidden Data Flow Patterns](#forbidden-data-flow-patterns)
 7. [Dependency Injection](#dependency-injection)
@@ -52,27 +52,37 @@ We explicitly do **NOT** optimize for:
 
 ```bash
 # Setup
-poetry install && pre-commit install
+uv sync --all-extras && pre-commit install
 
 # Testing
-poetry run pytest tests/                    # All tests (sequential by default)
-poetry run pytest tests/ -n 4               # With 4 parallel workers
-poetry run pytest tests/ -n 0 -xvs          # Debug mode (no parallelism)
-poetry run pytest tests/ --cov              # With coverage (60% minimum required)
+uv run pytest tests/                    # All tests (sequential by default)
+uv run pytest tests/ -n 4               # With 4 parallel workers
+uv run pytest tests/ -n 0 -xvs          # Debug mode (no parallelism)
+uv run pytest tests/ --cov              # With coverage (60% minimum required)
 
 # Code Quality
-poetry run mypy src/omnibase_core/          # Type checking (strict, 0 errors required)
-poetry run ruff check src/ tests/           # Linting
-pre-commit run --all-files                  # All hooks
+uv run mypy src/omnibase_core/          # Type checking (strict, 0 errors required)
+uv run ruff check src/ tests/           # Linting
+pre-commit run --all-files              # All hooks
 ```
 
 **Test markers**: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.slow`, `@pytest.mark.performance`, `@pytest.mark.memory_intensive`, `@pytest.mark.isolated`
 
 ---
 
-## Python Development - Poetry
+## Python Development - uv
 
-> **Shared rules** (Poetry usage, `--no-verify` prohibition, pre-commit hook policy) are in `~/.claude/CLAUDE.md`. Below are repo-specific additions only.
+> **Shared rules** (`--no-verify` prohibition, pre-commit hook policy) are in `~/.claude/CLAUDE.md`. Below are repo-specific additions only.
+
+### Package Manager
+
+This repository uses **uv** (not Poetry) for dependency management. All Python commands must be run via `uv run`.
+
+```bash
+uv sync --all-extras    # Install all dependencies (replaces: poetry install)
+uv run <command>        # Run command in venv (replaces: poetry run <command>)
+uv lock                 # Regenerate lockfile (replaces: poetry lock)
+```
 
 ### Additional Git Commit Rules
 
@@ -82,7 +92,7 @@ pre-commit run --all-files                  # All hooks
 ### Agent Instructions
 
 When spawning polymorphic agents or AI assistants:
-- **ALWAYS** instruct them to use `poetry run` for Python commands
+- **ALWAYS** instruct them to use `uv run` for Python commands
 - **NEVER** allow direct pip or python execution
 - **NEVER** run agents in background mode
 
@@ -295,7 +305,7 @@ Do NOT share node instances across threads without synchronization. Nodes are si
 1. Always call `super().__init__(container)` in node constructors
 2. Use `ModelONEXContainer` for dependency injection
 3. Use protocol names for DI: `container.get_service("ProtocolEventBus")`
-4. Use `poetry run` for all Python commands
+4. Use `uv run` for all Python commands
 5. Use thread-local instances for multi-threaded access
 
 ---

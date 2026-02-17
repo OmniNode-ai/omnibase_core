@@ -19,6 +19,14 @@ This comprehensive guide teaches you how to create production-ready mixins (subc
 - **Integration**: Connecting mixins to nodes
 - **Best Practices**: Patterns, tools, and validation strategies
 
+> **Note on YAML Workflow**: The guides below describe a workflow where YAML mixin
+> contract files are created and then backed by Pydantic models. The YAML mixin
+> contract layer is a **planned feature** -- the directory `nodes/canary/mixins/`
+> does not yet exist. Currently, Pydantic subcontract models in
+> `src/omnibase_core/models/contracts/subcontracts/` serve as the primary contract
+> definitions, and Python mixins in `src/omnibase_core/mixins/` provide runtime
+> behavior. The guide content remains valid for understanding the target architecture.
+
 ## Guide Structure
 
 ### Fundamentals
@@ -57,7 +65,7 @@ This comprehensive guide teaches you how to create production-ready mixins (subc
 - **ONEX Node Types**: Understanding of COMPUTE, EFFECT, REDUCER, ORCHESTRATOR
 - **YAML**: Basic YAML syntax and structure
 - **Pydantic**: Understanding of Pydantic models and validation
-- **Python 3.11+**: Async/await, type hints, dataclasses
+- **Python 3.12+**: Async/await, type hints, dataclasses
 
 ### Required Tools
 
@@ -67,12 +75,12 @@ This comprehensive guide teaches you how to create production-ready mixins (subc
 
 ### Verification
 
-```
+```bash
 # Verify environment
-poetry run python -c "from omnibase_core.model.subcontracts import ModelHealthCheckSubcontract; print('✓ Mixin system ready!')"
+uv run python -c "from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract import ModelHealthCheckSubcontract; print('Mixin system ready')"
 
-# Check existing mixins
-ls /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/nodes/canary/mixins/
+# Check existing mixins (run from repo root)
+ls ./src/omnibase_core/mixins/
 ```
 
 ## Learning Path
@@ -81,7 +89,7 @@ ls /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/nodes/canary/mixins/
 
 1. **Understand Architecture** (15 min)
    - Read: [Mixin Architecture](../../architecture/MIXIN_ARCHITECTURE.md)
-   - Review: Existing mixins in `nodes/canary/mixins/`
+   - Review: Existing mixins in `src/omnibase_core/mixins/`
 
 2. **Create Your First Mixin** (1-2 hours)
    - Follow: [Creating Mixins](01_CREATING_MIXINS.md)
@@ -205,21 +213,21 @@ Applicable to all node types:
 
 ### Adding Mixins to Your Project
 
-```
+```bash
 # In your project directory
 mkdir -p src/your_project/mixins
-mkdir -p src/your_project/model/subcontracts
+mkdir -p src/your_project/models/contracts/subcontracts
 
-# Create your mixin YAML
+# Create your mixin YAML (planned workflow)
 touch src/your_project/mixins/mixin_your_feature.yaml
 
 # Create backing Pydantic model
-touch src/your_project/model/subcontracts/model_your_feature_subcontract.py
+touch src/your_project/models/contracts/subcontracts/model_your_feature_subcontract.py
 ```
 
 ### Project Structure
 
-```
+```text
 your_project/
 ├── pyproject.toml
 ├── src/
@@ -229,7 +237,7 @@ your_project/
 │       │   ├── mixin_authentication.yaml
 │       │   └── mixin_rate_limiting.yaml
 │       │
-│       ├── model/subcontracts/                  # Pydantic models
+│       ├── models/contracts/subcontracts/         # Pydantic models
 │       │   ├── model_logging_subcontract.py
 │       │   ├── model_authentication_subcontract.py
 │       │   └── model_rate_limiting_subcontract.py
@@ -247,17 +255,17 @@ your_project/
 
 ### Contract Validation
 
-```
+```bash
 # Validate mixin contract
-poetry run onex run contract_validator --contract src/your_project/mixins/mixin_your_feature.yaml
+uv run onex run contract_validator --contract src/your_project/mixins/mixin_your_feature.yaml
 
 # Validate complete node contract (with mixins)
-poetry run onex run contract_validator --contract src/your_project/nodes/your_node/v1_0_0/contract.yaml
+uv run onex run contract_validator --contract src/your_project/nodes/your_node/v1_0_0/contract.yaml
 ```
 
 ### Testing Mixins
 
-```
+```python
 # Test mixin Pydantic model
 import pytest
 from your_project.model.subcontracts import ModelYourFeatureSubcontract
@@ -280,7 +288,7 @@ def test_mixin_validation():
 - **YAML Syntax**: See [YAML Schema](02_MIXIN_YAML_SCHEMA.md)
 - **Pydantic Issues**: See [Pydantic Models](03_PYDANTIC_MODELS.md)
 - **Integration Problems**: See [Mixin Integration](04_MIXIN_INTEGRATION.md)
-- **Code Examples**: Review `src/omnibase_core/nodes/canary/mixins/`
+- **Code Examples**: Review `src/omnibase_core/mixins/`
 
 ## Contributing
 
@@ -303,7 +311,7 @@ Ready to create mixins? Choose your path:
 - **Integrating into nodes?** → [Mixin Integration](04_MIXIN_INTEGRATION.md)
 - **Want best practices?** → [Best Practices](05_BEST_PRACTICES.md)
 
-Happy mixin development! 🚀
+Happy mixin development!
 
 ---
 

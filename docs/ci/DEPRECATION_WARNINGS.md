@@ -4,17 +4,19 @@
 
 > **Linear Ticket**: OMN-199 - Configure pytest deprecation warning capture
 > **Phase**: 7 - Deprecation & CI Enforcement
-> **Last Updated**: 2025-12-13
+> **Last Updated**: 2026-02-14
 
 ---
 
 ## Overview
 
-This document describes the deprecation warning strategy for omnibase_core, including the current configuration (v0.4.0) and the migration path to v0.5.0 where deprecation warnings will become test failures.
+> **HISTORICAL**: These deprecation warnings were relevant during the v0.5.0 migration. Most have been resolved in current versions. The project is now at v0.17.0. See current `pyproject.toml` for the active `filterwarnings` configuration.
+
+This document describes the deprecation warning strategy for omnibase_core, including the historical v0.4.0 configuration and the completed transition to strict enforcement in v0.5.0+.
 
 ---
 
-## Current State (v0.4.0)
+## Historical State (v0.4.0)
 
 ### Configuration
 
@@ -46,11 +48,11 @@ The `default` filter displays warnings without causing test failures. This allow
 
 ---
 
-## v0.5.0 Migration Path
+## v0.5.0 Migration Path (Completed)
 
-### Planned Configuration Change
+### Configuration Change (Completed in v0.5.0)
 
-In v0.5.0, the configuration will change from `default` to `error`:
+In v0.5.0, the configuration changed from `default` to `error`:
 
 ```toml
 filterwarnings = [
@@ -61,18 +63,19 @@ filterwarnings = [
 ]
 ```
 
-### Impact
+### Impact (Active since v0.5.0)
 
-- **DeprecationWarning**: Will cause test failures
-- **PendingDeprecationWarning**: Will cause test failures
-- **CI Impact**: PRs with deprecation warnings will fail CI checks
+- **DeprecationWarning**: Causes test failures
+- **PendingDeprecationWarning**: Causes test failures
+- **CI Impact**: PRs with deprecation warnings fail CI checks
 
 ### Timeline
 
 | Version | Behavior | Action Required |
 |---------|----------|-----------------|
 | **v0.4.x** | Warnings displayed | Address warnings proactively |
-| **v0.5.0** | Warnings become errors | All warnings must be resolved |
+| **v0.5.0+** | Warnings become errors | All warnings must be resolved |
+| **v0.17.0** (current) | Warnings are errors | Resolved - see `pyproject.toml` |
 
 ---
 
@@ -84,10 +87,10 @@ Run the test suite and review deprecation warnings in the output:
 
 ```bash
 # Run all tests and observe warnings
-poetry run pytest tests/
+uv run pytest tests/
 
 # Run with verbose warnings
-poetry run pytest tests/ -W default::DeprecationWarning
+uv run pytest tests/ -W default::DeprecationWarning
 ```
 
 ### Step 2: Categorize Warnings
@@ -188,25 +191,25 @@ filterwarnings = [
 
 ---
 
-## Pre-v0.5.0 Checklist
+## Pre-v0.5.0 Checklist (Resolved)
 
-Before v0.5.0 release, ensure:
+This checklist was completed during the v0.5.0 release:
 
-- [ ] Run full test suite: `poetry run pytest tests/`
-- [ ] Review all `DeprecationWarning` output
-- [ ] Update code to resolve internal deprecations
-- [ ] Update dependencies where possible
-- [ ] Add targeted suppressions for unavoidable warnings (with TODOs)
-- [ ] Verify no new deprecation warnings appear
+- [x] Run full test suite: `uv run pytest tests/`
+- [x] Review all `DeprecationWarning` output
+- [x] Update code to resolve internal deprecations
+- [x] Update dependencies where possible
+- [x] Add targeted suppressions for unavoidable warnings (with TODOs)
+- [x] Verify no new deprecation warnings appear
 
 ### Validation Command
 
 ```bash
-# Temporarily treat deprecations as errors to validate readiness
-poetry run pytest tests/ -W error::DeprecationWarning -W error::PendingDeprecationWarning
+# Treat deprecations as errors (this is now the default behavior since v0.5.0)
+uv run pytest tests/ -W error::DeprecationWarning -W error::PendingDeprecationWarning
 ```
 
-If this command passes, the codebase is ready for v0.5.0.
+This validation is now enforced by default in `pyproject.toml` since v0.5.0.
 
 ---
 
@@ -230,6 +233,6 @@ Under the `[tool.pytest.ini_options]` section, in the `filterwarnings` array.
 
 ---
 
-**Last Updated**: 2025-12-13
-**Document Version**: 1.0.0
+**Last Updated**: 2026-02-14
+**Document Version**: 1.1.0
 **Linear Ticket**: OMN-199

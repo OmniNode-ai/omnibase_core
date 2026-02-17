@@ -14,7 +14,7 @@ See Also:
     - OMN-1853: ModelGeometricConflictDetails
     - OMN-1852: EnumMergeConflictType geometric types
 
-.. versionadded:: 0.16.1
+.. versionadded:: 0.17.0
     Added as part of geometric conflict analysis (OMN-1854)
 """
 
@@ -32,9 +32,11 @@ from omnibase_core.models.merge.model_geometric_conflict_details import (
 # Semantic contradiction pairs for _are_contradictory detection.
 # Typed as frozenset[frozenset[object]] because pairs mix booleans and strings;
 # a Union-based generic would add complexity without safety benefit here.
+# Note: boolean True/False contradictions are handled separately via isinstance
+# checks in _values_contradict, so the {"true", "false"} pair below only
+# catches *string* representations (e.g., "true" vs "false").
 _CONTRADICTORY_PAIRS: frozenset[frozenset[object]] = frozenset(
     {
-        frozenset({True, False}),
         frozenset({"enable", "disable"}),
         frozenset({"allow", "deny"}),
         frozenset({"yes", "no"}),
@@ -59,13 +61,19 @@ class GeometricConflictClassifier:
         HIGH_SIMILARITY_THRESHOLD (0.85): Values are very similar.
         CONFLICTING_THRESHOLD (0.50): Partial overlap, needs resolution.
 
-    .. versionadded:: 0.16.1
+    Recursion guard:
+        _MAX_RECURSION_DEPTH (50) caps recursive traversal in _normalize,
+        _dict_similarity, and _values_contradict to prevent stack overflow
+        on deeply nested or cyclic-like structures.
+
+    .. versionadded:: 0.17.0
         Added as part of geometric conflict analysis (OMN-1854)
     """
 
     IDENTICAL_THRESHOLD: float = 0.99
     HIGH_SIMILARITY_THRESHOLD: float = 0.85
     CONFLICTING_THRESHOLD: float = 0.50
+    _MAX_RECURSION_DEPTH: int = 50
 
     def classify(
         self,
@@ -94,9 +102,9 @@ class GeometricConflictClassifier:
 
         # Compute all pairwise similarities (deterministic order)
         pairwise: list[float] = []
-        for i in range(len(values)):
-            for j in range(i + 1, len(values)):
-                sim = self.compute_similarity(values[i][1], values[j][1])
+        for i, (_, val_i) in enumerate(values):
+            for _, val_j in values[i + 1 :]:
+                sim = self.compute_similarity(val_i, val_j)
                 pairwise.append(sim)
 
         avg_similarity = sum(pairwise) / len(pairwise)
@@ -168,7 +176,9 @@ class GeometricConflictClassifier:
             affected_fields=affected_fields,
         )
 
-    def compute_similarity(self, value_a: object, value_b: object) -> float:
+    def compute_similarity(
+        self, value_a: object, value_b: object, _depth: int = 0
+    ) -> float:
         """Compute similarity score between two values.
 
         Returns a float in [0.0, 1.0] where 1.0 means identical.
@@ -176,15 +186,22 @@ class GeometricConflictClassifier:
         Handles dicts (recursive key+value comparison), strings (Dice bigram
         coefficient), lists (Jaccard index via JSON serialization), and
         primitives (exact match).
+
+        Args:
+            value_a: First value to compare.
+            value_b: Second value to compare.
+            _depth: Internal recursion depth guard. Do not set manually;
+                this is managed by recursive calls to prevent stack overflow
+                on deeply nested structures (capped at _MAX_RECURSION_DEPTH).
         """
-        norm_a = self._normalize(value_a)
-        norm_b = self._normalize(value_b)
+        norm_a = self._normalize(value_a, _depth=_depth)
+        norm_b = self._normalize(value_b, _depth=_depth)
 
         if norm_a == norm_b:
             return 1.0
 
         if isinstance(norm_a, dict) and isinstance(norm_b, dict):
-            return self._dict_similarity(norm_a, norm_b)
+            return self._dict_similarity(norm_a, norm_b, _depth=_depth)
 
         # Numeric proximity: close numbers score higher than distant numbers.
         # Check before string branch; bool is excluded (subclass of int).
@@ -194,8 +211,12 @@ class GeometricConflictClassifier:
             and not isinstance(norm_a, bool)
             and not isinstance(norm_b, bool)
         ):
-            if norm_a == 0 and norm_b == 0:
-                return 1.0
+            # The floor of 1 in the denominator prevents division-by-zero and
+            # means values in (-1, 1) are compared by absolute difference
+            # rather than relative difference.  E.g. 0.001 vs 0.002 yields
+            # ~0.999 similarity despite a 2x relative gap.  This is intentional:
+            # sub-unit quantities are treated as "close to zero" where absolute
+            # distance matters more than ratio.
             return 1.0 - min(
                 abs(norm_a - norm_b) / max(abs(norm_a), abs(norm_b), 1), 1.0
             )
@@ -204,7 +225,7 @@ class GeometricConflictClassifier:
             return self._string_similarity(norm_a, norm_b)
 
         if isinstance(norm_a, list) and isinstance(norm_b, list):
-            return self._list_similarity(norm_a, norm_b)
+            return self._list_similarity(norm_a, norm_b, _depth=_depth)
 
         # Different types or non-comparable primitives
         if type(norm_a) is not type(norm_b):
@@ -222,9 +243,15 @@ class GeometricConflictClassifier:
         ADVISORY ONLY (GI-3). Raises ValueError for OPPOSITE/AMBIGUOUS conflicts
         that require human approval.
 
+        Note: For LOW_CONFLICT and CONFLICTING classifications, this method
+        selects ``values[0]`` (the first agent's value) as the resolution.
+        Callers should be aware that input ordering matters: the agent listed
+        first in the ``values`` list is preferred when no merge is possible.
+
         Args:
             details: Classification result from classify().
-            values: Original (agent_name, value) pairs.
+            values: Original (agent_name, value) pairs. Ordering matters for
+                contested results (see note above).
 
         Returns:
             Tuple of (resolved_value, explanation_string).
@@ -327,7 +354,7 @@ class GeometricConflictClassifier:
                     return True
         return False
 
-    def _values_contradict(self, a: object, b: object) -> bool:
+    def _values_contradict(self, a: object, b: object, _depth: int = 0) -> bool:
         """Check if two values form a known contradiction."""
         # Direct boolean contradiction
         if isinstance(a, bool) and isinstance(b, bool) and a is not b:
@@ -344,11 +371,15 @@ class GeometricConflictClassifier:
         # suffices; for larger dicts, >50% of common keys must contradict
         # to avoid false positives where one field out of many differs.
         if isinstance(a, dict) and isinstance(b, dict):
+            if _depth >= self._MAX_RECURSION_DEPTH:
+                return False
             common_keys = sorted(set(a.keys()) & set(b.keys()))
             if not common_keys:
                 return False
             contradictions = sum(
-                1 for k in common_keys if self._values_contradict(a[k], b[k])
+                1
+                for k in common_keys
+                if self._values_contradict(a[k], b[k], _depth=_depth + 1)
             )
             if contradictions == 0:
                 return False
@@ -358,25 +389,33 @@ class GeometricConflictClassifier:
 
         return False
 
-    def _normalize(self, value: object) -> object:
+    def _normalize(self, value: object, _depth: int = 0) -> object:
         """Normalize a value for deterministic comparison.
 
         Sorts dict keys recursively. Preserves list ordering.
         """
+        if _depth >= self._MAX_RECURSION_DEPTH:
+            return value
         if isinstance(value, dict):
-            return {k: self._normalize(v) for k, v in sorted(value.items())}
+            return {
+                k: self._normalize(v, _depth=_depth + 1)
+                for k, v in sorted(value.items())
+            }
         if isinstance(value, list):
-            return [self._normalize(v) for v in value]
+            return [self._normalize(v, _depth=_depth + 1) for v in value]
         return value
 
     def _dict_similarity(
-        self, dict_a: dict[str, object], dict_b: dict[str, object]
+        self, dict_a: dict[str, object], dict_b: dict[str, object], _depth: int = 0
     ) -> float:
         """Compute similarity between two dicts using key overlap + value comparison.
 
         When all keys match (key_similarity=1.0), returns pure value similarity
         to prevent convergence to 1.0 for deeply nested dicts with differing leaves.
         """
+        if _depth >= self._MAX_RECURSION_DEPTH:
+            return 1.0 if dict_a == dict_b else 0.0
+
         all_keys = set(dict_a.keys()) | set(dict_b.keys())
         if not all_keys:
             return 1.0
@@ -389,7 +428,7 @@ class GeometricConflictClassifier:
         # Value similarity for common keys
         if common_keys:
             value_sims = [
-                self.compute_similarity(dict_a[k], dict_b[k])
+                self.compute_similarity(dict_a[k], dict_b[k], _depth=_depth + 1)
                 for k in sorted(common_keys)
             ]
             value_similarity = sum(value_sims) / len(value_sims)
@@ -430,7 +469,9 @@ class GeometricConflictClassifier:
             2 * intersection_size / (sum(bigrams_a.values()) + sum(bigrams_b.values()))
         )
 
-    def _list_similarity(self, list_a: list[object], list_b: list[object]) -> float:
+    def _list_similarity(
+        self, list_a: list[object], list_b: list[object], _depth: int = 0
+    ) -> float:
         """Compute list similarity using multiset Jaccard index on serialized elements.
 
         Uses Counter-based comparison so duplicate counts affect similarity
@@ -442,8 +483,8 @@ class GeometricConflictClassifier:
             return 0.0
 
         # Serialize elements for multiset comparison
-        counter_a = Counter(self._to_json_str(x) for x in list_a)
-        counter_b = Counter(self._to_json_str(x) for x in list_b)
+        counter_a = Counter(self._to_json_str(x, _depth=_depth) for x in list_a)
+        counter_b = Counter(self._to_json_str(x, _depth=_depth) for x in list_b)
 
         # Multiset Jaccard: sum(min counts) / sum(max counts)
         all_keys = set(counter_a.keys()) | set(counter_b.keys())
@@ -459,9 +500,11 @@ class GeometricConflictClassifier:
 
         return intersection_size / union_size
 
-    def _to_json_str(self, value: object) -> str:
+    def _to_json_str(self, value: object, _depth: int = 0) -> str:
         """Deterministic JSON serialization for set-based comparison."""
-        return json.dumps(self._normalize(value), sort_keys=True, default=str)
+        return json.dumps(
+            self._normalize(value, _depth=_depth), sort_keys=True, default=str
+        )
 
     def _compute_structural_similarity(
         self,

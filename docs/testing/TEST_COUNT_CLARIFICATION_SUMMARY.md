@@ -3,7 +3,7 @@
 # Test Count Clarification Summary
 
 **Date**: 2025-11-01
-**Verified Test Count**: **12,198 tests** (via `poetry run pytest --collect-only`)
+**Verified Test Count**: **12,198 tests** (via `uv run pytest --collect-only`)
 **Correlation ID**: 95cac850-05a3-43e2-9e57-ccbbef683f43
 **Source**: PR #71 review feedback
 
@@ -23,7 +23,7 @@ The omnibase_core documentation contained multiple inconsistent and outdated tes
 ## Verified Actual Count
 
 ```bash
-$ poetry run pytest --collect-only -q 2>/dev/null | tail -n 1
+$ uv run pytest --collect-only -q 2>/dev/null | tail -n 1
 12198 tests collected in 20.10s
 ```
 
@@ -119,14 +119,14 @@ To verify the test count at any time:
 
 ```bash
 # Quick count (accurate)
-poetry run pytest --collect-only -q 2>/dev/null | tail -n 1
+uv run pytest --collect-only -q 2>/dev/null | tail -n 1
 
 # Detailed collection info
-poetry run pytest --collect-only -v
+uv run pytest --collect-only -v
 
 # Count by category
-poetry run pytest --collect-only tests/unit/ -q 2>/dev/null | tail -n 1
-poetry run pytest --collect-only tests/integration/ -q 2>/dev/null | tail -n 1
+uv run pytest --collect-only tests/unit/ -q 2>/dev/null | tail -n 1
+uv run pytest --collect-only tests/integration/ -q 2>/dev/null | tail -n 1
 ```
 
 ---
@@ -152,5 +152,5 @@ Going forward, when referencing test counts in documentation:
 ---
 
 **Last Verified**: 2025-11-01
-**Verification Method**: `poetry run pytest --collect-only`
+**Verification Method**: `uv run pytest --collect-only`
 **Status**: ✅ All documentation updated and verified

@@ -36,6 +36,106 @@ See [Node Class Hierarchy Guide](../../architecture/NODE_CLASS_HIERARCHY.md) for
 
 ---
 
+## Handler Architecture
+
+> **Architectural Rule**: Nodes are thin coordination shells. Business logic belongs in **handlers**, not in the node class itself. The node delegates to a handler, and the handler returns a `ModelHandlerOutput`.
+
+### COMPUTE Output Constraints
+
+| Field | COMPUTE | EFFECT | REDUCER | ORCHESTRATOR |
+|-------|---------|--------|---------|--------------|
+| `result` | **Required** | Forbidden | Forbidden | Forbidden |
+| `events[]` | Forbidden | Allowed | Forbidden | Allowed |
+| `intents[]` | Forbidden | Forbidden | Forbidden | Allowed |
+| `projections[]` | Forbidden | Forbidden | Allowed | Forbidden |
+
+COMPUTE is the **only** node kind that returns a typed `result`.
+
+### Handler-Based Pattern (Recommended)
+
+In production ONEX code, the node delegates to a handler. The handler performs the computation and returns `ModelHandlerOutput.for_compute(result=...)`:
+
+```python
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes import NodeCompute
+
+from your_project.nodes.model_price_calculator_input import ModelPriceCalculatorInput
+from your_project.nodes.model_price_calculator_output import ModelPriceCalculatorOutput
+
+
+class HandlerPriceCalculator:
+    """Handler containing the actual computation logic."""
+
+    async def execute(
+        self,
+        envelope: ModelOnexEnvelope,
+        input_data: ModelPriceCalculatorInput,
+    ) -> ModelHandlerOutput:
+        """
+        Pure computation -- no I/O allowed.
+
+        Args:
+            envelope: The incoming ONEX envelope (provides IDs for tracing)
+            input_data: Price calculator input configuration
+
+        Returns:
+            ModelHandlerOutput with result set (COMPUTE constraint).
+        """
+        subtotal = sum(
+            item.price * item.quantity for item in input_data.items
+        )
+        discount = self._calculate_discount(subtotal, input_data.discount_code)
+        discounted = subtotal - discount
+        tax = discounted * input_data.tax_rate
+        total = discounted + tax
+
+        result = ModelPriceCalculatorOutput(
+            subtotal=round(subtotal, 2),
+            discount=round(discount, 2),
+            tax=round(tax, 2),
+            total=round(total, 2),
+            discount_code_applied=input_data.discount_code,
+            items_count=len(input_data.items),
+        )
+
+        # COMPUTE nodes MUST return result; events/intents/projections forbidden
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
+            handler_id="handler_price_calculator",
+            result=result,
+        )
+
+    def _calculate_discount(self, subtotal: float, code: str | None) -> float:
+        if not code:
+            return 0.0
+        # ... discount logic ...
+        return 0.0
+
+
+class NodePriceCalculatorCompute(NodeCompute):
+    """Thin shell -- delegates to handler."""
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+        # Production code should resolve the handler via container DI:
+        #   self._handler = container.get_service(ProtocolPriceCalculatorHandler)
+        self._handler = HandlerPriceCalculator()
+
+    async def process(
+        self,
+        envelope: ModelOnexEnvelope,
+        input_data: ModelPriceCalculatorInput,
+    ) -> ModelHandlerOutput:
+        return await self._handler.execute(envelope, input_data)
+```
+
+The tutorial below shows computation logic inline for teaching clarity. In production, always extract logic into a handler.
+
+---
+
 ## Overview
 
 In this tutorial, you'll build a complete COMPUTE node that calculates prices with tax and discounts. You'll learn:
@@ -50,7 +150,7 @@ In this tutorial, you'll build a complete COMPUTE node that calculates prices wi
 
 ## What We're Building
 
-```
+```python
 # Usage example
 calculator = NodePriceCalculatorCompute(container)
 
@@ -78,7 +178,7 @@ print(result.result)
 
 ### 1. Create Project Structure
 
-```
+```bash
 # Navigate to your project
 cd your_project
 
@@ -94,7 +194,7 @@ touch tests/nodes/test_node_price_calculator.py
 
 ### 2. Install Dependencies
 
-```
+```bash
 # Ensure you have omnibase_core
 poetry add omnibase_core
 
@@ -104,8 +204,8 @@ poetry add --group dev pytest pytest-asyncio
 
 ### 3. Verify Installation
 
-```
-poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ Ready!')"
+```bash
+uv run python -c "from omnibase_core.nodes import NodeCompute; print('✓ Ready!')"
 ```
 
 ## Step 1: Define Input Model
@@ -114,10 +214,9 @@ First, define what data your node accepts.
 
 **File**: `src/your_project/nodes/model_price_calculator_input.py`
 
-```
+```python
 """Input model for price calculator."""
 
-from typing import List
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -132,7 +231,7 @@ class CartItem(BaseModel):
 class ModelPriceCalculatorInput(BaseModel):
     """Input for price calculation."""
 
-    items: List[CartItem] = Field(
+    items: list[CartItem] = Field(
         min_items=1,
         description="Cart items to calculate price for"
     )
@@ -189,10 +288,9 @@ Define what your node returns.
 
 **File**: `src/your_project/nodes/model_price_calculator_output.py`
 
-```
+```python
 """Output model for price calculator."""
 
-from typing import Optional
 from pydantic import BaseModel, Field
 
 
@@ -253,11 +351,12 @@ For **95% of use cases**, use the production-ready `ModelServiceCompute` wrapper
 
 **File**: `src/your_project/nodes/node_price_calculator_compute.py`
 
-```
+> **Tutorial Simplification**: The example below places logic directly in the node class for clarity. In production, always use the [handler delegation pattern](#handler-architecture) shown above -- nodes must be thin shells that delegate to handlers.
+
+```python
 """COMPUTE node for price calculation with tax and discounts."""
 
 import time
-from typing import Dict
 from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -284,7 +383,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
     """
 
     # Discount codes (in production, fetch from database)
-    DISCOUNT_CODES: Dict[str, float] = {
+    DISCOUNT_CODES: dict[str, float] = {
         "SAVE10": 0.10,   # 10% off
         "SAVE20": 0.20,   # 20% off
         "SAVE30": 0.30,   # 30% off
@@ -301,7 +400,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
         super().__init__(container)
 
         # Simple in-memory cache (in production, use Redis)
-        self._cache: Dict[str, ModelPriceCalculatorOutput] = {}
+        self._cache: dict[str, ModelPriceCalculatorOutput] = {}
 
         # Performance tracking
         self.computation_count = 0
@@ -486,7 +585,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
 
         return f"{items_key}|{input_data.discount_code}|{input_data.tax_rate}"
 
-    def get_metrics(self) -> Dict[str, float]:
+    def get_metrics(self) -> dict[str, float]:
         """
         Get node performance metrics.
 
@@ -597,7 +696,7 @@ Always test your nodes!
 
 **File**: `tests/nodes/test_node_price_calculator.py`
 
-```
+```python
 """Tests for price calculator node."""
 
 import pytest
@@ -764,19 +863,19 @@ async def test_metrics(calculator):
 
 ## Step 5: Run Tests
 
-```
+```bash
 # Run all tests
-poetry run pytest tests/nodes/test_node_price_calculator.py -v
+uv run pytest tests/nodes/test_node_price_calculator.py -v
 
 # Run specific test
-poetry run pytest tests/nodes/test_node_price_calculator.py::test_basic_calculation -v
+uv run pytest tests/nodes/test_node_price_calculator.py::test_basic_calculation -v
 
 # Run with coverage
-poetry run pytest tests/nodes/test_node_price_calculator.py --cov=src/your_project/nodes --cov-report=term-missing
+uv run pytest tests/nodes/test_node_price_calculator.py --cov=src/your_project/nodes --cov-report=term-missing
 ```
 
 **Expected output**:
-```
+```text
 tests/nodes/test_node_price_calculator.py::test_basic_calculation PASSED
 tests/nodes/test_node_price_calculator.py::test_percentage_discount PASSED
 tests/nodes/test_node_price_calculator.py::test_flat_discount PASSED
@@ -793,7 +892,7 @@ tests/nodes/test_node_price_calculator.py::test_metrics PASSED
 
 Now use it in your application!
 
-```
+```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from your_project.nodes.node_price_calculator_compute import NodePriceCalculatorCompute
 from your_project.nodes.model_price_calculator_input import (
@@ -840,7 +939,7 @@ print(f"Processing time: {result.processing_time_ms:.2f}ms")
 
 ### 1. Add Logging
 
-```
+```python
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 
 async def process(self, input_data):
@@ -857,7 +956,7 @@ async def process(self, input_data):
 
 ### 2. Add Redis Caching
 
-```
+```python
 import redis.asyncio as redis
 
 def __init__(self, container):
@@ -884,11 +983,11 @@ async def process(self, input_data):
 
 ### 3. Add Parallel Processing
 
-```
+```python
 async def process_batch(
     self,
-    inputs: List[ModelPriceCalculatorInput]
-) -> List[ModelPriceCalculatorOutput]:
+    inputs: list[ModelPriceCalculatorInput]
+) -> list[ModelPriceCalculatorOutput]:
     """Process multiple calculations in parallel."""
     tasks = [self.process(input_data) for input_data in inputs]
     results = await asyncio.gather(*tasks)
@@ -916,24 +1015,24 @@ You've successfully built a COMPUTE node! Now:
 
 ### Import Errors
 
-```
+```bash
 # If you see import errors
 poetry install
-poetry run python -c "from omnibase_core.nodes import NodeCompute"
+uv run python -c "from omnibase_core.nodes import NodeCompute"
 ```
 
 ### Type Checking Failures
 
-```
+```bash
 # Run mypy to check types
-poetry run mypy src/your_project/nodes/node_price_calculator_compute.py
+uv run mypy src/your_project/nodes/node_price_calculator_compute.py
 ```
 
 ### Test Failures
 
-```
+```bash
 # Run tests with verbose output
-poetry run pytest tests/nodes/test_node_price_calculator.py -vvs
+uv run pytest tests/nodes/test_node_price_calculator.py -vvs
 ```
 
 ## Summary

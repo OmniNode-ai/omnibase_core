@@ -29,7 +29,7 @@ Success Criteria:
 
 Usage:
 Run manually for performance analysis:
-    poetry run pytest tests/performance/ -v -s
+    uv run pytest tests/performance/ -v -s
 
 Do NOT run in CI - results are unreliable in shared runners.
 

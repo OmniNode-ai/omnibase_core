@@ -72,13 +72,13 @@ registry = ServiceRegistry(config)
 
 # Register service by protocol interface
 await registry.register_instance(
-    interface=ProtocolLogger,
+    interface=ProtocolLoggerLike,
     instance=logger_instance,
     scope="global"
 )
 
 # Resolve service by protocol
-logger = await registry.resolve_service(ProtocolLogger)
+logger = await registry.resolve_service(ProtocolLoggerLike)
 ```
 
 **Integration with Container**:
@@ -87,7 +87,7 @@ logger = await registry.resolve_service(ProtocolLogger)
 self._service_registry = ServiceRegistry(registry_config)
 
 # Service resolution with fallback
-service = await self.get_service_async(ProtocolLogger)
+service = await self.get_service_async(ProtocolLoggerLike)
 ```
 
 **Files**:
@@ -148,18 +148,18 @@ These are **NOT dependency injection registries** - they serve business logic pu
 User Code
     │
     ▼
-container.get_service(ProtocolLogger)
+container.get_service(ProtocolLoggerLike)
     │
     ▼
-ServiceRegistry.resolve_service(ProtocolLogger)
+ServiceRegistry.resolve_service(ProtocolLoggerLike)
     │
-    ├─→ Check interface_map for ProtocolLogger
+    ├─→ Check interface_map for ProtocolLoggerLike
     │
     ├─→ Get registration metadata (Pydantic validated)
     │
     ├─→ Resolve by lifecycle (singleton/transient)
     │
-    └─→ Return typed instance: logger (type: ProtocolLogger)
+    └─→ Return typed instance: logger (type: ProtocolLoggerLike)
 ```
 
 ### Business Registry (Action Discovery)
@@ -235,14 +235,14 @@ Store in self.service_registry[tool_id]
 ```python
 # Register singleton
 await registry.register_instance(
-    interface=ProtocolLogger,
+    interface=ProtocolLoggerLike,
     instance=logger,
     scope="global"
 )
 
 # All resolutions return same instance
-logger1 = await registry.resolve_service(ProtocolLogger)
-logger2 = await registry.resolve_service(ProtocolLogger)
+logger1 = await registry.resolve_service(ProtocolLoggerLike)
+logger2 = await registry.resolve_service(ProtocolLoggerLike)
 assert logger1 is logger2  # Same instance
 ```
 
@@ -378,9 +378,9 @@ logger = registry.resolve("logger")
 
 **Pattern**:
 ```python
-@injectable(ProtocolLogger)
+@injectable(ProtocolLoggerLike)
 class MyService:
-    def __init__(self, logger: ProtocolLogger):
+    def __init__(self, logger: ProtocolLoggerLike):
         self.logger = logger
 ```
 
@@ -394,7 +394,7 @@ class MyService:
 
 ## Implementation Notes
 
-### Current Status (v0.2.0)
+### Current Status (v0.2.0, at time of writing)
 
 **Implemented**:
 - ✅ ServiceRegistry with protocol-based resolution
@@ -415,11 +415,10 @@ class MyService:
 
 ### Migration Path
 
-**Phase 1 (v0.1.x - v0.2.x)**: Dual resolution ✅ **CURRENT**
+**Phase 1 (v0.1.x - v0.2.x, at time of writing)**: Dual resolution ✅
 - ServiceRegistry available but optional
 - Fallback to legacy resolution if ServiceRegistry fails
 - Gradual migration of services to ServiceRegistry
-- **Status**: Active in v0.2.0
 
 **Phase 2 (v1.0.x)**: ServiceRegistry primary
 - ServiceRegistry becomes default resolution path
@@ -446,7 +445,7 @@ The codebase contains TODO comments that are often misinterpreted as "legacy reg
 
 **Clarified**:
 ```python
-# FUTURE (v2.0): Protocol integrations now available in omnibase-spi v0.2.0
+# FUTURE (v2.0): Protocol integrations now available in omnibase-spi v0.2.0 (at time of writing)
 # These protocols enable external service discovery and database pooling.
 # Ready for implementation - Tracking: https://github.com/OmniNode-ai/omnibase_spi/issues/42
 ```
@@ -459,7 +458,7 @@ The codebase contains TODO comments that are often misinterpreted as "legacy reg
 # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
 ```
 
-**Status**:
+**Status** (at time of writing):
 ProtocolServiceResolver is now available in omnibase_spi v0.2.0 and ready for implementation.
 This will enable automatic service discovery for ProtocolDatabaseConnection,
 ProtocolServiceDiscovery, and other external dependencies.
@@ -472,7 +471,7 @@ ProtocolServiceDiscovery, and other external dependencies.
 # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
 ```
 
-**Status**:
+**Status** (at time of writing):
 ProtocolServiceResolver is now available for implementation of external service health checks.
 Current behavior: Returns "unavailable" status message (graceful degradation).
 Implementation ready to proceed using omnibase_spi v0.2.0.

@@ -79,7 +79,7 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 #### Usage:
 
 ```
-from omnibase_core.models.services import ModelServiceCompute
+from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
 class NodeDataTransformerCompute(ModelServiceCompute):
@@ -283,20 +283,20 @@ class StreamProcessorCompute(
 ### Example 3: Secure Data Processor
 ```
 from omnibase_core.nodes.node_compute import NodeCompute
-from omnibase_core.mixins.mixin_security import MixinSecurity
-from omnibase_core.mixins.mixin_validation import MixinValidation
-from omnibase_core.mixins.mixin_logging import MixinLogging
+from omnibase_core.mixins.mixin_redaction import MixinSensitiveFieldRedaction
+from omnibase_core.mixins.mixin_fail_fast import MixinFailFast
+from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 
 class SecureDataProcessor(
     NodeCompute,
-    MixinSecurity,
-    MixinValidation,
-    MixinLogging
+    MixinSensitiveFieldRedaction,
+    MixinFailFast,
+    MixinHealthCheck
 ):
     """
     Custom composition for processing sensitive data.
 
-    Adds security (redaction) and validation (fail-fast).
+    Adds redaction (sensitive fields) and fail-fast validation.
     Omits caching (never cache sensitive data).
     """
     pass
@@ -426,7 +426,7 @@ class TestMyDatabaseWriter:
 ### Integration Testing with Real Mixins
 ```
 import pytest
-from omnibase_core.models.services import ModelServiceCompute
+from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 class TestDataTransformerIntegration:
@@ -520,8 +520,8 @@ if self.cache_hit_ratio < 0.5:
 ## Troubleshooting
 
 ### Import Errors: "Cannot import ModelServiceEffect"
-**Cause:** Node base classes don't exist yet (waiting for Agent 2).
-**Solution:** Wait for `NodeEffect`, `NodeCompute`, `NodeOrchestrator`, `NodeReducer` to be created in `src/omnibase_core/nodes/`.
+**Cause:** Missing dependency or incorrect import path.
+**Solution:** Ensure `omnibase_core` is installed via `poetry install` and import from `omnibase_core.models.services`.
 
 ### MRO Errors: "Cannot create consistent method resolution order"
 **Cause:** Conflicting mixin inheritance order.
@@ -541,7 +541,7 @@ if self.cache_hit_ratio < 0.5:
 
 - **Mixin Metadata:** `src/omnibase_core/mixins/mixin_metadata.yaml` - Detailed mixin capabilities
 - **ONEX Architecture Patterns:** See project documentation for ONEX architecture guidelines
-- **Node Base Classes:** `src/omnibase_core/nodes/node_*.py` (created by Agent 2)
+- **Node Base Classes:** `src/omnibase_core/nodes/node_*.py`
 - **Container Documentation:** `src/omnibase_core/models/container/model_onex_container.py`
 
 ---

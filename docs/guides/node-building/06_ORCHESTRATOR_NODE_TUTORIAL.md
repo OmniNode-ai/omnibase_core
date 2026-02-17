@@ -54,12 +54,106 @@ return ModelHandlerOutput[dict](
 - **Orchestrators communicate via events and intents, not direct results**
 
 **Validation Error:**
-```
-ValueError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
+```text
+ModelOnexError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
 Only COMPUTE nodes return typed results.
 ```
 
 See [ONEX Four-Node Architecture](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md#4-orchestrator-node) for detailed explanation.
+
+### ORCHESTRATOR Output Constraints
+
+| Field | COMPUTE | EFFECT | REDUCER | ORCHESTRATOR |
+|-------|---------|--------|---------|--------------|
+| `result` | Required | Forbidden | Forbidden | **Forbidden** |
+| `events[]` | Forbidden | Allowed | Forbidden | **Allowed** |
+| `intents[]` | Forbidden | Forbidden | Forbidden | **Allowed** |
+| `projections[]` | Forbidden | Forbidden | Allowed | **Forbidden** |
+
+ORCHESTRATOR nodes emit **events** and **intents** only. They coordinate workflow steps and delegate execution to other node kinds.
+
+### Handler Architecture
+
+> **Architectural Rule**: Nodes are thin coordination shells. Business logic belongs in **handlers**, not in the node class itself. The node delegates to a handler, and the handler returns a `ModelHandlerOutput`.
+
+In production ONEX code, the ORCHESTRATOR node delegates workflow coordination to a handler. The handler returns `ModelHandlerOutput.for_orchestrator(events=[...], intents=[...])`:
+
+```python
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes import NodeOrchestrator
+
+from your_project.nodes.model_pipeline_orchestrator_input import (
+    ModelPipelineOrchestratorInput,
+)
+
+
+class HandlerPipelineOrchestrator:
+    """Handler containing the workflow coordination logic."""
+
+    async def execute(
+        self,
+        envelope: ModelOnexEnvelope,
+        input_data: ModelPipelineOrchestratorInput,
+    ) -> ModelHandlerOutput:
+        """
+        Coordinate workflow steps and emit events + intents.
+
+        Args:
+            envelope: The incoming ONEX envelope (provides IDs for tracing)
+            input_data: Pipeline orchestrator input configuration
+
+        Returns:
+            ModelHandlerOutput with events and intents (ORCHESTRATOR constraint).
+            result MUST be None -- only COMPUTE nodes return results.
+        """
+        events = [
+            ModelEventEnvelope(
+                event_type="workflow.started",
+                payload={"workflow_id": str(input_data.workflow_id)},
+            ),
+        ]
+
+        intents = [
+            ModelIntent(
+                intent_type="execute_step",
+                target="NodeDataFetcherEffect",
+                payload={"step": "fetch_data"},
+                priority=1,
+            ),
+        ]
+
+        # ORCHESTRATOR: events + intents only, result MUST be None
+        return ModelHandlerOutput.for_orchestrator(
+            handler_id="handler_pipeline_orchestrator",
+            input_envelope_id=envelope.metadata.envelope_id,
+            correlation_id=envelope.metadata.correlation_id,
+            events=events,
+            intents=intents,
+        )
+
+
+class NodePipelineOrchestrator(NodeOrchestrator):
+    """Thin shell -- delegates to handler."""
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+        # Production code should resolve the handler via container DI:
+        #   self._handler = container.get_service(ProtocolPipelineOrchestratorHandler)
+        self._handler = HandlerPipelineOrchestrator()
+
+    async def process(
+        self,
+        envelope: ModelOnexEnvelope,
+        input_data: ModelPipelineOrchestratorInput,
+    ) -> ModelHandlerOutput:
+        return await self._handler.execute(envelope, input_data)
+```
+
+The tutorial below shows coordination logic inline for teaching clarity. In production, always extract logic into a handler.
 
 ---
 
@@ -186,14 +280,14 @@ Most orchestrator workflows require **ZERO custom Python code**. Custom code is 
 
 ```bash
 # Verify Poetry and environment
-poetry --version
+uv --version
 pwd  # Should end with /omnibase_core
 
 # Install dependencies
-poetry install
+uv sync
 
 # Run existing orchestrator tests
-poetry run pytest tests/unit/nodes/test_node_orchestrator.py -v --maxfail=1
+uv run pytest tests/unit/nodes/test_node_orchestrator.py -v --maxfail=1
 ```
 
 If tests pass, you're ready to begin!
@@ -455,6 +549,8 @@ class ModelPipelineOrchestratorInput(BaseModel):
 For workflow-driven orchestration, use `NodeOrchestrator` which provides all standard features:
 
 **File**: `src/your_project/nodes/node_pipeline_orchestrator.py`
+
+> **Tutorial Simplification**: The example below places logic directly in the node class for clarity. In production, always use the [handler delegation pattern](#handler-architecture) shown above -- nodes must be thin shells that delegate to handlers.
 
 ```python
 """
@@ -739,6 +835,8 @@ Extend the orchestrator to support conditional execution:
 
 **File**: `src/your_project/nodes/node_conditional_pipeline_orchestrator.py`
 
+> **Tutorial Simplification**: The example below places logic directly in the node class for clarity. In production, always use the [handler delegation pattern](#handler-architecture) shown above -- nodes must be thin shells that delegate to handlers.
+
 ```python
 """
 Conditional Pipeline Orchestrator with branching logic.
@@ -944,6 +1042,8 @@ result = await orchestrator.process_pipeline(input_data)
 ## Step 5: Error Handling and Recovery
 
 Add robust error handling with compensation logic:
+
+> **Tutorial Simplification**: The example below places logic directly in the node class for clarity. In production, always use the [handler delegation pattern](#handler-architecture) shown above -- nodes must be thin shells that delegate to handlers.
 
 ```python
 from omnibase_core.nodes import EnumWorkflowStatus

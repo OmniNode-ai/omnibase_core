@@ -49,7 +49,7 @@ Error: The operation was canceled.
 
 ### Step 2: Find Next Test in Collection Order
 ```
-poetry run pytest tests/ --collect-only -q | grep -A 5 "test_handles_various_data_types"
+uv run pytest tests/ --collect-only -q | grep -A 5 "test_handles_various_data_types"
 ```
 
 ### Step 3: Search for Unawaited Async Calls
@@ -142,22 +142,22 @@ After implementing the fix:
 
 ### 1. Run Affected Tests
 ```
-poetry run pytest tests/unit/mixins/test_mixin_workflow_support.py -xvs
+uv run pytest tests/unit/mixins/test_mixin_workflow_support.py -xvs
 ```
 
 ### 2. Check Type Safety
 ```
-poetry run mypy src/omnibase_core/mixins/mixin_workflow_support.py
+uv run mypy src/omnibase_core/mixins/mixin_workflow_support.py
 ```
 
 ### 3. Smoke Test Related Modules
 ```
-poetry run pytest tests/unit/mixins/ -x --tb=short
+uv run pytest tests/unit/mixins/ -x --tb=short
 ```
 
 ### 4. Full Test Suite (if time permits)
 ```
-poetry run pytest tests/ -x
+uv run pytest tests/ -x
 ```
 
 ---

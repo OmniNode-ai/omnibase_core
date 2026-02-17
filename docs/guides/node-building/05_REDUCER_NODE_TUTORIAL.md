@@ -147,7 +147,7 @@ state_transitions:
 | Subcontract Composition | Complete | ModelContractReducer |
 | FSM Runtime Executor | Complete | util_fsm_executor.py with MixinFSMExecution |
 | NodeReducer | **PRIMARY** | FSM-driven implementation (v0.4.0+) |
-| Legacy Classes | Available | `NodeReducerLegacy` in `nodes/legacy/` for backwards compatibility |
+| Legacy Classes | **Removed** | Removed in v0.4.0; all nodes use declarative contract-driven pattern |
 | Documentation | Complete | Full tutorial and migration guides available |
 
 ---
@@ -158,7 +158,7 @@ This tutorial demonstrates **two implementation approaches**:
 1. **Manual FSM Implementation** (Current pattern): Custom Python code with pure FSM principles and Intent emission
 2. **YAML-Driven FSM** (Recommended for new nodes): YAML-driven state machines using `NodeReducer`
 
-> **Note (v0.4.0)**: `NodeReducer` is the PRIMARY FSM-driven implementation. Import directly from `omnibase_core.nodes`. Legacy imperative implementations are available in `nodes/legacy/NodeReducerLegacy` for backwards compatibility.
+> **Note (v0.4.0)**: `NodeReducer` is the PRIMARY FSM-driven implementation. Import directly from `omnibase_core.nodes`. Legacy imperative implementations were removed in v0.4.0. All nodes now use the declarative contract-driven pattern.
 
 **Both approaches are production-ready and fully supported.**
 
@@ -187,6 +187,19 @@ In this tutorial, you'll build a production-ready **Metrics Aggregation Node** a
 > See [Canonical Execution Shapes](../../architecture/CANONICAL_EXECUTION_SHAPES.md) for the complete pattern.
 
 See also [Node Purity Guarantees](../../architecture/NODE_PURITY_GUARANTEES.md) for enforcement details.
+
+### REDUCER Output Constraints
+
+| Field | COMPUTE | EFFECT | REDUCER | ORCHESTRATOR |
+|-------|---------|--------|---------|--------------|
+| `result` | Required | Forbidden | **Forbidden** | Forbidden |
+| `events[]` | Forbidden | Allowed | **Forbidden** | Allowed |
+| `intents[]` | Forbidden | Forbidden | **Forbidden** | Allowed |
+| `projections[]` | Forbidden | Forbidden | **Allowed** | Forbidden |
+
+REDUCER nodes return **projections** (state snapshots) via `ModelHandlerOutput.projections[]`. They do NOT return typed results, events, or intents in the `ModelHandlerOutput` fields directly. Instead, side effects are described as `ModelIntent` objects in reducer-specific output models (e.g., `ModelMetricsAggregationOutput.intents`) and routed to EFFECT nodes by an ORCHESTRATOR.
+
+> **Handler Note**: As with all ONEX node kinds, reducers are thin coordination shells. In production, extract aggregation logic into a dedicated handler that returns `ModelHandlerOutput.for_reducer(projections=[...])`. The tutorial below shows logic inline for teaching clarity.
 
 ---
 
@@ -300,14 +313,14 @@ class NodeMetricsAggregatorReducer(NodeReducer):
 
 ```bash
 # Verify Poetry and environment
-poetry --version
+uv --version
 pwd  # Should end with /omnibase_core
 
 # Install dependencies
-poetry install
+uv sync
 
 # Run existing reducer tests
-poetry run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1
+uv run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1
 ```
 
 ---
@@ -515,6 +528,7 @@ CRITICAL: This is a PURE FUNCTION node:
 """
 
 import time
+from datetime import UTC, datetime
 
 # v0.4.0: Import NodeReducer directly from omnibase_core.nodes
 from omnibase_core.nodes import NodeReducer, ModelReducerInput, EnumReductionType
@@ -724,7 +738,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
                         "metadata": {
                             "sources_count": len(input_data.data_sources),
                             "strategy": input_data.aggregation_strategy.value,
-                            "completed_at": reducer_output.completed_at.isoformat() if hasattr(reducer_output, 'completed_at') else None,
+                            "completed_at": datetime.now(UTC).isoformat(),
                         },
                     },
                     priority=1,  # Highest priority for persistence
@@ -745,18 +759,19 @@ class NodeMetricsAggregatorReducer(NodeReducer):
         """
 
         # Map aggregation strategy to conflict resolution
+        # EnumConflictResolution members: FIRST_WINS, LAST_WINS, MERGE, ERROR, CUSTOM
         conflict_resolution_map = {
-            EnumAggregationStrategy.SUM: EnumConflictResolution.SUM,
-            EnumAggregationStrategy.AVERAGE: EnumConflictResolution.AVERAGE,
-            EnumAggregationStrategy.MAX: EnumConflictResolution.TAKE_MAX,
-            EnumAggregationStrategy.MIN: EnumConflictResolution.TAKE_MIN,
-            EnumAggregationStrategy.LATEST: EnumConflictResolution.TAKE_LATEST,
+            EnumAggregationStrategy.SUM: EnumConflictResolution.MERGE,
+            EnumAggregationStrategy.AVERAGE: EnumConflictResolution.MERGE,
+            EnumAggregationStrategy.MAX: EnumConflictResolution.LAST_WINS,
+            EnumAggregationStrategy.MIN: EnumConflictResolution.FIRST_WINS,
+            EnumAggregationStrategy.LATEST: EnumConflictResolution.LAST_WINS,
             EnumAggregationStrategy.MERGE_LISTS: EnumConflictResolution.MERGE,
         }
 
         conflict_resolution = conflict_resolution_map.get(
             input_data.aggregation_strategy,
-            EnumConflictResolution.SUM,
+            EnumConflictResolution.LAST_WINS,
         )
 
         # Determine reduction type
@@ -794,7 +809,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
 - **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
 - **Reduction Functions**: Registry for different reduction types (fold, aggregate, merge)
 - **Streaming Support**: Batch, incremental, and windowed processing modes
-- **Conflict Resolution**: Built-in strategies (sum, average, max, min, latest, merge)
+- **Conflict Resolution**: Built-in strategies (first_wins, last_wins, merge, error, custom)
 - **Streaming Windows**: Window management for time-based aggregation
 - **Performance Tracking**: Built-in metrics for reduction operations
 - **Configuration Support**: Automatic config loading from `NodeConfigProvider`
@@ -1351,12 +1366,11 @@ INTENT_TYPES = {
 # Available strategies (import from omnibase_core.nodes)
 from omnibase_core.nodes import EnumConflictResolution
 
-EnumConflictResolution.SUM          # Add values together
-EnumConflictResolution.AVERAGE      # Average conflicting values
-EnumConflictResolution.TAKE_MAX     # Keep maximum value
-EnumConflictResolution.TAKE_MIN     # Keep minimum value
-EnumConflictResolution.TAKE_LATEST  # Use latest value
-EnumConflictResolution.MERGE        # Merge lists/objects
+EnumConflictResolution.FIRST_WINS   # Keep first encountered value
+EnumConflictResolution.LAST_WINS    # Keep last encountered value
+EnumConflictResolution.MERGE        # Attempt to merge values
+EnumConflictResolution.ERROR        # Raise error on conflict
+EnumConflictResolution.CUSTOM       # Use custom resolution function
 ```
 
 ---

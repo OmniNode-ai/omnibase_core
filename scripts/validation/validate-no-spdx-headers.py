@@ -13,13 +13,13 @@ Detected Patterns (in first 10 lines):
 
 Usage:
     # Check specific files (pre-commit mode)
-    poetry run python scripts/validation/validate-no-spdx-headers.py <file1> [file2] ...
+    uv run python scripts/validation/validate-no-spdx-headers.py <file1> [file2] ...
 
     # Check entire src/ directory (default)
-    poetry run python scripts/validation/validate-no-spdx-headers.py
+    uv run python scripts/validation/validate-no-spdx-headers.py
 
     # Check specific directory
-    poetry run python scripts/validation/validate-no-spdx-headers.py src/omnibase_core/
+    uv run python scripts/validation/validate-no-spdx-headers.py src/omnibase_core/
 
     To allow SPDX headers in specific files (rare cases), add comment:
     # spdx-ok: reason for exception

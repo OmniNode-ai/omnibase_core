@@ -642,12 +642,14 @@ def benchmark_with_gc_control(func, iterations=100):
 **Why**: Parallel tests interfere with each other
 
 ```bash
-# Run performance tests serially (no parallel execution)
-poetry run pytest tests/performance/ -n 0 -v
+# Run performance tests without parallel execution (-n 0 disables xdist)
+uv run pytest tests/performance/ -n 0 -v
 
-# Or mark tests as serial-only
-@pytest.mark.serial  # Requires pytest-xdist
+# Or mark tests as isolated to prevent parallel interference
+@pytest.mark.isolated
 ```
+
+> **Valid test markers**: `unit`, `integration`, `slow`, `performance`, `memory_intensive`, `isolated`. There is no `serial` marker -- use `-n 0` for sequential execution or `@pytest.mark.isolated` for test-level isolation.
 
 ### Handling Variance
 
@@ -796,7 +798,7 @@ git bisect bad HEAD  # Current commit is slow
 git bisect good v0.3.6  # Known good version
 
 # Git checks out commits for testing
-poetry run pytest tests/performance/test_model_reducer_output_benchmarks.py \
+uv run pytest tests/performance/test_model_reducer_output_benchmarks.py \
     -k "test_model_creation_performance" -x
 
 # Mark each commit
@@ -1012,7 +1014,7 @@ class TestPerformanceRegression:
 # .github/workflows/test.yml
 - name: Run Performance Tests
   run: |
-    poetry run pytest tests/performance/ \
+    uv run pytest tests/performance/ \
       -m "performance and not manual" \
       -n 0 \  # No parallelism for performance tests
       --timeout=300 \
@@ -1116,6 +1118,6 @@ class TestPerformanceRegression:
 
 ---
 
-**Last Updated**: 2025-12-16
+**Last Updated**: 2026-02-14
 **Status**: Active - performance testing framework
 **Contact**: @omnibase_core-maintainers

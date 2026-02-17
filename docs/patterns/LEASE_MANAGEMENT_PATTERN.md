@@ -398,7 +398,7 @@ class NodePrimaryOrchestrator(NodeCoreBase):
 Leases can expire after a TTL to prevent orphaned workflows:
 
 ```
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pydantic import BaseModel
 
 class ModelLeaseMetadata(BaseModel):
@@ -410,12 +410,12 @@ class ModelLeaseMetadata(BaseModel):
 
     def is_expired(self) -> bool:
         """Check if lease has expired."""
-        elapsed = (datetime.now() - self.acquired_at).total_seconds()
+        elapsed = (datetime.now(UTC) - self.acquired_at).total_seconds()
         return elapsed > self.ttl_seconds
 
     def remaining_ttl(self) -> float:
         """Get remaining TTL in seconds."""
-        elapsed = (datetime.now() - self.acquired_at).total_seconds()
+        elapsed = (datetime.now(UTC) - self.acquired_at).total_seconds()
         return max(0, self.ttl_seconds - elapsed)
 
 class NodeMyOrchestrator(NodeCoreBase):
@@ -425,7 +425,7 @@ class NodeMyOrchestrator(NodeCoreBase):
         self.lease_id = uuid4()
         self.lease_metadata = ModelLeaseMetadata(
             lease_id=self.lease_id,
-            acquired_at=datetime.now(),
+            acquired_at=datetime.now(UTC),
             ttl_seconds=300,  # 5 minutes
         )
 
@@ -459,7 +459,7 @@ class NodeMyOrchestrator(NodeCoreBase):
             # Update acquisition time
             self.lease_metadata = ModelLeaseMetadata(
                 lease_id=self.lease_id,  # Keep same lease_id
-                acquired_at=datetime.now(),  # Reset timer
+                acquired_at=datetime.now(UTC),  # Reset timer
                 ttl_seconds=self.lease_metadata.ttl_seconds,
             )
 
@@ -500,12 +500,12 @@ class NodeLeaseManager(NodeCoreBase):
         del self.active_leases[lease_id]
 
         # Emit revocation event
-        revocation_event = ModelEvent(
+        revocation_event = ModelOnexEvent(
             event_type=EnumEventType.LEASE_REVOKED,
             payload={
                 "lease_id": str(lease_id),
                 "reason": reason,
-                "revoked_at": datetime.now().isoformat(),
+                "revoked_at": datetime.now(UTC).isoformat(),
             }
         )
 
@@ -574,8 +574,8 @@ Set reasonable TTLs to prevent orphaned workflows:
 ```
 self.lease_metadata = ModelLeaseMetadata(
     lease_id=self.lease_id,
-    acquired_at=datetime.now(),
-    ttl_seconds=300,  # ✅ RECOMMENDED: 5 minutes
+    acquired_at=datetime.now(UTC),
+    ttl_seconds=300,  # 5 minutes
 )
 ```
 

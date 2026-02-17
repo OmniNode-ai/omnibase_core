@@ -573,12 +573,12 @@ Use the enhanced contract validator:
 
 ```
 # Validate mixin contract
-poetry run onex run contract_validator \
+uv run onex run contract_validator \
     --contract src/your_project/mixins/mixin_error_handling.yaml \
     --verbose
 
 # Validate node contract with mixins
-poetry run onex run contract_validator \
+uv run onex run contract_validator \
     --contract src/your_project/nodes/api_client_effect/v1_0_0/contract.yaml \
     --check-mixins \
     --verbose
@@ -590,7 +590,7 @@ Generate Pydantic models from YAML contracts:
 
 ```
 # Generate model skeleton
-poetry run onex run generate_model \
+uv run onex run generate_model \
     --contract src/your_project/mixins/mixin_error_handling.yaml \
     --output src/your_project/model/subcontracts/model_error_handling_subcontract.py
 
@@ -603,7 +603,7 @@ Inspect mixin usage across project:
 
 ```
 # Find all nodes using a specific mixin
-poetry run onex run inspect_mixin \
+uv run onex run inspect_mixin \
     --mixin mixin_error_handling \
     --project-root src/your_project
 
@@ -620,7 +620,7 @@ Generate documentation from mixin contracts:
 
 ```
 # Generate mixin documentation
-poetry run onex run generate_mixin_docs \
+uv run onex run generate_mixin_docs \
     --mixin src/your_project/mixins/mixin_error_handling.yaml \
     --output docs/mixins/ERROR_HANDLING_MIXIN.md \
     --include-examples

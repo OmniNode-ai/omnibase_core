@@ -14,9 +14,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  POETRY_VERSION: "2.2.1"
+  UV_VERSION: "0.8.3"
   PYTHON_VERSION: "3.12"
-  CACHE_VERSION: "0.1.5"
 
 jobs:
   # =============================================================================
@@ -32,119 +31,32 @@ jobs:
   #   - mypy-validation-scripts: Type check validation scripts
   #   - core-infra-boundary: Transport/I/O import validation (ADR-005)
   #   - enum-governance: Enum architectural standards validation (OMN-1313)
+  #   - detect-secrets: Baseline security scan (detect-secrets)
   #
-  # Phase 2 - Full Test Suite (after Phase 1 completes):
+  # Phase 1.5 - Quality Gate:
+  #   - quality-gate: Aggregates all Phase 1 quality checks into single gate
+  #     This is the API-stable check_name for branch protection
+  #
+  # Phase 2 - Full Test Suite (after quality-gate passes):
   #   - test-parallel: 20 splits of full test suite (~3 min each)
-  #     Depends on: lint, pyright, exports-validation
+  #     Depends on: quality-gate
   #     This ensures type errors and lint failures are caught BEFORE
   #     spawning 20 parallel test runners (saves ~60 runner-minutes on failure)
   #
-  # Phase 3 - Aggregation:
-  #   - test-summary: Aggregates all job results
+  # Phase 3 - Gates and Summary:
+  #   - tests-gate: Aggregates 20-shard test matrix results (API-stable gate)
+  #   - ci-summary: Final aggregator for all gates
   #
   # This ordering ensures:
   #   1. Fast feedback on code quality issues (type errors, lint, exports)
   #   2. No wasted compute on test splits when validation fails
   #   3. All Phase 1 jobs run in parallel for speed
+  #   4. Branch protection uses stable gate names (Quality Gate, Tests Gate)
   # =============================================================================
 
-  # Parallel test execution - split into 20 groups for speed and memory management
-  # Split strategy rationale:
-  #   - 12,198 total tests / 20 splits = ~610 tests/split
-  #   - Target: 1.5-3 minutes per split (prevents runner timeouts/cancellations)
-  #   - 20x parallelization speedup vs sequential execution
-  #   - Increased from 16 to 20 splits to eliminate Split 10 timeout issues
-  #   - Shorter per-split runtime reduces probability of external runner shutdown
-  #
-  # Dependency rationale (fail-fast optimization):
-  #   - lint: Catches formatting, linting, and mypy errors early
-  #   - pyright: Catches type errors that mypy might miss
-  #   - exports-validation: Ensures __all__ exports are valid before tests
-  #   These 3 jobs run in parallel (~3 min total) and must all pass before
-  #   spawning 20 test runners. This saves ~60 runner-minutes on validation failures.
-  test-parallel:
-    name: Tests (Split ${{ matrix.split }}/20)
-    needs: [lint, pyright, exports-validation]
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      # Note: omnibase_spi is now public - no auth required
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
-
-      - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: |
-          poetry install --no-interaction --no-root || {
-            echo "❌ Dependency install failed"
-            exit 1
-          }
-
-      - name: Install project
-        run: |
-          poetry install --no-interaction || {
-            echo "❌ Project install failed"
-            exit 1
-          }
-
-      - name: Run test split ${{ matrix.split }}/20
-        run: |
-          poetry run pytest tests/ \
-            --splits 20 \
-            --group ${{ matrix.split }} \
-            -n auto \
-            --timeout=60 \
-            --timeout-method=thread \
-            --tb=short \
-            --junitxml=junit-${{ matrix.split }}.xml
-          # Per-test timeout: 60 seconds prevents infinite hangs
-          #   - Longest test: ~30 seconds (2x safety margin)
-          #   - Thread method: Avoids signal handler issues in parallel execution
-          #   - No false positives observed at this threshold
-          # All splits use -n auto (full parallelism) - shorter splits reduce
-          # resource pressure and runner cancellation probability
-          # Note: Coverage collection disabled - use local pytest-cov for coverage reports
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-${{ matrix.split }}
-          path: junit-${{ matrix.split }}.xml
-          retention-days: 7
+  # ---------------------------------------------------------------------------
+  # Phase 1 - Quick Validation Jobs (all run in parallel)
+  # ---------------------------------------------------------------------------
 
   # Phase 1 validation job - runs in parallel with pyright, exports-validation
   # Must complete before test-parallel starts (fail-fast optimization)
@@ -161,44 +73,25 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      # Note: omnibase_spi is now public - no auth required
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Check ruff formatting
-        run: poetry run ruff format --check src/ tests/
+        run: uv run ruff format --check src/ tests/
 
       - name: Check ruff linting (includes import sorting)
-        run: poetry run ruff check src/ tests/
+        run: uv run ruff check src/ tests/
 
       - name: Run mypy type checking (strict)
-        run: poetry run mypy src/omnibase_core
+        run: uv run mypy src/omnibase_core
 
   # Phase 1 validation job - runs in parallel with lint, exports-validation
   # Must complete before test-parallel starts (fail-fast optimization)
@@ -216,36 +109,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Run pyright type checking
-        run: poetry run pyright src/omnibase_core
+        run: uv run pyright src/omnibase_core
 
   # Phase 1 validation job - runs in parallel with lint, pyright
   # Must complete before test-parallel starts (fail-fast optimization)
@@ -263,36 +139,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Validate __all__ exports
-        run: poetry run python scripts/validation/validate-all-exports.py
+        run: uv run python scripts/validation/validate-all-exports.py
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Separate job for validation scripts mypy (not blocking test-parallel)
@@ -310,37 +169,20 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Run mypy on architectural validation scripts (strict)
         run: |
-          poetry run mypy --strict \
+          uv run mypy --strict \
             scripts/validation/validate-no-direct-io.py \
             scripts/validation/validate-all-exports.py \
             scripts/validation/validate-no-infra-imports.py \
@@ -391,12 +233,12 @@ jobs:
           FULL_SCAN_EXIT=0
 
           if [[ "$RUN_CHANGED_FILES" == "true" ]]; then
-            poetry run python scripts/check_transport_imports.py --changed-files --verbose
+            uv run python scripts/check_transport_imports.py --changed-files --verbose
             CHANGED_FILES_EXIT=$?
           fi
 
           if [[ "$RUN_FULL_SCAN" == "true" ]]; then
-            poetry run python scripts/check_transport_imports.py --verbose
+            uv run python scripts/check_transport_imports.py --verbose
             FULL_SCAN_EXIT=$?
           fi
 
@@ -501,6 +343,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Validate documentation links
+        id: validate-doc-links
         run: |
           python3 scripts/validation/validate-doc-links.py --fix-case
 
@@ -508,7 +351,11 @@ jobs:
         if: always()
         run: |
           echo "## Documentation Validation" >> $GITHUB_STEP_SUMMARY
-          echo "✅ All documentation links validated" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.validate-doc-links.outcome }}" = "success" ]; then
+            echo "All documentation links validated successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Documentation link validation failed - check logs above for details" >> $GITHUB_STEP_SUMMARY
+          fi
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Node Purity Validation (OMN-203) - not blocking test-parallel
@@ -527,33 +374,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Run Node Purity Check
         run: |
@@ -561,7 +391,7 @@ jobs:
           # Validates declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
           # TECH DEBT NOTE: Existing 'Any' type violations in node_compute.py and node_reducer.py
           # are tracked tech debt. Once fixed, remove --continue-on-error and make blocking.
-          poetry run python scripts/check_node_purity.py --verbose
+          uv run python scripts/check_node_purity.py --verbose
         continue-on-error: true  # Non-blocking until tech debt resolved
 
       - name: Node purity check summary
@@ -594,36 +424,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
+        run: uv sync --all-extras
 
       - name: Run enum governance validator
-        run: poetry run python -m omnibase_core.validation.checker_enum_governance src/omnibase_core/
+        run: uv run python -m omnibase_core.validation.checker_enum_governance src/omnibase_core/
 
       - name: Enum governance summary
         if: always()
@@ -635,92 +448,271 @@ jobs:
           echo "- ENUM_002: Detect Literal type aliases that should be enums" >> $GITHUB_STEP_SUMMARY
           echo "- ENUM_003: Detect duplicate enum values across files (warn-only)" >> $GITHUB_STEP_SUMMARY
 
-  # ============================================================================
-  # Tests Gate (aggregator for branch protection)
-  # Required check: "Tests Gate" — do not rename without updating branch protection
-  # and .github/required-checks.yaml
-  # ============================================================================
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Baseline security scan using detect-secrets (OMN-2226)
+  # Uses detect-secrets-hook for proper baseline comparison (handles type+hash equality)
+  detect-secrets:
+    name: Detect Secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install detect-secrets
+        run: pip install detect-secrets==1.5.0
+
+      - name: Run detect-secrets-hook
+        run: |
+          # Use detect-secrets-hook with baseline for proper CI enforcement.
+          # detect-secrets-hook compares findings against the baseline using the
+          # full equality model (hashed_secret + type), and exits non-zero only
+          # for NEW secrets not already baselined.
+          #
+          # Excludes: uv.lock (dependency hashes), .venv/, test fixtures,
+          # .git/, .secrets.baseline (contains hashed values that self-trigger),
+          # workflow YAML (references "secret" in config context)
+          set +e
+          git ls-files -z | xargs -0 detect-secrets-hook \
+            --baseline .secrets.baseline \
+            --exclude-files 'uv\.lock' \
+            --exclude-files '\.venv/' \
+            --exclude-files 'tests/fixtures/' \
+            --exclude-files '\.git/' \
+            --exclude-files '\.secrets\.baseline' \
+            --exclude-files '\.github/workflows/.*\.yml'
+          HOOK_EXIT=$?
+          set -e
+
+          if [[ $HOOK_EXIT -eq 0 ]]; then
+            echo "## Secrets Scan" >> $GITHUB_STEP_SUMMARY
+            echo "No new secrets detected (all findings are baselined)." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## New Secrets Detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "detect-secrets-hook found secrets not present in .secrets.baseline." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "If these are false positives, regenerate the baseline:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo 'detect-secrets scan --all-files --exclude-files "uv\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --exclude-files "\.secrets\.baseline" --exclude-files "\.github/workflows/.*\.yml" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
+  # ---------------------------------------------------------------------------
+  # API-STABLE check_name: "Quality Gate"
+  # This is the single required check for branch protection (replaces 6+ individual checks).
+  # Individual Phase 1 job names can change without updating branch protection rules.
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check, enum-governance, detect-secrets]
+    if: always()
+
+    steps:
+      - name: Evaluate quality checks
+        run: |
+          echo "## Quality Gate Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          lint="${{ needs.lint.result }}"
+          pyright="${{ needs.pyright.result }}"
+          exports="${{ needs.exports-validation.result }}"
+          mypy_scripts="${{ needs.mypy-validation-scripts.result }}"
+          core_infra="${{ needs.core-infra-boundary.result }}"
+          docs="${{ needs.docs-validation.result }}"
+          purity="${{ needs.node-purity-check.result }}"
+          enum_gov="${{ needs.enum-governance.result }}"
+          secrets="${{ needs.detect-secrets.result }}"
+
+          # Report each check
+          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality (lint) | $lint |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pyright Type Checking | $pyright |" >> $GITHUB_STEP_SUMMARY
+          echo "| Exports Validation | $exports |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mypy Validation Scripts | $mypy_scripts |" >> $GITHUB_STEP_SUMMARY
+          echo "| Core-Infra Boundary | $core_infra |" >> $GITHUB_STEP_SUMMARY
+          echo "| Documentation Validation | $docs |" >> $GITHUB_STEP_SUMMARY
+          echo "| Node Purity Check | $purity |" >> $GITHUB_STEP_SUMMARY
+          echo "| Enum Governance | $enum_gov |" >> $GITHUB_STEP_SUMMARY
+          echo "| Detect Secrets | $secrets |" >> $GITHUB_STEP_SUMMARY
+
+          # Gate logic: all must pass
+          # node-purity-check is NOT evaluated by this gate (continue-on-error until tech debt resolved)
+          if [[ "$lint" == "success" ]] && \
+             [[ "$pyright" == "success" ]] && \
+             [[ "$exports" == "success" ]] && \
+             [[ "$mypy_scripts" == "success" ]] && \
+             [[ "$core_infra" == "success" ]] && \
+             [[ "$docs" == "success" ]] && \
+             [[ "$enum_gov" == "success" ]] && \
+             [[ "$secrets" == "success" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Quality Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
+            echo "All quality checks passed."
+            exit 0
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Quality Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
+            echo "Quality gate failed. See individual check results above."
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Phase 2 - Full Test Suite
+  # ---------------------------------------------------------------------------
+
+  # Parallel test execution - split into 20 groups for speed and memory management
+  # Split strategy rationale:
+  #   - 12,198 total tests / 20 splits = ~610 tests/split
+  #   - Target: 1.5-3 minutes per split (prevents runner timeouts/cancellations)
+  #   - 20x parallelization speedup vs sequential execution
+  #   - Increased from 16 to 20 splits to eliminate Split 10 timeout issues
+  #   - Shorter per-split runtime reduces probability of external runner shutdown
+  #
+  # Dependency rationale (fail-fast optimization):
+  #   - quality-gate: Aggregates all Phase 1 checks (lint, pyright, exports, etc.)
+  #   - This ensures quality failures are caught BEFORE spawning 20 test runners
+  #   - Saves ~60 runner-minutes on validation failures
+  test-parallel:
+    name: Tests (Split ${{ matrix.split }}/20)
+    needs: [quality-gate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run test split ${{ matrix.split }}/20
+        run: |
+          uv run pytest tests/ \
+            --splits 20 \
+            --group ${{ matrix.split }} \
+            -n auto \
+            --timeout=60 \
+            --timeout-method=thread \
+            --tb=short \
+            --junitxml=junit-${{ matrix.split }}.xml
+          # Per-test timeout: 60 seconds prevents infinite hangs
+          #   - Longest test: ~30 seconds (2x safety margin)
+          #   - Thread method: Avoids signal handler issues in parallel execution
+          #   - No false positives observed at this threshold
+          # All splits use -n auto (full parallelism) - shorter splits reduce
+          # resource pressure and runner cancellation probability
+          # Note: Coverage collection disabled - use local pytest-cov for coverage reports
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.split }}
+          path: junit-${{ matrix.split }}.xml
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Phase 3 - Gates and Summary
+  # ---------------------------------------------------------------------------
+
+  # Tests Gate - aggregates 20-shard test matrix results
+  # API-STABLE check_name: "Tests Gate"
+  # Shard count can change without updating branch protection rules.
   tests-gate:
     name: Tests Gate
     runs-on: ubuntu-latest
     needs: [test-parallel]
     if: always()
+
     steps:
-      - name: Check test results
-        env:
-          TESTS_RESULT: ${{ needs.test-parallel.result }}
+      - name: Evaluate test results
         run: |
-          if [ "$TESTS_RESULT" != "success" ]; then
-            echo "::error::One or more test splits failed, were cancelled, or were skipped"
-            echo "Test matrix result: $TESTS_RESULT"
+          echo "## Tests Gate Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          parallel="${{ needs.test-parallel.result }}"
+
+          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Parallel Tests (20 splits) | $parallel |" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$parallel" == "success" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Tests Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
+            echo "All 20 test splits passed."
+            exit 0
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Tests Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
+            echo "Test matrix result: $parallel"
             exit 1
           fi
-          echo "All test splits passed (result: $TESTS_RESULT)"
 
-  # Phase 3 - Aggregation job
-  # Waits for ALL jobs (Phase 1 validation + Phase 2 tests) to complete
-  # Provides unified pass/fail status for branch protection rules
-  test-summary:
-    name: Test Summary
+  # CI Summary - final aggregator for all gates (OMN-2226)
+  # API-STABLE check_name: "CI Summary"
+  # Aggregates Quality Gate + Tests Gate into a single top-level status.
+  # Not strictly required for omnibase_core (no path filtering on Tier A gates),
+  # but added for uniformity across all OmniNode repos.
+  ci-summary:
+    name: CI Summary
     runs-on: ubuntu-latest
-    needs: [test-parallel, tests-gate, lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check, enum-governance]
+    needs: [quality-gate, tests-gate]
     if: always()
 
     steps:
-      - name: Check test results
-        env:
-          # Required checks (failures cause test-summary to fail)
-          RESULT_PARALLEL: ${{ needs.test-parallel.result }}
-          RESULT_TESTS_GATE: ${{ needs.tests-gate.result }}
-          RESULT_LINT: ${{ needs.lint.result }}
-          RESULT_PYRIGHT: ${{ needs.pyright.result }}
-          RESULT_EXPORTS: ${{ needs.exports-validation.result }}
-          RESULT_MYPY_SCRIPTS: ${{ needs.mypy-validation-scripts.result }}
-          RESULT_CORE_INFRA: ${{ needs.core-infra-boundary.result }}
-          RESULT_ENUM_GOV: ${{ needs.enum-governance.result }}
-          # Excluded checks (informational only, per .github/required-checks.yaml)
-          # Kept in needs: for visibility in summary output, but failures here
-          # do NOT block merging or cause test-summary to fail.
-          RESULT_DOCS: ${{ needs.docs-validation.result }}
-          RESULT_PURITY: ${{ needs.node-purity-check.result }}
+      - name: Evaluate all gates
         run: |
-          echo "=== Required Checks ==="
-          echo "Parallel Tests (20 splits): $RESULT_PARALLEL"
-          echo "Tests Gate: $RESULT_TESTS_GATE"
-          echo "Code Quality: $RESULT_LINT"
-          echo "Pyright Type Checking: $RESULT_PYRIGHT"
-          echo "Exports Validation: $RESULT_EXPORTS"
-          echo "Mypy Validation Scripts: $RESULT_MYPY_SCRIPTS"
-          echo "Core-Infra Boundary: $RESULT_CORE_INFRA"
-          echo "Enum Governance: $RESULT_ENUM_GOV"
+          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
-          echo ""
-          echo "=== Excluded Checks (informational, non-blocking) ==="
-          echo "Documentation Validation: $RESULT_DOCS"
-          echo "Node Purity Check: $RESULT_PURITY"
+          quality="${{ needs.quality-gate.result }}"
+          tests="${{ needs.tests-gate.result }}"
 
-          # Warn on excluded check failures (do not affect exit code)
-          if [[ "$RESULT_DOCS" != "success" ]]; then
-            echo "::warning::Documentation Validation did not succeed (result: $RESULT_DOCS) — non-blocking per required-checks.yaml"
-          fi
-          if [[ "$RESULT_PURITY" != "success" ]]; then
-            echo "::warning::Node Purity Check did not succeed (result: $RESULT_PURITY) — non-blocking per required-checks.yaml"
-          fi
+          echo "| Gate | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Quality Gate | $quality |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests Gate | $tests |" >> $GITHUB_STEP_SUMMARY
 
-          # Only required checks determine pass/fail
-          if [[ "$RESULT_PARALLEL" == "success" ]] && \
-             [[ "$RESULT_TESTS_GATE" == "success" ]] && \
-             [[ "$RESULT_LINT" == "success" ]] && \
-             [[ "$RESULT_PYRIGHT" == "success" ]] && \
-             [[ "$RESULT_EXPORTS" == "success" ]] && \
-             [[ "$RESULT_MYPY_SCRIPTS" == "success" ]] && \
-             [[ "$RESULT_CORE_INFRA" == "success" ]] && \
-             [[ "$RESULT_ENUM_GOV" == "success" ]]; then
-            echo ""
-            echo "All required checks passed."
+          if [[ "$quality" == "success" ]] && [[ "$tests" == "success" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**CI Summary: ALL GATES PASSED**" >> $GITHUB_STEP_SUMMARY
+            echo "All CI gates passed."
             exit 0
           else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**CI Summary: FAILED**" >> $GITHUB_STEP_SUMMARY
             echo ""
-            echo "::error::One or more required checks failed — see details above."
+            echo "Gate results:"
+            echo "  Quality Gate: $quality"
+            echo "  Tests Gate: $tests"
             exit 1
           fi

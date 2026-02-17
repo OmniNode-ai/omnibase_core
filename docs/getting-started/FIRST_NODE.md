@@ -2,742 +2,598 @@
 
 > **Note**: For authoritative coding standards, see [CLAUDE.md](../../CLAUDE.md).
 
-# Your First Node - omnibase_core
+# Build Your First Node
 
-**Status**: ✅ Complete
 **Estimated Time**: 20 minutes
 
 ## Overview
 
-This tutorial guides you through creating your first complete ONEX node from scratch, with proper models, testing, and deployment. You'll build a temperature converter that demonstrates real-world patterns.
+This tutorial walks you through building a complete ONEX COMPUTE node using the correct handler architecture. You will define a YAML contract, write Pydantic input/output models, implement a handler with business logic, and wire it all together with a thin node shell.
 
-## What You'll Build
+By the end, you will understand the foundational pattern used by every node in the system.
+
+## What You Will Build
 
 A temperature converter COMPUTE node that:
 - Converts between Celsius, Fahrenheit, and Kelvin
-- Validates input ranges and units
-- Handles errors gracefully with proper error types
-- Includes comprehensive tests with edge cases
-- Uses Pydantic models for type safety
+- Uses a YAML contract as the source of truth for behavior
+- Keeps business logic in a handler, not in the node
+- Returns results via `ModelHandlerOutput` with enforced output constraints
+- Follows ONEX file naming conventions
 
 ## Prerequisites
 
-- ✅ Completed [Installation](INSTALLATION.md)
-- ✅ Completed [Quick Start](QUICK_START.md)
-- ✅ Basic Python knowledge
-- ✅ Understanding of Pydantic models
+- Completed [Installation](installation.md)
+- Basic Python 3.12+ knowledge
+- Familiarity with Pydantic models
 
-## Step-by-Step Guide
+## Key Architecture Rules
 
-### Step 1: Project Setup
+Before writing code, understand these non-negotiable rules:
+
+1. **Nodes are thin shells** -- only `__init__` calling `super().__init__(container)`, no business logic
+2. **Handlers own ALL business logic** -- conversion formulas, validation, error handling
+3. **YAML contracts define behavior** -- the contract declares the node type, I/O models, and handler binding
+4. **Output constraints are enforced per node kind**:
+
+| Kind | Allowed | Forbidden |
+|------|---------|-----------|
+| **COMPUTE** | `result` (required) | `events[]`, `intents[]`, `projections[]` |
+| **EFFECT** | `events[]` | `intents[]`, `projections[]`, `result` |
+| **REDUCER** | `projections[]` | `events[]`, `intents[]`, `result` |
+| **ORCHESTRATOR** | `events[]`, `intents[]` | `projections[]`, `result` |
+
+These constraints are enforced at runtime by `ModelHandlerOutput` validators. Violating them raises `ModelOnexError`.
+
+---
+
+## Step 1: Create the Project Structure
+
+```bash
+mkdir -p temperature_converter/nodes/node_temperature_converter/{models,handlers}
+mkdir -p temperature_converter/enums
+mkdir -p tests/nodes
+
+# Create required __init__.py files
+touch temperature_converter/__init__.py
+touch temperature_converter/nodes/__init__.py
+touch temperature_converter/nodes/node_temperature_converter/__init__.py
+touch temperature_converter/nodes/node_temperature_converter/models/__init__.py
+touch temperature_converter/nodes/node_temperature_converter/handlers/__init__.py
+touch temperature_converter/enums/__init__.py
+```
+
+The directory layout follows ONEX conventions:
 
 ```
-# Create project directory
-mkdir temperature-converter
-cd temperature-converter
-
-# Initialize Poetry project
-poetry init --no-interaction
-poetry add omnibase_core
-poetry add --group dev pytest pytest-asyncio mypy
-
-# Create project structure
-mkdir -p src/temperature_converter/{nodes,models,enums}
-mkdir -p tests/{nodes,models,enums}
-touch src/temperature_converter/__init__.py
-touch src/temperature_converter/nodes/__init__.py
-touch src/temperature_converter/models/__init__.py
-touch src/temperature_converter/enums/__init__.py
+temperature_converter/
+├── enums/
+│   └── enum_temperature_unit.py      # Enum prefix required
+├── nodes/
+│   └── node_temperature_converter/
+│       ├── contract.yaml             # YAML contract (source of truth)
+│       ├── node.py                   # Thin node shell
+│       ├── models/
+│       │   ├── model_temperature_input.py    # Model prefix required
+│       │   └── model_temperature_output.py
+│       └── handlers/
+│           └── handler_temperature.py        # Handler prefix required
+└── tests/
+    └── nodes/
+        └── test_temperature_converter.py
 ```
 
-### Step 2: Define Enums
+Note the file naming conventions: `enum_*`, `model_*`, `handler_*`. These are enforced by the project structure rules.
 
-**File**: `src/temperature_converter/enums/temperature_unit.py`
+---
 
+## Step 2: Define the YAML Contract
+
+The contract is the single source of truth for what this node does. It declares the node type, I/O models, capabilities, and handler binding.
+
+**File**: `temperature_converter/nodes/node_temperature_converter/contract.yaml`
+
+```yaml
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_version: "1.0.0"
+name: "node_temperature_converter"
+node_type: "COMPUTE_GENERIC"
+description: "Converts temperature values between Celsius, Fahrenheit, and Kelvin."
+
+input_model:
+  name: "ModelTemperatureInput"
+  module: "temperature_converter.nodes.node_temperature_converter.models.model_temperature_input"
+
+output_model:
+  name: "ModelTemperatureOutput"
+  module: "temperature_converter.nodes.node_temperature_converter.models.model_temperature_output"
+
+capabilities:
+  - name: "temperature.conversion"
+    description: "Convert temperature between unit systems"
+
+handler:
+  path: "temperature_converter.nodes.node_temperature_converter.handlers.handler_temperature:handle_temperature_conversion"
 ```
+
+Key points:
+- `node_type: "COMPUTE_GENERIC"` -- this is a pure computation, no side effects
+- `input_model` and `output_model` use fully qualified module paths
+- `handler.path` uses colon-separated format: `module.path:callable_name`
+
+---
+
+## Step 3: Define the Enum
+
+**File**: `temperature_converter/enums/enum_temperature_unit.py`
+
+```python
 """Temperature unit enumeration."""
+
+from __future__ import annotations
 
 from enum import Enum
 
 
-class TemperatureUnit(str, Enum):
+class EnumTemperatureUnit(str, Enum):
     """Supported temperature units."""
 
     CELSIUS = "celsius"
     FAHRENHEIT = "fahrenheit"
     KELVIN = "kelvin"
 
-    @classmethod
-    def get_all_units(cls) -> list[str]:
-        """Get all supported temperature units."""
-        return [unit.value for unit in cls]
-
     def get_symbol(self) -> str:
-        """Get the symbol for this temperature unit."""
+        """Get the display symbol for this temperature unit."""
         symbols = {
-            self.CELSIUS: "°C",
-            self.FAHRENHEIT: "°F",
-            self.KELVIN: "K"
+            EnumTemperatureUnit.CELSIUS: "C",
+            EnumTemperatureUnit.FAHRENHEIT: "F",
+            EnumTemperatureUnit.KELVIN: "K",
         }
         return symbols[self]
 ```
 
-### Step 3: Define Input Model
+---
 
-**File**: `src/temperature_converter/models/temperature_input.py`
+## Step 4: Define Input and Output Models
 
-```
+**File**: `temperature_converter/nodes/node_temperature_converter/models/model_temperature_input.py`
+
+```python
 """Input model for temperature conversion."""
 
-from typing import Optional
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from __future__ import annotations
 
-from ..enums.temperature_unit import TemperatureUnit
+from pydantic import BaseModel, ConfigDict, Field
+
+from temperature_converter.enums.enum_temperature_unit import EnumTemperatureUnit
 
 
-class TemperatureInput(BaseModel):
-    """Input for temperature conversion."""
+class ModelTemperatureInput(BaseModel):
+    """Input for temperature conversion.
 
-    # Pydantic v2: model_config replaces Config class
-    model_config = ConfigDict(
-        validate_assignment=True,
-        use_enum_values=True,
-        json_schema_extra={
-            "examples": [{
-                "value": 25.0,
-                "from_unit": "celsius",
-                "to_unit": "fahrenheit",
-                "precision": 2
-            }]
-        }
-    )
+    Immutable value object following ONEX Pydantic standards.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     value: float = Field(
         description="Temperature value to convert",
-        gt=-273.15,  # Absolute zero in Celsius
-        le=10000.0   # Reasonable upper limit
     )
-
-    from_unit: TemperatureUnit = Field(
-        description="Source temperature unit"
+    from_unit: EnumTemperatureUnit = Field(
+        description="Source temperature unit",
     )
-
-    to_unit: TemperatureUnit = Field(
-        description="Target temperature unit"
+    to_unit: EnumTemperatureUnit = Field(
+        description="Target temperature unit",
     )
-
     precision: int = Field(
         default=2,
         ge=0,
         le=10,
-        description="Number of decimal places in result"
+        description="Number of decimal places in result",
     )
-
-    # Pydantic v2: field_validator replaces validator, requires @classmethod
-    @field_validator('from_unit', 'to_unit')
-    @classmethod
-    def validate_units(cls, v):
-        """Ensure units are valid."""
-        if v not in TemperatureUnit:
-            raise ValueError(f"Invalid temperature unit: {v}")
-        return v
-
-    # Pydantic v2: field_validator for dependent validation
-    @field_validator('value')
-    @classmethod
-    def validate_temperature_range(cls, v, info):
-        """Validate temperature is within reasonable range for the unit."""
-        # Pydantic v2: info.data replaces values
-        from_unit = info.data.get('from_unit')
-
-        if from_unit == TemperatureUnit.CELSIUS:
-            if v < -273.15:  # Absolute zero
-                raise ValueError("Temperature cannot be below absolute zero (-273.15°C)")
-        elif from_unit == TemperatureUnit.FAHRENHEIT:
-            if v < -459.67:  # Absolute zero in Fahrenheit
-                raise ValueError("Temperature cannot be below absolute zero (-459.67°F)")
-        elif from_unit == TemperatureUnit.KELVIN:
-            if v < 0:  # Absolute zero in Kelvin
-                raise ValueError("Temperature cannot be below absolute zero (0K)")
-
-        return v
 ```
 
-### Step 4: Define Output Model
+**File**: `temperature_converter/nodes/node_temperature_converter/models/model_temperature_output.py`
 
-**File**: `src/temperature_converter/models/temperature_output.py`
-
-```
+```python
 """Output model for temperature conversion."""
 
-from typing import Optional
+from __future__ import annotations
+
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..enums.temperature_unit import TemperatureUnit
+from temperature_converter.enums.enum_temperature_unit import EnumTemperatureUnit
 
 
-class TemperatureOutput(BaseModel):
-    """Output from temperature conversion."""
+class ModelTemperatureOutput(BaseModel):
+    """Output from temperature conversion.
 
-    # Pydantic v2: model_config replaces Config class
-    model_config = ConfigDict(
-        validate_assignment=True,
-        use_enum_values=True,
-        json_schema_extra={
-            "examples": [{
-                "original_value": 25.0,
-                "converted_value": 77.0,
-                "from_unit": "celsius",
-                "to_unit": "fahrenheit",
-                "from_symbol": "°C",
-                "to_symbol": "°F",
-                "precision": 2,
-                "success": True
-            }]
-        }
-    )
+    Immutable value object. Used as the result payload in ModelHandlerOutput.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     original_value: float = Field(description="Original input value")
     converted_value: float = Field(description="Converted temperature value")
-
-    from_unit: TemperatureUnit = Field(description="Source temperature unit")
-    to_unit: TemperatureUnit = Field(description="Target temperature unit")
-
-    from_symbol: str = Field(description="Source unit symbol")
-    to_symbol: str = Field(description="Target unit symbol")
-
+    from_unit: EnumTemperatureUnit = Field(description="Source temperature unit")
+    to_unit: EnumTemperatureUnit = Field(description="Target temperature unit")
     precision: int = Field(description="Number of decimal places used")
-
-    success: bool = Field(default=True, description="Whether conversion was successful")
-    error_message: Optional[str] = Field(default=None, description="Error message if conversion failed")
 ```
 
-### Step 5: Implement the Node
+Note the use of:
+- `ConfigDict(frozen=True, extra="forbid", from_attributes=True)` -- required for immutable value objects
+- `X | None` instead of `Optional[X]` (PEP 604)
+- `list[str]` instead of `List[str]` (lowercase generics)
+- No `Optional` or `Dict` imports from `typing`
 
-**File**: `src/temperature_converter/nodes/temperature_converter_compute.py`
+---
 
+## Step 5: Write the Handler (Business Logic)
+
+This is where all computation logic lives. The handler is a standalone callable, not a method on the node.
+
+**File**: `temperature_converter/nodes/node_temperature_converter/handlers/handler_temperature.py`
+
+```python
+"""Handler for temperature conversion computation."""
+
+from __future__ import annotations
+
+from uuid import UUID
+
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+
+from temperature_converter.enums.enum_temperature_unit import EnumTemperatureUnit
+from temperature_converter.nodes.node_temperature_converter.models.model_temperature_input import (
+    ModelTemperatureInput,
+)
+from temperature_converter.nodes.node_temperature_converter.models.model_temperature_output import (
+    ModelTemperatureOutput,
+)
+
+
+def _to_celsius(value: float, unit: EnumTemperatureUnit) -> float:
+    """Convert a temperature value to Celsius."""
+    if unit == EnumTemperatureUnit.CELSIUS:
+        return value
+    elif unit == EnumTemperatureUnit.FAHRENHEIT:
+        return (value - 32) * 5 / 9
+    elif unit == EnumTemperatureUnit.KELVIN:
+        return value - 273.15
+    raise ValueError(f"Unsupported source unit: {unit}")
+
+
+def _from_celsius(celsius: float, unit: EnumTemperatureUnit) -> float:
+    """Convert a Celsius value to the target unit."""
+    if unit == EnumTemperatureUnit.CELSIUS:
+        return celsius
+    elif unit == EnumTemperatureUnit.FAHRENHEIT:
+        return (celsius * 9 / 5) + 32
+    elif unit == EnumTemperatureUnit.KELVIN:
+        return celsius + 273.15
+    raise ValueError(f"Unsupported target unit: {unit}")
+
+
+def handle_temperature_conversion(
+    input_data: ModelTemperatureInput,
+    *,
+    input_envelope_id: UUID,
+    correlation_id: UUID,
+) -> ModelHandlerOutput[ModelTemperatureOutput]:
+    """Convert a temperature value between units.
+
+    This is a pure function: same input always produces the same output.
+    No side effects, no I/O, no state mutation.
+
+    Args:
+        input_data: Validated temperature conversion request.
+        input_envelope_id: ID of the input envelope (for causality tracking).
+        correlation_id: Correlation ID copied from the input envelope.
+
+    Returns:
+        ModelHandlerOutput containing the conversion result.
+        Uses for_compute() because COMPUTE nodes must return a result.
+    """
+    # Convert via Celsius as the intermediate representation
+    celsius = _to_celsius(input_data.value, input_data.from_unit)
+    converted = _from_celsius(celsius, input_data.to_unit)
+    converted = round(converted, input_data.precision)
+
+    result = ModelTemperatureOutput(
+        original_value=input_data.value,
+        converted_value=converted,
+        from_unit=input_data.from_unit,
+        to_unit=input_data.to_unit,
+        precision=input_data.precision,
+    )
+
+    # COMPUTE nodes MUST return a result via for_compute()
+    return ModelHandlerOutput.for_compute(
+        input_envelope_id=input_envelope_id,
+        correlation_id=correlation_id,
+        handler_id="compute.temperature.converter",
+        result=result,
+    )
 ```
-"""Temperature converter COMPUTE node."""
 
-import time
-from typing import Dict, Any
-from omnibase_core.nodes.node_compute import NodeCompute
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+Key points about this handler:
 
-from ..models.temperature_input import TemperatureInput
-from ..models.temperature_output import TemperatureOutput
-from ..enums.temperature_unit import TemperatureUnit
+1. **All logic lives here** -- conversion formulas, rounding, result construction
+2. **Returns `ModelHandlerOutput.for_compute()`** -- the builder method enforces COMPUTE constraints automatically. If you tried to pass `events=` or `intents=`, it would raise `ModelOnexError`.
+3. **Pure function** -- no `self`, no state, no I/O. Same input always produces the same output.
+4. **Typed models** -- accepts `ModelTemperatureInput`, returns `ModelHandlerOutput[ModelTemperatureOutput]`
+
+---
+
+## Step 6: Write the Thin Node Shell
+
+The node is a coordination shell. It does not contain business logic. Its only job is to call `super().__init__(container)`.
+
+**File**: `temperature_converter/nodes/node_temperature_converter/node.py`
+
+```python
+"""Temperature converter compute node."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from omnibase_core.nodes import NodeCompute
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
-class TemperatureConverterCompute(NodeCompute):
-    """COMPUTE node for temperature conversions."""
+class NodeTemperatureConverter(NodeCompute):
+    """Temperature converter - COMPUTE_GENERIC node.
 
-    def __init__(self, container: ModelONEXContainer):
-        """Initialize the temperature converter."""
+    Converts temperature values between Celsius, Fahrenheit, and Kelvin.
+    Pure computation with no side effects.
+
+    All business logic lives in the handler:
+        handler_temperature:handle_temperature_conversion
+
+    Behavior is defined by contract.yaml.
+    """
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        """Initialize the temperature converter node."""
         super().__init__(container)
 
-        # Conversion statistics
-        self.conversion_count = 0
-        self.error_count = 0
 
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Convert temperature between units.
-
-        Args:
-            input_data: Dictionary containing temperature conversion parameters
-
-        Returns:
-            Dictionary with conversion result
-
-        Raises:
-            ModelOnexError: If conversion fails
-        """
-        start_time = time.time()
-
-        try:
-            # Validate and parse input
-            temp_input = TemperatureInput(**input_data)
-
-            # Perform conversion
-            result = self._convert_temperature(temp_input)
-
-            # Update statistics
-            self.conversion_count += 1
-
-            # Add processing time
-            processing_time = (time.time() - start_time) * 1000
-
-            return {
-                **result.model_dump(),
-                "processing_time_ms": round(processing_time, 3)
-            }
-
-        except Exception as e:
-            self.error_count += 1
-
-            # Convert to ONEX error
-            if isinstance(e, ValueError):
-                error_code = EnumCoreErrorCode.VALIDATION_ERROR
-            else:
-                error_code = EnumCoreErrorCode.PROCESSING_ERROR
-
-            raise ModelOnexError(
-                error_code=error_code,
-                message=f"Temperature conversion failed: {str(e)}",
-                context={"input_data": input_data}
-            ) from e
-
-    def _convert_temperature(self, input_data: TemperatureInput) -> TemperatureOutput:
-        """
-        Perform the actual temperature conversion.
-
-        Args:
-            input_data: Validated input data
-
-        Returns:
-            Conversion result
-        """
-        # Convert to Celsius first (our base unit)
-        celsius_value = self._to_celsius(input_data.value, input_data.from_unit)
-
-        # Convert from Celsius to target unit
-        converted_value = self._from_celsius(celsius_value, input_data.to_unit)
-
-        # Round to specified precision
-        converted_value = round(converted_value, input_data.precision)
-
-        return TemperatureOutput(
-            original_value=input_data.value,
-            converted_value=converted_value,
-            from_unit=input_data.from_unit,
-            to_unit=input_data.to_unit,
-            from_symbol=input_data.from_unit.get_symbol(),
-            to_symbol=input_data.to_unit.get_symbol(),
-            precision=input_data.precision
-        )
-
-    def _to_celsius(self, value: float, unit: TemperatureUnit) -> float:
-        """Convert any temperature unit to Celsius."""
-        if unit == TemperatureUnit.CELSIUS:
-            return value
-        elif unit == TemperatureUnit.FAHRENHEIT:
-            return (value - 32) * 5/9
-        elif unit == TemperatureUnit.KELVIN:
-            return value - 273.15
-        else:
-            raise ValueError(f"Unsupported source unit: {unit}")
-
-    def _from_celsius(self, celsius_value: float, unit: TemperatureUnit) -> float:
-        """Convert Celsius to any temperature unit."""
-        if unit == TemperatureUnit.CELSIUS:
-            return celsius_value
-        elif unit == TemperatureUnit.FAHRENHEIT:
-            return (celsius_value * 9/5) + 32
-        elif unit == TemperatureUnit.KELVIN:
-            return celsius_value + 273.15
-        else:
-            raise ValueError(f"Unsupported target unit: {unit}")
-
-    def get_statistics(self) -> Dict[str, Any]:
-        """Get conversion statistics."""
-        total_operations = self.conversion_count + self.error_count
-        success_rate = (self.conversion_count / total_operations * 100) if total_operations > 0 else 0
-
-        return {
-            "total_conversions": self.conversion_count,
-            "total_errors": self.error_count,
-            "total_operations": total_operations,
-            "success_rate_percent": round(success_rate, 2)
-        }
+__all__ = ["NodeTemperatureConverter"]
 ```
 
-### Step 6: Write Comprehensive Tests
+Notice what is **not** here:
+- No `process()` method -- the handler owns the logic
+- No `_convert_temperature()` -- business logic belongs in the handler
+- No `self.conversion_count` -- nodes do not maintain state
+- No `Dict[str, Any]` signatures -- typed models are used throughout
+- The `__init__` does nothing except call `super().__init__(container)`
+
+---
+
+## Step 7: Write Tests
 
 **File**: `tests/nodes/test_temperature_converter.py`
 
-```
-"""Tests for temperature converter node."""
+```python
+"""Tests for the temperature converter handler."""
+
+from __future__ import annotations
+
+from uuid import uuid4
 
 import pytest
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-from temperature_converter.nodes.temperature_converter_compute import TemperatureConverterCompute
-from temperature_converter.enums.temperature_unit import TemperatureUnit
+from omnibase_core.enums.enum_node_kind import EnumNodeKind
 
-
-@pytest.fixture
-def container():
-    """Create test container."""
-    return ModelONEXContainer()
-
-
-@pytest.fixture
-def converter(container):
-    """Create temperature converter node."""
-    return TemperatureConverterCompute(container)
+from temperature_converter.enums.enum_temperature_unit import EnumTemperatureUnit
+from temperature_converter.nodes.node_temperature_converter.handlers.handler_temperature import (
+    handle_temperature_conversion,
+)
+from temperature_converter.nodes.node_temperature_converter.models.model_temperature_input import (
+    ModelTemperatureInput,
+)
 
 
-@pytest.mark.asyncio
-async def test_celsius_to_fahrenheit(converter):
-    """Test Celsius to Fahrenheit conversion."""
-    result = await converter.process({
-        "value": 25.0,
-        "from_unit": "celsius",
-        "to_unit": "fahrenheit",
-        "precision": 2
-    })
+@pytest.mark.unit
+class TestTemperatureConversionHandler:
+    """Test the temperature conversion handler."""
 
-    assert result["converted_value"] == 77.0
-    assert result["original_value"] == 25.0
-    assert result["from_unit"] == "celsius"
-    assert result["to_unit"] == "fahrenheit"
-    assert result["success"] is True
+    def _make_input(
+        self,
+        value: float,
+        from_unit: EnumTemperatureUnit,
+        to_unit: EnumTemperatureUnit,
+        precision: int = 2,
+    ) -> ModelTemperatureInput:
+        return ModelTemperatureInput(
+            value=value,
+            from_unit=from_unit,
+            to_unit=to_unit,
+            precision=precision,
+        )
 
+    def _call_handler(self, input_data: ModelTemperatureInput):
+        return handle_temperature_conversion(
+            input_data=input_data,
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
+        )
 
-@pytest.mark.asyncio
-async def test_fahrenheit_to_celsius(converter):
-    """Test Fahrenheit to Celsius conversion."""
-    result = await converter.process({
-        "value": 68.0,
-        "from_unit": "fahrenheit",
-        "to_unit": "celsius",
-        "precision": 1
-    })
+    def test_celsius_to_fahrenheit(self) -> None:
+        """Test basic Celsius to Fahrenheit conversion."""
+        input_data = self._make_input(
+            value=100.0,
+            from_unit=EnumTemperatureUnit.CELSIUS,
+            to_unit=EnumTemperatureUnit.FAHRENHEIT,
+        )
+        output = self._call_handler(input_data)
 
-    assert result["converted_value"] == 20.0
-    assert result["from_unit"] == "fahrenheit"
-    assert result["to_unit"] == "celsius"
+        assert output.node_kind == EnumNodeKind.COMPUTE
+        assert output.result is not None
+        assert output.result.converted_value == 212.0
+        assert output.result.original_value == 100.0
 
+    def test_fahrenheit_to_celsius(self) -> None:
+        """Test Fahrenheit to Celsius conversion."""
+        input_data = self._make_input(
+            value=32.0,
+            from_unit=EnumTemperatureUnit.FAHRENHEIT,
+            to_unit=EnumTemperatureUnit.CELSIUS,
+        )
+        output = self._call_handler(input_data)
 
-@pytest.mark.asyncio
-async def test_celsius_to_kelvin(converter):
-    """Test Celsius to Kelvin conversion."""
-    result = await converter.process({
-        "value": 0.0,
-        "from_unit": "celsius",
-        "to_unit": "kelvin",
-        "precision": 1
-    })
+        assert output.result is not None
+        assert output.result.converted_value == 0.0
 
-    assert result["converted_value"] == 273.1
-    assert result["from_unit"] == "celsius"
-    assert result["to_unit"] == "kelvin"
+    def test_celsius_to_kelvin(self) -> None:
+        """Test Celsius to Kelvin conversion."""
+        input_data = self._make_input(
+            value=0.0,
+            from_unit=EnumTemperatureUnit.CELSIUS,
+            to_unit=EnumTemperatureUnit.KELVIN,
+        )
+        output = self._call_handler(input_data)
 
+        assert output.result is not None
+        assert output.result.converted_value == 273.15
 
-@pytest.mark.asyncio
-async def test_kelvin_to_fahrenheit(converter):
-    """Test Kelvin to Fahrenheit conversion."""
-    result = await converter.process({
-        "value": 273.15,
-        "from_unit": "kelvin",
-        "to_unit": "fahrenheit",
-        "precision": 2
-    })
+    def test_same_unit_returns_same_value(self) -> None:
+        """Test that converting to the same unit is a no-op."""
+        input_data = self._make_input(
+            value=42.0,
+            from_unit=EnumTemperatureUnit.CELSIUS,
+            to_unit=EnumTemperatureUnit.CELSIUS,
+        )
+        output = self._call_handler(input_data)
 
-    assert result["converted_value"] == 32.0
-    assert result["from_unit"] == "kelvin"
-    assert result["to_unit"] == "fahrenheit"
+        assert output.result is not None
+        assert output.result.converted_value == 42.0
 
+    def test_negative_40_intersection(self) -> None:
+        """Test the -40 intersection point of Celsius and Fahrenheit."""
+        input_data = self._make_input(
+            value=-40.0,
+            from_unit=EnumTemperatureUnit.CELSIUS,
+            to_unit=EnumTemperatureUnit.FAHRENHEIT,
+        )
+        output = self._call_handler(input_data)
 
-@pytest.mark.asyncio
-async def test_same_unit_conversion(converter):
-    """Test conversion to the same unit."""
-    result = await converter.process({
-        "value": 25.5,
-        "from_unit": "celsius",
-        "to_unit": "celsius",
-        "precision": 1
-    })
+        assert output.result is not None
+        assert output.result.converted_value == -40.0
 
-    assert result["converted_value"] == 25.5
-    assert result["original_value"] == 25.5
+    def test_precision_rounding(self) -> None:
+        """Test that precision controls decimal places."""
+        input_data = self._make_input(
+            value=100.0,
+            from_unit=EnumTemperatureUnit.FAHRENHEIT,
+            to_unit=EnumTemperatureUnit.CELSIUS,
+            precision=4,
+        )
+        output = self._call_handler(input_data)
 
+        assert output.result is not None
+        assert output.result.converted_value == 37.7778
+        assert output.result.precision == 4
 
-@pytest.mark.asyncio
-async def test_precision_handling(converter):
-    """Test precision handling."""
-    result = await converter.process({
-        "value": 25.123456,
-        "from_unit": "celsius",
-        "to_unit": "fahrenheit",
-        "precision": 3
-    })
+    def test_output_is_compute_kind(self) -> None:
+        """Verify the handler returns COMPUTE-typed output."""
+        input_data = self._make_input(
+            value=0.0,
+            from_unit=EnumTemperatureUnit.CELSIUS,
+            to_unit=EnumTemperatureUnit.KELVIN,
+        )
+        output = self._call_handler(input_data)
 
-    # Should round to 3 decimal places
-    assert result["converted_value"] == 77.222
-    assert result["precision"] == 3
-
-
-@pytest.mark.asyncio
-async def test_negative_temperatures(converter):
-    """Test negative temperature conversions."""
-    result = await converter.process({
-        "value": -40.0,
-        "from_unit": "celsius",
-        "to_unit": "fahrenheit",
-        "precision": 1
-    })
-
-    # -40°C = -40°F (the point where they intersect)
-    assert result["converted_value"] == -40.0
-
-
-@pytest.mark.asyncio
-async def test_absolute_zero_validation(converter):
-    """Test absolute zero validation."""
-    with pytest.raises(ModelOnexError):
-        await converter.process({
-            "value": -300.0,  # Below absolute zero in Celsius
-            "from_unit": "celsius",
-            "to_unit": "fahrenheit"
-        })
-
-
-@pytest.mark.asyncio
-async def test_invalid_input_missing_value(converter):
-    """Test error handling for missing value."""
-    with pytest.raises(ModelOnexError):
-        await converter.process({
-            "from_unit": "celsius",
-            "to_unit": "fahrenheit"
-        })
-
-
-@pytest.mark.asyncio
-async def test_invalid_input_missing_units(converter):
-    """Test error handling for missing units."""
-    with pytest.raises(ModelOnexError):
-        await converter.process({
-            "value": 25.0
-        })
-
-
-@pytest.mark.asyncio
-async def test_statistics_tracking(converter):
-    """Test statistics tracking."""
-    # Perform some conversions
-    await converter.process({
-        "value": 25.0,
-        "from_unit": "celsius",
-        "to_unit": "fahrenheit"
-    })
-
-    await converter.process({
-        "value": 68.0,
-        "from_unit": "fahrenheit",
-        "to_unit": "celsius"
-    })
-
-    # Try an invalid conversion
-    try:
-        await converter.process({
-            "value": -300.0,
-            "from_unit": "celsius",
-            "to_unit": "fahrenheit"
-        })
-    except ModelOnexError:
-        pass  # Expected error
-
-    stats = converter.get_statistics()
-
-    assert stats["total_conversions"] == 2
-    assert stats["total_errors"] == 1
-    assert stats["total_operations"] == 3
-    assert stats["success_rate_percent"] == 66.67
-
-
-@pytest.mark.asyncio
-async def test_processing_time_tracking(converter):
-    """Test that processing time is tracked."""
-    result = await converter.process({
-        "value": 25.0,
-        "from_unit": "celsius",
-        "to_unit": "fahrenheit"
-    })
-
-    assert "processing_time_ms" in result
-    assert isinstance(result["processing_time_ms"], float)
-    assert result["processing_time_ms"] >= 0
+        # ModelHandlerOutput enforces: COMPUTE has result, no events/intents/projections
+        assert output.node_kind == EnumNodeKind.COMPUTE
+        assert output.result is not None
+        assert output.events == ()
+        assert output.intents == ()
+        assert output.projections == ()
 ```
 
-### Step 7: Run Tests and Validation
+Run the tests:
 
-```
-# Run tests
-poetry run pytest tests/ -v
-
-# Run type checking
-poetry run mypy src/
-
-# Run linting
-poetry run ruff check src/ tests/
+```bash
+uv run pytest tests/nodes/test_temperature_converter.py -v
 ```
 
-### Step 8: Create Usage Example
+---
 
-**File**: `example_usage.py`
+## Step 8: Understand the Output Constraints
 
-```
-"""Example usage of the temperature converter."""
+The `ModelHandlerOutput` model enforces architectural constraints at runtime. Here is what happens if you violate them:
 
-import asyncio
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from temperature_converter.nodes.temperature_converter_compute import TemperatureConverterCompute
+```python
+from uuid import uuid4
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 
+# CORRECT: COMPUTE returns a result
+output = ModelHandlerOutput.for_compute(
+    input_envelope_id=uuid4(),
+    correlation_id=uuid4(),
+    handler_id="compute.temperature.converter",
+    result={"converted_value": 212.0},
+)
 
-async def main():
-    """Demonstrate the temperature converter."""
-    # Create container and node
-    container = ModelONEXContainer()
-    converter = TemperatureConverterCompute(container)
-
-    # Test cases
-    test_cases = [
-        {"value": 0, "from_unit": "celsius", "to_unit": "fahrenheit", "precision": 1},
-        {"value": 32, "from_unit": "fahrenheit", "to_unit": "celsius", "precision": 1},
-        {"value": 0, "from_unit": "celsius", "to_unit": "kelvin", "precision": 1},
-        {"value": 100, "from_unit": "celsius", "to_unit": "fahrenheit", "precision": 2},
-        {"value": -40, "from_unit": "celsius", "to_unit": "fahrenheit", "precision": 1},
-    ]
-
-    print("Temperature Converter Demo")
-    print("=" * 40)
-
-    for test_case in test_cases:
-        try:
-            result = await converter.process(test_case)
-            print(f"{result['original_value']}{result['from_symbol']} = {result['converted_value']}{result['to_symbol']}")
-        except Exception as e:
-            print(f"Error converting {test_case}: {e}")
-
-    # Show statistics
-    stats = converter.get_statistics()
-    print(f"\nStatistics: {stats['total_conversions']} conversions, {stats['success_rate_percent']}% success rate")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# ERROR: COMPUTE cannot emit events
+# This raises ModelOnexError at construction time:
+#   "COMPUTE cannot emit events[] - result only.
+#    COMPUTE nodes are pure transformations. If you need to emit events, use EFFECT."
 ```
 
-Run it:
+The builder methods (`for_compute`, `for_effect`, `for_reducer`, `for_orchestrator`) are the preferred way to construct handler output because they set the correct `node_kind` automatically. The full constraint table:
 
-```
-poetry run python example_usage.py
+| Builder Method | `node_kind` | Allowed Fields | Raises on |
+|---|---|---|---|
+| `for_compute()` | `COMPUTE` | `result` (required) | `events`, `intents`, `projections` |
+| `for_effect()` | `EFFECT` | `events` | `intents`, `projections`, `result` |
+| `for_reducer()` | `REDUCER` | `projections` | `events`, `intents`, `result` |
+| `for_orchestrator()` | `ORCHESTRATOR` | `events`, `intents` | `projections`, `result` |
 
-# Expected output:
-# Temperature Converter Demo
-# ========================================
-# 0°C = 32.0°F
-# 32°F = 0.0°C
-# 0°C = 273.1K
-# 100°C = 212.0°F
-# -40°C = -40.0°F
-#
-# Statistics: 5 conversions, 100.0% success rate
-```
+---
 
 ## What You Learned
 
-By completing this tutorial, you've learned:
+By completing this tutorial, you have learned:
 
-- ✅ **Project Structure**: How to organize a complete ONEX node project
-- ✅ **Pydantic Models**: Input/output validation with proper error handling
-- ✅ **Enums**: Type-safe constants and validation
-- ✅ **Node Implementation**: Complete COMPUTE node with business logic
-- ✅ **Error Handling**: ONEX error patterns and proper exception management
-- ✅ **Testing**: Comprehensive test coverage with edge cases
-- ✅ **Type Safety**: Full type checking with MyPy
-- ✅ **Statistics**: Performance tracking and monitoring
-- ✅ **Documentation**: Clear docstrings and examples
+- **Contract-first development** -- the YAML contract defines behavior before any code is written
+- **Handler architecture** -- business logic lives in handlers, not nodes
+- **Thin node pattern** -- the node class is a coordination shell with no logic
+- **ModelHandlerOutput** -- typed, constraint-enforced output that prevents architectural violations
+- **Pydantic model standards** -- frozen, extra-forbid, from_attributes for immutable value objects
+- **File naming conventions** -- `enum_*`, `model_*`, `handler_*` prefixes enforced by the project
 
-## Key ONEX Patterns You Used
+## Common Mistakes to Avoid
 
-1. **Model-Driven Development**: Pydantic models for validation
-2. **Error Handling**: Proper ONEX error types and context
-3. **Async Processing**: Non-blocking computation
-4. **Container Pattern**: Dependency injection
-5. **Statistics Tracking**: Performance monitoring
-6. **Type Safety**: Full typing throughout
+| Mistake | Correct Pattern |
+|---|---|
+| Business logic in `node.py` | Put it in `handlers/handler_*.py` |
+| `async def process(self, input_data: Dict[str, Any])` | Use typed Pydantic models as handler arguments |
+| `Optional[str]` | `str \| None` (PEP 604) |
+| `Dict[str, Any]`, `List[str]` | `dict[str, Any]`, `list[str]` |
+| File named `temperature_unit.py` | Name it `enum_temperature_unit.py` |
+| `ModelContainer` for DI | Use `ModelONEXContainer` |
+| Returning `dict` from a handler | Return `ModelHandlerOutput.for_compute(result=...)` |
+| `self._cache = {}` in node `__init__` | Nodes do not maintain state; use protocol injection |
 
 ## Next Steps
 
-### 🚀 **Continue Building**
-- [Node Building Guide](../guides/node-building/README.md) - Comprehensive guide
-- [EFFECT Node Tutorial](../guides/node-building/04_EFFECT_NODE_TUTORIAL.md) - External interactions
-- [REDUCER Node Tutorial](../guides/node-building/05_REDUCER_NODE_TUTORIAL.md) - State management
-
-### 🏗️ **Enhance Your Node**
-- Add more temperature units (Rankine, Réaumur)
-- Add batch conversion support
-- Add caching for common conversions
-- Add logging and metrics
-- Add API endpoints
-
-### 📚 **Learn More**
-- [Testing Guide](../guides/TESTING_GUIDE.md) - Advanced testing strategies
-- [Error Handling](../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Best practices
-- [Performance Tuning](../guides/PRODUCTION_CACHE_TUNING.md) - Optimization
-
-## Challenge: Extend Your Node
-
-Try these enhancements:
-
-1. **Add More Units**: Support Rankine and Réaumur temperature scales
-2. **Batch Processing**: Convert multiple temperatures at once
-3. **Caching**: Cache common conversions for performance
-4. **API Endpoints**: Add REST API endpoints
-5. **Configuration**: Make conversion formulas configurable
-
-## Troubleshooting
-
-### Common Issues
-
-#### Import Errors
-```
-# Ensure you're in the virtual environment
-poetry shell
-
-# Check imports
-poetry run python -c "from temperature_converter.nodes.temperature_converter_compute import TemperatureConverterCompute"
-```
-
-#### Test Failures
-```
-# Run with verbose output
-poetry run pytest tests/ -vvs
-
-# Run specific test
-poetry run pytest tests/nodes/test_temperature_converter.py::test_celsius_to_fahrenheit -v
-```
-
-#### Type Checking Issues
-```
-# Run MyPy with more details
-poetry run mypy src/ --show-error-codes
-```
-
-## Summary
-
-🎉 **Congratulations!** You've built a complete, production-ready ONEX node!
-
-You now understand:
-- ✅ Complete project structure and organization
-- ✅ Pydantic models for validation and type safety
-- ✅ Comprehensive error handling with ONEX patterns
-- ✅ Full test coverage with edge cases
-- ✅ Performance tracking and statistics
-- ✅ Real-world node implementation patterns
-
-**Ready for more?** Continue with the [Node Building Guide](../guides/node-building/README.md) to learn about other node types and advanced patterns.
+- [Quick Start](QUICK_START.md) -- See all four node kinds side by side
+- [Node Archetypes Reference](../reference/node-archetypes.md) -- Complete reference for each node type
+- [Handler Contract Guide](../contracts/HANDLER_CONTRACT_GUIDE.md) -- Advanced handler contract features
+- [Node Building Guide](../guides/node-building/README.md) -- In-depth guide for each node type
 
 ---
 
 **Related Documentation**:
 - [Quick Start Guide](QUICK_START.md)
-- [Node Building Guide](../guides/node-building/README.md)
-- [Testing Guide](../guides/TESTING_GUIDE.md)
-- [Error Handling](../conventions/ERROR_HANDLING_BEST_PRACTICES.md)
+- [Node Archetypes Reference](../reference/node-archetypes.md)
+- [Handler Contract Guide](../contracts/HANDLER_CONTRACT_GUIDE.md)
+- [Error Handling Best Practices](../conventions/ERROR_HANDLING_BEST_PRACTICES.md)
