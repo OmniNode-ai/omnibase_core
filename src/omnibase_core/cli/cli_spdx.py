@@ -59,7 +59,6 @@ EXCLUDED_DIRS: frozenset[str] = frozenset(
         "node_modules",
         ".tox",
         ".eggs",
-        "*.egg-info",
     }
 )
 
@@ -201,7 +200,7 @@ def _strip_existing_spdx(lines: list[str]) -> list[str]:
         # Also match the 3-line variant with a bare "#" separator
         if stripped == "#" and i > 0:
             # Only skip bare "#" if it sits between two SPDX lines
-            prev_stripped = lines[i - 1].strip() if i > 0 else ""
+            prev_stripped = lines[i - 1].strip()
             next_stripped = lines[i + 1].strip() if i + 1 < len(lines) else ""
             prev_is_spdx = any(prev_stripped.startswith(m) for m in _SPDX_MARKERS)
             next_is_spdx = any(next_stripped.startswith(m) for m in _SPDX_MARKERS)
