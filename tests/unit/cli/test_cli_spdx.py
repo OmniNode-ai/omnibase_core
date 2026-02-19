@@ -534,6 +534,25 @@ class TestCLIFix:
         updated = f.read_text(encoding="utf-8")
         assert updated.startswith(SPDX_COPYRIGHT_LINE)
 
+    @pytest.mark.skipif(os.getuid() == 0, reason="chmod is bypassed as root")
+    def test_dry_run_exits_nonzero_on_error_count(self, tmp_path: pathlib.Path) -> None:
+        """--dry-run exits non-zero when error_count > 0 (file cannot be read).
+
+        Regression test: the bottom error guard in fix() fires for the dry-run
+        path when a file raises OSError during read. Confirms exit_code != 0.
+        """
+        f = tmp_path / "unreadable.py"
+        f.write_text("x = 1\n", encoding="utf-8")
+        f.chmod(0o000)  # Make unreadable to trigger OSError on read
+
+        runner = CliRunner()
+        result = runner.invoke(spdx, ["fix", "--dry-run", str(tmp_path)])
+
+        # Restore permissions so pytest cleanup can remove the temp dir
+        f.chmod(0o644)
+
+        assert result.exit_code != 0
+
 
 @pytest.mark.unit
 class TestCLIValidate:

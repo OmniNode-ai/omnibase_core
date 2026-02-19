@@ -15,6 +15,7 @@ Usage:
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -122,7 +123,7 @@ def _is_shebang(line: str) -> bool:
 
 
 def _is_encoding(line: str) -> bool:
-    return "coding:" in line or "coding=" in line
+    return bool(re.search(r"coding[=:]\s*[-\w.]+", line))
 
 
 def _has_bypass(lines: list[str]) -> bool:
@@ -197,15 +198,17 @@ def _strip_existing_spdx(lines: list[str]) -> list[str]:
             if stripped.startswith(marker):
                 is_spdx = True
                 break
-        # Also match the 3-line variant with a bare "#" separator
-        if stripped == "#" and i > 0:
-            # Check that lines[i-1] (raw buffer) and lines[i+1] are both SPDX
-            # markers, making this bare "#" part of the SPDX separator block.
-            prev_stripped = lines[i - 1].strip()
+        # Also match the 3-line variant with a bare "#" separator.
+        # Only treat it as part of the SPDX block when the previous line is
+        # itself an SPDX marker (guards against i==0 and against a bare "#"
+        # that happens to precede an SPDX line but is not part of the header).
+        if (
+            stripped == "#"
+            and i > 0
+            and any(lines[i - 1].strip().startswith(m) for m in _SPDX_MARKERS)
+        ):
             next_stripped = lines[i + 1].strip() if i + 1 < len(lines) else ""
-            prev_is_spdx = any(prev_stripped.startswith(m) for m in _SPDX_MARKERS)
-            next_is_spdx = any(next_stripped.startswith(m) for m in _SPDX_MARKERS)
-            if prev_is_spdx and next_is_spdx:
+            if any(next_stripped.startswith(m) for m in _SPDX_MARKERS):
                 is_spdx = True
 
         if is_spdx:
