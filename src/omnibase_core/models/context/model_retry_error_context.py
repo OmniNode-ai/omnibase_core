@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Error context model for structured error tracking.
 
 This module provides ModelErrorContext, a typed context model for tracking

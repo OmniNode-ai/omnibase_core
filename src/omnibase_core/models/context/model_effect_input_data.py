@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect operation data context model for effect node inputs.
 
 This module provides ModelEffectInputData, a typed context model for

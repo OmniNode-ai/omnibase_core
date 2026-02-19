@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """SQL parser adapter for table extraction.
 
 Provides AST-based table extraction using sqlglot when available.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Status grid widget configuration model.
 
 This module defines the configuration for status grid dashboard widgets,

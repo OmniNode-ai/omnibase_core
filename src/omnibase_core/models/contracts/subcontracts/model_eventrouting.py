@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.infrastructure.model_retry_policy import ModelRetryPolicy

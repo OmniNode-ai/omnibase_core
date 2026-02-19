@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tool execution content model for pattern learning.
 
 Captures content from Claude Code tool executions for pattern extraction

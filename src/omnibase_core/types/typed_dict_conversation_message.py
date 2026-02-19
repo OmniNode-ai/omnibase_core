@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for conversation message structure.
 
 Defines the TypedDictConversationMessage TypedDict for conversation messages

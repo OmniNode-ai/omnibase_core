@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Hub Registration Event model for ONEX Discovery & Integration Event Registry.
 
 This module defines the Hub self-registration event for Consul service registry.

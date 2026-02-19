@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for util_exclusion module.
 
 Verifies the shared exclusion logic used by multiple validation rules.

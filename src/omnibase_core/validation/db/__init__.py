@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Database repository contract validators.
 
 Validators for ModelDbRepositoryContract: structural, SQL safety,

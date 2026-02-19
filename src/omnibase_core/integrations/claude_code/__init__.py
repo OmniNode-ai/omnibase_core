@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Claude Code integration types.
 
 Provides the public API for Claude Code hook event types and models.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Patch validation error codes for contract patch validation.
 
 These error codes are used by ContractPatchValidator to categorize

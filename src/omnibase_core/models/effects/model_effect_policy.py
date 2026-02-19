@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect Policy Specification Model for defining replay policies.
 
 Specifies how non-deterministic effects should be handled during replay.

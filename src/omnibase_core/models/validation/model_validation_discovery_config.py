@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Discovery configuration for cross-repo validation scanning.
 
 Defines what files to scan during validation, including inclusion/exclusion

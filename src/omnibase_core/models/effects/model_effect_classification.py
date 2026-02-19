@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect Classification Model for categorizing non-deterministic effects.
 
 Provides structured classification of effects for replay safety analysis.

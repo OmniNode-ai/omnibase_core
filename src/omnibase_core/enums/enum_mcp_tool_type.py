@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """MCP tool type enumeration.
 
 Defines the types of tools that can be exposed via the Model Context Protocol.

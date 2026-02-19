@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Core models for OmniBase - Core domain models only.
 
 This module contains only core domain models to prevent circular dependencies.

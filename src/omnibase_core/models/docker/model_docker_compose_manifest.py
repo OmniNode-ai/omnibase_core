@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Docker Compose Manifest Model.
 
 Top-level Pydantic model for complete docker-compose.yaml validation.

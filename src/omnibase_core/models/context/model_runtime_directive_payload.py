@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Runtime directive payload model for typed directive parameters.
 
 This module provides ModelRuntimeDirectivePayload, a typed context model for

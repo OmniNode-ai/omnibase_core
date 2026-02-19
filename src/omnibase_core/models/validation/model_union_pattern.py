@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ModelUnionPattern - Represents a Union type pattern for static analysis.
 
 This module provides the ModelUnionPattern class used by union validation tools

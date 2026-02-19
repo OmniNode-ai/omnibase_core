@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for ModelReducerOutput[T] - REFACTORED with parametrization.
 
 Tests all aspects of the reducer output model including:

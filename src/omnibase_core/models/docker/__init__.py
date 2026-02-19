@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Docker deployment and Docker Compose models.
 
 This package contains all models related to Docker deployment,

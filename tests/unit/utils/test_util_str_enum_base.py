@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for StrValueHelper mixin.
 
 This module tests the StrValueHelper mixin which provides consistent

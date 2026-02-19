@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2025 OmniNode AI
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 
 """
 MVP Conformance Tests: NodeOrchestrator Workflow Validation [OMN-657].

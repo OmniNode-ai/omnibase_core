@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect template context model for dynamic template resolution.
 
 This module provides ModelEffectTemplateContext, an explicitly dynamic model for

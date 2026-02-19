@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for ModelMixinVersion.
 
 This module tests semantic version validation and parsing for mixin metadata.

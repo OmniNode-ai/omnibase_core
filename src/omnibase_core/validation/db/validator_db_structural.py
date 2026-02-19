@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Structural validation for DB repository contracts.
 
 Validates table and operation names are valid SQL identifiers.

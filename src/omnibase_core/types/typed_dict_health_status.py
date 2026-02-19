@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for health status dictionary returned by get_health_status().
 
 Provides better type information for consumers than a generic dict type,

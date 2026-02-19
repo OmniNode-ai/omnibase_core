@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Contract Hash Registry.
 
 This module provides deterministic SHA256 fingerprinting for ONEX contracts,

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Conflict resolution strategy enumeration for data reduction."""
 
 from enum import Enum, unique

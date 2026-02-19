@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Enum for change proposal types (OMN-1196)."""
 
 from enum import Enum, unique

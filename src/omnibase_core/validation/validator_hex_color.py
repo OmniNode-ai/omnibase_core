@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Shared hex color validation for dashboard models.
 
 This module provides centralized hex color validation used throughout

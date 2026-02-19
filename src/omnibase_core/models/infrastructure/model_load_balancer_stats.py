@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Model for load balancer statistics."""
 
 from pydantic import BaseModel, ConfigDict, Field

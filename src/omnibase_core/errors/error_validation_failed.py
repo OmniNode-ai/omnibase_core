@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from typing import Any
 
 from omnibase_core.errors.exception_fail_fast import ExceptionFailFastError

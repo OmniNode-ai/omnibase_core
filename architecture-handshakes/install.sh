@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 # shellcheck shell=bash
 # Architecture Handshake Installer
 # Installs repo-specific constraint maps to .claude/architecture-handshake.md

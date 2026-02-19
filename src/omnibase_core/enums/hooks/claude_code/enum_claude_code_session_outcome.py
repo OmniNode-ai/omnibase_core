@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Claude Code session outcome enumeration.
 
 Classifies how a Claude Code session ended, providing semantic meaning

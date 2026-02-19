@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Contract validation error codes for merge and expanded validation phases.
 
 These error codes are used by the Contract Validation Pipeline to categorize

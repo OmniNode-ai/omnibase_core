@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Rule Condition Model.
 
 Rule condition with key-value pairs for matching policy contexts.

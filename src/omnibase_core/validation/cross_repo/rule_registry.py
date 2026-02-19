@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Static rule registry for cross-repo validation.
 
 Rule IDs are fixed in core. Rule behavior is fixed in core.

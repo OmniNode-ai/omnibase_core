@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Error details model to replace Dict[str, Any] usage.
 
 This module provides the ModelErrorDetails class, a typed Pydantic model that

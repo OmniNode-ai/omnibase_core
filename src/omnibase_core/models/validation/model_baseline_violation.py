@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Individual violation model for baselines.
 
 Captures a single violation with its fingerprint and metadata.

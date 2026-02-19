@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for zero-code contract-driven node invariants.
 
 Validates architectural invariants for contract-driven nodes (OMN-1731).

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Internal service - NOT for cross-repo import.
 
 This is allowed to import from fake_core (infra depends on core).

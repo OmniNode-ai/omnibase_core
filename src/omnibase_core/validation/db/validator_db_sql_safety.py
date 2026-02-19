@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """SQL safety validation for DB repository contracts.
 
 Validates read/write mode consistency, forbids DDL statements, and

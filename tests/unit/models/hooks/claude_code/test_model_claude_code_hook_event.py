@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for Claude Code hook event models.
 
 Validates ModelClaudeCodeHookEvent and ModelClaudeCodeHookEventPayload including

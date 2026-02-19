@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """StrValueHelper mixin providing standard __str__ for string enums."""
 
 from __future__ import annotations

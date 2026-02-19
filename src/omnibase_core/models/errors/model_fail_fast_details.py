@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Model for fail-fast error details."""
 
 from pydantic import BaseModel, ConfigDict, Field

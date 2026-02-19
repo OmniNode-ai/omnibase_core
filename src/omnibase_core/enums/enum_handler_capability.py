@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Handler capability enumeration for cross-cutting features like caching, retry, and batching."""
 
 from __future__ import annotations

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Enumeration for pattern learning execution status.
 
 Defines the execution states for pattern learning pipeline runs.

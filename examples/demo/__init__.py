@@ -1,6 +1,6 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Demo examples for ONEX framework.
 
 This package contains demo implementations for showcasing ONEX capabilities:

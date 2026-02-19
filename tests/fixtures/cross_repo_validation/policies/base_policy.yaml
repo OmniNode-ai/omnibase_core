@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 ---
 # Base policy for testing inheritance (OMN-1774)
 # This policy defines shared defaults that child policies can inherit from.

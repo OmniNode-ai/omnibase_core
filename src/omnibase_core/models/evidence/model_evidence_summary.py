@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Evidence summary model for corpus replay aggregation.
 
 This model aggregates all comparisons from a corpus replay into a decision-ready

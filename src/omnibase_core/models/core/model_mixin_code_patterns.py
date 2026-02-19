@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pydantic model for mixin code generation patterns.
 
 This module provides the ModelMixinCodePatterns class for defining

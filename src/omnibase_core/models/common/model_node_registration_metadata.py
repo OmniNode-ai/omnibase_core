@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Node registration runtime metadata model.
 
 This module provides strongly-typed metadata for node registration at runtime.

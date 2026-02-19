@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Model validation demo models for support ticket classification.
 
 This module provides sample input/output models for demonstrating

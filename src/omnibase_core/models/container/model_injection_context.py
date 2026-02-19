@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Injection Context Model.
 
 Implements ProtocolInjectionContext for dependency injection tracking.

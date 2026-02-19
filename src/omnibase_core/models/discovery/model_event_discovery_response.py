@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Event Discovery Response model for ONEX Discovery & Integration Event Registry.
 
 This module defines the response model for event discovery queries.

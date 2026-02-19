@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Runtime state model for event bus operations.
 
 This model holds serializable runtime state for event bus operations.

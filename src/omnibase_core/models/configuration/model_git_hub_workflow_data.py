@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """GitHub Actions workflow data model."""
 
 from pydantic import BaseModel, ConfigDict

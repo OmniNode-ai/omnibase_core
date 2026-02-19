@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Table access validation for DB repository contracts.
 
 Validates SQL only references declared tables using a tiered extraction

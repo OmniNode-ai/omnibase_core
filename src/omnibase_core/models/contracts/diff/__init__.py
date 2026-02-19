@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Contract Diff Models for Semantic Contract Diffing.
 
 This module provides Pydantic models for computing and representing

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Service for injecting configuration overrides during replay.
 
 Uses centralized exception groups from omnibase_core.errors.exception_groups.

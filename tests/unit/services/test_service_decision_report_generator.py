@@ -1,6 +1,6 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Comprehensive TDD test suite for ServiceDecisionReportGenerator (OMN-1199).
 
 This module provides TDD tests for the decision report generation service,

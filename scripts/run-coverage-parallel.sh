@@ -1,4 +1,7 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 # Run tests in 20 splits with coverage, then combine results
 # IMPORTANT: This script adds resource constraints for local execution
 # CI runs 20 splits on separate isolated runners (no resource limits needed)

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Base class for test fixtures using Pydantic bypass patterns.
 
 ⚠️ WARNING: This module uses Pydantic validation bypass for test performance.

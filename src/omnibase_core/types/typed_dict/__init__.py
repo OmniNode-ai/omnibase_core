@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict definitions for mixin return types.
 
 This module provides strongly-typed dictionaries for use in mixins,

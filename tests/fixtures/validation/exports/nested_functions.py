@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Module with nested functions - nested ones should NOT be detected as module-level."""
 
 __all__ = ["outer_function", "outer_async_function"]

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Deterministic ordering validator for DB repository contracts.
 
 Ensures many=True and LIMIT/OFFSET queries have ORDER BY clauses

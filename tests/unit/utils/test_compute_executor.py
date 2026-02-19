@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for compute_executor error handling.
 
 Tests focus on the execute_compute_pipeline function's handling of unexpected

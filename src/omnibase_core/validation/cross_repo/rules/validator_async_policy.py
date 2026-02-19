@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Async policy rule - flag blocking calls inside async functions.
 
 Prevents event loop blocking by detecting synchronous I/O calls

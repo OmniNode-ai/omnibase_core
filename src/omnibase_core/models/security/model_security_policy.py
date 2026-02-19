@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Security policy model with structured data fields.
 
 Provides comprehensive security policy management with typed fields for

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Docker Compose Generator Models.
 
 Re-export module for Docker Compose generator components including configuration,

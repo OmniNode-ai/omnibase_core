@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """MCP (Model Context Protocol) models for ONEX integration.
 
 This module provides models for exposing ONEX nodes as MCP tools,

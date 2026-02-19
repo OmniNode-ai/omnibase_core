@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for event type dictionary representation.
 
 This module provides strongly-typed dictionary definitions for event types

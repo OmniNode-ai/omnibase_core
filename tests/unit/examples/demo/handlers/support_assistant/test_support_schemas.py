@@ -1,6 +1,6 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for SupportRequest and SupportResponse Pydantic models.
 
 This module tests the input/output schemas for the OMN-1201 Demo Support Assistant.

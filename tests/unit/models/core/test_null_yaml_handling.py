@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for null YAML value handling in ModelMixinMetadataCollection.
 
 MINOR-5: Handle null YAML Values in ModelMixinMetadataCollection

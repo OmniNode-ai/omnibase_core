@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Claude Code hook enumerations.
 
 Enums for Claude Code hook event types, lifecycle states, and tool names.

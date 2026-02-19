@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Function Node Metadata Models.
 
 Re-export module for function node metadata components including documentation summary,

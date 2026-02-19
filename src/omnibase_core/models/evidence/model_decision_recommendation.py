@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Decision recommendation model for corpus replay evidence reports.
 
 This model represents actionable recommendations generated from corpus replay

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 ONEX Pattern Exclusion Decorators.
 Provides fine-grained control over ONEX strict typing standards enforcement.

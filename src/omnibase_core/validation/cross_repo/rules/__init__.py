@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Validation rules for cross-repo conformance.
 
 Each rule implements a specific check against the import graph

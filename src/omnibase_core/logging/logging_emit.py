@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Core emit_log_event utility for ONEX structured logging.
 
 Provides the main entry point for all ONEX logging, routing events through

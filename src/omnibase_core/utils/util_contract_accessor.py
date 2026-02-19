@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Contract data accessor utilities.
 
 Provides type-safe access to contract data attributes, supporting both

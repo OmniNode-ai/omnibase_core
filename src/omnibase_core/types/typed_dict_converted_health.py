@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for converted legacy health data.
 
 Represents the output of converting TypedDictLegacyHealth to a typed structure.

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Cross-platform timeout utilities for validation scripts.
 Provides Windows-compatible timeout handling with proper cleanup.

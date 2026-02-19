@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from pydantic import Field
 
 "\nOrchestrator Step Model\n\nType-safe orchestrator step that replaces Dict[str, Any] usage\nin orchestrator plans.\n"

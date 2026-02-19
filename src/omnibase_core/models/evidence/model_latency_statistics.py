@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Latency comparison statistics between baseline and replay executions.
 
 This model provides comprehensive latency metrics including averages and

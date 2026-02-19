@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fields.
 """

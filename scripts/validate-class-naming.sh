@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: 2025 OmniNode AI <https://omninode.ai>
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 #
 # validate-class-naming.sh - ONEX Class Naming Convention Validation
 #

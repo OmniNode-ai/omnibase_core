@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for event bus health check results.
 
 This TypedDict defines the structure returned by ProtocolEventBusLifecycle.health_check(),

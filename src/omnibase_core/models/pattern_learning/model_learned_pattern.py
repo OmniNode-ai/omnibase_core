@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Model for learned/aggregated patterns.
 
 Provides the primary data structure for patterns that have been extracted,

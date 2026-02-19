@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Retry context model for retry-related metadata.
 
 This module provides ModelRetryContext, a typed context model for tracking

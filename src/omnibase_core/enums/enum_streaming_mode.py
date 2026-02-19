@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Streaming mode enumeration for data processing strategies."""
 
 from enum import Enum, unique

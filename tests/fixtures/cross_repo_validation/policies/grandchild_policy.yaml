@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 ---
 # Grandchild policy that tries to extend child_policy (OMN-1774)
 # This should FAIL because multi-level inheritance is not allowed.

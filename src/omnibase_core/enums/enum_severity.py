@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Severity levels for logging, errors, and diagnostic messages."""
 
 from enum import Enum, unique

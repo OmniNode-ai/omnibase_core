@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ModelValueUnion - Type-safe wrapper for common primitive value unions.
 
 This model provides automatic type inference and validation for union types,

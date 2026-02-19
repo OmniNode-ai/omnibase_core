@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Replay mode enum for deterministic replay infrastructure.
 
 This module defines the modes of operation for the replay infrastructure,

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Stability calculation utilities for baseline health assessment.
 
 This module provides functions to calculate system stability scores

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Validation context model for field-level validation details.
 
 This module provides ModelValidationContext, a typed context model for

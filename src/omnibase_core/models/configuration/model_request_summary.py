@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Clean request configuration summary model.
 
 Provides a summary view of request configuration without sensitive data.

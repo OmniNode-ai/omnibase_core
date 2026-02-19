@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Vector quantization configuration model.
 
 This module provides the ModelQuantizationConfig class for vector quantization settings.

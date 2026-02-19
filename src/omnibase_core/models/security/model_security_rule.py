@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Security rule model for individual security rules.
 
 Defines individual access control rules that specify allowed or denied

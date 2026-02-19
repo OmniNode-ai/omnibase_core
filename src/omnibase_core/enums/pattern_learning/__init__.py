@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pattern learning enumerations.
 
 Enums for pattern learning systems including evidence quality tiers,

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Contract Models for ONEX Four-Node Architecture.
 
 This module provides Pydantic models for validating and managing contract

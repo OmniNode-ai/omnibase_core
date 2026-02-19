@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Resource context model for resource identification.
 
 This module provides ModelResourceContext, a typed context model for

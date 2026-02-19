@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Workflow context type alias for flexible runtime state.
 
 This type alias is used by ModelWorkflowStateSnapshot to represent workflow context data.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Signature Verification Result Model.
 
 Result of signature verification including chain validation and policy compliance.

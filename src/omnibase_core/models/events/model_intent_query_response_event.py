@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Event model for intent query responses.
 
 Published in response to ModelIntentQueryRequestedEvent after the

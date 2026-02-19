@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Metrics policy violation action enum for observability cardinality enforcement."""
 
 from __future__ import annotations

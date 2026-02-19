@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Memory leak tests for ServiceRegistry - repeated registration/unregistration cycles."""
 
 import gc

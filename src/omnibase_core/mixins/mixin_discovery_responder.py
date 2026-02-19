@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # description: Discovery responder mixin for ONEX nodes to respond to discovery broadcasts

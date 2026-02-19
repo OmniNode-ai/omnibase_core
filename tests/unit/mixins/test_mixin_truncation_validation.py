@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for MixinTruncationValidation mixin.
 
 Tests the truncation validation logic that is shared between

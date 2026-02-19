@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Enum for definition format classifications.
 
 Specifies the format in which an interface definition is expressed,

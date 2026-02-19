@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Distance metric enumeration for vector similarity search.
 
 This module defines the distance metrics supported by vector store operations.

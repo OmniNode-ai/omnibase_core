@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Enum for checkpoint status.
 Single responsibility: Centralized checkpoint status definitions.

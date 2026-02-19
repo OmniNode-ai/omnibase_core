@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Widget type enumeration for dashboard widgets.
 
 This module defines the available widget types for dashboard configuration.

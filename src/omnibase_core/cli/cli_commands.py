@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """CLI commands for omnibase_core.
 
 This module provides the main CLI entry point using Click.
@@ -547,6 +550,11 @@ cli.add_command(demo)
 from omnibase_core.cli.cli_db_migration import db
 
 cli.add_command(db)
+
+# Register spdx command group from separate module
+from omnibase_core.cli.cli_spdx import spdx
+
+cli.add_command(spdx)
 
 
 if __name__ == "__main__":

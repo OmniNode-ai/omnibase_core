@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Protocol dependency model for contract-driven DI.
 
 Defines protocol dependency declarations in contract.yaml for zero-code

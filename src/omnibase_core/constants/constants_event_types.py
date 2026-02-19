@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Core event types for the ONEX system.
 
 This module defines the core event types used throughout the ONEX ecosystem

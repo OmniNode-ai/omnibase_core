@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """GitHub Actions container configuration model.
 
 This module defines ModelGitHubActionsContainer, a Pydantic model representing

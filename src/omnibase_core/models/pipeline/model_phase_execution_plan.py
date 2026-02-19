@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Phase execution plan model for pipeline hooks."""
 
 from pydantic import BaseModel, ConfigDict, Field

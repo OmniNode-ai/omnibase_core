@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Centralized hash utilities for consistent, deterministic, and secure hashing.
 
 This module provides deterministic hash functions that are safe for use in:

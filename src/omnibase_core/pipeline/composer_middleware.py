@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Middleware composer for onion-style wrapping."""
 
 from collections.abc import Awaitable, Callable

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for secondary intent entries.
 
 Defines the TypedDictSecondaryIntent TypedDict for secondary intent entries

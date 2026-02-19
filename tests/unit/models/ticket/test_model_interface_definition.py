@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Comprehensive unit tests for interface definition models (OMN-1968).
 
 Tests cover:

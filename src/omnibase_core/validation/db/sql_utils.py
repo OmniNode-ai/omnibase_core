@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Shared SQL utilities for database repository validators.
 
 Provides normalize_sql (removes comments, collapses whitespace) and

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Node configuration model for node settings and parameters.
 Restructured to use focused sub-models for better organization.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Node announce metadata model for ONEX event-driven architecture."""
 
 from datetime import UTC, datetime

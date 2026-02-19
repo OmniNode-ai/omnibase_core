@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Deregistration reason enumeration for contract lifecycle events.
 
 Defines standard reasons for contract deregistration in the ONEX framework.

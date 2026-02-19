@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """File Event Type enumeration generated from contract."""
 
 from enum import Enum, unique

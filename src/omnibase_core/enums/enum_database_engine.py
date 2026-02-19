@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Database engine type enum for repository contracts.
 
 Defines supported database engines for contract-driven data access.

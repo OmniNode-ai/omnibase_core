@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Mixin for truncation validation in snapshot models.
 
 Provides reusable validation logic for models that track truncation

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for execution detail view models.
 
 Covers the 8 models used for detailed drill-down views of execution comparisons:

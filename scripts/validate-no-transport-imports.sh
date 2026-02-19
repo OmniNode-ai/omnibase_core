@@ -1,4 +1,7 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 # Validate no direct transport/I/O library imports exist in omnibase_core
 # Enforces architectural boundary: Core should be pure, infrastructure owns all I/O
 #

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Hook error model for pipeline execution."""
 
 from pydantic import BaseModel, ConfigDict, Field

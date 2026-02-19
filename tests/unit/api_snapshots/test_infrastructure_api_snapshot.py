@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pre-refactor API snapshot tests for omnibase_core.infrastructure module.
 
 These tests capture the public API surface before v0.4.0 refactoring.

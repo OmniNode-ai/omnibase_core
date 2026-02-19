@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Centralized ModelObjectData implementation."""
 
 from pydantic import BaseModel, Field

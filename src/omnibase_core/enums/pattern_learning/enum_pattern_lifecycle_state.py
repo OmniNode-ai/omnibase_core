@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Enumeration for pattern learning lifecycle states.
 
 Defines the lifecycle stages for learned patterns in the OmniNode intelligence

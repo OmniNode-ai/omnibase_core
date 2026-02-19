@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ModelSchema Class.
 
 Strongly typed Pydantic model for ONEX JSON schema files.

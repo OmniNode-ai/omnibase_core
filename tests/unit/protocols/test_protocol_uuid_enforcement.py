@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for UUID type enforcement in protocol implementations.
 
 This test module verifies that protocol implementations correctly enforce UUID types

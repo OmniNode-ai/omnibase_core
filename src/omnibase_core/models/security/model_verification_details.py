@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field

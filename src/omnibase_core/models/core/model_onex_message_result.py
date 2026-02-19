@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from __future__ import annotations
 
 from omnibase_core.models.core.model_orchestrator_info import ModelOrchestratorInfo

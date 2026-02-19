@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Integration tests validating real agent YAML files against Pydantic models.
 
 This module tests that the ModelAgentDefinition and related models can successfully

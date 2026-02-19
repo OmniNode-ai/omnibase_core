@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 EnumEnforcementMode - Enforcement mode enum for replay safety infrastructure.
 

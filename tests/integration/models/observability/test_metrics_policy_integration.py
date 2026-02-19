@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Integration tests for observability metrics policy with metric emissions.
 
 This module provides comprehensive integration tests for the ModelMetricsPolicy

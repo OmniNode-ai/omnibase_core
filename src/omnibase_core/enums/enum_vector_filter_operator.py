@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Filter operator enumeration for vector metadata filtering.
 
 This module defines the operators supported for metadata filtering in vector queries.

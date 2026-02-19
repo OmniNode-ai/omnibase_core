@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pydantic model for complete mixin metadata.
 
 This module provides the ModelMixinMetadata class, which aggregates all

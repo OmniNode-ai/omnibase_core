@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDictBasicErrorContext.
 
 Minimal error context TypedDict with no dependencies.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Event Registry Coordinator Output model for ONEX Discovery & Integration Event Registry.
 
 This module defines the output model for Event Registry Coordinator operations.

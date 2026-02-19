@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for agent routing alternative entries.
 
 Defines the TypedDictRoutingAlternative TypedDict for alternative agents

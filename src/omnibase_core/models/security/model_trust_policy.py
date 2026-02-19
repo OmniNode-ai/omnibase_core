@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Trust Policy re-exports.
 
 This module re-exports ModelTrustPolicy and ModelPolicyRule for API consistency.

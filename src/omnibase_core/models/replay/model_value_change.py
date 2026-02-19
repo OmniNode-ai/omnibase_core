@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Value change model for structured difference representation.
 
 Captures a single value change between baseline and replay outputs.

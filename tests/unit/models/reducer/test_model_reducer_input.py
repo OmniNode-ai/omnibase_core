@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for ModelReducerInput[T].
 
 This module provides comprehensive tests for the generic ModelReducerInput model,

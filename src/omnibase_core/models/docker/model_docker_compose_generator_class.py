@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Docker Compose Generator Model.
 
 Generator for Docker Compose configurations from ONEX service schemas.

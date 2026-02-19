@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Service for evaluating invariants against execution outputs.
 
 This module provides the ServiceInvariantEvaluator class for validating

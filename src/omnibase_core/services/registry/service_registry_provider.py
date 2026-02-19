@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 ServiceRegistryProvider - In-memory thread-safe registry for provider descriptors.
 

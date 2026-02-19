@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Business impact severity levels for risk assessment and prioritization."""
 
 from enum import Enum, unique

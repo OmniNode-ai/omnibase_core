@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Collection TypedDict definitions.
 
 Type-safe dictionary definitions for collection creation parameters.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from pydantic import ConfigDict, Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

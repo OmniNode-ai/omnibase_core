@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Simple JSON data container for request bodies."""
 
 from pydantic import BaseModel, ConfigDict

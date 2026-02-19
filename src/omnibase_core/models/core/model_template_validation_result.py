@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Result of template validation with comprehensive metrics"""
 
 from pydantic import BaseModel

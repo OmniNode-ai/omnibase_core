@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Dashboard models and widget configuration types.
 
 This module provides Pydantic models for configuring dashboards and their

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDictMappingResult.
 
 TypedDict for mapping step results in compute pipeline execution.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Policy Rule Model.
 
 Individual policy rule with conditions and actions for trust policy evaluation.

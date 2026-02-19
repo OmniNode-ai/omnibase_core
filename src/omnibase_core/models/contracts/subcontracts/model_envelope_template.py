@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Envelope template model for operation bindings DSL.
 
 Defines how to construct handler envelopes from request data using

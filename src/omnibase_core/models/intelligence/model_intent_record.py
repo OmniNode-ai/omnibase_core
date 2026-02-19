@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Stored intent classification record model.
 
 Represents a persisted intent classification for querying and analysis.

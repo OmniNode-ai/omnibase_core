@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Observability emission models and cardinality policies.
 
 This module provides models for metrics emission, log emission,

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Discovery status enumeration for ONEX tool discovery operations."""
 
 from enum import Enum, unique

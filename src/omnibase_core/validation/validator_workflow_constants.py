@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Shared constants for workflow validation and execution.
 
 This module consolidates constants used by both workflow_validator.py

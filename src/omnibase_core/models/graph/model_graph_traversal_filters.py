@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Graph Traversal Filters Model.
 
 Type-safe model for configuring graph traversal filter criteria.

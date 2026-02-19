@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Runtime models for ONEX node execution."""
 
 from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ModelSchemaPropertiesModel.
 
 Strongly typed model for the properties field in a JSON schema.

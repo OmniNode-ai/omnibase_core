@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 ---
 # Handler Contract Example: EFFECT Handler
 # This handler performs external I/O operations (database queries).

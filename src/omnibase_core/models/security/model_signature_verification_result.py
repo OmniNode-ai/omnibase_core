@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Signature Verification Result Models.
 
 Re-export module for signature verification components including chain validation,

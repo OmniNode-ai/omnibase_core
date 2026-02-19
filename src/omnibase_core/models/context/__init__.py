@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Context models for typed Generic[TContext] patterns.
 
 This module provides reusable typed context models for use as type parameters

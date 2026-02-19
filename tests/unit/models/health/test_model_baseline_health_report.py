@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for ModelBaselineHealthReport - Baseline Health Report feature (OMN-1198).
 
 This test module tests the baseline health report models:

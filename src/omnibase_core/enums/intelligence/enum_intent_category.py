@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Intent category enumeration for classification.
 
 Defines canonical intent categories used across the OmniNode intelligence

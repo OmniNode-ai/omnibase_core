@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Strongly typed models for extracted metadata blocks, decoupled from model_node_metadata.py to avoid circular imports.
 """

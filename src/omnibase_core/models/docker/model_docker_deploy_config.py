@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Docker Deploy Config Models.
 
 Re-export module for Docker deploy configuration components including resource limits,

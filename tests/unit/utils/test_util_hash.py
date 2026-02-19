@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for the hash utility module.
 
 Tests deterministic hash functions for cache keys, UUIDs, jitter, and error codes.

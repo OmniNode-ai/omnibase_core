@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Primitive type models for ONEX framework."""
 
 from omnibase_core.models.primitives.model_semver import (

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Enhanced unit tests for ModelReducerOutput[T].
 
 This module provides additional test coverage for:

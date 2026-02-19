@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Error taxonomy validation rule.
 
 Enforces canonical error module usage and proper error context.

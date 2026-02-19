@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Tests for CodeRabbit issues #10, #11, #12, #13 - Cache implementation fixes.
 

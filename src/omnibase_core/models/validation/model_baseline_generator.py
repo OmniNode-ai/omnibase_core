@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Generator metadata model for violation baselines.
 
 Tracks provenance of baseline files for debugging and auditing.

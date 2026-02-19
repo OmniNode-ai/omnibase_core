@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Reducer Contract Model (Clean ModelArchitecture) - v1.5.0 Schema.
 

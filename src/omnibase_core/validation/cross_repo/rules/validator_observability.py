@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Observability rule - flag print() and raw logging usage.
 
 Encourages use of ProtocolLogger for structured, consistent logging

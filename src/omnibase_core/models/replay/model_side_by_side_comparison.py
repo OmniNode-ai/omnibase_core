@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Model for side-by-side formatted comparison."""
 
 from pydantic import BaseModel, ConfigDict

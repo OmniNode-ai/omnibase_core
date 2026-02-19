@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Test isolation fixtures for parallel-safe test execution.
 
 This module provides fixtures to reset context variables and clear caches

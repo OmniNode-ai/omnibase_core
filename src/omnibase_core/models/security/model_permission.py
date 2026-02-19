@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ONEX-compatible Permission Model.
 
 Comprehensive permission model for fine-grained access control with support for

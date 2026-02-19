@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 import types
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Dashboard layout grid configuration model.
 
 This module defines the grid layout settings for dashboard widget positioning.

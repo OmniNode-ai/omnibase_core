@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Field projection validation for DB repository contracts.
 
 Validates that SQL SELECT projections match declared fields when

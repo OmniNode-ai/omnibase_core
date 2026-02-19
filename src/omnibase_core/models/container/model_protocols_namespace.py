@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Protocols Namespace Model.
 
 Provides an immutable namespace for resolved protocol dependencies.

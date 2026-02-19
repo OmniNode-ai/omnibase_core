@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Shared enums for ONEX ecosystem.
 
 Domain-grouped enums used across multiple ONEX packages (omnibase_core, omnibase_spi, etc.)

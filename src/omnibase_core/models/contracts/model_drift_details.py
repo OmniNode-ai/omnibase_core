@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Contract Drift Details Model.
 
 This module provides the ModelDriftDetails class for structured reporting of

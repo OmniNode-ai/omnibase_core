@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Integration tests for Interface Segregation Principle (ISP) protocol compliance.
 
 This module verifies that ISP-split protocols are properly structured and usable.

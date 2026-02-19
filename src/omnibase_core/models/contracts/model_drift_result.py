@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Contract Drift Detection Result Model.
 
 This module provides the ModelDriftResult class, which encapsulates the

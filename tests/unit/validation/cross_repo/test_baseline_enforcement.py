@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for baseline enforcement in cross-repo validation.
 
 Verifies that baseline suppression works correctly:

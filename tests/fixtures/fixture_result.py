@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Test fixtures for ModelBaseResult using Pydantic bypass pattern.
 
 ⚠️ WARNING: Uses model_construct() for test performance.

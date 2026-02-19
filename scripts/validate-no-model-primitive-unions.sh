@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 #
 # validate-no-model-primitive-unions.sh
 # Pre-commit hook to prevent Union types mixing models and primitives

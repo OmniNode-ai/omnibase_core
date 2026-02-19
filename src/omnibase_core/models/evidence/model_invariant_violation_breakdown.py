@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Invariant violation breakdown model for corpus replay aggregation.
 
 Breaks down invariant violations by type and severity for reporting

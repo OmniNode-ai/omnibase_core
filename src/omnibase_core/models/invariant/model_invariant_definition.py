@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Detailed definition for an invariant with type-specific config.
 
 Combines the invariant type discriminator with its corresponding

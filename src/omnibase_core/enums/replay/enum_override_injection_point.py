@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """EnumOverrideInjectionPoint - Injection points for config overrides.
 
 Defines where configuration overrides can be applied during replay execution.

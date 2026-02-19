@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for ModelInvariantComparisonSummary model.
 
 Tests the invariant comparison summary model used for aggregating

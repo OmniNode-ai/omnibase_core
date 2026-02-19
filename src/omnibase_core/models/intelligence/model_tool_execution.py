@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tool execution model for intelligence pattern extraction.
 
 Represents structured tool execution data for pattern extraction,

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

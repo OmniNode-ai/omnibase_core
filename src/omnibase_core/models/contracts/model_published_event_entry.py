@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Published event entry model for YAML contracts.
 
 ONEX infra extension - used for contract-level event publishing declarations.

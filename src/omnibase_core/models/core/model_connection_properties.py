@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 from core.model_masked_connection_properties import ModelMaskedConnectionProperties
 from core.model_performance_summary import ModelPerformanceSummary

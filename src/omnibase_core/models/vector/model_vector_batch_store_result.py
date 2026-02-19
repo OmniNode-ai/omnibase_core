@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Vector batch store result model.
 
 This module provides the ModelVectorBatchStoreResult class for representing

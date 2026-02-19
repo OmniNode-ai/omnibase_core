@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Canonical health status enum for ONEX framework.
 
 **BREAKING CHANGE** (OMN-1310): This enum consolidates and replaces:

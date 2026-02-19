@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Binding expression model for operation bindings DSL.
 
 Validates and parses expression strings in the format:

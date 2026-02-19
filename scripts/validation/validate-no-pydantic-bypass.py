@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Validate that Pydantic bypass patterns are not used in production code.
 
 This script enforces that model_construct(), direct __dict__ manipulation,

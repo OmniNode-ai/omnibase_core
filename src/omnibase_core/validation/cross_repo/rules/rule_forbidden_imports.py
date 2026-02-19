@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Forbidden imports rule - granular import blocking.
 
 Blocks specific imports at module or prefix level,

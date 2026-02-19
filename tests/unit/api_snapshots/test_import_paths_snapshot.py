@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pre-refactor import path verification tests.
 
 These tests verify that all documented import paths work correctly.

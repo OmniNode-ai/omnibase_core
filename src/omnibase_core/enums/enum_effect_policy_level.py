@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect Policy Level Enum for replay enforcement.
 
 Defines enforcement levels for non-deterministic effect handling during replay.

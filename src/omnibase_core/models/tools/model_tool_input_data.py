@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tool input data model for protocol tool."""
 
 from .model_tool_input_data_class import ModelToolInputData

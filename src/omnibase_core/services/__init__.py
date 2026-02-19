@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Services module - ONEX protocol service implementations.
 
 This module contains service implementations for ONEX protocols.

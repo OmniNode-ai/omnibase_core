@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Operation mapping model for operation bindings DSL.
 
 Combines an envelope template and optional response mapping for a single

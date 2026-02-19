@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 ---
 # ONEX Smart Responder Chain CI/CD Pipeline
 # Note: Quality checks (linting, testing, type checking) are handled by pre-push hooks

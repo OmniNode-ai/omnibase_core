@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 MixinIntentPublisher - Coordination I/O capability for ONEX nodes.
 

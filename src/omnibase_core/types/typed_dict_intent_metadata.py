@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for intent classification metadata.
 
 Defines the TypedDictIntentMetadata TypedDict for metadata about intent

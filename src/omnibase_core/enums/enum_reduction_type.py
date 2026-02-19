@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Reduction type enumeration for data aggregation operations."""
 
 from enum import Enum, unique

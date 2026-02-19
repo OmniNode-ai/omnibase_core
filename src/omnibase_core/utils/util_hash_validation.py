@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Shared hash format validation utilities.
 
 This module provides reusable hash format validation for Pydantic models

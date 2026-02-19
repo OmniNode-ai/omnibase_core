@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """GitHub Actions workflow input model.
 
 This module defines ModelWorkflowInput, a Pydantic model representing an

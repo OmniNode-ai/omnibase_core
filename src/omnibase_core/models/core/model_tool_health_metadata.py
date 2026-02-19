@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from pydantic import Field
 
 "\nModel for tool health metadata.\n\nSimple metadata model for tool health status with proper typing\nwhile avoiding heavy dependencies from full ModelToolMetadata.\n"

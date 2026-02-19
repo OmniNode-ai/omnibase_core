@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Claude Code session status enumeration.
 
 Defines the lifecycle states for a Claude Code session snapshot, tracking

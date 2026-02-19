@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Fingerprint utility for cross-repo validation.
 
 Generates deterministic fingerprints for validation violations
