@@ -375,6 +375,9 @@ repos:
         # cli_spdx.py INCLUDED_FILENAMES but are NOT matched by this pattern.
         # Neither file currently exists in this repo; if one is added in future,
         # extend this pattern with an additional alternation (e.g. |Makefile|Dockerfile).
+        # Root-level .toml files (e.g. pyproject.toml) are also NOT matched by this
+        # pattern; they must carry SPDX headers but are validated by the CLI tool
+        # directly (e.g. via `onex spdx validate`) rather than via this hook.
         files: ^(src|tests|scripts|examples)/.*\.(py|sh|bash|yml|yaml|toml)$
         exclude: ^(archived/|archive/)
         stages: [pre-commit]

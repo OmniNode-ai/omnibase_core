@@ -190,7 +190,7 @@ class TestRemoveBodySpdxBlocks:
 
 
 # ---------------------------------------------------------------------------
-# _fix_file_content  (covers _build_spdx_header insertion logic)
+# _fix_file_content  (covers _fix_file_content insertion logic)
 # ---------------------------------------------------------------------------
 
 
