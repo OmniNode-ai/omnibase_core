@@ -199,7 +199,8 @@ def _strip_existing_spdx(lines: list[str]) -> list[str]:
                 break
         # Also match the 3-line variant with a bare "#" separator
         if stripped == "#" and i > 0:
-            # Only skip bare "#" if it sits between two SPDX lines
+            # Check that lines[i-1] (raw buffer) and lines[i+1] are both SPDX
+            # markers, making this bare "#" part of the SPDX separator block.
             prev_stripped = lines[i - 1].strip()
             next_stripped = lines[i + 1].strip() if i + 1 < len(lines) else ""
             prev_is_spdx = any(prev_stripped.startswith(m) for m in _SPDX_MARKERS)
@@ -293,7 +294,11 @@ def _remove_body_spdx_blocks(lines: list[str]) -> list[str]:
 
 
 def _fix_file_content(content: str) -> str:
-    """Return *content* with the canonical SPDX header inserted/replaced."""
+    """Return *content* with the canonical SPDX header inserted/replaced.
+
+    YAML files whose first non-shebang/encoding line is "---" receive no blank
+    separator between the SPDX header and the "---" document marker.
+    """
     lines = content.splitlines(keepends=True)
 
     if not lines:
@@ -322,10 +327,7 @@ def _fix_file_content(content: str) -> str:
     if insert_idx < len(lines) and _is_encoding(lines[insert_idx]):
         insert_idx += 1
 
-    # For YAML files starting with "---", insert SPDX before "---"
-    # But only if the "---" is at the insertion point
-    # Actually per plan: "YAML files starting with ---: SPDX goes before ---"
-    # So SPDX header goes before the "---" line
+    # For YAML files: insert SPDX before "---" document marker (no blank separator)
     if insert_idx < len(lines) and lines[insert_idx].rstrip() == "---":
         # Insert SPDX before the "---"
         new_lines = list(lines[:insert_idx])
@@ -418,12 +420,12 @@ def validate_files(file_args: list[str]) -> int:
 
     Args:
         file_args: File paths or directories to validate. If empty,
-            defaults to scanning ``src/``.
+            defaults to scanning the current working directory.
 
     Returns:
         0 if all files are compliant, 1 if violations found.
     """
-    paths: list[Path] = [Path(a) for a in file_args] if file_args else [Path("src/")]
+    paths: list[Path] = [Path(a) for a in file_args] if file_args else [Path()]
 
     files_to_check: list[Path] = []
     for p in paths:
