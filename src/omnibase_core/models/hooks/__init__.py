@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Hook-related models.
 
 Contains models for external hook systems that integrate with OmniNode.

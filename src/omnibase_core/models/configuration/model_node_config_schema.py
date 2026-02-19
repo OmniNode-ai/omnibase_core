@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Model for node configuration schema."""
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator

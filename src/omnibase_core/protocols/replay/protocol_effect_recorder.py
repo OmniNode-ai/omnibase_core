@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 ProtocolEffectRecorder - Protocol for effect recording and replay.
 

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """BAD: This handler imports from fake_infra.services which is forbidden."""
 
 from __future__ import annotations

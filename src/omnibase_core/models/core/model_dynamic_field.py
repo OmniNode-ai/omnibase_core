@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Dynamic field model for flexible data without using Any type."""
 
 from pydantic import BaseModel, Field

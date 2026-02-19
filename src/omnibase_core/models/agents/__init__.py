@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Agent definition models for YAML schema validation.
 
 This package provides Pydantic models for validating agent YAML configuration

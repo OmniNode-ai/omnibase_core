@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """HTML report renderer for evidence summaries (OMN-1200).
 
 Renders evidence summaries to standalone HTML with inline CSS,

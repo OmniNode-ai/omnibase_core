@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Latency breakdown event payload.
 
 Provides detailed timing including user-perceived latency.

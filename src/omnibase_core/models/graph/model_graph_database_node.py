@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Graph Database Node Model.
 
 Type-safe model representing a node in a graph database (Neo4j, Memgraph, etc.).

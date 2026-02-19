@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for Contract-Driven NodeCompute v1.0 transformations and executor."""
 
 from uuid import uuid4

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Base model for event payloads.
 
 Payloads are data structures embedded within events. Unlike events,

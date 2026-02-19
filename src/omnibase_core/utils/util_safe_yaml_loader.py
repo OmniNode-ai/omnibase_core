@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Safe YAML loading utilities using yaml.safe_load plus Pydantic validation.
 

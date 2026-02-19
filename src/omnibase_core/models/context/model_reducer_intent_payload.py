@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Intent payload model for typed reducer intent data.
 
 This module provides ModelReducerIntentPayload, a typed context model for carrying

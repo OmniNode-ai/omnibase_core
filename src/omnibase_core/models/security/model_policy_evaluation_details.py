@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ModelPolicyEvaluationDetails: Details from policy evaluation."""
 
 from pydantic import BaseModel, Field

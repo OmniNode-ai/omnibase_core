@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for SQL utility functions.
 
 Tests for normalize_sql and strip_sql_strings functions in sql_utils.py.

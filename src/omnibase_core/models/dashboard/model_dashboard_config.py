@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Dashboard configuration model.
 
 This module defines the top-level dashboard configuration container that holds

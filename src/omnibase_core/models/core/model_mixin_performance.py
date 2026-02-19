@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pydantic model for mixin performance characteristics.
 
 This module provides the ModelMixinPerformance class for defining

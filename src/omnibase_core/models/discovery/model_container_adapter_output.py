@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Container Adapter Output model for ONEX Discovery & Integration Event Registry.
 
 This module defines the output model used by the Container Adapter tool

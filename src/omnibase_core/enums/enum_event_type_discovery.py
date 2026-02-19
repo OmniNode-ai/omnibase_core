@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Event types for ONEX discovery and integration operations."""
 
 from enum import Enum, unique

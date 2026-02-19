@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 # ONEX-EXEMPT: typed-dict-collection - Data (output) and Input types serve different purposes
 """
 TypedDict for policy value data structures.

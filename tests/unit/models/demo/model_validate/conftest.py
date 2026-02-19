@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Fixtures for model-validate demo tests."""
 
 from datetime import UTC, datetime

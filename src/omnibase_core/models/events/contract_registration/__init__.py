@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Contract registration event models.
 
 Event models for dynamic contract discovery via Kafka (OMN-1651).

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Operational context model for operation-level metadata.
 
 This module provides ModelOperationalContext, a typed context model for

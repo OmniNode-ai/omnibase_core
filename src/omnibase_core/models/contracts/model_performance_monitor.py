@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from omnibase_core.types.typed_dict_performance_metrics import (
     TypedDictPerformanceMetrics,
 )

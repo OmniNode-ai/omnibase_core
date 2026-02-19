@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Operation bindings subcontract model.
 
 Top-level subcontract for the operation bindings DSL. Wires operations to a

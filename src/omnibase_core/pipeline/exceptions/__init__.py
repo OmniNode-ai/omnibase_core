@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pipeline-specific exceptions.
 
 This module re-exports pipeline exceptions from the canonical `errors` module.

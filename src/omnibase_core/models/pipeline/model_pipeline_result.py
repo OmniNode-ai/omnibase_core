@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pipeline result model for execution outcomes."""
 
 from collections.abc import Mapping, Sequence

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Enum for coordination tool names.
 Single responsibility: Centralized coordination tool name definitions.

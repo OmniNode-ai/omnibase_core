@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Claude Code session outcome model.
 
 Represents the outcome of a Claude Code session for the feedback loop.

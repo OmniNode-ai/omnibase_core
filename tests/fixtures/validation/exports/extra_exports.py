@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Module with extra items in __all__ that are not defined."""
 
 __all__ = ["RealClass", "NonExistentClass", "ghost_function"]  # noqa: F822

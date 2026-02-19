@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Extended unit tests for ServiceRegistry - covering uncovered paths."""
 
 from uuid import UUID, uuid4

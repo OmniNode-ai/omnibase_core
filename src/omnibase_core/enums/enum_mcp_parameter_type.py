@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """MCP parameter type enumeration.
 
 Defines the JSON Schema types for MCP tool parameters.

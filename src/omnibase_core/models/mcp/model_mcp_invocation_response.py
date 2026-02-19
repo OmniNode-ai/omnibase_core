@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """MCP invocation response model.
 
 Tool call response wrapper for MCP protocol.

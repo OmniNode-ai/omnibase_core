@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Service for running validation suites.
 
 This module provides a unified validation suite for ONEX compliance.

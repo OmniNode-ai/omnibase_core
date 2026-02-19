@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for node executor health status from MixinNodeExecutor.get_executor_health()."""
 
 from __future__ import annotations

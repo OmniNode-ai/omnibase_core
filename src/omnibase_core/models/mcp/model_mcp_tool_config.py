@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """MCP tool configuration model.
 
 Defines the `mcp:` block schema for ONEX contract.yaml files.

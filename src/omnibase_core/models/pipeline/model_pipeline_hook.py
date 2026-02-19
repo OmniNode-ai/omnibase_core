@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pipeline hook model.
 
 Note: This module was moved from omnibase_core.pipeline.models to

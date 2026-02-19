@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Requirements models for expressing and evaluating requirements with graduated strictness.
 
 This module provides ModelRequirementEvaluator for expressing requirements across

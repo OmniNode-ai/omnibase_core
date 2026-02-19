@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pipeline step types for contract-driven NodeCompute operations."""
 
 from enum import Enum, unique

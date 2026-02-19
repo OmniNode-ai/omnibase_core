@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for node state serialization methods [OMN-739, OMN-740].
 
 Tests state serialization, snapshot creation, and restoration for:

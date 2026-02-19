@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Execution comparison model for baseline vs replay evaluation.
 
 Captures all comparison data between a baseline execution and a replay,

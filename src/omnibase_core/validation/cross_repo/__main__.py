@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Allow running as python -m omnibase_core.validation.cross_repo."""
 
 from omnibase_core.validation.cross_repo.cli import main

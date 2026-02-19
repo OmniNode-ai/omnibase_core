@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Database ownership metadata model.
 
 Defines the schema for the ``db_metadata`` table used by runtime assertion B1

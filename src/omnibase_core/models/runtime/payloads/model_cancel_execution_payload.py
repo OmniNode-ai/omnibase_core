@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 ModelCancelExecutionPayload - Typed payload for CANCEL_EXECUTION directives.
 

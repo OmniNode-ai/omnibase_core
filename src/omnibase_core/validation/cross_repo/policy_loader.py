@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Policy loader for cross-repo validation.
 
 Loads and validates policy contracts from YAML files.

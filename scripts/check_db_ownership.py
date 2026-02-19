@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """CI twin for runtime assertion B1 -- database ownership verification.
 
 Provisions a temporary SQLite database, runs the db_metadata migration,

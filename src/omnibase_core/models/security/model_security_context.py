@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Security context model for security-related operations.
 
 Provides a type-safe security context for authentication, authorization,

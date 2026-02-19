@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for EnumEffectCategory enum.
 
 Part of OMN-1147: Effect Classification System test suite.

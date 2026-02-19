@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Table widget configuration model.
 
 This module defines the configuration for table-based dashboard widgets,

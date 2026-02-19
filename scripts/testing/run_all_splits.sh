@@ -1,4 +1,7 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 # Run all 20 test splits in parallel batches
 # Batch size: 5 splits at a time to avoid system overload
 

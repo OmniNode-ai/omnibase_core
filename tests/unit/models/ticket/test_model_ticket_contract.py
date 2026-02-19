@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Comprehensive unit tests for TicketContract model (OMN-1807).
 
 Tests cover all requirements from the ticket Definition of Done:

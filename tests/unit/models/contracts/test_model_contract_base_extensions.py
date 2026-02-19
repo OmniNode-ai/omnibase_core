@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for ModelContractBase ONEX infrastructure extension fields.
 
 Tests the OMN-1588 extension fields:

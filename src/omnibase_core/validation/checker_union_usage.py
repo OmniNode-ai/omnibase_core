@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """UnionUsageChecker - AST-based checker for Union type usage patterns.
 
 This module provides the UnionUsageChecker class for analyzing Python source

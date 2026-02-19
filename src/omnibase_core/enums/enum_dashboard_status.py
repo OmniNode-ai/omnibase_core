@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Dashboard status enumeration for dashboard lifecycle states.
 
 This module defines the lifecycle states for dashboard instances,

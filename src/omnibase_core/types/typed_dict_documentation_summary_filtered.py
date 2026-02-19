@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for filtered documentation summary.
 
 Type-safe dictionary for documentation summary with quality_score excluded.

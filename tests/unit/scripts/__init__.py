@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for scripts.  # noqa: empty-directory-ok
 
 This package contains unit tests for validation scripts in scripts/validation/.

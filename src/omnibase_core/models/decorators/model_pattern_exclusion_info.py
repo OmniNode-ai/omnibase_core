@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Model for ONEX pattern exclusion information."""
 
 from pydantic import BaseModel, ConfigDict, Field

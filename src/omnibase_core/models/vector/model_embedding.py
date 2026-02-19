@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Embedding model for vector store operations.
 
 This module provides the ModelEmbedding class for representing a single

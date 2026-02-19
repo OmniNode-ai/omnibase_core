@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Trace context model for distributed tracing and correlation.
 
 This module provides ModelTraceContext, a typed context model for tracking

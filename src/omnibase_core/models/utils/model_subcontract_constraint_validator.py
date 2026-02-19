@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ModelSubcontractConstraintValidator - Shared Subcontract Validation Logic.
 
 Provides unified validation logic for subcontract architectural constraints

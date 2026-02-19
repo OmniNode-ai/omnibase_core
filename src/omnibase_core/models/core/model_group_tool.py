@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field

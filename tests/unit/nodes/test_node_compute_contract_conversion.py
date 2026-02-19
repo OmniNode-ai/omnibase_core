@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for NodeCompute contract-to-input conversion.
 
 Tests error handling in NodeCompute._contract_to_input() when input_state is missing.

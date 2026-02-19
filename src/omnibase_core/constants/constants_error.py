@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Centralized error code constants and patterns.
 
 This module provides the single source of truth for error code patterns

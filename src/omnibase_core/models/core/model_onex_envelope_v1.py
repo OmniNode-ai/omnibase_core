@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 ModelOnexEnvelopeV1 - Simple event envelope for standardized message wrapping.
 

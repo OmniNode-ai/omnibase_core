@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Consul Event Bridge Output model for ONEX Discovery & Integration Event Registry.
 
 This module defines the output model for Consul Event Bridge operations.

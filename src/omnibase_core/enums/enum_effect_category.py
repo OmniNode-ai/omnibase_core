@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect Category Enum for non-deterministic effect classification.
 
 Categorizes external effects by their nature for replay safety analysis.

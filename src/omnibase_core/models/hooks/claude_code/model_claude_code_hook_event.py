@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Claude Code hook event model.
 
 Raw input schema for Claude Code hook events. This model represents the exact

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from __future__ import annotations
 
 from omnibase_core.types.typed_dict_execution_params import TypedDictExecutionParams

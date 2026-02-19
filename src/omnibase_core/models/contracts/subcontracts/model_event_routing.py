@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from pydantic import Field
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS, TIMEOUT_MIN_MS

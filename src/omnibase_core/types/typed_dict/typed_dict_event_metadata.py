@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for event metadata in lifecycle events."""
 
 from __future__ import annotations

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for structured computation output summary.
 
 Provides strongly-typed summary return values for structured computation output,

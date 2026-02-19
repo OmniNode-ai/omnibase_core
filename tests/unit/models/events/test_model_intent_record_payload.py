@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for ModelIntentRecordPayload model.
 
 This module tests the lightweight intent record payload used in

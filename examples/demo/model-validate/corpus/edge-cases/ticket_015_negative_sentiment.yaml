@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 ---
 # Edge case: Angry customer, strong negative sentiment
 ticket_id: "TKT-2024-015"

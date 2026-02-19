@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Concurrent registration stress tests for ServiceRegistry.
 
 This module contains stress tests to verify thread safety of the ServiceRegistry

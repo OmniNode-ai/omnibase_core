@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Replay infrastructure enums.
 
 This module provides enums for the deterministic replay infrastructure:

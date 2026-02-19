@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """AST-based validator for transport/I/O library imports in omnibase_core.
 
 This script enforces the architectural boundary defined in ADR-005:

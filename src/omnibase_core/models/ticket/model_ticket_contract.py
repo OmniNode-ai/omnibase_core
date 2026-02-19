@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TicketContract model for contract-driven ticket execution.
 
 Provides the main contract model for the /ticket-work skill automation system.

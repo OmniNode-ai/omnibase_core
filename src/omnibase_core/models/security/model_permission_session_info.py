@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from pydantic import Field
 
 "\nPermission Session Info Model\n\nType-safe session information for permission validation.\n"

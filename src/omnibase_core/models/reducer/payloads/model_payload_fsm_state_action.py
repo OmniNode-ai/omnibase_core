@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 ModelPayloadFSMStateAction - Typed payload for FSM state action execution intents.
 

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Configuration for ModelSecureEventEnvelope.
 
 Provides configuration settings for secure event envelope behavior,

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for published event entry intermediate format.
 
 Used by ModelContractBase field validator to provide strong typing

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """CLI Exit Code Enumeration.
 
 Standard CLI exit codes for ONEX operations.

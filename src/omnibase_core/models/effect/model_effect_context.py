@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect handler context with time injection support.
 
 This module provides the execution context model for effect handler invocations.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Import validation tests for PR #317 file renames.
 
 This module validates that all import paths work correctly after the file renames

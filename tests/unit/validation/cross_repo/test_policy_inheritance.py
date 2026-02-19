@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for policy inheritance in cross-repo validation.
 
 Tests the shallow inheritance feature where child policies can extend

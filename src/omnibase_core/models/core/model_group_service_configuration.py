@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_group_service_endpoint import (

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Event model for intent query requests.
 
 Published when a client (e.g., dashboard) requests intent data via events

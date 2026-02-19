@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Decision report generator service for corpus replay evidence (OMN-1199).
 
 Generates decision-ready reports from corpus replay evidence in multiple formats:

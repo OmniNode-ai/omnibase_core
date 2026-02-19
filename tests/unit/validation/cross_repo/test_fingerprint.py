@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for fingerprint utility.
 
 Verifies determinism, uniqueness, and format of fingerprints

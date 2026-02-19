@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Parameter validation for DB repository contracts.
 
 Validates named params (:param) and positional ($N with param_order), ensuring

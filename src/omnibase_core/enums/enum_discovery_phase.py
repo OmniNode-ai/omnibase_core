@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Discovery implementation phases for progressive rollout."""
 
 from enum import Enum, unique

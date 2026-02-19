@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Vector store connection configuration model.
 
 This module provides the ModelVectorConnectionConfig class for defining

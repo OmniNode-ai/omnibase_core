@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for intent classification context.
 
 Defines the TypedDictIntentContext TypedDict for providing additional context

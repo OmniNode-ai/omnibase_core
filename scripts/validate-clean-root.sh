@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 #
 # validate-clean-root.sh
 # Validates that project root is clean (no temporary/build artifacts)

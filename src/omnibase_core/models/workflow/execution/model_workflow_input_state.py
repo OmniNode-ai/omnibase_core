@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Workflow input state model for protocol workflow orchestrator."""
 
 from uuid import UUID

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for Claude Code session outcome model.
 
 Validates ModelClaudeCodeSessionOutcome including construction, immutability,

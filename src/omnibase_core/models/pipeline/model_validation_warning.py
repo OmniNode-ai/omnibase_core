@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Validation warning model for pipeline hooks.
 
 Note: This module was moved from omnibase_core.pipeline.models to

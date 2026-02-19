@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Metadata about the validation process."""
 
 from pydantic import BaseModel, ConfigDict, Field

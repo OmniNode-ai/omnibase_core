@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Encryption Metadata Model.
 
 Metadata for encrypted envelope payloads including cryptographic parameters,

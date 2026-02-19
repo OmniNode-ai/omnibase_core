@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Claude Code hook event type enumeration.
 
 Defines the 12 lifecycle events in Claude Code's hook system, matching the

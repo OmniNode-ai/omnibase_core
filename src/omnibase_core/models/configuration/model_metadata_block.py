@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ONEX metadata block model for validators and tools.
 
 This module defines ModelMetadataBlock, the canonical metadata structure

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar

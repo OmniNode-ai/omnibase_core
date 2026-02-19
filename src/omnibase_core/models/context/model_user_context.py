@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """User context model for user and session tracking.
 
 This module provides ModelUserContext, a typed context model for

@@ -1,4 +1,6 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 #
 # SPDX-License-Identifier: Apache-2.0
 """Shared fixtures for contract validation event model tests."""

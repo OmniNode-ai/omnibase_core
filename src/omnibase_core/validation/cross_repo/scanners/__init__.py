@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Scanners for cross-repo validation.
 
 Scanners discover files and extract information for validation rules.

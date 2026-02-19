@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ModelDictValueUnion - Type-safe wrapper for dict-containing union patterns.
 
 This model provides automatic type inference and validation for union types,

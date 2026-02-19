@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Graph Health Status Model.
 
 Type-safe model representing the health status of a graph database connection.

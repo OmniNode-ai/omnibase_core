@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Rule Condition Value Model.
 
 Value structure for rule conditions supporting various comparison types.

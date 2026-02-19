@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for ModelONEXContainer service registry initialization API.
 
 This module tests the initialize_service_registry() method and service_registry

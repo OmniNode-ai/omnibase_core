@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Payload model for intent records in query responses.
 
 Lightweight representation of a stored intent for transmission

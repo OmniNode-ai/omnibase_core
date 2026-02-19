@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Enum for interface surface classifications.
 
 Categorizes the visibility surface of an interface boundary,

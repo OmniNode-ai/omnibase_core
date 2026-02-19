@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Transaction state enumeration for tracking transaction lifecycle."""
 
 from enum import Enum, unique

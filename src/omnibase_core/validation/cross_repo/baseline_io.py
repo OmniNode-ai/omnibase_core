@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """YAML I/O utilities for violation baselines.
 
 Provides read/write functions for baseline files with proper error

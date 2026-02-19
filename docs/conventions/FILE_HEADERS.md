@@ -2,7 +2,7 @@
 
 # File Header Conventions
 
-This document defines the canonical file header format for all Python files in the omnibase_core codebase. Consistent headers improve readability, enable automated tooling, and ensure compliance with Python standards.
+This document defines the canonical file header format for all source files in the omnibase_core codebase. Consistent headers improve readability, enable automated tooling, and ensure compliance with Python standards and licensing requirements.
 
 ---
 
@@ -20,7 +20,8 @@ This document defines the canonical file header format for all Python files in t
 
 File headers in omnibase_core follow a strict ordering to ensure:
 
-- **PEP 257 compliance**: Module docstrings appear first for documentation tools
+- **SPDX compliance**: Every source file carries canonical SPDX MIT license headers
+- **PEP 257 compliance**: Module docstrings appear after the SPDX header for documentation tools
 - **Future-proof typing**: `from __future__ import annotations` enables PEP 604 union syntax everywhere
 - **Consistent import order**: Standard library, third-party, then local imports (enforced by ruff I001/I002)
 - **Automated validation**: Pre-commit hooks detect violations automatically
@@ -32,6 +33,9 @@ File headers in omnibase_core follow a strict ordering to ensure:
 Every Python file in `src/omnibase_core/` MUST follow this structure:
 
 ```python
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Module docstring (PEP 257 format).
 
@@ -65,24 +69,53 @@ class MyClass:
 __all__ = ["MyClass"]
 ```
 
+For files with a shebang line:
+
+```python
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""Module docstring."""
+
+from __future__ import annotations
+```
+
 ---
 
 ## Key Rules
 
-### 1. Module Docstring Comes First
+### 0. SPDX Header Comes First
 
-The module docstring MUST be the very first statement in the file (before any imports).
+Every source file MUST begin with the canonical two-line SPDX header (after shebang/encoding if present):
+
+```
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+```
+
+- **Year policy**: Use creation year `2025` only; do not update on edits
+- **No email** in the copyright text
+- **Bypass**: For rare exceptions, add `# spdx-skip: <reason>` in the first 10 lines
+- **Scope**: All `.py`, `.sh`, `.bash`, `.yml`, `.yaml`, `.toml`, `Dockerfile`, `Makefile`
+
+### 1. Module Docstring Comes After SPDX
+
+The module docstring MUST appear immediately after the SPDX header (before any imports).
 
 ```python
 # CORRECT
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Module description."""
 
 from __future__ import annotations
 
-# WRONG - Import before docstring
-from __future__ import annotations
+# WRONG - SPDX header missing
+"""Module description."""
 
-"""Module description."""  # This becomes a string literal, not a docstring
+from __future__ import annotations
 ```
 
 ### 2. `from __future__ import annotations` Must Follow Docstring
@@ -94,6 +127,9 @@ This import MUST appear immediately after the module docstring. It enables:
 - Consistent typing behavior across the codebase
 
 ```python
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Module docstring."""
 
 from __future__ import annotations  # MUST be here, right after docstring
@@ -129,6 +165,9 @@ __all__ = ["MyClass", "my_function"]
 ### Enum Files
 
 ```python
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Node Kind Enum.
 
@@ -163,6 +202,9 @@ __all__ = ["EnumNodeKind"]
 ### Model Files
 
 ```python
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Generic container pattern for single-value models with metadata.
 
@@ -199,6 +241,9 @@ __all__ = ["ModelContainer"]
 ### TypedDict Files
 
 ```python
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 TypedDict for event information.
 """
@@ -225,6 +270,9 @@ __all__ = ["TypedDictEventInfo"]
 ### Decorator Files
 
 ```python
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Standard error handling decorators for ONEX framework.
 
@@ -267,6 +315,7 @@ __all__ = ["standard_error_handling"]
 
 File header conventions are enforced automatically by:
 
+- **validate-spdx-headers**: Ensures canonical SPDX MIT header is present
 - **ruff I001**: Import block organization (sorting within groups)
 - **ruff I002**: Missing required imports
 - **ruff D100**: Missing module docstring (if docstring rules enabled)
@@ -276,6 +325,15 @@ File header conventions are enforced automatically by:
 Run the following to check compliance:
 
 ```bash
+# Validate SPDX headers
+uv run onex spdx validate
+
+# Fix SPDX headers automatically
+uv run onex spdx fix
+
+# Check mode (CI gate, no writes)
+uv run onex spdx fix --check .
+
 # Check import ordering
 uv run ruff check src/omnibase_core/ --select=I
 
@@ -290,7 +348,9 @@ pre-commit run --all-files
 
 | Violation | Fix |
 |-----------|-----|
-| Import before docstring | Move docstring to line 1 |
+| Missing SPDX header | Run `onex spdx fix` |
+| Wrong SPDX copyright text | Run `onex spdx fix` (auto-replaces) |
+| Import before docstring | Move docstring after SPDX header |
 | Missing `from __future__ import annotations` | Add after docstring |
 | Unsorted imports | Run `ruff check --fix` |
 | Missing blank line between import groups | Run `ruff check --fix` |
@@ -305,4 +365,4 @@ pre-commit run --all-files
 
 ---
 
-**Last Updated**: 2026-01-14 | **Related PR**: #398 (Unified file headers across 225+ files)
+**Last Updated**: 2026-02-19 | **Related PR**: SPDX MIT License Header Rollout

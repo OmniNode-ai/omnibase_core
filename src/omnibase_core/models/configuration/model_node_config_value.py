@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Model for node configuration values - re-exports from split files."""
 
 from omnibase_core.models.configuration.model_config_types import (

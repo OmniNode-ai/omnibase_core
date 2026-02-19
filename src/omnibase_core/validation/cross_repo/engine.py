@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Validation engine for cross-repo conformance.
 
 Orchestrates the validation process: discover files, scan imports,

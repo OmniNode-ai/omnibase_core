@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from datetime import UTC, datetime
 
 from omnibase_core.models.errors.model_fail_fast_details import ModelFailFastDetails

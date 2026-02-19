@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Shared validators for ONEX metadata models.
 
 This module provides reusable validator functions for common metadata fields

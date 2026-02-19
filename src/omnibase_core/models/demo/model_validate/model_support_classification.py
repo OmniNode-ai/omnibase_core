@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Support classification output model for model-validate demo scenario."""
 
 from pydantic import BaseModel, ConfigDict, Field

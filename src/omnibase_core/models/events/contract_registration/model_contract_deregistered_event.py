@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Contract deregistration event model.
 
 Published when a node deregisters its contract (graceful shutdown).

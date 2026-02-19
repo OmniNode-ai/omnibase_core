@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from pydantic import Field
 
 "\nSecurity Level Model\n\nExtensible security configuration model that replaces hardcoded\nsecurity enums with flexible, nuanced security settings.\n"

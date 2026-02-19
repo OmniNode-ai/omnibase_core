@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for EnumFunctionLifecycleStatus.
 
 Tests all aspects of the function lifecycle status enum including:

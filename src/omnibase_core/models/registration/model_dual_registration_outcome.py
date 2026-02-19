@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Domain-level outcome of dual registration.
 
 This module provides ModelDualRegistrationOutcome, a pure domain model representing

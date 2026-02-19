@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Rule Condition Models.
 
 Re-export module for rule condition components including value structure and main condition class.

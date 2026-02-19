@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 # Package init kept intentionally light to avoid circular imports during
 # submodule imports (e.g., utils → models.common → package init → cli → utils).
 # Importing heavy subpackages or re-exporting symbols here can trigger cycles.

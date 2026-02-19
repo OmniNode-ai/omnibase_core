@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Topic naming validation rule.
 
 Enforces Kafka topic naming conventions per ONEX topic taxonomy.

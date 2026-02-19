@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Vector store domain models for ONEX SPI handler protocols.
 
 This module provides typed Pydantic models for vector store operations,

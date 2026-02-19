@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Secure Event Envelope Models.
 
 Re-export module for secure event envelope components including encryption metadata,

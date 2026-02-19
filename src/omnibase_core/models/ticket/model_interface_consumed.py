@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Interface consumed model for ticket-driven parallel development."""
 
 from __future__ import annotations

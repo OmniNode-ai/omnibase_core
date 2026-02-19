@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Module with public names not in __all__ (for --warn-missing testing)."""
 
 __all__ = ["ExportedClass"]

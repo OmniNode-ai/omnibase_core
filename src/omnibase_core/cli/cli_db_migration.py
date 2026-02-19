@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """CLI commands for DB repository contract migration.
 
 Provides tools to convert positional parameters ($1, $2) to named parameters (:param).

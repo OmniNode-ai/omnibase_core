@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDictCollectionFromItemsKwargs.
 
 Type-safe dictionary for collection creation from items parameters.

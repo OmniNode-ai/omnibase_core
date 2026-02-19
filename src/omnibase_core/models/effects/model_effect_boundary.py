@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect Boundary Model for defining effect isolation zones.
 
 Defines boundaries where non-deterministic effects are tracked and controlled.

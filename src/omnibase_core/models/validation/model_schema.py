@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Schema validation models and compatibility aliases.
 
 This module provides a consolidated interface for all schema-related models,

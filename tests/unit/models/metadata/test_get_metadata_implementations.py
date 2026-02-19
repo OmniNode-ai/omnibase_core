@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for get_metadata() implementations across models.
 
 This module tests the fixed get_metadata() implementations to verify:

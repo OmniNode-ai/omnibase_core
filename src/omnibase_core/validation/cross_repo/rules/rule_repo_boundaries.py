@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Repo boundaries rule - the 'where code lives' gate.
 
 Enforces that code is in the correct repository and layer.

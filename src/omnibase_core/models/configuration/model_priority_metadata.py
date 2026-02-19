@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ONEX-compatible Priority Metadata Model.
 
 Additional metadata for execution priorities with ONEX compliance and validation.

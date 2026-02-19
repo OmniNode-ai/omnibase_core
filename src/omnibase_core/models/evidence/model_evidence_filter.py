@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Evidence filtering for partial exports.
 
 This module provides filtering options for exporting subsets of evidence

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """HNSW index configuration model.
 
 This module provides the ModelHnswConfig class for HNSW index tuning.

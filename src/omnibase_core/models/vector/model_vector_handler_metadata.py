@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Vector handler metadata model.
 
 This module provides the ModelVectorHandlerMetadata class for describing

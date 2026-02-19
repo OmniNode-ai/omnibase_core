@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Protocol dependency resolver for contract-driven DI.
 
 This module provides resolution of protocol dependencies declared in node contracts.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from uuid import UUID, uuid4
 
 from omnibase_core.models.discovery.model_nodeintrospectionevent import (

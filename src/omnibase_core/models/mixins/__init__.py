@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Mixin-related models for ONEX framework."""
 
 from omnibase_core.models.mixins.model_completion_data import ModelCompletionData

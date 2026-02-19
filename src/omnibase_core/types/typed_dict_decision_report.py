@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for top-level decision report JSON structure (OMN-1199)."""
 
 from typing import NotRequired, TypedDict

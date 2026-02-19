@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Metric threshold configuration model.
 
 This module defines the threshold configuration used in metric card widgets

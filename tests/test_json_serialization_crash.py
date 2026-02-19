@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 PROOF: Generic[T] Crashes on JSON Serialization (Distributed Systems)
 

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Performance tests for ServiceRegistry - large-scale handler/node registration.
 
 This module tests ServiceRegistry scalability with 1000+ registered services,

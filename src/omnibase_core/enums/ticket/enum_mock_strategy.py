@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Enum for mock strategy classifications.
 
 Defines the strategy used for mocking dependencies in test and

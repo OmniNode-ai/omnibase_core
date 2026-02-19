@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect classification and policy models for replay safety.
 
 Provides structured models for classifying non-deterministic effects,

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Event Discovery Request model for ONEX Discovery & Integration Event Registry.
 
 This module defines the request model for event discovery queries.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for protocol structural compliance.
 
 This module verifies that all protocols in omnibase_core follow proper

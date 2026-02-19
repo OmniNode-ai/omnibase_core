@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Secure Event Envelope Model.
 
 Cryptographically signed event envelope with enterprise security features.

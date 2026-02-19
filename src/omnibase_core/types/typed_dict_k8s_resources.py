@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 # ONEX-EXEMPT: typed-dict-collection - K8s resource types form a cohesive collection
 """
 TypedDict definitions for Kubernetes resource structures.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for DB ownership validation (OMN-2150).
 
 Tests the ownership model, validator, and CI twin logic:

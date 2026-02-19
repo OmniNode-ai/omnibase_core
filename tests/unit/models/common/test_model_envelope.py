@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for ModelEnvelope canonical message envelope.
 
 This module tests the ModelEnvelope model which provides:

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Enumeration for evidence quality tiers in pattern learning.
 
 Defines the evidence quality levels that gate pattern promotion in the

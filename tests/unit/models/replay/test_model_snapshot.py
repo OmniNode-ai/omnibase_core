@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for ModelInputSnapshot and ModelOutputSnapshot models.
 
 Tests the snapshot models used to capture execution input/output data

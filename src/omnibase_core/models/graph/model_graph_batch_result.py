@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Graph Batch Result Model.
 
 Type-safe model representing the result of a batch graph operation.

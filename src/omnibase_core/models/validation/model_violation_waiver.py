@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Violation waiver model for baseline management.
 
 Waivers allow temporary exceptions to validation rules.

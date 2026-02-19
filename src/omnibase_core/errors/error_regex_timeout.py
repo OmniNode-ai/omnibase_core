@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Regex timeout error for ReDoS protection.
 
 This module provides the RegexTimeoutError exception class used to signal

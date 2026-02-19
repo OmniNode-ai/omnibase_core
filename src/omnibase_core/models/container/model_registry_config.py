@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Registry configuration model - implements ProtocolServiceRegistryConfig."""
 
 from pydantic import BaseModel, Field

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Registry Error Code Enumeration.
 
 Canonical error codes for ONEX tool/handler registries.

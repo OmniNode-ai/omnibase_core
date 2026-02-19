@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Response mapping model for operation bindings DSL.
 
 Defines how handler results are transformed into response fields.

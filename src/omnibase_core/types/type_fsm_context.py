@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """FSM context type alias for flexible runtime state.
 
 This type alias is used by ModelFSMStateSnapshot to represent FSM context data.

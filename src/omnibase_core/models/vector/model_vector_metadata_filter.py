@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Metadata filter model for vector queries.
 
 This module provides the ModelVectorMetadataFilter class for defining

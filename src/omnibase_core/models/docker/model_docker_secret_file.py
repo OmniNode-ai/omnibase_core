@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Docker secret file configuration model.
 
 Pydantic model for Docker Compose secret file definitions.

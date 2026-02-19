@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """CLI report renderer for evidence summaries (OMN-1200).
 
 Renders evidence summaries and recommendations to formatted terminal output

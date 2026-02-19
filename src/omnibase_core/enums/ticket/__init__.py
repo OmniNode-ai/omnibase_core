@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Ticket workflow enums for contract-driven execution."""
 
 from omnibase_core.enums.ticket.enum_definition_format import (

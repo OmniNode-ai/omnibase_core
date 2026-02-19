@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """File discovery scanner using glob patterns.
 
 Discovers files to validate based on include/exclude patterns

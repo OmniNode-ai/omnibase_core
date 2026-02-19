@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect Boundary Decorator for annotating functions with effect metadata.
 
 Provides the @effect_boundary decorator to mark functions as effect boundaries,

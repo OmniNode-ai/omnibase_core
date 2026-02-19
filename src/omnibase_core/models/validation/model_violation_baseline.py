@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Complete violation baseline model for incremental adoption.
 
 Baselines capture current violations so teams can adopt validation

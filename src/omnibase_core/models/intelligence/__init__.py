@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Intelligence models for ONEX integration.
 
 This module provides domain models for AI/ML intelligence operations,

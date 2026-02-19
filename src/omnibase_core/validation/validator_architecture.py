@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 ValidatorArchitecture - AST-based validator for ONEX one-model-per-file architecture.
 

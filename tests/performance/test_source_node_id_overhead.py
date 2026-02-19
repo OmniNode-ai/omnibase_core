@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Performance benchmarks for source_node_id field overhead in ModelOnexEnvelope.
 

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Dashboard theme enumeration.
 
 This module defines the available visual theme options for dashboards.

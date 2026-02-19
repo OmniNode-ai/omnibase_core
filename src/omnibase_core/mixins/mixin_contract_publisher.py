@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Mixin for publishing node contracts on startup for dynamic discovery.
 
 This mixin provides contract registration capability for ONEX nodes.

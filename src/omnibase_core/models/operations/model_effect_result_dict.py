@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect Result Dict Model.
 
 Dictionary result for effect operations (e.g., file operations).

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Label violation type enum for metrics policy enforcement."""
 
 from __future__ import annotations

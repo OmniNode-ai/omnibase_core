@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pipeline context model for hook communication."""
 
 from pydantic import BaseModel, ConfigDict, Field

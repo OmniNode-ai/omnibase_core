@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Unit tests for EnumScenarioStatusV2.
 
 Tests all aspects of the scenario status enum including:

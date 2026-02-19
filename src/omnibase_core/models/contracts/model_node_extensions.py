@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Node Extensions Model - ONEX Standards Compliant.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION

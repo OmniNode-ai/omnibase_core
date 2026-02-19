@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Enum for interface kind classifications.
 
 Categorizes the type of interface a contract boundary represents,

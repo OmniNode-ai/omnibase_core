@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Ownership validation for DB repository contracts.
 
 Validates that a DB repository contract declares ``db_metadata`` in its

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Vector search results container model.
 
 This module provides the ModelVectorSearchResults class for representing

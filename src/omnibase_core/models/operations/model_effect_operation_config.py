@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Effect Operation Configuration Model.
 
 Provides a typed model to replace dict[str, Any] usage for operation_config

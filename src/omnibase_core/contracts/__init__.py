@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ONEX Contracts Module.
 
 This module provides the contract infrastructure for the ONEX 4-node architecture:

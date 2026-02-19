@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Model ONEX Dependency Injection Container.
 
 This module provides the ModelONEXContainer, the primary dependency injection

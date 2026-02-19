@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Service Dependency Graph Model.
 
 Implements ProtocolDependencyGraph for service registry dependency analysis.

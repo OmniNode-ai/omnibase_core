@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """MCP parameter mapping model.
 
 Maps ONEX contract fields to MCP tool parameters.

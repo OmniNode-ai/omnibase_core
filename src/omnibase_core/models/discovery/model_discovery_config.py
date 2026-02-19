@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tool discovery configuration model with caching, depth control, and filtering options."""
 
 import warnings

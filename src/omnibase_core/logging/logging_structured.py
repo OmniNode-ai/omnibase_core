@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Structured logging for ONEX core.
 
 Provides centralized structured logging with standardized JSON formats

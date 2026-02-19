@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Top-level agent definition model for YAML schema validation."""
 
 from __future__ import annotations

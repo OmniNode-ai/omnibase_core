@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Masked authentication summary model for logging and debugging.
 
 Provides safe authentication information display without exposing sensitive data.

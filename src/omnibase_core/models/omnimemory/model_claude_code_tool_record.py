@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 ModelClaudeCodeToolRecord - Record of a tool execution during a Claude Code session.
 

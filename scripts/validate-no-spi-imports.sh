@@ -1,4 +1,7 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 # Validate no omnibase_spi imports exist in omnibase_core
 # Enforces architectural boundary: Core should not depend on SPI
 

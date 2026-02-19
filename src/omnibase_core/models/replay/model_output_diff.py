@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Output diff model for structured difference representation.
 
 Captures structured differences between two outputs in a way that's

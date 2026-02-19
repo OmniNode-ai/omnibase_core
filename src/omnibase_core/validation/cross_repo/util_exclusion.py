@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Exclusion utilities for cross-repo validation rules.
 
 Provides shared logic for determining whether files should be excluded

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Hook timeout exception."""
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

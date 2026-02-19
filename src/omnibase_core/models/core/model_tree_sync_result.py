@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from pydantic import Field
 
 from omnibase_core.enums.enum_tree_sync_status import EnumTreeSyncStatus

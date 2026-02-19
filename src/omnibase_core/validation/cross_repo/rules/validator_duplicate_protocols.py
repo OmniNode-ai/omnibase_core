@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Duplicate protocols rule - detect protocol classes defined in multiple files.
 
 Catches DRY violations and copy-paste drift by flagging when the same

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Integration tests for MCP models with YAML contracts.
 
 Tests for loading MCP configuration from YAML-like data structures,

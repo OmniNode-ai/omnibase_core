@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_event_type import EnumEventType

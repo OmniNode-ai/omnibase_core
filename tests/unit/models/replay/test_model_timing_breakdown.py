@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Tests for ModelTimingBreakdown model.
 
 Tests the timing breakdown model used to represent execution timing comparisons

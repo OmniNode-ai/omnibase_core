@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Typed rule configurations for cross-repo validation.
 
 Each rule has its own typed config model. No dict[str, Any] allowed.

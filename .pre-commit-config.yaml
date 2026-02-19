@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 ---
 # ONEX Core Pre-commit Configuration
 # Uses shared ONEX hook templates to demonstrate ecosystem integration
@@ -359,18 +361,17 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
-      # SPDX Header Prevention (OMN-1360)
-      # Prevents SPDX license headers from being (re)introduced.
-      # ONEX uses a centralized LICENSE file instead of per-file headers.
-      # To allow SPDX headers in rare cases, add: # spdx-ok: <reason>
+      # SPDX Header Requirement
+      # Ensures all source files have the canonical SPDX MIT license header.
+      # To skip SPDX check in rare cases, add: # spdx-skip: <reason>
       # See: docs/conventions/FILE_HEADERS.md for canonical header format
-      - id: validate-no-spdx-headers
-        name: ONEX SPDX Header Prevention
-        entry: uv run python scripts/validation/validate-no-spdx-headers.py
+      - id: validate-spdx-headers
+        name: ONEX SPDX Header Requirement
+        entry: uv run python scripts/validation/validate_spdx_headers.py
         language: system
         pass_filenames: true
-        files: ^src/.*\.py$
-        exclude: ^(tests/|archived/|archive/).*\.py$
+        files: ^(src|tests|scripts|examples)/.*\.(py|sh|bash|yml|yaml)$
+        exclude: ^(archived/|archive/)
         stages: [pre-commit]
 
       # PROTOCOL EXCLUSION: protocols/ is excluded because Protocol files define

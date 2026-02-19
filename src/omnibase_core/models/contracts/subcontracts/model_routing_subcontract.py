@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Routing Subcontract Model - ONEX Microservices ModelArchitecture Compliant.
 

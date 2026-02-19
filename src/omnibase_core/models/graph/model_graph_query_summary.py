@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Graph query summary model.
 
 This module provides the ModelGraphQuerySummary class for query execution summary.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Validation policy contract for cross-repo conformance validation.
 
 Defines the schema that repositories use to declare their validation policies.

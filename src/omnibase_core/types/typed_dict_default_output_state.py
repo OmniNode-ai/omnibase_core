@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """TypedDict for default output state from contract state reducer."""
 
 from typing import TYPE_CHECKING, TypedDict

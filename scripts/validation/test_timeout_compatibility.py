@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Cross-platform timeout compatibility test.
 Verifies timeout functionality works on both Windows and Unix systems.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Typed payload for registration intents.
 
 This module provides ModelRegistrationPayload, a pure data model that carries

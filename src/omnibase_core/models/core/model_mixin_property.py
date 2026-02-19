@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pydantic model for mixin property definitions.
 
 This module provides the ModelMixinProperty class for defining

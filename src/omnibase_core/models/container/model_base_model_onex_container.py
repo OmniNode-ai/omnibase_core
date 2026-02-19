@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Base dependency injection container using dependency-injector.
 
 This module provides _BaseModelONEXContainer, a DeclarativeContainer that

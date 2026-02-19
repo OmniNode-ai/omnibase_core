@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Input/Output models for Container Adapter tool.
 
 This module provides convenience imports for all Container Adapter models

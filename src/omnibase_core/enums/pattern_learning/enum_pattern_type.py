@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Enumeration for learned pattern types.
 
 Defines the classification types for patterns extracted by the learning system.

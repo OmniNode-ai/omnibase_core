@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Partition key rule - require explicit partition_key in topic configs.
 
 Enforces that Kafka topic configuration classes declare an explicit

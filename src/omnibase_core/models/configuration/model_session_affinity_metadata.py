@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 from pydantic import Field
 
 "\nModelSessionAffinityMetadata - Session affinity configuration for load balancing\n\nSession affinity model for configuring sticky sessions and client-to-node\nrouting persistence in load balancing systems.\n"

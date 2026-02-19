@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """GOOD: This handler imports from allowed public APIs."""
 
 from __future__ import annotations

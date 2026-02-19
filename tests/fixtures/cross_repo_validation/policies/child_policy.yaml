@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 ---
 # Child policy that extends base_policy (OMN-1774)
 # Tests single-level inheritance with various merge scenarios.

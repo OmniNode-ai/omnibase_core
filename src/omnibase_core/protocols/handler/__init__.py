@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Handler protocols for message dispatch.
 
 This package contains protocols for handler execution context, contracts,

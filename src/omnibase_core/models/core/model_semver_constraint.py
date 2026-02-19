@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ModelSemVerConstraint - Strongly typed semantic version constraints."""
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 # ONEX-EXEMPT: typed-dict-collection - Summary TypedDict is nested in main TypedDict
 from __future__ import annotations
 

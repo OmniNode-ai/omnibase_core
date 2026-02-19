@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Configuration for schema validation invariant.
 
 Validates output against a JSON Schema, ensuring structural

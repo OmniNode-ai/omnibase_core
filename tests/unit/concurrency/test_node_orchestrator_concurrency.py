@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Comprehensive concurrency tests for NodeOrchestrator.
 
 This module validates thread safety and async concurrency behavior of

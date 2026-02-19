@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Claude Code hook event payload base class.
 
 Provides a base model for event-specific payloads from Claude Code hooks.

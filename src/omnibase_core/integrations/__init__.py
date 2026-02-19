@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """External integrations for OmniNode.
 
 Provides integration surfaces for external systems like Claude Code.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 name: Handshake Policy Gate
 # Checks that every active OmniNode repo has the architecture-handshake
 # CI workflow installed and passing on its default branch.

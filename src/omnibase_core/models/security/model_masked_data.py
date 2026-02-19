@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Masked Data Models.
 
 Re-export module for masked data components including dictionary and list containers,

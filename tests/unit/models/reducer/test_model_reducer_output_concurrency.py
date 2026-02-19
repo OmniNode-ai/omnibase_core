@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Thread safety, async-safe, and UUID preservation tests for ModelReducerOutput[T].
 
 This module provides comprehensive concurrency and serialization tests for

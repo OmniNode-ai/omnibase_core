@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """BAD: This file imports from fake_core.internal which is forbidden."""
 
 from __future__ import annotations

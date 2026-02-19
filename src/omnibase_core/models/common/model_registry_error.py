@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """
 Canonical error model for registry errors (tool/handler registries).
 Use this for all structured registry error reporting.

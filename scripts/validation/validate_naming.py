@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Naming convention validation for omni* ecosystem.
 
 This script validates that Python classes follow the ONEX naming conventions

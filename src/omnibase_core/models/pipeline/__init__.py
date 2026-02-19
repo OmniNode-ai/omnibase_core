@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Pipeline models."""
 
 from omnibase_core.models.pipeline.model_hook_error import ModelHookError

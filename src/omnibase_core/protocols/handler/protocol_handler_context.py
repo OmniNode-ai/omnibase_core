@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Protocol for handler execution context.
 
 This module defines ProtocolHandlerContext, the interface for execution context

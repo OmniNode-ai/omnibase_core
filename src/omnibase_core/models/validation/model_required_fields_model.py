@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """ModelRequiredFieldsModel.
 
 Strongly typed model for the required fields in a JSON schema.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Singleton holder utilities.
 
 DEPRECATED: All singleton holders have been removed in favor of:

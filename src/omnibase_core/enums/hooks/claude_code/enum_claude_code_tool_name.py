@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 """Enumeration of Claude Code tool names.
 
 Defines the canonical tool names used by Claude Code for tool execution tracking.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
 import json
 
 from omnibase_core.types.typed_dict_k8s_resources import (
