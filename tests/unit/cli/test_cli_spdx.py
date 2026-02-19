@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -677,6 +678,30 @@ class TestCLIFix:
         f.chmod(0o644)
 
         assert result.exit_code != 0
+
+    def test_write_fail_does_not_inflate_modified_count(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        """modified_count is NOT incremented when write_text raises OSError.
+
+        Regression test: a failed write must not count as a successful fix.
+        The summary must show "Fixed: 0" and "Errors: 1", and exit non-zero.
+        """
+        f = tmp_path / "needs_header.py"
+        f.write_text("x = 1\n", encoding="utf-8")
+
+        runner = CliRunner()
+        with mock.patch("pathlib.Path.write_text", side_effect=OSError("disk full")):
+            result = runner.invoke(spdx, ["fix", str(tmp_path)])
+
+        # Must exit non-zero because the write failed
+        assert result.exit_code != 0
+        # Error must be reported
+        assert "Errors: 1" in result.output or "Errors: 1" in (
+            result.output + str(result.exception)
+        )
+        # modified_count must NOT be inflated — "Fixed: 0" must appear
+        assert "Fixed: 0" in result.output
 
 
 @pytest.mark.unit

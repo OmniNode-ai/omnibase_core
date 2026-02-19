@@ -27,6 +27,7 @@ from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 # Constants
 # ---------------------------------------------------------------------------
 
+# Year intentionally frozen at 2025 per FILE_HEADERS.md policy: use creation year only, do not update on edits.
 SPDX_COPYRIGHT_LINE = "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc."
 SPDX_LICENSE_LINE = "# SPDX-License-Identifier: MIT"
 SPDX_HEADER = f"{SPDX_COPYRIGHT_LINE}\n{SPDX_LICENSE_LINE}\n"
@@ -201,18 +202,22 @@ def _strip_existing_spdx(lines: list[str]) -> list[str]:
             if stripped.startswith(marker):
                 is_spdx = True
                 break
-        # Also match the 3-line variant with a bare "#" separator.
-        # Only treat it as part of the SPDX block when the previous line is
-        # itself an SPDX marker (guards against i==0 and against a bare "#"
-        # that happens to precede an SPDX line but is not part of the header).
-        if (
-            stripped == "#"
-            and i > 0
-            and any(lines[i - 1].strip().startswith(m) for m in _SPDX_MARKERS)
+        # Also match bare "#" separator lines within an SPDX header block.
+        # A bare "#" is part of the block when:
+        #   (a) spdx_removed is True (we are already inside the block), OR
+        #   (b) the immediately preceding line is an SPDX marker (handles a
+        #       bare "#" that sits between two SPDX lines, e.g. the middle of
+        #       a 3-line header: copyright / # / license).
+        # The previous guard checked that the *next* line was also an SPDX
+        # marker, which was too strict: it left a trailing bare "#" (after the
+        # last SPDX line) unconsumed.
+        if stripped == "#" and (
+            spdx_removed
+            or (
+                i > 0 and any(lines[i - 1].strip().startswith(m) for m in _SPDX_MARKERS)
+            )
         ):
-            next_stripped = lines[i + 1].strip() if i + 1 < len(lines) else ""
-            if any(next_stripped.startswith(m) for m in _SPDX_MARKERS):
-                is_spdx = True
+            is_spdx = True
 
         if is_spdx:
             spdx_removed = True
@@ -229,15 +234,29 @@ def _strip_existing_spdx(lines: list[str]) -> list[str]:
     # Only do this immediately after the main block (no real content in between).
     if spdx_removed:
         j = i
+        remnant_consumed = False
         while j < len(lines):
             s = lines[j].strip()
             is_remnant = any(s.startswith(m) for m in _SPDX_MARKERS)
-            if not is_remnant and s == "#":
-                # Bare "#": skip only if the next line is an SPDX marker
-                if j + 1 < len(lines) and any(
-                    lines[j + 1].strip().startswith(m) for m in _SPDX_MARKERS
-                ):
-                    is_remnant = True
+            if is_remnant:
+                remnant_consumed = True
+            # Bare "#": consume when already inside the remnant block (previous
+            # SPDX line consumed) OR when the next line is an SPDX marker (e.g.
+            # "#\n# SPDX-License-Identifier: X" multi-line remnant header).
+            if (
+                not is_remnant
+                and s == "#"
+                and (
+                    remnant_consumed
+                    or (
+                        j + 1 < len(lines)
+                        and any(
+                            lines[j + 1].strip().startswith(m) for m in _SPDX_MARKERS
+                        )
+                    )
+                )
+            ):
+                is_remnant = True
             if not is_remnant:
                 break
             j += 1
@@ -446,6 +465,10 @@ def validate_files(file_args: list[str]) -> int:
         if p.is_file():
             if _is_eligible_file(p):
                 files_to_check.append(p)
+            else:
+                print(  # print-ok: CLI output
+                    f"Warning: skipping ineligible file: {p}", file=sys.stderr
+                )
         elif p.is_dir():
             files_to_check.extend(_discover_files(p))
         else:
@@ -566,13 +589,13 @@ def fix(
             already_ok_count += 1
             continue
 
-        modified_count += 1
-
         if check or dry_run:
+            modified_count += 1
             click.echo(f"  NEEDS FIX: {filepath}")
         else:
             try:
                 filepath.write_text(new_content, encoding="utf-8")
+                modified_count += 1
                 if verbose:
                     click.echo(f"  FIXED: {filepath}")
             except OSError as e:
@@ -600,11 +623,13 @@ def fix(
             click.echo(click.style("All files have correct SPDX headers.", fg="green"))
             ctx.exit(EnumCLIExitCode.SUCCESS)
     elif dry_run:
-        click.echo(f"DRY RUN: {modified_count} file(s) would be modified")
-        click.echo(f"Already OK: {already_ok_count} | Skipped: {skipped_count}")
-        # This guard fires for the dry-run path when a file raises OSError during read.
+        # Surface errors before the summary counts so the ordering matches the
+        # normal write path (error-first, then summary).
         if error_count:
             click.echo(click.style(f"Errors: {error_count}", fg="red"), err=True)
+        click.echo(f"DRY RUN: {modified_count} file(s) would be modified")
+        click.echo(f"Already OK: {already_ok_count} | Skipped: {skipped_count}")
+        if error_count:
             ctx.exit(EnumCLIExitCode.ERROR)
     # For the normal write path, surface errors before the success summary so
     # the user sees the failure context rather than a misleading "Fixed: N" line.
