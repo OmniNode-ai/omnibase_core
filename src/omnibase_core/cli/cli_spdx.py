@@ -575,6 +575,9 @@ def fix(
                 )
             )
             ctx.exit(EnumCLIExitCode.ERROR)
+        elif error_count > 0:
+            click.echo(click.style(f"Errors: {error_count}", fg="red"), err=True)
+            ctx.exit(EnumCLIExitCode.ERROR)
         else:
             click.echo(click.style("All files have correct SPDX headers.", fg="green"))
             ctx.exit(EnumCLIExitCode.SUCCESS)

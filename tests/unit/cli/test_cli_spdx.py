@@ -10,6 +10,8 @@ Tests cover:
 - _remove_body_spdx_blocks: stale SPDX blocks embedded in file body
 - _fix_file_content: correct header insertion for all file types
 - _has_correct_header / _validate_file: detection of valid vs. invalid headers
+- validate_files: directory scanning, sorted deduplication, 0-vs-1 return value
+- CLI: --dry-run, --check, --verbose flags via CliRunner
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ from __future__ import annotations
 import pathlib
 
 import pytest
+from click.testing import CliRunner
 
 from omnibase_core.cli.cli_spdx import (
     SPDX_COPYRIGHT_LINE,
@@ -26,6 +29,8 @@ from omnibase_core.cli.cli_spdx import (
     _remove_body_spdx_blocks,
     _strip_existing_spdx,
     _validate_file,
+    spdx,
+    validate_files,
 )
 
 # Mark all tests in this module as unit tests
@@ -353,3 +358,198 @@ class TestValidateFile:
         result = _validate_file(f)
         assert result is not None
         assert "Stale" in result or "stale" in result
+
+
+# ---------------------------------------------------------------------------
+# validate_files  (public function: directory scanning, dedup, return codes)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestValidateFiles:
+    """Tests for the validate_files() public function."""
+
+    def test_returns_zero_when_all_files_valid(self, tmp_path: pathlib.Path) -> None:
+        """Returns 0 when every eligible file has a correct SPDX header."""
+        f = tmp_path / "good.py"
+        f.write_text(
+            f"{SPDX_COPYRIGHT_LINE}\n{SPDX_LICENSE_LINE}\n\nx = 1\n", encoding="utf-8"
+        )
+        assert validate_files([str(tmp_path)]) == 0
+
+    def test_returns_one_when_violation_found(self, tmp_path: pathlib.Path) -> None:
+        """Returns 1 when at least one eligible file lacks a correct header."""
+        f = tmp_path / "bad.py"
+        f.write_text("x = 1\n", encoding="utf-8")
+        assert validate_files([str(tmp_path)]) == 1
+
+    def test_directory_scanning_discovers_nested_files(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        """_discover_files is invoked for directory args and finds nested files."""
+        sub = tmp_path / "subdir"
+        sub.mkdir()
+        good = sub / "ok.py"
+        good.write_text(
+            f"{SPDX_COPYRIGHT_LINE}\n{SPDX_LICENSE_LINE}\n\npass\n", encoding="utf-8"
+        )
+        bad = sub / "missing.py"
+        bad.write_text("pass\n", encoding="utf-8")
+        # Should detect the violation in the nested file
+        assert validate_files([str(tmp_path)]) == 1
+
+    def test_sorted_deduplication_does_not_double_count(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        """Passing the same file twice does not duplicate violation counts."""
+        f = tmp_path / "dup.py"
+        f.write_text("x = 1\n", encoding="utf-8")
+        # Both args refer to the same file; sorted() deduplicates nothing, but
+        # validate_files should still return 1 (not crash or double-report).
+        result = validate_files([str(f), str(f)])
+        assert result == 1
+
+    def test_empty_file_list_defaults_to_cwd_scan(
+        self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Passing an empty list causes validate_files to scan the CWD."""
+        monkeypatch.chdir(tmp_path)
+        good = tmp_path / "fine.py"
+        good.write_text(
+            f"{SPDX_COPYRIGHT_LINE}\n{SPDX_LICENSE_LINE}\n\npass\n", encoding="utf-8"
+        )
+        assert validate_files([]) == 0
+
+    def test_nonexistent_path_prints_warning_and_returns_zero(
+        self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A path that does not exist emits a warning but does not crash."""
+        missing = str(tmp_path / "does_not_exist.py")
+        result = validate_files([missing])
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "Warning" in captured.err or "Warning" in captured.out
+
+    def test_ineligible_file_is_skipped(self, tmp_path: pathlib.Path) -> None:
+        """A file with an extension not in INCLUDED_EXTENSIONS is silently skipped."""
+        f = tmp_path / "binary.dat"
+        f.write_text("no header needed\n", encoding="utf-8")
+        assert validate_files([str(f)]) == 0
+
+
+# ---------------------------------------------------------------------------
+# CLI integration tests via CliRunner
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestCLIFix:
+    """Click CLI tests for `onex spdx fix` subcommand flags."""
+
+    def test_dry_run_reports_needs_fix_without_writing(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        """--dry-run prints 'NEEDS FIX' but does not modify the file."""
+        f = tmp_path / "unfixed.py"
+        original = "x = 1\n"
+        f.write_text(original, encoding="utf-8")
+        runner = CliRunner()
+        result = runner.invoke(spdx, ["fix", "--dry-run", str(tmp_path)])
+        assert result.exit_code == 0
+        assert "NEEDS FIX" in result.output
+        # File must be unchanged
+        assert f.read_text(encoding="utf-8") == original
+
+    def test_check_exits_nonzero_when_files_need_fix(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        """--check exits non-zero when files are missing headers."""
+        f = tmp_path / "bad.py"
+        f.write_text("x = 1\n", encoding="utf-8")
+        runner = CliRunner()
+        result = runner.invoke(spdx, ["fix", "--check", str(tmp_path)])
+        assert result.exit_code != 0
+
+    def test_check_exits_zero_when_all_files_correct(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        """--check exits 0 when every eligible file already has a correct header."""
+        f = tmp_path / "ok.py"
+        f.write_text(
+            f"{SPDX_COPYRIGHT_LINE}\n{SPDX_LICENSE_LINE}\n\nx = 1\n", encoding="utf-8"
+        )
+        runner = CliRunner()
+        result = runner.invoke(spdx, ["fix", "--check", str(tmp_path)])
+        assert result.exit_code == 0
+
+    def test_check_exits_nonzero_on_error_count_with_zero_modified(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        """--check exits non-zero when error_count > 0 even if modified_count == 0.
+
+        Regression test: previously, errors were only reported after the summary
+        block; if modified_count was 0 the command could silently exit 0 despite
+        real I/O errors encountered during the scan.
+        """
+        f = tmp_path / "unreadable.py"
+        f.write_text(
+            f"{SPDX_COPYRIGHT_LINE}\n{SPDX_LICENSE_LINE}\n\nx = 1\n", encoding="utf-8"
+        )
+        f.chmod(0o000)  # Make file unreadable to trigger an OSError
+
+        runner = CliRunner()
+        result = runner.invoke(spdx, ["fix", "--check", str(tmp_path)])
+
+        # Restore permissions so pytest cleanup can remove the temp dir
+        f.chmod(0o644)
+
+        # With an unreadable file: modified_count == 0 but error_count > 0 — must
+        # exit non-zero (the bug was that this path exited 0).
+        assert result.exit_code != 0
+
+    def test_verbose_flag_prints_per_file_status(self, tmp_path: pathlib.Path) -> None:
+        """--verbose emits per-file status lines alongside the summary."""
+        f = tmp_path / "verbose_ok.py"
+        f.write_text(
+            f"{SPDX_COPYRIGHT_LINE}\n{SPDX_LICENSE_LINE}\n\nx = 1\n", encoding="utf-8"
+        )
+        runner = CliRunner()
+        result = runner.invoke(spdx, ["fix", "--verbose", str(tmp_path)])
+        assert result.exit_code == 0
+        # Verbose mode reports at least the scan line and a per-file status
+        assert "Scanning" in result.output or "OK" in result.output
+
+    def test_fix_without_flags_writes_header(self, tmp_path: pathlib.Path) -> None:
+        """Running fix without flags actually rewrites missing-header files."""
+        f = tmp_path / "needs_header.py"
+        f.write_text("x = 1\n", encoding="utf-8")
+        runner = CliRunner()
+        result = runner.invoke(spdx, ["fix", str(tmp_path)])
+        assert result.exit_code == 0
+        updated = f.read_text(encoding="utf-8")
+        assert updated.startswith(SPDX_COPYRIGHT_LINE)
+
+
+@pytest.mark.unit
+class TestCLIValidate:
+    """Click CLI tests for `onex spdx validate` subcommand."""
+
+    def test_validate_exits_zero_for_valid_file(self, tmp_path: pathlib.Path) -> None:
+        """validate exits 0 when the provided file has the correct header."""
+        f = tmp_path / "valid.py"
+        f.write_text(
+            f"{SPDX_COPYRIGHT_LINE}\n{SPDX_LICENSE_LINE}\n\nx = 1\n", encoding="utf-8"
+        )
+        runner = CliRunner()
+        result = runner.invoke(spdx, ["validate", str(f)])
+        assert result.exit_code == 0
+
+    def test_validate_exits_nonzero_for_invalid_file(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        """validate exits non-zero when a file is missing its header."""
+        f = tmp_path / "invalid.py"
+        f.write_text("x = 1\n", encoding="utf-8")
+        runner = CliRunner()
+        result = runner.invoke(spdx, ["validate", str(f)])
+        assert result.exit_code != 0

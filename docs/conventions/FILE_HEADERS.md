@@ -30,7 +30,7 @@ File headers in omnibase_core follow a strict ordering to ensure:
 
 ## Canonical Format
 
-Every Python file in `src/omnibase_core/` MUST follow this structure:
+Every source file eligible for SPDX headers (`.py`, `.sh`, `.bash`, `.yml`, `.yaml`, `.toml`, `Dockerfile`, `Makefile`) MUST follow this structure:
 
 ```python
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
