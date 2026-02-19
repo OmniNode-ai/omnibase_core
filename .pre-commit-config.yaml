@@ -370,6 +370,11 @@ repos:
         entry: uv run python scripts/validation/validate_spdx_headers.py
         language: system
         pass_filenames: true
+        # NOTE: The files: pattern covers src/, tests/, scripts/, and examples/
+        # subdirectories.  Root-level Makefile and Dockerfile are eligible per
+        # cli_spdx.py INCLUDED_FILENAMES but are NOT matched by this pattern.
+        # Neither file currently exists in this repo; if one is added in future,
+        # extend this pattern with an additional alternation (e.g. |Makefile|Dockerfile).
         files: ^(src|tests|scripts|examples)/.*\.(py|sh|bash|yml|yaml|toml)$
         exclude: ^(archived/|archive/)
         stages: [pre-commit]

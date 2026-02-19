@@ -16,6 +16,7 @@ Tests cover:
 
 from __future__ import annotations
 
+import os
 import pathlib
 
 import pytest
@@ -398,16 +399,19 @@ class TestValidateFiles:
         # Should detect the violation in the nested file
         assert validate_files([str(tmp_path)]) == 1
 
-    def test_sorted_deduplication_does_not_double_count(
-        self, tmp_path: pathlib.Path
+    def test_deduplication_does_not_double_count(
+        self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """Passing the same file twice does not duplicate violation counts."""
+        """Passing the same file twice reports the violation exactly once."""
         f = tmp_path / "dup.py"
         f.write_text("x = 1\n", encoding="utf-8")
-        # Both args refer to the same file; sorted() deduplicates nothing, but
-        # validate_files should still return 1 (not crash or double-report).
+        # Both args refer to the same file; validate_files deduplicates the
+        # list so the file is only validated once.
         result = validate_files([str(f), str(f)])
         assert result == 1
+        captured = capsys.readouterr()
+        # The violation message for this one file should appear exactly once.
+        assert captured.out.count(str(f)) == 1
 
     def test_empty_file_list_defaults_to_cwd_scan(
         self, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
@@ -482,6 +486,7 @@ class TestCLIFix:
         result = runner.invoke(spdx, ["fix", "--check", str(tmp_path)])
         assert result.exit_code == 0
 
+    @pytest.mark.skipif(os.getuid() == 0, reason="chmod is bypassed as root")
     def test_check_exits_nonzero_on_error_count_with_zero_modified(
         self, tmp_path: pathlib.Path
     ) -> None:

@@ -420,7 +420,9 @@ def validate_files(file_args: list[str]) -> int:
 
     Args:
         file_args: File paths or directories to validate. If empty,
-            defaults to scanning the current working directory.
+            defaults to scanning the current working directory. Callers are
+            responsible for ensuring the CWD is the intended scan root when
+            an empty list is passed.
 
     Returns:
         0 if all files are compliant, 1 if violations found.
@@ -438,6 +440,10 @@ def validate_files(file_args: list[str]) -> int:
             print(  # print-ok: CLI output
                 f"Warning: path does not exist: {p}", file=sys.stderr
             )
+
+    # Deduplicate while preserving insertion order (e.g. when the same path is
+    # passed more than once via pre-commit or the CLI).
+    files_to_check = list(dict.fromkeys(files_to_check))
 
     violations: list[tuple[Path, str]] = []
     for f in sorted(files_to_check):
@@ -588,6 +594,8 @@ def fix(
         click.echo(f"Fixed: {modified_count} file(s)")
         click.echo(f"Already OK: {already_ok_count} | Skipped: {skipped_count}")
 
+    # This guard only fires for the non-check, non-dry-run write path; in --check
+    # mode errors are reported and the command exits early in the block above.
     if error_count:
         click.echo(click.style(f"Errors: {error_count}", fg="red"), err=True)
         ctx.exit(EnumCLIExitCode.ERROR)
