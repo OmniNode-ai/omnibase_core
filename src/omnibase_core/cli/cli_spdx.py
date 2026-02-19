@@ -431,6 +431,11 @@ def _validate_file(path: Path) -> str | None:
     except (OSError, UnicodeDecodeError) as e:
         return f"Cannot read file: {e}"
 
+    # Intentional: no keepends=True here.  _validate_file only inspects tokens
+    # (shebang, encoding cookie, SPDX text) and never reconstructs file content,
+    # so stripped line endings are fine.  _fix_file_content uses
+    # splitlines(keepends=True) because it must preserve exact line endings for
+    # round-trip reconstruction without altering the file's line-ending style.
     lines = content.splitlines()
 
     if _has_bypass(lines):
@@ -712,6 +717,7 @@ def fix(
     else:
         click.echo(f"Fixed: {modified_count} file(s)")
         click.echo(f"Already OK: {already_ok_count} | Skipped: {skipped_count}")
+        ctx.exit(EnumCLIExitCode.SUCCESS)
 
 
 @spdx.command(name="validate")
