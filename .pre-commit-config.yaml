@@ -370,7 +370,7 @@ repos:
         entry: uv run python scripts/validation/validate_spdx_headers.py
         language: system
         pass_filenames: true
-        files: ^(src|tests|scripts|examples)/.*\.(py|sh|bash|yml|yaml)$
+        files: ^(src|tests|scripts|examples)/.*\.(py|sh|bash|yml|yaml|toml)$
         exclude: ^(archived/|archive/)
         stages: [pre-commit]
 

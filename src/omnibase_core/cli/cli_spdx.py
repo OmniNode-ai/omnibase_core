@@ -598,11 +598,11 @@ def validate_cmd(ctx: click.Context, files: tuple[Path, ...]) -> None:
 
     Checks that every eligible file has the canonical two-line header.
     Accepts file paths as arguments (for pre-commit pass_filenames mode).
-    Defaults to scanning src/ if no arguments provided.
+    Defaults to scanning the current working directory if no arguments provided.
 
     \b
     Examples:
-        onex spdx validate                     # Check src/
+        onex spdx validate                     # Check current working directory
         onex spdx validate src/ tests/         # Check specific dirs
         onex spdx validate src/foo/bar.py      # Check single file
     """
