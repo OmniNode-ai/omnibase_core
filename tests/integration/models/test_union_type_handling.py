@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Integration tests for union type handling in typed payload models.
 
 This module provides comprehensive integration tests for union type handling

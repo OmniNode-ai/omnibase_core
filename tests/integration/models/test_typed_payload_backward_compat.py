@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Backward compatibility and union type handling tests for typed payload models.
 
 This module tests the backward compatibility and union type discrimination behavior

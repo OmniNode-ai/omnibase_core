@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Unit tests for cross-repo validation event models.
 
 Tests the validation lifecycle event models:

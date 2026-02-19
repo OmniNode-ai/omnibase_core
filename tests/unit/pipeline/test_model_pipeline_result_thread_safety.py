@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Tests for ModelPipelineResult thread safety features.
 
 This module tests the thread-safety guarantees of ModelPipelineResult,

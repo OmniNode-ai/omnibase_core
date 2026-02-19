@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Tests for ExpandedContractValidator (Phase 3 Contract Validation).
 
 Tests all validation checks performed by ExpandedContractValidator including:

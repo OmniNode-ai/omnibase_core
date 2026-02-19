@@ -135,7 +135,11 @@ def _has_bypass(lines: list[str]) -> bool:
 
 
 def _has_correct_header(lines: list[str]) -> bool:
-    """Return True if the file already has the exact canonical SPDX header."""
+    """Return True if the file already has the exact canonical SPDX header.
+
+    Returns False if the canonical two-line header is present but stale
+    SPDX-License-Identifier lines remain elsewhere in the file.
+    """
     idx = 0
     # Skip shebang
     if idx < len(lines) and _is_shebang(lines[idx]):
@@ -144,12 +148,21 @@ def _has_correct_header(lines: list[str]) -> bool:
     if idx < len(lines) and _is_encoding(lines[idx]):
         idx += 1
     # Now expect the two canonical lines
-    if idx + 1 < len(lines):
-        return (
-            lines[idx].rstrip() == SPDX_COPYRIGHT_LINE
-            and lines[idx + 1].rstrip() == SPDX_LICENSE_LINE
-        )
-    return False
+    if idx + 1 >= len(lines):
+        return False
+    if not (
+        lines[idx].rstrip() == SPDX_COPYRIGHT_LINE
+        and lines[idx + 1].rstrip() == SPDX_LICENSE_LINE
+    ):
+        return False
+    # Confirm no stale SPDX-License-Identifier lines follow the canonical header
+    for line in lines[idx + 2 :]:
+        if (
+            line.strip().startswith("# SPDX-License-Identifier:")
+            and line.rstrip() != SPDX_LICENSE_LINE
+        ):
+            return False
+    return True
 
 
 def _has_any_spdx(lines: list[str]) -> bool:
@@ -186,7 +199,7 @@ def _strip_existing_spdx(lines: list[str]) -> list[str]:
                 is_spdx = True
                 break
         # Also match the 3-line variant with a bare "#" separator
-        if stripped == "#" and not spdx_removed and i > 0:
+        if stripped == "#" and i > 0:
             # Only skip bare "#" if it sits between two SPDX lines
             prev_stripped = lines[i - 1].strip() if i > 0 else ""
             next_stripped = lines[i + 1].strip() if i + 1 < len(lines) else ""
@@ -205,7 +218,78 @@ def _strip_existing_spdx(lines: list[str]) -> list[str]:
     if spdx_removed and i < len(lines) and lines[i].strip() == "":
         i += 1
 
+    # Strip any SPDX remnant block that survived because it was separated from
+    # the main block by a blank line (e.g. "#\n# SPDX-License-Identifier: X").
+    # Only do this immediately after the main block (no real content in between).
+    if spdx_removed:
+        j = i
+        while j < len(lines):
+            s = lines[j].strip()
+            is_remnant = any(s.startswith(m) for m in _SPDX_MARKERS)
+            if not is_remnant and s == "#":
+                # Bare "#": skip only if the next line is an SPDX marker
+                next_s = lines[j + 1].strip() if j + 1 < len(lines) else ""
+                if any(next_s.startswith(m) for m in _SPDX_MARKERS):
+                    is_remnant = True
+            if not is_remnant:
+                break
+            j += 1
+        if j > i:
+            i = j
+            # Skip at most one blank line after the remnant block
+            if i < len(lines) and lines[i].strip() == "":
+                i += 1
+
     result.extend(lines[i:])
+    return result
+
+
+def _remove_body_spdx_blocks(lines: list[str]) -> list[str]:
+    """Remove stale SPDX blocks that appear in the file body (after the header).
+
+    Handles the case where a previous partial strip left an old Apache header
+    embedded after real code (e.g. after ``import`` statements).
+    Removes any run of ``# SPDX-FileCopyrightText:``, ``#``, and
+    ``# SPDX-License-Identifier:`` lines along with the blank line that
+    immediately precedes the block (when the preceding line is blank).
+    """
+    result: list[str] = []
+    i = 0
+    while i < len(lines):
+        stripped = lines[i].strip()
+        # Detect the start of a stale SPDX block
+        is_block_start = stripped.startswith("# SPDX-FileCopyrightText:") or (
+            stripped.startswith("# SPDX-License-Identifier:")
+            and stripped != SPDX_LICENSE_LINE
+        )
+        if is_block_start:
+            # Walk forward, consuming all lines that belong to this SPDX block
+            j = i
+            while j < len(lines):
+                s = lines[j].strip()
+                is_spdx = any(s.startswith(m) for m in _SPDX_MARKERS) or s == "#"
+                if not is_spdx:
+                    break
+                j += 1
+            # Only remove if at least one non-canonical SPDX-License-Identifier
+            # exists in the block (avoid removing intentional single-line comments)
+            block = lines[i:j]
+            has_stale = any(
+                ln.strip().startswith("# SPDX-License-Identifier:")
+                and ln.rstrip() != SPDX_LICENSE_LINE
+                for ln in block
+            )
+            if has_stale:
+                # Drop the blank line before the block if present
+                if result and result[-1].strip() == "":
+                    result.pop()
+                i = j
+                # Skip blank line after the removed block
+                if i < len(lines) and lines[i].strip() == "":
+                    i += 1
+                continue
+        result.append(lines[i])
+        i += 1
     return result
 
 
@@ -228,6 +312,9 @@ def _fix_file_content(content: str) -> str:
     # Strip any existing (wrong) SPDX header
     if _has_any_spdx(lines):
         lines = _strip_existing_spdx(lines)
+
+    # Remove any stale SPDX blocks embedded in the file body
+    lines = _remove_body_spdx_blocks(lines)
 
     # Determine insertion point (after shebang + encoding)
     insert_idx = 0
@@ -310,6 +397,17 @@ def _validate_file(path: Path) -> str | None:
             f"Line {idx + 2}: Expected '{SPDX_LICENSE_LINE}', "
             f"got '{lines[idx + 1].rstrip()[:80]}'"
         )
+
+    # Check for stale SPDX-License-Identifier lines beyond the canonical header
+    for lineno, line in enumerate(lines[idx + 2 :], start=idx + 3):
+        if (
+            line.strip().startswith("# SPDX-License-Identifier:")
+            and line.rstrip() != SPDX_LICENSE_LINE
+        ):
+            return (
+                f"Line {lineno}: Stale SPDX-License-Identifier found after canonical header: "
+                f"'{line.rstrip()[:80]}'"
+            )
 
     return None
 

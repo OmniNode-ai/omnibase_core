@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """End-to-end workflow tests for typed payload models.
 
 This module tests the typed payload models in real node workflow scenarios.

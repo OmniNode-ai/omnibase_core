@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Tests for RendererReportMarkdown (OMN-1200).
 
 This module tests the markdown rendering functionality including:

@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Examples showing how to migrate from dict-like interfaces to ModelFieldAccessor pattern.
 
 This demonstrates the replacement of custom field access methods across CLI, Config,

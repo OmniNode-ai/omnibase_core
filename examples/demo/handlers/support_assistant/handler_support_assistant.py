@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """SupportAssistantHandler for OMN-1201 Demo.
 
 This module provides the main handler for the AI support assistant that uses

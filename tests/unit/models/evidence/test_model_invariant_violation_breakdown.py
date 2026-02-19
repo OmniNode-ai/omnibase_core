@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Unit tests for ModelInvariantViolationBreakdown.
 
 Tests the breakdown model for invariant violations by type and severity

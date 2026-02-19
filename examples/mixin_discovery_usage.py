@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """MixinDiscovery API Usage Examples.
 
 Demonstrates how to use the MixinDiscovery API for intelligent mixin composition

@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Unit tests for ModelToolExecution (OMN-1608).
 
 Tests comprehensive tool execution model functionality including:

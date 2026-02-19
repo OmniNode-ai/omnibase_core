@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
-
 """SupportResponse model for OMN-1201 Demo Support Assistant.
 
 This module defines the output schema for the support assistant handler.

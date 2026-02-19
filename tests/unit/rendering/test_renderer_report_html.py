@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Unit tests for RendererReportHtml (OMN-1200).
 
 This module provides comprehensive tests for the HTML report renderer,

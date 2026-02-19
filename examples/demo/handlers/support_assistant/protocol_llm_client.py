@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Protocol definition for LLM client implementations.
 
 This module defines the ProtocolLLMClient interface that all LLM client

@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Unit tests for ModelEvidenceFilter (OMN-1200)."""
 
 from datetime import UTC, datetime, timedelta

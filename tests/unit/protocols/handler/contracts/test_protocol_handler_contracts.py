@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 # Copyright (C) 2024 OmniNode
-# SPDX-License-Identifier: AGPL-3.0-only
 """Comprehensive unit tests for handler contract protocols.
 
 This module tests the 5 handler contract protocols:

@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-#
-# SPDX-License-Identifier: Apache-2.0
 """Local LLM client implementation using httpx.
 
 This module provides a ProtocolLLMClient implementation for local/self-hosted
