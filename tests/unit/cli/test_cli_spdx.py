@@ -27,6 +27,7 @@ from omnibase_core.cli.cli_spdx import (
     SPDX_LICENSE_LINE,
     _fix_file_content,
     _has_correct_header,
+    _is_encoding,
     _remove_body_spdx_blocks,
     _strip_existing_spdx,
     _validate_file,
@@ -218,10 +219,13 @@ class TestFixFileContent:
         assert SPDX_LICENSE_LINE in result
         assert "Apache-2.0" not in result
 
-    def test_yaml_file_no_blank_before_document_marker(self) -> None:
+    def test_yaml_file_no_blank_before_document_marker(
+        self, tmp_path: pathlib.Path
+    ) -> None:
         """YAML files with '---' get header inserted without a blank separator."""
         content = "---\nkey: value\n"
-        result = _fix_file_content(content)
+        yaml_path = tmp_path / "config.yml"
+        result = _fix_file_content(content, file_path=yaml_path)
         lines = result.splitlines()
         assert lines[0] == SPDX_COPYRIGHT_LINE
         assert lines[1] == SPDX_LICENSE_LINE
@@ -255,6 +259,101 @@ class TestFixFileContent:
         assert lines[1] == SPDX_LICENSE_LINE
         assert lines[2] == ""
         assert lines[3] == "x = 1"
+
+
+# ---------------------------------------------------------------------------
+# _is_encoding  (false-positive guard)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestIsEncoding:
+    """Tests for _is_encoding to ensure it does not false-positive on non-comment lines."""
+
+    # Lines that MUST return True (genuine PEP 263 encoding declarations)
+    def test_true_for_emacs_style(self) -> None:
+        assert _is_encoding("# -*- coding: utf-8 -*-") is True
+
+    def test_true_for_plain_coding_colon(self) -> None:
+        assert _is_encoding("# coding: utf-8") is True
+
+    def test_true_for_coding_equals(self) -> None:
+        assert _is_encoding("# coding=utf-8") is True
+
+    # Lines that MUST return False (no leading `#`)
+    def test_false_for_string_literal_with_coding(self) -> None:
+        """A string value containing 'coding:' is not a PEP 263 declaration."""
+        assert _is_encoding('x = "coding: utf-8"') is False
+
+    def test_false_for_yaml_style_key(self) -> None:
+        """A bare YAML key 'coding: utf-8' with no '#' is not an encoding comment."""
+        assert _is_encoding("coding: utf-8") is False
+
+    def test_false_for_indented_no_hash(self) -> None:
+        """An indented assignment-style line with no '#' is not an encoding comment."""
+        assert _is_encoding("  coding=utf-8") is False
+
+
+# ---------------------------------------------------------------------------
+# _fix_file_content — CRLF line endings
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestFixFileContentCRLF:
+    """Tests documenting _fix_file_content behaviour with CRLF line endings.
+
+    The function uses ``str.splitlines(keepends=True)`` which treats ``\\r\\n``
+    as a single line ending. Injected SPDX header lines always use ``\\n``
+    (Unix) endings regardless of the source file's line endings — the result
+    is therefore a mixed-ending file.  This class documents that known behaviour
+    so that any future change to normalise endings is detected immediately.
+    """
+
+    def test_crlf_file_gets_header_injected(self) -> None:
+        """A CRLF file without a header receives the canonical SPDX header."""
+        content = "x = 1\r\ndef foo(): pass\r\n"
+        result = _fix_file_content(content)
+        assert SPDX_COPYRIGHT_LINE in result
+        assert SPDX_LICENSE_LINE in result
+
+    def test_injected_header_lines_use_lf_endings(self) -> None:
+        """Injected header lines use LF (\\n) endings; body lines retain CRLF.
+
+        This documents the current mixed-ending behaviour.  If the
+        implementation is changed to normalise line endings, update this test
+        to match.
+        """
+        content = "x = 1\r\n"
+        result = _fix_file_content(content)
+        lines_raw = result.splitlines(keepends=True)
+        # The first two lines are the injected SPDX lines — they should end
+        # with plain \\n (not \\r\\n) under the current implementation.
+        assert lines_raw[0].endswith("\n") and not lines_raw[0].endswith("\r\n"), (
+            "Expected injected copyright line to use LF endings"
+        )
+        assert lines_raw[1].endswith("\n") and not lines_raw[1].endswith("\r\n"), (
+            "Expected injected license line to use LF endings"
+        )
+
+    def test_crlf_body_lines_are_preserved(self) -> None:
+        """Body lines from a CRLF file are passed through unchanged."""
+        content = "x = 1\r\n"
+        result = _fix_file_content(content)
+        # The original body line must appear somewhere in the result intact.
+        assert "x = 1\r\n" in result
+
+    def test_yaml_crlf_no_blank_before_document_marker(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        """YAML CRLF file: header inserted before '---' with no blank separator."""
+        content = "---\r\nkey: value\r\n"
+        yaml_path = tmp_path / "config.yml"
+        result = _fix_file_content(content, file_path=yaml_path)
+        lines = result.splitlines()
+        assert lines[0] == SPDX_COPYRIGHT_LINE
+        assert lines[1] == SPDX_LICENSE_LINE
+        assert lines[2] == "---"
 
 
 # ---------------------------------------------------------------------------

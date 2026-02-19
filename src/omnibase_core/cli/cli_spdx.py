@@ -122,8 +122,11 @@ def _is_shebang(line: str) -> bool:
     return line.startswith("#!")
 
 
+_ENCODING_RE = re.compile(r"^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)")
+
+
 def _is_encoding(line: str) -> bool:
-    return bool(re.search(r"coding[=:]\s*[-\w.]+", line))
+    return bool(_ENCODING_RE.match(line))
 
 
 def _has_bypass(lines: list[str]) -> bool:
@@ -231,8 +234,9 @@ def _strip_existing_spdx(lines: list[str]) -> list[str]:
             is_remnant = any(s.startswith(m) for m in _SPDX_MARKERS)
             if not is_remnant and s == "#":
                 # Bare "#": skip only if the next line is an SPDX marker
-                next_s = lines[j + 1].strip() if j + 1 < len(lines) else ""
-                if any(next_s.startswith(m) for m in _SPDX_MARKERS):
+                if j + 1 < len(lines) and any(
+                    lines[j + 1].strip().startswith(m) for m in _SPDX_MARKERS
+                ):
                     is_remnant = True
             if not is_remnant:
                 break
@@ -296,11 +300,13 @@ def _remove_body_spdx_blocks(lines: list[str]) -> list[str]:
     return result
 
 
-def _fix_file_content(content: str) -> str:
+def _fix_file_content(content: str, file_path: Path | None = None) -> str:
     """Return *content* with the canonical SPDX header inserted/replaced.
 
-    YAML files whose first non-shebang/encoding line is "---" receive no blank
-    separator between the SPDX header and the "---" document marker.
+    YAML files (`.yml`/`.yaml`) whose first non-shebang/encoding line is "---"
+    receive no blank separator between the SPDX header and the "---" document
+    marker.  The ``file_path`` argument is used to determine the file extension;
+    when omitted the YAML special-case is not applied.
     """
     lines = content.splitlines(keepends=True)
 
@@ -330,8 +336,11 @@ def _fix_file_content(content: str) -> str:
     if insert_idx < len(lines) and _is_encoding(lines[insert_idx]):
         insert_idx += 1
 
-    # For YAML files: insert SPDX before "---" document marker (no blank separator)
-    if insert_idx < len(lines) and lines[insert_idx].rstrip() == "---":
+    # For YAML files: insert SPDX before "---" document marker (no blank separator).
+    # Guard on file extension so that non-YAML files whose first content line
+    # happens to be "---" are not treated as YAML.
+    _is_yaml = file_path is not None and file_path.suffix.lower() in (".yml", ".yaml")
+    if _is_yaml and insert_idx < len(lines) and lines[insert_idx].rstrip() == "---":
         # Insert SPDX before the "---"
         new_lines = list(lines[:insert_idx])
         new_lines.append(SPDX_COPYRIGHT_LINE + "\n")
@@ -549,7 +558,7 @@ def fix(
             skipped_count += 1
             continue
 
-        new_content = _fix_file_content(content)
+        new_content = _fix_file_content(content, file_path=filepath)
 
         if new_content == content:
             if verbose:
@@ -593,15 +602,20 @@ def fix(
     elif dry_run:
         click.echo(f"DRY RUN: {modified_count} file(s) would be modified")
         click.echo(f"Already OK: {already_ok_count} | Skipped: {skipped_count}")
+        # This guard fires for the dry-run path when a file raises OSError during read.
+        if error_count:
+            click.echo(click.style(f"Errors: {error_count}", fg="red"), err=True)
+            ctx.exit(EnumCLIExitCode.ERROR)
+    # For the normal write path, surface errors before the success summary so
+    # the user sees the failure context rather than a misleading "Fixed: N" line.
+    elif error_count:
+        click.echo(click.style(f"Errors: {error_count}", fg="red"), err=True)
+        click.echo(f"Fixed: {modified_count} file(s)")
+        click.echo(f"Already OK: {already_ok_count} | Skipped: {skipped_count}")
+        ctx.exit(EnumCLIExitCode.ERROR)
     else:
         click.echo(f"Fixed: {modified_count} file(s)")
         click.echo(f"Already OK: {already_ok_count} | Skipped: {skipped_count}")
-
-    # This guard only fires for the non-check, non-dry-run write path; in --check
-    # mode errors are reported and the command exits early in the block above.
-    if error_count:
-        click.echo(click.style(f"Errors: {error_count}", fg="red"), err=True)
-        ctx.exit(EnumCLIExitCode.ERROR)
 
 
 @spdx.command(name="validate")
