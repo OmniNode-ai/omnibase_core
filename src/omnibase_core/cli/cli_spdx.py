@@ -27,7 +27,8 @@ from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 # Constants
 # ---------------------------------------------------------------------------
 
-# Year intentionally frozen at 2025 per FILE_HEADERS.md policy: use creation year only, do not update on edits.
+# Year intentionally frozen at 2025 per FILE_HEADERS.md policy:
+# use creation year only, do not update on edits.
 SPDX_COPYRIGHT_LINE = "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc."
 SPDX_LICENSE_LINE = "# SPDX-License-Identifier: MIT"
 SPDX_HEADER = f"{SPDX_COPYRIGHT_LINE}\n{SPDX_LICENSE_LINE}\n"
@@ -611,6 +612,23 @@ def fix(
         new_content = _fix_file_content(content, file_path=filepath)
 
         if new_content == content:
+            # Content returned unchanged — could mean "already correct" OR
+            # "malformed block that cannot be auto-fixed".  Distinguish the
+            # two cases so that `fix --check` and `validate` agree.
+            file_lines = content.splitlines(keepends=True)
+            if not _has_correct_header(file_lines) and _has_any_spdx(file_lines):
+                # SPDX is present but not at the expected position; the fixer
+                # could not normalise it.  This is an error, not "already OK".
+                click.echo(
+                    click.style(
+                        f"Error: cannot normalize SPDX header in {filepath} "
+                        f"(malformed block structure)",
+                        fg="red",
+                    ),
+                    err=True,
+                )
+                error_count += 1
+                continue
             if verbose:
                 click.echo(f"  OK: {filepath}")
             already_ok_count += 1

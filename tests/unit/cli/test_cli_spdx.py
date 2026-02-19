@@ -722,6 +722,38 @@ class TestCLIFix:
 
         assert result.exit_code != 0
 
+    def test_fix_check_and_validate_agree_on_malformed_header(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        """fix --check and validate both exit non-zero for a malformed SPDX block.
+
+        Regression test for the contradiction where `fix --check` reported
+        "Already OK" (exit 0) while `validate` reported an error (exit non-zero)
+        on a file whose SPDX block is preceded by a non-SPDX comment, making the
+        block un-normalizable.
+        """
+        f = tmp_path / "malformed.py"
+        f.write_text(
+            f"# some comment\n{SPDX_COPYRIGHT_LINE}\n{SPDX_LICENSE_LINE}\n\nx=1\n",
+            encoding="utf-8",
+        )
+
+        runner = CliRunner()
+
+        # fix --check must exit non-zero (file is broken, not "already OK")
+        check_result = runner.invoke(spdx, ["fix", "--check", str(f)])
+        assert check_result.exit_code != 0, (
+            f"Expected fix --check to exit non-zero for malformed header, "
+            f"got {check_result.exit_code}.\nOutput:\n{check_result.output}"
+        )
+
+        # validate must also exit non-zero for the same file
+        validate_result = runner.invoke(spdx, ["validate", str(f)])
+        assert validate_result.exit_code != 0, (
+            f"Expected validate to exit non-zero for malformed header, "
+            f"got {validate_result.exit_code}.\nOutput:\n{validate_result.output}"
+        )
+
     def test_write_fail_does_not_inflate_modified_count(
         self, tmp_path: pathlib.Path
     ) -> None:
