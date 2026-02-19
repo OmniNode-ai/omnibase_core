@@ -326,6 +326,17 @@ class TestIsEncoding:
         """An indented assignment-style line with no '#' is not an encoding comment."""
         assert _is_encoding("  coding=utf-8") is False
 
+    def test_false_for_spdx_copyright_line_containing_coding(self) -> None:
+        """A comment with arbitrary text before 'coding' is not an encoding declaration.
+
+        Regression test for the tightened _ENCODING_RE: the old regex used .*?
+        (non-greedy wildcard) between '#' and 'coding', which would match a line
+        like '# SPDX-FileCopyrightText: coding=ascii' as a PEP 263 encoding
+        declaration.  The stricter regex requires only optional whitespace between
+        '#' and 'coding', so non-whitespace text before 'coding' is rejected.
+        """
+        assert _is_encoding("# SPDX-FileCopyrightText: coding=ascii") is False
+
 
 # ---------------------------------------------------------------------------
 # _fix_file_content — CRLF line endings

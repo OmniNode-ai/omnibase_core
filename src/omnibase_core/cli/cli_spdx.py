@@ -123,7 +123,7 @@ def _is_shebang(line: str) -> bool:
     return line.startswith("#!")
 
 
-_ENCODING_RE = re.compile(r"^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)")
+_ENCODING_RE = re.compile(r"^[ \t\f]*#[ \t\-*\w]*coding[:=][ \t]*([-\w.]+)")
 
 
 def _is_encoding(line: str) -> bool:
@@ -476,6 +476,9 @@ def validate_files(file_args: list[str]) -> int:
     Returns:
         0 if all files are compliant, 1 if violations found.
     """
+    # When called with no file args (e.g. manual invocation), scans CWD. In
+    # pre-commit context with pass_filenames=true, this branch is unreachable
+    # as pre-commit skips hook invocation when no files match.
     paths: list[Path] = [Path(a) for a in file_args] if file_args else [Path()]
 
     files_to_check: list[Path] = []
