@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.18.0"
+version = "0.18.1"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode Team", email = "team@omninode.ai"}
