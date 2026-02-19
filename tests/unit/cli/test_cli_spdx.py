@@ -514,6 +514,41 @@ class TestHasCorrectHeader:
         ]
         assert _has_correct_header(lines) is True
 
+    def test_spdx_identifier_inside_docstring_causes_false_positive(self) -> None:
+        # known limitation: plain-text scan cannot distinguish comments inside strings
+        #
+        # A '# SPDX-License-Identifier: MIT' line that appears literally inside a
+        # triple-quoted docstring is indistinguishable from a real comment by the
+        # plain-text body scan.  The scan therefore returns False even though the
+        # canonical header is present and the second occurrence is not a real comment.
+        # This test documents that known behaviour; the fix would require AST-based
+        # parsing which is intentionally avoided for performance reasons.
+        lines = [
+            f"{SPDX_COPYRIGHT_LINE}\n",
+            f"{SPDX_LICENSE_LINE}\n",
+            "\n",
+            '"""\n',
+            "Example usage::\n",
+            "\n",
+            "    # SPDX-License-Identifier: MIT\n",
+            '"""\n',
+        ]
+        # The scan sees the SPDX-License-Identifier line inside the docstring and,
+        # because it matches the canonical line exactly, returns True here — but if
+        # it were a *different* license identifier it would return False.  Test with
+        # a non-canonical identifier to confirm the false-positive path:
+        lines_noncanonical = [
+            f"{SPDX_COPYRIGHT_LINE}\n",
+            f"{SPDX_LICENSE_LINE}\n",
+            "\n",
+            '"""\n',
+            "Example usage::\n",
+            "\n",
+            "    # SPDX-License-Identifier: Apache-2.0\n",
+            '"""\n',
+        ]
+        assert _has_correct_header(lines_noncanonical) is False
+
 
 # ---------------------------------------------------------------------------
 # _validate_file  (via tmp_path)

@@ -160,7 +160,10 @@ def _has_correct_header(lines: list[str]) -> bool:
         and lines[idx + 1].rstrip() == SPDX_LICENSE_LINE
     ):
         return False
-    # Confirm no stale SPDX-License-Identifier lines follow the canonical header
+    # Confirm no stale SPDX-License-Identifier lines follow the canonical header.
+    # Note: plain-text scan; a '# SPDX-License-Identifier:' line inside a docstring
+    # or multi-line string would be a false positive. AST-based parsing is not used
+    # for performance reasons.
     for line in lines[idx + 2 :]:
         if (
             line.strip().startswith("# SPDX-License-Identifier:")
@@ -467,7 +470,10 @@ def _validate_file(path: Path) -> str | None:
             f"got '{lines[idx + 1].rstrip()[:80]}'"
         )
 
-    # Check for stale SPDX-License-Identifier lines beyond the canonical header
+    # Check for stale SPDX-License-Identifier lines beyond the canonical header.
+    # Note: plain-text scan; a '# SPDX-License-Identifier:' line inside a docstring
+    # or multi-line string would be a false positive. AST-based parsing is not used
+    # for performance reasons.
     for lineno, line in enumerate(lines[idx + 2 :], start=idx + 3):
         if (
             line.strip().startswith("# SPDX-License-Identifier:")
