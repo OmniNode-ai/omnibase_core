@@ -336,7 +336,9 @@ def validate_files(file_args: list[str]) -> int:
         elif p.is_dir():
             files_to_check.extend(_discover_files(p))
         else:
-            print(f"Warning: path does not exist: {p}", file=sys.stderr)  # print-ok: CLI output
+            print(  # print-ok: CLI output
+                f"Warning: path does not exist: {p}", file=sys.stderr
+            )
 
     violations: list[tuple[Path, str]] = []
     for f in sorted(files_to_check):
@@ -351,7 +353,7 @@ def validate_files(file_args: list[str]) -> int:
         for filepath, msg in violations:
             print(f"  {filepath}: {msg}")  # print-ok: CLI output
         print(  # print-ok: CLI output
-            f"\nRun `onex spdx fix <path>` to fix."
+            "\nRun `onex spdx fix <path>` to fix."
         )
         return 1
 
@@ -364,7 +366,7 @@ def validate_files(file_args: list[str]) -> int:
 
 
 @click.group()
-def spdx() -> None:
+def spdx() -> None:  # stub-ok: Click group, subcommands via @spdx.command()
     """SPDX license header management.
 
     Add, fix, and validate canonical SPDX MIT license headers across
@@ -505,7 +507,7 @@ def validate_cmd(ctx: click.Context, files: tuple[Path, ...]) -> None:
         onex spdx validate src/ tests/         # Check specific dirs
         onex spdx validate src/foo/bar.py      # Check single file
     """
-    exit_code = validate_files(list(str(f) for f in files))
+    exit_code = validate_files([str(f) for f in files])
     ctx.exit(exit_code)
 
 

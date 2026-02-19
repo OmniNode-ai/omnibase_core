@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
+
 class ModelIntrospectionMetadataConfig:
     json_schema_extra = {
         "example": {

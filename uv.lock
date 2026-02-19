@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.12"
 
 [[package]]
@@ -701,8 +701,8 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.2,<7.0.0" },
     { name = "redis", marker = "extra == 'cache'", specifier = ">=5.0.0,<6.0.0" },
     { name = "redis", marker = "extra == 'full'", specifier = ">=5.0.0,<6.0.0" },
-    { name = "sqlglot", marker = "extra == 'full'", specifier = ">=26.0.0,<27.0.0" },
-    { name = "sqlglot", marker = "extra == 'sql-parser'", specifier = ">=26.0.0,<27.0.0" },
+    { name = "sqlglot", marker = "extra == 'full'", specifier = ">=26.0.0,<29.0.0" },
+    { name = "sqlglot", marker = "extra == 'sql-parser'", specifier = ">=26.0.0,<29.0.0" },
 ]
 provides-extras = ["cli", "cache", "metrics", "sql-parser", "full"]
 
@@ -723,8 +723,8 @@ dev = [
     { name = "pytest-testmon", specifier = ">=2.2.0" },
     { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.14.13,<0.15.0" },
-    { name = "sqlglot", specifier = ">=26.0.0,<27.0.0" },
+    { name = "ruff", specifier = ">=0.14.13,<0.16.0" },
+    { name = "sqlglot", specifier = ">=26.0.0,<29.0.0" },
     { name = "types-psutil", specifier = ">=7.2.1.20260116" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250822" },
     { name = "types-requests", specifier = ">=2.32.4.20250913" },
