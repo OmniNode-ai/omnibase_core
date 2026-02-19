@@ -378,7 +378,7 @@ repos:
         # Root-level .toml files (e.g. pyproject.toml) are also NOT matched by this
         # pattern; they must carry SPDX headers but are validated by the CLI tool
         # directly (e.g. via `onex spdx validate`) rather than via this hook.
-        # Note: hook pattern does not cover root-level .toml or .github/workflows/ files (acknowledged gap)
+        # Note: hook pattern does not cover root-level .toml, Makefile, Dockerfile, or .github/workflows/ files (acknowledged gap)
         files: ^(src|tests|scripts|examples)/.*\.(py|sh|bash|yml|yaml|toml)$
         exclude: ^(archived/|archive/)
         stages: [pre-commit]

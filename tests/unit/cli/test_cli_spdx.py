@@ -186,6 +186,52 @@ class TestRemoveBodySpdxBlocks:
         assert "import sys\n" in result
         assert "def run(): pass\n" in result
 
+    def test_lone_copyright_comment_is_preserved(self) -> None:
+        """A lone SPDX-FileCopyrightText comment without a license identifier is NOT removed.
+
+        This is intentional behaviour: a standalone copyright notice (no
+        SPDX-License-Identifier line in the same block) may be a legitimate
+        third-party attribution and must be left in place.  _remove_body_spdx_blocks
+        only removes a block when has_stale=True (i.e. a non-canonical license
+        identifier is present).
+        """
+        lines = [
+            f"{SPDX_COPYRIGHT_LINE}\n",
+            f"{SPDX_LICENSE_LINE}\n",
+            "\n",
+            "import os\n",
+            "\n",
+            "# SPDX-FileCopyrightText: 2020 OldCorp.\n",
+            "\n",
+            "def main(): pass\n",
+        ]
+        result = _remove_body_spdx_blocks(lines)
+        # The lone copyright line must still be present
+        assert any("OldCorp" in ln for ln in result)
+        # Other content is also preserved
+        assert "import os\n" in result
+        assert "def main(): pass\n" in result
+
+    def test_lone_copyright_not_removed_by_fix_file_content(self) -> None:
+        """_fix_file_content does not remove a lone SPDX-FileCopyrightText body comment.
+
+        Verifies the same intentional behaviour end-to-end: a file body that
+        contains only a copyright notice (no license identifier) is left
+        untouched by the full fix pipeline.
+        """
+        content = (
+            f"{SPDX_COPYRIGHT_LINE}\n"
+            f"{SPDX_LICENSE_LINE}\n"
+            "\n"
+            "import os\n"
+            "\n"
+            "# SPDX-FileCopyrightText: 2020 OldCorp.\n"
+            "\n"
+            "def main(): pass\n"
+        )
+        result = _fix_file_content(content)
+        assert "OldCorp" in result
+
     def test_empty_input_returns_empty(self) -> None:
         """Empty input returns empty output."""
         assert _remove_body_spdx_blocks([]) == []
@@ -602,11 +648,16 @@ class TestValidateFiles:
         captured = capsys.readouterr()
         assert "Warning" in captured.err or "Warning" in captured.out
 
-    def test_ineligible_file_is_skipped(self, tmp_path: pathlib.Path) -> None:
-        """A file with an extension not in INCLUDED_EXTENSIONS is silently skipped."""
+    def test_ineligible_file_is_skipped(
+        self, tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A file with an extension not in INCLUDED_EXTENSIONS is skipped with a warning."""
         f = tmp_path / "binary.dat"
         f.write_text("no header needed\n", encoding="utf-8")
-        assert validate_files([str(f)]) == 0
+        result = validate_files([str(f)])
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "skipping ineligible file" in (captured.err + captured.out).lower()
 
 
 # ---------------------------------------------------------------------------

@@ -171,7 +171,12 @@ def _has_correct_header(lines: list[str]) -> bool:
 
 
 def _has_any_spdx(lines: list[str]) -> bool:
-    """Return True if any SPDX marker exists in the header region."""
+    """Return True if any SPDX marker exists in the header region.
+
+    Only scans the first HEADER_SCAN_LINES lines. Files with SPDX markers
+    exclusively beyond line 10 are treated as having no SPDX header and will
+    receive a new header insertion.
+    """
     for line in lines[:HEADER_SCAN_LINES]:
         stripped = line.strip()
         for marker in _SPDX_MARKERS:
@@ -233,6 +238,9 @@ def _strip_existing_spdx(lines: list[str]) -> list[str]:
     # Strip any SPDX remnant block that survived because it was separated from
     # the main block by a blank line (e.g. "#\n# SPDX-License-Identifier: X").
     # Only do this immediately after the main block (no real content in between).
+    # Only tolerates a single blank line separating the main block from a remnant
+    # block. Files with two or more blank lines before a remnant rely on
+    # _remove_body_spdx_blocks for cleanup.
     if spdx_removed:
         j = i
         remnant_consumed = False
@@ -306,6 +314,10 @@ def _remove_body_spdx_blocks(lines: list[str]) -> list[str]:
                 and ln.rstrip() != SPDX_LICENSE_LINE
                 for ln in block
             )
+            # Only remove the block if it contains a non-canonical license
+            # identifier (has_stale=True). A lone copyright comment without a
+            # license line is left in place intentionally — it may be a
+            # legitimate third-party attribution.
             if has_stale:
                 # Drop the blank line before the block if present
                 if result and result[-1].strip() == "":
@@ -512,6 +524,8 @@ def validate_files(file_args: list[str]) -> int:
 
     # Deduplicate while preserving insertion order (e.g. when the same path is
     # passed more than once via pre-commit or the CLI).
+    # Note: deduplication is by path string, not inode; symlinks to the same
+    # underlying file may be validated twice.
     files_to_check = list(dict.fromkeys(files_to_check))
 
     violations: list[tuple[Path, str]] = []
