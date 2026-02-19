@@ -48,7 +48,7 @@ Validators:
 """
 
 # string-version-ok: Package metadata follows PEP 396 standard Python practice
-__version__ = "0.18.0"
+__version__ = "0.18.1"
 
 
 # =============================================================================

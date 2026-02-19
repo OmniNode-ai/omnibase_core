@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-02-19
+
+### Added
+
+- **SPDX MIT license headers** (#518): Added SPDX-FileCopyrightText and SPDX-License-Identifier headers to all source files for OSS compliance
+
+### Changed
+
+- **Repository references in CLAUDE_CODE_HOOKS.md** (#508): Updated repository references to reflect current repo structure
+
+### Fixed
+
+- **Mermaid diagram compatibility** (#514): Improved mermaid diagram syntax for broader rendering compatibility across documentation viewers
+
+### Dependencies
+
+- **sqlglot** (#516): Updated sqlglot dev dependency to latest version
+- **ruff** (#515): Updated ruff linter to latest version
+
 ## [0.18.0] - 2026-02-15
 
 ### Added
