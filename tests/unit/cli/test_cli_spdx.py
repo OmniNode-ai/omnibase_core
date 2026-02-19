@@ -261,6 +261,31 @@ class TestFixFileContent:
         assert lines[2] == ""
         assert lines[3] == "x = 1"
 
+    def test_shebang_without_newline_is_not_corrupted(self) -> None:
+        """A shebang with no trailing newline is not concatenated with the header.
+
+        When content is '#!/usr/bin/env python3' (no trailing newline),
+        splitlines(keepends=True) returns a single element without a newline
+        character.  Without the guard in _fix_file_content the SPDX header
+        would be appended directly to the shebang, producing a corrupted line
+        like '#!/usr/bin/env python3# SPDX-FileCopyrightText: ...'.
+        """
+        content = "#!/usr/bin/env python3"
+        result = _fix_file_content(content)
+        # The shebang must be followed by a newline — not by a '#' character
+        assert result.startswith("#!/usr/bin/env python3\n"), (
+            f"Shebang not terminated with newline. Got: {result!r}"
+        )
+        # The concatenated form must never appear
+        assert "#!/usr/bin/env python3#" not in result, (
+            f"Shebang was corrupted (concatenated with header). Got: {result!r}"
+        )
+        # The copyright line must appear as its own line (not glued to shebang)
+        lines = result.splitlines()
+        assert lines[0] == "#!/usr/bin/env python3"
+        assert lines[1] == SPDX_COPYRIGHT_LINE
+        assert lines[2] == SPDX_LICENSE_LINE
+
     def test_no_duplicate_header_when_non_spdx_comment_precedes_spdx_block(
         self,
     ) -> None:

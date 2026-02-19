@@ -383,6 +383,12 @@ def _fix_file_content(content: str, file_path: Path | None = None) -> str:
 
     # Standard case: insert header at insert_idx
     new_lines = list(lines[:insert_idx])
+
+    # Guard: if the last preserved line (shebang or encoding) has no trailing
+    # newline, append one now so the SPDX header begins on its own line.
+    if new_lines and not new_lines[-1].endswith(("\n", "\r\n")):
+        new_lines[-1] += "\n"
+
     new_lines.append(SPDX_COPYRIGHT_LINE + "\n")
     new_lines.append(SPDX_LICENSE_LINE + "\n")
 
