@@ -8,11 +8,13 @@ Tests cover:
 - _strip_existing_spdx: shebang preservation, encoding line preservation,
   bare '#' separator removal, YAML '---' marker handling, remnant block removal
 - _remove_body_spdx_blocks: stale SPDX blocks embedded in file body
-- _build_spdx_header / _fix_file_content: correct header insertion for all file types
+- _fix_file_content: correct header insertion for all file types
 - _has_correct_header / _validate_file: detection of valid vs. invalid headers
 """
 
 from __future__ import annotations
+
+import pathlib
 
 import pytest
 
@@ -302,13 +304,13 @@ class TestHasCorrectHeader:
 class TestValidateFile:
     """Tests for _validate_file using real temporary files."""
 
-    def test_valid_file_returns_none(self, tmp_path: pytest.TempPath) -> None:
+    def test_valid_file_returns_none(self, tmp_path: pathlib.Path) -> None:
         """A file with the canonical header passes validation."""
         f = tmp_path / "ok.py"
         f.write_text(f"{_CANONICAL_HEADER}\ndef foo(): pass\n", encoding="utf-8")
         assert _validate_file(f) is None
 
-    def test_missing_header_returns_error(self, tmp_path: pytest.TempPath) -> None:
+    def test_missing_header_returns_error(self, tmp_path: pathlib.Path) -> None:
         """A file without any SPDX header returns an error message."""
         f = tmp_path / "no_header.py"
         f.write_text("def foo(): pass\n", encoding="utf-8")
@@ -316,7 +318,7 @@ class TestValidateFile:
         assert result is not None
         assert "Expected" in result or "Missing" in result
 
-    def test_wrong_license_returns_error(self, tmp_path: pytest.TempPath) -> None:
+    def test_wrong_license_returns_error(self, tmp_path: pathlib.Path) -> None:
         """A file with an Apache license returns an error message."""
         f = tmp_path / "wrong.py"
         f.write_text(
@@ -326,13 +328,13 @@ class TestValidateFile:
         result = _validate_file(f)
         assert result is not None
 
-    def test_bypass_marker_skips_validation(self, tmp_path: pytest.TempPath) -> None:
+    def test_bypass_marker_skips_validation(self, tmp_path: pathlib.Path) -> None:
         """A file with spdx-skip bypass marker returns None (skipped)."""
         f = tmp_path / "skip.py"
         f.write_text("# spdx-skip: vendored\nx = 1\n", encoding="utf-8")
         assert _validate_file(f) is None
 
-    def test_empty_file_returns_error(self, tmp_path: pytest.TempPath) -> None:
+    def test_empty_file_returns_error(self, tmp_path: pathlib.Path) -> None:
         """An empty file returns an error about missing header."""
         f = tmp_path / "empty.py"
         f.write_text("", encoding="utf-8")
@@ -340,9 +342,7 @@ class TestValidateFile:
         assert result is not None
         assert "empty" in result.lower() or "header" in result.lower()
 
-    def test_stale_license_in_body_returns_error(
-        self, tmp_path: pytest.TempPath
-    ) -> None:
+    def test_stale_license_in_body_returns_error(self, tmp_path: pathlib.Path) -> None:
         """A file with a correct header but stale license in the body fails."""
         f = tmp_path / "stale.py"
         f.write_text(
