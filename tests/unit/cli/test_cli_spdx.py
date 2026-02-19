@@ -261,6 +261,38 @@ class TestFixFileContent:
         assert lines[2] == ""
         assert lines[3] == "x = 1"
 
+    def test_no_duplicate_header_when_non_spdx_comment_precedes_spdx_block(
+        self,
+    ) -> None:
+        """_fix_file_content is idempotent when a non-SPDX comment precedes the SPDX block.
+
+        Regression test for a duplicate-header bug: _has_any_spdx() returns
+        True (finds SPDX markers in the header region) but
+        _strip_existing_spdx() is a no-op because a regular comment line
+        appears before the SPDX block, causing the stripper to exit before
+        reaching the SPDX lines.  The fix must NOT insert a second header;
+        the output must contain exactly one SPDX-FileCopyrightText line and
+        exactly one SPDX-License-Identifier line.
+        """
+        content = (
+            "# some regular comment\n"
+            f"{SPDX_COPYRIGHT_LINE}\n"
+            f"{SPDX_LICENSE_LINE}\n"
+            "\n"
+            "x = 1\n"
+        )
+        result = _fix_file_content(content)
+        copyright_count = result.count("SPDX-FileCopyrightText:")
+        license_count = result.count("SPDX-License-Identifier:")
+        assert copyright_count == 1, (
+            f"Expected exactly 1 SPDX-FileCopyrightText line, got {copyright_count}.\n"
+            f"Output:\n{result!r}"
+        )
+        assert license_count == 1, (
+            f"Expected exactly 1 SPDX-License-Identifier line, got {license_count}.\n"
+            f"Output:\n{result!r}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # _is_encoding  (false-positive guard)

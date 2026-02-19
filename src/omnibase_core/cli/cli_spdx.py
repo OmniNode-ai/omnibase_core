@@ -341,9 +341,22 @@ def _fix_file_content(content: str, file_path: Path | None = None) -> str:
     if _has_correct_header(lines):
         return content
 
-    # Strip any existing (wrong) SPDX header
+    # Strip any existing (wrong) SPDX header.
+    # After stripping, compare against the original lines to detect whether the
+    # strip was a no-op.  This happens when _has_any_spdx() found an SPDX
+    # marker but _strip_existing_spdx() could not locate it at the expected
+    # position (e.g. a non-SPDX comment precedes the SPDX block, so the
+    # stripper exits its inner loop before reaching the SPDX lines).  In that
+    # case inserting a new header would produce a duplicate — leave the file
+    # unchanged so the existing (un-normalizable) block is preserved intact.
     if _has_any_spdx(lines):
-        lines = _strip_existing_spdx(lines)
+        stripped = _strip_existing_spdx(lines)
+        if stripped == lines:
+            # Strip was a no-op despite an SPDX marker being present: the block
+            # is in an unexpected position and cannot be safely replaced.
+            # Return content unchanged to avoid duplicate header insertion.
+            return content
+        lines = stripped
 
     # Remove any stale SPDX blocks embedded in the file body
     lines = _remove_body_spdx_blocks(lines)
@@ -415,6 +428,11 @@ def _validate_file(path: Path) -> str | None:
     if idx >= len(lines):
         return f"Missing SPDX header (file has only {len(lines)} lines)"
 
+    # intentional: trailing whitespace on header lines is tolerated per policy.
+    # Files that have the correct SPDX text but trailing spaces are accepted as
+    # valid rather than rejected, to avoid false positives from editors that
+    # insert trailing whitespace.  The fix command will not rewrite such files
+    # because _has_correct_header uses the same rstrip() tolerance.
     if lines[idx].rstrip() != SPDX_COPYRIGHT_LINE:
         return (
             f"Line {idx + 1}: Expected '{SPDX_COPYRIGHT_LINE}', "
@@ -472,6 +490,12 @@ def validate_files(file_args: list[str]) -> int:
         elif p.is_dir():
             files_to_check.extend(_discover_files(p))
         else:
+            # intentional: a non-existent explicit path emits a warning but
+            # does NOT count as a validation error (returns 0).  pre-commit
+            # passes staged filenames which may have been deleted or renamed
+            # since staging; silently skipping them avoids spurious CI failures
+            # for in-flight deletions.  Callers that need stricter behaviour
+            # (e.g. a fully authoritative CI scan) should pre-filter paths.
             print(  # print-ok: CLI output
                 f"Warning: path does not exist: {p}", file=sys.stderr
             )
