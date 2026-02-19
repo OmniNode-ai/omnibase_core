@@ -633,6 +633,32 @@ class TestCLIFix:
         updated = f.read_text(encoding="utf-8")
         assert updated.startswith(SPDX_COPYRIGHT_LINE)
 
+    def test_check_takes_precedence_over_dry_run(self, tmp_path: pathlib.Path) -> None:
+        """--check takes precedence over --dry-run when both flags are supplied.
+
+        When both --check and --dry-run are passed to the fix command on files
+        that need headers, the behaviour must match --check alone:
+          - exits non-zero
+          - reports files needing headers ("NEEDS FIX")
+          - does NOT modify files on disk
+          - does NOT emit "DRY RUN" summary language
+        """
+        f = tmp_path / "needs_header.py"
+        original = "x = 1\n"
+        f.write_text(original, encoding="utf-8")
+
+        runner = CliRunner()
+        result = runner.invoke(spdx, ["fix", "--check", "--dry-run", str(tmp_path)])
+
+        # --check semantics: exit non-zero when files need headers
+        assert result.exit_code != 0
+        # Per-file "NEEDS FIX" line is emitted (shared by both modes)
+        assert "NEEDS FIX" in result.output
+        # --check summary language, not dry-run language
+        assert "DRY RUN" not in result.output
+        # File must remain unmodified
+        assert f.read_text(encoding="utf-8") == original
+
     @pytest.mark.skipif(os.getuid() == 0, reason="chmod is bypassed as root")
     def test_dry_run_exits_nonzero_on_error_count(self, tmp_path: pathlib.Path) -> None:
         """--dry-run exits non-zero when error_count > 0 (file cannot be read).
