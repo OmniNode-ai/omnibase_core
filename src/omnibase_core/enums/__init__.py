@@ -10,6 +10,9 @@ organized by functional domains for better maintainability.
 # Action status enum (OMN-1309)
 from .enum_action_status import EnumActionStatus
 
+# Agent state enum (OMN-1847 - Agent Status MCP Protocol)
+from .enum_agent_state import EnumAgentState
+
 # Architecture and system enums
 from .enum_architecture import EnumArchitecture
 
@@ -419,6 +422,8 @@ from .enum_workflow_status import EnumWorkflowStatus
 
 
 __all__ = [
+    # Agent state domain (OMN-1847 - Agent Status MCP Protocol)
+    "EnumAgentState",
     # Error code domain
     "EnumCLIExitCode",
     "EnumOnexErrorCode",
