@@ -251,6 +251,45 @@ class TestModelAgentStatusEventBlockingReason:
 
 
 @pytest.mark.unit
+class TestModelAgentStatusEventCreatedAt:
+    """Tests for created_at timezone-awareness validation."""
+
+    def test_naive_datetime_raises(self) -> None:
+        """Test that a naive (timezone-unaware) datetime raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            _make_event(created_at=datetime(2026, 2, 20, 12, 0, 0))  # naive
+        assert "created_at" in str(exc_info.value)
+
+    def test_aware_datetime_is_accepted(self) -> None:
+        """Test that a timezone-aware datetime is accepted."""
+        event = _make_event(created_at=datetime.now(UTC))
+        assert event.created_at.tzinfo is not None
+
+
+@pytest.mark.unit
+class TestModelAgentStatusEventEmptyStrings:
+    """Tests that empty strings are rejected for required string fields."""
+
+    def test_empty_agent_name_raises(self) -> None:
+        """Test that an empty agent_name raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            _make_event(agent_name="")
+        assert "agent_name" in str(exc_info.value)
+
+    def test_empty_session_id_raises(self) -> None:
+        """Test that an empty session_id raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            _make_event(session_id="")
+        assert "session_id" in str(exc_info.value)
+
+    def test_empty_message_raises(self) -> None:
+        """Test that an empty message raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            _make_event(message="")
+        assert "message" in str(exc_info.value)
+
+
+@pytest.mark.unit
 class TestModelAgentStatusEventSerialization:
     """Tests for model_dump and model_validate round-trip."""
 

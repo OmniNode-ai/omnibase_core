@@ -60,9 +60,11 @@ class ModelAgentStatusEvent(BaseModel):
         description="Correlation ID for distributed tracing",
     )
     agent_name: str = Field(
+        min_length=1,
         description="Name of the reporting agent",
     )
     session_id: str = Field(  # string-id-ok: session IDs are opaque string tokens from external systems, not UUIDs
+        min_length=1,
         description="Session ID for intra-session event ordering",
     )
     state: EnumAgentState = Field(
@@ -74,6 +76,7 @@ class ModelAgentStatusEvent(BaseModel):
         ge=1,
     )
     message: str = Field(
+        min_length=1,
         description="Human-readable status message",
     )
     progress: float | None = Field(
@@ -99,6 +102,20 @@ class ModelAgentStatusEvent(BaseModel):
         default_factory=dict,
         description="Additional metadata key-value pairs",
     )
+
+    @field_validator("created_at")
+    @classmethod
+    def validate_created_at_timezone_aware(cls, v: datetime) -> datetime:
+        """Validate that created_at is timezone-aware.
+
+        Naive datetimes are ambiguous in distributed systems and can cause
+        interoperability issues. All timestamps must be explicitly UTC.
+        """
+        if v.tzinfo is None:
+            raise ValueError(
+                "created_at must be timezone-aware (use datetime.now(UTC))"
+            )
+        return v
 
     @field_validator("progress")
     @classmethod
