@@ -16,12 +16,12 @@ class TestEnumAgentState:
 
     def test_enum_values(self) -> None:
         """Test that enum has expected string values."""
-        assert EnumAgentState.IDLE == "idle"
-        assert EnumAgentState.WORKING == "working"
-        assert EnumAgentState.BLOCKED == "blocked"
-        assert EnumAgentState.AWAITING_INPUT == "awaiting_input"
-        assert EnumAgentState.FINISHED == "finished"
-        assert EnumAgentState.ERROR == "error"
+        assert EnumAgentState.IDLE.value == "idle"
+        assert EnumAgentState.WORKING.value == "working"
+        assert EnumAgentState.BLOCKED.value == "blocked"
+        assert EnumAgentState.AWAITING_INPUT.value == "awaiting_input"
+        assert EnumAgentState.FINISHED.value == "finished"
+        assert EnumAgentState.ERROR.value == "error"
 
     def test_enum_inheritance(self) -> None:
         """Test that enum inherits from str and Enum."""
@@ -32,7 +32,7 @@ class TestEnumAgentState:
         """Test that enum values behave as strings."""
         state = EnumAgentState.WORKING
         assert isinstance(state, str)
-        assert state == "working"
+        assert state.value == "working"
 
     def test_enum_iteration(self) -> None:
         """Test that enum can be iterated and has exactly 6 members."""
@@ -62,9 +62,9 @@ class TestEnumAgentState:
 
     def test_enum_comparison(self) -> None:
         """Test enum equality comparisons."""
-        assert EnumAgentState.IDLE != EnumAgentState.WORKING
-        assert EnumAgentState.IDLE == "idle"
-        assert EnumAgentState.ERROR == "error"
+        assert EnumAgentState.IDLE.value != EnumAgentState.WORKING.value
+        assert EnumAgentState.IDLE.value == "idle"
+        assert EnumAgentState.ERROR.value == "error"
 
     def test_enum_serialization(self) -> None:
         """Test that enum values serialize to their string representations."""

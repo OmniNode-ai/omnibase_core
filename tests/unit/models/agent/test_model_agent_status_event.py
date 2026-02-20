@@ -61,7 +61,7 @@ class TestModelAgentStatusEventMinimal:
     def test_missing_correlation_id_raises(self) -> None:
         """Test that omitting correlation_id raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelAgentStatusEvent(
+            ModelAgentStatusEvent(  # type: ignore[call-arg]
                 agent_name="agent",
                 session_id="s",
                 state=EnumAgentState.IDLE,
@@ -73,7 +73,7 @@ class TestModelAgentStatusEventMinimal:
     def test_missing_agent_name_raises(self) -> None:
         """Test that omitting agent_name raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelAgentStatusEvent(
+            ModelAgentStatusEvent(  # type: ignore[call-arg]
                 correlation_id=uuid4(),
                 session_id="s",
                 state=EnumAgentState.IDLE,
@@ -85,7 +85,7 @@ class TestModelAgentStatusEventMinimal:
     def test_missing_created_at_raises(self) -> None:
         """Test that omitting created_at raises (no default supplied)."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelAgentStatusEvent(
+            ModelAgentStatusEvent(  # type: ignore[call-arg]
                 correlation_id=uuid4(),
                 agent_name="agent",
                 session_id="s",
@@ -97,7 +97,7 @@ class TestModelAgentStatusEventMinimal:
     def test_extra_fields_raise(self) -> None:
         """Test that extra fields are forbidden (extra='forbid')."""
         with pytest.raises(ValidationError):
-            _make_event(unknown_field="oops")  # type: ignore[call-overload]
+            _make_event(unknown_field="oops")
 
 
 @pytest.mark.unit
@@ -108,13 +108,13 @@ class TestModelAgentStatusEventFrozen:
         """Test that the frozen model raises on attribute assignment."""
         event = _make_event()
         with pytest.raises(ValidationError):
-            event.agent_name = "modified"  # type: ignore[misc]
+            event.agent_name = "modified"
 
     def test_frozen_model_rejects_state_mutation(self) -> None:
         """Test that the frozen model rejects state mutation."""
         event = _make_event()
         with pytest.raises(ValidationError):
-            event.state = EnumAgentState.ERROR  # type: ignore[misc]
+            event.state = EnumAgentState.ERROR
 
 
 @pytest.mark.unit
@@ -133,7 +133,7 @@ class TestModelAgentStatusEventStates:
     def test_invalid_state_raises(self) -> None:
         """Test that an invalid state string raises ValidationError."""
         with pytest.raises(ValidationError):
-            _make_event(state="not_a_valid_state")  # type: ignore[arg-type]
+            _make_event(state="not_a_valid_state")
 
 
 @pytest.mark.unit
