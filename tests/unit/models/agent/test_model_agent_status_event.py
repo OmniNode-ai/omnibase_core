@@ -124,7 +124,10 @@ class TestModelAgentStatusEventStates:
     def test_all_states_are_accepted(self) -> None:
         """Test that each EnumAgentState value is accepted."""
         for state in EnumAgentState:
-            event = _make_event(state=state)
+            kwargs: dict[str, object] = {"state": state}
+            if state == EnumAgentState.BLOCKED:
+                kwargs["blocking_reason"] = "waiting for external dependency"
+            event = _make_event(**kwargs)
             assert event.state == state
 
     def test_invalid_state_raises(self) -> None:
@@ -205,6 +208,46 @@ class TestModelAgentStatusEventSchemaVersion:
         """Test that schema_version < 1 raises ValidationError (ge=1 constraint)."""
         with pytest.raises(ValidationError):
             _make_event(status_schema_version=0)
+
+
+@pytest.mark.unit
+class TestModelAgentStatusEventBlockingReason:
+    """Tests for the blocking_reason / state consistency invariant."""
+
+    def test_blocked_with_blocking_reason_is_valid(self) -> None:
+        """Test that state=BLOCKED with a blocking_reason is valid."""
+        event = _make_event(
+            state=EnumAgentState.BLOCKED,
+            blocking_reason="waiting for external dependency",
+        )
+        assert event.state == EnumAgentState.BLOCKED
+        assert event.blocking_reason == "waiting for external dependency"
+
+    def test_blocked_without_blocking_reason_raises(self) -> None:
+        """Test that state=BLOCKED without blocking_reason raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            _make_event(state=EnumAgentState.BLOCKED, blocking_reason=None)
+        assert "blocking_reason" in str(exc_info.value)
+
+    def test_non_blocked_with_blocking_reason_raises(self) -> None:
+        """Test that state != BLOCKED with a blocking_reason raises ValidationError."""
+        for state in EnumAgentState:
+            if state == EnumAgentState.BLOCKED:
+                continue
+            with pytest.raises(ValidationError) as exc_info:
+                _make_event(
+                    state=state,
+                    blocking_reason="should not be set",
+                )
+            assert "blocking_reason" in str(exc_info.value)
+
+    def test_non_blocked_without_blocking_reason_is_valid(self) -> None:
+        """Test that state != BLOCKED with blocking_reason=None is valid."""
+        for state in EnumAgentState:
+            if state == EnumAgentState.BLOCKED:
+                continue
+            event = _make_event(state=state, blocking_reason=None)
+            assert event.blocking_reason is None
 
 
 @pytest.mark.unit

@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_agent_state import EnumAgentState
@@ -107,6 +107,23 @@ class ModelAgentStatusEvent(BaseModel):
         if v is not None and not (0.0 <= v <= 1.0):
             raise ValueError(f"progress must be in range [0.0, 1.0], got {v!r}")
         return v
+
+    @model_validator(mode="after")
+    def validate_blocking_reason_consistency(self) -> ModelAgentStatusEvent:
+        """Enforce that blocking_reason is set iff state == BLOCKED.
+
+        Raises:
+            ValueError: If state == BLOCKED and blocking_reason is None.
+            ValueError: If state != BLOCKED and blocking_reason is not None.
+        """
+        if self.state == EnumAgentState.BLOCKED and self.blocking_reason is None:
+            raise ValueError("blocking_reason must be provided when state is BLOCKED")
+        if self.state != EnumAgentState.BLOCKED and self.blocking_reason is not None:
+            raise ValueError(
+                f"blocking_reason must be None when state is {self.state!r}; "
+                "it is only valid for BLOCKED state"
+            )
+        return self
 
 
 __all__ = ["ModelAgentStatusEvent"]

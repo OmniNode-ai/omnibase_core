@@ -4,16 +4,18 @@
 """Closed enum for agent lifecycle states (OMN-1847).
 
 CLOSED ENUM: Adding new states is a BREAKING CHANGE requiring:
-- Version increment of status_schema_version in ModelAgentStatus
+- Version increment of status_schema_version in ModelAgentStatusEvent
 - Consumer updates across all downstream subscribers
 - Migration plan for existing state machine transitions
 """
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumAgentState(str, Enum):
+class EnumAgentState(StrValueHelper, str, Enum):
     """Closed enum for agent states. Version: 1.
 
     Represents the observable lifecycle state of an agent as reported
