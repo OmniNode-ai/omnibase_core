@@ -288,6 +288,18 @@ class TestModelAgentStatusEventEmptyStrings:
             _make_event(message="")
         assert "message" in str(exc_info.value)
 
+    def test_empty_current_phase_raises(self) -> None:
+        """Test that an empty current_phase raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError) as exc_info:
+            _make_event(current_phase="")
+        assert "current_phase" in str(exc_info.value)
+
+    def test_empty_current_task_raises(self) -> None:
+        """Test that an empty current_task raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError) as exc_info:
+            _make_event(current_task="")
+        assert "current_task" in str(exc_info.value)
+
 
 @pytest.mark.unit
 class TestModelAgentStatusEventSerialization:

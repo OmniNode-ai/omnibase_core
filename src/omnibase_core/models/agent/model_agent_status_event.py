@@ -85,10 +85,12 @@ class ModelAgentStatusEvent(BaseModel):
     )
     current_phase: str | None = Field(
         default=None,
+        min_length=1,
         description="Current workflow phase label",
     )
     current_task: str | None = Field(
         default=None,
+        min_length=1,
         description="Description of the current task being executed",
     )
     blocking_reason: str | None = Field(
