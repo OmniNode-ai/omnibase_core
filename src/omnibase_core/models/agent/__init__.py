@@ -5,7 +5,7 @@
 
 This package contains models for the Agent Status MCP Protocol.
 Callers should import concrete symbols directly, e.g.:
-    from omnibase_core.models.agent.model_agent_status import ModelAgentStatus
+    from omnibase_core.models.agent.model_agent_status_event import ModelAgentStatusEvent
 """
 
 __all__ = [

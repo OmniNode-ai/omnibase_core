@@ -27,7 +27,7 @@ from omnibase_core.enums.enum_agent_state import EnumAgentState
     "extensible observability context. This is explicitly the extension point "
     "for downstream consumers to attach domain-specific metadata."
 )
-class ModelAgentStatus(BaseModel):
+class ModelAgentStatusEvent(BaseModel):
     """Immutable status event reporting the observable state of an agent.
 
     Status events are observational snapshots emitted by an agent to describe
@@ -109,4 +109,4 @@ class ModelAgentStatus(BaseModel):
         return v
 
 
-__all__ = ["ModelAgentStatus"]
+__all__ = ["ModelAgentStatusEvent"]
