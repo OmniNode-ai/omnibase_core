@@ -93,6 +93,7 @@ class ModelAgentStatusEvent(BaseModel):
     )
     blocking_reason: str | None = Field(
         default=None,
+        min_length=1,
         description="Reason the agent is blocked; populated when state == BLOCKED",
     )
     created_at: datetime = Field(
