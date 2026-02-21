@@ -34,6 +34,17 @@ class ModelPerformanceRequirements(BaseModel):
         external_service_timeout_ms: Timeout for external service calls (APIs, etc.).
         projection_reader_timeout_ms: Timeout for projection reader operations.
         circuit_breaker_recovery_timeout_s: Circuit breaker recovery timeout in seconds.
+
+    Constraint tension — single_operation_max_ms vs database_query_timeout_ms:
+        single_operation_max_ms has a minimum of 1ms (ge=1), while
+        database_query_timeout_ms has a minimum of 100ms (ge=100). When
+        single_operation_max_ms is set to any value in [1, 99], it becomes
+        impossible to also set database_query_timeout_ms because the smallest
+        valid value for that field (100ms) already exceeds the SLA. Any attempt
+        to assign database_query_timeout_ms in that state will raise a
+        ValidationError from the cross-field validator. This is intentional: a
+        sub-100ms single-operation SLA implies database queries are not expected
+        to be performed within the same operation boundary.
     """
 
     single_operation_max_ms: int | None = Field(

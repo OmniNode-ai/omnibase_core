@@ -241,6 +241,24 @@ class TestCrossFieldValidation:
         assert req.external_service_timeout_ms == 60000
         assert req.single_operation_max_ms == 100
 
+    def test_db_timeout_impossible_when_operation_sla_below_100ms(self) -> None:
+        """Test that database_query_timeout_ms cannot be set when single_operation_max_ms < 100.
+
+        When single_operation_max_ms is in [1, 99], any valid database_query_timeout_ms
+        value (minimum 100ms) already exceeds the SLA. The cross-field validator must
+        reject this combination. This behavior is intentional: a sub-100ms
+        single-operation SLA implies database queries are not expected within that
+        operation boundary.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelPerformanceRequirements(
+                single_operation_max_ms=50,
+                database_query_timeout_ms=100,
+            )
+        error_str = str(exc_info.value)
+        assert "database_query_timeout_ms" in error_str
+        assert "single_operation_max_ms" in error_str
+
 
 @pytest.mark.unit
 class TestFullTimeoutConfiguration:
@@ -311,6 +329,31 @@ class TestFullTimeoutConfiguration:
         # Invalid: below minimum
         with pytest.raises(ValidationError):
             req.database_query_timeout_ms = 50
+
+    def test_validate_assignment_cross_field_fires_on_operation_sla_mutation(
+        self,
+    ) -> None:
+        """Test that the cross-field validator fires via validate_assignment on mutation.
+
+        When single_operation_max_ms is mutated to a value below the existing
+        database_query_timeout_ms, the model_validator must re-run and reject
+        the assignment. This verifies the cross-field invariant is enforced not
+        only at construction time but also on subsequent field mutations.
+        """
+        req = ModelPerformanceRequirements(
+            single_operation_max_ms=1000,
+            database_query_timeout_ms=500,
+        )
+        assert req.single_operation_max_ms == 1000
+        assert req.database_query_timeout_ms == 500
+
+        # Mutating single_operation_max_ms below the existing database_query_timeout_ms
+        # (500ms) must trigger the cross-field validator.
+        with pytest.raises(ValidationError) as exc_info:
+            req.single_operation_max_ms = 200
+        error_str = str(exc_info.value)
+        assert "database_query_timeout_ms" in error_str
+        assert "single_operation_max_ms" in error_str
 
     def test_existing_contracts_remain_valid(self) -> None:
         """Regression test: verify existing contract patterns still work.
