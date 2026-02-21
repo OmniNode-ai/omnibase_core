@@ -27,7 +27,7 @@
 ## install: Install all dependencies and dev tools (uv sync --all-extras)
 install:
 	uv sync --all-extras
-	uv tool install detect-secrets==1.5.0 --quiet
+	uv tool install detect-secrets==1.5.0 --quiet --force
 	chmod +x scripts/validate-no-transport-imports.sh
 
 # ---------------------------------------------------------------------------
