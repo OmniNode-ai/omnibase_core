@@ -111,6 +111,14 @@ from omnibase_core.models.contracts.model_drift_result import (
     ModelDriftResult,
 )
 from omnibase_core.models.contracts.model_node_extensions import ModelNodeExtensions
+from omnibase_core.models.contracts.model_provenance_decision_record import (
+    DecisionRecord,
+    ModelProvenanceDecisionRecord,
+)
+from omnibase_core.models.contracts.model_provenance_decision_score import (
+    DecisionScore,
+    ModelProvenanceDecisionScore,
+)
 
 __all__ = [
     # Hash Registry
@@ -133,4 +141,9 @@ __all__ = [
     "ModelContractMeta",
     "is_valid_meta_model",
     "validate_meta_model",
+    # Decision Provenance models (OMN-2350)
+    "ModelProvenanceDecisionScore",
+    "ModelProvenanceDecisionRecord",
+    "DecisionScore",
+    "DecisionRecord",
 ]

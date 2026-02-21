@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""Decision Provenance Score Model.
+
+Provides the ModelProvenanceDecisionScore class, which represents the
+per-candidate scoring breakdown for a provenance decision record.
+
+This model is part of the Decision Provenance system (OMN-2350), designed
+to support auditability and reproducibility of agent decisions.
+
+Design Decisions:
+    - frozen=True: Immutable after creation — provenance artifacts must not be mutated.
+    - No implicit defaults: All fields must be explicitly provided by callers.
+    - Separate from DecisionRecord: Allows per-candidate breakdown without flattening.
+
+See Also:
+    model_provenance_decision_record.py: Main provenance record model.
+    OMN-2350: Decision Provenance epic.
+"""
+
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ModelProvenanceDecisionScore(BaseModel):
+    """Per-candidate scoring breakdown for a decision provenance record.
+
+    Captures the score and detailed breakdown for a single candidate
+    evaluated during a decision. Used within ModelProvenanceDecisionRecord
+    to provide full auditability of how each candidate was scored.
+
+    Attributes:
+        candidate: Identifier for the candidate being scored.
+        score: Aggregate score for this candidate.
+        breakdown: Per-criterion score contributions that sum to the aggregate.
+
+    Example:
+        >>> score = ModelProvenanceDecisionScore(
+        ...     candidate="claude-3-opus",
+        ...     score=0.87,
+        ...     breakdown={"quality": 0.45, "speed": 0.25, "cost": 0.17},
+        ... )
+        >>> score.candidate
+        'claude-3-opus'
+        >>> score.score
+        0.87
+    """
+
+    model_config = ConfigDict(
+        frozen=True,
+        extra="ignore",
+        from_attributes=True,
+    )
+
+    candidate: str = Field(
+        ...,
+        description="Identifier for the candidate being scored",
+    )
+
+    score: float = Field(
+        ...,
+        description="Aggregate score for this candidate",
+    )
+
+    breakdown: dict[str, float] = Field(
+        ...,
+        description="Per-criterion score contributions",
+    )
+
+
+# Public alias for API surface
+DecisionScore = ModelProvenanceDecisionScore
+
+__all__ = ["DecisionScore", "ModelProvenanceDecisionScore"]
