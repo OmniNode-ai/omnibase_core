@@ -29,7 +29,7 @@ format:
 # Linting
 # ---------------------------------------------------------------------------
 
-## lint: Check formatting and linting without modifying files (matches CI)
+## lint: Check formatting and linting without modifying files (CI: lint + mypy)
 lint:
 	uv run ruff format --check src/ tests/
 	uv run ruff check src/ tests/
@@ -64,7 +64,7 @@ test-cov:
 # CI Fast (Phase 1 quality checks — matches CI quality-gate)
 # ---------------------------------------------------------------------------
 
-## ci-fast: Run all Phase 1 CI quality checks locally
+## ci-fast: Run all Phase 1 CI quality checks locally (matches quality-gate)
 ci-fast:
 	uv run ruff format --check src/ tests/
 	uv run ruff check src/ tests/
@@ -73,6 +73,22 @@ ci-fast:
 	uv run python scripts/validation/validate-all-exports.py
 	uv run python scripts/validation/validate-doc-links.py --fix-case
 	uv run python -m omnibase_core.validation.checker_enum_governance src/omnibase_core/
+	uv run mypy --strict \
+		scripts/validation/validate-no-direct-io.py \
+		scripts/validation/validate-all-exports.py \
+		scripts/validation/validate-no-infra-imports.py \
+		scripts/check_transport_imports.py
+	uv run python scripts/check_transport_imports.py --changed-files --verbose
+	./scripts/validate-no-transport-imports.sh
+	uv run python scripts/check_node_purity.py --verbose || true  # non-blocking (CI continue-on-error)
+	git ls-files -z | xargs -0 detect-secrets-hook \
+		--baseline .secrets.baseline \
+		--exclude-files 'uv\.lock' \
+		--exclude-files '\.venv/' \
+		--exclude-files 'tests/fixtures/' \
+		--exclude-files '\.git/' \
+		--exclude-files '\.secrets\.baseline' \
+		--exclude-files '\.github/workflows/.*\.yml'  # requires: pip install detect-secrets
 
 # ---------------------------------------------------------------------------
 # Help
