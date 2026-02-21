@@ -17,7 +17,7 @@ Architecture:
         Event arrives
             → Reducer emits ModelProjectionIntent(s)
             → NodeProjectionEffect receives intent
-            → NodeProjectionEffect resolves projector_id → ProtocolProjector
+            → NodeProjectionEffect resolves projector_key → ProtocolProjector
             → ProtocolProjector.project(envelope) → ModelProjectionResult
 
 Intent vs. Event:
