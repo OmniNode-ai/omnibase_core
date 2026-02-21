@@ -99,7 +99,7 @@ class TestModelProjectionIntentConstruction:
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
     ) -> None:
         """All four fields are required; omitting any raises ValidationError."""
-        # Missing projector_id
+        # Missing projector_key
         with pytest.raises(ValidationError) as exc_info:
             ModelProjectionIntent(  # type: ignore[call-arg]
                 event_type="node.created.v1",
@@ -172,10 +172,10 @@ class TestModelProjectionIntentConstruction:
 class TestModelProjectionIntentValidation:
     """Tests for field-level validation constraints."""
 
-    def test_projector_id_min_length(
+    def test_projector_key_min_length(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
     ) -> None:
-        """Empty projector_id is rejected."""
+        """Empty projector_key is rejected."""
         with pytest.raises(ValidationError) as exc_info:
             ModelProjectionIntent(
                 projector_key="",
@@ -185,10 +185,10 @@ class TestModelProjectionIntentValidation:
             )
         assert "projector_key" in str(exc_info.value)
 
-    def test_projector_id_max_length(
+    def test_projector_key_max_length(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
     ) -> None:
-        """projector_id exceeding 100 chars is rejected."""
+        """projector_key exceeding 100 chars is rejected."""
         with pytest.raises(ValidationError) as exc_info:
             ModelProjectionIntent(
                 projector_key="x" * 101,
@@ -198,10 +198,10 @@ class TestModelProjectionIntentValidation:
             )
         assert "projector_key" in str(exc_info.value)
 
-    def test_projector_id_at_max_length_accepted(
+    def test_projector_key_at_max_length_accepted(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
     ) -> None:
-        """projector_id at exactly 100 chars is accepted."""
+        """projector_key at exactly 100 chars is accepted."""
         intent = ModelProjectionIntent(
             projector_key="x" * 100,
             event_type="node.created.v1",
@@ -286,29 +286,29 @@ class TestModelProjectionIntentValidation:
 class TestModelProjectionIntentImmutability:
     """Tests for frozen (immutable) behavior."""
 
-    def test_projector_id_immutable(self, valid_intent: ModelProjectionIntent) -> None:
-        """Cannot reassign projector_id on frozen model."""
+    def test_projector_key_immutable(self, valid_intent: ModelProjectionIntent) -> None:
+        """Cannot reassign projector_key on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.projector_key = "changed"  # type: ignore[misc]
+            valid_intent.projector_key = "changed"  # type: ignore[attr-defined]
 
     def test_event_type_immutable(self, valid_intent: ModelProjectionIntent) -> None:
         """Cannot reassign event_type on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.event_type = "changed.v2"  # type: ignore[misc]
+            valid_intent.event_type = "changed.v2"  # type: ignore[attr-defined]
 
     def test_envelope_immutable(
         self, valid_intent: ModelProjectionIntent, simple_envelope: _SimpleEnvelope
     ) -> None:
         """Cannot reassign envelope on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.envelope = simple_envelope  # type: ignore[misc]
+            valid_intent.envelope = simple_envelope  # type: ignore[attr-defined]
 
     def test_correlation_id_immutable(
         self, valid_intent: ModelProjectionIntent
     ) -> None:
         """Cannot reassign correlation_id on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.correlation_id = uuid4()  # type: ignore[misc]
+            valid_intent.correlation_id = uuid4()  # type: ignore[attr-defined]
 
     def test_hashable(self, correlation_id: UUID) -> None:
         """Frozen model with a frozen envelope is hashable (can be used in sets/dicts).
@@ -438,10 +438,10 @@ class TestModelProjectionIntentRepr:
         """repr contains 'ModelProjectionIntent'."""
         assert "ModelProjectionIntent" in repr(valid_intent)
 
-    def test_repr_contains_projector_id(
+    def test_repr_contains_projector_key(
         self, valid_intent: ModelProjectionIntent
     ) -> None:
-        """repr contains the projector_id value."""
+        """repr contains the projector_key value."""
         assert "node_state_projector" in repr(valid_intent)
 
     def test_repr_contains_event_type(
@@ -577,10 +577,10 @@ class TestModelProjectionIntentEnvelope:
 class TestModelProjectionIntentEdgeCases:
     """Tests for boundary conditions and edge cases."""
 
-    def test_projector_id_single_char_accepted(
+    def test_projector_key_single_char_accepted(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
     ) -> None:
-        """Single-character projector_id is at min_length and is accepted."""
+        """Single-character projector_key is at min_length and is accepted."""
         intent = ModelProjectionIntent(
             projector_key="p",
             event_type="node.created.v1",
@@ -601,10 +601,10 @@ class TestModelProjectionIntentEdgeCases:
         )
         assert intent.event_type == "e"
 
-    def test_different_projector_ids_produce_different_intents(
+    def test_different_projector_keys_produce_different_intents(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
     ) -> None:
-        """Intents with different projector_ids are not equal."""
+        """Intents with different projector_keys are not equal."""
         intent_a = ModelProjectionIntent(
             projector_key="projector_a",
             event_type="node.created.v1",
