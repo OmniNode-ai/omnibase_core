@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025-2026 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
 # Makefile for omnibase_core
@@ -79,7 +79,7 @@ ci-fast:
 	uv run mypy src/omnibase_core
 	uv run pyright src/omnibase_core
 	uv run python scripts/validation/validate-all-exports.py
-	uv run python scripts/validation/validate-doc-links.py --fix-case
+	uv run python scripts/validation/validate-doc-links.py --fix-case  # intentionally mutates: auto-repairs casing so CI passes; mirrors CI behavior
 	uv run python -m omnibase_core.validation.checker_enum_governance src/omnibase_core/
 	uv run mypy --strict \
 		scripts/validation/validate-no-direct-io.py \
