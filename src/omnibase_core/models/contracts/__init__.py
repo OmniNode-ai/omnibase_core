@@ -150,6 +150,8 @@ from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
 from .model_performance_requirements import ModelPerformanceRequirements
 from .model_profile_reference import ModelProfileReference
+from .model_provenance_decision_record import DecisionRecord
+from .model_provenance_decision_score import DecisionScore
 from .model_published_event_entry import ModelPublishedEventEntry
 from .model_reduction_config import ModelReductionConfig
 from .model_runtime_event_bus_config import ModelRuntimeEventBusConfig
@@ -172,6 +174,9 @@ from .subcontracts import (
 __all__ = [
     # Mixins
     "MixinNodeTypeValidator",
+    # Decision Provenance models (OMN-2464)
+    "DecisionRecord",
+    "DecisionScore",
     # Foundation models
     "ModelConsumedEventEntry",
     "ModelContractBase",
