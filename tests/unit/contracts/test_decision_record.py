@@ -674,3 +674,11 @@ class TestExportPaths:
             breakdown={},
         )
         assert isinstance(score, ModelProvenanceDecisionScore)
+
+    def test_models_contracts_all_exports(self) -> None:
+        """ModelProvenanceDecisionRecord and ModelProvenanceDecisionScore appear
+        in omnibase_core.models.contracts.__all__."""
+        import omnibase_core.models.contracts as models_contracts_module
+
+        assert "ModelProvenanceDecisionRecord" in models_contracts_module.__all__
+        assert "ModelProvenanceDecisionScore" in models_contracts_module.__all__

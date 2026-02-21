@@ -180,7 +180,14 @@ class ModelProvenanceDecisionRecord(BaseModel):
     selected_candidate: str = Field(
         ...,
         min_length=1,
-        description="The candidate identifier that was ultimately selected.",
+        description=(
+            "The candidate identifier that was ultimately selected. "
+            "When candidates_considered is non-empty, this field is "
+            "cross-validated to ensure the value is present in that list. "
+            "When candidates_considered is empty (bootstrapped or "
+            "single-candidate scenarios), this field is unconstrained — "
+            "any non-empty string is accepted without cross-validation."
+        ),
     )
 
     agent_rationale: str | None = Field(
@@ -198,6 +205,30 @@ class ModelProvenanceDecisionRecord(BaseModel):
             "this decision (e.g., model versions, feature flags, config hashes)."
         ),
     )
+
+    @field_validator("constraints_applied")
+    @classmethod
+    def validate_constraints_applied_keys(cls, v: dict[str, str]) -> dict[str, str]:
+        for key in v:
+            if not key:
+                raise ValueError(
+                    "constraints_applied keys must be non-empty strings; "
+                    "found an empty string key"
+                )
+        return v
+
+    @field_validator("reproducibility_snapshot")
+    @classmethod
+    def validate_reproducibility_snapshot_keys(
+        cls, v: dict[str, str]
+    ) -> dict[str, str]:
+        for key in v:
+            if not key:
+                raise ValueError(
+                    "reproducibility_snapshot keys must be non-empty strings; "
+                    "found an empty string key"
+                )
+        return v
 
     @field_validator("timestamp")
     @classmethod
