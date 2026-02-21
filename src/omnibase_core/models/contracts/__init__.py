@@ -150,6 +150,14 @@ from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
 from .model_performance_requirements import ModelPerformanceRequirements
 from .model_profile_reference import ModelProfileReference
+from .model_provenance_decision_record import (
+    DecisionRecord,
+    ModelProvenanceDecisionRecord,
+)
+from .model_provenance_decision_score import (
+    DecisionScore,
+    ModelProvenanceDecisionScore,
+)
 from .model_published_event_entry import ModelPublishedEventEntry
 from .model_reduction_config import ModelReductionConfig
 from .model_runtime_event_bus_config import ModelRuntimeEventBusConfig
@@ -268,4 +276,9 @@ __all__ = [
     # Handler routing models (OMN-1295)
     "ModelHandlerRoutingEntry",
     "ModelHandlerRoutingSubcontract",
+    # Decision Provenance models (OMN-2350)
+    "ModelProvenanceDecisionScore",
+    "ModelProvenanceDecisionRecord",
+    "DecisionScore",
+    "DecisionRecord",
 ]
