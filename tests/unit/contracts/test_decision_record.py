@@ -128,19 +128,19 @@ class TestModelProvenanceDecisionScore:
         """Mutating candidate raises ValidationError (frozen=True)."""
         score = make_score()
         with pytest.raises(ValidationError):
-            score.candidate = "gpt-4"  # type: ignore[misc]
+            score.candidate = "gpt-4"
 
     def test_frozen_rejects_score_mutation(self) -> None:
         """Mutating score raises ValidationError (frozen=True)."""
         score = make_score()
         with pytest.raises(ValidationError):
-            score.score = 0.5  # type: ignore[misc]
+            score.score = 0.5
 
     def test_frozen_rejects_breakdown_mutation(self) -> None:
         """Mutating breakdown raises ValidationError (frozen=True)."""
         score = make_score()
         with pytest.raises(ValidationError):
-            score.breakdown = {}  # type: ignore[misc]
+            score.breakdown = {}
 
     # -----------------------------------------------------------------------
     # R2: Required fields have no defaults
@@ -169,6 +169,15 @@ class TestModelProvenanceDecisionScore:
                 candidate="claude-3-opus",
                 score=0.87,
             )  # type: ignore[call-arg]
+
+    def test_empty_candidate_raises(self) -> None:
+        """Empty string for candidate raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError):
+            ModelProvenanceDecisionScore(
+                candidate="",
+                score=0.87,
+                breakdown={"quality": 0.45},
+            )
 
     # -----------------------------------------------------------------------
     # Extra fields ignored (extra="ignore")
@@ -284,37 +293,37 @@ class TestModelProvenanceDecisionRecord:
         """Mutating decision_id raises ValidationError."""
         record = make_record()
         with pytest.raises(ValidationError):
-            record.decision_id = UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")  # type: ignore[misc]
+            record.decision_id = UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
 
     def test_frozen_rejects_decision_type_mutation(self) -> None:
         """Mutating decision_type raises ValidationError."""
         record = make_record()
         with pytest.raises(ValidationError):
-            record.decision_type = "tool_pick"  # type: ignore[misc]
+            record.decision_type = "tool_pick"
 
     def test_frozen_rejects_timestamp_mutation(self) -> None:
         """Mutating timestamp raises ValidationError."""
         record = make_record()
         with pytest.raises(ValidationError):
-            record.timestamp = datetime(2025, 1, 1, tzinfo=UTC)  # type: ignore[misc]
+            record.timestamp = datetime(2025, 1, 1, tzinfo=UTC)
 
     def test_frozen_rejects_candidates_mutation(self) -> None:
         """Mutating candidates_considered raises ValidationError."""
         record = make_record()
         with pytest.raises(ValidationError):
-            record.candidates_considered = []  # type: ignore[misc]
+            record.candidates_considered = []
 
     def test_frozen_rejects_selected_candidate_mutation(self) -> None:
         """Mutating selected_candidate raises ValidationError."""
         record = make_record()
         with pytest.raises(ValidationError):
-            record.selected_candidate = "gpt-4"  # type: ignore[misc]
+            record.selected_candidate = "gpt-4"
 
     def test_frozen_rejects_agent_rationale_mutation(self) -> None:
         """Mutating agent_rationale raises ValidationError."""
         record = make_record()
         with pytest.raises(ValidationError):
-            record.agent_rationale = "new rationale"  # type: ignore[misc]
+            record.agent_rationale = "new rationale"
 
     # -----------------------------------------------------------------------
     # R2: Required fields have no defaults (callers must inject)
@@ -371,6 +380,23 @@ class TestModelProvenanceDecisionRecord:
                 scoring_breakdown=[],
                 selected_candidate="a",
             )  # type: ignore[call-arg]
+
+    def test_empty_decision_type_raises(self) -> None:
+        """Empty string for decision_type raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError):
+            make_record(decision_type="")
+
+    def test_empty_selected_candidate_raises(self) -> None:
+        """Empty string for selected_candidate raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError):
+            make_record(selected_candidate="")
+
+    def test_naive_timestamp_raises(self) -> None:
+        """Timezone-naive datetime for timestamp raises ValidationError."""
+        from datetime import datetime as dt
+
+        with pytest.raises(ValidationError):
+            make_record(timestamp=dt(2026, 1, 1))
 
     def test_agent_rationale_defaults_to_none(self) -> None:
         """agent_rationale has explicit None default — callers may omit it."""

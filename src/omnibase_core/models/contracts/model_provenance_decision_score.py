@@ -56,6 +56,7 @@ class ModelProvenanceDecisionScore(BaseModel):
 
     candidate: str = Field(
         ...,
+        min_length=1,
         description="Identifier for the candidate being scored",
     )
 

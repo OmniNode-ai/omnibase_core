@@ -32,7 +32,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.models.contracts.model_provenance_decision_score import (
     ModelProvenanceDecisionScore,
@@ -116,6 +116,7 @@ class ModelProvenanceDecisionRecord(BaseModel):
 
     decision_type: str = Field(
         ...,
+        min_length=1,
         description=(
             'Classification of the decision. E.g. "model_select", '
             '"workflow_route", "tool_pick".'
@@ -158,6 +159,7 @@ class ModelProvenanceDecisionRecord(BaseModel):
 
     selected_candidate: str = Field(
         ...,
+        min_length=1,
         description="The candidate identifier that was ultimately selected.",
     )
 
@@ -176,6 +178,13 @@ class ModelProvenanceDecisionRecord(BaseModel):
             "this decision (e.g., model versions, feature flags, config hashes)."
         ),
     )
+
+    @field_validator("timestamp")
+    @classmethod
+    def validate_timestamp_timezone_aware(cls, v: datetime) -> datetime:
+        if v.tzinfo is None:
+            raise ValueError("timestamp must be timezone-aware (use UTC)")
+        return v
 
 
 # Public alias for API surface
