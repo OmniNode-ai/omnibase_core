@@ -291,26 +291,26 @@ class TestModelProjectionIntentImmutability:
     def test_projector_key_immutable(self, valid_intent: ModelProjectionIntent) -> None:
         """Cannot reassign projector_key on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.projector_key = "changed"  # type: ignore[misc]
+            valid_intent.projector_key = "changed"
 
     def test_event_type_immutable(self, valid_intent: ModelProjectionIntent) -> None:
         """Cannot reassign event_type on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.event_type = "changed.v2"  # type: ignore[misc]
+            valid_intent.event_type = "changed.v2"
 
     def test_envelope_immutable(
         self, valid_intent: ModelProjectionIntent, simple_envelope: _SimpleEnvelope
     ) -> None:
         """Cannot reassign envelope on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.envelope = simple_envelope  # type: ignore[misc]
+            valid_intent.envelope = simple_envelope
 
     def test_correlation_id_immutable(
         self, valid_intent: ModelProjectionIntent
     ) -> None:
         """Cannot reassign correlation_id on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.correlation_id = uuid4()  # type: ignore[misc]
+            valid_intent.correlation_id = uuid4()
 
     def test_hashable(self, correlation_id: UUID) -> None:
         """Frozen model with a frozen envelope is hashable (can be used in sets/dicts).

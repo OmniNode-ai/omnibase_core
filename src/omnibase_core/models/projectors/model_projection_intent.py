@@ -154,7 +154,9 @@ class ModelProjectionIntent(BaseModel):
         description=(
             "The full event envelope to project. Typed as BaseModel for flexibility; "
             "concrete ProtocolProjector implementations cast this to the appropriate "
-            "envelope type for their domain."
+            "envelope type for their domain. "
+            "Note: the envelope must be frozen (frozen=True) for hash-based operations "
+            "(set membership, dict keys) to work correctly."
         ),
     )
 
