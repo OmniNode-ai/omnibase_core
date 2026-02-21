@@ -3,7 +3,9 @@
 #
 # Makefile for omnibase_core
 #
-# Targets match CI exactly (see .github/workflows/test.yml).
+# Targets match CI exactly (see .github/workflows/test.yml) with one
+# intentional difference: `uv run python` is used here for consistency with
+# other steps, whereas CI invokes `python3` directly (e.g. validate-doc-links.py).
 # All Python commands use `uv run` — never direct python/pip.
 
 .DEFAULT_GOAL := help
@@ -78,9 +80,14 @@ ci-fast:
 		scripts/validation/validate-all-exports.py \
 		scripts/validation/validate-no-infra-imports.py \
 		scripts/check_transport_imports.py
-	uv run python scripts/check_transport_imports.py --changed-files --verbose
+	uv run python scripts/check_transport_imports.py --verbose  # full scan: CI runs full scan on main/develop; --changed-files would miss violations on unchanged files
 	./scripts/validate-no-transport-imports.sh
-	uv run python scripts/check_node_purity.py --verbose || true  # non-blocking (CI continue-on-error)
+	uv run python scripts/check_node_purity.py --verbose; \
+		_purity_exit=$$?; \
+		if [ $$_purity_exit -ne 0 ]; then \
+			echo "node-purity-check: FAILED (non-blocking, see CI for details)"; \
+		fi; \
+		true  # non-blocking (CI continue-on-error)
 	git ls-files -z | xargs -0 detect-secrets-hook \
 		--baseline .secrets.baseline \
 		--exclude-files 'uv\.lock' \
@@ -88,7 +95,7 @@ ci-fast:
 		--exclude-files 'tests/fixtures/' \
 		--exclude-files '\.git/' \
 		--exclude-files '\.secrets\.baseline' \
-		--exclude-files '\.github/workflows/.*\.yml'  # requires: pip install detect-secrets
+		--exclude-files '\.github/workflows/.*\.yml'  # requires: pip install detect-secrets==1.5.0
 
 # ---------------------------------------------------------------------------
 # Help
