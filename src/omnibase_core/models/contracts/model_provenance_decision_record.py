@@ -231,11 +231,16 @@ class ModelProvenanceDecisionRecord(BaseModel):
     @field_validator("constraints_applied")
     @classmethod
     def validate_constraints_applied_keys(cls, v: dict[str, str]) -> dict[str, str]:
-        for key in v:
+        for key, value in v.items():
             if not key:
                 raise ValueError(
                     "constraints_applied keys must be non-empty strings; "
                     "found an empty string key"
+                )
+            if not value:
+                raise ValueError(
+                    "constraints_applied values must be non-empty strings; "
+                    f"found an empty string value for key '{key}'"
                 )
         return v
 
@@ -244,11 +249,16 @@ class ModelProvenanceDecisionRecord(BaseModel):
     def validate_reproducibility_snapshot_keys(
         cls, v: dict[str, str]
     ) -> dict[str, str]:
-        for key in v:
+        for key, value in v.items():
             if not key:
                 raise ValueError(
                     "reproducibility_snapshot keys must be non-empty strings; "
                     "found an empty string key"
+                )
+            if not value:
+                raise ValueError(
+                    "reproducibility_snapshot values must be non-empty strings; "
+                    f"found an empty string value for key '{key}'"
                 )
         return v
 

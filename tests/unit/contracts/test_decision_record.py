@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
@@ -643,6 +642,16 @@ class TestModelProvenanceDecisionRecord:
                 selected_candidate="claude-3-opus",
                 scoring_breakdown=[],
             )
+
+    def test_constraints_applied_empty_value_raises(self) -> None:
+        """Empty string value in constraints_applied raises ValidationError."""
+        with pytest.raises(ValidationError, match="constraints_applied values"):
+            make_record(constraints_applied={"max_cost_usd": ""})
+
+    def test_reproducibility_snapshot_empty_value_raises(self) -> None:
+        """Empty string value in reproducibility_snapshot raises ValidationError."""
+        with pytest.raises(ValidationError, match="reproducibility_snapshot values"):
+            make_record(reproducibility_snapshot={"routing_version": ""})
 
     def test_duplicate_candidates_considered_accepted_and_roundtrip(self) -> None:
         """Duplicate entries in candidates_considered are accepted (uniqueness not enforced).
