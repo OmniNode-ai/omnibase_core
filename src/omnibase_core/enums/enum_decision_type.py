@@ -36,6 +36,9 @@ class EnumDecisionType(StrValueHelper, str, Enum):
         EARLY_TERMINATION: Decision to terminate early (success or abort)
         PARAMETER_CHOICE: Decision about parameter values or configuration settings
         CUSTOM: Forward-compatibility escape hatch for new decision types
+        MODEL_SELECT: Alias for model selection (provenance record classification)
+        WORKFLOW_ROUTE: Alias for workflow routing (provenance record classification)
+        TOOL_PICK: Alias for tool selection (provenance record classification)
 
     Example:
         >>> decision_type = EnumDecisionType.MODEL_SELECTION
@@ -74,6 +77,15 @@ class EnumDecisionType(StrValueHelper, str, Enum):
 
     CUSTOM = "custom"
     """Escape hatch for forward-compatibility with new decision types."""
+
+    MODEL_SELECT = "model_select"
+    """Provenance record classification: model selection decision."""
+
+    WORKFLOW_ROUTE = "workflow_route"
+    """Provenance record classification: workflow routing decision."""
+
+    TOOL_PICK = "tool_pick"
+    """Provenance record classification: tool selection decision."""
 
     @classmethod
     def is_valid(cls, value: str) -> bool:

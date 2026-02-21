@@ -20,6 +20,13 @@ Design Decisions:
       flattening into a single flat structure.
     - No implicit defaults for decision_id or timestamp: Callers must inject these
       values — no auto-generation, no datetime.now() defaults — per repo invariant.
+    - Shallow-freeze limitation: scoring_breakdown is a frozen list of frozen
+      ModelProvenanceDecisionScore objects (frozen=True on the score model). The
+      list reference itself is immutable via frozen=True on this record. However,
+      the breakdown dict *inside* each score is enforced as a read-only
+      MappingProxyType by ModelProvenanceDecisionScore.model_post_init — in-place
+      mutation of breakdown raises TypeError. Nested container contents beyond that
+      level are not additionally frozen.
 
 See Also:
     model_provenance_decision_score.py: Per-candidate scoring breakdown.
@@ -29,7 +36,7 @@ See Also:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Annotated
 from uuid import UUID
 
@@ -42,6 +49,7 @@ from pydantic import (
     model_validator,
 )
 
+from omnibase_core.enums.enum_decision_type import EnumDecisionType
 from omnibase_core.models.contracts.model_provenance_decision_score import (
     ModelProvenanceDecisionScore,
 )
@@ -61,9 +69,12 @@ class ModelProvenanceDecisionRecord(BaseModel):
     Attributes:
         decision_id: Caller-supplied UUID for this decision. No auto-generation
             — callers must provide a UUID.
-        decision_type: Classification string, e.g. "model_select",
-            "workflow_route", "tool_pick".
-        timestamp: Caller-injected UTC datetime of the decision. No
+        decision_type: Classification enum value (EnumDecisionType), e.g.
+            EnumDecisionType.MODEL_SELECT, EnumDecisionType.WORKFLOW_ROUTE,
+            EnumDecisionType.TOOL_PICK. Pydantic coerces plain strings to enum.
+        timestamp: Caller-injected UTC datetime of the decision. Must be
+            timezone-aware with offset == 0 (strictly UTC). Non-UTC offsets
+            are rejected even if they represent the same instant. No
             datetime.now() default — callers must inject the timestamp.
         candidates_considered: Ordered list of candidate identifiers that
             were evaluated.
@@ -105,7 +116,7 @@ class ModelProvenanceDecisionRecord(BaseModel):
         >>> record.selected_candidate
         'claude-3-opus'
         >>> record.decision_type
-        'model_select'
+        <EnumDecisionType.MODEL_SELECT: 'model_select'>
     """
 
     model_config = ConfigDict(
@@ -123,12 +134,12 @@ class ModelProvenanceDecisionRecord(BaseModel):
         ),
     )
 
-    decision_type: str = Field(
+    decision_type: EnumDecisionType = Field(
         ...,
-        min_length=1,
         description=(
-            'Classification of the decision. E.g. "model_select", '
-            '"workflow_route", "tool_pick".'
+            "Classification of the decision. One of the EnumDecisionType values, "
+            "e.g. EnumDecisionType.MODEL_SELECT, EnumDecisionType.WORKFLOW_ROUTE, "
+            "EnumDecisionType.TOOL_PICK. Pydantic coerces plain strings to the enum."
         ),
     )
 
@@ -136,6 +147,8 @@ class ModelProvenanceDecisionRecord(BaseModel):
         ...,
         description=(
             "Caller-injected UTC datetime of the decision. "
+            "Must be timezone-aware with offset == 0 (strictly UTC); "
+            "non-UTC offsets are rejected even if they represent the same instant. "
             "No datetime.now() default — callers must inject the timestamp."
         ),
     )
@@ -258,7 +271,9 @@ class ModelProvenanceDecisionRecord(BaseModel):
     @classmethod
     def validate_timestamp_timezone_aware(cls, v: datetime) -> datetime:
         if v.tzinfo is None:
-            raise ValueError("timestamp must be timezone-aware (use UTC)")
+            raise ValueError("timestamp must be timezone-aware UTC")
+        if v.utcoffset() != timedelta(0):
+            raise ValueError("timestamp must be UTC (offset must be 0)")
         return v
 
     @model_validator(mode="after")

@@ -13,6 +13,11 @@ Design Decisions:
     - frozen=True: Immutable after creation — provenance artifacts must not be mutated.
     - No implicit defaults: All fields must be explicitly provided by callers.
     - Separate from DecisionRecord: Allows per-candidate breakdown without flattening.
+    - breakdown as MappingProxyType: The breakdown field is stored as a read-only
+      types.MappingProxyType. The field_validator validate_breakdown_keys returns
+      types.MappingProxyType(validated_dict) after key validation; Pydantic v2
+      stores the validator return value directly, so no frozen bypass is needed.
+      In-place mutation of breakdown raises TypeError.
 
 See Also:
     model_provenance_decision_record.py: Main provenance record model.
@@ -20,6 +25,9 @@ See Also:
 """
 
 from __future__ import annotations
+
+import types
+from collections.abc import Mapping
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -35,7 +43,9 @@ class ModelProvenanceDecisionScore(BaseModel):
         candidate: Identifier for the candidate being scored.
         score: Aggregate score for this candidate.
         breakdown: Per-criterion score contributions (not necessarily summing to
-            aggregate_score — no summation invariant is enforced).
+            aggregate_score — no summation invariant is enforced). Stored as a
+            read-only MappingProxyType after construction; in-place mutation
+            raises TypeError.
 
     Example:
         >>> score = ModelProvenanceDecisionScore(
@@ -79,21 +89,25 @@ class ModelProvenanceDecisionScore(BaseModel):
         ),
     )
 
-    breakdown: dict[str, float] = Field(
+    breakdown: Mapping[str, float] = Field(
         ...,
-        description="Per-criterion score contributions",
+        description=(
+            "Per-criterion score contributions. Stored as a read-only "
+            "MappingProxyType after construction; in-place mutation raises TypeError. "
+            "Keys must be non-empty strings. Values are unbounded floats."
+        ),
     )
 
     @field_validator("breakdown")
     @classmethod
-    def validate_breakdown_keys(cls, v: dict[str, float]) -> dict[str, float]:
+    def validate_breakdown_keys(cls, v: dict[str, float]) -> Mapping[str, float]:
         for key in v:
             if not key:
                 raise ValueError(
                     "breakdown keys must be non-empty strings; "
                     "found an empty string key"
                 )
-        return v
+        return types.MappingProxyType(v)
 
 
 # Public alias for API surface

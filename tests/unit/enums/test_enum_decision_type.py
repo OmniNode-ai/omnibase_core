@@ -21,7 +21,7 @@ class TestEnumDecisionType:
     """Tests for EnumDecisionType enum."""
 
     def test_all_values_defined(self) -> None:
-        """Verify all 8 expected decision types are defined."""
+        """Verify all 11 expected decision types are defined."""
         expected_values = {
             "model_selection",
             "route_choice",
@@ -31,10 +31,14 @@ class TestEnumDecisionType:
             "early_termination",
             "parameter_choice",
             "custom",
+            # Provenance record classification aliases (OMN-2350)
+            "model_select",
+            "workflow_route",
+            "tool_pick",
         }
         actual_values = {member.value for member in EnumDecisionType}
         assert actual_values == expected_values
-        assert len(EnumDecisionType) == 8
+        assert len(EnumDecisionType) == 11
 
     def test_string_enum_inheritance(self) -> None:
         """Verify enum inherits from str for JSON serialization."""
