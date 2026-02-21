@@ -37,7 +37,7 @@ See Also:
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Self
 from uuid import UUID
 
 from pydantic import (
@@ -279,7 +279,7 @@ class ModelProvenanceDecisionRecord(BaseModel):
     @model_validator(mode="after")
     def validate_selected_candidate_in_candidates(
         self,
-    ) -> ModelProvenanceDecisionRecord:
+    ) -> Self:
         """Cross-validate selected_candidate and scoring_breakdown against candidates_considered.
 
         When candidates_considered is empty, all cross-validation against it is

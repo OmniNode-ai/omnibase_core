@@ -43,7 +43,7 @@ class ModelProvenanceDecisionScore(BaseModel):
         candidate: Identifier for the candidate being scored.
         score: Aggregate score for this candidate.
         breakdown: Per-criterion score contributions (not necessarily summing to
-            aggregate_score — no summation invariant is enforced). Stored as a
+            score — no summation invariant is enforced). Stored as a
             read-only MappingProxyType after construction; in-place mutation
             raises TypeError.
 
