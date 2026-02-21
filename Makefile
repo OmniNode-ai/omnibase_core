@@ -37,7 +37,7 @@ format:
 # Linting
 # ---------------------------------------------------------------------------
 
-## lint: Check formatting and linting without modifying files (CI: lint + mypy)
+## lint: Check formatting and linting without modifying files (CI: lint + mypy jobs only; use ci-fast for full type gate including pyright)
 lint:
 	uv run ruff format --check src/ tests/
 	uv run ruff check src/ tests/
