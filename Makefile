@@ -9,6 +9,7 @@
 #    (e.g. validate-doc-links.py). This is a potential correctness risk: `python3`
 #    and `uv run python` may resolve to different interpreter versions or site-packages
 #    depending on the host environment — not merely a style difference.
+#    TODO(OMN-2335): align CI to use uv run python for consistency
 # 2. transport import check always runs full scan here; CI uses --changed-files on
 #    feature branches (conservative local default catches more violations pre-push).
 # 3. `enum-governance` runs as a separate parallel CI job in test.yml but is included
@@ -85,6 +86,9 @@ ci-fast:
 	uv run pyright src/omnibase_core
 	uv run python scripts/validation/validate-all-exports.py
 	uv run python scripts/validation/validate-doc-links.py --fix-case  # intentionally mutates: auto-repairs casing so CI passes; mirrors CI behavior
+	@if ! git diff --quiet docs/ 2>/dev/null; then \
+		echo "validate-doc-links: WARNING — --fix-case mutated files in docs/. Review uncommitted changes with 'git diff docs/'."; \
+	fi
 	uv run python -m omnibase_core.validation.checker_enum_governance src/omnibase_core/
 	uv run mypy --strict \
 		scripts/validation/validate-no-direct-io.py \
@@ -92,7 +96,7 @@ ci-fast:
 		scripts/validation/validate-no-infra-imports.py \
 		scripts/check_transport_imports.py
 	uv run python scripts/check_transport_imports.py --verbose  # full scan: CI runs full scan on main/develop; --changed-files would miss violations on unchanged files
-	@test -x scripts/validate-no-transport-imports.sh || (echo "ERROR: scripts/validate-no-transport-imports.sh is not executable. Run 'make install' first." && exit 1)
+	@test -x scripts/validate-no-transport-imports.sh || (echo "ERROR: scripts/validate-no-transport-imports.sh is not executable. Run 'make install' to set up all required prerequisites." && exit 1)
 	./scripts/validate-no-transport-imports.sh
 	@uv run python scripts/check_node_purity.py --verbose; \
 		_purity_exit=$$?; \
@@ -101,7 +105,7 @@ ci-fast:
 		else \
 			echo "node-purity-check: PASSED"; \
 		fi; \
-		exit 0  # non-blocking: matches CI continue-on-error
+		exit 0  # always succeed — non-blocking: matches CI continue-on-error
 	@# set +e: capture detect-secrets exit code without failing the recipe; scoped to this @-block
 	@set +e; \
 	git ls-files -z | xargs -0 uv run detect-secrets-hook \
