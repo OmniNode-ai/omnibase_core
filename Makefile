@@ -87,6 +87,7 @@ ci-fast:
 		scripts/validation/validate-no-infra-imports.py \
 		scripts/check_transport_imports.py
 	uv run python scripts/check_transport_imports.py --verbose  # full scan: CI runs full scan on main/develop; --changed-files would miss violations on unchanged files
+	chmod +x scripts/validate-no-transport-imports.sh
 	./scripts/validate-no-transport-imports.sh
 	@uv run python scripts/check_node_purity.py --verbose; \
 		_purity_exit=$$?; \
