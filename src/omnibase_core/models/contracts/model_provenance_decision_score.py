@@ -50,6 +50,7 @@ class ModelProvenanceDecisionScore(BaseModel):
 
     model_config = ConfigDict(
         frozen=True,
+        # extra="ignore" intentional: contract/external model — forward-compatible with event bus
         extra="ignore",
         from_attributes=True,
     )

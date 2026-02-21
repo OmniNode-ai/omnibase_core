@@ -32,7 +32,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.models.contracts.model_provenance_decision_score import (
     ModelProvenanceDecisionScore,
@@ -102,6 +102,7 @@ class ModelProvenanceDecisionRecord(BaseModel):
 
     model_config = ConfigDict(
         frozen=True,
+        # extra="ignore" intentional: contract/external model — forward-compatible with event bus
         extra="ignore",
         from_attributes=True,
     )
@@ -185,6 +186,24 @@ class ModelProvenanceDecisionRecord(BaseModel):
         if v.tzinfo is None:
             raise ValueError("timestamp must be timezone-aware (use UTC)")
         return v
+
+    @model_validator(mode="after")
+    def validate_selected_candidate_in_candidates(
+        self,
+    ) -> ModelProvenanceDecisionRecord:
+        """Cross-validate that selected_candidate is present in candidates_considered.
+
+        Skips the check when candidates_considered is empty (valid edge case —
+        record may be created before candidates are known) or when
+        selected_candidate is None.
+        """
+        if self.selected_candidate is not None and self.candidates_considered:
+            if self.selected_candidate not in self.candidates_considered:
+                raise ValueError(
+                    f"selected_candidate '{self.selected_candidate}' must be present "
+                    "in candidates_considered"
+                )
+        return self
 
 
 # Public alias for API surface
