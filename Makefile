@@ -6,9 +6,13 @@
 # Targets match CI exactly (see .github/workflows/test.yml) with intentional
 # differences documented below:
 # 1. `uv run python` is used here for consistency; CI invokes `python3` directly
-#    (e.g. validate-doc-links.py).
+#    (e.g. validate-doc-links.py). This is a potential correctness risk: `python3`
+#    and `uv run python` may resolve to different interpreter versions or site-packages
+#    depending on the host environment — not merely a style difference.
 # 2. transport import check always runs full scan here; CI uses --changed-files on
 #    feature branches (conservative local default catches more violations pre-push).
+# 3. `enum-governance` runs as a separate parallel CI job in test.yml but is included
+#    sequentially here in ci-fast (via `uv run python -m omnibase_core.validation.checker_enum_governance`).
 # All Python commands use `uv run` — never direct python/pip.
 # `detect-secrets` is installed via `make install` as a one-time setup step.
 
@@ -22,7 +26,7 @@
 ## install: Install all dependencies and dev tools (uv sync --all-extras)
 install:
 	uv sync --all-extras
-	uv run pip install detect-secrets==1.5.0 --quiet
+	uv tool install detect-secrets==1.5.0 --quiet
 	chmod +x scripts/validate-no-transport-imports.sh
 
 # ---------------------------------------------------------------------------
@@ -74,6 +78,10 @@ test-cov:
 
 ## ci-fast: Run all Phase 1 CI quality checks locally (matches quality-gate)
 ci-fast:
+	@if ! uv run python -c "import detect_secrets" 2>/dev/null; then \
+		echo "detect-secrets not found — run 'make install' first (installs detect-secrets==1.5.0)"; \
+		exit 1; \
+	fi
 	uv run ruff format --check src/ tests/
 	uv run ruff check src/ tests/
 	uv run mypy src/omnibase_core
@@ -87,7 +95,7 @@ ci-fast:
 		scripts/validation/validate-no-infra-imports.py \
 		scripts/check_transport_imports.py
 	uv run python scripts/check_transport_imports.py --verbose  # full scan: CI runs full scan on main/develop; --changed-files would miss violations on unchanged files
-	chmod +x scripts/validate-no-transport-imports.sh
+	@test -x scripts/validate-no-transport-imports.sh || (echo "ERROR: scripts/validate-no-transport-imports.sh is not executable. Run 'make install' first." && exit 1)
 	./scripts/validate-no-transport-imports.sh
 	@uv run python scripts/check_node_purity.py --verbose; \
 		_purity_exit=$$?; \
@@ -95,10 +103,6 @@ ci-fast:
 			echo "node-purity-check: FAILED (non-blocking, see CI for details)"; \
 		fi; \
 		true  # non-blocking (CI continue-on-error)
-	@if ! uv run python -c "import detect_secrets" 2>/dev/null; then \
-		echo "detect-secrets not found — run 'make install' first (installs detect-secrets==1.5.0)"; \
-		exit 1; \
-	fi
 	@set +e; \
 	git ls-files -z | xargs -0 uv run detect-secrets-hook \
 		--baseline .secrets.baseline \
@@ -111,8 +115,8 @@ ci-fast:
 	_secrets_exit=$$?; \
 	set -e; \
 	if [ $$_secrets_exit -ne 0 ]; then \
-		echo "detect-secrets: FAILED — potential secrets detected. Review .secrets.baseline and remediate before merging."; \
-		exit 1; \
+		echo "detect-secrets: FAILED (exit code: $$_secrets_exit) — possible secrets detected or scan error. Review .secrets.baseline and remediate before merging."; \
+		exit $$_secrets_exit; \
 	fi
 
 # ---------------------------------------------------------------------------
