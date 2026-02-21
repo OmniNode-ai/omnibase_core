@@ -13,6 +13,10 @@ ModelIdempotencyConfig
     Configuration for idempotent event processing. Specifies the
     idempotency key and whether checking is enabled.
 
+ModelProjectionIntent
+    Intent to project an event envelope via a named projector key.
+    Produced by reducers and consumed by NodeProjectionEffect.
+
 ModelProjectionResult
     Result of a projection operation, including success status,
     rows affected, and any error information.
