@@ -245,7 +245,7 @@ class TestModelProvenanceDecisionRecord:
 
     def test_valid_construction_full(self) -> None:
         """Construct a record with all fields populated."""
-        score = make_score()
+        score = make_score("route-a")
         record = ModelProvenanceDecisionRecord(
             decision_id=DECISION_ID,
             decision_type="workflow_route",
@@ -270,14 +270,13 @@ class TestModelProvenanceDecisionRecord:
         assert record.constraints_applied == {}
 
     def test_multiple_scoring_breakdown_entries(self) -> None:
-        """Multiple score entries are valid."""
+        """Multiple score entries are valid when all candidates are in candidates_considered."""
         scores = [
-            make_score("a", 0.9, {"q": 0.9}),
-            make_score("b", 0.7, {"q": 0.7}),
-            make_score("c", 0.5, {"q": 0.5}),
+            make_score("claude-3-opus", 0.9, {"q": 0.9}),
+            make_score("gpt-4", 0.7, {"q": 0.7}),
         ]
         record = make_record(scoring_breakdown=scores)
-        assert len(record.scoring_breakdown) == 3
+        assert len(record.scoring_breakdown) == 2
 
     def test_various_decision_types(self) -> None:
         """Decision type is a free string — any value is valid."""
@@ -468,10 +467,10 @@ class TestModelProvenanceDecisionRecord:
 
     def test_scoring_breakdown_contains_score_models(self) -> None:
         """Scoring breakdown entries are ModelProvenanceDecisionScore instances."""
-        score = make_score("claude", 0.9, {"quality": 0.9})
+        score = make_score("claude-3-opus", 0.9, {"quality": 0.9})
         record = make_record(scoring_breakdown=[score])
         assert isinstance(record.scoring_breakdown[0], ModelProvenanceDecisionScore)
-        assert record.scoring_breakdown[0].candidate == "claude"
+        assert record.scoring_breakdown[0].candidate == "claude-3-opus"
 
     def test_scoring_breakdown_dict_coercion(self) -> None:
         """Scoring breakdown entries can be supplied as raw dicts (Pydantic coerces)."""
@@ -530,25 +529,25 @@ class TestModelProvenanceDecisionRecord:
         )
         assert record.selected_candidate == "any-candidate"
 
-    def test_selected_candidate_none_always_allowed(self) -> None:
-        """None selected_candidate skips the cross-validation check entirely."""
-        # selected_candidate has min_length=1 so it cannot be None via the field
-        # definition; this test confirms the validator guard for None is reachable
-        # when the field type is relaxed — validated via direct model construction
-        # with a patched field. Since the field is str (non-optional), Pydantic
-        # rejects None before the model validator runs. We therefore test the
-        # guard indirectly: setting selected_candidate to a value not in an empty
-        # list (already covered) and confirming None is handled by the validator
-        # guard by inspecting the validator source. This test documents intent.
+    def test_scoring_breakdown_unknown_candidate_raises(self) -> None:
+        """scoring_breakdown entry with candidate not in candidates_considered raises ValidationError."""
+        unknown_score = make_score("gemini-pro", 0.6, {"quality": 0.6})
+        with pytest.raises(ValidationError, match="scoring_breakdown candidate"):
+            make_record(
+                candidates_considered=["claude-3-opus", "gpt-4"],
+                selected_candidate="claude-3-opus",
+                scoring_breakdown=[unknown_score],
+            )
+
+    def test_scoring_breakdown_valid_candidate_passes(self) -> None:
+        """scoring_breakdown entry whose candidate is in candidates_considered passes validation."""
+        valid_score = make_score("gpt-4", 0.75, {"quality": 0.75})
         record = make_record(
-            candidates_considered=["a", "b"],
-            selected_candidate="a",
+            candidates_considered=["claude-3-opus", "gpt-4"],
+            selected_candidate="claude-3-opus",
+            scoring_breakdown=[valid_score],
         )
-        # The None branch is unreachable through the public API because
-        # selected_candidate is typed `str` with min_length=1. The guard
-        # `if self.selected_candidate is not None` is a defensive check.
-        # Verify that the record with a valid selected_candidate constructs fine.
-        assert record.selected_candidate == "a"
+        assert record.scoring_breakdown[0].candidate == "gpt-4"
 
 
 # ===========================================================================

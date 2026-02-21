@@ -191,16 +191,27 @@ class ModelProvenanceDecisionRecord(BaseModel):
     def validate_selected_candidate_in_candidates(
         self,
     ) -> ModelProvenanceDecisionRecord:
-        """Cross-validate that selected_candidate is present in candidates_considered.
+        """Cross-validate selected_candidate and scoring_breakdown against candidates_considered.
 
-        Skips the check when candidates_considered is empty (valid edge case —
-        record may be created before candidates are known) or when
-        selected_candidate is None.
+        Skips all checks when candidates_considered is empty (valid edge case —
+        record may be created before candidates are known).
+
+        Checks:
+            - selected_candidate must be present in candidates_considered.
+            - Every score.candidate in scoring_breakdown must be present in
+              candidates_considered.
         """
-        if self.selected_candidate is not None and self.candidates_considered:
-            if self.selected_candidate not in self.candidates_considered:
+        if not self.candidates_considered:
+            return self
+        if self.selected_candidate not in self.candidates_considered:
+            raise ValueError(
+                f"selected_candidate '{self.selected_candidate}' must be present "
+                "in candidates_considered"
+            )
+        for score in self.scoring_breakdown:
+            if score.candidate not in self.candidates_considered:
                 raise ValueError(
-                    f"selected_candidate '{self.selected_candidate}' must be present "
+                    f"scoring_breakdown candidate '{score.candidate}' must be present "
                     "in candidates_considered"
                 )
         return self
