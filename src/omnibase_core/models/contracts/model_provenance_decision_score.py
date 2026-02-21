@@ -61,9 +61,21 @@ class ModelProvenanceDecisionScore(BaseModel):
         description="Identifier for the candidate being scored",
     )
 
+    # Design decision: score range is intentionally unbounded.
+    # Negative scores are valid (e.g., penalty-based scoring systems where
+    # a candidate receives a negative weight for constraint violations).
+    # Values >1.0 are valid for raw un-normalised metrics before calibration.
+    # Downstream consumers that require a normalised [0.0, 1.0] range must
+    # clamp or validate the value themselves — this model does not impose that
+    # constraint because the provenance system must faithfully record whatever
+    # score was produced, not silently truncate it.
     score: float = Field(
         ...,
-        description="Aggregate score for this candidate",
+        description=(
+            "Aggregate score for this candidate. Range is intentionally unbounded: "
+            "negative values are valid for penalty-based systems; values >1.0 are "
+            "valid for raw un-normalised metrics. See module docstring for rationale."
+        ),
     )
 
     breakdown: dict[str, float] = Field(

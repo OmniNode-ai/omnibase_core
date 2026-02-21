@@ -30,9 +30,17 @@ See Also:
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
 from omnibase_core.models.contracts.model_provenance_decision_score import (
     ModelProvenanceDecisionScore,
@@ -132,9 +140,14 @@ class ModelProvenanceDecisionRecord(BaseModel):
         ),
     )
 
-    candidates_considered: list[str] = Field(
-        ...,
-        description="Ordered list of candidate identifiers that were evaluated.",
+    candidates_considered: list[Annotated[str, StringConstraints(min_length=1)]] = (
+        Field(
+            ...,
+            description=(
+                "Ordered list of candidate identifiers that were evaluated. "
+                "Each element must be a non-empty string (min_length=1)."
+            ),
+        )
     )
 
     constraints_applied: dict[str, str] = Field(
@@ -193,15 +206,27 @@ class ModelProvenanceDecisionRecord(BaseModel):
     ) -> ModelProvenanceDecisionRecord:
         """Cross-validate selected_candidate and scoring_breakdown against candidates_considered.
 
-        Skips all checks when candidates_considered is empty (valid edge case —
-        record may be created before candidates are known).
+        When candidates_considered is empty, all cross-validation against it is
+        skipped — EXCEPT when scoring_breakdown is non-empty. A non-empty
+        scoring_breakdown alongside an empty candidates_considered is logically
+        inconsistent: there can be no scored candidates if none were considered.
 
         Checks:
-            - selected_candidate must be present in candidates_considered.
+            - If candidates_considered is empty and scoring_breakdown is non-empty,
+              raises ValueError (logically inconsistent state).
+            - selected_candidate must be present in candidates_considered (when
+              candidates_considered is non-empty).
             - Every score.candidate in scoring_breakdown must be present in
-              candidates_considered.
+              candidates_considered (when candidates_considered is non-empty).
         """
         if not self.candidates_considered:
+            if self.scoring_breakdown:
+                raise ValueError(
+                    "scoring_breakdown must be empty when candidates_considered is empty: "
+                    f"found {len(self.scoring_breakdown)} scoring entry/entries but no "
+                    "candidates were recorded. Either populate candidates_considered or "
+                    "clear scoring_breakdown."
+                )
             return self
         if self.selected_candidate not in self.candidates_considered:
             raise ValueError(

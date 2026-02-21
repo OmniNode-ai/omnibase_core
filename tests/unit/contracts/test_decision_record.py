@@ -264,8 +264,12 @@ class TestModelProvenanceDecisionRecord:
         assert len(record.scoring_breakdown) == 1
 
     def test_empty_candidates_and_constraints(self) -> None:
-        """Empty lists and dicts are valid field values."""
-        record = make_record(candidates_considered=[], constraints_applied={})
+        """Empty lists and dicts are valid field values when scoring_breakdown is also empty."""
+        record = make_record(
+            candidates_considered=[],
+            constraints_applied={},
+            scoring_breakdown=[],
+        )
         assert record.candidates_considered == []
         assert record.constraints_applied == {}
 
@@ -522,10 +526,14 @@ class TestModelProvenanceDecisionRecord:
         assert record.selected_candidate == "gpt-4"
 
     def test_selected_candidate_allowed_when_candidates_empty(self) -> None:
-        """selected_candidate is allowed when candidates_considered is empty (edge case)."""
+        """selected_candidate is allowed when candidates_considered is empty (edge case).
+
+        scoring_breakdown must also be empty when candidates_considered is empty.
+        """
         record = make_record(
             candidates_considered=[],
             selected_candidate="any-candidate",
+            scoring_breakdown=[],
         )
         assert record.selected_candidate == "any-candidate"
 
@@ -548,6 +556,25 @@ class TestModelProvenanceDecisionRecord:
             scoring_breakdown=[valid_score],
         )
         assert record.scoring_breakdown[0].candidate == "gpt-4"
+
+    def test_nonempty_scoring_breakdown_with_empty_candidates_raises(self) -> None:
+        """Non-empty scoring_breakdown with empty candidates_considered is logically
+        inconsistent and raises ValidationError."""
+        with pytest.raises(ValidationError, match="scoring_breakdown must be empty"):
+            make_record(
+                candidates_considered=[],
+                selected_candidate="any-candidate",
+                scoring_breakdown=[make_score("any-candidate")],
+            )
+
+    def test_empty_string_in_candidates_considered_raises(self) -> None:
+        """Empty string element in candidates_considered raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError):
+            make_record(
+                candidates_considered=["claude-3-opus", ""],
+                selected_candidate="claude-3-opus",
+                scoring_breakdown=[],
+            )
 
 
 # ===========================================================================
