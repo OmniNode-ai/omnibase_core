@@ -1,13 +1,16 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Decision Score Model.
+"""Provenance Decision Score Model.
 
-Provides DecisionScore, a per-candidate scoring breakdown for a single decision
-in the Decision Provenance system.
+Provides ModelProvenanceDecisionScore, a per-candidate scoring breakdown for a
+single decision in the Decision Provenance system.
+
+The public alias ``DecisionScore`` is exported for use by consumers of the
+Decision Provenance API via ``omnibase_core.contracts``.
 
 See Also:
-    model_provenance_decision_record.py: The parent DecisionRecord model.
+    model_provenance_decision_record.py: The parent ModelProvenanceDecisionRecord model.
     OMN-2350: Decision Provenance epic.
 """
 
@@ -16,7 +19,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class DecisionScore(BaseModel):
+class ModelProvenanceDecisionScore(BaseModel):
     """Per-candidate scoring breakdown for a single decision.
 
     Captures how a single candidate was evaluated during a decision, including
@@ -36,7 +39,7 @@ class DecisionScore(BaseModel):
 
     Example::
 
-        score = DecisionScore(
+        score = ModelProvenanceDecisionScore(
             candidate="gpt-4o",
             score=0.91,
             breakdown={"quality": 0.94, "cost": 0.88},
@@ -63,4 +66,7 @@ class DecisionScore(BaseModel):
     )
 
 
-__all__ = ["DecisionScore"]
+# Public alias for Decision Provenance API consumers
+DecisionScore = ModelProvenanceDecisionScore
+
+__all__ = ["ModelProvenanceDecisionScore", "DecisionScore"]

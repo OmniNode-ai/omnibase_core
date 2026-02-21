@@ -1,11 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Decision Record Model.
+"""Provenance Decision Record Model.
 
-Provides DecisionRecord, the foundational artifact for the Decision Provenance
-system. All subsequent emission, storage, and dashboard work depends on this
-schema.
+Provides ModelProvenanceDecisionRecord, the foundational artifact for the
+Decision Provenance system. All subsequent emission, storage, and dashboard
+work depends on this schema.
+
+The public alias ``DecisionRecord`` is exported for use by consumers of the
+Decision Provenance API via ``omnibase_core.contracts``.
 
 Design Decisions:
     - ``frozen=True``: Immutable after emission — decision events are facts,
@@ -15,7 +18,7 @@ Design Decisions:
       provenance fields are mandatory.
     - ``reproducibility_snapshot`` as dict: Captures runtime state needed to
       re-derive the decision (e.g., model versions, feature flags, env vars).
-    - ``decision_id`` is UUID: Follows repo convention (Use UUID for ID fields).
+    - ``decision_id`` is UUID: Follows ONEX convention for ID fields.
     - No ``datetime.now()`` defaults: Timestamps are injected by callers for
       deterministic testing. See repo invariant: "emitted_at timestamps must
       be explicitly injected".
@@ -48,7 +51,7 @@ Example::
     )
 
 See Also:
-    model_provenance_decision_score.py: The DecisionScore model used in scoring_breakdown.
+    model_provenance_decision_score.py: ModelProvenanceDecisionScore used in scoring_breakdown.
     OMN-2350: Decision Provenance epic.
     OMN-2465: DecisionRecord Kafka emission (omniclaude).
     OMN-2466: DecisionRecord ingestion and storage (omniintelligence).
@@ -61,10 +64,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.models.contracts.model_provenance_decision_score import DecisionScore
+from omnibase_core.models.contracts.model_provenance_decision_score import (
+    ModelProvenanceDecisionScore,
+)
 
 
-class DecisionRecord(BaseModel):
+class ModelProvenanceDecisionRecord(BaseModel):
     """Immutable record capturing a single decision event.
 
     The foundational artifact for the Decision Provenance system. Records
@@ -103,7 +108,7 @@ class DecisionRecord(BaseModel):
         from datetime import datetime, timezone
         from uuid import UUID
 
-        record = DecisionRecord(
+        record = ModelProvenanceDecisionRecord(
             decision_id=UUID("550e8400-e29b-41d4-a716-446655440000"),
             decision_type="model_select",
             timestamp=datetime(2026, 2, 21, 12, 0, 0, tzinfo=timezone.utc),
@@ -155,7 +160,7 @@ class DecisionRecord(BaseModel):
             'decision, e.g. {"region": "us-east-1"}.'
         ),
     )
-    scoring_breakdown: list[DecisionScore] = Field(
+    scoring_breakdown: list[ModelProvenanceDecisionScore] = Field(
         ...,
         description=(
             "Per-candidate scoring details. May be empty if the decision "
@@ -189,4 +194,7 @@ class DecisionRecord(BaseModel):
     )
 
 
-__all__ = ["DecisionRecord"]
+# Public alias for Decision Provenance API consumers
+DecisionRecord = ModelProvenanceDecisionRecord
+
+__all__ = ["ModelProvenanceDecisionRecord", "DecisionRecord"]

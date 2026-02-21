@@ -27,8 +27,14 @@ from omnibase_core.contracts import DecisionRecord, DecisionScore
 from omnibase_core.models.contracts.model_provenance_decision_record import (
     DecisionRecord as DecisionRecordDirect,
 )
+from omnibase_core.models.contracts.model_provenance_decision_record import (
+    ModelProvenanceDecisionRecord,
+)
 from omnibase_core.models.contracts.model_provenance_decision_score import (
     DecisionScore as DecisionScoreDirect,
+)
+from omnibase_core.models.contracts.model_provenance_decision_score import (
+    ModelProvenanceDecisionScore,
 )
 
 # ---------------------------------------------------------------------------
@@ -84,6 +90,14 @@ class TestDecisionRecordExports:
     def test_decision_score_importable_from_contracts(self) -> None:
         """DecisionScore can be imported from omnibase_core.contracts."""
         assert DecisionScore is DecisionScoreDirect
+
+    def test_decision_record_is_alias_for_canonical_class(self) -> None:
+        """DecisionRecord alias resolves to ModelProvenanceDecisionRecord."""
+        assert DecisionRecord is ModelProvenanceDecisionRecord
+
+    def test_decision_score_is_alias_for_canonical_class(self) -> None:
+        """DecisionScore alias resolves to ModelProvenanceDecisionScore."""
+        assert DecisionScore is ModelProvenanceDecisionScore
 
     def test_decision_record_in_contracts_all(self) -> None:
         """DecisionRecord appears in omnibase_core.contracts.__all__."""
