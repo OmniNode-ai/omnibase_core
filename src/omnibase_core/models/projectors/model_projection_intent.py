@@ -65,8 +65,8 @@ Example:
     'node.created.v1'
 
 See Also:
-    - omnibase_spi.nodes.NodeProjectionEffect: Consumes ModelProjectionIntent
-    - omnibase_spi.protocols.ProtocolProjector: Projection implementation contract
+    - NodeProjectionEffect (omnibase_spi) — executes projection effects triggered by this intent
+    - ProtocolProjector (omnibase_spi) — projection implementation contract fulfilled by concrete projectors
     - omnibase_core.models.projectors.ModelProjectionResult: Projection outcome
     - omnibase_core.models.projectors.ModelProjectorContract: Declarative projector spec
 """

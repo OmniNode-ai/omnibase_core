@@ -398,7 +398,18 @@ class TestModelProjectionIntentSerialization:
     def test_roundtrip_dict(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
     ) -> None:
-        """Intent survives a model_dump → model_validate round-trip."""
+        """Scalar fields survive a model_dump → model_validate round-trip; envelope does not.
+
+        Known limitation: ``envelope`` is typed as ``BaseModel`` with no discriminator.
+        Pydantic cannot recover the concrete subtype from a raw dict, so
+        ``model_validate`` reconstructs the envelope as a bare ``BaseModel``
+        instance with no fields — all envelope data is silently lost.
+
+        This test explicitly asserts both what IS preserved (projector_key,
+        event_type, correlation_id) and what IS NOT preserved (envelope type
+        and contents) so the limitation is documented and not mistaken for a
+        full-fidelity round-trip.
+        """
         original = ModelProjectionIntent(
             projector_key="proj-roundtrip",
             event_type="workflow.started.v1",
@@ -408,9 +419,16 @@ class TestModelProjectionIntentSerialization:
         data = original.model_dump(mode="json", serialize_as_any=True)
         restored = ModelProjectionIntent.model_validate(data)
 
+        # Scalar fields are preserved.
         assert restored.projector_key == original.projector_key
         assert restored.event_type == original.event_type
         assert str(restored.correlation_id) == str(original.correlation_id)
+
+        # Known limitation: envelope loses its concrete type and all field data.
+        # Pydantic reconstructs it as a bare BaseModel with no declared fields,
+        # because the field annotation is BaseModel and there is no discriminator.
+        assert type(restored.envelope) is BaseModel
+        assert type(restored.envelope).model_fields == {}
 
     def test_model_dump_json_string_valid(
         self, valid_intent: ModelProjectionIntent
@@ -420,6 +438,11 @@ class TestModelProjectionIntentSerialization:
         parsed = json.loads(json_str)
         assert parsed["projector_key"] == "node_state_projector"
         assert parsed["event_type"] == "node.created.v1"
+        assert "envelope" in parsed
+        envelope_data = parsed["envelope"]
+        assert isinstance(envelope_data, dict)
+        assert envelope_data.get("envelope_id") == "env-001"
+        assert envelope_data.get("node_id") == "node-abc"
 
 
 # ---------------------------------------------------------------------------
