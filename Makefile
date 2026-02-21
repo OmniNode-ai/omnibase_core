@@ -41,7 +41,7 @@ format:
 # Linting
 # ---------------------------------------------------------------------------
 
-## lint: Check formatting and linting without modifying files (CI: lint + mypy jobs only; use ci-fast for full type gate including pyright)
+## lint: Check formatting and linting without modifying files (runs mypy only, not pyright; use ci-fast for full type gate with pyright coverage)
 lint:
 	uv run ruff format --check src/ tests/
 	uv run ruff check src/ tests/
@@ -78,10 +78,7 @@ test-cov:
 
 ## ci-fast: Run all Phase 1 CI quality checks locally (matches quality-gate)
 ci-fast:
-	@if ! uv run python -c "import detect_secrets" 2>/dev/null; then \
-		echo "detect-secrets not found — run 'make install' first (installs detect-secrets==1.5.0)"; \
-		exit 1; \
-	fi
+	@command -v detect-secrets-hook >/dev/null 2>&1 || (echo "ERROR: detect-secrets not installed. Run 'make install' first." && exit 1)
 	uv run ruff format --check src/ tests/
 	uv run ruff check src/ tests/
 	uv run mypy src/omnibase_core
@@ -101,8 +98,11 @@ ci-fast:
 		_purity_exit=$$?; \
 		if [ $$_purity_exit -ne 0 ]; then \
 			echo "node-purity-check: FAILED (non-blocking, see CI for details)"; \
+		else \
+			echo "node-purity-check: PASSED"; \
 		fi; \
-		true  # non-blocking (CI continue-on-error)
+		exit 0  # non-blocking: matches CI continue-on-error
+	@# set +e: capture detect-secrets exit code without failing the recipe; scoped to this @-block
 	@set +e; \
 	git ls-files -z | xargs -0 uv run detect-secrets-hook \
 		--baseline .secrets.baseline \
