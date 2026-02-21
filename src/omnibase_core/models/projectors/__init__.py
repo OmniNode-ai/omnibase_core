@@ -49,6 +49,9 @@ from omnibase_core.models.projectors.model_idempotency_config import (
 from omnibase_core.models.projectors.model_partial_update_operation import (
     ModelPartialUpdateOperation,
 )
+from omnibase_core.models.projectors.model_projection_intent import (
+    ModelProjectionIntent,
+)
 from omnibase_core.models.projectors.model_projection_result import (
     ModelProjectionResult,
 )
@@ -67,6 +70,7 @@ __all__ = [
     "EVENT_NAME_PATTERN",
     "ModelIdempotencyConfig",
     "ModelPartialUpdateOperation",
+    "ModelProjectionIntent",
     "ModelProjectionResult",
     "ModelProjectorBehavior",
     "ModelProjectorColumn",
