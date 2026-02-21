@@ -145,7 +145,13 @@ class ModelProvenanceDecisionRecord(BaseModel):
             ...,
             description=(
                 "Ordered list of candidate identifiers that were evaluated. "
-                "Each element must be a non-empty string (min_length=1)."
+                "Each element must be a non-empty string (min_length=1). "
+                "Uniqueness is intentionally not enforced: duplicate identifiers "
+                "are accepted so that the provenance record faithfully reflects "
+                "whatever candidate list was supplied by the caller (e.g. a "
+                "deliberate re-evaluation of the same candidate under different "
+                "constraints). Callers that require unique identifiers must "
+                "deduplicate before constructing this record."
             ),
         )
     )
@@ -218,6 +224,15 @@ class ModelProvenanceDecisionRecord(BaseModel):
               candidates_considered is non-empty).
             - Every score.candidate in scoring_breakdown must be present in
               candidates_considered (when candidates_considered is non-empty).
+
+        Note — partial scoring_breakdown is intentional by design:
+            This validator does NOT require that every candidate in
+            candidates_considered has a corresponding entry in
+            scoring_breakdown. Partial coverage is valid because some
+            candidates may be eliminated before scoring (e.g. filtered out
+            by a pre-screen step), and recording a score for them would be
+            misleading. Callers that require full coverage must enforce that
+            invariant themselves before constructing this record.
         """
         if not self.candidates_considered:
             if self.scoring_breakdown:

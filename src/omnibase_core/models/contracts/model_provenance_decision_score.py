@@ -34,7 +34,8 @@ class ModelProvenanceDecisionScore(BaseModel):
     Attributes:
         candidate: Identifier for the candidate being scored.
         score: Aggregate score for this candidate.
-        breakdown: Per-criterion score contributions that sum to the aggregate.
+        breakdown: Per-criterion score contributions (not necessarily summing to
+            aggregate_score — no summation invariant is enforced).
 
     Example:
         >>> score = ModelProvenanceDecisionScore(

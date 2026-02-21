@@ -264,7 +264,13 @@ class TestModelProvenanceDecisionRecord:
         assert len(record.scoring_breakdown) == 1
 
     def test_empty_candidates_and_constraints(self) -> None:
-        """Empty lists and dicts are valid field values when scoring_breakdown is also empty."""
+        """Empty lists and dicts are valid field values when scoring_breakdown is also empty.
+
+        make_record uses 'claude-3-opus' as the default selected_candidate; this
+        test does not override that, so selected_candidate must be preserved as-is
+        even though candidates_considered is empty (cross-validation is skipped
+        when candidates_considered is empty).
+        """
         record = make_record(
             candidates_considered=[],
             constraints_applied={},
@@ -272,6 +278,7 @@ class TestModelProvenanceDecisionRecord:
         )
         assert record.candidates_considered == []
         assert record.constraints_applied == {}
+        assert record.selected_candidate == "claude-3-opus"
 
     def test_multiple_scoring_breakdown_entries(self) -> None:
         """Multiple score entries are valid when all candidates are in candidates_considered."""
