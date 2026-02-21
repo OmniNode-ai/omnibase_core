@@ -7,9 +7,7 @@
 # differences documented below:
 # 1. `uv run python` is used here for consistency; CI invokes `python3` directly
 #    (e.g. validate-doc-links.py).
-# 2. validate-doc-links.py is run with --fix-case to auto-repair casing locally;
-#    CI validates only (no mutation). Run this locally first so CI passes.
-# 3. transport import check always runs full scan here; CI uses --changed-files on
+# 2. transport import check always runs full scan here; CI uses --changed-files on
 #    feature branches (conservative local default catches more violations pre-push).
 # All Python commands use `uv run` — never direct python/pip.
 # `detect-secrets` is installed via `make install` as a one-time setup step.
@@ -90,7 +88,7 @@ ci-fast:
 		scripts/check_transport_imports.py
 	uv run python scripts/check_transport_imports.py --verbose  # full scan: CI runs full scan on main/develop; --changed-files would miss violations on unchanged files
 	./scripts/validate-no-transport-imports.sh
-	uv run python scripts/check_node_purity.py --verbose; \
+	@uv run python scripts/check_node_purity.py --verbose; \
 		_purity_exit=$$?; \
 		if [ $$_purity_exit -ne 0 ]; then \
 			echo "node-purity-check: FAILED (non-blocking, see CI for details)"; \
