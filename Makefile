@@ -80,12 +80,13 @@ test-cov:
 ## ci-fast: Run all Phase 1 CI quality checks locally (matches quality-gate)
 ci-fast:
 	@command -v detect-secrets-hook >/dev/null 2>&1 || (echo "ERROR: detect-secrets not installed. Run 'make install' first." && exit 1)
+	@detect-secrets-hook --version 2>&1 | grep -q "1\.5\.0" || (echo "WARNING: detect-secrets version mismatch — expected 1.5.0. Run 'make install' to reinstall." && exit 1)
 	uv run ruff format --check src/ tests/
 	uv run ruff check src/ tests/
 	uv run mypy src/omnibase_core
 	uv run pyright src/omnibase_core
 	uv run python scripts/validation/validate-all-exports.py
-	uv run python scripts/validation/validate-doc-links.py --fix-case  # intentionally mutates: auto-repairs casing so CI passes; mirrors CI behavior
+	uv run python scripts/validation/validate-doc-links.py --fix-case  # intentionally mutates: auto-repairs casing in docs/; CI runs equivalent step with python3
 	@if ! git diff --quiet docs/ 2>/dev/null; then \
 		echo "validate-doc-links: WARNING — --fix-case mutated files in docs/. Review uncommitted changes with 'git diff docs/'."; \
 	fi
@@ -96,7 +97,7 @@ ci-fast:
 		scripts/validation/validate-no-infra-imports.py \
 		scripts/check_transport_imports.py
 	uv run python scripts/check_transport_imports.py --verbose  # full scan: CI runs full scan on main/develop; --changed-files would miss violations on unchanged files
-	@test -x scripts/validate-no-transport-imports.sh || (echo "ERROR: scripts/validate-no-transport-imports.sh is not executable. Run 'make install' to set up all required prerequisites." && exit 1)
+	@test -x scripts/validate-no-transport-imports.sh || (echo "ERROR: scripts/validate-no-transport-imports.sh is not executable. Fix: chmod +x scripts/validate-no-transport-imports.sh (or run 'make install' for full setup)." && exit 1)
 	./scripts/validate-no-transport-imports.sh
 	@uv run python scripts/check_node_purity.py --verbose; \
 		_purity_exit=$$?; \
