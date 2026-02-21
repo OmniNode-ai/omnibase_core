@@ -14,6 +14,9 @@ This module provides the contract infrastructure for the ONEX 4-node architectur
 3. **Drift Detection**: Tools for detecting when contracts have changed from their
    registered fingerprints, supporting safe migration workflows.
 
+4. **Decision Provenance**: Immutable models capturing decision events for auditability
+   and reproducibility across the Decision Provenance system.
+
 Exports:
     ContractHashRegistry: Registry for storing and retrieving contract fingerprints.
     ModelContractFingerprint: Pydantic model for contract fingerprints.
@@ -31,6 +34,8 @@ Exports:
     load_contract: Load contract YAML with !include support.
     DEFAULT_MAX_INCLUDE_DEPTH: Default maximum include nesting depth (10).
     DEFAULT_MAX_FILE_SIZE: Default maximum file size (1MB).
+    DecisionRecord: Immutable model capturing a single decision event.
+    DecisionScore: Per-candidate scoring breakdown for a decision.
 
 Example:
     Basic fingerprinting workflow::
@@ -111,6 +116,10 @@ from omnibase_core.models.contracts.model_drift_result import (
     ModelDriftResult,
 )
 from omnibase_core.models.contracts.model_node_extensions import ModelNodeExtensions
+from omnibase_core.models.contracts.model_provenance_decision_record import (
+    DecisionRecord,
+)
+from omnibase_core.models.contracts.model_provenance_decision_score import DecisionScore
 
 __all__ = [
     # Hash Registry
@@ -133,4 +142,7 @@ __all__ = [
     "ModelContractMeta",
     "is_valid_meta_model",
     "validate_meta_model",
+    # Decision Provenance
+    "DecisionRecord",
+    "DecisionScore",
 ]
