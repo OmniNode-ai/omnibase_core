@@ -296,6 +296,28 @@ class TestModelProvenanceDecisionRecord:
         assert record.constraints_applied == {}
         assert record.selected_candidate == "claude-3-opus"
 
+    def test_empty_constraints_applied_with_nonempty_scoring_breakdown(self) -> None:
+        """Empty constraints_applied is valid alongside a non-empty scoring_breakdown.
+
+        The schema imposes no min-length on constraints_applied; an empty dict
+        means no constraints were applied, which is a legitimate scenario.
+        The scoring_breakdown cross-validation (selected_candidate present in
+        scoring_breakdown candidates) must still succeed independently.
+        """
+        score = make_score(
+            "claude-3-opus", 0.87, {"quality": 0.45, "speed": 0.25, "cost": 0.17}
+        )
+        record = make_record(
+            candidates_considered=["claude-3-opus", "gpt-4"],
+            constraints_applied={},
+            scoring_breakdown=[score],
+            selected_candidate="claude-3-opus",
+        )
+        assert record.constraints_applied == {}
+        assert len(record.scoring_breakdown) == 1
+        assert record.scoring_breakdown[0].candidate == "claude-3-opus"
+        assert record.selected_candidate == "claude-3-opus"
+
     def test_multiple_scoring_breakdown_entries(self) -> None:
         """Multiple score entries are valid when all candidates are in candidates_considered."""
         scores = [
@@ -621,6 +643,34 @@ class TestModelProvenanceDecisionRecord:
                 selected_candidate="claude-3-opus",
                 scoring_breakdown=[],
             )
+
+    def test_duplicate_candidates_considered_accepted_and_roundtrip(self) -> None:
+        """Duplicate entries in candidates_considered are accepted (uniqueness not enforced).
+
+        The model explicitly documents that duplicates are allowed so the
+        provenance record faithfully reflects whatever candidate list was
+        supplied by the caller.  This test also verifies:
+          - The cross-validation (selected_candidate must be in
+            candidates_considered) works correctly with duplicates present.
+          - scoring_breakdown cross-validation (score.candidate must be in
+            candidates_considered) still passes.
+          - model_dump() round-trip preserves the duplicates exactly.
+        """
+        score = make_score(
+            "claude-3-opus", 0.87, {"quality": 0.45, "speed": 0.25, "cost": 0.17}
+        )
+        candidates_with_duplicate = ["claude-3-opus", "gpt-4", "claude-3-opus"]
+        record = make_record(
+            candidates_considered=candidates_with_duplicate,
+            selected_candidate="claude-3-opus",
+            scoring_breakdown=[score],
+        )
+        assert record.candidates_considered == candidates_with_duplicate
+        assert record.selected_candidate == "claude-3-opus"
+        assert record.scoring_breakdown[0].candidate == "claude-3-opus"
+        # Round-trip preserves duplicates.
+        dumped = record.model_dump()
+        assert dumped["candidates_considered"] == candidates_with_duplicate
 
 
 # ===========================================================================
