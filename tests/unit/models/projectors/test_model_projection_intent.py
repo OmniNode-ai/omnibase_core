@@ -26,6 +26,7 @@ Test Organization:
     TestModelProjectionIntentEdgeCases     — boundary conditions
 """
 
+import json
 from uuid import UUID, uuid4
 
 import pytest
@@ -188,7 +189,7 @@ class TestModelProjectionIntentValidation:
     def test_projector_key_max_length(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
     ) -> None:
-        """projector_key exceeding 100 chars is rejected."""
+        """projector_key exceeding the max length defined by MAX_IDENTIFIER_LENGTH is rejected."""
         with pytest.raises(ValidationError) as exc_info:
             ModelProjectionIntent(
                 projector_key="x" * 101,
@@ -201,7 +202,7 @@ class TestModelProjectionIntentValidation:
     def test_projector_key_at_max_length_accepted(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
     ) -> None:
-        """projector_key at exactly 100 chars is accepted."""
+        """projector_key at exactly MAX_IDENTIFIER_LENGTH chars is accepted."""
         intent = ModelProjectionIntent(
             projector_key="x" * 100,
             event_type="node.created.v1",
@@ -289,26 +290,26 @@ class TestModelProjectionIntentImmutability:
     def test_projector_key_immutable(self, valid_intent: ModelProjectionIntent) -> None:
         """Cannot reassign projector_key on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.projector_key = "changed"  # type: ignore[attr-defined]
+            valid_intent.projector_key = "changed"  # type: ignore[misc]
 
     def test_event_type_immutable(self, valid_intent: ModelProjectionIntent) -> None:
         """Cannot reassign event_type on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.event_type = "changed.v2"  # type: ignore[attr-defined]
+            valid_intent.event_type = "changed.v2"  # type: ignore[misc]
 
     def test_envelope_immutable(
         self, valid_intent: ModelProjectionIntent, simple_envelope: _SimpleEnvelope
     ) -> None:
         """Cannot reassign envelope on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.envelope = simple_envelope  # type: ignore[attr-defined]
+            valid_intent.envelope = simple_envelope  # type: ignore[misc]
 
     def test_correlation_id_immutable(
         self, valid_intent: ModelProjectionIntent
     ) -> None:
         """Cannot reassign correlation_id on frozen model."""
         with pytest.raises(ValidationError):
-            valid_intent.correlation_id = uuid4()  # type: ignore[attr-defined]
+            valid_intent.correlation_id = uuid4()  # type: ignore[misc]
 
     def test_hashable(self, correlation_id: UUID) -> None:
         """Frozen model with a frozen envelope is hashable (can be used in sets/dicts).
@@ -414,8 +415,6 @@ class TestModelProjectionIntentSerialization:
         self, valid_intent: ModelProjectionIntent
     ) -> None:
         """model_dump_json produces a valid JSON string."""
-        import json
-
         json_str = valid_intent.model_dump_json(serialize_as_any=True)
         parsed = json.loads(json_str)
         assert parsed["projector_key"] == "node_state_projector"
