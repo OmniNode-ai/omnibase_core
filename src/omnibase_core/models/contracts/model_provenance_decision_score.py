@@ -21,7 +21,7 @@ See Also:
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ModelProvenanceDecisionScore(BaseModel):
@@ -83,6 +83,17 @@ class ModelProvenanceDecisionScore(BaseModel):
         ...,
         description="Per-criterion score contributions",
     )
+
+    @field_validator("breakdown")
+    @classmethod
+    def validate_breakdown_keys(cls, v: dict[str, float]) -> dict[str, float]:
+        for key in v:
+            if not key:
+                raise ValueError(
+                    "breakdown keys must be non-empty strings; "
+                    "found an empty string key"
+                )
+        return v
 
 
 # Public alias for API surface

@@ -428,6 +428,16 @@ class TestModelProvenanceDecisionRecord:
         record = make_record(tie_breaker="random")
         assert record.tie_breaker == "random"
 
+    def test_empty_tie_breaker_raises(self) -> None:
+        """Empty string for tie_breaker raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError):
+            make_record(tie_breaker="")
+
+    def test_empty_agent_rationale_raises(self) -> None:
+        """Empty string for agent_rationale raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError):
+            make_record(agent_rationale="")
+
     # -----------------------------------------------------------------------
     # Extra fields ignored (extra="ignore")
     # -----------------------------------------------------------------------

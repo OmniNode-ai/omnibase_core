@@ -173,7 +173,9 @@ class ModelProvenanceDecisionRecord(BaseModel):
         default=None,
         description=(
             "Optional strategy name used when candidates scored equally "
-            '(e.g., "random", "alphabetical", "cost_ascending").'
+            '(e.g., "random", "alphabetical", "cost_ascending"). '
+            "When provided, must be a non-empty string (min_length=1); "
+            "use None to indicate no tie-breaking was applied."
         ),
     )
 
@@ -194,7 +196,9 @@ class ModelProvenanceDecisionRecord(BaseModel):
         default=None,
         description=(
             "Optional free-text explanation from the agent for why this "
-            "candidate was selected. Assistive only."
+            "candidate was selected. Assistive only. "
+            "When provided, must be a non-empty string (min_length=1); "
+            "use None to omit the rationale entirely."
         ),
     )
 
@@ -228,6 +232,26 @@ class ModelProvenanceDecisionRecord(BaseModel):
                     "reproducibility_snapshot keys must be non-empty strings; "
                     "found an empty string key"
                 )
+        return v
+
+    @field_validator("tie_breaker")
+    @classmethod
+    def validate_tie_breaker_not_empty(cls, v: str | None) -> str | None:
+        if v is not None and len(v) == 0:
+            raise ValueError(
+                "tie_breaker must be a non-empty string when provided; "
+                "use None to indicate no tie-breaking was applied"
+            )
+        return v
+
+    @field_validator("agent_rationale")
+    @classmethod
+    def validate_agent_rationale_not_empty(cls, v: str | None) -> str | None:
+        if v is not None and len(v) == 0:
+            raise ValueError(
+                "agent_rationale must be a non-empty string when provided; "
+                "use None to omit the rationale entirely"
+            )
         return v
 
     @field_validator("timestamp")
