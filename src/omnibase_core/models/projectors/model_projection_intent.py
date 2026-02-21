@@ -39,7 +39,11 @@ Design Constraints:
 
 Thread Safety:
     ModelProjectionIntent is immutable (frozen=True) after creation, making it
-    thread-safe for concurrent read access.
+    thread-safe for concurrent read access. Note: this guarantees that the
+    intent's field *references* cannot be reassigned, but does not enforce
+    immutability on the envelope itself. If the envelope is a mutable BaseModel
+    (frozen=False), callers are responsible for not mutating it after the intent
+    is constructed; ModelProjectionIntent cannot enforce envelope immutability.
 
 Example:
     >>> from uuid import uuid4
@@ -156,7 +160,10 @@ class ModelProjectionIntent(BaseModel):
             "concrete ProtocolProjector implementations cast this to the appropriate "
             "envelope type for their domain. "
             "Note: the envelope must be frozen (frozen=True) for hash-based operations "
-            "(set membership, dict keys) to work correctly."
+            "(set membership, dict keys) to work correctly. "
+            "Thread-safety caveat: ModelProjectionIntent.frozen=True prevents field "
+            "reassignment but does not freeze the envelope object itself. Mutable "
+            "envelopes must not be mutated externally after intent construction."
         ),
     )
 

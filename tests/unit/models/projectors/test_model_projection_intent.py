@@ -103,7 +103,7 @@ class TestModelProjectionIntentConstruction:
         """All four fields are required; omitting any raises ValidationError."""
         # Missing projector_key
         with pytest.raises(ValidationError) as exc_info:
-            ModelProjectionIntent(  # type: ignore[call-arg]
+            ModelProjectionIntent(  # NOTE(OMN-2460): mypy requires all fields; omitting projector_key intentionally to trigger ValidationError.  # type: ignore[call-arg]
                 event_type="node.created.v1",
                 envelope=simple_envelope,
                 correlation_id=correlation_id,
@@ -112,7 +112,7 @@ class TestModelProjectionIntentConstruction:
 
         # Missing event_type
         with pytest.raises(ValidationError) as exc_info:
-            ModelProjectionIntent(  # type: ignore[call-arg]
+            ModelProjectionIntent(  # NOTE(OMN-2460): mypy requires all fields; omitting event_type intentionally to trigger ValidationError.  # type: ignore[call-arg]
                 projector_key="node_state_projector",
                 envelope=simple_envelope,
                 correlation_id=correlation_id,
@@ -121,7 +121,7 @@ class TestModelProjectionIntentConstruction:
 
         # Missing envelope
         with pytest.raises(ValidationError) as exc_info:
-            ModelProjectionIntent(  # type: ignore[call-arg]
+            ModelProjectionIntent(  # NOTE(OMN-2460): mypy requires all fields; omitting envelope intentionally to trigger ValidationError.  # type: ignore[call-arg]
                 projector_key="node_state_projector",
                 event_type="node.created.v1",
                 correlation_id=correlation_id,
@@ -130,7 +130,7 @@ class TestModelProjectionIntentConstruction:
 
         # Missing correlation_id
         with pytest.raises(ValidationError) as exc_info:
-            ModelProjectionIntent(  # type: ignore[call-arg]
+            ModelProjectionIntent(  # NOTE(OMN-2460): mypy requires all fields; omitting correlation_id intentionally to trigger ValidationError.  # type: ignore[call-arg]
                 projector_key="node_state_projector",
                 event_type="node.created.v1",
                 envelope=simple_envelope,
@@ -146,7 +146,7 @@ class TestModelProjectionIntentConstruction:
             projector_key="proj-1",
             event_type="node.created.v1",
             envelope=simple_envelope,
-            correlation_id=uuid_str,  # type: ignore[arg-type]
+            correlation_id=uuid_str,  # NOTE(OMN-2460): passing str where UUID expected — tests Pydantic coercion from valid UUID string.  # type: ignore[arg-type]
         )
         assert str(intent.correlation_id) == uuid_str
 
@@ -159,7 +159,7 @@ class TestModelProjectionIntentConstruction:
                 projector_key="proj-1",
                 event_type="node.created.v1",
                 envelope=simple_envelope,
-                correlation_id="not-a-uuid",  # type: ignore[arg-type]
+                correlation_id="not-a-uuid",  # NOTE(OMN-2460): passing invalid str to UUID field — tests rejection of malformed UUIDs.  # type: ignore[arg-type]
             )
         assert "correlation_id" in str(exc_info.value)
 
@@ -255,7 +255,7 @@ class TestModelProjectionIntentValidation:
     ) -> None:
         """Extra fields are rejected (extra='forbid')."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelProjectionIntent(  # type: ignore[call-arg]
+            ModelProjectionIntent(  # NOTE(OMN-2460): passing unknown_field intentionally to test extra='forbid' rejection.  # type: ignore[call-arg]
                 projector_key="proj-1",
                 event_type="node.created.v1",
                 envelope=simple_envelope,
@@ -562,8 +562,12 @@ class TestModelProjectionIntentEnvelope:
             envelope=env,
             correlation_id=correlation_id,
         )
-        assert intent.envelope.envelope_id == "env-complex"  # type: ignore[attr-defined]
-        assert intent.envelope.payload.node_id == "n-1"  # type: ignore[attr-defined]
+        assert (
+            intent.envelope.envelope_id == "env-complex"
+        )  # NOTE(OMN-2460): envelope typed as BaseModel; ComplexEnvelope.envelope_id not visible to mypy.  # type: ignore[attr-defined]
+        assert (
+            intent.envelope.payload.node_id == "n-1"
+        )  # NOTE(OMN-2460): envelope typed as BaseModel; ComplexEnvelope.payload.node_id not visible to mypy.  # type: ignore[attr-defined]
 
     def test_multiple_intents_can_share_same_envelope(
         self, correlation_id: UUID
