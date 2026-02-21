@@ -106,6 +106,11 @@ from omnibase_core.models.reducer.payloads.model_payload_persist_result import (
 from omnibase_core.models.reducer.payloads.model_payload_persist_state import (
     ModelPayloadPersistState,
 )
+
+# Projection payloads
+from omnibase_core.models.reducer.payloads.model_payload_projection_intent import (
+    ModelPayloadProjectionIntent,
+)
 from omnibase_core.models.reducer.payloads.model_payload_write import ModelPayloadWrite
 
 # Protocol for structural typing
@@ -138,6 +143,8 @@ __all__ = [
     "ModelPayloadHTTP",
     # Notification payloads
     "ModelPayloadNotify",
+    # Projection payloads
+    "ModelPayloadProjectionIntent",
     # Extension payloads
     "ModelPayloadExtension",
 ]

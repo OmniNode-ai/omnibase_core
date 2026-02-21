@@ -32,8 +32,15 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.fsm import ModelFSMStateSnapshot
+from omnibase_core.models.projectors.model_projection_intent import (
+    ModelProjectionIntent,
+)
+from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
+from omnibase_core.models.reducer.payloads.model_payload_projection_intent import (
+    ModelPayloadProjectionIntent,
+)
 from omnibase_core.types.type_json import JsonType
 
 # Clock skew tolerance for snapshot timestamp validation
@@ -257,17 +264,29 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
     async def process(
         self,
         input_data: ModelReducerInput[T_Input],
+        projection_intents: tuple[ModelProjectionIntent, ...] = (),
     ) -> ModelReducerOutput[T_Output]:
         """
         Process input using FSM-driven state transitions.
 
         Pure FSM pattern: Executes transition, emits intents for side effects.
+        When projection_intents are provided, wraps each as a ModelIntent with
+        a ModelPayloadProjectionIntent payload and appends them to the output
+        effects list. This replaces any direct projector calls in the reducer
+        with declarative intent emission.
 
         Args:
             input_data: Reducer input with trigger and context
+            projection_intents: Optional sequence of ModelProjectionIntent instances
+                to emit as blocking projection effects. Each intent is wrapped in a
+                ModelPayloadProjectionIntent and added to the output intents tuple.
+                The runtime contract (enforced by the Effect executor) requires these
+                to be resolved before the pipeline advances.
 
         Returns:
-            Reducer output with new state and intents
+            Reducer output with new state and intents. The intents tuple contains
+            both FSM-generated intents and any projection intents in the order:
+            FSM intents first, then projection intents.
 
         Raises:
             ModelOnexError: If FSM contract not loaded or transition fails
@@ -275,23 +294,39 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         Example:
             ```python
             import logging
+            from uuid import uuid4
+            from pydantic import BaseModel
 
             from omnibase_core.models.reducer import ModelReducerInput
             from omnibase_core.enums.enum_reduction_type import EnumReductionType
+            from omnibase_core.models.projectors import ModelProjectionIntent
 
             logger = logging.getLogger(__name__)
+
+            # Build a projection intent for an event that needs materializing
+            class NodeCreatedEnvelope(BaseModel):
+                node_id: str
+
+            envelope = NodeCreatedEnvelope(node_id="node-abc")
+            corr_id = uuid4()
+            proj_intent = ModelProjectionIntent(
+                projector_key="node_state_projector",
+                event_type="node.created.v1",
+                envelope=envelope,
+                correlation_id=corr_id,
+            )
 
             input_data = ModelReducerInput(
                 data=[...],
                 reduction_type=EnumReductionType.AGGREGATE,
-                metadata={
-                    "trigger": "collect_metrics",
-                    "data_sources": ["db1", "db2", "api"],
-                }
+                metadata={"trigger": "collect_metrics"},
             )
 
-            result = await node.process(input_data)
-            logger.debug("New state: %s", result.metadata['fsm_state'])
+            result = await node.process(
+                input_data,
+                projection_intents=(proj_intent,),
+            )
+            logger.debug("New state: %s", result.metadata.fsm_state)
             logger.debug("Intents emitted: %d", len(result.intents))
             ```
         """
@@ -342,6 +377,15 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             }
         )
 
+        # Build projection intents as ModelIntent instances with typed payloads.
+        # These replace any direct projector calls that previously existed in the reducer.
+        # The Effect executor is responsible for resolving these before advancing the pipeline.
+        projection_intent_models = self._build_projection_intents(projection_intents)
+
+        # Combine FSM intents with projection intents.
+        # FSM intents come first (state management), projection intents follow (read model).
+        all_intents = (*fsm_result.intents, *projection_intent_models)
+
         output: ModelReducerOutput[T_Output] = ModelReducerOutput(
             result=cast(
                 "T_Output", input_data.data
@@ -355,11 +399,51 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             conflicts_resolved=0,
             streaming_mode=input_data.streaming_mode,
             batches_processed=1,
-            intents=fsm_result.intents,  # Emit FSM intents
+            intents=all_intents,  # FSM intents + projection intents
             metadata=output_metadata,  # Typed metadata with FSM fields
         )
 
         return output
+
+    def _build_projection_intents(
+        self,
+        projection_intents: tuple[ModelProjectionIntent, ...],
+    ) -> tuple[ModelIntent, ...]:
+        """
+        Wrap ModelProjectionIntent instances as ModelIntent with typed payloads.
+
+        Converts each ModelProjectionIntent into a ModelIntent carrying a
+        ModelPayloadProjectionIntent payload. This enables the Effect executor
+        to route projection effects to NodeProjectionEffect via the standard
+        intent dispatch mechanism.
+
+        Each projection intent is wrapped independently. If no projection intents
+        are provided, returns an empty tuple (no side effects emitted).
+
+        Args:
+            projection_intents: Sequence of ModelProjectionIntent instances to wrap.
+                Each intent carries the projector_key, event_type, envelope, and
+                correlation_id needed by NodeProjectionEffect to execute the projection.
+
+        Returns:
+            Tuple of ModelIntent instances, one per input ModelProjectionIntent.
+            Returns empty tuple when projection_intents is empty.
+
+        Note:
+            The target for each wrapped intent is the projector_key from the
+            ModelProjectionIntent, enabling Effect routing by projector key.
+        """
+        if not projection_intents:
+            return ()
+
+        return tuple(
+            ModelIntent(
+                intent_type="projection_intent",
+                target=pi.projector_key,
+                payload=ModelPayloadProjectionIntent(intent=pi),
+            )
+            for pi in projection_intents
+        )
 
     async def validate_contract(self) -> list[str]:
         """
