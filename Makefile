@@ -81,6 +81,7 @@ ci-fast:
 		scripts/validation/validate-no-infra-imports.py \
 		scripts/check_transport_imports.py
 	uv run python scripts/check_transport_imports.py --verbose  # full scan: CI runs full scan on main/develop; --changed-files would miss violations on unchanged files
+	chmod +x scripts/validate-no-transport-imports.sh
 	./scripts/validate-no-transport-imports.sh
 	uv run python scripts/check_node_purity.py --verbose; \
 		_purity_exit=$$?; \
@@ -88,6 +89,11 @@ ci-fast:
 			echo "node-purity-check: FAILED (non-blocking, see CI for details)"; \
 		fi; \
 		true  # non-blocking (CI continue-on-error)
+	@if ! command -v detect-secrets-hook >/dev/null 2>&1; then \
+		echo "detect-secrets not found — installing detect-secrets==1.5.0 ..."; \
+		pip install detect-secrets==1.5.0 --quiet; \
+	fi
+	set +e; \
 	git ls-files -z | xargs -0 detect-secrets-hook \
 		--baseline .secrets.baseline \
 		--exclude-files 'uv\.lock' \
@@ -95,7 +101,13 @@ ci-fast:
 		--exclude-files 'tests/fixtures/' \
 		--exclude-files '\.git/' \
 		--exclude-files '\.secrets\.baseline' \
-		--exclude-files '\.github/workflows/.*\.yml'  # requires: pip install detect-secrets==1.5.0
+		--exclude-files '\.github/workflows/.*\.yml'; \
+	_secrets_exit=$$?; \
+	set -e; \
+	if [ $$_secrets_exit -ne 0 ]; then \
+		echo "detect-secrets: FAILED — potential secrets detected. Review .secrets.baseline and remediate before merging."; \
+		exit 1; \
+	fi
 
 # ---------------------------------------------------------------------------
 # Help
