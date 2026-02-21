@@ -32,6 +32,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel, ValidationError
 
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.models.projectors import ModelProjectionIntent
 
 # ---------------------------------------------------------------------------
@@ -192,7 +193,7 @@ class TestModelProjectionIntentValidation:
         """projector_key exceeding the max length defined by MAX_IDENTIFIER_LENGTH is rejected."""
         with pytest.raises(ValidationError) as exc_info:
             ModelProjectionIntent(
-                projector_key="x" * 101,
+                projector_key="x" * (MAX_IDENTIFIER_LENGTH + 1),
                 event_type="node.created.v1",
                 envelope=simple_envelope,
                 correlation_id=correlation_id,
@@ -204,12 +205,12 @@ class TestModelProjectionIntentValidation:
     ) -> None:
         """projector_key at exactly MAX_IDENTIFIER_LENGTH chars is accepted."""
         intent = ModelProjectionIntent(
-            projector_key="x" * 100,
+            projector_key="x" * MAX_IDENTIFIER_LENGTH,
             event_type="node.created.v1",
             envelope=simple_envelope,
             correlation_id=correlation_id,
         )
-        assert len(intent.projector_key) == 100
+        assert len(intent.projector_key) == MAX_IDENTIFIER_LENGTH
 
     def test_event_type_min_length(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
@@ -227,11 +228,11 @@ class TestModelProjectionIntentValidation:
     def test_event_type_max_length(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
     ) -> None:
-        """event_type exceeding 100 chars is rejected."""
+        """event_type exceeding the max length defined by MAX_IDENTIFIER_LENGTH is rejected."""
         with pytest.raises(ValidationError) as exc_info:
             ModelProjectionIntent(
                 projector_key="proj-1",
-                event_type="e" * 101,
+                event_type="e" * (MAX_IDENTIFIER_LENGTH + 1),
                 envelope=simple_envelope,
                 correlation_id=correlation_id,
             )
@@ -240,14 +241,14 @@ class TestModelProjectionIntentValidation:
     def test_event_type_at_max_length_accepted(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
     ) -> None:
-        """event_type at exactly 100 chars is accepted."""
+        """event_type at exactly MAX_IDENTIFIER_LENGTH chars is accepted."""
         intent = ModelProjectionIntent(
             projector_key="proj-1",
-            event_type="e" * 100,
+            event_type="e" * MAX_IDENTIFIER_LENGTH,
             envelope=simple_envelope,
             correlation_id=correlation_id,
         )
-        assert len(intent.event_type) == 100
+        assert len(intent.event_type) == MAX_IDENTIFIER_LENGTH
 
     def test_extra_fields_rejected(
         self, correlation_id: UUID, simple_envelope: _SimpleEnvelope
