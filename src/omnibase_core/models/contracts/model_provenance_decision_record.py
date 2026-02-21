@@ -173,7 +173,12 @@ class ModelProvenanceDecisionRecord(BaseModel):
         ...,
         description=(
             "Key-value mapping of constraint name to its applied value "
-            '(e.g., {"max_cost_usd": "0.05"}).'
+            '(e.g., {"max_cost_usd": "0.05"}). '
+            "All values are strings by design: the record faithfully captures the "
+            "constraint specification as declared (which may be a threshold, flag, "
+            "or enum label). Callers must stringify numeric values before constructing "
+            "this record (e.g., str(0.05) → '0.05'). This avoids lossy numeric "
+            "coercions and keeps the schema homogeneous for downstream serialization."
         ),
     )
 
