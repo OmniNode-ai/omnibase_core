@@ -690,6 +690,20 @@ class TestModelProvenanceDecisionRecord:
         # Round-trip preserves duplicates.
         dumped = record.model_dump()
         assert dumped["candidates_considered"] == candidates_with_duplicate
+        # Full serialization roundtrip: model_dump() -> model_validate() -> assert fields.
+        revalidated = ModelProvenanceDecisionRecord.model_validate(dumped)
+        assert revalidated.decision_id == record.decision_id
+        assert revalidated.decision_type == record.decision_type
+        assert revalidated.timestamp == record.timestamp
+        assert revalidated.candidates_considered == record.candidates_considered
+        assert revalidated.selected_candidate == record.selected_candidate
+        assert (
+            revalidated.scoring_breakdown[0].candidate
+            == record.scoring_breakdown[0].candidate
+        )
+        assert (
+            revalidated.scoring_breakdown[0].score == record.scoring_breakdown[0].score
+        )
 
 
 # ===========================================================================
