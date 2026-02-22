@@ -52,7 +52,7 @@ class ModelIntentDriftSignal(BaseModel):
         ... )
     """
 
-    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     intent_id: UUID = Field(
         description="The intent being monitored for drift",
