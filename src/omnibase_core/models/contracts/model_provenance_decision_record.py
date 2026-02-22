@@ -183,6 +183,9 @@ class ModelProvenanceDecisionRecord(BaseModel):
         )
     )
 
+    # Values are intentionally constrained to str for cross-process wire-format
+    # stability — numeric or structured values must be serialized as strings by
+    # callers before constructing this record.
     constraints_applied: Mapping[str, str] = Field(
         ...,
         description=(
@@ -235,6 +238,9 @@ class ModelProvenanceDecisionRecord(BaseModel):
         ),
     )
 
+    # Values are intentionally constrained to str for cross-process wire-format
+    # stability — numeric or structured values must be serialized as strings by
+    # callers before constructing this record.
     reproducibility_snapshot: Mapping[str, str] = Field(
         ...,
         description=(
@@ -385,6 +391,10 @@ class ModelProvenanceDecisionRecord(BaseModel):
                 f"selected_candidate '{self.selected_candidate}' must be present "
                 "in candidates_considered"
             )
+        # candidates_considered intentionally permits duplicate identifiers (see field
+        # description). If a scoring_breakdown key appears multiple times in
+        # candidates_considered, all occurrences are valid per that design — this
+        # validator only checks membership, not uniqueness.
         for score in self.scoring_breakdown:
             if score.candidate not in self.candidates_considered:
                 raise ValueError(
