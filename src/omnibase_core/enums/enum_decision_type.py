@@ -146,6 +146,13 @@ class EnumDecisionType(StrValueHelper, str, Enum):
         Returns:
             True if this decision type represents selecting from candidates.
 
+        Note:
+            The provenance record aliases MODEL_SELECT, WORKFLOW_ROUTE, and
+            TOOL_PICK are included because they are semantically equivalent to
+            their primary counterparts (MODEL_SELECTION, ROUTE_CHOICE, and
+            TOOL_SELECTION respectively) — each represents a decision that
+            involves choosing from a set of available options.
+
         Example:
             >>> EnumDecisionType.MODEL_SELECTION.is_selection_decision()
             True
@@ -154,6 +161,8 @@ class EnumDecisionType(StrValueHelper, str, Enum):
             >>> EnumDecisionType.TOOL_SELECTION.is_selection_decision()
             True
             >>> EnumDecisionType.PARAMETER_CHOICE.is_selection_decision()
+            True
+            >>> EnumDecisionType.MODEL_SELECT.is_selection_decision()
             True
             >>> EnumDecisionType.CUSTOM.is_selection_decision()
             False
@@ -169,6 +178,8 @@ class EnumDecisionType(StrValueHelper, str, Enum):
             EnumDecisionType.PARAMETER_CHOICE,
             EnumDecisionType.ROUTE_CHOICE,
             EnumDecisionType.TOOL_SELECTION,
+            # Provenance record classification aliases (OMN-2350): semantically
+            # equivalent to MODEL_SELECTION, ROUTE_CHOICE, and TOOL_SELECTION.
             EnumDecisionType.MODEL_SELECT,
             EnumDecisionType.WORKFLOW_ROUTE,
             EnumDecisionType.TOOL_PICK,

@@ -20,6 +20,15 @@ Design Decisions:
       flattening into a single flat structure.
     - No implicit defaults for decision_id or timestamp: Callers must inject these
       values — no auto-generation, no datetime.now() defaults — per repo invariant.
+    - Shallow-freeze limitation: scoring_breakdown is a frozen list of frozen
+      ModelProvenanceDecisionScore objects (frozen=True on the score model). The
+      list reference itself is immutable via frozen=True on this record. However,
+      the breakdown dict *inside* each score is enforced as a read-only
+      MappingProxyType by ModelProvenanceDecisionScore's field_validator
+      validate_breakdown_keys, which returns types.MappingProxyType(v) after key
+      validation — Pydantic v2 stores the validator return value directly, so no
+      frozen bypass is needed. In-place mutation of breakdown raises TypeError.
+      Nested container contents beyond that level are not additionally frozen.
 
 See Also:
     model_provenance_decision_score.py: Per-candidate scoring breakdown.

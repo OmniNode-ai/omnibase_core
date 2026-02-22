@@ -144,6 +144,10 @@ class TestEnumDecisionType:
             (EnumDecisionType.RETRY_STRATEGY, False),
             (EnumDecisionType.PARAMETER_CHOICE, False),
             (EnumDecisionType.CUSTOM, False),
+            # Provenance record classification aliases (OMN-2350): not terminal.
+            (EnumDecisionType.MODEL_SELECT, False),
+            (EnumDecisionType.WORKFLOW_ROUTE, False),
+            (EnumDecisionType.TOOL_PICK, False),
         ],
     )
     def test_is_terminal_decision(
@@ -163,6 +167,12 @@ class TestEnumDecisionType:
             (EnumDecisionType.EARLY_TERMINATION, False),
             (EnumDecisionType.RETRY_STRATEGY, False),
             (EnumDecisionType.CUSTOM, False),
+            # Provenance record classification aliases (OMN-2350): semantically
+            # equivalent to MODEL_SELECTION, ROUTE_CHOICE, and TOOL_SELECTION,
+            # so they are selection decisions.
+            (EnumDecisionType.MODEL_SELECT, True),
+            (EnumDecisionType.WORKFLOW_ROUTE, True),
+            (EnumDecisionType.TOOL_PICK, True),
         ],
     )
     def test_is_selection_decision(
