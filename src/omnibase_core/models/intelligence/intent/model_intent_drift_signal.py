@@ -12,15 +12,13 @@ Part of the Intent Intelligence Framework (OMN-2486).
 """
 
 from datetime import datetime
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["ModelIntentDriftSignal"]
+from omnibase_core.enums.intelligence.enum_drift_type import EnumDriftType
 
-# Canonical drift type values. Using Literal for exhaustive matching support.
-DriftType = Literal["tool_mismatch", "file_surface", "scope_expansion"]
+__all__ = ["ModelIntentDriftSignal"]
 
 
 class ModelIntentDriftSignal(BaseModel):
@@ -33,9 +31,9 @@ class ModelIntentDriftSignal(BaseModel):
     Attributes:
         intent_id: The intent being monitored for drift.
         drift_type: Category of drift detected.
-            - ``tool_mismatch``: Tools used do not match expected pattern.
-            - ``file_surface``: File access pattern diverged from intent.
-            - ``scope_expansion``: Scope has grown beyond original intent boundary.
+            - ``TOOL_MISMATCH``: Tools used do not match expected pattern.
+            - ``FILE_SURFACE``: File access pattern diverged from intent.
+            - ``SCOPE_EXPANSION``: Scope has grown beyond original intent boundary.
         description: Human-readable description of the detected drift.
         detected_at: Timestamp when drift was detected (UTC).
             Callers must inject this value — no ``datetime.now()`` defaults.
@@ -47,7 +45,7 @@ class ModelIntentDriftSignal(BaseModel):
         >>> from datetime import UTC, datetime
         >>> signal = ModelIntentDriftSignal(
         ...     intent_id=uuid4(),
-        ...     drift_type="scope_expansion",
+        ...     drift_type=EnumDriftType.SCOPE_EXPANSION,
         ...     description="Session now touches 12 files vs expected 2",
         ...     detected_at=datetime.now(UTC),
         ...     severity=0.75,
@@ -59,10 +57,9 @@ class ModelIntentDriftSignal(BaseModel):
     intent_id: UUID = Field(
         description="The intent being monitored for drift",
     )
-    drift_type: DriftType = Field(
+    drift_type: EnumDriftType = Field(
         description=(
-            "Category of drift detected: "
-            "'tool_mismatch' | 'file_surface' | 'scope_expansion'"
+            "Category of drift detected: TOOL_MISMATCH | FILE_SURFACE | SCOPE_EXPANSION"
         ),
     )
     description: str = Field(
