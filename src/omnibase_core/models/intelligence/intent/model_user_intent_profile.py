@@ -12,7 +12,7 @@ Part of the Intent Intelligence Framework (OMN-2486).
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.intelligence.enum_intent_class import EnumIntentClass
 
@@ -81,3 +81,25 @@ class ModelUserIntentProfile(BaseModel):
             "Callers must inject this value — no datetime.now() defaults."
         ),
     )
+
+    @field_validator("class_distribution")
+    @classmethod
+    def validate_class_distribution(cls, v: dict[str, float]) -> dict[str, float]:
+        """Validate that all class_distribution values are in [0.0, 1.0].
+
+        Args:
+            v: The class distribution mapping to validate.
+
+        Returns:
+            The validated mapping unchanged.
+
+        Raises:
+            ValueError: If any value is outside the inclusive [0.0, 1.0] range.
+        """
+        invalid = {k: val for k, val in v.items() if val < 0.0 or val > 1.0}
+        if invalid:
+            raise ValueError(
+                "class_distribution values must be within [0.0, 1.0]; "
+                f"found out-of-range values: {invalid}"
+            )
+        return v

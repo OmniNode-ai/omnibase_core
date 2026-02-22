@@ -173,7 +173,7 @@ class TestModelTypedIntentFrozen:
             classified_at=_NOW,
         )
         with pytest.raises((TypeError, Exception)):
-            model.confidence_score = 0.1  # type: ignore[misc]
+            model.confidence_score = 0.1  # type: ignore[misc] # NOTE(OMN-2486): intentional assignment to frozen model field to verify TypeError is raised at runtime
 
 
 class TestModelTypedIntentSerialization:
