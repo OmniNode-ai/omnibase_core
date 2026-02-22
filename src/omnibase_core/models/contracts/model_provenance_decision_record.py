@@ -29,6 +29,12 @@ Design Decisions:
       validation — Pydantic v2 stores the validator return value directly, so no
       frozen bypass is needed. In-place mutation of breakdown raises TypeError.
       Nested container contents beyond that level are not additionally frozen.
+    - constraints_applied and reproducibility_snapshot as MappingProxyType: Both
+      dict fields follow the same pattern as breakdown in ModelProvenanceDecisionScore.
+      Their field_validators (validate_constraints_applied_keys and
+      validate_reproducibility_snapshot_keys) return types.MappingProxyType(v) after
+      key validation, so Pydantic v2 stores the read-only proxy directly. In-place
+      mutation of either field raises TypeError.
 
 See Also:
     model_provenance_decision_score.py: Per-candidate scoring breakdown.
@@ -82,7 +88,9 @@ class ModelProvenanceDecisionRecord(BaseModel):
         candidates_considered: Ordered list of candidate identifiers that
             were evaluated.
         constraints_applied: Key-value mapping of constraint name to its
-            applied value (e.g., {"max_cost_usd": "0.05"}).
+            applied value (e.g., {"max_cost_usd": "0.05"}). Stored as a
+            read-only MappingProxyType after construction; in-place mutation
+            raises TypeError.
         scoring_breakdown: Per-candidate scores with individual criterion
             breakdowns. See ModelProvenanceDecisionScore.
         tie_breaker: Optional strategy name used when candidates scored
@@ -93,7 +101,9 @@ class ModelProvenanceDecisionRecord(BaseModel):
             for why this candidate was selected. Assistive only.
         reproducibility_snapshot: Key-value mapping of runtime state needed
             to re-derive or audit this decision (e.g., model versions,
-            feature flags, config hashes).
+            feature flags, config hashes). Stored as a read-only
+            MappingProxyType after construction; in-place mutation raises
+            TypeError.
 
     Example:
         >>> from datetime import datetime, UTC

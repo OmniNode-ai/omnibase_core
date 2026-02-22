@@ -36,9 +36,24 @@ class EnumDecisionType(StrValueHelper, str, Enum):
         EARLY_TERMINATION: Decision to terminate early (success or abort)
         PARAMETER_CHOICE: Decision about parameter values or configuration settings
         CUSTOM: Forward-compatibility escape hatch for new decision types
-        MODEL_SELECT: Alias for model selection (provenance record classification)
-        WORKFLOW_ROUTE: Alias for workflow routing (provenance record classification)
-        TOOL_PICK: Alias for tool selection (provenance record classification)
+        MODEL_SELECT: Short-form alias used specifically by ModelProvenanceDecisionRecord
+            (OMN-2350) for provenance record classification and wire format. Semantically
+            equivalent to MODEL_SELECTION but uses a compact identifier suited to the
+            event bus payload and the provenance decision_type field. Distinct from
+            MODEL_SELECTION to avoid conflating omnimemory snapshot decisions with
+            provenance record decisions at API boundaries.
+        WORKFLOW_ROUTE: Short-form alias used specifically by ModelProvenanceDecisionRecord
+            (OMN-2350) for provenance record classification and wire format. Semantically
+            equivalent to ROUTE_CHOICE but uses a compact identifier suited to the
+            event bus payload and the provenance decision_type field. Distinct from
+            ROUTE_CHOICE to avoid conflating omnimemory snapshot decisions with
+            provenance record decisions at API boundaries.
+        TOOL_PICK: Short-form alias used specifically by ModelProvenanceDecisionRecord
+            (OMN-2350) for provenance record classification and wire format. Semantically
+            equivalent to TOOL_SELECTION but uses a compact identifier suited to the
+            event bus payload and the provenance decision_type field. Distinct from
+            TOOL_SELECTION to avoid conflating omnimemory snapshot decisions with
+            provenance record decisions at API boundaries.
 
     Example:
         >>> decision_type = EnumDecisionType.MODEL_SELECTION
