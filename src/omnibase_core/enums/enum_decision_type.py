@@ -5,7 +5,14 @@
 Decision Type Enum.
 
 Provides type-safe classification of agent decisions for analysis
-and reporting within memory snapshots.
+and reporting. This enum serves two purposes:
+
+1. Omnimemory snapshots: classifies decisions recorded during agent
+   execution for analysis, debugging, and optimization of agent workflows.
+2. Decision provenance records (OMN-2350): classifies decisions captured
+   in ModelProvenanceDecisionRecord for auditability and reproducibility.
+   The compact aliases MODEL_SELECT, WORKFLOW_ROUTE, and TOOL_PICK are
+   defined specifically for the provenance record system's wire format.
 """
 
 from enum import Enum, unique
@@ -15,12 +22,18 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 @unique
 class EnumDecisionType(StrValueHelper, str, Enum):
-    """Decision type classification for omnimemory snapshots.
+    """Decision type classification for omnimemory snapshots and provenance records.
 
     Classifies decisions recorded in memory snapshots to enable systematic
     analysis and reporting of agent decision-making patterns. Each decision
     event is tagged with its type to support explainability, debugging, and
     optimization of agent workflows in the omnimemory system.
+
+    This enum also serves the Decision Provenance system (OMN-2350): the
+    compact aliases MODEL_SELECT, WORKFLOW_ROUTE, and TOOL_PICK are used
+    as the decision_type field values in ModelProvenanceDecisionRecord,
+    providing a stable wire-format identifier for provenance events emitted
+    to the event bus and stored in the provenance record database.
 
     See Also:
         - docs/omnimemory/memory_snapshots.md: Memory snapshot architecture

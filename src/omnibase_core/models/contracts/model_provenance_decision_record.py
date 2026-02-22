@@ -340,9 +340,9 @@ class ModelProvenanceDecisionRecord(BaseModel):
 
     @field_validator("timestamp")
     @classmethod
-    def validate_timestamp_utc(cls, v: datetime) -> datetime:
-        if v.tzinfo is None:
-            raise ValueError("timestamp must be timezone-aware (use UTC)")
+    def validate_timestamp_timezone_aware(cls, v: datetime) -> datetime:
+        if v.tzinfo is None or v.tzinfo.utcoffset(v) is None:
+            raise ValueError("timestamp must be a timezone-aware UTC datetime")
         if v.utcoffset() != timedelta(0):
             raise ValueError(
                 "timestamp must be UTC; got non-UTC timezone-aware datetime"

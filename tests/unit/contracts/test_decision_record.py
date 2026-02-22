@@ -504,6 +504,32 @@ class TestModelProvenanceDecisionRecord:
         with pytest.raises(ValidationError, match="non-UTC timezone-aware datetime"):
             make_record(timestamp=non_utc_ts)
 
+    def test_effectively_naive_timestamp_raises(self) -> None:
+        """Datetime with tzinfo set but utcoffset() returning None raises ValidationError.
+
+        This covers the 'effectively naive' edge case: tzinfo is not None but
+        utcoffset(v) returns None (e.g. a custom tzinfo subclass with an incomplete
+        implementation). The validator must guard against a TypeError that would
+        otherwise occur when comparing None != timedelta(0).
+        """
+        from datetime import tzinfo
+
+        class NullOffsetTz(tzinfo):
+            """Custom tzinfo whose utcoffset() always returns None."""
+
+            def utcoffset(self, dt: datetime | None) -> timedelta | None:  # type: ignore[override]
+                return None
+
+            def tzname(self, dt: datetime | None) -> str | None:
+                return "NullOffset"
+
+            def dst(self, dt: datetime | None) -> timedelta | None:
+                return None
+
+        effectively_naive = datetime(2026, 1, 1, 12, 0, tzinfo=NullOffsetTz())
+        with pytest.raises(ValidationError, match="timezone-aware UTC"):
+            make_record(timestamp=effectively_naive)
+
     def test_agent_rationale_defaults_to_none(self) -> None:
         """agent_rationale has explicit None default — callers may omit it."""
         record = make_record()
