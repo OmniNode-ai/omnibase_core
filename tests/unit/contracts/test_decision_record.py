@@ -648,10 +648,20 @@ class TestModelProvenanceDecisionRecord:
         with pytest.raises(ValidationError, match="constraints_applied values"):
             make_record(constraints_applied={"max_cost_usd": ""})
 
+    def test_constraints_applied_empty_key_raises(self) -> None:
+        """Empty string key in constraints_applied raises ValidationError."""
+        with pytest.raises(ValidationError, match="constraints_applied keys"):
+            make_record(constraints_applied={"": "some_value"})
+
     def test_reproducibility_snapshot_empty_value_raises(self) -> None:
         """Empty string value in reproducibility_snapshot raises ValidationError."""
         with pytest.raises(ValidationError, match="reproducibility_snapshot values"):
             make_record(reproducibility_snapshot={"routing_version": ""})
+
+    def test_reproducibility_snapshot_empty_key_raises(self) -> None:
+        """Empty string key in reproducibility_snapshot raises ValidationError."""
+        with pytest.raises(ValidationError, match="reproducibility_snapshot keys"):
+            make_record(reproducibility_snapshot={"": "some_value"})
 
     def test_duplicate_candidates_considered_accepted_and_roundtrip(self) -> None:
         """Duplicate entries in candidates_considered are accepted (uniqueness not enforced).
