@@ -943,14 +943,15 @@ class TestNodeReducerProcessSignatureSnapshot:
     def test_node_reducer_process_signature_params(self) -> None:
         """Verify NodeReducer.process parameter names.
 
-        Pre-refactor snapshot: ['self', 'input_data']
+        Updated snapshot (OMN-2509): ['self', 'input_data', 'projection_intents']
+        projection_intents is an optional parameter with default value ().
         """
         from omnibase_core.nodes import NodeReducer
 
         sig = inspect.signature(NodeReducer.process)
         params = list(sig.parameters.keys())
 
-        expected_params = ["self", "input_data"]
+        expected_params = ["self", "input_data", "projection_intents"]
         assert params == expected_params, (
             f"NodeReducer.process signature changed. "
             f"Expected params: {expected_params}, Got: {params}"
@@ -1218,11 +1219,11 @@ class TestProcessSignatureComprehensiveSummary:
     def test_process_signature_param_counts(self) -> None:
         """Verify expected parameter counts for each node process method.
 
-        Pre-refactor counts (all have 2 params: self, input_data):
-        - NodeCompute.process: 2 params
-        - NodeEffect.process: 2 params
-        - NodeReducer.process: 2 params
-        - NodeOrchestrator.process: 2 params
+        Snapshot (OMN-2509 updated NodeReducer.process):
+        - NodeCompute.process: 2 params (self, input_data)
+        - NodeEffect.process: 2 params (self, input_data)
+        - NodeReducer.process: 3 params (self, input_data, projection_intents)
+        - NodeOrchestrator.process: 2 params (self, input_data)
         """
         from omnibase_core.nodes import (
             NodeCompute,
@@ -1231,7 +1232,12 @@ class TestProcessSignatureComprehensiveSummary:
             NodeReducer,
         )
 
-        expected_count = 2  # self and input_data
+        expected_counts = {
+            "NodeCompute": 2,
+            "NodeEffect": 2,
+            "NodeReducer": 3,  # OMN-2509: added optional projection_intents param
+            "NodeOrchestrator": 2,
+        }
 
         node_classes = {
             "NodeCompute": NodeCompute,
@@ -1243,6 +1249,7 @@ class TestProcessSignatureComprehensiveSummary:
         for name, cls in node_classes.items():
             sig = inspect.signature(cls.process)
             actual_count = len(sig.parameters)
+            expected_count = expected_counts[name]
             assert actual_count == expected_count, (
                 f"{name}.process parameter count changed. "
                 f"Expected {expected_count}, got {actual_count}. "
