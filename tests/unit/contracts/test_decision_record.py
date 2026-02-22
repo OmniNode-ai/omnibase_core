@@ -54,7 +54,7 @@ def make_score(
 def make_record(**overrides: object) -> ModelProvenanceDecisionRecord:
     defaults: dict[str, object] = {
         "decision_id": DECISION_ID,
-        "decision_type": "model_select",
+        "decision_type": "model_selection",
         "timestamp": FIXED_TIMESTAMP,
         "candidates_considered": ["claude-3-opus", "gpt-4"],
         "constraints_applied": {"max_cost_usd": "0.05"},
@@ -65,9 +65,8 @@ def make_record(**overrides: object) -> ModelProvenanceDecisionRecord:
         "reproducibility_snapshot": {"routing_version": "1.2.3"},
     }
     defaults.update(overrides)
-    return ModelProvenanceDecisionRecord(
-        **defaults
-    )  # NOTE(OMN-2464): dict[str, object] used for flexible fixture defaults; Pydantic validates types at runtime  # type: ignore[arg-type]
+    # NOTE(OMN-2464): mypy cannot infer dict[str, object] unpacking satisfies ModelProvenanceDecisionRecord keyword-argument types.
+    return ModelProvenanceDecisionRecord(**defaults)  # type: ignore[arg-type]
 
 
 # ===========================================================================
@@ -144,6 +143,26 @@ class TestModelProvenanceDecisionScore:
         with pytest.raises(ValidationError):
             score.breakdown = {}
 
+    def test_breakdown_external_mutation_does_not_affect_model(self) -> None:
+        """Mutating the original dict after construction does not affect score.breakdown."""
+        original: dict[str, float] = {"quality": 0.45, "speed": 0.25}
+        score = ModelProvenanceDecisionScore(
+            candidate="claude-3-opus",
+            score=0.87,
+            breakdown=original,
+        )
+        original["quality"] = 9999.0
+        original["new_key"] = 1.0
+        assert score.breakdown["quality"] == 0.45
+        assert "new_key" not in score.breakdown
+
+    def test_breakdown_direct_mutation_raises(self) -> None:
+        """Directly writing to score.breakdown raises TypeError (MappingProxyType)."""
+        score = make_score()
+        with pytest.raises(TypeError):
+            # NOTE(OMN-2464): intentional write to immutable mapping — mypy[index] expected
+            score.breakdown["new_key"] = 1.0  # type: ignore[index]
+
     # -----------------------------------------------------------------------
     # R2: Required fields have no defaults
     # -----------------------------------------------------------------------
@@ -154,7 +173,8 @@ class TestModelProvenanceDecisionScore:
             ModelProvenanceDecisionScore(
                 score=0.87,
                 breakdown={"quality": 0.45},
-            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+                # NOTE(OMN-2464): intentional missing required field — mypy[call-arg] expected
+            )  # type: ignore[call-arg]
 
     def test_missing_score_raises(self) -> None:
         """Omitting score raises ValidationError."""
@@ -162,7 +182,8 @@ class TestModelProvenanceDecisionScore:
             ModelProvenanceDecisionScore(
                 candidate="claude-3-opus",
                 breakdown={"quality": 0.45},
-            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+                # NOTE(OMN-2464): intentional missing required field — mypy[call-arg] expected
+            )  # type: ignore[call-arg]
 
     def test_missing_breakdown_raises(self) -> None:
         """Omitting breakdown raises ValidationError."""
@@ -170,7 +191,8 @@ class TestModelProvenanceDecisionScore:
             ModelProvenanceDecisionScore(
                 candidate="claude-3-opus",
                 score=0.87,
-            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+                # NOTE(OMN-2464): intentional missing required field — mypy[call-arg] expected
+            )  # type: ignore[call-arg]
 
     def test_empty_candidate_raises(self) -> None:
         """Empty string for candidate raises ValidationError (min_length=1)."""
@@ -191,7 +213,8 @@ class TestModelProvenanceDecisionScore:
             candidate="claude-3-opus",
             score=0.87,
             breakdown={},
-            unknown_field="ignored",  # NOTE(OMN-2464): intentional unknown keyword argument to verify extra="ignore" silently drops it; mypy flags the unexpected kwarg  # type: ignore[call-arg]
+            # NOTE(OMN-2464): intentional unknown keyword argument — mypy[call-arg] expected
+            unknown_field="ignored",  # type: ignore[call-arg]
         )
         assert score.candidate == "claude-3-opus"
         assert not hasattr(score, "unknown_field")
@@ -214,19 +237,6 @@ class TestModelProvenanceDecisionScore:
         assert score.candidate == "gpt-4"
         assert score.score == 0.75
 
-    # -----------------------------------------------------------------------
-    # In-place mutation of breakdown is prevented by MappingProxyType
-    # -----------------------------------------------------------------------
-
-    @pytest.mark.unit
-    def test_breakdown_in_place_mutation_raises(self) -> None:
-        """In-place mutation of breakdown raises TypeError (MappingProxyType)."""
-        score = make_score()
-        with pytest.raises(TypeError):
-            score.breakdown["new_key"] = (
-                1.0  # NOTE(OMN-2464): intentional mutation of MappingProxyType to verify TypeError is raised; mypy cannot infer the subscript assignment will fail at runtime  # type: ignore[index]
-            )
-
 
 # ===========================================================================
 # Tests: ModelProvenanceDecisionRecord
@@ -246,7 +256,7 @@ class TestModelProvenanceDecisionRecord:
         agent_rationale default to None)."""
         record = ModelProvenanceDecisionRecord(
             decision_id=DECISION_ID,
-            decision_type="model_select",
+            decision_type="model_selection",
             timestamp=FIXED_TIMESTAMP,
             candidates_considered=["claude-3-opus"],
             constraints_applied={},
@@ -263,7 +273,7 @@ class TestModelProvenanceDecisionRecord:
         score = make_score("route-a")
         record = ModelProvenanceDecisionRecord(
             decision_id=DECISION_ID,
-            decision_type="workflow_route",
+            decision_type="route_choice",
             timestamp=FIXED_TIMESTAMP,
             candidates_considered=["route-a", "route-b"],
             constraints_applied={"latency_ms": "500"},
@@ -273,7 +283,7 @@ class TestModelProvenanceDecisionRecord:
             agent_rationale="Lowest latency route.",
             reproducibility_snapshot={"planner_version": "2.1.0"},
         )
-        assert record.decision_type == "workflow_route"
+        assert record.decision_type == EnumDecisionType.ROUTE_CHOICE
         assert record.tie_breaker == "alphabetical"
         assert record.agent_rationale == "Lowest latency route."
         assert len(record.scoring_breakdown) == 1
@@ -327,15 +337,15 @@ class TestModelProvenanceDecisionRecord:
         assert len(record.scoring_breakdown) == 2
 
     def test_various_decision_types(self) -> None:
-        """Decision type accepts all valid EnumDecisionType values."""
-        for dt in (
-            EnumDecisionType.MODEL_SELECT,
-            EnumDecisionType.WORKFLOW_ROUTE,
-            EnumDecisionType.TOOL_PICK,
-            EnumDecisionType.CUSTOM,
+        """All valid EnumDecisionType string values are accepted."""
+        for dt, expected in (
+            ("model_selection", EnumDecisionType.MODEL_SELECTION),
+            ("route_choice", EnumDecisionType.ROUTE_CHOICE),
+            ("tool_selection", EnumDecisionType.TOOL_SELECTION),
+            ("custom", EnumDecisionType.CUSTOM),
         ):
             record = make_record(decision_type=dt)
-            assert record.decision_type == dt
+            assert record.decision_type == expected
 
     # -----------------------------------------------------------------------
     # R1: Immutability (frozen=True)
@@ -351,7 +361,7 @@ class TestModelProvenanceDecisionRecord:
         """Mutating decision_type raises ValidationError."""
         record = make_record()
         with pytest.raises(ValidationError):
-            record.decision_type = "tool_pick"
+            record.decision_type = "tool_selection"
 
     def test_frozen_rejects_timestamp_mutation(self) -> None:
         """Mutating timestamp raises ValidationError."""
@@ -377,6 +387,40 @@ class TestModelProvenanceDecisionRecord:
         with pytest.raises(ValidationError):
             record.agent_rationale = "new rationale"
 
+    def test_constraints_applied_external_mutation_does_not_affect_model(self) -> None:
+        """Mutating the original dict after construction does not affect record.constraints_applied."""
+        original: dict[str, str] = {"max_cost_usd": "0.05"}
+        record = make_record(constraints_applied=original)
+        original["max_cost_usd"] = "9999"
+        original["new_key"] = "value"
+        assert record.constraints_applied["max_cost_usd"] == "0.05"
+        assert "new_key" not in record.constraints_applied
+
+    def test_constraints_applied_direct_mutation_raises(self) -> None:
+        """Directly writing to record.constraints_applied raises TypeError (MappingProxyType)."""
+        record = make_record(constraints_applied={"max_cost_usd": "0.05"})
+        with pytest.raises(TypeError):
+            # NOTE(OMN-2464): intentional write to immutable mapping — mypy[index] expected
+            record.constraints_applied["new_key"] = "value"  # type: ignore[index]
+
+    def test_reproducibility_snapshot_external_mutation_does_not_affect_model(
+        self,
+    ) -> None:
+        """Mutating the original dict after construction does not affect record.reproducibility_snapshot."""
+        original: dict[str, str] = {"routing_version": "1.2.3"}
+        record = make_record(reproducibility_snapshot=original)
+        original["routing_version"] = "9.9.9"
+        original["new_key"] = "value"
+        assert record.reproducibility_snapshot["routing_version"] == "1.2.3"
+        assert "new_key" not in record.reproducibility_snapshot
+
+    def test_reproducibility_snapshot_direct_mutation_raises(self) -> None:
+        """Directly writing to record.reproducibility_snapshot raises TypeError (MappingProxyType)."""
+        record = make_record(reproducibility_snapshot={"routing_version": "1.2.3"})
+        with pytest.raises(TypeError):
+            # NOTE(OMN-2464): intentional write to immutable mapping — mypy[index] expected
+            record.reproducibility_snapshot["new_key"] = "value"  # type: ignore[index]
+
     # -----------------------------------------------------------------------
     # R2: Required fields have no defaults (callers must inject)
     # -----------------------------------------------------------------------
@@ -385,56 +429,60 @@ class TestModelProvenanceDecisionRecord:
         """Omitting decision_id raises ValidationError."""
         with pytest.raises(ValidationError):
             ModelProvenanceDecisionRecord(
-                decision_type="model_select",
+                decision_type="model_selection",
                 timestamp=FIXED_TIMESTAMP,
                 candidates_considered=[],
                 constraints_applied={},
                 scoring_breakdown=[],
                 selected_candidate="a",
                 reproducibility_snapshot={},
-            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+                # NOTE(OMN-2464): intentional missing required field — mypy[call-arg] expected
+            )  # type: ignore[call-arg]
 
     def test_missing_timestamp_raises(self) -> None:
         """Omitting timestamp raises ValidationError — no datetime.now() default."""
         with pytest.raises(ValidationError):
             ModelProvenanceDecisionRecord(
                 decision_id=DECISION_ID,
-                decision_type="model_select",
+                decision_type="model_selection",
                 candidates_considered=[],
                 constraints_applied={},
                 scoring_breakdown=[],
                 selected_candidate="a",
                 reproducibility_snapshot={},
-            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+                # NOTE(OMN-2464): intentional missing required field — mypy[call-arg] expected
+            )  # type: ignore[call-arg]
 
     def test_missing_selected_candidate_raises(self) -> None:
         """Omitting selected_candidate raises ValidationError."""
         with pytest.raises(ValidationError):
             ModelProvenanceDecisionRecord(
                 decision_id=DECISION_ID,
-                decision_type="model_select",
+                decision_type="model_selection",
                 timestamp=FIXED_TIMESTAMP,
                 candidates_considered=[],
                 constraints_applied={},
                 scoring_breakdown=[],
                 reproducibility_snapshot={},
-            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+                # NOTE(OMN-2464): intentional missing required field — mypy[call-arg] expected
+            )  # type: ignore[call-arg]
 
     def test_missing_reproducibility_snapshot_raises(self) -> None:
         """Omitting reproducibility_snapshot raises ValidationError."""
         with pytest.raises(ValidationError):
             ModelProvenanceDecisionRecord(
                 decision_id=DECISION_ID,
-                decision_type="model_select",
+                decision_type="model_selection",
                 timestamp=FIXED_TIMESTAMP,
                 candidates_considered=[],
                 constraints_applied={},
                 scoring_breakdown=[],
                 selected_candidate="a",
-            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+                # NOTE(OMN-2464): intentional missing required field — mypy[call-arg] expected
+            )  # type: ignore[call-arg]
 
     def test_empty_decision_type_raises(self) -> None:
-        """Empty string for decision_type raises ValidationError (min_length=1)."""
+        """Empty string for decision_type raises ValidationError (not a valid enum member)."""
         with pytest.raises(ValidationError):
             make_record(decision_type="")
 
@@ -450,11 +498,11 @@ class TestModelProvenanceDecisionRecord:
         with pytest.raises(ValidationError):
             make_record(timestamp=dt(2026, 1, 1))
 
-    def test_non_utc_aware_timestamp_raises(self) -> None:
-        """Timezone-aware datetime with non-zero UTC offset raises ValidationError."""
-        non_utc = datetime(2026, 1, 1, 12, 0, tzinfo=timezone(timedelta(hours=5)))
-        with pytest.raises(ValidationError):
-            make_record(timestamp=non_utc)
+    def test_timestamp_non_utc_timezone_raises(self) -> None:
+        """Timezone-aware datetime with a non-UTC offset raises ValidationError."""
+        non_utc_ts = datetime(2025, 1, 1, tzinfo=timezone(timedelta(hours=5)))
+        with pytest.raises(ValidationError, match="non-UTC timezone-aware datetime"):
+            make_record(timestamp=non_utc_ts)
 
     def test_agent_rationale_defaults_to_none(self) -> None:
         """agent_rationale has explicit None default — callers may omit it."""
@@ -494,14 +542,15 @@ class TestModelProvenanceDecisionRecord:
         """Extra fields are silently ignored."""
         record = ModelProvenanceDecisionRecord(
             decision_id=DECISION_ID,
-            decision_type="model_select",
+            decision_type="model_selection",
             timestamp=FIXED_TIMESTAMP,
             candidates_considered=[],
             constraints_applied={},
             scoring_breakdown=[],
             selected_candidate="a",
             reproducibility_snapshot={},
-            unknown_field="should_be_ignored",  # NOTE(OMN-2464): intentional unknown keyword argument to verify extra="ignore" silently drops it; mypy flags the unexpected kwarg  # type: ignore[call-arg]
+            # NOTE(OMN-2464): intentional unknown keyword argument — mypy[call-arg] expected
+            unknown_field="should_be_ignored",  # type: ignore[call-arg]
         )
         assert not hasattr(record, "unknown_field")
 
@@ -514,7 +563,7 @@ class TestModelProvenanceDecisionRecord:
 
         class FakeOrm:
             decision_id = DECISION_ID
-            decision_type = "tool_pick"
+            decision_type = "tool_selection"
             timestamp = FIXED_TIMESTAMP
             candidates_considered = ["bash", "read"]
             constraints_applied: dict[str, str] = {}
@@ -527,7 +576,7 @@ class TestModelProvenanceDecisionRecord:
         record = ModelProvenanceDecisionRecord.model_validate(
             FakeOrm(), from_attributes=True
         )
-        assert record.decision_type == "tool_pick"
+        assert record.decision_type == EnumDecisionType.TOOL_SELECTION
         assert record.selected_candidate == "bash"
 
     # -----------------------------------------------------------------------
@@ -546,13 +595,12 @@ class TestModelProvenanceDecisionRecord:
         raw_score = {"candidate": "gpt-4", "score": 0.75, "breakdown": {"q": 0.75}}
         record = ModelProvenanceDecisionRecord(
             decision_id=DECISION_ID,
-            decision_type="model_select",
+            decision_type="model_selection",
             timestamp=FIXED_TIMESTAMP,
             candidates_considered=["gpt-4"],
             constraints_applied={},
-            scoring_breakdown=[
-                raw_score
-            ],  # NOTE(OMN-2464): raw dict intentionally passed to test Pydantic coercion of nested models from plain dicts  # type: ignore[list-item]
+            # NOTE(OMN-2464): intentional raw dict where model instance expected — mypy[list-item] expected
+            scoring_breakdown=[raw_score],  # type: ignore[list-item]
             selected_candidate="gpt-4",
             reproducibility_snapshot={},
         )
@@ -663,6 +711,16 @@ class TestModelProvenanceDecisionRecord:
         with pytest.raises(ValidationError, match="reproducibility_snapshot keys"):
             make_record(reproducibility_snapshot={"": "some_value"})
 
+    def test_invalid_decision_type_string_raises(self) -> None:
+        """A string that is not a valid EnumDecisionType member raises ValidationError."""
+        with pytest.raises(ValidationError):
+            make_record(decision_type="not_a_valid_type")
+
+    def test_enum_member_accepted_directly(self) -> None:
+        """Passing an EnumDecisionType member directly is accepted without coercion."""
+        record = make_record(decision_type=EnumDecisionType.MODEL_SELECTION)
+        assert record.decision_type == EnumDecisionType.MODEL_SELECTION
+
     def test_duplicate_candidates_considered_accepted_and_roundtrip(self) -> None:
         """Duplicate entries in candidates_considered are accepted (uniqueness not enforced).
 
@@ -704,6 +762,93 @@ class TestModelProvenanceDecisionRecord:
         assert (
             revalidated.scoring_breakdown[0].score == record.scoring_breakdown[0].score
         )
+
+
+# ===========================================================================
+# Tests: EnumDecisionType.is_selection_decision
+# ===========================================================================
+
+
+@pytest.mark.unit
+class TestEnumDecisionTypeIsSelectionDecision:
+    """Tests for EnumDecisionType.is_selection_decision().
+
+    Covers all eight members: the four that must return True (the provenance
+    selection types) and the four that must return False (terminal, retry, and
+    the CUSTOM escape hatch).
+    """
+
+    # -----------------------------------------------------------------------
+    # Selection decisions — must return True
+    # -----------------------------------------------------------------------
+
+    def test_model_selection_is_selection_decision(self) -> None:
+        """MODEL_SELECTION is a selection decision."""
+        assert EnumDecisionType.MODEL_SELECTION.is_selection_decision() is True
+
+    def test_route_choice_is_selection_decision(self) -> None:
+        """ROUTE_CHOICE is a selection decision."""
+        assert EnumDecisionType.ROUTE_CHOICE.is_selection_decision() is True
+
+    def test_tool_selection_is_selection_decision(self) -> None:
+        """TOOL_SELECTION is a selection decision."""
+        assert EnumDecisionType.TOOL_SELECTION.is_selection_decision() is True
+
+    def test_parameter_choice_is_selection_decision(self) -> None:
+        """PARAMETER_CHOICE is a selection decision."""
+        assert EnumDecisionType.PARAMETER_CHOICE.is_selection_decision() is True
+
+    # -----------------------------------------------------------------------
+    # Non-selection decisions — must return False
+    # -----------------------------------------------------------------------
+
+    def test_retry_strategy_is_not_selection_decision(self) -> None:
+        """RETRY_STRATEGY is not a selection decision (describes how to retry)."""
+        assert EnumDecisionType.RETRY_STRATEGY.is_selection_decision() is False
+
+    def test_escalation_is_not_selection_decision(self) -> None:
+        """ESCALATION is not a selection decision (terminal hand-off)."""
+        assert EnumDecisionType.ESCALATION.is_selection_decision() is False
+
+    def test_early_termination_is_not_selection_decision(self) -> None:
+        """EARLY_TERMINATION is not a selection decision (terminal stop signal)."""
+        assert EnumDecisionType.EARLY_TERMINATION.is_selection_decision() is False
+
+    def test_custom_is_not_selection_decision(self) -> None:
+        """CUSTOM is not a selection decision — it is an unclassified escape hatch."""
+        assert EnumDecisionType.CUSTOM.is_selection_decision() is False
+
+    # -----------------------------------------------------------------------
+    # Provenance record alias members
+    # -----------------------------------------------------------------------
+
+    def test_model_select_alias_is_selection_decision(self) -> None:
+        """MODEL_SELECT (provenance alias) is a selection decision."""
+        assert EnumDecisionType.MODEL_SELECT.is_selection_decision() is True
+
+    def test_workflow_route_alias_is_selection_decision(self) -> None:
+        """WORKFLOW_ROUTE (provenance alias) is a selection decision."""
+        assert EnumDecisionType.WORKFLOW_ROUTE.is_selection_decision() is True
+
+    def test_tool_pick_alias_is_selection_decision(self) -> None:
+        """TOOL_PICK (provenance alias) is a selection decision."""
+        assert EnumDecisionType.TOOL_PICK.is_selection_decision() is True
+
+    # -----------------------------------------------------------------------
+    # Exhaustive coverage guard
+    # -----------------------------------------------------------------------
+
+    def test_all_members_classified(self) -> None:
+        """Every EnumDecisionType member returns a bool from is_selection_decision.
+
+        This test fails if a new member is added without updating this test
+        suite, because the explicit True/False assertions above would not
+        cover it.  The count assertion documents the expected member count.
+        """
+        results = {m: m.is_selection_decision() for m in EnumDecisionType}
+        assert all(isinstance(v, bool) for v in results.values())
+        # Update this count when new members are added.
+        assert len(results) == 11
 
 
 # ===========================================================================
@@ -778,7 +923,7 @@ class TestExportPaths:
         """DecisionRecord alias can be used to instantiate models."""
         record = DecisionRecord(
             decision_id=DECISION_ID,
-            decision_type="model_select",
+            decision_type="model_selection",
             timestamp=FIXED_TIMESTAMP,
             candidates_considered=["a"],
             constraints_applied={},

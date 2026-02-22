@@ -20,13 +20,6 @@ Design Decisions:
       flattening into a single flat structure.
     - No implicit defaults for decision_id or timestamp: Callers must inject these
       values — no auto-generation, no datetime.now() defaults — per repo invariant.
-    - Shallow-freeze limitation: scoring_breakdown is a frozen list of frozen
-      ModelProvenanceDecisionScore objects (frozen=True on the score model). The
-      list reference itself is immutable via frozen=True on this record. However,
-      the breakdown dict *inside* each score is enforced as a read-only
-      MappingProxyType by ModelProvenanceDecisionScore.model_post_init — in-place
-      mutation of breakdown raises TypeError. Nested container contents beyond that
-      level are not additionally frozen.
 
 See Also:
     model_provenance_decision_score.py: Per-candidate scoring breakdown.
@@ -36,7 +29,9 @@ See Also:
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime, timedelta
+from types import MappingProxyType
 from typing import Annotated, Self
 from uuid import UUID
 
@@ -69,12 +64,11 @@ class ModelProvenanceDecisionRecord(BaseModel):
     Attributes:
         decision_id: Caller-supplied UUID for this decision. No auto-generation
             — callers must provide a UUID.
-        decision_type: Classification enum value (EnumDecisionType), e.g.
-            EnumDecisionType.MODEL_SELECT, EnumDecisionType.WORKFLOW_ROUTE,
-            EnumDecisionType.TOOL_PICK. Pydantic coerces plain strings to enum.
-        timestamp: Caller-injected UTC datetime of the decision. Must be
-            timezone-aware with offset == 0 (strictly UTC). Non-UTC offsets
-            are rejected even if they represent the same instant. No
+        decision_type: Enum classification of the decision. E.g.
+            EnumDecisionType.MODEL_SELECTION, EnumDecisionType.ROUTE_CHOICE,
+            EnumDecisionType.TOOL_SELECTION. String values are coerced to the
+            enum member automatically by Pydantic.
+        timestamp: Caller-injected UTC datetime of the decision. No
             datetime.now() default — callers must inject the timestamp.
         candidates_considered: Ordered list of candidate identifiers that
             were evaluated.
@@ -97,7 +91,7 @@ class ModelProvenanceDecisionRecord(BaseModel):
         >>> from uuid import UUID
         >>> record = ModelProvenanceDecisionRecord(
         ...     decision_id=UUID("550e8400-e29b-41d4-a716-446655440000"),
-        ...     decision_type="model_select",
+        ...     decision_type="model_selection",
         ...     timestamp=datetime(2026, 1, 15, 12, 0, 0, tzinfo=UTC),
         ...     candidates_considered=["claude-3-opus", "gpt-4", "gemini-pro"],
         ...     constraints_applied={"max_cost_usd": "0.05", "min_quality": "0.8"},
@@ -116,7 +110,7 @@ class ModelProvenanceDecisionRecord(BaseModel):
         >>> record.selected_candidate
         'claude-3-opus'
         >>> record.decision_type
-        <EnumDecisionType.MODEL_SELECT: 'model_select'>
+        <EnumDecisionType.MODEL_SELECTION: 'model_selection'>
     """
 
     model_config = ConfigDict(
@@ -124,6 +118,7 @@ class ModelProvenanceDecisionRecord(BaseModel):
         # extra="ignore" intentional: contract/external model — forward-compatible with event bus
         extra="ignore",
         from_attributes=True,
+        arbitrary_types_allowed=True,
     )
 
     decision_id: UUID = Field(
@@ -137,18 +132,18 @@ class ModelProvenanceDecisionRecord(BaseModel):
     decision_type: EnumDecisionType = Field(
         ...,
         description=(
-            "Classification of the decision. One of the EnumDecisionType values, "
-            "e.g. EnumDecisionType.MODEL_SELECT, EnumDecisionType.WORKFLOW_ROUTE, "
-            "EnumDecisionType.TOOL_PICK. Pydantic coerces plain strings to the enum."
+            "Enum classification of the decision. E.g. "
+            '"model_selection", "route_choice", "tool_selection", "custom". '
+            "String values matching a valid EnumDecisionType member are "
+            "coerced automatically by Pydantic."
         ),
     )
 
     timestamp: datetime = Field(
         ...,
         description=(
-            "Caller-injected UTC datetime of the decision. "
-            "Must be timezone-aware with offset == 0 (strictly UTC); "
-            "non-UTC offsets are rejected even if they represent the same instant. "
+            "Caller-injected UTC-aware datetime of the decision. "
+            "Must be timezone-aware with a UTC offset of zero. "
             "No datetime.now() default — callers must inject the timestamp."
         ),
     )
@@ -169,16 +164,17 @@ class ModelProvenanceDecisionRecord(BaseModel):
         )
     )
 
-    constraints_applied: dict[str, str] = Field(
+    constraints_applied: Mapping[str, str] = Field(
         ...,
         description=(
-            "Key-value mapping of constraint name to its applied value "
+            "Read-only mapping of constraint name to its applied value "
             '(e.g., {"max_cost_usd": "0.05"}). '
             "All values are strings by design: the record faithfully captures the "
             "constraint specification as declared (which may be a threshold, flag, "
             "or enum label). Callers must stringify numeric values before constructing "
             "this record (e.g., str(0.05) → '0.05'). This avoids lossy numeric "
-            "coercions and keeps the schema homogeneous for downstream serialization."
+            "coercions and keeps the schema homogeneous for downstream serialization. "
+            "Stored as an immutable MappingProxyType to prevent in-place mutation."
         ),
     )
 
@@ -220,18 +216,27 @@ class ModelProvenanceDecisionRecord(BaseModel):
         ),
     )
 
-    reproducibility_snapshot: dict[str, str] = Field(
+    reproducibility_snapshot: Mapping[str, str] = Field(
         ...,
         description=(
-            "Key-value mapping of runtime state needed to re-derive or audit "
-            "this decision (e.g., model versions, feature flags, config hashes)."
+            "Read-only mapping of runtime state needed to re-derive or audit "
+            "this decision (e.g., model versions, feature flags, config hashes). "
+            "Stored as an immutable MappingProxyType to prevent in-place mutation."
         ),
     )
 
-    @field_validator("constraints_applied")
+    @field_validator("constraints_applied", mode="before")
     @classmethod
-    def validate_constraints_applied_keys(cls, v: dict[str, str]) -> dict[str, str]:
-        for key, value in v.items():
+    def validate_constraints_applied_keys(cls, v: object) -> object:
+        """Validate that all constraints_applied keys and values are non-empty strings."""
+        if isinstance(v, MappingProxyType):
+            mapping: Mapping[str, str] = v
+        elif isinstance(v, dict):
+            mapping = v
+        else:
+            # Let Pydantic produce its own type error for non-mapping inputs.
+            return v
+        for key, value in mapping.items():
             if not key:
                 raise ValueError(
                     "constraints_applied keys must be non-empty strings; "
@@ -244,12 +249,28 @@ class ModelProvenanceDecisionRecord(BaseModel):
                 )
         return v
 
-    @field_validator("reproducibility_snapshot")
+    @field_validator("constraints_applied", mode="after")
     @classmethod
-    def validate_reproducibility_snapshot_keys(
-        cls, v: dict[str, str]
-    ) -> dict[str, str]:
-        for key, value in v.items():
+    def validate_constraints_applied_immutable(
+        cls, v: Mapping[str, str]
+    ) -> MappingProxyType[str, str]:
+        """Wrap the validated mapping in MappingProxyType to prevent in-place mutation."""
+        if isinstance(v, MappingProxyType):
+            return v
+        return MappingProxyType(dict(v))
+
+    @field_validator("reproducibility_snapshot", mode="before")
+    @classmethod
+    def validate_reproducibility_snapshot_keys(cls, v: object) -> object:
+        """Validate that all reproducibility_snapshot keys and values are non-empty strings."""
+        if isinstance(v, MappingProxyType):
+            snapshot: Mapping[str, str] = v
+        elif isinstance(v, dict):
+            snapshot = v
+        else:
+            # Let Pydantic produce its own type error for non-mapping inputs.
+            return v
+        for key, value in snapshot.items():
             if not key:
                 raise ValueError(
                     "reproducibility_snapshot keys must be non-empty strings; "
@@ -261,6 +282,16 @@ class ModelProvenanceDecisionRecord(BaseModel):
                     f"found an empty string value for key '{key}'"
                 )
         return v
+
+    @field_validator("reproducibility_snapshot", mode="after")
+    @classmethod
+    def validate_reproducibility_snapshot_immutable(
+        cls, v: Mapping[str, str]
+    ) -> MappingProxyType[str, str]:
+        """Wrap the validated mapping in MappingProxyType to prevent in-place mutation."""
+        if isinstance(v, MappingProxyType):
+            return v
+        return MappingProxyType(dict(v))
 
     @field_validator("tie_breaker")
     @classmethod
@@ -284,11 +315,13 @@ class ModelProvenanceDecisionRecord(BaseModel):
 
     @field_validator("timestamp")
     @classmethod
-    def validate_timestamp_timezone_aware(cls, v: datetime) -> datetime:
+    def validate_timestamp_utc(cls, v: datetime) -> datetime:
         if v.tzinfo is None:
-            raise ValueError("timestamp must be timezone-aware UTC")
+            raise ValueError("timestamp must be timezone-aware (use UTC)")
         if v.utcoffset() != timedelta(0):
-            raise ValueError("timestamp must be UTC (offset must be 0)")
+            raise ValueError(
+                "timestamp must be UTC; got non-UTC timezone-aware datetime"
+            )
         return v
 
     @model_validator(mode="after")

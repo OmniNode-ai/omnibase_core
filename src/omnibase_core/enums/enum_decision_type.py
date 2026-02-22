@@ -123,22 +123,55 @@ class EnumDecisionType(StrValueHelper, str, Enum):
         }
 
     def is_selection_decision(self) -> bool:
-        """Check if this decision type involves selecting from options.
+        """Check if this decision type involves selecting from a set of candidates.
+
+        A selection decision is one where an agent evaluated multiple candidates
+        and chose one — making it directly expressible in a
+        ``ModelProvenanceDecisionRecord`` (candidates_considered + selected_candidate).
+
+        Included members:
+            - MODEL_SELECTION: choosing which AI model to use
+            - ROUTE_CHOICE: choosing a routing path or workflow branch
+            - TOOL_SELECTION: choosing which tool or capability to invoke
+            - PARAMETER_CHOICE: choosing parameter values or configuration settings
+
+        Excluded members (and rationale):
+            - RETRY_STRATEGY: describes how to retry, not a candidate selection
+            - ESCALATION: a terminal hand-off, not a selection from alternatives
+            - EARLY_TERMINATION: a terminal stop signal, not a selection decision
+            - CUSTOM: intentionally excluded — it is an unclassified escape hatch,
+              not a selection decision; callers using CUSTOM must perform their
+              own classification
 
         Returns:
-            True if this is a selection-type decision.
+            True if this decision type represents selecting from candidates.
 
         Example:
             >>> EnumDecisionType.MODEL_SELECTION.is_selection_decision()
             True
+            >>> EnumDecisionType.ROUTE_CHOICE.is_selection_decision()
+            True
+            >>> EnumDecisionType.TOOL_SELECTION.is_selection_decision()
+            True
+            >>> EnumDecisionType.PARAMETER_CHOICE.is_selection_decision()
+            True
+            >>> EnumDecisionType.CUSTOM.is_selection_decision()
+            False
             >>> EnumDecisionType.ESCALATION.is_selection_decision()
             False
         """
+        # CUSTOM is intentionally excluded — it is an unclassified escape hatch,
+        # not a selection decision.
+        # MODEL_SELECT, WORKFLOW_ROUTE, TOOL_PICK are provenance-record aliases
+        # for MODEL_SELECTION, ROUTE_CHOICE, and TOOL_SELECTION respectively.
         return self in {
             EnumDecisionType.MODEL_SELECTION,
             EnumDecisionType.PARAMETER_CHOICE,
             EnumDecisionType.ROUTE_CHOICE,
             EnumDecisionType.TOOL_SELECTION,
+            EnumDecisionType.MODEL_SELECT,
+            EnumDecisionType.WORKFLOW_ROUTE,
+            EnumDecisionType.TOOL_PICK,
         }
 
 

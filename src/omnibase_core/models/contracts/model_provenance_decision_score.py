@@ -13,11 +13,6 @@ Design Decisions:
     - frozen=True: Immutable after creation — provenance artifacts must not be mutated.
     - No implicit defaults: All fields must be explicitly provided by callers.
     - Separate from DecisionRecord: Allows per-candidate breakdown without flattening.
-    - breakdown as MappingProxyType: The breakdown field is stored as a read-only
-      types.MappingProxyType. The field_validator validate_breakdown_keys returns
-      types.MappingProxyType(validated_dict) after key validation; Pydantic v2
-      stores the validator return value directly, so no frozen bypass is needed.
-      In-place mutation of breakdown raises TypeError.
 
 See Also:
     model_provenance_decision_record.py: Main provenance record model.
@@ -26,8 +21,8 @@ See Also:
 
 from __future__ import annotations
 
-import types
 from collections.abc import Mapping
+from types import MappingProxyType
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -43,9 +38,7 @@ class ModelProvenanceDecisionScore(BaseModel):
         candidate: Identifier for the candidate being scored.
         score: Aggregate score for this candidate.
         breakdown: Per-criterion score contributions (not necessarily summing to
-            score — no summation invariant is enforced). Stored as a
-            read-only MappingProxyType after construction; in-place mutation
-            raises TypeError.
+            score — no summation invariant is enforced).
 
     Example:
         >>> score = ModelProvenanceDecisionScore(
@@ -64,6 +57,7 @@ class ModelProvenanceDecisionScore(BaseModel):
         # extra="ignore" intentional: contract/external model — forward-compatible with event bus
         extra="ignore",
         from_attributes=True,
+        arbitrary_types_allowed=True,
     )
 
     candidate: str = Field(
@@ -91,23 +85,37 @@ class ModelProvenanceDecisionScore(BaseModel):
 
     breakdown: Mapping[str, float] = Field(
         ...,
-        description=(
-            "Per-criterion score contributions. Stored as a read-only "
-            "MappingProxyType after construction; in-place mutation raises TypeError. "
-            "Keys must be non-empty strings. Values are unbounded floats."
-        ),
+        description="Per-criterion score contributions. Stored as an immutable mapping.",
     )
 
-    @field_validator("breakdown")
+    @field_validator("breakdown", mode="before")
     @classmethod
-    def validate_breakdown_keys(cls, v: dict[str, float]) -> Mapping[str, float]:
-        for key in v:
+    def validate_breakdown_keys(cls, v: object) -> object:
+        """Validate that all breakdown keys are non-empty strings."""
+        if isinstance(v, MappingProxyType):
+            mapping: Mapping[str, float] = v
+        elif isinstance(v, dict):
+            mapping = v
+        else:
+            # Let Pydantic produce its own type error for non-mapping inputs.
+            return v
+        for key in mapping:
             if not key:
                 raise ValueError(
                     "breakdown keys must be non-empty strings; "
                     "found an empty string key"
                 )
-        return types.MappingProxyType(v)
+        return v
+
+    @field_validator("breakdown", mode="after")
+    @classmethod
+    def validate_breakdown_immutable(
+        cls, v: Mapping[str, float]
+    ) -> MappingProxyType[str, float]:
+        """Wrap the validated dict in MappingProxyType to prevent in-place mutation."""
+        if isinstance(v, MappingProxyType):
+            return v
+        return MappingProxyType(dict(v))
 
 
 # Public alias for API surface
