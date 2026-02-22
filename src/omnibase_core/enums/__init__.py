@@ -356,6 +356,9 @@ from .enum_subject_type import EnumSubjectType
 from .enum_support_category import EnumSupportCategory
 from .enum_support_channel import EnumSupportChannel
 
+# Tie-breaker strategy enums (OMN-2464)
+from .enum_tie_breaker_strategy import EnumTieBreakerStrategy
+
 # Token and authentication context enums (OMN-1054)
 from .enum_token_type import EnumTokenType
 
@@ -624,6 +627,8 @@ __all__ = [
     "EnumCheckpointType",
     # Change type domain (OMN-1196)
     "EnumChangeType",
+    # Tie-breaker strategy domain (OMN-2464)
+    "EnumTieBreakerStrategy",
     # Token and authentication context domain (OMN-1054)
     "EnumTokenType",
     "EnumTriggerEvent",

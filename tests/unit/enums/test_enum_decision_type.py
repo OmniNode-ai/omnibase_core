@@ -160,8 +160,11 @@ class TestEnumDecisionType:
         ("member", "expected"),
         [
             (EnumDecisionType.MODEL_SELECTION, True),
+            (EnumDecisionType.MODEL_SELECT, True),
             (EnumDecisionType.TOOL_SELECTION, True),
+            (EnumDecisionType.TOOL_PICK, True),
             (EnumDecisionType.ROUTE_CHOICE, True),
+            (EnumDecisionType.WORKFLOW_ROUTE, True),
             (EnumDecisionType.PARAMETER_CHOICE, True),
             (EnumDecisionType.ESCALATION, False),
             (EnumDecisionType.EARLY_TERMINATION, False),

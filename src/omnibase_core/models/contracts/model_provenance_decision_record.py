@@ -60,6 +60,7 @@ from pydantic import (
 )
 
 from omnibase_core.enums.enum_decision_type import EnumDecisionType
+from omnibase_core.enums.enum_tie_breaker_strategy import EnumTieBreakerStrategy
 from omnibase_core.models.contracts.model_provenance_decision_score import (
     ModelProvenanceDecisionScore,
 )
@@ -93,8 +94,9 @@ class ModelProvenanceDecisionRecord(BaseModel):
             raises TypeError.
         scoring_breakdown: Per-candidate scores with individual criterion
             breakdowns. See ModelProvenanceDecisionScore.
-        tie_breaker: Optional strategy name used when candidates scored
-            equally (e.g., "random", "alphabetical", "cost_ascending").
+        tie_breaker: Optional EnumTieBreakerStrategy used when candidates scored
+            equally (e.g., RANDOM, ALPHABETICAL, COST_ASCENDING). Pydantic
+            coerces plain strings to the enum.
         selected_candidate: The candidate identifier that was ultimately
             selected.
         agent_rationale: Optional free-text explanation from the agent
@@ -121,7 +123,7 @@ class ModelProvenanceDecisionRecord(BaseModel):
         ...             breakdown={"quality": 0.45, "speed": 0.25, "cost": 0.17},
         ...         ),
         ...     ],
-        ...     tie_breaker=None,
+        ...     tie_breaker=None,  # or EnumTieBreakerStrategy.RANDOM
         ...     selected_candidate="claude-3-opus",
         ...     agent_rationale="Selected for highest quality within cost constraint.",
         ...     reproducibility_snapshot={"routing_version": "1.2.3"},
@@ -205,13 +207,14 @@ class ModelProvenanceDecisionRecord(BaseModel):
         description="Per-candidate scores with individual criterion breakdowns.",
     )
 
-    tie_breaker: str | None = Field(
+    tie_breaker: EnumTieBreakerStrategy | None = Field(
         default=None,
         description=(
-            "Optional strategy name used when candidates scored equally "
-            '(e.g., "random", "alphabetical", "cost_ascending"). '
-            "When provided, must be a non-empty string (min_length=1); "
-            "use None to indicate no tie-breaking was applied."
+            "Optional strategy used when candidates scored equally. "
+            "One of the EnumTieBreakerStrategy values "
+            "(RANDOM, ALPHABETICAL, COST_ASCENDING). "
+            "Pydantic coerces plain strings to the enum. "
+            "Use None to indicate no tie-breaking was applied."
         ),
     )
 
@@ -317,16 +320,6 @@ class ModelProvenanceDecisionRecord(BaseModel):
         if isinstance(v, MappingProxyType):
             return v
         return MappingProxyType(dict(v))
-
-    @field_validator("tie_breaker")
-    @classmethod
-    def validate_tie_breaker_not_empty(cls, v: str | None) -> str | None:
-        if v is not None and len(v) == 0:
-            raise ValueError(
-                "tie_breaker must be a non-empty string when provided; "
-                "use None to indicate no tie-breaking was applied"
-            )
-        return v
 
     @field_validator("agent_rationale")
     @classmethod
