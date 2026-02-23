@@ -30,7 +30,7 @@ Usage Examples:
 Suppression:
     Add ``# local-path-ok`` anywhere on a line to suppress that line::
 
-        DOCS_ROOT = "/Volumes/PRO-G40/Code"  # local-path-ok  (example only)
+        DOCS_ROOT = "/Volumes/MY-DRIVE/Code"  # local-path-ok  (example only)
 
 Schema Version:
     v1.0.0 - Initial version
@@ -50,7 +50,7 @@ from pydantic import BaseModel, ConfigDict
 # ---------------------------------------------------------------------------
 
 _LOCAL_PATH_PATTERNS: Final[list[tuple[str, re.Pattern[str]]]] = [
-    ("macOS volume mount", re.compile(r"/Volumes/[A-Za-z]")),
+    ("macOS volume mount", re.compile(r"/Volumes/[A-Za-z][A-Za-z0-9_.-]*/")),
     ("macOS user home", re.compile(r"/Users/[A-Za-z_][A-Za-z0-9_.-]*/")),
     ("Linux user home", re.compile(r"/home/[A-Za-z_][A-Za-z0-9_.-]*/")),
     ("Windows user path", re.compile(r"[Cc]:[/\\][Uu]sers[/\\]")),
@@ -146,7 +146,7 @@ class ValidatorLocalPaths(BaseModel):
             if p.is_file():
                 all_violations.extend(self.check_file(p))
             elif p.is_dir():
-                for child in sorted(p.rglob("*")):
+                for child in sorted(p.rglob("*")):  # sorted for deterministic output order
                     if child.is_file():
                         all_violations.extend(self.check_file(child))
             else:
