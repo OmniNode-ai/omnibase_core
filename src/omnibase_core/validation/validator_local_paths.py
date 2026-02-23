@@ -40,9 +40,10 @@ from __future__ import annotations
 
 import re
 import sys
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final
+
+from pydantic import BaseModel, ConfigDict
 
 # ---------------------------------------------------------------------------
 # Patterns
@@ -50,8 +51,8 @@ from typing import Final
 
 _LOCAL_PATH_PATTERNS: Final[list[tuple[str, re.Pattern[str]]]] = [
     ("macOS volume mount", re.compile(r"/Volumes/[A-Za-z]")),
-    ("macOS user home", re.compile(r"/Users/[a-z_][a-z0-9_.\-]*/")),
-    ("Linux user home", re.compile(r"/home/[a-z_][a-z0-9_.\-]*/")),
+    ("macOS user home", re.compile(r"/Users/[A-Za-z_][A-Za-z0-9_.-]*/")),
+    ("Linux user home", re.compile(r"/home/[A-Za-z_][A-Za-z0-9_.-]*/")),
     ("Windows user path", re.compile(r"[Cc]:[/\\][Uu]sers[/\\]")),
 ]
 
@@ -79,9 +80,10 @@ _TEXT_EXTENSIONS: Final[frozenset[str]] = frozenset(
 # ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
-class ModelLocalPathViolation:
+class ModelLocalPathViolation(BaseModel):
     """A single local-path violation found in a file."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     file: Path
     line: int
@@ -96,18 +98,20 @@ class ModelLocalPathViolation:
 # ---------------------------------------------------------------------------
 
 
-@dataclass
-class ValidatorLocalPaths:
+class ValidatorLocalPaths(BaseModel):
     """Detect machine-specific absolute paths that break portability.
 
+    Stateless: each call to check_file or check_paths returns violations
+    without mutating any instance state. Safe to reuse across calls.
+
     Thread Safety:
-        Instances are NOT thread-safe. Create one instance per thread.
+        Instances are thread-safe because there is no mutable state.
     """
 
-    violations: list[ModelLocalPathViolation] = field(default_factory=list)
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     def check_file(self, path: Path) -> list[ModelLocalPathViolation]:
-        """Check a single file. Returns violations found (also appended to self.violations)."""
+        """Check a single file. Returns violations found."""
         if path.suffix not in _TEXT_EXTENSIONS:
             return []
 
@@ -133,7 +137,6 @@ class ValidatorLocalPaths:
                         )
                     )
 
-        self.violations.extend(file_violations)
         return file_violations
 
     def check_paths(self, paths: list[Path]) -> list[ModelLocalPathViolation]:
@@ -146,6 +149,11 @@ class ValidatorLocalPaths:
                 for child in sorted(p.rglob("*")):
                     if child.is_file():
                         all_violations.extend(self.check_file(child))
+            else:
+                print(
+                    f"Warning: check-local-paths: skipping non-existent path: {p}",
+                    file=sys.stderr,
+                )
         return all_violations
 
 
@@ -181,7 +189,7 @@ def main(argv: list[str] | None = None) -> int:
         "--quiet",
         "-q",
         action="store_true",
-        help="Suppress summary line",
+        help="Suppress per-violation context lines and summary",
     )
     parsed = parser.parse_args(argv)
 
