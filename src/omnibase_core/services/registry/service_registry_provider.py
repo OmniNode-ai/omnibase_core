@@ -47,7 +47,7 @@ from __future__ import annotations
 __all__ = ["ServiceRegistryProvider"]
 
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
@@ -292,7 +292,9 @@ class ServiceRegistryProvider:
 
         .. versionadded:: 0.4.0
         """
-        return self._find_by_capability_impl(capability)
+        return cast(
+            list[ModelProviderDescriptor], self._find_by_capability_impl(capability)
+        )
 
     @standard_error_handling("Provider capability search")
     def _find_by_capability_impl(

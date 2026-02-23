@@ -75,4 +75,4 @@ class ModelViolationBaseline(BaseModel):
         return None
 
 
-__all__ = ["ModelViolationBaseline"]
+__all__ = ["ModelBaselineGenerator", "ModelBaselineViolation", "ModelViolationBaseline"]

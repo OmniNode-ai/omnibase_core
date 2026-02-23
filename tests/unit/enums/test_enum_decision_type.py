@@ -21,7 +21,7 @@ class TestEnumDecisionType:
     """Tests for EnumDecisionType enum."""
 
     def test_all_values_defined(self) -> None:
-        """Verify all 8 expected decision types are defined."""
+        """Verify all 11 expected decision types are defined."""
         expected_values = {
             "model_selection",
             "route_choice",
@@ -31,10 +31,14 @@ class TestEnumDecisionType:
             "early_termination",
             "parameter_choice",
             "custom",
+            # Provenance record classification aliases (OMN-2350)
+            "model_select",
+            "workflow_route",
+            "tool_pick",
         }
         actual_values = {member.value for member in EnumDecisionType}
         assert actual_values == expected_values
-        assert len(EnumDecisionType) == 8
+        assert len(EnumDecisionType) == 11
 
     def test_string_enum_inheritance(self) -> None:
         """Verify enum inherits from str for JSON serialization."""
@@ -140,6 +144,10 @@ class TestEnumDecisionType:
             (EnumDecisionType.RETRY_STRATEGY, False),
             (EnumDecisionType.PARAMETER_CHOICE, False),
             (EnumDecisionType.CUSTOM, False),
+            # Provenance record classification aliases (OMN-2350): not terminal.
+            (EnumDecisionType.MODEL_SELECT, False),
+            (EnumDecisionType.WORKFLOW_ROUTE, False),
+            (EnumDecisionType.TOOL_PICK, False),
         ],
     )
     def test_is_terminal_decision(
@@ -152,8 +160,14 @@ class TestEnumDecisionType:
         ("member", "expected"),
         [
             (EnumDecisionType.MODEL_SELECTION, True),
+            # MODEL_SELECT is a provenance alias for MODEL_SELECTION (OMN-2350):
+            (EnumDecisionType.MODEL_SELECT, True),
             (EnumDecisionType.TOOL_SELECTION, True),
+            # TOOL_PICK is a provenance alias for TOOL_SELECTION (OMN-2350):
+            (EnumDecisionType.TOOL_PICK, True),
             (EnumDecisionType.ROUTE_CHOICE, True),
+            # WORKFLOW_ROUTE is a provenance alias for ROUTE_CHOICE (OMN-2350):
+            (EnumDecisionType.WORKFLOW_ROUTE, True),
             (EnumDecisionType.PARAMETER_CHOICE, True),
             (EnumDecisionType.ESCALATION, False),
             (EnumDecisionType.EARLY_TERMINATION, False),

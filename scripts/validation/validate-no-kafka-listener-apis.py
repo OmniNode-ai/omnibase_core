@@ -270,7 +270,9 @@ def main() -> int:
 
     if all_violations:
         print(f"\n{'=' * 70}")  # print-ok: CLI output
-        print("ONEX Listener API / Kafka Client Import Prevention Failed")  # print-ok: CLI output
+        print(
+            "ONEX Listener API / Kafka Client Import Prevention Failed"
+        )  # print-ok: CLI output
         print(f"{'=' * 70}\n")  # print-ok: CLI output
 
         print(  # print-ok: CLI output
@@ -281,15 +283,15 @@ def main() -> int:
             print(f"  {filepath}:{line_num}")  # print-ok: CLI output
             print(f"    Violation: {violation_type}")  # print-ok: CLI output
             truncated = (
-                line_content[:70] + "..."
-                if len(line_content) > 70
-                else line_content
+                line_content[:70] + "..." if len(line_content) > 70 else line_content
             )
             print(f"    Content: {truncated}")  # print-ok: CLI output
             print()  # print-ok: CLI output
 
         print("-" * 70)  # print-ok: CLI output
-        print("\nWhy these patterns are not allowed in omnibase_core:")  # print-ok: CLI output
+        print(
+            "\nWhy these patterns are not allowed in omnibase_core:"
+        )  # print-ok: CLI output
         print(  # print-ok: CLI output
             "  - OMN-1747: Listener lifecycle removed from core (transport-agnostic)"
         )

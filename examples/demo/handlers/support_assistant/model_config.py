@@ -84,7 +84,9 @@ class _ProviderConfigSection(BaseModel):  # type: ignore[explicit-any]
 class _ContractMetadata(BaseModel):  # type: ignore[explicit-any]
     """Metadata section containing provider_config."""
 
-    model_config = ConfigDict(extra="ignore", from_attributes=True)  # Ignore other metadata fields
+    model_config = ConfigDict(
+        extra="ignore", from_attributes=True
+    )  # Ignore other metadata fields
 
     provider_config: _ProviderConfigSection
 
@@ -93,7 +95,9 @@ class _ContractMetadata(BaseModel):  # type: ignore[explicit-any]
 class _ContractWithProviderConfig(BaseModel):  # type: ignore[explicit-any]
     """Partial contract model for extracting provider_config from metadata."""
 
-    model_config = ConfigDict(extra="ignore", from_attributes=True)  # Ignore other contract fields
+    model_config = ConfigDict(
+        extra="ignore", from_attributes=True
+    )  # Ignore other contract fields
 
     metadata: _ContractMetadata
 

@@ -10,9 +10,6 @@ organized by functional domains for better maintainability.
 # Action status enum (OMN-1309)
 from .enum_action_status import EnumActionStatus
 
-# Agent state enum (OMN-1847 - Agent Status MCP Protocol)
-from .enum_agent_state import EnumAgentState
-
 # Architecture and system enums
 from .enum_architecture import EnumArchitecture
 
@@ -359,6 +356,9 @@ from .enum_subject_type import EnumSubjectType
 from .enum_support_category import EnumSupportCategory
 from .enum_support_channel import EnumSupportChannel
 
+# Tie-breaker strategy enums (OMN-2464)
+from .enum_tie_breaker_strategy import EnumTieBreakerStrategy
+
 # Token and authentication context enums (OMN-1054)
 from .enum_token_type import EnumTokenType
 
@@ -422,8 +422,6 @@ from .enum_workflow_status import EnumWorkflowStatus
 
 
 __all__ = [
-    # Agent state domain (OMN-1847 - Agent Status MCP Protocol)
-    "EnumAgentState",
     # Error code domain
     "EnumCLIExitCode",
     "EnumOnexErrorCode",
@@ -629,6 +627,8 @@ __all__ = [
     "EnumCheckpointType",
     # Change type domain (OMN-1196)
     "EnumChangeType",
+    # Tie-breaker strategy domain (OMN-2464)
+    "EnumTieBreakerStrategy",
     # Token and authentication context domain (OMN-1054)
     "EnumTokenType",
     "EnumTriggerEvent",

@@ -313,9 +313,9 @@ def _verify_protocol_compliance() -> None:
 
     # Verify all protocol methods exist on the client class
     for method_name in protocol_methods:
-        assert hasattr(
-            AnthropicLLMClient, method_name
-        ), f"AnthropicLLMClient must have '{method_name}' method per ProtocolLLMClient"
+        assert hasattr(AnthropicLLMClient, method_name), (
+            f"AnthropicLLMClient must have '{method_name}' method per ProtocolLLMClient"
+        )
 
 
 __all__ = ["AnthropicLLMClient", "_verify_protocol_compliance"]

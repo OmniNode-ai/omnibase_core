@@ -780,6 +780,7 @@ class TestModelServiceOrchestratorHealthMonitoring:
         assert health["status"] == "unhealthy"
         assert health["shutdown_requested"] is True
 
+    @pytest.mark.timeout(0)  # No per-test timeout; teardown communicates with xdist
     def test_get_service_health_with_active_invocations(self, service_orchestrator):
         """
         Test health reporting includes active workflow invocations count.

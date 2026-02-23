@@ -29,9 +29,12 @@ class EnumDecisionType(StrValueHelper, str, Enum):
 
     Values:
         MODEL_SELECTION: Decision about which AI model to use for a task
+        MODEL_SELECT: Provenance alias for MODEL_SELECTION (OMN-2350)
         ROUTE_CHOICE: Decision about routing or path selection in workflow execution
+        WORKFLOW_ROUTE: Provenance alias for ROUTE_CHOICE (OMN-2350)
         RETRY_STRATEGY: Decision about retry behavior after a failure occurs
         TOOL_SELECTION: Decision about which tool or capability to invoke
+        TOOL_PICK: Provenance alias for TOOL_SELECTION (OMN-2350)
         ESCALATION: Decision to escalate to human oversight or higher authority
         EARLY_TERMINATION: Decision to terminate early (success or abort)
         PARAMETER_CHOICE: Decision about parameter values or configuration settings
@@ -54,14 +57,23 @@ class EnumDecisionType(StrValueHelper, str, Enum):
     MODEL_SELECTION = "model_selection"
     """Decision about which AI model to use for a task."""
 
+    MODEL_SELECT = "model_select"
+    """Provenance alias for MODEL_SELECTION (OMN-2350)."""
+
     ROUTE_CHOICE = "route_choice"
     """Decision about routing or path selection in workflow execution."""
+
+    WORKFLOW_ROUTE = "workflow_route"
+    """Provenance alias for ROUTE_CHOICE (OMN-2350)."""
 
     RETRY_STRATEGY = "retry_strategy"
     """Decision about retry behavior after a failure occurs."""
 
     TOOL_SELECTION = "tool_selection"
     """Decision about which tool or capability to invoke."""
+
+    TOOL_PICK = "tool_pick"
+    """Provenance alias for TOOL_SELECTION (OMN-2350)."""
 
     ESCALATION = "escalation"
     """Decision to escalate to human oversight or higher authority."""
@@ -124,9 +136,12 @@ class EnumDecisionType(StrValueHelper, str, Enum):
         """
         return self in {
             EnumDecisionType.MODEL_SELECTION,
+            EnumDecisionType.MODEL_SELECT,
             EnumDecisionType.PARAMETER_CHOICE,
             EnumDecisionType.ROUTE_CHOICE,
+            EnumDecisionType.WORKFLOW_ROUTE,
             EnumDecisionType.TOOL_SELECTION,
+            EnumDecisionType.TOOL_PICK,
         }
 
 

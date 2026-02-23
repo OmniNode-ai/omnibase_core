@@ -13,7 +13,7 @@ leakage into the rest of the codebase.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 # Lazy-loaded sqlglot module reference
 _sqlglot: Any | None = None
@@ -176,7 +176,7 @@ def _format_table_name(table_node: Any) -> str | None:
         return None
 
     # Get the table name
-    name = table_node.name
+    name = cast(str, table_node.name)
     if not name:
         return None
 

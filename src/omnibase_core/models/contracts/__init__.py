@@ -154,7 +154,10 @@ from .model_provenance_decision_record import (
     DecisionRecord,
     ModelProvenanceDecisionRecord,
 )
-from .model_provenance_decision_score import DecisionScore, ModelProvenanceDecisionScore
+from .model_provenance_decision_score import (
+    DecisionScore,
+    ModelProvenanceDecisionScore,
+)
 from .model_published_event_entry import ModelPublishedEventEntry
 from .model_reduction_config import ModelReductionConfig
 from .model_runtime_event_bus_config import ModelRuntimeEventBusConfig
@@ -177,11 +180,6 @@ from .subcontracts import (
 __all__ = [
     # Mixins
     "MixinNodeTypeValidator",
-    # Decision Provenance models (OMN-2464)
-    "ModelProvenanceDecisionRecord",
-    "ModelProvenanceDecisionScore",
-    "DecisionRecord",
-    "DecisionScore",
     # Foundation models
     "ModelConsumedEventEntry",
     "ModelContractBase",
@@ -278,4 +276,9 @@ __all__ = [
     # Handler routing models (OMN-1295)
     "ModelHandlerRoutingEntry",
     "ModelHandlerRoutingSubcontract",
+    # Decision Provenance models (OMN-2350)
+    "ModelProvenanceDecisionScore",
+    "ModelProvenanceDecisionRecord",
+    "DecisionScore",
+    "DecisionRecord",
 ]

@@ -268,7 +268,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
                 # NOTE(OMN-1731): mypy cannot infer the return type from
                 # the dynamically resolved handler. Safe because contract defines the
                 # handler signature requirement.
-                handler_result = resolved_handler(self, input_data)  # type: ignore[misc]
+                handler_result = resolved_handler(self, input_data)
 
                 # Handle both async and sync handlers
                 if asyncio.iscoroutine(handler_result):

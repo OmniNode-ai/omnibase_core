@@ -28,6 +28,8 @@ from omnibase_core.services.service_validation_suite import ServiceValidationSui
 
 from .validator_utils import ModelValidationResult
 
+__all__ = ["ServiceValidationSuite", "ModelValidationResult"]
+
 
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser for the CLI."""

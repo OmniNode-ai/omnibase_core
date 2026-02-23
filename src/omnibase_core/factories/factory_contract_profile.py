@@ -21,6 +21,8 @@ Usage:
     ... )
 """
 
+from typing import cast
+
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums import EnumNodeKind, EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -94,7 +96,10 @@ def get_default_contract_profile(
         ...     profile="orchestrator_safe",
         ... )
     """
-    return _get_default_contract_profile_impl(node_type, profile, version)
+    return cast(
+        ModelContractBase,
+        _get_default_contract_profile_impl(node_type, profile, version),
+    )
 
 
 @standard_error_handling("Contract profile resolution")
@@ -187,7 +192,10 @@ def get_default_orchestrator_profile(
     Example:
         >>> contract = get_default_orchestrator_profile("orchestrator_safe")
     """
-    return _get_default_orchestrator_profile_impl(profile, version)
+    return cast(
+        ModelContractOrchestrator,
+        _get_default_orchestrator_profile_impl(profile, version),
+    )
 
 
 @standard_error_handling("Orchestrator profile resolution")
@@ -230,7 +238,9 @@ def get_default_reducer_profile(
     Example:
         >>> contract = get_default_reducer_profile("reducer_fsm_basic")
     """
-    return _get_default_reducer_profile_impl(profile, version)
+    return cast(
+        ModelContractReducer, _get_default_reducer_profile_impl(profile, version)
+    )
 
 
 @standard_error_handling("Reducer profile resolution")
@@ -273,7 +283,7 @@ def get_default_effect_profile(
     Example:
         >>> contract = get_default_effect_profile("effect_idempotent")
     """
-    return _get_default_effect_profile_impl(profile, version)
+    return cast(ModelContractEffect, _get_default_effect_profile_impl(profile, version))
 
 
 @standard_error_handling("Effect profile resolution")
@@ -316,7 +326,9 @@ def get_default_compute_profile(
     Example:
         >>> contract = get_default_compute_profile("compute_pure")
     """
-    return _get_default_compute_profile_impl(profile, version)
+    return cast(
+        ModelContractCompute, _get_default_compute_profile_impl(profile, version)
+    )
 
 
 @standard_error_handling("Compute profile resolution")
