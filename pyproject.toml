@@ -59,6 +59,7 @@ omni-agent = "omnibase_core.cli.cli_commands:cli"
 # Dev/test runtime host CLI (Phase 1 MVP - LocalHandler only)
 # WARNING: For development and testing ONLY, not for production use
 omninode-runtime-host-dev = "omnibase_core.cli.cli_runtime_host:main"
+check-local-paths = "omnibase_core.validation.validator_local_paths:main"
 
 [project.optional-dependencies]
 cli = ["psutil>=7.2.1"]
