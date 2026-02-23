@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-02-23
+
+### Added
+
+- **Intent Intelligence Pydantic models** [OMN-2486] (#526): Defined core models for the Intent Intelligence Framework — typed intent classifications, confidence scoring, and session-scoped intent graphs
+- **DecisionRecord Pydantic model and schema** [OMN-2464] (#528): Implemented `DecisionRecord` contract model for tracking agent model-selection decisions with full scoring breakdown and rationale
+- **ModelProjectionIntent + core projection types** [OMN-2460] (#523): Defined `ModelProjectionIntent` and supporting projection type contracts for the Projector-as-Effect-Node refactor
+- **EnumAgentState + ModelAgentStatusEvent** [OMN-1847] (#520): Implemented agent state enum and status event model for lifecycle observability
+- **Timeout configuration in ModelPerformanceRequirements** [OMN-1548] (#524): Added timeout fields to the performance requirements contract schema
+
+### Changed
+
+- **NodeReducer emits ModelProjectionIntent as blocking effect** [OMN-2509] (#527): NodeReducer now emits `ModelProjectionIntent` as a synchronous blocking effect before Kafka publish, enabling projection-as-effect-node pattern
+- **Standardized Makefile with CI-parity targets** [OMN-2335] (#525): Added top-level `Makefile` with `lint`, `type-check`, `test`, `test-unit`, `test-integration`, and `ci` targets matching CI pipeline behaviour
+
+### Dependencies
+
+- **redis** (#517): Updated redis dev dependency to latest version
+
 ## [0.18.1] - 2026-02-19
 
 ### Added
