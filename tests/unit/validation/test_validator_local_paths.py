@@ -213,6 +213,13 @@ class TestCheckPathsDirectory:
         violations = validator.check_paths([tmp_path])
         assert len(violations) == 2
 
+    @pytest.mark.unit
+    def test_check_paths_empty_list_returns_no_violations(self) -> None:
+        """check_paths([]) returns an empty list with no violations."""
+        validator = ValidatorLocalPaths()
+        result = validator.check_paths([])
+        assert result == []
+
     def test_non_existent_path_prints_warning(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:

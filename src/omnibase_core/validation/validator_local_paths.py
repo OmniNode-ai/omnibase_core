@@ -146,7 +146,10 @@ class ValidatorLocalPaths(BaseModel):
             if p.is_file():
                 all_violations.extend(self.check_file(p))
             elif p.is_dir():
+                _SKIP_DIRS = frozenset({".git", "__pycache__", "node_modules", ".tox", ".venv", "venv"})
                 for child in sorted(p.rglob("*")):  # sorted for deterministic output order
+                    if any(part in _SKIP_DIRS for part in child.parts):
+                        continue
                     if child.is_file():
                         all_violations.extend(self.check_file(child))
             else:
