@@ -151,7 +151,9 @@ class ValidatorLocalPaths(BaseModel):
             if p.is_file():
                 all_violations.extend(self.check_file(p))
             elif p.is_dir():
-                for child in sorted(p.rglob("*")):  # sorted for deterministic output order
+                for child in sorted(
+                    p.rglob("*")
+                ):  # sorted for deterministic output order
                     if any(part in _SKIP_DIRS for part in child.parts):
                         continue
                     if child.is_file():
@@ -189,7 +191,7 @@ def main(argv: list[str] | None = None) -> int:
         "paths",
         nargs="*",
         type=Path,
-        default=[Path(".")],
+        default=[Path()],
         help="Files or directories to check (default: current directory)",
     )
     parser.add_argument(

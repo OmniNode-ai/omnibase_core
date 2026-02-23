@@ -45,7 +45,7 @@ class TestCheckFileClean:
         f1 = tmp_path / "a.py"
         f1.write_text('path = "/Volumes/PRO-G40/file"\n', encoding="utf-8")
         f2 = tmp_path / "b.py"
-        f2.write_text('x = 1\n', encoding="utf-8")
+        f2.write_text("x = 1\n", encoding="utf-8")
 
         validator = ValidatorLocalPaths()
         v1 = validator.check_file(f1)
@@ -207,7 +207,7 @@ class TestCheckPathsDirectory:
         sub.mkdir()
         (sub / "a.py").write_text('X = "/Volumes/PRO-G40/a"\n', encoding="utf-8")
         (sub / "b.py").write_text('Y = "/home/ubuntu/b"\n', encoding="utf-8")
-        (sub / "clean.py").write_text('Z = 42\n', encoding="utf-8")
+        (sub / "clean.py").write_text("Z = 42\n", encoding="utf-8")
 
         validator = ValidatorLocalPaths()
         violations = validator.check_paths([tmp_path])
@@ -302,7 +302,9 @@ class TestCLIMain:
         assert "  ROOT" not in captured.out
         assert "violation(s)" not in captured.out
 
-    def test_main_no_args_uses_cwd(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_main_no_args_uses_cwd(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """main() with no paths argument defaults to current directory."""
         monkeypatch.chdir(tmp_path)
         f = tmp_path / "clean.py"
