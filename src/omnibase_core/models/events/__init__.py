@@ -28,6 +28,14 @@ from omnibase_core.models.events.model_context_utilization_payload import (
 from omnibase_core.models.events.model_event_payload_base import (
     ModelEventPayloadBase,
 )
+from omnibase_core.models.events.model_git_hook_event import (
+    TOPIC_GIT_HOOK_EVENT,
+    ModelGitHookEvent,
+)
+from omnibase_core.models.events.model_github_pr_status_event import (
+    TOPIC_GITHUB_PR_STATUS_EVENT,
+    ModelGitHubPRStatusEvent,
+)
 from omnibase_core.models.events.model_intent_events import (
     TOPIC_EVENT_PUBLISH_INTENT,
     ModelEventPublishIntent,
@@ -47,6 +55,10 @@ from omnibase_core.models.events.model_intent_stored_event import (
 )
 from omnibase_core.models.events.model_latency_breakdown_payload import (
     ModelLatencyBreakdownPayload,
+)
+from omnibase_core.models.events.model_linear_snapshot_event import (
+    TOPIC_LINEAR_SNAPSHOT_EVENT,
+    ModelLinearSnapshotEvent,
 )
 from omnibase_core.models.events.model_runtime_events import (
     NODE_GRAPH_READY_EVENT,
@@ -133,4 +145,11 @@ __all__ = [
     "EnumTopicType",
     "ModelTopicConfig",
     "ModelTopicManifest",
+    # Workflow automation event models (OMN-2655)
+    "TOPIC_GITHUB_PR_STATUS_EVENT",
+    "ModelGitHubPRStatusEvent",
+    "TOPIC_GIT_HOOK_EVENT",
+    "ModelGitHookEvent",
+    "TOPIC_LINEAR_SNAPSHOT_EVENT",
+    "ModelLinearSnapshotEvent",
 ]

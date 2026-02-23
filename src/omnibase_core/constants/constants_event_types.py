@@ -49,6 +49,11 @@ EVENT_TYPE_CONTRACT_REGISTERED = "contract-registered"
 EVENT_TYPE_CONTRACT_DEREGISTERED = "contract-deregistered"
 EVENT_TYPE_NODE_HEARTBEAT = "node-heartbeat"
 
+# Workflow automation event topics (OMN-2655)
+TOPIC_GITHUB_PR_STATUS_EVENT = "onex.evt.github.pr-status.v1"
+TOPIC_GIT_HOOK_EVENT = "onex.evt.git.hook.v1"
+TOPIC_LINEAR_SNAPSHOT_EVENT = "onex.evt.linear.snapshot.v1"
+
 
 def normalize_legacy_event_type(event_type: str | TypedDictEventType | object) -> str:
     """Normalize legacy event types to consistent string format.
