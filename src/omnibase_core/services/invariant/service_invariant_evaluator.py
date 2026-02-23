@@ -939,7 +939,7 @@ class ServiceInvariantEvaluator:
 
         try:
             # NOTE(OMN-1302): Runtime conversion from unknown dict value. Safe because ValueError caught below.
-            actual_num = float(actual_value)  # type: ignore[arg-type]
+            actual_num = float(actual_value)
         except (
             TypeError,
             ValueError,
@@ -1035,7 +1035,7 @@ class ServiceInvariantEvaluator:
             if found:
                 try:
                     # NOTE(OMN-1302): Runtime conversion from resolved field. Safe because ValueError caught below.
-                    actual_ms = float(value)  # type: ignore[arg-type]
+                    actual_ms = float(value)
                     break
                 except (
                     TypeError,
@@ -1095,7 +1095,7 @@ class ServiceInvariantEvaluator:
         if found:
             try:
                 # NOTE(OMN-1302): Runtime conversion from resolved field. Safe because ValueError caught below.
-                actual_cost = float(cost_value)  # type: ignore[arg-type]
+                actual_cost = float(cost_value)
             except (
                 TypeError,
                 ValueError,
@@ -1112,7 +1112,7 @@ class ServiceInvariantEvaluator:
             if found:
                 try:
                     # NOTE(OMN-1302): Runtime conversion from resolved field. Safe because ValueError caught below.
-                    token_count = float(tokens)  # type: ignore[arg-type]
+                    token_count = float(tokens)
                     # Default cost rate per token (can be customized via config)
                     cost_per_token = config.get("cost_per_token", 0.0001)
                     # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.

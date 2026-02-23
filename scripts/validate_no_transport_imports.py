@@ -168,7 +168,8 @@ class TransportImportChecker(ast.NodeVisitor):
         # Note: Only constant aliases are valid here, NOT module aliases.
         # `if t:` is NOT a TYPE_CHECKING guard even if `import typing as t` was used.
         if isinstance(test, ast.Name) and (
-            test.id == "TYPE_CHECKING" or test.id in self._type_checking_constant_aliases
+            test.id == "TYPE_CHECKING"
+            or test.id in self._type_checking_constant_aliases
         ):
             return True
 
@@ -183,7 +184,9 @@ class TransportImportChecker(ast.NodeVisitor):
                     or test.value.id in self._type_checking_module_aliases
                 ):
                     return True
-            return False  # Only verified typing module references are TYPE_CHECKING guards
+            return (
+                False  # Only verified typing module references are TYPE_CHECKING guards
+            )
 
         return False
 
@@ -579,13 +582,17 @@ TYPE_CHECKING guarded imports are allowed per ADR-005.
             if args.verbose:
                 print(f"    -> {v.import_statement}")
         print()
-        print("Architectural Invariant: omnibase_core must be pure (no I/O dependencies).")
+        print(
+            "Architectural Invariant: omnibase_core must be pure (no I/O dependencies)."
+        )
         print("Transport and I/O libraries belong in infrastructure layers.")
         print()
         print("Solutions:")
         print("  1. Define a protocol in omnibase_core for the capability you need")
         print("  2. Implement the protocol in an infrastructure package")
-        print("  3. Use TYPE_CHECKING guards for type-only imports (allowed per ADR-005)")
+        print(
+            "  3. Use TYPE_CHECKING guards for type-only imports (allowed per ADR-005)"
+        )
         print()
         print(
             f"Total: {len(all_violations)} violation(s), "

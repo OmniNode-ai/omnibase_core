@@ -127,26 +127,26 @@ class EnumEvidenceTier(StrValueHelper, str, Enum):
         """Compare tiers by evidence weight, not lexicographic order."""
         coerced = self._coerce_other(other)
         if coerced is None:
-            return NotImplemented  # type: ignore[return-value]
+            return NotImplemented
         return self.get_numeric_value() < coerced.get_numeric_value()
 
     def __le__(self, other: object) -> bool:
         """Compare tiers by evidence weight, not lexicographic order."""
         coerced = self._coerce_other(other)
         if coerced is None:
-            return NotImplemented  # type: ignore[return-value]
+            return NotImplemented
         return self.get_numeric_value() <= coerced.get_numeric_value()
 
     def __gt__(self, other: object) -> bool:
         """Compare tiers by evidence weight, not lexicographic order."""
         coerced = self._coerce_other(other)
         if coerced is None:
-            return NotImplemented  # type: ignore[return-value]
+            return NotImplemented
         return self.get_numeric_value() > coerced.get_numeric_value()
 
     def __ge__(self, other: object) -> bool:
         """Compare tiers by evidence weight, not lexicographic order."""
         coerced = self._coerce_other(other)
         if coerced is None:
-            return NotImplemented  # type: ignore[return-value]
+            return NotImplemented
         return self.get_numeric_value() >= coerced.get_numeric_value()

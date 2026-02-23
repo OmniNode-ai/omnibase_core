@@ -240,9 +240,9 @@ def _verify_protocol_compliance() -> None:
 
     # Verify all protocol methods exist on the client class
     for method_name in protocol_methods:
-        assert hasattr(
-            LocalLLMClient, method_name
-        ), f"LocalLLMClient must have '{method_name}' method per ProtocolLLMClient"
+        assert hasattr(LocalLLMClient, method_name), (
+            f"LocalLLMClient must have '{method_name}' method per ProtocolLLMClient"
+        )
 
 
 __all__ = ["LocalLLMClient", "_verify_protocol_compliance"]

@@ -430,9 +430,9 @@ class TestMain:
                 str(policy_path),
                 "--format",
                 "json",
+                str(fake_app_dir),
                 "--rules",
                 "repo_boundaries",
-                str(fake_app_dir),
             ],
         ):
             output = StringIO()

@@ -44,6 +44,7 @@ from __future__ import annotations
 __all__ = ["ServiceRegistryCapability"]
 
 import threading
+from typing import cast
 
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -291,7 +292,7 @@ class ServiceRegistryCapability:
 
         .. versionadded:: 0.4.0
         """
-        return self._list_all_impl()
+        return cast(list[ModelCapabilityMetadata], self._list_all_impl())
 
     @standard_error_handling("Capability listing")
     def _list_all_impl(self) -> list[ModelCapabilityMetadata]:
@@ -350,7 +351,9 @@ class ServiceRegistryCapability:
 
         .. versionadded:: 0.4.0
         """
-        return self._find_by_tags_impl(tags, match_all)
+        return cast(
+            list[ModelCapabilityMetadata], self._find_by_tags_impl(tags, match_all)
+        )
 
     @standard_error_handling("Capability tag search")
     def _find_by_tags_impl(

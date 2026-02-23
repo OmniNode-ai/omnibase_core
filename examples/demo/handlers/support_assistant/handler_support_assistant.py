@@ -108,7 +108,9 @@ def get_valid_sentiments() -> frozenset[str]:
 # Lazy accessors for valid values - evaluated on first access, not at import time
 # This ensures handler validation stays in sync with model definitions (DRY)
 # while avoiding import-time side effects from get_type_hints() calls
-VALID_CATEGORIES: frozenset[str] = frozenset({"billing", "technical", "general", "account"})
+VALID_CATEGORIES: frozenset[str] = frozenset(
+    {"billing", "technical", "general", "account"}
+)
 VALID_SENTIMENTS: frozenset[str] = frozenset({"positive", "neutral", "negative"})
 
 # System prompt for the LLM - uses only valid JSON examples to avoid model confusion
@@ -588,8 +590,7 @@ class SupportAssistantHandler:
 
         # Fallback: return error response with low confidence
         fallback_text = (
-            "I apologize, but I had trouble processing your request. "
-            "Please try again."
+            "I apologize, but I had trouble processing your request. Please try again."
         )
         return SupportResponse(
             response_text=fallback_text,

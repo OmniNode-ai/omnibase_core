@@ -449,7 +449,9 @@ class MinimalHandlerContract(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_descriptor_node_archetype_consistency(self) -> "MinimalHandlerContract":
+    def validate_descriptor_node_archetype_consistency(
+        self,
+    ) -> "MinimalHandlerContract":
         """Validate that handler_id prefix is consistent with descriptor.node_archetype."""
         # Extract first segment of handler_id
         prefix = self.handler_id.split(".")[0].lower()
@@ -467,7 +469,10 @@ class MinimalHandlerContract(BaseModel):
         expected_archetype = prefix_to_archetype.get(prefix)
 
         # Only validate if prefix implies a specific archetype
-        if expected_archetype is not None and self.descriptor.node_archetype != expected_archetype:
+        if (
+            expected_archetype is not None
+            and self.descriptor.node_archetype != expected_archetype
+        ):
             raise ValueError(
                 f"Handler ID prefix '{prefix}' implies node_archetype='{expected_archetype}' "
                 f"but descriptor has node_archetype='{self.descriptor.node_archetype}'"
@@ -476,7 +481,9 @@ class MinimalHandlerContract(BaseModel):
         return self
 
     @classmethod
-    def validate_yaml_content(cls, yaml_data: dict[str, Any]) -> "MinimalHandlerContract":
+    def validate_yaml_content(
+        cls, yaml_data: dict[str, Any]
+    ) -> "MinimalHandlerContract":
         """Validate YAML dict and return validated handler contract.
 
         Args:

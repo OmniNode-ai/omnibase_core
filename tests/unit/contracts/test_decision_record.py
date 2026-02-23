@@ -1,103 +1,695 @@
+#!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Unit tests for DecisionRecord and DecisionScore Pydantic models.
+"""Unit tests for Decision Provenance models (OMN-2464).
 
-Covers:
-- R1: DecisionRecord model is frozen and immutable
-- R2: All fields have explicit types — no implicit defaults
-- R3: Model exported from omnibase_core.contracts
-- V3: Frozen model rejects mutation (raises TypeError on attribute assignment)
-
-Test Categories:
-1. Immutability / Frozen Model Tests
-2. Field Type and Default Tests
-3. Construction and Validation Tests
-4. Export Path Tests
-5. Edge Cases
+Covers ModelProvenanceDecisionScore and ModelProvenanceDecisionRecord,
+including:
+    - Valid construction (minimal and full field sets)
+    - R1: frozen=True immutability
+    - R2: No implicit defaults for required fields
+    - R3: Export paths from omnibase_core.contracts and omnibase_core.models.contracts
+    - Nullable optional fields (tie_breaker, agent_rationale)
+    - Field type validation
+    - Public alias (DecisionRecord, DecisionScore) accessibility
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from uuid import UUID
 
 import pytest
 from pydantic import ValidationError
 
 from omnibase_core.contracts import DecisionRecord, DecisionScore
-from omnibase_core.models.contracts.model_provenance_decision_record import (
-    DecisionRecord as DecisionRecordDirect,
-)
+from omnibase_core.enums.enum_decision_type import EnumDecisionType
+from omnibase_core.enums.enum_tie_breaker_strategy import EnumTieBreakerStrategy
 from omnibase_core.models.contracts.model_provenance_decision_record import (
     ModelProvenanceDecisionRecord,
-)
-from omnibase_core.models.contracts.model_provenance_decision_score import (
-    DecisionScore as DecisionScoreDirect,
 )
 from omnibase_core.models.contracts.model_provenance_decision_score import (
     ModelProvenanceDecisionScore,
 )
 
 # ---------------------------------------------------------------------------
-# Shared fixtures
+# Fixtures
 # ---------------------------------------------------------------------------
 
-FIXED_TS = datetime(2026, 2, 21, 12, 0, 0, tzinfo=UTC)
-DECISION_UUID = UUID("550e8400-e29b-41d4-a716-446655440000")
+FIXED_TIMESTAMP = datetime(2026, 1, 15, 12, 0, 0, tzinfo=UTC)
+DECISION_ID = UUID("550e8400-e29b-41d4-a716-446655440000")
 
 
-def _make_score(**kwargs: object) -> DecisionScore:
-    """Return a valid DecisionScore, merging any overrides."""
+def make_score(
+    candidate: str = "claude-3-opus",
+    score: float = 0.87,
+    breakdown: dict[str, float] | None = None,
+) -> ModelProvenanceDecisionScore:
+    if breakdown is None:
+        breakdown = {"quality": 0.45, "speed": 0.25, "cost": 0.17}
+    return ModelProvenanceDecisionScore(
+        candidate=candidate,
+        score=score,
+        breakdown=breakdown,
+    )
+
+
+def make_record(**overrides: object) -> ModelProvenanceDecisionRecord:
     defaults: dict[str, object] = {
-        "candidate": "model-a",
-        "score": 0.92,
-        "breakdown": {"accuracy": 0.95, "latency": 0.89},
-    }
-    defaults.update(kwargs)
-    return DecisionScore(**defaults)  # type: ignore[arg-type]
-
-
-def _make_record(**kwargs: object) -> DecisionRecord:
-    """Return a valid DecisionRecord, merging any overrides."""
-    defaults: dict[str, object] = {
-        "decision_id": DECISION_UUID,
+        "decision_id": DECISION_ID,
         "decision_type": "model_select",
-        "timestamp": FIXED_TS,
-        "candidates_considered": ["model-a", "model-b"],
-        "constraints_applied": {"region": "us-east-1"},
-        "scoring_breakdown": [_make_score()],
+        "timestamp": FIXED_TIMESTAMP,
+        "candidates_considered": ["claude-3-opus", "gpt-4"],
+        "constraints_applied": {"max_cost_usd": "0.05"},
+        "scoring_breakdown": [make_score()],
         "tie_breaker": None,
-        "selected_candidate": "model-a",
+        "selected_candidate": "claude-3-opus",
         "agent_rationale": None,
-        "reproducibility_snapshot": {"registry_version": "v2.1.0"},
+        "reproducibility_snapshot": {"routing_version": "1.2.3"},
     }
-    defaults.update(kwargs)
-    return DecisionRecord(**defaults)  # type: ignore[arg-type]
+    defaults.update(overrides)
+    return ModelProvenanceDecisionRecord(
+        **defaults
+    )  # NOTE(OMN-2464): dict[str, object] used for flexible fixture defaults; Pydantic validates types at runtime  # type: ignore[arg-type]
 
 
 # ===========================================================================
-# R3: Export path tests
+# Tests: ModelProvenanceDecisionScore
 # ===========================================================================
 
 
 @pytest.mark.unit
-class TestDecisionRecordExports:
-    """Verify R3: models are exported from omnibase_core.contracts."""
+class TestModelProvenanceDecisionScore:
+    """Tests for ModelProvenanceDecisionScore."""
+
+    # -----------------------------------------------------------------------
+    # Valid construction
+    # -----------------------------------------------------------------------
+
+    def test_valid_construction_basic(self) -> None:
+        """Construct a score with all fields."""
+        score = ModelProvenanceDecisionScore(
+            candidate="claude-3-opus",
+            score=0.87,
+            breakdown={"quality": 0.45, "speed": 0.25, "cost": 0.17},
+        )
+        assert score.candidate == "claude-3-opus"
+        assert score.score == 0.87
+        assert score.breakdown == {"quality": 0.45, "speed": 0.25, "cost": 0.17}
+
+    def test_valid_construction_zero_score(self) -> None:
+        """Score of zero is valid."""
+        score = ModelProvenanceDecisionScore(
+            candidate="gpt-4",
+            score=0.0,
+            breakdown={},
+        )
+        assert score.score == 0.0
+        assert score.breakdown == {}
+
+    def test_valid_construction_negative_score(self) -> None:
+        """Negative scores are allowed (no range constraint)."""
+        score = ModelProvenanceDecisionScore(
+            candidate="llama-2",
+            score=-1.5,
+            breakdown={"penalty": -1.5},
+        )
+        assert score.score == -1.5
+
+    def test_valid_construction_empty_breakdown(self) -> None:
+        """Empty breakdown dict is valid."""
+        score = ModelProvenanceDecisionScore(
+            candidate="gpt-4",
+            score=0.5,
+            breakdown={},
+        )
+        assert score.breakdown == {}
+
+    # -----------------------------------------------------------------------
+    # R1: Immutability (frozen=True)
+    # -----------------------------------------------------------------------
+
+    def test_frozen_rejects_candidate_mutation(self) -> None:
+        """Mutating candidate raises ValidationError (frozen=True)."""
+        score = make_score()
+        with pytest.raises(ValidationError):
+            score.candidate = "gpt-4"
+
+    def test_frozen_rejects_score_mutation(self) -> None:
+        """Mutating score raises ValidationError (frozen=True)."""
+        score = make_score()
+        with pytest.raises(ValidationError):
+            score.score = 0.5
+
+    def test_frozen_rejects_breakdown_mutation(self) -> None:
+        """Mutating breakdown raises ValidationError (frozen=True)."""
+        score = make_score()
+        with pytest.raises(ValidationError):
+            score.breakdown = {}
+
+    # -----------------------------------------------------------------------
+    # R2: Required fields have no defaults
+    # -----------------------------------------------------------------------
+
+    def test_missing_candidate_raises(self) -> None:
+        """Omitting candidate raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ModelProvenanceDecisionScore(
+                score=0.87,
+                breakdown={"quality": 0.45},
+            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+
+    def test_missing_score_raises(self) -> None:
+        """Omitting score raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ModelProvenanceDecisionScore(
+                candidate="claude-3-opus",
+                breakdown={"quality": 0.45},
+            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+
+    def test_missing_breakdown_raises(self) -> None:
+        """Omitting breakdown raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ModelProvenanceDecisionScore(
+                candidate="claude-3-opus",
+                score=0.87,
+            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+
+    def test_empty_candidate_raises(self) -> None:
+        """Empty string for candidate raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError):
+            ModelProvenanceDecisionScore(
+                candidate="",
+                score=0.87,
+                breakdown={"quality": 0.45},
+            )
+
+    # -----------------------------------------------------------------------
+    # Extra fields ignored (extra="ignore")
+    # -----------------------------------------------------------------------
+
+    def test_extra_fields_ignored(self) -> None:
+        """Extra fields are ignored, not rejected."""
+        score = ModelProvenanceDecisionScore(
+            candidate="claude-3-opus",
+            score=0.87,
+            breakdown={},
+            unknown_field="ignored",  # NOTE(OMN-2464): intentional unknown keyword argument to verify extra="ignore" silently drops it; mypy flags the unexpected kwarg  # type: ignore[call-arg]
+        )
+        assert score.candidate == "claude-3-opus"
+        assert not hasattr(score, "unknown_field")
+
+    # -----------------------------------------------------------------------
+    # from_attributes=True
+    # -----------------------------------------------------------------------
+
+    def test_from_attributes(self) -> None:
+        """Model can be constructed from ORM-like objects."""
+
+        class FakeOrmScore:
+            candidate = "gpt-4"
+            score = 0.75
+            breakdown = {"quality": 0.40, "cost": 0.35}
+
+        score = ModelProvenanceDecisionScore.model_validate(
+            FakeOrmScore(), from_attributes=True
+        )
+        assert score.candidate == "gpt-4"
+        assert score.score == 0.75
+
+    # -----------------------------------------------------------------------
+    # In-place mutation of breakdown is prevented by MappingProxyType
+    # -----------------------------------------------------------------------
+
+    @pytest.mark.unit
+    def test_breakdown_in_place_mutation_raises(self) -> None:
+        """In-place mutation of breakdown raises TypeError (MappingProxyType)."""
+        score = make_score()
+        with pytest.raises(TypeError):
+            score.breakdown["new_key"] = (
+                1.0  # NOTE(OMN-2464): intentional mutation of MappingProxyType to verify TypeError is raised; mypy cannot infer the subscript assignment will fail at runtime  # type: ignore[index]
+            )
+
+
+# ===========================================================================
+# Tests: ModelProvenanceDecisionRecord
+# ===========================================================================
+
+
+@pytest.mark.unit
+class TestModelProvenanceDecisionRecord:
+    """Tests for ModelProvenanceDecisionRecord."""
+
+    # -----------------------------------------------------------------------
+    # Valid construction
+    # -----------------------------------------------------------------------
+
+    def test_valid_construction_minimal(self) -> None:
+        """Construct a record with only required fields (tie_breaker and
+        agent_rationale default to None)."""
+        record = ModelProvenanceDecisionRecord(
+            decision_id=DECISION_ID,
+            decision_type="model_select",
+            timestamp=FIXED_TIMESTAMP,
+            candidates_considered=["claude-3-opus"],
+            constraints_applied={},
+            scoring_breakdown=[],
+            selected_candidate="claude-3-opus",
+            reproducibility_snapshot={},
+        )
+        assert record.decision_id == DECISION_ID
+        assert record.tie_breaker is None
+        assert record.agent_rationale is None
+
+    def test_valid_construction_full(self) -> None:
+        """Construct a record with all fields populated."""
+        score = make_score("route-a")
+        record = ModelProvenanceDecisionRecord(
+            decision_id=DECISION_ID,
+            decision_type="workflow_route",
+            timestamp=FIXED_TIMESTAMP,
+            candidates_considered=["route-a", "route-b"],
+            constraints_applied={"latency_ms": "500"},
+            scoring_breakdown=[score],
+            tie_breaker=EnumTieBreakerStrategy.ALPHABETICAL,
+            selected_candidate="route-a",
+            agent_rationale="Lowest latency route.",
+            reproducibility_snapshot={"planner_version": "2.1.0"},
+        )
+        assert record.decision_type == "workflow_route"
+        assert record.tie_breaker == EnumTieBreakerStrategy.ALPHABETICAL
+        assert record.agent_rationale == "Lowest latency route."
+        assert len(record.scoring_breakdown) == 1
+
+    def test_empty_candidates_and_constraints(self) -> None:
+        """Empty lists and dicts are valid field values when scoring_breakdown is also empty.
+
+        make_record uses 'claude-3-opus' as the default selected_candidate; this
+        test does not override that, so selected_candidate must be preserved as-is
+        even though candidates_considered is empty (cross-validation is skipped
+        when candidates_considered is empty).
+        """
+        record = make_record(
+            candidates_considered=[],
+            constraints_applied={},
+            scoring_breakdown=[],
+        )
+        assert record.candidates_considered == []
+        assert record.constraints_applied == {}
+        assert record.selected_candidate == "claude-3-opus"
+
+    def test_multiple_scoring_breakdown_entries(self) -> None:
+        """Multiple score entries are valid when all candidates are in candidates_considered."""
+        scores = [
+            make_score("claude-3-opus", 0.9, {"q": 0.9}),
+            make_score("gpt-4", 0.7, {"q": 0.7}),
+        ]
+        record = make_record(scoring_breakdown=scores)
+        assert len(record.scoring_breakdown) == 2
+
+    def test_various_decision_types(self) -> None:
+        """Decision type accepts all valid EnumDecisionType values."""
+        for dt in (
+            EnumDecisionType.MODEL_SELECT,
+            EnumDecisionType.WORKFLOW_ROUTE,
+            EnumDecisionType.TOOL_PICK,
+            EnumDecisionType.CUSTOM,
+        ):
+            record = make_record(decision_type=dt)
+            assert record.decision_type == dt
+
+    # -----------------------------------------------------------------------
+    # R1: Immutability (frozen=True)
+    # -----------------------------------------------------------------------
+
+    def test_frozen_rejects_decision_id_mutation(self) -> None:
+        """Mutating decision_id raises ValidationError."""
+        record = make_record()
+        with pytest.raises(ValidationError):
+            record.decision_id = UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+
+    def test_frozen_rejects_decision_type_mutation(self) -> None:
+        """Mutating decision_type raises ValidationError."""
+        record = make_record()
+        with pytest.raises(ValidationError):
+            record.decision_type = "tool_pick"
+
+    def test_frozen_rejects_timestamp_mutation(self) -> None:
+        """Mutating timestamp raises ValidationError."""
+        record = make_record()
+        with pytest.raises(ValidationError):
+            record.timestamp = datetime(2025, 1, 1, tzinfo=UTC)
+
+    def test_frozen_rejects_candidates_mutation(self) -> None:
+        """Mutating candidates_considered raises ValidationError."""
+        record = make_record()
+        with pytest.raises(ValidationError):
+            record.candidates_considered = []
+
+    def test_frozen_rejects_selected_candidate_mutation(self) -> None:
+        """Mutating selected_candidate raises ValidationError."""
+        record = make_record()
+        with pytest.raises(ValidationError):
+            record.selected_candidate = "gpt-4"
+
+    def test_frozen_rejects_agent_rationale_mutation(self) -> None:
+        """Mutating agent_rationale raises ValidationError."""
+        record = make_record()
+        with pytest.raises(ValidationError):
+            record.agent_rationale = "new rationale"
+
+    # -----------------------------------------------------------------------
+    # R2: Required fields have no defaults (callers must inject)
+    # -----------------------------------------------------------------------
+
+    def test_missing_decision_id_raises(self) -> None:
+        """Omitting decision_id raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ModelProvenanceDecisionRecord(
+                decision_type="model_select",
+                timestamp=FIXED_TIMESTAMP,
+                candidates_considered=[],
+                constraints_applied={},
+                scoring_breakdown=[],
+                selected_candidate="a",
+                reproducibility_snapshot={},
+            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+
+    def test_missing_timestamp_raises(self) -> None:
+        """Omitting timestamp raises ValidationError — no datetime.now() default."""
+        with pytest.raises(ValidationError):
+            ModelProvenanceDecisionRecord(
+                decision_id=DECISION_ID,
+                decision_type="model_select",
+                candidates_considered=[],
+                constraints_applied={},
+                scoring_breakdown=[],
+                selected_candidate="a",
+                reproducibility_snapshot={},
+            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+
+    def test_missing_selected_candidate_raises(self) -> None:
+        """Omitting selected_candidate raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ModelProvenanceDecisionRecord(
+                decision_id=DECISION_ID,
+                decision_type="model_select",
+                timestamp=FIXED_TIMESTAMP,
+                candidates_considered=[],
+                constraints_applied={},
+                scoring_breakdown=[],
+                reproducibility_snapshot={},
+            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+
+    def test_missing_reproducibility_snapshot_raises(self) -> None:
+        """Omitting reproducibility_snapshot raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ModelProvenanceDecisionRecord(
+                decision_id=DECISION_ID,
+                decision_type="model_select",
+                timestamp=FIXED_TIMESTAMP,
+                candidates_considered=[],
+                constraints_applied={},
+                scoring_breakdown=[],
+                selected_candidate="a",
+            )  # NOTE(OMN-2464): intentional omission of required field to trigger ValidationError; mypy cannot infer pytest.raises suppresses the TypeError  # type: ignore[call-arg]
+
+    def test_empty_decision_type_raises(self) -> None:
+        """Empty string for decision_type raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError):
+            make_record(decision_type="")
+
+    def test_empty_selected_candidate_raises(self) -> None:
+        """Empty string for selected_candidate raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError):
+            make_record(selected_candidate="")
+
+    def test_naive_timestamp_raises(self) -> None:
+        """Timezone-naive datetime for timestamp raises ValidationError."""
+        from datetime import datetime as dt
+
+        with pytest.raises(ValidationError):
+            make_record(timestamp=dt(2026, 1, 1))
+
+    def test_non_utc_aware_timestamp_raises(self) -> None:
+        """Timezone-aware datetime with non-zero UTC offset raises ValidationError."""
+        non_utc = datetime(2026, 1, 1, 12, 0, tzinfo=timezone(timedelta(hours=5)))
+        with pytest.raises(ValidationError):
+            make_record(timestamp=non_utc)
+
+    def test_effectively_naive_timestamp_raises(self) -> None:
+        """Datetime with tzinfo set but utcoffset() returning None raises ValidationError.
+
+        This covers the 'effectively naive' edge case: tzinfo is not None but
+        utcoffset(v) returns None (e.g. a custom tzinfo subclass with an incomplete
+        implementation). The validator must guard against a TypeError that would
+        otherwise occur when comparing None != timedelta(0).
+        """
+        from datetime import tzinfo
+
+        class NullOffsetTz(tzinfo):
+            """Custom tzinfo whose utcoffset() always returns None."""
+
+            def utcoffset(self, dt: datetime | None) -> timedelta | None:  # type: ignore[override]
+                return None
+
+            def tzname(self, dt: datetime | None) -> str | None:
+                return "NullOffset"
+
+            def dst(self, dt: datetime | None) -> timedelta | None:
+                return None
+
+        effectively_naive = datetime(2026, 1, 1, 12, 0, tzinfo=NullOffsetTz())
+        with pytest.raises(ValidationError, match="timezone-aware UTC"):
+            make_record(timestamp=effectively_naive)
+
+    def test_agent_rationale_defaults_to_none(self) -> None:
+        """agent_rationale has explicit None default — callers may omit it."""
+        record = make_record()
+        assert record.agent_rationale is None
+
+    def test_tie_breaker_defaults_to_none(self) -> None:
+        """tie_breaker has explicit None default — callers may omit it."""
+        record = make_record()
+        assert record.tie_breaker is None
+
+    def test_agent_rationale_can_be_set(self) -> None:
+        """agent_rationale can be provided explicitly."""
+        record = make_record(agent_rationale="Chosen for cost efficiency.")
+        assert record.agent_rationale == "Chosen for cost efficiency."
+
+    def test_tie_breaker_can_be_set(self) -> None:
+        """tie_breaker can be provided as an enum value or coerced from string."""
+        record = make_record(tie_breaker="random")
+        assert record.tie_breaker == EnumTieBreakerStrategy.RANDOM
+
+    def test_tie_breaker_enum_coercion(self) -> None:
+        """tie_breaker accepts EnumTieBreakerStrategy values directly."""
+        record = make_record(tie_breaker=EnumTieBreakerStrategy.COST_ASCENDING)
+        assert record.tie_breaker == EnumTieBreakerStrategy.COST_ASCENDING
+
+    def test_invalid_tie_breaker_raises(self) -> None:
+        """Invalid string for tie_breaker raises ValidationError."""
+        with pytest.raises(ValidationError):
+            make_record(tie_breaker="not_a_valid_strategy")
+
+    def test_empty_agent_rationale_raises(self) -> None:
+        """Empty string for agent_rationale raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError):
+            make_record(agent_rationale="")
+
+    # -----------------------------------------------------------------------
+    # Extra fields ignored (extra="ignore")
+    # -----------------------------------------------------------------------
+
+    def test_extra_fields_ignored(self) -> None:
+        """Extra fields are silently ignored."""
+        record = ModelProvenanceDecisionRecord(
+            decision_id=DECISION_ID,
+            decision_type="model_select",
+            timestamp=FIXED_TIMESTAMP,
+            candidates_considered=[],
+            constraints_applied={},
+            scoring_breakdown=[],
+            selected_candidate="a",
+            reproducibility_snapshot={},
+            unknown_field="should_be_ignored",  # NOTE(OMN-2464): intentional unknown keyword argument to verify extra="ignore" silently drops it; mypy flags the unexpected kwarg  # type: ignore[call-arg]
+        )
+        assert not hasattr(record, "unknown_field")
+
+    # -----------------------------------------------------------------------
+    # from_attributes=True
+    # -----------------------------------------------------------------------
+
+    def test_from_attributes(self) -> None:
+        """Model can be constructed from ORM-like objects."""
+
+        class FakeOrm:
+            decision_id = DECISION_ID
+            decision_type = "tool_pick"
+            timestamp = FIXED_TIMESTAMP
+            candidates_considered = ["bash", "read"]
+            constraints_applied: dict[str, str] = {}
+            scoring_breakdown: list[ModelProvenanceDecisionScore] = []
+            tie_breaker = None
+            selected_candidate = "bash"
+            agent_rationale = None
+            reproducibility_snapshot: dict[str, str] = {}
+
+        record = ModelProvenanceDecisionRecord.model_validate(
+            FakeOrm(), from_attributes=True
+        )
+        assert record.decision_type == "tool_pick"
+        assert record.selected_candidate == "bash"
+
+    # -----------------------------------------------------------------------
+    # Scoring breakdown nested model integration
+    # -----------------------------------------------------------------------
+
+    def test_scoring_breakdown_contains_score_models(self) -> None:
+        """Scoring breakdown entries are ModelProvenanceDecisionScore instances."""
+        score = make_score("claude-3-opus", 0.9, {"quality": 0.9})
+        record = make_record(scoring_breakdown=[score])
+        assert isinstance(record.scoring_breakdown[0], ModelProvenanceDecisionScore)
+        assert record.scoring_breakdown[0].candidate == "claude-3-opus"
+
+    def test_scoring_breakdown_dict_coercion(self) -> None:
+        """Scoring breakdown entries can be supplied as raw dicts (Pydantic coerces)."""
+        raw_score = {"candidate": "gpt-4", "score": 0.75, "breakdown": {"q": 0.75}}
+        record = ModelProvenanceDecisionRecord(
+            decision_id=DECISION_ID,
+            decision_type="model_select",
+            timestamp=FIXED_TIMESTAMP,
+            candidates_considered=["gpt-4"],
+            constraints_applied={},
+            scoring_breakdown=[
+                raw_score
+            ],  # NOTE(OMN-2464): raw dict intentionally passed to test Pydantic coercion of nested models from plain dicts  # type: ignore[list-item]
+            selected_candidate="gpt-4",
+            reproducibility_snapshot={},
+        )
+        assert record.scoring_breakdown[0].candidate == "gpt-4"
+
+    # -----------------------------------------------------------------------
+    # Reproducibility snapshot
+    # -----------------------------------------------------------------------
+
+    def test_reproducibility_snapshot_stores_values(self) -> None:
+        """Reproducibility snapshot stores key-value pairs correctly."""
+        snapshot = {
+            "routing_version": "1.2.3",
+            "model_registry_hash": "abc123",
+            "feature_flags": "flag-a=true,flag-b=false",
+        }
+        record = make_record(reproducibility_snapshot=snapshot)
+        assert record.reproducibility_snapshot == snapshot
+
+    # -----------------------------------------------------------------------
+    # Cross-validation: selected_candidate vs candidates_considered
+    # -----------------------------------------------------------------------
+
+    def test_selected_candidate_not_in_candidates_raises(self) -> None:
+        """selected_candidate not in candidates_considered raises ValidationError."""
+        with pytest.raises(ValidationError, match="selected_candidate"):
+            make_record(
+                candidates_considered=["claude-3-opus", "gpt-4"],
+                selected_candidate="gemini-pro",
+            )
+
+    def test_selected_candidate_in_candidates_valid(self) -> None:
+        """selected_candidate present in candidates_considered is valid."""
+        record = make_record(
+            candidates_considered=["claude-3-opus", "gpt-4"],
+            selected_candidate="gpt-4",
+        )
+        assert record.selected_candidate == "gpt-4"
+
+    def test_selected_candidate_allowed_when_candidates_empty(self) -> None:
+        """selected_candidate is allowed when candidates_considered is empty (edge case).
+
+        scoring_breakdown must also be empty when candidates_considered is empty.
+        """
+        record = make_record(
+            candidates_considered=[],
+            selected_candidate="any-candidate",
+            scoring_breakdown=[],
+        )
+        assert record.selected_candidate == "any-candidate"
+
+    def test_scoring_breakdown_unknown_candidate_raises(self) -> None:
+        """scoring_breakdown entry with candidate not in candidates_considered raises ValidationError."""
+        unknown_score = make_score("gemini-pro", 0.6, {"quality": 0.6})
+        with pytest.raises(ValidationError, match="scoring_breakdown candidate"):
+            make_record(
+                candidates_considered=["claude-3-opus", "gpt-4"],
+                selected_candidate="claude-3-opus",
+                scoring_breakdown=[unknown_score],
+            )
+
+    def test_scoring_breakdown_valid_candidate_passes(self) -> None:
+        """scoring_breakdown entry whose candidate is in candidates_considered passes validation."""
+        valid_score = make_score("gpt-4", 0.75, {"quality": 0.75})
+        record = make_record(
+            candidates_considered=["claude-3-opus", "gpt-4"],
+            selected_candidate="claude-3-opus",
+            scoring_breakdown=[valid_score],
+        )
+        assert record.scoring_breakdown[0].candidate == "gpt-4"
+
+    def test_nonempty_scoring_breakdown_with_empty_candidates_raises(self) -> None:
+        """Non-empty scoring_breakdown with empty candidates_considered is logically
+        inconsistent and raises ValidationError."""
+        with pytest.raises(ValidationError, match="scoring_breakdown must be empty"):
+            make_record(
+                candidates_considered=[],
+                selected_candidate="any-candidate",
+                scoring_breakdown=[make_score("any-candidate")],
+            )
+
+    def test_empty_string_in_candidates_considered_raises(self) -> None:
+        """Empty string element in candidates_considered raises ValidationError (min_length=1)."""
+        with pytest.raises(ValidationError):
+            make_record(
+                candidates_considered=["claude-3-opus", ""],
+                selected_candidate="claude-3-opus",
+                scoring_breakdown=[],
+            )
+
+
+# ===========================================================================
+# Tests: R3 — Export paths
+# ===========================================================================
+
+
+@pytest.mark.unit
+class TestExportPaths:
+    """Verify R3: DecisionRecord and DecisionScore are importable from
+    omnibase_core.contracts and omnibase_core.models.contracts."""
 
     def test_decision_record_importable_from_contracts(self) -> None:
-        """DecisionRecord can be imported from omnibase_core.contracts."""
-        assert DecisionRecord is DecisionRecordDirect
+        """DecisionRecord is importable from omnibase_core.contracts."""
+        from omnibase_core.contracts import DecisionRecord as ImportedDecisionRecord
+
+        assert ImportedDecisionRecord is ModelProvenanceDecisionRecord
 
     def test_decision_score_importable_from_contracts(self) -> None:
-        """DecisionScore can be imported from omnibase_core.contracts."""
-        assert DecisionScore is DecisionScoreDirect
+        """DecisionScore is importable from omnibase_core.contracts."""
+        from omnibase_core.contracts import DecisionScore as ImportedDecisionScore
 
-    def test_decision_record_is_alias_for_canonical_class(self) -> None:
-        """DecisionRecord alias resolves to ModelProvenanceDecisionRecord."""
-        assert DecisionRecord is ModelProvenanceDecisionRecord
+        assert ImportedDecisionScore is ModelProvenanceDecisionScore
 
-    def test_decision_score_is_alias_for_canonical_class(self) -> None:
-        """DecisionScore alias resolves to ModelProvenanceDecisionScore."""
-        assert DecisionScore is ModelProvenanceDecisionScore
+    def test_decision_record_importable_from_models_contracts(self) -> None:
+        """DecisionRecord is importable from omnibase_core.models.contracts."""
+        from omnibase_core.models.contracts import (
+            DecisionRecord as ModelsDecisionRecord,
+        )
+
+        assert ModelsDecisionRecord is ModelProvenanceDecisionRecord
+
+    def test_decision_score_importable_from_models_contracts(self) -> None:
+        """DecisionScore is importable from omnibase_core.models.contracts."""
+        from omnibase_core.models.contracts import DecisionScore as ModelsDecisionScore
+
+        assert ModelsDecisionScore is ModelProvenanceDecisionScore
 
     def test_decision_record_in_contracts_all(self) -> None:
         """DecisionRecord appears in omnibase_core.contracts.__all__."""
@@ -111,348 +703,53 @@ class TestDecisionRecordExports:
 
         assert "DecisionScore" in contracts_module.__all__
 
+    def test_model_provenance_decision_record_in_contracts_all(self) -> None:
+        """ModelProvenanceDecisionRecord appears in omnibase_core.contracts.__all__."""
+        import omnibase_core.contracts as contracts_module
 
-# ===========================================================================
-# R1: Frozen / immutability tests
-# ===========================================================================
+        assert "ModelProvenanceDecisionRecord" in contracts_module.__all__
 
+    def test_model_provenance_decision_score_in_contracts_all(self) -> None:
+        """ModelProvenanceDecisionScore appears in omnibase_core.contracts.__all__."""
+        import omnibase_core.contracts as contracts_module
 
-@pytest.mark.unit
-class TestDecisionRecordImmutability:
-    """Verify R1: DecisionRecord and DecisionScore are frozen and immutable."""
+        assert "ModelProvenanceDecisionScore" in contracts_module.__all__
 
-    def test_decision_record_frozen_config(self) -> None:
-        """model_config has frozen=True, extra='ignore', from_attributes=True."""
-        cfg = DecisionRecord.model_config
-        assert cfg.get("frozen") is True
-        assert cfg.get("extra") == "ignore"
-        assert cfg.get("from_attributes") is True
+    def test_decision_record_alias_is_same_class(self) -> None:
+        """The public alias DecisionRecord is the canonical class."""
+        assert DecisionRecord is ModelProvenanceDecisionRecord
 
-    def test_decision_score_frozen_config(self) -> None:
-        """DecisionScore model_config has frozen=True."""
-        cfg = DecisionScore.model_config
-        assert cfg.get("frozen") is True
-        assert cfg.get("extra") == "ignore"
-        assert cfg.get("from_attributes") is True
+    def test_decision_score_alias_is_same_class(self) -> None:
+        """The public alias DecisionScore is the canonical class."""
+        assert DecisionScore is ModelProvenanceDecisionScore
 
-    def test_decision_record_mutation_raises_type_error(self) -> None:
-        """Attempting to mutate a DecisionRecord field raises TypeError (frozen model)."""
-        record = _make_record()
-        with pytest.raises((TypeError, ValidationError)):
-            record.decision_id = UUID("00000000-0000-0000-0000-000000000001")  # type: ignore[misc]
-
-    def test_decision_record_mutation_selected_candidate_raises(self) -> None:
-        """Mutating selected_candidate on a frozen DecisionRecord raises TypeError."""
-        record = _make_record()
-        with pytest.raises((TypeError, ValidationError)):
-            record.selected_candidate = "model-b"  # type: ignore[misc]
-
-    def test_decision_score_mutation_raises_type_error(self) -> None:
-        """Attempting to mutate a DecisionScore field raises TypeError."""
-        score = _make_score()
-        with pytest.raises((TypeError, ValidationError)):
-            score.score = 0.5  # type: ignore[misc]
-
-    def test_decision_record_from_attributes_orm_style(self) -> None:
-        """from_attributes=True allows constructing from ORM-style objects."""
-
-        class FakeORM:
-            decision_id = DECISION_UUID
-            decision_type = "workflow_route"
-            timestamp = FIXED_TS
-            candidates_considered = ["wf-a", "wf-b"]
-            constraints_applied = {"env": "prod"}
-            scoring_breakdown: list[DecisionScore] = []
-            tie_breaker = None
-            selected_candidate = "wf-a"
-            agent_rationale = None
-            reproducibility_snapshot = {"version": "1.0"}
-
-        record = DecisionRecord.model_validate(FakeORM(), from_attributes=True)
-        assert record.decision_id == DECISION_UUID
-        assert record.selected_candidate == "wf-a"
-
-
-# ===========================================================================
-# R2: No implicit defaults on required fields
-# ===========================================================================
-
-
-@pytest.mark.unit
-class TestDecisionRecordNoImplicitDefaults:
-    """Verify R2: Required fields have no defaults — callers must inject them."""
-
-    def test_timestamp_has_no_default(self) -> None:
-        """timestamp field has no default — omitting it raises ValidationError."""
-        with pytest.raises(ValidationError, match="timestamp"):
-            DecisionRecord(
-                decision_id=DECISION_UUID,
-                decision_type="model_select",
-                # timestamp intentionally omitted
-                candidates_considered=[],
-                constraints_applied={},
-                scoring_breakdown=[],
-                selected_candidate="model-a",
-                reproducibility_snapshot={},
-            )
-
-    def test_decision_id_has_no_default(self) -> None:
-        """decision_id has no default — omitting it raises ValidationError."""
-        with pytest.raises(ValidationError, match="decision_id"):
-            DecisionRecord(
-                # decision_id intentionally omitted
-                decision_type="model_select",
-                timestamp=FIXED_TS,
-                candidates_considered=[],
-                constraints_applied={},
-                scoring_breakdown=[],
-                selected_candidate="model-a",
-                reproducibility_snapshot={},
-            )
-
-    def test_decision_id_is_uuid_type(self) -> None:
-        """decision_id field accepts UUID objects."""
-        record = _make_record()
-        assert isinstance(record.decision_id, UUID)
-        assert record.decision_id == DECISION_UUID
-
-    def test_decision_id_coerced_from_string(self) -> None:
-        """Pydantic coerces UUID strings to UUID objects for decision_id."""
-        record = _make_record(decision_id="550e8400-e29b-41d4-a716-446655440000")
-        assert isinstance(record.decision_id, UUID)
-        assert record.decision_id == DECISION_UUID
-
-    def test_agent_rationale_defaults_to_none(self) -> None:
-        """agent_rationale explicitly defaults to None (optional field)."""
-        record = _make_record(agent_rationale=None)
-        assert record.agent_rationale is None
-
-    def test_agent_rationale_can_be_set(self) -> None:
-        """agent_rationale can be provided as a string."""
-        record = _make_record(agent_rationale="Selected for speed.")
-        assert record.agent_rationale == "Selected for speed."
-
-    def test_tie_breaker_defaults_to_none(self) -> None:
-        """tie_breaker explicitly defaults to None."""
-        record = _make_record()
-        assert record.tie_breaker is None
-
-    def test_tie_breaker_can_be_set(self) -> None:
-        """tie_breaker can be provided as a string."""
-        record = _make_record(tie_breaker="random_seed_42")
-        assert record.tie_breaker == "random_seed_42"
-
-    def test_required_fields_all_mandatory(self) -> None:
-        """All non-optional fields are required — empty construction fails."""
-        with pytest.raises(ValidationError):
-            DecisionRecord()  # type: ignore[call-arg]
-
-
-# ===========================================================================
-# Construction and field validation tests
-# ===========================================================================
-
-
-@pytest.mark.unit
-class TestDecisionRecordConstruction:
-    """Test valid construction and field content of DecisionRecord."""
-
-    def test_minimal_valid_construction(self) -> None:
-        """A DecisionRecord with all required fields constructs correctly."""
-        record = _make_record()
-        assert record.decision_id == DECISION_UUID
-        assert record.decision_type == "model_select"
-        assert record.timestamp == FIXED_TS
-        assert record.candidates_considered == ["model-a", "model-b"]
-        assert record.constraints_applied == {"region": "us-east-1"}
-        assert len(record.scoring_breakdown) == 1
-        assert record.tie_breaker is None
-        assert record.selected_candidate == "model-a"
-        assert record.agent_rationale is None
-        assert record.reproducibility_snapshot == {"registry_version": "v2.1.0"}
-
-    def test_empty_lists_and_dicts_are_valid(self) -> None:
-        """DecisionRecord allows empty collections for optional-style list fields."""
-        record = _make_record(
-            candidates_considered=[],
-            constraints_applied={},
-            scoring_breakdown=[],
-            reproducibility_snapshot={},
-        )
-        assert record.candidates_considered == []
-        assert record.constraints_applied == {}
-        assert record.scoring_breakdown == []
-        assert record.reproducibility_snapshot == {}
-
-    def test_multiple_scores_in_breakdown(self) -> None:
-        """scoring_breakdown accepts multiple DecisionScore objects."""
-        scores = [
-            _make_score(candidate="model-a", score=0.92),
-            _make_score(candidate="model-b", score=0.81),
-            _make_score(candidate="model-c", score=0.77),
-        ]
-        record = _make_record(scoring_breakdown=scores)
-        assert len(record.scoring_breakdown) == 3
-        assert record.scoring_breakdown[0].candidate == "model-a"
-        assert record.scoring_breakdown[2].candidate == "model-c"
-
-    def test_decision_types_variety(self) -> None:
-        """decision_type accepts any non-empty string classifier."""
-        for dt in ("model_select", "workflow_route", "tool_pick", "custom_decision"):
-            record = _make_record(decision_type=dt)
-            assert record.decision_type == dt
-
-    def test_extra_fields_ignored(self) -> None:
-        """extra='ignore' means unknown fields are silently dropped."""
+    def test_instantiation_via_alias(self) -> None:
+        """DecisionRecord alias can be used to instantiate models."""
         record = DecisionRecord(
-            decision_id=DECISION_UUID,
+            decision_id=DECISION_ID,
             decision_type="model_select",
-            timestamp=FIXED_TS,
-            candidates_considered=[],
+            timestamp=FIXED_TIMESTAMP,
+            candidates_considered=["a"],
             constraints_applied={},
             scoring_breakdown=[],
-            selected_candidate="model-a",
+            selected_candidate="a",
             reproducibility_snapshot={},
-            unknown_future_field="ignored",  # type: ignore[call-arg]
         )
-        assert not hasattr(record, "unknown_future_field")
+        assert isinstance(record, ModelProvenanceDecisionRecord)
 
-    def test_constraints_applied_multiple_entries(self) -> None:
-        """constraints_applied holds multiple string key-value pairs."""
-        constraints = {
-            "region": "us-east-1",
-            "tier": "production",
-            "feature_flag": "enabled",
-        }
-        record = _make_record(constraints_applied=constraints)
-        assert record.constraints_applied == constraints
-
-    def test_reproducibility_snapshot_multiple_entries(self) -> None:
-        """reproducibility_snapshot holds multiple string key-value pairs."""
-        snapshot = {
-            "registry_version": "v2.1.0",
-            "feature_flag_hash": "abc123",
-            "model_registry_revision": "r42",
-        }
-        record = _make_record(reproducibility_snapshot=snapshot)
-        assert record.reproducibility_snapshot == snapshot
-
-
-@pytest.mark.unit
-class TestDecisionScoreConstruction:
-    """Test valid construction and field content of DecisionScore."""
-
-    def test_minimal_valid_construction(self) -> None:
-        """A DecisionScore with all required fields constructs correctly."""
-        score = _make_score()
-        assert score.candidate == "model-a"
-        assert score.score == pytest.approx(0.92)
-        assert score.breakdown == {"accuracy": 0.95, "latency": 0.89}
-
-    def test_empty_breakdown_is_valid(self) -> None:
-        """breakdown can be an empty dict."""
-        score = _make_score(breakdown={})
-        assert score.breakdown == {}
-
-    def test_negative_score_is_accepted(self) -> None:
-        """score field has no range constraint — negative values are accepted."""
-        score = _make_score(score=-1.0)
-        assert score.score == pytest.approx(-1.0)
-
-    def test_score_above_one_is_accepted(self) -> None:
-        """score field has no upper bound constraint."""
-        score = _make_score(score=1.5)
-        assert score.score == pytest.approx(1.5)
-
-    def test_extra_fields_on_score_ignored(self) -> None:
-        """extra='ignore' on DecisionScore drops unknown fields."""
+    def test_score_instantiation_via_alias(self) -> None:
+        """DecisionScore alias can be used to instantiate models."""
         score = DecisionScore(
-            candidate="model-x",
-            score=0.5,
+            candidate="a",
+            score=1.0,
             breakdown={},
-            unknown_field="ignored",  # type: ignore[call-arg]
         )
-        assert not hasattr(score, "unknown_field")
+        assert isinstance(score, ModelProvenanceDecisionScore)
 
-    def test_candidate_required(self) -> None:
-        """Omitting candidate from DecisionScore raises ValidationError."""
-        with pytest.raises(ValidationError, match="candidate"):
-            DecisionScore(score=0.5, breakdown={})  # type: ignore[call-arg]
+    def test_models_contracts_all_exports(self) -> None:
+        """ModelProvenanceDecisionRecord and ModelProvenanceDecisionScore appear
+        in omnibase_core.models.contracts.__all__."""
+        import omnibase_core.models.contracts as models_contracts_module
 
-    def test_score_required(self) -> None:
-        """Omitting score from DecisionScore raises ValidationError."""
-        with pytest.raises(ValidationError, match="score"):
-            DecisionScore(candidate="model-a", breakdown={})  # type: ignore[call-arg]
-
-    def test_breakdown_required(self) -> None:
-        """Omitting breakdown from DecisionScore raises ValidationError."""
-        with pytest.raises(ValidationError, match="breakdown"):
-            DecisionScore(candidate="model-a", score=0.5)  # type: ignore[call-arg]
-
-
-# ===========================================================================
-# Edge cases
-# ===========================================================================
-
-
-@pytest.mark.unit
-class TestDecisionRecordEdgeCases:
-    """Edge case tests for DecisionRecord."""
-
-    def test_timestamp_with_timezone_preserved(self) -> None:
-        """Timezone-aware datetime is preserved on the timestamp field."""
-        record = _make_record(timestamp=FIXED_TS)
-        assert record.timestamp.tzinfo is not None
-
-    def test_decision_id_unique_uuids(self) -> None:
-        """Two records with different UUIDs are not equal on decision_id."""
-        r1 = _make_record(decision_id=UUID("550e8400-e29b-41d4-a716-446655440000"))
-        r2 = _make_record(decision_id=UUID("550e8400-e29b-41d4-a716-446655440001"))
-        assert r1.decision_id != r2.decision_id
-
-    def test_selected_candidate_not_in_considered_list(self) -> None:
-        """No constraint requiring selected_candidate to be in candidates_considered."""
-        record = _make_record(
-            candidates_considered=["model-a"],
-            selected_candidate="model-z",  # not in the list
-        )
-        assert record.selected_candidate == "model-z"
-
-    def test_scoring_breakdown_with_multi_dim_breakdown(self) -> None:
-        """breakdown dict supports many dimensions."""
-        many_dims = {f"dim_{i}": float(i) / 10 for i in range(20)}
-        score = _make_score(breakdown=many_dims)
-        assert len(score.breakdown) == 20
-
-    def test_record_equality_same_data(self) -> None:
-        """Two DecisionRecords with the same data compare equal."""
-        r1 = _make_record()
-        r2 = _make_record()
-        assert r1 == r2
-
-    def test_record_inequality_different_data(self) -> None:
-        """Two DecisionRecords with different data are not equal."""
-        r1 = _make_record(selected_candidate="model-a")
-        r2 = _make_record(selected_candidate="model-b")
-        assert r1 != r2
-
-    def test_record_not_hashable_due_to_unhashable_fields(self) -> None:
-        """Frozen DecisionRecord with list/dict fields is not hashable.
-
-        Pydantic frozen models generate __hash__ from __dict__, but list and
-        dict values are themselves not hashable, so hash() raises TypeError.
-        This is expected — equality comparison still works fine.
-        """
-        r1 = _make_record()
-        with pytest.raises(TypeError, match="unhashable type"):
-            hash(r1)
-
-    def test_score_not_hashable_due_to_unhashable_fields(self) -> None:
-        """Frozen DecisionScore with dict fields is not hashable.
-
-        DecisionScore.breakdown is a dict, which is unhashable, so the
-        auto-generated Pydantic __hash__ raises TypeError. Equality works.
-        """
-        s1 = _make_score()
-        with pytest.raises(TypeError, match="unhashable type"):
-            hash(s1)
+        assert "ModelProvenanceDecisionRecord" in models_contracts_module.__all__
+        assert "ModelProvenanceDecisionScore" in models_contracts_module.__all__

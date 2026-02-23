@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.12"
 
 [[package]]
@@ -699,8 +699,8 @@ requires-dist = [
     { name = "psutil", marker = "extra == 'full'", specifier = ">=7.2.1" },
     { name = "pydantic", specifier = ">=2.12.5,<3.0.0" },
     { name = "pyyaml", specifier = ">=6.0.2,<7.0.0" },
-    { name = "redis", marker = "extra == 'cache'", specifier = ">=5.0.0,<6.0.0" },
-    { name = "redis", marker = "extra == 'full'", specifier = ">=5.0.0,<6.0.0" },
+    { name = "redis", marker = "extra == 'cache'", specifier = ">=5.0.0,<8.0.0" },
+    { name = "redis", marker = "extra == 'full'", specifier = ">=5.0.0,<8.0.0" },
     { name = "sqlglot", marker = "extra == 'full'", specifier = ">=26.0.0,<29.0.0" },
     { name = "sqlglot", marker = "extra == 'sql-parser'", specifier = ">=26.0.0,<29.0.0" },
 ]
