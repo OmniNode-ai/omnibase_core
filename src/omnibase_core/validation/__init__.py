@@ -132,6 +132,10 @@ from .validator_contract_pipeline import (
 # RULE_FINGERPRINT_FORMAT, RULE_FINGERPRINT_MATCH, RULE_MODEL_PREFIX, RULE_NAMING_CONVENTION,
 # RULE_RECOMMENDED_FIELDS, RULE_REQUIRED_FIELDS, RULE_SCHEMA_VALIDATION, RULE_YAML_SYNTAX
 # Import Naming Convention validator (OMN-1291)
+from .validator_local_paths import (
+    ModelLocalPathViolation,
+    ValidatorLocalPaths,
+)
 from .validator_naming_convention import (
     RULE_CLASS_NAMING,
     RULE_FILE_NAMING,
@@ -470,6 +474,9 @@ __all__ = [
     "RULE_FINGERPRINT_FORMAT",
     "RULE_FINGERPRINT_MATCH",
     "RULE_SCHEMA_VALIDATION",
+    # Local path validator — detect machine-specific absolute paths
+    "ValidatorLocalPaths",
+    "ModelLocalPathViolation",
     # Naming Convention validator (OMN-1291)
     "ValidatorNamingConvention",
     "RULE_FILE_NAMING",
