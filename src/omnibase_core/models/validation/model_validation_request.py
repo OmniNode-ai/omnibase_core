@@ -15,11 +15,11 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ValidationRequest(BaseModel):
+class ModelValidationRequest(BaseModel):
     """Captures the target, scope, profile, and tag filters for a validation run.
 
     Example:
-        >>> req = ValidationRequest(
+        >>> req = ModelValidationRequest(
         ...     target="src/omnibase_core/nodes/node_compute.py",
         ...     scope="file",
         ...     profile="default",
@@ -87,4 +87,4 @@ class ValidationRequest(BaseModel):
     )
 
 
-__all__ = ["ValidationRequest"]
+__all__ = ["ModelValidationRequest"]

@@ -19,19 +19,23 @@ import json
 
 import pytest
 
-from omnibase_core.models.validation.model_validation_finding import ValidationFinding
+from omnibase_core.models.validation.model_validation_finding import (
+    ModelValidationFinding,
+)
 from omnibase_core.models.validation.model_validation_report import (
     SEVERITY_PRECEDENCE,
-    ValidationFindingEmbed,
-    ValidationFindingRef,
-    ValidationMetrics,
-    ValidationReport,
-    ValidationRequestRef,
+    ModelValidationFindingEmbed,
+    ModelValidationFindingRef,
+    ModelValidationMetrics,
+    ModelValidationReport,
+    ModelValidationRequestRef,
     _compute_overall_status,
 )
-from omnibase_core.models.validation.model_validation_request import ValidationRequest
+from omnibase_core.models.validation.model_validation_request import (
+    ModelValidationRequest,
+)
 from omnibase_core.models.validation.model_validator_descriptor import (
-    ValidatorDescriptor,
+    ModelValidatorDescriptor,
 )
 
 # ---------------------------------------------------------------------------
@@ -45,7 +49,7 @@ class TestValidationRequest:
 
     def test_minimal_construction(self) -> None:
         """ValidationRequest can be constructed with target and scope only."""
-        req = ValidationRequest(target="src/", scope="file")
+        req = ModelValidationRequest(target="src/", scope="file")
         assert req.target == "src/"
         assert req.scope == "file"
         assert req.profile == "default"
@@ -56,34 +60,34 @@ class TestValidationRequest:
     def test_all_scope_literals(self) -> None:
         """All four scope literals are accepted."""
         for scope in ("file", "subtree", "workspace", "artifact"):
-            req = ValidationRequest(target="x", scope=scope)  # type: ignore[arg-type]
+            req = ModelValidationRequest(target="x", scope=scope)  # type: ignore[arg-type]
             assert req.scope == scope
 
     def test_all_profile_literals(self) -> None:
         """All three profile literals are accepted."""
         for profile in ("strict", "default", "advisory"):
-            req = ValidationRequest(target="x", scope="file", profile=profile)  # type: ignore[arg-type]
+            req = ModelValidationRequest(target="x", scope="file", profile=profile)  # type: ignore[arg-type]
             assert req.profile == profile
 
     def test_invalid_scope_rejected(self) -> None:
         """Invalid scope raises ValidationError."""
         with pytest.raises(Exception):
-            ValidationRequest(target="x", scope="unknown")  # type: ignore[arg-type]
+            ModelValidationRequest(target="x", scope="unknown")  # type: ignore[arg-type]
 
     def test_invalid_profile_rejected(self) -> None:
         """Invalid profile raises ValidationError."""
         with pytest.raises(Exception):
-            ValidationRequest(target="x", scope="file", profile="aggressive")  # type: ignore[arg-type]
+            ModelValidationRequest(target="x", scope="file", profile="aggressive")  # type: ignore[arg-type]
 
     def test_frozen(self) -> None:
         """ValidationRequest is immutable."""
-        req = ValidationRequest(target="src/", scope="file")
+        req = ModelValidationRequest(target="src/", scope="file")
         with pytest.raises(Exception):
             req.target = "other/"  # type: ignore[misc]
 
     def test_json_serialisable(self) -> None:
         """ValidationRequest serialises to JSON without custom encoders."""
-        req = ValidationRequest(
+        req = ModelValidationRequest(
             target="src/",
             scope="subtree",
             profile="strict",
@@ -108,7 +112,7 @@ class TestValidationFinding:
 
     def test_minimal_construction(self) -> None:
         """ValidationFinding can be constructed with validator_id, severity, message."""
-        finding = ValidationFinding(
+        finding = ModelValidationFinding(
             validator_id="test_validator",
             severity="PASS",
             message="All good.",
@@ -124,7 +128,7 @@ class TestValidationFinding:
     def test_all_severity_literals(self) -> None:
         """All six severity literals are accepted."""
         for severity in ("PASS", "WARN", "FAIL", "ERROR", "SKIP", "NOT_APPLICABLE"):
-            finding = ValidationFinding(
+            finding = ModelValidationFinding(
                 validator_id="v",
                 severity=severity,  # type: ignore[arg-type]
                 message="msg",
@@ -134,7 +138,7 @@ class TestValidationFinding:
     def test_invalid_severity_rejected(self) -> None:
         """Invalid severity raises ValidationError."""
         with pytest.raises(Exception):
-            ValidationFinding(
+            ModelValidationFinding(
                 validator_id="v",
                 severity="CRITICAL",  # type: ignore[arg-type]
                 message="msg",
@@ -142,7 +146,7 @@ class TestValidationFinding:
 
     def test_full_construction(self) -> None:
         """ValidationFinding accepts all optional fields."""
-        finding = ValidationFinding(
+        finding = ModelValidationFinding(
             validator_id="naming_convention",
             severity="FAIL",
             location="src/foo.py:42",
@@ -157,13 +161,13 @@ class TestValidationFinding:
 
     def test_frozen(self) -> None:
         """ValidationFinding is immutable."""
-        finding = ValidationFinding(validator_id="v", severity="PASS", message="ok")
+        finding = ModelValidationFinding(validator_id="v", severity="PASS", message="ok")
         with pytest.raises(Exception):
             finding.message = "changed"  # type: ignore[misc]
 
     def test_json_serialisable(self) -> None:
         """ValidationFinding serialises to JSON without custom encoders."""
-        finding = ValidationFinding(
+        finding = ModelValidationFinding(
             validator_id="v",
             severity="WARN",
             message="warning",
@@ -197,9 +201,9 @@ class TestSeverityPrecedenceMatrix:
         """NOT_APPLICABLE is not in the precedence matrix."""
         assert "NOT_APPLICABLE" not in SEVERITY_PRECEDENCE
 
-    def _make_refs(self, *severities: str) -> tuple[ValidationFindingRef, ...]:
+    def _make_refs(self, *severities: str) -> tuple[ModelValidationFindingRef, ...]:
         return tuple(
-            ValidationFindingRef(severity=s, validator_id="v")  # type: ignore[arg-type]
+            ModelValidationFindingRef(severity=s, validator_id="v")  # type: ignore[arg-type]
             for s in severities
         )
 
@@ -312,7 +316,7 @@ def _embed(
     severity: str,
     message: str = "msg",
 ) -> ValidationFindingEmbed:
-    return ValidationFindingEmbed(
+    return ModelValidationFindingEmbed(
         validator_id=validator_id,
         severity=severity,  # type: ignore[arg-type]
         message=message,
@@ -325,43 +329,43 @@ class TestValidationReport:
 
     def test_from_findings_no_findings(self) -> None:
         """Empty findings produces PASS."""
-        req = ValidationRequestRef(profile="default")
-        report = ValidationReport.from_findings(findings=(), request=req)
+        req = ModelValidationRequestRef(profile="default")
+        report = ModelValidationReport.from_findings(findings=(), request=req)
         assert report.overall_status == "PASS"
         assert report.metrics.total == 0
 
     def test_from_findings_single_fail(self) -> None:
-        req = ValidationRequestRef(profile="default")
+        req = ModelValidationRequestRef(profile="default")
         findings = (_embed("v", "FAIL"),)
-        report = ValidationReport.from_findings(findings=findings, request=req)
+        report = ModelValidationReport.from_findings(findings=findings, request=req)
         assert report.overall_status == "FAIL"
         assert report.metrics.fail_count == 1
         assert report.metrics.total == 1
 
     def test_from_findings_strict_elevates_warn(self) -> None:
         """strict profile: WARN finding produces FAIL overall_status."""
-        req = ValidationRequestRef(profile="strict")
+        req = ModelValidationRequestRef(profile="strict")
         findings = (_embed("v", "WARN"),)
-        report = ValidationReport.from_findings(findings=findings, request=req)
+        report = ModelValidationReport.from_findings(findings=findings, request=req)
         assert report.overall_status == "FAIL"
 
     def test_from_findings_advisory_caps_fail(self) -> None:
         """advisory profile: FAIL finding produces WARN overall_status."""
-        req = ValidationRequestRef(profile="advisory")
+        req = ModelValidationRequestRef(profile="advisory")
         findings = (_embed("v", "FAIL"),)
-        report = ValidationReport.from_findings(findings=findings, request=req)
+        report = ModelValidationReport.from_findings(findings=findings, request=req)
         assert report.overall_status == "WARN"
 
     def test_from_findings_advisory_caps_error(self) -> None:
         """advisory profile: ERROR finding produces WARN overall_status."""
-        req = ValidationRequestRef(profile="advisory")
+        req = ModelValidationRequestRef(profile="advisory")
         findings = (_embed("v", "ERROR"),)
-        report = ValidationReport.from_findings(findings=findings, request=req)
+        report = ModelValidationReport.from_findings(findings=findings, request=req)
         assert report.overall_status == "WARN"
 
     def test_metrics_counts(self) -> None:
         """ValidationMetrics counts all severities correctly."""
-        req = ValidationRequestRef(profile="default")
+        req = ModelValidationRequestRef(profile="default")
         findings = (
             _embed("v", "PASS"),
             _embed("v", "PASS"),
@@ -371,7 +375,7 @@ class TestValidationReport:
             _embed("v", "SKIP"),
             _embed("v", "NOT_APPLICABLE"),
         )
-        report = ValidationReport.from_findings(findings=findings, request=req)
+        report = ModelValidationReport.from_findings(findings=findings, request=req)
         m = report.metrics
         assert m.total == 7
         assert m.pass_count == 2
@@ -383,28 +387,28 @@ class TestValidationReport:
 
     def test_skip_does_not_influence_overall_status(self) -> None:
         """SKIP findings don't change overall_status."""
-        req = ValidationRequestRef(profile="default")
+        req = ModelValidationRequestRef(profile="default")
         findings = (_embed("v", "PASS"), _embed("v", "SKIP"))
-        report = ValidationReport.from_findings(findings=findings, request=req)
+        report = ModelValidationReport.from_findings(findings=findings, request=req)
         assert report.overall_status == "PASS"
 
     def test_not_applicable_does_not_influence_overall_status(self) -> None:
-        req = ValidationRequestRef(profile="default")
+        req = ModelValidationRequestRef(profile="default")
         findings = (_embed("v", "PASS"), _embed("v", "NOT_APPLICABLE"))
-        report = ValidationReport.from_findings(findings=findings, request=req)
+        report = ModelValidationReport.from_findings(findings=findings, request=req)
         assert report.overall_status == "PASS"
 
     def test_report_is_frozen(self) -> None:
         """ValidationReport is immutable."""
-        req = ValidationRequestRef(profile="default")
-        report = ValidationReport.from_findings(findings=(), request=req)
+        req = ModelValidationRequestRef(profile="default")
+        report = ModelValidationReport.from_findings(findings=(), request=req)
         with pytest.raises(Exception):
             report.overall_status = "FAIL"  # type: ignore[misc]
 
     def test_provenance_populated(self) -> None:
         """Provenance records validators_run and request_id."""
-        req = ValidationRequestRef(profile="default")
-        report = ValidationReport.from_findings(
+        req = ModelValidationRequestRef(profile="default")
+        report = ModelValidationReport.from_findings(
             findings=(),
             request=req,
             validators_run=("v1", "v2"),
@@ -415,12 +419,12 @@ class TestValidationReport:
 
     def test_json_serialisable(self) -> None:
         """ValidationReport serialises to JSON without custom encoders."""
-        req = ValidationRequestRef(profile="default")
+        req = ModelValidationRequestRef(profile="default")
         findings = (
             _embed("naming", "FAIL", "Bad name"),
             _embed("typing", "WARN", "Missing type"),
         )
-        report = ValidationReport.from_findings(findings=findings, request=req)
+        report = ModelValidationReport.from_findings(findings=findings, request=req)
         data = json.loads(report.model_dump_json())
         assert data["overall_status"] == "FAIL"
         assert len(data["findings"]) == 2
@@ -436,21 +440,21 @@ class TestValidationReport:
 
     def test_report_id_is_unique(self) -> None:
         """Each report gets a unique UUID."""
-        req = ValidationRequestRef(profile="default")
-        r1 = ValidationReport.from_findings(findings=(), request=req)
-        r2 = ValidationReport.from_findings(findings=(), request=req)
+        req = ModelValidationRequestRef(profile="default")
+        r1 = ModelValidationReport.from_findings(findings=(), request=req)
+        r2 = ModelValidationReport.from_findings(findings=(), request=req)
         assert r1.report_id != r2.report_id
 
     def test_error_dominates_all_other_severities(self) -> None:
         """ERROR finding produces ERROR overall_status regardless of others."""
-        req = ValidationRequestRef(profile="default")
+        req = ModelValidationRequestRef(profile="default")
         findings = (
             _embed("v", "PASS"),
             _embed("v", "WARN"),
             _embed("v", "FAIL"),
             _embed("v", "ERROR"),
         )
-        report = ValidationReport.from_findings(findings=findings, request=req)
+        report = ModelValidationReport.from_findings(findings=findings, request=req)
         assert report.overall_status == "ERROR"
 
 
@@ -465,7 +469,7 @@ class TestValidatorDescriptor:
 
     def test_minimal_construction(self) -> None:
         """ValidatorDescriptor can be constructed with validator_id only."""
-        d = ValidatorDescriptor(validator_id="naming_convention")
+        d = ModelValidatorDescriptor(validator_id="naming_convention")
         assert d.validator_id == "naming_convention"
         assert d.deterministic is True
         assert d.idempotent is True
@@ -475,7 +479,7 @@ class TestValidatorDescriptor:
 
     def test_full_construction(self) -> None:
         """ValidatorDescriptor accepts all fields."""
-        d = ValidatorDescriptor(
+        d = ModelValidatorDescriptor(
             validator_id="security_scan",
             display_name="Security Scanner",
             description="Scans for known vulnerabilities.",
@@ -497,17 +501,17 @@ class TestValidatorDescriptor:
     def test_timeout_seconds_must_be_positive(self) -> None:
         """timeout_seconds must be >= 1 when set."""
         with pytest.raises(Exception):
-            ValidatorDescriptor(validator_id="v", timeout_seconds=0)
+            ModelValidatorDescriptor(validator_id="v", timeout_seconds=0)
 
     def test_frozen(self) -> None:
         """ValidatorDescriptor is immutable."""
-        d = ValidatorDescriptor(validator_id="v")
+        d = ModelValidatorDescriptor(validator_id="v")
         with pytest.raises(Exception):
             d.validator_id = "changed"  # type: ignore[misc]
 
     def test_json_serialisable(self) -> None:
         """ValidatorDescriptor serialises to JSON without custom encoders."""
-        d = ValidatorDescriptor(
+        d = ModelValidatorDescriptor(
             validator_id="naming",
             applicable_scopes=("file",),
             tags=("style",),
@@ -520,7 +524,7 @@ class TestValidatorDescriptor:
     def test_invalid_scope_in_applicable_scopes_rejected(self) -> None:
         """Invalid scope in applicable_scopes raises ValidationError."""
         with pytest.raises(Exception):
-            ValidatorDescriptor(
+            ModelValidatorDescriptor(
                 validator_id="v",
                 applicable_scopes=("file", "unknown"),  # type: ignore[arg-type]
             )
@@ -536,10 +540,10 @@ class TestValidationMetrics:
     """Tests for ValidationMetrics standalone construction."""
 
     def test_default_construction(self) -> None:
-        m = ValidationMetrics()
+        m = ModelValidationMetrics()
         assert m.total == 0
         assert m.pass_count == 0
 
     def test_negative_count_rejected(self) -> None:
         with pytest.raises(Exception):
-            ValidationMetrics(total=-1)
+            ModelValidationMetrics(total=-1)

@@ -15,7 +15,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ValidationFinding(BaseModel):
+class ModelValidationFinding(BaseModel):
     """Captures a single result emitted by one validator during a validation run.
 
     Every finding is fully self-describing: it records which validator produced it,
@@ -23,7 +23,7 @@ class ValidationFinding(BaseModel):
     remediation hint, and arbitrary structured evidence.
 
     Example:
-        >>> finding = ValidationFinding(
+        >>> finding = ModelValidationFinding(
         ...     validator_id="naming_convention",
         ...     severity="FAIL",
         ...     location="src/omnibase_core/nodes/node_bad.py:42",
@@ -97,4 +97,4 @@ class ValidationFinding(BaseModel):
     )
 
 
-__all__ = ["ValidationFinding"]
+__all__ = ["ModelValidationFinding"]

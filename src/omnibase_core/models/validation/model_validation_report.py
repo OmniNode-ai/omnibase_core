@@ -43,7 +43,7 @@ _PRECEDENCE_TO_STATUS: dict[int, Literal["PASS", "WARN", "FAIL", "ERROR"]] = {
 
 
 def _compute_overall_status(
-    findings: tuple[ValidationFindingRef, ...],
+    findings: tuple[ModelValidationFindingRef, ...],
     profile: Literal["strict", "default", "advisory"],
 ) -> Literal["PASS", "WARN", "FAIL", "ERROR"]:
     """Compute overall_status from findings using the explicit precedence matrix.
@@ -83,14 +83,14 @@ def _compute_overall_status(
 # ---------------------------------------------------------------------------
 
 
-class ValidationFindingRef(BaseModel):
+class ModelValidationFindingRef(BaseModel):
     """Lightweight reference used inside ValidationReport.
 
     Stores only the fields needed for status aggregation and metrics.
     Full ValidationFinding objects should be stored externally and
     referenced here by index or validator_id when needed.
 
-    Note: ValidationReport embeds ValidationFinding directly (not via reference)
+    Note: ModelValidationReport embeds ValidationFinding directly (not via reference)
     for full self-containment and JSON serializability.
     """
 
@@ -113,14 +113,14 @@ class ValidationFindingRef(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ValidationFindingEmbed(BaseModel):
+class ModelValidationFindingEmbed(BaseModel):
     """Full ValidationFinding fields embedded inside ValidationReport.
 
     Mirrors the fields of ValidationFinding exactly. We define this here
     (rather than importing ValidationFinding) to avoid circular imports
     between model_validation_report and model_validation_finding.
     Callers should construct these from ValidationFinding instances:
-        ValidationFindingEmbed(**finding.model_dump())
+        ModelValidationFindingEmbed(**finding.model_dump())
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -149,7 +149,7 @@ class ValidationFindingEmbed(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ValidationRequestRef(BaseModel):
+class ModelValidationRequestRef(BaseModel):
     """Minimal duck-type of ValidationRequest used by ValidationReport.from_findings.
 
     Allows the factory to accept a real ValidationRequest or any compatible
@@ -168,7 +168,7 @@ class ValidationRequestRef(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ValidationMetrics(BaseModel):
+class ModelValidationMetrics(BaseModel):
     """Summary counts of findings by severity.
 
     All counts are non-negative. The sum of all severity counts equals the
@@ -195,7 +195,7 @@ class ValidationMetrics(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ValidationProvenance(BaseModel):
+class ModelValidationProvenance(BaseModel):
     """Provenance metadata for a validation run.
 
     Records when the report was generated, which request triggered it,
@@ -237,9 +237,9 @@ class ValidationProvenance(BaseModel):
 
 
 def _build_metrics(
-    findings: tuple[ValidationFindingEmbed, ...],
-) -> ValidationMetrics:
-    """Build ValidationMetrics by counting findings by severity."""
+    findings: tuple[ModelValidationFindingEmbed, ...],
+) -> ModelValidationMetrics:
+    """Build ModelValidationMetrics by counting findings by severity."""
     counts: dict[str, int] = {
         "PASS": 0,
         "WARN": 0,
@@ -251,7 +251,7 @@ def _build_metrics(
     for f in findings:
         counts[f.severity] = counts.get(f.severity, 0) + 1
 
-    return ValidationMetrics(
+    return ModelValidationMetrics(
         total=len(findings),
         pass_count=counts["PASS"],
         warn_count=counts["WARN"],
@@ -267,7 +267,7 @@ def _build_metrics(
 # ---------------------------------------------------------------------------
 
 
-class ValidationReport(BaseModel):
+class ModelValidationReport(BaseModel):
     """Aggregates ValidationFinding instances into a machine-readable result.
 
     overall_status is computed from findings using an explicit precedence matrix:
@@ -295,8 +295,8 @@ class ValidationReport(BaseModel):
         ...     message="Module name does not match convention.",
         ... )
         >>> report = ValidationReport.from_findings(
-        ...     findings=(ValidationFindingEmbed(**finding.model_dump()),),
-        ...     request=ValidationRequestRef(profile=req.profile),
+        ...     findings=(ModelValidationFindingEmbed(**finding.model_dump()),),
+        ...     request=ModelValidationRequestRef(profile=req.profile),
         ... )
         >>> report.overall_status  # strict profile elevates WARN -> FAIL
         'FAIL'
@@ -325,30 +325,30 @@ class ValidationReport(BaseModel):
         ),
     )
 
-    findings: tuple[ValidationFindingEmbed, ...] = Field(
+    findings: tuple[ModelValidationFindingEmbed, ...] = Field(
         default=(),
         description="All findings produced during this validation run.",
     )
 
-    metrics: ValidationMetrics = Field(
-        default_factory=ValidationMetrics,
+    metrics: ModelValidationMetrics = Field(
+        default_factory=ModelValidationMetrics,
         description="Summary counts of findings by severity.",
     )
 
-    provenance: ValidationProvenance = Field(
-        default_factory=ValidationProvenance,
+    provenance: ModelValidationProvenance = Field(
+        default_factory=ModelValidationProvenance,
         description="Metadata about when and how this report was generated.",
     )
 
     @model_validator(mode="after")
-    def _validate_overall_status_consistent(self) -> ValidationReport:
+    def _validate_overall_status_consistent(self) -> ModelValidationReport:
         """Validate that overall_status is consistent with findings and profile.
 
         This is a read-time guard; callers should use from_findings() to
         ensure consistency at construction time.
         """
         refs = tuple(
-            ValidationFindingRef(
+            ModelValidationFindingRef(
                 severity=f.severity,
                 validator_id=f.validator_id,
             )
@@ -365,11 +365,11 @@ class ValidationReport(BaseModel):
     @classmethod
     def from_findings(
         cls,
-        findings: tuple[ValidationFindingEmbed, ...],
-        request: ValidationRequestRef,
+        findings: tuple[ModelValidationFindingEmbed, ...],
+        request: ModelValidationRequestRef,
         validators_run: tuple[str, ...] = (),
         request_id: str | None = None,
-    ) -> ValidationReport:
+    ) -> ModelValidationReport:
         """Construct a ValidationReport by computing overall_status from findings.
 
         This is the canonical factory method. It:
@@ -388,7 +388,7 @@ class ValidationReport(BaseModel):
             A frozen ValidationReport with consistent overall_status.
         """
         refs = tuple(
-            ValidationFindingRef(
+            ModelValidationFindingRef(
                 severity=f.severity,
                 validator_id=f.validator_id,
             )
@@ -398,7 +398,7 @@ class ValidationReport(BaseModel):
 
         metrics = _build_metrics(findings)
 
-        provenance = ValidationProvenance(
+        provenance = ModelValidationProvenance(
             validators_run=validators_run,
             request_id=request_id,
         )
@@ -417,12 +417,12 @@ SEVERITY_PRECEDENCE = _SEVERITY_PRECEDENCE
 
 __all__ = [
     "SEVERITY_PRECEDENCE",
-    "ValidationFindingEmbed",
-    "ValidationFindingRef",
-    "ValidationMetrics",
-    "ValidationProvenance",
-    "ValidationReport",
-    "ValidationRequestRef",
+    "ModelValidationFindingEmbed",
+    "ModelValidationFindingRef",
+    "ModelValidationMetrics",
+    "ModelValidationProvenance",
+    "ModelValidationReport",
+    "ModelValidationRequestRef",
     "_build_metrics",
     "_compute_overall_status",
 ]

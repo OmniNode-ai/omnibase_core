@@ -16,7 +16,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ValidatorDescriptor(BaseModel):
+class ModelValidatorDescriptor(BaseModel):
     """Declares what a validator applies to and its execution constraints.
 
     The validator registry reads this descriptor to determine:
@@ -28,7 +28,7 @@ class ValidatorDescriptor(BaseModel):
     - How long the validator is allowed to run.
 
     Example:
-        >>> descriptor = ValidatorDescriptor(
+        >>> descriptor = ModelValidatorDescriptor(
         ...     validator_id="naming_convention",
         ...     applicable_scopes=("file", "subtree"),
         ...     deterministic=True,
@@ -143,4 +143,4 @@ class ValidatorDescriptor(BaseModel):
     )
 
 
-__all__ = ["ValidatorDescriptor"]
+__all__ = ["ModelValidatorDescriptor"]
