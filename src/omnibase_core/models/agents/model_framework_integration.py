@@ -8,6 +8,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.agents.model_domain_queries import ModelDomainQueries
+from omnibase_core.models.agents.model_rag_queries import ModelRagQueries
 from omnibase_core.types.typed_dict_pattern_catalog import TypedDictPatternCatalog
 
 
@@ -15,7 +16,7 @@ class ModelFrameworkIntegration(BaseModel):
     """Framework integration configuration.
 
     Defines how the agent integrates with external frameworks, references,
-    and pattern catalogs.
+    pattern catalogs, and RAG retrieval settings.
     """
 
     model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
@@ -24,6 +25,7 @@ class ModelFrameworkIntegration(BaseModel):
     domain_queries: ModelDomainQueries | None = None
     mandatory_functions: list[str] | None = None
     pattern_catalog: TypedDictPatternCatalog | None = None
+    rag_queries: ModelRagQueries | None = None
 
 
 __all__ = ["ModelFrameworkIntegration"]
