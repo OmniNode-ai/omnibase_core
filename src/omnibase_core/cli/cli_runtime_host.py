@@ -13,6 +13,7 @@ runtime host initialization for development purposes.
 
 Usage:
     omninode-runtime-host-dev CONTRACT.yaml
+    omninode-runtime-host-dev --validate-only CONTRACT.yaml
 """
 
 from __future__ import annotations
@@ -26,14 +27,29 @@ import click
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.logging.logging_structured import emit_log_event_sync
+from omnibase_core.models.contracts.model_runtime_host_contract import (
+    ModelRuntimeHostContract,
+)
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 @click.command(name="runtime-host-dev")
+@click.option(
+    "--validate-only",
+    "-v",
+    is_flag=True,
+    default=False,
+    help=(
+        "Validate the contract against schema and exit. "
+        "Does not start the runtime. "
+        "Exit code: 0 = valid, 1 = invalid."
+    ),
+)
 @click.argument(
     "contract_path",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
 )
-def main(contract_path: Path) -> None:
+def main(validate_only: bool, contract_path: Path) -> None:
     """Start runtime host in dev/test mode (LocalHandler only).
 
     WARNING: This command is for DEVELOPMENT and TESTING only.
@@ -47,8 +63,13 @@ def main(contract_path: Path) -> None:
         CONTRACT_PATH: Path to the RuntimeHostContract YAML file.
 
     \b
-    Example:
+    Options:
+        --validate-only / -v: Validate contract schema and exit (no runtime start).
+
+    \b
+    Examples:
         omninode-runtime-host-dev contracts/dev_config.yaml
+        omninode-runtime-host-dev --validate-only contracts/dev_config.yaml
     """
     # Hard check for production environment - NEVER run in prod
     env_value = os.environ.get("ENVIRONMENT", "").lower()
@@ -64,6 +85,10 @@ def main(contract_path: Path) -> None:
             "This CLI is for development and testing only."
         )
         sys.exit(EnumCLIExitCode.ERROR)  # error-ok: CLI exit code for production check
+
+    if validate_only:
+        _run_validate_only(contract_path)
+        return
 
     # Print prominent warning about dev/test usage
     click.echo(
@@ -130,6 +155,55 @@ def main(contract_path: Path) -> None:
         )
     )
     click.echo("MVP: Contract validated. Actual runtime integration coming soon.")
+
+
+def _run_validate_only(contract_path: Path) -> None:
+    """Validate the contract schema and exit.
+
+    Parses and validates the contract YAML against the RuntimeHostContract
+    schema. Prints a summary of validation results and exits with:
+        - 0 if the contract is valid
+        - 1 if the contract is invalid (parse error, schema mismatch, etc.)
+
+    Args:
+        contract_path: Path to the YAML contract file to validate.
+    """
+    click.echo(f"Validating contract: {contract_path}")
+
+    try:
+        contract = ModelRuntimeHostContract.from_yaml(contract_path)
+    except ModelOnexError as e:
+        click.echo(
+            click.style(
+                "INVALID",
+                fg="red",
+                bold=True,
+            )
+        )
+        click.echo(f"Validation failed: {e.message}")
+        # Print any additional context details (e.g. validation_error summary)
+        additional = e.context.get("additional_context")
+        if additional and isinstance(additional, dict):
+            for key, value in additional.items():
+                if key not in ("validation_errors",):
+                    click.echo(f"  {key}: {value}")
+        sys.exit(EnumCLIExitCode.ERROR)  # error-ok: CLI exit code for invalid contract
+
+    # Report success
+    handler_count = len(contract.handlers)
+    node_count = len(contract.nodes)
+    click.echo(
+        click.style(
+            "VALID",
+            fg="green",
+            bold=True,
+        )
+    )
+    click.echo(
+        f"Contract is valid: {handler_count} handler(s), "
+        f"{node_count} node(s), "
+        f"event_bus.kind={contract.event_bus.kind!r}"
+    )
 
 
 if __name__ == "__main__":
