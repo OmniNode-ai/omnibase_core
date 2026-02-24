@@ -323,7 +323,7 @@ class ModelCliContribution(BaseModel):
         >>> contribution = ModelCliContribution(
         ...     version=ModelSemVer(major=1, minor=0, patch=0),
         ...     publisher="com.omninode.memory",
-        ...     fingerprint="a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+        ...     fingerprint="a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",  # pragma: allowlist secret
         ...     signature="base64sig==",
         ...     signer_public_key="base64pubkey==",
         ...     commands=[...],
