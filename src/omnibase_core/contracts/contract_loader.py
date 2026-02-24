@@ -2,11 +2,15 @@
 # SPDX-License-Identifier: MIT
 
 """
-Contract loader with YAML !include directive support.
+Contract loader with YAML !include directive support and optional caching.
 
 This module provides contract loading with support for modular contract
 composition via the YAML !include tag. Contracts can reference external
 YAML files that are resolved and merged during loading.
+
+An optional in-memory cache (ContractLoaderCache) is available for
+high-throughput scenarios where the same contract files are loaded
+repeatedly. Caching is opt-in and disabled by default.
 
 Security:
     - Path traversal attacks are blocked (relative paths only)
@@ -19,14 +23,39 @@ Security:
 Thread Safety:
     IncludeLoader instances are NOT thread-safe. Create separate instances
     for concurrent use or protect with external synchronization.
+    ContractLoaderCache is NOT thread-safe. Use external synchronization
+    for concurrent access or create per-thread instances.
 
 Example:
-    Basic usage::
+    Basic usage (no caching)::
 
         from omnibase_core.contracts.contract_loader import load_contract
 
         # Load contract with includes
         contract = load_contract(Path("contracts/my_node.yaml"))
+
+    Cached usage::
+
+        from omnibase_core.contracts.contract_loader import (
+            ContractLoaderCache,
+            load_contract_cached,
+        )
+
+        # Create a cache with 60-second TTL
+        cache = ContractLoaderCache(ttl_seconds=60)
+
+        # Load with caching; repeated calls return the cached result
+        contract = load_contract_cached(Path("contracts/my_node.yaml"), cache=cache)
+        stats = cache.get_stats()
+
+    Module-level default cache (suitable for process-wide reuse)::
+
+        from omnibase_core.contracts.contract_loader import (
+            get_default_cache,
+            load_contract_cached,
+        )
+
+        contract = load_contract_cached(Path("contracts/my_node.yaml"))
 
     Contract with include::
 
@@ -38,10 +67,12 @@ Example:
         routing: !include subcontracts/routing.yaml
 
 See Also:
+    - OMN-554: Optional caching for contract loading in high-throughput scenarios
     - OMN-1047: YAML !include directive support implementation
     - util_contract_loader.py: Legacy contract loading (without !include)
 """
 
+import time
 from pathlib import Path
 
 import yaml
@@ -49,10 +80,280 @@ import yaml
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.typed_dict.typed_dict_contract_loader_cache_stats import (
+    TypedDictContractLoaderCacheStats,
+)
 
 # Default configuration constants
 DEFAULT_MAX_INCLUDE_DEPTH = 10
 DEFAULT_MAX_FILE_SIZE = 1024 * 1024  # 1MB
+
+# Default cache TTL (seconds). None = no expiration.
+DEFAULT_CACHE_TTL_SECONDS: int | None = None
+
+
+class ContractLoaderCache:
+    """
+    Optional in-memory cache for contract loading in high-throughput scenarios.
+
+    Cache keys incorporate the file path and its mtime so that a modified
+    contract is never served stale. Entries optionally expire after a
+    configurable TTL.
+
+    Caching is opt-in: pass a ``ContractLoaderCache`` instance to
+    ``load_contract_cached()`` to enable it. The module-level default cache
+    (accessed via ``get_default_cache()``) is created lazily with
+    ``ttl_seconds=None`` (no expiration).
+
+    Thread Safety:
+        This class is NOT thread-safe. For concurrent use, either create
+        separate instances per thread or protect access with an external lock.
+
+    Attributes:
+        _ttl_seconds: Seconds before a cache entry expires, or None for no expiration.
+        _store: Internal mapping from cache key to (value, expiry_timestamp).
+        _hits: Number of cache hits since last reset.
+        _misses: Number of cache misses since last reset.
+        _evictions: Number of entries removed due to expiry or explicit invalidation.
+
+    Example:
+        .. code-block:: python
+
+            from omnibase_core.contracts.contract_loader import (
+                ContractLoaderCache,
+                load_contract_cached,
+            )
+
+            cache = ContractLoaderCache(ttl_seconds=300)
+            contract = load_contract_cached(
+                Path("contracts/my_node.yaml"), cache=cache
+            )
+            stats = cache.get_stats()
+            # stats["hits"] == 0, stats["misses"] == 1 after first load
+
+    .. versionadded:: OMN-554
+    """
+
+    def __init__(self, ttl_seconds: int | None = DEFAULT_CACHE_TTL_SECONDS) -> None:
+        """
+        Initialise the cache.
+
+        Args:
+            ttl_seconds: Seconds until a cached entry expires.  ``None`` (the
+                default) means entries never expire automatically.  A value of
+                ``0`` or negative is treated as *no caching* — ``get()`` always
+                returns a miss and ``put()`` is a no-op.
+        """
+        self._ttl_seconds = ttl_seconds
+        # key -> (contract_dict, expiry_timestamp | None)
+        self._store: dict[str, tuple[dict[str, object], float | None]] = {}
+        self._hits: int = 0
+        self._misses: int = 0
+        self._evictions: int = 0
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _make_key(self, contract_path: Path) -> str:
+        """
+        Compute a cache key from path and mtime.
+
+        Including the mtime in the key ensures that file modifications
+        automatically produce a cache miss without requiring explicit
+        invalidation.
+
+        Args:
+            contract_path: Resolved (absolute) path to the contract file.
+
+        Returns:
+            A string key in the form ``<absolute_path>:<mtime_ns>``.
+        """
+        try:
+            mtime_ns = contract_path.stat().st_mtime_ns
+        except OSError:
+            # File does not exist or is inaccessible; use a sentinel mtime.
+            mtime_ns = -1
+        return f"{contract_path!s}:{mtime_ns}"
+
+    def _is_expired(self, expiry: float | None) -> bool:
+        """Return True if the entry has passed its expiry timestamp."""
+        if expiry is None:
+            return False
+        return time.monotonic() > expiry
+
+    def _compute_expiry(self) -> float | None:
+        """Return the expiry timestamp for a new entry, or None if no TTL."""
+        if self._ttl_seconds is None:
+            return None
+        return time.monotonic() + self._ttl_seconds
+
+    def _is_disabled(self) -> bool:
+        """Return True if TTL is zero or negative (caching disabled)."""
+        return self._ttl_seconds is not None and self._ttl_seconds <= 0
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def get(self, contract_path: Path) -> dict[str, object] | None:
+        """
+        Retrieve a cached contract, or return ``None`` on miss/expiry.
+
+        Expired entries are lazily removed on access.
+
+        Args:
+            contract_path: Resolved path to the contract file.
+
+        Returns:
+            The cached contract dictionary, or ``None`` if not found or expired.
+        """
+        if self._is_disabled():
+            self._misses += 1
+            return None
+
+        key = self._make_key(contract_path)
+        entry = self._store.get(key)
+
+        if entry is None:
+            self._misses += 1
+            return None
+
+        value, expiry = entry
+        if self._is_expired(expiry):
+            del self._store[key]
+            self._evictions += 1
+            self._misses += 1
+            return None
+
+        self._hits += 1
+        return value
+
+    def put(
+        self, contract_path: Path, contract: dict[str, object]
+    ) -> None:
+        """
+        Store a contract in the cache.
+
+        A no-op when TTL is zero or negative.
+
+        Args:
+            contract_path: Resolved path used to generate the cache key.
+            contract: The loaded contract dictionary to cache.
+        """
+        if self._is_disabled():
+            return
+
+        key = self._make_key(contract_path)
+        expiry = self._compute_expiry()
+        self._store[key] = (contract, expiry)
+
+    def invalidate(self, contract_path: Path) -> bool:
+        """
+        Remove a specific contract from the cache.
+
+        Args:
+            contract_path: Path whose entry should be removed.
+
+        Returns:
+            ``True`` if an entry was removed, ``False`` if it was not present.
+        """
+        key = self._make_key(contract_path)
+        if key in self._store:
+            del self._store[key]
+            self._evictions += 1
+            return True
+        return False
+
+    def clear(self) -> int:
+        """
+        Remove all entries from the cache.
+
+        Returns:
+            Number of entries removed.
+        """
+        count = len(self._store)
+        self._store.clear()
+        self._evictions += count
+        return count
+
+    def get_stats(self) -> TypedDictContractLoaderCacheStats:
+        """
+        Return current cache statistics.
+
+        Does NOT trigger expiry cleanup; call ``evict_expired()`` explicitly
+        if you want accurate ``entries`` counts.
+
+        Returns:
+            A :class:`TypedDictContractLoaderCacheStats` with fields:
+            - ``enabled``: True unless TTL is zero or negative.
+            - ``entries``: Current number of stored entries (may include expired).
+            - ``hits``: Cumulative hit count.
+            - ``misses``: Cumulative miss count.
+            - ``evictions``: Cumulative eviction count (expiry + explicit).
+            - ``hit_ratio``: hits / (hits + misses), or 0.0 if no lookups.
+        """
+        total = self._hits + self._misses
+        hit_ratio = self._hits / total if total > 0 else 0.0
+        return TypedDictContractLoaderCacheStats(
+            enabled=not self._is_disabled(),
+            entries=len(self._store),
+            hits=self._hits,
+            misses=self._misses,
+            evictions=self._evictions,
+            hit_ratio=hit_ratio,
+        )
+
+    def evict_expired(self) -> int:
+        """
+        Remove all expired entries from the cache.
+
+        Returns:
+            Number of entries evicted.
+        """
+        now = time.monotonic()
+        expired = [
+            k for k, (_, expiry) in self._store.items()
+            if expiry is not None and now > expiry
+        ]
+        for k in expired:
+            del self._store[k]
+        self._evictions += len(expired)
+        return len(expired)
+
+    def reset_stats(self) -> None:
+        """Reset hit/miss/eviction counters without clearing cached data."""
+        self._hits = 0
+        self._misses = 0
+        self._evictions = 0
+
+
+# ---------------------------------------------------------------------------
+# Module-level default cache (lazily initialised, process-wide singleton)
+# ---------------------------------------------------------------------------
+
+_default_cache: ContractLoaderCache | None = None
+
+
+def get_default_cache() -> ContractLoaderCache:
+    """
+    Return the module-level default ``ContractLoaderCache`` instance.
+
+    The default cache is created lazily on first access with
+    ``ttl_seconds=None`` (entries never expire). It is suitable for
+    process-wide reuse when contract files are not expected to change
+    during the process lifetime.
+
+    For time-limited caching or per-request caches, create a dedicated
+    ``ContractLoaderCache`` instance instead.
+
+    Returns:
+        The process-wide default ``ContractLoaderCache``.
+    """
+    global _default_cache  # module-level singleton
+    if _default_cache is None:
+        _default_cache = ContractLoaderCache(ttl_seconds=None)
+    return _default_cache
 
 
 def _validate_file_size(
@@ -430,3 +731,77 @@ def load_contract(
                 "yaml_error": str(e),
             },
         ) from e
+
+
+def load_contract_cached(
+    contract_path: Path,
+    *,
+    cache: ContractLoaderCache | None = None,
+    max_depth: int = DEFAULT_MAX_INCLUDE_DEPTH,
+    max_file_size: int = DEFAULT_MAX_FILE_SIZE,
+) -> dict[str, object]:
+    """
+    Load a YAML contract with optional in-memory caching.
+
+    On a cache hit the cached dictionary is returned immediately without
+    reading or parsing the file again.  Cache keys include the file's
+    ``mtime`` so that on-disk changes automatically produce a miss.
+
+    If ``cache`` is ``None``, the module-level default cache (see
+    ``get_default_cache()``) is used.  To disable caching entirely, pass
+    a ``ContractLoaderCache`` with ``ttl_seconds=0``.
+
+    Thread Safety:
+        The underlying ``load_contract()`` call is thread-safe.
+        ``ContractLoaderCache`` itself is NOT thread-safe; use an external
+        lock if multiple threads share the same cache instance.
+
+    Args:
+        contract_path: Path to the contract YAML file.
+        cache: ``ContractLoaderCache`` instance to use.  Defaults to the
+            module-level default cache.
+        max_depth: Maximum nesting depth for !include directives (default: 10).
+        max_file_size: Maximum file size in bytes (default: 1MB).
+
+    Returns:
+        The loaded (and possibly cached) contract as a dictionary.
+
+    Raises:
+        ModelOnexError: If the contract cannot be loaded or parsed.
+
+    Example:
+        .. code-block:: python
+
+            from pathlib import Path
+            from omnibase_core.contracts.contract_loader import (
+                ContractLoaderCache,
+                load_contract_cached,
+            )
+
+            cache = ContractLoaderCache(ttl_seconds=300)
+            contract = load_contract_cached(
+                Path("contracts/my_node.yaml"), cache=cache
+            )
+            # Second call returns cached result without I/O
+            contract2 = load_contract_cached(
+                Path("contracts/my_node.yaml"), cache=cache
+            )
+            assert cache.get_stats()["hits"] == 1
+
+    .. versionadded:: OMN-554
+    """
+    resolved = contract_path.resolve()
+    effective_cache = cache if cache is not None else get_default_cache()
+
+    # Try cache first
+    cached_value = effective_cache.get(resolved)
+    if cached_value is not None:
+        return cached_value
+
+    # Cache miss: load from disk
+    result = load_contract(resolved, max_depth=max_depth, max_file_size=max_file_size)
+
+    # Store in cache (put() is a no-op when cache is disabled)
+    effective_cache.put(resolved, result)
+
+    return result

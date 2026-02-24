@@ -271,6 +271,7 @@ from .typed_dict_migration_step_dict import TypedDictMigrationStepDict
 # Mixin-specific TypedDict definitions
 from .typed_dict_mixin_types import (
     TypedDictCacheStats,
+    TypedDictContractLoaderCacheStats,
     TypedDictDiscoveryExtendedStats,
     TypedDictEventMetadata,
     TypedDictExecutorHealth,
@@ -607,6 +608,7 @@ __all__ = [
     "convert_error_details_to_typed_dict",
     # Mixin-specific TypedDict definitions
     "TypedDictCacheStats",
+    "TypedDictContractLoaderCacheStats",
     "TypedDictDiscoveryExtendedStats",
     "TypedDictMixinDiscoveryStats",
     "TypedDictEventMetadata",
