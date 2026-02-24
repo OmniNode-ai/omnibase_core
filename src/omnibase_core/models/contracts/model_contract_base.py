@@ -15,6 +15,7 @@ This implementation does not use Any types.
 """
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, Self, cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -843,6 +844,49 @@ class ModelContractBase(BaseModel, ABC):
                 validation_type="complexity_limit",
                 architectural_guidance="Consider breaking complex contracts into smaller, more focused contracts",
             )
+
+    @classmethod
+    def validate_file_exists(cls, path: Path | str) -> None:
+        """
+        Pre-flight check that a YAML contract file exists and is readable.
+
+        Validates the given path before attempting to load it via any
+        ``from_yaml()`` method, surfacing ``FILE_NOT_FOUND`` or
+        ``FILE_READ_ERROR`` errors early with clear, structured messages.
+
+        This is a thin wrapper around
+        :func:`omnibase_core.utils.util_safe_yaml_loader.validate_file_exists`
+        exposed as a classmethod so callers can use the contract type for
+        context (e.g. ``ModelContractCompute.validate_file_exists(path)``).
+
+        Args:
+            path: File path to validate. Accepts both ``pathlib.Path`` and
+                ``str`` inputs; strings are coerced to ``Path`` internally.
+
+        Returns:
+            None if the file exists, is a regular file, and is readable.
+
+        Raises:
+            ModelOnexError: With ``FILE_NOT_FOUND`` code when the path does
+                not exist or is a directory rather than a regular file.
+            ModelOnexError: With ``FILE_READ_ERROR`` code when the file
+                exists but cannot be read (permission denied).
+            ModelOnexError: With ``INTERNAL_ERROR`` code for unexpected
+                OS-level errors; original exception is preserved via
+                ``__cause__``.
+
+        Example::
+
+            contract_path = Path("contracts/node_my_compute.yaml")
+            ModelContractCompute.validate_file_exists(contract_path)
+            contract = ModelContractCompute.from_yaml(contract_path.read_text())
+        """
+        from omnibase_core.utils.util_safe_yaml_loader import (
+            validate_file_exists as _validate_file_exists,
+        )
+
+        resolved = Path(path) if isinstance(path, str) else path
+        _validate_file_exists(resolved)
 
     # from_attributes=True allows Pydantic to accept objects with matching
     # attributes even when class identity differs (e.g., in pytest-xdist

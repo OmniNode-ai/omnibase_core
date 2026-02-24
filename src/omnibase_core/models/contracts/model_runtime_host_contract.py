@@ -81,6 +81,45 @@ class ModelRuntimeHostContract(BaseModel):
     )
 
     @classmethod
+    def validate_file_exists(cls, path: Path | str) -> None:
+        """
+        Pre-flight check that a RuntimeHostContract YAML file exists and is readable.
+
+        Convenience wrapper around
+        :func:`omnibase_core.utils.util_safe_yaml_loader.validate_file_exists`
+        that allows callers to verify the contract file before calling
+        :meth:`from_yaml`.
+
+        Args:
+            path: File path to validate. Accepts both ``pathlib.Path`` and
+                ``str`` inputs; strings are coerced to ``Path`` internally.
+
+        Returns:
+            None if the file exists, is a regular file, and is readable.
+
+        Raises:
+            ModelOnexError: With ``FILE_NOT_FOUND`` code when the path does
+                not exist or is a directory.
+            ModelOnexError: With ``FILE_READ_ERROR`` code when the file
+                exists but cannot be read (permission denied).
+            ModelOnexError: With ``INTERNAL_ERROR`` code for unexpected
+                OS-level errors; original exception is preserved via
+                ``__cause__``.
+
+        Example::
+
+            contract_path = Path("config/runtime_host.yaml")
+            ModelRuntimeHostContract.validate_file_exists(contract_path)
+            contract = ModelRuntimeHostContract.from_yaml(contract_path)
+        """
+        from omnibase_core.utils.util_safe_yaml_loader import (
+            validate_file_exists as _validate_file_exists,
+        )
+
+        resolved = Path(path) if isinstance(path, str) else path
+        _validate_file_exists(resolved)
+
+    @classmethod
     def from_yaml(cls, path: Path) -> "ModelRuntimeHostContract":
         """Load RuntimeHostContract from a YAML file.
 
