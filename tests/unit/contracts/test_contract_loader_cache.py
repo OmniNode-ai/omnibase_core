@@ -27,7 +27,6 @@ from omnibase_core.contracts.contract_loader import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -149,9 +148,7 @@ class TestContractLoaderCacheMtimeInvalidation:
 class TestContractLoaderCacheTTL:
     """TTL-based entry expiry."""
 
-    def test_entry_expires_after_ttl(
-        self, basic_yaml: Path
-    ) -> None:
+    def test_entry_expires_after_ttl(self, basic_yaml: Path) -> None:
         cache = ContractLoaderCache(ttl_seconds=1)
         cache.put(basic_yaml, {"node_name": "ttl_test"})
         assert cache.get(basic_yaml) is not None  # alive
@@ -164,9 +161,7 @@ class TestContractLoaderCacheTTL:
 
         assert result is None
 
-    def test_entry_alive_before_ttl(
-        self, basic_yaml: Path
-    ) -> None:
+    def test_entry_alive_before_ttl(self, basic_yaml: Path) -> None:
         cache = ContractLoaderCache(ttl_seconds=3600)
         cache.put(basic_yaml, {"node_name": "alive"})
         assert cache.get(basic_yaml) == {"node_name": "alive"}
@@ -329,9 +324,7 @@ class TestContractLoaderCacheMetrics:
         # Entry should still be accessible
         assert fresh_cache.get(basic_yaml) == {"node_name": "x"}
 
-    def test_expired_entry_increments_miss_and_eviction(
-        self, basic_yaml: Path
-    ) -> None:
+    def test_expired_entry_increments_miss_and_eviction(self, basic_yaml: Path) -> None:
         cache = ContractLoaderCache(ttl_seconds=1)
         cache.put(basic_yaml, {"node_name": "x"})
 
@@ -366,9 +359,7 @@ class TestContractLoaderCacheEvictExpired:
         assert evicted == 1
         assert cache.get_stats()["entries"] == 0
 
-    def test_evict_expired_does_not_remove_live_entries(
-        self, basic_yaml: Path
-    ) -> None:
+    def test_evict_expired_does_not_remove_live_entries(self, basic_yaml: Path) -> None:
         cache = ContractLoaderCache(ttl_seconds=3600)
         cache.put(basic_yaml, {"node_name": "x"})
         evicted = cache.evict_expired()
@@ -392,9 +383,7 @@ class TestContractLoaderCacheEvictExpired:
 class TestLoadContractCached:
     """load_contract_cached() function behaviour."""
 
-    def test_first_call_is_miss_and_loads_file(
-        self, basic_yaml: Path
-    ) -> None:
+    def test_first_call_is_miss_and_loads_file(self, basic_yaml: Path) -> None:
         cache = ContractLoaderCache()
         contract = load_contract_cached(basic_yaml, cache=cache)
         assert contract["node_name"] == "test_node"
@@ -417,9 +406,7 @@ class TestLoadContractCached:
         direct = load_contract(basic_yaml)
         assert cached == direct
 
-    def test_uses_default_cache_when_none_passed(
-        self, basic_yaml: Path
-    ) -> None:
+    def test_uses_default_cache_when_none_passed(self, basic_yaml: Path) -> None:
         """Calling without explicit cache uses get_default_cache()."""
         default = get_default_cache()
         default.clear()
@@ -480,4 +467,4 @@ class TestGetDefaultCache:
         """Default cache entries should never expire automatically."""
         cache = get_default_cache()
         # Accessing private attribute for assertion only in tests
-        assert cache._ttl_seconds is None  # noqa: SLF001
+        assert cache._ttl_seconds is None

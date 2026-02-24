@@ -229,9 +229,7 @@ class ContractLoaderCache:
         self._hits += 1
         return value
 
-    def put(
-        self, contract_path: Path, contract: dict[str, object]
-    ) -> None:
+    def put(self, contract_path: Path, contract: dict[str, object]) -> None:
         """
         Store a contract in the cache.
 
@@ -313,7 +311,8 @@ class ContractLoaderCache:
         """
         now = time.monotonic()
         expired = [
-            k for k, (_, expiry) in self._store.items()
+            k
+            for k, (_, expiry) in self._store.items()
             if expiry is not None and now > expiry
         ]
         for k in expired:
