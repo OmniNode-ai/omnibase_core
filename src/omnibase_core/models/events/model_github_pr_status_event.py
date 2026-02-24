@@ -14,7 +14,7 @@ Partition key: ``{repo}:{pr_number}``
 
 from __future__ import annotations
 
-from typing import Literal
+from enum import Enum
 
 from pydantic import ConfigDict, Field
 
@@ -22,20 +22,22 @@ from omnibase_core.models.events.model_runtime_event_base import (
     ModelRuntimeEventBase,
 )
 
-__all__ = ["ModelGitHubPRStatusEvent", "TOPIC_GITHUB_PR_STATUS_EVENT"]
+__all__ = ["ModelGitHubPRStatusEvent", "TOPIC_GITHUB_PR_STATUS_EVENT", "TriageState"]
 
 TOPIC_GITHUB_PR_STATUS_EVENT = "onex.evt.github.pr-status.v1"
 
-TriageState = Literal[
-    "draft",
-    "stale",
-    "ci_failing",
-    "changes_requested",
-    "ready_to_merge",
-    "approved_pending_ci",
-    "needs_review",
-    "blocked",
-]
+
+class TriageState(str, Enum):
+    """Triage classification of a GitHub pull request."""
+
+    DRAFT = "draft"
+    STALE = "stale"
+    CI_FAILING = "ci_failing"
+    CHANGES_REQUESTED = "changes_requested"
+    READY_TO_MERGE = "ready_to_merge"
+    APPROVED_PENDING_CI = "approved_pending_ci"
+    NEEDS_REVIEW = "needs_review"
+    BLOCKED = "blocked"
 
 
 class ModelGitHubPRStatusEvent(ModelRuntimeEventBase):
