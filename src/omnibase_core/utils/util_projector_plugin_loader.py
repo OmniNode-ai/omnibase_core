@@ -40,8 +40,6 @@ Or use the combined helper:
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import ValidationError as PydanticValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -66,7 +64,7 @@ from omnibase_core.models.projectors.model_projector_contract import (
 CURRENT_SCHEMA_VERSION: ModelSemVer = ModelSemVer(major=1, minor=0, patch=0)
 
 #: Deprecated versions that still load successfully but trigger a WARNING log.
-#: These exist only for backward compatibility; operators should migrate contracts.
+#: Operators running contracts on these versions should migrate to CURRENT_SCHEMA_VERSION.
 DEPRECATED_SCHEMA_VERSIONS: frozenset[ModelSemVer] = frozenset(
     # No deprecated versions in the initial release.  Populate as the schema evolves.
     # Example for future use:
@@ -163,7 +161,7 @@ class UtilProjectorPluginLoader:
     # Public API
     # ------------------------------------------------------------------
 
-    def load(self, data: dict[str, Any]) -> ModelProjectorContract:
+    def load(self, data: dict[str, object]) -> ModelProjectorContract:
         """Parse *data* into a :class:`ModelProjectorContract`.
 
         Args:
@@ -179,10 +177,11 @@ class UtilProjectorPluginLoader:
         try:
             return ModelProjectorContract.model_validate(data)
         except PydanticValidationError as exc:
+            projector_id = data.get("projector_id", "<unknown>")
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
                 message=f"Projector contract validation failed: {exc}",
-                context={"projector_id": data.get("projector_id", "<unknown>")},
+                context={"projector_id": projector_id},
             ) from exc
 
     def validate_version(self, contract: ModelProjectorContract) -> None:
@@ -253,14 +252,14 @@ class UtilProjectorPluginLoader:
                 },
             )
 
-    def load_and_validate(self, data: dict[str, Any]) -> ModelProjectorContract:
+    def load_and_validate(self, data: dict[str, object]) -> ModelProjectorContract:
         """Parse *data* and validate the schema version in one call.
 
         This is the preferred entry point for production use.  It combines
         :meth:`load` and :meth:`validate_version` into a single operation.
 
         Args:
-            data: Raw dict representation of a projector contract.
+            data: Raw dict representation of a projector contract (e.g. from YAML).
 
         Returns:
             Validated :class:`ModelProjectorContract` instance.

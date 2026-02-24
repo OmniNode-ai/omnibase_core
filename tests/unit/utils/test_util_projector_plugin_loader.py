@@ -18,7 +18,6 @@ Test coverage:
 
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -37,7 +36,7 @@ from omnibase_core.utils.util_projector_plugin_loader import (
 # ---------------------------------------------------------------------------
 
 
-def _minimal_contract_data(version: str = "1.0.0") -> dict[str, Any]:
+def _minimal_contract_data(version: str = "1.0.0") -> dict[str, object]:
     """Return the minimal dict required to build a valid ModelProjectorContract."""
     return {
         "projector_kind": "materialized_view",
@@ -135,7 +134,7 @@ class TestUtilProjectorPluginLoaderLoad:
         self, loader: UtilProjectorPluginLoader
     ) -> None:
         """load() wraps Pydantic ValidationError in ModelOnexError."""
-        bad_data: dict[str, Any] = {
+        bad_data: dict[str, object] = {
             "projector_kind": "materialized_view",
             # Missing required fields: projector_id, name, version, aggregate_type, etc.
         }
