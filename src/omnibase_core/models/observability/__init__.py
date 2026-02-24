@@ -18,10 +18,24 @@ Cardinality Policy:
     - ModelMetricsPolicy: Label validation and cardinality enforcement
     - ModelLabelViolation: Individual policy violation details
     - ModelLabelValidationResult: Complete validation result with sanitization
+
+Envelope Validation Metrics:
+    - ModelEnvelopeValidationTimingMetrics: p50/p95/p99 latency with per-step breakdown
+    - ModelEnvelopeValidationFailureMetrics: Per-type failure rates and alerting
+    - ModelEnvelopeValidationSummary: Combined timing and failure snapshot
 """
 
 from omnibase_core.models.observability.model_counter_emission import (
     ModelCounterEmission,
+)
+from omnibase_core.models.observability.model_envelope_validation_failure_metrics import (
+    ModelEnvelopeValidationFailureMetrics,
+)
+from omnibase_core.models.observability.model_envelope_validation_summary import (
+    ModelEnvelopeValidationSummary,
+)
+from omnibase_core.models.observability.model_envelope_validation_timing_metrics import (
+    ModelEnvelopeValidationTimingMetrics,
 )
 from omnibase_core.models.observability.model_gauge_emission import ModelGaugeEmission
 from omnibase_core.models.observability.model_histogram_observation import (
@@ -45,4 +59,8 @@ __all__ = [
     "ModelMetricsPolicy",
     "ModelLabelViolation",
     "ModelLabelValidationResult",
+    # Envelope validation metrics
+    "ModelEnvelopeValidationTimingMetrics",
+    "ModelEnvelopeValidationFailureMetrics",
+    "ModelEnvelopeValidationSummary",
 ]
