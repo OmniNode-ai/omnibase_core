@@ -192,22 +192,30 @@ class TestServiceRegistryExtended:
         # Restore original method
         registry._store_instance = original_store  # type: ignore[method-assign]
 
-    # ===== register_factory Not Implemented (Lines 289-315) =====
+    # ===== register_factory Implementation =====
 
     @pytest.mark.asyncio
-    async def test_register_factory_not_implemented(
-        self, registry: ServiceRegistry
-    ) -> None:
-        """Test register_factory raises not implemented error (Lines 311-315)."""
-        with pytest.raises(ModelOnexError) as exc_info:
-            await registry.register_factory(
-                interface=ITestService,
-                factory=lambda: MockServiceImplementation(),
-                lifecycle="transient",
-                scope="global",
-            )
+    async def test_register_factory_succeeds(self, registry: ServiceRegistry) -> None:
+        """Test register_factory now succeeds and returns a valid registration UUID."""
 
-        assert "Factory registration not yet implemented" in str(exc_info.value)
+        class MockFactory:
+            """Minimal ProtocolServiceFactory-compatible factory for testing."""
+
+            async def create_instance(self, interface: type, context: dict) -> object:
+                return MockServiceImplementation("from_factory")
+
+            async def dispose_instance(self, instance: object) -> None:
+                pass
+
+        factory = MockFactory()
+        registration_id = await registry.register_factory(
+            interface=ITestService,
+            factory=factory,
+            lifecycle="transient",
+            scope="global",
+        )
+
+        assert isinstance(registration_id, UUID)
 
     # ===== unregister_service Edge Cases (Lines 327-351) =====
 
@@ -621,23 +629,23 @@ class TestServiceRegistryExtended:
         assert "Singleton instance not found" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_resolve_by_lifecycle_transient_not_supported(
+    async def test_resolve_by_lifecycle_transient_requires_factory(
         self, registry: ServiceRegistry
     ) -> None:
-        """Test _resolve_by_lifecycle raises error for transient lifecycle (Lines 882-889)."""
-        # Register transient service (lazy loading)
-        reg_id = await registry.register_service(
+        """Test _resolve_by_lifecycle raises error for transient lifecycle without factory."""
+        # Register transient service via register_service (no factory stored)
+        await registry.register_service(
             interface=ITestService,
             implementation=MockServiceImplementation,
             lifecycle="transient",
             scope="request",
         )
 
-        # Try to resolve transient (not supported without factory)
+        # Transient resolution without a factory should raise an appropriate error
         with pytest.raises(ModelOnexError) as exc_info:
             await registry.resolve_service(ITestService)
 
-        assert "Transient lifecycle not yet supported" in str(exc_info.value)
+        assert "Transient lifecycle requires a factory" in str(exc_info.value)
 
     # ===== get_registry_status Edge Cases =====
 
