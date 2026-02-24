@@ -24,12 +24,53 @@ DB repository contracts are validated by 5 validators:
 
 ### Usage
 
+#### Individual Validators
+
 ```python
 from omnibase_core.runtime.runtime_file_registry import FileRegistry
 from pathlib import Path
 
 registry = FileRegistry()
 contract = registry.load(Path("examples/contracts/db_repository_example.yaml"))
+```
+
+#### Composite Validator (Recommended)
+
+Use `validate_db_repository_contract()` to run all 5 validators in a single call.
+It returns on the first failure for efficiency:
+
+```python
+from omnibase_core.validation.db import validate_db_repository_contract
+
+result = validate_db_repository_contract(contract)
+if result.is_valid:
+    print(f"Contract valid: {result.summary}")
+else:
+    print(f"Validation failed: {result.errors}")
+```
+
+This is equivalent to calling all 5 validators in sequence:
+
+```python
+from omnibase_core.validation.db import (
+    validate_db_deterministic,
+    validate_db_params,
+    validate_db_sql_safety,
+    validate_db_structural,
+    validate_db_table_access,
+)
+
+for validator in [
+    validate_db_structural,
+    validate_db_sql_safety,
+    validate_db_table_access,
+    validate_db_deterministic,
+    validate_db_params,
+]:
+    result = validator(contract)
+    if not result.is_valid:
+        print(f"Failed: {result.errors}")
+        break
 ```
 
 ## Other Contract Examples
