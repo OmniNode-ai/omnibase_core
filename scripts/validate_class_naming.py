@@ -156,6 +156,27 @@ ALLOWED_EXCEPTIONS: set[tuple[str, str]] = {
     ("validator_expanded_contract.py", "ExpandedContractValidator"),
     ("validator_expanded_contract_graph.py", "ExpandedContractGraphValidator"),
     ("validator_merge.py", "MergeValidator"),
+    #
+    # --- Pre-existing violations on main (OMN-2381) ---
+    #
+    # Protocols co-located with mixins (should move to protocols/ directory)
+    # These helper protocols support duck-typed access in the mixin implementations
+    ("mixin_event_bus.py", "ProtocolEventBusDuckTyped"),
+    ("mixin_health_check.py", "ProtocolConnectionPool"),
+    ("mixin_health_check.py", "ProtocolConnectionPoolWithConnection"),
+    ("mixin_health_check.py", "ProtocolKafkaProducerAio"),
+    ("mixin_health_check.py", "ProtocolKafkaProducerConfluent"),
+    ("mixin_health_check.py", "ProtocolRedisClient"),
+    #
+    # Enum co-located with model file (should move to enums/ directory)
+    ("model_github_pr_status_event.py", "TriageState"),
+    #
+    # Error class in utils (should move to errors/ directory)
+    ("util_compute_path_resolver.py", "PathResolutionError"),
+    #
+    # Utility helper class without Util prefix (legacy naming)
+    # StrValueHelper is a mixin providing __str__ for str-based enums
+    ("util_str_enum_base.py", "StrValueHelper"),
 }
 
 
