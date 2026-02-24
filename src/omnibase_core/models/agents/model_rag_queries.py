@@ -19,7 +19,7 @@ class ModelRagQueries(BaseModel):
         implementation_query: Natural-language query for implementation patterns
         context_preference: Preferred context source (e.g. "debugging", "general")
         match_count: Number of results to retrieve; must be between 1 and 20
-        confidence_threshold: Minimum confidence score (0.0–1.0) to accept results
+        confidence_threshold: Minimum confidence score (0.0-1.0) to accept results
 
     Example (from velocity-tracker.yaml)::
 
@@ -38,11 +38,11 @@ class ModelRagQueries(BaseModel):
     context_preference: str | None = None
     match_count: int | None = Field(
         default=None,
-        description="Number of results to retrieve (1–20)",
+        description="Number of results to retrieve (1-20)",
     )
     confidence_threshold: float | None = Field(
         default=None,
-        description="Minimum confidence score to accept results (0.0–1.0)",
+        description="Minimum confidence score to accept results (0.0-1.0)",
     )
 
     @field_validator("match_count")
