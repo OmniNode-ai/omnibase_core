@@ -151,7 +151,7 @@ class ModelEnvelopeValidationFailureMetrics(BaseModel):
 
     @property
     def failure_rate(self) -> float:
-        """Overall validation failure rate (0.0–1.0).
+        """Overall validation failure rate (0.0-1.0).
 
         Returns:
             Failure rate as a decimal, or ``0.0`` if no validations recorded.
@@ -162,7 +162,7 @@ class ModelEnvelopeValidationFailureMetrics(BaseModel):
 
     @property
     def pass_rate(self) -> float:
-        """Overall validation pass rate (0.0–1.0).
+        """Overall validation pass rate (0.0-1.0).
 
         Returns:
             Pass rate as a decimal, or ``1.0`` if no validations recorded.
@@ -212,7 +212,7 @@ class ModelEnvelopeValidationFailureMetrics(BaseModel):
     def record_failure(
         self,
         failure_type: EnumEnvelopeValidationFailureType,
-    ) -> "ModelEnvelopeValidationFailureMetrics":
+    ) -> ModelEnvelopeValidationFailureMetrics:
         """Record a validation failure and return updated metrics.
 
         Args:
@@ -246,7 +246,7 @@ class ModelEnvelopeValidationFailureMetrics(BaseModel):
     def record_pass(
         self,
         correlation_id_was_generated: bool = False,
-    ) -> "ModelEnvelopeValidationFailureMetrics":
+    ) -> ModelEnvelopeValidationFailureMetrics:
         """Record a successful validation and return updated metrics.
 
         Args:
@@ -268,7 +268,8 @@ class ModelEnvelopeValidationFailureMetrics(BaseModel):
             total_failures=self.total_failures,
             failures_by_type=dict(self.failures_by_type),
             correlation_ids_generated=(
-                self.correlation_ids_generated + (1 if correlation_id_was_generated else 0)
+                self.correlation_ids_generated
+                + (1 if correlation_id_was_generated else 0)
             ),
             correlation_ids_propagated=(
                 self.correlation_ids_propagated
@@ -339,7 +340,7 @@ class ModelEnvelopeValidationFailureMetrics(BaseModel):
         }
 
     @classmethod
-    def create_empty(cls) -> "ModelEnvelopeValidationFailureMetrics":
+    def create_empty(cls) -> ModelEnvelopeValidationFailureMetrics:
         """Create a new empty metrics instance.
 
         Returns:

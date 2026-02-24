@@ -181,7 +181,7 @@ class ModelEnvelopeValidationTimingMetrics(BaseModel):
 
     @property
     def pass_rate(self) -> float:
-        """Fraction of validations that passed (0.0–1.0).
+        """Fraction of validations that passed (0.0-1.0).
 
         Returns:
             Pass rate as a decimal, or ``1.0`` if no validations recorded.
@@ -192,7 +192,7 @@ class ModelEnvelopeValidationTimingMetrics(BaseModel):
 
     @property
     def failure_rate(self) -> float:
-        """Fraction of validations that failed (0.0–1.0).
+        """Fraction of validations that failed (0.0-1.0).
 
         Returns:
             Failure rate as a decimal, or ``0.0`` if no validations recorded.
@@ -238,7 +238,7 @@ class ModelEnvelopeValidationTimingMetrics(BaseModel):
         total_duration_ms: float,
         passed: bool,
         step_durations_ms: dict[str, float] | None = None,
-    ) -> "ModelEnvelopeValidationTimingMetrics":
+    ) -> ModelEnvelopeValidationTimingMetrics:
         """Record a single validation operation and return updated metrics.
 
         Creates a new immutable instance with updated statistics. The original
@@ -341,7 +341,7 @@ class ModelEnvelopeValidationTimingMetrics(BaseModel):
         }
 
     @classmethod
-    def create_empty(cls) -> "ModelEnvelopeValidationTimingMetrics":
+    def create_empty(cls) -> ModelEnvelopeValidationTimingMetrics:
         """Create a new empty metrics instance.
 
         Returns:

@@ -62,7 +62,9 @@ class TestModelEnvelopeValidationFailureMetricsRecordFailure:
     def test_record_single_failure_increments_counts(self) -> None:
         """Recording a failure increments total_validations and total_failures."""
         m = ModelEnvelopeValidationFailureMetrics()
-        updated = m.record_failure(EnumEnvelopeValidationFailureType.MISSING_CORRELATION_ID)
+        updated = m.record_failure(
+            EnumEnvelopeValidationFailureType.MISSING_CORRELATION_ID
+        )
 
         assert updated.total_validations == 1
         assert updated.total_failures == 1
@@ -98,10 +100,19 @@ class TestModelEnvelopeValidationFailureMetricsRecordFailure:
     def test_get_failure_count(self) -> None:
         """get_failure_count returns correct count for a specific type."""
         m = ModelEnvelopeValidationFailureMetrics()
-        m = m.record_failure(EnumEnvelopeValidationFailureType.INVALID_ENVELOPE_STRUCTURE)
-        m = m.record_failure(EnumEnvelopeValidationFailureType.INVALID_ENVELOPE_STRUCTURE)
+        m = m.record_failure(
+            EnumEnvelopeValidationFailureType.INVALID_ENVELOPE_STRUCTURE
+        )
+        m = m.record_failure(
+            EnumEnvelopeValidationFailureType.INVALID_ENVELOPE_STRUCTURE
+        )
 
-        assert m.get_failure_count(EnumEnvelopeValidationFailureType.INVALID_ENVELOPE_STRUCTURE) == 2
+        assert (
+            m.get_failure_count(
+                EnumEnvelopeValidationFailureType.INVALID_ENVELOPE_STRUCTURE
+            )
+            == 2
+        )
         assert m.get_failure_count(EnumEnvelopeValidationFailureType.EMPTY_PAYLOAD) == 0
 
     def test_get_failure_rate_for_type(self) -> None:
@@ -112,7 +123,9 @@ class TestModelEnvelopeValidationFailureMetricsRecordFailure:
         m = m.record_failure(EnumEnvelopeValidationFailureType.MISSING_MESSAGE_ID)
         m = m.record_failure(EnumEnvelopeValidationFailureType.MISSING_MESSAGE_ID)
 
-        rate = m.get_failure_rate_for_type(EnumEnvelopeValidationFailureType.MISSING_MESSAGE_ID)
+        rate = m.get_failure_rate_for_type(
+            EnumEnvelopeValidationFailureType.MISSING_MESSAGE_ID
+        )
         assert rate == pytest.approx(0.2)
 
 

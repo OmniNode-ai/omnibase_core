@@ -101,9 +101,6 @@ from .enum_directive_type import EnumDirectiveType
 # Dispatch status enum
 from .enum_dispatch_status import EnumDispatchStatus
 
-# Envelope validation failure type enum (OMN-839)
-from .enum_envelope_validation_failure_type import EnumEnvelopeValidationFailureType
-
 # Effect-related enums (from nodes)
 from .enum_effect_capability import EnumEffectCapability
 
@@ -112,6 +109,9 @@ from .enum_effect_category import EnumEffectCategory
 from .enum_effect_handler_type import EnumEffectHandlerType
 from .enum_effect_policy_level import EnumEffectPolicyLevel
 from .enum_effect_types import EnumEffectType, EnumTransactionState
+
+# Envelope validation failure type enum (OMN-839)
+from .enum_envelope_validation_failure_type import EnumEnvelopeValidationFailureType
 
 # Validation-related enums
 from .enum_environment_validation_rule_type import EnumEnvironmentValidationRuleType

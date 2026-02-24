@@ -6,8 +6,8 @@
 import pytest
 
 from omnibase_core.models.observability.model_envelope_validation_timing_metrics import (
-    ModelEnvelopeValidationTimingMetrics,
     VALIDATION_LATENCY_HISTOGRAM_BUCKETS,
+    ModelEnvelopeValidationTimingMetrics,
 )
 
 
@@ -46,8 +46,17 @@ class TestModelEnvelopeValidationTimingMetricsDefaults:
         """Histogram has the expected bucket keys."""
         m = ModelEnvelopeValidationTimingMetrics()
         expected_keys = {
-            "le_0_1ms", "le_0_25ms", "le_0_5ms", "le_1ms", "le_2_5ms",
-            "le_5ms", "le_10ms", "le_25ms", "le_50ms", "le_100ms", "gt_100ms",
+            "le_0_1ms",
+            "le_0_25ms",
+            "le_0_5ms",
+            "le_1ms",
+            "le_2_5ms",
+            "le_5ms",
+            "le_10ms",
+            "le_25ms",
+            "le_50ms",
+            "le_100ms",
+            "gt_100ms",
         }
         assert set(m.latency_histogram.keys()) == expected_keys
 
@@ -169,7 +178,7 @@ class TestModelEnvelopeValidationTimingMetricsHistogram:
     """Tests for histogram bucket assignment."""
 
     @pytest.mark.parametrize(
-        "duration_ms, expected_bucket",
+        ("duration_ms", "expected_bucket"),
         [
             (0.05, "le_0_1ms"),
             (0.1, "le_0_1ms"),

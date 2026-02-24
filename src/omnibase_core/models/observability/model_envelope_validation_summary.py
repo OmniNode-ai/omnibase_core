@@ -133,7 +133,7 @@ class ModelEnvelopeValidationSummary(BaseModel):
         step_durations_ms: dict[str, float] | None = None,
         failure_type: EnumEnvelopeValidationFailureType | None = None,
         correlation_id_was_generated: bool = False,
-    ) -> "ModelEnvelopeValidationSummary":
+    ) -> ModelEnvelopeValidationSummary:
         """Record a single validation operation and return updated summary.
 
         Atomically updates both the timing and failure sub-models. When
@@ -207,7 +207,7 @@ class ModelEnvelopeValidationSummary(BaseModel):
         }
 
     @classmethod
-    def create_empty(cls) -> "ModelEnvelopeValidationSummary":
+    def create_empty(cls) -> ModelEnvelopeValidationSummary:
         """Create a new empty summary instance.
 
         Returns:
