@@ -1,3 +1,4 @@
+---
 # Pre-commit hooks exported by omnibase_core.
 # Consumers reference these via:
 #
@@ -9,9 +10,8 @@
 - id: check-local-paths
   name: Check for local path references
   description: >
-    Detect machine-specific absolute paths (/Volumes/..., /Users/..., /home/...,
-    C:\Users\...) that break portability when code or skills are distributed.
-    Add `# local-path-ok` to suppress a specific line.
+    Detect machine-specific absolute paths (/Volumes/..., /Users/..., /home/..., C:\Users\...) that break
+    portability when code or skills are distributed. Add `# local-path-ok` to suppress a specific line.
   language: python
   entry: python -m omnibase_core.validation.validator_local_paths
   types: [text]
