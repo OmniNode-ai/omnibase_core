@@ -13,15 +13,11 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums import EnumPatternKind
+from omnibase_core.models.intelligence._helpers import _default_schema_version
 from omnibase_core.models.intelligence.model_pattern_error import ModelPatternError
 from omnibase_core.models.intelligence.model_pattern_record import ModelPatternRecord
 from omnibase_core.models.intelligence.model_pattern_warning import ModelPatternWarning
 from omnibase_core.models.primitives import ModelSemVer
-
-
-def _default_schema_version() -> ModelSemVer:
-    """Create default schema version 1.0.0."""
-    return ModelSemVer(major=1, minor=0, patch=0)
 
 
 def _default_patterns_by_kind() -> dict[EnumPatternKind, list[ModelPatternRecord]]:
