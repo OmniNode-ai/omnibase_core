@@ -53,7 +53,6 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_action_config_parameter import (
     ModelActionConfigParameter,
 )
-from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # =============================================================================
