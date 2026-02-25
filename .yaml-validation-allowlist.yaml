@@ -146,6 +146,14 @@ allowed_files:
     added: "2026-02-05"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/services/lock/service_lock_manager.py"
+    reason: >-
+      Reads raw lockfile YAML to dict before constructing ModelLockfile via ModelLockEntry.model_validate()
+      per entry. The YAML-to-Pydantic bridge is explicit and intentional: raw parse is immediately followed
+      by model_validate() on each command entry. (OMN-2570)
+    added: "2026-02-24"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

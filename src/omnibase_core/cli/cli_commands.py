@@ -556,6 +556,11 @@ from omnibase_core.cli.cli_spdx import spdx
 
 cli.add_command(spdx)
 
+# Register lock command group from separate module
+from omnibase_core.cli.cli_lock import lock
+
+cli.add_command(lock)
+
 
 if __name__ == "__main__":
     cli()
