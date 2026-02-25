@@ -257,7 +257,7 @@ from .enum_operation_status import EnumOperationStatus
 from .enum_orchestrator_capability import EnumOrchestratorCapability
 from .enum_orchestrator_types import EnumActionType, EnumBranchCondition
 
-# Overlay scope enum (OMN-2757)
+# Overlay scope enum (OMN-2757 — overlay stacking pipeline)
 from .enum_overlay_scope import SCOPE_ORDER, EnumOverlayScope
 
 # Parameter and return type enums

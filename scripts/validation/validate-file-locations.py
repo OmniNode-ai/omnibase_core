@@ -107,6 +107,13 @@ class FileLocationValidator:
         "error_fail_fast.py": ["mixins"],
         # Error models
         "model_onex_error.py": ["errors"],
+        # ONCP package module (OMN-2758) — models and services belong to the package subsystem
+        "model_oncp_manifest.py": ["package"],
+        "model_oncp_overlay_entry.py": ["package"],
+        "model_oncp_scenario_entry.py": ["package"],
+        "model_oncp_invariant_entry.py": ["package"],
+        "service_oncp_builder.py": ["package"],
+        "service_oncp_reader.py": ["package"],
         # Service implementations
         "service_logging.py": ["utils"],
         "service_minimal_logging.py": ["utils"],
@@ -233,6 +240,9 @@ class FileLocationValidator:
                     return
                 # Model* classes in validation/ are OK (validation helper models)
                 if prefix == "Model" and "validation/" in str(file_path):
+                    return
+                # Model* and Service* classes in package/ are OK (oncp package subsystem)
+                if prefix in ("Model", "Service") and "package/" in str(file_path):
                     return
                 # Protocol* classes in utils/ are OK (utility protocols)
                 if prefix == "Protocol" and "utils/" in str(file_path):

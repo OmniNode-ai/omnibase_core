@@ -146,6 +146,14 @@ allowed_files:
     added: "2026-02-05"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/package/service_oncp_reader.py"
+    reason: >-
+      ONCP package reader for .oncp zip bundles - must parse YAML bytes read from zip entries before Pydantic
+      model_validate(). The yaml.safe_load() calls are immediately followed by ModelOncpManifest.model_validate()
+      and ModelContractPatch.model_validate() respectively. (OMN-2758)
+    added: "2026-02-25"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
