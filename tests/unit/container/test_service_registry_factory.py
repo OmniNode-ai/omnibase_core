@@ -341,4 +341,4 @@ class TestRegisterFactory:
 
         # Each concurrent call produces a distinct instance
         assert factory.create_call_count == 10
-        assert len(set(id(inst) for inst in instances)) == 10
+        assert len({id(inst) for inst in instances}) == 10
