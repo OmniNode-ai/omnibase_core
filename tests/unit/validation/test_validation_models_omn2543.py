@@ -161,7 +161,9 @@ class TestValidationFinding:
 
     def test_frozen(self) -> None:
         """ValidationFinding is immutable."""
-        finding = ModelValidationFinding(validator_id="v", severity="PASS", message="ok")
+        finding = ModelValidationFinding(
+            validator_id="v", severity="PASS", message="ok"
+        )
         with pytest.raises(Exception):
             finding.message = "changed"  # type: ignore[misc]
 
