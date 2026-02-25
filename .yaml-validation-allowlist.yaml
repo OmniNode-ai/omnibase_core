@@ -223,3 +223,11 @@ allowed_functions:
       raw YAML to populate ModelContractRegisteredEvent fields (OMN-1655)
     added: "2026-01-29"
     review: "2026-06-13"
+
+  - function: "_check_fixture_presence"
+    reason: >-
+      Reads scenario YAML content from .oncp bundle to inspect the optional fixture_path field. Scenario
+      YAMLs are user-defined and have no fixed Pydantic schema in omnibase_core — the raw dict is used
+      only to extract one optional key for the tier1_static fixture presence check (OMN-2759).
+    added: "2026-02-25"
+    review: "2026-08-25"

@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Contract for contract.verify.replay compute node (OMN-2759).
+#
+# Tier 1 static validation: schema validation, capability linting, fixture
+# presence, overlay merge correctness, and determinism class declaration.
+# Tier 2 simulated replay is deferred.
+#
+# node-type: compute (pure transform — no I/O side effects)
+# input:  ModelVerifyReplayInput
+# output: ModelVerifyReplayOutput (signed verification report)
+
+name: contract.verify.replay
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: compute
+description: >
+  Statically verifies a .oncp contract package against tier1_static checks: schema validation, capability
+  linting, fixture presence, overlay merge correctness, determinism class declaration. Produces a signed
+  ModelVerifyReplayOutput report.
+input_model: omnibase_core.models.contract_verify_replay.model_verify_replay_input.ModelVerifyReplayInput
+output_model: omnibase_core.models.contract_verify_replay.model_verify_replay_output.ModelVerifyReplayOutput
+
+events:
+  emits:
+    - onex.contract.verify.replay.requested
+    - onex.contract.verify.replay.completed
+
+capability_inputs:
+  - oncp_package_read
+
+capability_outputs:
+  - contract_verify_replay
+
+determinism: deterministic
