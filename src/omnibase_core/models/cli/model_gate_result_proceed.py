@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-GateResultProceed — risk gate passed, dispatch proceeds immediately.
+ModelGateResultProceed — risk gate passed, dispatch proceeds immediately.
 
 .. versionadded:: 0.20.0  (OMN-2562)
 """

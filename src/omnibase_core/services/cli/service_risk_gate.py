@@ -60,7 +60,7 @@ from __future__ import annotations
 import threading
 from argparse import Namespace
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_never
 
 from omnibase_core.enums.enum_cli_command_risk import EnumCliCommandRisk
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -250,9 +250,7 @@ class ServiceRiskGate:
             )
             return result
 
-        # Unreachable if EnumCliCommandRisk is exhaustive, but defensive fallthrough
-        self._log_gate_decision(command_ref, risk, EnumRiskGateOutcome.PROCEED)
-        return ModelGateResultProceed(command_ref=command_ref, risk=risk)
+        assert_never(risk)
 
     def evaluate_confirmation_response(
         self,

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-GateResultHITLRequired — HIGH-risk gate, requires a one-time HITL approval token.
+ModelGateResultHITLRequired — HIGH-risk gate, requires a one-time HITL approval token.
 
 .. versionadded:: 0.20.0  (OMN-2562)
 """

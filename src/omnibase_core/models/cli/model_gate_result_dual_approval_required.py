@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-GateResultDualApprovalRequired — CRITICAL-risk gate, requires two principal tokens.
+ModelGateResultDualApprovalRequired — CRITICAL-risk gate, requires two principal tokens.
 
 .. versionadded:: 0.20.0  (OMN-2562)
 """

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-GateResultPromptConfirmation — MEDIUM-risk gate, requires user confirmation.
+ModelGateResultPromptConfirmation — MEDIUM-risk gate, requires user confirmation.
 
 .. versionadded:: 0.20.0  (OMN-2562)
 """
