@@ -106,8 +106,7 @@ class ValidatorRegistry:
         """
         if not _is_validator_node_class(node_class):
             raise TypeError(
-                f"node_class must be a subclass of NodeValidator, "
-                f"got {node_class!r}."
+                f"node_class must be a subclass of NodeValidator, got {node_class!r}."
             )
         with self._lock:
             if descriptor.validator_id in self._entries:
@@ -209,7 +208,9 @@ class ValidatorRegistry:
 
             # 3. contract_types filter (only if query is non-empty)
             if contract_types and descriptor.applicable_contract_types:
-                if not set(contract_types).intersection(descriptor.applicable_contract_types):
+                if not set(contract_types).intersection(
+                    descriptor.applicable_contract_types
+                ):
                     continue
 
             # 4. tuple_types filter (only if query is non-empty)

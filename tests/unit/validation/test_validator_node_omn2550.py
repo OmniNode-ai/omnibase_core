@@ -419,7 +419,8 @@ class TestValidatorRegistry:
     def test_resolve_contract_type_match(self) -> None:
         """resolve() includes validators whose applicable_contract_types intersect query."""
         registry = _make_registry_with(
-            AlwaysPassValidator, ContractTypeValidator  # AlwaysPass: no restriction
+            AlwaysPassValidator,
+            ContractTypeValidator,  # AlwaysPass: no restriction
         )
         validators = registry.resolve(contract_types=("NodeContract",))
         ids = {type(v).descriptor.validator_id for v in validators}
