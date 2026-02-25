@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# ONEX contract for the contract.resolve compute node.
+# Declares node type, I/O model references, and lifecycle events.
+#
+# See: OMN-2754 — Phase 1: contract.resolve compute node
+
+node_type: compute
+handler_id: node.contract.resolve
+name: contract_resolve
+version: "1.0.0"
+
+description: >
+  Canonical overlay resolution compute node. Merges an ordered list of
+  contract patches onto a base profile using ContractMergeEngine and
+  returns a content-addressed, fully-expanded ModelHandlerContract.
+
+input_model: omnibase_core.models.nodes.contract_resolve.ModelContractResolveInput
+output_model: omnibase_core.models.nodes.contract_resolve.ModelContractResolveOutput
+
+consumed_events:
+  - onex.contract.resolve.requested
+
+produced_events:
+  - onex.contract.resolve.completed
+
+descriptor:
+  purity: pure
+  idempotent: true
+  timeout_ms: 5000
