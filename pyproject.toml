@@ -54,6 +54,8 @@ documentation = "https://github.com/OmniNode-ai/omnibase_core/tree/main/docs"
 
 [project.scripts]
 onex = "omnibase_core.cli.cli_commands:cli"
+# Registry-driven CLI binary (OMN-2576)
+omn = "omnibase_core.cli.cli_omn:omn_cli"
 # Backward-compatibility alias (renamed from 'omni-agent' to 'onex' in v0.3.0)
 omni-agent = "omnibase_core.cli.cli_commands:cli"
 # Dev/test runtime host CLI (Phase 1 MVP - LocalHandler only)
