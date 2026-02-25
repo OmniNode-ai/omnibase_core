@@ -65,8 +65,8 @@ check-local-paths = "omnibase_core.validation.validator_local_paths:main"
 cli = ["psutil>=7.2.1"]
 cache = ["redis>=5.0.0,<8.0.0"]
 metrics = ["prometheus-client>=0.21.0,<1.0.0"]
-sql-parser = ["sqlglot>=26.0.0,<29.0.0"]
-full = ["psutil>=7.2.1", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<29.0.0"]
+sql-parser = ["sqlglot>=26.0.0,<30.0.0"]
+full = ["psutil>=7.2.1", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<30.0.0"]
 
 [dependency-groups]
 dev = [
@@ -89,7 +89,7 @@ dev = [
     "psutil>=7.2.1",
     "prometheus-client>=0.21.0,<1.0.0",
     "types-psutil>=7.2.1.20260116",
-    "sqlglot>=26.0.0,<29.0.0",
+    "sqlglot>=26.0.0,<30.0.0",
 ]
 
 [tool.hatch.build.targets.wheel]
