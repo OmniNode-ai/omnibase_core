@@ -14,7 +14,7 @@ Dispatches validated, parsed arguments to the correct backend based on the
     3. Backend dispatch (Kafka, HTTP, DIRECT_CALL, SUBPROCESS)
 
 The risk gate MUST run before argument validation side effects. If the gate
-returns anything other than ``GateResultProceed``, dispatch is aborted and
+returns anything other than ``ModelGateResultProceed``, dispatch is aborted and
 the caller receives a failed ``ModelCommandDispatchResult``.
 
 ## Supported Invocation Types
@@ -82,7 +82,7 @@ from omnibase_core.models.cli.model_command_dispatch_result import (
     ModelCommandDispatchResult,
 )
 from omnibase_core.models.cli.model_risk_gate_result import (
-    GateResultProceed,
+    ModelGateResultProceed,
 )
 from omnibase_core.protocols.cli.protocol_kafka_producer import ProtocolKafkaProducer
 from omnibase_core.services.cli.service_risk_gate import ServiceRiskGate
@@ -175,7 +175,7 @@ class ServiceCommandDispatcher:
 
         # Step 1: Risk gate — MUST run before any side-effectful validation.
         gate_result: GateResult = self._risk_gate.evaluate(command, parsed_args)
-        if not isinstance(gate_result, GateResultProceed):
+        if not isinstance(gate_result, ModelGateResultProceed):
             return ModelCommandDispatchResult(
                 success=False,
                 correlation_id=correlation_id,

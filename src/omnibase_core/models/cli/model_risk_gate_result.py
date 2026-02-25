@@ -14,28 +14,28 @@ and provides the union alias for use by callers.
 from __future__ import annotations
 
 from omnibase_core.models.cli.model_gate_result_dual_approval_required import (
-    GateResultDualApprovalRequired,
+    ModelGateResultDualApprovalRequired,
 )
 from omnibase_core.models.cli.model_gate_result_hitl_required import (
-    GateResultHITLRequired,
+    ModelGateResultHITLRequired,
 )
-from omnibase_core.models.cli.model_gate_result_proceed import GateResultProceed
+from omnibase_core.models.cli.model_gate_result_proceed import ModelGateResultProceed
 from omnibase_core.models.cli.model_gate_result_prompt_confirmation import (
-    GateResultPromptConfirmation,
+    ModelGateResultPromptConfirmation,
 )
 
 __all__ = [
     "GateResult",
-    "GateResultDualApprovalRequired",
-    "GateResultHITLRequired",
-    "GateResultProceed",
-    "GateResultPromptConfirmation",
+    "ModelGateResultDualApprovalRequired",
+    "ModelGateResultHITLRequired",
+    "ModelGateResultProceed",
+    "ModelGateResultPromptConfirmation",
 ]
 
 #: Discriminated union of all possible gate results.
 GateResult = (
-    GateResultProceed
-    | GateResultPromptConfirmation
-    | GateResultHITLRequired
-    | GateResultDualApprovalRequired
+    ModelGateResultProceed
+    | ModelGateResultPromptConfirmation
+    | ModelGateResultHITLRequired
+    | ModelGateResultDualApprovalRequired
 )
