@@ -66,4 +66,5 @@ __all__ = [
     "merge_dict",
     "merge_list_replace",
     "merge_scalar",
+    # Overlay stacking (OMN-2757)
 ]
