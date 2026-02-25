@@ -724,6 +724,9 @@ __all__ = [
     "EnumObjectiveLayer",
     "EnumPolicyType",
     "EnumRewardTargetType",
+    # Overlay scope (OMN-2757)
+    "EnumOverlayScope",
+    "SCOPE_ORDER",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")
