@@ -17,6 +17,8 @@ Design principles:
 - The action set never includes transitions not in the declared graph
 """
 
+from __future__ import annotations
+
 import logging
 
 from pydantic import BaseModel, ConfigDict, Field

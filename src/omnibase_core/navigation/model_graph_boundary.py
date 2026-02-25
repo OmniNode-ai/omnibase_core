@@ -18,6 +18,8 @@ Design principles:
 - Never raises unhandled exceptions for model-generated invalid selections
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Annotated, Literal
 

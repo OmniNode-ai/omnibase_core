@@ -16,6 +16,8 @@ Design principles:
 - No mutable global state; each session gets its own graph instance
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -300,7 +302,7 @@ class RegistryNode(BaseModel):
     capabilities: tuple[str, ...] = Field(default=())
     policy_tier: int = Field(default=0, ge=0)
     metadata: dict[str, str] = Field(default_factory=dict)
-    declared_transitions: tuple["RegistryTransitionDecl", ...] = Field(default=())
+    declared_transitions: tuple[RegistryTransitionDecl, ...] = Field(default=())
 
 
 class RegistryTransitionDecl(BaseModel):
