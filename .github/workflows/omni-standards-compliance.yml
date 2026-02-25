@@ -1,0 +1,197 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: Omni* Ecosystem Standards Compliance
+
+on:
+  push:
+    branches: [main, develop, "feature/*", "fix/*", "chore/*", "jonah/*", "jonahgabriel/*"]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+  REPO_NAME: "omnibase_core"
+
+jobs:
+  naming-conventions:
+    name: Naming Convention Validation
+    runs-on: ubuntu-latest
+    # Pre-existing violations on main (9 as of activation). Non-blocking until resolved.
+    # See: mixin_event_bus.py, mixin_health_check.py, util_compute_path_resolver.py,
+    #      util_str_enum_base.py, model_github_pr_status_event.py
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Validate class naming conventions
+        run: uv run python scripts/validate_class_naming.py
+
+  type-safety:
+    name: Type Safety Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Load cached venv
+        id: cached-uv-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/uv.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
+        run: uv sync --all-extras
+
+      - name: Install project (ensure editable install)
+        run: uv sync --all-extras
+
+      - name: Run MyPy type checking
+        run: |
+          uv run mypy src/ --config-file=mypy.ini || true
+          # Note: Continue on MyPy errors for now during transition period
+
+  onex-compliance:
+    name: ONEX Architecture Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate ONEX architecture compliance
+        run: |
+          # Check that core omnibase structure exists
+          if [ ! -d "src/${{ env.REPO_NAME }}" ]; then
+            echo "ERROR: Missing source package directory: src/${{ env.REPO_NAME }}"
+            exit 1
+          fi
+
+          # omnibase_core is a foundational library containing base protocols
+          # Specific node implementations are in omnibase_infra:
+          # - consul, kafka_adapter, postgres_adapter
+          # - node_postgres_adapter_effect, node_distributed_tracing_compute
+          # - node_event_bus_circuit_breaker_compute, hook_node, etc.
+          echo "omnibase_core foundational library structure validated"
+
+      - name: Report protocol locations
+        run: |
+          protocol_count=$(find . -name "protocol_*.py" | wc -l)
+          echo "Protocol files found: $protocol_count"
+          # omnibase_core is the foundational protocol library; protocol count is expected to be high
+          echo "Protocol file inventory (informational):"
+          find . -name "protocol_*.py" | sort
+
+  legacy-compatibility-check:
+    name: Legacy Compatibility Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for forbidden patterns
+        run: |
+          # Check for /model/ directory (should be /models/)
+          if [ -d "src/${{ env.REPO_NAME }}/model" ] && [ -d "src/${{ env.REPO_NAME }}/models" ]; then
+            echo "ERROR: Both /model/ and /models/ directories exist - remove /model/"
+            exit 1
+          elif [ -d "src/${{ env.REPO_NAME }}/model" ]; then
+            echo "WARNING: Using /model/ directory - should be /models/ for consistency"
+          fi
+
+          # Check for scattered model files
+          scattered_models=$(find . -name "*.py" -path "*/api/models.py" -o -path "*/validation/models.py" | head -5)
+          if [ -n "$scattered_models" ]; then
+            echo "WARNING: Found scattered model files:"
+            echo "$scattered_models"
+            echo "Consider consolidating into src/${{ env.REPO_NAME }}/models/"
+          fi
+
+          echo "Legacy compatibility check completed"
+
+  ecosystem-validation:
+    name: Ecosystem Integration Validation
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'OmniNode-ai' || github.repository_owner == 'jonahgabriel'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate ecosystem integration
+        run: |
+          echo "Validating ecosystem integration for ${{ env.REPO_NAME }}"
+
+          # Check for CLAUDE.md
+          if [ ! -f "CLAUDE.md" ]; then
+            echo "WARNING: No CLAUDE.md found - consider adding project instructions"
+          else
+            echo "CLAUDE.md found"
+          fi
+
+          # Check for standardization framework compliance
+          if [ -f "OMNI_ECOSYSTEM_STANDARDIZATION_FRAMEWORK.md" ]; then
+            echo "Standardization framework documentation found"
+          else
+            echo "INFO: Consider adding standardization framework documentation"
+          fi
+
+          echo "Ecosystem integration validation completed"
+
+  node-purity-check:
+    name: Node Purity Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run node purity check
+        run: uv run python scripts/check_node_purity.py
+
+  transport-boundary:
+    name: Transport/I/O Import Boundary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check transport imports (ADR-005)
+        run: bash scripts/validate-no-transport-imports.sh

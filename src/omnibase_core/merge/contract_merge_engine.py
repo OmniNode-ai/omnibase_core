@@ -33,6 +33,7 @@ See Also:
 
 from __future__ import annotations
 
+import logging
 import time
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
@@ -41,6 +42,7 @@ from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_merge_conflict_type import EnumMergeConflictType
 from omnibase_core.enums.enum_node_archetype import EnumNodeArchetype
+from omnibase_core.enums.enum_overlay_scope import SCOPE_ORDER
 from omnibase_core.merge.merge_rules import (
     apply_list_operations,
     merge_scalar,
@@ -52,6 +54,8 @@ from omnibase_core.models.contracts.model_contract_patch import ModelContractPat
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.merge.model_merge_conflict import ModelMergeConflict
+from omnibase_core.models.merge.model_overlay_ref import ModelOverlayRef
+from omnibase_core.models.merge.model_overlay_stack_entry import ModelOverlayStackEntry
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
 
@@ -68,6 +72,8 @@ if TYPE_CHECKING:
     from omnibase_core.protocols.protocol_contract_validation_event_emitter import (
         ProtocolContractValidationEventEmitter,
     )
+
+_log = logging.getLogger(__name__)
 
 
 __all__ = [
@@ -218,6 +224,107 @@ class ContractMergeEngine:
         .. versionchanged:: 0.4.1
             Added run_id parameter and event emission for OMN-1151.
         """
+        result, _overlay_refs = self._merge_internal(
+            patch=patch,
+            node_type=node_type,
+            run_id=run_id,
+            overlays=[],
+        )
+        return result
+
+    def merge_with_overlays(
+        self,
+        patch: ModelContractPatch,
+        overlays: list[ModelOverlayStackEntry],
+        node_type: EnumNodeType | None = None,
+        run_id: UUID | None = None,
+        strict_ordering: bool = False,
+    ) -> ModelHandlerContract:
+        """
+        Merge base patch then apply an ordered stack of overlays sequentially.
+
+        Overlays are applied in list order after the base patch merge. If
+        overlays are supplied out of canonical scope order (BASE → SESSION),
+        a warning is logged and they are sorted to canonical order before
+        application — unless ``strict_ordering=True``, in which case a
+        :class:`ModelOnexError` is raised.
+
+        If an event_emitter was provided during initialisation, this method
+        emits ``merge_started`` and ``merge_completed`` events with the full
+        ``overlay_refs`` list populated.
+
+        Args:
+            patch: Base contract patch to merge first.
+            overlays: Ordered list of overlay entries to apply in sequence.
+            node_type: Optional node type override.
+            run_id: Optional run identifier for event correlation.
+            strict_ordering: If True, raise on out-of-order overlay scopes
+                instead of warning and sorting.
+
+        Returns:
+            Expanded ModelHandlerContract with all overlays applied.
+
+        Raises:
+            ModelOnexError: If scope ordering is violated and strict_ordering
+                is True, or if any merge step fails.
+
+        Example:
+            >>> from omnibase_core.enums.enum_overlay_scope import EnumOverlayScope
+            >>> from omnibase_core.models.merge.model_overlay_stack_entry import (
+            ...     ModelOverlayStackEntry,
+            ... )
+            >>>
+            >>> stack = [
+            ...     ModelOverlayStackEntry(
+            ...         overlay_id="org-defaults",
+            ...         overlay_patch=org_patch,
+            ...         scope=EnumOverlayScope.ORG,
+            ...         version="1.0.0",
+            ...     ),
+            ...     ModelOverlayStackEntry(
+            ...         overlay_id="user-prefs",
+            ...         overlay_patch=user_patch,
+            ...         scope=EnumOverlayScope.USER,
+            ...         version="2.1.0",
+            ...     ),
+            ... ]
+            >>> contract = engine.merge_with_overlays(base_patch, stack)
+
+        .. versionadded:: 0.18.0
+            Added as part of overlay stacking pipeline (OMN-2757).
+        """
+        sorted_overlays = self._sort_overlays(overlays, strict_ordering=strict_ordering)
+        result, _overlay_refs = self._merge_internal(
+            patch=patch,
+            node_type=node_type,
+            run_id=run_id,
+            overlays=sorted_overlays,
+        )
+        return result
+
+    def _merge_internal(
+        self,
+        patch: ModelContractPatch,
+        node_type: EnumNodeType | None,
+        run_id: UUID | None,
+        overlays: list[ModelOverlayStackEntry],
+    ) -> tuple[ModelHandlerContract, list[ModelOverlayRef]]:
+        """
+        Core merge implementation shared by merge() and merge_with_overlays().
+
+        Applies the base patch, then each overlay in order, collecting
+        ModelOverlayRef records. Emits lifecycle events when an emitter is
+        configured.
+
+        Args:
+            patch: Base contract patch.
+            node_type: Optional node type override.
+            run_id: Optional run ID for event correlation.
+            overlays: Pre-sorted overlay stack (may be empty).
+
+        Returns:
+            Tuple of (merged contract, applied overlay refs).
+        """
         # Import event models here to avoid circular imports at module level
         from omnibase_core.models.events.contract_validation import (
             ModelContractMergeCompletedEvent,
@@ -238,12 +345,13 @@ class ContractMergeEngine:
 
         # Emit merge_started event if emitter is available
         if self._event_emitter is not None:
+            overlay_id_refs = [o.overlay_id for o in overlays]
             started_event = ModelContractMergeStartedEvent.create(
                 contract_name=event_contract_name,
                 run_id=effective_run_id,
                 merge_plan_name=None,
                 profile_names=[patch.extends.profile],
-                overlay_refs=[],
+                overlay_refs=overlay_id_refs,
                 resolver_config_hash=None,
                 correlation_id=self._correlation_id,
             )
@@ -259,134 +367,40 @@ class ContractMergeEngine:
             version=patch.extends.version,
         )
 
-        # 3. Apply scalar overrides
-        # For new contracts, patch provides name/version; for overrides, use base
-        merged_name = merge_scalar(base.name, patch.name)
-        if merged_name is None:
-            raise ModelOnexError(
-                message="Contract name cannot be None after merge",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                field="name",
-                base_value=base.name,
-                patch_value=patch.name,
-            )
-
-        # Track name override
-        if patch.name is not None and patch.name != base.name:
-            changes_applied.append(f"name: {base.name} -> {patch.name}")
-
-        # Version handling: patch uses ModelSemVer, base uses ModelSemVer
-        # Keep as ModelSemVer for ModelHandlerContract.contract_version field
-        merged_contract_version: ModelSemVer = (
-            patch.node_version if patch.node_version else base.contract_version
+        # 3. Apply scalar overrides from base patch
+        # base is a ModelContractBase (has .behavior, not .descriptor)
+        result, changes_applied = self._apply_patch_to_base(
+            base_name=base.name,
+            base_contract_version=base.contract_version,
+            base_description=base.description,
+            base_input_model=base.input_model,
+            base_output_model=base.output_model,
+            base_behavior=base.behavior,
+            base_tags=list(base.tags) if base.tags else [],
+            patch=patch,
+            changes_applied=changes_applied,
         )
 
-        # Track version override
-        if patch.node_version is not None:
-            changes_applied.append(
-                f"node_version: set to {patch.node_version} (base contract_version: {base.contract_version})"
+        # 4. Apply overlay stack sequentially
+        applied_refs: list[ModelOverlayRef] = []
+        for order_index, entry in enumerate(overlays):
+            result, changes_applied = self._apply_overlay_entry(
+                current=result,
+                entry=entry,
+                order_index=order_index,
+                changes_applied=changes_applied,
+            )
+            applied_refs.append(
+                ModelOverlayRef(
+                    overlay_id=entry.overlay_id,
+                    version=entry.version,
+                    content_hash=None,
+                    scope=entry.scope,
+                    order_index=order_index,
+                )
             )
 
-        merged_description = merge_scalar(base.description, patch.description)
-
-        # Track description override
-        if patch.description is not None and patch.description != base.description:
-            changes_applied.append("description: updated")
-
-        # Model references
-        merged_input_model = merge_scalar(
-            base.input_model,
-            str(patch.input_model) if patch.input_model else None,
-        )
-        if merged_input_model is None:
-            raise ModelOnexError(
-                message="input_model cannot be None after merge",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                field="input_model",
-            )
-
-        # Track input_model override
-        if patch.input_model is not None:
-            changes_applied.append(
-                f"input_model: {base.input_model} -> {patch.input_model}"
-            )
-
-        merged_output_model = merge_scalar(
-            base.output_model,
-            str(patch.output_model) if patch.output_model else None,
-        )
-        if merged_output_model is None:
-            raise ModelOnexError(
-                message="output_model cannot be None after merge",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                field="output_model",
-            )
-
-        # Track output_model override
-        if patch.output_model is not None:
-            changes_applied.append(
-                f"output_model: {base.output_model} -> {patch.output_model}"
-            )
-
-        # 4. Apply descriptor/behavior merge
-        merged_behavior = self._merge_behavior(base.behavior, patch.descriptor)
-
-        # Track descriptor changes
-        if patch.descriptor is not None:
-            changes_applied.append("descriptor: updated")
-
-        # 5. Apply list operations for capabilities
-        merged_capability_inputs = self._merge_capability_inputs(
-            base_inputs=merged_behavior.capability_inputs if merged_behavior else [],
-            add_inputs=patch.capability_inputs__add,
-            remove_inputs=patch.capability_inputs__remove,
-        )
-
-        # Track capability_inputs changes
-        if patch.capability_inputs__add:
-            changes_applied.append(
-                f"capability_inputs: added {len(patch.capability_inputs__add)} items"
-            )
-        if patch.capability_inputs__remove:
-            changes_applied.append(
-                f"capability_inputs: removed {len(patch.capability_inputs__remove)} items"
-            )
-
-        merged_capability_outputs = self._merge_capability_outputs(
-            base_outputs=merged_behavior.capability_outputs if merged_behavior else [],
-            add_outputs=patch.capability_outputs__add,
-            remove_outputs=patch.capability_outputs__remove,
-        )
-
-        # Track capability_outputs changes
-        if patch.capability_outputs__add:
-            changes_applied.append(
-                f"capability_outputs: added {len(patch.capability_outputs__add)} items"
-            )
-        if patch.capability_outputs__remove:
-            changes_applied.append(
-                f"capability_outputs: removed {len(patch.capability_outputs__remove)} items"
-            )
-
-        # 6. Generate handler_id from name
-        # Convention: node.<name> for handler identification
-        handler_id = f"node.{merged_name.lower().replace(' ', '_')}"
-
-        # 7. Construct final contract
-        result = ModelHandlerContract(
-            handler_id=handler_id,
-            name=merged_name,
-            contract_version=merged_contract_version,
-            description=merged_description,
-            descriptor=merged_behavior,
-            capability_inputs=merged_capability_inputs,
-            capability_outputs=merged_capability_outputs,
-            input_model=merged_input_model,
-            output_model=merged_output_model,
-            tags=list(base.tags) if base.tags else [],
-        )
-
-        # 8. Emit merge_completed event if emitter is available
+        # 5. Emit merge_completed event if emitter is available
         if self._event_emitter is not None:
             # Detect conflicts only when needed for event emission
             conflicts = self.detect_conflicts(patch)
@@ -399,10 +413,11 @@ class ContractMergeEngine:
             completed_event = ModelContractMergeCompletedEvent.create(
                 contract_name=event_contract_name,
                 run_id=effective_run_id,
-                effective_contract_name=merged_name,
+                effective_contract_name=result.name,
                 duration_ms=duration_ms,
-                effective_contract_hash=None,  # Could be computed if needed
-                overlays_applied_count=0,  # No overlays in current implementation
+                effective_contract_hash=None,
+                overlays_applied_count=len(applied_refs),
+                overlay_refs=applied_refs,
                 defaults_applied=True,  # Profile defaults are always applied
                 warnings_count=conflicts_resolved_count,
                 diff_ref="; ".join(changes_applied) if changes_applied else None,
@@ -410,7 +425,233 @@ class ContractMergeEngine:
             )
             self._event_emitter.emit_merge_completed(completed_event)
 
-        return result
+        return result, applied_refs
+
+    def _apply_patch_to_base(
+        self,
+        base_name: str,
+        base_contract_version: ModelSemVer,
+        base_description: str | None,
+        base_input_model: str,
+        base_output_model: str,
+        base_behavior: ModelHandlerBehavior | None,
+        base_tags: list[str],
+        patch: ModelContractPatch,
+        changes_applied: list[str],
+    ) -> tuple[ModelHandlerContract, list[str]]:
+        """
+        Apply a single ModelContractPatch on top of explicitly-provided base fields.
+
+        This internal helper accepts the base fields individually so it can be
+        called both on a ModelContractBase (from the profile factory) and on a
+        ModelHandlerContract (as the accumulator during overlay stacking). The
+        caller is responsible for extracting the appropriate behavior field
+        (``base.behavior`` for ModelContractBase, ``base.descriptor`` for
+        ModelHandlerContract).
+
+        Returns the merged contract and an updated changes list.
+        """
+        changes = list(changes_applied)
+
+        merged_name = merge_scalar(base_name, patch.name)
+        if merged_name is None:
+            raise ModelOnexError(
+                message="Contract name cannot be None after merge",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                field="name",
+                base_value=base_name,
+                patch_value=patch.name,
+            )
+
+        if patch.name is not None and patch.name != base_name:
+            changes.append(f"name: {base_name} -> {patch.name}")
+
+        merged_contract_version: ModelSemVer = (
+            patch.node_version if patch.node_version else base_contract_version
+        )
+
+        if patch.node_version is not None:
+            changes.append(
+                f"node_version: set to {patch.node_version} "
+                f"(base contract_version: {base_contract_version})"
+            )
+
+        merged_description = merge_scalar(base_description, patch.description)
+
+        if patch.description is not None and patch.description != base_description:
+            changes.append("description: updated")
+
+        merged_input_model = merge_scalar(
+            base_input_model,
+            str(patch.input_model) if patch.input_model else None,
+        )
+        if merged_input_model is None:
+            raise ModelOnexError(
+                message="input_model cannot be None after merge",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                field="input_model",
+            )
+
+        if patch.input_model is not None:
+            changes.append(f"input_model: {base_input_model} -> {patch.input_model}")
+
+        merged_output_model = merge_scalar(
+            base_output_model,
+            str(patch.output_model) if patch.output_model else None,
+        )
+        if merged_output_model is None:
+            raise ModelOnexError(
+                message="output_model cannot be None after merge",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                field="output_model",
+            )
+
+        if patch.output_model is not None:
+            changes.append(f"output_model: {base_output_model} -> {patch.output_model}")
+
+        merged_behavior = self._merge_behavior(base_behavior, patch.descriptor)
+
+        if patch.descriptor is not None:
+            changes.append("descriptor: updated")
+
+        merged_capability_inputs = self._merge_capability_inputs(
+            base_inputs=merged_behavior.capability_inputs if merged_behavior else [],
+            add_inputs=patch.capability_inputs__add,
+            remove_inputs=patch.capability_inputs__remove,
+        )
+
+        if patch.capability_inputs__add:
+            changes.append(
+                f"capability_inputs: added {len(patch.capability_inputs__add)} items"
+            )
+        if patch.capability_inputs__remove:
+            changes.append(
+                f"capability_inputs: removed {len(patch.capability_inputs__remove)} items"
+            )
+
+        merged_capability_outputs = self._merge_capability_outputs(
+            base_outputs=merged_behavior.capability_outputs if merged_behavior else [],
+            add_outputs=patch.capability_outputs__add,
+            remove_outputs=patch.capability_outputs__remove,
+        )
+
+        if patch.capability_outputs__add:
+            changes.append(
+                f"capability_outputs: added {len(patch.capability_outputs__add)} items"
+            )
+        if patch.capability_outputs__remove:
+            changes.append(
+                f"capability_outputs: removed {len(patch.capability_outputs__remove)} items"
+            )
+
+        handler_id = f"node.{merged_name.lower().replace(' ', '_')}"
+
+        result = ModelHandlerContract(
+            handler_id=handler_id,
+            name=merged_name,
+            contract_version=merged_contract_version,
+            description=merged_description,
+            descriptor=merged_behavior,
+            capability_inputs=merged_capability_inputs,
+            capability_outputs=merged_capability_outputs,
+            input_model=merged_input_model,
+            output_model=merged_output_model,
+            tags=list(base_tags) if base_tags else [],
+        )
+        return result, changes
+
+    def _apply_overlay_entry(
+        self,
+        current: ModelHandlerContract,
+        entry: ModelOverlayStackEntry,
+        order_index: int,
+        changes_applied: list[str],
+    ) -> tuple[ModelHandlerContract, list[str]]:
+        """
+        Apply a single overlay on top of the current merged contract.
+
+        The overlay_patch is applied using the same scalar/list merge logic
+        as the base patch, treating the current contract as the base.
+
+        Args:
+            current: Current state of the merged contract.
+            entry: Overlay stack entry to apply.
+            order_index: Zero-based position in the stack (for change tracking).
+            changes_applied: Running list of change descriptions.
+
+        Returns:
+            Updated (contract, changes_applied) after overlay application.
+        """
+        changes = list(changes_applied)
+        changes.append(
+            f"overlay[{order_index}] '{entry.overlay_id}' "
+            f"(scope={entry.scope.value}, version={entry.version})"
+        )
+        result, updated_changes = self._apply_patch_to_base(
+            base_name=current.name,
+            base_contract_version=current.contract_version,
+            base_description=current.description,
+            base_input_model=current.input_model,
+            base_output_model=current.output_model,
+            base_behavior=current.descriptor,
+            base_tags=list(current.tags) if current.tags else [],
+            patch=entry.overlay_patch,
+            changes_applied=changes,
+        )
+        return result, updated_changes
+
+    def _sort_overlays(
+        self,
+        overlays: list[ModelOverlayStackEntry],
+        strict_ordering: bool,
+    ) -> list[ModelOverlayStackEntry]:
+        """
+        Validate scope ordering of overlays and sort to canonical order.
+
+        Canonical order: BASE → ORG → PROJECT → ENV → USER → SESSION.
+        When overlays are already in canonical order this is a no-op.
+
+        Args:
+            overlays: Input overlay stack.
+            strict_ordering: If True, raise ModelOnexError on out-of-order scopes
+                instead of warning and sorting.
+
+        Returns:
+            Overlays sorted to canonical scope order.
+
+        Raises:
+            ModelOnexError: When strict_ordering=True and overlays are
+                not in canonical scope order.
+        """
+        if not overlays:
+            return overlays
+
+        scope_values = [SCOPE_ORDER[entry.scope] for entry in overlays]
+        already_sorted = all(
+            scope_values[i] <= scope_values[i + 1] for i in range(len(scope_values) - 1)
+        )
+
+        if already_sorted:
+            return list(overlays)
+
+        if strict_ordering:
+            out_of_order = [
+                f"[{i}] {entry.overlay_id} ({entry.scope.value})"
+                for i, entry in enumerate(overlays)
+            ]
+            raise ModelOnexError(
+                message=(
+                    "Overlays are not in canonical scope order "
+                    f"(BASE→ORG→PROJECT→ENV→USER→SESSION): {', '.join(out_of_order)}"
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
+        _log.warning(
+            "Overlay stack is not in canonical scope order; sorting automatically. "
+            "Pass strict_ordering=True to raise instead."
+        )
+        return sorted(overlays, key=lambda e: SCOPE_ORDER[e.scope])
 
     def detect_conflicts(self, patch: ModelContractPatch) -> list[ModelMergeConflict]:
         """

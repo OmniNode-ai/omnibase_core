@@ -14,13 +14,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums import EnumPatternKind
+from omnibase_core.models.intelligence._helpers import _default_schema_version
 from omnibase_core.models.primitives import ModelSemVer
 from omnibase_core.types.type_json import JsonType
-
-
-def _default_schema_version() -> ModelSemVer:
-    """Create default schema version 1.0.0."""
-    return ModelSemVer(major=1, minor=0, patch=0)
 
 
 class ModelPatternExtractionInput(BaseModel):

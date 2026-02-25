@@ -109,6 +109,17 @@ from .checker_visitor_any_type import (
     AnyTypeVisitor,
 )
 
+# Contract Linter validator imports are lazy-loaded via __getattr__ to avoid
+# circular imports. validator_contract_linter.py imports from omnibase_core.contracts
+# which imports from models/contracts which imports from validation/__init__.py.
+# See __getattr__ below for: ValidatorContractLinter, CONTRACT_MODELS, NODE_TYPE_MAPPING,
+# RULE_FINGERPRINT_FORMAT, RULE_FINGERPRINT_MATCH, RULE_MODEL_PREFIX, RULE_NAMING_CONVENTION,
+# RULE_RECOMMENDED_FIELDS, RULE_REQUIRED_FIELDS, RULE_SCHEMA_VALIDATION, RULE_YAML_SYNTAX
+# Import Naming Convention validator (OMN-1291)
+from .envelope_validation_error import EnvelopeValidationError
+from .envelope_validation_result import EnvelopeValidationResult
+from .envelope_validator import EnvelopeValidator
+
 # Import Any type validator (OMN-1291)
 from .validator_any_type import ValidatorAnyType
 
@@ -124,14 +135,6 @@ from .validator_contract_pipeline import (
     ContractValidationPipeline,
     ModelExpandedContractResult,
 )
-
-# Contract Linter validator imports are lazy-loaded via __getattr__ to avoid
-# circular imports. validator_contract_linter.py imports from omnibase_core.contracts
-# which imports from models/contracts which imports from validation/__init__.py.
-# See __getattr__ below for: ValidatorContractLinter, CONTRACT_MODELS, NODE_TYPE_MAPPING,
-# RULE_FINGERPRINT_FORMAT, RULE_FINGERPRINT_MATCH, RULE_MODEL_PREFIX, RULE_NAMING_CONVENTION,
-# RULE_RECOMMENDED_FIELDS, RULE_REQUIRED_FIELDS, RULE_SCHEMA_VALIDATION, RULE_YAML_SYNTAX
-# Import Naming Convention validator (OMN-1291)
 from .validator_local_paths import (
     ModelLocalPathViolation,
     ValidatorLocalPaths,
@@ -383,6 +386,10 @@ def validate_all(
 
 
 __all__ = [
+    # Envelope validation (OMN-840)
+    "EnvelopeValidationError",
+    "EnvelopeValidationResult",
+    "EnvelopeValidator",
     # Core classes and types
     "CircularImportValidator",
     "ModelImportValidationResult",

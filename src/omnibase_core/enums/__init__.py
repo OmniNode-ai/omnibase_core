@@ -133,6 +133,9 @@ from .enum_failure_type import EnumFailureType
 # Function-related enums
 from .enum_function_language import EnumFunctionLanguage
 
+# Gate type enum (OMN-2537 — objective functions)
+from .enum_gate_type import EnumGateType
+
 # GitHub Actions enums
 from .enum_github_action_event import EnumGithubActionEvent
 from .enum_github_runner_os import EnumGithubRunnerOs
@@ -239,6 +242,9 @@ from .enum_node_status import EnumNodeStatus
 from .enum_node_type import EnumNodeType
 from .enum_notification_method import EnumNotificationMethod
 from .enum_numeric_value_type import EnumNumericValueType
+
+# Objective layer enum (OMN-2537 — objective functions)
+from .enum_objective_layer import EnumObjectiveLayer
 from .enum_onex_error_code import EnumOnexErrorCode
 
 # Response and reply enums
@@ -251,6 +257,9 @@ from .enum_operation_status import EnumOperationStatus
 from .enum_orchestrator_capability import EnumOrchestratorCapability
 from .enum_orchestrator_types import EnumActionType, EnumBranchCondition
 
+# Overlay scope enum (OMN-2757)
+from .enum_overlay_scope import SCOPE_ORDER, EnumOverlayScope
+
 # Parameter and return type enums
 from .enum_parameter_type import EnumParameterType
 
@@ -262,6 +271,9 @@ from .enum_pattern_kind import EnumPatternKind
 
 # Pipeline validation mode enum (pipeline processing OMN-1308)
 from .enum_pipeline_validation_mode import EnumPipelineValidationMode
+
+# Policy type enum (OMN-2537 — objective functions reward architecture)
+from .enum_policy_type import EnumPolicyType
 from .enum_query_parameter_transformation_type import (
     EnumQueryParameterTransformationType,
 )
@@ -291,6 +303,9 @@ from .enum_response_header_transformation_type import (
     EnumResponseHeaderTransformationType,
 )
 from .enum_return_type import EnumReturnType
+
+# Reward target type enum (OMN-2537 — objective functions reward architecture)
+from .enum_reward_target_type import EnumRewardTargetType
 
 # Security-related enums
 from .enum_security_profile import EnumSecurityProfile
@@ -502,6 +517,9 @@ __all__ = [
     "EnumMetadataToolType",
     # Merge domain (OMN-1127)
     "EnumMergeConflictType",
+    # Overlay scope (OMN-2757)
+    "EnumOverlayScope",
+    "SCOPE_ORDER",
     # Namespace domain
     "EnumNamespaceStrategy",
     # Resource domain
@@ -687,6 +705,11 @@ __all__ = [
     "EnumSentiment",
     "EnumSupportCategory",
     "EnumSupportChannel",
+    # Objective functions and reward architecture domain (OMN-2537)
+    "EnumGateType",
+    "EnumObjectiveLayer",
+    "EnumPolicyType",
+    "EnumRewardTargetType",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

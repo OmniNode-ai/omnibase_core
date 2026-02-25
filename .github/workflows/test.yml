@@ -189,7 +189,16 @@ jobs:
             scripts/validation/validate-no-direct-io.py \
             scripts/validation/validate-all-exports.py \
             scripts/validation/validate-no-infra-imports.py \
+            scripts/validation/validate-check-names.py \
             scripts/check_transport_imports.py
+
+      # check_name Validator (OMN-2229)
+      # Validates that every gates[].check_name in required-checks.yaml matches
+      # an actual job 'name:' field in the referenced workflow file and that
+      # workflow_job_key values resolve to real job keys.
+      # Catches drift before it silently breaks branch protection gates.
+      - name: Validate check_names in required-checks.yaml (OMN-2229)
+        run: uv run python scripts/validation/validate-check-names.py
 
       # CRITICAL: Transport Import Validation (B+ Hybrid Mode)
       # This step enforces dependency inversion architecture by preventing omnibase_core

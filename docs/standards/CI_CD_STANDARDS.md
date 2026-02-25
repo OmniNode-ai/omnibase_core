@@ -690,6 +690,7 @@ jobs:
 | CI monitoring guide | `docs/ci/CI_MONITORING_GUIDE.md` |
 | Core-infra boundary (ADR-005) | `docs/decisions/ADR-005-core-infra-dependency-boundary.md` |
 | Standard doc layout | `docs/standards/STANDARD_DOC_LAYOUT.md` |
+| Cross-repo merge ordering | `docs/standards/MERGE_DEPENDENCY_GRAPH.md` |
 | GitHub branch protection API | [GitHub Docs](https://docs.github.com/en/rest/branches/branch-protection) |
 
 ---

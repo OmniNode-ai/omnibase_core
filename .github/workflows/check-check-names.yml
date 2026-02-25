@@ -1,0 +1,83 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: check_name Validator
+
+# Validates that every gates[].check_name in .github/required-checks.yaml
+# matches an actual job 'name:' field in the referenced workflow file and that
+# workflow_job_key values resolve to real job keys.
+#
+# Catches drift before it silently breaks branch protection gates.
+# See: OMN-2229
+
+on:
+  push:
+    branches: [main, develop, "feature/*", "fix/*", "chore/*", "jonah/*", "jonahgabriel/*"]
+    paths:
+      - ".github/required-checks.yaml"
+      - ".github/workflows/**.yml"
+      - "scripts/validation/validate-check-names.py"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - ".github/required-checks.yaml"
+      - ".github/workflows/**.yml"
+      - "scripts/validation/validate-check-names.py"
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+jobs:
+  check-names:
+    name: check_name Validator
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Validate check_names in required-checks.yaml
+        id: check-names
+        run: |
+          uv run python scripts/validation/validate-check-names.py --verbose
+
+      - name: check_name validator summary
+        if: always()
+        run: |
+          echo "## check_name Validator (OMN-2229)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Validates \`.github/required-checks.yaml\` gates against workflow files." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Checks performed:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Every \`gates[].check_name\` matches actual job \`name:\` field" >> $GITHUB_STEP_SUMMARY
+          echo "- Every \`gates[].workflow_job_key\` exists as a real job key" >> $GITHUB_STEP_SUMMARY
+          echo "- Every \`gates[].workflow_file\` resolves to an existing workflow" >> $GITHUB_STEP_SUMMARY
+          echo "- No matrix shard names appear in branch protection gates" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check-names.outcome }}" = "success" ]; then
+            echo "**Result: PASSED** — All gate check_names are consistent with workflow definitions." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Result: FAILED** — Gate check_name drift detected. See logs for details." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "> **Action required**: Update either \`required-checks.yaml\` or the workflow" >> $GITHUB_STEP_SUMMARY
+            echo "> files to resolve violations. Renaming a gate check_name requires a coordinated" >> $GITHUB_STEP_SUMMARY
+            echo "> branch protection update (temp dual-require → merge → remove old)." >> $GITHUB_STEP_SUMMARY
+          fi
