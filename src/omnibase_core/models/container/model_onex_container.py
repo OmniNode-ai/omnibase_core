@@ -730,31 +730,95 @@ class ModelONEXContainer:
         return await self.get_service_async(ProtocolDatabaseConnection)  # type: ignore[type-abstract]
 
     async def get_external_services_health(self) -> dict[str, object]:
-        """Get health status for all external services.
+        """Get health status for all registered services.
+
+        Queries the ServiceRegistry for comprehensive health information
+        including per-service health status, registry-level statistics,
+        and overall health percentage.
 
         Returns:
-            Dictionary with service health information. Currently returns
-            unavailable status as this requires omnibase-spi integration.
+            Dictionary containing:
+            - status: Overall status ("healthy", "degraded", or "unavailable")
+            - total_registrations: Number of registered services
+            - active_instances: Number of active service instances
+            - health_percentage: Percentage of services in healthy state
+            - services: Per-service health details (name, interface, health, lifecycle)
+            - registry_status: Overall registry operational status
+
+        Raises:
+            No exceptions raised - returns unavailable status on failure.
         """
-        # TODO(OMN-TBD): Implement using ProtocolServiceResolver from omnibase_spi.protocols.container  [NEEDS TICKET]
-        # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
-        return {
-            "status": "unavailable",
-            "message": "External service health check not yet implemented - requires omnibase-spi integration",
-        }
+        if not self._enable_service_registry or self._service_registry is None:
+            return {
+                "status": "unavailable",
+                "message": "ServiceRegistry not initialized",
+            }
+
+        try:
+            registry_status = await self._service_registry.get_registry_status()
+            registrations = await self._service_registry.get_all_registrations()
+
+            services_health: list[dict[str, object]] = []
+            for reg in registrations:
+                services_health.append(
+                    {
+                        "service_name": reg.service_metadata.service_name,
+                        "service_interface": reg.service_metadata.service_interface,
+                        "health_status": reg.health_status.value,
+                        "lifecycle": reg.lifecycle.value,
+                        "instance_count": reg.instance_count,
+                        "access_count": reg.access_count,
+                        "is_active": reg.is_active(),
+                    }
+                )
+
+            health_pct = registry_status.get_health_percentage()
+            overall_status = "healthy" if registry_status.is_healthy() else "degraded"
+
+            return {
+                "status": overall_status,
+                "total_registrations": registry_status.total_registrations,
+                "active_instances": registry_status.active_instances,
+                "health_percentage": health_pct,
+                "failed_registrations": registry_status.failed_registrations,
+                "services": services_health,
+                "registry_status": registry_status.status.value,
+            }
+        except (
+            Exception
+        ) as e:  # fallback-ok: health check should not raise, returns degraded status
+            emit_log_event(
+                LogLevel.ERROR,
+                f"Failed to retrieve external services health: {e}",
+                {"method": "get_external_services_health"},
+            )
+            return {
+                "status": "degraded",
+                "message": f"Health check failed: {e!s}",
+            }
 
     async def refresh_external_services(self) -> None:
         """Force refresh all external service connections.
 
-        Clears cached service instances and re-establishes connections.
-        Currently logs a warning as this requires omnibase-spi integration.
+        Clears the service resolution cache, forcing subsequent calls to
+        ``get_service_async`` to re-resolve services from the ServiceRegistry.
+        This is useful after configuration changes or when service instances
+        need to be re-created.
+
+        If the ServiceRegistry is not initialized, this method logs a warning
+        and returns without error.
         """
-        # TODO(OMN-TBD): Implement using ProtocolServiceResolver from omnibase_spi.protocols.container  [NEEDS TICKET]
-        # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
+        cache_size = len(self._service_cache)
+        self._service_cache.clear()
+
         emit_log_event(
-            LogLevel.WARNING,
-            "External service refresh not yet implemented - requires omnibase-spi integration",
-            {"method": "refresh_external_services"},
+            LogLevel.INFO,
+            "External service cache cleared",
+            {
+                "method": "refresh_external_services",
+                "cleared_entries": cache_size,
+                "registry_enabled": self._enable_service_registry,
+            },
         )
 
     async def warm_cache(self) -> None:
