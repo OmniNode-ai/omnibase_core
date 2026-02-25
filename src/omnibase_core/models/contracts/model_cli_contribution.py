@@ -25,7 +25,10 @@ Schema Version: 1.0.0
 ## Usage
 
     >>> from omnibase_core.models.contracts.model_cli_contribution import (
-    ...     ModelCliContribution, ModelCliCommandEntry,
+    ...     ModelCliContribution,
+    ... )
+    >>> from omnibase_core.models.contracts.model_cli_command_entry import (
+    ...     ModelCliCommandEntry,
     ... )
     >>> from omnibase_core.enums.enum_cli_command_risk import EnumCliCommandRisk
     >>> from omnibase_core.enums.enum_cli_command_visibility import EnumCliCommandVisibility
@@ -34,268 +37,28 @@ Schema Version: 1.0.0
 See Also:
     - docs/design/CLI_CONTRIBUTION_CONTRACT.md — Detailed spec.
     - ServiceRegistryCliContribution — Registry for contribution contracts.
+    - model_cli_command_entry.py — ModelCliCommandEntry
+    - model_cli_command_example.py — ModelCliCommandExample
+    - model_cli_invocation.py — ModelCliInvocation
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
-import re
 from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from omnibase_core.enums.enum_cli_command_risk import EnumCliCommandRisk
-from omnibase_core.enums.enum_cli_command_visibility import EnumCliCommandVisibility
-from omnibase_core.enums.enum_cli_invocation_type import EnumCliInvocationType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.contracts.model_cli_command_entry import ModelCliCommandEntry
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-# Globally namespaced command ID pattern: at least two dot-separated segments,
-# each segment composed of lowercase letters, digits, and hyphens.
-# Examples: "com.omninode.memory.query", "io.onex.cli.run"
-_COMMAND_ID_PATTERN = re.compile(r"^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*){1,}$")
+__all__ = ["CLI_CONTRIBUTION_CONTRACT_TYPE", "ModelCliContribution"]
 
 # Contract type discriminator — immutable across versions.
 CLI_CONTRIBUTION_CONTRACT_TYPE: str = "cli.contribution.v1"
-
-
-class ModelCliInvocation(BaseModel):
-    """Invocation specification for a CLI command.
-
-    Describes how the CLI runtime dispatches the command when it is executed.
-
-    Attributes:
-        invocation_type: Dispatch mechanism (kafka_event, direct_call, etc.).
-        topic: Kafka topic for KAFKA_EVENT invocations. Required when
-            invocation_type is KAFKA_EVENT.
-        endpoint: HTTP endpoint for HTTP_ENDPOINT invocations.
-        callable_ref: Fully qualified Python callable for DIRECT_CALL.
-        subprocess_cmd: Shell command string for SUBPROCESS.
-    """
-
-    invocation_type: EnumCliInvocationType = Field(
-        ...,
-        description="Dispatch mechanism for this command.",
-    )
-    topic: str | None = Field(
-        default=None,
-        description="Kafka topic for KAFKA_EVENT dispatch.",
-    )
-    endpoint: str | None = Field(
-        default=None,
-        description="HTTP endpoint URL for HTTP_ENDPOINT dispatch.",
-    )
-    callable_ref: str | None = Field(
-        default=None,
-        description="Fully qualified Python callable ref for DIRECT_CALL.",
-    )
-    subprocess_cmd: str | None = Field(
-        default=None,
-        description="Shell command string for SUBPROCESS dispatch.",
-    )
-
-    @model_validator(mode="after")
-    def validate_invocation_target(self) -> ModelCliInvocation:
-        """Ensure the required target field is set for the chosen invocation type."""
-        itype = self.invocation_type
-        if itype == EnumCliInvocationType.KAFKA_EVENT and not self.topic:
-            raise ModelOnexError(
-                message="topic is required for KAFKA_EVENT invocation",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                invocation_type=itype,
-            )
-        if itype == EnumCliInvocationType.HTTP_ENDPOINT and not self.endpoint:
-            raise ModelOnexError(
-                message="endpoint is required for HTTP_ENDPOINT invocation",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                invocation_type=itype,
-            )
-        if itype == EnumCliInvocationType.DIRECT_CALL and not self.callable_ref:
-            raise ModelOnexError(
-                message="callable_ref is required for DIRECT_CALL invocation",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                invocation_type=itype,
-            )
-        if itype == EnumCliInvocationType.SUBPROCESS and not self.subprocess_cmd:
-            raise ModelOnexError(
-                message="subprocess_cmd is required for SUBPROCESS invocation",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                invocation_type=itype,
-            )
-        return self
-
-    model_config = ConfigDict(
-        extra="forbid",
-        from_attributes=True,
-        str_strip_whitespace=True,
-    )
-
-
-class ModelCliCommandExample(BaseModel):
-    """A single usage example for a CLI command.
-
-    Attributes:
-        description: Brief human-readable description of what the example does.
-        invocation: The command-line string the user would type.
-        expected_output: Optional sample of expected output.
-    """
-
-    description: str = Field(
-        ...,
-        min_length=1,
-        description="Brief description of what this example demonstrates.",
-    )
-    invocation: str = Field(
-        ...,
-        min_length=1,
-        description="The command-line string (e.g., 'onex memory query --limit 10').",
-    )
-    expected_output: str | None = Field(
-        default=None,
-        description="Sample of expected output for documentation.",
-    )
-
-    model_config = ConfigDict(
-        extra="forbid",
-        from_attributes=True,
-        str_strip_whitespace=True,
-    )
-
-
-class ModelCliCommandEntry(BaseModel):
-    """A single CLI command advertised by a node.
-
-    Command IDs are globally namespaced and MUST be immutable across versions.
-    Display names and descriptions may change; the ``id`` field must not.
-
-    Attributes:
-        id: Globally namespaced, immutable command identifier.
-            Format: ``<reverse-domain-prefix>.<command-name>``
-            Example: ``com.omninode.memory.query``
-        display_name: Human-readable name shown in help and catalogs.
-        description: Full description of what the command does.
-        group: Logical grouping for catalog organization (e.g., "memory").
-        args_schema_ref: Registry reference to the command's argument schema.
-            Must point to a schema registered in the ONEX schema registry.
-        output_schema_ref: Registry reference to the command's output schema.
-        invocation: How the runtime dispatches this command.
-        permissions: List of permission strings required to execute this command.
-        risk: Risk classification governing HITL and audit requirements.
-        requires_hitl: Whether human confirmation is required before execution.
-        visibility: Controls surfacing in help output and discovery.
-        examples: Usage examples for documentation and testing.
-    """
-
-    id: str = Field(
-        ...,
-        min_length=5,
-        description="Globally namespaced, immutable command ID (dot notation).",
-    )
-    display_name: str = Field(
-        ...,
-        min_length=1,
-        description="Human-readable display name.",
-    )
-    description: str = Field(
-        ...,
-        min_length=1,
-        description="Full description of the command.",
-    )
-    group: str = Field(
-        ...,
-        min_length=1,
-        description="Logical grouping for catalog organization.",
-    )
-    args_schema_ref: str = Field(
-        ...,
-        min_length=1,
-        description="Registry reference to argument schema (not inline).",
-    )
-    output_schema_ref: str = Field(
-        ...,
-        min_length=1,
-        description="Registry reference to output schema (not inline).",
-    )
-    invocation: ModelCliInvocation = Field(
-        ...,
-        description="Dispatch specification for this command.",
-    )
-    permissions: list[str] = Field(
-        default_factory=list,
-        description="Permission strings required to execute this command.",
-    )
-    risk: EnumCliCommandRisk = Field(
-        default=EnumCliCommandRisk.LOW,
-        description="Risk classification for HITL and audit.",
-    )
-    requires_hitl: bool = Field(
-        default=False,
-        description="Whether human confirmation is required before execution.",
-    )
-    visibility: EnumCliCommandVisibility = Field(
-        default=EnumCliCommandVisibility.PUBLIC,
-        description="Controls surfacing in help and discovery.",
-    )
-    examples: list[ModelCliCommandExample] = Field(
-        default_factory=list,
-        description="Usage examples for documentation.",
-    )
-
-    @field_validator("id", mode="after")
-    @classmethod
-    def validate_command_id_namespace(cls, v: str) -> str:
-        """Validate that command ID is globally namespaced (dot notation).
-
-        At least two dot-separated segments are required, each composed of
-        lowercase letters, digits, and hyphens. Collisions at the registry
-        level are a hard failure — IDs must be unique across all publishers.
-
-        Args:
-            v: Command ID string.
-
-        Returns:
-            Validated command ID.
-
-        Raises:
-            ModelOnexError: If the ID does not match the required format.
-        """
-        if not _COMMAND_ID_PATTERN.match(v):
-            raise ModelOnexError(
-                message=(
-                    f"Command ID '{v}' is not globally namespaced. "
-                    "Required format: '<segment>.<segment>[.<segment>...]' "
-                    "where each segment is lowercase letters, digits, and hyphens. "
-                    "Example: 'com.omninode.memory.query'"
-                ),
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                command_id=v,
-                expected_format="<reverse-domain>.<command-name>",
-                example="com.omninode.memory.query",
-            )
-        return v
-
-    @model_validator(mode="after")
-    def validate_hitl_consistency(self) -> ModelCliCommandEntry:
-        """Ensure requires_hitl is True when risk is CRITICAL."""
-        if self.risk == EnumCliCommandRisk.CRITICAL and not self.requires_hitl:
-            raise ModelOnexError(
-                message=(
-                    f"Command '{self.id}' has risk=CRITICAL but requires_hitl=False. "
-                    "CRITICAL commands must require HITL."
-                ),
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                command_id=self.id,
-                risk=self.risk,
-            )
-        return self
-
-    model_config = ConfigDict(
-        extra="forbid",
-        from_attributes=True,
-        str_strip_whitespace=True,
-    )
 
 
 class ModelCliContribution(BaseModel):
@@ -505,12 +268,3 @@ def _sort_dict_recursive(obj: object) -> object:
     if isinstance(obj, list):
         return [_sort_dict_recursive(item) for item in obj]
     return obj
-
-
-__all__ = [
-    "CLI_CONTRIBUTION_CONTRACT_TYPE",
-    "ModelCliCommandEntry",
-    "ModelCliCommandExample",
-    "ModelCliContribution",
-    "ModelCliInvocation",
-]

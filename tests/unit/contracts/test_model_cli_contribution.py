@@ -30,13 +30,15 @@ from omnibase_core.crypto.crypto_ed25519_signer import generate_keypair, sign_ba
 from omnibase_core.enums.enum_cli_command_risk import EnumCliCommandRisk
 from omnibase_core.enums.enum_cli_command_visibility import EnumCliCommandVisibility
 from omnibase_core.enums.enum_cli_invocation_type import EnumCliInvocationType
+from omnibase_core.models.contracts.model_cli_command_entry import ModelCliCommandEntry
+from omnibase_core.models.contracts.model_cli_command_example import (
+    ModelCliCommandExample,
+)
 from omnibase_core.models.contracts.model_cli_contribution import (
     CLI_CONTRIBUTION_CONTRACT_TYPE,
-    ModelCliCommandEntry,
-    ModelCliCommandExample,
     ModelCliContribution,
-    ModelCliInvocation,
 )
+from omnibase_core.models.contracts.model_cli_invocation import ModelCliInvocation
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.services.registry.service_registry_cli_contribution import (

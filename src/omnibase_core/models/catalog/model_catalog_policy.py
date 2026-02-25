@@ -92,7 +92,7 @@ class ModelCatalogPolicy(BaseModel):
         default_factory=set,
         description="Explicit denylist. Allowlist overrides.",
     )
-    cli_version: str | None = Field(
+    cli_version: str | None = Field(  # string-version-ok: filter comparator
         default=None,
         description=(
             "Running CLI version (MAJOR.MINOR.PATCH). None disables version-gating."

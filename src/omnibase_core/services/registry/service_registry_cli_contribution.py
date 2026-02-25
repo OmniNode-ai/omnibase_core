@@ -40,8 +40,10 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.models.contracts.model_cli_contribution import (
+    from omnibase_core.models.contracts.model_cli_command_entry import (
         ModelCliCommandEntry,
+    )
+    from omnibase_core.models.contracts.model_cli_contribution import (
         ModelCliContribution,
     )
 

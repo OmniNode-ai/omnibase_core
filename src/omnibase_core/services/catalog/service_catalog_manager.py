@@ -96,12 +96,15 @@ from omnibase_core.errors.error_catalog import (
     CatalogSignatureError,
     CatalogVersionError,
 )
+from omnibase_core.models.catalog.model_catalog_diff import ModelCatalogDiff
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from omnibase_core.models.catalog.model_catalog_policy import ModelCatalogPolicy
-    from omnibase_core.models.contracts.model_cli_contribution import (
+    from omnibase_core.models.contracts.model_cli_command_entry import (
         ModelCliCommandEntry,
+    )
+    from omnibase_core.models.contracts.model_cli_contribution import (
         ModelCliContribution,
     )
     from omnibase_core.services.registry.service_registry_cli_contribution import (
@@ -124,33 +127,6 @@ _DEFAULT_CACHE_PATH = Path.home() / ".omn" / "catalog.json"
 # ---------------------------------------------------------------------------
 # Diff result
 # ---------------------------------------------------------------------------
-
-
-class _CatalogDiff:
-    """Holds the diff between the old and new catalog after a refresh."""
-
-    def __init__(
-        self,
-        added: list[str],
-        removed: list[str],
-        updated: list[str],
-        deprecated: list[str],
-    ) -> None:
-        self.added = added
-        self.removed = removed
-        self.updated = updated
-        self.deprecated = deprecated
-
-    def is_empty(self) -> bool:
-        """Return True when the catalog did not change."""
-        return not (self.added or self.removed or self.updated or self.deprecated)
-
-    def __repr__(self) -> str:  # pragma: no cover
-        return (
-            f"_CatalogDiff("
-            f"added={self.added}, removed={self.removed}, "
-            f"updated={self.updated}, deprecated={self.deprecated})"
-        )
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +206,7 @@ class ServiceCatalogManager:
     # Public API
     # ------------------------------------------------------------------
 
-    def refresh(self) -> _CatalogDiff:
+    def refresh(self) -> ModelCatalogDiff:
         """Fetch, verify, filter, and cache the command catalog.
 
         Runs the full materialization pipeline:
@@ -243,7 +219,7 @@ class ServiceCatalogManager:
         6. Persist catalog to local cache file.
 
         Returns:
-            ``_CatalogDiff`` describing added / removed / updated / deprecated
+            ``ModelCatalogDiff`` describing added / removed / updated / deprecated
             commands relative to the catalog state before the refresh.
 
         Raises:
@@ -358,7 +334,7 @@ class ServiceCatalogManager:
                 }
 
             # Load commands from cache.
-            from omnibase_core.models.contracts.model_cli_contribution import (
+            from omnibase_core.models.contracts.model_cli_command_entry import (
                 ModelCliCommandEntry,
             )
 
@@ -605,7 +581,7 @@ class ServiceCatalogManager:
     def _compute_diff(
         old: dict[str, ModelCliCommandEntry],
         new: dict[str, ModelCliCommandEntry],
-    ) -> _CatalogDiff:
+    ) -> ModelCatalogDiff:
         """Compute the diff between old and new catalogs.
 
         Args:
@@ -613,7 +589,7 @@ class ServiceCatalogManager:
             new: New catalog state after refresh.
 
         Returns:
-            ``_CatalogDiff`` with added / removed / updated / deprecated.
+            ``ModelCatalogDiff`` with added / removed / updated / deprecated.
         """
         old_ids = set(old)
         new_ids = set(new)
@@ -633,7 +609,7 @@ class ServiceCatalogManager:
                 else:
                     updated.append(cmd_id)
 
-        return _CatalogDiff(
+        return ModelCatalogDiff(
             added=added,
             removed=removed,
             updated=sorted(updated),

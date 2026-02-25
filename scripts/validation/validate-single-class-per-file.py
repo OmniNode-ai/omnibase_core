@@ -185,6 +185,7 @@ def should_exclude_file(filepath: Path) -> bool:
         "model_security_summaries.py",  # 18+ security summary models
         "model_database_secure_config.py",  # Database config with nested models
         "model_service_registry_config.py",  # Service config models
+        "error_catalog.py",  # Exception hierarchy: CatalogError + 3 subclasses (OMN-2544)
     }
 
     # Exclude validator files with small helper classes
@@ -193,6 +194,7 @@ def should_exclude_file(filepath: Path) -> bool:
     validator_helper_files = {
         "validator_architecture.py",  # ModelCounter AST visitor helper
         "validator_patterns.py",  # ProtocolPatternChecker Protocol interface
+        "validator_local_paths.py",  # ModelLocalPathViolation data model helper (OMN-2655)
     }
     if filepath.name in validator_helper_files:
         return True
