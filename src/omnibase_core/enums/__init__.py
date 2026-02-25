@@ -115,6 +115,9 @@ from .enum_effect_handler_type import EnumEffectHandlerType
 from .enum_effect_policy_level import EnumEffectPolicyLevel
 from .enum_effect_types import EnumEffectType, EnumTransactionState
 
+# Envelope validation failure type enum (OMN-839)
+from .enum_envelope_validation_failure_type import EnumEnvelopeValidationFailureType
+
 # Validation-related enums
 from .enum_environment_validation_rule_type import EnumEnvironmentValidationRuleType
 
@@ -619,6 +622,8 @@ __all__ = [
     "EnumDirectiveType",
     # Dispatch status domain
     "EnumDispatchStatus",
+    # Envelope validation domain (OMN-839)
+    "EnumEnvelopeValidationFailureType",
     # Function-related domain
     "EnumFunctionLanguage",
     # Registration status domain (DI container OMN-1308)

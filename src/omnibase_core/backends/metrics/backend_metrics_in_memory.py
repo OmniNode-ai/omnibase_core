@@ -139,7 +139,7 @@ class BackendMetricsInMemory:
         For in-memory backend, this is a no-op since there is no
         remote backend to push to.
         """
-        # No-op for in-memory backend
+        return
 
     def get_gauges(self) -> dict[str, float]:
         """
