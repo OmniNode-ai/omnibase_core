@@ -257,6 +257,9 @@ from .enum_operation_status import EnumOperationStatus
 from .enum_orchestrator_capability import EnumOrchestratorCapability
 from .enum_orchestrator_types import EnumActionType, EnumBranchCondition
 
+# Overlay scope enum (OMN-2757 — overlay stacking pipeline)
+from .enum_overlay_scope import SCOPE_ORDER, EnumOverlayScope
+
 # Parameter and return type enums
 from .enum_parameter_type import EnumParameterType
 
@@ -704,6 +707,9 @@ __all__ = [
     "EnumObjectiveLayer",
     "EnumPolicyType",
     "EnumRewardTargetType",
+    # Overlay scope (OMN-2757)
+    "EnumOverlayScope",
+    "SCOPE_ORDER",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")
