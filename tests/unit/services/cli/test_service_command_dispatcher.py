@@ -35,10 +35,8 @@ from omnibase_core.errors.error_command_dispatch import CommandDispatchError
 from omnibase_core.models.cli.model_command_dispatch_result import (
     ModelCommandDispatchResult,
 )
-from omnibase_core.models.contracts.model_cli_contribution import (
-    ModelCliCommandEntry,
-    ModelCliInvocation,
-)
+from omnibase_core.models.contracts.model_cli_command_entry import ModelCliCommandEntry
+from omnibase_core.models.contracts.model_cli_invocation import ModelCliInvocation
 from omnibase_core.services.cli.service_command_dispatcher import (
     ServiceCommandDispatcher,
 )

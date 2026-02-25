@@ -62,7 +62,7 @@ from omnibase_core.models.cli.model_command_dispatch_result import (
 from omnibase_core.protocols.cli.protocol_kafka_producer import ProtocolKafkaProducer
 
 if TYPE_CHECKING:
-    from omnibase_core.models.contracts.model_cli_contribution import (
+    from omnibase_core.models.contracts.model_cli_command_entry import (
         ModelCliCommandEntry,
     )
 

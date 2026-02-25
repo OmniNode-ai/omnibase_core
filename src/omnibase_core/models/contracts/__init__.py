@@ -88,13 +88,13 @@ from .model_backup_config import ModelBackupConfig
 from .model_branching_config import ModelBranchingConfig
 from .model_caching_config import ModelCachingConfig
 from .model_capability_provided import ModelCapabilityProvided
+from .model_cli_command_entry import ModelCliCommandEntry
+from .model_cli_command_example import ModelCliCommandExample
 from .model_cli_contribution import (
     CLI_CONTRIBUTION_CONTRACT_TYPE,
-    ModelCliCommandEntry,
-    ModelCliCommandExample,
     ModelCliContribution,
-    ModelCliInvocation,
 )
+from .model_cli_invocation import ModelCliInvocation
 from .model_compensation_plan import ModelCompensationPlan
 from .model_condition_value_list import ModelConditionValueList
 from .model_conflict_resolution_config import ModelConflictResolutionConfig

@@ -72,7 +72,15 @@ Migration Guide:
 
 from __future__ import annotations
 
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from omnibase_core.types.typed_dict_service_discovery_entry import (
+        TypedDictServiceDiscoveryEntry,
+    )
+    from omnibase_core.types.typed_dict_service_health_status import (
+        TypedDictServiceHealthStatus,
+    )
 
 
 @runtime_checkable
@@ -151,7 +159,7 @@ class ProtocolServiceDiscovery(Protocol):
         service_name: str,
         tags: list[str] | None = None,
         healthy_only: bool = True,
-    ) -> list[dict[str, Any]]:
+    ) -> list[TypedDictServiceDiscoveryEntry]:
         """
         Discover services by name and optional tags.
 
@@ -165,7 +173,9 @@ class ProtocolServiceDiscovery(Protocol):
         """
         ...
 
-    async def get_service(self, service_id: str) -> dict[str, Any] | None:
+    async def get_service(
+        self, service_id: str
+    ) -> TypedDictServiceDiscoveryEntry | None:
         """
         Get a specific service instance by ID.
 
@@ -177,7 +187,7 @@ class ProtocolServiceDiscovery(Protocol):
         """
         ...
 
-    async def get_service_health(self, service_id: str) -> dict[str, Any]:
+    async def get_service_health(self, service_id: str) -> TypedDictServiceHealthStatus:
         """
         Get health status for a specific service.
 
