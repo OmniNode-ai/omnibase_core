@@ -33,6 +33,7 @@ from omnibase_core.models.agents import (
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.unit
 class TestModelRagQueries:
     """Tests for ModelRagQueries field-level validation."""
 
@@ -182,7 +183,7 @@ def _make_minimal_definition(
         onex_integration=ModelOnexIntegration(),
         agent_philosophy=ModelAgentPhilosophy(core_responsibility="Testing"),
         capabilities=ModelAgentCapabilities(
-            primary=primary_capabilities or ["capability-one"],
+            primary=primary_capabilities if primary_capabilities is not None else ["capability-one"],
         ),
         intelligence_integration=ModelIntelligenceIntegration(),
     )
@@ -193,6 +194,7 @@ def _make_minimal_definition(
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.unit
 class TestToRoutingConfig:
     """Tests for the to_routing_config() converter function."""
 
