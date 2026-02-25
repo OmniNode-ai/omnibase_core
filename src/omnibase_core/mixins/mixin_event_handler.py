@@ -280,7 +280,7 @@ class MixinEventHandler:
             if not is_event_equal(event.event_type, discovery_request_type):
                 return
 
-        except Exception:  # catch-all-ok: event handler returns early if type check fails, malformed events shouldn't crash
+        except Exception:  # fallback-ok: event handler returns early if type check fails, malformed events shouldn't crash
             # If we can't create the event type, skip
             return
 
@@ -357,7 +357,7 @@ class MixinEventHandler:
             # No specific filters, respond
             return True
 
-        except Exception:  # catch-all-ok: filter error defaults to responding, safe fallback for event handling
+        except Exception:  # fallback-ok: filter error defaults to responding, safe fallback for event handling
             # On error, default to responding
             return True
 

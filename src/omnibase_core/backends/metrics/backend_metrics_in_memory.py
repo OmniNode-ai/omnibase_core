@@ -130,7 +130,9 @@ class BackendMetricsInMemory:
             self._histograms[key] = []
         self._histograms[key].append(value)
 
-    def push(self) -> None:
+    def push(
+        self,
+    ) -> None:  # stub-ok: in-memory backend intentionally has no push target
         """
         Push metrics to remote backend.
 
