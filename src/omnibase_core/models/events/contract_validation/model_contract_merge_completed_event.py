@@ -25,6 +25,9 @@ See Also:
 
 .. versionadded:: 0.4.0
     Initial implementation as part of OMN-1146 contract validation events.
+
+.. versionchanged:: 0.18.0
+    Added ``overlay_refs`` field with structured overlay application records (OMN-2757).
 """
 
 from uuid import UUID
@@ -37,6 +40,7 @@ from omnibase_core.models.events.contract_validation.model_contract_ref import (
 from omnibase_core.models.events.contract_validation.model_contract_validation_event_base import (
     ModelContractValidationEventBase,
 )
+from omnibase_core.models.merge.model_overlay_ref import ModelOverlayRef
 
 __all__ = ["ModelContractMergeCompletedEvent", "CONTRACT_MERGE_COMPLETED_EVENT"]
 
@@ -114,6 +118,12 @@ class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):
         description="Number of overlays that were successfully applied.",
     )
 
+    overlay_refs: list[ModelOverlayRef] = Field(
+        default_factory=list,
+        description="Ordered list of overlay application records. Each entry "
+        "describes one overlay that was applied, in application order.",
+    )
+
     defaults_applied: bool = Field(
         default=False,
         description="Whether profile defaults were applied during merge.",
@@ -157,6 +167,7 @@ class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):
         *,
         effective_contract_hash: str | None = None,
         overlays_applied_count: int = 0,
+        overlay_refs: list[ModelOverlayRef] | None = None,
         defaults_applied: bool = False,
         warnings_count: int = 0,
         diff_ref: str | None = None,
@@ -174,6 +185,7 @@ class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):
             duration_ms: Time taken for the merge in milliseconds.
             effective_contract_hash: Optional hash of the effective contract.
             overlays_applied_count: Number of overlays applied (default 0).
+            overlay_refs: Ordered list of overlay application records (default []).
             defaults_applied: Whether defaults were applied (default False).
             warnings_count: Number of warnings generated (default 0).
             diff_ref: Optional reference to stored diff.
@@ -191,6 +203,7 @@ class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):
             duration_ms=duration_ms,
             effective_contract_hash=effective_contract_hash,
             overlays_applied_count=overlays_applied_count,
+            overlay_refs=overlay_refs if overlay_refs is not None else [],
             defaults_applied=defaults_applied,
             warnings_count=warnings_count,
             diff_ref=diff_ref,

@@ -517,6 +517,9 @@ __all__ = [
     "EnumMetadataToolType",
     # Merge domain (OMN-1127)
     "EnumMergeConflictType",
+    # Overlay scope (OMN-2757)
+    "EnumOverlayScope",
+    "SCOPE_ORDER",
     # Namespace domain
     "EnumNamespaceStrategy",
     # Resource domain
