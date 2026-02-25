@@ -15,7 +15,10 @@ Example:
     >>> agent = ModelAgentDefinition.model_validate(data)
 """
 
-from omnibase_core.models.agents.converter_agent_definition import to_routing_config
+from omnibase_core.models.agents.converter_agent_definition import (
+    TypedDictAgentRoutingConfig,
+    to_routing_config,
+)
 from omnibase_core.models.agents.model_activation_patterns import (
     ModelActivationPatterns,
 )
@@ -58,5 +61,6 @@ __all__ = [
     "ModelTransformationContext",
     "ModelWorkflowPhase",
     "ModelWorkflowTemplates",
+    "TypedDictAgentRoutingConfig",
     "to_routing_config",
 ]

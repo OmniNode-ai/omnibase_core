@@ -134,7 +134,7 @@ class TestModelRagQueries:
         """ModelRagQueries is frozen — mutation must raise."""
         rq = ModelRagQueries(match_count=5)
         with pytest.raises(ValidationError):
-            rq.match_count = 10  # type: ignore[misc]
+            rq.match_count = 10
 
     def test_extra_fields_ignored(self) -> None:
         """Unknown fields from agent YAMLs must be silently ignored."""
@@ -183,7 +183,9 @@ def _make_minimal_definition(
         onex_integration=ModelOnexIntegration(),
         agent_philosophy=ModelAgentPhilosophy(core_responsibility="Testing"),
         capabilities=ModelAgentCapabilities(
-            primary=primary_capabilities if primary_capabilities is not None else ["capability-one"],
+            primary=primary_capabilities
+            if primary_capabilities is not None
+            else ["capability-one"],
         ),
         intelligence_integration=ModelIntelligenceIntegration(),
     )

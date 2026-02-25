@@ -34,12 +34,13 @@ Example::
 
 from __future__ import annotations
 
-from typing import Any
-
 from omnibase_core.models.agents.model_agent_definition import ModelAgentDefinition
+from omnibase_core.types.typed_dict_agent_routing_config import (
+    TypedDictAgentRoutingConfig,
+)
 
 
-def to_routing_config(definition: ModelAgentDefinition) -> dict[str, Any]:
+def to_routing_config(definition: ModelAgentDefinition) -> TypedDictAgentRoutingConfig:
     """Convert a full agent definition to a compact routing-view dictionary.
 
     Extracts the fields relevant to agent routing and capability matching while
@@ -50,7 +51,7 @@ def to_routing_config(definition: ModelAgentDefinition) -> dict[str, Any]:
         definition: A validated ``ModelAgentDefinition`` instance.
 
     Returns:
-        A dictionary containing the routing-relevant fields:
+        A ``TypedDictAgentRoutingConfig`` containing the routing-relevant fields:
 
         - ``name`` (str): Unique agent name from identity.
         - ``agent_type`` (str): Agent type classifier.
@@ -122,4 +123,4 @@ def to_routing_config(definition: ModelAgentDefinition) -> dict[str, Any]:
     }
 
 
-__all__ = ["to_routing_config"]
+__all__ = ["TypedDictAgentRoutingConfig", "to_routing_config"]
