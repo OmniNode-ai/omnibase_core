@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-GateResultHITLRequired — HIGH-risk gate, requires a one-time HITL approval token.
+ModelGateResultHITLRequired — HIGH-risk gate, requires a one-time HITL approval token.
 
 .. versionadded:: 0.20.0  (OMN-2562)
 """
@@ -15,11 +15,11 @@ from datetime import UTC, datetime
 from omnibase_core.enums.enum_cli_command_risk import EnumCliCommandRisk
 from omnibase_core.enums.enum_risk_gate_outcome import EnumRiskGateOutcome
 
-__all__ = ["GateResultHITLRequired"]
+__all__ = ["ModelGateResultHITLRequired"]
 
 
 @dataclass(frozen=True)
-class GateResultHITLRequired:
+class ModelGateResultHITLRequired:
     """HIGH-risk gate — requires a one-time HITL approval token.
 
     The CLI must:

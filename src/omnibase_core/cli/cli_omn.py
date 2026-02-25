@@ -38,7 +38,7 @@ _DEFAULT_CATALOG_PATH = Path.home() / ".omn" / "catalog.json"
 def _get_cli_version() -> str:
     """Get the CLI version with graceful fallback."""
     try:
-        from importlib.metadata import PackageNotFoundError, version
+        from importlib.metadata import version
 
         return version("omnibase_core")
     except (ImportError, Exception):  # fallback-ok: version getter must never crash

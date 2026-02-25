@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-GateResultProceed — risk gate passed, dispatch proceeds immediately.
+ModelGateResultProceed — risk gate passed, dispatch proceeds immediately.
 
 .. versionadded:: 0.20.0  (OMN-2562)
 """
@@ -15,11 +15,11 @@ from datetime import UTC, datetime
 from omnibase_core.enums.enum_cli_command_risk import EnumCliCommandRisk
 from omnibase_core.enums.enum_risk_gate_outcome import EnumRiskGateOutcome
 
-__all__ = ["GateResultProceed"]
+__all__ = ["ModelGateResultProceed"]
 
 
 @dataclass(frozen=True)
-class GateResultProceed:
+class ModelGateResultProceed:
     """Risk gate passed — dispatch proceeds immediately.
 
     Used for LOW-risk commands (no gate required) and after successful

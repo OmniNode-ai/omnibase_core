@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-GateResultDualApprovalRequired — CRITICAL-risk gate, requires two principal tokens.
+ModelGateResultDualApprovalRequired — CRITICAL-risk gate, requires two principal tokens.
 
 .. versionadded:: 0.20.0  (OMN-2562)
 """
@@ -15,11 +15,11 @@ from datetime import UTC, datetime
 from omnibase_core.enums.enum_cli_command_risk import EnumCliCommandRisk
 from omnibase_core.enums.enum_risk_gate_outcome import EnumRiskGateOutcome
 
-__all__ = ["GateResultDualApprovalRequired"]
+__all__ = ["ModelGateResultDualApprovalRequired"]
 
 
 @dataclass(frozen=True)
-class GateResultDualApprovalRequired:
+class ModelGateResultDualApprovalRequired:
     """CRITICAL-risk gate — requires two distinct principal approval tokens.
 
     The CLI must collect two separate tokens from two different principals,

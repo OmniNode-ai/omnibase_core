@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-GateResultPromptConfirmation — MEDIUM-risk gate, requires user confirmation.
+ModelGateResultPromptConfirmation — MEDIUM-risk gate, requires user confirmation.
 
 .. versionadded:: 0.20.0  (OMN-2562)
 """
@@ -15,11 +15,11 @@ from datetime import UTC, datetime
 from omnibase_core.enums.enum_cli_command_risk import EnumCliCommandRisk
 from omnibase_core.enums.enum_risk_gate_outcome import EnumRiskGateOutcome
 
-__all__ = ["GateResultPromptConfirmation"]
+__all__ = ["ModelGateResultPromptConfirmation"]
 
 
 @dataclass(frozen=True)
-class GateResultPromptConfirmation:
+class ModelGateResultPromptConfirmation:
     """MEDIUM-risk gate — requires user confirmation prompt (y/N).
 
     The CLI must display the prompt and collect input before proceeding.

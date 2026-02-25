@@ -468,7 +468,7 @@ class TestCommandDispatch:
     ) -> None:
         """MEDIUM-risk command blocks dispatch and requests confirmation."""
         from omnibase_core.models.cli.model_risk_gate_result import (
-            GateResultPromptConfirmation,
+            ModelGateResultPromptConfirmation,
         )
 
         medium_risk_cmd = _make_command_entry()
@@ -490,7 +490,7 @@ class TestCommandDispatch:
         result = dispatcher.dispatch(medium_risk_cmd, parsed_args)
 
         assert result.success is False
-        assert isinstance(result.gate_result, GateResultPromptConfirmation)
+        assert isinstance(result.gate_result, ModelGateResultPromptConfirmation)
 
     def test_correlation_id_is_valid_uuid(
         self,

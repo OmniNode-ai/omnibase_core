@@ -10,23 +10,23 @@ call to ``ServiceCommandDispatcher.dispatch()``.
 
 ## Risk Level Semantics
 
-    LOW    → GateResultProceed (no gate, dispatch immediately)
-    MEDIUM → GateResultPromptConfirmation (confirmation prompt, default No)
-    HIGH   → GateResultHITLRequired (one approval token required)
-    CRITICAL → GateResultDualApprovalRequired (two distinct principal tokens)
+    LOW    → ModelGateResultProceed (no gate, dispatch immediately)
+    MEDIUM → ModelGateResultPromptConfirmation (confirmation prompt, default No)
+    HIGH   → ModelGateResultHITLRequired (one approval token required)
+    CRITICAL → ModelGateResultDualApprovalRequired (two distinct principal tokens)
 
 ## Integration Contract
 
     # In ServiceCommandDispatcher.dispatch():
     gate = ServiceRiskGate(validator=ServiceApprovalTokenValidator())
     result = gate.evaluate(command, parsed_args)
-    if isinstance(result, GateResultProceed):
+    if isinstance(result, ModelGateResultProceed):
         # dispatch
-    elif isinstance(result, GateResultPromptConfirmation):
+    elif isinstance(result, ModelGateResultPromptConfirmation):
         # prompt user for confirmation
-    elif isinstance(result, GateResultHITLRequired):
+    elif isinstance(result, ModelGateResultHITLRequired):
         # request approval token from user
-    elif isinstance(result, GateResultDualApprovalRequired):
+    elif isinstance(result, ModelGateResultDualApprovalRequired):
         # request two approval tokens from two principals
 
 ## Logging
@@ -69,14 +69,14 @@ from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.models.cli.model_gate_result_dual_approval_required import (
-    GateResultDualApprovalRequired,
+    ModelGateResultDualApprovalRequired,
 )
 from omnibase_core.models.cli.model_gate_result_hitl_required import (
-    GateResultHITLRequired,
+    ModelGateResultHITLRequired,
 )
-from omnibase_core.models.cli.model_gate_result_proceed import GateResultProceed
+from omnibase_core.models.cli.model_gate_result_proceed import ModelGateResultProceed
 from omnibase_core.models.cli.model_gate_result_prompt_confirmation import (
-    GateResultPromptConfirmation,
+    ModelGateResultPromptConfirmation,
 )
 from omnibase_core.models.cli.model_risk_gate_result import GateResult
 
@@ -129,9 +129,9 @@ class ServiceRiskGate:
 
         gate = ServiceRiskGate()
         result = gate.evaluate(command_entry, parsed_args)
-        if isinstance(result, GateResultProceed):
+        if isinstance(result, ModelGateResultProceed):
             dispatcher.dispatch(command_entry, parsed_args)
-        elif isinstance(result, GateResultPromptConfirmation):
+        elif isinstance(result, ModelGateResultPromptConfirmation):
             answer = input(result.prompt_message + " [y/N] ").strip().lower()
             if answer == "y":
                 dispatcher.dispatch(command_entry, parsed_args)
@@ -175,16 +175,16 @@ class ServiceRiskGate:
 
         Returns:
             A ``GateResult`` variant describing what the CLI must do next:
-            - ``GateResultProceed``: dispatch immediately.
-            - ``GateResultPromptConfirmation``: show y/N prompt.
-            - ``GateResultHITLRequired``: collect and validate one token.
-            - ``GateResultDualApprovalRequired``: collect and validate two tokens.
+            - ``ModelGateResultProceed``: dispatch immediately.
+            - ``ModelGateResultPromptConfirmation``: show y/N prompt.
+            - ``ModelGateResultHITLRequired``: collect and validate one token.
+            - ``ModelGateResultDualApprovalRequired``: collect and validate two tokens.
         """
         risk = command.risk
         command_ref = command.id
 
         if risk == EnumCliCommandRisk.LOW:
-            result: GateResult = GateResultProceed(
+            result: GateResult = ModelGateResultProceed(
                 command_ref=command_ref,
                 risk=risk,
             )
@@ -192,7 +192,7 @@ class ServiceRiskGate:
             return result
 
         if risk == EnumCliCommandRisk.MEDIUM:
-            result = GateResultPromptConfirmation(
+            result = ModelGateResultPromptConfirmation(
                 command_ref=command_ref,
                 risk=risk,
                 prompt_message=(
@@ -214,7 +214,7 @@ class ServiceRiskGate:
                     token=approval_token,
                 )
 
-            result = GateResultHITLRequired(
+            result = ModelGateResultHITLRequired(
                 command_ref=command_ref,
                 risk=risk,
                 challenge_message=_HITL_CHALLENGE_MESSAGE.format(
@@ -238,7 +238,7 @@ class ServiceRiskGate:
                     token2=approval_token2,
                 )
 
-            result = GateResultDualApprovalRequired(
+            result = ModelGateResultDualApprovalRequired(
                 command_ref=command_ref,
                 risk=risk,
                 challenge_message=_DUAL_APPROVAL_CHALLENGE_MESSAGE.format(
@@ -259,7 +259,7 @@ class ServiceRiskGate:
     ) -> GateResult:
         """Process user response to a MEDIUM-risk confirmation prompt.
 
-        Called after displaying the ``GateResultPromptConfirmation`` message
+        Called after displaying the ``ModelGateResultPromptConfirmation`` message
         and collecting the user's response.
 
         Args:
@@ -267,7 +267,7 @@ class ServiceRiskGate:
             confirmed: ``True`` if the user responded "yes"; ``False`` otherwise.
 
         Returns:
-            ``GateResultProceed`` if confirmed, ``GateResultPromptConfirmation``
+            ``ModelGateResultProceed`` if confirmed, ``ModelGateResultPromptConfirmation``
             with an updated outcome if rejected.
         """
         command_ref = command.id
@@ -275,10 +275,10 @@ class ServiceRiskGate:
 
         if confirmed:
             self._log_gate_decision(command_ref, risk, EnumRiskGateOutcome.CONFIRMED)
-            return GateResultProceed(command_ref=command_ref, risk=risk)
+            return ModelGateResultProceed(command_ref=command_ref, risk=risk)
 
         self._log_gate_decision(command_ref, risk, EnumRiskGateOutcome.REJECTED)
-        return GateResultPromptConfirmation(
+        return ModelGateResultPromptConfirmation(
             command_ref=command_ref,
             risk=risk,
             prompt_message="Cancelled by user.",
@@ -293,15 +293,15 @@ class ServiceRiskGate:
         """Validate a single HITL approval token for a HIGH-risk command.
 
         Called after the user provides the approval token in response to
-        a ``GateResultHITLRequired`` result.
+        a ``ModelGateResultHITLRequired`` result.
 
         Args:
             command: The command entry from the catalog.
             token: The approval token string provided by the user.
 
         Returns:
-            ``GateResultProceed`` if the token is valid,
-            ``GateResultHITLRequired`` with updated outcome if invalid.
+            ``ModelGateResultProceed`` if the token is valid,
+            ``ModelGateResultHITLRequired`` with updated outcome if invalid.
         """
         return self._validate_single_token(
             command_ref=command.id,
@@ -325,8 +325,8 @@ class ServiceRiskGate:
             token2: Second approval token.
 
         Returns:
-            ``GateResultProceed`` if both tokens are valid and from distinct
-            principals. ``GateResultDualApprovalRequired`` with updated outcome
+            ``ModelGateResultProceed`` if both tokens are valid and from distinct
+            principals. ``ModelGateResultDualApprovalRequired`` with updated outcome
             if validation fails.
         """
         return self._validate_dual_tokens(
@@ -355,7 +355,7 @@ class ServiceRiskGate:
             token: The approval token to validate.
 
         Returns:
-            ``GateResultProceed`` on success or ``GateResultHITLRequired``
+            ``ModelGateResultProceed`` on success or ``ModelGateResultHITLRequired``
             with outcome ``HITL_TOKEN_INVALID`` on failure.
         """
         result = self._validator.validate(token=token, command_ref=command_ref)
@@ -364,7 +364,7 @@ class ServiceRiskGate:
             self._log_gate_decision(
                 command_ref, risk, EnumRiskGateOutcome.HITL_TOKEN_INVALID
             )
-            return GateResultHITLRequired(
+            return ModelGateResultHITLRequired(
                 command_ref=command_ref,
                 risk=risk,
                 challenge_message=(
@@ -381,7 +381,7 @@ class ServiceRiskGate:
                     self._log_gate_decision(
                         command_ref, risk, EnumRiskGateOutcome.HITL_TOKEN_INVALID
                     )
-                    return GateResultHITLRequired(
+                    return ModelGateResultHITLRequired(
                         command_ref=command_ref,
                         risk=risk,
                         challenge_message=(
@@ -393,7 +393,7 @@ class ServiceRiskGate:
                 self._used_jtis.add(result.token_jti)
 
         self._log_gate_decision(command_ref, risk, EnumRiskGateOutcome.HITL_TOKEN_VALID)
-        return GateResultProceed(command_ref=command_ref, risk=risk)
+        return ModelGateResultProceed(command_ref=command_ref, risk=risk)
 
     def _validate_dual_tokens(
         self,
@@ -414,7 +414,7 @@ class ServiceRiskGate:
             token2: Second approval token.
 
         Returns:
-            ``GateResultProceed`` on success or ``GateResultDualApprovalRequired``
+            ``ModelGateResultProceed`` on success or ``ModelGateResultDualApprovalRequired``
             with outcome ``DUAL_APPROVAL_INVALID`` on failure.
         """
         result1 = self._validator.validate(token=token1, command_ref=command_ref)
@@ -425,7 +425,7 @@ class ServiceRiskGate:
             self._log_gate_decision(
                 command_ref, risk, EnumRiskGateOutcome.DUAL_APPROVAL_INVALID
             )
-            return GateResultDualApprovalRequired(
+            return ModelGateResultDualApprovalRequired(
                 command_ref=command_ref,
                 risk=risk,
                 challenge_message=(
@@ -438,7 +438,7 @@ class ServiceRiskGate:
             self._log_gate_decision(
                 command_ref, risk, EnumRiskGateOutcome.DUAL_APPROVAL_INVALID
             )
-            return GateResultDualApprovalRequired(
+            return ModelGateResultDualApprovalRequired(
                 command_ref=command_ref,
                 risk=risk,
                 challenge_message=(
@@ -452,7 +452,7 @@ class ServiceRiskGate:
             self._log_gate_decision(
                 command_ref, risk, EnumRiskGateOutcome.DUAL_APPROVAL_INVALID
             )
-            return GateResultDualApprovalRequired(
+            return ModelGateResultDualApprovalRequired(
                 command_ref=command_ref,
                 risk=risk,
                 challenge_message=(
@@ -472,7 +472,7 @@ class ServiceRiskGate:
                     self._log_gate_decision(
                         command_ref, risk, EnumRiskGateOutcome.DUAL_APPROVAL_INVALID
                     )
-                    return GateResultDualApprovalRequired(
+                    return ModelGateResultDualApprovalRequired(
                         command_ref=command_ref,
                         risk=risk,
                         challenge_message=(
@@ -486,7 +486,7 @@ class ServiceRiskGate:
         self._log_gate_decision(
             command_ref, risk, EnumRiskGateOutcome.DUAL_APPROVAL_VALID
         )
-        return GateResultProceed(command_ref=command_ref, risk=risk)
+        return ModelGateResultProceed(command_ref=command_ref, risk=risk)
 
     @staticmethod
     def _log_gate_decision(
