@@ -4,6 +4,7 @@
 """Constants module for omnibase_core."""
 
 from omnibase_core.constants import (
+    constants_contract,
     constants_contract_fields,
     constants_effect,
     constants_error,
@@ -12,6 +13,7 @@ from omnibase_core.constants import (
     constants_omnimemory,
     constants_topic_taxonomy,
 )
+from omnibase_core.constants.constants_contract import CONTRACT_FILENAME
 from omnibase_core.constants.constants_contract_fields import (
     BACKEND_KEY,
     CUSTOM_KEY,
@@ -163,6 +165,7 @@ from omnibase_core.constants.constants_topic_taxonomy import (
 )
 
 __all__ = [
+    "constants_contract",
     "constants_contract_fields",
     "constants_effect",
     "constants_error",
@@ -171,6 +174,8 @@ __all__ = [
     "constants_topic_taxonomy",
     "constants_handler_capabilities",
     "normalize_legacy_event_type",
+    # Contract filename constant (OMN-1533)
+    "CONTRACT_FILENAME",
     # Error code pattern (centralized)
     "ERROR_CODE_PATTERN",
     "ERROR_CODE_PATTERN_STRING",
