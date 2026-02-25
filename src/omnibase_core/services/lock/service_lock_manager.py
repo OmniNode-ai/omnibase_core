@@ -56,8 +56,8 @@ the entry's ``command_id → publisher`` mapping.
 from __future__ import annotations
 
 __all__ = [
-    "LockDiffResult",
-    "LockDriftEntry",
+    "ModelLockDiffResult",
+    "ModelLockDriftEntry",
     "LockDriftError",
     "LockError",
     "LockFileError",
@@ -78,8 +78,8 @@ from omnibase_core.errors.error_lock import (
     LockFileError,
     LockPartialError,
 )
-from omnibase_core.models.lock.model_lock_diff_result import LockDiffResult
-from omnibase_core.models.lock.model_lock_drift_entry import LockDriftEntry
+from omnibase_core.models.lock.model_lock_diff_result import ModelLockDiffResult
+from omnibase_core.models.lock.model_lock_drift_entry import ModelLockDriftEntry
 from omnibase_core.models.lock.model_lock_entry import ModelLockEntry
 from omnibase_core.models.lock.model_lockfile import LOCK_FORMAT_VERSION, ModelLockfile
 
@@ -127,7 +127,7 @@ class ServiceLockManager:
             lock = ServiceLockManager(catalog=catalog, cli_version="0.20.0")
             lock.generate()            # writes omn.lock
             lock.check()               # verifies omn.lock (raises LockDriftError on drift)
-            result = lock.diff()       # returns LockDiffResult
+            result = lock.diff()       # returns ModelLockDiffResult
 
     .. versionadded:: 0.20.0  (OMN-2570)
     """
@@ -212,14 +212,14 @@ class ServiceLockManager:
                 + ". Run 'omn lock' to regenerate the lockfile."
             )
 
-    def diff(self) -> LockDiffResult:
+    def diff(self) -> ModelLockDiffResult:
         """Compute drift between the current catalog and the lockfile.
 
-        Returns a ``LockDiffResult`` showing which commands have been added,
+        Returns a ``ModelLockDiffResult`` showing which commands have been added,
         removed, or changed since the lockfile was generated.
 
         Returns:
-            ``LockDiffResult`` with the full list of drifted entries.
+            ``ModelLockDiffResult`` with the full list of drifted entries.
             ``result.is_clean`` is True when no drift is detected.
 
         Raises:
@@ -434,7 +434,7 @@ class ServiceLockManager:
                 f"Lockfile at '{self._lock_path}' has invalid structure: {exc}"
             ) from exc
 
-    def _compute_diff(self, lockfile: ModelLockfile) -> LockDiffResult:
+    def _compute_diff(self, lockfile: ModelLockfile) -> ModelLockDiffResult:
         """Compare the lockfile against the current catalog.
 
         Detects:
@@ -449,7 +449,7 @@ class ServiceLockManager:
             lockfile: The loaded lockfile to compare against.
 
         Returns:
-            ``LockDiffResult`` describing all drifted commands.
+            ``ModelLockDiffResult`` describing all drifted commands.
 
         Raises:
             LockPartialError: If the lockfile is a strict subset of the
@@ -476,13 +476,13 @@ class ServiceLockManager:
         current_ids = set(current_map)
         locked_ids = set(locked_map)
 
-        drifted: list[LockDriftEntry] = []
+        drifted: list[ModelLockDriftEntry] = []
 
         # Changed: in both but fingerprint differs.
         for cmd_id in current_ids & locked_ids:
             if current_map[cmd_id] != locked_map[cmd_id]:
                 drifted.append(
-                    LockDriftEntry(
+                    ModelLockDriftEntry(
                         command_id=cmd_id,
                         locked_fingerprint=locked_map[cmd_id],
                         current_fingerprint=current_map[cmd_id],
@@ -503,7 +503,7 @@ class ServiceLockManager:
         # Removed: in lockfile but not in catalog.
         for cmd_id in locked_ids - current_ids:
             drifted.append(
-                LockDriftEntry(
+                ModelLockDriftEntry(
                     command_id=cmd_id,
                     locked_fingerprint=locked_map[cmd_id],
                     current_fingerprint=None,
@@ -511,7 +511,7 @@ class ServiceLockManager:
                 )
             )
 
-        return LockDiffResult(drifted=drifted)
+        return ModelLockDiffResult(drifted=drifted)
 
     def __repr__(self) -> str:
         """Return debug representation."""

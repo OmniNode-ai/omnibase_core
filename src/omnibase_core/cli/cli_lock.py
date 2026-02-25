@@ -285,10 +285,10 @@ def diff(
         cli_version=cli_ver,
     )
 
-    from omnibase_core.services.lock.service_lock_manager import LockDiffResult
+    from omnibase_core.services.lock.service_lock_manager import ModelLockDiffResult
 
     try:
-        diff_result: LockDiffResult = lock_mgr.diff()
+        diff_result: ModelLockDiffResult = lock_mgr.diff()
     except LockFileError as exc:
         raise click.ClickException(str(exc)) from exc
     except LockPartialError as exc:

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-LockDiffResult dataclass — result of ServiceLockManager.diff().
+ModelLockDiffResult dataclass — result of ServiceLockManager.diff().
 
 .. versionadded:: 0.20.0  (OMN-2570)
 """
@@ -11,13 +11,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from omnibase_core.models.lock.model_lock_drift_entry import LockDriftEntry
+from omnibase_core.models.lock.model_lock_drift_entry import ModelLockDriftEntry
 
-__all__ = ["LockDiffResult"]
+__all__ = ["ModelLockDiffResult"]
 
 
 @dataclass
-class LockDiffResult:
+class ModelLockDiffResult:
     """Result of ``ServiceLockManager.diff()``.
 
     Attributes:
@@ -25,7 +25,7 @@ class LockDiffResult:
         is_clean: True when there is no drift (drifted is empty).
     """
 
-    drifted: list[LockDriftEntry] = field(default_factory=list)
+    drifted: list[ModelLockDriftEntry] = field(default_factory=list)
 
     @property
     def is_clean(self) -> bool:

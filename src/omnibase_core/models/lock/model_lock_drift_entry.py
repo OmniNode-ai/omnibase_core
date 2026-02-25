@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-LockDriftEntry dataclass — one command that has drifted from the lockfile.
+ModelLockDriftEntry dataclass — one command that has drifted from the lockfile.
 
 .. versionadded:: 0.20.0  (OMN-2570)
 """
@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-__all__ = ["LockDriftEntry"]
+__all__ = ["ModelLockDriftEntry"]
 
 
 @dataclass
-class LockDriftEntry:
+class ModelLockDriftEntry:
     """One command that has drifted from the lockfile.
 
     Attributes:
