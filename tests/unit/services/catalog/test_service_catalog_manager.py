@@ -58,7 +58,9 @@ def _make_invocation(
     """Build a minimal valid invocation spec."""
     return ModelCliInvocation(
         invocation_type=invocation_type,
-        topic="onex.cmd.test.v1" if invocation_type == EnumCliInvocationType.KAFKA_EVENT else None,
+        topic="onex.cmd.test.v1"
+        if invocation_type == EnumCliInvocationType.KAFKA_EVENT
+        else None,
         callable_ref=(
             "omnibase_core.test.callable"
             if invocation_type == EnumCliInvocationType.DIRECT_CALL
@@ -123,29 +125,29 @@ def _build_contribution(
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture()
+@pytest.fixture
 def tmp_cache(tmp_path: Path) -> Path:
     """Return a temp path for the catalog cache file."""
     return tmp_path / "catalog.json"
 
 
-@pytest.fixture()
+@pytest.fixture
 def registry() -> ServiceRegistryCliContribution:
     """Return a fresh, empty registry."""
     return ServiceRegistryCliContribution()
 
 
-@pytest.fixture()
+@pytest.fixture
 def cmd_a() -> ModelCliCommandEntry:
     return _make_command("com.omninode.test.alpha", group="test")
 
 
-@pytest.fixture()
+@pytest.fixture
 def cmd_b() -> ModelCliCommandEntry:
     return _make_command("com.omninode.test.beta", group="test")
 
 
-@pytest.fixture()
+@pytest.fixture
 def contrib_ab(
     cmd_a: ModelCliCommandEntry,
     cmd_b: ModelCliCommandEntry,
@@ -174,7 +176,7 @@ class TestModelCatalogPolicy:
 
     def test_policy_is_frozen(self) -> None:
         policy = ModelCatalogPolicy()
-        with pytest.raises(Exception):  # noqa: B017  (pydantic frozen raises ValidationError)
+        with pytest.raises(Exception):
             policy.hide_deprecated = True  # type: ignore[misc]
 
 
@@ -202,7 +204,9 @@ class TestRefresh:
         diff = manager.refresh()
 
         assert len(manager.list_commands()) == 2
-        assert diff.added == sorted(["com.omninode.test.alpha", "com.omninode.test.beta"])
+        assert diff.added == sorted(
+            ["com.omninode.test.alpha", "com.omninode.test.beta"]
+        )
         assert diff.removed == []
         assert diff.updated == []
 
@@ -389,7 +393,9 @@ class TestLoad:
         data = json.loads(tmp_cache.read_text())
         for pub in data["signatures"]:
             sig = data["signatures"][pub]["signature"]
-            data["signatures"][pub]["signature"] = ("X" if sig[0] != "X" else "Y") + sig[1:]
+            data["signatures"][pub]["signature"] = (
+                "X" if sig[0] != "X" else "Y"
+            ) + sig[1:]
         tmp_cache.write_text(json.dumps(data), encoding="utf-8")
 
         loader = ServiceCatalogManager(cache_path=tmp_cache, cli_version="0.19.0")
@@ -725,9 +731,7 @@ class TestPublicApi:
             _build_contribution([cmd_x], keypair=kp),
             verify_signature=True,
         )
-        manager = ServiceCatalogManager(
-            registry=registry, cache_path=tmp_cache
-        )
+        manager = ServiceCatalogManager(registry=registry, cache_path=tmp_cache)
         manager.refresh()
         key1 = manager.cache_key()
 

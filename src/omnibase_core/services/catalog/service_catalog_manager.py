@@ -77,10 +77,6 @@ catalog — **never** from the live registry at invocation time.
 from __future__ import annotations
 
 __all__ = [
-    "CatalogError",
-    "CatalogLoadError",
-    "CatalogSignatureError",
-    "CatalogVersionError",
     "ServiceCatalogManager",
 ]
 
@@ -94,6 +90,12 @@ from typing import TYPE_CHECKING
 from omnibase_core.crypto.crypto_ed25519_signer import verify_base64
 from omnibase_core.enums.enum_cli_command_visibility import EnumCliCommandVisibility
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.error_catalog import (
+    CatalogError,
+    CatalogLoadError,
+    CatalogSignatureError,
+    CatalogVersionError,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
@@ -106,29 +108,17 @@ if TYPE_CHECKING:
         ServiceRegistryCliContribution,
     )
 
+# Re-export for convenience so callers can import from the service module.
+__all__ = [
+    "CatalogError",
+    "CatalogLoadError",
+    "CatalogSignatureError",
+    "CatalogVersionError",
+    "ServiceCatalogManager",
+]
+
 # Default cache path (overrideable via constructor).
 _DEFAULT_CACHE_PATH = Path.home() / ".omn" / "catalog.json"
-
-
-# ---------------------------------------------------------------------------
-# Exception hierarchy
-# ---------------------------------------------------------------------------
-
-
-class CatalogError(Exception):
-    """Base error for all catalog failures."""
-
-
-class CatalogLoadError(CatalogError):
-    """Raised when the cache file is missing, corrupt, or unreadable."""
-
-
-class CatalogSignatureError(CatalogError):
-    """Raised when Ed25519 signature verification fails on load or refresh."""
-
-
-class CatalogVersionError(CatalogError):
-    """Raised when the cached catalog was written by an incompatible CLI version."""
 
 
 # ---------------------------------------------------------------------------
@@ -492,11 +482,17 @@ class ServiceCatalogManager:
                 return False
 
         # Deprecation filter.
-        if policy.hide_deprecated and cmd.visibility == EnumCliCommandVisibility.DEPRECATED:
+        if (
+            policy.hide_deprecated
+            and cmd.visibility == EnumCliCommandVisibility.DEPRECATED
+        ):
             return False
 
         # Experimental filter.
-        if policy.hide_experimental and cmd.visibility == EnumCliCommandVisibility.EXPERIMENTAL:
+        if (
+            policy.hide_experimental
+            and cmd.visibility == EnumCliCommandVisibility.EXPERIMENTAL
+        ):
             return False
 
         return True

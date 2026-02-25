@@ -95,8 +95,7 @@ class ModelCatalogPolicy(BaseModel):
     cli_version: str | None = Field(
         default=None,
         description=(
-            "Running CLI version (MAJOR.MINOR.PATCH). "
-            "None disables version-gating."
+            "Running CLI version (MAJOR.MINOR.PATCH). None disables version-gating."
         ),
     )
 
