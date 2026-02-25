@@ -8,8 +8,8 @@ Provides schema-driven argument parsing and dynamic command dispatch.
 
 Import directly from the specific module per OMN-1071 policy:
 
-    from omnibase_core.services.cli.service_schema_argument_parser import SchemaArgumentParser
-    from omnibase_core.services.cli.service_command_dispatcher import CommandDispatcher
+    from omnibase_core.services.cli.service_schema_argument_parser import ServiceSchemaArgumentParser
+    from omnibase_core.services.cli.service_command_dispatcher import ServiceCommandDispatcher
 
 .. versionadded:: 0.19.0  (OMN-2553)
 """

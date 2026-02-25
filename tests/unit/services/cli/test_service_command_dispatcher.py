@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-Unit tests for CommandDispatcher — OMN-2553.
+Unit tests for ServiceCommandDispatcher — OMN-2553.
 
 Covers:
     - KAFKA_EVENT: successful dispatch publishes to correct topic
@@ -39,7 +39,9 @@ from omnibase_core.models.contracts.model_cli_contribution import (
     ModelCliCommandEntry,
     ModelCliInvocation,
 )
-from omnibase_core.services.cli.service_command_dispatcher import CommandDispatcher
+from omnibase_core.services.cli.service_command_dispatcher import (
+    ServiceCommandDispatcher,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers / stubs
@@ -111,7 +113,7 @@ def _make_namespace(**kwargs: Any) -> Namespace:
 def test_kafka_dispatch_success() -> None:
     """Successful KAFKA_EVENT dispatch returns success=True."""
     producer = _FakeKafkaProducer()
-    dispatcher = CommandDispatcher(kafka_producer=producer)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
     command = _make_command()
     ns = _make_namespace(mode="fast", limit=5, json=False)
 
@@ -127,7 +129,7 @@ def test_kafka_dispatch_success() -> None:
 def test_kafka_dispatch_produces_to_correct_topic() -> None:
     """Dispatch publishes to the topic specified in the command invocation."""
     producer = _FakeKafkaProducer()
-    dispatcher = CommandDispatcher(kafka_producer=producer)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
     command = _make_command(topic="onex.cmd.memory.query.v1")
     ns = _make_namespace(query="hello", json=False)
 
@@ -141,7 +143,7 @@ def test_kafka_dispatch_produces_to_correct_topic() -> None:
 def test_kafka_dispatch_returns_valid_uuid_correlation_id() -> None:
     """Dispatch result correlation_id is a valid UUID4 string."""
     producer = _FakeKafkaProducer()
-    dispatcher = CommandDispatcher(kafka_producer=producer)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
     result = dispatcher.dispatch(_make_command(), _make_namespace(json=False))
 
     parsed = uuid.UUID(result.correlation_id)
@@ -152,7 +154,7 @@ def test_kafka_dispatch_returns_valid_uuid_correlation_id() -> None:
 def test_kafka_dispatch_correlation_id_in_payload() -> None:
     """Correlation ID is embedded in the Kafka message payload."""
     producer = _FakeKafkaProducer()
-    dispatcher = CommandDispatcher(kafka_producer=producer)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
     result = dispatcher.dispatch(_make_command(), _make_namespace(json=False))
 
     payload = json.loads(producer.produced[0]["value"])
@@ -163,7 +165,7 @@ def test_kafka_dispatch_correlation_id_in_payload() -> None:
 def test_kafka_dispatch_flushes_producer() -> None:
     """Dispatcher calls flush() after produce()."""
     producer = _FakeKafkaProducer()
-    dispatcher = CommandDispatcher(kafka_producer=producer)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
     dispatcher.dispatch(_make_command(), _make_namespace(json=False))
 
     assert producer.flushed is True
@@ -173,7 +175,7 @@ def test_kafka_dispatch_flushes_producer() -> None:
 def test_kafka_dispatch_produce_failure_returns_error_result() -> None:
     """A Kafka produce exception is captured as success=False result."""
     producer = _FakeKafkaProducer(fail_on_produce=True)
-    dispatcher = CommandDispatcher(kafka_producer=producer)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
     result = dispatcher.dispatch(_make_command(), _make_namespace(json=False))
 
     assert result.success is False
@@ -184,7 +186,7 @@ def test_kafka_dispatch_produce_failure_returns_error_result() -> None:
 @pytest.mark.unit
 def test_kafka_dispatch_no_producer_raises() -> None:
     """Dispatching KAFKA_EVENT with no producer raises CommandDispatchError."""
-    dispatcher = CommandDispatcher(kafka_producer=None)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=None)
     with pytest.raises(CommandDispatchError, match="No Kafka producer"):
         dispatcher.dispatch(_make_command(), _make_namespace(json=False))
 
@@ -215,7 +217,7 @@ def test_kafka_dispatch_empty_topic_raises() -> None:
     object.__setattr__(command, "examples", [])
 
     producer = _FakeKafkaProducer()
-    dispatcher = CommandDispatcher(kafka_producer=producer)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
     with pytest.raises(CommandDispatchError, match="topic is empty"):
         dispatcher.dispatch(command, _make_namespace(json=False))
 
@@ -228,7 +230,7 @@ def test_kafka_dispatch_empty_topic_raises() -> None:
 @pytest.mark.unit
 def test_http_endpoint_raises_dispatch_error() -> None:
     """HTTP_ENDPOINT invocation raises CommandDispatchError (stub)."""
-    dispatcher = CommandDispatcher()
+    dispatcher = ServiceCommandDispatcher()
     command = _make_command(invocation_type=EnumCliInvocationType.HTTP_ENDPOINT)
     with pytest.raises(CommandDispatchError, match="HTTP_ENDPOINT"):
         dispatcher.dispatch(command, _make_namespace(json=False))
@@ -237,7 +239,7 @@ def test_http_endpoint_raises_dispatch_error() -> None:
 @pytest.mark.unit
 def test_direct_call_raises_dispatch_error() -> None:
     """DIRECT_CALL invocation raises CommandDispatchError (stub)."""
-    dispatcher = CommandDispatcher()
+    dispatcher = ServiceCommandDispatcher()
     command = _make_command(invocation_type=EnumCliInvocationType.DIRECT_CALL)
     with pytest.raises(CommandDispatchError, match="DIRECT_CALL"):
         dispatcher.dispatch(command, _make_namespace(json=False))
@@ -246,7 +248,7 @@ def test_direct_call_raises_dispatch_error() -> None:
 @pytest.mark.unit
 def test_subprocess_raises_dispatch_error() -> None:
     """SUBPROCESS invocation raises CommandDispatchError (stub)."""
-    dispatcher = CommandDispatcher()
+    dispatcher = ServiceCommandDispatcher()
     command = _make_command(invocation_type=EnumCliInvocationType.SUBPROCESS)
     with pytest.raises(CommandDispatchError, match="SUBPROCESS"):
         dispatcher.dispatch(command, _make_namespace(json=False))
@@ -268,7 +270,7 @@ def test_required_field_missing_returns_error_result() -> None:
         "required": ["mode"],
     }
     producer = _FakeKafkaProducer()
-    dispatcher = CommandDispatcher(kafka_producer=producer)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
     command = _make_command()
     # Namespace without 'mode'
     ns = _make_namespace(limit=5, json=False)
@@ -293,7 +295,7 @@ def test_required_field_present_dispatches_successfully() -> None:
         "required": ["mode"],
     }
     producer = _FakeKafkaProducer()
-    dispatcher = CommandDispatcher(kafka_producer=producer)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
     command = _make_command()
     ns = _make_namespace(mode="fast", json=False)
 
@@ -307,7 +309,7 @@ def test_required_field_present_dispatches_successfully() -> None:
 def test_no_schema_skips_validation() -> None:
     """When args_schema is None, required field validation is skipped."""
     producer = _FakeKafkaProducer()
-    dispatcher = CommandDispatcher(kafka_producer=producer)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
     command = _make_command()
     # No required field provided — but no schema, so no error.
     ns = _make_namespace(json=False)
@@ -363,7 +365,7 @@ def test_dispatch_result_is_frozen() -> None:
 def test_end_to_end_schema_parse_and_dispatch() -> None:
     """Integration: parse args from schema then dispatch to Kafka."""
     from omnibase_core.services.cli.service_schema_argument_parser import (
-        SchemaArgumentParser,
+        ServiceSchemaArgumentParser,
     )
 
     schema: dict[str, object] = {
@@ -377,7 +379,7 @@ def test_end_to_end_schema_parse_and_dispatch() -> None:
     command = _make_command(cmd_id="com.omninode.memory.search")
 
     # Phase 1: parse args from schema.
-    parser = SchemaArgumentParser.from_schema(
+    parser = ServiceSchemaArgumentParser.from_schema(
         command_id=command.id,
         display_name="Memory Search",
         description="Search the memory store.",
@@ -389,7 +391,7 @@ def test_end_to_end_schema_parse_and_dispatch() -> None:
 
     # Phase 2: dispatch.
     producer = _FakeKafkaProducer()
-    dispatcher = CommandDispatcher(kafka_producer=producer)
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
     result = dispatcher.dispatch(command, ns, args_schema=schema)
 
     assert result.success is True

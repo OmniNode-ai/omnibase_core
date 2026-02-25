@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-SchemaArgumentParser — schema-driven CLI argument parser for the registry-driven CLI.
+ServiceSchemaArgumentParser — schema-driven CLI argument parser for the registry-driven CLI.
 
 Generates a fully functional ``argparse.ArgumentParser`` at runtime from a
 command's JSON Schema (as referenced via ``args_schema_ref`` in the
@@ -53,9 +53,9 @@ The parser will produce::
 
 ## Usage
 
-    from omnibase_core.services.cli.service_schema_argument_parser import SchemaArgumentParser
+    from omnibase_core.services.cli.service_schema_argument_parser import ServiceSchemaArgumentParser
 
-    parser = SchemaArgumentParser.from_schema(
+    parser = ServiceSchemaArgumentParser.from_schema(
         command_id="com.omninode.memory.query",
         display_name="Query Memory",
         description="Search the memory store.",
@@ -67,7 +67,7 @@ The parser will produce::
 
 See Also:
     - ``omnibase_core.errors.error_schema_argument_parser.SchemaParseError``
-    - ``omnibase_core.services.cli.service_command_dispatcher.CommandDispatcher``
+    - ``omnibase_core.services.cli.service_command_dispatcher.ServiceCommandDispatcher``
 
 .. versionadded:: 0.19.0  (OMN-2553)
 """
@@ -75,7 +75,7 @@ See Also:
 from __future__ import annotations
 
 __all__ = [
-    "SchemaArgumentParser",
+    "ServiceSchemaArgumentParser",
 ]
 
 import argparse
@@ -87,7 +87,7 @@ from omnibase_core.errors.error_schema_argument_parser import SchemaParseError
 # type[str] | type[int] | type[float] covers the argparse coercion types.
 
 
-class SchemaArgumentParser:
+class ServiceSchemaArgumentParser:
     """Schema-driven CLI argument parser factory.
 
     Converts a JSON Schema (``dict``) into a fully-configured

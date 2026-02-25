@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-Unit tests for SchemaArgumentParser — OMN-2553.
+Unit tests for ServiceSchemaArgumentParser — OMN-2553.
 
 Covers:
     - full schema parse: all property types generate correct flags
@@ -26,7 +26,7 @@ import pytest
 
 from omnibase_core.errors.error_schema_argument_parser import SchemaParseError
 from omnibase_core.services.cli.service_schema_argument_parser import (
-    SchemaArgumentParser,
+    ServiceSchemaArgumentParser,
 )
 
 # ---------------------------------------------------------------------------
@@ -83,7 +83,7 @@ def _make_parser(
     risk: str = "low",
     examples: list[str] | None = None,
 ) -> argparse.ArgumentParser:
-    return SchemaArgumentParser.from_schema(
+    return ServiceSchemaArgumentParser.from_schema(
         command_id=command_id,
         display_name=display_name,
         description=description,
@@ -293,7 +293,7 @@ def test_non_object_schema_raises() -> None:
 def test_non_dict_schema_raises() -> None:
     """Non-dict schema raises SchemaParseError."""
     with pytest.raises(SchemaParseError):
-        SchemaArgumentParser.from_schema(
+        ServiceSchemaArgumentParser.from_schema(
             command_id=COMMAND_ID,
             display_name=DISPLAY_NAME,
             description=DESCRIPTION,

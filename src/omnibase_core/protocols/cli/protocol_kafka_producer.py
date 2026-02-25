@@ -4,7 +4,7 @@
 """
 Kafka producer protocol for the registry-driven CLI dispatch system.
 
-Defines the minimal interface required by CommandDispatcher to publish
+Defines the minimal interface required by ServiceCommandDispatcher to publish
 events to the Kafka event bus.  Any object implementing this protocol
 can be injected as the Kafka producer — no hard dependency on a specific
 Kafka library (confluent_kafka, aiokafka, etc.) is required.
@@ -23,7 +23,7 @@ from typing import Protocol, runtime_checkable
 
 @runtime_checkable
 class ProtocolKafkaProducer(Protocol):
-    """Minimal Kafka producer interface required by CommandDispatcher.
+    """Minimal Kafka producer interface required by ServiceCommandDispatcher.
 
     Any object that implements ``produce(topic, key, value)`` and ``flush()``
     satisfies this protocol.  In production, a ``confluent_kafka.Producer``

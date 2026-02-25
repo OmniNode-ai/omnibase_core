@@ -4,7 +4,7 @@
 """
 Command dispatch error for the registry-driven CLI.
 
-Raised by CommandDispatcher when dispatch configuration is invalid or an
+Raised by ServiceCommandDispatcher when dispatch configuration is invalid or an
 unimplemented invocation type (stub) is invoked.
 
 .. versionadded:: 0.19.0  (OMN-2553)

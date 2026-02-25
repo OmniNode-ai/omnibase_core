@@ -4,7 +4,7 @@
 """
 Schema argument parser error for the registry-driven CLI.
 
-Raised by SchemaArgumentParser when a JSON Schema cannot be converted
+Raised by ServiceSchemaArgumentParser when a JSON Schema cannot be converted
 to an argparse.ArgumentParser.
 
 .. versionadded:: 0.19.0  (OMN-2553)
@@ -26,7 +26,7 @@ class SchemaParseError(Exception):
     - A property uses an unsupported JSON Schema type.
 
     Callers should validate the schema structure before calling
-    ``SchemaArgumentParser.from_schema()``.
+    ``ServiceSchemaArgumentParser.from_schema()``.
 
     .. versionadded:: 0.19.0  (OMN-2553)
     """

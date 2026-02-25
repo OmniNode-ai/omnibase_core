@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-CommandDispatcher -- dynamic command dispatch for the registry-driven CLI.
+ServiceCommandDispatcher -- dynamic command dispatch for the registry-driven CLI.
 
 Dispatches validated, parsed arguments to the correct backend based on the
 ``invocation.type`` field in a ``ModelCliCommandEntry``.
@@ -31,7 +31,7 @@ invocations that fail type constraints early, before reaching the backend.
 
 ## Thread Safety
 
-``CommandDispatcher`` is stateless after construction.  The Kafka producer
+``ServiceCommandDispatcher`` is stateless after construction.  The Kafka producer
 (if any) should be passed in as a dependency; it is not created internally.
 
 See Also:
@@ -45,7 +45,7 @@ See Also:
 from __future__ import annotations
 
 __all__ = [
-    "CommandDispatcher",
+    "ServiceCommandDispatcher",
 ]
 
 import json
@@ -67,7 +67,7 @@ if TYPE_CHECKING:
     )
 
 
-class CommandDispatcher:
+class ServiceCommandDispatcher:
     """Dispatches validated CLI arguments to the correct backend.
 
     The dispatcher is the final step in the registry-driven CLI invocation
@@ -83,7 +83,7 @@ class CommandDispatcher:
     Example::
 
         producer = MyKafkaProducer(bootstrap_servers="localhost:29092")
-        dispatcher = CommandDispatcher(kafka_producer=producer)
+        dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
         result = dispatcher.dispatch(command_entry, parsed_namespace)
         print(result.correlation_id)
 
@@ -94,7 +94,7 @@ class CommandDispatcher:
         self,
         kafka_producer: ProtocolKafkaProducer | None = None,
     ) -> None:
-        """Initialize CommandDispatcher.
+        """Initialize ServiceCommandDispatcher.
 
         Args:
             kafka_producer: Kafka producer to use for KAFKA_EVENT dispatch.
@@ -160,21 +160,21 @@ class CommandDispatcher:
             raise CommandDispatchError(
                 f"HTTP_ENDPOINT dispatch is not yet implemented "
                 f"(command: {command.id}). "
-                "Stub the interface via a custom CommandDispatcher subclass."
+                "Stub the interface via a custom ServiceCommandDispatcher subclass."
             )
 
         if invocation_type == EnumCliInvocationType.DIRECT_CALL:
             raise CommandDispatchError(
                 f"DIRECT_CALL dispatch is not yet implemented "
                 f"(command: {command.id}). "
-                "Stub the interface via a custom CommandDispatcher subclass."
+                "Stub the interface via a custom ServiceCommandDispatcher subclass."
             )
 
         if invocation_type == EnumCliInvocationType.SUBPROCESS:
             raise CommandDispatchError(
                 f"SUBPROCESS dispatch is not yet implemented "
                 f"(command: {command.id}). "
-                "Stub the interface via a custom CommandDispatcher subclass."
+                "Stub the interface via a custom ServiceCommandDispatcher subclass."
             )
 
         raise CommandDispatchError(
@@ -212,7 +212,7 @@ class CommandDispatcher:
             raise CommandDispatchError(
                 f"No Kafka producer configured for KAFKA_EVENT dispatch "
                 f"(command: {command.id}). "
-                "Pass a kafka_producer to CommandDispatcher()."
+                "Pass a kafka_producer to ServiceCommandDispatcher()."
             )
 
         topic = command.invocation.topic
