@@ -4,12 +4,12 @@
 """ValidatorRegistry — thread-safe registry mapping validators to subjects.
 
 Part of the Generic Validator Node Architecture (OMN-2362).
-Blocked by: OMN-2543 (models), OMN-2550 (ValidatorNode base class).
+Blocked by: OMN-2543 (models), OMN-2550 (NodeValidator base class).
 
-The registry stores `(ModelValidatorDescriptor, ValidatorNode subclass)` pairs
+The registry stores `(ModelValidatorDescriptor, NodeValidator subclass)` pairs
 and provides:
 - register(): record a descriptor + node class (raises on duplicate validator_id)
-- resolve(): return instantiated ValidatorNode instances applicable to a query
+- resolve(): return instantiated NodeValidator instances applicable to a query
 - list_all(): enumerate all registered descriptors
 
 Thread safety:
@@ -39,13 +39,13 @@ from omnibase_core.models.validation.model_validator_descriptor import (
 
 
 def _is_validator_node_class(obj: object) -> bool:
-    """Duck-type check: does obj look like a concrete ValidatorNode subclass?
+    """Duck-type check: does obj look like a concrete NodeValidator subclass?
 
     We use duck typing rather than a strict issubclass() check to avoid
-    import-identity issues when the ValidatorNode class is loaded from
+    import-identity issues when the NodeValidator class is loaded from
     different paths (e.g. editable installs vs site-packages).
 
-    A valid ValidatorNode subclass must:
+    A valid NodeValidator subclass must:
     - Be a type (class).
     - Have a callable 'validate' instance method.
     - Have a 'descriptor' class attribute of type ModelValidatorDescriptor.
@@ -64,9 +64,9 @@ def _is_validator_node_class(obj: object) -> bool:
 
 
 class ValidatorRegistry:
-    """Thread-safe registry that maps ValidatorDescriptors to ValidatorNode classes.
+    """Thread-safe registry that maps ValidatorDescriptors to NodeValidator classes.
 
-    The registry does NOT import ValidatorNode at module level to avoid a circular
+    The registry does NOT import NodeValidator at module level to avoid a circular
     import between this module and node_validator.py. The type annotation is kept
     as a string forward reference.
 
@@ -77,7 +77,7 @@ class ValidatorRegistry:
         >>> # registry.register(MyValidator.descriptor, MyValidator)
         >>> # Later, resolve validators for a request:
         >>> validators = registry.resolve(scope="file")
-        >>> # validators is a list of instantiated ValidatorNode instances.
+        >>> # validators is a list of instantiated NodeValidator instances.
     """
 
     def __init__(self) -> None:
@@ -95,18 +95,18 @@ class ValidatorRegistry:
         Args:
             descriptor: The ModelValidatorDescriptor declaring the validator's
                 identity and capabilities.
-            node_class: The concrete ValidatorNode subclass to instantiate when
-                this validator is resolved. Must be a subclass of ValidatorNode
+            node_class: The concrete NodeValidator subclass to instantiate when
+                this validator is resolved. Must be a subclass of NodeValidator
                 (i.e. must have a callable 'validate' method and a 'descriptor'
                 attribute of type ModelValidatorDescriptor).
 
         Raises:
-            TypeError: If node_class does not look like a ValidatorNode subclass.
+            TypeError: If node_class does not look like a NodeValidator subclass.
             ValueError: If a validator with the same validator_id is already registered.
         """
         if not _is_validator_node_class(node_class):
             raise TypeError(
-                f"node_class must be a subclass of ValidatorNode, "
+                f"node_class must be a subclass of NodeValidator, "
                 f"got {node_class!r}."
             )
         with self._lock:
@@ -121,7 +121,7 @@ class ValidatorRegistry:
             self._entries[descriptor.validator_id] = (descriptor, node_class)
 
     def register_decorator(self, node_class: type) -> type:
-        """Class decorator that registers a ValidatorNode subclass on definition.
+        """Class decorator that registers a NodeValidator subclass on definition.
 
         The class must have a 'descriptor' class variable of type
         ModelValidatorDescriptor set before the decorator is applied.
@@ -130,7 +130,7 @@ class ValidatorRegistry:
             registry = ValidatorRegistry()
 
             @registry.register_decorator
-            class MyValidator(ValidatorNode):
+            class MyValidator(NodeValidator):
                 descriptor = ModelValidatorDescriptor(
                     validator_id="my_validator",
                     applicable_scopes=("file",),
@@ -142,12 +142,12 @@ class ValidatorRegistry:
             The unmodified node_class (the decorator is registration-only).
 
         Raises:
-            TypeError: If node_class is not a ValidatorNode subclass.
+            TypeError: If node_class is not a NodeValidator subclass.
             ValueError: If the validator_id is already registered.
         """
         if not _is_validator_node_class(node_class):
             raise TypeError(
-                f"register_decorator can only be applied to ValidatorNode subclasses, "
+                f"register_decorator can only be applied to NodeValidator subclasses, "
                 f"got {node_class!r}."
             )
         descriptor: ModelValidatorDescriptor = node_class.descriptor  # type: ignore[attr-defined]
@@ -162,7 +162,7 @@ class ValidatorRegistry:
         available_capabilities: tuple[str, ...] = (),
         deny_list: tuple[str, ...] = (),
     ) -> list[object]:
-        """Return instantiated ValidatorNode instances applicable to a query.
+        """Return instantiated NodeValidator instances applicable to a query.
 
         Filtering logic (all filters are AND-combined):
         1. scope: If provided, the validator's applicable_scopes must include it.
@@ -190,7 +190,7 @@ class ValidatorRegistry:
             deny_list: Validator IDs to exclude from results.
 
         Returns:
-            A list of instantiated ValidatorNode instances, ordered by
+            A list of instantiated NodeValidator instances, ordered by
             validator_id (deterministic).
         """
         matched: list[tuple[str, object]] = []

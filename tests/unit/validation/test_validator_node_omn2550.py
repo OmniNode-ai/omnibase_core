@@ -1,13 +1,13 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Unit tests for ValidatorNode base class and ValidatorRegistry.
+"""Unit tests for NodeValidator base class and ValidatorRegistry.
 
-OMN-2550: Implement ValidatorNode base class and validator registry.
+OMN-2550: Implement NodeValidator base class and validator registry.
 
 Coverage:
-- ValidatorNode abstract base class (cannot instantiate, must implement validate)
-- ValidatorNode descriptor enforcement
+- NodeValidator abstract base class (cannot instantiate, must implement validate)
+- NodeValidator descriptor enforcement
 - ValidatorRegistry.register() — happy path and duplicate error
 - ValidatorRegistry.resolve() — scope, capability, deny_list, contract_type,
   tuple_type filtering
@@ -34,7 +34,7 @@ from omnibase_core.models.validation.model_validation_request import (
 from omnibase_core.models.validation.model_validator_descriptor import (
     ModelValidatorDescriptor,
 )
-from omnibase_core.nodes.node_validator import ValidatorNode
+from omnibase_core.nodes.node_validator import NodeValidator
 from omnibase_core.validation.registry_validator import ValidatorRegistry
 
 # ---------------------------------------------------------------------------
@@ -42,10 +42,10 @@ from omnibase_core.validation.registry_validator import ValidatorRegistry
 # ---------------------------------------------------------------------------
 
 
-class AlwaysPassValidator(ValidatorNode):
+class AlwaysPassValidator(NodeValidator):
     """Minimal concrete validator that always produces a PASS finding.
 
-    This class serves as a test fixture for ValidatorNode and ValidatorRegistry.
+    This class serves as a test fixture for NodeValidator and ValidatorRegistry.
     It is intentionally minimal — no validator-specific logic, just PASS.
     """
 
@@ -69,7 +69,7 @@ class AlwaysPassValidator(ValidatorNode):
         )
 
 
-class AlwaysFailValidator(ValidatorNode):
+class AlwaysFailValidator(NodeValidator):
     """Minimal concrete validator that always produces a FAIL finding."""
 
     descriptor = ModelValidatorDescriptor(
@@ -93,7 +93,7 @@ class AlwaysFailValidator(ValidatorNode):
         )
 
 
-class CapabilityRequiringValidator(ValidatorNode):
+class CapabilityRequiringValidator(NodeValidator):
     """Validator that requires the 'network' capability."""
 
     descriptor = ModelValidatorDescriptor(
@@ -114,7 +114,7 @@ class CapabilityRequiringValidator(ValidatorNode):
         )
 
 
-class ContractTypeValidator(ValidatorNode):
+class ContractTypeValidator(NodeValidator):
     """Validator that applies only to NodeContract contract type."""
 
     descriptor = ModelValidatorDescriptor(
@@ -135,7 +135,7 @@ class ContractTypeValidator(ValidatorNode):
         )
 
 
-class TupleTypeValidator(ValidatorNode):
+class TupleTypeValidator(NodeValidator):
     """Validator that applies only to ModelOnexNode tuple type."""
 
     descriptor = ModelValidatorDescriptor(
@@ -161,7 +161,7 @@ class TupleTypeValidator(ValidatorNode):
 # ---------------------------------------------------------------------------
 
 
-def _make_registry_with(*validators: type[ValidatorNode]) -> ValidatorRegistry:
+def _make_registry_with(*validators: type[NodeValidator]) -> ValidatorRegistry:
     """Build a fresh ValidatorRegistry with the given validator classes registered."""
     registry = ValidatorRegistry()
     for cls in validators:
@@ -180,23 +180,23 @@ def _make_request(
 
 
 # ---------------------------------------------------------------------------
-# ValidatorNode
+# NodeValidator
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.unit
-class TestValidatorNode:
-    """Tests for the ValidatorNode abstract base class."""
+class TestNodeValidator:
+    """Tests for the NodeValidator abstract base class."""
 
     def test_cannot_instantiate_abstract_base(self) -> None:
-        """ValidatorNode cannot be instantiated directly."""
+        """NodeValidator cannot be instantiated directly."""
         with pytest.raises(TypeError):
-            ValidatorNode()  # type: ignore[abstract]
+            NodeValidator()  # type: ignore[abstract]
 
     def test_missing_abstract_method_raises(self) -> None:
         """Subclass without validate() implementation cannot be instantiated."""
 
-        class NoValidate(ValidatorNode):  # type: ignore[abstract]
+        class NoValidate(NodeValidator):  # type: ignore[abstract]
             descriptor = ModelValidatorDescriptor(validator_id="no_validate")
 
         with pytest.raises(TypeError):
@@ -205,7 +205,7 @@ class TestValidatorNode:
     def test_concrete_subclass_instantiates(self) -> None:
         """AlwaysPassValidator can be instantiated."""
         v = AlwaysPassValidator()
-        assert isinstance(v, ValidatorNode)
+        assert isinstance(v, NodeValidator)
 
     def test_validate_returns_report(self) -> None:
         """validate() returns a ModelValidationReport."""
@@ -236,7 +236,7 @@ class TestValidatorNode:
         """Concrete subclass without a descriptor raises TypeError at class definition."""
         with pytest.raises(TypeError, match="descriptor"):
 
-            class MissingDescriptor(ValidatorNode):
+            class MissingDescriptor(NodeValidator):
                 def validate(
                     self, request: ModelValidationRequest
                 ) -> ModelValidationReport:
@@ -246,7 +246,7 @@ class TestValidatorNode:
         """Concrete subclass with non-descriptor 'descriptor' raises TypeError."""
         with pytest.raises(TypeError, match="descriptor"):
 
-            class WrongDescriptorType(ValidatorNode):
+            class WrongDescriptorType(NodeValidator):
                 descriptor = "not_a_descriptor"  # type: ignore[assignment]
 
                 def validate(
@@ -307,13 +307,13 @@ class TestValidatorRegistry:
             registry.register(AlwaysPassValidator.descriptor, AlwaysPassValidator)
 
     def test_register_non_validator_node_raises(self) -> None:
-        """Registering a non-ValidatorNode class raises TypeError."""
+        """Registering a non-NodeValidator class raises TypeError."""
         registry = ValidatorRegistry()
 
         class NotAValidator:
             pass
 
-        with pytest.raises(TypeError, match="ValidatorNode"):
+        with pytest.raises(TypeError, match="NodeValidator"):
             registry.register(AlwaysPassValidator.descriptor, NotAValidator)  # type: ignore[arg-type]
 
     def test_list_all_returns_descriptors(self) -> None:
@@ -455,11 +455,11 @@ class TestValidatorRegistry:
     # --- register_decorator ---
 
     def test_register_decorator(self) -> None:
-        """register_decorator registers a ValidatorNode class on definition."""
+        """register_decorator registers a NodeValidator class on definition."""
         registry = ValidatorRegistry()
 
         @registry.register_decorator
-        class DecoratedValidator(ValidatorNode):
+        class DecoratedValidator(NodeValidator):
             descriptor = ModelValidatorDescriptor(
                 validator_id="decorated_validator",
                 applicable_scopes=("file",),
@@ -489,7 +489,7 @@ class TestValidatorRegistry:
         with pytest.raises(ValueError, match="always_pass"):
 
             @registry.register_decorator
-            class Duplicate(ValidatorNode):
+            class Duplicate(NodeValidator):
                 descriptor = ModelValidatorDescriptor(
                     validator_id="always_pass",  # duplicate
                     applicable_scopes=("file",),
@@ -501,10 +501,10 @@ class TestValidatorRegistry:
                     raise NotImplementedError
 
     def test_register_decorator_non_validator_raises(self) -> None:
-        """register_decorator on a non-ValidatorNode class raises TypeError."""
+        """register_decorator on a non-NodeValidator class raises TypeError."""
         registry = ValidatorRegistry()
 
-        with pytest.raises(TypeError, match="ValidatorNode"):
+        with pytest.raises(TypeError, match="NodeValidator"):
 
             @registry.register_decorator  # type: ignore[arg-type]
             class NotAValidator:
@@ -556,14 +556,14 @@ class TestValidatorRegistry:
 
         # Pre-create validator classes with descriptors set at class level
         # (descriptor must be set before class creation due to __init_subclass__).
-        def _make_thread_validator(idx: int) -> type[ValidatorNode]:
+        def _make_thread_validator(idx: int) -> type[NodeValidator]:
             _descriptor = ModelValidatorDescriptor(
                 validator_id=f"thread_validator_{idx}",
                 applicable_scopes=("file",),
             )
 
             # Capture descriptor in default arg to avoid closure issue in loop.
-            class _ThreadValidator(ValidatorNode):
+            class _ThreadValidator(NodeValidator):
                 descriptor = _descriptor
 
                 def validate(
@@ -583,7 +583,7 @@ class TestValidatorRegistry:
 
         validator_classes = [_make_thread_validator(i) for i in range(5)]
 
-        def register_validator(cls: type[ValidatorNode]) -> None:
+        def register_validator(cls: type[NodeValidator]) -> None:
             try:
                 registry.register(cls.descriptor, cls)
             except ValueError:
@@ -675,7 +675,7 @@ class TestNoCircularImports:
     def test_import_node_validator(self) -> None:
         from omnibase_core.nodes import node_validator
 
-        assert hasattr(node_validator, "ValidatorNode")
+        assert hasattr(node_validator, "NodeValidator")
 
     def test_import_registry_validator(self) -> None:
         from omnibase_core.validation import registry_validator
@@ -694,4 +694,4 @@ class TestNoCircularImports:
         import omnibase_core.nodes.node_validator as nv
 
         # Just confirm node_validator module loaded successfully without pulling in registry
-        assert hasattr(nv, "ValidatorNode")
+        assert hasattr(nv, "NodeValidator")

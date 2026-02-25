@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""ValidatorNode — abstract base class for generic ONEX validators.
+"""NodeValidator — abstract base class for generic ONEX validators.
 
 Part of the Generic Validator Node Architecture (OMN-2362).
 Blocked by: OMN-2543 (models must exist first).
 
-Each concrete validator extends ValidatorNode and implements exactly one
+Each concrete validator extends NodeValidator and implements exactly one
 abstract method: validate(). This is the sole entry point for running a
 validator — no side-channel execution paths are permitted.
 
@@ -14,7 +14,7 @@ Design constraints:
 - validate() accepts only immutable input (ModelValidationRequest is frozen).
 - validate() returns only a new ModelValidationReport; it must not mutate
   external state or return mutable state that can affect callers.
-- ValidatorNode does not import from any concrete validator module.
+- NodeValidator does not import from any concrete validator module.
 - No validator-specific logic lives in this base class.
 """
 
@@ -33,7 +33,7 @@ from omnibase_core.models.validation.model_validator_descriptor import (
 )
 
 
-class ValidatorNode(ABC):
+class NodeValidator(ABC):
     """Abstract base class for all ONEX validators in the Generic Validator Architecture.
 
     Each concrete validator must:
@@ -55,7 +55,7 @@ class ValidatorNode(ABC):
         >>> from omnibase_core.models.validation.model_validator_descriptor import (
         ...     ModelValidatorDescriptor,
         ... )
-        >>> class AlwaysPassValidator(ValidatorNode):
+        >>> class AlwaysPassValidator(NodeValidator):
         ...     descriptor = ModelValidatorDescriptor(
         ...         validator_id="always_pass",
         ...         applicable_scopes=("file",),
@@ -96,7 +96,7 @@ class ValidatorNode(ABC):
                 cls.descriptor, ModelValidatorDescriptor
             ):
                 raise TypeError(
-                    f"Concrete ValidatorNode subclass '{cls.__name__}' must define "
+                    f"Concrete NodeValidator subclass '{cls.__name__}' must define "
                     f"a class-level 'descriptor' of type ModelValidatorDescriptor. "
                     f"Example: descriptor = ModelValidatorDescriptor(validator_id='my_validator')"
                 )
@@ -124,4 +124,4 @@ class ValidatorNode(ABC):
         """
 
 
-__all__ = ["ValidatorNode"]
+__all__ = ["NodeValidator"]
