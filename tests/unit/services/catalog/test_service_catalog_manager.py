@@ -31,11 +31,9 @@ from omnibase_core.enums.enum_cli_command_risk import EnumCliCommandRisk
 from omnibase_core.enums.enum_cli_command_visibility import EnumCliCommandVisibility
 from omnibase_core.enums.enum_cli_invocation_type import EnumCliInvocationType
 from omnibase_core.models.catalog.model_catalog_policy import ModelCatalogPolicy
-from omnibase_core.models.contracts.model_cli_contribution import (
-    ModelCliCommandEntry,
-    ModelCliContribution,
-    ModelCliInvocation,
-)
+from omnibase_core.models.contracts.model_cli_command_entry import ModelCliCommandEntry
+from omnibase_core.models.contracts.model_cli_contribution import ModelCliContribution
+from omnibase_core.models.contracts.model_cli_invocation import ModelCliInvocation
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.services.catalog.service_catalog_manager import (
     CatalogLoadError,

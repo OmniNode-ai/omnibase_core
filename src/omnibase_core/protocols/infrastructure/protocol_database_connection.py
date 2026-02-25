@@ -53,7 +53,7 @@ Migration Guide:
 
 from __future__ import annotations
 
-from typing import Any, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
@@ -117,7 +117,7 @@ class ProtocolDatabaseConnection(Protocol):
         self,
         query: str,
         *args: object,
-    ) -> list[dict[str, Any]]:
+    ) -> list[dict[str, str | int | float | bool | bytes | None]]:
         """
         Execute a query and return results.
 

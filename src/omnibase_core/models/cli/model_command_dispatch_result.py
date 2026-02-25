@@ -5,9 +5,10 @@
 Command dispatch result model for the registry-driven CLI.
 
 Captures the outcome of a single command dispatch operation, including
-success status, correlation ID, topic, and error detail.
+success status, correlation ID, topic, error detail, and gate result.
 
 .. versionadded:: 0.19.0  (OMN-2553)
+.. versionchanged:: 0.20.0  (OMN-2562) Added gate_result field.
 """
 
 from __future__ import annotations
@@ -19,8 +20,12 @@ __all__ = [
 import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from omnibase_core.enums.enum_cli_invocation_type import EnumCliInvocationType
+
+if TYPE_CHECKING:
+    from omnibase_core.models.cli.model_risk_gate_result import GateResult
 
 
 @dataclass(frozen=True)
@@ -35,9 +40,12 @@ class ModelCommandDispatchResult:
         invocation_type: The dispatch mechanism that was used.
         topic: Kafka topic published to (for KAFKA_EVENT dispatches).
         error_message: Error detail if ``success`` is False.
+        gate_result: The gate result if dispatch was blocked by the risk gate.
+            ``None`` for successful dispatches or non-gate failures.
         dispatched_at: UTC timestamp of dispatch attempt.
 
     .. versionadded:: 0.19.0  (OMN-2553)
+    .. versionchanged:: 0.20.0  (OMN-2562) Added gate_result field.
     """
 
     success: bool
@@ -46,6 +54,7 @@ class ModelCommandDispatchResult:
     invocation_type: EnumCliInvocationType
     topic: str | None = field(default=None)
     error_message: str | None = field(default=None)
+    gate_result: GateResult | None = field(default=None)
     dispatched_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_json(self) -> str:
@@ -54,6 +63,13 @@ class ModelCommandDispatchResult:
         Returns:
             JSON representation of the dispatch result.
         """
+        gate_result_data = None
+        if self.gate_result is not None:
+            gate_result_data = {
+                "outcome": self.gate_result.outcome.value,
+                "risk": self.gate_result.risk.value,
+                "command_ref": self.gate_result.command_ref,
+            }
         return json.dumps(
             {
                 "success": self.success,
@@ -62,6 +78,7 @@ class ModelCommandDispatchResult:
                 "invocation_type": self.invocation_type.value,
                 "topic": self.topic,
                 "error_message": self.error_message,
+                "gate_result": gate_result_data,
                 "dispatched_at": self.dispatched_at.isoformat(),
             },
             sort_keys=True,
