@@ -3097,6 +3097,7 @@ class TestValidatorDbProjection:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestValidateDbRepositoryContract:
     """Tests for the composite validate_db_repository_contract() function.
 
@@ -3112,7 +3113,7 @@ class TestValidateDbRepositoryContract:
 
     def _make_valid_contract(
         self, name: str = "test_repo"
-    ) -> "ModelDbRepositoryContract":
+    ) -> ModelDbRepositoryContract:
         """Create a minimal valid contract that passes all validators."""
         return ModelDbRepositoryContract(
             name=name,
@@ -3323,7 +3324,7 @@ class TestValidateDbRepositoryContract:
         assert composite_result.errors == structural_result.errors
 
     def test_golden_contract_passes(
-        self, golden_contract: "ModelDbRepositoryContract"
+        self, golden_contract: ModelDbRepositoryContract
     ) -> None:
         """The golden contract fixture passes all validators via the composite function."""
         result = validate_db_repository_contract(golden_contract)

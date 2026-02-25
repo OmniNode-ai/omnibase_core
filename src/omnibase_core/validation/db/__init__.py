@@ -55,6 +55,12 @@ def validate_db_repository_contract(
 
     Returns on first validation failure for efficiency.
 
+    Note: Two validators are intentionally excluded from this composite:
+    - ``validate_db_ownership``: requires runtime context (expected_owner_service)
+      that is not available at contract-validation time.
+    - ``validate_db_projection``: optional feature check; callers that require
+      projection validation should invoke it separately.
+
     Args:
         contract: The DB repository contract to validate.
 
