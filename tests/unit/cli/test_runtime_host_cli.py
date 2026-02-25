@@ -12,6 +12,7 @@ Tests cover:
 - Error handling for non-existent contract paths
 - Successful execution with valid contract path
 - Help text containing dev/test warning
+- --validate-only flag: valid contract, invalid contract, YAML parse errors
 """
 
 from __future__ import annotations
@@ -348,6 +349,188 @@ class TestErrorHandling:
         assert (
             "development" in result.output.lower() or "testing" in result.output.lower()
         )
+
+
+@pytest.mark.unit
+class TestValidateOnlyFlag:
+    """Tests for the --validate-only / -v flag."""
+
+    # Minimal valid RuntimeHostContract YAML content
+    _VALID_CONTRACT = """\
+event_bus:
+  kind: local
+"""
+
+    # Invalid contract: missing required event_bus field
+    _INVALID_CONTRACT_MISSING_FIELD = """\
+handlers: []
+"""
+
+    # Invalid contract: extra forbidden field
+    _INVALID_CONTRACT_EXTRA_FIELD = """\
+event_bus:
+  kind: local
+unknown_field: oops
+"""
+
+    # Invalid YAML syntax
+    _BAD_YAML = """\
+event_bus: [unclosed
+"""
+
+    def test_validate_only_valid_contract_exits_0(self) -> None:
+        """Valid contract with --validate-only should print VALID and exit 0."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem():
+            Path("contract.yaml").write_text(self._VALID_CONTRACT)
+
+            result = runner.invoke(main, ["--validate-only", "contract.yaml"])
+
+        assert result.exit_code == 0
+        assert "VALID" in result.output
+        assert "Validating contract" in result.output
+
+    def test_validate_only_short_flag_works(self) -> None:
+        """-v short flag should behave the same as --validate-only."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem():
+            Path("contract.yaml").write_text(self._VALID_CONTRACT)
+
+            result = runner.invoke(main, ["-v", "contract.yaml"])
+
+        assert result.exit_code == 0
+        assert "VALID" in result.output
+
+    def test_validate_only_prints_handler_and_node_counts(self) -> None:
+        """Validate-only success output includes handler/node counts and event_bus kind."""
+        runner = CliRunner()
+        contract_content = """\
+event_bus:
+  kind: kafka
+handlers:
+  - handler_type: filesystem
+nodes:
+  - slug: node-compute-transformer
+"""
+        with runner.isolated_filesystem():
+            Path("contract.yaml").write_text(contract_content)
+
+            result = runner.invoke(main, ["--validate-only", "contract.yaml"])
+
+        assert result.exit_code == 0
+        assert "1 handler(s)" in result.output
+        assert "1 node(s)" in result.output
+        assert "kafka" in result.output
+
+    def test_validate_only_invalid_contract_exits_1(self) -> None:
+        """Contract missing required field with --validate-only exits with code 1."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem():
+            Path("contract.yaml").write_text(self._INVALID_CONTRACT_MISSING_FIELD)
+
+            result = runner.invoke(main, ["--validate-only", "contract.yaml"])
+
+        assert result.exit_code == EnumCLIExitCode.ERROR
+        assert "INVALID" in result.output
+        assert "Validation failed" in result.output
+
+    def test_validate_only_extra_field_exits_1(self) -> None:
+        """Contract with extra forbidden field exits with code 1."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem():
+            Path("contract.yaml").write_text(self._INVALID_CONTRACT_EXTRA_FIELD)
+
+            result = runner.invoke(main, ["--validate-only", "contract.yaml"])
+
+        assert result.exit_code == EnumCLIExitCode.ERROR
+        assert "INVALID" in result.output
+
+    def test_validate_only_bad_yaml_exits_1(self) -> None:
+        """Malformed YAML with --validate-only exits with code 1."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem():
+            Path("contract.yaml").write_text(self._BAD_YAML)
+
+            result = runner.invoke(main, ["--validate-only", "contract.yaml"])
+
+        assert result.exit_code == EnumCLIExitCode.ERROR
+        assert "INVALID" in result.output
+        assert "Validation failed" in result.output
+
+    def test_validate_only_empty_file_exits_1(self) -> None:
+        """Empty YAML file with --validate-only exits with code 1."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem():
+            Path("contract.yaml").write_text("")
+
+            result = runner.invoke(main, ["--validate-only", "contract.yaml"])
+
+        assert result.exit_code == EnumCLIExitCode.ERROR
+        assert "INVALID" in result.output
+
+    def test_validate_only_does_not_print_runtime_warning(self) -> None:
+        """--validate-only mode should not print the DEV/TEST runtime warning banner."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem():
+            Path("contract.yaml").write_text(self._VALID_CONTRACT)
+
+            result = runner.invoke(main, ["--validate-only", "contract.yaml"])
+
+        # The large "WARNING: This is a DEV/TEST runtime host" banner must NOT appear
+        assert "DEV/TEST runtime host" not in result.output
+
+    def test_validate_only_does_not_start_runtime(self) -> None:
+        """--validate-only mode does not print runtime start messages."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem():
+            Path("contract.yaml").write_text(self._VALID_CONTRACT)
+
+            result = runner.invoke(main, ["--validate-only", "contract.yaml"])
+
+        assert "started successfully" not in result.output
+        assert "runtime integration coming soon" not in result.output
+
+    def test_validate_only_blocked_in_prod(self) -> None:
+        """--validate-only should still be blocked in production environment."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem():
+            Path("contract.yaml").write_text(self._VALID_CONTRACT)
+
+            with patch.dict(os.environ, {"ENVIRONMENT": "prod"}):
+                result = runner.invoke(main, ["--validate-only", "contract.yaml"])
+
+        assert result.exit_code == EnumCLIExitCode.ERROR
+        assert "production" in result.output.lower()
+
+    def test_validate_only_help_text_mentions_validate_only(self) -> None:
+        """Help text should describe the --validate-only option."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["--help"])
+
+        assert result.exit_code == 0
+        assert "--validate-only" in result.output or "validate-only" in result.output
+
+    def test_validate_only_zero_handlers_zero_nodes(self) -> None:
+        """Valid minimal contract with no handlers/nodes reports correct counts."""
+        runner = CliRunner()
+
+        with runner.isolated_filesystem():
+            Path("contract.yaml").write_text(self._VALID_CONTRACT)
+
+            result = runner.invoke(main, ["--validate-only", "contract.yaml"])
+
+        assert result.exit_code == 0
+        assert "0 handler(s)" in result.output
+        assert "0 node(s)" in result.output
 
 
 @pytest.mark.unit
