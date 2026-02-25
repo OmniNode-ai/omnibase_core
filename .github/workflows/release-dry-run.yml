@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+name: Release Dry Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag to simulate (e.g. v0.20.0)'
+        required: true
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.12'
+      - name: Build only (no publish)
+        run: uv build
+      - name: Verify artifacts
+        run: |
+          ls dist/*.whl dist/*.tar.gz
+          sha256sum dist/*.whl dist/*.tar.gz

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-02-25
+
+### Added
+
+- **Overlay stacking pipeline** [OMN-2757] (#563): Implement overlay stacking pipeline and wire `overlay_refs` for composable contract overlays
+- **Configurable validation strictness levels** [OMN-840] (#550): Add configurable strictness levels to the validation framework, enabling graduated enforcement from advisory to hard-fail
+- **Contract graph navigation module** [OMN-2540/2546/2554/2561] (#536): Implement graph-based contract navigation for traversing dependency relationships across the ONEX contract graph
+- **ModelRagQueries + `to_routing_config()` converter** [OMN-407] (#543): Add `ModelRagQueries`, `rag_queries` field to contracts, and `to_routing_config()` converter for RAG-driven routing
+- **ValidatorNode base class and validator registry** [OMN-2550] (#552): Implement `ValidatorNode` base class and `ValidatorRegistry` for declarative validator discovery and dispatch
+- **ValidationRequest, ValidationFinding, ValidationReport, ValidatorDescriptor** [OMN-2543] (#542): Add core validation data models for structured validation workflows — findings, reports, and validator descriptors
+- **Core data models for objective functions and reward architecture** [OMN-2537] (#538): Implement Pydantic models for objective functions, reward signals, and reward architecture contracts
+- **`check_name` validator for required-checks drift prevention** (#533): Add `ValidatorCheckName` to detect drift between declared required status checks and actual workflow job names
+- **Core event models for GitHub PR, Git hook, and Linear snapshot** [OMN-2655] (#531): Add `ModelGitHubPREvent`, `ModelGitHookEvent`, and `ModelLinearSnapshot` for cross-tool event sourcing
+- **`ValidatorLocalPaths` for hardcoded machine path detection** (#530): Add validator that detects hardcoded absolute machine paths in source files to prevent environment-specific drift
+- **Publish-on-tag CI release workflow**: Add `release.yml` triggered by `v*.*.*` tags that validates version alignment, builds wheel + sdist, publishes to PyPI via `PYPI_TOKEN`, generates checksums, and creates a GitHub Release with artifacts
+
+### Fixed
+
+- **Class identity regression in fingerprint scanner** [OMN-2537] (#557): Resolve class identity regression where fingerprint scanner incorrectly resolved class references across module boundaries
+
 ## [0.19.0] - 2026-02-23
 
 ### Added
