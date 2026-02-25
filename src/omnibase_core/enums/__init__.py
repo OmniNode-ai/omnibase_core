@@ -43,8 +43,13 @@ from .enum_checkpoint_type import EnumCheckpointType
 # Circuit breaker state enum (standalone for cross-repo standardization)
 from .enum_circuit_breaker_state import EnumCircuitBreakerState
 
+# CLI contribution contract enums (OMN-2536)
+from .enum_cli_command_risk import EnumCliCommandRisk
+from .enum_cli_command_visibility import EnumCliCommandVisibility
+
 # Error code enums
 from .enum_cli_exit_code import EnumCLIExitCode
+from .enum_cli_invocation_type import EnumCliInvocationType
 
 # Comparison type enum (OMN-1207)
 from .enum_comparison_type import EnumComparisonType
@@ -437,6 +442,10 @@ from .enum_workflow_status import EnumWorkflowStatus
 
 
 __all__ = [
+    # CLI contribution contract enums (OMN-2536)
+    "EnumCliCommandRisk",
+    "EnumCliCommandVisibility",
+    "EnumCliInvocationType",
     # Error code domain
     "EnumCLIExitCode",
     "EnumOnexErrorCode",

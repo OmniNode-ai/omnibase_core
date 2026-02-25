@@ -1,0 +1,94 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# cli.contribution.v1 — Sample Contract
+#
+# This file is a reference example for the cli.contribution.v1 contract schema.
+# It demonstrates a node (omnimemory query service) advertising CLI commands to
+# the ONEX registry-driven CLI system.
+#
+# IMPORTANT:
+#   - "fingerprint" must be the SHA256 of canonical JSON of the "commands" list.
+#     Compute with: ModelCliContribution.compute_fingerprint(commands)
+#   - "signature" must be an Ed25519 signature over the fingerprint bytes,
+#     URL-safe base64 encoded, using the publishing node's identity key.
+#   - Command "id" values are globally namespaced and IMMUTABLE.
+#
+# This file uses placeholder values for fingerprint/signature.
+# In production, these are computed programmatically.
+
+contract_type: "cli.contribution.v1"
+
+version:
+  major: 1
+  minor: 0
+  patch: 0
+
+publisher: "com.omninode.omnimemory"
+
+# sha256 of canonical JSON of commands list (placeholder — recompute before use)
+fingerprint: "0000000000000000000000000000000000000000000000000000000000000000"
+
+# Ed25519 signature over fingerprint bytes (placeholder)
+signature: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+
+# Ed25519 public key (URL-safe base64, placeholder)
+signer_public_key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+
+commands:
+  - id: "com.omninode.omnimemory.query"
+    display_name: "Memory Query"
+    description: "Query the omnimemory semantic store for relevant documents."
+    group: "memory"
+    args_schema_ref: "com.omninode.omnimemory.query.args.v1"
+    output_schema_ref: "com.omninode.omnimemory.query.output.v1"
+    invocation:
+      invocation_type: "kafka_event"
+      topic: "onex.cmd.omnimemory.query.v1"
+    permissions:
+      - "memory:read"
+    risk: "low"
+    requires_hitl: false
+    visibility: "public"
+    examples:
+      - description: "Query for Python best practices with a limit of 5 results."
+        invocation: "onex memory query --query 'Python best practices' --limit 5"
+        expected_output: "5 documents matching 'Python best practices'"
+      - description: "Query with JSON output format."
+        invocation: "onex memory query --query 'ONEX architecture' --format json"
+
+  - id: "com.omninode.omnimemory.ingest"
+    display_name: "Memory Ingest"
+    description: "Ingest a document or directory into the omnimemory semantic store."
+    group: "memory"
+    args_schema_ref: "com.omninode.omnimemory.ingest.args.v1"
+    output_schema_ref: "com.omninode.omnimemory.ingest.output.v1"
+    invocation:
+      invocation_type: "kafka_event"
+      topic: "onex.cmd.omnimemory.ingest.v1"
+    permissions:
+      - "memory:write"
+    risk: "medium"
+    requires_hitl: false
+    visibility: "public"
+    examples:
+      - description: "Ingest a single markdown file."
+        invocation: "onex memory ingest --path docs/architecture.md"
+
+  - id: "com.omninode.omnimemory.purge"
+    display_name: "Memory Purge"
+    description: "Purge all documents from the omnimemory store. IRREVERSIBLE."
+    group: "memory"
+    args_schema_ref: "com.omninode.omnimemory.purge.args.v1"
+    output_schema_ref: "com.omninode.omnimemory.purge.output.v1"
+    invocation:
+      invocation_type: "kafka_event"
+      topic: "onex.cmd.omnimemory.purge.v1"
+    permissions:
+      - "memory:admin"
+    risk: "critical"
+    requires_hitl: true
+    visibility: "public"
+    examples:
+      - description: "Purge the entire memory store (requires confirmation)."
+        invocation: "onex memory purge --confirm"
