@@ -21,7 +21,7 @@ class TestEnumDecisionType:
     """Tests for EnumDecisionType enum."""
 
     def test_all_values_defined(self) -> None:
-        """Verify all 11 expected decision types are defined."""
+        """Verify all 16 expected decision types are defined."""
         expected_values = {
             "model_selection",
             "route_choice",
@@ -35,10 +35,16 @@ class TestEnumDecisionType:
             "model_select",
             "workflow_route",
             "tool_pick",
+            # Decision Store extensions (OMN-2763)
+            "tech_stack_choice",
+            "design_pattern",
+            "api_contract",
+            "scope_boundary",
+            "requirement_choice",
         }
         actual_values = {member.value for member in EnumDecisionType}
         assert actual_values == expected_values
-        assert len(EnumDecisionType) == 11
+        assert len(EnumDecisionType) == 16
 
     def test_string_enum_inheritance(self) -> None:
         """Verify enum inherits from str for JSON serialization."""
@@ -148,6 +154,12 @@ class TestEnumDecisionType:
             (EnumDecisionType.MODEL_SELECT, False),
             (EnumDecisionType.WORKFLOW_ROUTE, False),
             (EnumDecisionType.TOOL_PICK, False),
+            # Decision Store extensions (OMN-2763): not terminal.
+            (EnumDecisionType.TECH_STACK_CHOICE, False),
+            (EnumDecisionType.DESIGN_PATTERN, False),
+            (EnumDecisionType.API_CONTRACT, False),
+            (EnumDecisionType.SCOPE_BOUNDARY, False),
+            (EnumDecisionType.REQUIREMENT_CHOICE, False),
         ],
     )
     def test_is_terminal_decision(
@@ -173,6 +185,12 @@ class TestEnumDecisionType:
             (EnumDecisionType.EARLY_TERMINATION, False),
             (EnumDecisionType.RETRY_STRATEGY, False),
             (EnumDecisionType.CUSTOM, False),
+            # Decision Store selection types (OMN-2763):
+            (EnumDecisionType.TECH_STACK_CHOICE, True),
+            (EnumDecisionType.DESIGN_PATTERN, True),
+            (EnumDecisionType.API_CONTRACT, True),
+            (EnumDecisionType.SCOPE_BOUNDARY, True),
+            (EnumDecisionType.REQUIREMENT_CHOICE, True),
         ],
     )
     def test_is_selection_decision(
