@@ -110,6 +110,7 @@ from .typed_dict_action_validation_context import TypedDictActionValidationConte
 from .typed_dict_action_validation_statistics import TypedDictActionValidationStatistics
 from .typed_dict_active_summary import TypedDictActiveSummary
 from .typed_dict_additional_fields import TypedDictAdditionalFields
+from .typed_dict_agent_routing_config import TypedDictAgentRoutingConfig
 from .typed_dict_alert_data import TypedDictAlertData
 from .typed_dict_alert_metadata import TypedDictAlertMetadata
 
@@ -435,6 +436,7 @@ __all__ = [
     "SerializableValue",
     "SerializedDict",
     "TypedDictAdditionalFields",
+    "TypedDictAgentRoutingConfig",
     "TypedDictSerializedModel",
     # Type constraints and protocols
     "ModelBaseCollection",

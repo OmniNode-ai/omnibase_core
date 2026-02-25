@@ -31,6 +31,7 @@ from omnibase_core.validation.db import (
     validate_db_deterministic,
     validate_db_params,
     validate_db_projection,
+    validate_db_repository_contract,
     validate_db_sql_safety,
     validate_db_structural,
     validate_db_table_access,
@@ -3089,3 +3090,275 @@ class TestValidatorDbProjection:
         assert result.is_valid, (
             f"Expected valid (string literal with alias extracted), got: {result.errors}"
         )
+
+
+# ============================================================================
+# TestValidateDbRepositoryContract
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestValidateDbRepositoryContract:
+    """Tests for the composite validate_db_repository_contract() function.
+
+    The composite function runs all 5 validators in sequence:
+    1. validate_db_structural
+    2. validate_db_sql_safety
+    3. validate_db_table_access
+    4. validate_db_deterministic
+    5. validate_db_params
+
+    It returns on the first failure for efficiency.
+    """
+
+    def _make_valid_contract(
+        self, name: str = "test_repo"
+    ) -> ModelDbRepositoryContract:
+        """Create a minimal valid contract that passes all validators."""
+        return ModelDbRepositoryContract(
+            name=name,
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="test_db",
+            tables=["users"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id, name FROM users WHERE id = :user_id ORDER BY id",
+                    params={
+                        "user_id": ModelDbParam(
+                            name="user_id",
+                            param_type=EnumParameterType.INTEGER,
+                            required=True,
+                        ),
+                    },
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=False,
+                    ),
+                ),
+            },
+        )
+
+    def test_valid_contract_passes_all_validators(self) -> None:
+        """A fully valid contract passes the composite validator."""
+        contract = self._make_valid_contract()
+        result = validate_db_repository_contract(contract)
+        assert result.is_valid, f"Expected valid contract to pass, got: {result.errors}"
+
+    def test_valid_contract_summary_includes_name(self) -> None:
+        """The success summary includes the contract name."""
+        contract = self._make_valid_contract(name="my_repo")
+        result = validate_db_repository_contract(contract)
+        assert result.is_valid
+        assert "my_repo" in result.summary
+
+    def test_valid_contract_many_true_with_order_by(self) -> None:
+        """A contract with many=True and ORDER BY passes the composite validator."""
+        contract = ModelDbRepositoryContract(
+            name="list_repo",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="test_db",
+            tables=["orders"],
+            models={},
+            ops={
+                "list_orders": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id, status FROM orders ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:OrderModel",
+                        many=True,
+                    ),
+                ),
+            },
+        )
+        result = validate_db_repository_contract(contract)
+        assert result.is_valid, f"Expected valid, got: {result.errors}"
+
+    def test_structural_failure_caught_first(self) -> None:
+        """Structural validation failure is caught and returned."""
+        # Invalid operation name (starts with digit)
+        contract = ModelDbRepositoryContract(
+            name="test_repo",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="test_db",
+            tables=["users"],
+            models={},
+            ops={
+                "1invalid_op": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id FROM users ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        result = validate_db_repository_contract(contract)
+        assert not result.is_valid
+        assert result.errors  # structural error reported
+
+    def test_sql_safety_failure_caught(self) -> None:
+        """SQL safety validation failure is caught and returned."""
+        # read mode with non-SELECT statement
+        contract = ModelDbRepositoryContract(
+            name="test_repo",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="test_db",
+            tables=["users"],
+            models={},
+            ops={
+                "delete_user": ModelDbOperation(
+                    mode="read",
+                    sql="DELETE FROM users WHERE id = :user_id",
+                    params={
+                        "user_id": ModelDbParam(
+                            name="user_id",
+                            param_type=EnumParameterType.INTEGER,
+                            required=True,
+                        ),
+                    },
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        result = validate_db_repository_contract(contract)
+        assert not result.is_valid
+
+    def test_table_access_failure_caught(self) -> None:
+        """Table access validation failure is caught and returned."""
+        # SQL accesses 'secrets' table not in declared tables
+        contract = ModelDbRepositoryContract(
+            name="test_repo",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="test_db",
+            tables=["users"],
+            models={},
+            ops={
+                "get_secret": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id FROM secrets WHERE id = :sid ORDER BY id",
+                    params={
+                        "sid": ModelDbParam(
+                            name="sid",
+                            param_type=EnumParameterType.INTEGER,
+                            required=True,
+                        ),
+                    },
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        result = validate_db_repository_contract(contract)
+        assert not result.is_valid
+
+    def test_deterministic_failure_caught(self) -> None:
+        """Deterministic validation failure is caught and returned."""
+        # many=True without ORDER BY
+        contract = ModelDbRepositoryContract(
+            name="test_repo",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="test_db",
+            tables=["users"],
+            models={},
+            ops={
+                "list_users": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id, name FROM users",
+                    params={},
+                    returns=ModelDbReturn(
+                        model_ref="test:Model",
+                        many=True,
+                    ),
+                ),
+            },
+        )
+        result = validate_db_repository_contract(contract)
+        assert not result.is_valid
+
+    def test_params_failure_caught(self) -> None:
+        """Parameter validation failure is caught and returned."""
+        # SQL uses :user_id but it is not declared in params
+        contract = ModelDbRepositoryContract(
+            name="test_repo",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="test_db",
+            tables=["users"],
+            models={},
+            ops={
+                "get_user": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id FROM users WHERE id = :user_id ORDER BY id",
+                    params={},  # missing user_id declaration
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        result = validate_db_repository_contract(contract)
+        assert not result.is_valid
+
+    def test_returns_first_failure(self) -> None:
+        """Composite validator returns on first failure without running later validators."""
+        # Contract with structural failure — structural runs first, should fail there
+        contract = ModelDbRepositoryContract(
+            name="test_repo",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="test_db",
+            tables=["users"],
+            models={},
+            ops={
+                "2invalid": ModelDbOperation(
+                    mode="read",
+                    sql="SELECT id FROM users ORDER BY id",
+                    params={},
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        composite_result = validate_db_repository_contract(contract)
+        structural_result = validate_db_structural(contract)
+        # Both should report invalid
+        assert not composite_result.is_valid
+        assert not structural_result.is_valid
+        # Composite result should match structural (first validator)
+        assert composite_result.errors == structural_result.errors
+
+    def test_golden_contract_passes(
+        self, golden_contract: ModelDbRepositoryContract
+    ) -> None:
+        """The golden contract fixture passes all validators via the composite function."""
+        result = validate_db_repository_contract(golden_contract)
+        assert result.is_valid, (
+            f"Golden contract should pass composite validator, got: {result.errors}"
+        )
+
+    def test_write_contract_passes(self) -> None:
+        """A write-mode contract passes the composite validator."""
+        contract = ModelDbRepositoryContract(
+            name="write_repo",
+            engine=EnumDatabaseEngine.POSTGRES,
+            database_ref="test_db",
+            tables=["events"],
+            models={},
+            ops={
+                "insert_event": ModelDbOperation(
+                    mode="write",
+                    sql="INSERT INTO events (type, payload) VALUES (:event_type, :payload)",
+                    params={
+                        "event_type": ModelDbParam(
+                            name="event_type",
+                            param_type=EnumParameterType.STRING,
+                            required=True,
+                        ),
+                        "payload": ModelDbParam(
+                            name="payload",
+                            param_type=EnumParameterType.STRING,
+                            required=True,
+                        ),
+                    },
+                    returns=ModelDbReturn(model_ref="test:Model", many=False),
+                ),
+            },
+        )
+        result = validate_db_repository_contract(contract)
+        assert result.is_valid, f"Expected write contract to pass, got: {result.errors}"

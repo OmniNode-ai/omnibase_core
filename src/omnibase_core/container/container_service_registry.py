@@ -5,6 +5,7 @@
 
 import asyncio
 import time
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from typing import TypeVar, cast
 from uuid import UUID, uuid4
@@ -110,6 +111,13 @@ class ServiceRegistry:
         self._name_map: dict[str, UUID] = {}
         self._performance_metrics: dict[str, float] = {}
         self._failed_registrations: int = 0
+        # Maps registration_id -> (factory_callable, lifecycle) for lazy factory registrations
+        # The factory callable is a zero-arg async callable returning the service instance.
+        self._factories: dict[
+            UUID, tuple[Callable[[], Awaitable[object]], EnumServiceLifecycle]
+        ] = {}
+        # Lock protecting singleton factory instantiation to prevent duplicate creation
+        self._singleton_lock: asyncio.Lock = asyncio.Lock()
 
         emit_log_event(
             EnumLogLevel.INFO,
@@ -360,25 +368,126 @@ class ServiceRegistry:
         scope: EnumInjectionScope = EnumInjectionScope.GLOBAL,
     ) -> UUID:
         """
-        Register service factory (not fully implemented in v1.0).
+        Register service factory for lazy/deferred service instantiation.
+
+        The factory's ``create_instance`` method is invoked on the first
+        ``resolve_service()`` call.  For SINGLETON lifecycle the result is
+        cached; for TRANSIENT a new instance is created on every resolution.
 
         Args:
             interface: Interface protocol type
-            factory: Service factory implementing ProtocolServiceFactory
-            lifecycle: Lifecycle pattern
+            factory: Service factory implementing ProtocolServiceFactory.
+                     ``create_instance`` is called with ``(interface, {})``
+                     on each resolution (TRANSIENT) or the first resolution
+                     (SINGLETON).
+            lifecycle: Lifecycle pattern — SINGLETON or TRANSIENT.
             scope: Injection scope
 
         Returns:
             Registration ID
 
         Raises:
-            ModelOnexError: Not implemented in v1.0
+            ModelOnexError: If registration fails or lifecycle is unsupported.
         """
-        msg = "Factory registration not yet implemented (planned for v2.0)"
-        raise ModelOnexError(
-            message=msg,
-            error_code=EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED,
-        )
+        try:
+            registration_id = uuid4()
+            interface_name = (
+                interface.__name__ if hasattr(interface, "__name__") else str(interface)
+            )
+            factory_type = type(factory).__name__
+
+            # Validate lifecycle
+            supported = {EnumServiceLifecycle.SINGLETON, EnumServiceLifecycle.TRANSIENT}
+            if lifecycle not in supported:
+                msg = (
+                    f"Unsupported lifecycle '{lifecycle}' for factory registration of '{interface_name}'. "
+                    f"Supported lifecycles: {', '.join(lc.value for lc in supported)}."
+                )
+                raise ModelOnexError(
+                    message=msg,
+                    error_code=EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED,
+                )
+
+            # Create metadata
+            from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+            metadata = ModelServiceMetadata(
+                service_id=registration_id,
+                service_name=factory_type,
+                service_interface=interface_name,
+                service_implementation=factory_type,
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                tags=["factory"],
+                configuration={},
+            )
+
+            # Create registration — instance creation is deferred to resolve time
+            registration = ModelServiceRegistration(
+                registration_id=registration_id,
+                service_metadata=metadata,
+                lifecycle=lifecycle,
+                scope=scope,
+            )
+
+            # Store registration and factory callable
+            self._registrations[registration_id] = registration
+
+            # Capture interface and factory in closure for use at resolve time.
+            # The wrapper is a zero-arg async callable returning object so that
+            # _resolve_by_lifecycle can invoke it without knowing the interface type.
+            _iface = interface
+            _fac = factory
+
+            async def _call_factory(
+                iface: type[TInterface] = _iface,
+                fac: ProtocolServiceFactory = _fac,
+            ) -> object:
+                return await fac.create_instance(iface, {})
+
+            self._factories[registration_id] = (_call_factory, lifecycle)
+
+            # Update interface mapping
+            if interface_name not in self._interface_map:
+                self._interface_map[interface_name] = []
+            self._interface_map[interface_name].append(registration_id)
+
+            # Update name mapping
+            self._name_map[factory_type] = registration_id
+
+            emit_log_event(
+                EnumLogLevel.INFO,
+                f"Service factory registered: {interface_name} -> {factory_type}",
+                {
+                    "registration_id": registration_id,
+                    "lifecycle": lifecycle,
+                    "scope": scope,
+                },
+            )
+
+            return registration_id
+
+        except (GeneratorExit, KeyboardInterrupt, SystemExit):
+            raise
+        except asyncio.CancelledError:
+            raise
+        except ModelOnexError:
+            raise
+        except Exception as e:
+            # boundary-ok: wrap factory registration failures in structured ONEX error
+            self._failed_registrations += 1
+            interface_name = (
+                interface.__name__ if hasattr(interface, "__name__") else str(interface)
+            )
+            msg = (
+                f"Failed to register factory for interface '{interface_name}'. "
+                f"Error: {e}. "
+                f"Ensure the factory implements ProtocolServiceFactory correctly."
+            )
+            emit_log_event(EnumLogLevel.ERROR, msg, {"error": str(e)})
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
+            ) from e
 
     async def unregister_service(self, registration_id: UUID) -> bool:
         """
@@ -412,6 +521,9 @@ class ServiceRegistry:
         service_name = registration.service_metadata.service_name
         if service_name in self._name_map:
             del self._name_map[service_name]
+
+        # Remove factory entry if present
+        self._factories.pop(registration_id, None)
 
         # Remove registration
         del self._registrations[registration_id]
@@ -1075,20 +1187,34 @@ class ServiceRegistry:
         lifecycle = registration.lifecycle
 
         if lifecycle == EnumServiceLifecycle.SINGLETON:
-            # Return existing instance or create new one
+            # Return existing instance if available
             existing_instances = self._instances.get(registration_id, [])
             if existing_instances:
-                # Mark accessed
                 existing_instances[0].mark_accessed()
                 return existing_instances[0].instance
 
-            # Create new singleton instance
-            # In v1.0, we don't have factory support, so this won't work for class-based registrations
-            # Only instance-based registrations will work
+            # Lazily invoke factory under lock to prevent duplicate creation
+            factory_entry = self._factories.get(registration_id)
+            if factory_entry is not None:
+                factory_callable, _ = factory_entry
+                async with self._singleton_lock:
+                    # Double-checked locking: re-check after acquiring lock
+                    existing_instances = self._instances.get(registration_id, [])
+                    if existing_instances:
+                        existing_instances[0].mark_accessed()
+                        return existing_instances[0].instance
+                    instance = await factory_callable()
+                    await self._store_instance(
+                        registration_id, instance, lifecycle, scope
+                    )
+                    return instance
+
+            # No factory — cannot create singleton
             msg = (
-                f"Singleton instance not found and cannot create (registration_id: {registration_id}). "
-                f"In v1.0, only instance-based registrations are supported. "
-                f"Use register_instance() instead of register_service() with a factory."
+                f"Singleton instance not found and no factory registered "
+                f"(registration_id: {registration_id}). "
+                f"Use register_instance() to provide a pre-built instance, or "
+                f"register_factory() to enable lazy instantiation."
             )
             raise ModelOnexError(
                 message=msg,
@@ -1096,11 +1222,18 @@ class ServiceRegistry:
             )
 
         if lifecycle == EnumServiceLifecycle.TRANSIENT:
-            # Always create new instance
-            # In v1.0, we don't have factory support, so this is not implemented
+            # Always create a new instance via factory
+            factory_entry = self._factories.get(registration_id)
+            if factory_entry is not None:
+                factory_callable, _ = factory_entry
+                instance = await factory_callable()
+                # Store for tracking but do NOT cache (transient — new each time)
+                await self._store_instance(registration_id, instance, lifecycle, scope)
+                return instance
+
             msg = (
-                "Transient lifecycle not yet supported (requires factory support in v2.0). "
-                "Use 'singleton' lifecycle with register_instance() or wait for v2.0 factory support."
+                "Transient lifecycle requires a factory registered via register_factory(). "
+                "Use register_instance() for singleton pre-built instances."
             )
             raise ModelOnexError(
                 message=msg,
@@ -1113,8 +1246,7 @@ class ServiceRegistry:
         ]
         msg = (
             f"Unsupported lifecycle: '{lifecycle}'. "
-            f"Supported lifecycles: {', '.join(supported_lifecycles)}. "
-            f"Note: 'transient' requires v2.0 factory support."
+            f"Supported lifecycles: {', '.join(supported_lifecycles)}."
         )
         raise ModelOnexError(
             message=msg,
