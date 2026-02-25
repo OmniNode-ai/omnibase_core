@@ -50,7 +50,9 @@ from pathlib import Path
 
 import yaml
 
+from omnibase_core.enums.enum_check_status import EnumCheckStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_overall_status import EnumOverallStatus
 from omnibase_core.enums.enum_verify_tier import EnumVerifyTier
 from omnibase_core.merge.contract_merge_engine import ContractMergeEngine
 from omnibase_core.models.contract_verify_replay.model_verify_check_result import (
@@ -157,16 +159,16 @@ class NodeContractVerifyReplayCompute:
             checks = [
                 ModelVerifyCheckResult(
                     check_name="tier2_simulated",
-                    status="skip",
+                    status=EnumCheckStatus.SKIP,
                     message="Tier 2 simulated replay is not implemented yet.",
                 )
             ]
 
         # Determine overall status.
-        if any(c.status == "fail" for c in checks):
-            overall: str = "fail"
+        if any(c.status == EnumCheckStatus.FAIL for c in checks):
+            overall = EnumOverallStatus.FAIL
         else:
-            overall = "pass"
+            overall = EnumOverallStatus.PASS
 
         # Build report (without digest/sig fields first so we can hash it).
         report_dict = self._build_report_dict(
@@ -192,7 +194,7 @@ class NodeContractVerifyReplayCompute:
             package_version=manifest.package_version,
             package_content_hash=package_content_hash,
             checks=checks,
-            overall_status=overall,  # type: ignore[arg-type]
+            overall_status=overall,
             generated_at=datetime.now(tz=UTC),
             report_digest=report_digest,
             signature=signature,
@@ -249,7 +251,7 @@ class NodeContractVerifyReplayCompute:
             results.append(
                 ModelVerifyCheckResult(
                     check_name="content_digest_integrity",
-                    status="skip",
+                    status=EnumCheckStatus.SKIP,
                     message="Skipped by options.skip_digest_check=True.",
                 )
             )
@@ -265,20 +267,20 @@ class NodeContractVerifyReplayCompute:
         except (ModelOnexError, Exception) as exc:
             return ModelVerifyCheckResult(
                 check_name="schema_validation",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message=f"Overlay patch schema validation failed: {exc}",
             )
 
         if not patches:
             return ModelVerifyCheckResult(
                 check_name="schema_validation",
-                status="pass",
+                status=EnumCheckStatus.PASS,
                 message="No overlays in bundle — schema validation trivially passes.",
             )
 
         return ModelVerifyCheckResult(
             check_name="schema_validation",
-            status="pass",
+            status=EnumCheckStatus.PASS,
             message=f"All {len(patches)} overlay(s) passed schema validation.",
         )
 
@@ -301,14 +303,14 @@ class NodeContractVerifyReplayCompute:
         except (ModelOnexError, Exception) as exc:
             return ModelVerifyCheckResult(
                 check_name="capability_linting",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message=f"Could not load patches for capability linting: {exc}",
             )
 
         if not patches:
             return ModelVerifyCheckResult(
                 check_name="capability_linting",
-                status="pass",
+                status=EnumCheckStatus.PASS,
                 message="No overlays — capability linting trivially passes.",
             )
 
@@ -330,7 +332,7 @@ class NodeContractVerifyReplayCompute:
         if unsatisfied:
             return ModelVerifyCheckResult(
                 check_name="capability_linting",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message=(
                     "Unsatisfied capability_inputs (not in any overlay's "
                     f"capability_outputs): {sorted(set(unsatisfied))}"
@@ -339,7 +341,7 @@ class NodeContractVerifyReplayCompute:
 
         return ModelVerifyCheckResult(
             check_name="capability_linting",
-            status="pass",
+            status=EnumCheckStatus.PASS,
             message="All declared capability_inputs are satisfied.",
         )
 
@@ -356,7 +358,7 @@ class NodeContractVerifyReplayCompute:
         if not manifest.scenarios:
             return ModelVerifyCheckResult(
                 check_name="fixture_presence",
-                status="pass",
+                status=EnumCheckStatus.PASS,
                 message="No scenarios in bundle — fixture_presence trivially passes.",
             )
 
@@ -389,20 +391,20 @@ class NodeContractVerifyReplayCompute:
         except (zipfile.BadZipFile, Exception) as exc:
             return ModelVerifyCheckResult(
                 check_name="fixture_presence",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message=f"Could not read bundle for fixture presence check: {exc}",
             )
 
         if missing:
             return ModelVerifyCheckResult(
                 check_name="fixture_presence",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message="; ".join(missing),
             )
 
         return ModelVerifyCheckResult(
             check_name="fixture_presence",
-            status="pass",
+            status=EnumCheckStatus.PASS,
             message="All fixture_path references are present in the bundle.",
         )
 
@@ -422,14 +424,14 @@ class NodeContractVerifyReplayCompute:
         except (ModelOnexError, Exception) as exc:
             return ModelVerifyCheckResult(
                 check_name="overlay_merge_correctness",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message=f"Could not load patches: {exc}",
             )
 
         if not patches:
             return ModelVerifyCheckResult(
                 check_name="overlay_merge_correctness",
-                status="pass",
+                status=EnumCheckStatus.PASS,
                 message="No overlays — merge correctness trivially passes.",
             )
 
@@ -477,13 +479,13 @@ class NodeContractVerifyReplayCompute:
         except (ModelOnexError, Exception) as exc:
             return ModelVerifyCheckResult(
                 check_name="overlay_merge_correctness",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message=f"Overlay merge failed: {exc}",
             )
 
         return ModelVerifyCheckResult(
             check_name="overlay_merge_correctness",
-            status="pass",
+            status=EnumCheckStatus.PASS,
             message=f"All {len(patches)} overlay(s) merged without conflicts.",
         )
 
@@ -528,13 +530,13 @@ class NodeContractVerifyReplayCompute:
         if not manifest.base_profile_ref or not manifest.base_profile_ref.strip():
             return ModelVerifyCheckResult(
                 check_name="determinism_declared",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message="manifest.base_profile_ref is empty; determinism class cannot be inferred.",
             )
 
         return ModelVerifyCheckResult(
             check_name="determinism_declared",
-            status="pass",
+            status=EnumCheckStatus.PASS,
             message=f"base_profile_ref='{manifest.base_profile_ref}' is declared.",
         )
 
@@ -545,7 +547,7 @@ class NodeContractVerifyReplayCompute:
         if not manifest.scenarios:
             return ModelVerifyCheckResult(
                 check_name="all_scenarios_present",
-                status="pass",
+                status=EnumCheckStatus.PASS,
                 message="No scenarios declared in manifest.",
             )
 
@@ -561,20 +563,20 @@ class NodeContractVerifyReplayCompute:
         except (zipfile.BadZipFile, Exception) as exc:
             return ModelVerifyCheckResult(
                 check_name="all_scenarios_present",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message=f"Could not check scenarios: {exc}",
             )
 
         if missing:
             return ModelVerifyCheckResult(
                 check_name="all_scenarios_present",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message="; ".join(missing),
             )
 
         return ModelVerifyCheckResult(
             check_name="all_scenarios_present",
-            status="pass",
+            status=EnumCheckStatus.PASS,
             message=f"All {len(manifest.scenarios)} scenario(s) present.",
         )
 
@@ -585,7 +587,7 @@ class NodeContractVerifyReplayCompute:
         if not manifest.invariants:
             return ModelVerifyCheckResult(
                 check_name="all_invariants_present",
-                status="pass",
+                status=EnumCheckStatus.PASS,
                 message="No invariants declared in manifest.",
             )
 
@@ -601,20 +603,20 @@ class NodeContractVerifyReplayCompute:
         except (zipfile.BadZipFile, Exception) as exc:
             return ModelVerifyCheckResult(
                 check_name="all_invariants_present",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message=f"Could not check invariants: {exc}",
             )
 
         if missing:
             return ModelVerifyCheckResult(
                 check_name="all_invariants_present",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message="; ".join(missing),
             )
 
         return ModelVerifyCheckResult(
             check_name="all_invariants_present",
-            status="pass",
+            status=EnumCheckStatus.PASS,
             message=f"All {len(manifest.invariants)} invariant(s) present.",
         )
 
@@ -627,19 +629,19 @@ class NodeContractVerifyReplayCompute:
         except ModelOnexError as exc:
             return ModelVerifyCheckResult(
                 check_name="content_digest_integrity",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message=str(exc),
             )
         except Exception as exc:  # fallback-ok: digest check returns structured fail result instead of raising
             return ModelVerifyCheckResult(
                 check_name="content_digest_integrity",
-                status="fail",
+                status=EnumCheckStatus.FAIL,
                 message=f"Digest check failed unexpectedly: {exc}",
             )
 
         return ModelVerifyCheckResult(
             check_name="content_digest_integrity",
-            status="pass",
+            status=EnumCheckStatus.PASS,
             message="All content hashes verified.",
         )
 
@@ -695,7 +697,7 @@ class NodeContractVerifyReplayCompute:
         manifest: ModelOncpManifest,
         package_content_hash: str,
         checks: list[ModelVerifyCheckResult],
-        overall_status: str,
+        overall_status: EnumOverallStatus,
     ) -> dict[str, object]:
         """Build the canonical dict representation of the report for hashing.
 

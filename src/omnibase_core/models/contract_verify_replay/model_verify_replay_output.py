@@ -12,18 +12,16 @@ content hash of the verified package, and an ed25519 signature of the report.
 """
 
 from datetime import datetime
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_overall_status import EnumOverallStatus
 from omnibase_core.enums.enum_verify_tier import EnumVerifyTier
 from omnibase_core.models.contract_verify_replay.model_verify_check_result import (
     ModelVerifyCheckResult,
 )
 
 __all__ = ["ModelVerifyReplayOutput"]
-
-OverallStatus = Literal["pass", "fail", "error"]
 
 
 class ModelVerifyReplayOutput(BaseModel):
@@ -74,7 +72,7 @@ class ModelVerifyReplayOutput(BaseModel):
         default_factory=list,
         description="Per-check results in execution order.",
     )
-    overall_status: OverallStatus = Field(
+    overall_status: EnumOverallStatus = Field(
         ...,
         description="Aggregated outcome: pass, fail, or error.",
     )

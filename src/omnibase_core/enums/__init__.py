@@ -37,6 +37,9 @@ from .enum_category_filter import EnumCategoryFilter
 # Change type enums (OMN-1196)
 from .enum_change_type import EnumChangeType
 
+# Check status enum (contract.verify.replay - OMN-2759)
+from .enum_check_status import EnumCheckStatus
+
 # Checkpoint-related enums
 from .enum_checkpoint_type import EnumCheckpointType
 
@@ -264,6 +267,9 @@ from .enum_operation_status import EnumOperationStatus
 # Orchestrator-related enums (from nodes)
 from .enum_orchestrator_capability import EnumOrchestratorCapability
 from .enum_orchestrator_types import EnumActionType, EnumBranchCondition
+
+# Overall status enum (contract.verify.replay - OMN-2759)
+from .enum_overall_status import EnumOverallStatus
 
 # Overlay scope enum (OMN-2757 — overlay stacking pipeline)
 from .enum_overlay_scope import SCOPE_ORDER, EnumOverlayScope
@@ -727,6 +733,9 @@ __all__ = [
     # Overlay scope (OMN-2757)
     "EnumOverlayScope",
     "SCOPE_ORDER",
+    # Contract verify replay domain (OMN-2759)
+    "EnumCheckStatus",
+    "EnumOverallStatus",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

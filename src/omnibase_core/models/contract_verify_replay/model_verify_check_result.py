@@ -6,13 +6,11 @@
 .. versionadded:: 0.20.0
 """
 
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["ModelVerifyCheckResult"]
+from omnibase_core.enums.enum_check_status import EnumCheckStatus
 
-CheckStatus = Literal["pass", "fail", "skip"]
+__all__ = ["ModelVerifyCheckResult"]
 
 
 class ModelVerifyCheckResult(BaseModel):
@@ -29,7 +27,7 @@ class ModelVerifyCheckResult(BaseModel):
 
     # string-id-ok: check names are machine-readable identifiers, not UUIDs
     check_name: str = Field(..., min_length=1, description="Name of the check.")
-    status: CheckStatus = Field(..., description="Check outcome.")
+    status: EnumCheckStatus = Field(..., description="Check outcome.")
     message: str | None = Field(
         default=None,
         description="Human-readable detail (required on fail/skip).",
