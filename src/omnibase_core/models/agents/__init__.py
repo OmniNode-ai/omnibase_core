@@ -15,6 +15,10 @@ Example:
     >>> agent = ModelAgentDefinition.model_validate(data)
 """
 
+from omnibase_core.models.agents.converter_agent_definition import (
+    TypedDictAgentRoutingConfig,
+    to_routing_config,
+)
 from omnibase_core.models.agents.model_activation_patterns import (
     ModelActivationPatterns,
 )
@@ -32,6 +36,7 @@ from omnibase_core.models.agents.model_intelligence_integration import (
 )
 from omnibase_core.models.agents.model_onex_integration import ModelOnexIntegration
 from omnibase_core.models.agents.model_quality_gates import ModelQualityGates
+from omnibase_core.models.agents.model_rag_queries import ModelRagQueries
 from omnibase_core.models.agents.model_success_metrics import ModelSuccessMetrics
 from omnibase_core.models.agents.model_transformation_context import (
     ModelTransformationContext,
@@ -51,8 +56,11 @@ __all__ = [
     "ModelIntelligenceIntegration",
     "ModelOnexIntegration",
     "ModelQualityGates",
+    "ModelRagQueries",
     "ModelSuccessMetrics",
     "ModelTransformationContext",
     "ModelWorkflowPhase",
     "ModelWorkflowTemplates",
+    "TypedDictAgentRoutingConfig",
+    "to_routing_config",
 ]
