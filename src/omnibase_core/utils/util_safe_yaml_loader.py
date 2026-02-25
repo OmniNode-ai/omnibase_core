@@ -63,6 +63,115 @@ from omnibase_core.types.typed_dict_yaml_dump_options import TypedDictYamlDumpOp
 # Removed _load_yaml_content function - YAML loading now handled by Pydantic model from_yaml methods
 
 
+def validate_file_exists(path: Path | str) -> None:
+    """
+    Pre-flight check that a file path exists and is a readable file.
+
+    This function is intended for use before expensive operations (such as YAML
+    loading or contract parsing) to surface ``FILE_NOT_FOUND`` errors early with
+    a clear, structured error message.
+
+    Checks performed (in order):
+    1. Path exists at all.
+    2. Path points to a file (not a directory or device).
+    3. Path is readable by the current process.
+
+    Args:
+        path: File path to validate. Accepts both ``pathlib.Path`` and ``str``
+            inputs; strings are coerced to ``Path`` internally.
+
+    Returns:
+        None if all checks pass.
+
+    Raises:
+        ModelOnexError: With ``FILE_NOT_FOUND`` code when the path does not
+            exist.  The error message includes the resolved string path so
+            callers can surface it directly to users.
+        ModelOnexError: With ``FILE_NOT_FOUND`` code when the path exists but
+            is a directory rather than a regular file.
+        ModelOnexError: With ``FILE_READ_ERROR`` code when the file exists but
+            cannot be read by the current process (permission denied).
+        ModelOnexError: With ``INTERNAL_ERROR`` code for unexpected OS-level
+            errors (e.g. broken symlinks, I/O errors).  The original exception
+            is preserved via ``__cause__``.
+
+    Examples:
+        Pre-flight check before loading a contract YAML::
+
+            from pathlib import Path
+            from omnibase_core.utils.util_safe_yaml_loader import validate_file_exists
+
+            contract_path = Path("config/node_my_compute.yaml")
+            validate_file_exists(contract_path)       # raises if missing
+            contract = ModelContractCompute.from_yaml(contract_path.read_text())
+
+        With str input::
+
+            validate_file_exists("/etc/contracts/node.yaml")
+    """
+    resolved: Path = Path(path) if isinstance(path, str) else path
+
+    try:
+        if not resolved.exists():
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+                message=f"File does not exist: {resolved}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "operation": ModelSchemaValue.from_value(
+                            "validate_file_exists"
+                        ),
+                        "path": ModelSchemaValue.from_value(str(resolved)),
+                    },
+                ),
+            )
+
+        if not resolved.is_file():
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+                message=f"Path exists but is not a regular file: {resolved}",
+                details=ModelErrorContext.with_context(
+                    {
+                        "operation": ModelSchemaValue.from_value(
+                            "validate_file_exists"
+                        ),
+                        "path": ModelSchemaValue.from_value(str(resolved)),
+                        "path_type": ModelSchemaValue.from_value(
+                            "directory" if resolved.is_dir() else "non-file"
+                        ),
+                    },
+                ),
+            )
+
+        # Attempt to open for reading to detect permission issues
+        resolved.open("r").close()
+
+    except ModelOnexError:
+        raise
+    except PermissionError as e:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+            message=f"Permission denied reading file: {resolved}",
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value("validate_file_exists"),
+                    "path": ModelSchemaValue.from_value(str(resolved)),
+                },
+            ),
+        ) from e
+    except OSError as e:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+            message=f"OS error checking file: {resolved}: {e}",
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value("validate_file_exists"),
+                    "path": ModelSchemaValue.from_value(str(resolved)),
+                },
+            ),
+        ) from e
+
+
 def load_and_validate_yaml_model[T: BaseModel](path: Path, model_cls: type[T]) -> T:
     """
     Load a YAML file and validate it against the provided Pydantic model class.
