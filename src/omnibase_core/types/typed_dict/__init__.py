@@ -8,6 +8,9 @@ replacing generic dict[str, Any] patterns with specific typed structures.
 """
 
 from omnibase_core.types.typed_dict.typed_dict_cache_stats import TypedDictCacheStats
+from omnibase_core.types.typed_dict.typed_dict_contract_loader_cache_stats import (
+    TypedDictContractLoaderCacheStats,
+)
 from omnibase_core.types.typed_dict.typed_dict_discovery_extended_stats import (
     TypedDictDiscoveryExtendedStats,
 )
@@ -70,6 +73,7 @@ from omnibase_core.types.typed_dict.typed_dict_workflow_step_config import (
 
 __all__ = [
     "TypedDictCacheStats",
+    "TypedDictContractLoaderCacheStats",
     "TypedDictDiscoveryExtendedStats",
     "TypedDictDiscoveryStats",
     "TypedDictEventBusHealth",

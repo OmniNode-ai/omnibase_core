@@ -29,6 +29,9 @@ Exports:
     validate_meta_model: Validate a model against meta-model requirements.
     IncludeLoader: YAML loader with !include directive support.
     load_contract: Load contract YAML with !include support.
+    load_contract_cached: Load contract YAML with optional in-memory caching.
+    ContractLoaderCache: In-memory cache for high-throughput contract loading.
+    get_default_cache: Return the module-level default ContractLoaderCache.
     DEFAULT_MAX_INCLUDE_DEPTH: Default maximum include nesting depth (10).
     DEFAULT_MAX_FILE_SIZE: Default maximum file size (1MB).
 
@@ -86,8 +89,11 @@ from omnibase_core.contracts.contract_hash_registry import (
 from omnibase_core.contracts.contract_loader import (
     DEFAULT_MAX_FILE_SIZE,
     DEFAULT_MAX_INCLUDE_DEPTH,
+    ContractLoaderCache,
     IncludeLoader,
+    get_default_cache,
     load_contract,
+    load_contract_cached,
 )
 
 # Import models from their proper locations in models/contracts/
@@ -130,9 +136,12 @@ __all__ = [
     "ModelDriftResult",
     "compute_contract_fingerprint",
     "normalize_contract",
-    # Contract Loader (with !include support)
+    # Contract Loader (with !include support and optional caching)
+    "ContractLoaderCache",
     "IncludeLoader",
+    "get_default_cache",
     "load_contract",
+    "load_contract_cached",
     "DEFAULT_MAX_INCLUDE_DEPTH",
     "DEFAULT_MAX_FILE_SIZE",
     # Contract Meta Model

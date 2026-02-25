@@ -11,6 +11,7 @@ Re-exports TypedDict types from the typed_dict subpackage.
 
 from omnibase_core.types.typed_dict import (
     TypedDictCacheStats,
+    TypedDictContractLoaderCacheStats,
     TypedDictDiscoveryExtendedStats,
     TypedDictDiscoveryStats,
     TypedDictEventBusHealth,
@@ -36,6 +37,7 @@ from omnibase_core.types.typed_dict import (
 
 __all__ = [
     "TypedDictCacheStats",
+    "TypedDictContractLoaderCacheStats",
     "TypedDictDiscoveryExtendedStats",
     "TypedDictDiscoveryStats",
     "TypedDictEventBusHealth",
