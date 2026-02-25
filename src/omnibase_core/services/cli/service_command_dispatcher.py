@@ -7,6 +7,16 @@ ServiceCommandDispatcher -- dynamic command dispatch for the registry-driven CLI
 Dispatches validated, parsed arguments to the correct backend based on the
 ``invocation.type`` field in a ``ModelCliCommandEntry``.
 
+## Invocation Pipeline
+
+    1. Risk gate evaluation (ServiceRiskGate.evaluate()) — ALWAYS first
+    2. Required-field validation against args_schema
+    3. Backend dispatch (Kafka, HTTP, DIRECT_CALL, SUBPROCESS)
+
+The risk gate MUST run before argument validation side effects. If the gate
+returns anything other than ``GateResultProceed``, dispatch is aborted and
+the caller receives a failed ``ModelCommandDispatchResult``.
+
 ## Supported Invocation Types
 
 - ``KAFKA_EVENT``: Publishes a fire-and-forget event to the Kafka topic
@@ -15,13 +25,23 @@ Dispatches validated, parsed arguments to the correct backend based on the
 - ``DIRECT_CALL`` (stub): Interface defined, not yet implemented.
 - ``SUBPROCESS`` (stub): Interface defined, not yet implemented.
 
-## Dispatch Contract
+## Risk Gate Integration
+
+    # Default: risk gate enabled with ServiceRiskGate defaults
+    dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
+
+    # Custom risk gate (e.g., for testing or custom validator)
+    dispatcher = ServiceCommandDispatcher(
+        kafka_producer=producer,
+        risk_gate=ServiceRiskGate(validator=my_validator),
+    )
 
     result = dispatcher.dispatch(command_entry, parsed_args)
     if result.success:
         print(result.correlation_id)
-    else:
-        print(result.error_message)
+    elif result.gate_result is not None:
+        # Handle non-Proceed gate result (confirmation, HITL, etc.)
+        print(f"Gate blocked: {result.gate_result.outcome.value}")
 
 ## Type Validation
 
@@ -31,15 +51,17 @@ invocations that fail type constraints early, before reaching the backend.
 
 ## Thread Safety
 
-``ServiceCommandDispatcher`` is stateless after construction.  The Kafka producer
-(if any) should be passed in as a dependency; it is not created internally.
+``ServiceCommandDispatcher`` is thread-safe after construction when ``risk_gate``
+is thread-safe (the default ``ServiceRiskGate`` uses a mutex for JTI tracking).
 
 See Also:
     - ``omnibase_core.models.cli.model_command_dispatch_result.ModelCommandDispatchResult``
     - ``omnibase_core.errors.error_command_dispatch.CommandDispatchError``
     - ``omnibase_core.protocols.cli.protocol_kafka_producer.ProtocolKafkaProducer``
+    - ``omnibase_core.services.cli.service_risk_gate.ServiceRiskGate``
 
 .. versionadded:: 0.19.0  (OMN-2553)
+.. versionchanged:: 0.20.0  (OMN-2562) Added risk gate integration.
 """
 
 from __future__ import annotations
@@ -59,9 +81,14 @@ from omnibase_core.errors.error_command_dispatch import CommandDispatchError
 from omnibase_core.models.cli.model_command_dispatch_result import (
     ModelCommandDispatchResult,
 )
+from omnibase_core.models.cli.model_risk_gate_result import (
+    GateResultProceed,
+)
 from omnibase_core.protocols.cli.protocol_kafka_producer import ProtocolKafkaProducer
+from omnibase_core.services.cli.service_risk_gate import ServiceRiskGate
 
 if TYPE_CHECKING:
+    from omnibase_core.models.cli.model_risk_gate_result import GateResult
     from omnibase_core.models.contracts.model_cli_command_entry import (
         ModelCliCommandEntry,
     )
@@ -72,35 +99,48 @@ class ServiceCommandDispatcher:
 
     The dispatcher is the final step in the registry-driven CLI invocation
     pipeline.  It receives a ``ModelCliCommandEntry`` (from the catalog) and
-    a ``Namespace`` of parsed, type-coerced arguments, then routes the
-    invocation to the appropriate backend.
+    a ``Namespace`` of parsed, type-coerced arguments, then:
+
+    1. Evaluates the risk gate (ServiceRiskGate) — ALWAYS before anything else.
+    2. Validates required args against args_schema (if provided).
+    3. Routes to the appropriate backend.
 
     Args:
         kafka_producer: Optional Kafka producer for ``KAFKA_EVENT`` dispatch.
             If not supplied, ``KAFKA_EVENT`` dispatches raise
             ``CommandDispatchError``.
+        risk_gate: Risk gate to evaluate before dispatch. Defaults to a new
+            ``ServiceRiskGate()`` instance with default configuration.
 
     Example::
 
         producer = MyKafkaProducer(bootstrap_servers="localhost:29092")
         dispatcher = ServiceCommandDispatcher(kafka_producer=producer)
         result = dispatcher.dispatch(command_entry, parsed_namespace)
-        print(result.correlation_id)
+        if result.success:
+            print(result.correlation_id)
+        elif result.gate_result is not None:
+            # Gate blocked — inspect result.gate_result for details
+            print(result.error_message)
 
     .. versionadded:: 0.19.0  (OMN-2553)
+    .. versionchanged:: 0.20.0  (OMN-2562) Added risk gate integration.
     """
 
     def __init__(
         self,
         kafka_producer: ProtocolKafkaProducer | None = None,
+        risk_gate: ServiceRiskGate | None = None,
     ) -> None:
         """Initialize ServiceCommandDispatcher.
 
         Args:
             kafka_producer: Kafka producer to use for KAFKA_EVENT dispatch.
                 May be None for non-Kafka commands.
+            risk_gate: Risk gate instance. Defaults to ``ServiceRiskGate()``.
         """
         self._kafka_producer = kafka_producer
+        self._risk_gate = risk_gate if risk_gate is not None else ServiceRiskGate()
 
     def dispatch(
         self,
@@ -111,8 +151,9 @@ class ServiceCommandDispatcher:
     ) -> ModelCommandDispatchResult:
         """Dispatch a parsed command invocation.
 
-        Validates parsed args against the schema (if provided), then
-        routes to the appropriate backend based on ``command.invocation.type``.
+        Step 1: Risk gate evaluation — always runs before anything else.
+        Step 2: Validate parsed args against the schema (if provided).
+        Step 3: Route to the appropriate backend.
 
         Args:
             command: The ``ModelCliCommandEntry`` from the catalog.
@@ -132,7 +173,23 @@ class ServiceCommandDispatcher:
         invocation = command.invocation
         invocation_type = invocation.invocation_type
 
-        # Pre-dispatch: validate required fields.
+        # Step 1: Risk gate — MUST run before any side-effectful validation.
+        gate_result: GateResult = self._risk_gate.evaluate(command, parsed_args)
+        if not isinstance(gate_result, GateResultProceed):
+            return ModelCommandDispatchResult(
+                success=False,
+                correlation_id=correlation_id,
+                command_ref=command.id,
+                invocation_type=invocation_type,
+                topic=invocation.topic,
+                error_message=(
+                    f"Risk gate blocked dispatch: {gate_result.outcome.value} "
+                    f"(risk={gate_result.risk.value})"
+                ),
+                gate_result=gate_result,
+            )
+
+        # Step 2: Validate required fields (side-effect-free schema check).
         if args_schema is not None:
             validation_error = self._validate_required_fields(
                 args_schema=args_schema,
