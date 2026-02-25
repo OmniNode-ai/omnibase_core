@@ -1,0 +1,12 @@
+name: Auto-Tag on Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  auto-tag:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
+    uses: OmniNode-ai/omnibase_core/.github/workflows/auto-tag-reusable.yml@main
+    permissions:
+      contents: write
