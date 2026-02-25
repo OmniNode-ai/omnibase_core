@@ -257,6 +257,9 @@ from .enum_operation_status import EnumOperationStatus
 from .enum_orchestrator_capability import EnumOrchestratorCapability
 from .enum_orchestrator_types import EnumActionType, EnumBranchCondition
 
+# Overlay scope enum (OMN-2757)
+from .enum_overlay_scope import SCOPE_ORDER, EnumOverlayScope
+
 # Parameter and return type enums
 from .enum_parameter_type import EnumParameterType
 
@@ -514,6 +517,9 @@ __all__ = [
     "EnumMetadataToolType",
     # Merge domain (OMN-1127)
     "EnumMergeConflictType",
+    # Overlay scope (OMN-2757)
+    "EnumOverlayScope",
+    "SCOPE_ORDER",
     # Namespace domain
     "EnumNamespaceStrategy",
     # Resource domain

@@ -43,7 +43,6 @@ import sys
 from pathlib import Path
 from typing import Final, NamedTuple, TypedDict
 
-
 # ---------------------------------------------------------------------------
 # Data types (defined before constants so constants can reference them)
 # ---------------------------------------------------------------------------
@@ -546,7 +545,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.verbose:
         print(f"\nParsed {len(gates)} gate(s) from {required_checks_path}:")
         for gate in gates:
-            print(f"  - check_name={gate.get('check_name')!r} workflow_file={gate.get('workflow_file')!r} workflow_job_key={gate.get('workflow_job_key')!r}")
+            print(
+                f"  - check_name={gate.get('check_name')!r} workflow_file={gate.get('workflow_file')!r} workflow_job_key={gate.get('workflow_job_key')!r}"
+            )
 
     # --- Run validation ---
     try:
@@ -560,9 +561,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # --- Report results ---
     if not violations:
-        print(
-            f"check_name validator: All {len(gates)} gate(s) validated successfully."
-        )
+        print(f"check_name validator: All {len(gates)} gate(s) validated successfully.")
         return 0
 
     print(f"\ncheck_name validator: {len(violations)} violation(s) found:\n")

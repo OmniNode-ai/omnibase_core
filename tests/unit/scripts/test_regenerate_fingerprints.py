@@ -53,7 +53,6 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_action_config_parameter import (
     ModelActionConfigParameter,
 )
-from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # =============================================================================
@@ -957,10 +956,6 @@ class TestAdditionalModelDetection:
 
     def test_detect_reducer_model(self) -> None:
         """Test detecting reducer contract model."""
-        from omnibase_core.models.contracts.model_contract_reducer import (
-            ModelContractReducer,
-        )
-
         data = {
             "node_type": "REDUCER_GENERIC",
             "name": "TestReducer",
@@ -972,14 +967,13 @@ class TestAdditionalModelDetection:
 
         model = detect_contract_model(data)
 
-        assert model == ModelContractReducer
+        # Use __qualname__ comparison to avoid pytest-xdist class identity issues
+        # (each worker imports classes independently, causing id() mismatch)
+        assert model is not None
+        assert model.__qualname__ == "ModelContractReducer"
 
     def test_detect_orchestrator_model(self) -> None:
         """Test detecting orchestrator contract model."""
-        from omnibase_core.models.contracts.model_contract_orchestrator import (
-            ModelContractOrchestrator,
-        )
-
         data = {
             "node_type": "ORCHESTRATOR_GENERIC",
             "name": "TestOrchestrator",
@@ -991,7 +985,10 @@ class TestAdditionalModelDetection:
 
         model = detect_contract_model(data)
 
-        assert model == ModelContractOrchestrator
+        # Use __qualname__ comparison to avoid pytest-xdist class identity issues
+        # (each worker imports classes independently, causing id() mismatch)
+        assert model is not None
+        assert model.__qualname__ == "ModelContractOrchestrator"
 
     def test_detect_transformer_model(self) -> None:
         """Test detecting transformer (compute) contract model."""
@@ -1006,14 +1003,13 @@ class TestAdditionalModelDetection:
 
         model = detect_contract_model(data)
 
-        assert model == ModelContractCompute
+        # Use __qualname__ comparison to avoid pytest-xdist class identity issues
+        # (each worker imports classes independently, causing id() mismatch)
+        assert model is not None
+        assert model.__qualname__ == "ModelContractCompute"
 
     def test_detect_gateway_model(self) -> None:
         """Test detecting gateway (effect) contract model."""
-        from omnibase_core.models.contracts.model_contract_effect import (
-            ModelContractEffect,
-        )
-
         data = {
             "node_type": "GATEWAY",
             "name": "TestGateway",
@@ -1025,7 +1021,10 @@ class TestAdditionalModelDetection:
 
         model = detect_contract_model(data)
 
-        assert model == ModelContractEffect
+        # Use __qualname__ comparison to avoid pytest-xdist class identity issues
+        # (each worker imports classes independently, causing id() mismatch)
+        assert model is not None
+        assert model.__qualname__ == "ModelContractEffect"
 
     def test_detect_with_contract_version_uses_yaml_contract_full(self) -> None:
         """Test that contracts with contract_version use ModelYamlContractFull.
@@ -1033,8 +1032,6 @@ class TestAdditionalModelDetection:
         Note: We use ModelYamlContractFull (extra="allow") instead of ModelYamlContract
         (extra="ignore") to ensure all fields are captured for fingerprint computation.
         """
-        from regenerate_fingerprints import ModelYamlContractFull
-
         data = {
             "node_type": "COMPUTE_GENERIC",
             "name": "TestFlexible",
@@ -1044,8 +1041,10 @@ class TestAdditionalModelDetection:
 
         model = detect_contract_model(data)
 
-        # Should fall back to ModelYamlContractFull for proper fingerprinting
-        assert model == ModelYamlContractFull
+        # Use __qualname__ comparison to avoid pytest-xdist class identity issues
+        # (each worker imports classes independently, causing id() mismatch)
+        assert model is not None
+        assert model.__qualname__ == "ModelYamlContractFull"
 
     def test_non_string_node_type_returns_none(self) -> None:
         """Test that non-string node_type returns None."""
