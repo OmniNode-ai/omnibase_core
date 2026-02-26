@@ -4,11 +4,11 @@
 """
 Core event model for Git hook events.
 
-Published to ``onex.evt.git.hook.v1`` by the Git hook integration layer.
+Published to ``onex.evt.platform.git-hook.v1`` by the Git hook integration layer.
 This is the Core-layer view: a superset of ``ContractGitHookEvent``
 from omnibase_spi.
 
-Topic: ``onex.evt.git.hook.v1``
+Topic: ``onex.evt.platform.git-hook.v1``
 Partition key: ``{repo}:{branch}``
 """
 
@@ -22,13 +22,13 @@ from omnibase_core.models.events.model_runtime_event_base import (
 
 __all__ = ["ModelGitHookEvent", "TOPIC_GIT_HOOK_EVENT"]
 
-TOPIC_GIT_HOOK_EVENT = "onex.evt.git.hook.v1"
+TOPIC_GIT_HOOK_EVENT = "onex.evt.platform.git-hook.v1"
 
 
 class ModelGitHookEvent(ModelRuntimeEventBase):
     """Core event model for a Git hook event.
 
-    Published to ``onex.evt.git.hook.v1`` after a hook invocation completes.
+    Published to ``onex.evt.platform.git-hook.v1`` after a hook invocation completes.
 
     All fields from ``ContractGitHookEvent`` (omnibase_spi) must be present
     here (SPI contract fields ⊆ Core model fields invariant).

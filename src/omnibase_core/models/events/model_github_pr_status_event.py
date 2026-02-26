@@ -4,11 +4,11 @@
 """
 Core event model for GitHub PR status events.
 
-Published to ``onex.evt.github.pr-status.v1`` by the GitHub PR poller effect.
+Published to ``onex.evt.platform.github-pr-status.v1`` by the GitHub PR poller effect.
 This is the Core-layer view: a superset of ``ContractGitHubPRStatusEvent``
 from omnibase_spi.
 
-Topic: ``onex.evt.github.pr-status.v1``
+Topic: ``onex.evt.platform.github-pr-status.v1``
 Partition key: ``{repo}:{pr_number}``
 """
 
@@ -24,7 +24,7 @@ from omnibase_core.models.events.model_runtime_event_base import (
 
 __all__ = ["ModelGitHubPRStatusEvent", "TOPIC_GITHUB_PR_STATUS_EVENT", "TriageState"]
 
-TOPIC_GITHUB_PR_STATUS_EVENT = "onex.evt.github.pr-status.v1"
+TOPIC_GITHUB_PR_STATUS_EVENT = "onex.evt.platform.github-pr-status.v1"
 
 
 class TriageState(str, Enum):
@@ -44,7 +44,7 @@ class ModelGitHubPRStatusEvent(ModelRuntimeEventBase):
     """Core event model for a GitHub PR status event.
 
     Produced by the GitHub PR poller effect and published to
-    ``onex.evt.github.pr-status.v1``.
+    ``onex.evt.platform.github-pr-status.v1``.
 
     All fields from ``ContractGitHubPRStatusEvent`` (omnibase_spi) must
     be present here (SPI contract fields ⊆ Core model fields invariant).
