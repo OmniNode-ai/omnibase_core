@@ -154,6 +154,15 @@ allowed_files:
     added: "2026-02-25"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/nodes/node_contract_verify_replay_compute/handler.py"
+    reason: >-
+      Contract verify replay compute node handler - uses yaml.safe_load() to parse scenario YAML content
+      from .oncp bundles for fixture_path presence checks. Scenario YAMLs are user-defined with no fixed
+      Pydantic schema in omnibase_core — raw dict access is needed to extract the optional fixture_path
+      key for tier1_static verification. (OMN-2759)
+    added: "2026-02-26"
+    review: "2026-08-25"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
