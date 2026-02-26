@@ -35,13 +35,20 @@ See Also:
 .. versionadded:: 0.4.1
 """
 
-from typing import Any, Literal
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.models.capabilities.model_capability_requirement_set import (
     ModelRequirementSet,
 )
+
+if TYPE_CHECKING:
+    from omnibase_core.models.routing.model_tiered_resolution_config import (
+        ModelTieredResolutionConfig,
+    )
 
 # Selection policy determines how the registry resolves multiple matching providers
 SelectionPolicy = Literal["auto_if_unique", "best_score", "require_explicit"]
@@ -155,6 +162,15 @@ class ModelCapabilityDependency(BaseModel):
         description="Human-readable description of why this capability is needed",
     )
 
+    tiered_resolution: ModelTieredResolutionConfig | None = Field(
+        default=None,
+        description=(
+            "Optional tiered resolution configuration constraining which tiers "
+            "the resolver may attempt and what proofs are required. "
+            "When None, the resolver uses its default tier progression."
+        ),
+    )
+
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
@@ -228,3 +244,19 @@ __all__ = [
     "ModelCapabilityDependency",
     "SelectionPolicy",
 ]
+
+
+def _rebuild_model_capability_dependency() -> None:
+    """Rebuild ModelCapabilityDependency to resolve forward references."""
+    from omnibase_core.models.routing.model_tiered_resolution_config import (
+        ModelTieredResolutionConfig,
+    )
+
+    ModelCapabilityDependency.model_rebuild(
+        _types_namespace={
+            "ModelTieredResolutionConfig": ModelTieredResolutionConfig,
+        }
+    )
+
+
+_rebuild_model_capability_dependency()
