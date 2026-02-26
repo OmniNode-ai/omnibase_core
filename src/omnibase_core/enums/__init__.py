@@ -311,6 +311,10 @@ from .enum_registry_error_code import EnumRegistryErrorCode
 from .enum_registry_health_status import EnumRegistryHealthStatus
 from .enum_registry_type import EnumRegistryType
 
+# Resolution tier enums (authenticated dependency resolution - OMN-2890)
+from .enum_resolution_failure_code import EnumResolutionFailureCode
+from .enum_resolution_tier import EnumResolutionTier
+
 # Resource-related enums
 from .enum_resource_unit import EnumResourceUnit
 from .enum_response_header_transformation_type import (
@@ -736,6 +740,9 @@ __all__ = [
     # Contract verify replay domain (OMN-2759)
     "EnumCheckStatus",
     "EnumOverallStatus",
+    # Resolution tier domain (authenticated dependency resolution - OMN-2890)
+    "EnumResolutionFailureCode",
+    "EnumResolutionTier",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")
