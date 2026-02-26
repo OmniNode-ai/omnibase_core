@@ -296,6 +296,12 @@ from .validator_patterns import (
 # - For string input (e.g., YAML config), use validate_execution_mode_string instead
 from .validator_reserved_enum import RESERVED_EXECUTION_MODES, validate_execution_mode
 
+# Import startup contract validator (OMN-1533)
+from .validator_startup_contract import (
+    StartupContractValidationResult,
+    validate_startup_contract,
+)
+
 # Import Union Usage validator (OMN-1291)
 from .validator_types import (
     ValidatorUnionUsage,
@@ -534,6 +540,9 @@ __all__ = [
     "validate_hex_color",
     "validate_hex_color_optional",
     "validate_hex_color_mapping",
+    # Startup contract validator (OMN-1533)
+    "StartupContractValidationResult",
+    "validate_startup_contract",
     # Topic suffix validators (OMN-1537)
     "ENV_PREFIXES",
     "EXPECTED_SEGMENT_COUNT",

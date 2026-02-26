@@ -412,6 +412,11 @@ class NodeCoreBase(ABC):
         Load and validate contract configuration.
 
         Attempts to load contract data from container or environment.
+        If no contract service is registered, falls back to file-based
+        startup validation (OMN-1533): locates contract.yaml via stack
+        inspection, logs presence/absence, and parses YAML for
+        well-formedness. Startup always continues regardless of outcome.
+
         Contract loading is optional - nodes can operate without contracts.
         """
         try:
@@ -496,6 +501,12 @@ class NodeCoreBase(ABC):
                 except AttributeError:
                     # Contract service doesn't have get_node_contract method - that's OK
                     pass
+            else:
+                # OMN-1533: No contract service available — fall back to file-based startup
+                # validation. Locate contract.yaml adjacent to the calling node's module,
+                # then use validate_startup_contract() for presence + YAML well-formedness
+                # checks. Result is advisory only; startup is never blocked.
+                self._run_startup_contract_validation()
 
         except Exception as e:  # fallback-ok: contract loading failure uses defaults, graceful degradation
             # Contract loading failure is not fatal
@@ -504,6 +515,38 @@ class NodeCoreBase(ABC):
                 f"Contract loading failed (continuing without): {e!s}",
                 {"node_id": self.node_id, "node_type": self.__class__.__name__},
             )
+
+    def _run_startup_contract_validation(self) -> None:
+        """
+        Run file-based startup contract.yaml validation (OMN-1533).
+
+        Locates contract.yaml via stack inspection, delegates to
+        validate_startup_contract() for presence and YAML well-formedness
+        checks. Logs appropriately. Never raises. Populates self.contract_data
+        when a valid contract is found.
+        """
+        from omnibase_core.validation.validator_startup_contract import (
+            validate_startup_contract,
+        )
+
+        contract_path: Path | None = None
+        try:
+            contract_path = self._find_contract_path()
+        except Exception:  # fallback-ok: contract path discovery is advisory
+            emit_log_event(
+                LogLevel.WARNING,
+                f"Warning: contract.yaml not found — running without ONEX contract ({self.__class__.__name__})",
+                {"node_id": self.node_id, "node_type": self.__class__.__name__},
+            )
+            return
+
+        result = validate_startup_contract(
+            contract_path,
+            node_name=self.__class__.__name__,
+        )
+
+        if result.found and result.valid_yaml and result.contract_data is not None:
+            self.contract_data = result.contract_data
 
     async def _initialize_node_resources(self) -> None:
         """
@@ -795,7 +838,7 @@ class NodeCoreBase(ABC):
         import inspect
         from pathlib import Path
 
-        from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
+        from omnibase_core.constants.constants_contract import CONTRACT_FILENAME
 
         try:
             # Traverse call stack to find the calling class module
