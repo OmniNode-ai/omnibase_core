@@ -72,6 +72,9 @@ from omnibase_core.protocols.resolution.protocol_dependency_resolver import (
 from omnibase_core.protocols.resolution.protocol_execution_resolver import (
     ProtocolExecutionResolver,
 )
+from omnibase_core.protocols.resolution.protocol_tiered_resolver import (
+    ProtocolTieredResolver,
+)
 
 __all__ = [
     "ProtocolCapabilityResolver",
@@ -79,4 +82,5 @@ __all__ = [
     "ProtocolExecutionResolver",
     "ProtocolProfile",
     "ProtocolProviderRegistry",
+    "ProtocolTieredResolver",
 ]
