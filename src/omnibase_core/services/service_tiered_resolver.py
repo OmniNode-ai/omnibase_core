@@ -33,6 +33,7 @@ Determinism:
 .. versionadded:: 0.21.0
     Phase 2 of authenticated dependency resolution (OMN-2891).
     Phase 3 integrates capability token verification (OMN-2892).
+    Phase 4 integrates classification gate enforcement (OMN-2893).
 """
 
 from __future__ import annotations
@@ -56,6 +57,7 @@ from omnibase_core.models.capabilities.model_capability_dependency import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.routing.model_capability_token import ModelCapabilityToken
 from omnibase_core.models.routing.model_hop_constraints import ModelHopConstraints
+from omnibase_core.models.routing.model_policy_bundle import ModelPolicyBundle
 from omnibase_core.models.routing.model_resolution_route_hop import (
     ModelResolutionRouteHop,
 )
@@ -162,7 +164,7 @@ class ServiceTieredResolver:
         self,
         dependency: ModelCapabilityDependency,
         trust_domains: list[ModelTrustDomain],
-        policy_bundle: object | None = None,
+        policy_bundle: ModelPolicyBundle | None = None,
         capability_tokens: list[ModelCapabilityToken] | None = None,
     ) -> ModelTieredResolutionResult:
         """Resolve a dependency through ordered trust tiers.
@@ -170,6 +172,11 @@ class ServiceTieredResolver:
         Iterates through trust domains ordered by tier, attempting
         resolution at each. Returns the first successful result or
         a fail-closed result if all tiers are exhausted.
+
+        When a ``ModelPolicyBundle`` is provided, classification gates are
+        checked before each tier attempt. If the gate's classification
+        does not allow the current tier, resolution at that tier is
+        blocked with a ``policy_denied`` failure code.
 
         For tiers beyond ``local_exact``, if a token verifier is configured
         and capability tokens are provided, the resolver verifies that a
@@ -180,9 +187,8 @@ class ServiceTieredResolver:
         Args:
             dependency: The capability dependency to resolve.
             trust_domains: Trust domains to attempt, resolved in tier order.
-            policy_bundle: Optional policy bundle for classification gates
-                (Phase 4 integration point). Currently used only for
-                hash computation.
+            policy_bundle: Optional policy bundle with classification gates
+                and redaction policies. Gates are checked before each tier.
             capability_tokens: Optional list of capability tokens to verify
                 for non-local tiers. Tokens are matched by issuer_domain.
 
@@ -436,7 +442,7 @@ class ServiceTieredResolver:
         failure_code: EnumResolutionFailureCode,
         failure_reason: str,
         trust_domains: list[ModelTrustDomain],
-        policy_bundle: object | None,
+        policy_bundle: ModelPolicyBundle | None,
     ) -> ModelTieredResolutionResult:
         """Build a fail-closed result when resolution cannot proceed.
 
@@ -471,23 +477,30 @@ class ServiceTieredResolver:
     def _check_classification_gates(
         self,
         domain: ModelTrustDomain,
-        policy_bundle: object,
+        policy_bundle: ModelPolicyBundle,
     ) -> str | None:
-        """Check classification gates for a domain.
+        """Check classification gates against the domain's tier.
 
-        Phase 4 integration point. Currently returns None (all gates
-        pass). When Phase 4 is implemented, this will inspect the
-        policy bundle's classification gates and verify the domain's
-        tier is allowed for the data classification.
+        Iterates through the policy bundle's classification gates and
+        verifies that the domain's tier is allowed for each gate's
+        classification level. If any gate blocks the tier, returns a
+        failure reason string.
 
         Args:
             domain: The trust domain being checked.
             policy_bundle: The policy bundle with classification gates.
 
         Returns:
-            None if all gates pass, or a failure reason string.
+            None if all gates pass, or a failure reason string
+            describing the first gate that blocked the tier.
         """
-        # TODO(OMN-2893): Implement classification gate checks (Phase 4).
+        for gate in policy_bundle.classification_gates:
+            if gate.allowed_tiers and domain.tier not in gate.allowed_tiers:
+                return (
+                    f"Classification gate '{gate.classification.value}' "
+                    f"does not allow tier '{domain.tier.value}'. "
+                    f"Allowed tiers: {[t.value for t in gate.allowed_tiers]}"
+                )
         return None
 
     def _get_required_proofs(self, tier: EnumResolutionTier) -> list[str]:
@@ -519,26 +532,24 @@ class ServiceTieredResolver:
 
     def _get_policy_bundle_hash(
         self,
-        policy_bundle: object | None,
+        policy_bundle: ModelPolicyBundle | None,
         trust_domains: list[ModelTrustDomain],
     ) -> str:
         """Get the policy bundle hash for determinism inputs.
 
-        If a policy bundle is provided and has a ``compute_hash()`` method,
-        calls it. Otherwise falls back to the first trust domain's
-        policy_bundle_hash, or a default empty hash.
+        If a ``ModelPolicyBundle`` is provided, calls its
+        ``compute_hash()`` method. Otherwise falls back to the first
+        trust domain's policy_bundle_hash, or a default empty hash.
 
         Args:
-            policy_bundle: Optional policy bundle object.
+            policy_bundle: Optional policy bundle.
             trust_domains: The trust domains (fallback source for hash).
 
         Returns:
             Policy bundle hash string.
         """
         if policy_bundle is not None:
-            compute_hash = getattr(policy_bundle, "compute_hash", None)
-            if callable(compute_hash):
-                return str(compute_hash())
+            return policy_bundle.compute_hash()
 
         # Fall back to first trust domain's policy_bundle_hash
         if trust_domains:

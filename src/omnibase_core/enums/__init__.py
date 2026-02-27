@@ -46,6 +46,9 @@ from .enum_checkpoint_type import EnumCheckpointType
 # Circuit breaker state enum (standalone for cross-repo standardization)
 from .enum_circuit_breaker_state import EnumCircuitBreakerState
 
+# Classification enum (policy bundle classification gates - OMN-2893)
+from .enum_classification import EnumClassification
+
 # CLI contribution contract enums (OMN-2536)
 from .enum_cli_command_risk import EnumCliCommandRisk
 from .enum_cli_command_visibility import EnumCliCommandVisibility
@@ -485,6 +488,8 @@ __all__ = [
     "EnumValidationRuleType",
     # Circuit breaker domain (standalone for cross-repo standardization)
     "EnumCircuitBreakerState",
+    # Classification domain (policy bundle classification gates - OMN-2893)
+    "EnumClassification",
     # Effect domain (from nodes)
     "EnumEffectHandlerType",
     "EnumEffectType",
