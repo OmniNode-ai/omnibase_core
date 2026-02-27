@@ -44,7 +44,7 @@ See Also:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -60,6 +60,11 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import (
     ModelHandlerBehavior,
 )
+
+if TYPE_CHECKING:
+    from omnibase_core.models.routing.model_trust_domain_config import (
+        ModelTrustDomainConfig,
+    )
 
 
 class ModelHandlerContract(BaseModel):
@@ -270,6 +275,20 @@ class ModelHandlerContract(BaseModel):
         description="Additional metadata for extensibility",
     )
 
+    # ==========================================================================
+    # Trust Domain Configuration (OMN-2896 Phase 7)
+    # ==========================================================================
+
+    trust_domains: list[ModelTrustDomainConfig] | None = Field(
+        default=None,
+        description=(
+            "Optional trust domain declarations for tiered resolution. "
+            "Maps domain identifiers to resolution tiers with optional "
+            "trust root references. When None, the resolver uses its "
+            "default trust domain configuration."
+        ),
+    )
+
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
@@ -450,3 +469,19 @@ class ModelHandlerContract(BaseModel):
 __all__ = [
     "ModelHandlerContract",
 ]
+
+
+def _rebuild_model_handler_contract() -> None:
+    """Rebuild ModelHandlerContract to resolve forward references."""
+    from omnibase_core.models.routing.model_trust_domain_config import (
+        ModelTrustDomainConfig,
+    )
+
+    ModelHandlerContract.model_rebuild(
+        _types_namespace={
+            "ModelTrustDomainConfig": ModelTrustDomainConfig,
+        }
+    )
+
+
+_rebuild_model_handler_contract()

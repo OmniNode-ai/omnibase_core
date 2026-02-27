@@ -26,6 +26,8 @@ Resolution Flow
     and ModelPolicyBundle (OMN-2893).
     Phase 6 adds ModelResolutionEvent for the resolution event
     ledger (OMN-2895).
+    Phase 7 adds ModelTieredResolutionConfig and ModelTrustDomainConfig
+    for declarative contract YAML integration (OMN-2896).
 """
 
 from omnibase_core.models.routing.model_capability_token import ModelCapabilityToken
@@ -42,10 +44,16 @@ from omnibase_core.models.routing.model_resolution_route_hop import (
 )
 from omnibase_core.models.routing.model_route_plan import ModelRoutePlan
 from omnibase_core.models.routing.model_tier_attempt import ModelTierAttempt
+from omnibase_core.models.routing.model_tiered_resolution_config import (
+    ModelTieredResolutionConfig,
+)
 from omnibase_core.models.routing.model_tiered_resolution_result import (
     ModelTieredResolutionResult,
 )
 from omnibase_core.models.routing.model_trust_domain import ModelTrustDomain
+from omnibase_core.models.routing.model_trust_domain_config import (
+    ModelTrustDomainConfig,
+)
 
 __all__ = [
     "ModelCapabilityToken",
@@ -58,6 +66,8 @@ __all__ = [
     "ModelResolutionRouteHop",
     "ModelRoutePlan",
     "ModelTierAttempt",
+    "ModelTieredResolutionConfig",
     "ModelTieredResolutionResult",
     "ModelTrustDomain",
+    "ModelTrustDomainConfig",
 ]
