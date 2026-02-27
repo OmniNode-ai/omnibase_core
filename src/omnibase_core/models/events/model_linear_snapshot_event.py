@@ -4,11 +4,11 @@
 """
 Core event model for Linear snapshot events.
 
-Published to ``onex.evt.linear.snapshot.v1`` by the Linear snapshot effect.
+Published to ``onex.evt.platform.linear-snapshot.v1`` by the Linear snapshot effect.
 This is the Core-layer view: a superset of ``ContractLinearSnapshotEvent``
 from omnibase_spi.
 
-Topic: ``onex.evt.linear.snapshot.v1``
+Topic: ``onex.evt.platform.linear-snapshot.v1``
 Partition key: ``snapshot_id``
 """
 
@@ -24,13 +24,13 @@ from omnibase_core.models.events.model_runtime_event_base import (
 
 __all__ = ["ModelLinearSnapshotEvent", "TOPIC_LINEAR_SNAPSHOT_EVENT"]
 
-TOPIC_LINEAR_SNAPSHOT_EVENT = "onex.evt.linear.snapshot.v1"
+TOPIC_LINEAR_SNAPSHOT_EVENT = "onex.evt.platform.linear-snapshot.v1"
 
 
 class ModelLinearSnapshotEvent(ModelRuntimeEventBase):
     """Core event model for a Linear snapshot event.
 
-    Published to ``onex.evt.linear.snapshot.v1`` after the Linear snapshot
+    Published to ``onex.evt.platform.linear-snapshot.v1`` after the Linear snapshot
     effect polls the Linear workspace.
 
     All fields from ``ContractLinearSnapshotEvent`` (omnibase_spi) must be
