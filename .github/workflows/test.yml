@@ -8,6 +8,7 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  merge_queue:
   workflow_dispatch:
 
 # Prevent auto-cancellation of running workflows when new commits are pushed
