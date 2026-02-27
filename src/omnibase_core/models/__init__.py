@@ -46,6 +46,7 @@ __all__ = [
     "providers",
     "registration",
     "results",
+    "routing",  # Tiered resolution routing models (OMN-2890)
     "state",
     "validation",
 ]
