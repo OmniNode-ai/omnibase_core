@@ -1,3 +1,4 @@
+---
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
@@ -12,10 +13,8 @@ name: contract_resolve
 version: "1.0.0"
 
 description: >
-  Canonical overlay resolution compute node. Merges an ordered list of
-  contract patches onto a base profile using ContractMergeEngine and
-  returns a content-addressed, fully-expanded ModelHandlerContract.
-
+  Canonical overlay resolution compute node. Merges an ordered list of contract patches onto a base profile
+  using ContractMergeEngine and returns a content-addressed, fully-expanded ModelHandlerContract. #magic___^_^___line
 input_model: omnibase_core.models.nodes.contract_resolve.ModelContractResolveInput
 output_model: omnibase_core.models.nodes.contract_resolve.ModelContractResolveOutput
 

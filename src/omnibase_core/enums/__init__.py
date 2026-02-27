@@ -288,6 +288,9 @@ from .enum_pipeline_validation_mode import EnumPipelineValidationMode
 
 # Policy type enum (OMN-2537 — objective functions reward architecture)
 from .enum_policy_type import EnumPolicyType
+
+# Proof type enum (capability attestation verification - OMN-2892)
+from .enum_proof_type import EnumProofType
 from .enum_query_parameter_transformation_type import (
     EnumQueryParameterTransformationType,
 )
@@ -743,6 +746,8 @@ __all__ = [
     # Resolution tier domain (authenticated dependency resolution - OMN-2890)
     "EnumResolutionFailureCode",
     "EnumResolutionTier",
+    # Proof type domain (capability attestation verification - OMN-2892)
+    "EnumProofType",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

@@ -13,7 +13,7 @@ Algorithm:
     2. For each tier:
        a. Scope registry to trust domain (FilteredProviderRegistry).
        b. Check classification gates (if policy bundle present).
-       c. Verify capability tokens (if tier > local_exact) -- Phase 3 stub.
+       c. Verify capability tokens (if tier > local_exact and verifier present).
        d. Delegate to base ServiceCapabilityResolver.
        e. If success: build ModelRoutePlan with hop, return result.
        f. Else: record ModelTierAttempt, continue.
@@ -32,6 +32,7 @@ Determinism:
 
 .. versionadded:: 0.21.0
     Phase 2 of authenticated dependency resolution (OMN-2891).
+    Phase 3 integrates capability token verification (OMN-2892).
 """
 
 from __future__ import annotations
@@ -53,6 +54,7 @@ from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.routing.model_capability_token import ModelCapabilityToken
 from omnibase_core.models.routing.model_hop_constraints import ModelHopConstraints
 from omnibase_core.models.routing.model_resolution_route_hop import (
     ModelResolutionRouteHop,
@@ -72,6 +74,9 @@ from omnibase_core.services.registry.filtered_provider_registry import (
 )
 from omnibase_core.services.service_capability_resolver import (
     ServiceCapabilityResolver,
+)
+from omnibase_core.services.service_capability_token_verifier import (
+    ServiceCapabilityTokenVerifier,
 )
 
 logger = logging.getLogger(__name__)
@@ -122,11 +127,17 @@ class ServiceTieredResolver:
     base flat resolver. The first tier that yields a successful resolution
     wins; if all tiers are exhausted, resolution fails closed.
 
+    For tiers beyond ``local_exact``, the resolver verifies capability
+    tokens via the optional ``ServiceCapabilityTokenVerifier``. Token
+    verification failure produces an ``attestation_invalid`` failure code.
+
     Args:
         base_resolver: The flat capability resolver to delegate to.
         registry: The provider registry to query.
-        key_provider: Optional key provider for token verification
-            (Phase 3 integration point). Currently unused.
+        key_provider: Optional key provider for token verification.
+        token_verifier: Optional capability token verifier. When provided,
+            tiers beyond ``local_exact`` require token verification.
+            When absent, token verification is skipped (backward compatible).
 
     Thread Safety:
         Stateless after construction. Thread safety depends on the
@@ -140,16 +151,19 @@ class ServiceTieredResolver:
         base_resolver: ServiceCapabilityResolver,
         registry: ProtocolProviderRegistry,
         key_provider: ProtocolKeyProvider | None = None,
+        token_verifier: ServiceCapabilityTokenVerifier | None = None,
     ) -> None:
         self._base_resolver = base_resolver
         self._registry = registry
         self._key_provider = key_provider
+        self._token_verifier = token_verifier
 
     def resolve_tiered(
         self,
         dependency: ModelCapabilityDependency,
         trust_domains: list[ModelTrustDomain],
         policy_bundle: object | None = None,
+        capability_tokens: list[ModelCapabilityToken] | None = None,
     ) -> ModelTieredResolutionResult:
         """Resolve a dependency through ordered trust tiers.
 
@@ -157,12 +171,20 @@ class ServiceTieredResolver:
         resolution at each. Returns the first successful result or
         a fail-closed result if all tiers are exhausted.
 
+        For tiers beyond ``local_exact``, if a token verifier is configured
+        and capability tokens are provided, the resolver verifies that a
+        valid token attests the requested capability from the current
+        domain's issuer. Token verification failure produces an
+        ``attestation_invalid`` failure code for that tier.
+
         Args:
             dependency: The capability dependency to resolve.
             trust_domains: Trust domains to attempt, resolved in tier order.
             policy_bundle: Optional policy bundle for classification gates
                 (Phase 4 integration point). Currently used only for
                 hash computation.
+            capability_tokens: Optional list of capability tokens to verify
+                for non-local tiers. Tokens are matched by issuer_domain.
 
         Returns:
             A ``ModelTieredResolutionResult`` containing the route plan
@@ -206,6 +228,33 @@ class ServiceTieredResolver:
                             candidates_after_trust_filter=0,
                             failure_code=EnumResolutionFailureCode.POLICY_DENIED,
                             failure_reason=gate_result,
+                            duration_ms=duration_ms,
+                        )
+                    )
+                    continue
+
+            # Verify capability tokens for tiers beyond local_exact (Phase 3)
+            if (
+                domain.tier != EnumResolutionTier.LOCAL_EXACT
+                and self._token_verifier is not None
+                and capability_tokens is not None
+            ):
+                token_result = self._verify_capability_token(
+                    domain=domain,
+                    capability=dependency.capability,
+                    tokens=capability_tokens,
+                )
+                if token_result is not None:
+                    tier_end = time.perf_counter()
+                    duration_ms = (tier_end - tier_start) * 1000
+                    tier_attempts.append(
+                        ModelTierAttempt(
+                            tier=domain.tier,
+                            attempted_at=attempt_timestamp,
+                            candidates_found=0,
+                            candidates_after_trust_filter=0,
+                            failure_code=EnumResolutionFailureCode.ATTESTATION_INVALID,
+                            failure_reason=token_result,
                             duration_ms=duration_ms,
                         )
                     )
@@ -497,12 +546,57 @@ class ServiceTieredResolver:
 
         return "sha256:none"
 
+    def _verify_capability_token(
+        self,
+        domain: ModelTrustDomain,
+        capability: str,
+        tokens: list[ModelCapabilityToken],
+    ) -> str | None:
+        """Verify a capability token for a domain and capability.
+
+        Finds a token issued by the given domain and verifies it using
+        the token verifier. Returns None on success or a failure reason
+        string on failure.
+
+        Args:
+            domain: The trust domain requiring token verification.
+            capability: The capability that must be attested.
+            tokens: Available capability tokens to search.
+
+        Returns:
+            None if verification succeeded, or a failure reason string.
+        """
+        assert self._token_verifier is not None
+
+        # Find token(s) matching this domain
+        domain_tokens = [t for t in tokens if t.issuer_domain == domain.domain_id]
+
+        if not domain_tokens:
+            return (
+                f"No capability token found for domain '{domain.domain_id}' "
+                f"attesting capability '{capability}'"
+            )
+
+        # Try each matching token until one succeeds
+        for token in domain_tokens:
+            proof = self._token_verifier.verify_token(token, capability)
+            if proof.verified:
+                return None
+
+        # All tokens for this domain failed verification
+        last_proof = self._token_verifier.verify_token(domain_tokens[-1], capability)
+        return (
+            f"Capability token verification failed for domain "
+            f"'{domain.domain_id}': {last_proof.verification_notes}"
+        )
+
     def __repr__(self) -> str:
         """Return representation for debugging."""
         return (
             f"ServiceTieredResolver("
             f"base_resolver={self._base_resolver!r}, "
-            f"has_key_provider={self._key_provider is not None})"
+            f"has_key_provider={self._key_provider is not None}, "
+            f"has_token_verifier={self._token_verifier is not None})"
         )
 
     def __str__(self) -> str:

@@ -12,14 +12,19 @@ Resolution Flow
 1. A capability dependency enters the tiered resolver.
 2. The resolver iterates through trust domains ordered by tier.
 3. Each tier attempt is recorded as a ``ModelTierAttempt``.
-4. On success, a ``ModelRoutePlan`` with ``ModelResolutionRouteHop`` entries is built.
-5. The full result is wrapped in ``ModelTieredResolutionResult``.
+4. For tiers beyond ``local_exact``, capability tokens are verified
+   via ``ServiceCapabilityTokenVerifier`` producing ``ModelResolutionProof``.
+5. On success, a ``ModelRoutePlan`` with ``ModelResolutionRouteHop`` entries is built.
+6. The full result is wrapped in ``ModelTieredResolutionResult``.
 
 .. versionadded:: 0.21.0
     Phase 1 of authenticated dependency resolution (OMN-2890).
+    Phase 3 adds ModelCapabilityToken and ModelResolutionProof (OMN-2892).
 """
 
+from omnibase_core.models.routing.model_capability_token import ModelCapabilityToken
 from omnibase_core.models.routing.model_hop_constraints import ModelHopConstraints
+from omnibase_core.models.routing.model_resolution_proof import ModelResolutionProof
 from omnibase_core.models.routing.model_resolution_route_hop import (
     ModelResolutionRouteHop,
 )
@@ -31,7 +36,9 @@ from omnibase_core.models.routing.model_tiered_resolution_result import (
 from omnibase_core.models.routing.model_trust_domain import ModelTrustDomain
 
 __all__ = [
+    "ModelCapabilityToken",
     "ModelHopConstraints",
+    "ModelResolutionProof",
     "ModelResolutionRouteHop",
     "ModelRoutePlan",
     "ModelTierAttempt",
