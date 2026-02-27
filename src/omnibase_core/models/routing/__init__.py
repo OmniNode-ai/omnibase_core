@@ -24,6 +24,8 @@ Resolution Flow
     Phase 3 adds ModelCapabilityToken and ModelResolutionProof (OMN-2892).
     Phase 4 adds ModelClassificationGate, ModelRedactionPolicy,
     and ModelPolicyBundle (OMN-2893).
+    Phase 6 adds ModelResolutionEvent for the resolution event
+    ledger (OMN-2895).
 """
 
 from omnibase_core.models.routing.model_capability_token import ModelCapabilityToken
@@ -33,6 +35,7 @@ from omnibase_core.models.routing.model_classification_gate import (
 from omnibase_core.models.routing.model_hop_constraints import ModelHopConstraints
 from omnibase_core.models.routing.model_policy_bundle import ModelPolicyBundle
 from omnibase_core.models.routing.model_redaction_policy import ModelRedactionPolicy
+from omnibase_core.models.routing.model_resolution_event import ModelResolutionEvent
 from omnibase_core.models.routing.model_resolution_proof import ModelResolutionProof
 from omnibase_core.models.routing.model_resolution_route_hop import (
     ModelResolutionRouteHop,
@@ -50,6 +53,7 @@ __all__ = [
     "ModelHopConstraints",
     "ModelPolicyBundle",
     "ModelRedactionPolicy",
+    "ModelResolutionEvent",
     "ModelResolutionProof",
     "ModelResolutionRouteHop",
     "ModelRoutePlan",
