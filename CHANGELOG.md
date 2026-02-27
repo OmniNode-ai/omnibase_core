@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-02-27
+
+### Changed
+- Version bump as part of coordinated OmniNode platform release run release-20260227-eceed7
+
 ## [0.20.0] - 2026-02-25
 
 ### Added
