@@ -21,7 +21,7 @@ Import Example:
         )
 
 Event Type:
-    ``onex.validation.cross_repo.run.started.v1``
+    ``onex.evt.validation.cross-repo-run-started.v1``
 
 See Also:
     - :class:`ModelValidationViolationsBatchEvent`: Emitted for each batch of violations
@@ -43,7 +43,7 @@ from omnibase_core.models.events.validation.model_validation_event_base import (
 
 __all__ = ["ModelValidationRunStartedEvent", "VALIDATION_RUN_STARTED_EVENT"]
 
-VALIDATION_RUN_STARTED_EVENT = "onex.validation.cross_repo.run.started.v1"
+VALIDATION_RUN_STARTED_EVENT = "onex.evt.validation.cross-repo-run-started.v1"
 
 
 class ModelValidationRunStartedEvent(ModelValidationEventBase):
@@ -57,7 +57,7 @@ class ModelValidationRunStartedEvent(ModelValidationEventBase):
     The model is immutable (frozen) to ensure event integrity after creation.
 
     Attributes:
-        event_type: Event type identifier (onex.validation.cross_repo.run.started.v1).
+        event_type: Event type identifier (onex.evt.validation.cross-repo-run-started.v1).
         root_path: Root directory path being validated.
         policy_name: Name of the validation policy being applied.
         rules_enabled: List of rule IDs that are enabled for this run.
@@ -80,7 +80,7 @@ class ModelValidationRunStartedEvent(ModelValidationEventBase):
         ...     baseline_applied=False,
         ... )
         >>> event.event_type
-        'onex.validation.cross_repo.run.started.v1'
+        'onex.evt.validation.cross-repo-run-started.v1'
 
     .. versionadded:: 0.13.0
     """
