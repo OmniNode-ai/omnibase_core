@@ -3,8 +3,8 @@
 
 """Shared private helpers for the intelligence models module.
 
-This module contains utility functions shared across multiple intelligence
-model files to avoid duplication.
+Utility functions shared across multiple intelligence model files to avoid
+duplication.
 """
 
 from omnibase_core.models.primitives import ModelSemVer
