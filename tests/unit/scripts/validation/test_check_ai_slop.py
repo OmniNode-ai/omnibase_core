@@ -445,7 +445,7 @@ class TestStepNarration:
 
 
 class TestMarkdownSeparator:
-    """Tests for md_separator WARNING violations (==== in docstrings)."""
+    """Tests for md_separator WARNING violations (four-or-more = signs in docstrings)."""
 
     def test_md_separator_in_docstring(self, tmp_path: Path) -> None:
         source = '''\

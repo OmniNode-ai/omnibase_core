@@ -3,9 +3,9 @@
 
 """Converter from ModelAgentDefinition to routing-view dictionary.
 
-This module provides the ``to_routing_config`` function which extracts the
-routing-relevant subset of a full agent definition for use by the agent
-routing layer (e.g. UserPromptSubmit hook, omniintelligence routing service).
+``to_routing_config`` extracts the routing-relevant subset of a full agent
+definition for use by the agent routing layer (e.g. UserPromptSubmit hook,
+omniintelligence routing service).
 
 The routing view intentionally excludes heavyweight authoring fields (philosophy
 details, workflow templates, quality gates, etc.) and focuses on the fields
