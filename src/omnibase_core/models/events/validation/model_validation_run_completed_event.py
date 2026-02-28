@@ -4,9 +4,8 @@
 """
 Cross-repo validation run completed event model.
 
-This module provides the event model for when a cross-repo validation run completes.
-This event marks the end of a validation lifecycle and contains the summary
-of the validation results.
+Event model for when a cross-repo validation run completes. Marks the end of
+a validation lifecycle and contains the summary of the validation results.
 
 Location:
     ``omnibase_core.models.events.validation.model_validation_run_completed_event``

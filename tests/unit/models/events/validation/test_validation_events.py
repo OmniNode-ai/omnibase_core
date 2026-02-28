@@ -608,7 +608,8 @@ class TestEventTypeConstants:
     def test_all_event_type_constants_are_defined(self) -> None:
         """Test that all event type constants are defined."""
         assert (
-            VALIDATION_RUN_STARTED_EVENT == "onex.evt.validation.cross-repo-run-started.v1"
+            VALIDATION_RUN_STARTED_EVENT
+            == "onex.evt.validation.cross-repo-run-started.v1"
         )
         assert (
             VALIDATION_VIOLATIONS_BATCH_EVENT

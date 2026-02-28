@@ -4,10 +4,9 @@
 """
 Cross-repo validation run started event model.
 
-This module provides the event model for when a cross-repo validation run begins.
-This event marks the start of a validation lifecycle and should be followed
-by zero or more violations batch events, and finally a completed event with
-the same run_id.
+Event model for when a cross-repo validation run begins. Marks the start of
+a validation lifecycle; should be followed by zero or more violations batch
+events, and finally a completed event with the same run_id.
 
 Location:
     ``omnibase_core.models.events.validation.model_validation_run_started_event``

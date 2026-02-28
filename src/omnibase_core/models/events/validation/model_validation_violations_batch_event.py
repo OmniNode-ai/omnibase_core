@@ -4,9 +4,9 @@
 """
 Cross-repo validation violations batch event model.
 
-This module provides the event model for batches of violations found during
-a cross-repo validation run. Violations are emitted in batches to manage
-volume (default: 50 violations per batch).
+Event model for batches of violations found during a cross-repo validation
+run. Violations are emitted in batches to manage volume (default: 50
+violations per batch).
 
 Location:
     ``omnibase_core.models.events.validation.model_validation_violations_batch_event``
