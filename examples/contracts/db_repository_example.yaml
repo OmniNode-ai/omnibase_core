@@ -13,7 +13,7 @@
 db_repository:
   name: learned_patterns_repository
   engine: postgres
-  database_ref: omninode_bridge
+  database_ref: omnibase_infra
   description: |
     Repository for accessing learned patterns from the pattern store.
     Used by the pattern learning pipeline for CRUD operations.
