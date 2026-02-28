@@ -164,9 +164,6 @@ class ServiceRegistryProvider:
                 updated_provider = provider.model_copy(update={"tags": ["updated"]})
                 registry.register(updated_provider, replace=True)  # OK
 
-        Thread Safety:
-            This method is protected by the internal RLock.
-
         .. versionadded:: 0.4.0
         """
         self._register_impl(provider, replace)
@@ -213,9 +210,6 @@ class ServiceRegistryProvider:
                 removed = registry.unregister(provider.provider_id)
                 assert removed is False
 
-        Thread Safety:
-            This method is protected by the internal RLock.
-
         .. versionadded:: 0.4.0
         """
         str_id = str(provider_id)
@@ -250,9 +244,6 @@ class ServiceRegistryProvider:
                 missing = registry.get(nil_uuid)
                 assert missing is None
 
-        Thread Safety:
-            This method is protected by the internal RLock.
-
         .. versionadded:: 0.4.0
         """
         str_id = str(provider_id)
@@ -286,9 +277,6 @@ class ServiceRegistryProvider:
                 # No match returns empty list
                 storage_providers = registry.find_by_capability("storage.s3")
                 assert len(storage_providers) == 0
-
-        Thread Safety:
-            This method is protected by the internal RLock.
 
         .. versionadded:: 0.4.0
         """
@@ -343,9 +331,6 @@ class ServiceRegistryProvider:
                 )
                 assert len(results) == 1  # Only provider1 has both
 
-        Thread Safety:
-            This method is protected by the internal RLock.
-
         .. versionadded:: 0.4.0
         """
         # Empty tags list matches nothing - searching for no tags means no results.
@@ -381,9 +366,6 @@ class ServiceRegistryProvider:
                 assert len(all_providers) == 2
                 assert all_providers[0] == provider1  # Insertion order
 
-        Thread Safety:
-            This method is protected by the internal RLock.
-
         .. versionadded:: 0.4.0
         """
         with self._lock:
@@ -414,9 +396,6 @@ class ServiceRegistryProvider:
                     "database.postgresql",
                     "cache.redis",
                 }
-
-        Thread Safety:
-            This method is protected by the internal RLock.
 
         .. versionadded:: 0.4.0
         """
@@ -486,9 +465,6 @@ class ServiceRegistryProvider:
 
                 registry.clear()
                 assert len(registry) == 0
-
-        Thread Safety:
-            This method is protected by the internal RLock.
 
         .. versionadded:: 0.4.0
         """
