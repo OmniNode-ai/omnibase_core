@@ -547,3 +547,15 @@ class TestExitCodes:
         p.write_text("", encoding="utf-8")
         result = main([str(p)])
         assert result == 0
+
+    def test_markdown_file_clean_exits_zero(self, tmp_path: Path) -> None:
+        """Markdown files are processed for line-based checks (step_narration)."""
+        p = tmp_path / "notes.md"
+        p.write_text("# My Notes\n\nSome content here.\n", encoding="utf-8")
+        result = main([str(p)])
+        assert result == 0
+
+    def test_no_files_exits_zero(self, tmp_path: Path) -> None:
+        """Empty file list exits cleanly."""
+        result = main([])
+        assert result == 0

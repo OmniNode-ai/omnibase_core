@@ -404,7 +404,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "files",
         nargs="*",
-        help="Files to check (if empty, reads from stdin).",
+        help="Files or directories to check. When no files are given, exits 0.",
     )
     parser.add_argument(
         "--strict",
@@ -431,6 +431,8 @@ def main(argv: list[str] | None = None) -> int:
         p = Path(f)
         if p.is_dir():
             files.extend(p.rglob("*.py"))
+            if args.report:
+                files.extend(p.rglob("*.md"))
         elif p.exists():
             files.append(p)
 
@@ -438,6 +440,21 @@ def main(argv: list[str] | None = None) -> int:
     for filepath in files:
         if filepath.suffix == ".py":
             all_violations.extend(check_file(filepath))
+        # Markdown files: no AST checks, only line-based (step_narration)
+        elif filepath.suffix == ".md":
+            try:
+                source_lines = filepath.read_text(encoding="utf-8").splitlines()
+                all_violations.extend(_check_lines(str(filepath), source_lines))
+            except OSError as exc:
+                all_violations.append(
+                    SlopViolation(
+                        filename=str(filepath),
+                        line=0,
+                        check="file_read",
+                        severity=SEVERITY_ERROR,
+                        message=f"Cannot read file: {exc}",
+                    )
+                )
 
     # Filter by severity
     if not args.report:
