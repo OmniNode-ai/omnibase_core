@@ -42,7 +42,6 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import Any
 
 
 # ---------------------------------------------------------------------------
@@ -449,7 +448,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.json_output:
         import json
 
-        output: list[dict[str, Any]] = [
+        output: list[dict[str, str | int]] = [
             {
                 "filename": v.filename,
                 "line": v.line,
