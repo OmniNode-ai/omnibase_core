@@ -13,7 +13,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums import EnumPatternKind
-from omnibase_core.models.intelligence._helpers import _default_schema_version
+from omnibase_core.models.intelligence.model_intelligence_helpers import (
+    _default_schema_version,
+)
 from omnibase_core.models.intelligence.model_pattern_error import ModelPatternError
 from omnibase_core.models.intelligence.model_pattern_record import ModelPatternRecord
 from omnibase_core.models.intelligence.model_pattern_warning import ModelPatternWarning

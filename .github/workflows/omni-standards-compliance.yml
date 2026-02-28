@@ -195,3 +195,30 @@ jobs:
 
       - name: Check transport imports (ADR-005)
         run: bash scripts/validate-no-transport-imports.sh
+
+  ai-slop-check:
+    name: AI-Slop Pattern Check (strict, PR diff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Compute changed Python/Markdown files vs PR base
+        id: changed
+        run: |
+          if [ -n "${{ github.base_ref }}" ]; then
+            git fetch origin "${{ github.base_ref }}" --no-tags --depth=1
+            FILES=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD -- '*.py' '*.md' | tr '\n' ' ')
+          else
+            FILES=$(git diff --name-only HEAD~1 -- '*.py' '*.md' 2>/dev/null | tr '\n' ' ')
+          fi
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+      - name: Check changed files for AI-slop patterns (strict)
+        run: |
+          FILES="${{ steps.changed.outputs.files }}"
+          if [ -z "$FILES" ]; then exit 0; fi
+          python scripts/validation/check_ai_slop.py --strict $FILES

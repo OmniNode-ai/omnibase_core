@@ -352,6 +352,14 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/validation/|.*example.*).*\.py$
         stages: [pre-commit]
 
+      - id: check-ai-slop
+        name: Check for AI-slop patterns
+        language: system
+        entry: uv run python scripts/validation/check_ai_slop.py
+        types_or: [python, markdown]
+        pass_filenames: true
+        stages: [pre-commit]
+
       - id: validate-no-enhancement-prefixes
         name: ONEX Enhancement Prefix Anti-Pattern Detection
         entry: uv run python scripts/validation/validate-no-enhancement-prefixes.py

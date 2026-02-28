@@ -392,49 +392,49 @@ class TestStepNarration:
     """Tests for step_narration WARNING violations (line-based, outside docstrings)."""
 
     def test_step_narration_colon(self, tmp_path: Path) -> None:
-        source = '''\
+        source = """\
             def fn() -> None:
                 # Step 1: Initialize the system
                 x = 1
-        '''
+        """
         violations = _violations_of(tmp_path, source)
         assert CHECK_STEP_NARRATION in _checks(violations)
 
     def test_step_narration_dash(self, tmp_path: Path) -> None:
-        source = '''\
+        source = """\
             def fn() -> None:
                 # Step 2 - Connect to database
                 pass
-        '''
+        """
         violations = _violations_of(tmp_path, source)
         assert CHECK_STEP_NARRATION in _checks(violations)
 
     def test_step_narration_is_warning(self, tmp_path: Path) -> None:
-        source = '''\
+        source = """\
             def fn() -> None:
                 # Step 3: Do the thing
                 pass
-        '''
+        """
         violations = _violations_of(tmp_path, source)
         sn = [v for v in violations if v.check == CHECK_STEP_NARRATION]
         assert sn
         assert all(v.severity == SEVERITY_WARNING for v in sn)
 
     def test_non_step_comment_clean(self, tmp_path: Path) -> None:
-        source = '''\
+        source = """\
             def fn() -> None:
                 # Initialize the system
                 pass
-        '''
+        """
         violations = _violations_of(tmp_path, source)
         assert CHECK_STEP_NARRATION not in _checks(violations)
 
     def test_step_narration_suppressed(self, tmp_path: Path) -> None:
-        source = '''\
+        source = """\
             def fn() -> None:
                 # Step 1: Initialize  # ai-slop-ok: tutorial code
                 pass
-        '''
+        """
         violations = _violations_of(tmp_path, source)
         assert CHECK_STEP_NARRATION not in _checks(violations)
 
