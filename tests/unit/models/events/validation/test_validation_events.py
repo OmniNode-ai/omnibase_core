@@ -147,7 +147,7 @@ class TestModelValidationRunStartedEvent:
             started_at=datetime.now(UTC),
         )
 
-        assert event.event_type == "onex.validation.cross_repo.run.started.v1"
+        assert event.event_type == "onex.evt.validation.cross-repo-run-started.v1"
         assert event.event_type == VALIDATION_RUN_STARTED_EVENT
 
     def test_started_event_event_type_validation(self) -> None:
@@ -348,7 +348,7 @@ class TestModelValidationViolationsBatchEvent:
             violations=(),
         )
 
-        assert event.event_type == "onex.validation.cross_repo.violations.batch.v1"
+        assert event.event_type == "onex.evt.validation.cross-repo-violations-batch.v1"
         assert event.event_type == VALIDATION_VIOLATIONS_BATCH_EVENT
 
     def test_batch_event_batch_index_ge_zero(self) -> None:
@@ -497,7 +497,7 @@ class TestModelValidationRunCompletedEvent:
             completed_at=datetime.now(UTC),
         )
 
-        assert event.event_type == "onex.validation.cross_repo.run.completed.v1"
+        assert event.event_type == "onex.evt.validation.cross-repo-run-completed.v1"
         assert event.event_type == VALIDATION_RUN_COMPLETED_EVENT
 
     def test_completed_event_counts_ge_zero(self) -> None:
@@ -608,15 +608,16 @@ class TestEventTypeConstants:
     def test_all_event_type_constants_are_defined(self) -> None:
         """Test that all event type constants are defined."""
         assert (
-            VALIDATION_RUN_STARTED_EVENT == "onex.validation.cross_repo.run.started.v1"
+            VALIDATION_RUN_STARTED_EVENT
+            == "onex.evt.validation.cross-repo-run-started.v1"
         )
         assert (
             VALIDATION_VIOLATIONS_BATCH_EVENT
-            == "onex.validation.cross_repo.violations.batch.v1"
+            == "onex.evt.validation.cross-repo-violations-batch.v1"
         )
         assert (
             VALIDATION_RUN_COMPLETED_EVENT
-            == "onex.validation.cross_repo.run.completed.v1"
+            == "onex.evt.validation.cross-repo-run-completed.v1"
         )
 
     def test_event_types_are_unique(self) -> None:

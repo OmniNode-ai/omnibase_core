@@ -4,17 +4,17 @@
 """
 Cross-repo validation event models.
 
-This module provides event models for cross-repo validation lifecycle events
-in the ONEX framework. These events enable tracking, replay, and dashboard
-integration for validation operations.
+Event models for cross-repo validation lifecycle events in the ONEX framework.
+These events enable tracking, replay, and dashboard integration for validation
+operations.
 
 Event Lifecycle:
     started -> violations batch(es)* -> completed
 
 Event Types:
-    - ``onex.validation.cross_repo.run.started.v1``: Validation run begins
-    - ``onex.validation.cross_repo.violations.batch.v1``: Batch of violations
-    - ``onex.validation.cross_repo.run.completed.v1``: Validation run completes
+    - ``onex.evt.validation.cross-repo-run-started.v1``: Validation run begins
+    - ``onex.evt.validation.cross-repo-violations-batch.v1``: Batch of violations
+    - ``onex.evt.validation.cross-repo-run-completed.v1``: Validation run completes
 
 Import Example:
     .. code-block:: python

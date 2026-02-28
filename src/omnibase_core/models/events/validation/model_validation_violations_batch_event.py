@@ -4,9 +4,9 @@
 """
 Cross-repo validation violations batch event model.
 
-This module provides the event model for batches of violations found during
-a cross-repo validation run. Violations are emitted in batches to manage
-volume (default: 50 violations per batch).
+Event model for batches of violations found during a cross-repo validation
+run. Violations are emitted in batches to manage volume (default: 50
+violations per batch).
 
 Location:
     ``omnibase_core.models.events.validation.model_validation_violations_batch_event``
@@ -21,7 +21,7 @@ Import Example:
         )
 
 Event Type:
-    ``onex.validation.cross_repo.violations.batch.v1``
+    ``onex.evt.validation.cross-repo-violations-batch.v1``
 
 See Also:
     - :class:`ModelValidationRunStartedEvent`: Emitted when validation starts
@@ -47,7 +47,7 @@ __all__ = [
     "VALIDATION_VIOLATIONS_BATCH_EVENT",
 ]
 
-VALIDATION_VIOLATIONS_BATCH_EVENT = "onex.validation.cross_repo.violations.batch.v1"
+VALIDATION_VIOLATIONS_BATCH_EVENT = "onex.evt.validation.cross-repo-violations-batch.v1"
 
 
 class ModelValidationViolationsBatchEvent(ModelValidationEventBase):
@@ -61,7 +61,7 @@ class ModelValidationViolationsBatchEvent(ModelValidationEventBase):
     The model is immutable (frozen) to ensure event integrity after creation.
 
     Attributes:
-        event_type: Event type identifier (onex.validation.cross_repo.violations.batch.v1).
+        event_type: Event type identifier (onex.evt.validation.cross-repo-violations-batch.v1).
         batch_index: Zero-based index of this batch (0, 1, 2, ...).
         batch_size: Number of violations in this batch.
         total_batches: Total number of batches that will be emitted for this run.

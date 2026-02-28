@@ -122,6 +122,12 @@ class FileLocationValidator:
         "error_handling.py": ["decorators"],
         # Mixin discovery
         "mixin_discovery.py": ["discovery"],
+        # Navigation subsystem data types (OMN-2540, OMN-2546)
+        "model_action_set.py": ["navigation"],
+        "model_backward_chaining.py": ["navigation"],
+        "model_contract_graph.py": ["navigation"],
+        "model_contract_graph_builder.py": ["navigation"],
+        "model_graph_boundary.py": ["navigation"],
     }
 
     # Class prefix → expected directory mapping

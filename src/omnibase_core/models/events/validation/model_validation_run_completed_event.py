@@ -4,9 +4,8 @@
 """
 Cross-repo validation run completed event model.
 
-This module provides the event model for when a cross-repo validation run completes.
-This event marks the end of a validation lifecycle and contains the summary
-of the validation results.
+Event model for when a cross-repo validation run completes. Marks the end of
+a validation lifecycle and contains the summary of the validation results.
 
 Location:
     ``omnibase_core.models.events.validation.model_validation_run_completed_event``
@@ -20,7 +19,7 @@ Import Example:
         )
 
 Event Type:
-    ``onex.validation.cross_repo.run.completed.v1``
+    ``onex.evt.validation.cross-repo-run-completed.v1``
 
 See Also:
     - :class:`ModelValidationRunStartedEvent`: Emitted when validation starts
@@ -41,7 +40,7 @@ from omnibase_core.models.events.validation.model_validation_event_base import (
 
 __all__ = ["ModelValidationRunCompletedEvent", "VALIDATION_RUN_COMPLETED_EVENT"]
 
-VALIDATION_RUN_COMPLETED_EVENT = "onex.validation.cross_repo.run.completed.v1"
+VALIDATION_RUN_COMPLETED_EVENT = "onex.evt.validation.cross-repo-run-completed.v1"
 
 
 class ModelValidationRunCompletedEvent(ModelValidationEventBase):
@@ -55,7 +54,7 @@ class ModelValidationRunCompletedEvent(ModelValidationEventBase):
     The model is immutable (frozen) to ensure event integrity after creation.
 
     Attributes:
-        event_type: Event type identifier (onex.validation.cross_repo.run.completed.v1).
+        event_type: Event type identifier (onex.evt.validation.cross-repo-run-completed.v1).
         is_valid: Whether the validation passed (no unsuppressed errors).
         total_violations: Total number of violations found.
         error_count: Number of ERROR/CRITICAL/FATAL severity violations.
@@ -87,7 +86,7 @@ class ModelValidationRunCompletedEvent(ModelValidationEventBase):
         ...     completed_at=datetime.now(UTC),
         ... )
         >>> event.event_type
-        'onex.validation.cross_repo.run.completed.v1'
+        'onex.evt.validation.cross-repo-run-completed.v1'
 
     .. versionadded:: 0.13.0
     """
