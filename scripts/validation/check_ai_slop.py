@@ -14,7 +14,7 @@ Checks performed:
 - ERROR: rest_docstring (reST-style :param:, :type:, :returns:, :rtype:)
 - WARNING: boilerplate_docstring ("This module/class/function provides/implements/contains")
 - WARNING: step_narration ("# Step N:" comments)
-- WARNING: md_separator (long ==== lines used as markdown separators in docstrings)
+- WARNING: md_separator (four-or-more = signs used as markdown separators in docstrings)
 - INFO: obvious_comment (self-evident inline comments, report mode only)
 
 Suppression:
