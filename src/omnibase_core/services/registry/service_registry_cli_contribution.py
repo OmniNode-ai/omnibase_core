@@ -112,9 +112,6 @@ class ServiceRegistryCliContribution:
                 - Signature verification fails.
                 - A command ID collides with a different publisher's command.
 
-        Thread Safety:
-            This method is protected by the internal RLock.
-
         .. versionadded:: 1.0.0
         """
         publisher = contribution.publisher
@@ -170,9 +167,6 @@ class ServiceRegistryCliContribution:
         Returns:
             The ModelCliContribution if found, None otherwise.
 
-        Thread Safety:
-            This method is protected by the internal RLock.
-
         .. versionadded:: 1.0.0
         """
         with self._lock:
@@ -186,9 +180,6 @@ class ServiceRegistryCliContribution:
 
         Returns:
             The ModelCliCommandEntry if found, None otherwise.
-
-        Thread Safety:
-            This method is protected by the internal RLock.
 
         .. versionadded:: 1.0.0
         """
@@ -213,9 +204,6 @@ class ServiceRegistryCliContribution:
         Returns:
             True if the contract was found and removed, False if not found.
 
-        Thread Safety:
-            This method is protected by the internal RLock.
-
         .. versionadded:: 1.0.0
         """
         with self._lock:
@@ -232,9 +220,6 @@ class ServiceRegistryCliContribution:
         Returns:
             List of ModelCliContribution instances in insertion order.
 
-        Thread Safety:
-            This method is protected by the internal RLock.
-
         .. versionadded:: 1.0.0
         """
         with self._lock:
@@ -245,9 +230,6 @@ class ServiceRegistryCliContribution:
 
         Returns:
             Flat list of all ModelCliCommandEntry objects.
-
-        Thread Safety:
-            This method is protected by the internal RLock.
 
         .. versionadded:: 1.0.0
         """
@@ -263,9 +245,6 @@ class ServiceRegistryCliContribution:
         Returns:
             List of publisher IDs in insertion order.
 
-        Thread Safety:
-            This method is protected by the internal RLock.
-
         .. versionadded:: 1.0.0
         """
         with self._lock:
@@ -280,9 +259,6 @@ class ServiceRegistryCliContribution:
         Returns:
             True if registered, False otherwise.
 
-        Thread Safety:
-            This method is protected by the internal RLock.
-
         .. versionadded:: 1.0.0
         """
         with self._lock:
@@ -290,9 +266,6 @@ class ServiceRegistryCliContribution:
 
     def clear(self) -> None:
         """Remove all registered contracts.
-
-        Thread Safety:
-            This method is protected by the internal RLock.
 
         .. versionadded:: 1.0.0
         """
