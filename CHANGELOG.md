@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-02-28
+
+### Added
+
+- **Canonical ModelRewardAssignedEvent** [OMN-2928] (#579): Add `ModelRewardAssignedEvent` bridging producer and consumer for reward signal lifecycle tracking
+- **Docstring-aware AI-slop checker + pre-commit hook + CI gate** (#581): Add infrastructure to detect AI-generated slop in docstrings with pre-commit integration and CI enforcement gate
+
+### Fixed
+
+- **Canonical onex.evt.* topic alignment for validation events** [OMN-3042] (#583): Align validation event topics to canonical `onex.evt.*` format
+
+### Changed
+
+- **Remove redundant RLock docstrings** (#582): Remove 17 redundant identical RLock docstrings to reduce documentation noise
+- **Fix stale database_ref in example contract** (#580): Correct stale `database_ref` field in example contract
+
+### Dependencies
+
+- Pin `omnibase-spi==0.15.0` as part of coordinated platform release run release-20260228-a9b3f1
+
 ## [0.21.0] - 2026-02-27
 
 ### Changed

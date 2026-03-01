@@ -626,7 +626,7 @@ wheels = [
 
 [[package]]
 name = "omnibase-core"
-version = "0.21.0"
+version = "0.22.0"
 source = { editable = "." }
 dependencies = [
     { name = "blake3" },
@@ -636,6 +636,7 @@ dependencies = [
     { name = "dependency-injector" },
     { name = "httpx" },
     { name = "jsonschema" },
+    { name = "omnibase-spi" },
     { name = "pydantic" },
     { name = "pyyaml" },
 ]
@@ -693,6 +694,7 @@ requires-dist = [
     { name = "dependency-injector", specifier = ">=4.48.3,<5.0.0" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "jsonschema", specifier = ">=4.25.1,<5.0.0" },
+    { name = "omnibase-spi", specifier = "==0.15.0" },
     { name = "prometheus-client", marker = "extra == 'full'", specifier = ">=0.21.0,<1.0.0" },
     { name = "prometheus-client", marker = "extra == 'metrics'", specifier = ">=0.21.0,<1.0.0" },
     { name = "psutil", marker = "extra == 'cli'", specifier = ">=7.2.1" },
@@ -728,6 +730,20 @@ dev = [
     { name = "types-psutil", specifier = ">=7.2.1.20260116" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250822" },
     { name = "types-requests", specifier = ">=2.32.4.20250913" },
+]
+
+[[package]]
+name = "omnibase-spi"
+version = "0.15.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "omnibase-core" },
+    { name = "pydantic" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/36/53/cb1ff1f3fd19fa52f5324241d00c06fca2096bac2a151fb5bc51edef379e/omnibase_spi-0.15.0.tar.gz", hash = "sha256:12077a559032b819373ddf8073b33a5b1c80d7333b398b0d9ccd2b9b975d1009", size = 1113303, upload-time = "2026-03-01T00:01:46.487Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/66/0e/c9b2469692a6111c6c7aab23dbe55863adc6c7e084524098792c1614bd30/omnibase_spi-0.15.0-py3-none-any.whl", hash = "sha256:3082b4ef55c874dd4fd25b03bd5011ee9ef2b1c46521737196d985286f6b6046", size = 731825, upload-time = "2026-03-01T00:01:45.22Z" },
 ]
 
 [[package]]
