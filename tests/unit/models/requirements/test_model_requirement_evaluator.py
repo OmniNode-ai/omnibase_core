@@ -796,7 +796,7 @@ class TestCombinedTiers:
         )
 
     def test_all_tiers_perfect_provider(self) -> None:
-        """Perfect provider satisfies all tiers with full score."""
+        """Provider satisfying all tiers receives full score."""
         reqs = self._create_full_tier_requirements()
         perfect = {
             "region": "us-east-1",

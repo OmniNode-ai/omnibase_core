@@ -95,7 +95,7 @@ class NodeValidator(ABC):
             if not hasattr(cls, "descriptor") or not isinstance(
                 cls.descriptor, ModelValidatorDescriptor
             ):
-                raise TypeError(
+                raise TypeError(  # error-ok: Standard metaclass contract enforcement — TypeError is the Python convention for subclass misuse
                     f"Concrete NodeValidator subclass '{cls.__name__}' must define "
                     f"a class-level 'descriptor' of type ModelValidatorDescriptor. "
                     f"Example: descriptor = ModelValidatorDescriptor(validator_id='my_validator')"

@@ -4,8 +4,8 @@
 """
 Protocol for service discovery operations.
 
-This module provides the ProtocolServiceDiscovery protocol which defines
-the contract for service discovery implementations. It supports:
+ProtocolServiceDiscovery defines the contract for service discovery
+implementations. Supported capabilities:
 - Service registration and deregistration
 - Service lookup by name or tags
 - Health check integration
@@ -146,7 +146,7 @@ class ProtocolServiceDiscovery(Protocol):
         """
         ...
 
-    async def discover_services(
+    async def discover_services(  # ONEX_EXCLUDE: dict_str_any — protocol return type: service records have mixed field types
         self,
         service_name: str,
         tags: list[str] | None = None,
@@ -165,6 +165,7 @@ class ProtocolServiceDiscovery(Protocol):
         """
         ...
 
+    # ONEX_EXCLUDE: dict_str_any — protocol return type: service records have mixed field types
     async def get_service(self, service_id: str) -> dict[str, Any] | None:
         """
         Get a specific service instance by ID.
@@ -177,6 +178,7 @@ class ProtocolServiceDiscovery(Protocol):
         """
         ...
 
+    # ONEX_EXCLUDE: dict_str_any — protocol return type: health status dict has mixed value types
     async def get_service_health(self, service_id: str) -> dict[str, Any]:
         """
         Get health status for a specific service.

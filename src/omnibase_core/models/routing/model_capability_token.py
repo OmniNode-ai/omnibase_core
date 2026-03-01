@@ -52,7 +52,7 @@ class ModelCapabilityToken(BaseModel):
         description="Unique identifier for this token instance",
     )
 
-    subject_node_id: str = Field(
+    subject_node_id: str = Field(  # string-id-ok: node identifier can be a hostname, handler name, or other non-UUID identifier
         ...,
         description="Node that this token attests capabilities for",
         min_length=1,

@@ -41,7 +41,7 @@ class ModelValidatorDescriptor(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    validator_id: str = Field(
+    validator_id: str = Field(  # string-id-ok: human-readable snake_case validator name (e.g., 'naming_convention'), not a UUID
         description=(
             "Unique identifier for this validator. "
             "Must be stable across releases; used as the primary key in the registry. "

@@ -163,6 +163,15 @@ allowed_files:
     added: "2026-02-26"
     review: "2026-08-25"
 
+  - file: "src/omnibase_core/validation/validator_startup_contract.py"
+    reason: >-
+      Startup contract validation utility - must parse contract.yaml files at arbitrary runtime-determined
+      paths before any Pydantic model selection. The YAML is loaded raw to check structural validity (valid
+      YAML, top-level mapping) and surface human-readable warnings during node startup. No fixed Pydantic
+      model applies here since this validator handles contracts from any ONEX node.
+    added: "2026-03-01"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

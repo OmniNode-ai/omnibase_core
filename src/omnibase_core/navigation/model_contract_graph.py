@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
 """
@@ -45,6 +45,7 @@ class TransitionGuard(BaseModel):
         default_factory=frozenset,
         description="Capability strings the executing agent must possess",
     )
+    # string-version-ok: schema version guard string (e.g., '1.0.0'), flexible match not ModelSemVer
     required_schema_version: str | None = Field(
         default=None,
         description="Required schema version of the source state, or None for any",
@@ -159,17 +160,17 @@ class ContractTransition(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    transition_id: str = Field(
+    transition_id: str = Field(  # string-id-ok: graph transition identifier (human-readable name like 'call-datasource'), not a UUID
         ...,
         description="Unique identifier for this transition",
         min_length=1,
     )
-    source_state_id: str = Field(
+    source_state_id: str = Field(  # string-id-ok: graph state identifier (human-readable node name), not a UUID
         ...,
         description="node_id of the source ContractState",
         min_length=1,
     )
-    target_state_id: str = Field(
+    target_state_id: str = Field(  # string-id-ok: graph state identifier (human-readable node name), not a UUID
         ...,
         description="node_id of the target ContractState",
         min_length=1,
@@ -325,12 +326,14 @@ class RegistryTransitionDecl(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    # string-id-ok: human-readable transition name (e.g., 'compute→store'), not a UUID
     transition_id: str = Field(..., min_length=1)
     target_node_id: str = Field(..., min_length=1)
     input_types: tuple[str, ...] = Field(default=())
     output_types: tuple[str, ...] = Field(default=())
     preconditions: tuple[str, ...] = Field(default=())
     required_capabilities: tuple[str, ...] = Field(default=())
+    # string-version-ok: schema version guard string (e.g., '1.0.0'), flexible match not ModelSemVer
     required_schema_version: str | None = Field(default=None)
     policy_tier_max: int | None = Field(default=None)
     precondition_keys: tuple[str, ...] = Field(default=())
@@ -356,6 +359,7 @@ class RegistrySnapshot(BaseModel):
         default=(),
         description="All registered nodes in this snapshot",
     )
+    # string-id-ok: optional human-readable snapshot label, not a UUID
     snapshot_id: str = Field(
         default="",
         description="Optional identifier for this snapshot",

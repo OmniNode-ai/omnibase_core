@@ -44,6 +44,7 @@ class ModelResolutionRouteHop(BaseModel):
         ge=0,
     )
 
+    # string-id-ok: human-readable adapter/provider identifier, not a UUID
     adapter_id: str = Field(
         ...,
         description="Identifier of the resolved provider or adapter",

@@ -10,7 +10,7 @@ All findings must be structured; no free-form log strings as primary output.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -36,6 +36,7 @@ class ModelValidationFinding(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    # string-id-ok: human-readable validator name (e.g., 'naming_convention'), not a UUID
     validator_id: str = Field(
         description=(
             "Unique identifier of the validator that produced this finding. "
@@ -78,7 +79,7 @@ class ModelValidationFinding(BaseModel):
         ),
     )
 
-    evidence: dict[str, Any] = Field(
+    evidence: dict[str, str | int | float | bool | None] = Field(
         default_factory=dict,
         description=(
             "Structured, machine-readable evidence supporting this finding. "
@@ -88,6 +89,7 @@ class ModelValidationFinding(BaseModel):
         ),
     )
 
+    # string-id-ok: human-readable rule name (e.g., 'snake_case_rule'), not a UUID
     rule_id: str | None = Field(
         default=None,
         description=(

@@ -3,9 +3,8 @@
 
 """Unit tests for RendererReportHtml (OMN-1200).
 
-This module provides comprehensive tests for the HTML report renderer,
-which generates standalone or embedded HTML from evidence summaries
-with inline CSS for portability.
+Covers the HTML report renderer, which generates standalone or embedded
+HTML from evidence summaries with inline CSS for portability.
 
 Test Coverage:
 - Standalone vs embedded HTML modes
@@ -1188,7 +1187,7 @@ class TestRendererReportHtmlEdgeCases:
         self,
         sample_comparisons: list[ModelExecutionComparison],
     ) -> None:
-        """Perfect score summary should render with approve badge."""
+        """Score summary with 100% pass rate should render with approve badge."""
         summary = create_evidence_summary(
             total_executions=100,
             passed_count=100,

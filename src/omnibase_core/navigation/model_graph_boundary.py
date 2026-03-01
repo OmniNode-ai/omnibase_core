@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
 """
@@ -41,10 +41,11 @@ class NotInActionSet(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     kind: Literal["not_in_action_set"] = Field(default="not_in_action_set")
-    transition_id: str = Field(
+    transition_id: str = Field(  # string-id-ok: graph transition identifier (human-readable name), not a UUID
         ...,
         description="The transition_id that was not found in the action set",
     )
+    # string-id-ok: graph state identifier (human-readable name), not a UUID
     state_id: str = Field(
         ...,
         description="The state node_id at which the action was attempted",
@@ -57,7 +58,7 @@ class GuardFailed(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     kind: Literal["guard_failed"] = Field(default="guard_failed")
-    transition_id: str = Field(
+    transition_id: str = Field(  # string-id-ok: graph transition identifier (human-readable name), not a UUID
         ...,
         description="The transition_id whose guard failed",
     )
@@ -79,7 +80,7 @@ class PreconditionNotSatisfied(BaseModel):
     kind: Literal["precondition_not_satisfied"] = Field(
         default="precondition_not_satisfied"
     )
-    transition_id: str = Field(
+    transition_id: str = Field(  # string-id-ok: graph transition identifier (human-readable name), not a UUID
         ...,
         description="The transition_id whose precondition is not satisfied",
     )
@@ -106,7 +107,7 @@ class Valid(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     kind: Literal["valid"] = Field(default="valid")
-    transition_id: str = Field(
+    transition_id: str = Field(  # string-id-ok: graph transition identifier (human-readable name), not a UUID
         ...,
         description="The validated transition_id",
     )
@@ -189,14 +190,16 @@ class PlanStep(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    transition_id: str = Field(
+    transition_id: str = Field(  # string-id-ok: graph transition identifier (human-readable name), not a UUID
         ...,
         description="The transition to execute in this step",
     )
+    # string-id-ok: graph state identifier (human-readable name), not a UUID
     pre_state_id: str = Field(
         ...,
         description="Expected state node_id before this transition",
     )
+    # string-id-ok: graph state identifier (human-readable name), not a UUID
     post_state_id: str = Field(
         ...,
         description="Expected state node_id after this transition",
@@ -221,6 +224,7 @@ class RequiredTransitionNotInGraph(BaseModel):
     kind: Literal["required_transition_not_in_graph"] = Field(
         default="required_transition_not_in_graph"
     )
+    # string-id-ok: graph state identifier (human-readable name), not a UUID
     goal_node_id: str | None = Field(
         default=None,
         description="The goal node_id that could not be reached, if known",
@@ -293,6 +297,7 @@ class GoalAlreadySatisfied(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     kind: Literal["goal_already_satisfied"] = Field(default="goal_already_satisfied")
+    # string-id-ok: graph state identifier (human-readable name), not a UUID
     current_state_id: str = Field(
         ...,
         description="The state node_id that satisfies the goal",

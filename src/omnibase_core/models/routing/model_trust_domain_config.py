@@ -46,7 +46,7 @@ class ModelTrustDomainConfig(BaseModel):
             (e.g. local key store).
     """
 
-    domain_id: str = Field(
+    domain_id: str = Field(  # string-id-ok: hierarchical trust domain name using dot-notation (e.g., 'local.default'), not a UUID
         ...,
         min_length=1,
         max_length=256,
