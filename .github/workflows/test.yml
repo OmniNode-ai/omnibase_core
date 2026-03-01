@@ -66,7 +66,16 @@ jobs:
   # Must complete before test-parallel starts (fail-fast optimization)
   lint:
     name: Code Quality
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     timeout-minutes: 10
 
     steps:
@@ -102,7 +111,16 @@ jobs:
   # Pyright complements mypy (in lint job) - catches different type error categories
   pyright:
     name: Pyright Type Checking
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     timeout-minutes: 10
 
     steps:
@@ -132,7 +150,16 @@ jobs:
   # Quick check (~5 min) ensures __all__ exports are valid before expensive test splits
   exports-validation:
     name: Exports Validation
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     timeout-minutes: 5
 
     steps:
@@ -162,7 +189,16 @@ jobs:
   # Rationale: These scripts are CI tooling, not core library code
   mypy-validation-scripts:
     name: Mypy Validation Scripts
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     timeout-minutes: 5
 
     steps:
@@ -311,7 +347,16 @@ jobs:
   # Complements the Python-based check in mypy-validation-scripts with a simple grep scan
   core-infra-boundary:
     name: Core-Infra Boundary
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     timeout-minutes: 5
 
     steps:
@@ -343,7 +388,16 @@ jobs:
   # Rationale: Doc link validation is independent of code correctness
   docs-validation:
     name: Documentation Validation
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     timeout-minutes: 5
 
     steps:
@@ -376,7 +430,16 @@ jobs:
   # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
   node-purity-check:
     name: Node Purity Check
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     timeout-minutes: 5
 
     steps:
@@ -426,7 +489,16 @@ jobs:
   # - Use StrValueHelper for string serialization
   enum-governance:
     name: Enum Governance Check
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     timeout-minutes: 5
 
     steps:
@@ -466,7 +538,16 @@ jobs:
   # Uses detect-secrets-hook for proper baseline comparison (handles type+hash equality)
   detect-secrets:
     name: Detect Secrets
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     timeout-minutes: 5
 
     steps:
@@ -526,7 +607,16 @@ jobs:
   # Individual Phase 1 job names can change without updating branch protection rules.
   quality-gate:
     name: Quality Gate
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check, enum-governance, detect-secrets]
     if: always()
 
@@ -599,7 +689,16 @@ jobs:
   test-parallel:
     name: Tests (Split ${{ matrix.split }}/20)
     needs: [quality-gate]
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -662,7 +761,16 @@ jobs:
   # Shard count can change without updating branch protection rules.
   tests-gate:
     name: Tests Gate
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     needs: [test-parallel]
     if: always()
 
@@ -697,7 +805,16 @@ jobs:
   # but added for uniformity across all OmniNode repos.
   ci-summary:
     name: CI Summary
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     needs: [quality-gate, tests-gate]
     if: always()
 

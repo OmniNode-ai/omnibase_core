@@ -17,7 +17,16 @@ env:
 jobs:
   naming-conventions:
     name: Naming Convention Validation
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     # Pre-existing violations on main (9 as of activation). Non-blocking until resolved.
     # See: mixin_event_bus.py, mixin_health_check.py, util_compute_path_resolver.py,
     #      util_str_enum_base.py, model_github_pr_status_event.py
@@ -44,7 +53,16 @@ jobs:
 
   type-safety:
     name: Type Safety Validation
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -80,7 +98,16 @@ jobs:
 
   onex-compliance:
     name: ONEX Architecture Compliance
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -110,7 +137,16 @@ jobs:
 
   legacy-compatibility-check:
     name: Legacy Compatibility Check
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -137,7 +173,16 @@ jobs:
 
   ecosystem-validation:
     name: Ecosystem Integration Validation
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     if: github.repository_owner == 'OmniNode-ai' || github.repository_owner == 'jonahgabriel'
     steps:
       - name: Checkout code
@@ -165,7 +210,16 @@ jobs:
 
   node-purity-check:
     name: Node Purity Check
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -188,7 +242,16 @@ jobs:
 
   transport-boundary:
     name: Transport/I/O Import Boundary
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -198,7 +261,16 @@ jobs:
 
   ai-slop-check:
     name: AI-Slop Pattern Check (strict, PR diff)
-    runs-on: ubuntu-latest
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
     steps:
       - uses: actions/checkout@v4
         with:
