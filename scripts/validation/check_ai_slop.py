@@ -3,19 +3,31 @@
 # SPDX-License-Identifier: MIT
 
 """
-ONEX AI-Slop Pattern Checker
+ONEX AI-Slop Pattern Checker v1.0
 
 This pre-commit hook and CI gate detects AI-generated boilerplate ("slop") patterns
 in Python and Markdown files. Uses AST analysis for docstring patterns and line-based
 regex for non-docstring patterns.
 
-Checks performed:
+Rule set v1.0 (locked 2026-03-02, OMN-3191):
 - ERROR: sycophancy (sycophantic docstring openers: "Excellent", "Great", "Sure")
 - ERROR: rest_docstring (reST-style :param:, :type:, :returns:, :rtype:)
 - WARNING: boilerplate_docstring ("This module/class/function provides/implements/contains")
-- WARNING: step_narration ("# Step N:" comments)
+  Applies to Python docstrings (AST-based). Catches LLM-generated opener phrases.
+- WARNING: step_narration ("# Step N:" or "## Step N:" comments) — Markdown files ONLY.
+  Python inline "# Step N:" comments are legitimate ordered-step code documentation
+  and are NOT flagged. Only Markdown headings trigger this rule.
 - WARNING: md_separator (four-or-more = signs used as markdown separators in docstrings)
+  Applies to Python docstrings (AST-based). Catches LLM visual separators.
 - INFO: obvious_comment (self-evident inline comments, report mode only)
+
+Rule change log:
+  v1.0 (2026-03-02): step_narration scoped to Markdown files only.
+    Rationale: 48h post-rollout audit (OMN-3191) found "# Step N:" in Python code
+    triggers 110+ false positives in omniintelligence and omniclaude alone.
+    Python numbered steps ("# Step 1: Fetch session snapshot") are legitimate
+    multi-step function documentation. Only Markdown step headings are LLM slop.
+  v0.1 (2026-02-28, OMN-2971): initial rollout across 7 repos.
 
 Suppression:
     Add `# ai-slop-ok: reason` on:
@@ -33,7 +45,7 @@ Usage:
     python scripts/validation/check_ai_slop.py --strict [files...]
     python scripts/validation/check_ai_slop.py --report src/
 
-Linear ticket: OMN-2971
+Linear tickets: OMN-2971 (original), OMN-3191 (v1.0 tuning)
 """
 
 from __future__ import annotations
@@ -42,7 +54,6 @@ import ast
 import re
 import sys
 from pathlib import Path
-
 
 # ---------------------------------------------------------------------------
 # Data models
@@ -156,11 +167,7 @@ class _DocstringVisitor(ast.NodeVisitor):
                 return SUPPRESSION_MARKER in lines[lineno - 1]
             return False
 
-        return (
-            _check(def_lineno)
-            or _check(docstring_lineno)
-            or _check(def_lineno - 1)
-        )
+        return _check(def_lineno) or _check(docstring_lineno) or _check(def_lineno - 1)
 
     # ------------------------------------------------------------------
     # Docstring checker
@@ -280,8 +287,13 @@ def _check_lines(filename: str, source_lines: list[str]) -> list[SlopViolation]:
     Line-based regex checks for patterns that don't require AST analysis.
     Only applies outside of docstrings (we use a simple heuristic: skip
     lines inside triple-quoted strings by tracking quote depth).
+
+    step_narration is only checked in Markdown files (.md), not Python files.
+    In Python code, '# Step N:' is a legitimate ordered-step comment pattern
+    (e.g., documenting multi-step functions). In Markdown, it is LLM boilerplate.
     """
     violations: list[SlopViolation] = []
+    is_markdown = filename.endswith(".md")
 
     in_triple_quote = False
     triple_char = ""
@@ -306,23 +318,27 @@ def _check_lines(filename: str, source_lines: list[str]) -> list[SlopViolation]:
         if in_triple_quote:
             continue
 
-        # Step narration: "# Step N:" outside docstrings
-        comment_match = re.search(r"#(.+)", stripped)
-        if comment_match:
-            comment_text = comment_match.group(0)
-            if _STEP_NARRATION_RE.search(comment_text):
-                # Check for suppression on this line
-                if SUPPRESSION_MARKER not in stripped:
-                    violations.append(
-                        SlopViolation(
-                            filename=filename,
-                            line=lineno,
-                            check=CHECK_STEP_NARRATION,
-                            severity=SEVERITY_WARNING,
-                            message=f"Step narration comment: {comment_text.strip()!r}",
-                            source_line=stripped,
+        # Step narration: "# Step N:" — Markdown files only.
+        # Python inline comments like "# Step 1: Clone repo" are legitimate code
+        # documentation for ordered multi-step functions; only flag in .md files
+        # where "## Step N:" / "### Step N:" is LLM-generated structural boilerplate.
+        if is_markdown:
+            comment_match = re.search(r"#(.+)", stripped)
+            if comment_match:
+                comment_text = comment_match.group(0)
+                if _STEP_NARRATION_RE.search(comment_text):
+                    # Check for suppression on this line
+                    if SUPPRESSION_MARKER not in stripped:
+                        violations.append(
+                            SlopViolation(
+                                filename=filename,
+                                line=lineno,
+                                check=CHECK_STEP_NARRATION,
+                                severity=SEVERITY_WARNING,
+                                message=f"Step narration comment: {comment_text.strip()!r}",
+                                source_line=stripped,
+                            )
                         )
-                    )
 
     return violations
 
@@ -459,7 +475,9 @@ def main(argv: list[str] | None = None) -> int:
     # Filter by severity
     if not args.report:
         all_violations = [
-            v for v in all_violations if v.severity in (SEVERITY_ERROR, SEVERITY_WARNING)
+            v
+            for v in all_violations
+            if v.severity in (SEVERITY_ERROR, SEVERITY_WARNING)
         ]
 
     if args.json_output:
