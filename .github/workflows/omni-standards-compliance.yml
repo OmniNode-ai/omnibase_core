@@ -214,7 +214,7 @@ jobs:
             git fetch origin "${{ github.base_ref }}" --no-tags --depth=1
             git diff --name-only "origin/${{ github.base_ref }}"...HEAD -- '*.py' '*.md' \
               | grep -v '^CHANGELOG\.md$' \
-              > /tmp/changed_files.txt
+              > /tmp/changed_files.txt || true
           else
             git diff --name-only HEAD~1 -- '*.py' '*.md' 2>/dev/null \
               | grep -v '^CHANGELOG\.md$' \
