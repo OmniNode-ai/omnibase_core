@@ -22,11 +22,13 @@ Rule set v1.0 (locked 2026-03-02, OMN-3191):
 - INFO: obvious_comment (self-evident inline comments, report mode only)
 
 Rule change log:
-  v1.0 (2026-03-02): step_narration scoped to Markdown files only.
+  v1.0 (2026-03-02): step_narration scoped to Markdown files only; code fences skipped.
     Rationale: 48h post-rollout audit (OMN-3191) found "# Step N:" in Python code
     triggers 110+ false positives in omniintelligence and omniclaude alone.
     Python numbered steps ("# Step 1: Fetch session snapshot") are legitimate
     multi-step function documentation. Only Markdown step headings are LLM slop.
+    Code fence tracking added: lines inside ```...``` blocks in .md files are skipped
+    so that quoted Python examples in documentation are not flagged.
   v0.1 (2026-02-28, OMN-2971): initial rollout across 7 repos.
 
 Suppression:
@@ -291,34 +293,51 @@ def _check_lines(filename: str, source_lines: list[str]) -> list[SlopViolation]:
     step_narration is only checked in Markdown files (.md), not Python files.
     In Python code, '# Step N:' is a legitimate ordered-step comment pattern
     (e.g., documenting multi-step functions). In Markdown, it is LLM boilerplate.
+
+    For Markdown files, lines inside fenced code blocks (``` ... ```) are skipped
+    so that quoted Python examples with '# Step N:' comments are not flagged.
     """
     violations: list[SlopViolation] = []
     is_markdown = filename.endswith(".md")
 
     in_triple_quote = False
     triple_char = ""
+    in_md_code_fence = False
 
     for lineno, line in enumerate(source_lines, start=1):
         stripped = line.rstrip()
 
-        # Toggle triple-quote tracking (simple heuristic)
+        # Toggle triple-quote tracking for Python files (simple heuristic)
         # Count occurrences of """ and '''
-        for tq in ('"""', "'''"):
-            count = stripped.count(tq)
-            if count:
-                if not in_triple_quote:
-                    if count % 2 == 1:
-                        in_triple_quote = True
-                        triple_char = tq
-                elif tq == triple_char:
-                    if count % 2 == 1:
-                        in_triple_quote = False
-                        triple_char = ""
+        if not is_markdown:
+            for tq in ('"""', "'''"):
+                count = stripped.count(tq)
+                if count:
+                    if not in_triple_quote:
+                        if count % 2 == 1:
+                            in_triple_quote = True
+                            triple_char = tq
+                    elif tq == triple_char:
+                        if count % 2 == 1:
+                            in_triple_quote = False
+                            triple_char = ""
 
-        if in_triple_quote:
-            continue
+            if in_triple_quote:
+                continue
 
-        # Step narration: "# Step N:" — Markdown files only.
+        # For Markdown: track fenced code blocks (``` or ~~~) to skip their content.
+        # Lines inside code fences are quoted code examples, not prose patterns.
+        if is_markdown:
+            if stripped.startswith("```") or stripped.startswith("~~~"):
+                in_md_code_fence = not in_md_code_fence
+            if (
+                in_md_code_fence
+                or stripped.startswith("```")
+                or stripped.startswith("~~~")
+            ):
+                continue
+
+        # Step narration: "# Step N:" — Markdown files only, outside code fences.
         # Python inline comments like "# Step 1: Clone repo" are legitimate code
         # documentation for ordered multi-step functions; only flag in .md files
         # where "## Step N:" / "### Step N:" is LLM-generated structural boilerplate.
