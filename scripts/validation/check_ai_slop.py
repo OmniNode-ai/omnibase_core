@@ -328,13 +328,9 @@ def _check_lines(filename: str, source_lines: list[str]) -> list[SlopViolation]:
         # For Markdown: track fenced code blocks (``` or ~~~) to skip their content.
         # Lines inside code fences are quoted code examples, not prose patterns.
         if is_markdown:
-            if stripped.startswith("```") or stripped.startswith("~~~"):
+            if stripped.startswith(("```", "~~~")):
                 in_md_code_fence = not in_md_code_fence
-            if (
-                in_md_code_fence
-                or stripped.startswith("```")
-                or stripped.startswith("~~~")
-            ):
+            if in_md_code_fence or stripped.startswith(("```", "~~~")):
                 continue
 
         # Step narration: "# Step N:" — Markdown files only, outside code fences.
