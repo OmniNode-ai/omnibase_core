@@ -49,6 +49,7 @@ spec.loader.exec_module(check_ai_slop)
 
 SlopViolation: Any = check_ai_slop.SlopViolation
 check_file: Any = check_ai_slop.check_file
+_check_lines: Any = check_ai_slop._check_lines
 main: Any = check_ai_slop.main
 CHECK_SYCOPHANCY: str = check_ai_slop.CHECK_SYCOPHANCY
 CHECK_REST_DOCSTRING: str = check_ai_slop.CHECK_REST_DOCSTRING
@@ -75,8 +76,22 @@ def _write_py(tmp_path: Path, source: str) -> Path:
     return p
 
 
+def _write_md(tmp_path: Path, source: str) -> Path:
+    """Write Markdown content to a temp file and return its path."""
+    source = textwrap.dedent(source)
+    p = tmp_path / "test_subject.md"
+    p.write_text(source, encoding="utf-8")
+    return p
+
+
 def _violations_of(tmp_path: Path, source: str) -> list[Any]:
     return check_file(_write_py(tmp_path, source))
+
+
+def _violations_of_md(tmp_path: Path, source: str) -> list[Any]:
+    """Run line-based checks on Markdown content (no AST parsing)."""
+    p = _write_md(tmp_path, source)
+    return _check_lines(str(p), textwrap.dedent(source).splitlines())
 
 
 def _checks(violations: list[Any]) -> list[str]:
@@ -393,29 +408,29 @@ class TestStepNarration:
 
     def test_step_narration_colon(self, tmp_path: Path) -> None:
         source = """\
-            def fn() -> None:
-                # Step 1: Initialize the system
-                x = 1
+            ## Step 1: Initialize the system
+
+            Some prose here.
         """
-        violations = _violations_of(tmp_path, source)
+        violations = _violations_of_md(tmp_path, source)
         assert CHECK_STEP_NARRATION in _checks(violations)
 
     def test_step_narration_dash(self, tmp_path: Path) -> None:
         source = """\
-            def fn() -> None:
-                # Step 2 - Connect to database
-                pass
+            ## Step 2 - Connect to database
+
+            Some prose here.
         """
-        violations = _violations_of(tmp_path, source)
+        violations = _violations_of_md(tmp_path, source)
         assert CHECK_STEP_NARRATION in _checks(violations)
 
     def test_step_narration_is_warning(self, tmp_path: Path) -> None:
         source = """\
-            def fn() -> None:
-                # Step 3: Do the thing
-                pass
+            ## Step 3: Do the thing
+
+            Some prose here.
         """
-        violations = _violations_of(tmp_path, source)
+        violations = _violations_of_md(tmp_path, source)
         sn = [v for v in violations if v.check == CHECK_STEP_NARRATION]
         assert sn
         assert all(v.severity == SEVERITY_WARNING for v in sn)
