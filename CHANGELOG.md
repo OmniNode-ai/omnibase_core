@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-02-28
+
+### Added
+
+- **Canonical ModelRewardAssignedEvent** [OMN-2928] (#579): Add `ModelRewardAssignedEvent` bridging producer and consumer for reward signal lifecycle tracking
+- **Docstring-aware AI-slop checker + pre-commit hook + CI gate** (#581): Add infrastructure to detect AI-generated slop in docstrings with pre-commit integration and CI enforcement gate
+
+### Fixed
+
+- **Canonical onex.evt.* topic alignment for validation events** [OMN-3042] (#583): Align validation event topics to canonical `onex.evt.*` format
+
+### Changed
+
+- **Remove redundant RLock docstrings** (#582): Remove 17 redundant identical RLock docstrings to reduce documentation noise
+- **Fix stale database_ref in example contract** (#580): Correct stale `database_ref` field in example contract
+
+### Dependencies
+
+- Pin `omnibase-spi==0.15.0` as part of coordinated platform release run release-20260228-a9b3f1
+
 ## [0.21.0] - 2026-02-27
 
 ### Changed
@@ -2112,7 +2132,7 @@ Actions now include `lease_id` and `epoch` for idempotent retries, preventing du
 - [ ] Update error handling to use declarative patterns
 - [ ] Run tests to verify behavior
 
-#### Step 1: Update Imports
+#### Step 1: Update Imports <!-- ai-slop-ok: migration guide step headers -->
 ```python
 # Before (v0.3.x) - Old declarative import paths
 from omnibase_core.infrastructure.nodes.node_reducer_declarative import NodeReducerDeclarative
@@ -2121,7 +2141,7 @@ from omnibase_core.infrastructure.nodes.node_reducer_declarative import NodeRedu
 from omnibase_core.nodes import NodeReducer
 ```
 
-#### Step 2: Update Class Inheritance
+#### Step 2: Update Class Inheritance <!-- ai-slop-ok: migration guide step headers -->
 ```python
 # Before (v0.3.x)
 class MyReducer(NodeReducerBase):
@@ -2132,12 +2152,12 @@ class MyReducer(NodeReducer):
     pass
 ```
 
-#### Step 3: Adopt FSM/Workflow Patterns
+#### Step 3: Adopt FSM/Workflow Patterns <!-- ai-slop-ok: migration guide step headers -->
 - **Reducer nodes**: Implement `ModelIntent` emission instead of direct state updates
 - **Orchestrator nodes**: Use `ModelAction` with lease management for coordination
 - See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for detailed examples
 
-#### Step 4: Update Error Handling
+#### Step 4: Update Error Handling <!-- ai-slop-ok: migration guide step headers -->
 ```python
 # Before (v0.3.x) - Imperative error handling
 class MyReducer(NodeReducerBase):
