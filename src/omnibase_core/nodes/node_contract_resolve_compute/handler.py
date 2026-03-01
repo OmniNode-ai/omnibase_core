@@ -222,15 +222,14 @@ class NodeContractResolveCompute:
     # Internal helpers
     # ─────────────────────────────────────────────────────────────────────────
 
-    def _emit_event(self, event: object) -> None:
+    def _emit_event(self, event: object) -> None:  # stub-ok
         """Emit a lifecycle event.
 
-        In the base implementation events are emitted to stdout for
-        observability. A production container would inject a
-        ProtocolEventBus here via DI.
+        In the base implementation events are silently discarded (no-op).
+        A production container would inject a ProtocolEventBus here via DI.
 
         Args:
             event: The event model to emit.
         """
-        # fallback-ok: no event bus injected — log for local observability.
-        # Production DI replaces this with ProtocolEventBus.publish(event)
+        # fallback-ok: no event bus injected — intentional no-op for local dev.
+        # Production DI replaces this with ProtocolEventBus.publish(event).

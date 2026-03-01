@@ -105,13 +105,13 @@ class ValidatorRegistry:
             ValueError: If a validator with the same validator_id is already registered.
         """
         if not _is_validator_node_class(node_class):
-            raise TypeError(
+            raise TypeError(  # error-ok: Standard type guard for registry API boundary
                 f"node_class must be a subclass of NodeValidator, got {node_class!r}."
             )
         with self._lock:
             if descriptor.validator_id in self._entries:
                 existing_descriptor, _ = self._entries[descriptor.validator_id]
-                raise ValueError(
+                raise ValueError(  # error-ok: Standard validation error for duplicate registration
                     f"A validator with id '{descriptor.validator_id}' is already "
                     f"registered (class: {existing_descriptor.display_name or descriptor.validator_id!r}). "
                     f"Registry must not silently overwrite existing registrations. "
@@ -145,7 +145,7 @@ class ValidatorRegistry:
             ValueError: If the validator_id is already registered.
         """
         if not _is_validator_node_class(node_class):
-            raise TypeError(
+            raise TypeError(  # error-ok: Standard type guard for decorator API boundary
                 f"register_decorator can only be applied to NodeValidator subclasses, "
                 f"got {node_class!r}."
             )

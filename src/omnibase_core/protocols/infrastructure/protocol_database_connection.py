@@ -4,8 +4,8 @@
 """
 Protocol for database connection operations.
 
-This module provides the ProtocolDatabaseConnection protocol which defines
-the contract for database connection implementations. It supports:
+ProtocolDatabaseConnection defines the contract for database connection
+implementations. Supported capabilities:
 - Async connection lifecycle management
 - Query execution with parameterized queries
 - Transaction management with commit/rollback
@@ -113,7 +113,7 @@ class ProtocolDatabaseConnection(Protocol):
         """
         ...
 
-    async def execute(
+    async def execute(  # ONEX_EXCLUDE: dict_str_any — protocol return type: DB rows have arbitrary column types
         self,
         query: str,
         *args: object,

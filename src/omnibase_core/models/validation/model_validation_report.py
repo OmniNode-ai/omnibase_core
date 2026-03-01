@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import datetime
 import uuid
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -102,6 +102,7 @@ class ModelValidationFindingRef(BaseModel):
         )
     )
 
+    # string-id-ok: human-readable validator name (e.g., 'naming_convention'), not a UUID
     validator_id: str = Field(
         description="Validator that produced this finding.",
     )
@@ -125,6 +126,7 @@ class ModelValidationFindingEmbed(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    # string-id-ok: human-readable validator name (e.g., 'naming_convention'), not a UUID
     validator_id: str = Field(description="Validator that produced this finding.")
     severity: Literal["PASS", "WARN", "FAIL", "ERROR", "SKIP", "NOT_APPLICABLE"] = (
         Field(
@@ -134,10 +136,11 @@ class ModelValidationFindingEmbed(BaseModel):
     location: str | None = Field(default=None, description="File/line location.")
     message: str = Field(description="Human-readable description of the finding.")
     remediation: str | None = Field(default=None, description="How to fix the issue.")
-    evidence: dict[str, Any] = Field(
+    evidence: dict[str, str | int | float | bool | None] = Field(
         default_factory=dict,
         description="Structured machine-readable evidence.",
     )
+    # string-id-ok: human-readable rule name (e.g., 'snake_case_rule'), not a UUID
     rule_id: str | None = Field(
         default=None,
         description="Rule within the validator that produced this finding.",
@@ -304,6 +307,7 @@ class ModelValidationReport(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    # string-id-ok: report_id is a UUID serialised as str for JSON-serialisability
     report_id: str = Field(
         default_factory=lambda: str(uuid.uuid4()),
         description="UUID uniquely identifying this report instance.",

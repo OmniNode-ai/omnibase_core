@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
 """
@@ -52,6 +52,7 @@ class TypedAction(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    # string-id-ok: human-readable transition name (e.g., 'compute→store'), not a UUID
     transition_id: str = Field(
         ...,
         description="Unique identifier matching the ContractTransition",
@@ -61,11 +62,13 @@ class TypedAction(BaseModel):
         default="",
         description="Human-readable label for display",
     )
+    # string-id-ok: graph state identifier (human-readable node name), not a UUID
     source_state_id: str = Field(
         ...,
         description="node_id of the state this action is available at",
         min_length=1,
     )
+    # string-id-ok: graph state identifier (human-readable node name), not a UUID
     target_state_id: str = Field(
         ...,
         description="node_id of the resulting state after this action",

@@ -72,7 +72,7 @@ class ModelOverlayRef(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    overlay_id: str = Field(
+    overlay_id: str = Field(  # string-id-ok: overlay identifier is a human-readable slug (e.g., patch name), not a UUID
         ...,
         min_length=1,
         description="Stable identifier for the overlay.",
@@ -125,12 +125,12 @@ class ModelResolverBuild(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    core_version: str = Field(
+    core_version: str = Field(  # string-version-ok: runtime package version string from importlib.metadata, not a ModelSemVer
         default_factory=_omnibase_core_version,
         description="Installed version of omnibase_core.",
     )
 
-    node_version: str = Field(
+    node_version: str = Field(  # string-version-ok: node version string for audit metadata, not a ModelSemVer
         default="1.0.0",
         description="Version of the NodeContractResolveCompute node.",
     )

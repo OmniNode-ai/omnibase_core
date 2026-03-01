@@ -41,7 +41,7 @@ class ModelTrustDomain(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    domain_id: str = Field(
+    domain_id: str = Field(  # string-id-ok: hierarchical trust domain name (e.g., 'local.default', 'org.omninode'), not a UUID
         ...,
         description="Hierarchical trust domain identifier (e.g., 'local.default')",
         min_length=1,

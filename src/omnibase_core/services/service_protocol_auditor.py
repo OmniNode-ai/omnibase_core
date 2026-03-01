@@ -101,7 +101,7 @@ class _QualityIssue:
     line_number: int = 0
     column_number: int = 0
     message: str = ""
-    rule_id: str = ""
+    rule_id: str = ""  # string-id-ok: audit rule identifier (human-readable code like 'E001'), not a UUID
     suggested_fix: str | None = None
 
     async def get_issue_summary(self) -> str:

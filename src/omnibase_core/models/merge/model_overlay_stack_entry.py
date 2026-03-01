@@ -64,7 +64,7 @@ class ModelOverlayStackEntry(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    overlay_id: str = Field(
+    overlay_id: str = Field(  # string-id-ok: overlay identifier is a human-readable slug (e.g., 'org-defaults'), not a UUID
         ...,
         min_length=1,
         description="Stable identifier for this overlay (slug or UUID).",

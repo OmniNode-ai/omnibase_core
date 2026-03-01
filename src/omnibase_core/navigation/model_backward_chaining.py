@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
 """
@@ -123,7 +123,9 @@ class BackwardChainingPlanner:
             max_depth: Maximum search depth (plan length). Default: 10.
         """
         if max_depth < 1:
-            raise ValueError(f"max_depth must be >= 1, got {max_depth}")
+            raise ValueError(  # error-ok: Standard parameter validation at __init__ boundary
+                f"max_depth must be >= 1, got {max_depth}"
+            )
         self._max_depth = max_depth
 
     @property
