@@ -213,9 +213,11 @@ jobs:
           if [ -n "${{ github.base_ref }}" ]; then
             git fetch origin "${{ github.base_ref }}" --no-tags --depth=1
             git diff --name-only "origin/${{ github.base_ref }}"...HEAD -- '*.py' '*.md' \
+              | grep -v '^CHANGELOG\.md$' \
               > /tmp/changed_files.txt
           else
             git diff --name-only HEAD~1 -- '*.py' '*.md' 2>/dev/null \
+              | grep -v '^CHANGELOG\.md$' \
               > /tmp/changed_files.txt || true
           fi
           echo "count=$(wc -l < /tmp/changed_files.txt)" >> "$GITHUB_OUTPUT"

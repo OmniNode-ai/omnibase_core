@@ -358,6 +358,11 @@ repos:
         entry: uv run python scripts/validation/check_ai_slop.py
         types_or: [python, markdown]
         pass_filenames: true
+        # CHANGELOG.md is excluded because migration guide step headers (Step N: ...)
+        # are a systematic false positive for the step_narration detector.
+        # Numbered steps in changelogs and migration guides are genuine documentation,
+        # not AI-generated boilerplate. See OMN-3204.
+        exclude: ^CHANGELOG\.md$
         stages: [pre-commit]
 
       - id: validate-no-enhancement-prefixes
