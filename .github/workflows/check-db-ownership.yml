@@ -36,7 +36,7 @@ jobs:
          (github.event_name == 'push' ||
           github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
     timeout-minutes: 5
