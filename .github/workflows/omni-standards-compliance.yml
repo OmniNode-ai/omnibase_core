@@ -24,7 +24,7 @@ jobs:
          (github.event_name == 'push' ||
           github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
     # Pre-existing violations on main (9 as of activation). Non-blocking until resolved.
@@ -60,7 +60,7 @@ jobs:
          (github.event_name == 'push' ||
           github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
     steps:
@@ -105,7 +105,7 @@ jobs:
          (github.event_name == 'push' ||
           github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
     steps:
@@ -144,7 +144,7 @@ jobs:
          (github.event_name == 'push' ||
           github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
     steps:
@@ -180,7 +180,7 @@ jobs:
          (github.event_name == 'push' ||
           github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
     if: github.repository_owner == 'OmniNode-ai' || github.repository_owner == 'jonahgabriel'
@@ -217,7 +217,7 @@ jobs:
          (github.event_name == 'push' ||
           github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
     steps:
@@ -249,7 +249,7 @@ jobs:
          (github.event_name == 'push' ||
           github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
     steps:
@@ -268,7 +268,7 @@ jobs:
          (github.event_name == 'push' ||
           github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci","linux","x64"]')
+        && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
     steps:
