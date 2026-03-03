@@ -1,13 +1,11 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Core models for OmniBase - Core domain models only.
+"""Core domain models — configuration, envelopes, flags, topology, metadata.
 
-This module contains only core domain models to prevent circular dependencies.
-Other domains should import from their respective modules directly.
-
-Note: ModelSemVer is located in omnibase_core.models.primitives.model_semver.
-Import directly: from omnibase_core.models.primitives.model_semver import ModelSemVer
+Circular-dependency boundary: imports from this package must not reference
+transport, infra, or Kafka modules. For ModelSemVer import directly:
+``from omnibase_core.models.primitives.model_semver import ModelSemVer``.
 """
 
 # Configuration base classes
