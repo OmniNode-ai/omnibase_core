@@ -1,4 +1,5 @@
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 """Ticket Context Bundle -- provenance-stamped, TTL-bound context artifact."""
 
 from __future__ import annotations

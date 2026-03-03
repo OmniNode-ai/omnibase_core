@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 OmniNode Team
 """One-shot runner for NodeCrossRepoValidationOrchestrator.
 
 Loads onex_validation_policy.yaml, runs cross-repo validation against this

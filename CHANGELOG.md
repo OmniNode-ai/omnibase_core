@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-03-03
+
+### Added
+
+- **ModelTicketContextBundle — provenance-stamped TCB artifact** [OMN-3104] (#590): Add `ModelTicketContextBundle` with provenance stamping for TCB generation workflow
+- **NodeCrossRepoValidationOrchestrator scheduled CI** [OMN-3336] (#591): Wire cross-repo validation orchestrator to scheduled CI for automated drift detection
+
+### Fixed
+
+- **Self-hosted runner routing labels** [OMN-3273] (#589): Correct self-hosted runner routing labels across workflows
+
+### Changed
+
+- **Self-hosted runner routing rollout** (OMN-3279) (#588): Roll out self-hosted runner routing to omnibase_core CI workflows
+- **CHANGELOG excluded from AI-slop checker** [OMN-3204] (#586): Exclude CHANGELOG.md from AI-slop pattern detection to avoid false positives
+- **AI-slop checker v1.0 tuning** [OMN-3191] (#585): Scope `step_narration` pattern to markdown files only, reducing false positives in Python code
+- **Pre-commit violations cleanup** [OMN-3201] (#587): Fix remaining pre-commit violations across omnibase_core
+
 ## [0.22.0] - 2026-02-28
 
 ### Added
