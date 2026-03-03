@@ -55,6 +55,18 @@ from omnibase_core.models.ticket.model_requirement import (
     ModelRequirement,
     Requirement,
 )
+from omnibase_core.models.ticket.model_ticket_context_bundle import (
+    ModelTCBAssumption,
+    ModelTCBConstraint,
+    ModelTCBEntrypoint,
+    ModelTCBIntent,
+    ModelTCBNormalizedIntent,
+    ModelTCBPattern,
+    ModelTCBProvenance,
+    ModelTCBRelatedChange,
+    ModelTCBTestRecommendation,
+    ModelTicketContextBundle,
+)
 from omnibase_core.models.ticket.model_ticket_contract import (
     ModelTicketContract,
     TicketContract,
@@ -97,4 +109,15 @@ __all__ = [
     "TicketContract",
     # Constants
     "PHASE_ALLOWED_ACTIONS",
+    # TCB models
+    "ModelTicketContextBundle",
+    "ModelTCBIntent",
+    "ModelTCBNormalizedIntent",
+    "ModelTCBEntrypoint",
+    "ModelTCBRelatedChange",
+    "ModelTCBPattern",
+    "ModelTCBTestRecommendation",
+    "ModelTCBConstraint",
+    "ModelTCBAssumption",
+    "ModelTCBProvenance",
 ]
