@@ -1,0 +1,94 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 OmniNode Team
+#
+# cross-repo-validation.yml — Scheduled cross-repo contract validation
+#
+# Invokes NodeCrossRepoValidationOrchestrator daily on the self-hosted runner.
+# Emits lifecycle events to the local Kafka/Redpanda bus so that the omnidash
+# event-consumer can project results into validation_runs and make the
+# Validation Dashboard Live.
+#
+# Requirements (self-hosted runner environment):
+#   KAFKA_BOOTSTRAP_SERVERS — defaults to localhost:19092 in the script
+#
+# Ticket: OMN-3336
+
+name: Cross-Repo Validation
+
+on:
+  schedule:
+    # Daily at 07:00 UTC (after baselines-scheduler runs at 06:00)
+    - cron: '0 7 * * *'
+  # Also run on pushes to main to keep the dashboard current
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_kafka:
+        description: 'Skip Kafka emission (validation-only dry run)'
+        required: false
+        default: 'false'
+
+env:
+  UV_VERSION: "0.8.3"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  cross-repo-validation:
+    name: Cross-Repo Validation
+    # Self-hosted runner preferred: provides Kafka access for event emission
+    # Falls back to ubuntu-latest (validation runs, Kafka emission skipped)
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
+    timeout-minutes: 20
+    # Validation findings are informational — do not block merges
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run cross-repo validation
+        env:
+          ROOT: ${{ github.workspace }}
+          KAFKA_BOOTSTRAP_SERVERS: ${{ github.event.inputs.skip_kafka == 'true' && '' || 'localhost:19092' }}
+        run: uv run python scripts/run_cross_repo_validation.py
+
+      - name: Post summary
+        if: always()
+        run: |
+          echo "## Cross-Repo Validation (OMN-3336)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Ran NodeCrossRepoValidationOrchestrator to populate Validation Dashboard." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Events emitted to Kafka topics:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`onex.evt.validation.cross-repo-run-started.v1\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`onex.evt.validation.cross-repo-violations-batch.v1\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`onex.evt.validation.cross-repo-run-completed.v1\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Results projected into omnidash \`validation_runs\` table." >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 OmniNode Team
+#
+# Cross-repo validation policy for omnibase_core.
+#
+# This policy is used by NodeCrossRepoValidationOrchestrator (OMN-3336) to
+# run automated validation on a schedule and emit events to omnidash's
+# Validation Dashboard via Kafka topics:
+#   - onex.evt.validation.cross-repo-run-started.v1
+#   - onex.evt.validation.cross-repo-violations-batch.v1
+#   - onex.evt.validation.cross-repo-run-completed.v1
+#
+# Invoked by: .github/workflows/cross-repo-validation.yml
+# Runner script: scripts/run_cross_repo_validation.py
+---
+policy_id: omnibase_core_validation
+policy_version:
+  major: 1
+  minor: 0
+  patch: 0
+repo_id: omnibase_core
+
+discovery:
+  include_globs:
+    - "src/**/*.py"
+  exclude_globs:
+    - "**/__pycache__/**"
+    - "**/__init__.py"
+    - "**/test_*.py"
+    - "**/tests/**"
+
+rules:
+  repo_boundaries:
+    enabled: true
+    severity: error
+    ownership:
+      "omnibase_core.": omnibase_core
+    # omnibase_core must not import transport-layer packages (ADR-005)
+    forbidden_import_prefixes:
+      - "aiokafka"
+      - "asyncpg"
+      - "aiohttp"
+      - "httpx"
+      - "redis"
+    allowed_cross_repo_prefixes: []
+
+baselines: []
