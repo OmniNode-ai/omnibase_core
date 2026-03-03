@@ -1,13 +1,11 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Core models for OmniBase - Core domain models only.
+"""Core domain models — configuration, envelopes, flags, topology, metadata.
 
-This module contains only core domain models to prevent circular dependencies.
-Other domains should import from their respective modules directly.
-
-Note: ModelSemVer is located in omnibase_core.models.primitives.model_semver.
-Import directly: from omnibase_core.models.primitives.model_semver import ModelSemVer
+Circular-dependency boundary: imports from this package must not reference
+transport, infra, or Kafka modules. For ModelSemVer import directly:
+``from omnibase_core.models.primitives.model_semver import ModelSemVer``.
 """
 
 # Configuration base classes
@@ -19,6 +17,11 @@ from .model_custom_fields_accessor import ModelCustomFieldsAccessor
 
 # Custom properties pattern
 from .model_custom_properties import ModelCustomProperties
+
+# Deployment topology models (OMN-3490)
+from .model_deployment_topology import ModelDeploymentTopology
+from .model_deployment_topology_local_config import ModelDeploymentTopologyLocalConfig
+from .model_deployment_topology_service import ModelDeploymentTopologyService
 
 # Event envelope patterns
 from .model_envelope_metadata import ModelEnvelopeMetadata
@@ -135,6 +138,10 @@ except ImportError:
 __all__ = [
     # Storage checkpoint metadata pattern
     "ModelStorageCheckpointMetadata",
+    # Deployment topology models (OMN-3490)
+    "ModelDeploymentTopology",
+    "ModelDeploymentTopologyLocalConfig",
+    "ModelDeploymentTopologyService",
     # Configuration base classes
     "ModelConfigurationBase",
     "ModelTypedConfiguration",

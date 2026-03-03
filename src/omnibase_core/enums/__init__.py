@@ -103,6 +103,9 @@ from .enum_decision_type import EnumDecisionType
 from .enum_demo_recommendation import EnumDemoRecommendation
 from .enum_demo_verdict import EnumDemoVerdict
 
+# Deployment mode enum (OMN-3490)
+from .enum_deployment_mode import EnumDeploymentMode
+
 # Detection and security enums
 from .enum_detection_type import EnumDetectionType
 
@@ -572,6 +575,8 @@ __all__ = [
     # Architecture and system domain
     "EnumArchitecture",
     "EnumLogFormat",
+    # Deployment mode domain (OMN-3490)
+    "EnumDeploymentMode",
     # Communication domain
     "EnumMappingType",
     "EnumMessageType",
