@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Ticket contract models for contract-driven ticket execution.
+"""Ticket contract and context bundle models.
 
-This module provides the foundation for the /ticket-work skill automation system.
-It defines workflow phases, allowed actions, verification steps, and gates
-for structured ticket processing.
+Exports TicketContract (contract-driven ticket execution with phases, actions,
+verification steps, and gates) and ModelTicketContextBundle (provenance-stamped,
+TTL-bound context artifact for ticket work).
 
 Example:
     >>> from omnibase_core.models.ticket import (
@@ -55,6 +55,18 @@ from omnibase_core.models.ticket.model_requirement import (
     ModelRequirement,
     Requirement,
 )
+from omnibase_core.models.ticket.model_ticket_context_bundle import (
+    ModelTCBAssumption,
+    ModelTCBConstraint,
+    ModelTCBEntrypoint,
+    ModelTCBIntent,
+    ModelTCBNormalizedIntent,
+    ModelTCBPattern,
+    ModelTCBProvenance,
+    ModelTCBRelatedChange,
+    ModelTCBTestRecommendation,
+    ModelTicketContextBundle,
+)
 from omnibase_core.models.ticket.model_ticket_contract import (
     ModelTicketContract,
     TicketContract,
@@ -97,4 +109,15 @@ __all__ = [
     "TicketContract",
     # Constants
     "PHASE_ALLOWED_ACTIONS",
+    # TCB models
+    "ModelTicketContextBundle",
+    "ModelTCBIntent",
+    "ModelTCBNormalizedIntent",
+    "ModelTCBEntrypoint",
+    "ModelTCBRelatedChange",
+    "ModelTCBPattern",
+    "ModelTCBTestRecommendation",
+    "ModelTCBConstraint",
+    "ModelTCBAssumption",
+    "ModelTCBProvenance",
 ]
