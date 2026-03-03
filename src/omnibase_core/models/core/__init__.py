@@ -20,6 +20,11 @@ from .model_custom_fields_accessor import ModelCustomFieldsAccessor
 # Custom properties pattern
 from .model_custom_properties import ModelCustomProperties
 
+# Deployment topology models (OMN-3490)
+from .model_deployment_topology import ModelDeploymentTopology
+from .model_deployment_topology_local_config import ModelDeploymentTopologyLocalConfig
+from .model_deployment_topology_service import ModelDeploymentTopologyService
+
 # Event envelope patterns
 from .model_envelope_metadata import ModelEnvelopeMetadata
 from .model_environment_accessor import ModelEnvironmentAccessor
@@ -135,6 +140,10 @@ except ImportError:
 __all__ = [
     # Storage checkpoint metadata pattern
     "ModelStorageCheckpointMetadata",
+    # Deployment topology models (OMN-3490)
+    "ModelDeploymentTopology",
+    "ModelDeploymentTopologyLocalConfig",
+    "ModelDeploymentTopologyService",
     # Configuration base classes
     "ModelConfigurationBase",
     "ModelTypedConfiguration",
