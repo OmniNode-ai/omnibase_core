@@ -19,8 +19,6 @@ from collections.abc import Callable
 
 import pytest
 
-from tests.performance.conftest import ci_threshold, ci_upper_threshold
-
 from omnibase_core.models.pipeline import (
     ModelPhaseExecutionPlan,
     ModelPipelineContext,
@@ -33,6 +31,7 @@ from omnibase_core.pipeline.runner_pipeline import (
     HookCallable,
     RunnerPipeline,
 )
+from tests.performance.conftest import ci_threshold, ci_upper_threshold
 
 # ===== Test Fixture Factories =====
 

@@ -14,14 +14,13 @@ import time
 
 import pytest
 
-from tests.performance.conftest import ci_threshold, ci_upper_threshold
-
 from omnibase_core.models.contracts.model_dependency import (
     EnumDependencyType,
     ModelDependency,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from tests.performance.conftest import ci_threshold, ci_upper_threshold
 
 
 @pytest.mark.performance

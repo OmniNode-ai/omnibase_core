@@ -13,9 +13,8 @@ from uuid import UUID
 
 import pytest
 
-from tests.performance.conftest import ci_threshold, ci_upper_threshold
-
 from omnibase_core.container.container_service_registry import ServiceRegistry
+from tests.performance.conftest import ci_threshold, ci_upper_threshold
 
 # ===== Dynamic Interface and Implementation Factories =====
 
