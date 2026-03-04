@@ -20,6 +20,7 @@ from omnibase_core.models.contracts.model_dependency import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from tests.performance.conftest import ci_threshold, ci_upper_threshold
 
 
 @pytest.mark.performance
@@ -148,11 +149,11 @@ class TestModelDependencyPerformance:
         #   * System load from concurrent pytest-xdist workers
         # - Still catches actual regressions (>3.0s = >333μs per operation vs 140μs baseline)
         # - Per-operation threshold: 0.25ms (updated for parallel execution variance)
-        assert security_time < 3.0, (
-            f"Security validation too slow: {security_time:.2f}s (threshold: 3.0s for parallel execution)"
+        assert security_time < ci_upper_threshold(3.0), (
+            f"Security validation too slow: {security_time:.2f}s (threshold: {ci_upper_threshold(3.0):.1f}s)"
         )
-        assert avg_security_time_ms < 0.25, (
-            f"Average security check too slow: {avg_security_time_ms:.3f}ms (threshold: 0.25ms for parallel execution)"
+        assert avg_security_time_ms < ci_upper_threshold(0.25), (
+            f"Average security check too slow: {avg_security_time_ms:.3f}ms (threshold: {ci_upper_threshold(0.25):.3f}ms)"
         )
         assert rejected_count >= 7000, (
             f"Expected ≥7000 security rejections, got {rejected_count}"
@@ -206,11 +207,11 @@ class TestModelDependencyPerformance:
         avg_creation_time_ms = (creation_time / created_count) * 1000
 
         # Performance targets
-        assert creation_time < 2.0, (
-            f"Dependency creation too slow: {creation_time:.2f}s"
+        assert creation_time < ci_upper_threshold(2.0), (
+            f"Dependency creation too slow: {creation_time:.2f}s (threshold: {ci_upper_threshold(2.0):.1f}s)"
         )
-        assert avg_creation_time_ms < 0.5, (
-            f"Average creation too slow: {avg_creation_time_ms:.3f}ms"
+        assert avg_creation_time_ms < ci_upper_threshold(0.5), (
+            f"Average creation too slow: {avg_creation_time_ms:.3f}ms (threshold: {ci_upper_threshold(0.5):.3f}ms)"
         )
         assert created_count == 10000, f"Expected 10000 creations, got {created_count}"
 
@@ -276,9 +277,11 @@ class TestModelDependencyPerformance:
         avg_pattern_time_ms = (pattern_time / total_pattern_operations) * 1000
 
         # Performance targets
-        assert pattern_time < 1.0, f"Pattern validation too slow: {pattern_time:.2f}s"
-        assert avg_pattern_time_ms < 0.1, (
-            f"Average pattern check too slow: {avg_pattern_time_ms:.3f}ms"
+        assert pattern_time < ci_upper_threshold(1.0), (
+            f"Pattern validation too slow: {pattern_time:.2f}s (threshold: {ci_upper_threshold(1.0):.1f}s)"
+        )
+        assert avg_pattern_time_ms < ci_upper_threshold(0.1), (
+            f"Average pattern check too slow: {avg_pattern_time_ms:.3f}ms (threshold: {ci_upper_threshold(0.1):.3f}ms)"
         )
         assert pattern_matches >= 5000, (
             f"Expected ≥5000 pattern matches, got {pattern_matches}"
@@ -345,7 +348,9 @@ class TestModelDependencyPerformance:
         analysis_time = time.perf_counter() - start_time
 
         # Performance targets
-        assert creation_time < 3.0, f"Large set creation too slow: {creation_time:.2f}s"
+        assert creation_time < ci_upper_threshold(3.0), (
+            f"Large set creation too slow: {creation_time:.2f}s (threshold: {ci_upper_threshold(3.0):.1f}s)"
+        )
         assert analysis_time < 0.1, f"Large set analysis too slow: {analysis_time:.2f}s"
 
         # Verify correctness
@@ -512,8 +517,12 @@ class TestModelDependencyPerformance:
         throughput = total_ops / overall_time
 
         # Performance targets for stress test
-        assert overall_time < 10.0, f"Stress test too slow: {overall_time:.2f}s"
-        assert throughput > 1000, f"Stress throughput too low: {throughput:.1f} ops/sec"
+        assert overall_time < ci_upper_threshold(10.0), (
+            f"Stress test too slow: {overall_time:.2f}s (threshold: {ci_upper_threshold(10.0):.1f}s)"
+        )
+        assert throughput > ci_threshold(1000), (
+            f"Stress throughput too low: {throughput:.1f} ops/sec (threshold: {ci_threshold(1000):.0f} ops/sec)"
+        )
         assert total_successes > total_failures, (
             f"Too many failures: {total_failures}/{total_ops}"
         )
