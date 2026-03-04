@@ -4,14 +4,8 @@
 """
 Pure transformation functions for contract-driven NodeCompute v1.0.
 
-This module provides a collection of pure transformation functions for processing
-data in compute pipelines. Each function follows the pattern (data, config) -> result
-with no side effects and deterministic output.
-
-Thread Safety:
-    All functions in this module are pure and stateless - safe for concurrent use.
-    Each function operates only on its input parameters and produces a new result
-    without modifying any shared state.
+Each function has the signature ``(data, config) -> result`` with no side effects
+and deterministic output. All functions are stateless and safe for concurrent use.
 
 Supported Transformations:
     - IDENTITY: Pass-through transformation (no change)
