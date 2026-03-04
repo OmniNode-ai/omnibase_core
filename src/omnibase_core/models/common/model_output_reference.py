@@ -7,9 +7,9 @@ Output Reference Model.
 Strongly-typed model for referencing outputs from other graph nodes.
 Follows ONEX canonical patterns with strict typing - no Any types allowed.
 
-This module provides the ``ModelOutputReference`` class for defining
-typed data flow references between nodes in the ONEX execution graph.
-It replaces untyped ``dict[str, str]`` patterns with validated references.
+``ModelOutputReference`` defines typed data flow references between
+nodes in the ONEX execution graph, replacing untyped ``dict[str, str]``
+patterns with validated references.
 
 The source_reference format is "node_id.output_name" which is validated
 to ensure proper structure and prevent malformed references at runtime.
@@ -36,7 +36,7 @@ See Also:
     - :class:`ModelOutputMapping`: Container for multiple output references.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
 
@@ -73,6 +73,7 @@ class ModelOutputReference(BaseModel):
         description="Reference to source output in format 'node_id.output_name'",
         min_length=3,  # Minimum: "a.b"
         max_length=512,
+        pattern=r"^[^.]+\..+$",
     )
     local_name: str = Field(
         default=...,
@@ -90,23 +91,6 @@ class ModelOutputReference(BaseModel):
         description="Optional transformation to apply (e.g., 'json_parse', 'to_string')",
         max_length=256,
     )
-
-    @field_validator("source_reference")
-    @classmethod
-    def validate_source_reference_format(cls, v: str) -> str:
-        """Validate that source_reference contains exactly one dot separator."""
-        if "." not in v:
-            # error-ok: Pydantic validator requires ValueError
-            raise ValueError(
-                f"source_reference must be in format 'node_id.output_name', got: {v}"
-            )
-        parts = v.split(".", 1)
-        if len(parts) != 2 or not parts[0] or not parts[1]:
-            # error-ok: Pydantic validator requires ValueError
-            raise ValueError(
-                f"source_reference must have non-empty node_id and output_name, got: {v}"
-            )
-        return v
 
     @property
     def source_node_id(self) -> str:

@@ -4,7 +4,8 @@
 """
 Typed configuration schema model for mixins.
 
-This module provides strongly-typed configuration schemas for mixin patterns.
+Supports two input formats for mixin config: structured (explicit properties)
+and flat (JSON Schema style), with automatic conversion between them.
 """
 
 from typing import Self
@@ -133,7 +134,6 @@ class ModelMixinConfigSchema(BaseModel):
         undefined_required = required_set - property_names
 
         if undefined_required:
-            # error-ok: Pydantic validator requires ValueError
             raise ValueError(
                 f"required_properties contains undefined properties: "
                 f"{sorted(undefined_required)}. "
