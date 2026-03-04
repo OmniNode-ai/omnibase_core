@@ -1,16 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CLI commands for omnibase_core.
-
-This module provides the main CLI entry point using Click.
-The entry point 'onex' is configured in pyproject.toml.
-
-Usage:
-    onex --help
-    onex --version
-    onex validate src/
-"""
+"""CLI commands for omnibase_core."""
 
 from __future__ import annotations
 
