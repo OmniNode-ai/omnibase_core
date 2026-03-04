@@ -200,9 +200,7 @@ class TestModelMappingConfig:
         """Test that empty field_mappings raises validation error."""
         import pytest
 
-        with pytest.raises(
-            ValueError, match="Dictionary should have at least 1 item"
-        ):
+        with pytest.raises(ValueError, match="Dictionary should have at least 1 item"):
             ModelMappingConfig(field_mappings={})
 
 
