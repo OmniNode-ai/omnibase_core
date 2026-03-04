@@ -4,7 +4,7 @@
 """
 ONEX event bus protocol for distributed messaging infrastructure.
 
-This module provides the ProtocolEventBus protocol definition
+The ProtocolEventBus protocol definition
 for the main event bus interface. It combines Publisher, Subscriber,
 and Lifecycle protocols following the Interface Segregation Principle (ISP).
 

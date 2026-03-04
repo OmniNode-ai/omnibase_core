@@ -3,7 +3,7 @@
 
 """Observability emission models and cardinality policies.
 
-This module provides models for metrics emission, log emission,
+Models for metrics emission, log emission,
 and cardinality policy enforcement for the ONEX observability stack.
 
 Metrics Emission Models:

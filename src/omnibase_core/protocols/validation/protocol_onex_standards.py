@@ -4,7 +4,7 @@
 """
 Protocol definition for ONEX ecosystem architectural standards and conventions.
 
-This module provides the ProtocolONEXStandards protocol which defines and
+The ProtocolONEXStandards protocol which defines and
 validates ONEX naming conventions, directory structure requirements, and
 forbidden patterns.
 

@@ -4,7 +4,7 @@
 """
 Topic naming model for ONEX message routing.
 
-This module provides ModelTopicNaming, a Pydantic model that generates
+ModelTopicNaming, a Pydantic model that generates
 canonical Kafka topic names based on domain and message category.
 
 Topic Naming Convention:

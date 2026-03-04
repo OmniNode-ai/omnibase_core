@@ -4,7 +4,7 @@
 """
 ModelRuntimeNodeInstance - Lightweight execution wrapper for ONEX nodes.
 
-This module provides the ModelRuntimeNodeInstance class, which serves as a lightweight
+The ModelRuntimeNodeInstance class, which serves as a lightweight
 wrapper around node execution. It handles lifecycle management (initialize/shutdown)
 and envelope reception, delegating actual execution to EnvelopeRouter.
 
@@ -145,7 +145,7 @@ class ModelRuntimeNodeInstance(BaseModel):
     - Manages lifecycle (initialize, shutdown)
     - Receives envelopes and delegates to runtime
 
-    This class contains NO business logic or I/O operations. All execution
+    NO business logic or I/O operations. All execution
     is delegated to the EnvelopeRouter via execute_with_handler().
 
     Attributes:
@@ -394,7 +394,7 @@ class ModelRuntimeNodeInstance(BaseModel):
         2. Delegates to runtime.execute_with_handler()
         3. Returns the response envelope
 
-        This method contains NO execution logic - it purely delegates.
+        NO execution logic - it purely delegates.
         All handler dispatch, error handling, observability, and transaction
         management is the responsibility of the runtime.
 

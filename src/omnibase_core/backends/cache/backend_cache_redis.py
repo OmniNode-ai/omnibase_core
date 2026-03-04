@@ -4,7 +4,7 @@
 """
 BackendCacheRedis - Redis/Valkey implementation of ProtocolCacheBackend.
 
-This module provides an async Redis backend for L2 distributed caching
+An async Redis backend for L2 distributed caching
 with MixinCaching. It supports connection pooling, JSON serialization,
 and TTL enforcement.
 

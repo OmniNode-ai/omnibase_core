@@ -4,7 +4,7 @@
 """
 Typed data model for graph nodes.
 
-This module provides strongly-typed data for graph node patterns.
+Strongly-typed data for graph node patterns.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

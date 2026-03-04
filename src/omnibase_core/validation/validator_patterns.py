@@ -4,7 +4,7 @@
 """
 ValidatorPatterns - Contract-driven validator for ONEX code patterns.
 
-This module provides the ValidatorPatterns class for analyzing Python source
+The ValidatorPatterns class for analyzing Python source
 code to detect pattern violations that may indicate ONEX compliance issues.
 
 The validator uses AST analysis to find:

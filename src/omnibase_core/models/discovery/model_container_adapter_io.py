@@ -3,7 +3,7 @@
 
 """Input/Output models for Container Adapter tool.
 
-This module provides convenience imports for all Container Adapter models
+Convenience imports for all Container Adapter models
 for current standards while following ONEX one-model-per-file standard.
 """
 

@@ -4,7 +4,7 @@
 """
 Replay infrastructure injectors and executor.
 
-This module provides implementations for deterministic replay:
+Implementations for deterministic replay:
 
 - **ServiceRNGInjector**: RNG injection for deterministic replay (from services.replay)
 - **ServiceTimeInjector**: Time injection for deterministic replay (from services.replay)

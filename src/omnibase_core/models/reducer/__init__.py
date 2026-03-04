@@ -4,7 +4,7 @@
 """
 Reducer models for ONEX NodeReducer operations.
 
-This module provides models for FSM-driven state management:
+Models for FSM-driven state management:
 - ModelReducerInput: Input model for reduction operations
 - ModelReducerOutput: Output model with intents for side effects
 - ModelReducerContext: Handler context (deliberately excludes time injection)
@@ -14,8 +14,8 @@ This module provides models for FSM-driven state management:
 - UtilStreamingWindow: Time-based windowing for streaming (moved from ModelStreamingWindow)
 
 Deprecated Aliases (OMN-1071)
-=============================
-This module provides deprecated aliases for classes renamed in v0.4.0.
+-----------------------------
+Deprecated aliases for classes renamed in v0.4.0.
 The following aliases will be removed in a future version:
 
 - ``ModelConflictResolver`` -> use ``UtilConflictResolver``

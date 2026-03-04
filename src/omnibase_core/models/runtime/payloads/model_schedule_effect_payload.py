@@ -4,7 +4,7 @@
 """
 ModelScheduleEffectPayload - Typed payload for SCHEDULE_EFFECT directives.
 
-This module provides the ModelScheduleEffectPayload model for scheduling
+The ModelScheduleEffectPayload model for scheduling
 effect node execution in the runtime.
 
 Example:

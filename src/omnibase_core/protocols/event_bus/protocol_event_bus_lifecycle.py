@@ -4,7 +4,7 @@
 """
 Protocol for event bus lifecycle management (ISP - Interface Segregation Principle).
 
-This module provides the ProtocolEventBusLifecycle protocol definition
+The ProtocolEventBusLifecycle protocol definition
 for components that need to manage event bus lifecycle, without requiring
 the full ProtocolEventBus interface.
 

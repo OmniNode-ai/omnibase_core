@@ -3,7 +3,7 @@
 
 """Shared validators for ONEX metadata models.
 
-This module provides reusable validator functions for common metadata fields
+Reusable validator functions for common metadata fields
 shared between ModelOnexMetadata and ModelMetadataBlock.
 
 These validators are designed to be used with Pydantic's @field_validator

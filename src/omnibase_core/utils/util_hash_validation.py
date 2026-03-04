@@ -3,7 +3,7 @@
 
 """Shared hash format validation utilities.
 
-This module provides reusable hash format validation for Pydantic models
+Reusable hash format validation for Pydantic models
 that need to validate hash strings in the "algorithm:hexdigest" format.
 
 The pattern supports various hash algorithms (sha256, md5, sha1, etc.)

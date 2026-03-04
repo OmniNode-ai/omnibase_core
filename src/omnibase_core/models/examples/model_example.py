@@ -4,7 +4,7 @@
 """
 Example model for examples collection.
 
-This module provides the ModelExample class for strongly typed
+The ModelExample class for strongly typed
 example data with comprehensive fields and validation.
 """
 

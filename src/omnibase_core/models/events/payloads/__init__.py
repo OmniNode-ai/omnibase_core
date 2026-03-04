@@ -4,7 +4,7 @@
 """
 Typed event payload models for ONEX coordination I/O.
 
-This module provides typed payload models for use with ModelEventPublishIntent
+Typed payload models for use with ModelEventPublishIntent
 and other event coordination patterns. Using typed payloads instead of
 dict[str, Any] enables compile-time type checking and runtime validation.
 

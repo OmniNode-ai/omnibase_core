@@ -4,7 +4,7 @@
 """
 Helper functions for error code mapping and registration.
 
-This module provides utility functions for mapping EnumOnexStatus to CLI exit codes
+Utility functions for mapping EnumOnexStatus to CLI exit codes
 and for component-specific error code registration.
 
 NOTE: The enum classes (EnumCLIExitCode, EnumOnexErrorCode, EnumCoreErrorCode,
@@ -16,7 +16,7 @@ Import them from their new locations:
   - from omnibase_core.enums.enum_registry_error_code import EnumRegistryErrorCode
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
+-----------------------------------------------
 This module is early in the import chain and must remain free of circular dependencies.
 
 Safe Runtime Imports:

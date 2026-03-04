@@ -4,7 +4,7 @@
 """
 TypedDict definition for signature optional parameters.
 
-This module provides a TypedDict for optional parameters used in signature
+A TypedDict for optional parameters used in signature
 factory methods, following ONEX TypedDict naming conventions.
 """
 

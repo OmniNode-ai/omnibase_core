@@ -65,7 +65,7 @@ class MixinToolExecution:
         """
         Handle tool execution request events.
 
-        This method handles tool.execution.request events received via the event bus.
+        Tool.execution.request events received via the event bus.
         """
         event = envelope.payload
 

@@ -4,7 +4,7 @@
 """
 Protocol for service factory operations.
 
-This module provides the ProtocolServiceFactory protocol which
+The ProtocolServiceFactory protocol which
 defines the interface for service instance creation with dependency
 injection support and lifecycle management.
 

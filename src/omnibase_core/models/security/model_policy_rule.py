@@ -5,7 +5,7 @@
 
 Individual policy rule with conditions and actions for trust policy evaluation.
 
-This module provides ModelPolicyRule, which defines individual rules within a
+ModelPolicyRule, which defines individual rules within a
 ModelTrustPolicy. Each rule specifies conditions that must be matched and
 security requirements (signatures, algorithms, compliance) that must be met.
 

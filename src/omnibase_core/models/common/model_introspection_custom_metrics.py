@@ -4,7 +4,7 @@
 """
 Typed custom metrics model for introspection additional info.
 
-This module provides strongly-typed metrics for introspection patterns.
+Strongly-typed metrics for introspection patterns.
 """
 
 from pydantic import BaseModel, Field

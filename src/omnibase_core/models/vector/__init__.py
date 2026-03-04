@@ -3,7 +3,7 @@
 
 """Vector store domain models for ONEX SPI handler protocols.
 
-This module provides typed Pydantic models for vector store operations,
+Typed Pydantic models for vector store operations,
 replacing untyped dict[str, Any] placeholders in SPI handler protocols.
 
 The models are organized into these categories:

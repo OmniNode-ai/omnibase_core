@@ -4,7 +4,7 @@
 """
 Action parameters model for typed action execution parameters.
 
-This module provides ModelActionParameters, a typed model for action execution
+ModelActionParameters, a typed model for action execution
 parameters that replaces untyped dict[str, ModelSchemaValue] fields. It captures
 common action execution configuration with explicit typed fields while allowing
 domain-specific extensions through a typed extensions field.

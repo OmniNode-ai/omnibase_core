@@ -4,7 +4,7 @@
 """
 Contract Validation Pipeline Phases.
 
-This module contains validators for each phase of the contract validation pipeline:
+Validators for each phase of the contract validation pipeline:
     - Phase 1 (PATCH): Validates individual patches before merge
     - Phase 2 (MERGE): Validates merged contracts before expansion
     - Phase 3 (EXPANDED): Validates fully expanded contracts

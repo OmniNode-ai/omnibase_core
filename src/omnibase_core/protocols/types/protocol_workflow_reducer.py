@@ -4,7 +4,7 @@
 """
 ProtocolWorkflowReducer - Protocol for workflow reducers.
 
-This module provides the protocol definition for nodes that implement
+The protocol definition for nodes that implement
 the reducer pattern with synchronous and asynchronous dispatch capabilities.
 """
 

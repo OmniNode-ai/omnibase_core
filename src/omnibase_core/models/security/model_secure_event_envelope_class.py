@@ -5,7 +5,7 @@
 
 Cryptographically signed event envelope with enterprise security features.
 
-This module provides the ModelSecureEventEnvelope class which extends the base
+The ModelSecureEventEnvelope class which extends the base
 event envelope with digital signatures, PKI certificates, trust policies,
 encrypted payloads, and compliance metadata for secure multi-hop routing in
 enterprise environments.

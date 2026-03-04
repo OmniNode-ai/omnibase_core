@@ -3,7 +3,7 @@
 
 """Application context module for ONEX framework.
 
-This module provides context-variable based container management
+Context-variable based container management
 using Python's contextvars for thread-safe and async-safe isolation.
 
 Key Features:

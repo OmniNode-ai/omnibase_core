@@ -4,7 +4,7 @@
 """
 Intent to upsert a node registration in PostgreSQL.
 
-This module provides the ModelPostgresUpsertRegistrationIntent class for
+The ModelPostgresUpsertRegistrationIntent class for
 declaring node registration persistence to PostgreSQL. This is a core intent
 that participates in the discriminated union pattern for type-safe handling.
 

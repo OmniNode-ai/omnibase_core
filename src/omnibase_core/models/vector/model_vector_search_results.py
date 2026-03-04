@@ -3,7 +3,7 @@
 
 """Vector search results container model.
 
-This module provides the ModelVectorSearchResults class for representing
+The ModelVectorSearchResults class for representing
 the complete results of a vector similarity search operation.
 
 Thread Safety:

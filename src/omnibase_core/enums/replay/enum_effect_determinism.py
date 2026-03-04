@@ -4,7 +4,7 @@
 """
 EnumEffectDeterminism - Effect determinism classification enum for replay.
 
-This module provides the EnumEffectDeterminism enum that classifies effects
+The EnumEffectDeterminism enum that classifies effects
 based on their determinism characteristics for replay safety enforcement.
 
 Design:

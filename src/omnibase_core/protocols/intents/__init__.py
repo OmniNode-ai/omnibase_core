@@ -4,7 +4,7 @@
 """
 Intent-related protocols for the ONEX framework.
 
-This module provides protocol definitions for intent-related contracts,
+Protocol definitions for intent-related contracts,
 including registration records used with PostgreSQL upsert intents.
 
 Protocols:

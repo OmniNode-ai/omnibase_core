@@ -3,7 +3,7 @@
 
 """User context model for user and session tracking.
 
-This module provides ModelUserContext, a typed context model for
+ModelUserContext, a typed context model for
 tracking user identifiers, session IDs, and tenant information.
 
 Thread Safety:

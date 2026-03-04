@@ -4,7 +4,7 @@
 """
 ProtocolCapabilityProvider - Protocol for capability providers.
 
-This module provides the protocol definition for objects that provide
+The protocol definition for objects that provide
 node capabilities and contract-derived capabilities for auto-discovery.
 
 OMN-1124: Protocol for capability-based auto-discovery and registration.

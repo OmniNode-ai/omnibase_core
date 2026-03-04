@@ -4,7 +4,7 @@
 """
 Action Configuration Value Model - Discriminated union and factory functions.
 
-This module provides the discriminator function and factory functions for creating
+The discriminator function and factory functions for creating
 typed config values. The discriminated union type is a Union of
 ModelActionConfigStringValue, ModelActionConfigNumericValue, and
 ModelActionConfigBooleanValue.

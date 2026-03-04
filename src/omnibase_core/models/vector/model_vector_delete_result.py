@@ -3,7 +3,7 @@
 
 """Vector delete result model.
 
-This module provides the ModelVectorDeleteResult class for representing
+The ModelVectorDeleteResult class for representing
 the result of a vector deletion operation.
 
 Thread Safety:

@@ -4,7 +4,7 @@
 """
 Unified CLI interface for all omnibase_core validation tools.
 
-This module provides a single entry point for all validation tools,
+A single entry point for all validation tools,
 making it easy for other repositories to use validation functionality.
 
 Usage:

@@ -4,7 +4,7 @@
 """
 Core infrastructure intents module.
 
-This module provides typed intent variants for core infrastructure workflows
+Typed intent variants for core infrastructure workflows
 using the discriminated union pattern. For extension/plugin intents, use
 omnibase_core.models.reducer.model_intent.ModelIntent instead.
 

@@ -9,7 +9,7 @@ and workflow_executor.py to avoid duplication and ensure consistency.
 These constants define normative constraints per ONEX v1.0.x specification.
 
 Constants Map - ONEX Constants Architecture
-===========================================
+-------------------------------------------
 
 The ONEX framework organizes constants across multiple files based on their
 domain and usage patterns. Understanding this architecture is critical for

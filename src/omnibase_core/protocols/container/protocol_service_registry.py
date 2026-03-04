@@ -4,7 +4,7 @@
 """
 Protocol for service registry operations.
 
-This module provides the ProtocolServiceRegistry protocol which
+The ProtocolServiceRegistry protocol which
 provides dependency injection service registration and management.
 Supports the complete service lifecycle including registration,
 resolution, injection, and disposal.

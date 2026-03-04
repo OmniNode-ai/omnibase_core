@@ -23,7 +23,7 @@ class ManifestLogger:
     """
     Logs and outputs manifests in various formats.
 
-    This class provides static methods to convert execution manifests
+    Static methods to convert execution manifests
     into different output formats for display, storage, or analysis.
 
     Supported formats:

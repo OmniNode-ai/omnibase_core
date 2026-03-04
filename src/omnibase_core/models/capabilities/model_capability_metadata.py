@@ -4,7 +4,7 @@
 """
 Capability metadata model for documentation and discovery.
 
-This module provides the ModelCapabilityMetadata model that describes
+The ModelCapabilityMetadata model that describes
 what a capability is, its requirements, and example providers. This is
 metadata about capabilities for documentation and discovery purposes,
 NOT runtime registration.

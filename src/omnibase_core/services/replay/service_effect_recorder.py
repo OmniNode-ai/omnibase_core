@@ -4,7 +4,7 @@
 """
 ServiceEffectRecorder - Effect recorder for deterministic replay.
 
-This module provides the default ProtocolEffectRecorder implementation for
+The default ProtocolEffectRecorder implementation for
 capturing and replaying effects in the ONEX pipeline.
 
 Design:

@@ -4,7 +4,7 @@
 """
 Protocol definition for validation error objects.
 
-This module provides the ProtocolValidationError protocol which represents
+The ProtocolValidationError protocol which represents
 a single validation error with type, message, context, and severity information.
 
 Design Principles:

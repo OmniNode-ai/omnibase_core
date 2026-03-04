@@ -4,7 +4,7 @@
 """
 Base class for core infrastructure intents.
 
-This module provides the ModelCoreIntent base class that all core infrastructure
+The ModelCoreIntent base class that all core infrastructure
 intents inherit from. Core intents use a discriminated union pattern for
 type-safe, exhaustive handling.
 

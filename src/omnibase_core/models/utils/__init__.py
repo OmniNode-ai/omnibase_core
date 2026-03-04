@@ -4,7 +4,7 @@
 """
 Utility models for YAML processing, contract validation, and data conversion.
 
-This module provides utility models that support core ONEX operations including
+Utility models that support core ONEX operations including
 YAML serialization, contract validation, and field conversion between different
 representations.
 

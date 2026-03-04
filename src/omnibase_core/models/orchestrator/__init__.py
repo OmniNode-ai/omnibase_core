@@ -4,7 +4,7 @@
 """
 Orchestrator models for ONEX workflow coordination.
 
-This module provides models for workflow-driven coordination in the ONEX
+Models for workflow-driven coordination in the ONEX
 4-node architecture. Orchestrators manage multi-step workflows with parallel
 execution, dependency resolution, and load balancing capabilities.
 

@@ -4,7 +4,7 @@
 """
 Sentinel value for missing configuration paths.
 
-This module provides a singleton sentinel to distinguish "path not found"
+A singleton sentinel to distinguish "path not found"
 from "value is None" during config override traversal.
 
 .. versionadded:: 0.4.0

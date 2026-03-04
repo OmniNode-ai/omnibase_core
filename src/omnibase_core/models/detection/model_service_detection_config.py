@@ -4,7 +4,7 @@
 """
 Service Detection Configuration Model for ONEX Configuration-Driven Registry System.
 
-This module provides the ModelServiceDetectionConfig for service detection and health checking.
+The ModelServiceDetectionConfig for service detection and health checking.
 Extracted from model_service_configuration.py for modular architecture compliance.
 
 """

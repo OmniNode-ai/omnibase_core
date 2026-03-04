@@ -4,7 +4,7 @@
 """
 Intent to deregister a service from Consul.
 
-This module provides the ModelConsulDeregisterIntent class for declaring
+The ModelConsulDeregisterIntent class for declaring
 service deregistration from Consul service discovery. This is a core intent
 that participates in the discriminated union pattern for type-safe handling.
 

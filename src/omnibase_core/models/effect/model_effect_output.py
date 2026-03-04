@@ -4,7 +4,7 @@
 """
 Output model for NodeEffect operations.
 
-This module provides the ModelEffectOutput model that wraps side effect
+The ModelEffectOutput model that wraps side effect
 operation results with comprehensive transaction status, timing metrics,
 and execution metadata for observability and error recovery.
 

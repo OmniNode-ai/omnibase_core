@@ -4,7 +4,7 @@
 """
 ProtocolHandlerRegistry - Protocol for handler registry abstraction.
 
-This module provides the protocol definition for handler registries used by
+The protocol definition for handler registries used by
 the dispatch engine and mixin components. The protocol abstracts the handler
 registry interface, enabling dependency inversion and testability.
 

@@ -860,7 +860,7 @@ class ModelNodeType(BaseModel):
             ```
 
         Note:
-            This method provides a hook for custom validation logic.
+            A hook for custom validation logic.
             Override in subclasses to implement specific validation
             requirements. Pydantic validation occurs automatically
             during instantiation and assignment.

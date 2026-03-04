@@ -4,7 +4,7 @@
 """
 ServiceHandlerRegistry - Thread-safe registry for message handlers.
 
-This module provides the ServiceHandlerRegistry class for managing handler
+The ServiceHandlerRegistry class for managing handler
 registrations in the dispatch engine. Handlers are the execution units that
 process messages after routing.
 

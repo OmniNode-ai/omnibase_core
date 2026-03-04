@@ -14,7 +14,7 @@ Validates workflow DAGs using Kahn's algorithm for topological sorting with:
 - Disabled step handling in DAG validation
 - DAG invariant validation for disabled steps
 
-This module provides comprehensive workflow validation utilities following
+Comprehensive workflow validation utilities following
 the patterns established in validator_fsm_analysis.py and dag_validator.py.
 
 ONEX Compliance:

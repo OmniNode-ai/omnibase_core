@@ -474,7 +474,7 @@ def _convert_dict_value(
 def _convert_value(value: Any, schema_cls: type[ModelSchemaValue]) -> Any:
     """Convert a value (list or dict) to ModelSchemaValue format.
 
-    This function handles conversion of raw values to ModelSchemaValue instances.
+    Conversion of raw values to ModelSchemaValue instances.
     It preserves the collection type (list vs dict) to ensure proper field semantics.
 
     Args:

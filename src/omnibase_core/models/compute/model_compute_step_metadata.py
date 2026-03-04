@@ -4,7 +4,7 @@
 """
 Metadata for a single pipeline step execution.
 
-This module provides the ModelComputeStepMetadata model that captures execution
+The ModelComputeStepMetadata model that captures execution
 metrics and observability information for individual pipeline steps. This data
 is essential for performance monitoring, debugging, and optimization.
 

@@ -4,7 +4,7 @@
 """
 Type aliases for effect operation results.
 
-This module provides centralized type aliases for effect operation result types,
+Centralized type aliases for effect operation result types,
 eliminating the need for scattered inline unions throughout the codebase.
 
 These type aliases follow ONEX patterns by:

@@ -4,7 +4,7 @@
 """
 Replay services module.
 
-This module contains services for the replay infrastructure including:
+Services for the replay infrastructure including:
 
 - **InjectorRNG**: RNG injection for deterministic replay
 - **InjectorTime**: Time injection for deterministic replay

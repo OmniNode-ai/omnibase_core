@@ -4,7 +4,7 @@
 """
 Standard error handling decorators for ONEX framework.
 
-This module provides decorators that eliminate error handling boilerplate
+Decorators that eliminate error handling boilerplate
 and ensure consistent error patterns across all tools, especially important
 for agent-generated tools.
 

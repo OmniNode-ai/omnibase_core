@@ -4,7 +4,7 @@
 """
 ValidatorContractLinter - Contract-driven YAML contract file validator.
 
-This module provides the ValidatorContractLinter class for validating ONEX
+The ValidatorContractLinter class for validating ONEX
 contract YAML files for compliance with ONEX standards.
 
 The validator checks:

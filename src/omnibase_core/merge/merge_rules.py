@@ -4,7 +4,7 @@
 """
 Merge rules for contract patching system.
 
-This module implements the core merge semantics for combining base contracts
+The core merge semantics for combining base contracts
 with patch overlays. These rules form the foundation of the typed contract
 merge engine, enabling environment-specific customizations.
 

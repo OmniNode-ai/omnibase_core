@@ -3,7 +3,7 @@
 
 """TypedDict definitions for mixin return types.
 
-This module provides strongly-typed dictionaries for use in mixins,
+Strongly-typed dictionaries for use in mixins,
 replacing generic dict[str, Any] patterns with specific typed structures.
 """
 

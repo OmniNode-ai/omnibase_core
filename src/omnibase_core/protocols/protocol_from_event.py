@@ -4,7 +4,7 @@
 """
 Protocol for classes supporting construction from ModelOnexEvent.
 
-This module provides a runtime-checkable protocol for type-safe checking of
+A runtime-checkable protocol for type-safe checking of
 the from_event class method pattern used by input state classes that can be
 constructed from ONEX events.
 

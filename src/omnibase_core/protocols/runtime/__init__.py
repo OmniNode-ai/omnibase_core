@@ -4,7 +4,7 @@
 """
 Runtime protocols for ONEX EnvelopeRouter and handler integration.
 
-This module provides Core-native protocol definitions for runtime handlers.
+Core-native protocol definitions for runtime handlers.
 These protocols establish the contracts that handler implementations (in SPI
 or other packages) must satisfy, enabling dependency inversion.
 

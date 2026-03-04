@@ -4,7 +4,7 @@
 """
 Protocol for service registry status information.
 
-This module provides the ProtocolServiceRegistryStatus protocol which
+The ProtocolServiceRegistryStatus protocol which
 defines the interface for comprehensive registry status reporting
 including registration statistics, health monitoring, and performance metrics.
 """

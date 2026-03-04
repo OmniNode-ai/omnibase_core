@@ -4,7 +4,7 @@
 """
 ONEX HTTP client protocol for dependency inversion.
 
-This module provides the ProtocolHttpClient and ProtocolHttpResponse protocol
+The ProtocolHttpClient and ProtocolHttpResponse protocol
 definitions, enabling dependency inversion for HTTP client implementations.
 Components can depend on these protocols instead of concrete HTTP libraries
 (aiohttp, httpx, requests), allowing for easier testing and implementation swapping.

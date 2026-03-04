@@ -4,7 +4,7 @@
 """
 Shared validators for common patterns.
 
-This module provides reusable Pydantic validators for common data patterns:
+Reusable Pydantic validators for common data patterns:
 - ISO 8601 duration strings (e.g., "PT1H30M", "P1D")
 - BCP 47 locale tags (e.g., "en-US", "fr-FR", "zh-Hans-CN") - simplified validator
 - UUID strings (with or without hyphens)

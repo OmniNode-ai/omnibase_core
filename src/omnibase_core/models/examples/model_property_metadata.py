@@ -4,7 +4,7 @@
 """
 Property metadata model for environment properties.
 
-This module provides the ModelPropertyMetadata class for storing metadata
+The ModelPropertyMetadata class for storing metadata
 about individual properties in the environment property system.
 """
 

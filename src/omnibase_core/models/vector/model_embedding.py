@@ -3,7 +3,7 @@
 
 """Embedding model for vector store operations.
 
-This module provides the ModelEmbedding class for representing a single
+The ModelEmbedding class for representing a single
 embedding vector with associated metadata.
 
 Thread Safety:

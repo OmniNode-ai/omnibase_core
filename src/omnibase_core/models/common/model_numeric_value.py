@@ -8,7 +8,7 @@ Type-safe numeric value container that replaces int | float unions
 with structured validation and proper type handling.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
+-----------------------------------------------
 This module is part of a carefully managed import chain to avoid circular dependencies.
 To avoid circular imports with error_codes, we use TYPE_CHECKING for type hints
 and runtime imports in validators that need to raise errors.

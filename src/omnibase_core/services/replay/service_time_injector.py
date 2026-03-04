@@ -4,7 +4,7 @@
 """
 ServiceTimeInjector - Time injector for deterministic replay.
 
-This module provides the default ProtocolTimeService implementation for
+The default ProtocolTimeService implementation for
 controlled time injection in the ONEX pipeline.
 
 Design:

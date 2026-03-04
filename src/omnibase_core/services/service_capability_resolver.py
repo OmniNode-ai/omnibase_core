@@ -4,7 +4,7 @@
 """
 ServiceCapabilityResolver - Resolves capability dependencies to provider bindings.
 
-This service implements the ProtocolCapabilityResolver protocol, providing the
+The ProtocolCapabilityResolver protocol, providing the
 core resolution engine for matching capability-based dependencies declared in
 handler contracts to concrete provider bindings.
 

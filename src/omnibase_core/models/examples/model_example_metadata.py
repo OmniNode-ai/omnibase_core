@@ -4,7 +4,7 @@
 """
 Example metadata model for examples collection.
 
-This module provides the ModelExampleMetadata class for metadata
+The ModelExampleMetadata class for metadata
 about example collections with enhanced structure.
 """
 

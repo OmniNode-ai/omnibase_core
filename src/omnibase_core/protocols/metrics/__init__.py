@@ -4,7 +4,7 @@
 """
 Metrics Protocol Module - Backend abstractions for metrics collection.
 
-This module provides protocol definitions for metrics backends,
+Protocol definitions for metrics backends,
 enabling pluggable metrics implementations (Prometheus, StatsD, OpenTelemetry, etc.)
 while maintaining a consistent interface.
 

@@ -3,7 +3,7 @@
 
 """Vector batch store result model.
 
-This module provides the ModelVectorBatchStoreResult class for representing
+The ModelVectorBatchStoreResult class for representing
 the result of a batch embedding store operation.
 
 Thread Safety:

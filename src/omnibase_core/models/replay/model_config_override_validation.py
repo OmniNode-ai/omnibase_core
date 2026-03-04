@@ -4,7 +4,7 @@
 """
 Validation result for configuration overrides.
 
-This module provides the ModelConfigOverrideValidation model which represents
+The ModelConfigOverrideValidation model which represents
 validation results for config overrides, checking path existence, type
 compatibility, and override consistency.
 

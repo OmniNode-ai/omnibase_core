@@ -4,7 +4,7 @@
 """
 Infrastructure protocols for database and service discovery.
 
-This module provides protocols for infrastructure-level concerns:
+Protocols for infrastructure-level concerns:
 - Database connections with async lifecycle and transaction support
 - Service discovery for distributed deployments
 

@@ -65,7 +65,7 @@ class ModelOnexInternalOutputState(BaseModel):
         """
         Convert internal state to boundary state for external consumption.
 
-        This method handles the conversion from required UUID fields back to
+        The conversion from required UUID fields back to
         Optional UUID fields for external APIs that expect the boundary model.
 
         Returns:

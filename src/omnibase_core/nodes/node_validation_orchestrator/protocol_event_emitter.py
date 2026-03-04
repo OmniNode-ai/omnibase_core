@@ -4,7 +4,7 @@
 """
 Protocol for event emission in validation orchestrator.
 
-This module provides the protocol interface for event emission,
+The protocol interface for event emission,
 allowing dependency injection of the event bus.
 
 Related ticket: OMN-1776

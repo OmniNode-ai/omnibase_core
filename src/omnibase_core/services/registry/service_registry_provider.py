@@ -4,7 +4,7 @@
 """
 ServiceRegistryProvider - In-memory thread-safe registry for provider descriptors.
 
-This module provides the ServiceRegistryProvider class for managing ModelProviderDescriptor
+The ServiceRegistryProvider class for managing ModelProviderDescriptor
 instances at runtime. The registry supports registration, lookup, and filtering
 of providers by capability and tags.
 

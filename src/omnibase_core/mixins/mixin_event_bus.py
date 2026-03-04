@@ -379,7 +379,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             The check-and-bind logic is now inlined into bind_*() methods
             and executed atomically under the mixin lock to prevent race conditions.
 
-        This method implements runtime misuse detection for thread-unsafe
+        Runtime misuse detection for thread-unsafe
         binding patterns. The behavior depends on the STRICT_BINDING_MODE class variable:
 
         - STRICT_BINDING_MODE = True (default): Raises ModelOnexError with INVALID_STATE.

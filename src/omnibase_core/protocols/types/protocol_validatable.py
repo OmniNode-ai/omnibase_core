@@ -4,7 +4,7 @@
 """
 ProtocolValidatable - Protocol for validatable objects.
 
-This module provides the protocol definition for objects that can be validated.
+The protocol definition for objects that can be validated.
 """
 
 from __future__ import annotations

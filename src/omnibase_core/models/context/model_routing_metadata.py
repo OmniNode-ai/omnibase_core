@@ -4,7 +4,7 @@
 """
 Routing metadata model for service routing and load balancing.
 
-This module provides ModelRoutingMetadata, a typed model for routing-related
+ModelRoutingMetadata, a typed model for routing-related
 metadata that replaces untyped dict[str, ModelSchemaValue] fields. It captures
 routing configuration for service discovery, load balancing, and traffic
 management.

@@ -4,7 +4,7 @@
 """
 Phase Sequencer for Runtime Execution Sequencing.
 
-This module provides functions for converting execution profiles and handler
+Functions for converting execution profiles and handler
 mappings into executable plans. It validates phase list integrity and enforces
 canonical phase ordering.
 
@@ -63,7 +63,7 @@ def get_canonical_phase_order() -> list[EnumHandlerExecutionPhase]:
 
     The canonical order is: PREFLIGHT -> BEFORE -> EXECUTE -> AFTER -> EMIT -> FINALIZE
 
-    This function provides a single source of truth for phase ordering
+    A single source of truth for phase ordering
     across the codebase.
 
     Returns:

@@ -4,7 +4,7 @@
 """
 ONEX Secret Management Models and Utilities.
 
-This module provides compatibility imports for secret management
+Compatibility imports for secret management
 models that have been extracted to separate files as part of nm_arch_003.
 
 All models have been enhanced with enterprise-grade features including:

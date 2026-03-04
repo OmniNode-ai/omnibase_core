@@ -4,7 +4,7 @@
 """
 Forward reference resolver utility for Pydantic models.
 
-This module provides a reusable utility for resolving TYPE_CHECKING forward
+A reusable utility for resolving TYPE_CHECKING forward
 references in Pydantic models. This pattern is commonly needed when models
 use lazy imports to avoid circular dependencies.
 
@@ -44,7 +44,7 @@ Quick Start:
     )
 
 Error Handling Overview:
-    This module implements a three-tier error handling strategy:
+    A three-tier error handling strategy:
 
     1. **Fail-Fast Errors** (raise immediately):
        - PydanticSchemaGenerationError: Invalid type annotations or schema issues
@@ -200,7 +200,7 @@ def rebuild_model_references(
               - error_details: Original exception message
 
     Error Handling Details:
-        This function implements fail-fast semantics. Any error during rebuild
+        Fail-fast semantics. Any error during rebuild
         is immediately raised as a ModelOnexError. There is no retry or deferral
         logic - that is handled by the caller (e.g., handle_subclass_forward_refs
         or auto_rebuild_on_module_load).
@@ -374,7 +374,7 @@ def handle_subclass_forward_refs(
             This should be the module's _rebuild_model() function.
 
     Error Handling:
-        This function implements deferred error semantics for ImportError and
+        Deferred error semantics for ImportError and
         warning-based logging for other errors. It never raises exceptions.
 
         **ImportError** (deferred):
@@ -526,7 +526,7 @@ def auto_rebuild_on_module_load(  # stub-ok: fully implemented with extensive do
             {"ONEX_CORE_044_CONFIGURATION_ERROR", "ONEX_CORE_087_INITIALIZATION_FAILED"}.
 
     Error Handling:
-        This function implements a tiered error handling strategy:
+        A tiered error handling strategy:
 
         **Fail-Fast Errors** (re-raised immediately):
             These errors indicate configuration problems that must be fixed:

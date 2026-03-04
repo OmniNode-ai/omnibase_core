@@ -4,7 +4,7 @@
 """
 ServiceEffectMockRegistry - Registry for effect mocks used during replay.
 
-This module provides a registry for deterministic mock implementations that
+A registry for deterministic mock implementations that
 replace non-deterministic effects during replay execution with the MOCKED policy.
 
 Design:

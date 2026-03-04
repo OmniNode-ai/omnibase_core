@@ -4,7 +4,7 @@
 """
 Replay infrastructure models.
 
-This module provides model definitions for deterministic replay infrastructure:
+Model definitions for deterministic replay infrastructure:
 
 - **ModelAuditTrailEntry**: Individual entry in enforcement decision audit trail (OMN-1150)
 - **ModelAuditTrailSummary**: Summary statistics for enforcement decisions (OMN-1150)

@@ -3,7 +3,7 @@
 
 """Node registration runtime metadata model.
 
-This module provides strongly-typed metadata for node registration at runtime.
+Strongly-typed metadata for node registration at runtime.
 Separate from ModelNodeCapabilitiesMetadata (authorship/docs) - this is for
 environment-specific, deployment-specific, mutable data captured during
 node registration.

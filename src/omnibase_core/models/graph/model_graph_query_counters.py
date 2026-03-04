@@ -3,7 +3,7 @@
 
 """Graph query counters model.
 
-This module provides the ModelGraphQueryCounters class for tracking
+The ModelGraphQueryCounters class for tracking
 database operation statistics during query execution.
 
 Thread Safety:

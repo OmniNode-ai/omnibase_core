@@ -4,7 +4,7 @@
 """
 Centralized Exception Type Groups for ONEX.
 
-This module provides standardized exception type tuples for consistent
+Standardized exception type tuples for consistent
 error handling across the codebase. All tuples are alphabetically ordered
 by exception class name.
 

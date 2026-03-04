@@ -3,7 +3,7 @@
 
 """Protocol dependency resolver for contract-driven DI.
 
-This module provides resolution of protocol dependencies declared in node contracts.
+Resolution of protocol dependencies declared in node contracts.
 At node initialization, the resolver processes ModelProtocolDependency declarations
 and resolves them from the ONEX container.
 

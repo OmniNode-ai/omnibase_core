@@ -449,7 +449,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
     ) -> ModelValidationResult[None]:
         """Apply duck-typed constraint validator and merge results.
 
-        This method provides the seam for future SPI constraint validator
+        The seam for future SPI constraint validator
         integration. It checks if the constraint_validator has a `validate`
         method and calls it if present.
 

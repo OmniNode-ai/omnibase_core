@@ -4,7 +4,7 @@
 """
 CheckerEnumGovernance - Contract-driven validator for enum governance rules.
 
-This module provides comprehensive enum governance validation including:
+Comprehensive enum governance validation including:
 - ENUM_001: Member casing enforcement (UPPER_SNAKE_CASE)
 - ENUM_002: Literal type alias detection (suggest Enum conversion)
 - ENUM_003: Duplicate enum value detection across files

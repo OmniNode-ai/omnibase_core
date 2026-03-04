@@ -4,7 +4,7 @@
 """
 Protocol definition for comprehensive compliance report.
 
-This module provides the ProtocolComplianceReport protocol which contains
+The ProtocolComplianceReport protocol which contains
 all violations and compliance scores for a file or project.
 
 Design Principles:

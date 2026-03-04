@@ -4,7 +4,7 @@
 """
 Protocol for node identity in event bus subscriptions.
 
-This module provides the ProtocolNodeIdentity protocol definition used
+The ProtocolNodeIdentity protocol definition used
 for identifying nodes when subscribing to event bus topics. The node
 identity is used to derive consumer group IDs in the canonical format:
 ``{env}.{service}.{node_name}.{purpose}.{version}``.

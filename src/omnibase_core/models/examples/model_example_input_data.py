@@ -4,7 +4,7 @@
 """
 Example input data model.
 
-This module provides the ModelExampleInputData class for clean,
+The ModelExampleInputData class for clean,
 strongly-typed replacement for dict[str, Any] in example input data.
 Follows ONEX one-model-per-file naming conventions.
 """

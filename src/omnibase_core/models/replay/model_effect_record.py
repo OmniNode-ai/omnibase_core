@@ -4,7 +4,7 @@
 """
 ModelEffectRecord - Effect record model for replay infrastructure.
 
-This module provides the ModelEffectRecord model that captures effect intent
+The ModelEffectRecord model that captures effect intent
 and result pairs for deterministic replay in the ONEX pipeline.
 
 Design:

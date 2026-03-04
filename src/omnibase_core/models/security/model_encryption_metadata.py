@@ -6,7 +6,7 @@
 Metadata for encrypted envelope payloads including cryptographic parameters,
 key identifiers, and integrity verification data.
 
-This module provides the ModelEncryptionMetadata class used to store all
+The ModelEncryptionMetadata class used to store all
 cryptographic metadata required to decrypt an encrypted payload in a
 ModelSecureEventEnvelope.
 

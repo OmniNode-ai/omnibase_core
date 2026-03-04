@@ -4,7 +4,7 @@
 """
 Protocol for service validation operations.
 
-This module provides the ProtocolServiceValidator protocol which
+The ProtocolServiceValidator protocol which
 defines the interface for comprehensive service validation including
 interface compliance checking and dependency validation.
 

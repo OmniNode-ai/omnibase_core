@@ -4,7 +4,7 @@
 """
 ModelPayloadPersistResult - Typed payload for computation result persistence intents.
 
-This module provides the ModelPayloadPersistResult model for computation
+The ModelPayloadPersistResult model for computation
 result persistence from Reducers. The Effect node receives the intent
 and stores the result to the configured persistence backend.
 

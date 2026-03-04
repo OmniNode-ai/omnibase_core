@@ -4,7 +4,7 @@
 """
 Binding models for ONEX capability resolution.
 
-This module provides models for recording the results of capability resolution,
+Models for recording the results of capability resolution,
 where capability dependencies are matched to concrete providers.
 
 Core Principle:

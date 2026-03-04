@@ -4,7 +4,7 @@
 """
 Protocol for replay progress callbacks.
 
-This module provides a type-safe Protocol for callbacks that receive
+A type-safe Protocol for callbacks that receive
 replay progress updates during corpus replay orchestration.
 
 The protocol enables structural subtyping (duck typing) for callback

@@ -4,7 +4,7 @@
 """
 Replay infrastructure protocols.
 
-This module provides protocol definitions for deterministic replay infrastructure:
+Protocol definitions for deterministic replay infrastructure:
 
 - **ProtocolAuditTrail**: Interface for enforcement decision audit trail
 - **ProtocolEffectRecorder**: Interface for effect recording and replay

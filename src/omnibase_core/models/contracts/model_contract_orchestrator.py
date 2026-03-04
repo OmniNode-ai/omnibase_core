@@ -14,7 +14,7 @@ Specialized contract model for NodeOrchestrator implementations providing:
 Strict typing is enforced: No Any types allowed in implementation.
 
 Orchestrator Error Hierarchy (v1.0.1 Compliance):
-=================================================
+-------------------------------------------------
 This module uses the three-level orchestrator error code hierarchy defined in
 EnumCoreErrorCode for consistent, semantically-specific error handling:
 

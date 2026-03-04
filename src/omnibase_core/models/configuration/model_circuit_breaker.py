@@ -7,9 +7,9 @@ ModelCircuitBreaker - Circuit breaker configuration for load balancing
 Circuit breaker model for implementing fault tolerance and preventing
 cascade failures in load balancing systems.
 
-# ============================================================================
+# ----------------------------------------------------------------------------
 # PR #328 Context: Why This Fix Is Included in the Evidence Models PR
-# ============================================================================
+# ----------------------------------------------------------------------------
 #
 # This file contains fixes for a LATENT BUG that existed before the evidence
 # models work but was EXPOSED when running tests with pytest-xdist parallel
@@ -42,7 +42,7 @@ cascade failures in load balancing systems.
 # making the model safe for parallel test execution across worker processes.
 #
 # Related Issue: OMN-1195 (Evidence Summary Model implementation)
-# ============================================================================
+# ----------------------------------------------------------------------------
 """
 
 import threading
@@ -64,7 +64,7 @@ _rebuild_lock = threading.Lock()
 def _ensure_models_rebuilt(circuit_breaker_cls: type[BaseModel] | None = None) -> None:
     """Ensure models are rebuilt to resolve forward references (lazy initialization).
 
-    This function implements lazy model rebuild to avoid importing ModelCustomFields
+    Lazy model rebuild to avoid importing ModelCustomFields
     at module load time. The rebuild only happens on first ModelCircuitBreaker
     instantiation, improving import performance when the model isn't used.
 
@@ -533,7 +533,7 @@ class ModelCircuitBreaker(BaseModel):
         """
         Manually reset circuit breaker to closed state.
 
-        This method provides ProtocolCircuitBreaker conformance by
+        ProtocolCircuitBreaker conformance by
         delegating to reset_state(). Both methods are functionally
         equivalent and can be used interchangeably.
 

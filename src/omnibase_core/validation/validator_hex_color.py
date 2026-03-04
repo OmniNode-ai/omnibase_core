@@ -3,7 +3,7 @@
 
 """Shared hex color validation for dashboard models.
 
-This module provides centralized hex color validation used throughout
+Centralized hex color validation used throughout
 the ONEX dashboard models. It supports standard web color formats:
 - #RGB (3 digits)
 - #RRGGBB (6 digits)
@@ -59,7 +59,7 @@ _HEX_COLOR_ERROR_MSG = (
 class HexColorValidator:
     """Shared hex color validation for dashboard models.
 
-    This class provides class-level validation methods for hex color codes.
+    Class-level validation methods for hex color codes.
     The pattern and methods are thread-safe as they use immutable compiled
     regex patterns.
 

@@ -4,7 +4,7 @@
 """
 Typed schema property model for mixin configuration.
 
-This module provides strongly-typed schema properties for configuration patterns,
+Strongly-typed schema properties for configuration patterns,
 with full validation of type-default and type-enum consistency.
 
 Supports type aliases:

@@ -4,7 +4,7 @@
 """
 ModelCorpusReplayConfig - Configuration for corpus replay orchestration.
 
-This module provides the ModelCorpusReplayConfig model for configuring
+The ModelCorpusReplayConfig model for configuring
 how a corpus should be replayed, including concurrency, error handling,
 and subset filtering options.
 

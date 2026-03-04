@@ -3,7 +3,7 @@
 
 """ModelChangeProposal for representing proposed system changes (OMN-1196).
 
-This module provides a typed model for capturing proposed system changes
+A typed model for capturing proposed system changes
 including model swaps, configuration changes, and endpoint changes. It is
 designed for use in the DEMO feature set for evaluating changes before
 they are applied.

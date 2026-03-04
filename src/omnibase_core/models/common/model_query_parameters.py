@@ -4,7 +4,7 @@
 """
 Typed query parameters model for effect operations.
 
-This module provides a strongly-typed model for query parameters,
+A strongly-typed model for query parameters,
 replacing dict[str, str] patterns with explicit type validation
 and helper methods for query string generation.
 

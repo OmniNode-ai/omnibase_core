@@ -3,7 +3,7 @@
 
 """Context models for typed Generic[TContext] patterns.
 
-This module provides reusable typed context models for use as type parameters
+Reusable typed context models for use as type parameters
 in generic models like ModelErrorDetails[TContext].
 
 Available Context Models:

@@ -3,7 +3,7 @@
 
 """Model ONEX Dependency Injection Container.
 
-This module provides the ModelONEXContainer, the primary dependency injection
+The ModelONEXContainer, the primary dependency injection
 container for the ONEX framework. It integrates with the contract-driven
 architecture and provides:
 
@@ -362,7 +362,7 @@ class ModelONEXContainer:
     ) -> "ServiceRegistry":
         """Initialize the service registry exactly once.
 
-        This method provides explicit control over service registry initialization.
+        Explicit control over service registry initialization.
         After initialization, the ``service_registry`` property will return the
         registry instance directly. If accessed before initialization, the property
         raises ``ModelOnexError`` with ``INVALID_STATE`` error code.
@@ -659,7 +659,7 @@ class ModelONEXContainer:
         """
         Get service with optional return - returns None if not found.
 
-        This method provides a non-throwing alternative to get_service(),
+        A non-throwing alternative to get_service(),
         useful for optional dependencies that may not be available in all
         container configurations.
 

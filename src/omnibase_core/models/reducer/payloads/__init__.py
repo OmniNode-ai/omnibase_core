@@ -4,7 +4,7 @@
 """
 Typed intent payloads for ONEX Reducer/Effect pattern.
 
-This module provides typed payload models for ModelIntent, replacing the generic
+Typed payload models for ModelIntent, replacing the generic
 `dict[str, Any]` payload field with Protocol-based types for type safety.
 
 Intent Payload Architecture:

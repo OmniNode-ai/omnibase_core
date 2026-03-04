@@ -4,7 +4,7 @@
 """
 ProtocolCompute - Protocol for computation nodes.
 
-This module provides the protocol definition for nodes that implement
+The protocol definition for nodes that implement
 the COMPUTE pattern with pure transformation capabilities.
 
 OMN-662: Node Protocol Definitions for ONEX Four-Node Architecture.

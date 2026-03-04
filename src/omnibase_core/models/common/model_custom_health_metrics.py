@@ -4,7 +4,7 @@
 """
 Typed custom metrics model for health monitoring.
 
-This module provides strongly-typed metrics for health monitoring patterns.
+Strongly-typed metrics for health monitoring patterns.
 """
 
 from pydantic import BaseModel, Field

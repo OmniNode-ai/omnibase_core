@@ -5,7 +5,7 @@
 """
 ONEX Workflow Testing Enumerations
 
-This module provides all enumerations for the ONEX workflow testing system,
+All enumerations for the ONEX workflow testing system,
 supporting flexible dependency accommodation and comprehensive test workflows.
 """
 

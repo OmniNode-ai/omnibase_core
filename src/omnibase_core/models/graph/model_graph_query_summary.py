@@ -3,7 +3,7 @@
 
 """Graph query summary model.
 
-This module provides the ModelGraphQuerySummary class for query execution summary.
+The ModelGraphQuerySummary class for query execution summary.
 
 Thread Safety:
     ModelGraphQuerySummary instances are immutable (frozen=True) after creation,

@@ -4,7 +4,7 @@
 """
 Contract validation event model.
 
-This module provides the Pydantic model for contract validation lifecycle events.
+The Pydantic model for contract validation lifecycle events.
 
 Design Decision:
     This model intentionally lives in ``models/validation/`` rather than

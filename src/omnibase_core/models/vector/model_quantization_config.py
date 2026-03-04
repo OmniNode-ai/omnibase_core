@@ -3,7 +3,7 @@
 
 """Vector quantization configuration model.
 
-This module provides the ModelQuantizationConfig class for vector quantization settings.
+The ModelQuantizationConfig class for vector quantization settings.
 
 Thread Safety:
     ModelQuantizationConfig instances are immutable (frozen=True) after creation,

@@ -3,7 +3,7 @@
 
 """Trace query models module.
 
-This module provides query and summary models for trace recording operations.
+Query and summary models for trace recording operations.
 
 .. versionadded:: 0.4.0
     Added as part of Trace Recording Service (OMN-1209)

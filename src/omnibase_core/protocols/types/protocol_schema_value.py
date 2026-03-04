@@ -4,7 +4,7 @@
 """
 ProtocolSchemaValue - Protocol for schema values.
 
-This module provides the protocol definition for schema value types.
+The protocol definition for schema value types.
 """
 
 from __future__ import annotations

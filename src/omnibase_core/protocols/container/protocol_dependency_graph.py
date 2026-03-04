@@ -4,7 +4,7 @@
 """
 Protocol for dependency graph information.
 
-This module provides the ProtocolDependencyGraph protocol which
+The ProtocolDependencyGraph protocol which
 defines the interface for dependency graph analysis including
 dependency chains, circular reference detection, and resolution ordering.
 """

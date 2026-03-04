@@ -4,7 +4,7 @@
 """
 Result of compute pipeline execution.
 
-This module provides the result model for compute pipeline executions,
+The result model for compute pipeline executions,
 aggregating all step results and providing overall success/failure status
 with detailed error information when failures occur.
 

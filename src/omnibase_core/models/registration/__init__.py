@@ -3,7 +3,7 @@
 
 """Registration domain models for ONEX node registration workflows.
 
-This module provides pure data models for node registration operations.
+Pure data models for node registration operations.
 These models follow the ONEX "Intent -> Effect" pattern where Reducers
 compute registration payloads deterministically, and Effects perform
 actual registration operations.

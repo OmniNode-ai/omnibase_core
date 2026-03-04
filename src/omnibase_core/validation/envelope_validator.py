@@ -4,7 +4,7 @@
 """
 EnvelopeValidator - Configurable envelope validation with strict/lenient modes.
 
-This module provides envelope validation with configurable strictness levels
+Envelope validation with configurable strictness levels
 for the ONEX runtime. Validation behavior is controlled by
 ModelEnvelopeValidationConfig, which can be set via environment variable
 (ONEX_VALIDATION_MODE) or runtime injection.

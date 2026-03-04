@@ -3,7 +3,7 @@
 
 """Contract Drift Details Model.
 
-This module provides the ModelDriftDetails class for structured reporting of
+The ModelDriftDetails class for structured reporting of
 contract drift, which occurs when a contract's computed fingerprint no longer
 matches its registered fingerprint.
 

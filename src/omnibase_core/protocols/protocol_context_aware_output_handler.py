@@ -4,7 +4,7 @@
 """
 Protocol for context-aware output handling.
 
-This module provides the ProtocolContextAwareOutputHandler protocol which
+The ProtocolContextAwareOutputHandler protocol which
 defines the interface for output handlers used in the ONEX logging infrastructure.
 
 Design Principles:

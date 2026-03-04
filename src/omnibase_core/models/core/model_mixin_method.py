@@ -3,7 +3,7 @@
 
 """Pydantic model for mixin method definitions.
 
-This module provides the ModelMixinMethod class for defining
+The ModelMixinMethod class for defining
 methods in mixin code patterns.
 """
 

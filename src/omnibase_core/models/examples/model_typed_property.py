@@ -4,7 +4,7 @@
 """
 Typed property model for environment properties.
 
-This module provides the ModelTypedProperty class for storing a single
+The ModelTypedProperty class for storing a single
 typed property with validation in the environment property system.
 """
 

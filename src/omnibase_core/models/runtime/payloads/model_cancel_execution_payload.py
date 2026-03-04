@@ -4,7 +4,7 @@
 """
 ModelCancelExecutionPayload - Typed payload for CANCEL_EXECUTION directives.
 
-This module provides the ModelCancelExecutionPayload model for cancelling
+The ModelCancelExecutionPayload model for cancelling
 an ongoing or scheduled execution.
 
 Example:

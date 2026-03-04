@@ -4,7 +4,7 @@
 """
 Base class for runtime directive payloads.
 
-This module provides the foundation for typed directive payloads used by
+The foundation for typed directive payloads used by
 ModelRuntimeDirective. Each directive type (SCHEDULE_EFFECT, ENQUEUE_HANDLER,
 RETRY_WITH_BACKOFF, DELAY_UNTIL, CANCEL_EXECUTION) has a corresponding payload
 model that inherits from this base.

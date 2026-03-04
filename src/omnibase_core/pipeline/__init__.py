@@ -4,7 +4,7 @@
 """
 ONEX Pipeline Module.
 
-This module provides pipeline execution infrastructure and observability:
+Pipeline execution infrastructure and observability:
 
 **Execution Infrastructure:**
 

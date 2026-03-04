@@ -4,7 +4,7 @@
 """
 ModelAggregateMetrics - Aggregate metrics from corpus replay.
 
-This module provides the ModelAggregateMetrics model for capturing
+The ModelAggregateMetrics model for capturing
 aggregate timing and statistical metrics from replaying a corpus,
 including averages, percentiles, and distribution data.
 

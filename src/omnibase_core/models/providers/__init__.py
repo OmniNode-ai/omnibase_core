@@ -4,7 +4,7 @@
 """
 Provider models for ONEX framework.
 
-This module provides models for provider-related functionality including
+Models for provider-related functionality including
 provider descriptors and capability requirements.
 
 Key Models

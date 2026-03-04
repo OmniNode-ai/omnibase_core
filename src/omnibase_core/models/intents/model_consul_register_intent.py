@@ -4,7 +4,7 @@
 """
 Intent to register a service with Consul.
 
-This module provides the ModelConsulRegisterIntent class for declaring
+The ModelConsulRegisterIntent class for declaring
 service registration with Consul service discovery. This is a core intent
 that participates in the discriminated union pattern for type-safe handling.
 

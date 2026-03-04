@@ -4,7 +4,7 @@
 """
 ServiceRegistryCliContribution — Registry for cli.contribution.v1 contracts.
 
-This module provides the ServiceRegistryCliContribution class for storing,
+The ServiceRegistryCliContribution class for storing,
 retrieving, and validating CLI contribution contracts published by nodes in
 the ONEX registry-driven CLI system.
 

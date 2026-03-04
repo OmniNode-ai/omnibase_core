@@ -4,7 +4,7 @@
 """
 ExecutorReplay - Replay executor for deterministic pipeline replay.
 
-This module provides the ExecutorReplay class that orchestrates deterministic
+The ExecutorReplay class that orchestrates deterministic
 replay by injecting controlled time, seeded RNG, and recorded effects.
 
 Design:

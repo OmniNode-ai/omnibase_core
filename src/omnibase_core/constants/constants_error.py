@@ -3,7 +3,7 @@
 
 """Centralized error code constants and patterns.
 
-This module provides the single source of truth for error code patterns
+The single source of truth for error code patterns
 used throughout the ONEX system.
 
 Error Code Format:

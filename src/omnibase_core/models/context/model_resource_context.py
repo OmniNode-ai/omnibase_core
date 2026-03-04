@@ -3,7 +3,7 @@
 
 """Resource context model for resource identification.
 
-This module provides ModelResourceContext, a typed context model for
+ModelResourceContext, a typed context model for
 tracking resource identifiers, types, and namespaces.
 
 Thread Safety:

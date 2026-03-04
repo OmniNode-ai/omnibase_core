@@ -3,7 +3,7 @@
 
 """Error context model for structured error tracking.
 
-This module provides ModelErrorContext, a typed context model for tracking
+ModelErrorContext, a typed context model for tracking
 error information including error codes, categories, correlation IDs,
 retry state, and helper methods for error classification.
 

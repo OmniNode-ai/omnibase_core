@@ -4,7 +4,7 @@
 """
 YAML parsing utilities for invariant definitions.
 
-This module provides functions for loading invariant sets from YAML files
+Functions for loading invariant sets from YAML files
 or strings, with proper error handling using ModelOnexError.
 
 This module is located in utils/ to avoid circular import issues that occur

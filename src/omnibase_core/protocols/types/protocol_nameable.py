@@ -4,7 +4,7 @@
 """
 ProtocolNameable - Protocol for nameable objects.
 
-This module provides the protocol definition for objects that have a name.
+The protocol definition for objects that have a name.
 """
 
 from __future__ import annotations

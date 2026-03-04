@@ -4,7 +4,7 @@
 """
 Contract merge completed event model.
 
-This module provides the event model for when contract merge operations complete.
+The event model for when contract merge operations complete.
 This event contains information about the resulting effective contract.
 
 Location:

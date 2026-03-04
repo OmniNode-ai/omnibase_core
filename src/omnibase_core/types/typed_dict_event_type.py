@@ -3,7 +3,7 @@
 
 """TypedDict for event type dictionary representation.
 
-This module provides strongly-typed dictionary definitions for event types
+Strongly-typed dictionary definitions for event types
 used throughout the ONEX system for inter-service communication and discovery.
 """
 

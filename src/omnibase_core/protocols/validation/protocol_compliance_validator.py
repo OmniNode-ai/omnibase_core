@@ -4,7 +4,7 @@
 """
 Protocol definition for compliance validation in ONEX systems.
 
-This module provides the ProtocolComplianceValidator protocol which validates
+The ProtocolComplianceValidator protocol which validates
 compliance with ONEX standards, architectural patterns, and ecosystem requirements.
 
 Design Principles:

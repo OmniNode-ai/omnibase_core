@@ -3,7 +3,7 @@
 
 """Base dependency injection container using dependency-injector.
 
-This module provides _BaseModelONEXContainer, a DeclarativeContainer that
+_BaseModelONEXContainer, a DeclarativeContainer that
 defines the core service providers for the ONEX framework. It uses the
 dependency-injector library to manage singleton and factory providers.
 

@@ -28,7 +28,7 @@
 """
 Base Introspection Mixin for ONEX Nodes.
 
-This module provides a reusable mixin class that implements standardized
+A reusable mixin class that implements standardized
 introspection capabilities for ONEX nodes. All nodes should inherit from
 this mixin to provide consistent --introspect functionality.
 """

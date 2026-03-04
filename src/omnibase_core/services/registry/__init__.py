@@ -8,9 +8,9 @@ This package provides in-memory thread-safe registries for ONEX metadata:
 - ServiceRegistryCapability: Registry for capability metadata
 - ServiceRegistryProvider: Registry for provider descriptors
 
-================================================================================
+--------------------------------------------------------------------------------
 IMPORT POLICY: NO PACKAGE-LEVEL EXPORTS (OMN-1071)
-================================================================================
+--------------------------------------------------------------------------------
 
 Registry services follow the same import policy as other services in omnibase_core.
 Import directly from the specific module:

@@ -4,7 +4,7 @@
 """
 ProtocolMessageHandler - Protocol for category-based message handlers.
 
-This module provides the protocol definition for category-based message handlers
+The protocol definition for category-based message handlers
 used by the dispatch engine to execute envelope-based operations. Message handlers
 are classified by category (EVENT, COMMAND, INTENT) and node kind (REDUCER,
 ORCHESTRATOR, EFFECT).

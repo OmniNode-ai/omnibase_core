@@ -4,7 +4,7 @@
 """
 Lint statistics model for workflow linting telemetry.
 
-This module provides the ModelLintStatistics model for capturing telemetry
+The ModelLintStatistics model for capturing telemetry
 data from workflow linting operations, including warning counts by code and
 severity, timing information, and workflow metrics.
 

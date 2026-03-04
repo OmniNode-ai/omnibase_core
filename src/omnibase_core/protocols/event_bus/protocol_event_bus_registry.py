@@ -4,7 +4,7 @@
 """
 Protocol for registry that provides event bus access.
 
-This module provides the ProtocolEventBusRegistry protocol definition
+The ProtocolEventBusRegistry protocol definition
 for service registries with event bus access.
 """
 

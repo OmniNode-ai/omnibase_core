@@ -4,7 +4,7 @@
 """
 JSON-compatible type aliases for ONEX.
 
-This module provides centralized type aliases for JSON-compatible values,
+Centralized type aliases for JSON-compatible values,
 eliminating scattered inline union types throughout the codebase.
 
 These type aliases follow ONEX patterns by:

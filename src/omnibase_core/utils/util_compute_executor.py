@@ -4,7 +4,7 @@
 """
 Pipeline executor for contract-driven NodeCompute v1.0.
 
-This module provides the core pipeline execution logic for contract-driven
+The core pipeline execution logic for contract-driven
 compute nodes. It executes transformation pipelines defined in YAML contracts
 with abort-on-first-failure semantics, ensuring deterministic and traceable
 data processing.
@@ -378,7 +378,7 @@ def _execute_pipeline_steps(
     """
     Internal helper that executes pipeline steps without timeout wrapper.
 
-    This function contains the core pipeline execution logic, separated from
+    The core pipeline execution logic, separated from
     the timeout enforcement to allow clean timeout handling without complex
     exception propagation.
 

@@ -3,7 +3,7 @@
 
 """Pydantic model for mixin metadata collection.
 
-This module provides the ModelMixinMetadataCollection class for loading,
+The ModelMixinMetadataCollection class for loading,
 validating, and working with collections of mixin metadata from YAML files.
 """
 

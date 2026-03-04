@@ -4,7 +4,7 @@
 """
 Protocol for structured log emission via event bus.
 
-This module provides the ProtocolEventBusLogEmitter protocol definition
+The ProtocolEventBusLogEmitter protocol definition
 for structured log event emission.
 """
 

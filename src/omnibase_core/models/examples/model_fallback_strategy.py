@@ -4,7 +4,7 @@
 """
 Fallback Strategy Model for ONEX Configuration-Driven Registry System.
 
-This module provides the ModelFallbackStrategy for defining fallback strategies
+The ModelFallbackStrategy for defining fallback strategies
 when services are unavailable. Extracted from model_service_configuration.py
 for modular architecture compliance.
 

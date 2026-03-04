@@ -4,7 +4,7 @@
 """
 AnyTypeVisitor - AST visitor for detecting Any type usage patterns.
 
-This module provides the AnyTypeVisitor class which is an AST visitor that
+The AnyTypeVisitor class which is an AST visitor that
 walks Python source code to find all usages of the Any type, including
 imports, annotations, and parameterized generics like dict[str, Any] or
 list[Any].

@@ -3,7 +3,7 @@
 
 """Contract Diff Models for Semantic Contract Diffing.
 
-This module provides Pydantic models for computing and representing
+Pydantic models for computing and representing
 semantic differences between contract versions. The diff system supports:
 
 - Field-level diffing for scalar values

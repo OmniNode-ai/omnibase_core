@@ -4,7 +4,7 @@
 """
 ModelCorpusCaptureWindow - Capture window model for execution corpus.
 
-This module provides the ModelCorpusCaptureWindow model which represents
+The ModelCorpusCaptureWindow model which represents
 the time window during which executions were collected for inclusion
 in the corpus.
 

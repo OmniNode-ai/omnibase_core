@@ -4,7 +4,7 @@
 """
 OmniMemory Models Module.
 
-This module provides models for OmniMemory - the agent memory and state
+Models for OmniMemory - the agent memory and state
 tracking system. It includes cost tracking, decision recording, failure
 analysis, and unified memory snapshots.
 

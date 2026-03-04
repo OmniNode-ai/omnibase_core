@@ -3,7 +3,7 @@
 
 """Trace context model for distributed tracing and correlation.
 
-This module provides ModelTraceContext, a typed context model for tracking
+ModelTraceContext, a typed context model for tracking
 distributed traces, spans, and request correlations across services.
 
 Thread Safety:

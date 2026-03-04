@@ -4,7 +4,7 @@
 """
 ProtocolAction - Protocol for reducer actions.
 
-This module provides the protocol definition for action objects used in
+The protocol definition for action objects used in
 reducer dispatch operations.
 """
 

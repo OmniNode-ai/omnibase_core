@@ -4,7 +4,7 @@
 """
 Audit metadata model for compliance and audit trails.
 
-This module provides ModelAuditMetadata, a typed model for audit trail
+ModelAuditMetadata, a typed model for audit trail
 metadata that replaces untyped dict[str, str] fields. It captures audit
 identification, categorization, and compliance information.
 

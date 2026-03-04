@@ -3,7 +3,7 @@
 
 """Pydantic model for mixin performance characteristics.
 
-This module provides the ModelMixinPerformance class for defining
+The ModelMixinPerformance class for defining
 performance characteristics and recommendations for mixins.
 """
 

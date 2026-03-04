@@ -8,7 +8,7 @@ This module re-exports strongly-typed models for common metadata patterns
 found across discovery, effect, reducer, and other model modules.
 
 All models are in individual files per ONEX single-class-per-file rule.
-This module provides a unified import location for convenience.
+A unified import location for convenience.
 """
 
 from omnibase_core.models.common.model_config_schema_property import (

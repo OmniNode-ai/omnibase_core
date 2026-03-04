@@ -3,7 +3,7 @@
 
 """CLI commands for omnibase_core.
 
-This module provides the main CLI entry point using Click.
+The main CLI entry point using Click.
 The entry point 'onex' is configured in pyproject.toml.
 
 Usage:

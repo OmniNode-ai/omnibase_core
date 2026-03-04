@@ -4,7 +4,7 @@
 """
 TypedDicts for demo CLI data structures.
 
-This module provides type definitions for the demo CLI's data structures,
+Type definitions for the demo CLI's data structures,
 including corpus samples, evaluation results, configuration, and summaries.
 
 Related:

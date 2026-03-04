@@ -4,7 +4,7 @@
 """
 Protocol for service dependency information.
 
-This module provides the ProtocolServiceDependency protocol which
+The ProtocolServiceDependency protocol which
 defines the interface for service dependency metadata including
 version constraints, circular dependency detection, and injection points.
 """

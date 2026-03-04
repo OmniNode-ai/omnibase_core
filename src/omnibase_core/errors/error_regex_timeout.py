@@ -3,7 +3,7 @@
 
 """Regex timeout error for ReDoS protection.
 
-This module provides the RegexTimeoutError exception class used to signal
+The RegexTimeoutError exception class used to signal
 when a regex operation exceeds the configured timeout limit.
 """
 

@@ -11,7 +11,7 @@ Core Principle:
     "Projectors are consumers of ModelEventEnvelope streams, not participants
     in handler dispatch. They never emit events, intents, or projections."
 
-This module provides:
+Exports:
     - :class:`ModelProjectorContract`: Complete projector definition
 
 Contract Components:

@@ -4,7 +4,7 @@
 """
 FSM string comparison operators for condition evaluation.
 
-This module provides string-based comparison operators for evaluating
+String-based comparison operators for evaluating
 FSM transition conditions. All operators use STRING COERCION by design
 to ensure consistent behavior with YAML/JSON configuration values.
 

@@ -4,7 +4,7 @@
 """
 ModelAuditTrailSummary - Summary statistics for enforcement decisions.
 
-This module provides the ModelAuditTrailSummary model that aggregates
+The ModelAuditTrailSummary model that aggregates
 enforcement decision statistics for a replay session.
 
 Design:

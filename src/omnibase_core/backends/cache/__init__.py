@@ -4,7 +4,7 @@
 """
 Cache backend implementations for optional L2 caching.
 
-This module provides implementations of ProtocolCacheBackend for various
+Implementations of ProtocolCacheBackend for various
 distributed caching systems.
 
 Available Backends:

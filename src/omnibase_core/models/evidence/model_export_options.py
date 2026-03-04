@@ -3,7 +3,7 @@
 
 """Export options for evidence rendering.
 
-This module provides configuration options for customizing evidence export
+Configuration options for customizing evidence export
 output across different formats (JSON, Markdown, CLI, HTML).
 
 Thread Safety:

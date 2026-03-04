@@ -4,7 +4,7 @@
 """
 Typed event subscription configuration model.
 
-This module provides strongly-typed configuration for event subscription patterns.
+Strongly-typed configuration for event subscription patterns.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

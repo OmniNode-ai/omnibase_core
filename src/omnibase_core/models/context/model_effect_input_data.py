@@ -3,7 +3,7 @@
 
 """Effect operation data context model for effect node inputs.
 
-This module provides ModelEffectInputData, a typed context model for
+ModelEffectInputData, a typed context model for
 describing effect operation targets, parameters, and operational characteristics.
 Used as a typed context parameter in Generic patterns for effect operations.
 

@@ -4,7 +4,7 @@
 """
 Contract validation invariant checker service implementation.
 
-This module provides the concrete implementation of contract validation
+The concrete implementation of contract validation
 invariant checking, enforcing event ordering and state machine constraints
 for contract validation workflows.
 

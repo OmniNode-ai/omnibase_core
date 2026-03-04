@@ -770,7 +770,7 @@ def _route_to_logger_node(
     """
     Route log event to logger node for processing using protocol-based discovery.
 
-    This function handles the actual routing of log events to the logger node
+    The actual routing of log events to the logger node
     with smart formatting and output handling via protocol abstractions.
 
     Args:

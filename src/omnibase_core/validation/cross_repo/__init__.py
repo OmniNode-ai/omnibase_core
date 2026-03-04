@@ -3,7 +3,7 @@
 
 """Cross-repo conformance validation.
 
-This module provides validators for enforcing code placement,
+Validators for enforcing code placement,
 import boundaries, topic conventions, and error taxonomy
 across ONEX repositories.
 

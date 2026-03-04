@@ -3,7 +3,7 @@
 
 """Contract Normalization Configuration Model.
 
-This module provides configuration options for the contract normalization
+Configuration options for the contract normalization
 pipeline, which prepares contracts for fingerprint computation by ensuring
 deterministic, canonical representations.
 

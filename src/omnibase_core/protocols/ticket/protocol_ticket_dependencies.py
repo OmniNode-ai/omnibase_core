@@ -4,7 +4,7 @@
 """
 Protocol definitions for ticket-work automation dependencies.
 
-This module provides protocol interfaces for ticket-work automation components
+Protocol interfaces for ticket-work automation components
 including Linear API client operations, file system operations for ticket
 contracts, and notification delivery.
 """

@@ -4,7 +4,7 @@
 """
 Contract merge started event model.
 
-This module provides the event model for when contract merge operations begin.
+The event model for when contract merge operations begin.
 Contract merging combines base contracts with overlays and profiles to produce
 an effective contract for runtime use.
 

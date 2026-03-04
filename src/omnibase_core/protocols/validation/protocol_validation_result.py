@@ -4,7 +4,7 @@
 """
 Protocol definition for validation result objects.
 
-This module provides the ProtocolValidationResult protocol which contains
+The ProtocolValidationResult protocol which contains
 the overall validation status, errors, and warnings.
 
 Design Principles:

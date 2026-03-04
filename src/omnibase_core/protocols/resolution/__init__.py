@@ -4,7 +4,7 @@
 """
 Resolution Protocols for ONEX Dependency Resolution.
 
-This module provides protocols for capability-based dependency resolution,
+Protocols for capability-based dependency resolution,
 enabling auto-discovery and loose coupling between ONEX nodes.
 
 Protocols:

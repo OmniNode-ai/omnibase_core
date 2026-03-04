@@ -4,7 +4,7 @@
 """
 ExecutionResolver - Pure function implementation of execution order resolution.
 
-This module implements ProtocolExecutionResolver, providing deterministic
+ProtocolExecutionResolver, providing deterministic
 topological ordering of handlers based on execution profiles and contract
 constraints.
 

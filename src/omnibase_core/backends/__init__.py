@@ -4,7 +4,7 @@
 """
 Backends Module - Pluggable backend implementations.
 
-This module provides backend implementations for various infrastructure
+Backend implementations for various infrastructure
 concerns like metrics, logging, caching, and tracing. Backends implement
 protocols defined in omnibase_core.protocols.
 

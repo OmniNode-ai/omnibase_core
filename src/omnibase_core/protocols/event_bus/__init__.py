@@ -4,7 +4,7 @@
 """
 Core-native event bus protocols.
 
-This module provides protocol definitions for event-driven messaging,
+Protocol definitions for event-driven messaging,
 event bus operations, and event envelope handling. These are Core-native
 equivalents of the SPI event bus protocols.
 

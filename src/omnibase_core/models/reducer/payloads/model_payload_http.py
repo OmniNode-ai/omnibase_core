@@ -4,7 +4,7 @@
 """
 ModelPayloadHTTP - Typed payload for HTTP request intents.
 
-This module provides the ModelPayloadHTTP model for outbound HTTP request
+The ModelPayloadHTTP model for outbound HTTP request
 operations from Reducers. The Effect node receives the intent and
 performs the HTTP request to the specified URL.
 

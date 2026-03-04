@@ -3,7 +3,7 @@
 
 """Pydantic model for mixin code generation patterns.
 
-This module provides the ModelMixinCodePatterns class for defining
+The ModelMixinCodePatterns class for defining
 code generation patterns for mixins.
 """
 

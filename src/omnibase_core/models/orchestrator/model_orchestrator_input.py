@@ -4,7 +4,7 @@
 """
 Input model for NodeOrchestrator operations.
 
-This module provides the ModelOrchestratorInput class that wraps workflow
+The ModelOrchestratorInput class that wraps workflow
 coordination operations with comprehensive configuration for execution modes,
 parallelism, timeouts, and failure handling strategies.
 

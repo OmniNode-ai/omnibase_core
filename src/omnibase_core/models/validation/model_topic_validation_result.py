@@ -4,7 +4,7 @@
 """
 Topic suffix validation result model for ONEX naming convention.
 
-This module provides ModelTopicValidationResult, a Pydantic model that
+ModelTopicValidationResult, a Pydantic model that
 encapsulates the result of validating an ONEX topic suffix.
 
 The result includes:

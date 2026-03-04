@@ -4,7 +4,7 @@
 """
 Common models for shared use across domains.
 
-This module contains models that are used across multiple domains
+Models that are used across multiple domains
 and are not specific to any particular functionality area.
 """
 

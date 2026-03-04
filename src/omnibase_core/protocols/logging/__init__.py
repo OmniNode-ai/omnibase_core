@@ -4,7 +4,7 @@
 """
 Logging protocols for ONEX logging infrastructure.
 
-This module provides protocol definitions for logging formatters and output handlers
+Protocol definitions for logging formatters and output handlers
 used by the ONEX logging system.
 """
 

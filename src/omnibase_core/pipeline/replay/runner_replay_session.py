@@ -4,7 +4,7 @@
 """
 ModelReplaySession - Active replay session with injected services.
 
-This module provides the ReplaySession dataclass that encapsulates all
+The ReplaySession dataclass that encapsulates all
 services needed for deterministic replay execution.
 
 Design:

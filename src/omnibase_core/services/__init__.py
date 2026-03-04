@@ -3,11 +3,11 @@
 
 """Services module - ONEX protocol service implementations.
 
-This module contains service implementations for ONEX protocols.
+Service implementations for ONEX protocols.
 
-================================================================================
+--------------------------------------------------------------------------------
 IMPORT POLICY: NO PACKAGE-LEVEL EXPORTS (OMN-1071)
-================================================================================
+--------------------------------------------------------------------------------
 
 Services are intentionally NOT exported at the package level. This is a deliberate
 design decision to prevent circular import issues that arise from the complex

@@ -4,7 +4,7 @@
 """
 Typed envelope payload model for event-driven processing.
 
-This module provides a strongly-typed model for event envelope payloads,
+A strongly-typed model for event envelope payloads,
 replacing dict[str, str] patterns with explicit typed fields for common
 event payload data including event_type, source, timestamp, and correlation_id.
 

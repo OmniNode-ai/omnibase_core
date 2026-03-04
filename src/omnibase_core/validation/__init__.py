@@ -4,7 +4,7 @@
 """
 Comprehensive validation framework for omni* ecosystem.
 
-This module provides centralized validation tools that can be imported
+Centralized validation tools that can be imported
 by all repositories in the omni* ecosystem for ONEX compliance validation.
 
 Key validation modules:

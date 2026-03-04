@@ -4,7 +4,7 @@
 """
 ModelCorpusReplayProgress - Progress tracking for corpus replay.
 
-This module provides the ModelCorpusReplayProgress model for tracking
+The ModelCorpusReplayProgress model for tracking
 progress during corpus replay execution, including counts, timing,
 and current execution information.
 

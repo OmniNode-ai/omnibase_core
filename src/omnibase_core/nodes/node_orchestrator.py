@@ -535,7 +535,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution, MixinHandlerRouting
         """
         return self.get_workflow_execution_order(steps)
 
-    def _convert_workflow_result_to_output(
+    def _convert_workflow_result_to_output(  # ai-slop-ok: reST table
         self,
         workflow_result: WorkflowExecutionResult,
     ) -> ModelOrchestratorOutput:

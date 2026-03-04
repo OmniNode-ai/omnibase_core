@@ -4,7 +4,7 @@
 """
 EnumEnforcementMode - Enforcement mode enum for replay safety infrastructure.
 
-This module provides the EnumEnforcementMode enum that determines how the
+The EnumEnforcementMode enum that determines how the
 replay safety enforcer handles non-deterministic effects during replay.
 
 Design:

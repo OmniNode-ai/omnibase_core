@@ -4,7 +4,7 @@
 """
 Load balancer model for distributing workflow operations.
 
-This module provides the ModelLoadBalancer class that distributes workflow
+The ModelLoadBalancer class that distributes workflow
 operations across available resources using semaphore-based concurrency
 control and least-loaded target selection.
 

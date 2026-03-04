@@ -4,7 +4,7 @@
 """
 Service type enum.
 
-This module provides the EnumServiceType enum for defining
+The EnumServiceType enum for defining
 infrastructure service types in the ONEX Configuration-Driven Registry System.
 """
 

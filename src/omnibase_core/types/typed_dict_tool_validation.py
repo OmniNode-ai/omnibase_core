@@ -4,7 +4,7 @@
 """
 TypedDict for tool validation results.
 
-This module provides the typed dictionary structure for individual tool
+The typed dictionary structure for individual tool
 validation results used by ModelMetadataToolCollection.
 """
 

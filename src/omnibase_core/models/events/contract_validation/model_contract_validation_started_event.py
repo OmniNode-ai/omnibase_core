@@ -4,7 +4,7 @@
 """
 Contract validation started event model.
 
-This module provides the event model for when contract validation begins.
+The event model for when contract validation begins.
 This event marks the start of a validation lifecycle and should be followed
 by either a passed or failed event with the same run_id.
 

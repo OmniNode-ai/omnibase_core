@@ -4,7 +4,7 @@
 """
 Service discovery metadata model for service discovery and composition.
 
-This module provides ModelServiceDiscoveryMetadata, a typed model for service-related
+ModelServiceDiscoveryMetadata, a typed model for service-related
 metadata that replaces untyped dict[str, ModelSchemaValue] fields. It captures
 service identification, capabilities, and discovery information.
 

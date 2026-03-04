@@ -4,7 +4,7 @@
 """
 Typed metadata model for node capabilities.
 
-This module provides strongly-typed metadata for node capability patterns.
+Strongly-typed metadata for node capability patterns.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

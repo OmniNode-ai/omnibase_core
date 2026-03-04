@@ -4,7 +4,7 @@
 """
 Protocol defining the minimal interface for event envelopes.
 
-This module provides the ProtocolEventEnvelope generic protocol definition
+The ProtocolEventEnvelope generic protocol definition
 for event envelope handling without circular dependencies.
 """
 

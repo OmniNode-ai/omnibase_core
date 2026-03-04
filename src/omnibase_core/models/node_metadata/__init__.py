@@ -3,7 +3,7 @@
 
 """Node metadata models.
 
-This module contains models related to node metadata, configuration, and status.
+Models related to node metadata, configuration, and status.
 These models describe nodes themselves rather than implementing node functionality.
 """
 

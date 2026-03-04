@@ -4,7 +4,7 @@
 """
 Canonical message envelope model for commands, events, and intents.
 
-This module provides the unified envelope model for all inter-service messages
+The unified envelope model for all inter-service messages
 in ONEX. It provides essential tracing, correlation, and partitioning fields
 that enable distributed workflow tracking.
 

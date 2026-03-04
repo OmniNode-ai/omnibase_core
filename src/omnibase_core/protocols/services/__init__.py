@@ -4,7 +4,7 @@
 """
 Service protocols for ONEX infrastructure.
 
-This module provides protocol definitions for various services
+Protocol definitions for various services
 used by ONEX components, including secret management.
 """
 

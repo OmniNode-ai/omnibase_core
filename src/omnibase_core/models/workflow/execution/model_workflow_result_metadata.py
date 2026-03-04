@@ -4,7 +4,7 @@
 """
 Typed metadata model for workflow execution results.
 
-This module provides ModelWorkflowResultMetadata which replaces the
+ModelWorkflowResultMetadata which replaces the
 untyped dict[str, ModelSchemaValue] pattern in ModelDeclarativeWorkflowResult
 with strongly-typed fields for full type safety and IDE support.
 

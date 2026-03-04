@@ -4,7 +4,7 @@
 """
 JSON-serializable type definition using PEP 695 type statement.
 
-This module provides the JsonSerializable recursive type alias that represents
+The JsonSerializable recursive type alias that represents
 all valid JSON values as defined by RFC 8259. This enables type-safe handling
 of data that must be JSON-compatible.
 

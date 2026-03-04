@@ -4,7 +4,7 @@
 """
 Contract validation event emitter service.
 
-This module provides a service for emitting contract validation events to
+A service for emitting contract validation events to
 configurable destinations (memory, file, Kafka). It implements the sink
 abstraction pattern for flexible event routing.
 

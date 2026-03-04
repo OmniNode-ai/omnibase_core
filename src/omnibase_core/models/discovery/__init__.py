@@ -4,7 +4,7 @@
 """
 Discovery Event Models for ONEX Event-Driven Service Discovery
 
-This module contains Pydantic models for the event-driven discovery lifecycle:
+Pydantic models for the event-driven discovery lifecycle:
 - NODE_INTROSPECTION_EVENT: Node capability publishing
 - TOOL_DISCOVERY_REQUEST: Request for available tools
 - TOOL_DISCOVERY_RESPONSE: Response with tool listings

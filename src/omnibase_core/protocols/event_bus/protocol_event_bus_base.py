@@ -4,7 +4,7 @@
 """
 Base protocol for event bus operations.
 
-This module provides the ProtocolEventBusBase protocol definition
+The ProtocolEventBusBase protocol definition
 for common event bus operations.
 """
 

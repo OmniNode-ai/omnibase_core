@@ -3,7 +3,7 @@
 
 """Routing models for tiered authenticated dependency resolution.
 
-This module provides the type system for trust-domain-scoped, tiered
+The type system for trust-domain-scoped, tiered
 dependency resolution. All models are immutable (frozen) value objects
 suitable for serialization, caching, and concurrent read access.
 

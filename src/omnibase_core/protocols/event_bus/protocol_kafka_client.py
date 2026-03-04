@@ -4,7 +4,7 @@
 """
 Protocol for Kafka client used by intent publisher.
 
-This module provides the ProtocolKafkaClient protocol definition
+The ProtocolKafkaClient protocol definition
 for simple string-based Kafka publishing used by MixinIntentPublisher.
 """
 

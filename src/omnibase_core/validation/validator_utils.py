@@ -4,7 +4,7 @@
 """
 Shared utilities for protocol validation across omni* ecosystem.
 
-This module provides common validation functions used throughout the ONEX framework:
+Common validation functions used throughout the ONEX framework:
 - Python identifier validation
 - ONEX naming convention validation
 - Import path format validation
@@ -96,7 +96,7 @@ def validate_protocol_compliance(
 ) -> None:
     """Validate that an object implements required protocol methods.
 
-    This function provides runtime validation for protocol compliance with
+    Runtime validation for protocol compliance with
     detailed error messages when objects don't implement required protocols.
     It is designed for use after casting `object` types to protocols, providing
     better error messages than a bare `isinstance()` check.

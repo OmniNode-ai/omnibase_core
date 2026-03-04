@@ -4,7 +4,7 @@
 """
 Core-native validation protocols.
 
-This module provides protocol definitions for validation operations
+Protocol definitions for validation operations
 including compliance validation and validation results. These are
 Core-native equivalents of the SPI validation protocols.
 

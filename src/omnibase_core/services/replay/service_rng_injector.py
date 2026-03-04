@@ -4,7 +4,7 @@
 """
 ServiceRNGInjector - RNG injector for deterministic replay.
 
-This module provides the default ProtocolRNGService implementation using
+The default ProtocolRNGService implementation using
 Python's random.Random class for isolated, seeded random number generation.
 
 Design:

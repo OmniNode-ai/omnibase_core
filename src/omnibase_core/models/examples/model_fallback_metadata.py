@@ -4,7 +4,7 @@
 """
 Fallback metadata model for ONEX Configuration-Driven Registry System.
 
-This module provides the ModelFallbackMetadata for strongly-typed
+The ModelFallbackMetadata for strongly-typed
 metadata configuration for fallback strategies.
 """
 

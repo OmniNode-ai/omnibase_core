@@ -3,7 +3,7 @@
 
 """Pydantic model for mixin method parameter definitions.
 
-This module provides the ModelMixinMethodParameter class for defining
+The ModelMixinMethodParameter class for defining
 method parameters in mixin code patterns.
 """
 

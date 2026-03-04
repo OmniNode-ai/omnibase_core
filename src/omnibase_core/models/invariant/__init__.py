@@ -4,7 +4,7 @@
 """
 Invariant models for user-defined validation rules.
 
-This module provides models for defining and evaluating invariants - validation
+Models for defining and evaluating invariants - validation
 rules that ensure AI model changes are safe before production deployment.
 
 Models:

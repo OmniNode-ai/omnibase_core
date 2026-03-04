@@ -59,7 +59,7 @@ TOPIC_LINEAR_SNAPSHOT_EVENT = "onex.evt.platform.linear-snapshot.v1"
 def normalize_legacy_event_type(event_type: str | TypedDictEventType | object) -> str:
     """Normalize legacy event types to consistent string format.
 
-    This function handles compatibility by converting various
+    Compatibility by converting various
     event type formats (strings, ModelEventType objects, etc.) to
     standardized string values.
 

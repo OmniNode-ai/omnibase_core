@@ -4,7 +4,7 @@
 """
 Protocol for schema models.
 
-This module provides the ProtocolSchemaModel protocol definition for schema
+The ProtocolSchemaModel protocol definition for schema
 loading and validation. This is a Core-native equivalent of the SPI schema protocol.
 
 Design Principles:

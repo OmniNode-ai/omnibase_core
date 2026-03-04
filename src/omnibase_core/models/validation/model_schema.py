@@ -3,7 +3,7 @@
 
 """Schema validation models and compatibility aliases.
 
-This module provides a consolidated interface for all schema-related models,
+A consolidated interface for all schema-related models,
 including compatibility aliases for consistent naming.
 """
 

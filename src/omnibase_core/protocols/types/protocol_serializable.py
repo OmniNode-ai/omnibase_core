@@ -4,7 +4,7 @@
 """
 ProtocolSerializable - Protocol for serializable objects.
 
-This module provides the protocol definition for objects that can be
+The protocol definition for objects that can be
 serialized to dictionary format.
 """
 

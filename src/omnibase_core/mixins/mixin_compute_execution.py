@@ -4,7 +4,7 @@
 """
 Mixin for contract-driven compute pipeline execution.
 
-This module provides a mixin class that adds contract-driven pipeline execution
+A mixin class that adds contract-driven pipeline execution
 capabilities to NodeCompute instances. It wraps the synchronous pipeline executor
 in an async-compatible interface and provides contract validation utilities.
 

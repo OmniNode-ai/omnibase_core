@@ -117,7 +117,7 @@ class ModelOnexInputState(BaseModel):
         """
         Convert boundary input state to internal state with required UUIDs.
 
-        This method handles the conversion from Optional UUID fields to required
+        The conversion from Optional UUID fields to required
         UUID fields by generating UUIDs where needed using the UUID service.
 
         Returns:

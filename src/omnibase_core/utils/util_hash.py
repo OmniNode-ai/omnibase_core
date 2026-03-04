@@ -3,7 +3,7 @@
 
 """Centralized hash utilities for consistent, deterministic, and secure hashing.
 
-This module provides deterministic hash functions that are safe for use in:
+Deterministic hash functions that are safe for use in:
 - Cache keys (consistent across Python processes/sessions)
 - UUID generation from strings
 - Unique identifiers that need to be stable

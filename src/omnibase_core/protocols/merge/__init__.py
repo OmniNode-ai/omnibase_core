@@ -4,7 +4,7 @@
 """
 Merge Protocols for ONEX Contract Merging.
 
-This module provides protocols for contract patch merging, enabling the
+Protocols for contract patch merging, enabling the
 combination of user-authored patches with base profiles to produce
 expanded (complete) contracts.
 

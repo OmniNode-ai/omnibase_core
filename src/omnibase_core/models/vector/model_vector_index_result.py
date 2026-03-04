@@ -3,7 +3,7 @@
 
 """Vector index operation result model.
 
-This module provides the ModelVectorIndexResult class for representing
+The ModelVectorIndexResult class for representing
 the result of an index creation or management operation.
 
 Thread Safety:

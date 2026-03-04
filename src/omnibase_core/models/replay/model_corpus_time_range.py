@@ -4,7 +4,7 @@
 """
 ModelCorpusTimeRange - Time range model for execution corpus.
 
-This module provides the ModelCorpusTimeRange model which represents
+The ModelCorpusTimeRange model which represents
 the min/max time range of execution manifests in a corpus.
 
 Thread Safety:

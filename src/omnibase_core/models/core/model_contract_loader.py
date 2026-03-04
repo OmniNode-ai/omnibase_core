@@ -27,7 +27,7 @@ _rebuild_lock = threading.Lock()
 def _ensure_models_rebuilt(contract_loader_cls: type[BaseModel] | None = None) -> None:
     """Ensure models are rebuilt to resolve forward references (lazy initialization).
 
-    This function implements lazy model rebuild to avoid importing ModelCustomFields
+    Lazy model rebuild to avoid importing ModelCustomFields
     at module load time. The rebuild only happens on first ModelContractLoader
     instantiation, improving import performance when the model isn't used.
 

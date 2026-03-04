@@ -11,7 +11,7 @@ from omnibase_core.pipeline.exceptions import (
 )
 
 
-class RegistryHook:
+class RegistryHook:  # ai-slop-ok: reST table
     """
     Registry for pipeline hooks with freeze-after-init thread safety.
 

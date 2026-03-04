@@ -4,7 +4,7 @@
 """
 Handler models for ONEX framework.
 
-This module provides models for handler-related functionality including
+Models for handler-related functionality including
 artifact references, identifiers, packaging metadata references, security
 metadata references, handler descriptors, handler type metadata, and other
 handler configuration types.

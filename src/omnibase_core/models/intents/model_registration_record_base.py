@@ -4,7 +4,7 @@
 """
 Base class for registration records.
 
-This module provides ModelRegistrationRecordBase, a Pydantic base class that
+ModelRegistrationRecordBase, a Pydantic base class that
 implements ProtocolRegistrationRecord. Use this as a base for custom
 registration records to ensure protocol compliance and consistent behavior.
 

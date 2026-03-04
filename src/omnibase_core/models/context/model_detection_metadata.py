@@ -4,7 +4,7 @@
 """
 Detection metadata model for security pattern matching.
 
-This module provides ModelDetectionMetadata, a typed model for security
+ModelDetectionMetadata, a typed model for security
 detection match metadata that replaces untyped dict[str, str] fields. It
 captures pattern categorization, detection source, and remediation hints.
 

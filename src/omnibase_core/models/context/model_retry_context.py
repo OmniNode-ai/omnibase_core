@@ -3,7 +3,7 @@
 
 """Retry context model for retry-related metadata.
 
-This module provides ModelRetryContext, a typed context model for tracking
+ModelRetryContext, a typed context model for tracking
 retry attempts, retryability, and next retry scheduling.
 
 Thread Safety:

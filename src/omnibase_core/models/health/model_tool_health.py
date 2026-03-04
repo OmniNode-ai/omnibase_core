@@ -4,7 +4,7 @@
 """
 Enterprise Tool Health Monitoring Model.
 
-This module provides comprehensive tool health tracking with business intelligence,
+Comprehensive tool health tracking with business intelligence,
 performance monitoring, and operational insights for ONEX registry tools.
 """
 

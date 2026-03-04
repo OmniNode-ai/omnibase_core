@@ -4,7 +4,7 @@
 """
 Conflict resolution utility for data reduction operations.
 
-This module provides the UtilConflictResolver class that handles conflicts
+The UtilConflictResolver class that handles conflicts
 during data reduction with configurable strategies including FIRST_WINS,
 LAST_WINS, MERGE, ERROR, and CUSTOM.
 

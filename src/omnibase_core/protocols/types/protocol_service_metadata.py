@@ -4,7 +4,7 @@
 """
 ProtocolServiceMetadata - Protocol for service metadata.
 
-This module provides the protocol definition for service metadata including
+The protocol definition for service metadata including
 capabilities and tags.
 """
 

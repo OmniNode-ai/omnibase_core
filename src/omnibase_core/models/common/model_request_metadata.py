@@ -4,7 +4,7 @@
 """
 Typed metadata model for discovery/effect/reducer requests.
 
-This module provides strongly-typed metadata for request patterns.
+Strongly-typed metadata for request patterns.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

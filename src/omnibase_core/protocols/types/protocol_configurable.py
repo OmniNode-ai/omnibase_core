@@ -4,7 +4,7 @@
 """
 ProtocolConfigurable - Protocol for configurable objects.
 
-This module provides the protocol definition for objects that can be configured.
+The protocol definition for objects that can be configured.
 """
 
 from __future__ import annotations

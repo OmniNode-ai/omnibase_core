@@ -4,7 +4,7 @@
 """
 Core-native base protocols and type aliases.
 
-This module provides common type definitions and base protocols used across
+Common type definitions and base protocols used across
 all Core protocol ABCs. It establishes Core-native equivalents for common
 SPI types to eliminate external dependencies.
 

@@ -7,7 +7,7 @@ Projector Schema Model.
 Defines the database schema for a projection, including table name, primary key,
 columns, indexes, and optional versioning.
 
-This module provides:
+Exports:
     - :class:`ModelProjectorSchema`: Pydantic model for projector schema definition
 
 Schema Components:
