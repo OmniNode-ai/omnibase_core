@@ -4,11 +4,10 @@
 """
 Standard error handling decorators for ONEX framework.
 
-This module provides decorators that eliminate error handling boilerplate
-and ensure consistent error patterns across all tools, especially important
-for agent-generated tools.
+Decorators that eliminate repetitive try/except patterns and enforce consistent
+error wrapping across all tools, especially agent-generated ones.
 
-All decorators in this module follow the ONEX exception handling contract:
+All decorators follow the ONEX exception handling contract:
 - Cancellation/exit signals (SystemExit, KeyboardInterrupt, GeneratorExit,
   asyncio.CancelledError) ALWAYS propagate - they are never caught.
 - ModelOnexError is always re-raised as-is to preserve error context.
