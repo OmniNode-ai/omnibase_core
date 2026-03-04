@@ -49,6 +49,7 @@ from omnibase_core.utils.util_compute_executor import (
     resolve_mapping_path,
 )
 from omnibase_core.utils.util_compute_transformations import (
+    _get_compiled_pattern,
     execute_transformation,
     transform_case,
     transform_identity,
@@ -134,6 +135,63 @@ class TestTransformRegex:
         config = ModelTransformRegexConfig(pattern=r"[invalid", replacement="x")
         with pytest.raises(ModelOnexError):
             transform_regex("test", config)
+
+
+@pytest.mark.timeout(5)
+@pytest.mark.unit
+class TestRegexPatternCache:
+    """Tests for LRU-cached regex pattern compilation (OMN-504)."""
+
+    def setup_method(self) -> None:
+        """Clear the LRU cache before each test to ensure isolation."""
+        _get_compiled_pattern.cache_clear()
+
+    def test_cache_returns_same_compiled_object(self) -> None:
+        """Calling _get_compiled_pattern twice with the same args returns the same object."""
+        pattern_a = _get_compiled_pattern(r"\d+", 0)
+        pattern_b = _get_compiled_pattern(r"\d+", 0)
+        assert pattern_a is pattern_b
+
+    def test_cache_differentiates_flags(self) -> None:
+        """Different flags produce different cached entries."""
+        import re
+
+        pattern_no_flag = _get_compiled_pattern(r"hello", 0)
+        pattern_icase = _get_compiled_pattern(r"hello", re.IGNORECASE)
+        assert pattern_no_flag is not pattern_icase
+        assert pattern_no_flag.flags != pattern_icase.flags
+
+    def test_cache_info_tracks_hits_and_misses(self) -> None:
+        """Cache info correctly reports hits and misses."""
+        _get_compiled_pattern(r"abc", 0)  # miss
+        _get_compiled_pattern(r"abc", 0)  # hit
+        _get_compiled_pattern(r"xyz", 0)  # miss
+
+        info = _get_compiled_pattern.cache_info()
+        assert info.hits == 1
+        assert info.misses == 2
+
+    def test_transform_regex_uses_cache(self) -> None:
+        """transform_regex benefits from cached compilation across calls."""
+        config = ModelTransformRegexConfig(pattern=r"\s+", replacement=" ")
+
+        _get_compiled_pattern.cache_clear()
+        transform_regex("a  b", config)
+        transform_regex("c  d", config)
+
+        info = _get_compiled_pattern.cache_info()
+        assert info.hits >= 1, "Second call should hit the cache"
+
+    def test_invalid_pattern_not_cached(self) -> None:
+        """Invalid patterns that raise re.error are not stored in the cache."""
+        try:
+            _get_compiled_pattern(r"[invalid", 0)
+        except Exception:
+            pass
+
+        info = _get_compiled_pattern.cache_info()
+        # lru_cache does not cache exceptions, so misses increment but size stays 0
+        assert info.currsize == 0
 
 
 @pytest.mark.timeout(5)
