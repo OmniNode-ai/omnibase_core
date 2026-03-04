@@ -355,7 +355,7 @@ repos:
       - id: check-ai-slop
         name: Check for AI-slop patterns
         language: system
-        entry: uv run python scripts/validation/check_ai_slop.py
+        entry: uv run python scripts/validation/check_ai_slop.py --strict
         types_or: [python, markdown]
         pass_filenames: true
         # CHANGELOG.md is excluded because migration guide step headers (Step N: ...)

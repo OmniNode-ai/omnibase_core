@@ -15,7 +15,7 @@ import ast
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, cast
+from typing import Literal
 from uuid import UUID, uuid4
 
 import yaml
@@ -1404,11 +1404,7 @@ class ServiceContractValidator:
         # Read and validate file content
         try:
             content = path.read_text(encoding="utf-8")
-            # NOTE(OMN-1494): Cast needed because @standard_error_handling decorator erases return type.
-            return cast(
-                ModelContractValidationResult,
-                self.validate_contract_yaml(content, contract_type),
-            )
+            return self.validate_contract_yaml(content, contract_type)
         except UnicodeDecodeError as e:
             return ModelContractValidationResult(
                 is_valid=False,
