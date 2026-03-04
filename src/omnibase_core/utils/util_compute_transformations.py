@@ -37,6 +37,7 @@ See Also:
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
 """
 
+import functools
 import re
 import unicodedata
 from collections.abc import Callable
@@ -161,6 +162,38 @@ def transform_identity[T](
     return data
 
 
+_REGEX_CACHE_MAX_SIZE = 128
+"""Default maximum number of compiled regex patterns to cache.
+
+This is a sensible default for most pipeline workloads. Compiled re.Pattern
+objects are relatively small in memory, so 128 entries have negligible
+memory impact while avoiding repeated re.compile() calls in hot loops.
+"""
+
+
+@functools.lru_cache(maxsize=_REGEX_CACHE_MAX_SIZE)
+def _get_compiled_pattern(pattern: str, flags: int) -> re.Pattern[str]:
+    """Return a compiled regex pattern, caching results with LRU eviction.
+
+    Thread Safety:
+        ``functools.lru_cache`` is thread-safe in CPython 3.2+ (uses a
+        reentrant lock internally). The returned ``re.Pattern`` objects are
+        immutable and safe for concurrent use.
+
+    Args:
+        pattern: The regex pattern string to compile.
+        flags: Integer combination of ``re`` flag constants (e.g.
+            ``re.IGNORECASE | re.MULTILINE``).
+
+    Returns:
+        The compiled ``re.Pattern`` object.
+
+    Raises:
+        re.error: If *pattern* is not a valid regular expression.
+    """
+    return re.compile(pattern, flags)
+
+
 def transform_regex(data: str, config: ModelTransformRegexConfig) -> str:
     """
     Apply regex substitution to string data.
@@ -168,8 +201,14 @@ def transform_regex(data: str, config: ModelTransformRegexConfig) -> str:
     Performs a regular expression search-and-replace operation on the input string
     using the pattern and replacement defined in the configuration.
 
+    Performance:
+        Compiled regex patterns are cached via ``_get_compiled_pattern``
+        (LRU cache, default 128 entries) so repeated calls with the same
+        pattern/flags combination avoid recompilation overhead.
+
     Thread Safety:
         This function is pure and stateless - safe for concurrent use.
+        The underlying LRU cache is thread-safe in CPython 3.2+.
 
     Args:
         data: The input string to transform.
@@ -204,7 +243,8 @@ def transform_regex(data: str, config: ModelTransformRegexConfig) -> str:
             flags |= re.DOTALL
 
     try:
-        return re.sub(config.pattern, config.replacement, data, flags=flags)
+        compiled = _get_compiled_pattern(config.pattern, flags)
+        return compiled.sub(config.replacement, data)
     except re.error as e:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -574,4 +614,7 @@ __all__ = [
     "transform_json_path",
     "execute_transformation",
     "TRANSFORMATION_REGISTRY",
+    # Regex cache utilities (OMN-504)
+    "_REGEX_CACHE_MAX_SIZE",
+    "_get_compiled_pattern",
 ]
