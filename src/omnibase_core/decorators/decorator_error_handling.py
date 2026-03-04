@@ -18,7 +18,10 @@ All decorators in this module follow the ONEX exception handling contract:
 import asyncio
 import functools
 from collections.abc import Callable
-from typing import Any
+from typing import Any, ParamSpec, TypeVar
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
@@ -200,13 +203,16 @@ def _is_validation_error(exc: Exception) -> bool:
 
 def standard_error_handling(
     operation_name: str = "operation",
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator that provides standard error handling pattern for ONEX tools.
 
     This decorator eliminates 6+ lines of boilerplate error handling code
     and ensures consistent error patterns. It's especially valuable for
     agent-generated tools that need reliable error handling.
+
+    Uses ParamSpec/TypeVar to preserve the decorated function's parameter
+    and return type annotations for mypy strict compatibility.
 
     Args:
         operation_name: Human-readable name for the operation (used in error messages)
@@ -241,7 +247,7 @@ def standard_error_handling(
         must propagate for proper shutdown and task cancellation semantics.
     """
 
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
         if asyncio.iscoroutinefunction(func):
 
             @functools.wraps(func)
@@ -267,7 +273,7 @@ def standard_error_handling(
                         operation=operation_name,
                     ) from e
 
-            return async_wrapper
+            return async_wrapper  # type: ignore[return-value]
         else:
 
             @functools.wraps(func)
@@ -300,12 +306,15 @@ def standard_error_handling(
 
 def validation_error_handling(
     operation_name: str = "validation",
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator for validation operations that may throw ValidationError.
 
     This is a specialized version of standard_error_handling that treats
     ValidationError as a separate case with VALIDATION_ERROR code.
+
+    Uses ParamSpec/TypeVar to preserve the decorated function's parameter
+    and return type annotations for mypy strict compatibility.
 
     Args:
         operation_name: Human-readable name for the validation operation
@@ -325,7 +334,7 @@ def validation_error_handling(
         must propagate for proper shutdown and task cancellation semantics.
     """
 
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
         if asyncio.iscoroutinefunction(func):
 
             @functools.wraps(func)
@@ -363,7 +372,7 @@ def validation_error_handling(
                         operation=operation_name,
                     ) from e
 
-            return async_wrapper
+            return async_wrapper  # type: ignore[return-value]
         else:
 
             @functools.wraps(func)
@@ -408,9 +417,12 @@ def validation_error_handling(
 
 def io_error_handling(
     operation_name: str = "I/O operation",
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator for I/O operations (file/network) with appropriate error codes.
+
+    Uses ParamSpec/TypeVar to preserve the decorated function's parameter
+    and return type annotations for mypy strict compatibility.
 
     Args:
         operation_name: Human-readable name for the I/O operation
@@ -430,7 +442,7 @@ def io_error_handling(
         must propagate for proper shutdown and task cancellation semantics.
     """
 
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
         if asyncio.iscoroutinefunction(func):
 
             @functools.wraps(func)
@@ -470,7 +482,7 @@ def io_error_handling(
                         operation=operation_name,
                     ) from e
 
-            return async_wrapper
+            return async_wrapper  # type: ignore[return-value]
         else:
 
             @functools.wraps(func)
