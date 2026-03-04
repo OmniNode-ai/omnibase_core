@@ -727,6 +727,18 @@ jobs:
         run: uv sync --all-extras
 
       - name: Run test split ${{ matrix.split }}/20
+        env:
+          # OMN-3327: Performance tests use CI_RUNNER_TYPE to relax thresholds on
+          # shared self-hosted runners (15-25% lower throughput vs dedicated runners)
+          CI_RUNNER_TYPE: >-
+            ${{
+              (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+               (github.event_name == 'push' ||
+                github.event_name == 'workflow_dispatch' ||
+                github.event_name == 'schedule'))
+              && 'self-hosted'
+              || 'github-hosted'
+            }}
         run: |
           uv run pytest tests/ \
             --splits 20 \

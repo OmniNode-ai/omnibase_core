@@ -15,6 +15,8 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from tests.performance.conftest import ci_threshold, ci_upper_threshold
+
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
 from omnibase_core.models.contracts.model_workflow_condition import (
     EnumConditionOperator,
@@ -98,8 +100,8 @@ class TestModelWorkflowDependencyPerformance:
         avg_time_ms = (total_time / iterations) * 1000
 
         # Performance target: <1ms per dependency validation
-        assert avg_time_ms < 1.0, (
-            f"Single dependency validation too slow: {avg_time_ms:.2f}ms"
+        assert avg_time_ms < ci_upper_threshold(1.0), (
+            f"Single dependency validation too slow: {avg_time_ms:.2f}ms (threshold: {ci_upper_threshold(1.0):.1f}ms)"
         )
 
         print(f"✅ Single dependency validation: {avg_time_ms:.3f}ms average")
@@ -140,11 +142,11 @@ class TestModelWorkflowDependencyPerformance:
         circular_detection_time = time.perf_counter() - start_time
 
         # Performance targets
-        assert non_circular_time < 0.1, (
-            f"Non-circular validation too slow: {non_circular_time:.3f}s"
+        assert non_circular_time < ci_upper_threshold(0.1), (
+            f"Non-circular validation too slow: {non_circular_time:.3f}s (threshold: {ci_upper_threshold(0.1):.2f}s)"
         )
-        assert circular_detection_time < 0.1, (
-            f"Circular detection too slow: {circular_detection_time:.3f}s"
+        assert circular_detection_time < ci_upper_threshold(0.1), (
+            f"Circular detection too slow: {circular_detection_time:.3f}s (threshold: {ci_upper_threshold(0.1):.2f}s)"
         )
         assert circular_detections == 50, (
             f"Expected 50 circular detections, got {circular_detections}"
@@ -213,11 +215,11 @@ class TestModelWorkflowDependencyPerformance:
         valid_avg_ms = (valid_time / valid_count) * 1000
         invalid_avg_ms = (invalid_time / len(invalid_modules) / 200) * 1000
 
-        assert valid_avg_ms < 0.5, (
-            f"Valid module validation too slow: {valid_avg_ms:.3f}ms"
+        assert valid_avg_ms < ci_upper_threshold(0.5), (
+            f"Valid module validation too slow: {valid_avg_ms:.3f}ms (threshold: {ci_upper_threshold(0.5):.3f}ms)"
         )
-        assert invalid_avg_ms < 0.5, (
-            f"Invalid module rejection too slow: {invalid_avg_ms:.3f}ms"
+        assert invalid_avg_ms < ci_upper_threshold(0.5), (
+            f"Invalid module rejection too slow: {invalid_avg_ms:.3f}ms (threshold: {ci_upper_threshold(0.5):.3f}ms)"
         )
         assert valid_count == 1000, (
             f"Expected 1000 valid validations, got {valid_count}"
@@ -280,11 +282,11 @@ class TestModelWorkflowDependencyPerformance:
         analysis_time = time.perf_counter() - start_time
 
         # Performance targets
-        assert creation_time < 2.0, (
-            f"Large graph creation too slow: {creation_time:.2f}s"
+        assert creation_time < ci_upper_threshold(2.0), (
+            f"Large graph creation too slow: {creation_time:.2f}s (threshold: {ci_upper_threshold(2.0):.1f}s)"
         )
-        assert analysis_time < 0.1, (
-            f"Large graph analysis too slow: {analysis_time:.2f}s"
+        assert analysis_time < ci_upper_threshold(0.1), (
+            f"Large graph analysis too slow: {analysis_time:.2f}s (threshold: {ci_upper_threshold(0.1):.2f}s)"
         )
 
         # Verify correctness
@@ -355,9 +357,11 @@ class TestModelWorkflowDependencyPerformance:
         valid_avg_ms = (valid_time / valid_count) * 1000 if valid_count > 0 else 0
         invalid_avg_ms = (invalid_time / (len(invalid_timeouts) * 100)) * 1000
 
-        assert valid_avg_ms < 1.0, f"Timeout validation too slow: {valid_avg_ms:.3f}ms"
-        assert invalid_avg_ms < 1.0, (
-            f"Invalid timeout rejection too slow: {invalid_avg_ms:.3f}ms"
+        assert valid_avg_ms < ci_upper_threshold(1.0), (
+            f"Timeout validation too slow: {valid_avg_ms:.3f}ms (threshold: {ci_upper_threshold(1.0):.1f}ms)"
+        )
+        assert invalid_avg_ms < ci_upper_threshold(1.0), (
+            f"Invalid timeout rejection too slow: {invalid_avg_ms:.3f}ms (threshold: {ci_upper_threshold(1.0):.1f}ms)"
         )
         assert invalid_rejections >= 300, (
             f"Expected ≥300 timeout rejections, got {invalid_rejections}"
@@ -469,14 +473,18 @@ class TestModelWorkflowDependencyPerformance:
         )
 
         # Performance targets
-        assert overall_time < 5.0, (
-            f"Concurrent validation too slow: {overall_time:.2f}s"
+        assert overall_time < ci_upper_threshold(5.0), (
+            f"Concurrent validation too slow: {overall_time:.2f}s (threshold: {ci_upper_threshold(5.0):.1f}s)"
         )
-        assert max_thread_time < 2.0, f"Slowest thread too slow: {max_thread_time:.2f}s"
+        assert max_thread_time < ci_upper_threshold(2.0), (
+            f"Slowest thread too slow: {max_thread_time:.2f}s (threshold: {ci_upper_threshold(2.0):.1f}s)"
+        )
         assert total_validations == num_threads * deps_per_thread
 
         throughput = total_validations / overall_time
-        assert throughput > 200, f"Throughput too low: {throughput:.1f} validations/sec"
+        assert throughput > ci_threshold(200), (
+            f"Throughput too low: {throughput:.1f} validations/sec (threshold: {ci_threshold(200):.0f})"
+        )
 
         print(f"✅ Concurrent validation: {throughput:.1f} deps/sec throughput")
         print(

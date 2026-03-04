@@ -13,6 +13,8 @@ from uuid import UUID
 
 import pytest
 
+from tests.performance.conftest import ci_threshold, ci_upper_threshold
+
 from omnibase_core.container.container_service_registry import ServiceRegistry
 
 # ===== Dynamic Interface and Implementation Factories =====
@@ -138,11 +140,11 @@ class TestServiceRegistryPerformance:
         assert len(all_registrations) >= num_services
 
         # Verify performance thresholds
-        assert avg_time_per_service < 1.0, (
-            f"Average registration time {avg_time_per_service:.3f}ms exceeds 1ms threshold"
+        assert avg_time_per_service < ci_upper_threshold(1.0), (
+            f"Average registration time {avg_time_per_service:.3f}ms exceeds {ci_upper_threshold(1.0):.1f}ms threshold"
         )
-        assert total_time < 1.0, (
-            f"Total registration time {total_time:.3f}s exceeds 1s threshold"
+        assert total_time < ci_upper_threshold(1.0), (
+            f"Total registration time {total_time:.3f}s exceeds {ci_upper_threshold(1.0):.1f}s threshold"
         )
 
         print(
@@ -195,11 +197,11 @@ class TestServiceRegistryPerformance:
         assert status.total_registrations >= num_services
 
         # Verify performance thresholds (more lenient for larger scale)
-        assert avg_time_per_service < 2.0, (
-            f"Average registration time {avg_time_per_service:.3f}ms exceeds 2ms threshold"
+        assert avg_time_per_service < ci_upper_threshold(2.0), (
+            f"Average registration time {avg_time_per_service:.3f}ms exceeds {ci_upper_threshold(2.0):.1f}ms threshold"
         )
-        assert total_time < 10.0, (
-            f"Total registration time {total_time:.3f}s exceeds 10s threshold"
+        assert total_time < ci_upper_threshold(10.0), (
+            f"Total registration time {total_time:.3f}s exceeds {ci_upper_threshold(10.0):.1f}s threshold"
         )
 
         print(
@@ -260,8 +262,8 @@ class TestServiceRegistryPerformance:
         min_resolution_time = min(resolution_times)
 
         # Verify performance threshold
-        assert avg_resolution_time < 0.5, (
-            f"Average resolution time {avg_resolution_time:.3f}ms exceeds 0.5ms threshold"
+        assert avg_resolution_time < ci_upper_threshold(0.5), (
+            f"Average resolution time {avg_resolution_time:.3f}ms exceeds {ci_upper_threshold(0.5):.3f}ms threshold"
         )
 
         print(
@@ -311,8 +313,8 @@ class TestServiceRegistryPerformance:
         assert len(all_implementations) == num_implementations
 
         # Verify performance
-        assert resolve_time < 100.0, (
-            f"resolve_all_services took {resolve_time:.3f}ms, exceeds 100ms threshold"
+        assert resolve_time < ci_upper_threshold(100.0), (
+            f"resolve_all_services took {resolve_time:.3f}ms, exceeds {ci_upper_threshold(100.0):.0f}ms threshold"
         )
 
         print(
@@ -353,8 +355,8 @@ class TestServiceRegistryPerformance:
         throughput = num_services / total_time  # registrations per second
 
         # Verify throughput threshold
-        assert throughput > 1000.0, (
-            f"Throughput {throughput:.1f} ops/s is below 1000 ops/s threshold"
+        assert throughput > ci_threshold(1000.0), (
+            f"Throughput {throughput:.1f} ops/s is below {ci_threshold(1000.0):.0f} ops/s threshold"
         )
 
         print(
@@ -397,8 +399,8 @@ class TestServiceRegistryPerformance:
         assert len(all_registrations) >= num_services
 
         # Verify performance threshold
-        assert list_time_ms < 10.0, (
-            f"List operation took {list_time_ms:.3f}ms, exceeds 10ms threshold"
+        assert list_time_ms < ci_upper_threshold(10.0), (
+            f"List operation took {list_time_ms:.3f}ms, exceeds {ci_upper_threshold(10.0):.0f}ms threshold"
         )
 
         print(
@@ -442,8 +444,8 @@ class TestServiceRegistryPerformance:
         assert len(all_services) == num_implementations
 
         # Verify performance threshold
-        assert resolve_time_ms < 50.0, (
-            f"resolve_all took {resolve_time_ms:.3f}ms, exceeds 50ms threshold"
+        assert resolve_time_ms < ci_upper_threshold(50.0), (
+            f"resolve_all took {resolve_time_ms:.3f}ms, exceeds {ci_upper_threshold(50.0):.0f}ms threshold"
         )
 
         print(
@@ -496,8 +498,8 @@ class TestServiceRegistryPerformance:
         assert "request" in status.scope_distribution
 
         # Verify performance threshold
-        assert status_time_ms < 100.0, (
-            f"Status calculation took {status_time_ms:.3f}ms, exceeds 100ms threshold"
+        assert status_time_ms < ci_upper_threshold(100.0), (
+            f"Status calculation took {status_time_ms:.3f}ms, exceeds {ci_upper_threshold(100.0):.0f}ms threshold"
         )
 
         print(

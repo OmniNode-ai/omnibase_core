@@ -19,6 +19,8 @@ from collections.abc import Callable
 
 import pytest
 
+from tests.performance.conftest import ci_threshold, ci_upper_threshold
+
 from omnibase_core.models.pipeline import (
     ModelPhaseExecutionPlan,
     ModelPipelineContext,
@@ -139,8 +141,8 @@ class TestRegistryHookRegistrationPerformance:
         assert len(registry.get_all_hooks()) == num_hooks
 
         # Verify performance threshold
-        assert total_time_ms < 10.0, (
-            f"Total registration time {total_time_ms:.3f}ms exceeds 10ms threshold"
+        assert total_time_ms < ci_upper_threshold(10.0), (
+            f"Total registration time {total_time_ms:.3f}ms exceeds {ci_upper_threshold(10.0):.0f}ms threshold"
         )
 
         print(
@@ -174,11 +176,11 @@ class TestRegistryHookRegistrationPerformance:
         assert len(registry.get_all_hooks()) == num_hooks
 
         # Verify performance threshold
-        assert total_time_ms < 100.0, (
-            f"Total registration time {total_time_ms:.3f}ms exceeds 100ms threshold"
+        assert total_time_ms < ci_upper_threshold(100.0), (
+            f"Total registration time {total_time_ms:.3f}ms exceeds {ci_upper_threshold(100.0):.0f}ms threshold"
         )
-        assert avg_time_us < 100.0, (
-            f"Average registration time {avg_time_us:.1f}us exceeds 100us threshold"
+        assert avg_time_us < ci_upper_threshold(100.0), (
+            f"Average registration time {avg_time_us:.1f}us exceeds {ci_upper_threshold(100.0):.0f}us threshold"
         )
 
         print(
@@ -225,8 +227,8 @@ class TestRegistryHookRegistrationPerformance:
             assert len(phase_hooks) == num_hooks_per_phase
 
         # Verify performance threshold
-        assert total_time_ms < 100.0, (
-            f"Total registration time {total_time_ms:.3f}ms exceeds 100ms threshold"
+        assert total_time_ms < ci_upper_threshold(100.0), (
+            f"Total registration time {total_time_ms:.3f}ms exceeds {ci_upper_threshold(100.0):.0f}ms threshold"
         )
 
         print(
@@ -256,9 +258,9 @@ class TestRegistryHookRegistrationPerformance:
         total_time = end_time - start_time
         throughput = num_hooks / total_time
 
-        # Verify throughput threshold (5,000 ops/s is CI-friendly)
-        assert throughput > 5000.0, (
-            f"Throughput {throughput:.1f} ops/s below 5,000 ops/s threshold"
+        # Verify throughput threshold (5,000 ops/s is CI-friendly, scaled for runner type)
+        assert throughput > ci_threshold(5000.0), (
+            f"Throughput {throughput:.1f} ops/s below {ci_threshold(5000.0):.0f} ops/s threshold"
         )
 
         print(
@@ -323,11 +325,11 @@ class TestRegistryHookLookupPerformance:
         total_time_ms = sum(lookup_times) / 1000
 
         # Verify performance thresholds
-        assert avg_lookup_us < 10.0, (
-            f"Average lookup time {avg_lookup_us:.2f}us exceeds 10us threshold"
+        assert avg_lookup_us < ci_upper_threshold(10.0), (
+            f"Average lookup time {avg_lookup_us:.2f}us exceeds {ci_upper_threshold(10.0):.0f}us threshold"
         )
-        assert total_time_ms < 10.0, (
-            f"Total lookup time {total_time_ms:.3f}ms exceeds 10ms threshold"
+        assert total_time_ms < ci_upper_threshold(10.0), (
+            f"Total lookup time {total_time_ms:.3f}ms exceeds {ci_upper_threshold(10.0):.0f}ms threshold"
         )
 
         print(
@@ -380,8 +382,8 @@ class TestRegistryHookLookupPerformance:
             avg_time = sum(lookup_times[phase]) / len(lookup_times[phase])
             max_time = max(lookup_times[phase])
 
-            assert avg_time < 1.0, (
-                f"Phase {phase} avg lookup time {avg_time:.3f}ms exceeds 1ms threshold"
+            assert avg_time < ci_upper_threshold(1.0), (
+                f"Phase {phase} avg lookup time {avg_time:.3f}ms exceeds {ci_upper_threshold(1.0):.1f}ms threshold"
             )
 
             print(f"  {phase}: avg={avg_time:.3f}ms, max={max_time:.3f}ms")
@@ -422,8 +424,8 @@ class TestRegistryHookLookupPerformance:
         max_time_ms = max(call_times)
 
         # Verify performance threshold
-        assert avg_time_ms < 5.0, (
-            f"Average get_all_hooks time {avg_time_ms:.3f}ms exceeds 5ms threshold"
+        assert avg_time_ms < ci_upper_threshold(5.0), (
+            f"Average get_all_hooks time {avg_time_ms:.3f}ms exceeds {ci_upper_threshold(5.0):.0f}ms threshold"
         )
 
         print(
@@ -485,8 +487,8 @@ class TestRunnerPipelineExecutionPerformance:
         assert execution_count == num_hooks
 
         # Verify performance threshold
-        assert total_time_ms < 50.0, (
-            f"Execution time {total_time_ms:.3f}ms exceeds 50ms threshold"
+        assert total_time_ms < ci_upper_threshold(50.0), (
+            f"Execution time {total_time_ms:.3f}ms exceeds {ci_upper_threshold(50.0):.0f}ms threshold"
         )
 
         print(
@@ -534,8 +536,8 @@ class TestRunnerPipelineExecutionPerformance:
         assert execution_count == num_hooks
 
         # Verify performance threshold
-        assert total_time_ms < 500.0, (
-            f"Execution time {total_time_ms:.3f}ms exceeds 500ms threshold"
+        assert total_time_ms < ci_upper_threshold(500.0), (
+            f"Execution time {total_time_ms:.3f}ms exceeds {ci_upper_threshold(500.0):.0f}ms threshold"
         )
 
         print(
@@ -603,8 +605,8 @@ class TestRunnerPipelineExecutionPerformance:
         assert execution_order == expected_order
 
         # Verify performance threshold
-        assert total_time_ms < 500.0, (
-            f"Execution time {total_time_ms:.3f}ms exceeds 500ms threshold"
+        assert total_time_ms < ci_upper_threshold(500.0), (
+            f"Execution time {total_time_ms:.3f}ms exceeds {ci_upper_threshold(500.0):.0f}ms threshold"
         )
 
         print(
@@ -650,8 +652,8 @@ class TestRunnerPipelineExecutionPerformance:
         assert execution_count == num_hooks
 
         # Verify performance threshold
-        assert total_time_ms < 100.0, (
-            f"Async execution time {total_time_ms:.3f}ms exceeds 100ms threshold"
+        assert total_time_ms < ci_upper_threshold(100.0), (
+            f"Async execution time {total_time_ms:.3f}ms exceeds {ci_upper_threshold(100.0):.0f}ms threshold"
         )
 
         print(f"\n[OK] Executed {num_hooks} async hooks in {total_time_ms:.3f}ms")
