@@ -155,22 +155,22 @@ class TestModelTransformJsonPathConfig:
 
     def test_path_empty_raises_error(self) -> None:
         """Test that empty path raises validation error."""
-        with pytest.raises(ValueError, match="path cannot be empty"):
+        with pytest.raises(ValueError, match="String should have at least 1 character"):
             ModelTransformJsonPathConfig(path="")
 
     def test_path_whitespace_only_raises_error(self) -> None:
         """Test that whitespace-only path raises validation error."""
-        with pytest.raises(ValueError, match="path cannot be empty"):
+        with pytest.raises(ValueError, match="String should match pattern"):
             ModelTransformJsonPathConfig(path="   ")
 
     def test_path_without_dollar_raises_error(self) -> None:
         """Test that path not starting with $ raises validation error."""
-        with pytest.raises(ValueError, match="path must start with"):
+        with pytest.raises(ValueError, match="String should match pattern"):
             ModelTransformJsonPathConfig(path="data.items")
 
     def test_path_with_dot_but_no_dollar_raises_error(self) -> None:
         """Test that path starting with dot raises validation error."""
-        with pytest.raises(ValueError, match="path must start with"):
+        with pytest.raises(ValueError, match="String should match pattern"):
             ModelTransformJsonPathConfig(path=".data")
 
     def test_rejects_extra_fields(self) -> None:
@@ -200,7 +200,9 @@ class TestModelMappingConfig:
         """Test that empty field_mappings raises validation error."""
         import pytest
 
-        with pytest.raises(ValueError, match="field_mappings cannot be empty"):
+        with pytest.raises(
+            ValueError, match="Dictionary should have at least 1 item"
+        ):
             ModelMappingConfig(field_mappings={})
 
 
