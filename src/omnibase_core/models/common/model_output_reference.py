@@ -7,9 +7,9 @@ Output Reference Model.
 Strongly-typed model for referencing outputs from other graph nodes.
 Follows ONEX canonical patterns with strict typing - no Any types allowed.
 
-This module provides the ``ModelOutputReference`` class for defining
-typed data flow references between nodes in the ONEX execution graph.
-It replaces untyped ``dict[str, str]`` patterns with validated references.
+``ModelOutputReference`` defines typed data flow references between
+nodes in the ONEX execution graph, replacing untyped ``dict[str, str]``
+patterns with validated references.
 
 The source_reference format is "node_id.output_name" which is validated
 to ensure proper structure and prevent malformed references at runtime.
