@@ -125,6 +125,17 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # Security: Prevent .env file commits
+      # Enforces use of ~/.omnibase/.env as the single source of truth
+      # Blocks commits of .env files (except .env.example)
+      - id: no-env-file
+        name: Reject committed .env files (except .env.example)
+        entry: scripts/check_no_env_files.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
   # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:
