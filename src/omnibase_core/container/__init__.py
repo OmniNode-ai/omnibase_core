@@ -3,7 +3,7 @@
 
 """Container logic module.
 
-This module contains dependency injection container logic and service resolution.
+Dependency injection container logic and service resolution.
 """
 
 from omnibase_core.container.container_service_registry import ServiceRegistry

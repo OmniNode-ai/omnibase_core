@@ -3,7 +3,7 @@
 
 """Metadata filter model for vector queries.
 
-This module provides the ModelVectorMetadataFilter class for defining
+The ModelVectorMetadataFilter class for defining
 metadata-based filtering conditions in vector search operations.
 
 Thread Safety:

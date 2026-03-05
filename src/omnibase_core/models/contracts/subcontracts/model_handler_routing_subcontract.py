@@ -6,7 +6,7 @@ Handler Routing Subcontract Model.
 
 Pydantic model for contract-driven handler routing configuration.
 
-This module provides the main subcontract model for defining how messages
+The main subcontract model for defining how messages
 are routed to handlers based on the ONEX contract `handler_routing` section.
 These models enable MixinHandlerRouting to make routing decisions using
 contract configuration rather than hardcoded logic.

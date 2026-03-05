@@ -4,7 +4,7 @@
 """
 Protocol for event message objects in the event bus.
 
-This module provides the ProtocolEventMessage protocol definition for
+The ProtocolEventMessage protocol definition for
 event-driven messaging in the ONEX architecture.
 """
 

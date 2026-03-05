@@ -61,7 +61,7 @@ class ModelOnexInternalInputState(BaseModel):
         """
         Create internal state from boundary state, ensuring all UUIDs are populated.
 
-        This method handles the conversion from Optional UUID fields to required
+        The conversion from Optional UUID fields to required
         UUID fields by generating UUIDs where needed.
 
         Args:

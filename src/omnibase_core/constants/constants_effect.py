@@ -199,7 +199,7 @@ def contains_denied_builtin(field_path: str) -> str | None:
     """
     Check if a field path contains any denied Python built-in or special attribute.
 
-    This function provides defense-in-depth security by checking each segment
+    Defense-in-depth security by checking each segment
     of a dotted field path against the DENIED_BUILTINS set. It complements
     SAFE_FIELD_PATTERN which validates character sets.
 

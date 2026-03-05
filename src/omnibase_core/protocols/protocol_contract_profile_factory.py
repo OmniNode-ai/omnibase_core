@@ -4,7 +4,7 @@
 """
 Contract Profile Factory Protocol.
 
-This module provides the ProtocolContractProfileFactory protocol which defines
+The ProtocolContractProfileFactory protocol which defines
 the interface for factories that create default contract profiles for different
 node types. Contract profiles provide pre-configured templates for common node
 use cases.

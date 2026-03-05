@@ -4,7 +4,7 @@
 """
 Protocol for contract validation event emission.
 
-This module provides the protocol definition for emitting contract validation
+The protocol definition for emitting contract validation
 lifecycle events. It follows the Interface Segregation Principle (ISP) by
 providing a minimal interface for event emission.
 

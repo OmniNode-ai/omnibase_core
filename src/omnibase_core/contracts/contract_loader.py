@@ -4,7 +4,7 @@
 """
 Contract loader with YAML !include directive support and optional caching.
 
-This module provides contract loading with support for modular contract
+Contract loading with support for modular contract
 composition via the YAML !include tag. Contracts can reference external
 YAML files that are resolved and merged during loading.
 

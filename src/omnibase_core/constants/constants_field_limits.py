@@ -4,12 +4,12 @@
 """
 Centralized field length limits for ONEX models.
 
-This module provides standardized field length limits used across all Pydantic
+Standardized field length limits used across all Pydantic
 models in the omnibase_core package. Using these constants ensures consistency
 and makes it easy to adjust limits globally.
 
 SINGLE SOURCE OF TRUTH (SSOT)
-=============================
+-----------------------------
 
 This module is the CANONICAL SOURCE for:
 - MAX_DFS_ITERATIONS: Algorithm iteration limit for DFS cycle detection

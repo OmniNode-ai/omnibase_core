@@ -3,7 +3,7 @@
 
 """Operational context model for operation-level metadata.
 
-This module provides ModelOperationalContext, a typed context model for
+ModelOperationalContext, a typed context model for
 tracking operation identifiers, names, and timeout configurations.
 
 Thread Safety:

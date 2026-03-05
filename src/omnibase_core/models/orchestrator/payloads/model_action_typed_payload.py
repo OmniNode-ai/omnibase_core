@@ -29,7 +29,7 @@ because:
 2. The semantic categorization provides more precise type safety
 3. Payload fields directly match the operation being performed
 
-This module provides:
+Exports:
 1. `ActionPayloadType` - Type alias for use in ModelAction.payload field
 2. `get_recommended_payloads_for_action_type()` - Mapping from EnumActionType
 3. `create_action_payload()` - Factory for creating payloads based on action type

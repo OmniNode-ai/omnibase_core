@@ -4,7 +4,7 @@
 """
 ProtocolServiceInstance - Protocol for service instances.
 
-This module provides the protocol definition for service instance information
+The protocol definition for service instance information
 used for service discovery and health monitoring.
 """
 

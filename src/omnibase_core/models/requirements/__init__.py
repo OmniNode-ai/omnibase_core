@@ -3,7 +3,7 @@
 
 """Requirements models for expressing and evaluating requirements with graduated strictness.
 
-This module provides ModelRequirementEvaluator for expressing requirements across
+ModelRequirementEvaluator for expressing requirements across
 four tiers: must (hard requirements), prefer (soft preferences), forbid
 (exclusions), and hints (non-binding tie-breakers).
 

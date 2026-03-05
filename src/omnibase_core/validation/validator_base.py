@@ -4,7 +4,7 @@
 """
 ValidatorBase - Contract-driven base class for file validators.
 
-This module provides a concrete base class for implementing file-based validators
+A concrete base class for implementing file-based validators
 with shared behavior for file targeting, suppression handling, and result ordering.
 
 Key Features:

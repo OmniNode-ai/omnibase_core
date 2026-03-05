@@ -4,7 +4,7 @@
 """
 Strongly typed output model for NodeCompute operations.
 
-This module provides the ModelComputeOutput generic model that wraps computation
+The ModelComputeOutput generic model that wraps computation
 results with metadata including operation tracking, performance metrics, and
 cache/parallelism information.
 

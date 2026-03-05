@@ -4,7 +4,7 @@
 """
 Protocol for asynchronous event bus operations.
 
-This module provides the ProtocolAsyncEventBus protocol definition
+The ProtocolAsyncEventBus protocol definition
 for asynchronous event bus implementations.
 """
 

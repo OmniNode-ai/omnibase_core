@@ -8,7 +8,7 @@ Defines a partial update operation that updates only specific columns in a
 projection table when triggered by a specific event, without requiring a
 full upsert of all columns.
 
-This module provides:
+Exports:
     - :class:`ModelPartialUpdateOperation`: Pydantic model for partial update definition
 
 Use Cases:

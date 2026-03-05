@@ -3,14 +3,14 @@
 
 """ModelUnionPattern - Represents a Union type pattern for static analysis.
 
-This module provides the ModelUnionPattern class used by union validation tools
+The ModelUnionPattern class used by union validation tools
 to represent and analyze Union type definitions found in Python source code.
 
 The class is designed to be lightweight and hashable for use in pattern
 detection and deduplication across files.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
+-----------------------------------------------
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):

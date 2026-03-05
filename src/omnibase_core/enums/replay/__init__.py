@@ -3,7 +3,7 @@
 
 """Replay infrastructure enums.
 
-This module provides enums for the deterministic replay infrastructure:
+Enums for the deterministic replay infrastructure:
 
 - **EnumEffectDeterminism**: Classification of effect determinism (OMN-1150)
 - **EnumEnforcementMode**: Enforcement modes for replay safety (OMN-1150)

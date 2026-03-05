@@ -4,7 +4,7 @@
 """
 Protocol for event bus publishing operations (ISP - Interface Segregation Principle).
 
-This module provides the ProtocolEventBusPublisher protocol definition
+The ProtocolEventBusPublisher protocol definition
 for components that only need to publish events, without requiring
 the full ProtocolEventBus interface.
 

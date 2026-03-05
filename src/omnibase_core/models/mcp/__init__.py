@@ -3,7 +3,7 @@
 
 """MCP (Model Context Protocol) models for ONEX integration.
 
-This module provides models for exposing ONEX nodes as MCP tools,
+Models for exposing ONEX nodes as MCP tools,
 enabling AI agents to discover and invoke platform capabilities.
 
 Models:

@@ -278,7 +278,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         """Get a field value from the appropriate typed storage.
 
         Note: Intentional override of parent's ModelResult return type.
-        This class provides a simpler API for direct key-value access:
+        A simpler API for direct key-value access:
 
         - Simple paths (no dots): Returns raw values directly (str, int, bool, etc.)
         - Nested paths (with dots): Delegates to parent, returns ModelResult

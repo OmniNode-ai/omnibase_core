@@ -38,7 +38,7 @@ CANONICAL_PHASE_ORDER: list[PipelinePhase] = [
 ]
 
 
-class RunnerPipeline:
+class RunnerPipeline:  # ai-slop-ok: reST table
     """
     Executes hooks in the canonical phase order using an execution plan.
 

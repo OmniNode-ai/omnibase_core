@@ -7,7 +7,7 @@ Projector Column Model.
 Defines a column in a projector with event field mapping. Columns specify how
 event data is mapped to projection table columns.
 
-This module provides:
+Exports:
     - :class:`ModelProjectorColumn`: Pydantic model for column definition
 
 Column Types:

@@ -4,7 +4,7 @@
 """
 Event destination configuration model.
 
-This module provides the configuration model for event destinations,
+The configuration model for event destinations,
 supporting memory, file, and Kafka sink types with appropriate settings
 for each destination type.
 

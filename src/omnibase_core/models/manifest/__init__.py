@@ -4,7 +4,7 @@
 """
 ONEX Execution Manifest Models Module.
 
-This module provides models for pipeline execution manifests, which answer
+Models for pipeline execution manifests, which answer
 "what ran and why" for every pipeline execution. The manifest captures:
 
 - **Node Identity**: What node was executing

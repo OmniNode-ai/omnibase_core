@@ -4,7 +4,7 @@
 """
 Protocol definition for quality validation operations.
 
-This module provides the ProtocolQualityValidator protocol which validates
+The ProtocolQualityValidator protocol which validates
 code quality including metrics, issues, and standards.
 
 Design Principles:

@@ -107,7 +107,7 @@ class ModelOnexOutputState(BaseModel):
         """
         Create boundary output state from internal state.
 
-        This method handles the conversion from required UUID fields back to
+        The conversion from required UUID fields back to
         Optional UUID fields for external APIs that expect the boundary model.
 
         Args:

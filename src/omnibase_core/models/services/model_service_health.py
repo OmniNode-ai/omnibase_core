@@ -4,7 +4,7 @@
 """
 Enterprise Service Health Monitoring Model.
 
-This module provides comprehensive external service health tracking with business intelligence,
+Comprehensive external service health tracking with business intelligence,
 connection management, and operational insights for ONEX registry services.
 """
 

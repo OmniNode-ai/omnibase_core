@@ -8,7 +8,7 @@ Extensible environment configuration model that replaces hardcoded
 environment enums with flexible, user-defined environments.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
+-----------------------------------------------
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports:

@@ -4,7 +4,7 @@
 """
 NodeBase for ONEX ModelArchitecture.
 
-This module provides the NodeBase class that implements
+The NodeBase class that implements
 LlamaIndex workflow integration, observable state transitions,
 and contract-driven orchestration.
 
@@ -106,7 +106,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
     """
     Enhanced NodeBase class implementing ONEX architecture patterns.
 
-    This class provides:
+    Exports:
     - LlamaIndex workflow integration for complex orchestration
     - Observable state transitions with event emission
     - Contract-driven initialization with ModelONEXContainer
@@ -614,7 +614,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         """
         Process method that delegates to the main tool.
 
-        This method handles the actual business logic delegation to the
+        The actual business logic delegation to the
         resolved main tool instance, following the contract-driven pattern.
 
         Args:

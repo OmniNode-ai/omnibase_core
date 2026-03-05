@@ -250,7 +250,7 @@ class ModelStateContract(BaseModel):
         """
         Create a ModelStateContract from a dictionary loaded from YAML.
 
-        This method handles various legacy formats and normalizes them
+        Various legacy formats and normalizes them
         to the canonical structure.
 
         Args:

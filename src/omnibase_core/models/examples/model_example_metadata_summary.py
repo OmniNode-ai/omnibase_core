@@ -4,7 +4,7 @@
 """
 Example metadata summary model.
 
-This module provides the ModelExampleMetadataSummary class for clean
+The ModelExampleMetadataSummary class for clean
 metadata summary following ONEX naming conventions.
 """
 

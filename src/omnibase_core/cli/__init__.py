@@ -3,7 +3,7 @@
 
 """CLI module for omnibase_core.
 
-This module provides the command-line interface for omnibase_core,
+The command-line interface for omnibase_core,
 including the onex entry point and runtime-host-dev command.
 
 Usage:

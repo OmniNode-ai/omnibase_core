@@ -4,7 +4,7 @@
 """
 Property type enum for environment properties.
 
-This module provides the EnumPropertyType for defining supported property types
+The EnumPropertyType for defining supported property types
 in environment property storage with proper validation and constraints.
 """
 

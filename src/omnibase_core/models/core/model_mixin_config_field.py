@@ -3,7 +3,7 @@
 
 """Pydantic model for mixin configuration field definitions.
 
-This module provides the ModelMixinConfigField class for defining
+The ModelMixinConfigField class for defining
 configuration schema in mixin metadata.
 """
 

@@ -4,7 +4,7 @@
 """
 Rendering utilities for ONEX contract and diff visualization.
 
-This module provides formatters and renderers for converting ONEX
+Formatters and renderers for converting ONEX
 data structures into human-readable and machine-readable formats.
 
 Components:

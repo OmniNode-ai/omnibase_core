@@ -4,7 +4,7 @@
 """
 Checkpoint metadata model for state persistence.
 
-This module provides ModelCheckpointMetadata, a typed model for checkpoint
+ModelCheckpointMetadata, a typed model for checkpoint
 state metadata that replaces untyped dict[str, str] fields. It captures
 checkpoint type, source, trigger events, and workflow state information.
 

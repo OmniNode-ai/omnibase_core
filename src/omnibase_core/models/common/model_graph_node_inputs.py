@@ -4,7 +4,7 @@
 """
 Typed inputs model for graph nodes.
 
-This module provides strongly-typed inputs for graph node patterns.
+Strongly-typed inputs for graph node patterns.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

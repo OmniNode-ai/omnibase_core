@@ -8,7 +8,7 @@ Records the resolution of a capability dependency to a provider. A binding
 represents the result of the resolution process, capturing what was requested,
 what was resolved, and metadata about the resolution decision.
 
-This module provides:
+Exports:
     - :class:`ModelBinding`: Pydantic model recording a resolved capability binding
 
 Core Principle:

@@ -4,7 +4,7 @@
 """
 Runtime event models for coordination I/O (re-exports).
 
-This module provides a unified import location for runtime event models.
+A unified import location for runtime event models.
 The actual implementations are in separate files per ONEX single-class rule.
 
 These models are referenced in contracts/runtime/event_bus_wiring_effect.yaml

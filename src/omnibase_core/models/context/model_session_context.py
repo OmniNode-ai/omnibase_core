@@ -4,7 +4,7 @@
 """
 Session context model for user request tracking.
 
-This module provides ModelSessionContext, a typed model for session-related
+ModelSessionContext, a typed model for session-related
 metadata that replaces untyped dict[str, str] fields. It captures session
 identification and client context information for request tracing.
 

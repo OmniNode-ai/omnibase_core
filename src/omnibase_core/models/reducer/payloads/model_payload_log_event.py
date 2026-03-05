@@ -4,7 +4,7 @@
 """
 ModelPayloadLogEvent - Typed payload for log event emission intents.
 
-This module provides the ModelPayloadLogEvent model for structured log event
+The ModelPayloadLogEvent model for structured log event
 emission from Reducers. The Effect node receives the intent and sends
 the log to the configured logging backend.
 

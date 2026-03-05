@@ -4,7 +4,7 @@
 """
 Topic suffix validator for ONEX naming convention.
 
-This module provides validation utilities for ONEX topic suffixes following
+Validation utilities for ONEX topic suffixes following
 the canonical naming convention: onex.{kind}.{producer}.{event-name}.v{n}
 
 Validation Rules:

@@ -67,7 +67,7 @@ class ModelErrorContext(BaseModel):
         """
         Create ModelErrorContext with only additional context.
 
-        This method provides a clean way to create ModelErrorContext instances
+        A clean way to create ModelErrorContext instances
         with just the additional_context while maintaining MyPy compatibility.
 
         Args:

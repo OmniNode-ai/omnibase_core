@@ -4,7 +4,7 @@
 """
 ONEX Execution Trace Models Module.
 
-This module provides models for detailed execution traces, which form the
+Models for detailed execution traces, which form the
 foundation of the replay infrastructure. Unlike manifests (which are summaries),
 traces capture step-by-step timing and status for every operation.
 

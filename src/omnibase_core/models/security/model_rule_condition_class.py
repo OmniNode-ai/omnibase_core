@@ -5,7 +5,7 @@
 
 Rule condition with key-value pairs for matching policy contexts.
 
-This module provides ModelRuleCondition, which defines the conditions that
+ModelRuleCondition, which defines the conditions that
 must be met for a policy rule to apply. It supports both exact matching
 and operator-based matching for flexible condition evaluation.
 

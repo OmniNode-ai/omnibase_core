@@ -3,7 +3,7 @@
 
 """Logging module.
 
-This module contains structured logging, event emission, and bootstrap logging.
+Structured logging, event emission, and bootstrap logging.
 """
 
 from omnibase_core.logging.logging_emit import emit_log_event

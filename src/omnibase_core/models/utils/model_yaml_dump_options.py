@@ -4,7 +4,7 @@
 """
 Type-safe YAML dump options model.
 
-This module provides the ModelYamlDumpOptions class for configuring YAML
+The ModelYamlDumpOptions class for configuring YAML
 serialization output format. It implements core protocols for serialization
 and validation.
 

@@ -4,7 +4,7 @@
 """
 Core-native core protocols.
 
-This module provides protocol definitions for core operations including
+Protocol definitions for core operations including
 canonical serialization. These are Core-native equivalents of the SPI
 core protocols.
 

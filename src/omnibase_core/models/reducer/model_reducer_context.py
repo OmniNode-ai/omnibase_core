@@ -4,7 +4,7 @@
 """
 Reducer handler context - deliberately excludes time injection.
 
-This module provides ModelReducerContext, the execution context passed to
+ModelReducerContext, the execution context passed to
 reducer handlers. Unlike other context models (e.g., ModelComputeContext),
 this model deliberately omits any time-related fields to enforce reducer
 purity.

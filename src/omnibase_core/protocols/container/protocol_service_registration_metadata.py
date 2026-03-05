@@ -4,7 +4,7 @@
 """
 Protocol for service registration metadata objects.
 
-This module provides the ProtocolServiceRegistrationMetadata protocol which
+The ProtocolServiceRegistrationMetadata protocol which
 contains comprehensive metadata about a registered service including
 identification, versioning, and configuration.
 """

@@ -4,7 +4,7 @@
 """
 Packaging Metadata Reference Model.
 
-This module provides an opaque reference model for packaging metadata configuration.
+An opaque reference model for packaging metadata configuration.
 The reference acts as a stable identifier that is resolved at runtime to retrieve
 the actual packaging configuration from a registry or resolver.
 

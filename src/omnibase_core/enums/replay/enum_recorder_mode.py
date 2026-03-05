@@ -4,7 +4,7 @@
 """
 EnumRecorderMode - Recorder operating mode enum for replay infrastructure.
 
-This module provides the EnumRecorderMode enum that determines how the
+The EnumRecorderMode enum that determines how the
 effect recorder handles recording and replay.
 
 Design:

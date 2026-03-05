@@ -3,14 +3,14 @@
 
 """UnionUsageChecker - AST-based checker for Union type usage patterns.
 
-This module provides the UnionUsageChecker class for analyzing Python source
+The UnionUsageChecker class for analyzing Python source
 code to detect Union type usage patterns that may indicate poor type design.
 
 The checker visits AST nodes to find both Union[...] syntax and modern | syntax
 unions, analyzes them for problematic patterns, and reports issues.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
+-----------------------------------------------
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):

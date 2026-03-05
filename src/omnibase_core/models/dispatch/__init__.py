@@ -7,7 +7,7 @@ Dispatch Engine Models.
 Core models for the ONEX runtime dispatch engine that routes messages
 based on topic category and message type, and publishes handler outputs.
 
-This module provides:
+Exports:
 - **ModelDispatchRoute**: Routing rules that map topic patterns to handlers
 - **ModelDispatchResult**: Results of dispatch operations with metrics
 - **ModelHandlerRegistration**: Handler registration metadata

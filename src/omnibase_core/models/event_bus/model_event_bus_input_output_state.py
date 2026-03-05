@@ -3,7 +3,7 @@
 
 """Event Bus Input/Output State Composite Model.
 
-This module provides a composite model that combines the input and output states
+A composite model that combines the input and output states
 for event bus operations, enabling unified handling of both states.
 
 Thread Safety:

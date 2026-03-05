@@ -3,7 +3,7 @@
 
 """Storage protocol definitions.
 
-This module provides protocols for pluggable storage backends.
+Protocols for pluggable storage backends.
 Currently supports:
 
 - ProtocolDiffStore: Interface for contract diff storage backends

@@ -3,7 +3,7 @@
 
 """Vector index configuration model.
 
-This module provides the ModelVectorIndexConfig class for defining
+The ModelVectorIndexConfig class for defining
 the configuration of a vector index including dimension, metric, and
 optional performance tuning parameters.
 

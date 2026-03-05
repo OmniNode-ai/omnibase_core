@@ -4,7 +4,7 @@
 """
 Contract-derived capabilities model for capability-based auto-discovery.
 
-This module provides the ModelContractCapabilities model that enables
+The ModelContractCapabilities model that enables
 capability-based auto-discovery and registration for ONEX nodes. It extends
 the node capabilities system with contract-based metadata.
 

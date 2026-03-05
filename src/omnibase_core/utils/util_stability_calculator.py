@@ -3,7 +3,7 @@
 
 """Stability calculation utilities for baseline health assessment.
 
-This module provides functions to calculate system stability scores
+Functions to calculate system stability scores
 based on invariant pass rates, error rates, latency metrics, and corpus size.
 
 Design Philosophy

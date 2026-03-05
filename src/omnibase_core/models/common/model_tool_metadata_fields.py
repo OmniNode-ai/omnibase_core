@@ -4,7 +4,7 @@
 """
 Typed metadata model for discovered tools.
 
-This module provides strongly-typed metadata for tool discovery patterns.
+Strongly-typed metadata for tool discovery patterns.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

@@ -4,7 +4,7 @@
 """
 Base class for all typed intent payloads.
 
-This module provides the ModelIntentPayloadBase class that all typed intent
+The ModelIntentPayloadBase class that all typed intent
 payloads inherit from. Intent payloads use a discriminated union pattern for
 type-safe, exhaustive handling via the `intent_type` discriminator field.
 

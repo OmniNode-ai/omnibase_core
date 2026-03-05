@@ -3,7 +3,7 @@
 
 """Pydantic model for mixin semantic versioning.
 
-This module provides the ModelMixinVersion class for validating and working
+The ModelMixinVersion class for validating and working
 with semantic version numbers in mixin metadata.
 """
 

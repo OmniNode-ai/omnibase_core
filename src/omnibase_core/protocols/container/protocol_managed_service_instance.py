@@ -4,7 +4,7 @@
 """
 Protocol for service registry managed instance information.
 
-This module provides the ProtocolManagedServiceInstance protocol which
+The ProtocolManagedServiceInstance protocol which
 represents an active instance of a registered service with
 lifecycle and usage tracking.
 

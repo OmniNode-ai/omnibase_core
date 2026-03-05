@@ -4,7 +4,7 @@
 """
 Metrics context model for observability and distributed tracing.
 
-This module provides ModelMetricsContext, a typed model for observability
+ModelMetricsContext, a typed model for observability
 metadata that replaces untyped dict[str, str] fields. It captures distributed
 tracing information following the W3C Trace Context standard.
 

@@ -26,7 +26,7 @@ Repository Boundaries (v1.0.5 Informative):
     - **Infra (Infrastructure)**: Executes workflows using Core utilities.
       Reserved fields are ignored deterministically by the executor.
 
-    This module provides validation that Core uses to reject reserved modes
+    Validation that Core uses to reject reserved modes
     before execution reaches the Infra layer.
 
 Reserved Fields Global Rule (v1.0.4 Normative):

@@ -4,7 +4,7 @@
 """
 Protocol definition for architectural compliance checking.
 
-This module provides the ProtocolArchitectureCompliance protocol which
+The ProtocolArchitectureCompliance protocol which
 validates dependency compliance and layer separation.
 
 Design Principles:

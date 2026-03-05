@@ -4,7 +4,7 @@
 """
 Mixin for contract-driven effect execution.
 
-This module provides a mixin class that adds contract-driven I/O execution
+A mixin class that adds contract-driven I/O execution
 capabilities to NodeEffect instances. It orchestrates external interactions
 (HTTP, DB, Kafka, Filesystem) with comprehensive resilience patterns including
 retry policies, circuit breakers, and transaction management.
@@ -1023,7 +1023,7 @@ class MixinEffectExecution:
             return operation_data
         return operation_data.model_dump()
 
-    async def _execute_with_retry(
+    async def _execute_with_retry(  # ai-slop-ok: reST table
         self,
         resolved_context: ResolvedIOContext,
         input_data: ModelEffectInput,

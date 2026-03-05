@@ -116,7 +116,7 @@ DEFAULT_IDENTITY_KEYS: dict[str, str] = {
 class ContractDiffComputer:
     """Computes semantic diffs between contract versions.
 
-    This class implements the core diff algorithm for comparing two contract
+    The core diff algorithm for comparing two contract
     versions. It handles recursive object diffing, identity-based list
     matching, and produces structured diff results suitable for:
 

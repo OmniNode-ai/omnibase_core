@@ -4,7 +4,7 @@
 """
 Type aliases for schema-related types in ONEX.
 
-This module provides centralized type aliases for schema values and dictionaries,
+Centralized type aliases for schema values and dictionaries,
 replacing scattered inline type annotations throughout the codebase.
 
 These type aliases follow ONEX patterns by:
@@ -25,7 +25,7 @@ Design Decisions:
     - Uses TYPE_CHECKING to avoid circular imports with models
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
+-----------------------------------------------
 This module uses TYPE_CHECKING and forward references to avoid circular imports.
 The types module is imported by models which themselves may import ModelSchemaValue.
 

@@ -4,7 +4,7 @@
 """
 ModelPayloadProjectionIntent - Typed payload for projection intent emission from reducers.
 
-This module provides the ModelPayloadProjectionIntent model, which wraps a
+The ModelPayloadProjectionIntent model, which wraps a
 ModelProjectionIntent and allows the reducer to declare "this event should be
 projected via this projector" as a first-class effect in its output.
 

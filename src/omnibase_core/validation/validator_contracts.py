@@ -4,7 +4,7 @@
 """
 Contract validation tools for ONEX compliance.
 
-This module provides validation functions for contract files:
+Validation functions for contract files:
 - YAML contract validation
 - Manual YAML prevention
 - Contract structure validation

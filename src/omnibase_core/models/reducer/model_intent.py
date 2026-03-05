@@ -4,7 +4,7 @@
 """
 Extension intent model for plugin and experimental workflows.
 
-This module provides ModelIntent, a flexible intent class for extension workflows
+ModelIntent, a flexible intent class for extension workflows
 where the intent schema is not known at compile time. For core infrastructure
 intents (registration, persistence, lifecycle), use the discriminated union
 in omnibase_core.models.intents instead.

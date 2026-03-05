@@ -4,7 +4,7 @@
 """
 Contract validation failed event model.
 
-This module provides the event model for when contract validation fails.
+The event model for when contract validation fails.
 This event should have the same run_id as the corresponding started event.
 
 Location:

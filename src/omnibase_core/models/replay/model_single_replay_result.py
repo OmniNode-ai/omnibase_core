@@ -4,7 +4,7 @@
 """
 ModelSingleReplayResult - Result from single execution replay.
 
-This module provides the ModelSingleReplayResult model for capturing
+The ModelSingleReplayResult model for capturing
 the result of replaying a single execution manifest, including
 success/failure status, timing, and any errors encountered.
 

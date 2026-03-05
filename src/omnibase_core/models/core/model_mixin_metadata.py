@@ -3,7 +3,7 @@
 
 """Pydantic model for complete mixin metadata.
 
-This module provides the ModelMixinMetadata class, which aggregates all
+The ModelMixinMetadata class, which aggregates all
 mixin metadata components for validation and discovery.
 """
 

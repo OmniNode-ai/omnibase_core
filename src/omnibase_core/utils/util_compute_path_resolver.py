@@ -4,7 +4,7 @@
 """
 Shared path resolution utilities for contract-driven NodeCompute v1.0+.
 
-This module provides unified path resolution logic for navigating through nested data
+Unified path resolution logic for navigating through nested data
 structures in compute pipelines. It consolidates the path traversal patterns used by
 both the pipeline executor (resolve_mapping_path) and transformations (transform_json_path).
 
@@ -349,7 +349,7 @@ def resolve_input_path(
     Resolve a pipeline input path expression ($.input prefix).
 
     Extracts values from the pipeline input data using the $.input path syntax.
-    This function handles the input-specific path resolution for mapping steps.
+    The input-specific path resolution for mapping steps.
 
     Thread Safety:
         This function is pure and stateless - safe for concurrent use.
@@ -404,7 +404,7 @@ def resolve_step_path(
     Resolve a pipeline step path expression ($.steps prefix).
 
     Extracts values from previous step results using the $.steps path syntax.
-    This function handles the step-specific path resolution for mapping steps.
+    The step-specific path resolution for mapping steps.
 
     Thread Safety:
         This function is pure and stateless - safe for concurrent use.

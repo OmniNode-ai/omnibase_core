@@ -4,7 +4,7 @@
 """
 Contract validation passed event model.
 
-This module provides the event model for when contract validation succeeds.
+The event model for when contract validation succeeds.
 This event should have the same run_id as the corresponding started event.
 
 Location:

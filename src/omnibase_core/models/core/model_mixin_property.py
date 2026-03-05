@@ -3,7 +3,7 @@
 
 """Pydantic model for mixin property definitions.
 
-This module provides the ModelMixinProperty class for defining
+The ModelMixinProperty class for defining
 properties in mixin code patterns.
 """
 

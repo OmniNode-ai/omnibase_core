@@ -4,7 +4,7 @@
 """
 Protocol for event bus subscription operations (ISP - Interface Segregation Principle).
 
-This module provides the ProtocolEventBusSubscriber protocol definition
+The ProtocolEventBusSubscriber protocol definition
 for components that only need to subscribe to events, without requiring
 the full ProtocolEventBus interface.
 

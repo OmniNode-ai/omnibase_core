@@ -3,7 +3,7 @@
 
 """Model validation demo models for support ticket classification.
 
-This module provides sample input/output models for demonstrating
+Sample input/output models for demonstrating
 ONEX model validation capabilities without external dependencies.
 """
 

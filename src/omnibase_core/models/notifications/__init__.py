@@ -4,7 +4,7 @@
 """
 Notification models for the ONEX framework.
 
-This module provides models for various notification types used in
+Models for various notification types used in
 event-driven communication between ONEX components.
 
 Notifications enable:

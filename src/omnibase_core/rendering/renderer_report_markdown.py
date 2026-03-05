@@ -89,7 +89,7 @@ def escape_markdown(text: str) -> str:
 class RendererReportMarkdown:
     """Render evidence reports to Markdown format.
 
-    This class provides static methods to render ModelEvidenceSummary instances
+    Static methods to render ModelEvidenceSummary instances
     into GitHub-flavored markdown for pull request descriptions, documentation,
     or other markdown-rendering contexts.
 

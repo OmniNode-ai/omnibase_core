@@ -4,7 +4,7 @@
 """
 Typed operation data model for effect input.
 
-This module provides strongly-typed operation data for effect patterns,
+Strongly-typed operation data for effect patterns,
 using ModelQueryParameters and ModelEnvelopePayload for type-safe
 parameter and event payload handling.
 

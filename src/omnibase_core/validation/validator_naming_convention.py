@@ -4,7 +4,7 @@
 """
 ValidatorNamingConvention - Contract-driven naming convention validator.
 
-This module provides the ValidatorNamingConvention class for validating
+The ValidatorNamingConvention class for validating
 file, class, and function naming conventions in Python source code.
 
 The validator uses:

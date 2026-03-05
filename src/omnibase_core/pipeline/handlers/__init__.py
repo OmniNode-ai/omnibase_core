@@ -4,7 +4,7 @@
 """
 Handler capabilities for ONEX pipeline.
 
-This module contains handler implementations that replace mixin-based patterns
+Handler implementations that replace mixin-based patterns
 with composition-based handlers for the ONEX pipeline.
 
 .. versionadded:: 0.4.0

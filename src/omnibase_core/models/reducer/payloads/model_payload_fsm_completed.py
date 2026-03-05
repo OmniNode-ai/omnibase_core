@@ -4,7 +4,7 @@
 """
 ModelPayloadFSMCompleted - Typed payload for FSM completion notification intents.
 
-This module provides the ModelPayloadFSMCompleted model for FSM completion
+The ModelPayloadFSMCompleted model for FSM completion
 notification from Reducers. The Effect node receives the intent and
 performs cleanup operations and notifies downstream systems.
 

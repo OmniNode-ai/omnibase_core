@@ -4,7 +4,7 @@
 """
 Notification protocols for the ONEX framework.
 
-This module provides protocol definitions for notification publishing
+Protocol definitions for notification publishing
 and consuming in the ONEX framework.
 
 Protocols enable:

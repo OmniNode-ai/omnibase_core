@@ -7,7 +7,7 @@ HandlerLocal - Echo handler for development and testing.
 WARNING: This handler is for development and testing purposes ONLY.
          DO NOT use in production environments.
 
-This handler provides simple echo, transform, and error operations for
+Simple echo, transform, and error operations for
 testing the ONEX runtime without requiring external dependencies. It
 enables rapid iteration during development and comprehensive testing
 of the runtime's envelope routing and handler execution.
@@ -74,7 +74,7 @@ class HandlerLocal:
              DO NOT use in production environments. It has no security,
              authentication, or audit capabilities.
 
-    This handler implements the ProtocolHandler protocol and provides
+    The ProtocolHandler protocol and provides
     simple operations for testing the ONEX runtime:
 
     - **echo**: Returns the input payload unchanged in the response

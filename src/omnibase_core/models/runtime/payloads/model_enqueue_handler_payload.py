@@ -4,7 +4,7 @@
 """
 ModelEnqueueHandlerPayload - Typed payload for ENQUEUE_HANDLER directives.
 
-This module provides the ModelEnqueueHandlerPayload model for enqueuing
+The ModelEnqueueHandlerPayload model for enqueuing
 handlers for asynchronous execution in the runtime.
 
 Example:

@@ -4,7 +4,7 @@
 """
 ServiceRegistryCapability - Thread-safe registry for capability metadata.
 
-This module provides an in-memory thread-safe registry for ModelCapabilityMetadata
+An in-memory thread-safe registry for ModelCapabilityMetadata
 instances. The registry stores capability metadata for documentation and discovery
 purposes, keyed by the semantic capability identifier.
 

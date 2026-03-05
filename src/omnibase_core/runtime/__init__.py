@@ -4,7 +4,7 @@
 """
 ONEX Runtime Module.
 
-This module provides runtime infrastructure for ONEX node execution,
+Runtime infrastructure for ONEX node execution,
 including node instance management and execution coordination.
 
 Components:

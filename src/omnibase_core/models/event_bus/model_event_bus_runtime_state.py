@@ -112,7 +112,7 @@ class ModelEventBusRuntimeState(BaseModel):
     def has_node_name(self) -> bool:
         """Check if a node name has been explicitly set (not None and non-empty).
 
-        This method provides a semantic check for whether a node name was
+        A semantic check for whether a node name was
         explicitly bound. None is treated as "not set".
 
         Returns:
@@ -134,7 +134,7 @@ class ModelEventBusRuntimeState(BaseModel):
     def has_contract_path(self) -> bool:
         """Check if a contract path has been explicitly set (not None and non-empty).
 
-        This method provides a semantic check for whether a contract path was
+        A semantic check for whether a contract path was
         explicitly configured. None is treated as "not set".
 
         Note:

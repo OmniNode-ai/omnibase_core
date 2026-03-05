@@ -4,7 +4,7 @@
 """
 ProtocolMetadataProvider - Protocol for metadata providers.
 
-This module provides the protocol definition for objects that provide metadata.
+The protocol definition for objects that provide metadata.
 """
 
 from __future__ import annotations

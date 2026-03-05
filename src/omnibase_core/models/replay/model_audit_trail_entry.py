@@ -4,7 +4,7 @@
 """
 ModelAuditTrailEntry - Individual entry in enforcement decision audit trail.
 
-This module provides the ModelAuditTrailEntry model that wraps an enforcement
+The ModelAuditTrailEntry model that wraps an enforcement
 decision with session context and sequencing information.
 
 Design:

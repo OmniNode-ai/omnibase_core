@@ -4,7 +4,7 @@
 """
 FSM (Finite State Machine) models for strongly-typed data structures.
 
-This module provides typed models to replace dict[str, Any] usage in FSM operations.
+Typed models to replace dict[str, Any] usage in FSM operations.
 """
 
 from .model_fsm_data import ModelFsmData, ModelFsmState, ModelFsmTransition

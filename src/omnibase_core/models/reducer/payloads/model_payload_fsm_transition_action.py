@@ -4,7 +4,7 @@
 """
 ModelPayloadFSMTransitionAction - Typed payload for FSM transition action execution intents.
 
-This module provides the ModelPayloadFSMTransitionAction model for FSM
+The ModelPayloadFSMTransitionAction model for FSM
 transition action execution from Reducers. The Effect node receives
 the intent and invokes the registered transition action handler.
 

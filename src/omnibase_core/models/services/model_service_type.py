@@ -4,7 +4,7 @@
 """
 Service Type Model for ONEX Configuration-Driven Registry System.
 
-This module provides the ModelServiceType for defining service types with extensible configuration.
+The ModelServiceType for defining service types with extensible configuration.
 Extracted from model_service_configuration.py for modular architecture compliance.
 
 """

@@ -4,7 +4,7 @@
 """
 Protocol for ONEX schema loaders.
 
-This module provides the ProtocolSchemaLoader protocol definition for loading
+The ProtocolSchemaLoader protocol definition for loading
 ONEX YAML metadata and JSON schemas. This is a Core-native equivalent of the
 SPI schema protocol.
 

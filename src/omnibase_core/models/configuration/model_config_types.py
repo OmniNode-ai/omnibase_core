@@ -4,7 +4,7 @@
 """
 Configuration type aliases and validation utilities.
 
-This module provides type definitions and validation for node configuration values,
+Type definitions and validation for node configuration values,
 enforcing type safety for configuration entries that support scalar types only
 (int, float, bool, str).
 

@@ -3,7 +3,7 @@
 
 """Application context for ONEX framework.
 
-This module provides context-variable based container management
+Context-variable based container management
 using Python's contextvars for thread-safe and async-safe isolation.
 
 Key Benefits:
@@ -41,7 +41,7 @@ _current_container: contextvars.ContextVar[ModelONEXContainer | None] = (
 class ApplicationContext:
     """Application context manager for ONEX containers.
 
-    This class provides a structured way to manage container contexts,
+    A structured way to manage container contexts,
     with proper setup and teardown semantics.
 
     Usage:

@@ -4,7 +4,7 @@
 """
 Typed payload model for intent declarations.
 
-This module provides strongly-typed payloads for intent patterns.
+Strongly-typed payloads for intent patterns.
 """
 
 from pydantic import BaseModel, Field

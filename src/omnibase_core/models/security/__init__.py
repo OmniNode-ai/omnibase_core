@@ -5,8 +5,8 @@
 Security domain models for ONEX.
 
 Deprecated Aliases (OMN-1071)
-=============================
-This module provides deprecated aliases for classes renamed in v0.4.0.
+-----------------------------
+Deprecated aliases for classes renamed in v0.4.0.
 The following aliases will be removed in a future version:
 
 - ``ModelSecurityUtils`` -> use ``UtilSecurity`` from ``omnibase_core.utils.util_security``

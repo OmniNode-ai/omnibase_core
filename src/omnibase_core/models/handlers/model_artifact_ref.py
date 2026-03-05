@@ -4,7 +4,7 @@
 """
 Artifact Reference Model.
 
-This module provides an opaque reference model for artifacts in the ONEX framework.
+An opaque reference model for artifacts in the ONEX framework.
 An artifact reference is a stable identifier that can be resolved through a registry,
 rather than containing inline schema or content.
 

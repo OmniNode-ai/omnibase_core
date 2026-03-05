@@ -4,7 +4,7 @@
 """
 Result model for cross-repo validation orchestrator.
 
-This module provides the result container for validation orchestrator runs,
+The result container for validation orchestrator runs,
 holding the emitted events for inspection and testing.
 
 Related ticket: OMN-1776

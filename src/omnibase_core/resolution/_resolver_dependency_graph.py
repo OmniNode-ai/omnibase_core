@@ -4,7 +4,7 @@
 """
 Internal dependency graph type for ExecutionResolver.
 
-This module contains a private data structure used internally by the
+A private data structure used internally by the
 ExecutionResolver. This is not part of the public API.
 
 .. versionadded:: 0.4.1

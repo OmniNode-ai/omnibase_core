@@ -4,7 +4,7 @@
 """
 Base model for contract validation events.
 
-This module provides the base class for all contract validation lifecycle events,
+The base class for all contract validation lifecycle events,
 including validation started/passed/failed and merge started/completed events.
 
 Location:

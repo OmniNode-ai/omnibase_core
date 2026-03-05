@@ -4,7 +4,7 @@
 """
 HTTP request metadata model for request tracking.
 
-This module provides ModelHttpRequestMetadata, a typed model for HTTP-specific
+ModelHttpRequestMetadata, a typed model for HTTP-specific
 request metadata. It captures HTTP method, path, and content negotiation
 headers for request processing and logging.
 

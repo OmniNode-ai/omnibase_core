@@ -4,7 +4,7 @@
 """
 Input model for NodeReducer operations.
 
-This module provides the ModelReducerInput generic model that wraps data
+The ModelReducerInput generic model that wraps data
 reduction operations with comprehensive configuration for streaming modes,
 conflict resolution, and batch processing.
 

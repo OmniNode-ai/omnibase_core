@@ -4,7 +4,7 @@
 """
 Authorization context model for access control.
 
-This module provides ModelAuthorizationContext, a typed model for authorization
+ModelAuthorizationContext, a typed model for authorization
 metadata that replaces untyped dict[str, str] fields. It captures roles,
 permissions, OAuth scopes, and token information for access control decisions.
 

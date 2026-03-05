@@ -4,7 +4,7 @@
 """
 Operations models for strongly-typed data structures.
 
-This module provides typed models to replace dict[str, Any] usage patterns.
+Typed models to replace dict[str, Any] usage patterns.
 """
 
 from .model_change_proposal import ModelChangeProposal

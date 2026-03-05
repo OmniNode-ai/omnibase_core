@@ -4,7 +4,7 @@
 """
 ModelCorpusReplayResult - Aggregate result from corpus replay.
 
-This module provides the ModelCorpusReplayResult model for capturing
+The ModelCorpusReplayResult model for capturing
 the complete result of replaying an execution corpus, including
 individual results, aggregate metrics, and timing information.
 

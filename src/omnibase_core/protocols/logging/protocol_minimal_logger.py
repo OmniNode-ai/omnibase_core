@@ -4,7 +4,7 @@
 """
 ProtocolMinimalLogger - Protocol for minimal bootstrap logging.
 
-This module provides the protocol definition for minimal loggers
+The protocol definition for minimal loggers
 used during bootstrap phase when full logging infrastructure is unavailable.
 """
 

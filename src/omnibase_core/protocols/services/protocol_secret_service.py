@@ -4,7 +4,7 @@
 """
 Secret service protocol for secure credential retrieval.
 
-This module provides the protocol definition for secret/credential services
+The protocol definition for secret/credential services
 used in effect execution for template resolution.
 """
 

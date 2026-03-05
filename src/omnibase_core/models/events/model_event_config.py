@@ -4,7 +4,7 @@
 """
 Base model configuration module for events.
 
-This module provides a simple re-export of Pydantic's BaseModel
+A simple re-export of Pydantic's BaseModel
 for consistent imports across the events package.
 """
 

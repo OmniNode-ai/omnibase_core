@@ -4,7 +4,7 @@
 """
 Generic container pattern for single-value models with metadata.
 
-This module provides a reusable generic container that can replace
+A reusable generic container that can replace
 specialized single-value containers across the codebase, reducing
 repetitive patterns while maintaining type safety.
 """

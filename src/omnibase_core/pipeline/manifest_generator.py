@@ -540,7 +540,7 @@ class ManifestGenerator:
         """
         Estimate the JSON-serialized size of the manifest in bytes.
 
-        This method provides a quick approximation of the manifest size without
+        A quick approximation of the manifest size without
         actually building and serializing it. Useful for:
 
         - Detecting large manifests before serialization (e.g., >1MB warning)

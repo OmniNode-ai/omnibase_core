@@ -4,7 +4,7 @@
 """
 ONEX Execution Models Module.
 
-This module provides the data models for the Runtime Execution Sequencing Model,
+The data models for the Runtime Execution Sequencing Model,
 including phase steps, execution plans, and resolution metadata.
 
 Models included:

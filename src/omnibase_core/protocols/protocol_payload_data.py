@@ -4,7 +4,7 @@
 """
 Protocol for payload data with dict-like access.
 
-This module provides the ProtocolPayloadData protocol which defines
+The ProtocolPayloadData protocol which defines
 the interface for compute pipeline data that needs dict-like access.
 Compatible with dict, Pydantic BaseModel, and objects with __dict__.
 

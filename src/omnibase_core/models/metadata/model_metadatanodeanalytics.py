@@ -8,7 +8,7 @@ Analytics and metrics for metadata node collections with comprehensive
 tracking, validation, and business intelligence capabilities.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
+-----------------------------------------------
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports:

@@ -4,7 +4,7 @@
 """
 ProtocolMetadata - Protocol for structured metadata.
 
-This module provides the protocol definition for structured metadata objects.
+The protocol definition for structured metadata objects.
 """
 
 from __future__ import annotations

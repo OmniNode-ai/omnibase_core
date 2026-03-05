@@ -29,7 +29,7 @@ class ManifestObserver:
     """
     Observer that integrates manifest generation with pipeline execution.
 
-    This class provides static methods to attach a ManifestGenerator to
+    Static methods to attach a ManifestGenerator to
     pipeline context data and retrieve it during execution. It enables
     non-invasive instrumentation of pipeline runs.
 

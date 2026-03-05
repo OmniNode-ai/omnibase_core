@@ -4,7 +4,7 @@
 """
 ModelEnforcementDecision - Enforcement decision model for replay safety.
 
-This module provides the ModelEnforcementDecision model that captures the
+The ModelEnforcementDecision model that captures the
 outcome of replay safety enforcement decisions for effect execution.
 
 Design:

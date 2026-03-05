@@ -4,7 +4,7 @@
 """
 Strongly typed input model for NodeCompute operations.
 
-This module provides the ModelComputeInput generic model that wraps computation
+The ModelComputeInput generic model that wraps computation
 input data with metadata for operation tracking, caching configuration, and
 parallel execution control.
 

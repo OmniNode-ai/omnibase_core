@@ -4,7 +4,7 @@
 """
 Reusable Pydantic validator utilities for common conversion patterns.
 
-This module provides factory functions for creating field validators
+Factory functions for creating field validators
 that handle common type conversions while maintaining type safety.
 
 These patterns are used extensively in ONEX models to ensure collections

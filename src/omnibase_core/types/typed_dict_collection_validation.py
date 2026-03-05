@@ -4,7 +4,7 @@
 """
 TypedDict for collection validation results.
 
-This module provides the typed dictionary structure for collection-level
+The typed dictionary structure for collection-level
 validation results used by ModelMetadataToolCollection.
 """
 

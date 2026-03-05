@@ -3,7 +3,7 @@
 
 """Contract Hash Registry.
 
-This module provides deterministic SHA256 fingerprinting for ONEX contracts,
+Deterministic SHA256 fingerprinting for ONEX contracts,
 enabling drift detection between declarative and legacy versions during migration.
 
 Features:

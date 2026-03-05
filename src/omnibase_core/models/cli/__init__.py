@@ -7,8 +7,8 @@ CLI Operations Models
 Models for command-line interface operations, execution, and results.
 
 Deprecated Aliases (OMN-1071)
-=============================
-This module provides deprecated aliases for classes renamed in v0.4.0.
+-----------------------------
+Deprecated aliases for classes renamed in v0.4.0.
 The following aliases will be removed in a future version:
 
 - ``ModelCliResultFormatter`` -> use ``UtilCliResultFormatter`` from

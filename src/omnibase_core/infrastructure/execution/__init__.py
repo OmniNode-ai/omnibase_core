@@ -4,7 +4,7 @@
 """
 ONEX Runtime Execution Sequencing Module.
 
-This module provides the runtime execution sequencing model that consumes
+The runtime execution sequencing model that consumes
 merged contracts and produces execution plans.
 
 The module contains:

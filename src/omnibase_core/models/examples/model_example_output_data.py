@@ -4,7 +4,7 @@
 """
 Example output data model.
 
-This module provides the ModelExampleOutputData class for clean,
+The ModelExampleOutputData class for clean,
 strongly-typed replacement for dict[str, Any] in example output data.
 Follows ONEX one-model-per-file naming conventions.
 """

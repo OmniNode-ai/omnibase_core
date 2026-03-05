@@ -4,7 +4,7 @@
 """
 Parsed topic suffix parts model for ONEX topic naming validation.
 
-This module provides ModelTopicSuffixParts, an immutable Pydantic model that
+ModelTopicSuffixParts, an immutable Pydantic model that
 represents the parsed components of a valid ONEX topic suffix.
 
 Topic Suffix Format:

@@ -4,7 +4,7 @@
 """
 ProtocolSupportedMetadataType - Protocol for metadata types.
 
-This module provides the protocol definition for types that can be stored
+The protocol definition for types that can be stored
 in ONEX metadata systems.
 """
 

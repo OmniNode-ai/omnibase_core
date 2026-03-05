@@ -3,7 +3,7 @@
 
 """Diff storage models.
 
-This module provides Pydantic models for diff storage operations including
+Pydantic models for diff storage operations including
 query filters and storage configuration.
 
 Key Model Components:

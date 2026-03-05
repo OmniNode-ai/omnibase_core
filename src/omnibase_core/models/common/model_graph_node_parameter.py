@@ -7,7 +7,7 @@ Graph Node Parameter Model.
 Strongly-typed model for individual graph node parameters.
 Follows ONEX canonical patterns with strict typing - no Any types allowed.
 
-This module provides the ``ModelGraphNodeParameter`` class for representing
+The ``ModelGraphNodeParameter`` class for representing
 individual parameters in the ONEX graph node execution system. It replaces
 untyped ``dict[str, str]`` patterns with explicit type validation.
 

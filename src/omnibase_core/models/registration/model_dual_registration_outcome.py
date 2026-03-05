@@ -3,7 +3,7 @@
 
 """Domain-level outcome of dual registration.
 
-This module provides ModelDualRegistrationOutcome, a pure domain model representing
+ModelDualRegistrationOutcome, a pure domain model representing
 the logical result of registering a node to both Consul and PostgreSQL. This is a
 PURE domain model - it does NOT include infrastructure concerns like timing,
 retries, or telemetry.

@@ -4,7 +4,7 @@
 """
 ONEX Contract Merge Models Module.
 
-This module provides the data models for the Typed Contract Merge Engine,
+The data models for the Typed Contract Merge Engine,
 including merge conflicts, geometric conflict analysis, resolution tracking,
 and overlay stacking.
 

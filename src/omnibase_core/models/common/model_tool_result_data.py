@@ -4,7 +4,7 @@
 """
 Typed result data model for tool responses.
 
-This module provides strongly-typed result data for tool response patterns.
+Strongly-typed result data for tool response patterns.
 """
 
 from pydantic import BaseModel, Field

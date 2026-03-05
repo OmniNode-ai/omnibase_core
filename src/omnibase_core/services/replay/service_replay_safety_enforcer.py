@@ -4,7 +4,7 @@
 """
 ServiceReplaySafetyEnforcer - Runtime component for replay safety enforcement.
 
-This module provides the default ProtocolReplaySafetyEnforcer implementation
+The default ProtocolReplaySafetyEnforcer implementation
 for enforcing replay safety policies on non-deterministic effects.
 
 Design:

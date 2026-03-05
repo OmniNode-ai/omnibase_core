@@ -4,7 +4,7 @@
 """
 Cryptographic utilities for ONEX envelope signing and verification.
 
-This module provides Blake3 hashing and Ed25519 signing capabilities
+Blake3 hashing and Ed25519 signing capabilities
 for secure message envelope handling.
 """
 

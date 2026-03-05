@@ -4,7 +4,7 @@
 """
 Compute pipeline type definitions.
 
-This module provides type definitions for compute pipeline operations,
+Type definitions for compute pipeline operations,
 including type aliases for pipeline data flows and transformations.
 
 These types replace the use of `Any` with more specific type annotations

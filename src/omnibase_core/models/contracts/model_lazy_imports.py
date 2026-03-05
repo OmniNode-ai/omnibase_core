@@ -4,7 +4,7 @@
 """
 Lazy Import Optimization Module
 
-This module provides lazy loading functionality for contract models to resolve
+Lazy loading functionality for contract models to resolve
 the critical cold import performance issue (1856ms -> target <50ms).
 
 Performance Impact:

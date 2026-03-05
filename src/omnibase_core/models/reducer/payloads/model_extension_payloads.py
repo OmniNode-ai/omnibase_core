@@ -4,7 +4,7 @@
 """
 Extension intent payloads for plugins and experimental features.
 
-This module provides typed payloads for extension-related intents:
+Typed payloads for extension-related intents:
 - ModelPayloadExtension: Generic extension payload for plugins and webhooks
 
 Design Pattern:

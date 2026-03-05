@@ -4,7 +4,7 @@
 """
 Streaming window utility for time-based data processing.
 
-This module provides the UtilStreamingWindow class that implements
+The UtilStreamingWindow class that implements
 time-based windowing for streaming data reduction operations. Windows
 can optionally overlap for sliding window semantics.
 

@@ -4,7 +4,7 @@
 """
 Typed Payloads for ModelAction.
 
-This module provides typed payload support for ModelAction, replacing the
+Typed payload support for ModelAction, replacing the
 untyped `dict[str, Any]` payload field with structured, validated payloads.
 
 The payload system is organized by **semantic operation type** (what the action

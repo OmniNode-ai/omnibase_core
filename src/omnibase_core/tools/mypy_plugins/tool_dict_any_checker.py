@@ -326,7 +326,7 @@ class DictAnyCheckerPlugin(Plugin):
         """
         Check if a function has the @allow_dict_any decorator.
 
-        This method handles multiple cases:
+        Multiple cases:
         1. Decorator nodes (wrapper that contains FuncDef + decorator list)
         2. FuncDef nodes (looks up symbol table to find Decorator wrapper)
 

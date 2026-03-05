@@ -4,11 +4,11 @@
 """
 Type constraints and protocols for better generic programming.
 
-This module provides well-defined protocols, type variables with proper bounds,
+Well-defined protocols, type variables with proper bounds,
 and type constraints to replace overly broad generic usage patterns.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
+-----------------------------------------------
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports:

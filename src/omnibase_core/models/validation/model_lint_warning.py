@@ -4,7 +4,7 @@
 """
 Lint warning model for workflow contract validation.
 
-This module provides the ModelLintWarning model used by the WorkflowContractLinter
+The ModelLintWarning model used by the WorkflowContractLinter
 to report non-semantic validation issues such as unused configurations, duplicate
 names, unreachable steps, and priority clamping.
 

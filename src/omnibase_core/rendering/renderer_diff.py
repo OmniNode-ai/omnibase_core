@@ -32,7 +32,7 @@ class RendererDiff:
     """
     Static utility class for rendering contract diffs in multiple formats.
 
-    This class provides methods to convert ModelContractDiff instances into
+    Methods to convert ModelContractDiff instances into
     various output formats for display, documentation, or programmatic use.
 
     Supported formats:
@@ -143,7 +143,7 @@ class RendererDiff:
         return handler()
 
     @staticmethod
-    def render_text(
+    def render_text(  # ai-slop-ok: reST table
         diff: ModelContractDiff,
         options: ModelOutputFormatOptions | None = None,
         use_colors: bool = True,

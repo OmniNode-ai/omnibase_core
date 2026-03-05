@@ -4,7 +4,7 @@
 """
 Event emission intent payloads for event bus publishing.
 
-This module provides typed payloads for event-related intents:
+Typed payloads for event-related intents:
 - ModelPayloadEmitEvent: Domain event emission to event bus
 
 Design Pattern:

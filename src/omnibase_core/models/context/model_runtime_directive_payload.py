@@ -3,7 +3,7 @@
 
 """Runtime directive payload model for typed directive parameters.
 
-This module provides ModelRuntimeDirectivePayload, a typed context model for
+ModelRuntimeDirectivePayload, a typed context model for
 runtime directive payloads. This replaces dict[str, Any] payloads with a
 structured model for type safety and validation.
 

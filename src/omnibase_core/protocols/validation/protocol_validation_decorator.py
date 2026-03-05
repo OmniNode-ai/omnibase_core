@@ -4,7 +4,7 @@
 """
 Protocol definition for validation decorator functionality.
 
-This module provides the ProtocolValidationDecorator protocol which provides
+The ProtocolValidationDecorator protocol which provides
 decorator-based validation for protocol implementations.
 
 Design Principles:

@@ -4,7 +4,7 @@
 """
 Protocol definition for contract validation invariant checking.
 
-This module provides the ProtocolContractValidationInvariantChecker protocol which
+The ProtocolContractValidationInvariantChecker protocol which
 validates event ordering invariants and state machine constraints for contract
 validation workflows.
 

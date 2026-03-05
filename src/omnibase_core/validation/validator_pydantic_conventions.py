@@ -4,7 +4,7 @@
 """
 ValidatorPydanticConventions - AST-based validator for Pydantic model conventions.
 
-This module provides the ValidatorPydanticConventions class for analyzing Python
+The ValidatorPydanticConventions class for analyzing Python
 source code to detect Pydantic model configuration issues that violate ONEX
 conventions.
 

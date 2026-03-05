@@ -4,7 +4,7 @@
 """
 Protocol for standardized headers for ONEX event bus messages.
 
-This module provides the ProtocolEventBusHeaders protocol definition
+The ProtocolEventBusHeaders protocol definition
 for standardized header handling in event-driven messaging.
 """
 

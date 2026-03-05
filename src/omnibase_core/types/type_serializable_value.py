@@ -4,7 +4,7 @@
 """
 Type aliases for JSON-serializable values.
 
-This module provides type aliases for values that can be serialized to JSON,
+Type aliases for values that can be serialized to JSON,
 used throughout the codebase for Pydantic model serialization, API payloads,
 and configuration data.
 

@@ -4,7 +4,7 @@
 """
 Compute handler context - deliberately excludes time injection.
 
-This module provides ModelComputeContext, the execution context passed to
+ModelComputeContext, the execution context passed to
 compute handlers. Like ModelReducerContext, this model deliberately omits
 any time-related fields to enforce compute purity.
 

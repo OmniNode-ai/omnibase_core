@@ -4,7 +4,7 @@
 """
 Protocol definition for ONEX compliance rule definition and checking.
 
-This module provides the ProtocolComplianceRule protocol which defines a single
+The ProtocolComplianceRule protocol which defines a single
 compliance rule with validation logic, severity classification, and automated
 fix suggestions.
 

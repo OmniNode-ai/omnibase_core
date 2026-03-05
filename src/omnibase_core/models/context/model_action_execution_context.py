@@ -4,7 +4,7 @@
 """
 Action execution context model for action/node execution.
 
-This module provides ModelActionExecutionContext, a typed model for execution-related
+ModelActionExecutionContext, a typed model for execution-related
 metadata that replaces untyped dict[str, ModelSchemaValue] fields. It captures
 execution configuration, timeout settings, retry behavior, and debugging options.
 

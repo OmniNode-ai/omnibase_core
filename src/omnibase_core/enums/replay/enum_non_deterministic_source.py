@@ -4,7 +4,7 @@
 """
 EnumNonDeterministicSource - Non-deterministic source classification enum.
 
-This module provides the EnumNonDeterministicSource enum that identifies
+The EnumNonDeterministicSource enum that identifies
 the source of non-determinism in effects for replay safety enforcement.
 
 Design:

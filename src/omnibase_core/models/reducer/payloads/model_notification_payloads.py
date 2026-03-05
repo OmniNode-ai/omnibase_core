@@ -4,7 +4,7 @@
 """
 Notification intent payloads for alerts and messaging.
 
-This module provides typed payloads for notification-related intents:
+Typed payloads for notification-related intents:
 - ModelPayloadNotify: General notification/alert emission
 
 Design Pattern:

@@ -4,7 +4,7 @@
 """
 Typed metadata model for reducer input.
 
-This module provides strongly-typed metadata for reducer patterns.
+Strongly-typed metadata for reducer patterns.
 """
 
 from uuid import UUID

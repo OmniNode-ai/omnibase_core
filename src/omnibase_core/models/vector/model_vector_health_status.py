@@ -3,7 +3,7 @@
 
 """Vector store health status model.
 
-This module provides the ModelVectorHealthStatus class for representing
+The ModelVectorHealthStatus class for representing
 the health status of a vector store backend.
 
 Thread Safety:

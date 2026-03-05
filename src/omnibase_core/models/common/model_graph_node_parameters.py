@@ -7,7 +7,7 @@ Graph Node Parameters Container Model.
 Container for strongly-typed graph node parameters.
 Follows ONEX canonical patterns with strict typing - no Any types allowed.
 
-This module provides the ``ModelGraphNodeParameters`` class for managing
+The ``ModelGraphNodeParameters`` class for managing
 collections of typed parameters in the ONEX graph node execution system.
 It replaces untyped ``dict[str, str]`` patterns with strongly-typed containers.
 

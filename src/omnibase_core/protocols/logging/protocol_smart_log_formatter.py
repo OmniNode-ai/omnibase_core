@@ -4,7 +4,7 @@
 """
 ProtocolSmartLogFormatter - Protocol for smart log event formatting.
 
-This module provides the protocol definition for log formatters that
+The protocol definition for log formatters that
 transform structured log events into formatted output strings.
 """
 

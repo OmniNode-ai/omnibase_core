@@ -4,7 +4,7 @@
 """
 ModelDelayUntilPayload - Typed payload for DELAY_UNTIL directives.
 
-This module provides the ModelDelayUntilPayload model for delaying
+The ModelDelayUntilPayload model for delaying
 execution of an operation until a specific point in time.
 
 Example:

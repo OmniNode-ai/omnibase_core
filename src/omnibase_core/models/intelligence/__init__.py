@@ -3,7 +3,7 @@
 
 """Intelligence models for ONEX integration.
 
-This module provides domain models for AI/ML intelligence operations,
+Domain models for AI/ML intelligence operations,
 including intent classification and pattern extraction. These models are
 cross-repo domain nouns designed for sharing between omnibase_core,
 omniintelligence, and other ONEX repositories.

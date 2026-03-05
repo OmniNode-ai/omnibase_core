@@ -4,7 +4,7 @@
 """
 ValidatorArchitecture - AST-based validator for ONEX one-model-per-file architecture.
 
-This module provides the ValidatorArchitecture class for analyzing Python source
+The ValidatorArchitecture class for analyzing Python source
 code to enforce ONEX architectural principles:
 - One model per file validation
 - One enum per file validation
@@ -365,7 +365,7 @@ class ValidatorArchitecture(ValidatorBase):
             Resolved path if valid, None if security check fails.
 
         Security:
-            This method provides defense-in-depth against path traversal attacks.
+            Defense-in-depth against path traversal attacks.
             It complements the base class checks with additional patterns that
             could bypass simple string matching.
         """

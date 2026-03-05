@@ -4,7 +4,7 @@
 """
 ProtocolExecutable - Protocol for executable objects.
 
-This module provides the protocol definition for objects that can be executed.
+The protocol definition for objects that can be executed.
 """
 
 from __future__ import annotations

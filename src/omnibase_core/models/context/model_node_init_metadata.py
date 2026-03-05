@@ -4,7 +4,7 @@
 """
 Node initialization metadata model for startup tracking.
 
-This module provides ModelNodeInitMetadata, a typed model for node
+ModelNodeInitMetadata, a typed model for node
 initialization metadata that replaces untyped dict[str, str] fields. It
 captures initialization source, timing, configuration, and feature flags.
 

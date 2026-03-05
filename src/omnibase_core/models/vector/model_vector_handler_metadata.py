@@ -3,7 +3,7 @@
 
 """Vector handler metadata model.
 
-This module provides the ModelVectorHandlerMetadata class for describing
+The ModelVectorHandlerMetadata class for describing
 the capabilities and configuration of a vector store handler.
 
 Thread Safety:

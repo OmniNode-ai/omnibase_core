@@ -3,7 +3,7 @@
 
 """Pydantic model for mixin performance use case data.
 
-This module provides the ModelMixinPerformanceUseCase class for defining
+The ModelMixinPerformanceUseCase class for defining
 performance characteristics for specific use cases.
 """
 

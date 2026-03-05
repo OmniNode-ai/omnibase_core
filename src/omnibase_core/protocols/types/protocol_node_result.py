@@ -4,7 +4,7 @@
 """
 ProtocolNodeResult - Protocol for node results.
 
-This module provides the protocol definition for node workflow results.
+The protocol definition for node workflow results.
 """
 
 from __future__ import annotations

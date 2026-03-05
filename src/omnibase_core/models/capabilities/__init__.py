@@ -4,7 +4,7 @@
 """
 Capability models for ONEX nodes.
 
-This module provides models for:
+Models for:
 1. Vendor-agnostic capability dependencies - declaring what capabilities are needed
    without binding to specific vendors
 2. Contract-derived capabilities - capability-based auto-discovery and registration

@@ -5,7 +5,7 @@
 """
 ONEX Generic Value Model
 
-This module provides a strongly typed generic value model that can represent
+A strongly typed generic value model that can represent
 different data types in a type-safe manner for validation and testing.
 """
 

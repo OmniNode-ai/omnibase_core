@@ -4,7 +4,7 @@
 """
 Protocol for event destination abstraction (ISP - Interface Segregation Principle).
 
-This module provides the ProtocolEventSink protocol definition for components
+The ProtocolEventSink protocol definition for components
 that handle event persistence to various destinations (memory, file, Kafka).
 
 Location:

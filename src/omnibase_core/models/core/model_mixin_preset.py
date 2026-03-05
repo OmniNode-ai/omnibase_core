@@ -3,7 +3,7 @@
 
 """Pydantic model for mixin preset configurations.
 
-This module provides the ModelMixinPreset class for defining
+The ModelMixinPreset class for defining
 preset configurations for common use cases.
 """
 

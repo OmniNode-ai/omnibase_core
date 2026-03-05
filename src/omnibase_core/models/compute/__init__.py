@@ -4,7 +4,7 @@
 """
 Compute pipeline models for contract-driven NodeCompute v1.0.
 
-This module provides the core models for compute pipeline execution as defined
+The core models for compute pipeline execution as defined
 in the CONTRACT_DRIVEN_NODECOMPUTE_V1_0 specification. These models support
 deterministic, traceable data transformation pipelines with abort-on-first-failure
 semantics.

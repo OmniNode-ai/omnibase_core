@@ -67,7 +67,7 @@ Module Attributes:
         are always allowed (e.g., private modules starting with underscore).
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===================================================
+---------------------------------------------------
 This module is part of a carefully managed import chain to avoid circular
 dependencies.
 

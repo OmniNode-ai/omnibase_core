@@ -3,7 +3,7 @@
 
 """Contract Drift Detection Result Model.
 
-This module provides the ModelDriftResult class, which encapsulates the
+The ModelDriftResult class, which encapsulates the
 complete result of a drift detection operation, including both fingerprints
 and detailed comparison information.
 

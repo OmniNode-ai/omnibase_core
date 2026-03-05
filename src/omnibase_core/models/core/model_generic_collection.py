@@ -4,7 +4,7 @@
 """
 Generic collection management pattern for Omnibase Core.
 
-This module provides a reusable, strongly-typed collection base class that
+A reusable, strongly-typed collection base class that
 can replace ad-hoc collection operations found across Config, Data, and other domains.
 """
 
@@ -27,7 +27,7 @@ class ModelGenericCollection[T: BaseModel](BaseModel):
     """
     Generic collection with type safety and common operations.
 
-    This class provides a standardized way to manage collections of Pydantic models
+    A standardized way to manage collections of Pydantic models
     with common operations like adding, removing, filtering, and querying items.
     It replaces ad-hoc collection patterns found throughout the codebase.
 

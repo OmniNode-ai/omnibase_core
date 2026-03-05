@@ -3,7 +3,7 @@
 
 """Intent payload model for typed reducer intent data.
 
-This module provides ModelReducerIntentPayload, a typed context model for carrying
+ModelReducerIntentPayload, a typed context model for carrying
 structured data in reducer intents (FSM state transitions and side effect requests).
 
 Intent System Context:

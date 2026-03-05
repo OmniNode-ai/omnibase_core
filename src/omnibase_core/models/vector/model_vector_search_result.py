@@ -3,7 +3,7 @@
 
 """Vector search result model.
 
-This module provides the ModelVectorSearchResult class for representing
+The ModelVectorSearchResult class for representing
 a single result from a similarity search operation.
 
 Thread Safety:

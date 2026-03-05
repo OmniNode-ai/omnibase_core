@@ -4,7 +4,7 @@
 """
 Protocol for validation result objects.
 
-This module provides the ProtocolValidationResult protocol which
+The ProtocolValidationResult protocol which
 is a forward declaration to avoid circular imports with the validation module.
 See validation.py for the complete definition.
 """

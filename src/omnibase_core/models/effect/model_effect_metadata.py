@@ -4,7 +4,7 @@
 """
 Typed metadata model for effect input/output.
 
-This module provides strongly-typed metadata for effect patterns.
+Strongly-typed metadata for effect patterns.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

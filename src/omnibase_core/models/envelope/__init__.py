@@ -4,7 +4,7 @@
 """
 Envelope models for runtime-gateway-centric message routing.
 
-This module provides ModelMessageEnvelope and supporting models
+ModelMessageEnvelope and supporting models
 for cryptographically signed message transport with realm-based routing.
 
 Key Concepts:

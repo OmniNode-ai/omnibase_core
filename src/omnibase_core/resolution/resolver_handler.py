@@ -4,7 +4,7 @@
 """
 Handler Resolver - Resolve handler callables from import paths.
 
-This module provides resolution of handler callables from fully qualified
+Resolution of handler callables from fully qualified
 import paths specified in contracts. Supports both eager and lazy import
 patterns with caching for performance.
 

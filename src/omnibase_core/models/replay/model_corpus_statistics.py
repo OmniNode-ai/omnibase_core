@@ -4,7 +4,7 @@
 """
 ModelCorpusStatistics - Statistics model for execution corpus.
 
-This module provides the ModelCorpusStatistics model which contains
+The ModelCorpusStatistics model which contains
 computed statistics for an execution corpus, including handler distribution,
 success rates, and timing characteristics.
 

@@ -3,7 +3,7 @@
 
 """Vector store connection configuration model.
 
-This module provides the ModelVectorConnectionConfig class for defining
+The ModelVectorConnectionConfig class for defining
 connection parameters for vector store backends.
 
 Thread Safety:

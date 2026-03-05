@@ -4,7 +4,7 @@
 """
 Requirement evaluator model for expressing and evaluating requirements with graduated strictness.
 
-This module provides the ModelRequirementEvaluator class which enables expressing
+The ModelRequirementEvaluator class which enables expressing
 requirements across four tiers: must (hard requirements), prefer (soft preferences),
 forbid (exclusions), and hints (non-binding tie-breakers).
 
@@ -378,7 +378,7 @@ class ModelRequirementEvaluator(BaseModel):
     ) -> list[Mapping[str, Any]]:
         """Sort providers by match quality with optimized batch processing.
 
-        This method provides an efficient way to sort multiple providers,
+        An efficient way to sort multiple providers,
         potentially with internal caching optimizations for repeated
         requirement evaluations.
 

@@ -3,7 +3,7 @@
 
 """Service for evaluating invariants against execution outputs.
 
-This module provides the ServiceInvariantEvaluator class for validating
+The ServiceInvariantEvaluator class for validating
 that outputs conform to defined invariants (validation rules).
 
 Thread Safety:

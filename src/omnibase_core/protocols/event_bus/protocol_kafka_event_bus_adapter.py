@@ -4,7 +4,7 @@
 """
 Protocol for Event Bus Adapters supporting pluggable Kafka/Redpanda backends.
 
-This module provides the ProtocolKafkaEventBusAdapter protocol definition
+The ProtocolKafkaEventBusAdapter protocol definition
 for pluggable messaging backend support.
 """
 

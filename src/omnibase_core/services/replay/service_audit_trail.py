@@ -4,7 +4,7 @@
 """
 ServiceAuditTrail - Service for tracking enforcement decisions.
 
-This module provides the ServiceAuditTrail service for recording, querying,
+The ServiceAuditTrail service for recording, querying,
 and analyzing enforcement decisions made during replay execution.
 
 Design:

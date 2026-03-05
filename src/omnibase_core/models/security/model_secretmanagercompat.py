@@ -13,7 +13,7 @@ class ModelSecretManagerCompat:
     Current SecretManager standards layer.
 
     DEPRECATED: Use ModelSecretManager instead for enhanced functionality.
-    This class provides compatibility for existing code.
+    Compatibility for existing code.
     """
 
     def __init__(self, config: ModelSecretConfig):

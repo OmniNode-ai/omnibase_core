@@ -4,7 +4,7 @@
 """
 ProtocolEffect - Protocol for effect nodes.
 
-This module provides the protocol definition for nodes that implement
+The protocol definition for nodes that implement
 the EFFECT pattern with transactional side effects and resilience support.
 
 OMN-662: Node Protocol Definitions for ONEX Four-Node Architecture.

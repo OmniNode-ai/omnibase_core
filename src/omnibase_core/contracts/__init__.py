@@ -3,7 +3,7 @@
 
 """ONEX Contracts Module.
 
-This module provides the contract infrastructure for the ONEX 4-node architecture:
+The contract infrastructure for the ONEX 4-node architecture:
 
 1. **Contract Fingerprinting**: Deterministic SHA256 fingerprinting for ONEX contracts,
    enabling drift detection between declarative and legacy versions during migration.

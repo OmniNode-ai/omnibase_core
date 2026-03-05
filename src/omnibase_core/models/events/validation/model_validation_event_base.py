@@ -4,7 +4,7 @@
 """
 Base model for cross-repo validation events.
 
-This module provides the base class for all cross-repo validation lifecycle events,
+The base class for all cross-repo validation lifecycle events,
 including run started, violations batch, and run completed events.
 
 Location:

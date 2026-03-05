@@ -4,7 +4,7 @@
 """
 ModelPayloadFSMStateAction - Typed payload for FSM state action execution intents.
 
-This module provides the ModelPayloadFSMStateAction model for FSM state
+The ModelPayloadFSMStateAction model for FSM state
 entry/exit action execution from Reducers. The Effect node receives
 the intent and invokes the registered action handler.
 

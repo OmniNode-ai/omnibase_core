@@ -4,7 +4,7 @@
 """
 Metrics Backends Module - Backend implementations for metrics collection.
 
-This module provides backend implementations for metrics collection,
+Backend implementations for metrics collection,
 supporting different metrics systems like Prometheus, StatsD, etc.
 
 Available Backends:

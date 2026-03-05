@@ -4,7 +4,7 @@
 """
 ServiceCorpusReplayOrchestrator - Orchestrate replay of execution corpus.
 
-This module provides the ServiceCorpusReplayOrchestrator service for
+The ServiceCorpusReplayOrchestrator service for
 replaying an entire corpus of executions with configurable concurrency,
 error handling, and progress tracking.
 

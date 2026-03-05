@@ -3,7 +3,7 @@
 
 """Effect template context model for dynamic template resolution.
 
-This module provides ModelEffectTemplateContext, an explicitly dynamic model for
+ModelEffectTemplateContext, an explicitly dynamic model for
 effect operation template resolution. Unlike ModelEffectInputData (which is strict),
 this model accepts arbitrary key-value pairs for use in template placeholders.
 

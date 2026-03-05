@@ -52,7 +52,7 @@ def _ensure_models_rebuilt(
 ) -> None:
     """Ensure models are rebuilt to resolve forward references (lazy initialization).
 
-    This function implements lazy model rebuild to avoid importing ModelCustomFields
+    Lazy model rebuild to avoid importing ModelCustomFields
     at module load time. The rebuild only happens on first ModelRoutingSubcontract
     instantiation, improving import performance when the model isn't used.
 

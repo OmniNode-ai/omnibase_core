@@ -4,7 +4,7 @@
 """
 ProtocolRegistryNode - Protocol for bootstrap registry node.
 
-This module provides the protocol definition for registry nodes
+The protocol definition for registry nodes
 used in bootstrap service discovery.
 """
 

@@ -401,7 +401,7 @@ def validate_meta_model(meta: ModelContractMeta) -> None:
     """
     Validate a ModelContractMeta for ONEX compliance.
 
-    This function provides application-level validation for ONEX standards
+    Application-level validation for ONEX standards
     compliance. Since Pydantic already validates required fields and constraints
     during model construction, this function focuses on semantic validation
     that may be context-dependent.

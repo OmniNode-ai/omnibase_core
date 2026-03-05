@@ -4,7 +4,7 @@
 """
 Protocol definition for representing a detected compliance violation.
 
-This module provides the ProtocolComplianceViolation protocol which captures
+The ProtocolComplianceViolation protocol which captures
 complete violation information including the violated rule, location, severity,
 and automated fix capabilities.
 

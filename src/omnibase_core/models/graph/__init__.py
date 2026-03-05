@@ -6,7 +6,7 @@
 Type-safe graph models for orchestrator workflows and graph-based
 data structures used in the ONEX framework.
 
-This module provides two categories of models:
+Two categories of models:
 
 1. Workflow Visualization Models:
    - ModelGraphEdge: Edge in an orchestrator workflow graph

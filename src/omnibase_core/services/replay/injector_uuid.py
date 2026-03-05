@@ -4,7 +4,7 @@
 """
 InjectorUUID - UUID injector for deterministic replay.
 
-This module provides the default ProtocolUUIDService implementation for
+The default ProtocolUUIDService implementation for
 controlled UUID generation in the ONEX pipeline.
 
 Design:

@@ -4,7 +4,7 @@
 """
 Merge module for contract patching system.
 
-This module provides the core merge semantics for combining base contracts
+The core merge semantics for combining base contracts
 with patch overlays, enabling environment-specific customizations without
 duplicating entire contract definitions.
 

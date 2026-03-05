@@ -4,7 +4,7 @@
 """
 ValidatorAnyType - AST-based validator for Any type usage patterns.
 
-This module provides the ValidatorAnyType class for analyzing Python source
+The ValidatorAnyType class for analyzing Python source
 code to detect Any type usage patterns that may violate ONEX type safety
 standards.
 

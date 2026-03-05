@@ -4,7 +4,7 @@
 """
 ONEX Node Service Configuration Model.
 
-This module provides a comprehensive Pydantic schema for ONEX node service configuration,
+A comprehensive Pydantic schema for ONEX node service configuration,
 supporting Docker, Kubernetes, and compose file generation from contracts.
 """
 

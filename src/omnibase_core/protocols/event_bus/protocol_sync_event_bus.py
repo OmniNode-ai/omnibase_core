@@ -4,7 +4,7 @@
 """
 Protocol for synchronous event bus operations.
 
-This module provides the ProtocolSyncEventBus protocol definition
+The ProtocolSyncEventBus protocol definition
 for synchronous event bus implementations.
 """
 

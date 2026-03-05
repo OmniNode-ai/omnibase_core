@@ -4,7 +4,7 @@
 """
 ModelPayloadWrite - Typed payload for file/storage write intents.
 
-This module provides the ModelPayloadWrite model for file and storage
+The ModelPayloadWrite model for file and storage
 write operations from Reducers. The Effect node receives the intent
 and performs the write operation to the configured storage backend.
 

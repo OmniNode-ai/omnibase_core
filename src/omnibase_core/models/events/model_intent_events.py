@@ -4,7 +4,7 @@
 """
 Intent event models for coordination I/O (re-exports).
 
-This module provides a unified import location for intent event models.
+A unified import location for intent event models.
 The actual implementations are in separate files per ONEX single-class rule.
 
 See:

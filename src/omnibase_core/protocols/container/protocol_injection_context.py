@@ -4,7 +4,7 @@
 """
 Protocol for dependency injection context.
 
-This module provides the ProtocolInjectionContext protocol which
+The ProtocolInjectionContext protocol which
 defines the interface for injection context tracking including
 resolution status, error handling, and dependency path tracking.
 """

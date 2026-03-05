@@ -4,7 +4,7 @@
 """
 Lightweight violation record for event serialization.
 
-This module provides a simplified, immutable representation of a validation
+A simplified, immutable representation of a validation
 violation suitable for event streaming and Kafka serialization.
 
 Location:

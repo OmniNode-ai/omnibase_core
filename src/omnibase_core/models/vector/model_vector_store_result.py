@@ -3,7 +3,7 @@
 
 """Vector store result model.
 
-This module provides the ModelVectorStoreResult class for representing
+The ModelVectorStoreResult class for representing
 the result of a single embedding store operation.
 
 Thread Safety:

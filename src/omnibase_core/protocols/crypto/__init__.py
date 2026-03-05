@@ -4,7 +4,7 @@
 """
 Cryptographic protocol definitions for key management.
 
-This module provides the ProtocolKeyProvider interface for runtime
+The ProtocolKeyProvider interface for runtime
 public key lookup during envelope signature verification.
 """
 

@@ -3,7 +3,7 @@
 
 """Core types with minimal dependencies for breaking circular imports.
 
-This module provides fundamental type definitions that are used across
+Fundamental type definitions that are used across
 the codebase without introducing circular dependencies. These types
 serve as a dependency inversion layer.
 

@@ -5,7 +5,7 @@
 
 Uses centralized exception groups from omnibase_core.errors.exception_groups.
 
-This module provides the ServiceConfigOverrideInjector class for validating,
+The ServiceConfigOverrideInjector class for validating,
 previewing, and applying configuration overrides to handler configurations,
 environment variables, and replay contexts.
 

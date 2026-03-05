@@ -3,7 +3,7 @@
 
 """Error details model to replace Dict[str, Any] usage.
 
-This module provides the ModelErrorDetails class, a typed Pydantic model that
+The ModelErrorDetails class, a typed Pydantic model that
 replaces untyped dict[str, Any] for error context in ONEX error handling.
 
 Thread Safety:

@@ -3,7 +3,7 @@
 
 """Evidence filtering for partial exports.
 
-This module provides filtering options for exporting subsets of evidence
+Filtering options for exporting subsets of evidence
 based on invariant IDs, status, confidence, and date ranges.
 
 Thread Safety:

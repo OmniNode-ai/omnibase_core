@@ -4,7 +4,7 @@
 """
 Simple, clean ONEX logging - just emit_log_event(level, message).
 
-This module provides the simplest possible logging interface:
+The simplest possible logging interface:
 - emit_log_event(level, message) - that's it!
 - Automatic correlation ID management
 - Registry-based protocol resolution

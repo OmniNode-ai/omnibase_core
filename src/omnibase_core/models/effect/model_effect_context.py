@@ -3,7 +3,7 @@
 
 """Effect handler context with time injection support.
 
-This module provides the execution context model for effect handler invocations.
+The execution context model for effect handler invocations.
 The context carries time injection for retry timing and metrics calculations,
 along with causality tracking identifiers.
 

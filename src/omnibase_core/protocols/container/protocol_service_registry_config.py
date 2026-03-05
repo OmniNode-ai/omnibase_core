@@ -4,7 +4,7 @@
 """
 Protocol for service registry configuration.
 
-This module provides the ProtocolServiceRegistryConfig protocol which
+The ProtocolServiceRegistryConfig protocol which
 defines the interface for comprehensive service registry configuration
 including auto-wiring, lazy loading, and monitoring settings.
 """

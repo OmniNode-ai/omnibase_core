@@ -4,7 +4,7 @@
 """
 ProtocolIdentifiable - Protocol for identifiable objects.
 
-This module provides the protocol definition for objects that have an ID.
+The protocol definition for objects that have an ID.
 """
 
 from __future__ import annotations

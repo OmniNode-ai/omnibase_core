@@ -3,7 +3,7 @@
 
 """Typed payload for registration intents.
 
-This module provides ModelRegistrationPayload, a pure data model that carries
+ModelRegistrationPayload, a pure data model that carries
 all information needed to perform node registration. This model is emitted
 by the Reducer as the payload of a ModelIntent and consumed by Effect nodes.
 

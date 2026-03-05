@@ -4,7 +4,7 @@
 """
 Core-native type protocols.
 
-This module provides protocol definitions for common type constraints
+Protocol definitions for common type constraints
 and behaviors used across Core. These are Core-native equivalents of
 the SPI type protocols.
 

@@ -4,7 +4,7 @@
 """
 Protocol for smart log formatting.
 
-This module provides the ProtocolSmartLogFormatter protocol which defines
+The ProtocolSmartLogFormatter protocol which defines
 the interface for logging formatters used in the ONEX logging infrastructure.
 
 Design Principles:

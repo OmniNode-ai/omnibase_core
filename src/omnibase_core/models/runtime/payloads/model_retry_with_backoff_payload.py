@@ -4,7 +4,7 @@
 """
 ModelRetryWithBackoffPayload - Typed payload for RETRY_WITH_BACKOFF directives.
 
-This module provides the ModelRetryWithBackoffPayload model for configuring
+The ModelRetryWithBackoffPayload model for configuring
 retry behavior with exponential backoff for failed operations.
 
 Example:

@@ -4,7 +4,7 @@
 """
 Invariant set model - collection of invariants for a node/workflow.
 
-This module provides the ModelInvariantSet class which groups multiple
+The ModelInvariantSet class which groups multiple
 invariants together for validation of a specific node or workflow.
 
 Thread Safety:

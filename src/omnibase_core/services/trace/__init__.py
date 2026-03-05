@@ -3,12 +3,12 @@
 
 """Trace recording service module.
 
-This module provides services for recording and querying execution traces.
+Services for recording and querying execution traces.
 The trace recording infrastructure enables observability and replay capabilities.
 
-================================================================================
+--------------------------------------------------------------------------------
 IMPORT POLICY: NO PACKAGE-LEVEL EXPORTS (OMN-1071)
-================================================================================
+--------------------------------------------------------------------------------
 
 Services are intentionally NOT exported at the package level. This is a deliberate
 design decision to prevent circular import issues that arise from the complex

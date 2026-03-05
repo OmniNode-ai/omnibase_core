@@ -4,7 +4,7 @@
 """
 Cache protocols for distributed caching backend abstraction.
 
-This module provides protocol definitions for cache backends that can be used
+Protocol definitions for cache backends that can be used
 with MixinCaching for L2 (distributed) caching support.
 
 Protocols:

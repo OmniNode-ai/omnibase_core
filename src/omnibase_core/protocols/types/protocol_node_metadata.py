@@ -4,7 +4,7 @@
 """
 ProtocolNodeMetadata - Protocol for node metadata.
 
-This module provides the protocol definition for ONEX node metadata objects.
+The protocol definition for ONEX node metadata objects.
 """
 
 from __future__ import annotations

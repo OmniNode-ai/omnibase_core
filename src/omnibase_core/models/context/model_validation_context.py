@@ -3,7 +3,7 @@
 
 """Validation context model for field-level validation details.
 
-This module provides ModelValidationContext, a typed context model for
+ModelValidationContext, a typed context model for
 tracking validation field names, expected values, and actual values.
 
 Thread Safety:

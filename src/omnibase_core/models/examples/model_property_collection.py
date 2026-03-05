@@ -4,7 +4,7 @@
 """
 Property collection model for environment properties.
 
-This module provides the ModelPropertyCollection class for managing
+The ModelPropertyCollection class for managing
 collections of typed properties with validation and helper methods.
 """
 

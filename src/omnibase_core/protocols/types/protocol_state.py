@@ -4,7 +4,7 @@
 """
 ProtocolState - Protocol for reducer state.
 
-This module provides the protocol definition for state objects used in
+The protocol definition for state objects used in
 reducer nodes.
 """
 

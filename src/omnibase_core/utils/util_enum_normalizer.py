@@ -4,7 +4,7 @@
 """
 Enum normalizer utility for Pydantic field validation.
 
-This module provides a factory function to create enum normalizers that can be
+A factory function to create enum normalizers that can be
 used with Pydantic's @field_validator decorator. The normalizer enables:
 1. Accepting both enum values and string representations
 2. Case-insensitive string matching

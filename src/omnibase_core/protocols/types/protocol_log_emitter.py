@@ -4,7 +4,7 @@
 """
 ProtocolLogEmitter - Protocol for log emitters.
 
-This module provides the protocol definition for objects that can emit
+The protocol definition for objects that can emit
 structured log events.
 """
 

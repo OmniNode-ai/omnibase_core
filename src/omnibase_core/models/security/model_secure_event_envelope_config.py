@@ -7,7 +7,7 @@ Provides configuration settings for secure event envelope behavior,
 including validation and serialization options.
 
 Note:
-    This module provides a recommended ConfigDict constant for secure event
+    A recommended ConfigDict constant for secure event
     envelope models. Models should apply this config directly rather than
     inheriting from a non-Pydantic class (which doesn't work with Pydantic's
     config inheritance mechanism).

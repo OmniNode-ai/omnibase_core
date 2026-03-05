@@ -7,7 +7,7 @@ Handler Type Metadata Model.
 Describes replay behavior, security requirements, and execution semantics for handler types.
 Follows ONEX one-model-per-file architecture.
 
-This module provides:
+Exports:
     - :class:`ModelHandlerTypeMetadata`: Pydantic model describing handler type behavior
     - :func:`get_handler_type_metadata`: Factory function to get metadata for a category
 
@@ -20,7 +20,7 @@ The metadata is used for:
 Decision Matrix (from EnumHandlerTypeCategory):
     +---------------------------+---------------+-------------------+--------------+
     | Category                  | Pure (no I/O) | Deterministic     | Replay Safe  |
-    +===========================+===============+===================+==============+
+    +---------------------------+---------------+-------------------+--------------+
     | COMPUTE                   | Yes           | Yes               | Yes          |
     +---------------------------+---------------+-------------------+--------------+
     | NONDETERMINISTIC_COMPUTE  | Yes           | No                | No           |

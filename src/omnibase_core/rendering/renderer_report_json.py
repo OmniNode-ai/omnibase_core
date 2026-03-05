@@ -36,7 +36,7 @@ JSON_INDENT_SPACES = 2
 class RendererReportJson:
     """Render evidence reports to JSON format.
 
-    This class provides static methods to render ModelEvidenceSummary and
+    Static methods to render ModelEvidenceSummary and
     ModelExecutionComparison data into JSON-serializable dictionaries and
     JSON strings suitable for API responses, storage, or further processing.
 

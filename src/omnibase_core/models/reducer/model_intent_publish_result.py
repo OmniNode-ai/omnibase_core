@@ -4,7 +4,7 @@
 """
 Intent publish result model for coordination I/O.
 
-This module provides the ModelIntentPublishResult class that represents
+The ModelIntentPublishResult class that represents
 the result of publishing an intent through the IntentPublisherMixin.
 It provides full traceability for intent operations with correlation
 support for distributed tracing.

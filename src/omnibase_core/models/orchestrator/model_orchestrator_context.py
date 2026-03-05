@@ -4,7 +4,7 @@
 """
 Orchestrator handler context with time injection support.
 
-This module provides the ModelOrchestratorContext class that supplies
+The ModelOrchestratorContext class that supplies
 runtime context for orchestrator handler invocations, including time
 injection for deterministic deadline and timeout calculations.
 

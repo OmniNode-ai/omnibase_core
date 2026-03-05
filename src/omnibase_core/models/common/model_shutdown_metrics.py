@@ -4,7 +4,7 @@
 """
 Typed metrics model for node shutdown events.
 
-This module provides strongly-typed metrics for shutdown patterns.
+Strongly-typed metrics for shutdown patterns.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

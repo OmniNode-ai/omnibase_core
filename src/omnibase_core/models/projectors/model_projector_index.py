@@ -4,7 +4,7 @@
 """
 Index definition model for projection tables.
 
-This module provides the ModelProjectorIndex class for defining database
+The ModelProjectorIndex class for defining database
 indexes on projection tables, supporting btree, gin, and hash index types.
 
 Thread Safety:

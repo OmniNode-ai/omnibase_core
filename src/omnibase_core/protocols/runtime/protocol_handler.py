@@ -4,7 +4,7 @@
 """
 ProtocolHandler - Protocol for ONEX runtime handlers.
 
-This module provides the protocol definition for handlers used by EnvelopeRouter
+The protocol definition for handlers used by EnvelopeRouter
 to execute envelope-based operations. Handlers are the primary execution units
 that process ModelOnexEnvelope instances in the ONEX runtime.
 
@@ -302,7 +302,7 @@ class ProtocolHandler(Protocol):
         """
         Return handler metadata for registration and discovery.
 
-        This method provides metadata about the handler for use in:
+        Metadata about the handler for use in:
         - Handler registry registration
         - Runtime capability discovery
         - Monitoring and observability

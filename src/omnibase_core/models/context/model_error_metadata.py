@@ -4,7 +4,7 @@
 """
 Error metadata model for structured error metadata.
 
-This module provides ModelErrorMetadata, a typed model for error-related
+ModelErrorMetadata, a typed model for error-related
 metadata that supports correlation, retry logic, and categorization across
 the ONEX system.
 

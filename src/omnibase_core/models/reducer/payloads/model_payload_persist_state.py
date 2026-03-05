@@ -4,7 +4,7 @@
 """
 ModelPayloadPersistState - Typed payload for state persistence intents.
 
-This module provides the ModelPayloadPersistState model for FSM state
+The ModelPayloadPersistState model for FSM state
 snapshot persistence from Reducers. The Effect node receives the
 intent and stores the state to the configured persistence backend.
 

@@ -4,7 +4,7 @@
 """
 Discriminated union type for directive payloads.
 
-This module provides the ModelDirectivePayload type alias, which is a
+The ModelDirectivePayload type alias, which is a
 discriminated union of all directive payload types. The `kind` field
 serves as the discriminator, enabling Pydantic to automatically select
 the correct payload model during deserialization.

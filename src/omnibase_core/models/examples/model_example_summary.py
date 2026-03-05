@@ -4,7 +4,7 @@
 """
 Example summary model.
 
-This module provides the ModelExampleSummary class for clean
+The ModelExampleSummary class for clean
 individual example summary data following ONEX naming conventions.
 """
 

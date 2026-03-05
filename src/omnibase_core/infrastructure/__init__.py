@@ -3,7 +3,7 @@
 
 """Infrastructure module.
 
-This module contains node bases and infrastructure services.
+Node bases and infrastructure services.
 
 Re-exports:
     For convenience, this module re-exports cache backends from their canonical

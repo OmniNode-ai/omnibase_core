@@ -4,7 +4,7 @@
 """
 ValidatorUnionUsage - AST-based validator for Union type usage patterns.
 
-This module provides the ValidatorUnionUsage class for analyzing Python source
+The ValidatorUnionUsage class for analyzing Python source
 code to detect Union type usage patterns that may violate ONEX type safety
 standards.
 

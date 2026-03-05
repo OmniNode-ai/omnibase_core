@@ -161,7 +161,7 @@ class ProtocolExecutionConstrainable(Protocol):
         """
         Check if this object has execution constraints defined.
 
-        This method provides a fast check for constraint presence without
+        A fast check for constraint presence without
         requiring the caller to handle None values. It enables efficient
         conditional logic in the runtime:
 

@@ -4,7 +4,7 @@
 """
 Migration helpers for converting legacy dict payloads to typed event payloads.
 
-This module provides utilities to help migrate from the legacy dict[str, Any]
+Utilities to help migrate from the legacy dict[str, Any]
 payload pattern to the typed ModelEventPayloadUnion pattern introduced in v0.4.0.
 
 Usage:

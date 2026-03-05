@@ -4,7 +4,7 @@
 """
 ModelSubsetFilter - Filter for selecting subset of corpus executions.
 
-This module provides the ModelSubsetFilter model for filtering which
+The ModelSubsetFilter model for filtering which
 executions from a corpus should be replayed. Supports filtering by
 handler name, index range, and tags.
 

@@ -4,7 +4,7 @@
 """
 Input model for NodeEffect operations.
 
-This module provides the ModelEffectInput model that wraps side effect
+The ModelEffectInput model that wraps side effect
 operations with comprehensive transaction, retry, and circuit breaker
 configuration. Effect nodes handle all external I/O in the ONEX architecture.
 

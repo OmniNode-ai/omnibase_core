@@ -4,7 +4,7 @@
 """
 ONEX Type System - Centralized type definitions.
 
-This module provides a centralized type system to eliminate untyped ``Any``
+A centralized type system to eliminate untyped ``Any``
 usage across the codebase. All type aliases follow a consistent naming
 convention and are designed for specific domains within the ONEX framework.
 

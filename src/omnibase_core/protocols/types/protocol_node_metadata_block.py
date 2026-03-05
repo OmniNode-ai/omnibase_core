@@ -4,7 +4,7 @@
 """
 ProtocolNodeMetadataBlock - Protocol for node metadata blocks.
 
-This module provides the protocol definition for node metadata block objects.
+The protocol definition for node metadata block objects.
 """
 
 from __future__ import annotations

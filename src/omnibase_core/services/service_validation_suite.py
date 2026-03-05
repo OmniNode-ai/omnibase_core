@@ -3,7 +3,7 @@
 
 """Service for running validation suites.
 
-This module provides a unified validation suite for ONEX compliance.
+A unified validation suite for ONEX compliance.
 """
 
 from __future__ import annotations

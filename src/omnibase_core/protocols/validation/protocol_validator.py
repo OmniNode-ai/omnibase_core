@@ -4,7 +4,7 @@
 """
 Protocol definition for protocol validation functionality.
 
-This module provides the ProtocolValidator protocol which validates that
+The ProtocolValidator protocol which validates that
 implementations conform to their protocol interfaces.
 
 Design Principles:

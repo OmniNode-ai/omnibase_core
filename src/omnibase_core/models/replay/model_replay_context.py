@@ -4,7 +4,7 @@
 """
 ModelReplayContext - Replay context model for deterministic replay infrastructure.
 
-This module provides the ModelReplayContext which bundles all determinism data
+The ModelReplayContext which bundles all determinism data
 (time, RNG seed, effect recordings) needed to replay an execution.
 
 Design:

@@ -80,7 +80,7 @@ def _get_demo_root() -> Path:
     """Get the root path for demo scenarios.
 
     Returns the examples/demo/ directory relative to the omnibase_core package.
-    This function handles both development (editable install) and package
+    Both development (editable install) and package
     installation scenarios.
 
     Returns:

@@ -70,7 +70,7 @@ class ModelArgumentMap(BaseModel):
         """
         Type-safe argument retrieval with optional default.
 
-        This method provides runtime type conversion for common types. When the
+        Runtime type conversion for common types. When the
         stored value doesn't match expected_type, automatic conversion is attempted
         for str, int, float, and bool types.
 
@@ -190,7 +190,7 @@ class ModelArgumentMap(BaseModel):
         """
         Get positional argument by index with type conversion.
 
-        This method provides runtime type conversion for common types, identical
+        Runtime type conversion for common types, identical
         to get_typed(). When the stored value doesn't match expected_type,
         automatic conversion is attempted for str, int, float, and bool types.
 

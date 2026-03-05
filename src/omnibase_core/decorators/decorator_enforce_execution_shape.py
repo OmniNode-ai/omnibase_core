@@ -4,7 +4,7 @@
 """
 Runtime enforcement decorator for ONEX execution shapes.
 
-This module provides a decorator that validates message handlers only receive
+A decorator that validates message handlers only receive
 allowed message categories based on their node type, enforcing the canonical
 ONEX execution shapes at runtime.
 

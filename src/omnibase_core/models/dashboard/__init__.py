@@ -3,7 +3,7 @@
 
 """Dashboard models and widget configuration types.
 
-This module provides Pydantic models for configuring dashboards and their
+Pydantic models for configuring dashboards and their
 widgets in the ONEX platform. The dashboard system follows a hierarchical
 structure:
 

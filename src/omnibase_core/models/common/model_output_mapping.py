@@ -7,7 +7,7 @@ Output Mapping Container Model.
 Container for strongly-typed output references between graph nodes.
 Follows ONEX canonical patterns with strict typing - no Any types allowed.
 
-This module provides the ``ModelOutputMapping`` class for managing
+The ``ModelOutputMapping`` class for managing
 collections of typed output references in the ONEX execution graph.
 It replaces untyped ``dict[str, str]`` patterns with strongly-typed containers.
 

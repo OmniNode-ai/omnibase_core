@@ -3,7 +3,7 @@
 
 """Contract Models for ONEX Four-Node Architecture.
 
-This module provides Pydantic models for validating and managing contract
+Pydantic models for validating and managing contract
 definitions across the ONEX four-node architecture (EFFECT, COMPUTE, REDUCER,
 ORCHESTRATOR). Contracts define the interface and behavior expectations for
 nodes in the system.

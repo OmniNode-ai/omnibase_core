@@ -3,7 +3,7 @@
 
 """HNSW index configuration model.
 
-This module provides the ModelHnswConfig class for HNSW index tuning.
+The ModelHnswConfig class for HNSW index tuning.
 
 Thread Safety:
     ModelHnswConfig instances are immutable (frozen=True) after creation,

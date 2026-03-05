@@ -4,7 +4,7 @@
 """
 Contract validation event models.
 
-This module provides event models for contract validation and merge lifecycle
+Event models for contract validation and merge lifecycle
 events in the ONEX framework. These events enable tracking and auditing of
 contract validation operations.
 

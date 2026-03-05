@@ -4,7 +4,7 @@
 """
 Validation node implementations.
 
-This module provides orchestrator nodes for validation workflows
+Orchestrator nodes for validation workflows
 in the ONEX framework.
 
 Available Nodes:

@@ -4,7 +4,7 @@
 """
 Protocol for service registration information.
 
-This module provides the ProtocolServiceRegistration protocol which
+The ProtocolServiceRegistration protocol which
 defines the interface for comprehensive service registration metadata
 including lifecycle management, dependency tracking, and health monitoring.
 """

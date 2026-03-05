@@ -4,7 +4,7 @@
 """
 Typed metadata model for orchestrator input.
 
-This module provides ModelOrchestratorInputMetadata which replaces the
+ModelOrchestratorInputMetadata which replaces the
 untyped dict[str, ModelSchemaValue] pattern in ModelOrchestratorInput
 with strongly-typed fields for full type safety and IDE support.
 

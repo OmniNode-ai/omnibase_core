@@ -4,12 +4,12 @@
 """
 ONEX Types Module.
 
-This module contains TypedDict definitions and type constraints following ONEX patterns.
+TypedDict definitions and type constraints following ONEX patterns.
 TypedDicts provide type safety for dictionary structures without runtime overhead.
 Type constraints provide protocols and type variables for better generic programming.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
+-----------------------------------------------
 This module's __init__.py is loaded whenever ANY submodule is imported (e.g., types.core_types).
 To avoid circular dependencies, imports from .constraints are now LAZY-LOADED.
 

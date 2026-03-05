@@ -4,7 +4,7 @@
 """
 ProtocolOrchestrator - Protocol for orchestration nodes.
 
-This module provides the protocol definition for nodes that implement
+The protocol definition for nodes that implement
 the ORCHESTRATOR pattern with workflow coordination capabilities.
 
 OMN-662: Node Protocol Definitions for ONEX Four-Node Architecture.

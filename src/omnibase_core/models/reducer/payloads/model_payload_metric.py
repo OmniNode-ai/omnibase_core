@@ -4,7 +4,7 @@
 """
 ModelPayloadMetric - Typed payload for metric recording intents.
 
-This module provides the ModelPayloadMetric model for structured metric
+The ModelPayloadMetric model for structured metric
 recording from Reducers. The Effect node receives the intent and sends
 the metric to the configured metrics backend.
 

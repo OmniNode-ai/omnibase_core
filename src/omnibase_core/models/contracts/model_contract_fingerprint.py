@@ -3,7 +3,7 @@
 
 """Contract Fingerprint Model.
 
-This module provides the ModelContractFingerprint class for representing
+The ModelContractFingerprint class for representing
 computed contract fingerprints that combine semantic versioning with
 cryptographic hashing for contract integrity verification.
 

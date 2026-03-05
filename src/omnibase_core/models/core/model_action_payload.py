@@ -4,7 +4,7 @@
 """
 Action payload model for tool-as-a-service execution.
 
-This module provides ModelActionPayload, a comprehensive wrapper that combines
+ModelActionPayload, a comprehensive wrapper that combines
 a ModelNodeAction with typed execution parameters, context, and service
 composition metadata. It serves as the primary transport model for action
 invocation across MCP (Model Context Protocol), GraphQL, and internal service

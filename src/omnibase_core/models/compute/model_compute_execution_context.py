@@ -4,7 +4,7 @@
 """
 Typed execution context for compute pipelines.
 
-This module provides the execution context model used to track and trace
+The execution context model used to track and trace
 compute pipeline executions. The context carries identifiers for operation
 tracking, distributed tracing, and node identification.
 

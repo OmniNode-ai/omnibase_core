@@ -4,7 +4,7 @@
 """
 EnvelopeRouter - Transport-agnostic orchestrator for ONEX node execution.
 
-This module provides the EnvelopeRouter class, which orchestrates envelope
+The EnvelopeRouter class, which orchestrates envelope
 execution across multiple node instances and handlers. It is the core
 coordinator that:
 - Registers and manages handlers by EnumHandlerType
@@ -66,7 +66,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class EnvelopeRouter(ProtocolNodeRuntime):
+class EnvelopeRouter(ProtocolNodeRuntime):  # ai-slop-ok: reST table
     """
     Transport-agnostic orchestrator for ONEX node execution.
 
@@ -213,7 +213,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
                import threading
                _thread_local = threading.local()
 
-               def get_router() -> EnvelopeRouter:
+               def get_router() -> EnvelopeRouter:  # ai-slop-ok: reST table
                    if not hasattr(_thread_local, "router"):
                        _thread_local.router = EnvelopeRouter()
                    return _thread_local.router

@@ -4,7 +4,7 @@
 """
 Result of a single pipeline step.
 
-This module provides the ModelComputeStepResult model that captures the complete
+The ModelComputeStepResult model that captures the complete
 outcome of executing a single step in a compute pipeline, including the output
 data, success status, timing information, and error details if applicable.
 

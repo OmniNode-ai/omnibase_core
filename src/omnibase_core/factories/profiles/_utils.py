@@ -4,7 +4,7 @@
 """
 Shared utilities for contract profile factories.
 
-This module contains internal utility functions used by the profile factory
+Internal utility functions used by the profile factory
 modules. These functions are implementation details and should not be
 imported directly by external code.
 

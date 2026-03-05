@@ -4,7 +4,7 @@
 """
 Handler Descriptor Model.
 
-This module provides the **canonical runtime representation** of a handler descriptor
+The **canonical runtime representation** of a handler descriptor
 in the ONEX framework. Handler descriptors contain all metadata necessary for handler
 discovery, instantiation, routing, and lifecycle management.
 
