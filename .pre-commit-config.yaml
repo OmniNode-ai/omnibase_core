@@ -136,6 +136,20 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # Planning Doc Prevention (OMN-3616)
+      # Planning documents belong in omni_home/docs/plans/, not in individual repos.
+      # This hook prevents accidental commits of docs/plans/ files to this repo.
+      - id: no-planning-docs
+        name: Block planning docs (belong in omni_home/docs/plans/)
+        entry: bash -c 'PLAN_FILES=$(git diff --cached --name-only -- "docs/plans/"); if [ -n "$PLAN_FILES"
+          ]; then echo "ERROR - Planning docs must live in omni_home/docs/plans/, not in this repo"; echo
+          "$PLAN_FILES"; echo ""; echo "Move your file to /Volumes/PRO-G40/Code/omni_home/docs/plans/";
+          exit 1; fi'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
   # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:
