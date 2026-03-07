@@ -420,6 +420,158 @@ class TestExecutionConstraintsHelpers:
 
 
 @pytest.mark.unit
+class TestHandlerClassValidation:
+    """Tests for handler_class field validation (OMN-1420)."""
+
+    def test_handler_class_defaults_to_none(self) -> None:
+        """Test handler_class defaults to None when not provided."""
+        contract = ModelHandlerContract(
+            handler_id="node.test",
+            name="Test",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
+            input_model="a.Input",
+            output_model="a.Output",
+        )
+        assert contract.handler_class is None
+
+    def test_valid_handler_class_accepted(self) -> None:
+        """Test valid fully qualified class path is accepted."""
+        contract = ModelHandlerContract(
+            handler_id="node.test",
+            name="Test",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
+            input_model="a.Input",
+            output_model="a.Output",
+            handler_class="omnibase_infra.handlers.handler_consul.HandlerConsul",
+        )
+        assert (
+            contract.handler_class
+            == "omnibase_infra.handlers.handler_consul.HandlerConsul"
+        )
+
+    def test_two_segment_handler_class_accepted(self) -> None:
+        """Test minimal two-segment class path is accepted."""
+        contract = ModelHandlerContract(
+            handler_id="node.test",
+            name="Test",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
+            input_model="a.Input",
+            output_model="a.Output",
+            handler_class="mymodule.MyClass",
+        )
+        assert contract.handler_class == "mymodule.MyClass"
+
+    def test_handler_class_with_underscores_accepted(self) -> None:
+        """Test class path with underscores in segments is accepted."""
+        contract = ModelHandlerContract(
+            handler_id="node.test",
+            name="Test",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
+            input_model="a.Input",
+            output_model="a.Output",
+            handler_class="_private.module._internal.Handler",
+        )
+        assert contract.handler_class == "_private.module._internal.Handler"
+
+    def test_single_segment_handler_class_rejected(self) -> None:
+        """Test that single segment (no dots) is rejected."""
+        with pytest.raises(ValidationError, match="fully qualified Python class path"):
+            ModelHandlerContract(
+                handler_id="node.test",
+                name="Test",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
+                input_model="a.Input",
+                output_model="a.Output",
+                handler_class="HandlerConsul",
+            )
+
+    def test_handler_class_too_short_rejected(self) -> None:
+        """Test that handler_class shorter than 3 chars is rejected."""
+        with pytest.raises(ValidationError):
+            ModelHandlerContract(
+                handler_id="node.test",
+                name="Test",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
+                input_model="a.Input",
+                output_model="a.Output",
+                handler_class="a",
+            )
+
+    def test_handler_class_starting_with_digit_rejected(self) -> None:
+        """Test that segment starting with digit is rejected."""
+        with pytest.raises(ValidationError, match="fully qualified Python class path"):
+            ModelHandlerContract(
+                handler_id="node.test",
+                name="Test",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
+                input_model="a.Input",
+                output_model="a.Output",
+                handler_class="3module.Handler",
+            )
+
+    def test_handler_class_with_empty_segment_rejected(self) -> None:
+        """Test that empty segment (double dots) is rejected."""
+        with pytest.raises(ValidationError, match="fully qualified Python class path"):
+            ModelHandlerContract(
+                handler_id="node.test",
+                name="Test",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
+                input_model="a.Input",
+                output_model="a.Output",
+                handler_class="module..Handler",
+            )
+
+    def test_handler_class_with_spaces_rejected(self) -> None:
+        """Test that spaces in class path are rejected."""
+        with pytest.raises(ValidationError):
+            ModelHandlerContract(
+                handler_id="node.test",
+                name="Test",
+                contract_version=ModelSemVer(major=1, minor=0, patch=0),
+                descriptor=ModelHandlerBehavior(node_archetype="compute"),
+                input_model="a.Input",
+                output_model="a.Output",
+                handler_class="my module.Handler",
+            )
+
+    def test_handler_class_none_explicitly(self) -> None:
+        """Test handler_class can be explicitly set to None."""
+        contract = ModelHandlerContract(
+            handler_id="node.test",
+            name="Test",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
+            input_model="a.Input",
+            output_model="a.Output",
+            handler_class=None,
+        )
+        assert contract.handler_class is None
+
+    def test_full_creation_with_handler_class(self) -> None:
+        """Test full contract creation including handler_class."""
+        contract = ModelHandlerContract(
+            handler_id="effect.database.writer",
+            name="DB Writer",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
+            descriptor=ModelHandlerBehavior(node_archetype="effect"),
+            input_model="a.Input",
+            output_model="a.Output",
+            handler_class="myapp.handlers.db_writer.DBWriter",
+            supports_lifecycle=True,
+        )
+        assert contract.handler_class == "myapp.handlers.db_writer.DBWriter"
+        assert contract.supports_lifecycle is True
+
+
+@pytest.mark.unit
 class TestImmutability:
     """Tests for model immutability."""
 
