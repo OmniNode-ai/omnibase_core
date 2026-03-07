@@ -34,9 +34,9 @@ from .conftest import (
     TEST_REPLAY_ID,
 )
 
-# ============================================================================
+# ---===================
 # Helper Fixtures for ModelExecutionComparison Tests
-# ============================================================================
+# ---===================
 
 
 @pytest.fixture
@@ -152,9 +152,9 @@ def comparison_with_diff_data(
     }
 
 
-# ============================================================================
+# ---===================
 # Test Classes
-# ============================================================================
+# ---===================
 
 
 @pytest.mark.unit
@@ -3214,9 +3214,9 @@ class TestModelExecutionComparisonFieldConsistency:
         assert "output_match is False but hashes are identical" in error_message
 
 
-# ============================================================================
+# ---===================
 # Division by Zero Protection Tests
-# ============================================================================
+# ---===================
 
 
 @pytest.mark.unit
@@ -3227,7 +3227,7 @@ class TestModelExecutionComparisonDivisionByZero:
     handling zero baseline values in percentage change calculations.
 
     CONVENTION: When baseline is 0, delta_percent must be 0.0
-    =========================================================
+    ---
 
     Mathematical Context:
         Percentage change = ((new - old) / old) * 100

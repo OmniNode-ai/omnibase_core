@@ -226,7 +226,7 @@ class ModelDeploymentTopology(BaseModel):
 
         yaml = YAML(typ="safe")
         with open(path, encoding="utf-8") as fh:
-            data: dict[str, Any] = yaml.load(fh)
+            data = yaml.load(fh)
 
         if not isinstance(data, dict) or "schema_version" not in data:
             raise ValueError(
@@ -254,7 +254,7 @@ class ModelDeploymentTopology(BaseModel):
         from ruamel.yaml import YAML
 
         yaml = YAML(typ="safe")
-        data: dict[str, Any] = yaml.load(content)
+        data = yaml.load(content)
 
         if not isinstance(data, dict) or "schema_version" not in data:
             raise ValueError(

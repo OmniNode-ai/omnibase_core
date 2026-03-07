@@ -3,7 +3,6 @@
 
 """ModelConfig for LLM provider configuration.
 
-This module provides configuration for swapping between different LLM providers
 (OpenAI, Anthropic, Local) in the OMN-1201 demo support assistant handler.
 
 Example:

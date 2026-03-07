@@ -4,7 +4,6 @@
 """
 Tests for ValidatorPydanticConventions - AST-based validator for Pydantic model conventions.
 
-This module provides comprehensive tests for the ValidatorPydanticConventions class,
 covering:
 - Detection of models without model_config (Rule 1: missing-config)
 - Detection of empty ConfigDict() declarations (Rule 2: empty-config)
