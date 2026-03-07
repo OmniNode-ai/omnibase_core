@@ -158,7 +158,7 @@ The following protocols have ID fields changed from `str` to `UUID`:
 
 ## Migration Steps
 
-### Step 1: Update Imports
+### Update Imports
 
 Add the `UUID` import from the standard library:
 
@@ -171,7 +171,7 @@ from typing import Protocol
 from uuid import UUID
 ```
 
-### Step 2: Update Field Type Annotations
+### Update Field Type Annotations
 
 Change field type annotations from `str` to `UUID`:
 
@@ -185,7 +185,7 @@ class MyServiceMetadata:
     service_id: UUID
 ```
 
-### Step 3: Update ID Generation
+### Update ID Generation
 
 Replace string ID generation with proper UUID generation:
 
@@ -205,7 +205,7 @@ class MyService:
         self.service_id = uuid4()  # UUID object
 ```
 
-### Step 4: Convert Existing String IDs
+### Convert Existing String IDs
 
 For existing string IDs in databases or configurations:
 
@@ -225,7 +225,7 @@ def convert_string_to_uuid(string_id: str) -> UUID:
         raise ValueError(f"Invalid UUID format: {string_id}") from e
 ```
 
-### Step 5: Update Method Signatures
+### Update Method Signatures
 
 Update methods that accept or return IDs:
 
@@ -247,7 +247,7 @@ async def register_service(self, service: Service) -> UUID:
     ...
 ```
 
-### Step 6: Update Pydantic Models
+### Update Pydantic Models
 
 For Pydantic models implementing protocols:
 

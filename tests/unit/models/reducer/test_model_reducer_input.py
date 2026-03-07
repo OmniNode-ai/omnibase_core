@@ -3,7 +3,6 @@
 
 """Unit tests for ModelReducerInput[T].
 
-This module provides comprehensive tests for the generic ModelReducerInput model,
 which defines the input contract for REDUCER nodes in the ONEX architecture.
 
 Test Coverage:

@@ -1,3 +1,23 @@
+## v0.24.0 (2026-03-07)
+
+### Features
+- feat(validation): add cross-repo topic name CI validator [OMN-3740] (#604)
+- feat(cli): add validate-shape command for execution shapes [OMN-960] (#599)
+- feat(core): add ModelDeploymentTopology, EnumDeploymentMode with mode/local validator [OMN-3490] (#593)
+
+### Bug Fixes
+- fix(decorators): preserve return types in error handling decorators [OMN-1494] (#596)
+- fix(test): calibrate performance thresholds for self-hosted runners [OMN-3327] (#598)
+- fix(validators): replace manual validation with Pydantic constraints [OMN-852] (#597)
+
+### Other Changes
+- chore(hooks): add no-planning-docs pre-commit hook [OMN-3616] (#594)
+- chore: add no-env-file pre-commit hook (#603)
+- chore: fix pre-existing AI-slop violations for --strict mode [OMN-3669] (#601)
+- chore(deps): bump the actions group with 5 updates (#602)
+- ci: add --strict AI-slop, dependabot github-actions [OMN-3662] (#600)
+- perf(compute): LRU-cache compiled regex patterns [OMN-504] (#595)
+
 # Changelog
 
 All notable changes to the ONEX Core Framework (omnibase_core) will be documented in this file.

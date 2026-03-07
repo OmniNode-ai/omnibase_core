@@ -179,7 +179,7 @@ Trigger alerts when:
 
 ## Investigation Workflow
 
-### Step 1: Identify the Anomaly
+### Identify the Anomaly
 
 **Command**:
 ```
@@ -202,7 +202,7 @@ gh run list --workflow=test.yml --limit 10
   Duration: 4m25s ⚠️ WARNING (exceeds 3m30s threshold)
 ```
 
-### Step 2: Check Test Distribution
+### Check Test Distribution
 
 **Command**:
 ```
@@ -229,7 +229,7 @@ Variance: +43 tests (+7%)
 - If variance >15%: Consider rebalancing splits
 - If test count normal: Proceed to profiling
 
-### Step 3: Profile Slow Tests
+### Profile Slow Tests
 
 **Command**:
 ```
@@ -265,7 +265,7 @@ slowest durations:
 - If fixture delays: Optimize setup/teardown
 - If timeouts: Investigate event loop issues
 
-### Step 4: Review Resource Usage
+### Review Resource Usage
 
 **Location**: GitHub Actions run logs → Job details → Resource usage
 
@@ -290,7 +290,7 @@ slowest durations:
 - If CPU throttled: Consider dedicated runner
 - If I/O bound: Mock external dependencies
 
-### Step 5: Compare with Historical Data
+### Compare with Historical Data
 
 **Command**:
 ```
@@ -311,7 +311,7 @@ gh run view <run-id> --log | grep "split-12"
 - If ongoing issue: Plan optimization work
 - If external factor: Document and monitor
 
-### Step 6: Root Cause Analysis
+### Root Cause Analysis
 
 **Common Root Causes**:
 
@@ -326,7 +326,7 @@ gh run view <run-id> --log | grep "split-12"
 
 **Action**: Document findings in incident report
 
-### Step 7: Implement Resolution
+### Implement Resolution
 
 **Short-Term Fixes**:
 - Retry workflow (if transient)

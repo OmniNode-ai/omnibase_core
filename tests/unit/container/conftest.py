@@ -4,7 +4,6 @@
 """
 Shared fixtures for container test suite.
 
-This module provides reusable pytest fixtures for testing ServiceRegistry
 and related container components. Consolidates duplicate registry fixtures
 that were previously defined in multiple test files.
 

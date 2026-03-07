@@ -155,7 +155,7 @@ state = ModelFSMStateDefinition(
 
 ## Phase 1: sed Commands (Pattern 1 - Simple Cases)
 
-### Step 1: Verify Import Exists
+### Verify Import Exists
 
 Before running sed, ensure `ModelSemVer` is imported:
 
@@ -164,7 +164,7 @@ grep -r "from omnibase_core.models.primitives.model_semver import ModelSemVer" \
   tests/unit/models/contracts/subcontracts/test_*.py | wc -l
 ```
 
-### Step 2: Add Import if Missing
+### Add Import if Missing
 
 ```bash
 # Check which files need the import
@@ -185,7 +185,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 done
 ```
 
-### Step 3: Safe sed Commands for Top Models
+### Safe sed Commands for Top Models
 
 **IMPORTANT**: Always run with `-i ''` (macOS) or `-i` (Linux) to backup. Verify first without -i.
 
@@ -229,7 +229,7 @@ sed -i '' 's/ModelCachingSubcontract()/ModelCachingSubcontract(version=ModelSemV
   tests/unit/models/contracts/subcontracts/test_model_caching_subcontract.py
 ```
 
-### Step 4: Batch Automation Script
+### Batch Automation Script
 
 **Note**: The scripts referenced below (`scripts/fix_version_field_pattern1.sh` and `scripts/fix_version_field_pattern2.py`) were one-time migration scripts that have been removed after the migration was completed successfully. The code examples below are preserved for historical reference only.
 
@@ -644,7 +644,7 @@ def create_state_definition(name, state_type, **kwargs):
 
 ## Execution Order
 
-### Step 1: Prepare (5 minutes)
+### Prepare (5 minutes)
 
 ```bash
 # Create backup branch
@@ -660,7 +660,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 done
 ```
 
-### Step 2: Run Pattern 1 Automation (30 minutes) - COMPLETED
+### Run Pattern 1 Automation (30 minutes) - COMPLETED
 
 **Note**: The migration scripts have been removed after successful completion. The commands below are for historical reference only.
 
@@ -675,7 +675,7 @@ done
 uv run pytest tests/unit/models/contracts/subcontracts/ -x --tb=short
 ```
 
-### Step 3: Run Pattern 2 Automation (30 minutes) - COMPLETED
+### Run Pattern 2 Automation (30 minutes) - COMPLETED
 
 **Note**: The migration scripts have been removed after successful completion. The commands below are for historical reference only.
 
@@ -690,7 +690,7 @@ uv run pytest tests/unit/models/contracts/subcontracts/ -x --tb=short
 uv run pytest tests/unit/models/contracts/subcontracts/ -x --tb=short
 ```
 
-### Step 4: Manual Fixes (60 minutes)
+### Manual Fixes (60 minutes)
 
 ```bash
 # Find remaining failures
@@ -703,7 +703,7 @@ uv run pytest tests/unit/models/contracts/subcontracts/ --tb=line -q 2>&1 | \
 uv run pytest tests/unit/models/contracts/subcontracts/test_XXX.py -x --tb=short
 ```
 
-### Step 5: Full Test Suite Verification (30 minutes)
+### Full Test Suite Verification (30 minutes)
 
 ```bash
 # Run full subcontracts tests

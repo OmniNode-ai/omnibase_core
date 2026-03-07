@@ -16,6 +16,8 @@ Usage:
 
 from __future__ import annotations
 
+import sys
+
 import click
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
@@ -111,6 +113,7 @@ def validate_shape() -> None:
       COMMAND -> ORCHESTRATOR   (workflow execution)
       COMMAND -> EFFECT         (direct execution)
     """
+    pass  # noqa: PIE790 — Click group; subcommands are registered below
 
 
 @validate_shape.command()
@@ -153,7 +156,7 @@ def check(source: str, target: str) -> None:
             f"  Shape: {result.matched_shape.value if result.matched_shape else 'N/A'}"
         )
         click.echo(f"  {result.rationale}")
-        raise SystemExit(EnumCLIExitCode.SUCCESS)
+        sys.exit(EnumCLIExitCode.SUCCESS.value)
 
     click.echo(
         click.style("FORBIDDEN", fg="red")
@@ -179,7 +182,7 @@ def check(source: str, target: str) -> None:
             src_cat = EnumExecutionShape.get_source_category(shape)
             click.echo(f"    - {src_cat.value} -> {target_kind.value}  ({shape.value})")
 
-    raise SystemExit(EnumCLIExitCode.ERROR)
+    sys.exit(EnumCLIExitCode.ERROR.value)
 
 
 @validate_shape.command("list")

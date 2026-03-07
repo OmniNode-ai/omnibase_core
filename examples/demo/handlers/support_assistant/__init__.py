@@ -3,7 +3,6 @@
 
 """Support assistant handler for OMN-1201 Demo.
 
-This module provides the complete AI support assistant implementation including:
 - Input/output schemas (SupportRequest, SupportResponse)
 - LLM client protocol (ProtocolLLMClient)
 - Main handler (SupportAssistantHandler)

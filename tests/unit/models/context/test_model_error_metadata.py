@@ -4,7 +4,6 @@
 """
 Unit tests for ModelErrorMetadata.
 
-This module provides comprehensive tests for the ModelErrorMetadata model,
 covering:
 - Basic instantiation with valid data
 - Default values work correctly
