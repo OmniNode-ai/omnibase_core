@@ -44,6 +44,7 @@ See Also:
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -112,6 +113,7 @@ class ModelHandlerContract(BaseModel):
         input_model: Fully qualified input model reference.
         output_model: Fully qualified output model reference.
         execution_constraints: Ordering constraints for execution.
+        handler_class: Fully qualified Python class path for dynamic import.
         supports_lifecycle: Handler implements lifecycle hooks.
         supports_health_check: Handler implements health checking.
         supports_provisioning: Handler supports provisioning.
@@ -239,6 +241,20 @@ class ModelHandlerContract(BaseModel):
     execution_constraints: ModelExecutionConstraints | None = Field(
         default=None,
         description="Execution ordering constraints (requires_before/after)",
+    )
+
+    # ==========================================================================
+    # Instantiation (OMN-1420)
+    # ==========================================================================
+
+    handler_class: str | None = Field(
+        default=None,
+        min_length=3,
+        description=(
+            "Fully qualified Python class path for dynamic handler import "
+            "(e.g., 'omnibase_infra.handlers.handler_consul.HandlerConsul'). "
+            "Must be a dot-separated module path ending with a class name."
+        ),
     )
 
     # ==========================================================================
@@ -379,6 +395,38 @@ class ModelHandlerContract(BaseModel):
         if len(aliases) != len(set(aliases)):
             duplicates = [a for a in aliases if aliases.count(a) > 1]
             raise ValueError(f"Duplicate capability input aliases: {set(duplicates)}")
+
+        return v
+
+    @field_validator("handler_class")
+    @classmethod
+    def validate_handler_class_format(cls, v: str | None) -> str | None:
+        """
+        Validate handler_class is a dot-separated fully qualified Python class path.
+
+        The value must match the pattern for a valid Python import path:
+        one or more dot-separated segments where each segment starts with
+        a letter or underscore, followed by alphanumeric characters or
+        underscores. At least two segments are required (module + class).
+
+        Args:
+            v: The handler_class string or None.
+
+        Returns:
+            The validated handler_class.
+
+        Raises:
+            ValueError: If format is invalid.
+        """
+        if v is None:
+            return v
+
+        pattern = r"^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)+$"
+        if not re.match(pattern, v):
+            raise ValueError(
+                f"handler_class '{v}' must be a fully qualified Python class path "
+                f"with dot-separated segments (e.g., 'mypackage.module.ClassName')"
+            )
 
         return v
 

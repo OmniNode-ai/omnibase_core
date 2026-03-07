@@ -554,6 +554,21 @@
       "default": null,
       "description": "Execution ordering constraints (requires_before/after)"
     },
+    "handler_class": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 3,
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)+$"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Fully qualified Python class path for dynamic handler import (e.g., 'omnibase_infra.handlers.handler_consul.HandlerConsul')",
+      "title": "Handler Class"
+    },
     "supports_lifecycle": {
       "default": false,
       "description": "Handler implements lifecycle hooks (init/shutdown)",
