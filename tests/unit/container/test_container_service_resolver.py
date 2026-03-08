@@ -7,7 +7,7 @@ Comprehensive unit tests for container_service_resolver module.
 Tests cover:
 - Registry map building
 - Protocol-based service resolution
-- Special service cases (event_bus, consul, vault)
+- Special service cases (event_bus, vault)
 - Error handling for missing services
 - Method binding functionality
 """
@@ -153,23 +153,6 @@ class TestServiceResolution:
         assert service.service_name == "event_bus"
         assert service.service_type == "hybrid_event_bus"
         assert service.protocol_name == "ProtocolEventBus"
-
-    def test_resolve_consul_client_by_protocol(self):
-        """Test resolving consul client by protocol type."""
-        container = Mock()
-        container.consul_client = Mock()
-
-        # Create mock protocol type
-        protocol_type = Mock()
-        protocol_type.__name__ = "ProtocolConsulClient"
-
-        get_service = create_get_service_method(container)
-        service = get_service(container, protocol_type)
-
-        assert isinstance(service, ModelService)
-        assert service.service_name == "consul_client"
-        assert service.protocol_name == "ProtocolConsulClient"
-        container.consul_client.assert_called_once()
 
     def test_resolve_vault_client_by_protocol(self):
         """Test resolving vault client by protocol type."""
