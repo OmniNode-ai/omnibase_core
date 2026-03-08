@@ -10,19 +10,8 @@ Validates workflow DAGs using Kahn's algorithm for topological sorting with:
 - Isolated step detection
 - Unique step name validation
 
-This module contains the core ``WorkflowValidator`` class that operates on
-``ModelWorkflowStep`` instances to validate graph structure.
-
-Extracted from ``validator_workflow.py`` as part of OMN-1996 decomposition.
-
-ONEX Compliance:
-    This module follows ONEX v1.0 workflow validation patterns as defined in
-    CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md.
-
-Thread Safety:
-    All functions and the WorkflowValidator class in this module are stateless
-    and thread-safe. Each method call operates independently on its input
-    parameters without maintaining any shared state between calls.
+``WorkflowValidator`` operates on ``ModelWorkflowStep`` instances to validate
+graph structure. Extracted from ``validator_workflow.py`` (OMN-1996).
 
 Security Considerations:
     Resource Exhaustion Protection:
