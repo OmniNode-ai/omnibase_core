@@ -1,3 +1,8 @@
+## v0.24.1 (2026-03-08)
+
+### Features
+- feat(enums): consolidate EnumMessageCategory — add infra-specific methods (from_suffix, is_event, is_command, is_intent) to canonical definition [OMN-4015] (#619)
+
 ## v0.24.0 (2026-03-07)
 
 ### Features
