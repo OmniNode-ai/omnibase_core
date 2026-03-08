@@ -229,8 +229,8 @@ phase_history:
   - phase: implement
     completed_at: "2026-03-07T10:30:00+00:00"
     artifacts:
-      commit_sha: "abc123def"  # pragma: allowlist secret
-run_id: "pipeline-run-80ef845a"  # pragma: allowlist secret
+      commit_sha: "test-commit-sha"
+run_id: "pipeline-run-testrundid"
 pr_url: "https://github.com/OmniNode-ai/omnibase_infra/pull/22"
 pr_number: 22
 repo: omnibase_infra
@@ -259,10 +259,8 @@ updated_at: "2026-02-28T15:30:00+00:00"
         assert state.title == "Fix event handler retry logic"
         assert len(state.phase_history) == 3
         assert state.phase_history[0].phase == EnumPipelinePhase.INTAKE
-        assert (
-            state.phase_history[2].artifacts["commit_sha"] == "abc123def"
-        )  # pragma: allowlist secret
-        assert state.run_id == "pipeline-run-80ef845a"  # pragma: allowlist secret
+        assert state.phase_history[2].artifacts["commit_sha"] == "test-commit-sha"
+        assert state.run_id == "pipeline-run-testrundid"
         assert state.pr_number == 22
         assert state.repo == "omnibase_infra"
 
