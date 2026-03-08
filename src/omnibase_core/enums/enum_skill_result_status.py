@@ -13,34 +13,17 @@ ModelSkillResult rather than extending this enum.
 Behavioral definitions
 ----------------------
 
-+----------+--------------------------------------------------------------+-----------+--------------+
-| Value    | Behavioral definition                                        | Terminal? | Success-like?|
-+==========+==============================================================+===========+==============+
-| success  | Expected successful completion -- all goals met              | Yes       | Yes          |
-+----------+--------------------------------------------------------------+-----------+--------------+
-| partial  | Mixed or degraded but usable outcome -- some goals met,      | Yes       | Yes          |
-|          | some failed                                                  |           |              |
-+----------+--------------------------------------------------------------+-----------+--------------+
-| failed   | Expected domain-level negative outcome -- the task was       | Yes       | No           |
-|          | attempted and produced a known-bad result (CI red, review    |           |              |
-|          | rejected, merge conflict)                                    |           |              |
-+----------+--------------------------------------------------------------+-----------+--------------+
-| error    | Unexpected runtime/infrastructure/tool failure -- not a      | Yes       | No           |
-|          | domain outcome, an execution problem (network timeout, API   |           |              |
-|          | error, parse failure)                                        |           |              |
-+----------+--------------------------------------------------------------+-----------+--------------+
-| blocked  | Waiting on external dependency or missing prerequisite --    | No        | No           |
-|          | cannot proceed until something else happens                  |           |              |
-+----------+--------------------------------------------------------------+-----------+--------------+
-| skipped  | Intentionally not executed -- not needed or already          | Yes       | No           |
-|          | satisfied                                                    |           |              |
-+----------+--------------------------------------------------------------+-----------+--------------+
-| dry_run  | Simulated only, no side effects produced                     | Yes       | Yes          |
-+----------+--------------------------------------------------------------+-----------+--------------+
-| pending  | Execution started but not yet resolved                       | No        | No           |
-+----------+--------------------------------------------------------------+-----------+--------------+
-| gated    | Awaiting explicit human approval before proceeding           | No        | No           |
-+----------+--------------------------------------------------------------+-----------+--------------+
+Each value has an explicit behavioral classification:
+
+- ``success`` -- Expected successful completion, all goals met. Terminal, success-like.
+- ``partial`` -- Mixed or degraded but usable outcome. Terminal, success-like.
+- ``failed`` -- Domain-level negative outcome (CI red, review rejected). Terminal.
+- ``error`` -- Infrastructure/tool failure (network timeout, parse failure). Terminal.
+- ``blocked`` -- Waiting on external dependency or prerequisite. Non-terminal.
+- ``skipped`` -- Intentionally not executed, not needed. Terminal.
+- ``dry_run`` -- Simulated only, no side effects produced. Terminal, success-like.
+- ``pending`` -- Execution started but not yet resolved. Non-terminal.
+- ``gated`` -- Awaiting explicit human approval. Non-terminal.
 
 **Hard rule for failed vs error:**
 ``failed`` = the skill ran its logic and the outcome was negative.
