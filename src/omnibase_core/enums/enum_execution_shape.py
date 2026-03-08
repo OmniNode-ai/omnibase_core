@@ -79,30 +79,42 @@ class EnumMessageCategory(StrValueHelper, str, Enum):
             >>> EnumMessageCategory.COMMAND.topic_suffix
             'commands'
         """
-        return f"{self.value}s"
+        return _CATEGORY_TO_SUFFIX[self]
 
     @classmethod
     def from_topic(cls, topic: str) -> "EnumMessageCategory | None":
         """
-        Infer the message category from a topic name.
+        Infer the message category from a topic string.
 
-        Examines the topic to determine the message category by looking for
-        category patterns (.events, .commands, .intents) anywhere in the topic.
-        This handles both simple topics (user.events) and versioned topics
-        (dev.user.events.v1).
+        Examines the topic for category keywords as complete segments and
+        returns the corresponding category. Recognises both long plural
+        suffixes (``"events"``, ``"commands"``, ``"intents"``) and short
+        ONEX forms (``"evt"``, ``"cmd"``, ``"intent"``). Handles both
+        ONEX Kafka format (onex.<domain>.<type>) and Environment-Aware format
+        (<env>.<domain>.<category>.<version>).
+
+        The matching is segment-based to prevent false positives. For example:
+        - "onex.user.events" matches EVENT (segment "events" exists)
+        - "onex.evt.platform.node-introspection.v1" matches EVENT (segment "evt")
+        - "dev.eventsource.data.v1" does NOT match ("eventsource" != "events")
 
         Note:
             Topic matching is case-insensitive. Both "user.EVENTS" and
             "user.events" will correctly return EnumMessageCategory.EVENT.
 
         Args:
-            topic: Full topic name (e.g., "user.events", "dev.user.events.v1")
+            topic: The topic string to analyze. Both long suffixes
+                ("events"/"commands"/"intents") and short ONEX suffixes
+                ("evt"/"cmd"/"intent") are recognised as valid category
+                segments.
 
         Returns:
-            EnumMessageCategory or None if no match found
+            EnumMessageCategory if a category can be inferred, None otherwise
 
         Example:
             >>> EnumMessageCategory.from_topic("user.events")
+            <EnumMessageCategory.EVENT: 'event'>
+            >>> EnumMessageCategory.from_topic("onex.evt.platform.node-introspection.v1")
             <EnumMessageCategory.EVENT: 'event'>
             >>> EnumMessageCategory.from_topic("dev.user.events.v1")
             <EnumMessageCategory.EVENT: 'event'>
@@ -112,22 +124,64 @@ class EnumMessageCategory(StrValueHelper, str, Enum):
             <EnumMessageCategory.EVENT: 'event'>
             >>> EnumMessageCategory.from_topic("invalid.topic")
             None
+            >>> EnumMessageCategory.from_topic("dev.eventsource.data.v1")
+            None
         """
-        topic_lower = topic.lower()
-        # Check for category patterns using two complementary conditions:
-        # 1. ".events." (with trailing dot) - matches versioned topics like
-        #    "user.events.v1" where the category appears mid-string
-        # 2. ".endswith('.events')" - matches simple topics like "user.events"
-        #    where the category is at the end (no trailing dot)
-        # Both checks are necessary because ".events." won't match topics
-        # ending with ".events", and endswith won't match versioned topics.
-        if ".events." in topic_lower or topic_lower.endswith(".events"):
-            return cls.EVENT
-        if ".commands." in topic_lower or topic_lower.endswith(".commands"):
-            return cls.COMMAND
-        if ".intents." in topic_lower or topic_lower.endswith(".intents"):
-            return cls.INTENT
+        if not topic:
+            return None
+
+        # Split topic into segments and check for exact category suffix matches.
+        # This prevents false positives where a segment merely contains the
+        # category suffix as a substring (e.g., "eventsource" containing "events").
+        # Require at least 2 segments -- a bare word like "events" is not a valid topic.
+        segments = topic.lower().split(".")
+        if len(segments) < 2:
+            return None
+        for suffix, category in _SUFFIX_TO_CATEGORY.items():
+            if suffix in segments:
+                return category
+
         return None
+
+    @classmethod
+    def from_suffix(cls, suffix: str) -> "EnumMessageCategory | None":
+        """
+        Get the category from a topic suffix.
+
+        Accepts both long plural forms and short ONEX forms.
+
+        Args:
+            suffix: The suffix to look up (e.g., "events"/"evt",
+                "commands"/"cmd", "intents"/"intent").
+
+        Returns:
+            EnumMessageCategory if the suffix is valid, None otherwise
+
+        Example:
+            >>> EnumMessageCategory.from_suffix("events")
+            <EnumMessageCategory.EVENT: 'event'>
+            >>> EnumMessageCategory.from_suffix("evt")
+            <EnumMessageCategory.EVENT: 'event'>
+            >>> EnumMessageCategory.from_suffix("commands")
+            <EnumMessageCategory.COMMAND: 'command'>
+            >>> EnumMessageCategory.from_suffix("cmd")
+            <EnumMessageCategory.COMMAND: 'command'>
+            >>> EnumMessageCategory.from_suffix("unknown")
+            None
+        """
+        return _SUFFIX_TO_CATEGORY.get(suffix.lower())
+
+    def is_event(self) -> bool:
+        """Check if this is an event category."""
+        return self == EnumMessageCategory.EVENT
+
+    def is_command(self) -> bool:
+        """Check if this is a command category."""
+        return self == EnumMessageCategory.COMMAND
+
+    def is_intent(self) -> bool:
+        """Check if this is an intent category."""
+        return self == EnumMessageCategory.INTENT
 
     @classmethod
     def try_from_topic(
@@ -537,6 +591,24 @@ class EnumExecutionShape(StrValueHelper, str, Enum):
         }
         return descriptions.get(shape, "Unknown execution shape")
 
+
+# Module-level constant mappings for better performance (avoid dict creation per call).
+# Defined after enum class to enable proper type resolution.
+_CATEGORY_TO_SUFFIX: dict[EnumMessageCategory, str] = {
+    EnumMessageCategory.EVENT: "events",
+    EnumMessageCategory.COMMAND: "commands",
+    EnumMessageCategory.INTENT: "intents",
+}
+_SUFFIX_TO_CATEGORY: dict[str, EnumMessageCategory] = {
+    # Environment-Aware format (plural): dev.user.events.v1
+    "events": EnumMessageCategory.EVENT,
+    "commands": EnumMessageCategory.COMMAND,
+    "intents": EnumMessageCategory.INTENT,
+    # ONEX Kafka format (short): onex.evt.platform.node-introspection.v1
+    "evt": EnumMessageCategory.EVENT,
+    "cmd": EnumMessageCategory.COMMAND,
+    "intent": EnumMessageCategory.INTENT,
+}
 
 # Export for use
 __all__ = ["EnumMessageCategory", "EnumExecutionShape"]
