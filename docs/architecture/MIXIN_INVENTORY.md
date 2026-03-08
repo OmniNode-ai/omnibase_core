@@ -33,6 +33,7 @@ The ONEX platform uses 40 mixin classes across 41 `.py` files (`mixin_utils.py` 
 | discovery_events | 2 | MixinDiscoveryResponder, MixinNodeLifecycle |
 | event_handling | 1 | MixinEventHandler |
 | workflow | 1 | MixinWorkflowExecution |
+| health | 1 | MixinHealthCheck |
 | tool_execution | 1 | MixinToolExecution |
 
 *Items marked with `*` are documented in metadata but do not have a corresponding `.py` file (planned/abstract).

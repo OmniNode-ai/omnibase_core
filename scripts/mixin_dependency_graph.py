@@ -29,7 +29,16 @@ def load_capability_mapping(path: Path) -> list[dict[str, object]]:
     """Load mixin capability mapping from YAML."""
     with path.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
-    mixins: list[dict[str, object]] = data.get("mixins", [])
+    if not isinstance(data, dict):
+        raise ValueError(
+            f"Expected a YAML mapping at top level, got {type(data).__name__}: {path}"
+        )
+    mixins_raw = data.get("mixins", [])
+    if not isinstance(mixins_raw, list):
+        raise ValueError(
+            f"Expected 'mixins' to be a list, got {type(mixins_raw).__name__}: {path}"
+        )
+    mixins: list[dict[str, object]] = mixins_raw
     return mixins
 
 
@@ -44,6 +53,10 @@ def build_adjacency_list(
     graph: dict[str, list[str]] = defaultdict(list)
     all_names: set[str] = set()
 
+    declared_names: set[str] = set()
+    for mixin in mixins:
+        declared_names.add(str(mixin["mixin_name"]))
+
     for mixin in mixins:
         name = str(mixin["mixin_name"])
         all_names.add(name)
@@ -51,6 +64,11 @@ def build_adjacency_list(
         if isinstance(constraints, list):
             for dep in constraints:
                 dep_str = str(dep)
+                if dep_str not in declared_names:
+                    raise ValueError(
+                        f"Mixin '{name}' has ordering constraint on undeclared "
+                        f"mixin '{dep_str}'. Check for typos in ordering_constraints."
+                    )
                 graph[dep_str].append(name)
                 all_names.add(dep_str)
 
@@ -122,9 +140,7 @@ def topological_sort(graph: dict[str, list[str]]) -> list[str]:
     return result
 
 
-def format_dot(
-    mixins: list[dict[str, object]], graph: dict[str, list[str]]
-) -> str:
+def format_dot(mixins: list[dict[str, object]], graph: dict[str, list[str]]) -> str:
     """Generate DOT format output."""
     lines = ["digraph mixin_dependencies {", "  rankdir=TB;", "  node [shape=box];", ""]
 
@@ -145,7 +161,9 @@ def format_dot(
     for name, phase in sorted(mixin_phases.items()):
         color = phase_colors.get(phase, "#ffffff")
         label = f"{name}\\n(Phase {phase})"
-        lines.append(f'  "{name}" [label="{label}", style=filled, fillcolor="{color}"];')
+        lines.append(
+            f'  "{name}" [label="{label}", style=filled, fillcolor="{color}"];'
+        )
 
     lines.append("")
 
@@ -178,10 +196,19 @@ def format_text(
 
         if phase != current_phase:
             current_phase = phase
-            phase_names = {1: "Pure Compute", 2: "Stateful", 3: "I/O", 4: "Orchestration"}
-            lines.append(f"\n--- Phase {phase}: {phase_names.get(phase, 'Unknown')} ---\n")
+            phase_names = {
+                1: "Pure Compute",
+                2: "Stateful",
+                3: "I/O",
+                4: "Orchestration",
+            }
+            lines.append(
+                f"\n--- Phase {phase}: {phase_names.get(phase, 'Unknown')} ---\n"
+            )
 
-        deps = f" (after: {', '.join(str(c) for c in constraints)})" if constraints else ""
+        deps = (
+            f" (after: {', '.join(str(c) for c in constraints)})" if constraints else ""
+        )
         lines.append(f"  {i:2d}. {name} [{category}, priority={priority}]{deps}")
 
     lines.append(f"\nTotal mixins: {len(topo_order)}")

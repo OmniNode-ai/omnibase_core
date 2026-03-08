@@ -4250,7 +4250,7 @@ mixin_request_response_introspection:
 
   compatible_with:
     - "MixinEventBus"
-    - "MixinNodeIntrospection"
+    - "MixinIntrospection"
     - "MixinServiceRegistry"
 
   incompatible_with: []

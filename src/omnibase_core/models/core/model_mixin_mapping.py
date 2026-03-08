@@ -9,7 +9,7 @@ handler conversion target, capability set, and nondeterminism classification.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 from omnibase_core.enums.enum_nondeterminism_class import EnumNondeterminismClass
@@ -32,6 +32,8 @@ class ModelMixinMapping(BaseModel):
         conversion_evidence: Evidence that legacy shim is not required.
             Required when ``legacy_shim_required`` is ``False``.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     mixin_name: str = Field(description="Class name of the mixin")
     handler_contract_stub: str = Field(
@@ -57,6 +59,16 @@ class ModelMixinMapping(BaseModel):
         description="Evidence that legacy shim is not required. "
         "Format: test:<name>, rule:<name>, or audit:YYYY-MM-DD",
     )
+
+    @model_validator(mode="after")
+    def _check_conversion_evidence(self) -> ModelMixinMapping:
+        """Enforce conversion_evidence when legacy_shim_required is False."""
+        if not self.legacy_shim_required and not self.conversion_evidence:
+            raise ValueError(
+                f"conversion_evidence is required when legacy_shim_required=False "
+                f"for mixin '{self.mixin_name}'"
+            )
+        return self
 
 
 class ModelMixinMappingCollection(BaseModel):

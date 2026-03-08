@@ -33,7 +33,7 @@ The `EnumNondeterminismClass` categorizes the source of nondeterminism:
 | `time` | Uses time-dependent operations | NONDETERMINISTIC_COMPUTE | MixinCaching |
 | `random` | Uses random/UUID generation | NONDETERMINISTIC_COMPUTE | (none currently) |
 | `network` | Performs network I/O | EFFECT | MixinEventBus, MixinEffectExecution |
-| `external_state` | Reads env vars, config, filesystem | NONDETERMINISTIC_COMPUTE | MixinContractMetadata, MixinDiscovery |
+| `external_state` | Reads env vars, config, filesystem | Typically NONDETERMINISTIC_COMPUTE (exception: MixinHealthCheck maps to EFFECT) | MixinContractMetadata, MixinDiscovery |
 
 ## Migration Phases
 

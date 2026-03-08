@@ -61,6 +61,28 @@ class TestModelMixinMapping:
         )
         assert mapping.legacy_shim_required is True
 
+    def test_conversion_evidence_required_when_shim_disabled(self) -> None:
+        """conversion_evidence is required when legacy_shim_required=False."""
+        with pytest.raises(ValueError, match="conversion_evidence is required"):
+            ModelMixinMapping(
+                mixin_name="MixinTest",
+                handler_contract_stub="stub.yaml",
+                handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+                nondeterminism_classification=EnumNondeterminismClass.DETERMINISTIC,
+                legacy_shim_required=False,
+            )
+
+    def test_extra_fields_rejected(self) -> None:
+        """Extra fields are rejected by model config."""
+        with pytest.raises(ValueError, match="Extra inputs are not permitted"):
+            ModelMixinMapping(
+                mixin_name="MixinTest",
+                handler_contract_stub="stub.yaml",
+                handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+                nondeterminism_classification=EnumNondeterminismClass.DETERMINISTIC,
+                bogus_field="should fail",  # type: ignore[call-arg]
+            )
+
     def test_serialization_roundtrip(self) -> None:
         """Model serializes and deserializes correctly."""
         mapping = ModelMixinMapping(
