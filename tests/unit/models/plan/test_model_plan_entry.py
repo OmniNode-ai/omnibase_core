@@ -107,7 +107,9 @@ class TestModelPlanEntry:
         assert entry.dependencies == ["P1"]
 
     def test_dependency_normalization_lowercase_omn(self) -> None:
-        entry = ModelPlanEntry(id="P2", title="t", content="c", dependencies=["omn-123"])
+        entry = ModelPlanEntry(
+            id="P2", title="t", content="c", dependencies=["omn-123"]
+        )
         assert entry.dependencies == ["OMN-123"]
 
     def test_dependency_normalization_strip_whitespace(self) -> None:

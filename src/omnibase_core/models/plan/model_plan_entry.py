@@ -97,14 +97,19 @@ class ModelPlanEntry(BaseModel):
         result: list[str] = []
         for dep in v:
             if not isinstance(dep, str):
-                raise TypeError(f"Each dependency must be a string, got {type(dep).__name__}")
+                raise TypeError(
+                    f"Each dependency must be a string, got {type(dep).__name__}"
+                )
             normalized = dep.strip()
             # Normalize leading lowercase
             if normalized.startswith("p"):
                 normalized = "P" + normalized[1:]
             if normalized.startswith(("omn-", "Omn-")):
                 normalized = "OMN-" + normalized[4:]
-            if not (_PLAN_ID_PATTERN.match(normalized) or _EXTERNAL_DEP_PATTERN.match(normalized)):
+            if not (
+                _PLAN_ID_PATTERN.match(normalized)
+                or _EXTERNAL_DEP_PATTERN.match(normalized)
+            ):
                 raise ValueError(
                     f"Dependency {normalized!r} does not match internal pattern "
                     f"^P[1-9][0-9]*(?:_[1-9][0-9]*)?$ or external pattern ^OMN-[0-9]+$"
