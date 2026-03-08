@@ -112,6 +112,19 @@ class TestModelPlanEntry:
         )
         assert entry.dependencies == ["OMN-123"]
 
+    def test_dependency_normalization_mixedcase_omn(self) -> None:
+        """OMn-*, Omn-*, OmN-* etc. must all normalize to OMN-*."""
+        entry = ModelPlanEntry(
+            id="P2", title="t", content="c", dependencies=["OMn-1234"]
+        )
+        assert entry.dependencies == ["OMN-1234"]
+
+    def test_dependency_normalization_titlecase_omn(self) -> None:
+        entry = ModelPlanEntry(
+            id="P2", title="t", content="c", dependencies=["Omn-456"]
+        )
+        assert entry.dependencies == ["OMN-456"]
+
     def test_dependency_normalization_strip_whitespace(self) -> None:
         entry = ModelPlanEntry(id="P2", title="t", content="c", dependencies=["  P1  "])
         assert entry.dependencies == ["P1"]

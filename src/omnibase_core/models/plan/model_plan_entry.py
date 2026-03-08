@@ -66,12 +66,14 @@ class ModelPlanEntry(BaseModel):
     def _normalize_and_validate_id(cls, v: str) -> str:
         """Strip whitespace, uppercase p -> P, then validate pattern."""
         if not isinstance(v, str):
+            # error-ok: Pydantic field_validator requires ValueError/TypeError
             raise TypeError(f"id must be a string, got {type(v).__name__}")
         normalized = v.strip()
         # Uppercase leading 'p' to 'P'
         if normalized.startswith("p"):
             normalized = "P" + normalized[1:]
         if not _PLAN_ID_PATTERN.match(normalized):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Plan entry id {normalized!r} does not match pattern "
                 f"^P[1-9][0-9]*(?:_[1-9][0-9]*)?$ (e.g., P1, P12, P3_1)"
@@ -83,8 +85,10 @@ class ModelPlanEntry(BaseModel):
     def _reject_empty_content(cls, v: str) -> str:
         """Reject empty or whitespace-only content."""
         if not isinstance(v, str):
+            # error-ok: Pydantic field_validator requires ValueError/TypeError
             raise TypeError(f"content must be a string, got {type(v).__name__}")
         if not v.strip():
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError("Plan entry content must not be empty or whitespace-only.")
         return v
 
@@ -93,23 +97,27 @@ class ModelPlanEntry(BaseModel):
     def _normalize_and_validate_dependencies(cls, v: list[str]) -> list[str]:
         """Strip whitespace, normalize case, validate each dependency."""
         if not isinstance(v, list):
+            # error-ok: Pydantic field_validator requires ValueError/TypeError
             raise TypeError(f"dependencies must be a list, got {type(v).__name__}")
         result: list[str] = []
         for dep in v:
             if not isinstance(dep, str):
+                # error-ok: Pydantic field_validator requires ValueError/TypeError
                 raise TypeError(
                     f"Each dependency must be a string, got {type(dep).__name__}"
                 )
             normalized = dep.strip()
-            # Normalize leading lowercase
+            # Normalize leading lowercase p -> P
             if normalized.startswith("p"):
                 normalized = "P" + normalized[1:]
-            if normalized.startswith(("omn-", "Omn-")):
+            # Normalize any mixed-case "omn-" prefix to "OMN-" (case-insensitive)
+            if normalized.upper().startswith("OMN-"):
                 normalized = "OMN-" + normalized[4:]
             if not (
                 _PLAN_ID_PATTERN.match(normalized)
                 or _EXTERNAL_DEP_PATTERN.match(normalized)
             ):
+                # error-ok: Pydantic field_validator requires ValueError
                 raise ValueError(
                     f"Dependency {normalized!r} does not match internal pattern "
                     f"^P[1-9][0-9]*(?:_[1-9][0-9]*)?$ or external pattern ^OMN-[0-9]+$"
