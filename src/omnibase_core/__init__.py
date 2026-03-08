@@ -47,8 +47,13 @@ Validators:
             print(f"Found {len(result.circular_imports)} circular imports")
 """
 
-# string-version-ok: Package metadata follows PEP 396 standard Python practice
-__version__ = "0.24.0"
+# Do not hardcode versions here; version is sourced from distribution metadata.
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("omnibase-core")
+except PackageNotFoundError:
+    __version__ = "0.0.0-dev"
 
 
 # =============================================================================
