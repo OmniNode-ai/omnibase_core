@@ -91,8 +91,8 @@ class ModelPlanDocument(BaseModel):
         for start in internal_ids:
             if color[start] != WHITE:
                 continue
-            # Each stack frame: (node, iterator_over_neighbors, path_so_far)
-            path_set: set[str] = set()
+            # Each stack frame: (node, neighbor_index)
+            # path_list tracks the current DFS path for cycle reconstruction
             path_list: list[str] = []
             stack: deque[tuple[str, int]] = deque()
             stack.append((start, 0))
@@ -105,7 +105,6 @@ class ModelPlanDocument(BaseModel):
                     # First visit
                     color[node] = GRAY
                     path_list.append(node)
-                    path_set.add(node)
 
                 if idx < len(neighbors):
                     dep = neighbors[idx]
@@ -123,7 +122,6 @@ class ModelPlanDocument(BaseModel):
                     # All neighbors visited
                     stack.pop()
                     path_list.pop()
-                    path_set.discard(node)
                     color[node] = BLACK
 
         return self
