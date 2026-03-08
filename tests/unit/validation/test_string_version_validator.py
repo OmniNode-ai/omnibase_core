@@ -18,30 +18,14 @@ Coverage:
 
 from __future__ import annotations
 
-import importlib.util
-import sys
 from pathlib import Path
 
 import pytest
 
-# Load the validator module directly from its file path
-_scripts_path = Path(__file__).parent.parent.parent.parent / "scripts" / "validation"
-_validator_path = _scripts_path / "validate-string-versions.py"
-
-# Add scripts/validation to sys.path for timeout_utils import
-sys.path.insert(0, str(_scripts_path))
-
-# Load module spec and import it
-_spec = importlib.util.spec_from_file_location(
-    "validate_string_versions", _validator_path
+from omnibase_core.validation.scripts.validate_string_versions import (
+    PythonASTValidator,
+    StringVersionValidator,
 )
-_validator_module = importlib.util.module_from_spec(_spec)
-sys.modules["validate_string_versions"] = _validator_module
-_spec.loader.exec_module(_validator_module)
-
-# Import the classes we need
-PythonASTValidator = _validator_module.PythonASTValidator
-StringVersionValidator = _validator_module.StringVersionValidator
 
 
 @pytest.mark.unit
