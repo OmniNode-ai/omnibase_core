@@ -28,6 +28,7 @@ __all__ = [
     "contracts",
     "core",
     "dedup",
+    "epic",  # Epic-team execution state models (OMN-3871)
     "events",
     "execution",
     "handlers",
