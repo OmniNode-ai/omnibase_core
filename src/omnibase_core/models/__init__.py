@@ -42,6 +42,7 @@ __all__ = [
     "notifications",
     "operations",
     "pattern_learning",  # Pattern learning models (OMN-1683)
+    "plan",  # Plan parsing models (OMN-3868)
     "pipeline",
     "projection",
     "providers",

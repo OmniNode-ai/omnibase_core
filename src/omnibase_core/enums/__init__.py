@@ -295,6 +295,9 @@ from .enum_pattern_kind import EnumPatternKind
 # Pipeline validation mode enum (pipeline processing OMN-1308)
 from .enum_pipeline_validation_mode import EnumPipelineValidationMode
 
+# Plan structure type enum (OMN-3868)
+from .enum_plan_structure_type import EnumPlanStructureType, PlanStructureType
+
 # Policy type enum (OMN-2537 — objective functions reward architecture)
 from .enum_policy_type import EnumPolicyType
 
@@ -766,6 +769,9 @@ __all__ = [
     # Resolution tier domain (authenticated dependency resolution - OMN-2890)
     "EnumResolutionFailureCode",
     "EnumResolutionTier",
+    # Plan structure type domain (OMN-3868)
+    "EnumPlanStructureType",
+    "PlanStructureType",
     # Skill result status domain (OMN-3866)
     "EnumSkillResultStatus",
     "SkillResultStatus",
