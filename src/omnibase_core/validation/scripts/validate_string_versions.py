@@ -116,19 +116,15 @@ def should_exclude_file(file_path: Path, verbose: bool = False) -> bool:
     return False
 
 
-# Add src to Python path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Try to import Pydantic models if available (may not exist in empty package structure)
+# Try to import Pydantic models if available
 try:
     from omnibase_core.core.model_generic_yaml import ModelGenericYaml
     from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
     PYDANTIC_MODELS_AVAILABLE = True
 except ImportError:
-    # Empty package structure - models are archived
     ModelGenericYaml = None
-    load_yaml_content_as_model = None
+    load_yaml_content_as_model = None  # type: ignore[assignment]
     PYDANTIC_MODELS_AVAILABLE = False
 
 
@@ -138,8 +134,8 @@ class PythonASTValidator(ast.NodeVisitor):
     def __init__(self, file_path: str, source_lines: list[str] | None = None):
         self.file_path = file_path
         self.violations: list[ValidationViolation] = []
-        self.imports = set()
-        self.current_call_func = None  # Track current function being called
+        self.imports: set[str] = set()
+        self.current_call_func: str | None = None  # Track current function being called
         # Store source lines for inline comment checking
         self.source_lines = source_lines or []
 
@@ -283,13 +279,13 @@ class PythonASTValidator(ast.NodeVisitor):
             "id",  # Generic ID field in TypedDicts - serialization boundary only
         }
 
-    def visit_Import(self, node: ast.Import):
+    def visit_Import(self, node: ast.Import) -> None:
         """Track imports to understand what types are available."""
         for alias in node.names:
             self.imports.add(alias.name)
         self.generic_visit(node)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom):
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Track from imports to understand what types are available."""
         if node.module:
             for alias in node.names:
@@ -303,7 +299,7 @@ class PythonASTValidator(ast.NodeVisitor):
                     self.imports.add(alias.name)
         self.generic_visit(node)
 
-    def visit_AnnAssign(self, node: ast.AnnAssign):
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Visit annotated assignments (field definitions)."""
         if isinstance(node.target, ast.Name):
             field_name = node.target.id
@@ -312,7 +308,7 @@ class PythonASTValidator(ast.NodeVisitor):
             )
         self.generic_visit(node)
 
-    def visit_arg(self, node: ast.arg):
+    def visit_arg(self, node: ast.arg) -> None:
         """Visit function arguments - skip validation for parameters.
 
         Function/method parameters are NOT persistence fields and should not be
@@ -325,7 +321,7 @@ class PythonASTValidator(ast.NodeVisitor):
         # Skip validation - function parameters are not persistence fields
         self.generic_visit(node)
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call) -> None:
         """Visit function calls to detect ModelSemVer.parse() with string literals."""
         # Check if this is a call to ModelSemVer.parse or parse_semver_from_string
         func_name = self._get_call_func_name(node.func)
@@ -352,7 +348,7 @@ class PythonASTValidator(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_Constant(self, node: ast.Constant):
+    def visit_Constant(self, node: ast.Constant) -> None:
         """Detect semantic version string literals in inappropriate contexts."""
         # Skip if not a string
         if not isinstance(node.value, str):
@@ -427,7 +423,7 @@ class PythonASTValidator(ast.NodeVisitor):
 
     def _check_field_annotation(
         self, field_name: str, annotation: ast.AST, line_number: int, column: int
-    ):
+    ) -> None:
         """Check if a field annotation violates ID/version typing rules."""
         # Skip exceptions
         if field_name in self.exceptions:
@@ -562,7 +558,7 @@ class PythonASTValidator(ast.NodeVisitor):
 class StringVersionValidator:
     """Validates that YAML contract files don't use string versions and Python files use proper ID/version types."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.errors: list[str] = []
         self.ast_violations: list[ValidationViolation] = []
         self.checked_files = 0
@@ -614,7 +610,7 @@ class StringVersionValidator:
             return True
 
         self.checked_files += 1
-        file_errors = []
+        file_errors: list[str] = []
 
         # Check for __version__ declarations with error handling
         try:
@@ -836,7 +832,7 @@ class StringVersionValidator:
             return False
 
         self.checked_files += 1
-        file_errors = []
+        file_errors: list[str] = []
 
         # Use AST-based validation on the raw content (always runs)
         try:
@@ -999,13 +995,6 @@ class StringVersionValidator:
 
         for file_path in file_paths:
             try:
-                if not isinstance(file_path, Path):
-                    self.errors.append(
-                        f"Invalid file path type: {type(file_path)} - {file_path}"
-                    )
-                    success = False
-                    continue
-
                 suffix = file_path.suffix.lower()
                 if suffix in [".yaml", ".yml"]:
                     if not self.validate_yaml_file(file_path):
@@ -1029,13 +1018,6 @@ class StringVersionValidator:
 
         for yaml_path in file_paths:
             try:
-                if not isinstance(yaml_path, Path):
-                    self.errors.append(
-                        f"Invalid YAML path type: {type(yaml_path)} - {yaml_path}"
-                    )
-                    success = False
-                    continue
-
                 if not self.validate_yaml_file(yaml_path):
                     success = False
             except Exception as e:
@@ -1062,7 +1044,7 @@ class StringVersionValidator:
                 print(f"Found {len(self.ast_violations)} AST validation errors:")
 
                 # Group by file
-                by_file = {}
+                by_file: dict[str, list[ValidationViolation]] = {}
                 for violation in self.ast_violations:
                     if violation.file_path not in by_file:
                         by_file[violation.file_path] = []
