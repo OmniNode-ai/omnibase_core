@@ -292,6 +292,9 @@ from .enum_patch_validation_error_code import EnumPatchValidationErrorCode
 # Pattern extraction enums (OMN-1587)
 from .enum_pattern_kind import EnumPatternKind
 
+# Pipeline phase enum (ticket-pipeline lifecycle OMN-3870)
+from .enum_pipeline_phase import EnumPipelinePhase, PipelinePhaseEnum
+
 # Pipeline validation mode enum (pipeline processing OMN-1308)
 from .enum_pipeline_validation_mode import EnumPipelineValidationMode
 
@@ -740,6 +743,9 @@ __all__ = [
     "EnumSubjectType",
     # Step type domain (workflow steps OMN-1308)
     "EnumStepType",
+    # Pipeline phase domain (ticket-pipeline lifecycle OMN-3870)
+    "EnumPipelinePhase",
+    "PipelinePhaseEnum",
     # Pipeline validation mode domain (OMN-1308)
     "EnumPipelineValidationMode",
     # Observability cardinality domain (OMN-1367)
