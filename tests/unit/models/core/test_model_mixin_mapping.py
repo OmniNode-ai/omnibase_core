@@ -30,7 +30,10 @@ class TestModelMixinMapping:
         )
         assert mapping.mixin_name == "MixinMetrics"
         assert mapping.handler_type_category == EnumHandlerTypeCategory.COMPUTE
-        assert mapping.nondeterminism_classification == EnumNondeterminismClass.DETERMINISTIC
+        assert (
+            mapping.nondeterminism_classification
+            == EnumNondeterminismClass.DETERMINISTIC
+        )
         assert mapping.legacy_shim_required is False
         assert mapping.conversion_evidence == "test:test_metrics_pure"
 
