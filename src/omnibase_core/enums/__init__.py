@@ -250,6 +250,9 @@ from .enum_metrics_policy_violation_action import EnumMetricsPolicyViolationActi
 # Namespace-related enums
 from .enum_namespace_strategy import EnumNamespaceStrategy
 
+# Nondeterminism classification (OMN-1115 — mixin-to-handler migration)
+from .enum_nondeterminism_class import EnumNondeterminismClass
+
 # Node-related enums
 from .enum_node_archetype import EnumNodeArchetype
 from .enum_node_architecture_type import EnumNodeArchitectureType
@@ -512,6 +515,8 @@ __all__ = [
     "EnumHealthDetailType",
     "EnumHealthStatus",  # Canonical health status (OMN-1310)
     "EnumNodeStatus",
+    # Nondeterminism classification
+    "EnumNondeterminismClass",
     # Node domain
     "EnumNodeArchetype",
     "EnumNodeArchitectureType",

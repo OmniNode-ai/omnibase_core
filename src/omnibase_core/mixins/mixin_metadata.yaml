@@ -3410,3 +3410,983 @@ mixin_tool_execution:
       changes:
         - "Added subcontract mapping to ModelToolExecutionSubcontract"
         - "Initial metadata definition with declarative configuration"
+
+# =============================================================================
+# MixinCanonicalYAMLSerializer - Canonical YAML Serialization
+# =============================================================================
+mixin_canonical_serialization:
+  name: "MixinCanonicalYAMLSerializer"
+  description: "Protocol-compliant canonical YAML serialization with deterministic hash computation support"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "data_management"
+
+  requires:
+    - "omnibase_core.enums.EnumNodeMetadataField"
+    - "omnibase_core.models.core.model_node_metadata"
+    - "omnibase_core.models.core.model_project_metadata"
+    - "omnibase_core.protocols.ProtocolCanonicalSerializer"
+
+  compatible_with:
+    - "MixinHashComputation"
+    - "MixinYAMLSerialization"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Metadata stampers producing deterministic YAML blocks"
+    - "Hash computation requiring canonical serialization order"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinCLIHandler - CLI Argument Parsing
+# =============================================================================
+mixin_cli_handler:
+  name: "MixinCLIHandler"
+  description: "Standardized CLI argument parsing and main() function for tool nodes"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "integration"
+
+  requires:
+    - "omnibase_core.enums.enum_core_error_code"
+    - "omnibase_core.enums.enum_log_level"
+    - "omnibase_core.logging.logging_structured"
+    - "omnibase_core.models.errors.model_onex_error"
+    - "argparse"
+    - "json"
+
+  compatible_with:
+    - "MixinContractMetadata"
+    - "MixinFailFast"
+
+  incompatible_with: []
+
+  config_schema:
+    output_format:
+      type: "string"
+      enum: ["json", "yaml", "text"]
+      default: "json"
+
+  usage_examples:
+    - "Tool nodes providing command-line interface"
+    - "Batch processing tools with standard argument parsing"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinComputeExecution - Contract-Driven Compute Pipeline
+# =============================================================================
+mixin_compute_execution:
+  name: "MixinComputeExecution"
+  description: "Contract-driven compute pipeline execution for NodeCompute instances"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "execution"
+
+  requires:
+    - "omnibase_core.models.compute.model_compute_execution_context"
+    - "omnibase_core.models.compute.model_compute_pipeline_result"
+    - "omnibase_core.models.contracts.subcontracts.model_compute_subcontract"
+    - "omnibase_core.utils.util_compute_executor"
+
+  compatible_with:
+    - "MixinContractMetadata"
+    - "MixinMetrics"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "NodeCompute classes executing contract-driven transformation pipelines"
+    - "Data transformation nodes with validated compute operations"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinContractMetadata - Contract Metadata Loading
+# =============================================================================
+mixin_contract_metadata:
+  name: "MixinContractMetadata"
+  description: "Automatic loading and validation of node.onex.yaml and tool contract metadata"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "contract"
+
+  requires:
+    - "omnibase_core.constants.constants_contract_fields"
+    - "omnibase_core.enums.enum_log_level"
+    - "omnibase_core.logging.logging_structured"
+    - "omnibase_core.models.core.model_generic_yaml"
+    - "omnibase_core.models.core.model_node_metadata"
+
+  compatible_with:
+    - "MixinCLIHandler"
+    - "MixinNodeSetup"
+    - "MixinNodeIdFromContract"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Tool nodes loading contract metadata at initialization"
+    - "Nodes requiring access to node_name, node_version, description"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinContractPublisher - Contract Registration on Startup
+# =============================================================================
+mixin_contract_publisher:
+  name: "MixinContractPublisher"
+  description: "Publishes node contracts to Kafka on startup for dynamic discovery with heartbeat support"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "discovery"
+
+  requires:
+    - "omnibase_core.enums.enum_core_error_code"
+    - "omnibase_core.enums.events.enum_deregistration_reason"
+    - "omnibase_core.models.events.contract_registration"
+    - "omnibase_core.protocols.event_bus.protocol_event_bus_publisher"
+    - "yaml"
+
+  compatible_with:
+    - "MixinEventBus"
+    - "MixinNodeLifecycle"
+    - "MixinIntrospectionPublisher"
+
+  incompatible_with: []
+
+  config_schema:
+    heartbeat_interval_seconds:
+      type: "integer"
+      default: 30
+      description: "Interval between heartbeat publications"
+
+  usage_examples:
+    - "ONEX nodes registering contracts for dynamic service discovery"
+    - "Persistent services publishing heartbeats"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinContractStateReducer - Contract-Driven State Management
+# =============================================================================
+mixin_contract_state_reducer:
+  name: "MixinContractStateReducer"
+  description: "Contract-driven state management interpreting state_transitions from YAML subcontracts"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "state_management"
+
+  requires:
+    - "omnibase_core.enums.enum_core_error_code"
+    - "omnibase_core.enums.enum_onex_status"
+    - "omnibase_core.enums.enum_transition_type"
+    - "omnibase_core.models.core.model_generic_contract"
+    - "omnibase_core.models.core.model_state_transition"
+
+  compatible_with:
+    - "MixinFSMExecution"
+    - "MixinContractMetadata"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Reducer nodes with data-driven state machines"
+    - "Contract-driven state transition processing"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinDebugDiscoveryLogging - Debug Logging for Discovery
+# =============================================================================
+mixin_debug_discovery_logging:
+  name: "MixinDebugDiscoveryLogging"
+  description: "Standardized debug logging for service discovery events and troubleshooting"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "observability"
+
+  requires:
+    - "omnibase_core.enums.enum_log_level"
+    - "omnibase_core.logging.logging_structured"
+
+  compatible_with:
+    - "MixinServiceRegistry"
+    - "MixinDiscoveryResponder"
+    - "MixinEventBus"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Nodes monitoring service discovery interactions"
+    - "Debug logging during discovery troubleshooting"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinDiscovery - Mixin Discovery API
+# =============================================================================
+mixin_discovery:
+  name: "MixinDiscovery"
+  description: "Programmatic discovery and querying of available mixins with compatibility checking"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "discovery"
+
+  requires:
+    - "omnibase_core.enums.enum_core_error_code"
+    - "omnibase_core.models.discovery.model_mixin_info"
+    - "omnibase_core.models.errors.model_onex_error"
+    - "yaml"
+    - "pydantic"
+
+  compatible_with: []
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Querying available mixins by category"
+    - "Checking mixin compatibility before composition"
+    - "Dependency resolution for node assembly"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinEffectExecution - Contract-Driven I/O Execution
+# =============================================================================
+mixin_effect_execution:
+  name: "MixinEffectExecution"
+  description: "Contract-driven I/O execution with retry policies, circuit breakers, and transaction management"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "execution"
+
+  requires:
+    - "omnibase_core.models.effects"
+    - "omnibase_core.models.contracts.subcontracts.model_effect_subcontract"
+
+  compatible_with:
+    - "MixinEventBus"
+    - "MixinMetrics"
+    - "MixinHealthCheck"
+
+  incompatible_with: []
+
+  config_schema:
+    operation_timeout_ms:
+      type: "integer"
+      default: 30000
+      description: "Overall operation timeout including retries"
+    enable_circuit_breaker:
+      type: "boolean"
+      default: true
+
+  usage_examples:
+    - "NodeEffect classes executing HTTP, DB, Kafka, filesystem operations"
+    - "I/O nodes with resilience patterns (retry, circuit breaker)"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinEventDrivenNode - Composed Event-Driven Capabilities
+# =============================================================================
+mixin_event_driven_node:
+  name: "MixinEventDrivenNode"
+  description: "Composed event-driven node capabilities combining introspection, event handling, and lifecycle"
+  version: {major: 2, minor: 0, patch: 0}
+  category: "orchestration"
+
+  requires:
+    - "omnibase_core.mixins.mixin_introspection_publisher"
+    - "omnibase_core.mixins.mixin_event_handler"
+    - "omnibase_core.mixins.mixin_node_lifecycle"
+
+  compatible_with:
+    - "MixinNodeExecutor"
+    - "MixinNodeService"
+    - "MixinServiceRegistry"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Persistent ONEX nodes with full event-driven lifecycle"
+    - "Nodes requiring introspection, event handling, and lifecycle management"
+
+  version_history:
+    - version: {major: 2, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinFailFast - Fail-Fast Error Handling
+# =============================================================================
+mixin_fail_fast:
+  name: "MixinFailFast"
+  description: "Consistent fail-fast error handling with validation helpers and dependency checking"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "reliability"
+
+  requires:
+    - "omnibase_core.enums.enum_core_error_code"
+    - "omnibase_core.enums.enum_log_level"
+    - "omnibase_core.errors.exception_fail_fast"
+    - "omnibase_core.logging.logging_structured"
+    - "omnibase_core.models.errors.model_onex_error"
+
+  compatible_with:
+    - "MixinCLIHandler"
+    - "MixinContractMetadata"
+
+  incompatible_with: []
+
+  config_schema:
+    strict_mode:
+      type: "boolean"
+      default: true
+      description: "Whether to crash on all validation failures"
+
+  usage_examples:
+    - "Tool nodes validating required fields before processing"
+    - "Nodes enforcing contract compliance at startup"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinHandlerRouting - Contract-Driven Handler Routing
+# =============================================================================
+mixin_handler_routing:
+  name: "MixinHandlerRouting"
+  description: "Contract-driven message routing to handlers via payload type, operation, or topic pattern matching"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "routing"
+
+  requires:
+    - "omnibase_core.models.contracts.model_contract"
+    - "omnibase_core.models.container.model_onex_container"
+
+  compatible_with:
+    - "MixinEventHandler"
+    - "MixinEffectExecution"
+
+  incompatible_with: []
+
+  config_schema:
+    routing_strategy:
+      type: "string"
+      enum: ["payload_type_match", "operation_match", "topic_pattern"]
+      default: "payload_type_match"
+    cache_size:
+      type: "integer"
+      default: 128
+      description: "FIFO cache size for routing results"
+
+  usage_examples:
+    - "Orchestrator nodes routing events to typed handlers"
+    - "Effect nodes dispatching operations by contract configuration"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinHashComputation - Protocol-Compliant Hash Computation
+# =============================================================================
+mixin_hash_computation:
+  name: "MixinHashComputation"
+  description: "Protocol-compliant hash computation for node metadata blocks using canonical serialization"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "data_management"
+
+  requires:
+    - "omnibase_core.enums.EnumNodeMetadataField"
+    - "omnibase_core.mixins.mixin_canonical_serialization"
+
+  compatible_with:
+    - "MixinCanonicalYAMLSerializer"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Metadata stampers computing deterministic hashes"
+    - "Integrity verification for node metadata blocks"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinIntentPublisher - Coordination I/O Publishing
+# =============================================================================
+mixin_intent_publisher:
+  name: "MixinIntentPublisher"
+  description: "Intent publishing for coordination I/O without direct domain events"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "coordination"
+
+  requires:
+    - "omnibase_core.models.container.model_onex_container"
+    - "omnibase_core.models.events.model_onex_envelope"
+
+  compatible_with:
+    - "MixinEventBus"
+    - "MixinContractPublisher"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Reducer nodes publishing intents instead of direct events"
+    - "Pure logic nodes coordinating actions via intent executors"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinIntrospectFromContract - Contract-Based Introspection
+# =============================================================================
+mixin_introspect_from_contract:
+  name: "MixinIntrospectFromContract"
+  description: "Canonical introspect() method that loads contract/metadata YAML from the node directory"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "introspection"
+
+  requires:
+    - "omnibase_core.enums.enum_core_error_code"
+    - "omnibase_core.models.core.model_generic_yaml"
+    - "omnibase_core.models.errors.model_onex_error"
+
+  compatible_with:
+    - "MixinContractMetadata"
+    - "MixinNodeSetup"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Nodes providing introspection data from contract YAML"
+    - "Security-validated contract loading with namespace allowlist"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinIntrospectionPublisher - Introspection Event Publishing
+# =============================================================================
+mixin_introspection_publisher:
+  name: "MixinIntrospectionPublisher"
+  description: "Gathers node introspection data and publishes NODE_INTROSPECTION_EVENT for service discovery"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "discovery"
+
+  requires:
+    - "omnibase_core.enums.enum_core_error_code"
+    - "omnibase_core.enums.enum_log_level"
+    - "omnibase_core.models.discovery.model_nodeintrospectionevent"
+    - "omnibase_core.models.discovery.model_node_introspection_event"
+    - "omnibase_core.models.mixins.model_node_introspection_data"
+
+  compatible_with:
+    - "MixinEventBus"
+    - "MixinNodeLifecycle"
+    - "MixinEventDrivenNode"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Nodes publishing introspection events for automatic discovery"
+    - "Event-driven nodes announcing capabilities on startup"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinLazyEvaluation - Lazy Evaluation Patterns
+# =============================================================================
+mixin_lazy_evaluation:
+  name: "MixinLazyEvaluation"
+  description: "Lazy evaluation patterns for reducing memory usage and improving performance"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "performance"
+
+  requires:
+    - "omnibase_core.enums.enum_core_error_code"
+    - "omnibase_core.models.errors.model_onex_error"
+    - "omnibase_core.mixins.mixin_lazy_value"
+    - "pydantic"
+
+  compatible_with:
+    - "MixinCaching"
+    - "MixinMetrics"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Deferring expensive model serialization until needed"
+    - "Lazy property computation with caching"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinLazyValue - Lazy Value Wrapper
+# =============================================================================
+mixin_lazy_value:
+  name: "MixinLazyValue"
+  description: "Generic lazy evaluation wrapper for expensive operations with optional caching"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "performance"
+
+  requires: []
+
+  compatible_with:
+    - "MixinLazyEvaluation"
+
+  incompatible_with: []
+
+  config_schema:
+    cache:
+      type: "boolean"
+      default: true
+      description: "Whether to cache the computed value"
+
+  usage_examples:
+    - "Wrapping expensive computations for deferred execution"
+    - "Configuration values computed on first access"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinNodeExecutor - Node Execution Engine
+# =============================================================================
+mixin_node_executor:
+  name: "MixinNodeExecutor"
+  description: "Node execution engine with signal handling, graceful shutdown, and tool invocation support"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "execution"
+
+  requires:
+    - "omnibase_core.constants.TIMEOUT_DEFAULT_MS"
+    - "omnibase_core.constants.constants_event_types"
+    - "omnibase_core.enums.enum_core_error_code"
+    - "omnibase_core.enums.enum_log_level"
+    - "omnibase_core.mixins.mixin_event_driven_node"
+    - "omnibase_core.models.discovery.model_node_shutdown_event"
+    - "omnibase_core.models.discovery.model_tool_invocation_event"
+    - "omnibase_core.models.discovery.model_tool_response_event"
+
+  compatible_with:
+    - "MixinEventDrivenNode"
+    - "MixinNodeService"
+    - "MixinHealthCheck"
+
+  incompatible_with: []
+
+  config_schema:
+    timeout_ms:
+      type: "integer"
+      default: 30000
+      description: "Default execution timeout in milliseconds"
+
+  usage_examples:
+    - "Persistent ONEX nodes running as long-lived processes"
+    - "Nodes with graceful shutdown on SIGTERM/SIGINT"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinNodeIdFromContract - Node Identity from Contract
+# =============================================================================
+mixin_node_id_from_contract:
+  name: "MixinNodeIdFromContract"
+  description: "Loads node_id (node_name) from node.onex.yaml or contract.yaml with namespace security"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "contract"
+
+  requires:
+    - "omnibase_core.enums.enum_core_error_code"
+    - "omnibase_core.models.core.model_generic_yaml"
+    - "omnibase_core.models.errors.model_onex_error"
+
+  compatible_with:
+    - "MixinContractMetadata"
+    - "MixinNodeSetup"
+    - "MixinIntrospectFromContract"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Nodes loading identity from contract YAML at initialization"
+    - "Testable nodes with explicit contract_path injection"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinNodeService - Persistent Service Capabilities
+# =============================================================================
+mixin_node_service:
+  name: "MixinNodeService"
+  description: "Persistent node service capabilities for tool-as-a-service via MCP, GraphQL integrations"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "orchestration"
+
+  requires:
+    - "omnibase_core.mixins.mixin_node_executor"
+    - "omnibase_core.mixins.mixin_event_driven_node"
+
+  compatible_with:
+    - "MixinNodeExecutor"
+    - "MixinEventDrivenNode"
+    - "MixinToolExecution"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Nodes running as persistent services responding to TOOL_INVOCATION events"
+    - "MCP server integration with tool-as-a-service pattern"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinNodeSetup - Node Initialization and Contract Access
+# =============================================================================
+mixin_node_setup:
+  name: "MixinNodeSetup"
+  description: "Canonical mixin for ONEX node initialization providing contract, version, and path access"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "contract"
+
+  requires:
+    - "omnibase_core.models.core.model_state_contract"
+    - "omnibase_core.models.primitives.model_semver"
+
+  compatible_with:
+    - "MixinContractMetadata"
+    - "MixinNodeIdFromContract"
+    - "MixinIntrospectFromContract"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "All ONEX nodes accessing contract and metadata paths"
+    - "Nodes requiring node_id, node_version, state_contract"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinNodeTypeValidator - Node Type Validation
+# =============================================================================
+mixin_node_type_validator:
+  name: "MixinNodeTypeValidator"
+  description: "Shared node_type validation logic with architecture-to-node-type mapping"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "validation"
+
+  requires:
+    - "omnibase_core.enums.EnumNodeType"
+    - "omnibase_core.enums.enum_core_error_code"
+    - "omnibase_core.enums.enum_node_architecture_type"
+    - "pydantic"
+
+  compatible_with:
+    - "MixinContractMetadata"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Contract models validating node_type field"
+    - "Architecture type to node type conversion"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinSensitiveFieldRedaction - Sensitive Field Redaction
+# =============================================================================
+mixin_redaction:
+  name: "MixinSensitiveFieldRedaction"
+  description: "Automatic redaction of sensitive fields in Pydantic model serialization output"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "security"
+
+  requires:
+    - "omnibase_core.types.type_json"
+
+  compatible_with:
+    - "MixinSerializable"
+    - "MixinYAMLSerialization"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Models containing API keys or tokens in serialized output"
+    - "Logging models with sensitive field protection"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinRequestResponseIntrospection - Real-Time Introspection
+# =============================================================================
+mixin_request_response_introspection:
+  name: "MixinRequestResponseIntrospection"
+  description: "Responds to REQUEST_INTROSPECTION events with real-time node status information"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "introspection"
+
+  requires:
+    - "omnibase_core.constants.constants_event_types"
+    - "omnibase_core.enums.enum_log_level"
+    - "omnibase_core.enums.enum_node_current_status"
+    - "omnibase_core.models.discovery.model_current_tool_availability"
+    - "omnibase_core.models.discovery.model_discovery_performance_metrics"
+
+  compatible_with:
+    - "MixinEventBus"
+    - "MixinNodeIntrospection"
+    - "MixinServiceRegistry"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Nodes responding to real-time introspection requests"
+    - "Hybrid discovery system request-response half"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinSerializable - Serialization Protocol
+# =============================================================================
+mixin_serializable:
+  name: "MixinSerializable"
+  description: "Protocol for recursive, protocol-driven serialization and deserialization for ONEX I/O"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "data_management"
+
+  requires:
+    - "omnibase_core.types.type_serializable_value"
+
+  compatible_with:
+    - "MixinCanonicalYAMLSerializer"
+    - "MixinYAMLSerialization"
+    - "MixinSensitiveFieldRedaction"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Models requiring canonical serialization for file I/O"
+    - "Cross-service model transfer with recursive reconstruction"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinServiceRegistry - Event-Driven Service Registry
+# =============================================================================
+mixin_service_registry:
+  name: "MixinServiceRegistry"
+  description: "Event-driven service registry maintaining a live catalog of available tools and capabilities"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "discovery"
+
+  requires:
+    - "omnibase_core.enums.enum_log_level"
+    - "omnibase_core.errors.ModelOnexError"
+    - "omnibase_core.logging.logging_structured"
+    - "omnibase_core.models.core.model_onex_event"
+    - "omnibase_core.models.mixins.model_service_registry_entry"
+
+  compatible_with:
+    - "MixinEventBus"
+    - "MixinDiscoveryResponder"
+    - "MixinRequestResponseIntrospection"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Orchestrator nodes maintaining a live tool registry"
+    - "Service discovery with automatic tool registration and lifecycle tracking"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinTruncationValidation - Truncation State Validation
+# =============================================================================
+mixin_truncation_validation:
+  name: "MixinTruncationValidation"
+  description: "Validates logical constraints between truncation flag and size metadata in snapshot models"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "validation"
+
+  requires:
+    - "pydantic"
+
+  compatible_with: []
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Snapshot models tracking truncation state with size fields"
+    - "Data preview models ensuring size consistency"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"
+
+# =============================================================================
+# MixinYAMLSerialization - YAML Output Serialization
+# =============================================================================
+mixin_yaml_serialization:
+  name: "MixinYAMLSerialization"
+  description: "Protocol-compliant YAML serialization with comment prefixing for Pydantic models"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "data_management"
+
+  requires: []
+
+  compatible_with:
+    - "MixinCanonicalYAMLSerializer"
+    - "MixinSerializable"
+    - "MixinHashComputation"
+
+  incompatible_with: []
+
+  config_schema: {}
+
+  usage_examples:
+    - "Pydantic models producing YAML output with comment headers"
+    - "Metadata blocks serialized with protocol-compliant formatting"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2026-03-08"
+      changes:
+        - "Initial metadata definition (OMN-1115)"

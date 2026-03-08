@@ -1,0 +1,466 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# ONEX Mixin Capability Mapping
+# Version: 1.0.0
+# Purpose: Maps each mixin to its handler conversion target for the
+#          mixins-to-handlers refactor (OMN-1115).
+#
+# Each entry specifies:
+#   - handler_type_category: compute | effect | nondeterministic_compute
+#   - capability_set: list of capability identifiers
+#   - nondeterminism_classification: deterministic | time | random | network | external_state
+#   - phase: migration phase (1 = pure compute first, 2 = stateful, 3 = I/O, 4 = orchestration)
+#   - migration_priority: 1 (highest) to 5 (lowest)
+#   - ordering_constraints: list of mixins that must be migrated before this one
+#   - legacy_shim_required: true until proven otherwise
+#   - conversion_evidence: null until shim removal is validated
+
+mixins:
+  # ===== Phase 1: Pure Compute (Deterministic, No I/O) =====
+
+  - mixin_name: MixinHashComputation
+    handler_contract_stub: contracts/handlers/hash_computation_handler.yaml
+    handler_type_category: compute
+    capability_set: [hash_computation, integrity_verification]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 1
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinCanonicalYAMLSerializer
+    handler_contract_stub: contracts/handlers/canonical_serializer_handler.yaml
+    handler_type_category: compute
+    capability_set: [serialization, canonical_output]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 1
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinSerializable
+    handler_contract_stub: contracts/handlers/serializable_handler.yaml
+    handler_type_category: compute
+    capability_set: [serialization, deserialization]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 1
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinYAMLSerialization
+    handler_contract_stub: contracts/handlers/yaml_serialization_handler.yaml
+    handler_type_category: compute
+    capability_set: [serialization, yaml_output]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 1
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinTruncationValidation
+    handler_contract_stub: contracts/handlers/truncation_validation_handler.yaml
+    handler_type_category: compute
+    capability_set: [validation, truncation_checking]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 1
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinNodeTypeValidator
+    handler_contract_stub: contracts/handlers/node_type_validator_handler.yaml
+    handler_type_category: compute
+    capability_set: [validation, node_type_mapping]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 1
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinSensitiveFieldRedaction
+    handler_contract_stub: contracts/handlers/redaction_handler.yaml
+    handler_type_category: compute
+    capability_set: [security, field_redaction]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 2
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinLazyValue
+    handler_contract_stub: contracts/handlers/lazy_value_handler.yaml
+    handler_type_category: compute
+    capability_set: [lazy_evaluation, caching]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 2
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinLazyEvaluation
+    handler_contract_stub: contracts/handlers/lazy_evaluation_handler.yaml
+    handler_type_category: compute
+    capability_set: [lazy_evaluation, performance_optimization]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 2
+    ordering_constraints: [MixinLazyValue]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinFailFast
+    handler_contract_stub: contracts/handlers/fail_fast_handler.yaml
+    handler_type_category: compute
+    capability_set: [error_handling, validation, fail_fast]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 2
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinComputeExecution
+    handler_contract_stub: contracts/handlers/compute_execution_handler.yaml
+    handler_type_category: compute
+    capability_set: [compute_pipeline, contract_driven_execution]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 2
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinHandlerRouting
+    handler_contract_stub: contracts/handlers/handler_routing_handler.yaml
+    handler_type_category: compute
+    capability_set: [routing, handler_dispatch]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 2
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinMetrics
+    handler_contract_stub: contracts/handlers/metrics_handler.yaml
+    handler_type_category: compute
+    capability_set: [metrics, observability]
+    nondeterminism_classification: deterministic
+    phase: 1
+    migration_priority: 3
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  # ===== Phase 2: Stateful / Nondeterministic Compute =====
+
+  - mixin_name: MixinCaching
+    handler_contract_stub: contracts/handlers/caching_handler.yaml
+    handler_type_category: nondeterministic_compute
+    capability_set: [caching, performance]
+    nondeterminism_classification: time
+    phase: 2
+    migration_priority: 2
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinFSMExecution
+    handler_contract_stub: contracts/handlers/fsm_execution_handler.yaml
+    handler_type_category: nondeterministic_compute
+    capability_set: [state_machine, fsm_execution, contract_driven]
+    nondeterminism_classification: external_state
+    phase: 2
+    migration_priority: 2
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinContractStateReducer
+    handler_contract_stub: contracts/handlers/contract_state_reducer_handler.yaml
+    handler_type_category: nondeterministic_compute
+    capability_set: [state_management, contract_driven, state_transitions]
+    nondeterminism_classification: external_state
+    phase: 2
+    migration_priority: 2
+    ordering_constraints: [MixinFSMExecution]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinContractMetadata
+    handler_contract_stub: contracts/handlers/contract_metadata_handler.yaml
+    handler_type_category: nondeterministic_compute
+    capability_set: [metadata_loading, contract_validation]
+    nondeterminism_classification: external_state
+    phase: 2
+    migration_priority: 3
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinNodeSetup
+    handler_contract_stub: contracts/handlers/node_setup_handler.yaml
+    handler_type_category: nondeterministic_compute
+    capability_set: [node_initialization, contract_loading]
+    nondeterminism_classification: external_state
+    phase: 2
+    migration_priority: 3
+    ordering_constraints: [MixinContractMetadata]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinNodeIdFromContract
+    handler_contract_stub: contracts/handlers/node_id_from_contract_handler.yaml
+    handler_type_category: nondeterministic_compute
+    capability_set: [node_identity, contract_loading]
+    nondeterminism_classification: external_state
+    phase: 2
+    migration_priority: 3
+    ordering_constraints: [MixinContractMetadata]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinIntrospectFromContract
+    handler_contract_stub: contracts/handlers/introspect_from_contract_handler.yaml
+    handler_type_category: nondeterministic_compute
+    capability_set: [introspection, contract_loading]
+    nondeterminism_classification: external_state
+    phase: 2
+    migration_priority: 3
+    ordering_constraints: [MixinContractMetadata]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinNodeIntrospection
+    handler_contract_stub: contracts/handlers/node_introspection_handler.yaml
+    handler_type_category: nondeterministic_compute
+    capability_set: [introspection, node_metadata]
+    nondeterminism_classification: external_state
+    phase: 2
+    migration_priority: 3
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinDiscovery
+    handler_contract_stub: contracts/handlers/discovery_handler.yaml
+    handler_type_category: nondeterministic_compute
+    capability_set: [discovery, mixin_querying]
+    nondeterminism_classification: external_state
+    phase: 2
+    migration_priority: 3
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinCLIHandler
+    handler_contract_stub: contracts/handlers/cli_handler_handler.yaml
+    handler_type_category: nondeterministic_compute
+    capability_set: [cli_parsing, argument_handling, io_formatting]
+    nondeterminism_classification: external_state
+    phase: 2
+    migration_priority: 4
+    ordering_constraints: [MixinContractMetadata, MixinFailFast]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  # ===== Phase 3: I/O and Effect Mixins =====
+
+  - mixin_name: MixinEventBus
+    handler_contract_stub: contracts/handlers/event_bus_handler.yaml
+    handler_type_category: effect
+    capability_set: [event_publishing, event_subscription]
+    nondeterminism_classification: network
+    phase: 3
+    migration_priority: 1
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinEffectExecution
+    handler_contract_stub: contracts/handlers/effect_execution_handler.yaml
+    handler_type_category: effect
+    capability_set: [effect_pipeline, io_orchestration, retry, circuit_breaker]
+    nondeterminism_classification: network
+    phase: 3
+    migration_priority: 1
+    ordering_constraints: [MixinEventBus]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinHealthCheck
+    handler_contract_stub: contracts/handlers/health_check_handler.yaml
+    handler_type_category: effect
+    capability_set: [health_monitoring, liveness_probe, readiness_probe]
+    nondeterminism_classification: external_state
+    phase: 3
+    migration_priority: 2
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinContractPublisher
+    handler_contract_stub: contracts/handlers/contract_publisher_handler.yaml
+    handler_type_category: effect
+    capability_set: [contract_registration, heartbeat, dynamic_discovery]
+    nondeterminism_classification: network
+    phase: 3
+    migration_priority: 2
+    ordering_constraints: [MixinEventBus]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinIntentPublisher
+    handler_contract_stub: contracts/handlers/intent_publisher_handler.yaml
+    handler_type_category: effect
+    capability_set: [intent_publishing, coordination_io]
+    nondeterminism_classification: network
+    phase: 3
+    migration_priority: 2
+    ordering_constraints: [MixinEventBus]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinIntrospectionPublisher
+    handler_contract_stub: contracts/handlers/introspection_publisher_handler.yaml
+    handler_type_category: effect
+    capability_set: [introspection_publishing, service_discovery]
+    nondeterminism_classification: network
+    phase: 3
+    migration_priority: 2
+    ordering_constraints: [MixinEventBus, MixinNodeIntrospection]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinDebugDiscoveryLogging
+    handler_contract_stub: contracts/handlers/debug_discovery_logging_handler.yaml
+    handler_type_category: effect
+    capability_set: [debug_logging, discovery_monitoring]
+    nondeterminism_classification: external_state
+    phase: 3
+    migration_priority: 4
+    ordering_constraints: []
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  # ===== Phase 4: Orchestration / Lifecycle =====
+
+  - mixin_name: MixinNodeLifecycle
+    handler_contract_stub: contracts/handlers/node_lifecycle_handler.yaml
+    handler_type_category: effect
+    capability_set: [lifecycle_management, registration, deregistration]
+    nondeterminism_classification: network
+    phase: 4
+    migration_priority: 1
+    ordering_constraints: [MixinEventBus, MixinIntrospectionPublisher]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinEventHandler
+    handler_contract_stub: contracts/handlers/event_handler_handler.yaml
+    handler_type_category: effect
+    capability_set: [event_handling, request_response]
+    nondeterminism_classification: network
+    phase: 4
+    migration_priority: 1
+    ordering_constraints: [MixinEventBus]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinEventDrivenNode
+    handler_contract_stub: contracts/handlers/event_driven_node_handler.yaml
+    handler_type_category: effect
+    capability_set: [event_driven, composed_lifecycle]
+    nondeterminism_classification: network
+    phase: 4
+    migration_priority: 1
+    ordering_constraints: [MixinIntrospectionPublisher, MixinEventHandler, MixinNodeLifecycle]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinDiscoveryResponder
+    handler_contract_stub: contracts/handlers/discovery_responder_handler.yaml
+    handler_type_category: effect
+    capability_set: [discovery_response, service_announcement]
+    nondeterminism_classification: network
+    phase: 4
+    migration_priority: 2
+    ordering_constraints: [MixinEventBus]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinRequestResponseIntrospection
+    handler_contract_stub: contracts/handlers/request_response_introspection_handler.yaml
+    handler_type_category: effect
+    capability_set: [introspection, request_response, real_time_status]
+    nondeterminism_classification: network
+    phase: 4
+    migration_priority: 2
+    ordering_constraints: [MixinEventBus, MixinNodeIntrospection]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinServiceRegistry
+    handler_contract_stub: contracts/handlers/service_registry_handler.yaml
+    handler_type_category: effect
+    capability_set: [service_registry, tool_discovery, lifecycle_management]
+    nondeterminism_classification: network
+    phase: 4
+    migration_priority: 2
+    ordering_constraints: [MixinEventBus]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinNodeExecutor
+    handler_contract_stub: contracts/handlers/node_executor_handler.yaml
+    handler_type_category: effect
+    capability_set: [node_execution, signal_handling, graceful_shutdown]
+    nondeterminism_classification: network
+    phase: 4
+    migration_priority: 1
+    ordering_constraints: [MixinEventDrivenNode]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinNodeService
+    handler_contract_stub: contracts/handlers/node_service_handler.yaml
+    handler_type_category: effect
+    capability_set: [persistent_service, tool_invocation, mcp_integration]
+    nondeterminism_classification: network
+    phase: 4
+    migration_priority: 1
+    ordering_constraints: [MixinNodeExecutor, MixinEventDrivenNode]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinToolExecution
+    handler_contract_stub: contracts/handlers/tool_execution_handler.yaml
+    handler_type_category: effect
+    capability_set: [tool_execution, action_dispatch]
+    nondeterminism_classification: network
+    phase: 4
+    migration_priority: 2
+    ordering_constraints: [MixinEventBus]
+    legacy_shim_required: true
+    conversion_evidence: null
+
+  - mixin_name: MixinWorkflowExecution
+    handler_contract_stub: contracts/handlers/workflow_execution_handler.yaml
+    handler_type_category: effect
+    capability_set: [workflow_orchestration, step_execution, dag_execution]
+    nondeterminism_classification: network
+    phase: 4
+    migration_priority: 2
+    ordering_constraints: [MixinEventBus, MixinFSMExecution]
+    legacy_shim_required: true
+    conversion_evidence: null
