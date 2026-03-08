@@ -42,7 +42,7 @@ Key Concepts
     **Do NOT use is_adapter=True for**:
         - Database handlers (DATABASE type, EFFECT category)
         - Vault handlers (VAULT type, EFFECT category)
-        - Consul handlers (SERVICE_DISCOVERY type, EFFECT category)
+        - Service discovery handlers (SERVICE_DISCOVERY type, EFFECT category)
         - Outbound HTTP client handlers (HTTP type, EFFECT category)
 
     **Validation Constraint**: If ``is_adapter=True``, then ``handler_type_category``
@@ -439,7 +439,7 @@ class ModelHandlerDescriptor(BaseModel):
             "stricter defaults: no secrets access, narrow permissions. "
             "CONSTRAINT: is_adapter=True requires handler_type_category=EFFECT. "
             "Use for: Kafka ingress/egress, HTTP gateway, webhook, CLI bridge. "
-            "Do NOT use for: DB, Vault, Consul, outbound HTTP client handlers."
+            "Do NOT use for: DB, Vault, outbound HTTP client handlers."
         ),
     )
 

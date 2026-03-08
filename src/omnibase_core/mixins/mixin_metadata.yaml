@@ -3804,7 +3804,8 @@ mixin_fail_fast:
 # =============================================================================
 mixin_handler_routing:
   name: "MixinHandlerRouting"
-  description: "Contract-driven message routing to handlers via payload type, operation, or topic pattern matching"
+  description: "Contract-driven message routing to handlers via payload type, operation, or topic pattern
+    matching"
   version: {major: 1, minor: 0, patch: 0}
   category: "routing"
 

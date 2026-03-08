@@ -13,7 +13,7 @@ implementations. Supported capabilities:
 
 IMPORTANT - Architecture Boundary:
     This protocol is defined in omnibase_core. Concrete implementations
-    (e.g., ConsulServiceDiscovery, EtcdServiceDiscovery) belong in omnibase_infra,
+    (e.g., EtcdServiceDiscovery, KubernetesServiceDiscovery) belong in omnibase_infra,
     NOT in omnibase_core. This maintains clean architecture separation:
 
     - omnibase_core: Protocols (interfaces) only - no external dependencies
@@ -33,41 +33,6 @@ Usage:
         if services:
             return services[0]["address"]
         return None
-
-Migration Guide:
-    Step 1: Create an adapter implementing ProtocolServiceDiscovery (in omnibase_infra)
-        # NOTE: This adapter implementation belongs in omnibase_infra, not omnibase_core.
-        # Example location: omnibase_infra/adapters/discovery/consul_discovery_adapter.py
-
-        import consul.aio
-        from omnibase_core.protocols.infrastructure import ProtocolServiceDiscovery
-
-        class ConsulServiceDiscoveryAdapter:
-            def __init__(self, client: consul.aio.Consul):
-                self._client = client
-
-            async def discover_services(
-                self, service_name: str
-            ) -> list[dict[str, Any]]:
-                _, services = await self._client.catalog.service(service_name)
-                return [
-                    {
-                        "id": s["ServiceID"],
-                        "name": s["ServiceName"],
-                        "address": s["ServiceAddress"],
-                        "port": s["ServicePort"],
-                        "tags": s["ServiceTags"],
-                    }
-                    for s in services
-                ]
-
-    Step 2: Register via DI container
-        # Import adapter from omnibase_infra:
-        from omnibase_infra.adapters.discovery import ConsulServiceDiscoveryAdapter
-
-        consul_client = consul.aio.Consul()
-        adapter = ConsulServiceDiscoveryAdapter(consul_client)
-        container.register_service("ProtocolServiceDiscovery", adapter)
 """
 
 from __future__ import annotations
@@ -81,7 +46,7 @@ class ProtocolServiceDiscovery(Protocol):
     Protocol for service discovery operations.
 
     Defines the minimal interface for service discovery needed by ONEX Core.
-    Implementations can wrap Consul, etcd, Kubernetes, or other service
+    Implementations can wrap etcd, Kubernetes, or other service
     discovery systems.
 
     This protocol enables dependency inversion - components depend on

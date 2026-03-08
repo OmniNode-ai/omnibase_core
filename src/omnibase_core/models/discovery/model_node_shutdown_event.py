@@ -66,7 +66,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         default=None, description="ID of replacement node if applicable"
     )
     service_id: UUID | None = Field(
-        default=None, description="Service ID for Consul deregistration"
+        default=None, description="Service ID for deregistration"
     )
     final_metrics: ModelShutdownMetrics = Field(
         default_factory=ModelShutdownMetrics,

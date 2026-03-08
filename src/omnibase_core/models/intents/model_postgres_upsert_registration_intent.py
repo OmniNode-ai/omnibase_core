@@ -82,7 +82,6 @@ Example:
 See Also:
     omnibase_core.models.intents.ModelCoreIntent: Base class for core intents
     omnibase_core.models.intents.ModelCoreRegistrationIntent: Discriminated union type
-    omnibase_core.models.intents.ModelConsulRegisterIntent: Consul registration intent
     omnibase_core.models.intents.ModelRegistrationRecordBase: Base class for records
     omnibase_core.protocols.intents.ProtocolRegistrationRecord: Record protocol
 """
@@ -176,7 +175,6 @@ class ModelPostgresUpsertRegistrationIntent(ModelCoreIntent):
 
     See Also:
         omnibase_core.models.intents.ModelCoreRegistrationIntent: Discriminated union
-        omnibase_core.models.intents.ModelConsulRegisterIntent: Consul registration
     """
 
     # NOTE: Discriminator field is placed FIRST for optimal union type resolution.

@@ -11,12 +11,12 @@ actual registration operations.
 Models:
     ModelRegistrationPayload:
         Typed payload for registration intents. Contains all information
-        needed to register a node to both Consul and PostgreSQL. Emitted
-        by Reducers, consumed by Effects.
+        needed to register a node to PostgreSQL. Emitted by Reducers,
+        consumed by Effects.
 
     ModelDualRegistrationOutcome:
-        Domain-level outcome of dual registration. Captures the result
-        of registering to both Consul and PostgreSQL. Returned by Effects,
+        Domain-level outcome of registration. Captures the result
+        of registering to PostgreSQL. Returned by Effects,
         aggregated by Orchestrators.
 
 Design Principles:
@@ -62,10 +62,6 @@ Usage:
     ...     deployment_id=uuid4(),
     ...     environment="production",
     ...     network_id="vpc-main",
-    ...     consul_service_id="node-123",
-    ...     consul_service_name="onex-compute",
-    ...     consul_tags=["env:prod"],
-    ...     consul_health_check=None,
     ...     postgres_record=NodeRecord(node_id="123", status="active"),
     ... )
     >>>
@@ -74,7 +70,6 @@ Usage:
     ...     node_id=uuid4(),
     ...     status="success",
     ...     postgres_applied=True,
-    ...     consul_applied=True,
     ...     correlation_id=uuid4(),
     ... )
 

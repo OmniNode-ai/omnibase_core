@@ -5,7 +5,7 @@
 KV Operation Type Enum.
 
 Canonical enum for key-value store operations used throughout ONEX
-Consul integration and distributed storage systems.
+distributed storage systems.
 """
 
 from enum import Enum, unique

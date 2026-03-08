@@ -67,8 +67,6 @@ Effect Pattern - Reducer to Effect Flow:
 Usage:
     >>> from omnibase_core.models.intents import (
     ...     ModelCoreIntent,
-    ...     ModelConsulRegisterIntent,
-    ...     ModelConsulDeregisterIntent,
     ...     ModelPostgresUpsertRegistrationIntent,
     ...     ModelCoreRegistrationIntent,
     ... )
@@ -80,13 +78,6 @@ Example - Reducer emitting intents:
     ...     '''Pure reducer - returns new state and intents, NO side effects.'''
     ...     new_state = state.with_status("registering")
     ...     intents = [
-    ...         ModelConsulRegisterIntent(
-    ...             kind="consul.register",
-    ...             service_id=f"node-{state.node_id}",
-    ...             service_name="onex-compute",
-    ...             tags=["node_type:compute"],
-    ...             correlation_id=action.correlation_id,
-    ...         ),
     ...         ModelPostgresUpsertRegistrationIntent(
     ...             kind="postgres.upsert_registration",
     ...             record=NodeRecord(node_id=state.node_id, status="active"),
@@ -99,14 +90,6 @@ Example - Effect pattern matching:
     >>> async def execute(intent: ModelCoreRegistrationIntent) -> None:
     ...     '''Effect node - performs actual side effects based on intent type.'''
     ...     match intent:
-    ...         case ModelConsulRegisterIntent():
-    ...             await consul_client.register(
-    ...                 service_id=intent.service_id,
-    ...                 service_name=intent.service_name,
-    ...                 tags=intent.tags,
-    ...             )
-    ...         case ModelConsulDeregisterIntent():
-    ...             await consul_client.deregister(intent.service_id)
     ...         case ModelPostgresUpsertRegistrationIntent():
     ...             await db.upsert_registration(intent.record)
 
@@ -125,12 +108,6 @@ from typing import Annotated
 
 from pydantic import Field
 
-from omnibase_core.models.intents.model_consul_deregister_intent import (
-    ModelConsulDeregisterIntent,
-)
-from omnibase_core.models.intents.model_consul_register_intent import (
-    ModelConsulRegisterIntent,
-)
 from omnibase_core.models.intents.model_core_intent_base import ModelCoreIntent
 from omnibase_core.models.intents.model_postgres_upsert_registration_intent import (
     ModelPostgresUpsertRegistrationIntent,
@@ -142,9 +119,7 @@ from omnibase_core.models.intents.model_registration_record_base import (
 # ---- Discriminated Union ----
 
 ModelCoreRegistrationIntent = Annotated[
-    ModelConsulRegisterIntent
-    | ModelConsulDeregisterIntent
-    | ModelPostgresUpsertRegistrationIntent,
+    ModelPostgresUpsertRegistrationIntent,
     Field(discriminator="kind"),
 ]
 """Discriminated union of all core registration intents.
@@ -165,8 +140,6 @@ __all__ = [
     "ModelCoreIntent",
     "ModelRegistrationRecordBase",
     # Concrete intents
-    "ModelConsulRegisterIntent",
-    "ModelConsulDeregisterIntent",
     "ModelPostgresUpsertRegistrationIntent",
     # Discriminated union
     "ModelCoreRegistrationIntent",

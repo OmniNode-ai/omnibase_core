@@ -67,7 +67,7 @@ class ModelSecurityMetadataRef(BaseModel):
             When None, the latest version is used.
         source: Optional source location or registry identifier.
             Specifies where to resolve the reference when multiple registries
-            are available (e.g., "vault://prod", "consul://security-store").
+            are available (e.g., "vault://prod", "infisical://security-store").
 
     Example:
         >>> ref = ModelSecurityMetadataRef(ref="security://handlers/api-gateway")
@@ -117,7 +117,7 @@ class ModelSecurityMetadataRef(BaseModel):
         description=(
             "Optional source location or registry identifier. "
             "Specifies where to resolve the reference when multiple registries "
-            "are available (e.g., 'vault://prod', 'consul://security-store')."
+            "are available (e.g., 'vault://prod', 'infisical://security-store')."
         ),
     )
 

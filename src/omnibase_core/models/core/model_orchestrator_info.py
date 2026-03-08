@@ -107,7 +107,7 @@ class ModelOrchestratorInfo(BaseModel):
     # Service mesh information
     service_mesh: str | None = Field(
         default=None,
-        description="Service mesh type (istio/linkerd/consul)",
+        description="Service mesh type (istio/linkerd)",
     )
     sidecar_injected: bool = Field(
         default=False, description="Whether sidecar is injected"

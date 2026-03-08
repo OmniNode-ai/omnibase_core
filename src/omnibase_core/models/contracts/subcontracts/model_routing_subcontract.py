@@ -330,12 +330,6 @@ class ModelRoutingSubcontract(BaseModel):
         description="Enable container orchestration awareness (Docker, Kubernetes)",
     )
 
-    # Service discovery and registry integration
-    consul_integration: bool = Field(
-        default=True,
-        description="Enable Consul service discovery integration",
-    )
-
     redis_routing_cache: bool = Field(
         default=True,
         description="Enable Redis-based routing cache for performance",

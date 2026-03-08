@@ -55,7 +55,7 @@ def allow_string_id(reason: str) -> Callable[[ClassType], ClassType]:
     Decorator to allow string ID fields instead of UUID.
 
     Use this when integrating with external systems that require string identifiers
-    (e.g., Consul service IDs, Kubernetes resource names, cloud provider resource IDs).
+    (e.g., Kubernetes resource names, cloud provider resource IDs).
 
     Args:
         reason: Explanation for why string IDs are needed (e.g., external system constraint)

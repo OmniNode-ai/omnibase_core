@@ -40,7 +40,7 @@ class ModelDiscoveryFilters(BaseModel):
     )
     datacenter: str | None = Field(
         default=None,
-        description="Filter by datacenter (future Consul support)",
+        description="Filter by datacenter",
     )
     health_status: str | None = Field(
         default=None,

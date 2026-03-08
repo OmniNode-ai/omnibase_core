@@ -28,7 +28,6 @@ class EnumServiceType(StrValueHelper, str, Enum):
     REST_API = "rest_api"
     GRPC = "grpc"
     RABBITMQ = "rabbitmq"
-    CONSUL = "consul"
     VAULT = "vault"
     S3 = "s3"
     CUSTOM = "custom"

@@ -252,7 +252,7 @@ class ModelHandlerContract(BaseModel):
         min_length=3,
         description=(
             "Fully qualified Python class path for dynamic handler import "
-            "(e.g., 'omnibase_infra.handlers.handler_consul.HandlerConsul'). "
+            "(e.g., 'omnibase_infra.handlers.handler_postgres.HandlerPostgres'). "
             "Must be a dot-separated module path ending with a class name."
         ),
     )

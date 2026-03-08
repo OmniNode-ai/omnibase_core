@@ -42,8 +42,6 @@ Example:
 
 See Also:
     omnibase_core.models.intents.ModelCoreRegistrationIntent: Discriminated union type
-    omnibase_core.models.intents.ModelConsulRegisterIntent: Consul registration
-    omnibase_core.models.intents.ModelConsulDeregisterIntent: Consul deregistration
     omnibase_core.models.intents.ModelPostgresUpsertRegistrationIntent: PostgreSQL upsert
     omnibase_core.models.reducer.model_intent.ModelIntent: Extension intents (plugins)
 """
