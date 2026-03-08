@@ -48,6 +48,7 @@ __all__ = [
     "registration",
     "results",
     "routing",  # Tiered resolution routing models (OMN-2890)
+    "skill",  # Skill execution result models (OMN-3867)
     "state",
     "ticket",  # Ticket contract and context bundle models (OMN-3104)
     "validation",
