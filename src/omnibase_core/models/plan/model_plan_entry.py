@@ -107,10 +107,11 @@ class ModelPlanEntry(BaseModel):
                     f"Each dependency must be a string, got {type(dep).__name__}"
                 )
             normalized = dep.strip()
-            # Normalize leading lowercase
+            # Normalize leading lowercase p -> P
             if normalized.startswith("p"):
                 normalized = "P" + normalized[1:]
-            if normalized.startswith(("omn-", "Omn-")):
+            # Normalize any mixed-case "omn-" prefix to "OMN-" (case-insensitive)
+            if normalized.upper().startswith("OMN-"):
                 normalized = "OMN-" + normalized[4:]
             if not (
                 _PLAN_ID_PATTERN.match(normalized)

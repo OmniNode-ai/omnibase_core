@@ -239,3 +239,22 @@ class TestModelPlanDocument:
                 structure_type=EnumPlanStructureType.TASK_SECTIONS,
                 entries=entries,
             )
+
+    def test_large_linear_chain_no_recursion_error(self) -> None:
+        """1001-entry linear chain must not raise RecursionError (iterative DFS)."""
+        entries = [ModelPlanEntry(id="P1", title="Task 1", content="C.")]
+        for i in range(2, 1002):
+            entries.append(
+                ModelPlanEntry(
+                    id=f"P{i}",
+                    title=f"Task {i}",
+                    content="C.",
+                    dependencies=[f"P{i - 1}"],
+                )
+            )
+        doc = ModelPlanDocument(
+            title="Large Linear Plan",
+            structure_type=EnumPlanStructureType.TASK_SECTIONS,
+            entries=entries,
+        )
+        assert len(doc.entries) == 1001

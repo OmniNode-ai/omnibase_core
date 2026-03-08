@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections import deque
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -77,34 +78,53 @@ class ModelPlanDocument(BaseModel):
                         f"'{dep}' does not exist in document entries"
                     )
 
-        # Phase 3: Circular dependency detection via DFS topological sort
-        # Build adjacency list of internal deps only
+        # Phase 3: Circular dependency detection via iterative DFS topological sort.
+        # Iterative (not recursive) to avoid RecursionError on large plans.
+        # Build adjacency list of internal deps only.
         adj: dict[str, list[str]] = {}
         for entry in self.entries:
             adj[entry.id] = [d for d in entry.dependencies if d in internal_ids]
 
         WHITE, GRAY, BLACK = 0, 1, 2
         color: dict[str, int] = dict.fromkeys(internal_ids, WHITE)
-        path: list[str] = []
 
-        def dfs(node: str) -> None:
-            color[node] = GRAY
-            path.append(node)
-            for dep in adj.get(node, []):
-                if color[dep] == GRAY:
-                    cycle_start = path.index(dep)
-                    cycle = path[cycle_start:] + [dep]
-                    raise ValueError(  # error-ok: Pydantic model_validator requires ValueError
-                        f"Circular dependency detected: {' -> '.join(cycle)}"
-                    )
-                if color[dep] == WHITE:
-                    dfs(dep)
-            path.pop()
-            color[node] = BLACK
+        for start in internal_ids:
+            if color[start] != WHITE:
+                continue
+            # Each stack frame: (node, iterator_over_neighbors, path_so_far)
+            path_set: set[str] = set()
+            path_list: list[str] = []
+            stack: deque[tuple[str, int]] = deque()
+            stack.append((start, 0))
 
-        for eid in internal_ids:
-            if color[eid] == WHITE:
-                dfs(eid)
+            while stack:
+                node, idx = stack[-1]
+                neighbors = adj.get(node, [])
+
+                if idx == 0:
+                    # First visit
+                    color[node] = GRAY
+                    path_list.append(node)
+                    path_set.add(node)
+
+                if idx < len(neighbors):
+                    dep = neighbors[idx]
+                    stack[-1] = (node, idx + 1)
+                    if color[dep] == GRAY:
+                        # Cycle detected: reconstruct cycle path
+                        cycle_start = path_list.index(dep)
+                        cycle = path_list[cycle_start:] + [dep]
+                        raise ValueError(  # error-ok: Pydantic model_validator requires ValueError
+                            f"Circular dependency detected: {' -> '.join(cycle)}"
+                        )
+                    if color[dep] == WHITE:
+                        stack.append((dep, 0))
+                else:
+                    # All neighbors visited
+                    stack.pop()
+                    path_list.pop()
+                    path_set.discard(node)
+                    color[node] = BLACK
 
         return self
 
@@ -115,10 +135,13 @@ class ModelPlanDocument(BaseModel):
 
     @property
     def has_valid_dependency_graph(self) -> bool:
-        """True if no circular dependencies exist.
+        """Structural invariant: always True for any constructed instance.
 
-        Always True after construction -- the model_validator rejects cycles at
-        construction time, so a live instance always has a valid graph.
+        ``_validate_entries`` rejects circular and dangling dependencies at
+        construction time, so this property is an invariant assertion, not a
+        recheck. Do NOT call this expecting a live revalidation -- it will
+        always return True. Use it as a readable assertion in calling code
+        (e.g., ``assert doc.has_valid_dependency_graph``).
         """
         return True
 
