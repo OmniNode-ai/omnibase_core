@@ -397,3 +397,7 @@ async def test_handle(handler):
 - [Type System](TYPE_SYSTEM.md) - Typing patterns
 - [Node Building Guide](../guides/node-building/README.md) - Implementation tutorials
 - [API Reference](../reference/api/nodes.md) - Complete API documentation
+
+## Epic 3 Handler Classification Results
+
+- [File I/O Services Classification (OMN-4010)](HANDLER_CLASSIFICATION_FILE_IO_SERVICES_3_4.md) — ServiceDiffFileStore, ServiceFileSink, OncpBuilder, OncpReader assessed; all KEEP AS SERVICE
