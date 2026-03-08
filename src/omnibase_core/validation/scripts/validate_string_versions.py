@@ -803,7 +803,7 @@ class StringVersionValidator:
 
         # Parse YAML using Pydantic model validation if available
         yaml_data = None
-        if PYDANTIC_MODELS_AVAILABLE:
+        if PYDANTIC_MODELS_AVAILABLE and load_yaml_content_as_model is not None:
             try:
                 yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
                 yaml_data = yaml_model.model_dump()
@@ -817,15 +817,6 @@ class StringVersionValidator:
             yaml.safe_load(content)
         except yaml.YAMLError as e:
             self.errors.append(f"{yaml_path}: Invalid YAML syntax - {e}")
-            return False
-        except yaml.constructor.ConstructorError as e:
-            self.errors.append(f"{yaml_path}: YAML constructor error - {e}")
-            return False
-        except yaml.parser.ParserError as e:
-            self.errors.append(f"{yaml_path}: YAML parser error - {e}")
-            return False
-        except yaml.scanner.ScannerError as e:
-            self.errors.append(f"{yaml_path}: YAML scanner error - {e}")
             return False
         except MemoryError:
             self.errors.append(f"{yaml_path}: YAML file too large to parse in memory")
@@ -1028,8 +1019,6 @@ class StringVersionValidator:
 
     def print_results(self) -> None:
         """Print validation results."""
-        total_violations = len(self.errors) + len(self.ast_violations)
-
         if self.errors or self.ast_violations:
             print("❌ ID/Version Validation FAILED")
             print("=" * 50)

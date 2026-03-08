@@ -131,7 +131,9 @@ class UnixSignalTimeout:
         """Initialize Unix signal timeout."""
         self.seconds = seconds
         self.error_message = error_message
-        self.old_handler: signal.Handlers | Callable[[int, Any], Any] | int | None = None
+        self.old_handler: signal.Handlers | Callable[[int, Any], Any] | int | None = (
+            None
+        )
         self.use_signal = hasattr(signal, "SIGALRM")
 
         # Fallback to threading timeout on Windows
