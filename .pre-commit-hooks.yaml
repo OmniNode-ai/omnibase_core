@@ -7,6 +7,19 @@
 #     hooks:
 #       - id: check-local-paths
 
+- id: validate-string-versions
+  name: ONEX String Version Anti-Pattern Detection
+  description: >
+    Detect hardcoded __version__ string literals in __init__.py files and
+    string version anti-patterns in Python and YAML files. In __init__.py,
+    use importlib.metadata.version("package-name") instead.
+  language: python
+  entry: python scripts/validation/validate-string-versions.py
+  types_or: [python, yaml]
+  pass_filenames: true
+  stages: [pre-commit]
+  additional_dependencies: [pyyaml]
+
 - id: check-local-paths
   name: Check for local path references
   description: >
