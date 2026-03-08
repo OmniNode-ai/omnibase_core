@@ -656,8 +656,19 @@ class StringVersionValidator:
         python_path: Path,
         errors: list[str],
     ) -> None:
-        """Check Python content for hardcoded __version__ declarations."""
+        """Check Python content for hardcoded __version__ declarations.
+
+        In __init__.py files, ANY hardcoded string literal assigned to __version__
+        is always an error, regardless of bypass markers. The correct pattern is:
+            from importlib.metadata import version
+            __version__ = version("package-name")
+
+        In non-__init__.py files, the original behavior applies: only semver-like
+        strings are flagged, and bypass markers (string-version-ok, version-ok,
+        semver-ok) suppress the error.
+        """
         lines = content.splitlines()
+        is_init_file = python_path.name == "__init__.py"
 
         # Track bypass comments
         bypass_patterns = [
@@ -677,6 +688,41 @@ class StringVersionValidator:
             if "__version__" in stripped_line and "=" in stripped_line:
                 # Extract the assignment
                 if stripped_line.startswith("__version__"):
+                    assignment_part = stripped_line.split("=", 1)[1].strip()
+
+                    # For __init__.py files: block ANY hardcoded string literal,
+                    # bypass markers are not honored (OMN-3832)
+                    if is_init_file:
+                        # Check if the value is a string literal (quoted)
+                        if (
+                            (assignment_part.startswith('"') and assignment_part.endswith('"'))
+                            or (assignment_part.startswith("'") and assignment_part.endswith("'"))
+                        ):
+                            clean_value = assignment_part.strip("\"'")
+                            errors.append(
+                                f"Line {line_num}: __version__ = \"{clean_value}\" is a hardcoded "
+                                f"string literal in __init__.py - use "
+                                f"importlib.metadata.version(\"package-name\") instead. "
+                                f"Bypass markers are not honored in __init__.py files."
+                            )
+                        # Also check for inline string after comment stripping
+                        # e.g. __version__ = "1.0.0"  # string-version-ok: reason
+                        elif "#" in assignment_part:
+                            code_part = assignment_part.split("#", 1)[0].strip()
+                            if (
+                                (code_part.startswith('"') and code_part.endswith('"'))
+                                or (code_part.startswith("'") and code_part.endswith("'"))
+                            ):
+                                clean_value = code_part.strip("\"'")
+                                errors.append(
+                                    f"Line {line_num}: __version__ = \"{clean_value}\" is a hardcoded "
+                                    f"string literal in __init__.py - use "
+                                    f"importlib.metadata.version(\"package-name\") instead. "
+                                    f"Bypass markers are not honored in __init__.py files."
+                                )
+                        continue
+
+                    # For non-__init__.py files: original behavior
                     # Check for bypass comment on previous line or same line
                     has_bypass = False
 
@@ -701,7 +747,6 @@ class StringVersionValidator:
                     if has_bypass:
                         continue
 
-                    assignment_part = stripped_line.split("=", 1)[1].strip()
                     # Remove quotes and check if it's a version string
                     clean_value = assignment_part.strip().strip("\"'")
 
