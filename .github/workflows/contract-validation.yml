@@ -1,0 +1,117 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# Contract Validation Gate
+#
+# Validates ONEX ticket contracts for PRs in omnibase_core using the
+# reusable composite action from onex_change_control.
+#
+# Required status check: "contract-validation"
+# Must pass (or skip) before merging to main.
+#
+# The validation is intentionally lenient on missing contracts:
+# - If branch name has no OMN-XXXX ticket ID → skipped
+# - If contracts/<ticket_id>.yaml does not exist → skipped
+# - If contract file exists but fails schema validation → fails
+#
+# This prevents blocking PRs that legitimately have no contract
+# (e.g., dependency bumps, docs-only changes) while enforcing schema
+# correctness when a contract is present.
+
+name: Contract Validation
+
+on:
+  pull_request:
+    branches: [main, develop]
+  merge_group:
+  workflow_dispatch:
+    inputs:
+      branch-name:
+        description: "Branch name to validate contracts for (defaults to current branch)"
+        required: false
+        default: ""
+
+# Allow concurrent runs on different PRs; cancel stale runs on the same ref
+concurrency:
+  group: contract-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-validation:
+    name: contract-validation
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Auth preflight — confirm onex_change_control action is accessible
+        id: auth-preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Checking visibility of OmniNode-ai/onex_change_control..."
+          if gh api repos/OmniNode-ai/onex_change_control --silent; then
+            echo "::notice::onex_change_control repo is accessible."
+          else
+            echo "::error::Cannot reach OmniNode-ai/onex_change_control. Composite action will not resolve."
+            exit 1
+          fi
+
+      - name: Resolve branch name
+        id: resolve-branch
+        env:
+          WORKFLOW_INPUT_BRANCH: ${{ inputs.branch-name }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          # Prefer workflow_dispatch input, then PR head ref, then ref name
+          if [[ -n "$WORKFLOW_INPUT_BRANCH" ]]; then
+            BRANCH="$WORKFLOW_INPUT_BRANCH"
+          elif [[ -n "$GITHUB_HEAD_REF" ]]; then
+            BRANCH="$GITHUB_HEAD_REF"
+          else
+            BRANCH="$GITHUB_REF_NAME"
+          fi
+          echo "resolved_branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "::notice::Resolved branch name: $BRANCH"
+
+      - name: Run contract validation
+        id: validate-contract
+        uses: OmniNode-ai/onex_change_control/.github/actions/validate-contract@main
+        with:
+          branch-name: ${{ steps.resolve-branch.outputs.resolved_branch }}
+          contracts-path: contracts
+
+      - name: Report validation result
+        if: always()
+        env:
+          TICKET_ID: ${{ steps.validate-contract.outputs.ticket-id }}
+          VALIDATION_STATUS: ${{ steps.validate-contract.outputs.validation-status }}
+        run: |
+          case "$VALIDATION_STATUS" in
+            passed)
+              echo "::notice::Contract validation PASSED for ticket $TICKET_ID"
+              ;;
+            skipped)
+              if [[ -z "$TICKET_ID" ]]; then
+                echo "::notice::Contract validation SKIPPED — no OMN-XXXX ticket ID found in branch name."
+              else
+                echo "::notice::Contract validation SKIPPED — no contract file found for $TICKET_ID in contracts/."
+              fi
+              ;;
+            failed)
+              echo "::error::Contract validation FAILED for ticket $TICKET_ID. See validate-contract step for details."
+              exit 1
+              ;;
+            *)
+              echo "::warning::Unexpected validation status: '$VALIDATION_STATUS'. Treating as skipped."
+              ;;
+          esac
