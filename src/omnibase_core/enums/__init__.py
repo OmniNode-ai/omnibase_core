@@ -358,6 +358,9 @@ from .enum_service_type_category import EnumServiceTypeCategory
 # Severity enum (canonical - replaces EnumViolationSeverity, OMN-1311)
 from .enum_severity import EnumSeverity
 
+# Skill result status enum (OMN-3866)
+from .enum_skill_result_status import EnumSkillResultStatus, SkillResultStatus
+
 # State update operation enum
 from .enum_state_update_operation import EnumStateUpdateOperation
 
@@ -763,6 +766,9 @@ __all__ = [
     # Resolution tier domain (authenticated dependency resolution - OMN-2890)
     "EnumResolutionFailureCode",
     "EnumResolutionTier",
+    # Skill result status domain (OMN-3866)
+    "EnumSkillResultStatus",
+    "SkillResultStatus",
     # Proof type domain (capability attestation verification - OMN-2892)
     "EnumProofType",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
