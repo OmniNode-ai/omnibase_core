@@ -2,10 +2,24 @@
 # SPDX-License-Identifier: MIT
 
 """
-Execution Shape Enums.
+Execution Shape Enums — Canonical Enum Ownership.
 
-Enumerations for message categories and canonical execution shapes in ONEX.
-Used for validating that execution patterns conform to architectural standards.
+This module is the **single authoritative source** for ``EnumMessageCategory``
+and ``EnumExecutionShape`` across the entire ONEX platform.
+
+Canonical ownership rules (OMN-4032):
+
+* ``EnumMessageCategory`` is defined **only** in this module.  Downstream
+  repositories (``omnibase_infra``, ``omniclaude``, etc.) MUST import or
+  re-export from this location — never re-define the class.
+* Duplicate ``class EnumMessageCategory`` definitions elsewhere in the platform
+  are **forbidden** and are blocked by CI (``arch-invariants`` check).
+* The stable public import path is::
+
+      from omnibase_core.enums import EnumMessageCategory
+      from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+
+  Both are equivalent; prefer the shorter ``omnibase_core.enums`` form.
 """
 
 from enum import Enum, unique
