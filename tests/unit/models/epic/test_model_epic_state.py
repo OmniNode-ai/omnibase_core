@@ -70,11 +70,30 @@ class TestModelEpicTicketStatus:
 
 @pytest.mark.unit
 class TestModelEpicWave:
-    def test_construction_minimal(self) -> None:
+    def test_construction_by_python_name(self) -> None:
+        """wave_number (Python name) works with populate_by_name=True."""
         wave = ModelEpicWave(wave_number=1)
         assert wave.wave_number == 1
         assert wave.ticket_ids == []
         assert wave.status == "pending"
+
+    def test_construction_by_alias(self) -> None:
+        """Production state files use 'wave' and 'tickets' as keys."""
+        wave = ModelEpicWave.model_validate(
+            {"wave": 0, "tickets": ["OMN-3801", "OMN-3802"], "status": "done"}
+        )
+        assert wave.wave_number == 0
+        assert wave.ticket_ids == ["OMN-3801", "OMN-3802"]
+        assert wave.status == "done"
+
+    def test_wave_number_zero_allowed(self) -> None:
+        """Production uses zero-indexed waves."""
+        wave = ModelEpicWave(wave_number=0)
+        assert wave.wave_number == 0
+
+    def test_wave_number_negative_rejected(self) -> None:
+        with pytest.raises(Exception):
+            ModelEpicWave(wave_number=-1)
 
     def test_construction_with_tickets(self) -> None:
         wave = ModelEpicWave(
@@ -84,10 +103,6 @@ class TestModelEpicWave:
         )
         assert len(wave.ticket_ids) == 2
         assert wave.status == "in_progress"
-
-    def test_wave_number_ge_1(self) -> None:
-        with pytest.raises(Exception):
-            ModelEpicWave(wave_number=0)
 
     def test_extra_fields_allowed(self) -> None:
         wave = ModelEpicWave(
@@ -137,6 +152,36 @@ class TestModelEpicState:
         )
         assert ts.ticket_id == "OMN-3801"
 
+    def test_flat_ticket_status_coercion(self) -> None:
+        """Production state files use flat str->str for ticket_status."""
+        state = ModelEpicState.model_validate(
+            {
+                "epic_id": "OMN-3800",
+                "run_id": "run-001",
+                "ticket_status": {
+                    "OMN-3801": "pending",
+                    "OMN-3802": "merged",
+                },
+            }
+        )
+        assert state.ticket_statuses["OMN-3801"].ticket_id == "OMN-3801"
+        assert state.ticket_statuses["OMN-3801"].status == "pending"
+        assert state.ticket_statuses["OMN-3802"].status == "merged"
+
+    def test_object_ticket_status_accepted(self) -> None:
+        """Object-form ticket_status should also work."""
+        state = ModelEpicState(
+            epic_id="OMN-3800",
+            run_id="run-001",
+            ticket_statuses={
+                "OMN-3801": ModelEpicTicketStatus(
+                    ticket_id="OMN-3801",
+                    status="merged",
+                ),
+            },
+        )
+        assert state.ticket_statuses["OMN-3801"].status == "merged"
+
     def test_yaml_roundtrip(self) -> None:
         state = ModelEpicState(
             epic_id="OMN-3800",
@@ -167,6 +212,20 @@ class TestModelEpicState:
         assert restored.waves[0].status == "done"
         assert "OMN-3801" in restored.ticket_statuses
         assert restored.ticket_statuses["OMN-3801"].status == "merged"
+
+    def test_yaml_uses_production_field_names(self) -> None:
+        """to_yaml() should use alias names matching production format."""
+        state = ModelEpicState(
+            epic_id="OMN-3800",
+            run_id="run-001",
+            waves=[
+                ModelEpicWave(wave_number=0, ticket_ids=["OMN-3801"]),
+            ],
+        )
+        yaml_str = state.to_yaml()
+        assert "wave:" in yaml_str  # alias, not "wave_number"
+        assert "tickets:" in yaml_str  # alias, not "ticket_ids"
+        assert "ticket_status:" in yaml_str  # alias, not "ticket_statuses"
 
     def test_yaml_roundtrip_with_timestamps(self) -> None:
         ts = datetime(2026, 3, 8, 12, 0, 0, tzinfo=UTC)
@@ -331,3 +390,38 @@ class TestModelEpicState:
         assert EpicState is ModelEpicState
         assert ModelEpicWave is not None
         assert ModelEpicTicketStatus is not None
+
+    def test_real_production_state_format(self) -> None:
+        """Parse a real production state file format (from OMN-3865)."""
+        raw_yaml = """\
+epic_id: OMN-3865
+run_id: 80ef845a
+status: monitoring
+title: "Skill Interface Contracts Implementation Plan"
+repos:
+  - name: omnibase_core
+    tickets: [OMN-3866, OMN-3867]
+    status: running
+waves:
+  - wave: 0
+    tickets: [OMN-3866, OMN-3871]
+    status: pending
+  - wave: 1
+    tickets: [OMN-3867, OMN-3868]
+    status: pending
+ticket_status:
+  OMN-3866: pending
+  OMN-3867: pending
+adversarial_review:
+  policy: "2 consecutive clean runs, 10-run cap per task"
+"""
+        state = ModelEpicState.from_yaml(raw_yaml)
+        assert state.epic_id == "OMN-3865"
+        assert state.run_id == "80ef845a"
+        assert state.status == "monitoring"
+        assert len(state.waves) == 2
+        assert state.waves[0].wave_number == 0
+        assert state.waves[0].ticket_ids == ["OMN-3866", "OMN-3871"]
+        assert state.waves[1].wave_number == 1
+        assert state.ticket_statuses["OMN-3866"].ticket_id == "OMN-3866"
+        assert state.ticket_statuses["OMN-3866"].status == "pending"

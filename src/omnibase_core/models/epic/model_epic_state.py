@@ -19,7 +19,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 __all__ = [
     "ModelEpicState",
@@ -44,6 +44,11 @@ __all__ = [
 #
 # Wave statuses: done, pending, merged, running, pr_created,
 #   dispatching, deferred, completed, blocked_design_decision
+#
+# Production field name observations:
+#   - Waves use ``wave`` (not ``wave_number``) as the field key
+#   - Wave numbers start at 0 (zero-indexed)
+#   - ticket_status (singular) maps ticket_id -> str (flat), not -> object
 #
 # This corpus informs future EnumEpicStatus / EnumEpicWaveStatus design.
 
@@ -75,10 +80,12 @@ class ModelEpicWave(BaseModel):
     in production state files.
     """
 
-    model_config = ConfigDict(extra="allow", from_attributes=True)
+    model_config = ConfigDict(
+        extra="allow", from_attributes=True, populate_by_name=True
+    )
 
-    wave_number: int = Field(..., ge=1)
-    ticket_ids: list[str] = Field(default_factory=list)
+    wave_number: int = Field(..., ge=0, alias="wave")
+    ticket_ids: list[str] = Field(default_factory=list, alias="tickets")
     status: str = Field(default="pending")
 
 
@@ -104,6 +111,7 @@ class ModelEpicState(BaseModel):
     model_config = ConfigDict(
         extra="allow",
         from_attributes=True,
+        populate_by_name=True,
     )
 
     epic_id: str = Field(..., min_length=1)
@@ -111,7 +119,9 @@ class ModelEpicState(BaseModel):
     status: str = Field(default="queued")
 
     waves: list[ModelEpicWave] = Field(default_factory=list)
-    ticket_statuses: dict[str, ModelEpicTicketStatus] = Field(default_factory=dict)
+    ticket_statuses: dict[str, ModelEpicTicketStatus] = Field(
+        default_factory=dict, alias="ticket_status"
+    )
 
     # Failure tracking
     failures: dict[str, Any] = Field(default_factory=dict)
@@ -124,9 +134,39 @@ class ModelEpicState(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     last_update_utc: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_ticket_status(cls, values: Any) -> Any:
+        """Coerce flat ticket_status dict (str -> str) to str -> object.
+
+        Production state files use ``ticket_status: {OMN-3866: pending}``
+        (flat str values), not ``{OMN-3866: {ticket_id: OMN-3866, status: pending}}``.
+        This validator normalizes the flat form into ModelEpicTicketStatus objects.
+        """
+        if not isinstance(values, dict):
+            return values
+        # Handle both alias ("ticket_status") and Python name ("ticket_statuses")
+        for key in ("ticket_status", "ticket_statuses"):
+            raw = values.get(key)
+            if raw is None:
+                continue
+            if isinstance(raw, dict):
+                coerced: dict[str, Any] = {}
+                for tid, val in raw.items():
+                    if isinstance(val, str):
+                        coerced[tid] = {"ticket_id": tid, "status": val}
+                    else:
+                        coerced[tid] = val
+                values[key] = coerced
+        return values
+
     def to_yaml(self) -> str:
-        """Serialize to YAML string for file I/O."""
-        data = self.model_dump(mode="json")
+        """Serialize to YAML string for file I/O.
+
+        Uses aliases (``wave``, ``tickets``, ``ticket_status``) so the output
+        matches the format expected by existing producers and consumers.
+        """
+        data = self.model_dump(mode="json", by_alias=True)
         return yaml.dump(data, default_flow_style=False, sort_keys=False)
 
     @classmethod
