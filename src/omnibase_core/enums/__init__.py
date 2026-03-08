@@ -257,6 +257,9 @@ from .enum_node_kind import EnumNodeKind
 from .enum_node_requirement import EnumNodeRequirement
 from .enum_node_status import EnumNodeStatus
 from .enum_node_type import EnumNodeType
+
+# Nondeterminism classification (OMN-1115 — mixin-to-handler migration)
+from .enum_nondeterminism_class import EnumNondeterminismClass
 from .enum_notification_method import EnumNotificationMethod
 from .enum_numeric_value_type import EnumNumericValueType
 
@@ -355,6 +358,9 @@ from .enum_service_type_category import EnumServiceTypeCategory
 # Severity enum (canonical - replaces EnumViolationSeverity, OMN-1311)
 from .enum_severity import EnumSeverity
 
+# State update operation enum
+from .enum_state_update_operation import EnumStateUpdateOperation
+
 # Event enums (contract registration - OMN-1651)
 from .events.enum_deregistration_reason import EnumDeregistrationReason
 
@@ -386,7 +392,6 @@ from .pattern_learning.enum_pattern_type import EnumPatternType
 EnumInvariantSeverity: type[EnumSeverity] = EnumSeverity
 EnumValidationSeverity: type[EnumSeverity] = EnumSeverity
 EnumViolationSeverity: type[EnumSeverity] = EnumSeverity
-from .enum_state_update_operation import EnumStateUpdateOperation
 
 # Step type enum (workflow step types)
 from .enum_step_type import EnumStepType
@@ -512,6 +517,8 @@ __all__ = [
     "EnumHealthDetailType",
     "EnumHealthStatus",  # Canonical health status (OMN-1310)
     "EnumNodeStatus",
+    # Nondeterminism classification
+    "EnumNondeterminismClass",
     # Node domain
     "EnumNodeArchetype",
     "EnumNodeArchitectureType",
