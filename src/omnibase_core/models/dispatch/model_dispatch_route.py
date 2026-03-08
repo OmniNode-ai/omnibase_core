@@ -50,7 +50,7 @@ import re
 from functools import cached_property
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 
@@ -94,6 +94,7 @@ class ModelDispatchRoute(BaseModel):
         frozen=True,
         extra="forbid",
         from_attributes=True,
+        populate_by_name=True,
     )
 
     # ---- Route Identity ----
@@ -127,13 +128,22 @@ class ModelDispatchRoute(BaseModel):
         max_length=200,
     )
 
-    # ---- Handler Reference ----
+    # ---- Handler/Dispatcher Reference ----
     handler_id: str = Field(
         ...,
-        description="Identifier of the handler to invoke when this route matches.",
+        description=(
+            "Identifier of the handler/dispatcher to invoke when this route matches. "
+            "Also accessible as ``dispatcher_id`` for compatibility with omnibase_infra."
+        ),
         min_length=1,
         max_length=200,
+        validation_alias=AliasChoices("handler_id", "dispatcher_id"),
     )
+
+    @property
+    def dispatcher_id(self) -> str:
+        """Alias for ``handler_id`` used by omnibase_infra's dispatch engine."""
+        return self.handler_id
 
     # ---- Route Configuration ----
     priority: int = Field(
