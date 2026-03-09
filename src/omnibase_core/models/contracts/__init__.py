@@ -145,6 +145,7 @@ from .model_event_subscription import ModelEventSubscription
 from .model_execution_ordering_policy import ModelExecutionOrderingPolicy
 from .model_execution_profile import DEFAULT_EXECUTION_PHASES, ModelExecutionProfile
 from .model_filter_conditions import ModelFilterConditions
+from .model_handler_lifecycle_contract import ModelHandlerLifecycleContract
 from .model_handler_spec import ModelHandlerSpec
 
 # HTTP wire contracts (OMN-4222)
@@ -171,6 +172,7 @@ from .model_provenance_decision_score import (
 )
 from .model_published_event_entry import ModelPublishedEventEntry
 from .model_reduction_config import ModelReductionConfig
+from .model_retry_policy_contract import ModelRetryPolicyContract
 from .model_runtime_event_bus_config import ModelRuntimeEventBusConfig
 from .model_runtime_handler_config import ModelRuntimeHandlerConfig
 from .model_runtime_host_contract import ModelRuntimeHostContract
@@ -251,6 +253,9 @@ __all__ = [
     "ModelEventRegistryConfig",
     "ModelEventSubscription",
     # NOTE: ModelExternalServiceConfig removed - import from omnibase_core.models.services
+    # Handler lifecycle contract (OMN-4221)
+    "ModelHandlerLifecycleContract",
+    "ModelRetryPolicyContract",
     "ModelHandlerSpec",
     "ModelRuntimeHandlerConfig",
     "ModelInputValidationConfig",
