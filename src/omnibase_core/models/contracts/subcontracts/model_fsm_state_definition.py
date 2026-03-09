@@ -4,7 +4,10 @@
 """
 FSM State Definition Model.
 
-Schema version: v1.5.0
+Schema version: v1.6.0
+Changelog:
+    v1.6.0 - Added optional semantic_intent field for surface adapter labeling.
+    v1.5.0 - Added frozen=True for immutability after creation.
 
 Individual model for FSM state definition.
 Part of the FSM Subcontract Model family.
@@ -33,6 +36,7 @@ class ModelFSMStateDefinition(BaseModel):
     and validation rules for FSM state handling.
 
     Schema Version:
+        v1.6.0 - Added optional semantic_intent field for surface adapter labeling.
         v1.5.0 - Added frozen=True for immutability after creation.
 
     Immutability and Thread Safety:
@@ -106,6 +110,19 @@ class ModelFSMStateDefinition(BaseModel):
     validation_rules: list[str] = Field(
         default_factory=list,
         description="Validation rules for state data",
+    )
+
+    semantic_intent: str | None = Field(
+        default=None,
+        description=(
+            "Optional semantic label describing the intent of this state "
+            "for use by surface adapters (presentation or delivery surfaces: "
+            "UI rendering, voice, push notifications, chat, CLI summaries). "
+            "Prefer lowercase snake_case stable identifiers such as "
+            "'awaiting_user_confirmation' or 'process_payment_authorization'. "
+            "Free-form str — no enum constraint to allow new surfaces without "
+            "schema changes. None means no surface-facing label is declared."
+        ),
     )
 
     @model_validator(mode="after")

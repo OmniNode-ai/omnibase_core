@@ -372,3 +372,62 @@ class TestModelFSMStateDefinitionEdgeCases:
         assert state.version.major == 2
         assert state.version.minor == 0
         assert state.version.patch == 1
+
+
+@pytest.mark.unit
+class TestModelFSMStateDefinitionSemanticIntent:
+    """Test the optional semantic_intent field (v1.6.0 addition)."""
+
+    def test_defaults_to_none(self) -> None:
+        """semantic_intent is None when not provided."""
+        state = ModelFSMStateDefinition(
+            version=DEFAULT_VERSION,
+            state_name="test_state",
+            state_type="operational",
+            description="Test state",
+        )
+        assert state.semantic_intent is None
+
+    def test_accepts_lowercase_snake_case_value(self) -> None:
+        """semantic_intent accepts a lowercase snake_case string (recommended convention)."""
+        state = ModelFSMStateDefinition(
+            version=DEFAULT_VERSION,
+            state_name="test_state",
+            state_type="operational",
+            description="Test state",
+            semantic_intent="awaiting_user_confirmation",
+        )
+        assert state.semantic_intent == "awaiting_user_confirmation"
+
+    def test_is_frozen(self) -> None:
+        """semantic_intent is immutable after construction (frozen model)."""
+        state = ModelFSMStateDefinition(
+            version=DEFAULT_VERSION,
+            state_name="test_state",
+            state_type="operational",
+            description="Test state",
+            semantic_intent="initial_intent",
+        )
+        with pytest.raises(ValidationError):
+            state.semantic_intent = "modified"  # type: ignore[misc]
+
+    def test_coexists_with_all_other_fields(self) -> None:
+        """semantic_intent does not interfere with any other field."""
+        state = ModelFSMStateDefinition(
+            version=DEFAULT_VERSION,
+            state_name="enriched_state",
+            state_type="operational",
+            description="Full state",
+            is_terminal=False,
+            is_recoverable=True,
+            timeout_ms=3000,
+            entry_actions=["log_entry"],
+            exit_actions=["log_exit"],
+            required_data=["user_id"],
+            optional_data=["metadata"],
+            validation_rules=["validate_user"],
+            semantic_intent="process_payment_authorization",
+        )
+        assert state.semantic_intent == "process_payment_authorization"
+        assert state.timeout_ms == 3000
+        assert state.entry_actions == ["log_entry"]
