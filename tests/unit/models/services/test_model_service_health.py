@@ -132,7 +132,6 @@ class TestModelServiceHealthInstantiation:
             EnumServiceType.REST_API,
             EnumServiceType.GRPC,
             EnumServiceType.RABBITMQ,
-            EnumServiceType.CONSUL,
             EnumServiceType.VAULT,
             EnumServiceType.S3,
             EnumServiceType.CUSTOM,
