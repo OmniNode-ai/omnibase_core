@@ -145,7 +145,9 @@ from .model_event_subscription import ModelEventSubscription
 from .model_execution_ordering_policy import ModelExecutionOrderingPolicy
 from .model_execution_profile import DEFAULT_EXECUTION_PHASES, ModelExecutionProfile
 from .model_filter_conditions import ModelFilterConditions
+from .model_handler_lifecycle_contract import HandlerLifecycleContract
 from .model_handler_spec import ModelHandlerSpec
+from .model_retry_policy_contract import RetryPolicyContract
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig
 from .model_lifecycle_config import ModelLifecycleConfig
@@ -247,6 +249,9 @@ __all__ = [
     "ModelEventRegistryConfig",
     "ModelEventSubscription",
     # NOTE: ModelExternalServiceConfig removed - import from omnibase_core.models.services
+    # Handler lifecycle contract (OMN-4221)
+    "HandlerLifecycleContract",
+    "RetryPolicyContract",
     "ModelHandlerSpec",
     "ModelRuntimeHandlerConfig",
     "ModelInputValidationConfig",
