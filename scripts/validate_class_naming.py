@@ -168,8 +168,9 @@ ALLOWED_EXCEPTIONS: set[tuple[str, str]] = {
     ("mixin_health_check.py", "ProtocolKafkaProducerConfluent"),
     ("mixin_health_check.py", "ProtocolRedisClient"),
     #
-    # Enum co-located with model file (should move to enums/ directory)
+    # Enums co-located with model files (should move to enums/ directory)
     ("model_github_pr_status_event.py", "TriageState"),
+    ("model_chunk_series_failed.py", "EnumChunkFailureReason"),
     #
     # Error class in utils (should move to errors/ directory)
     ("util_compute_path_resolver.py", "PathResolutionError"),
