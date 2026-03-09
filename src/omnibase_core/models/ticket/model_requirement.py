@@ -14,6 +14,14 @@ class ModelRequirement(BaseModel):
     Immutability:
         This model uses frozen=True, making instances immutable after creation.
         This enables safe sharing across threads without synchronization.
+
+    Note on backward compatibility:
+        The ``acceptance`` field currently holds ``list[str]``. A Pydantic
+        pre-validator that coerces old string entries to
+        ``ModelAcceptanceCriterion`` dicts will be added in OMN-4340 (Task 3),
+        alongside the field-type change to ``list[ModelAcceptanceCriterion]``.
+        Adding the coercion before the type change would break validation
+        because ``list[str]`` rejects dict values.
     """
 
     id: str = Field(..., description="Unique identifier for the requirement")
