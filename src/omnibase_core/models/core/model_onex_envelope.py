@@ -54,6 +54,8 @@ Related:
     - ModelOnexEnvelopeV1: Predecessor with simpler fields (deprecated)
 """
 
+from __future__ import annotations
+
 import warnings
 from datetime import datetime
 from typing import Self
@@ -62,6 +64,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
+from omnibase_core.models.chunking.model_chunk_metadata import ModelChunkMetadata
 from omnibase_core.models.core.model_envelope_metadata import ModelEnvelopeMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -488,6 +491,19 @@ class ModelOnexEnvelope(BaseModel):
     )
 
     # ==========================================================================
+    # Transport-Level Chunking (Optional)
+    # ==========================================================================
+
+    chunking: ModelChunkMetadata | None = Field(
+        default=None,
+        description=(
+            "Transport-level chunk descriptor. Set by ChunkingGateway when the "
+            "envelope payload exceeds the configured size limit. Domain code "
+            "should never inspect or set this field directly."
+        ),
+    )
+
+    # ==========================================================================
     # Model Configuration
     # ==========================================================================
 
@@ -680,7 +696,7 @@ class ModelOnexEnvelope(BaseModel):
     @classmethod
     def create_response(
         cls,
-        request: "ModelOnexEnvelope",
+        request: ModelOnexEnvelope,
         payload: SerializedDict,
         *,
         success: bool = True,
