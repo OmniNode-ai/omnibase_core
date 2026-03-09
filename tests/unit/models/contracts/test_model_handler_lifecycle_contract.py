@@ -115,7 +115,9 @@ class TestModelRetryPolicyContract:
     def test_no_extra_fields_accepted(self) -> None:
         """extra='forbid' — unknown fields must raise ValidationError."""
         with pytest.raises(ValidationError):
-            ModelRetryPolicyContract(unknown_field="value")  # type: ignore[call-arg]
+            ModelRetryPolicyContract(  # type: ignore[call-arg]  # NOTE(OMN-4221): intentional unknown kwarg to validate extra='forbid'
+                unknown_field="value"
+            )
 
 
 @pytest.mark.unit
@@ -172,13 +174,17 @@ class TestModelHandlerLifecycleContract:
     def test_handler_id_required(self) -> None:
         """Omitting handler_id must raise ValidationError."""
         with pytest.raises(ValidationError):
-            ModelHandlerLifecycleContract(handler_type="http")  # type: ignore[call-arg]
+            ModelHandlerLifecycleContract(  # type: ignore[call-arg]  # NOTE(OMN-4221): intentional missing required field
+                handler_type="http"
+            )
 
     @pytest.mark.unit
     def test_handler_type_required(self) -> None:
         """Omitting handler_type must raise ValidationError."""
         with pytest.raises(ValidationError):
-            ModelHandlerLifecycleContract(handler_id="handler.x")  # type: ignore[call-arg]
+            ModelHandlerLifecycleContract(  # type: ignore[call-arg]  # NOTE(OMN-4221): intentional missing required field
+                handler_id="handler.x"
+            )
 
     @pytest.mark.unit
     def test_empty_handler_id_raises(self) -> None:
@@ -243,10 +249,10 @@ class TestModelHandlerLifecycleContract:
     def test_no_extra_fields_accepted(self) -> None:
         """extra='forbid' — unknown fields must raise ValidationError."""
         with pytest.raises(ValidationError):
-            ModelHandlerLifecycleContract(
+            ModelHandlerLifecycleContract(  # type: ignore[call-arg]  # NOTE(OMN-4221): intentional unknown kwarg to validate extra='forbid'
                 handler_id="handler.x",
                 handler_type="http",
-                unknown_field="value",  # type: ignore[call-arg]
+                unknown_field="value",
             )
 
     @pytest.mark.unit
