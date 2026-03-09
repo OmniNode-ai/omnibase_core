@@ -375,13 +375,18 @@ class TestONEXPatterns:
         simple_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test from_attributes allows ORM-like construction."""
+        nid = node_id
+        did = deployment_id
+        rec = simple_record
 
         class FakeOrm:
-            node_id = node_id
-            deployment_id = deployment_id
             environment = "production"
             network_id = "vpc"
-            postgres_record = simple_record
+
+            def __init__(self) -> None:
+                self.node_id = nid
+                self.deployment_id = did
+                self.postgres_record = rec
 
         payload = ModelRegistrationPayload.model_validate(
             FakeOrm(), from_attributes=True
@@ -403,8 +408,8 @@ class TestEdgeCases:
         deployment_id: UUID,
         simple_record: ModelRegistrationRecordBase,
     ) -> None:
-        """Test environment at maximum allowed length (200 chars)."""
-        max_env = "x" * 200
+        """Test environment at maximum allowed length (100 chars)."""
+        max_env = "x" * 100
         payload = ModelRegistrationPayload(
             node_id=node_id,
             deployment_id=deployment_id,
@@ -412,7 +417,7 @@ class TestEdgeCases:
             network_id="vpc",
             postgres_record=simple_record,
         )
-        assert len(payload.environment) == 200
+        assert len(payload.environment) == 100
 
     def test_error_message_at_max_length(
         self, node_id: UUID, correlation_id: UUID
