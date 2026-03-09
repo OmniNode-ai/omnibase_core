@@ -43,6 +43,9 @@ from .enum_check_status import EnumCheckStatus
 # Checkpoint-related enums
 from .enum_checkpoint_type import EnumCheckpointType
 
+# Chunk failure reason enum (chunking transport - OMN-4235)
+from .enum_chunk_failure_reason import EnumChunkFailureReason
+
 # Circuit breaker state enum (standalone for cross-repo standardization)
 from .enum_circuit_breaker_state import EnumCircuitBreakerState
 
@@ -701,6 +704,8 @@ __all__ = [
     "EnumVectorFilterOperator",
     # Checkpoint domain
     "EnumCheckpointType",
+    # Chunk failure reason domain (chunking transport - OMN-4235)
+    "EnumChunkFailureReason",
     # Change type domain (OMN-1196)
     "EnumChangeType",
     # Tie-breaker strategy domain (OMN-2464)
