@@ -148,8 +148,8 @@ from .model_filter_conditions import ModelFilterConditions
 from .model_handler_spec import ModelHandlerSpec
 
 # HTTP wire contracts (OMN-4222)
-from .model_http_request_contract import HttpRequestContract
-from .model_http_response_contract import HttpResponseContract
+from .model_http_request_contract import ModelHttpRequestContract
+from .model_http_response_contract import ModelHttpResponseContract
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig
 from .model_lifecycle_config import ModelLifecycleConfig
@@ -299,6 +299,6 @@ __all__ = [
     "DecisionScore",
     "DecisionRecord",
     # HTTP wire contracts (OMN-4222)
-    "HttpRequestContract",
-    "HttpResponseContract",
+    "ModelHttpRequestContract",
+    "ModelHttpResponseContract",
 ]

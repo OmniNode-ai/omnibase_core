@@ -38,10 +38,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["HttpRequestContract"]
+__all__ = ["ModelHttpRequestContract"]
 
 
-class HttpRequestContract(BaseModel):
+class ModelHttpRequestContract(BaseModel):
     """Typed wire contract for an outbound HTTP request.
 
     Represents the kernel's typed model of an HTTP call, decoupled from any
@@ -62,7 +62,7 @@ class HttpRequestContract(BaseModel):
             Defaults to ``True``.
 
     Example:
-        >>> req = HttpRequestContract(
+        >>> req = ModelHttpRequestContract(
         ...     method="POST",
         ...     url="https://api.example.com/v1/nodes",
         ...     headers={"Content-Type": "application/json"},

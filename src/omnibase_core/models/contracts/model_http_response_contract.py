@@ -37,10 +37,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["HttpResponseContract"]
+__all__ = ["ModelHttpResponseContract"]
 
 
-class HttpResponseContract(BaseModel):
+class ModelHttpResponseContract(BaseModel):
     """Typed wire contract for an inbound HTTP response.
 
     Represents the handler's typed model of an HTTP response, decoupled from any
@@ -58,7 +58,7 @@ class HttpResponseContract(BaseModel):
             receiving the full response. ``None`` if not measured by the handler.
 
     Example:
-        >>> resp = HttpResponseContract(
+        >>> resp = ModelHttpResponseContract(
         ...     status_code=200,
         ...     headers={"Content-Type": "application/json"},
         ...     body=b'{"result": "ok"}',
