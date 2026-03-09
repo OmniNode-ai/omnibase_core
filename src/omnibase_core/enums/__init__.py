@@ -794,6 +794,8 @@ __all__ = [
     # Skill result status domain (OMN-3866)
     "EnumSkillResultStatus",
     "SkillResultStatus",
+    # Proof kind domain (criterion-level proof linkage - OMN-4339)
+    "EnumProofKind",
     # Proof type domain (capability attestation verification - OMN-2892)
     "EnumProofType",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
