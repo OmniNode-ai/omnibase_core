@@ -19,6 +19,8 @@ from pydantic import ValidationError
 
 from omnibase_core.models.contracts.model_handler_lifecycle_contract import (
     HandlerLifecycleContract,
+)
+from omnibase_core.models.contracts.model_retry_policy_contract import (
     RetryPolicyContract,
 )
 
@@ -313,7 +315,9 @@ class TestHandlerLifecycleContractPublicApi:
             RetryPolicyContract,
         )
 
-        contract = HandlerLifecycleContract(handler_id="handler.test.api", handler_type="http")
+        contract = HandlerLifecycleContract(
+            handler_id="handler.test.api", handler_type="http"
+        )
         assert contract.handler_id == "handler.test.api"
 
         policy = RetryPolicyContract(max_retries=1)
