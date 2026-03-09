@@ -210,6 +210,7 @@ from omnibase_core.models.handlers.model_handler_descriptor import (
     ModelHandlerDescriptor,
 )
 from omnibase_core.models.handlers.model_handler_packaging import ModelHandlerPackaging
+from omnibase_core.models.handlers.model_handler_state import HandlerStateModel
 from omnibase_core.models.handlers.model_handler_type_metadata import (
     ModelHandlerTypeMetadata,
     get_handler_type_metadata,
@@ -226,6 +227,7 @@ from omnibase_core.models.handlers.model_security_metadata_ref import (
 )
 
 __all__ = [
+    "HandlerStateModel",
     "ModelArtifactRef",
     "ModelHandlerDescriptor",
     "ModelHandlerPackaging",

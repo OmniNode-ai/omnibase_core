@@ -173,6 +173,9 @@ from .enum_handler_role import EnumHandlerRole
 # Handler routing strategy enums (OMN-1295)
 from .enum_handler_routing_strategy import EnumHandlerRoutingStrategy
 
+# Handler status enum (OMN-4223 — HandlerStateModel logical state)
+from .enum_handler_status import EnumHandlerStatus
+
 # Handler type enums (runtime handler registry)
 from .enum_handler_type import EnumHandlerType
 from .enum_handler_type_category import EnumHandlerTypeCategory
@@ -610,6 +613,8 @@ __all__ = [
     "EnumHandlerRoutingStrategy",
     # Handler role domain (OMN-1086)
     "EnumHandlerRole",
+    # Handler status domain (OMN-4223 — HandlerStateModel logical state)
+    "EnumHandlerStatus",
     # Handler type domain (runtime handler registry)
     "EnumHandlerType",
     "EnumHandlerTypeCategory",
