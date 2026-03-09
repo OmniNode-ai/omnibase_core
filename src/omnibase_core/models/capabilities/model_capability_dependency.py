@@ -73,7 +73,7 @@ Thread Safety:
 """
 
 import re
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
 
@@ -82,6 +82,11 @@ from omnibase_core.models.capabilities.model_capability_requirement_set import (
     ModelRequirementSet,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+if TYPE_CHECKING:
+    from omnibase_core.models.routing.model_tiered_resolution_config import (
+        ModelTieredResolutionConfig,
+    )
 
 # Regex pattern for valid capability names
 # Must be lowercase letters, digits, underscores, and hyphens, with dot-separated tokens
@@ -297,6 +302,15 @@ class ModelCapabilityDependency(BaseModel):
         default=None,
         description="Optional semver range for capability version (e.g., '>=1.0.0 <2.0.0', '^1.2.3', '~1.2.3')",
         max_length=128,
+    )
+
+    tiered_resolution: "ModelTieredResolutionConfig | None" = Field(
+        default=None,
+        description=(
+            "Optional per-dependency tiered resolution configuration. "
+            "When set, constrains which tiers are attempted and enforces "
+            "min_tier / max_tier bounds. Requires ModelTieredResolutionConfig."
+        ),
     )
 
     @field_validator("alias")
@@ -662,3 +676,20 @@ class ModelCapabilityDependency(BaseModel):
 
 
 __all__ = ["ModelCapabilityDependency", "SelectionPolicy"]
+
+
+# Deferred rebuild to resolve forward reference to ModelTieredResolutionConfig.
+# The import is deferred (TYPE_CHECKING only) to avoid a circular import via
+# model_routing/__init__.py -> model_resolution_event -> model_capability_dependency.
+# model_rebuild() is safe to call here: the module is fully defined and
+# ModelTieredResolutionConfig can be imported via importlib to avoid the local-import rule.
+import importlib as _importlib
+
+_tiered_resolution_config_module = _importlib.import_module(
+    "omnibase_core.models.routing.model_tiered_resolution_config"
+)
+ModelCapabilityDependency.model_rebuild(
+    _types_namespace={
+        "ModelTieredResolutionConfig": _tiered_resolution_config_module.ModelTieredResolutionConfig
+    }
+)

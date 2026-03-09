@@ -215,6 +215,10 @@ class ServiceTieredResolver:
         )
 
         tier_attempts: list[ModelTierAttempt] = []
+        # Track whether any tier was blocked exclusively by the min_tier guard.
+        # Used to produce MATCH_INSUFFICIENT_TRUST instead of TIER_EXHAUSTED when
+        # all tiers fail solely because they are below the required min_tier.
+        _min_tier_block_count: int = 0
 
         for domain in sorted_domains:
             tier_start = time.perf_counter()
@@ -322,6 +326,44 @@ class ServiceTieredResolver:
                 tier_end = time.perf_counter()
                 duration_ms = (tier_end - tier_start) * 1000
 
+                # Enforce min_tier guard (no-silent-downgrade invariant, OMN-4321).
+                # If the dependency specifies a min_tier, the resolved tier must be at
+                # least as trusted. "More trusted" = lower index in _TIER_ORDER (e.g.,
+                # LOCAL_EXACT=0 is more local; ORG_TRUSTED=2 is a higher trust bound).
+                # A resolved tier with a higher index than min_tier is less trusted and
+                # must be rejected with MATCH_INSUFFICIENT_TRUST.
+                tiered_config = getattr(dependency, "tiered_resolution", None)
+                min_tier = tiered_config.min_tier if tiered_config is not None else None
+                if min_tier is not None:
+                    resolved_index = (
+                        _TIER_ORDER.index(domain.tier)
+                        if domain.tier in _TIER_ORDER
+                        else len(_TIER_ORDER)
+                    )
+                    min_tier_index = (
+                        _TIER_ORDER.index(min_tier)
+                        if min_tier in _TIER_ORDER
+                        else len(_TIER_ORDER)
+                    )
+                    if resolved_index < min_tier_index:
+                        # Resolved tier is below (less trusted than) min_tier.
+                        _min_tier_block_count += 1
+                        tier_attempts.append(
+                            ModelTierAttempt(
+                                tier=domain.tier,
+                                attempted_at=attempt_timestamp,
+                                candidates_found=candidates_found,
+                                candidates_after_trust_filter=candidates_found,
+                                failure_code=EnumResolutionFailureCode.MATCH_INSUFFICIENT_TRUST,
+                                failure_reason=(
+                                    f"Resolved tier '{domain.tier.value}' is below "
+                                    f"required min_tier '{min_tier.value}'"
+                                ),
+                                duration_ms=duration_ms,
+                            )
+                        )
+                        continue
+
                 # Record successful tier attempt
                 tier_attempts.append(
                     ModelTierAttempt(
@@ -391,12 +433,24 @@ class ServiceTieredResolver:
                 )
             )
 
-        # All tiers exhausted
+        # All tiers exhausted. If every failure was a min_tier trust guard, surface
+        # MATCH_INSUFFICIENT_TRUST so callers can distinguish "no providers" from
+        # "providers found but below required trust level" (OMN-4321).
+        exhausted_code = (
+            EnumResolutionFailureCode.MATCH_INSUFFICIENT_TRUST
+            if _min_tier_block_count > 0 and _min_tier_block_count == len(tier_attempts)
+            else EnumResolutionFailureCode.TIER_EXHAUSTED
+        )
+        exhausted_reason = (
+            "All configured tiers below required min_tier; no provider meets trust requirement"
+            if exhausted_code == EnumResolutionFailureCode.MATCH_INSUFFICIENT_TRUST
+            else "All configured tiers attempted without resolution"
+        )
         return self._fail_closed_result(
             dependency=dependency,
             tier_attempts=tier_attempts,
-            failure_code=EnumResolutionFailureCode.TIER_EXHAUSTED,
-            failure_reason="All configured tiers attempted without resolution",
+            failure_code=exhausted_code,
+            failure_reason=exhausted_reason,
             trust_domains=trust_domains,
             policy_bundle=policy_bundle,
         )
