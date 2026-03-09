@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Unit tests for HandlerStateModel and EnumHandlerStatus."""
+"""Unit tests for ModelHandlerState and EnumHandlerStatus."""
 
 import json
 from datetime import UTC, datetime
@@ -10,7 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_handler_status import EnumHandlerStatus
-from omnibase_core.models.handlers.model_handler_state import HandlerStateModel
+from omnibase_core.models.handlers.model_handler_state import ModelHandlerState
 
 
 @pytest.mark.unit
@@ -58,12 +58,12 @@ class TestEnumHandlerStatus:
 
 
 @pytest.mark.unit
-class TestHandlerStateModelInstantiation:
-    """Tests for HandlerStateModel instantiation."""
+class TestModelHandlerStateInstantiation:
+    """Tests for ModelHandlerState instantiation."""
 
     def test_minimal_instantiation(self) -> None:
         """Test creating model with only required fields."""
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:test-handler",
             handler_type="test",
             status=EnumHandlerStatus.INITIALIZING,
@@ -82,7 +82,7 @@ class TestHandlerStateModelInstantiation:
         """Test creating model with all fields populated."""
         now = datetime.now(tz=UTC)
 
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:postgres-handler",
             handler_type="postgres",
             status=EnumHandlerStatus.READY,
@@ -105,7 +105,7 @@ class TestHandlerStateModelInstantiation:
     def test_all_status_values_accepted(self) -> None:
         """Test that all EnumHandlerStatus values are accepted."""
         for status in EnumHandlerStatus:
-            state = HandlerStateModel(
+            state = ModelHandlerState(
                 handler_id="onex:test-handler",
                 handler_type="test",
                 status=status,
@@ -114,7 +114,7 @@ class TestHandlerStateModelInstantiation:
 
     def test_status_string_coercion(self) -> None:
         """Test that string status values are coerced to enum."""
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:test-handler",
             handler_type="test",
             status="ready",  # type: ignore[arg-type]
@@ -123,7 +123,7 @@ class TestHandlerStateModelInstantiation:
 
     def test_error_count_default_zero(self) -> None:
         """Verify error_count defaults to 0."""
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:x",
             handler_type="x",
             status=EnumHandlerStatus.READY,
@@ -133,7 +133,7 @@ class TestHandlerStateModelInstantiation:
     def test_error_count_rejects_negative(self) -> None:
         """Verify negative error_count is rejected."""
         with pytest.raises(ValidationError):
-            HandlerStateModel(
+            ModelHandlerState(
                 handler_id="onex:x",
                 handler_type="x",
                 status=EnumHandlerStatus.READY,
@@ -143,7 +143,7 @@ class TestHandlerStateModelInstantiation:
     def test_extra_fields_rejected(self) -> None:
         """Verify extra fields are rejected (extra='forbid')."""
         with pytest.raises(ValidationError):
-            HandlerStateModel(
+            ModelHandlerState(
                 handler_id="onex:x",
                 handler_type="x",
                 status=EnumHandlerStatus.READY,
@@ -153,7 +153,7 @@ class TestHandlerStateModelInstantiation:
     def test_missing_required_fields_rejected(self) -> None:
         """Verify missing required fields cause ValidationError."""
         with pytest.raises(ValidationError):
-            HandlerStateModel(  # type: ignore[call-arg]
+            ModelHandlerState(  # type: ignore[call-arg]
                 handler_type="test",
                 status=EnumHandlerStatus.READY,
                 # handler_id missing
@@ -161,12 +161,12 @@ class TestHandlerStateModelInstantiation:
 
 
 @pytest.mark.unit
-class TestHandlerStateModelStatusTransitions:
-    """Tests for field-level status transitions on HandlerStateModel."""
+class TestModelHandlerStateStatusTransitions:
+    """Tests for field-level status transitions on ModelHandlerState."""
 
     def test_status_update_via_model_copy(self) -> None:
         """Verify status can be updated using model_copy."""
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:test-handler",
             handler_type="test",
             status=EnumHandlerStatus.INITIALIZING,
@@ -179,7 +179,7 @@ class TestHandlerStateModelStatusTransitions:
     def test_initializing_to_ready_transition(self) -> None:
         """Simulate INITIALIZING -> READY transition."""
         now = datetime.now(tz=UTC)
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:test-handler",
             handler_type="test",
             status=EnumHandlerStatus.INITIALIZING,
@@ -193,7 +193,7 @@ class TestHandlerStateModelStatusTransitions:
 
     def test_ready_to_degraded_transition(self) -> None:
         """Simulate READY -> DEGRADED transition with error tracking."""
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:test-handler",
             handler_type="test",
             status=EnumHandlerStatus.READY,
@@ -212,7 +212,7 @@ class TestHandlerStateModelStatusTransitions:
 
     def test_degraded_to_stopped_transition(self) -> None:
         """Simulate DEGRADED -> STOPPED transition."""
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:test-handler",
             handler_type="test",
             status=EnumHandlerStatus.DEGRADED,
@@ -226,12 +226,12 @@ class TestHandlerStateModelStatusTransitions:
 
 
 @pytest.mark.unit
-class TestHandlerStateModelSerialization:
-    """Tests for HandlerStateModel JSON serialization."""
+class TestModelHandlerStateSerialization:
+    """Tests for ModelHandlerState JSON serialization."""
 
     def test_model_dump_json_is_valid_json(self) -> None:
         """Verify model_dump_json() produces valid JSON."""
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:test-handler",
             handler_type="test",
             status=EnumHandlerStatus.READY,
@@ -242,7 +242,7 @@ class TestHandlerStateModelSerialization:
 
     def test_model_dump_json_contains_expected_fields(self) -> None:
         """Verify all fields appear in JSON output."""
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:test-handler",
             handler_type="test",
             status=EnumHandlerStatus.READY,
@@ -260,7 +260,7 @@ class TestHandlerStateModelSerialization:
 
     def test_status_serializes_as_string(self) -> None:
         """Verify status enum serializes as its string value."""
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:test-handler",
             handler_type="test",
             status=EnumHandlerStatus.READY,
@@ -270,7 +270,7 @@ class TestHandlerStateModelSerialization:
 
     def test_null_fields_serialize_as_null(self) -> None:
         """Verify optional None fields serialize as null."""
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:test-handler",
             handler_type="test",
             status=EnumHandlerStatus.INITIALIZING,
@@ -283,7 +283,7 @@ class TestHandlerStateModelSerialization:
     def test_roundtrip_serialization(self) -> None:
         """Verify model can be serialized and deserialized back faithfully."""
         now = datetime.now(tz=UTC)
-        original = HandlerStateModel(
+        original = ModelHandlerState(
             handler_id="onex:postgres-handler",
             handler_type="postgres",
             status=EnumHandlerStatus.DEGRADED,
@@ -294,7 +294,7 @@ class TestHandlerStateModelSerialization:
         )
 
         json_str = original.model_dump_json()
-        restored = HandlerStateModel.model_validate_json(json_str)
+        restored = ModelHandlerState.model_validate_json(json_str)
 
         assert restored.handler_id == original.handler_id
         assert restored.handler_type == original.handler_type
@@ -305,7 +305,7 @@ class TestHandlerStateModelSerialization:
 
     def test_model_dump_dict_serializable(self) -> None:
         """Verify model_dump() output is JSON-serializable with json.dumps."""
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:test-handler",
             handler_type="test",
             status=EnumHandlerStatus.READY,
@@ -319,14 +319,14 @@ class TestHandlerStateModelSerialization:
 
 
 @pytest.mark.unit
-class TestHandlerStateModelPublicApi:
-    """Tests verifying HandlerStateModel is accessible via public API paths."""
+class TestModelHandlerStatePublicApi:
+    """Tests verifying ModelHandlerState is accessible via public API paths."""
 
     def test_import_from_models_handlers(self) -> None:
-        """Verify HandlerStateModel is importable from models.handlers package."""
-        from omnibase_core.models.handlers import HandlerStateModel
+        """Verify ModelHandlerState is importable from models.handlers package."""
+        from omnibase_core.models.handlers import ModelHandlerState
 
-        state = HandlerStateModel(
+        state = ModelHandlerState(
             handler_id="onex:x",
             handler_type="x",
             status=EnumHandlerStatus.READY,

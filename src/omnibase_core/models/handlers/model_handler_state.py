@@ -4,7 +4,7 @@
 """
 Handler State Model.
 
-Defines ``HandlerStateModel`` — a Pydantic model that captures the **logical
+Defines ``ModelHandlerState`` — a Pydantic model that captures the **logical
 (serializable) state** of a handler. This model is explicitly scoped to state
 that can be snapshotted, serialized, and diffed.
 
@@ -14,7 +14,7 @@ Handler state today is a mix of logical state (configuration, counters, timestam
 and runtime state (open connections, async clients, file handles). This conflation
 makes handlers impossible to serialize, snapshot, or migrate.
 
-``HandlerStateModel`` establishes a clean separation:
+``ModelHandlerState`` establishes a clean separation:
 
 * **Logical state** (this model): serializable, diffable, snapshotable.
   Lives in ``omnibase_core``.
@@ -39,10 +39,10 @@ Import Example
 --------------
 .. code-block:: python
 
-    from omnibase_core.models.handlers import HandlerStateModel
+    from omnibase_core.models.handlers import ModelHandlerState
     from omnibase_core.enums import EnumHandlerStatus
 
-    state = HandlerStateModel(
+    state = ModelHandlerState(
         handler_id="onex:postgres-handler",
         handler_type="postgres",
         status=EnumHandlerStatus.READY,
@@ -50,7 +50,7 @@ Import Example
     snapshot = state.model_dump_json()
 
 .. versionadded:: 0.8.0
-    Added as part of OMN-4223 (define HandlerStateModel — logical state only).
+    Added as part of OMN-4223 (define ModelHandlerState — logical state only).
 """
 
 from datetime import datetime
@@ -60,7 +60,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.enums.enum_handler_status import EnumHandlerStatus
 
 
-class HandlerStateModel(BaseModel):
+class ModelHandlerState(BaseModel):
     """
     Logical (serializable) state snapshot of a handler.
 
@@ -100,9 +100,9 @@ class HandlerStateModel(BaseModel):
             annotations. All values must be strings (no nested objects).
 
     Example:
-        >>> from omnibase_core.models.handlers import HandlerStateModel
+        >>> from omnibase_core.models.handlers import ModelHandlerState
         >>> from omnibase_core.enums import EnumHandlerStatus
-        >>> state = HandlerStateModel(
+        >>> state = ModelHandlerState(
         ...     handler_id="onex:postgres-handler",
         ...     handler_type="postgres",
         ...     status=EnumHandlerStatus.READY,
@@ -191,4 +191,4 @@ class HandlerStateModel(BaseModel):
     )
 
 
-__all__ = ["HandlerStateModel"]
+__all__ = ["ModelHandlerState"]
