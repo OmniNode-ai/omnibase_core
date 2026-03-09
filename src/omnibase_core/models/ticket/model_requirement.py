@@ -55,7 +55,7 @@ class ModelRequirement(BaseModel):
 
     @field_validator("acceptance", mode="before")
     @classmethod
-    def coerce_legacy_acceptance(cls, v: list[Any]) -> list[Any]:
+    def coerce_legacy_acceptance(cls, v: Any) -> Any:
         """Accept old list[str] format alongside new list[ModelAcceptanceCriterion] format.
 
         Old format: ``acceptance: ["criterion text", ...]``
