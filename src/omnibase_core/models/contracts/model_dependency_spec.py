@@ -11,7 +11,7 @@ auto-discovery and loose coupling between nodes using the principle:
 
 The model supports three discovery methods:
 - capability: Match by capability string (e.g., "event.publishing")
-- intent_types: Match by handled intent types (e.g., ["consul.register"])
+- intent_types: Match by handled intent types (e.g., ["postgres.upsert"])
 - protocol: Match by protocol interface (e.g., "ProtocolReducer")
 
 At least one discovery method must be specified for the dependency to be valid.
@@ -75,8 +75,8 @@ class ModelDependencySpec(BaseModel):
     Attributes:
         name: Reference name used in code to access the resolved dependency.
         type: Type of dependency (node, protocol, handler).
-        capability: Capability string for discovery (e.g., "consul.registration").
-        intent_types: List of intent types for discovery (e.g., ["consul.register"]).
+        capability: Capability string for discovery (e.g., "postgres.registration").
+        intent_types: List of intent types for discovery (e.g., ["postgres.upsert"]).
         protocol: Protocol interface name for discovery (e.g., "ProtocolReducer").
         contract_type: Filter by contract type (effect, compute, reducer, orchestrator).
         state: Filter by registration state (default: "ACTIVE").
@@ -94,9 +94,9 @@ class ModelDependencySpec(BaseModel):
 
         >>> # Dependency by intent types
         >>> spec = ModelDependencySpec(
-        ...     name="consul_handler",
+        ...     name="postgres_handler",
         ...     type="handler",
-        ...     intent_types=["consul.register", "consul.deregister"],
+        ...     intent_types=["postgres.upsert", "postgres.delete"],
         ... )
 
         >>> # Dependency by protocol with fallback
@@ -126,12 +126,12 @@ class ModelDependencySpec(BaseModel):
     # Capability-based discovery (at least one must be specified)
     capability: str | None = Field(
         default=None,
-        description="Capability string for discovery (e.g., 'consul.registration')",
+        description="Capability string for discovery (e.g., 'postgres.registration')",
     )
 
     intent_types: list[str] | None = Field(
         default=None,
-        description="List of intent types for discovery (e.g., ['consul.register'])",
+        description="List of intent types for discovery (e.g., ['postgres.upsert'])",
     )
 
     protocol: str | None = Field(

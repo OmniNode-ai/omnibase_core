@@ -122,17 +122,8 @@ def create_get_service_method(
                     protocol_name=protocol_name,
                     health_status="healthy",
                 )
-            if protocol_name == "ProtocolConsulClient":
-                getattr(self, "consul_client", lambda: None)()
-                return ModelService(
-                    service_id=_generate_service_uuid("consul_client"),
-                    service_name="consul_client",
-                    service_type="consul_client",
-                    protocol_name=protocol_name,
-                    health_status="healthy",
-                )
             if protocol_name == "ProtocolVaultClient":
-                # Vault client resolution following the same pattern as consul client
+                # Vault client resolution
                 # Assumes container has a vault_client() method available
                 if hasattr(self, "vault_client"):
                     self.vault_client()

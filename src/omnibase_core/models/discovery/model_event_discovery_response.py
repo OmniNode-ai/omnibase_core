@@ -33,10 +33,6 @@ class ModelEventDiscoveryResponse(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="Response timestamp",
     )
-    consul_query_time_ms: int | None = Field(
-        default=None,
-        description="Consul query time in milliseconds",
-    )
     container_adapter_active: bool = Field(
         default=True,
         description="Whether Container Adapter is active",

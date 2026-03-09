@@ -38,11 +38,6 @@ class ModelEventDiscoveryRequest(BaseModel):
         default_factory=list,
         description="Discovery phases to include",
     )
-    consul_tags: list[str] = Field(
-        default_factory=list,
-        description="Required Consul tags",
-    )
-
     # Container Adapter Filters
     container_status_filter: list[EnumServiceStatus] = Field(
         default_factory=list,

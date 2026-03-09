@@ -53,11 +53,6 @@ class ModelContainerAdapterOutput(BaseModel):
         description="Health update operation success",
     )
 
-    consul_services: list[dict[str, str]] | None = Field(
-        default=None,
-        description="Direct Consul query results",
-    )
-
     # Always present metadata
     discovery_phase: EnumDiscoveryPhase = Field(
         default=...,

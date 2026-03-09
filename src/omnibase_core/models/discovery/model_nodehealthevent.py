@@ -37,11 +37,9 @@ class ModelNodeHealthEvent(ModelOnexEvent):
         default=None, description="When the next health report is expected"
     )
     service_id: UUID | None = Field(
-        default=None, description="Service ID for Consul health checks"
+        default=None, description="Service ID for health checks"
     )
-    check_id: UUID | None = Field(
-        default=None, description="Health check ID for Consul"
-    )
+    check_id: UUID | None = Field(default=None, description="Health check ID")
 
     @field_validator("node_id", mode="before")
     @classmethod

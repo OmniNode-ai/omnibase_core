@@ -3,7 +3,7 @@
 
 """Hub Registration Event model for ONEX Discovery & Integration Event Registry.
 
-This module defines the Hub self-registration event for Consul service registry.
+This module defines the Hub self-registration event for service registry.
 """
 
 from datetime import UTC, datetime
@@ -15,7 +15,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelHubRegistrationEvent(BaseModel):
-    """Hub self-registration event for Consul service registry."""
+    """Hub self-registration event for service registry."""
 
     # Hub Identity
     hub_id: UUID = Field(default=..., description="Unique hub identifier")
@@ -24,24 +24,6 @@ class ModelHubRegistrationEvent(BaseModel):
     hub_version: ModelSemVer = Field(
         ...,  # REQUIRED - specify in contract
         description="Hub version",
-    )
-
-    # Consul Registration
-    consul_service_name: str = Field(
-        default=..., description="Consul service name for hub"
-    )
-    consul_service_id: UUID = Field(default=..., description="Consul service ID")
-    consul_port: int = Field(default=..., description="Hub service port")
-    consul_health_endpoint: str = Field(
-        default="/health", description="Health check endpoint"
-    )
-    consul_tags: list[str] = Field(
-        default_factory=list,
-        description="Consul service tags",
-    )
-    consul_meta: dict[str, str] = Field(
-        default_factory=dict,
-        description="Consul service metadata",
     )
 
     # Registration Details

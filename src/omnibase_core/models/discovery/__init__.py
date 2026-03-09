@@ -27,8 +27,6 @@ from omnibase_core.enums.enum_service_status import EnumServiceStatus
 
 # Container Adapter I/O models
 from .model_container_adapter_io import (
-    ModelConsulEventBridgeInput,
-    ModelConsulEventBridgeOutput,
     ModelContainerAdapterInput,
     ModelContainerAdapterOutput,
     ModelEventRegistryCoordinatorInput,
@@ -42,12 +40,6 @@ from .model_discovery_performance_metrics import ModelPerformanceMetrics
 from .model_event_descriptor import ModelEventDescriptor
 from .model_event_discovery_request import ModelEventDiscoveryRequest
 from .model_event_discovery_response import ModelEventDiscoveryResponse
-
-# Hub Consul Registration I/O models
-from .model_hub_consul_registration_io import (
-    ModelHubConsulRegistrationInput,
-    ModelHubConsulRegistrationOutput,
-)
 from .model_hub_registration_event import ModelHubRegistrationEvent
 from .model_introspection_filters import ModelIntrospectionFilters
 from .model_introspection_response_event import ModelIntrospectionResponseEvent
@@ -69,8 +61,6 @@ __all__ = [
     "EnumDiscoveryPhase",
     "EnumEventType",
     "EnumServiceStatus",
-    "ModelConsulEventBridgeInput",
-    "ModelConsulEventBridgeOutput",
     # Container Adapter I/O models
     "ModelContainerAdapterInput",
     "ModelContainerAdapterOutput",
@@ -83,9 +73,6 @@ __all__ = [
     "ModelEventDiscoveryResponse",
     "ModelEventRegistryCoordinatorInput",
     "ModelEventRegistryCoordinatorOutput",
-    # Hub Consul Registration I/O models
-    "ModelHubConsulRegistrationInput",
-    "ModelHubConsulRegistrationOutput",
     "ModelHubRegistrationEvent",
     "ModelIntrospectionFilters",
     "ModelIntrospectionResponseEvent",

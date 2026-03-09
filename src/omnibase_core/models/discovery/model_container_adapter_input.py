@@ -32,7 +32,7 @@ class ModelContainerAdapterInput(BaseModel):
         default=None, description="Event descriptor for registration/updates"
     )
     hub_registration: ModelHubRegistrationEvent | None = Field(
-        default=None, description="Hub registration data for Consul"
+        default=None, description="Hub registration data"
     )
     service_id: UUID | None = Field(
         default=None, description="Service ID for status/health operations"
@@ -42,9 +42,6 @@ class ModelContainerAdapterInput(BaseModel):
     )
     health_data: dict[str, str] | None = Field(
         default=None, description="Health data for service updates"
-    )
-    consul_query: dict[str, str] | None = Field(
-        default=None, description="Direct Consul query parameters"
     )
     mesh_data: dict[str, str] | None = Field(
         default=None, description="Mesh coordination data (Phase 3)"

@@ -26,7 +26,6 @@ class TestEnumServiceType:
         assert EnumServiceType.REST_API == "rest_api"
         assert EnumServiceType.GRPC == "grpc"
         assert EnumServiceType.RABBITMQ == "rabbitmq"
-        assert EnumServiceType.CONSUL == "consul"
         assert EnumServiceType.VAULT == "vault"
         assert EnumServiceType.S3 == "s3"
         assert EnumServiceType.CUSTOM == "custom"
@@ -46,7 +45,7 @@ class TestEnumServiceType:
     def test_enum_iteration(self):
         """Test that all enum values can be iterated."""
         values = list(EnumServiceType)
-        assert len(values) == 13
+        assert len(values) == 12
         assert EnumServiceType.KAFKA in values
         assert EnumServiceType.CUSTOM in values
 
@@ -95,7 +94,6 @@ class TestEnumServiceType:
             "rest_api",
             "grpc",
             "rabbitmq",
-            "consul",
             "vault",
             "s3",
             "custom",
@@ -146,7 +144,6 @@ class TestEnumServiceType:
     def test_infrastructure_services(self):
         """Test infrastructure service grouping."""
         infrastructure = {
-            EnumServiceType.CONSUL,
             EnumServiceType.VAULT,
         }
         assert all(service in EnumServiceType for service in infrastructure)
@@ -178,7 +175,7 @@ class TestEnumServiceType:
         # APIs
         apis = {EnumServiceType.REST_API, EnumServiceType.GRPC}
         # Infrastructure
-        infrastructure = {EnumServiceType.CONSUL, EnumServiceType.VAULT}
+        infrastructure = {EnumServiceType.VAULT}
         # Storage
         storage = {EnumServiceType.S3}
         # Custom

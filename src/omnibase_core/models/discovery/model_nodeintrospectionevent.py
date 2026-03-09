@@ -78,10 +78,10 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         description="Tags for categorization and discovery filtering",
     )
 
-    # Consul-compatible fields for future adapter
+    # Registry-compatible fields
     service_id: UUID | None = Field(
         default=None,
-        description="Service ID for Consul compatibility (future)",
+        description="Service ID for registry compatibility",
     )
     datacenter: str | None = Field(
         default=None,

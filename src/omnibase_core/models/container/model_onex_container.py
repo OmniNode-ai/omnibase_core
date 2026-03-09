@@ -994,11 +994,6 @@ async def create_model_onex_container(
     container.config.from_dict(
         {
             "logging": {"level": os.getenv("LOG_LEVEL", "INFO")},
-            "consul": {
-                "agent_url": f"http://{os.getenv('CONSUL_HOST', 'localhost')}:{os.getenv('CONSUL_PORT', '8500')}",
-                "datacenter": os.getenv("CONSUL_DATACENTER", "dc1"),
-                "timeout": int(os.getenv("CONSUL_TIMEOUT", "10")),
-            },
             "services": {
                 # Enhanced service configurations
             },

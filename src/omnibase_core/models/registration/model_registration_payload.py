@@ -16,7 +16,6 @@ Design Pattern:
     The payload contains ALL information needed for registration:
     - Node identity (node_id, deployment_id)
     - Environment context (environment, network_id)
-    - Consul projection (service_id, name, tags, health_check)
     - PostgreSQL record (postgres_record)
 
     This separation ensures Reducer purity - the Reducer declares the desired
@@ -37,8 +36,7 @@ Data Flow:
     │         │                   │    payload)          │             │
     │         │                   │─────────────────────>│             │
     │         │                   │                      │ register    │
-    │         │                   │                      │ to Consul   │
-    │         │                   │                      │ + Postgres  │
+    │         │                   │                      │ to Postgres │
     │                                                                  │
     └──────────────────────────────────────────────────────────────────┘
     ```
@@ -66,10 +64,6 @@ Example:
     ...     deployment_id=uuid4(),
     ...     environment="production",
     ...     network_id="vpc-main",
-    ...     consul_service_id="node-compute-123",
-    ...     consul_service_name="onex-compute",
-    ...     consul_tags=["node_type:compute", "env:production"],
-    ...     consul_health_check={"http": "http://localhost:8080/health"},
     ...     postgres_record=record,
     ... )
 
@@ -81,7 +75,6 @@ See Also:
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -98,17 +91,13 @@ class ModelRegistrationPayload(BaseModel):
     deterministically from the introspection event.
 
     This is a PURE data model with no I/O dependencies. Effect nodes
-    consume this payload to perform actual Consul and PostgreSQL operations.
+    consume this payload to perform actual PostgreSQL operations.
 
     Attributes:
         node_id: Unique identifier for the node being registered.
         deployment_id: Identifier for the deployment instance.
         environment: Deployment environment (e.g., "production", "staging").
         network_id: Network identifier for service discovery routing.
-        consul_service_id: Service ID for Consul registration (deterministic).
-        consul_service_name: Service name for Consul (e.g., "onex-compute").
-        consul_tags: List of tags for Consul service metadata.
-        consul_health_check: Optional health check configuration for Consul.
         postgres_record: The registration record to persist in PostgreSQL.
 
     Example:
@@ -124,10 +113,6 @@ class ModelRegistrationPayload(BaseModel):
         ...     deployment_id=uuid4(),
         ...     environment="staging",
         ...     network_id="internal",
-        ...     consul_service_id="svc-123",
-        ...     consul_service_name="my-service",
-        ...     consul_tags=["env:staging"],
-        ...     consul_health_check=None,
         ...     postgres_record=SimpleRecord(node_id="123", status="active"),
         ... )
     """
@@ -160,38 +145,6 @@ class ModelRegistrationPayload(BaseModel):
         description="Network identifier for service discovery routing.",
         min_length=1,
         max_length=200,
-    )
-
-    # ---- Consul Projection (Deterministic) ----
-    consul_service_id: str = Field(
-        ...,
-        description=(
-            "Service ID for Consul registration. Deterministically computed "
-            "from node_id and deployment context."
-        ),
-        min_length=1,
-        max_length=200,
-    )
-    consul_service_name: str = Field(
-        ...,
-        description="Service name for Consul (e.g., 'onex-compute').",
-        min_length=1,
-        max_length=MAX_IDENTIFIER_LENGTH,
-    )
-    consul_tags: list[str] = Field(
-        default_factory=list,
-        description="List of tags for Consul service metadata.",
-    )
-    # ONEX_EXCLUDE: dict_str_any - Consul health check schema requires flexible types (booleans, integers, nested objects)
-    consul_health_check: dict[str, Any] | None = Field(
-        default=None,
-        description=(
-            "Optional health check configuration for Consul. "
-            "Supports full Consul health check schema including boolean fields "
-            "(e.g., tls_skip_verify, TCPUseTLS), integer fields "
-            "(e.g., SuccessBeforePassing), and nested objects/arrays "
-            "(e.g., header, body)."
-        ),
     )
 
     # ---- PostgreSQL Record (Source of Truth) ----

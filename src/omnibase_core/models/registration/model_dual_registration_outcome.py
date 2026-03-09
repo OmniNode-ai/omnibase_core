@@ -1,29 +1,29 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Domain-level outcome of dual registration.
+"""Domain-level outcome of registration.
 
 ModelDualRegistrationOutcome, a pure domain model representing
-the logical result of registering a node to both Consul and PostgreSQL. This is a
+the logical result of registering a node. This is a
 PURE domain model - it does NOT include infrastructure concerns like timing,
 retries, or telemetry.
 
 Design Pattern:
     ModelDualRegistrationOutcome is the return type from Effect nodes that perform
-    dual registration. It captures the outcome of both registration operations
+    registration. It captures the outcome of the registration operation
     in a single, immutable model.
 
     The model follows these principles:
     - **Domain Purity**: Only captures domain-level outcomes, no infra concerns
-    - **Atomic Result**: Single model represents outcome of dual operation
+    - **Atomic Result**: Single model represents outcome of the operation
     - **Error Transparency**: Clear error fields when operations fail
     - **Correlation**: Links to originating request via correlation_id
 
 Outcome States:
     The `status` field represents the overall outcome:
-    - "success": Both Postgres and Consul registration succeeded
-    - "partial": One succeeded, one failed (check individual flags)
-    - "failed": Both registration attempts failed
+    - "success": PostgreSQL registration succeeded
+    - "partial": Registration partially succeeded (legacy state, kept for compatibility)
+    - "failed": Registration attempt failed
 
 Data Flow:
     ```
@@ -34,7 +34,6 @@ Data Flow:
     │   Effect Node                                 Orchestrator       │
     │       │                                            │             │
     │       │   register to Postgres                     │             │
-    │       │   register to Consul                       │             │
     │       │                                            │             │
     │       │   create DualRegistrationOutcome           │             │
     │       │───────────────────────────────────────────>│             │
@@ -52,22 +51,20 @@ Example:
     >>> from uuid import uuid4
     >>> from omnibase_core.models.registration import ModelDualRegistrationOutcome
     >>>
-    >>> # Successful dual registration
+    >>> # Successful registration
     >>> outcome = ModelDualRegistrationOutcome(
     ...     node_id=uuid4(),
     ...     status="success",
     ...     postgres_applied=True,
-    ...     consul_applied=True,
     ...     correlation_id=uuid4(),
     ... )
     >>>
-    >>> # Partial failure (Postgres succeeded, Consul failed)
-    >>> partial = ModelDualRegistrationOutcome(
+    >>> # Failed registration
+    >>> failure = ModelDualRegistrationOutcome(
     ...     node_id=uuid4(),
-    ...     status="partial",
-    ...     postgres_applied=True,
-    ...     consul_applied=False,
-    ...     consul_error="Connection timeout",
+    ...     status="failed",
+    ...     postgres_applied=False,
+    ...     postgres_error="Database connection refused",
     ...     correlation_id=uuid4(),
     ... )
 
@@ -86,11 +83,11 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ModelDualRegistrationOutcome(BaseModel):
-    """Domain-level outcome of dual registration.
+    """Domain-level outcome of registration.
 
     This is a PURE domain model representing the logical result of
-    registering a node to both Consul and PostgreSQL. It does NOT
-    include infrastructure concerns (timing, retries, telemetry).
+    registering a node. It does NOT include infrastructure concerns
+    (timing, retries, telemetry).
 
     This model is used by:
     - Effect nodes (return this after performing registration)
@@ -100,9 +97,7 @@ class ModelDualRegistrationOutcome(BaseModel):
         node_id: The node that was registered (or attempted).
         status: Overall outcome status ("success", "partial", "failed").
         postgres_applied: Whether PostgreSQL registration succeeded.
-        consul_applied: Whether Consul registration succeeded.
         postgres_error: Error message if PostgreSQL registration failed.
-        consul_error: Error message if Consul registration failed.
         correlation_id: Correlation ID for distributed tracing.
 
     Example:
@@ -113,7 +108,6 @@ class ModelDualRegistrationOutcome(BaseModel):
         ...     node_id=uuid4(),
         ...     status="success",
         ...     postgres_applied=True,
-        ...     consul_applied=True,
         ...     correlation_id=uuid4(),
         ... )
         >>>
@@ -122,9 +116,7 @@ class ModelDualRegistrationOutcome(BaseModel):
         ...     node_id=uuid4(),
         ...     status="failed",
         ...     postgres_applied=False,
-        ...     consul_applied=False,
         ...     postgres_error="Database connection refused",
-        ...     consul_error="Service unavailable",
         ...     correlation_id=uuid4(),
         ... )
     """
@@ -145,8 +137,8 @@ class ModelDualRegistrationOutcome(BaseModel):
     status: Literal["success", "partial", "failed"] = Field(
         ...,
         description=(
-            "Overall outcome status. 'success' means both operations succeeded, "
-            "'partial' means one succeeded and one failed, 'failed' means both failed."
+            "Overall outcome status. 'success' means the operation succeeded, "
+            "'partial' means partially succeeded, 'failed' means it failed."
         ),
     )
 
@@ -155,20 +147,11 @@ class ModelDualRegistrationOutcome(BaseModel):
         ...,
         description="Whether PostgreSQL registration succeeded.",
     )
-    consul_applied: bool = Field(
-        ...,
-        description="Whether Consul registration succeeded.",
-    )
 
     # ---- Error Information ----
     postgres_error: str | None = Field(
         default=None,
         description="Error message if PostgreSQL registration failed (max 2000 characters).",
-        max_length=2000,
-    )
-    consul_error: str | None = Field(
-        default=None,
-        description="Error message if Consul registration failed (max 2000 characters).",
         max_length=2000,
     )
 
@@ -187,20 +170,13 @@ class ModelDualRegistrationOutcome(BaseModel):
 
         This validator enforces domain invariants for the three possible status values:
 
-        1. status="success": Requires BOTH postgres_applied=True AND consul_applied=True
-           - Complete success means both operations succeeded
-           - Cannot have success status if either operation failed
+        1. status="success": Requires postgres_applied=True
+           - Complete success means the operation succeeded
 
-        2. status="failed": Requires BOTH postgres_applied=False AND consul_applied=False
-           - Complete failure means both operations failed
-           - Cannot have failed status if either operation succeeded
+        2. status="failed": Requires postgres_applied=False
+           - Complete failure means the operation failed
 
-        3. status="partial": Requires EXACTLY ONE operation to succeed (XOR condition)
-           - Partial means one succeeded and one failed
-           - Cannot have partial if both succeeded or both failed
-
-        These invariants ensure the model cannot be constructed in an inconsistent state,
-        preventing bugs where status doesn't match the actual operation outcomes.
+        3. status="partial": Cannot have both all-succeeded or all-failed
 
         Returns:
             Self after validation passes.
@@ -211,45 +187,31 @@ class ModelDualRegistrationOutcome(BaseModel):
         Example:
             >>> from uuid import uuid4
             >>>
-            >>> # Valid: status="success" with both operations succeeded
+            >>> # Valid: status="success" with operation succeeded
             >>> ModelDualRegistrationOutcome(
             ...     node_id=uuid4(),
             ...     status="success",
             ...     postgres_applied=True,
-            ...     consul_applied=True,
             ...     correlation_id=uuid4(),
             ... )
             >>>
-            >>> # Invalid: status="success" but Consul failed
+            >>> # Invalid: status="success" but postgres failed
             >>> ModelDualRegistrationOutcome(
             ...     node_id=uuid4(),
             ...     status="success",  # Will raise ValueError
-            ...     postgres_applied=True,
-            ...     consul_applied=False,
+            ...     postgres_applied=False,
             ...     correlation_id=uuid4(),
             ... )
             Traceback (most recent call last):
                 ...
-            ValueError: status='success' requires both postgres_applied and consul_applied to be True
+            ValueError: status='success' requires postgres_applied to be True
         """
-        both_succeeded = self.postgres_applied and self.consul_applied
-        both_failed = not self.postgres_applied and not self.consul_applied
-
-        if self.status == "success" and not both_succeeded:
+        if self.status == "success" and not self.postgres_applied:
             # error-ok: Pydantic validator requires ValueError
-            raise ValueError(
-                "status='success' requires both postgres_applied and consul_applied to be True"
-            )
-        if self.status == "failed" and not both_failed:
+            raise ValueError("status='success' requires postgres_applied to be True")
+        if self.status == "failed" and self.postgres_applied:
             # error-ok: Pydantic validator requires ValueError
-            raise ValueError(
-                "status='failed' requires both postgres_applied and consul_applied to be False"
-            )
-        if self.status == "partial" and (both_succeeded or both_failed):
-            # error-ok: Pydantic validator requires ValueError
-            raise ValueError(
-                "status='partial' requires exactly one operation to succeed"
-            )
+            raise ValueError("status='failed' requires postgres_applied to be False")
 
         return self
 

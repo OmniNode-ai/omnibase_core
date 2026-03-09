@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 """
-Canonical enum for Consul KV watch event types.
+Canonical enum for KV watch event types.
 
-Defines the types of events that can be triggered by Consul KV watchers.
+Defines the types of events that can be triggered by KV watchers.
 """
 
 from enum import Enum, unique
@@ -15,10 +15,10 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 @unique
 class EnumWatchEventType(StrValueHelper, str, Enum):
     """
-    Watch event types for Consul KV monitoring.
+    Watch event types for KV monitoring.
 
     Represents different types of events that can be detected
-    when watching Consul KV changes.
+    when watching KV changes.
     """
 
     KV_CHANGED = "kv_changed"

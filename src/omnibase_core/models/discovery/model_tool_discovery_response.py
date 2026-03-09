@@ -60,7 +60,7 @@ class ModelDiscoveredTool(BaseModel):
     # Service discovery
     service_id: UUID | None = Field(
         default=None,
-        description="Service ID for Consul compatibility",
+        description="Service ID for registry compatibility",
     )
     health_endpoint: str | None = Field(
         default=None,
