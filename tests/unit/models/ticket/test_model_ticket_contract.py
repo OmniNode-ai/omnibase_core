@@ -949,8 +949,13 @@ class TestYAMLSerialization:
         )
         assert len(restored.gates) == len(complete_contract.gates)
 
-        # Nested data preserved
-        assert restored.requirements[0].acceptance == ["Given/When/Then criteria"]
+        # Nested data preserved (acceptance now contains ModelAcceptanceCriterion objects;
+        # legacy string was coerced to {id="ac_1", statement=...} by OMN-4340)
+        assert len(restored.requirements[0].acceptance) == 1
+        assert (
+            restored.requirements[0].acceptance[0].statement
+            == "Given/When/Then criteria"
+        )
 
     def test_yaml_enums_serialize_as_strings(self, basic_contract: TicketContract):
         """Enums in YAML are plain strings, not !!python/object."""
