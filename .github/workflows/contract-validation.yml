@@ -71,7 +71,19 @@ jobs:
           WORKFLOW_INPUT_BRANCH: ${{ inputs.branch-name }}
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
+          # merge_group events run on gh-readonly-queue/... branches with no PR head ref.
+          # Contract validation is not meaningful in this context — skip immediately.
+          if [[ "$EVENT_NAME" == "merge_group" ]]; then
+            echo "resolved_branch=" >> "$GITHUB_OUTPUT"
+            echo "skip_validation=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::merge_group event — contract validation skipped (validated on PR branch instead)."
+            exit 0
+          fi
+
+          echo "skip_validation=false" >> "$GITHUB_OUTPUT"
+
           # Prefer workflow_dispatch input, then PR head ref, then ref name
           if [[ -n "$WORKFLOW_INPUT_BRANCH" ]]; then
             BRANCH="$WORKFLOW_INPUT_BRANCH"
@@ -85,6 +97,7 @@ jobs:
 
       - name: Run contract validation
         id: validate-contract
+        if: steps.resolve-branch.outputs.skip_validation != 'true'
         uses: OmniNode-ai/onex_change_control/.github/actions/validate-contract@main
         with:
           branch-name: ${{ steps.resolve-branch.outputs.resolved_branch }}
@@ -95,7 +108,12 @@ jobs:
         env:
           TICKET_ID: ${{ steps.validate-contract.outputs.ticket-id }}
           VALIDATION_STATUS: ${{ steps.validate-contract.outputs.validation-status }}
+          SKIP_VALIDATION: ${{ steps.resolve-branch.outputs.skip_validation }}
         run: |
+          if [[ "$SKIP_VALIDATION" == "true" ]]; then
+            echo "::notice::Contract validation SKIPPED — merge_group event."
+            exit 0
+          fi
           case "$VALIDATION_STATUS" in
             passed)
               echo "::notice::Contract validation PASSED for ticket $TICKET_ID"
