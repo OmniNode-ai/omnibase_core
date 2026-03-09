@@ -81,7 +81,7 @@ class TestHappyPath:
         self,
         populated_registry: InMemoryProviderRegistry,
         base_resolver: ServiceCapabilityResolver,
-        local_trust_domain: "ModelTrustDomain",  # type: ignore[name-defined]
+        local_trust_domain: ModelTrustDomain,  # type: ignore[name-defined]
     ) -> None:
         """Single LOCAL_EXACT domain with a matching provider resolves end-to-end.
 
@@ -162,8 +162,8 @@ class TestFailClosed:
         self,
         empty_registry: InMemoryProviderRegistry,
         base_resolver: ServiceCapabilityResolver,
-        local_trust_domain: "ModelTrustDomain",  # type: ignore[name-defined]
-        org_trust_domain: "ModelTrustDomain",  # type: ignore[name-defined]
+        local_trust_domain: ModelTrustDomain,  # type: ignore[name-defined]
+        org_trust_domain: ModelTrustDomain,  # type: ignore[name-defined]
     ) -> None:
         """When no providers exist in any tier, resolution fails closed.
 
@@ -193,7 +193,7 @@ class TestPolicyGateBlock:
         self,
         populated_registry: InMemoryProviderRegistry,
         base_resolver: ServiceCapabilityResolver,
-        local_trust_domain: "ModelTrustDomain",  # type: ignore[name-defined]
+        local_trust_domain: ModelTrustDomain,  # type: ignore[name-defined]
     ) -> None:
         """Classification gate that only allows FEDERATED_TRUSTED blocks LOCAL_EXACT.
 
@@ -238,7 +238,7 @@ class TestRoutePlanDeterminism:
         self,
         populated_registry: InMemoryProviderRegistry,
         base_resolver: ServiceCapabilityResolver,
-        local_trust_domain: "ModelTrustDomain",  # type: ignore[name-defined]
+        local_trust_domain: ModelTrustDomain,  # type: ignore[name-defined]
     ) -> None:
         """Two calls with identical inputs produce identical hash values.
 

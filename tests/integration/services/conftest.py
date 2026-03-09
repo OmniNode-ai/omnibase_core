@@ -16,16 +16,14 @@ from uuid import uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_resolution_tier import EnumResolutionTier
 from omnibase_core.models.providers.model_provider_descriptor import (
     ModelProviderDescriptor,
 )
 from omnibase_core.models.routing.model_trust_domain import ModelTrustDomain
-from omnibase_core.enums.enum_resolution_tier import EnumResolutionTier
 from omnibase_core.services.service_capability_resolver import (
     ServiceCapabilityResolver,
 )
-from omnibase_core.services.service_tiered_resolver import ServiceTieredResolver
-
 
 # =============================================================================
 # Mock Registry
