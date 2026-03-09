@@ -310,6 +310,9 @@ from .enum_plan_structure_type import EnumPlanStructureType, PlanStructureType
 # Policy type enum (OMN-2537 — objective functions reward architecture)
 from .enum_policy_type import EnumPolicyType
 
+# Proof kind enum (criterion-level proof linkage - OMN-4339)
+from .enum_proof_kind import EnumProofKind
+
 # Proof type enum (capability attestation verification - OMN-2892)
 from .enum_proof_type import EnumProofType
 from .enum_query_parameter_transformation_type import (

@@ -7,10 +7,8 @@ from __future__ import annotations
 
 import pytest
 
-from omnibase_core.models.ticket.model_proof_requirement import (
-    EnumProofKind,
-    ModelProofRequirement,
-)
+from omnibase_core.enums.enum_proof_kind import EnumProofKind
+from omnibase_core.models.ticket.model_proof_requirement import ModelProofRequirement
 
 
 @pytest.mark.unit

@@ -5,29 +5,9 @@
 
 from __future__ import annotations
 
-from enum import Enum
-
 from pydantic import BaseModel, ConfigDict, field_validator
 
-
-class EnumProofKind(str, Enum):
-    """Kind of proof reference in a ModelProofRequirement.
-
-    Ref semantics by kind:
-    - ``unit_test`` / ``integration_test``: pytest node ID
-      (``path/to/test.py::test_function_name``)
-    - ``static_check``: registered validator ID
-      (see ``static_checks_registry.yaml``)
-    - ``artifact``: file path relative to repo root
-    - ``manual``: human-readable description — satisfies traceability only,
-      NOT machine-verifiable proof
-    """
-
-    UNIT_TEST = "unit_test"
-    INTEGRATION_TEST = "integration_test"
-    STATIC_CHECK = "static_check"
-    ARTIFACT = "artifact"
-    MANUAL = "manual"  # traceability only; not machine-verifiable
+from omnibase_core.enums.enum_proof_kind import EnumProofKind
 
 
 class ModelProofRequirement(BaseModel):
@@ -68,4 +48,4 @@ class ModelProofRequirement(BaseModel):
         return self.kind != EnumProofKind.MANUAL
 
 
-__all__ = ["EnumProofKind", "ModelProofRequirement"]
+__all__ = ["ModelProofRequirement"]
