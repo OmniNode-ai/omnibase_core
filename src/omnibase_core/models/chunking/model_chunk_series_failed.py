@@ -4,20 +4,13 @@
 """Diagnostic event emitted when a chunk series cannot be reassembled."""
 
 from datetime import datetime
-from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_chunk_failure_reason import EnumChunkFailureReason
 
-class EnumChunkFailureReason(str, Enum):
-    """Reason a chunk series was abandoned."""
-
-    TIMEOUT = "timeout"
-    CHECKSUM_MISMATCH = "checksum_mismatch"
-    DUPLICATE_CHUNK = "duplicate_chunk"
-    CORRUPT_CHUNK = "corrupt_chunk"
-    PARTIAL_PROCESSING_PREVENTED = "partial_processing_prevented"
+__all__ = ["EnumChunkFailureReason", "ModelChunkSeriesFailed"]
 
 
 class ModelChunkSeriesFailed(BaseModel):
