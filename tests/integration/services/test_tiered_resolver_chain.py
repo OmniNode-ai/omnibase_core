@@ -211,7 +211,9 @@ class TestPolicyGateBlock:
         )
         dep = _make_dep()
 
-        result = resolver.resolve_tiered(dep, [local_trust_domain], policy_bundle=policy)
+        result = resolver.resolve_tiered(
+            dep, [local_trust_domain], policy_bundle=policy
+        )
 
         assert result.route_plan is None
         # All tiers exhausted after policy block
@@ -263,7 +265,8 @@ class TestRoutePlanDeterminism:
             result1.route_plan.trust_graph_hash == result2.route_plan.trust_graph_hash
         )
         assert (
-            result1.route_plan.policy_bundle_hash == result2.route_plan.policy_bundle_hash
+            result1.route_plan.policy_bundle_hash
+            == result2.route_plan.policy_bundle_hash
         )
 
 
