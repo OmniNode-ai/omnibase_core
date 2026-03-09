@@ -69,3 +69,13 @@ class ModelTrustDomain(BaseModel):
         description="SHA-256 hash of the associated policy bundle",
         min_length=1,
     )
+
+    encryption_enforced: bool = Field(
+        default=False,
+        description="Whether this trust domain enforces in-transit encryption.",
+    )
+
+    redaction_enforced: bool = Field(
+        default=False,
+        description="Whether this trust domain applies PII redaction policies.",
+    )
