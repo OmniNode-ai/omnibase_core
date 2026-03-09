@@ -495,11 +495,26 @@ class ServiceTieredResolver:
             describing the first gate that blocked the tier.
         """
         for gate in policy_bundle.classification_gates:
+            # Tier check (existing)
             if gate.allowed_tiers and domain.tier not in gate.allowed_tiers:
                 return (
                     f"Classification gate '{gate.classification.value}' "
                     f"does not allow tier '{domain.tier.value}'. "
                     f"Allowed tiers: {[t.value for t in gate.allowed_tiers]}"
+                )
+            # Encryption enforcement (OMN-4320)
+            if gate.require_encryption and not domain.encryption_enforced:
+                return (
+                    f"Classification gate '{gate.classification.value}' "
+                    f"requires encryption, but domain '{domain.domain_id}' "
+                    f"does not enforce encryption."
+                )
+            # Redaction enforcement (OMN-4320)
+            if gate.require_redaction and not domain.redaction_enforced:
+                return (
+                    f"Classification gate '{gate.classification.value}' "
+                    f"requires redaction, but domain '{domain.domain_id}' "
+                    f"does not enforce redaction."
                 )
         return None
 
