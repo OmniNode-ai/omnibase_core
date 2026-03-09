@@ -30,7 +30,9 @@ from omnibase_core.models.health.model_health_status import (
 from omnibase_core.models.providers.model_provider_descriptor import (
     ModelProviderDescriptor,
 )
-from omnibase_core.models.routing.model_classification_gate import ModelClassificationGate
+from omnibase_core.models.routing.model_classification_gate import (
+    ModelClassificationGate,
+)
 from omnibase_core.models.routing.model_policy_bundle import ModelPolicyBundle
 from omnibase_core.models.routing.model_trust_domain import ModelTrustDomain
 from omnibase_core.models.security.model_trustpolicy import ModelTrustPolicy
@@ -133,7 +135,9 @@ def test_encryption_required_gate_blocks_unencrypted_tier() -> None:
         policy_bundle=policy,
     )
 
-    assert result.route_plan is None, "Expected resolution to be blocked by encryption gate"
+    assert result.route_plan is None, (
+        "Expected resolution to be blocked by encryption gate"
+    )
     assert result.structured_failure is not None
 
 
@@ -164,7 +168,9 @@ def test_redaction_required_gate_blocks_non_redacted_tier() -> None:
         policy_bundle=policy,
     )
 
-    assert result.route_plan is None, "Expected resolution to be blocked by redaction gate"
+    assert result.route_plan is None, (
+        "Expected resolution to be blocked by redaction gate"
+    )
 
 
 @pytest.mark.unit
