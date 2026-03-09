@@ -10,7 +10,7 @@ retry mechanism or concrete handler implementation.
 
 See Also:
     - OMN-4221: Extract HandlerLifecycleContract into omnibase_core
-    - HandlerLifecycleContract: Lifecycle contract that composes this retry policy
+    - ModelHandlerLifecycleContract: Lifecycle contract that composes this retry policy
     - ModelRetrySubcontract: General-purpose retry subcontract for ONEX nodes
 
 .. versionadded:: 1.9.0
@@ -21,7 +21,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class RetryPolicyContract(BaseModel):
+class ModelRetryPolicyContract(BaseModel):
     """
     Declarative retry policy for handler lifecycle operations.
 
@@ -38,7 +38,7 @@ class RetryPolicyContract(BaseModel):
         The model is frozen. Use ``model_copy(update={...})`` to derive variants.
 
     Example:
-        >>> policy = RetryPolicyContract(
+        >>> policy = ModelRetryPolicyContract(
         ...     max_retries=3,
         ...     base_delay_seconds=1.0,
         ...     backoff_strategy="exponential",
@@ -83,4 +83,4 @@ class RetryPolicyContract(BaseModel):
     )
 
 
-__all__ = ["RetryPolicyContract"]
+__all__ = ["ModelRetryPolicyContract"]

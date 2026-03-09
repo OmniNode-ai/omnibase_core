@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Unit tests for HandlerLifecycleContract and RetryPolicyContract.
+"""Unit tests for ModelHandlerLifecycleContract and ModelRetryPolicyContract.
 
 Tests cover:
 - Model instantiation with minimal and full field sets
@@ -11,28 +11,28 @@ Tests cover:
 - Frozen model immutability
 - Import from public API surface
 
-OMN-4221: Extract HandlerLifecycleContract Pydantic model into omnibase_core
+OMN-4221: Extract ModelHandlerLifecycleContract Pydantic model into omnibase_core
 """
 
 import pytest
 from pydantic import ValidationError
 
 from omnibase_core.models.contracts.model_handler_lifecycle_contract import (
-    HandlerLifecycleContract,
+    ModelHandlerLifecycleContract,
 )
 from omnibase_core.models.contracts.model_retry_policy_contract import (
-    RetryPolicyContract,
+    ModelRetryPolicyContract,
 )
 
 
 @pytest.mark.unit
-class TestRetryPolicyContract:
-    """Tests for RetryPolicyContract."""
+class TestModelRetryPolicyContract:
+    """Tests for ModelRetryPolicyContract."""
 
     @pytest.mark.unit
     def test_default_instantiation(self) -> None:
-        """RetryPolicyContract should instantiate with all defaults."""
-        policy = RetryPolicyContract()
+        """ModelRetryPolicyContract should instantiate with all defaults."""
+        policy = ModelRetryPolicyContract()
         assert policy.max_retries == 3
         assert policy.base_delay_seconds == 1.0
         assert policy.backoff_strategy == "exponential"
@@ -40,8 +40,8 @@ class TestRetryPolicyContract:
 
     @pytest.mark.unit
     def test_full_instantiation(self) -> None:
-        """RetryPolicyContract should accept all valid field values."""
-        policy = RetryPolicyContract(
+        """ModelRetryPolicyContract should accept all valid field values."""
+        policy = ModelRetryPolicyContract(
             max_retries=5,
             base_delay_seconds=2.0,
             backoff_strategy="linear",
@@ -55,43 +55,43 @@ class TestRetryPolicyContract:
     @pytest.mark.unit
     def test_fixed_backoff_strategy(self) -> None:
         """'fixed' is a valid backoff_strategy literal."""
-        policy = RetryPolicyContract(backoff_strategy="fixed")
+        policy = ModelRetryPolicyContract(backoff_strategy="fixed")
         assert policy.backoff_strategy == "fixed"
 
     @pytest.mark.unit
     def test_zero_retries_allowed(self) -> None:
         """max_retries=0 is valid (disables retries)."""
-        policy = RetryPolicyContract(max_retries=0)
+        policy = ModelRetryPolicyContract(max_retries=0)
         assert policy.max_retries == 0
 
     @pytest.mark.unit
     def test_invalid_backoff_strategy_raises(self) -> None:
         """An unrecognised backoff_strategy should raise ValidationError."""
         with pytest.raises(ValidationError):
-            RetryPolicyContract.model_validate({"backoff_strategy": "random"})
+            ModelRetryPolicyContract.model_validate({"backoff_strategy": "random"})
 
     @pytest.mark.unit
     def test_max_retries_exceeds_upper_bound_raises(self) -> None:
         """max_retries > 10 should raise ValidationError."""
         with pytest.raises(ValidationError):
-            RetryPolicyContract(max_retries=11)
+            ModelRetryPolicyContract(max_retries=11)
 
     @pytest.mark.unit
     def test_negative_max_retries_raises(self) -> None:
         """max_retries < 0 should raise ValidationError."""
         with pytest.raises(ValidationError):
-            RetryPolicyContract(max_retries=-1)
+            ModelRetryPolicyContract(max_retries=-1)
 
     @pytest.mark.unit
     def test_base_delay_too_small_raises(self) -> None:
         """base_delay_seconds below minimum should raise ValidationError."""
         with pytest.raises(ValidationError):
-            RetryPolicyContract(base_delay_seconds=0.05)
+            ModelRetryPolicyContract(base_delay_seconds=0.05)
 
     @pytest.mark.unit
     def test_frozen_model_immutable(self) -> None:
-        """RetryPolicyContract is frozen; model_config confirms frozen=True."""
-        policy = RetryPolicyContract()
+        """ModelRetryPolicyContract is frozen; model_config confirms frozen=True."""
+        policy = ModelRetryPolicyContract()
         assert policy.model_config.get("frozen") is True
         # model_copy(update=...) produces a NEW instance; original is unchanged
         new_policy = policy.model_copy(update={"max_retries": 99})
@@ -101,31 +101,31 @@ class TestRetryPolicyContract:
     @pytest.mark.unit
     def test_serialization_round_trip(self) -> None:
         """model_dump() -> model_validate() round-trip must be lossless."""
-        policy = RetryPolicyContract(
+        policy = ModelRetryPolicyContract(
             max_retries=2,
             base_delay_seconds=0.5,
             backoff_strategy="fixed",
             max_delay_seconds=10.0,
         )
         as_dict = policy.model_dump()
-        restored = RetryPolicyContract.model_validate(as_dict)
+        restored = ModelRetryPolicyContract.model_validate(as_dict)
         assert restored == policy
 
     @pytest.mark.unit
     def test_no_extra_fields_accepted(self) -> None:
         """extra='forbid' — unknown fields must raise ValidationError."""
         with pytest.raises(ValidationError):
-            RetryPolicyContract(unknown_field="value")  # type: ignore[call-arg]
+            ModelRetryPolicyContract(unknown_field="value")  # type: ignore[call-arg]
 
 
 @pytest.mark.unit
-class TestHandlerLifecycleContract:
-    """Tests for HandlerLifecycleContract."""
+class TestModelHandlerLifecycleContract:
+    """Tests for ModelHandlerLifecycleContract."""
 
     @pytest.mark.unit
     def test_minimal_instantiation(self) -> None:
-        """HandlerLifecycleContract requires only handler_id and handler_type."""
-        contract = HandlerLifecycleContract(
+        """ModelHandlerLifecycleContract requires only handler_id and handler_type."""
+        contract = ModelHandlerLifecycleContract(
             handler_id="handler.http.outbound",
             handler_type="http",
         )
@@ -139,9 +139,9 @@ class TestHandlerLifecycleContract:
 
     @pytest.mark.unit
     def test_full_instantiation(self) -> None:
-        """HandlerLifecycleContract should accept all valid field values."""
-        retry = RetryPolicyContract(max_retries=2, backoff_strategy="linear")
-        contract = HandlerLifecycleContract(
+        """ModelHandlerLifecycleContract should accept all valid field values."""
+        retry = ModelRetryPolicyContract(max_retries=2, backoff_strategy="linear")
+        contract = ModelHandlerLifecycleContract(
             handler_id="handler.kafka.consumer",
             handler_type="kafka",
             supports_warm_start=True,
@@ -162,7 +162,7 @@ class TestHandlerLifecycleContract:
     @pytest.mark.unit
     def test_custom_handler_type(self) -> None:
         """handler_type accepts custom labels beyond 'http' and 'kafka'."""
-        contract = HandlerLifecycleContract(
+        contract = ModelHandlerLifecycleContract(
             handler_id="handler.grpc.client",
             handler_type="grpc",
         )
@@ -172,25 +172,25 @@ class TestHandlerLifecycleContract:
     def test_handler_id_required(self) -> None:
         """Omitting handler_id must raise ValidationError."""
         with pytest.raises(ValidationError):
-            HandlerLifecycleContract(handler_type="http")  # type: ignore[call-arg]
+            ModelHandlerLifecycleContract(handler_type="http")  # type: ignore[call-arg]
 
     @pytest.mark.unit
     def test_handler_type_required(self) -> None:
         """Omitting handler_type must raise ValidationError."""
         with pytest.raises(ValidationError):
-            HandlerLifecycleContract(handler_id="handler.x")  # type: ignore[call-arg]
+            ModelHandlerLifecycleContract(handler_id="handler.x")  # type: ignore[call-arg]
 
     @pytest.mark.unit
     def test_empty_handler_id_raises(self) -> None:
         """Empty handler_id should raise ValidationError (min_length=1)."""
         with pytest.raises(ValidationError):
-            HandlerLifecycleContract(handler_id="", handler_type="http")
+            ModelHandlerLifecycleContract(handler_id="", handler_type="http")
 
     @pytest.mark.unit
     def test_startup_timeout_below_minimum_raises(self) -> None:
         """startup_timeout_seconds < 0.1 should raise ValidationError."""
         with pytest.raises(ValidationError):
-            HandlerLifecycleContract(
+            ModelHandlerLifecycleContract(
                 handler_id="handler.x",
                 handler_type="http",
                 startup_timeout_seconds=0.0,
@@ -200,7 +200,7 @@ class TestHandlerLifecycleContract:
     def test_teardown_timeout_below_minimum_raises(self) -> None:
         """teardown_timeout_seconds < 0.1 should raise ValidationError."""
         with pytest.raises(ValidationError):
-            HandlerLifecycleContract(
+            ModelHandlerLifecycleContract(
                 handler_id="handler.x",
                 handler_type="http",
                 teardown_timeout_seconds=0.0,
@@ -210,7 +210,7 @@ class TestHandlerLifecycleContract:
     def test_health_check_interval_below_minimum_raises(self) -> None:
         """health_check_interval_seconds < 1.0 should raise ValidationError."""
         with pytest.raises(ValidationError):
-            HandlerLifecycleContract(
+            ModelHandlerLifecycleContract(
                 handler_id="handler.x",
                 handler_type="http",
                 health_check_interval_seconds=0.5,
@@ -219,7 +219,7 @@ class TestHandlerLifecycleContract:
     @pytest.mark.unit
     def test_health_check_interval_none_is_valid(self) -> None:
         """health_check_interval_seconds=None disables probing (valid)."""
-        contract = HandlerLifecycleContract(
+        contract = ModelHandlerLifecycleContract(
             handler_id="handler.x",
             handler_type="http",
             health_check_interval_seconds=None,
@@ -228,8 +228,8 @@ class TestHandlerLifecycleContract:
 
     @pytest.mark.unit
     def test_frozen_model_immutable(self) -> None:
-        """HandlerLifecycleContract is frozen; model_config confirms frozen=True."""
-        contract = HandlerLifecycleContract(
+        """ModelHandlerLifecycleContract is frozen; model_config confirms frozen=True."""
+        contract = ModelHandlerLifecycleContract(
             handler_id="handler.x",
             handler_type="http",
         )
@@ -243,7 +243,7 @@ class TestHandlerLifecycleContract:
     def test_no_extra_fields_accepted(self) -> None:
         """extra='forbid' — unknown fields must raise ValidationError."""
         with pytest.raises(ValidationError):
-            HandlerLifecycleContract(
+            ModelHandlerLifecycleContract(
                 handler_id="handler.x",
                 handler_type="http",
                 unknown_field="value",  # type: ignore[call-arg]
@@ -252,7 +252,7 @@ class TestHandlerLifecycleContract:
     @pytest.mark.unit
     def test_serialization_round_trip_without_retry(self) -> None:
         """Serialization round-trip must be lossless (no retry policy)."""
-        contract = HandlerLifecycleContract(
+        contract = ModelHandlerLifecycleContract(
             handler_id="handler.http.outbound",
             handler_type="http",
             supports_warm_start=False,
@@ -260,19 +260,19 @@ class TestHandlerLifecycleContract:
             teardown_timeout_seconds=8.0,
         )
         as_dict = contract.model_dump()
-        restored = HandlerLifecycleContract.model_validate(as_dict)
+        restored = ModelHandlerLifecycleContract.model_validate(as_dict)
         assert restored == contract
 
     @pytest.mark.unit
     def test_serialization_round_trip_with_retry(self) -> None:
         """Serialization round-trip must be lossless (with retry policy)."""
-        retry = RetryPolicyContract(
+        retry = ModelRetryPolicyContract(
             max_retries=3,
             base_delay_seconds=2.0,
             backoff_strategy="exponential",
             max_delay_seconds=60.0,
         )
-        contract = HandlerLifecycleContract(
+        contract = ModelHandlerLifecycleContract(
             handler_id="handler.kafka.producer",
             handler_type="kafka",
             supports_warm_start=True,
@@ -282,20 +282,20 @@ class TestHandlerLifecycleContract:
             retry_policy=retry,
         )
         as_dict = contract.model_dump()
-        restored = HandlerLifecycleContract.model_validate(as_dict)
+        restored = ModelHandlerLifecycleContract.model_validate(as_dict)
         assert restored == contract
 
     @pytest.mark.unit
     def test_json_schema_generation(self) -> None:
         """model_json_schema() must succeed and include required fields."""
-        schema = HandlerLifecycleContract.model_json_schema()
+        schema = ModelHandlerLifecycleContract.model_json_schema()
         assert "handler_id" in schema.get("properties", {})
         assert "handler_type" in schema.get("properties", {})
 
     @pytest.mark.unit
     def test_whitespace_stripped_from_handler_id(self) -> None:
         """str_strip_whitespace=True strips leading/trailing whitespace."""
-        contract = HandlerLifecycleContract(
+        contract = ModelHandlerLifecycleContract(
             handler_id="  handler.http.outbound  ",
             handler_type="  http  ",
         )
@@ -304,23 +304,23 @@ class TestHandlerLifecycleContract:
 
 
 @pytest.mark.unit
-class TestHandlerLifecycleContractPublicApi:
+class TestModelHandlerLifecycleContractPublicApi:
     """Tests verifying the public API surface (import from contracts package)."""
 
     @pytest.mark.unit
     def test_import_from_contracts_package(self) -> None:
-        """HandlerLifecycleContract and RetryPolicyContract importable from contracts."""
+        """ModelHandlerLifecycleContract and ModelRetryPolicyContract importable from contracts."""
         from omnibase_core.models.contracts import (
-            HandlerLifecycleContract,
-            RetryPolicyContract,
+            ModelHandlerLifecycleContract,
+            ModelRetryPolicyContract,
         )
 
-        contract = HandlerLifecycleContract(
+        contract = ModelHandlerLifecycleContract(
             handler_id="handler.test.api", handler_type="http"
         )
         assert contract.handler_id == "handler.test.api"
 
-        policy = RetryPolicyContract(max_retries=1)
+        policy = ModelRetryPolicyContract(max_retries=1)
         assert policy.max_retries == 1
 
     @pytest.mark.unit

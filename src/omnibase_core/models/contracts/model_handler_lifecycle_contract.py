@@ -33,7 +33,7 @@ See Also:
     - OMN-4221: Extract HandlerLifecycleContract into omnibase_core
     - ModelHandlerContract: Full handler contract with behavior and capability deps
     - ModelLifecycleConfig: General node lifecycle configuration
-    - RetryPolicyContract: Retry policy for handler lifecycle operations
+    - ModelRetryPolicyContract: Retry policy for handler lifecycle operations
 
 .. versionadded:: 1.9.0
 """
@@ -43,11 +43,11 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.contracts.model_retry_policy_contract import (
-    RetryPolicyContract,
+    ModelRetryPolicyContract,
 )
 
 
-class HandlerLifecycleContract(BaseModel):
+class ModelHandlerLifecycleContract(BaseModel):
     """
     Declarative lifecycle configuration for an ONEX handler.
 
@@ -72,18 +72,18 @@ class HandlerLifecycleContract(BaseModel):
         The model is frozen. Use ``model_copy(update={...})`` to derive variants.
 
     Example:
-        >>> contract = HandlerLifecycleContract(
+        >>> contract = ModelHandlerLifecycleContract(
         ...     handler_id="handler.http.outbound",
         ...     handler_type="http",
         ...     supports_warm_start=True,
         ...     startup_timeout_seconds=15.0,
         ...     teardown_timeout_seconds=5.0,
         ...     health_check_interval_seconds=30.0,
-        ...     retry_policy=RetryPolicyContract(max_retries=2),
+        ...     retry_policy=ModelRetryPolicyContract(max_retries=2),
         ... )
 
         >>> # Minimal contract — timeouts and retry use defaults
-        >>> minimal = HandlerLifecycleContract(
+        >>> minimal = ModelHandlerLifecycleContract(
         ...     handler_id="handler.kafka.consumer",
         ...     handler_type="kafka",
         ... )
@@ -92,7 +92,7 @@ class HandlerLifecycleContract(BaseModel):
         - OMN-4221: Extraction ticket
         - ModelHandlerContract: Full handler contract (behavior, capabilities, I/O)
         - ModelLifecycleConfig: General node lifecycle configuration
-        - RetryPolicyContract: Retry policy for lifecycle operations
+        - ModelRetryPolicyContract: Retry policy for lifecycle operations
     """
 
     model_config = ConfigDict(
@@ -158,7 +158,7 @@ class HandlerLifecycleContract(BaseModel):
         ),
     )
 
-    retry_policy: RetryPolicyContract | None = Field(
+    retry_policy: ModelRetryPolicyContract | None = Field(
         default=None,
         description=(
             "Optional retry configuration applied to startup and teardown operations. "
@@ -167,4 +167,4 @@ class HandlerLifecycleContract(BaseModel):
     )
 
 
-__all__ = ["HandlerLifecycleContract"]
+__all__ = ["ModelHandlerLifecycleContract"]
