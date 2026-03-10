@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Conftest for services tests.
+"""Conftest for services tests.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module handles forward reference resolution for Pydantic models used in
 services tests. The ModelProviderDescriptor model has a forward reference to

@@ -61,7 +61,7 @@ def get_timing_threshold() -> float:
 
 
 class MinimalServiceNode(MixinNodeService):
-    """Minimal test node class that uses MixinNodeService.
+    """Minimal test node class that uses MixinNodeService.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
     This class provides just enough implementation to test the shutdown
     timing behavior without requiring full node infrastructure.

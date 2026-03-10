@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Test isolation fixtures for parallel-safe test execution.
+"""Test isolation fixtures for parallel-safe test execution.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides fixtures to reset context variables and clear caches
 for parallel tests. Essential for pytest-xdist parallel execution.
@@ -144,7 +144,7 @@ class ContextState:
 
 
 class SingletonResetContext:
-    """Context manager for resetting context variables and clearing caches.
+    """Context manager for resetting context variables and clearing caches.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
     Thread Safety:
         Uses contextvars which provide inherent thread safety and async safety.

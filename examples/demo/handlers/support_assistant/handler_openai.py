@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""OpenAI LLM client implementation using httpx.
+"""OpenAI LLM client implementation using httpx.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides a ProtocolLLMClient implementation for OpenAI's API.
 Uses httpx for consistency with other providers.

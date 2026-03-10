@@ -45,7 +45,7 @@ ComputeNodeFactory = Callable[[], NodeCompute[Any, Any]]
 
 
 class TestableNodeCompute(NodeCompute[Any, Any]):
-    """Test implementation of NodeCompute for integration testing.
+    """Test implementation of NodeCompute for integration testing.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
     This class provides a configurable compute node for testing purposes.
     It allows injection of custom computations and configuration without

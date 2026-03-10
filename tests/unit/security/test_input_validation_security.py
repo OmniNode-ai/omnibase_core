@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Security test suite for input validation in PR #251 models.
+"""Security test suite for input validation in PR #251 models.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides comprehensive security tests for the typed payload models
 introduced in PR #251. These tests verify that:

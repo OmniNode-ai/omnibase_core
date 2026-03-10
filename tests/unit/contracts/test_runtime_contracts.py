@@ -369,7 +369,7 @@ class TestRuntimeContractsDirectoryStructure:
 
 @pytest.mark.unit
 class TestRuntimeOrchestratorContract:
-    """
+    """# ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
     Contract-specific tests for runtime_orchestrator.yaml.
 
     Common validations (file exists, valid YAML, required fields, node type,
@@ -422,7 +422,7 @@ class TestRuntimeOrchestratorContract:
 
 @pytest.mark.unit
 class TestContractLoaderEffectContract:
-    """
+    """# ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
     Contract-specific tests for contract_loader_effect.yaml.
 
     Common validations (file exists, valid YAML, required fields, node type,
@@ -468,7 +468,7 @@ class TestContractLoaderEffectContract:
 
 @pytest.mark.unit
 class TestContractRegistryReducerContract:
-    """
+    """# ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
     Contract-specific tests for contract_registry_reducer.yaml.
 
     Common validations (file exists, valid YAML, required fields, node type,
@@ -516,7 +516,7 @@ class TestContractRegistryReducerContract:
 
 @pytest.mark.unit
 class TestNodeGraphReducerContract:
-    """
+    """# ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
     Contract-specific tests for node_graph_reducer.yaml.
 
     Common validations (file exists, valid YAML, required fields, node type,
@@ -777,7 +777,7 @@ class TestNodeGraphReducerContract:
 
 @pytest.mark.unit
 class TestEventBusWiringEffectContract:
-    """
+    """# ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
     Contract-specific tests for event_bus_wiring_effect.yaml.
 
     Common validations (file exists, valid YAML, required fields, node type,

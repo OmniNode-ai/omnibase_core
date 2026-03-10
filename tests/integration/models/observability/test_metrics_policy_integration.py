@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Integration tests for observability metrics policy with metric emissions.
+"""Integration tests for observability metrics policy with metric emissions.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides comprehensive integration tests for the ModelMetricsPolicy
 and its interaction with metric emission models (Counter, Gauge, Histogram).

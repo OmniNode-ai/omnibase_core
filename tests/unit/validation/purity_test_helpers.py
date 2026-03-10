@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""
+"""# ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 Test helpers for purity linter tests.
 
 This module provides shared types and utilities for purity linter tests.

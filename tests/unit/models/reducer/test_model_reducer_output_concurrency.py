@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Thread safety, async-safe, and UUID preservation tests for ModelReducerOutput[T].
+"""Thread safety, async-safe, and UUID preservation tests for ModelReducerOutput[T].  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides comprehensive concurrency and serialization tests for
 ModelReducerOutput, including:

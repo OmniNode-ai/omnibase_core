@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Concurrent registration stress tests for ServiceRegistry.
+"""Concurrent registration stress tests for ServiceRegistry.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module contains stress tests to verify thread safety of the ServiceRegistry
 implementation. Tests focus on concurrent registration, resolution, and unregistration

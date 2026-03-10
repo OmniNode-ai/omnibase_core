@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""
+"""# ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 MVP Conformance Tests: NodeOrchestrator Workflow Validation [OMN-657].
 
 This module provides comprehensive validation tests for the workflow validation
