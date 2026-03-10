@@ -22,7 +22,7 @@ Design Pattern:
 Outcome States:
     The `status` field represents the overall outcome:
     - "success": PostgreSQL registration succeeded
-    - "partial": Registration partially succeeded (legacy state, kept for compatibility)
+    - "partial": Registration partially succeeded
     - "failed": Registration attempt failed
 
 Data Flow:
