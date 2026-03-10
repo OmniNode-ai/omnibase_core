@@ -268,6 +268,23 @@ class ModelTicketContract(BaseModel):
 
         return True
 
+    def is_proof_linked_complete(self) -> bool:
+        """True if all requirements have criterion-level proof linkage.
+
+        Stronger than ``is_spec_complete()``: requires every acceptance
+        criterion in every requirement to have at least one proof reference.
+
+        ``is_spec_complete()`` is semantically unchanged by this addition —
+        it still only checks that acceptance criteria exist, not that they
+        have proofs.
+
+        Returns False if there are no requirements (same semantics as
+        ``is_spec_complete()``).
+        """
+        if not self.requirements:
+            return False
+        return all(req.is_proof_complete() for req in self.requirements)
+
     def is_verification_complete(self) -> bool:
         """Check if all blocking verification steps have passed or been skipped."""
         for step in self.verification_steps:
