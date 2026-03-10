@@ -22,13 +22,13 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_deployment_mode import EnumDeploymentMode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_deployment_topology_local_config import (
     ModelDeploymentTopologyLocalConfig,
 )
 from omnibase_core.models.core.model_deployment_topology_service import (
     ModelDeploymentTopologyService,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 __all__ = ["ModelDeploymentTopology"]
 

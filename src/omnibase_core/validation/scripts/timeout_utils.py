@@ -110,7 +110,8 @@ class CrossPlatformTimeout:
             self.timer.join(timeout=0.1)
 
         if self.timed_out:
-            raise TimeoutError(self.error_message)  # error-ok: stdlib TimeoutError for cross-platform timeout mechanism in validation script
+            # error-ok: stdlib TimeoutError for cross-platform timeout mechanism in validation script
+            raise TimeoutError(self.error_message)
 
     def cancel(self) -> None:
         """Manually cancel the timeout."""
@@ -142,7 +143,8 @@ class UnixSignalTimeout:
 
     def _signal_handler(self, signum: int, frame: Any) -> None:
         """Signal handler for SIGALRM."""
-        raise TimeoutError(self.error_message)  # error-ok: stdlib TimeoutError required in SIGALRM handler — OnexError not safe in signal context
+        # error-ok: stdlib TimeoutError required in SIGALRM handler — OnexError not safe in signal context
+        raise TimeoutError(self.error_message)
 
     def __enter__(self) -> UnixSignalTimeout:
         """Start the timeout."""
@@ -276,7 +278,8 @@ def safe_file_operation(  # noqa: UP047
         try:
             return operation(file_path)
         except (OSError, PermissionError) as e:
-            raise OSError(f"File operation failed for {file_path}: {e}") from e  # error-ok: stdlib OSError for file I/O in validation script — OnexError not appropriate here
+            # error-ok: stdlib OSError for file I/O in validation script — OnexError not appropriate here
+            raise OSError(f"File operation failed for {file_path}: {e}") from e
 
 
 # ONEX_EXCLUDE: dict_str_any — platform info has heterogeneous values by design
