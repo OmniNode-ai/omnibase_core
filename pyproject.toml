@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.24.1"
+version = "0.24.2"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode Team", email = "team@omninode.ai"}
@@ -45,7 +45,7 @@ dependencies = [
     "jsonschema>=4.25.1,<5.0.0",
     "httpx>=0.27.0,<1.0.0",
     "blake3>=1.0.8,<2.0.0",
-    "omnibase-spi==0.15.1",
+    "omnibase-spi==0.15.2",
     "ruamel-yaml>=0.18.0",
 ]
 
