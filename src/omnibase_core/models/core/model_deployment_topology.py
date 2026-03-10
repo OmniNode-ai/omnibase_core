@@ -20,6 +20,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_deployment_mode import EnumDeploymentMode
 from omnibase_core.models.core.model_deployment_topology_local_config import (
     ModelDeploymentTopologyLocalConfig,
@@ -27,6 +28,7 @@ from omnibase_core.models.core.model_deployment_topology_local_config import (
 from omnibase_core.models.core.model_deployment_topology_service import (
     ModelDeploymentTopologyService,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 __all__ = ["ModelDeploymentTopology"]
 
@@ -219,7 +221,7 @@ class ModelDeploymentTopology(BaseModel):
         Load topology from a YAML file.
 
         Raises:
-            ValueError: if schema_version is missing.
+            ModelOnexError: if schema_version is missing.
             ValidationError: if any field values are invalid.
         """
         from ruamel.yaml import YAML
@@ -229,8 +231,9 @@ class ModelDeploymentTopology(BaseModel):
             data = yaml.load(fh)
 
         if not isinstance(data, dict) or "schema_version" not in data:
-            raise ValueError(
-                f"Deployment topology YAML at '{path}' is missing required field 'schema_version'."
+            raise ModelOnexError(
+                f"Deployment topology YAML at '{path}' is missing required field 'schema_version'.",
+                error_code=EnumCoreErrorCode.MISSING_REQUIRED_PARAMETER,
             )
 
         return cls.model_validate(data)
@@ -257,8 +260,9 @@ class ModelDeploymentTopology(BaseModel):
         data = yaml.load(content)
 
         if not isinstance(data, dict) or "schema_version" not in data:
-            raise ValueError(
-                "Deployment topology YAML string is missing required field 'schema_version'."
+            raise ModelOnexError(
+                "Deployment topology YAML string is missing required field 'schema_version'.",
+                error_code=EnumCoreErrorCode.MISSING_REQUIRED_PARAMETER,
             )
 
         return cls.model_validate(data)
