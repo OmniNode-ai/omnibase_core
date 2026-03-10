@@ -97,7 +97,7 @@ def _resolve_target(raw: str) -> EnumNodeKind:
 
 
 @click.group("validate-shape")
-def validate_shape() -> None:
+def validate_shape() -> None:  # stub-ok
     """Validate execution shapes against ONEX canonical patterns.
 
     Execution shapes define the valid patterns for message flow between

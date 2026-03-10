@@ -174,19 +174,19 @@ allowed_files:
 
   - file: "src/omnibase_core/validation/scripts/validate_string_versions.py"
     reason: >-
-      Pre-commit hook validation script - uses yaml.safe_load() exclusively for basic YAML syntax
-      checking (not data validation). The call at line 817 verifies that YAML files are parseable
-      before running AST-based structural validation. There is no fixed Pydantic schema for arbitrary
-      YAML files being syntax-checked by this hook. [OMN-4400]
+      Pre-commit hook validation script - uses yaml.safe_load() exclusively for basic YAML syntax checking
+      (not data validation). The call at line 817 verifies that YAML files are parseable before running
+      AST-based structural validation. There is no fixed Pydantic schema for arbitrary YAML files being
+      syntax-checked by this hook. [OMN-4400]
     added: "2026-03-10"
     review: "2026-06-13"
 
   - file: "scripts/mixin_dependency_graph.py"
     reason: >-
-      Standalone dependency graph utility - uses yaml.safe_load() to load a mixin capability mapping
-      YAML file (list of dicts with no fixed schema). There is no Pydantic model for this ad-hoc
-      configuration format; the function validates structural properties (top-level mapping, 'mixins'
-      list) manually after parsing. [OMN-4400]
+      Standalone dependency graph utility - uses yaml.safe_load() to load a mixin capability mapping YAML
+      file (list of dicts with no fixed schema). There is no Pydantic model for this ad-hoc configuration
+      format; the function validates structural properties (top-level mapping, 'mixins' list) manually
+      after parsing. [OMN-4400]
     added: "2026-03-10"
     review: "2026-06-13"
 
