@@ -56,12 +56,12 @@ __all__ = [
 class ModelEpicTicketStatus(BaseModel):
     """Status of a single ticket within an epic execution.
 
-    Migration-phase capture model. The ``status`` field uses ``str`` instead
-    of an enum to accommodate the 35+ distinct ticket status strings observed
-    in production state files (see migration corpus above).
+    The ``status`` field uses ``str`` instead of an enum to accommodate the
+    35+ distinct ticket status strings observed in production state files
+    (see corpus above). Unknown fields from state files are silently ignored.
     """
 
-    model_config = ConfigDict(extra="allow", from_attributes=True)
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
 
     ticket_id: str = Field(..., min_length=1)
     status: str = Field(..., min_length=1)
@@ -75,13 +75,13 @@ class ModelEpicTicketStatus(BaseModel):
 class ModelEpicWave(BaseModel):
     """A wave of parallel ticket execution within an epic.
 
-    Migration-phase capture model. The ``status`` field uses ``str`` instead
-    of an enum to accommodate the 9+ distinct wave status strings observed
-    in production state files.
+    The ``status`` field uses ``str`` instead of an enum to accommodate the
+    9+ distinct wave status strings observed in production state files.
+    Unknown fields from state files are silently ignored.
     """
 
     model_config = ConfigDict(
-        extra="allow", from_attributes=True, populate_by_name=True
+        extra="ignore", from_attributes=True, populate_by_name=True
     )
 
     wave_number: int = Field(..., ge=0, alias="wave")
@@ -109,7 +109,7 @@ class ModelEpicState(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="allow",
+        extra="ignore",
         from_attributes=True,
         populate_by_name=True,
     )

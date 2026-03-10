@@ -282,6 +282,16 @@ class PythonASTValidator(ast.NodeVisitor):
             #    (e.g., collection_id, tool_id, node_id instead of id)
             "version",  # Generic version field in TypedDicts - serialization boundary only
             "id",  # Generic ID field in TypedDicts - serialization boundary only
+            # TICKET_AND_PIPELINE_IDENTIFIERS (human-readable identifiers for pipeline state)
+            # These are not UUID fields — they hold structured string identifiers:
+            #   criterion_id: FK reference to ModelAcceptanceCriterion.id (e.g. "V1", "R2")
+            #   run_id: correlation string for pipeline runs (e.g. "run-abc123")
+            #   ticket_id: Linear ticket identifier pattern (e.g. "OMN-1234")
+            #   epic_id: Linear epic/ticket identifier (e.g. "OMN-4392")
+            "criterion_id",  # FK reference to acceptance criterion (human-readable label, not UUID)
+            "run_id",  # Pipeline run correlation string (human-readable, not UUID)
+            "ticket_id",  # Linear ticket identifier (e.g. "OMN-1234", not UUID)
+            "epic_id",  # Linear epic identifier (e.g. "OMN-4392", not UUID)
         }
 
     def visit_Import(self, node: ast.Import):
