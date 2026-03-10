@@ -617,7 +617,9 @@ class StringVersionValidator:
             self._validate_python_version_declarations(
                 content, python_path, file_errors
             )
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: pre-commit hook accumulates errors then exits with code
             self.errors.append(f"{python_path}: Error during content validation - {e}")
             return False
 
@@ -635,7 +637,9 @@ class StringVersionValidator:
         except SyntaxError as e:
             # Skip files with syntax errors - they'll be caught by other tools
             pass
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: pre-commit hook accumulates errors then exits with code
             self.errors.append(f"{python_path}: Error during AST validation - {e}")
             return False
 
@@ -828,7 +832,9 @@ class StringVersionValidator:
         # Use AST-based validation on the raw content (always runs)
         try:
             self._validate_yaml_content_ast(content, yaml_path, file_errors)
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: pre-commit hook accumulates errors then exits with code
             self.errors.append(f"{yaml_path}: Error during AST validation - {e}")
             return False
 
@@ -836,7 +842,7 @@ class StringVersionValidator:
         if yaml_data:
             try:
                 self._validate_parsed_yaml(yaml_data, file_errors)
-            except Exception as e:
+            except Exception as e:  # fallback-ok: pre-commit hook accumulates errors then exits with code
                 self.errors.append(
                     f"{yaml_path}: Error during parsed YAML validation - {e}"
                 )
@@ -1119,7 +1125,9 @@ Examples:
 
         try:
             validator = StringVersionValidator()
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: main() reports error and returns exit code
             print(f"Error: Failed to initialize validator: {e}")
             return 1
 
@@ -1225,7 +1233,9 @@ Examples:
                     except Exception as e:
                         print(f"Warning: Error processing file argument '{arg}': {e}")
                         continue
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: main() reports error and returns exit code
             print(f"Error: Failed to process file arguments: {e}")
             return 1
 
@@ -1260,14 +1270,16 @@ Examples:
         except timeout_utils.TimeoutError:
             print("Error: Validation timeout after 10 minutes")
             return 1
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: main() reports error and returns exit code
             print(f"Error: Validation failed with unexpected error: {e}")
             return 1
 
     except KeyboardInterrupt:
         print("\nError: Validation interrupted by user")
         return 1
-    except Exception as e:
+    except Exception as e:  # fallback-ok: main() reports error and returns exit code
         print(f"Error: Unexpected error in main function: {e}")
         return 1
 

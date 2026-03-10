@@ -36,6 +36,17 @@ from pathlib import Path
 # Constants
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent memory issues
 
+# File-level architectural exemptions.
+# These files contain intentional patterns that superficially match backward-compat
+# heuristics but are documented architectural decisions, not tech debt.
+# Format: path fragment (any part of the file path), justification in comment.
+ARCHITECTURAL_EXEMPTIONS: dict[str, str] = {
+    # Migration-phase capture model for epic-team state files.
+    # Uses extra="allow" to tolerate 35+ production status string variants observed in
+    # state files (see migration corpus in the file). Not a backward-compat shim.
+    "models/epic/model_epic_state.py": "intentional migration-phase capture model (OMN-4402)",
+}
+
 
 class BackwardCompatibilityDetector:
     """Detects backward compatibility anti-patterns in code."""
@@ -46,6 +57,13 @@ class BackwardCompatibilityDetector:
 
     def validate_python_file(self, py_path: Path) -> bool:
         """Check Python file for backward compatibility patterns."""
+        # Check architectural exemptions before any other validation
+        path_str = str(py_path)
+        for exempt_fragment in ARCHITECTURAL_EXEMPTIONS:
+            if exempt_fragment in path_str:
+                self.checked_files += 1
+                return True
+
         # Validate file existence and basic properties
         if not py_path.exists():
             self.errors.append(f"{py_path}: File does not exist")
