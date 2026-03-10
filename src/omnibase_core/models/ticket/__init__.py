@@ -51,6 +51,10 @@ from omnibase_core.models.ticket.model_interface_provided import (
     InterfaceProvided,
     ModelInterfaceProvided,
 )
+from omnibase_core.models.ticket.model_acceptance_criterion import (
+    ModelAcceptanceCriterion,
+)
+from omnibase_core.models.ticket.model_proof_requirement import ModelProofRequirement
 from omnibase_core.models.ticket.model_requirement import (
     ModelRequirement,
     Requirement,
@@ -90,9 +94,11 @@ __all__ = [
     "VerificationKind",
     "GateKind",
     # Sub-models (canonical names)
+    "ModelAcceptanceCriterion",
     "ModelClarifyingQuestion",
     "ModelInterfaceConsumed",
     "ModelInterfaceProvided",
+    "ModelProofRequirement",
     "ModelRequirement",
     "ModelVerificationStep",
     "ModelGate",

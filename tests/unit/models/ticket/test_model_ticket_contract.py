@@ -626,6 +626,89 @@ class TestCompletionChecks:
         )
         assert contract.is_spec_complete() is True
 
+    # --- is_proof_linked_complete ---
+
+    def test_is_proof_linked_complete_false_when_no_requirements(
+        self, basic_contract: TicketContract
+    ) -> None:
+        """is_proof_linked_complete() returns False when requirements list is empty."""
+        assert basic_contract.is_proof_linked_complete() is False
+
+    def test_is_proof_linked_complete_false_when_criteria_have_no_proofs(self) -> None:
+        """is_proof_linked_complete() returns False when criteria lack proof references."""
+        contract = TicketContract(
+            ticket_id="OMN-9991",
+            title="Proof linkage test",
+            requirements=[
+                Requirement(
+                    id="R1",
+                    statement="Req with criteria but no proofs",
+                    acceptance=["First criterion"],  # type: ignore[list-item]
+                )
+            ],
+        )
+        assert contract.is_proof_linked_complete() is False
+
+    def test_is_proof_linked_complete_true_when_all_criteria_covered(self) -> None:
+        """is_proof_linked_complete() returns True when all criteria have proofs."""
+        from omnibase_core.enums.enum_proof_kind import EnumProofKind
+        from omnibase_core.models.ticket.model_acceptance_criterion import (
+            ModelAcceptanceCriterion,
+        )
+        from omnibase_core.models.ticket.model_proof_requirement import (
+            ModelProofRequirement,
+        )
+
+        contract = TicketContract(
+            ticket_id="OMN-9992",
+            title="All criteria covered",
+            requirements=[
+                Requirement(
+                    id="R1",
+                    statement="Req with proof for every criterion",
+                    acceptance=[
+                        ModelAcceptanceCriterion(id="ac_1", statement="First"),
+                        ModelAcceptanceCriterion(id="ac_2", statement="Second"),
+                    ],
+                    proof_requirements=[
+                        ModelProofRequirement(
+                            criterion_id="ac_1",
+                            kind=EnumProofKind.UNIT_TEST,
+                            ref="tests/t.py::test_first",
+                        ),
+                        ModelProofRequirement(
+                            criterion_id="ac_2",
+                            kind=EnumProofKind.UNIT_TEST,
+                            ref="tests/t.py::test_second",
+                        ),
+                    ],
+                )
+            ],
+        )
+        assert contract.is_proof_linked_complete() is True
+
+    def test_is_spec_complete_does_not_require_proof_requirements(self) -> None:
+        """Critical regression guard: is_spec_complete() still passes with empty proofs.
+
+        is_spec_complete() checks only that acceptance criteria exist, not that they
+        have proof references. This test must remain passing as a regression guard.
+        """
+        contract = TicketContract(
+            ticket_id="OMN-9993",
+            title="Spec complete without proofs",
+            requirements=[
+                Requirement(
+                    id="R1",
+                    statement="Has acceptance, no proofs",
+                    acceptance=["Criterion A"],  # type: ignore[list-item]
+                )
+            ],
+        )
+        # is_spec_complete() should still return True — proofs are not required
+        assert contract.is_spec_complete() is True
+        # is_proof_linked_complete() should return False — no proofs yet
+        assert contract.is_proof_linked_complete() is False
+
     # --- is_verification_complete ---
 
     def test_is_verification_complete_allows_skipped(self):
