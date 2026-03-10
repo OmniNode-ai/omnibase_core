@@ -13,11 +13,27 @@ import os
 import signal
 import sys
 import threading
-import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, TypeVar
+
+from omnibase_core.validation.scripts.cross_platform_timeout import CrossPlatformTimeout
+from omnibase_core.validation.scripts.timeout_error import TimeoutError  # noqa: A004
+from omnibase_core.validation.scripts.unix_signal_timeout import UnixSignalTimeout
+
+__all__ = [
+    "CrossPlatformTimeout",
+    "TimeoutError",
+    "UnixSignalTimeout",
+    "TIMEOUT_ERROR_MESSAGES",
+    "DEFAULT_TIMEOUTS",
+    "timeout_context",
+    "with_timeout",
+    "create_cleanup_function",
+    "safe_file_operation",
+    "get_platform_info",
+]
 
 # Error message constants for Ruff TRY003 compliance
 TIMEOUT_ERROR_MESSAGES = {
@@ -42,125 +58,6 @@ DEFAULT_TIMEOUTS = {
 }
 
 T = TypeVar("T")
-
-
-class TimeoutError(Exception):
-    """Cross-platform timeout exception."""
-
-
-class CrossPlatformTimeout:
-    """
-    Cross-platform timeout handler using threading.Timer.
-
-    Provides consistent timeout behavior across Windows and Unix systems,
-    with proper resource cleanup and cancellation support.
-    """
-
-    def __init__(
-        self,
-        seconds: int,
-        error_message: str,
-        cleanup_func: Callable[[], None] | None = None,
-    ):
-        """
-        Initialize timeout handler.
-
-        Args:
-            seconds: Timeout duration in seconds
-            error_message: Error message for timeout exception
-            cleanup_func: Optional cleanup function to call on timeout
-        """
-        self.seconds = seconds
-        self.error_message = error_message
-        self.cleanup_func = cleanup_func
-        self.timer: threading.Timer | None = None
-        self.timed_out = False
-        self._cancelled = False
-
-    def _timeout_handler(self) -> None:
-        """Called when timeout occurs."""
-        if self._cancelled:
-            return
-
-        self.timed_out = True
-
-        # Run cleanup function if provided
-        if self.cleanup_func:
-            try:
-                self.cleanup_func()
-            except Exception as e:
-                # Don't let cleanup errors mask the timeout
-                print(f"Warning: Timeout cleanup failed: {e}", file=sys.stderr)
-
-    def __enter__(self) -> CrossPlatformTimeout:
-        """Start the timeout timer."""
-        if self.seconds > 0:
-            self.timer = threading.Timer(self.seconds, self._timeout_handler)
-            self.timer.daemon = True  # Don't prevent program exit
-            self.timer.start()
-        return self
-
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        """Cancel timer and check for timeout."""
-        self._cancelled = True
-
-        if self.timer:
-            self.timer.cancel()
-            # Give timer thread a moment to finish
-            self.timer.join(timeout=0.1)
-
-        if self.timed_out:
-            raise TimeoutError(self.error_message)
-
-    def cancel(self) -> None:
-        """Manually cancel the timeout."""
-        self._cancelled = True
-        if self.timer:
-            self.timer.cancel()
-
-
-class UnixSignalTimeout:
-    """
-    Unix-specific timeout handler using SIGALRM.
-
-    Only used when signal.SIGALRM is available and explicitly requested.
-    Falls back to CrossPlatformTimeout on Windows.
-    """
-
-    def __init__(self, seconds: int, error_message: str):
-        """Initialize Unix signal timeout."""
-        self.seconds = seconds
-        self.error_message = error_message
-        self.old_handler: signal.Handlers | Callable[[int, Any], Any] | int | None = (
-            None
-        )
-        self.use_signal = hasattr(signal, "SIGALRM")
-
-        # Fallback to threading timeout on Windows
-        if not self.use_signal:
-            self.fallback_timeout = CrossPlatformTimeout(seconds, error_message)
-
-    def _signal_handler(self, signum: int, frame: Any) -> None:
-        """Signal handler for SIGALRM."""
-        raise TimeoutError(self.error_message)
-
-    def __enter__(self) -> UnixSignalTimeout:
-        """Start the timeout."""
-        if self.use_signal:
-            self.old_handler = signal.signal(signal.SIGALRM, self._signal_handler)
-            signal.alarm(self.seconds)
-        else:
-            self.fallback_timeout.__enter__()
-        return self
-
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        """Cancel timeout and restore signal handler."""
-        if self.use_signal:
-            signal.alarm(0)  # Cancel alarm
-            if self.old_handler is not None:
-                signal.signal(signal.SIGALRM, self.old_handler)
-        else:
-            self.fallback_timeout.__exit__(exc_type, exc_val, exc_tb)
 
 
 @contextmanager
@@ -276,11 +173,12 @@ def safe_file_operation(  # noqa: UP047
         try:
             return operation(file_path)
         except (OSError, PermissionError) as e:
-            raise OSError(f"File operation failed for {file_path}: {e}") from e
+            raise OSError(  # error-ok: re-raising standard OS exception at utility boundary
+                f"File operation failed for {file_path}: {e}"
+            ) from e
 
 
-# ONEX_EXCLUDE: dict_str_any — platform info has heterogeneous values by design
-def get_platform_info() -> dict[str, Any]:
+def get_platform_info() -> dict[str, Any]:  # ONEX_EXCLUDE: dict_str_any
     """
     Get platform information for debugging timeout issues.
 
@@ -298,6 +196,8 @@ def get_platform_info() -> dict[str, Any]:
 
 if __name__ == "__main__":
     # Test the timeout functionality
+    import time
+
     print("Testing cross-platform timeout utilities...")
 
     # Test platform info

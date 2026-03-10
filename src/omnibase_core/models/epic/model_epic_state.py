@@ -21,10 +21,11 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.models.epic.model_epic_ticket_status import ModelEpicTicketStatus
+from omnibase_core.models.epic.model_epic_wave import ModelEpicWave
+
 __all__ = [
     "ModelEpicState",
-    "ModelEpicWave",
-    "ModelEpicTicketStatus",
     "EpicState",
 ]
 
@@ -53,42 +54,6 @@ __all__ = [
 # This corpus informs future EnumEpicStatus / EnumEpicWaveStatus design.
 
 
-class ModelEpicTicketStatus(BaseModel):
-    """Status of a single ticket within an epic execution.
-
-    The ``status`` field uses ``str`` instead of an enum to accommodate the
-    35+ distinct ticket status strings observed in production state files
-    (see corpus above). Unknown fields from state files are silently ignored.
-    """
-
-    model_config = ConfigDict(extra="ignore", from_attributes=True)
-
-    ticket_id: str = Field(..., min_length=1)
-    status: str = Field(..., min_length=1)
-    pr_url: str | None = Field(default=None)
-    pr_number: int | None = Field(default=None)
-    branch: str | None = Field(default=None)
-    error: str | None = Field(default=None)
-    failure_type: str | None = Field(default=None)
-
-
-class ModelEpicWave(BaseModel):
-    """A wave of parallel ticket execution within an epic.
-
-    The ``status`` field uses ``str`` instead of an enum to accommodate the
-    9+ distinct wave status strings observed in production state files.
-    Unknown fields from state files are silently ignored.
-    """
-
-    model_config = ConfigDict(
-        extra="ignore", from_attributes=True, populate_by_name=True
-    )
-
-    wave_number: int = Field(..., ge=0, alias="wave")
-    ticket_ids: list[str] = Field(default_factory=list, alias="tickets")
-    status: str = Field(default="pending")
-
-
 class ModelEpicState(BaseModel):
     """State of an epic-team execution.
 
@@ -114,7 +79,9 @@ class ModelEpicState(BaseModel):
         populate_by_name=True,
     )
 
+    # string-id-ok: epic_id is a Linear epic ID (e.g., "OMN-1234"), not a UUID
     epic_id: str = Field(..., min_length=1)
+    # string-id-ok: run_id is a pipeline run identifier (human-readable), not a UUID
     run_id: str = Field(..., min_length=1)
     status: str = Field(default="queued")
 
@@ -123,8 +90,8 @@ class ModelEpicState(BaseModel):
         default_factory=dict, alias="ticket_status"
     )
 
-    # Failure tracking  # ONEX_EXCLUDE: dict_str_any — heterogeneous failure metadata
-    failures: dict[str, Any] = Field(default_factory=dict)
+    # Failure tracking
+    failures: dict[str, Any] = Field(default_factory=dict)  # ONEX_EXCLUDE: dict_str_any
     open_prs: dict[str, str] = Field(
         default_factory=dict,
         description="Map of ticket_id -> PR URL for open PRs.",
@@ -150,10 +117,8 @@ class ModelEpicState(BaseModel):
             raw = values.get(key)
             if raw is None:
                 continue
-            if isinstance(
-                raw, dict
-            ):  # ONEX_EXCLUDE: dict_str_any — intermediate coercion local variable
-                coerced: dict[str, Any] = {}
+            if isinstance(raw, dict):
+                coerced: dict[str, Any] = {}  # ONEX_EXCLUDE: dict_str_any
                 for tid, val in raw.items():
                     if isinstance(val, str):
                         coerced[tid] = {"ticket_id": tid, "status": val}

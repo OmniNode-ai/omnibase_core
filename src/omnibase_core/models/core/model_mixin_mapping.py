@@ -71,16 +71,8 @@ class ModelMixinMapping(BaseModel):
         return self
 
 
-class ModelMixinMappingCollection(BaseModel):
-    """Collection of mixin-to-handler mappings.
-
-    Serialized as ``mixin_mappings.yaml`` for review and migration tracking.
-    """
-
-    mixins: list[ModelMixinMapping] = Field(
-        default_factory=list,
-        description="List of mixin-to-handler mappings",
-    )
-
+from omnibase_core.models.core.model_mixin_mapping_collection import (
+    ModelMixinMappingCollection,
+)
 
 __all__ = ["ModelMixinMapping", "ModelMixinMappingCollection"]
