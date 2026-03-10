@@ -255,6 +255,21 @@ class NamingConventionValidator:
         "merge/": [
             "ContractMergeEngine",  # Merge engine for typed contract merging (OMN-1127)
         ],
+        # NAVIGATION INFRASTRUCTURE: Contract graph and action set models for navigation
+        # Location: navigation/ - Navigation graph and action set models
+        # Rationale: ContractState, ContractTransition, ContractGraph are Pydantic BaseModel
+        #            subclasses used as graph node/edge data structures, not Protocol interfaces.
+        #            ContractGraphBuilder is a builder utility, not a Protocol.
+        #            TypedAction is a typed action model (BaseModel), not an Enum type.
+        #            ActionSetEnumerator is a utility class for enumerating action sets.
+        "navigation/": [
+            "ContractState",  # Pydantic model for contract state in navigation graph (OMN-4403)
+            "ContractTransition",  # Pydantic model for contract transition (OMN-4403)
+            "ContractGraph",  # Pydantic model for contract navigation graph (OMN-4403)
+            "ContractGraphBuilder",  # Builder utility for contract graphs (OMN-4403)
+            "TypedAction",  # Pydantic model for typed action data (OMN-4403)
+            "ActionSetEnumerator",  # Utility class for enumerating action sets (OMN-4403)
+        ],
         # REPLAY INFRASTRUCTURE: Deterministic replay utilities for testing and debugging
         # Location: services/replay/ - Replay infrastructure services (injectors/recorders)
         # Rationale: These classes provide deterministic replay capabilities (OMN-1116, OMN-1205).
