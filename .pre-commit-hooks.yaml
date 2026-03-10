@@ -28,3 +28,15 @@
   types: [text]
   pass_filenames: true
   stages: [pre-commit]
+
+- id: check-stub-implementations
+  name: ONEX Stub Implementation Detector
+  description: >
+    AST-based detection of stub implementations (pass, ellipsis, NotImplementedError). Exempts Protocol
+    classes, ABC abstract methods, @overload, test files, and lines annotated with "# stub-ok: <reason>".
+  language: python
+  entry: python scripts/validation/check_stub_implementations.py
+  pass_filenames: true
+  types: [python]
+  exclude: ^(tests/|archived/|archive/|examples/prototypes/).*\.py$
+  stages: [pre-commit]
