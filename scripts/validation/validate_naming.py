@@ -162,6 +162,8 @@ class NamingConventionValidator:
         # Location: contracts/ - Contract management infrastructure
         # Rationale: These are stateful service/utility classes for contract management,
         #            not Protocols or Models. Similar to ServiceRegistry in container/.
+        #            ContractLoaderCache is a structural Protocol interface (not ProtocolFoo naming
+        #            because it predates the naming convention; tracked for rename in future PR).
         "contracts/": [
             "ContractHashRegistry",  # Registry service for contract hash management
             "ContractDiffComputer",  # Utility class for computing contract diffs (OMN-1148)
