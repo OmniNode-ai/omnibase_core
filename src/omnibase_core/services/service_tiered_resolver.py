@@ -45,6 +45,7 @@ import json
 import logging
 import time
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from omnibase_core.crypto.crypto_blake3_hasher import hash_bytes
@@ -154,11 +155,13 @@ class ServiceTieredResolver:
         registry: ProtocolProviderRegistry,
         key_provider: ProtocolKeyProvider | None = None,
         token_verifier: ServiceCapabilityTokenVerifier | None = None,
+        resolution_event_publisher: Any | None = None,
     ) -> None:
         self._base_resolver = base_resolver
         self._registry = registry
         self._key_provider = key_provider
         self._token_verifier = token_verifier
+        self._resolution_event_publisher = resolution_event_publisher
 
     def resolve_tiered(
         self,
@@ -197,7 +200,7 @@ class ServiceTieredResolver:
             (on success) or structured failure information.
         """
         if not trust_domains:
-            return self._fail_closed_result(
+            empty_result = self._fail_closed_result(
                 dependency=dependency,
                 tier_attempts=[],
                 failure_code=EnumResolutionFailureCode.TIER_EXHAUSTED,
@@ -205,6 +208,13 @@ class ServiceTieredResolver:
                 trust_domains=trust_domains,
                 policy_bundle=policy_bundle,
             )
+            self._publish_resolution_event(
+                result=empty_result,
+                dependency=dependency,
+                trust_domains=trust_domains,
+                policy_bundle=policy_bundle,
+            )
+            return empty_result
 
         # Sort trust domains by canonical tier order
         sorted_domains = sorted(
@@ -406,7 +416,7 @@ class ServiceTieredResolver:
                     trust_graph_hash=trust_graph_hash,
                 )
 
-                return ModelTieredResolutionResult(
+                success_result = ModelTieredResolutionResult(
                     route_plan=route_plan,
                     base_resolution=base_result,
                     tier_progression=tier_attempts,
@@ -414,6 +424,13 @@ class ServiceTieredResolver:
                     fail_closed=True,
                     structured_failure=None,
                 )
+                self._publish_resolution_event(
+                    result=success_result,
+                    dependency=dependency,
+                    trust_domains=trust_domains,
+                    policy_bundle=policy_bundle,
+                )
+                return success_result
 
             # Resolution failed at this tier
             tier_end = time.perf_counter()
@@ -446,7 +463,7 @@ class ServiceTieredResolver:
             if exhausted_code == EnumResolutionFailureCode.MATCH_INSUFFICIENT_TRUST
             else "All configured tiers attempted without resolution"
         )
-        return self._fail_closed_result(
+        failure_result = self._fail_closed_result(
             dependency=dependency,
             tier_attempts=tier_attempts,
             failure_code=exhausted_code,
@@ -454,6 +471,13 @@ class ServiceTieredResolver:
             trust_domains=trust_domains,
             policy_bundle=policy_bundle,
         )
+        self._publish_resolution_event(
+            result=failure_result,
+            dependency=dependency,
+            trust_domains=trust_domains,
+            policy_bundle=policy_bundle,
+        )
+        return failure_result
 
     def compute_registry_snapshot_hash(self, capability: str) -> str:
         """Compute a BLAKE3 hash of the registry state for a capability.
@@ -669,6 +693,70 @@ class ServiceTieredResolver:
             f"Capability token verification failed for domain "
             f"'{domain.domain_id}': {last_proof.verification_notes}"
         )
+
+    def _publish_resolution_event(
+        self,
+        result: ModelTieredResolutionResult,
+        dependency: ModelCapabilityDependency,
+        trust_domains: list[ModelTrustDomain],
+        policy_bundle: ModelPolicyBundle | None,
+    ) -> None:
+        """Publish a resolution audit event to the event bus.
+
+        Builds a ``ModelResolutionEvent`` from the resolution result and
+        publishes it via the optional ``_resolution_event_publisher``.
+        This is best-effort: publish failures are caught and logged, never
+        raised. The resolution decision has already been made; audit
+        publishing must not block or fail the resolution path.
+
+        Args:
+            result: The completed tiered resolution result.
+            dependency: The capability dependency that was resolved.
+            trust_domains: The trust domains that were configured.
+            policy_bundle: The policy bundle in effect (may be None).
+        """
+        if self._resolution_event_publisher is None:
+            return
+
+        try:
+            from omnibase_core.models.routing.model_resolution_event import (
+                ModelResolutionEvent,
+            )
+
+            registry_snapshot_hash = self.compute_registry_snapshot_hash(
+                dependency.capability
+            )
+            trust_graph_hash = _compute_trust_graph_hash(trust_domains)
+            policy_hash = self._get_policy_bundle_hash(policy_bundle, trust_domains)
+
+            event = ModelResolutionEvent(
+                event_id=uuid4(),
+                timestamp=datetime.now(UTC),
+                dependency=dependency,
+                registry_snapshot_hash=registry_snapshot_hash,
+                policy_bundle_hash=policy_hash,
+                trust_graph_hash=trust_graph_hash,
+                route_plan=result.route_plan,
+                tier_progression=list(result.tier_progression),
+                proofs_attempted=[],
+                success=result.route_plan is not None,
+                failure_code=result.structured_failure,
+                failure_reason=(
+                    "; ".join(result.base_resolution.errors)
+                    if not result.base_resolution.success
+                    and result.base_resolution.errors
+                    else None
+                ),
+            )
+            self._resolution_event_publisher.publish(event)
+
+        except Exception:
+            logger.warning(
+                "Failed to publish resolution audit event for capability '%s'; "
+                "ignoring (best-effort)",
+                dependency.capability,
+                exc_info=True,
+            )
 
     def __repr__(self) -> str:
         """Return representation for debugging."""
