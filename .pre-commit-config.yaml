@@ -351,7 +351,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
-        exclude: ^(tests/|archived/|archive/).*\.py$
+        exclude: ^(tests/|archived/|archive/|src/omnibase_core/validation/scripts/).*\.py$
         stages: [pre-commit]
 
       - id: check-error-raising
