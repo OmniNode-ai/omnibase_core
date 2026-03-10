@@ -221,7 +221,7 @@ class ModelDeploymentTopology(BaseModel):
         Load topology from a YAML file.
 
         Raises:
-            ValueError: if schema_version is missing.
+            ModelOnexError: if schema_version is missing.
             ValidationError: if any field values are invalid.
         """
         from ruamel.yaml import YAML

@@ -20,6 +20,7 @@ from omnibase_core.models.core.model_deployment_topology_local_config import (
 from omnibase_core.models.core.model_deployment_topology_service import (
     ModelDeploymentTopologyService,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 @pytest.mark.unit
@@ -86,7 +87,7 @@ class TestModelDeploymentTopology:
         no_version_yaml.write_text(  # type: ignore[union-attr]
             "services: {}\npresets: {}\nactive_preset: null\n"
         )
-        with pytest.raises(ValueError, match="schema_version"):
+        with pytest.raises(ModelOnexError, match="schema_version"):
             ModelDeploymentTopology.from_yaml(no_version_yaml)  # type: ignore[arg-type]
 
     def test_extra_fields_forbidden_on_topology(self) -> None:
