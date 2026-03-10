@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_hook_event_type import (
     EnumClaudeCodeHookEventType,
 )
@@ -33,6 +34,9 @@ _PAYLOAD_TYPE_REGISTRY: dict[
 }
 
 
+@allow_dict_any(
+    reason="Raw JSON payload from Claude Code hook event — untyped by design"
+)
 def parse_hook_payload(
     event_type: EnumClaudeCodeHookEventType,
     data: dict[str, Any],

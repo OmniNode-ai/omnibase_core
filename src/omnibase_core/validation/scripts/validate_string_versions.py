@@ -889,7 +889,7 @@ class StringVersionValidator:
                                 f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
                             )
 
-    def _validate_parsed_yaml(
+    def _validate_parsed_yaml(  # ONEX_EXCLUDE: dict_str_any — YAML data is heterogeneous by nature
         self,
         yaml_data: dict[str, Any],
         errors: list[str],

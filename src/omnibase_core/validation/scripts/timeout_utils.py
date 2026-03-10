@@ -279,6 +279,7 @@ def safe_file_operation(  # noqa: UP047
             raise OSError(f"File operation failed for {file_path}: {e}") from e
 
 
+# ONEX_EXCLUDE: dict_str_any — platform info has heterogeneous values by design
 def get_platform_info() -> dict[str, Any]:
     """
     Get platform information for debugging timeout issues.

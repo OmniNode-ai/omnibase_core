@@ -126,7 +126,7 @@ class ModelSkillResult(BaseModel):
     )
 
     # ------------------------------------------------------------------
-    # Skill-specific fields
+    # Skill-specific fields  # ONEX_EXCLUDE: dict_str_any — extension fields are intentionally untyped
     # ------------------------------------------------------------------
 
     extra: dict[str, Any] = Field(
