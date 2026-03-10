@@ -123,7 +123,7 @@ class ModelEpicState(BaseModel):
         default_factory=dict, alias="ticket_status"
     )
 
-    # Failure tracking
+    # Failure tracking  # ONEX_EXCLUDE: dict_str_any — heterogeneous failure metadata
     failures: dict[str, Any] = Field(default_factory=dict)
     open_prs: dict[str, str] = Field(
         default_factory=dict,
@@ -150,7 +150,9 @@ class ModelEpicState(BaseModel):
             raw = values.get(key)
             if raw is None:
                 continue
-            if isinstance(raw, dict):
+            if isinstance(
+                raw, dict
+            ):  # ONEX_EXCLUDE: dict_str_any — intermediate coercion local variable
                 coerced: dict[str, Any] = {}
                 for tid, val in raw.items():
                     if isinstance(val, str):
