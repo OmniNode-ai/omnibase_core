@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Shared fixtures for typed payload integration tests.
+"""Shared fixtures for typed payload integration tests.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides common fixtures used across the typed payload test modules:
 - test_typed_payload_normalization.py

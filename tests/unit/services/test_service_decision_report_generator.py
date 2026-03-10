@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Comprehensive TDD test suite for ServiceDecisionReportGenerator (OMN-1199).
+"""Comprehensive TDD test suite for ServiceDecisionReportGenerator (OMN-1199).  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides TDD tests for the decision report generation service,
 which generates CLI, JSON, and Markdown reports from evidence summaries

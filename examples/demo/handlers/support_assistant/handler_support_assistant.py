@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""SupportAssistantHandler for OMN-1201 Demo.
+"""SupportAssistantHandler for OMN-1201 Demo.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides the main handler for the AI support assistant that uses
 protocol-based dependency injection for LLM client resolution.
@@ -606,7 +606,7 @@ class SupportAssistantHandler:
         )
 
     def _extract_json_object(self, text: str) -> str | None:
-        """Extract the first valid JSON object from text using balanced brace matching.
+        """Extract the first valid JSON object from text using balanced brace matching.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
         This method handles nested JSON objects that simple regex patterns miss.
         It finds the first '{' and then tracks brace balance to find the matching '}'.

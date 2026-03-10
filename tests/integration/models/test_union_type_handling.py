@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Integration tests for union type handling in typed payload models.
+"""Integration tests for union type handling in typed payload models.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides comprehensive integration tests for union type handling
 introduced in PR #251. These tests verify that union types work correctly

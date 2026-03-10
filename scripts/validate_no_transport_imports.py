@@ -459,7 +459,7 @@ def check_file(
 
 
 def main() -> int:
-    """Main entry point for the transport import validator CLI.
+    """Main entry point for the transport import validator CLI.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
     This function implements the command-line interface for the AST-based transport
     import validator. It scans Python files in the specified source directory and

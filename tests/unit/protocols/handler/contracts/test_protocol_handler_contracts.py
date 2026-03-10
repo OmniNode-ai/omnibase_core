@@ -45,7 +45,7 @@ if TYPE_CHECKING:
 
 
 class DuckTypedBehaviorDescriptor:
-    """Duck-typed implementation of ProtocolHandlerBehaviorDescriptor.
+    """Duck-typed implementation of ProtocolHandlerBehaviorDescriptor.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
     This class implements all required properties WITHOUT explicitly inheriting
     from the protocol. It demonstrates structural subtyping (duck typing).

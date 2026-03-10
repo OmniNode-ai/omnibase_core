@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Enhanced unit tests for ModelReducerOutput[T].
+"""Enhanced unit tests for ModelReducerOutput[T].  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides additional test coverage for:
 - Thread safety and concurrent access

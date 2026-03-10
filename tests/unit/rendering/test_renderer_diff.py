@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""
+"""# ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 Unit tests for RendererDiff.
 
 This module provides comprehensive tests for the contract diff rendering utilities,

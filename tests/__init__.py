@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""
+"""# ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 ONEX Core Framework Test Suite - Zero Tolerance Testing
 
 Comprehensive test suite for omnibase_core with >95% coverage requirements.

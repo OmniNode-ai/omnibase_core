@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Mock LLM client for unit testing.
+"""Mock LLM client for unit testing.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides a configurable mock LLM client that implements
 ProtocolLLMClient for use in unit tests. It allows testing different

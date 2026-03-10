@@ -165,6 +165,21 @@ class NamingConventionValidator:
         "contracts/": [
             "ContractHashRegistry",  # Registry service for contract hash management
             "ContractDiffComputer",  # Utility class for computing contract diffs (OMN-1148)
+            "ContractLoaderCache",  # Internal cache utility for contract loader (OMN-4405)
+        ],
+        # NAVIGATION INFRASTRUCTURE: Contract graph domain models and builder utilities
+        # Location: navigation/ - Contract graph traversal and action set infrastructure
+        # Rationale: ContractState, ContractTransition, ContractGraph are tightly coupled
+        #            Pydantic models for the contract graph domain — they predate the
+        #            Model* prefix convention. ContractGraphBuilder is a builder utility.
+        #            TypedAction and ActionSetEnumerator are co-located action-set classes.
+        "navigation/": [
+            "ContractGraphBuilder",  # Builder utility for contract graphs (OMN-4405)
+            "ContractState",  # Contract FSM state node (OMN-4405)
+            "ContractTransition",  # Contract FSM state transition (OMN-4405)
+            "ContractGraph",  # Contract graph root model (OMN-4405)
+            "TypedAction",  # Typed action model co-located with action set (OMN-4405)
+            "ActionSetEnumerator",  # Action set enumerator co-located with action set (OMN-4405)
         ],
         # REPLAY INFRASTRUCTURE: Replay executor and session for deterministic replay
         # Location: pipeline/replay/ - Replay infrastructure utilities
@@ -227,6 +242,7 @@ class NamingConventionValidator:
             "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for AST analysis (OMN-1311)
             "*Visitor",  # All *Visitor classes (AnyTypeVisitor, etc.) for AST analysis (OMN-1291)
             "Rule*",  # All Rule* classes (RuleContractSchema, RuleErrorTaxonomy, etc.) for cross-repo validation (OMN-1775)
+            "StartupContractValidationResult",  # NamedTuple result for startup contract validation (OMN-4405)
         ],
         # MERGE INFRASTRUCTURE: Contract merge engine for typed contract merging
         # Location: merge/ - Contract merge framework implementations

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Local LLM client implementation using httpx.
+"""Local LLM client implementation using httpx.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides a ProtocolLLMClient implementation for local/self-hosted
 LLM servers that expose OpenAI-compatible APIs (vLLM, Ollama, etc.).

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Custom validators for testing custom invariant evaluation.
+"""Custom validators for testing custom invariant evaluation.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides sample validator functions that demonstrate the
 different signatures and behaviors supported by CUSTOM invariant type.

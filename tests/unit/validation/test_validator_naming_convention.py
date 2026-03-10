@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""
+"""# ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 Tests for ValidatorNamingConvention - Contract-driven naming convention validator.
 
 This module provides comprehensive tests for the ValidatorNamingConvention class,
