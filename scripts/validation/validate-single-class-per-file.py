@@ -185,6 +185,7 @@ def should_exclude_file(filepath: Path) -> bool:
         "model_security_summaries.py",  # 18+ security summary models
         "model_database_secure_config.py",  # Database config with nested models
         "model_service_registry_config.py",  # Service config models
+        "model_epic_state.py",  # 3 tightly-coupled epic state models; split tracked in OMN-4401
     }
 
     # Exclude validator files with small helper classes
