@@ -75,8 +75,6 @@ from omnibase_core.validation.validator_workflow_constants import (
     MIN_TIMEOUT_MS,
     RESERVED_STEP_TYPES,
 )
-
-# Re-export from sub-modules for backwards compatibility
 from omnibase_core.validation.validator_workflow_graph import WorkflowValidator
 from omnibase_core.validation.validator_workflow_step import (
     ACCEPTED_EXECUTION_MODES,

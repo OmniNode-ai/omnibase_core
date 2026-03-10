@@ -48,12 +48,9 @@ Validators:
 """
 
 # Do not hardcode versions here; version is sourced from distribution metadata.
-from importlib.metadata import PackageNotFoundError, version
+from importlib.metadata import version
 
-try:
-    __version__ = version("omnibase-core")
-except PackageNotFoundError:
-    __version__ = "0.0.0-dev"
+__version__ = version("omnibase-core")
 
 
 # =============================================================================

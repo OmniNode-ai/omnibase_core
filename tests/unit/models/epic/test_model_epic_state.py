@@ -42,8 +42,8 @@ class TestModelEpicTicketStatus:
         assert ts.pr_number == 574
         assert ts.branch == "jonah/omn-3801-feature"
 
-    def test_extra_fields_allowed(self) -> None:
-        """Extra fields should be accepted for migration compatibility."""
+    def test_extra_fields_ignored(self) -> None:
+        """Unknown fields from state files are silently ignored."""
         ts = ModelEpicTicketStatus(
             ticket_id="OMN-3801",
             status="merged",
