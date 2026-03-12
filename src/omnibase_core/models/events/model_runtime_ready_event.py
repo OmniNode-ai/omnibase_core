@@ -74,9 +74,10 @@ class ModelRuntimeReadyEvent(ModelRuntimeEventBase):
     @model_validator(mode="after")
     def forbid_inmemory_in_production(self) -> "ModelRuntimeReadyEvent":
         """Raise ValueError if bus_type is INMEMORY and env is production."""
+        env_normalized = (self.env or "").strip().lower()
         if (
             self.event_bus_type == EnumEventBusType.INMEMORY
-            and self.env == "production"
+            and env_normalized == "production"
         ):
             msg = (
                 "EnumEventBusType.INMEMORY is forbidden in production. "

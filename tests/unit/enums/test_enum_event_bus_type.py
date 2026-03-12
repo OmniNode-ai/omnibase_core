@@ -128,6 +128,52 @@ class TestSubscriptionCreatedEventValidator:
         assert event.event_bus_type == EnumEventBusType.KAFKA
 
 
+class TestSubscriptionCreatedEventValidatorNormalization:
+    """Test that env string normalization closes bypass vectors."""
+
+    @pytest.mark.unit
+    def test_inmemory_forbidden_with_uppercase_production(self) -> None:
+        """Raises ValueError when env='Production' (mixed case)."""
+        from uuid import uuid4
+
+        from pydantic import ValidationError
+
+        from omnibase_core.models.events.model_subscription_created_event import (
+            ModelSubscriptionCreatedEvent,
+        )
+
+        with pytest.raises(
+            ValidationError, match="INMEMORY is forbidden in production"
+        ):
+            ModelSubscriptionCreatedEvent.create(
+                node_id=uuid4(),
+                topic="test.topic",
+                event_bus_type=EnumEventBusType.INMEMORY,
+                env="Production",
+            )
+
+    @pytest.mark.unit
+    def test_inmemory_forbidden_with_whitespace_production(self) -> None:
+        """Raises ValueError when env=' production ' (leading/trailing whitespace)."""
+        from uuid import uuid4
+
+        from pydantic import ValidationError
+
+        from omnibase_core.models.events.model_subscription_created_event import (
+            ModelSubscriptionCreatedEvent,
+        )
+
+        with pytest.raises(
+            ValidationError, match="INMEMORY is forbidden in production"
+        ):
+            ModelSubscriptionCreatedEvent.create(
+                node_id=uuid4(),
+                topic="test.topic",
+                event_bus_type=EnumEventBusType.INMEMORY,
+                env=" production ",
+            )
+
+
 class TestRuntimeReadyEventValidator:
     """Test that ModelRuntimeReadyEvent forbids INMEMORY in production."""
 
@@ -173,3 +219,41 @@ class TestRuntimeReadyEventValidator:
         )
         assert event.env == "development"
         assert event.event_bus_type == EnumEventBusType.INMEMORY
+
+
+class TestRuntimeReadyEventValidatorNormalization:
+    """Test that env string normalization closes bypass vectors."""
+
+    @pytest.mark.unit
+    def test_inmemory_forbidden_with_uppercase_production(self) -> None:
+        """Raises ValueError when env='PRODUCTION' (all caps)."""
+        from pydantic import ValidationError
+
+        from omnibase_core.models.events.model_runtime_ready_event import (
+            ModelRuntimeReadyEvent,
+        )
+
+        with pytest.raises(
+            ValidationError, match="INMEMORY is forbidden in production"
+        ):
+            ModelRuntimeReadyEvent.create(
+                event_bus_type=EnumEventBusType.INMEMORY,
+                env="PRODUCTION",
+            )
+
+    @pytest.mark.unit
+    def test_inmemory_forbidden_with_whitespace_production(self) -> None:
+        """Raises ValueError when env=' production ' (leading/trailing whitespace)."""
+        from pydantic import ValidationError
+
+        from omnibase_core.models.events.model_runtime_ready_event import (
+            ModelRuntimeReadyEvent,
+        )
+
+        with pytest.raises(
+            ValidationError, match="INMEMORY is forbidden in production"
+        ):
+            ModelRuntimeReadyEvent.create(
+                event_bus_type=EnumEventBusType.INMEMORY,
+                env=" production ",
+            )
