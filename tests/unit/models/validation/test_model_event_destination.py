@@ -571,3 +571,45 @@ class TestModelEventDestinationEdgeCases:
         assert "host1:9092" in dest.bootstrap_servers
         assert "host2:9092" in dest.bootstrap_servers
         assert "host3:9093" in dest.bootstrap_servers
+
+
+# =============================================================================
+# Decommissioned Endpoint Regression Tests (OMN-4793)
+# =============================================================================
+
+
+class TestDecommissionedEndpointAbsent:
+    """Ensure decommissioned M2 Ultra bus endpoint never appears in model code.
+
+    The M2 Ultra Redpanda at 192.168.86.200:29092 was decommissioned 2026-03-03
+    (OMN-3431). Any reference to this endpoint in docstrings or defaults is stale
+    and misleading.
+    """
+
+    @pytest.mark.unit
+    def test_no_decommissioned_endpoint_in_module_docstring(self) -> None:
+        """Assert decommissioned M2 endpoint absent from module docstring."""
+        import omnibase_core.models.validation.model_event_destination as mod
+
+        docstring = mod.__doc__ or ""
+        assert "192.168.86.200:29092" not in docstring, (
+            "Decommissioned M2 Ultra endpoint found in module docstring. "
+            "Use localhost:19092 (local Docker bus) instead."
+        )
+
+    @pytest.mark.unit
+    def test_no_decommissioned_endpoint_in_class_docstring(self) -> None:
+        """Assert decommissioned M2 endpoint absent from ModelEventDestination docstring."""
+        docstring = ModelEventDestination.__doc__ or ""
+        assert "192.168.86.200:29092" not in docstring, (
+            "Decommissioned M2 Ultra endpoint found in class docstring."
+        )
+
+    @pytest.mark.unit
+    def test_no_decommissioned_endpoint_in_create_kafka_docstring(self) -> None:
+        """Assert decommissioned M2 endpoint absent from create_kafka docstring."""
+        docstring = ModelEventDestination.create_kafka.__doc__ or ""
+        assert "192.168.86.200:29092" not in docstring, (
+            "Decommissioned M2 Ultra endpoint found in create_kafka docstring. "
+            "Use localhost:19092 (local Docker bus) instead."
+        )
