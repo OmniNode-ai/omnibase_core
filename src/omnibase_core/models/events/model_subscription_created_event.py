@@ -11,8 +11,9 @@ confirming a node has been wired to an event bus topic.
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
+from omnibase_core.enums.enum_event_bus_type import EnumEventBusType
 from omnibase_core.models.events.model_runtime_event_base import (
     ModelRuntimeEventBase,
 )
@@ -53,10 +54,28 @@ class ModelSubscriptionCreatedEvent(ModelRuntimeEventBase):
         default_factory=lambda: datetime.now(UTC),
         description="When the subscription was created (UTC)",
     )
-    event_bus_type: str = Field(
-        default="inmemory",
-        description="Type of event bus (inmemory, kafka, etc.)",
+    event_bus_type: EnumEventBusType = Field(
+        default=EnumEventBusType.INMEMORY,
+        description="Type of event bus. Use KAFKA or CLOUD in production; INMEMORY for tests only.",
     )
+    env: str = Field(
+        default="development",
+        description="Deployment environment (development, staging, production).",
+    )
+
+    @model_validator(mode="after")
+    def forbid_inmemory_in_production(self) -> "ModelSubscriptionCreatedEvent":
+        """Raise ValueError if bus_type is INMEMORY and env is production."""
+        if (
+            self.event_bus_type == EnumEventBusType.INMEMORY
+            and self.env == "production"
+        ):
+            msg = (
+                "EnumEventBusType.INMEMORY is forbidden in production. "
+                "Use EnumEventBusType.KAFKA or EnumEventBusType.CLOUD."
+            )
+            raise ValueError(msg)
+        return self
 
     @classmethod
     def create(
@@ -67,7 +86,8 @@ class ModelSubscriptionCreatedEvent(ModelRuntimeEventBase):
         subscription_id: UUID | None = None,
         handler_name: str | None = None,
         correlation_id: UUID | None = None,
-        event_bus_type: str = "inmemory",
+        event_bus_type: EnumEventBusType = EnumEventBusType.INMEMORY,
+        env: str = "development",
     ) -> "ModelSubscriptionCreatedEvent":
         """Factory method for creating a subscription created event."""
         return cls(
@@ -77,4 +97,5 @@ class ModelSubscriptionCreatedEvent(ModelRuntimeEventBase):
             handler_name=handler_name,
             correlation_id=correlation_id,
             event_bus_type=event_bus_type,
+            env=env,
         )
