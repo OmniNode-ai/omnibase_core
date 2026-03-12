@@ -37,7 +37,7 @@ Import Example:
         kafka_dest = ModelEventDestination.create_kafka(
             name="kafka-events",
             topic="contract.validation.events",
-            bootstrap_servers="192.168.86.200:29092",
+            bootstrap_servers="localhost:19092",
         )
 
 See Also:
@@ -306,7 +306,7 @@ class ModelEventDestination(BaseModel):
             >>> dest = ModelEventDestination.create_kafka(
             ...     name="kafka-events",
             ...     topic="contract.validation.events",
-            ...     bootstrap_servers="192.168.86.200:29092",
+            ...     bootstrap_servers="localhost:19092",
             ... )
             >>> dest.topic
             'contract.validation.events'
