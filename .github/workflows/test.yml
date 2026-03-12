@@ -618,6 +618,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: OmniNode-ai/omni_home
+          token: ${{ secrets.CROSS_REPO_PAT }}
           path: omni_home
           sparse-checkout: |
             standards/
