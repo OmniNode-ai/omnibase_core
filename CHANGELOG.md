@@ -1,3 +1,9 @@
+## v0.25.1 (2026-03-12)
+
+### Other Changes
+- fix(hygiene): block operational artifact commits (OMN-4569) (#657)
+- chore(deps): bump the actions group with 2 updates (#656)
+
 ## v0.24.1 (2026-03-08)
 
 ### Features
