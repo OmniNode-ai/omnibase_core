@@ -268,13 +268,13 @@ class TestModelSubscriptionCreatedEvent:
             topic="factory.topic",
             subscription_id=subscription_id,
             handler_name="handler_method",
-            event_bus_type="redis",
+            event_bus_type="cloud",
         )
 
         assert event.subscription_id == subscription_id
         assert event.topic == "factory.topic"
         assert event.handler_name == "handler_method"
-        assert event.event_bus_type == "redis"
+        assert event.event_bus_type == "cloud"
 
     def test_serialization_round_trip(self):
         """Test JSON serialization and deserialization."""
@@ -483,7 +483,7 @@ class TestModelRuntimeReadyEvent:
         event = ModelRuntimeReadyEvent.create(
             subscription_count=10,
             initialization_duration_ms=200.0,
-            event_bus_type="redis",
+            event_bus_type="cloud",
             nodes_wired=["node-1", "node-2"],
         )
 
