@@ -13,6 +13,7 @@ from uuid import UUID, uuid4
 
 from pydantic import Field, model_validator
 
+from omnibase_core.enums.enum_event_bus_type import EnumEventBusType
 from omnibase_core.models.events.model_runtime_event_base import (
     ModelRuntimeEventBase,
 )
@@ -57,14 +58,32 @@ class ModelRuntimeReadyEvent(ModelRuntimeEventBase):
         ge=0,
         description="How long initialization took in milliseconds",
     )
-    event_bus_type: str = Field(
-        default="inmemory",
-        description="Type of event bus being used",
+    event_bus_type: EnumEventBusType = Field(
+        default=EnumEventBusType.INMEMORY,
+        description="Type of event bus being used. Use KAFKA or CLOUD in production; INMEMORY for tests only.",
+    )
+    env: str = Field(
+        default="development",
+        description="Deployment environment (development, staging, production).",
     )
     nodes_wired: list[str] = Field(
         default_factory=list,
         description="List of node names that were wired",
     )
+
+    @model_validator(mode="after")
+    def forbid_inmemory_in_production(self) -> "ModelRuntimeReadyEvent":
+        """Raise ValueError if bus_type is INMEMORY and env is production."""
+        if (
+            self.event_bus_type == EnumEventBusType.INMEMORY
+            and self.env == "production"
+        ):
+            msg = (
+                "EnumEventBusType.INMEMORY is forbidden in production. "
+                "Use EnumEventBusType.KAFKA or EnumEventBusType.CLOUD."
+            )
+            raise ValueError(msg)
+        return self
 
     @model_validator(mode="after")
     def validate_node_count_consistency(self) -> "ModelRuntimeReadyEvent":
@@ -87,9 +106,10 @@ class ModelRuntimeReadyEvent(ModelRuntimeEventBase):
         node_count: int | None = None,
         subscription_count: int = 0,
         initialization_duration_ms: float | None = None,
-        event_bus_type: str = "inmemory",
+        event_bus_type: EnumEventBusType = EnumEventBusType.INMEMORY,
         nodes_wired: list[str] | None = None,
         correlation_id: UUID | None = None,
+        env: str = "development",
     ) -> "ModelRuntimeReadyEvent":
         """Factory method for creating a runtime ready event.
 
@@ -102,6 +122,7 @@ class ModelRuntimeReadyEvent(ModelRuntimeEventBase):
             event_bus_type: Type of event bus being used.
             nodes_wired: List of node names that were wired.
             correlation_id: Correlation ID for request tracing.
+            env: Deployment environment (development, staging, production).
 
         Returns:
             A new ModelRuntimeReadyEvent instance.
@@ -119,4 +140,5 @@ class ModelRuntimeReadyEvent(ModelRuntimeEventBase):
             event_bus_type=event_bus_type,
             nodes_wired=nodes_wired_list,
             correlation_id=correlation_id,
+            env=env,
         )
