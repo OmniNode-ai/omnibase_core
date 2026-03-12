@@ -600,6 +600,38 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
+  # Phase 1 - Version Pin Compliance Check (OMN-4806)
+  # ---------------------------------------------------------------------------
+  # Verifies that this repo's dependency pins are compliant with the shared
+  # version matrix defined in omni_home/standards/version-matrix.yaml.
+  # Depends on OMN-4803 (check_version_pins.py must exist in omni_home main).
+  version-pin-check:
+    name: Version Pin Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Checkout omni_home standards
+        uses: actions/checkout@v6
+        with:
+          repository: OmniNode-ai/omni_home
+          path: omni_home
+          sparse-checkout: |
+            standards/
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Check version pin compliance
+        run: python omni_home/standards/check_version_pins.py --repo omnibase_core --root omni_home
+
+  # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
   # ---------------------------------------------------------------------------
   # API-STABLE check_name: "Quality Gate"
@@ -617,7 +649,7 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check, enum-governance, detect-secrets]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check]
     if: always()
 
     steps:
