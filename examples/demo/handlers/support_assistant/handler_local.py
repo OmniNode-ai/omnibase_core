@@ -20,11 +20,12 @@ Example:
         # Set LOCAL_LLM_ENDPOINT=http://your-server:8000
         client = LocalLLMClient()  # Uses env var or defaults to localhost
 
-    Using with Ollama::
+    Using with a local OpenAI-compatible server::
 
+        # Use LLM_CODER_FAST_URL env var (Ollama decommissioned — see OMN-4829)
         client = LocalLLMClient(
-            endpoint_url="http://localhost:11434",
-            model_name="llama3",
+            endpoint_url=os.getenv("LLM_CODER_FAST_URL", ""),
+            model_name="qwen3-14b",
         )
 """
 
