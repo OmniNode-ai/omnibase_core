@@ -1,3 +1,17 @@
+## v0.26.0 (2026-03-13)
+
+### Features
+- feat(enums): add EventBusType enum; forbid inmemory production defaults [OMN-4794] (#660)
+
+### Bug Fixes
+- fix(cleanup): purge dead endpoints from tests and examples (OMN-4837, OMN-4838) (#666)
+- fix(enums): normalize env string before production check to close bypass vector [OMN-4794] (#664)
+- fix(hygiene): remove decommissioned M2 bus endpoint from docstrings [OMN-4793] (#659)
+
+### Other Changes
+- chore(pre-commit): standardize yamlfmt version to v0.21.0 [OMN-4858] (#665)
+- test(compliance): add PEP 604 annotation compliance regression test [OMN-4813] (#661)
+
 ## v0.25.1 (2026-03-12)
 
 ### Other Changes
