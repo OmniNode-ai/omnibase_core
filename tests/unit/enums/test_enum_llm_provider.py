@@ -17,7 +17,6 @@ class TestEnumLlmProvider:
     def test_enum_values(self):
         """Test that all enum values are correct"""
         assert EnumLlmProvider.CLAUDE == "claude"
-        assert EnumLlmProvider.OLLAMA == "ollama"
         assert EnumLlmProvider.OPENAI == "openai"
         assert EnumLlmProvider.GEMINI == "gemini"
         assert EnumLlmProvider.ANTHROPIC == "anthropic"
@@ -38,7 +37,7 @@ class TestEnumLlmProvider:
     def test_enum_iteration(self):
         """Test that we can iterate over enum values"""
         values = list(EnumLlmProvider)
-        assert len(values) == 7
+        assert len(values) == 6
         assert EnumLlmProvider.CLAUDE in values
         assert EnumLlmProvider.LITELLM in values
 
@@ -76,7 +75,6 @@ class TestEnumLlmProvider:
         """Test that all expected values are present"""
         expected_values = {
             "claude",
-            "ollama",
             "openai",
             "gemini",
             "anthropic",
@@ -99,14 +97,12 @@ class TestEnumLlmProvider:
         assert EnumLlmProvider.ANTHROPIC.value == "anthropic"
 
         # Local providers
-        assert EnumLlmProvider.OLLAMA.value == "ollama"
         assert EnumLlmProvider.LOCAL.value == "local"
         assert EnumLlmProvider.LITELLM.value == "litellm"
 
     def test_is_local_method(self):
         """Test the is_local method"""
         # Local providers
-        assert EnumLlmProvider.OLLAMA.is_local() is True
         assert EnumLlmProvider.LOCAL.is_local() is True
         assert EnumLlmProvider.LITELLM.is_local() is True
 
@@ -125,7 +121,6 @@ class TestEnumLlmProvider:
         assert EnumLlmProvider.ANTHROPIC.requires_api_key() is True
 
         # Providers that don't require API keys
-        assert EnumLlmProvider.OLLAMA.requires_api_key() is False
         assert EnumLlmProvider.LOCAL.requires_api_key() is False
         assert EnumLlmProvider.LITELLM.requires_api_key() is False
 
@@ -141,7 +136,6 @@ class TestEnumLlmProvider:
 
         # Local/self-hosted providers
         local_providers = {
-            EnumLlmProvider.OLLAMA,
             EnumLlmProvider.LOCAL,
             EnumLlmProvider.LITELLM,
         }
