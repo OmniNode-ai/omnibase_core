@@ -34,7 +34,7 @@ repos:
   # YAML formatting (standard across ecosystem)
   # Configuration in .yamlfmt file (ecosystem-aligned settings)
   - repo: https://github.com/google/yamlfmt
-    rev: v0.17.2
+    rev: v0.21.0
     hooks:
       - id: yamlfmt
         exclude: ^(work_tickets/|tests/fixtures/validation/invalid/|\.github/workflows/|archived/)
