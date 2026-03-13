@@ -26,8 +26,8 @@ class EnumEventBusType(StrValueHelper, str, Enum):
         CLOUD: Cloud-hosted Kafka bus (e.g. cloud Redpanda via tunnel).
 
     Notes:
-        ``ONEX_EVENT_BUS_TYPE=inmemory`` is FORBIDDEN for runtime sessions.
-        See CLAUDE.md: "ONEX_EVENT_BUS_TYPE=inmemory is FORBIDDEN".
+        Setting the event bus type env var to ``inmemory`` is FORBIDDEN for
+        runtime sessions. See CLAUDE.md for the full policy on this restriction.
     """
 
     KAFKA = "kafka"
