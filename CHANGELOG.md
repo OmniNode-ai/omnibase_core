@@ -1,3 +1,13 @@
+## v0.27.0 (2026-03-13)
+
+### Features
+- feat(scripts): rehome spdx-rollout.sh from omni_home [OMN-4922] (#671)
+- feat(ci): add forbidden-pattern scanner to CI [OMN-4801] (#662)
+- feat(cleanup): remove EnumOllamaErrorType and OLLAMA provider member (OMN-4849 Phase 2b) (#669)
+
+### Other Changes
+- ci(standards): add version pin compliance check [OMN-4806] (#663)
+
 ## v0.26.0 (2026-03-13)
 
 ### Features
