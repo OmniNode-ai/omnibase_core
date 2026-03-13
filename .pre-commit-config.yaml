@@ -523,7 +523,7 @@ repos:
       - id: validate-model-dump-json-mode
         name: Validate model_dump uses mode="json"
         entry: uv run python scripts/validation/validate-model-dump-json-mode.py --directory src/ --max-violations
-          312
+          308
         language: system
         pass_filenames: false
         files: ^src/.*\.py$

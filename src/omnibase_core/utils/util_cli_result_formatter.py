@@ -71,7 +71,9 @@ class UtilCliResultFormatter:
         if output_data:
             # Try to format structured data nicely
             try:
-                return json.dumps(output_data.model_dump(), indent=2, default=str)
+                return json.dumps(
+                    output_data.model_dump(mode="json"), indent=2, default=str
+                )
             except (TypeError, ValueError):
                 return str(output_data)
 

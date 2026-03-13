@@ -78,7 +78,7 @@ class ModelEvidenceBundle(BaseModel):
             Hex-encoded SHA-256 digest of the sorted serialized items.
         """
         serialized = [
-            json.dumps(item.model_dump(), sort_keys=True, ensure_ascii=True)
+            json.dumps(item.model_dump(mode="json"), sort_keys=True, ensure_ascii=True)
             for item in items
         ]
         # Sort for order-independence

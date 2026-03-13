@@ -587,7 +587,9 @@ class MixinDiscoveryResponder:
                 )
 
                 # Serialize envelope to bytes for protocol event bus
-                envelope_bytes = json.dumps(envelope.model_dump()).encode("utf-8")
+                envelope_bytes = json.dumps(envelope.model_dump(mode="json")).encode(
+                    "utf-8"
+                )
 
                 # Publish to event bus (protocol requires topic, key, value, headers)
                 await self._discovery_event_bus.publish(
