@@ -85,9 +85,11 @@ class ModelDumpModeDetector(ast.NodeVisitor):
             tree = ast.parse(content)
             self.visit(tree)
 
-        except (SyntaxError, UnicodeDecodeError):
-            # Skip files with syntax errors or encoding issues
-            pass
+        except (SyntaxError, UnicodeDecodeError) as e:
+            print(
+                f"Warning: Skipping unparsable file {file_path}: {e}",
+                file=sys.stderr,
+            )
         except (OSError, ValueError) as e:
             print(f"Warning: Could not process {file_path}: {e}", file=sys.stderr)
 
@@ -102,8 +104,9 @@ def find_python_files(directory: Path, exclude_patterns: list[str]) -> list[Path
     python_files = []
 
     for py_file in directory.rglob("*.py"):
-        # Check if file matches any exclude pattern
-        file_str = str(py_file)
+        # Check if file matches any exclude pattern (use POSIX paths for
+        # cross-platform consistency — forward slashes on all OSes)
+        file_str = py_file.as_posix()
         should_exclude = any(pattern in file_str for pattern in exclude_patterns)
 
         if not should_exclude:
@@ -133,6 +136,9 @@ def main() -> int:
     )
 
     args = parser.parse_args()
+
+    if args.max_violations < 0:
+        parser.error("--max-violations must be >= 0")
 
     # Define exclude patterns
     exclude_patterns = [
