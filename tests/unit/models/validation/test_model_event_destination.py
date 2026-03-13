@@ -91,13 +91,13 @@ class TestModelEventDestinationFactories:
         dest = ModelEventDestination.create_kafka(
             name="kafka-events",
             topic="contract.validation.events",
-            bootstrap_servers="192.168.86.200:29092",
+            bootstrap_servers="localhost:19092",
         )
 
         assert dest.destination_type == EnumEventSinkType.KAFKA
         assert dest.destination_name == "kafka-events"
         assert dest.topic == "contract.validation.events"
-        assert dest.bootstrap_servers == "192.168.86.200:29092"
+        assert dest.bootstrap_servers == "localhost:19092"
         assert dest.buffer_size == 100
         assert dest.flush_interval_ms == 1000  # Kafka default is lower
 

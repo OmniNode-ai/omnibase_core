@@ -20,10 +20,11 @@ Example:
         # Set LOCAL_LLM_ENDPOINT=http://your-server:8000
         client = LocalLLMClient()  # Uses env var or defaults to localhost
 
-    Using with Ollama::
+    Using with env-var-driven endpoint::
 
+        # Empty default — no silent fallback to decommissioned Ollama endpoint
         client = LocalLLMClient(
-            endpoint_url="http://localhost:11434",
+            endpoint_url=os.getenv("LLM_CODER_FAST_URL", ""),
             model_name="llama3",
         )
 """
