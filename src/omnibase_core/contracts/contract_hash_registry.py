@@ -85,7 +85,7 @@ def _convert_to_json_serializable(value: object) -> object:
     if isinstance(value, ModelContractVersion):
         return str(value)
     if isinstance(value, BaseModel):
-        return value.model_dump()
+        return value.model_dump(mode="json")
     if isinstance(value, dict):
         return {k: _convert_to_json_serializable(v) for k, v in value.items()}
     if isinstance(value, list):
@@ -183,7 +183,7 @@ def normalize_contract(
 
     try:
         # Convert Pydantic model to dict
-        normalized = contract.model_dump()
+        normalized = contract.model_dump(mode="json")
 
         # Step 0: Convert non-JSON-serializable objects (e.g., Pydantic models)
         converted = _convert_to_json_serializable(normalized)

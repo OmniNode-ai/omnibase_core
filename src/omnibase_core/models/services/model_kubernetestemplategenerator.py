@@ -206,7 +206,9 @@ class ModelKubernetesTemplateGenerator:
             "kind": "ConfigMap",
             "metadata": metadata,
             "data": {
-                "service-config.json": json.dumps(self.config.model_dump(), indent=2)
+                "service-config.json": json.dumps(
+                    self.config.model_dump(mode="json"), indent=2
+                )
             },
         }
 
