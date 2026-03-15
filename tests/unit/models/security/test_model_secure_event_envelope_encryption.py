@@ -119,7 +119,7 @@ class TestEncryptPayloadSuccess:
         try:
             decoded = base64.b64decode(sample_envelope.encrypted_payload)
             assert len(decoded) > 0
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             pytest.fail(f"encrypted_payload is not valid base64: {e}")
 
         # Verify encryption_metadata is set with correct algorithm
@@ -347,7 +347,7 @@ class TestEncryptionMetadataPopulated:
             decoded_iv = base64.b64decode(iv)
             # AES-GCM standard IV is 12 bytes
             assert len(decoded_iv) == 12
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             pytest.fail(f"IV is not valid base64: {e}")
 
     def test_encryption_metadata_auth_tag_is_valid_base64(
@@ -364,7 +364,7 @@ class TestEncryptionMetadataPopulated:
             decoded_tag = base64.b64decode(auth_tag)
             # AES-GCM standard auth tag is 16 bytes
             assert len(decoded_tag) == 16
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             pytest.fail(f"auth_tag is not valid base64: {e}")
 
     def test_encryption_metadata_key_id_is_uuid(self, sample_envelope, encryption_key):

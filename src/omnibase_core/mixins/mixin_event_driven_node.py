@@ -207,7 +207,7 @@ class MixinEventDrivenNode(
                 "event_types_handled": ["introspection", "discovery"],
             }
         except (
-            Exception
+            Exception  # noqa: BLE001
         ):  # fallback-ok: introspection is non-critical, return minimal metadata
             return {
                 "node_name": self.get_node_name(),

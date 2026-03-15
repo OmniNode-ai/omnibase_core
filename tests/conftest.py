@@ -168,7 +168,7 @@ def event_loop_cleanup() -> Generator[None, None, None]:
                     except (FileNotFoundError, OSError):
                         # Race condition - files already cleaned up by parallel workers
                         pass
-                    except Exception:
+                    except Exception:  # noqa: BLE001
                         # Best effort cleanup - don't fail tests due to cleanup issues
                         pass
             finally:
@@ -376,7 +376,7 @@ def cleanup_service_tasks(
     except (FileNotFoundError, OSError):
         # Race condition - files already cleaned up by parallel workers
         pass
-    except Exception:
+    except Exception:  # noqa: BLE001
         # Best effort cleanup - don't fail tests
         pass
 

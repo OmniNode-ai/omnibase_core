@@ -298,7 +298,7 @@ class ProtocolMessageHandler(Protocol):
                             projections=(result.projection,),
                             processing_time_ms=result.duration_ms,
                         )
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001
                         # Re-raise exceptions - dispatch engine handles errors
                         raise
         """

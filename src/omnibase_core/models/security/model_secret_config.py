@@ -574,6 +574,6 @@ class ModelSecretConfig(BaseModel):
 try:
     ModelSecretConfig.model_rebuild()
 except (
-    Exception
+    Exception  # noqa: BLE001
 ):  # error-ok: model_rebuild may fail during circular import resolution, safe to ignore
     pass

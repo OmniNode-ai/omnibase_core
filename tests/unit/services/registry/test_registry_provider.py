@@ -528,7 +528,7 @@ class TestServiceRegistryProviderThreadSafety:
                     tags=[f"tag-{i}"],
                 )
                 registry.register(provider)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -561,7 +561,7 @@ class TestServiceRegistryProviderThreadSafety:
                 registry.list_all()
                 registry.list_capabilities()
                 len(registry)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -584,7 +584,7 @@ class TestServiceRegistryProviderThreadSafety:
                 try:
                     registry.list_all()
                     registry.find_by_capability("test.capability")
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     errors.append(e)
 
         def writer() -> None:
@@ -597,7 +597,7 @@ class TestServiceRegistryProviderThreadSafety:
                         connection_ref="env://TEST",
                     )
                     registry.register(provider)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     errors.append(e)
 
         # Start multiple reader threads

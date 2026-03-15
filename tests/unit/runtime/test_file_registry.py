@@ -1426,7 +1426,7 @@ class TestFileRegistryErrorContext:
             pytest.fail("Expected ModelOnexError to be raised")
         except ModelOnexError:
             pass  # Expected
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             pytest.fail(f"Expected ModelOnexError but got {type(e).__name__}: {e}")
 
 
@@ -1560,7 +1560,7 @@ class TestFileRegistryOSErrorHandling:
             pass  # Expected
         except OSError as e:
             pytest.fail(f"Raw OSError leaked: {type(e).__name__}: {e}")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             pytest.fail(f"Unexpected exception: {type(e).__name__}: {e}")
 
     def test_load_all_does_not_leak_raw_oserror(

@@ -1044,7 +1044,7 @@ async def _execute_parallel(
             # Cancellation must propagate - do not convert to failed step
             # This prevents shutdown/timeout hangs caused by swallowing cancellation
             raise
-        except Exception as e:  # fallback-ok: parallel execution returns error in tuple for caller handling
+        except Exception as e:  # noqa: BLE001  # fallback-ok: parallel execution returns error in tuple for caller handling
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             return (step, None, 0, e)
 

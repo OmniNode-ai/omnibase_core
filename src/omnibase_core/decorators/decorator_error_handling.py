@@ -80,7 +80,7 @@ def _has_pydantic_error_count_method(exc: Exception) -> bool:
     try:
         result = error_count_attr()
         return isinstance(result, int)
-    except Exception:
+    except Exception:  # noqa: BLE001
         # fallback-ok: error_count() call failed, not Pydantic-like
         return False
 
@@ -179,7 +179,7 @@ def _is_validation_error(exc: Exception) -> bool:
             errors_result = errors_attr()
             if _is_pydantic_validation_error_structure(errors_result):
                 return True
-        except Exception:
+        except Exception:  # noqa: BLE001
             # fallback-ok: errors() call failed, continue to next tier
             pass
 
@@ -234,7 +234,7 @@ def standard_error_handling(
             raise  # Never suppress async cancellation
         except ModelOnexError:
             raise  # Always re-raise ModelOnexError as-is
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             raise ModelOnexError(
                 f"{operation_name} failed: {str(e)}",
                 EnumCoreErrorCode.OPERATION_FAILED

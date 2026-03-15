@@ -191,7 +191,7 @@ class TestReservedEnumValidatorIntegration:
             pytest.fail("Expected ModelOnexError to be raised")
         except ModelOnexError:
             pass  # Expected
-        except Exception:
+        except Exception:  # noqa: BLE001
             pytest.fail("Expected ModelOnexError, got generic Exception")
 
 
@@ -428,7 +428,7 @@ class TestStringModeEdgeCases:
             pytest.fail("Expected ModelOnexError to be raised")
         except ModelOnexError:
             pass  # Expected
-        except Exception:
+        except Exception:  # noqa: BLE001
             pytest.fail("Expected ModelOnexError, got generic Exception")
 
 

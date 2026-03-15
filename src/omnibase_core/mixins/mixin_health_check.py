@@ -275,7 +275,7 @@ class MixinHealthCheck:
                     {"check_name": check_func.__name__, "status": result.status},
                 )
 
-            except Exception as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+            except Exception as e:  # noqa: BLE001  # fallback-ok: health check should return UNHEALTHY status, not crash
                 # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                 emit_log_event(
                     LogLevel.ERROR,
@@ -403,7 +403,7 @@ class MixinHealthCheck:
                 check_tasks.append((check_func.__name__, task))
 
             # fallback-ok: health check task creation should not crash the async health check
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Failed to create health check task: {check_func.__name__}",
@@ -457,7 +457,7 @@ class MixinHealthCheck:
                     for issue in result.issues:
                         messages.append(f"{check_name}: {issue.message}")
 
-            except Exception as e:  # fallback-ok: async health check should return UNHEALTHY status, not crash
+            except Exception as e:  # noqa: BLE001  # fallback-ok: async health check should return UNHEALTHY status, not crash
                 # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                 emit_log_event(
                     LogLevel.ERROR,
@@ -567,7 +567,7 @@ class MixinHealthCheck:
                     ],
                 )
 
-        except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
+        except Exception as e:  # noqa: BLE001  # fallback-ok: health check returns UNHEALTHY, not crash
             from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 
             return ModelHealthStatus.create_unhealthy(
@@ -646,7 +646,7 @@ async def check_postgresql_health(
             ],
         )
 
-    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
+    except Exception as e:  # noqa: BLE001  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "PostgreSQL health check failed",
@@ -750,7 +750,7 @@ async def check_kafka_health(
             ],
         )
 
-    except Exception as e:  # fallback-ok: health check returns DEGRADED, not crash
+    except Exception as e:  # noqa: BLE001  # fallback-ok: health check returns DEGRADED, not crash
         emit_log_event(
             LogLevel.ERROR,
             "Kafka health check failed",
@@ -843,7 +843,7 @@ async def check_redis_health(
             ],
         )
 
-    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
+    except Exception as e:  # noqa: BLE001  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "Redis health check failed",
@@ -1038,7 +1038,7 @@ async def check_http_service_health(
             ],
         )
 
-    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
+    except Exception as e:  # noqa: BLE001  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "HTTP service health check failed",

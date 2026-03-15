@@ -1298,7 +1298,7 @@ class TestContractHashRegistryConcurrency:
                 try:
                     registry.register(contract_name, fingerprint)
                     registered += 1
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     with issues_lock:
                         observed_issues.append(f"Register error: {e}")
             return registered
@@ -1314,7 +1314,7 @@ class TestContractHashRegistryConcurrency:
                         result = registry.lookup_string(contract_name)
                         if result is not None:
                             found += 1
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001
                         with issues_lock:
                             observed_issues.append(f"Lookup error: {e}")
             return found
@@ -1331,7 +1331,7 @@ class TestContractHashRegistryConcurrency:
                     try:
                         registry.register(contract_name, fingerprint)
                         registered += 1
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001
                         with issues_lock:
                             observed_issues.append(f"Mixed register error: {e}")
                 else:
@@ -1342,7 +1342,7 @@ class TestContractHashRegistryConcurrency:
                         result = registry.lookup_string(contract_name)
                         if result is not None:
                             found += 1
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001
                         with issues_lock:
                             observed_issues.append(f"Mixed lookup error: {e}")
             return registered, found

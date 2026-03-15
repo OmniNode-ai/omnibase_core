@@ -124,7 +124,7 @@ def _resolve_forward_references() -> None:
         # init-errors-ok: Import may fail during early module loading
         # The forward reference will be resolved when health/__init__.py completes
         pass
-    except Exception:
+    except Exception:  # noqa: BLE001
         # init-errors-ok: model_rebuild may fail during circular import resolution
         # This is safe to ignore as the forward reference will be resolved
         # when the full module graph is loaded

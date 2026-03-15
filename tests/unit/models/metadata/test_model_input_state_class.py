@@ -154,7 +154,7 @@ class TestModelInputState:
         try:
             state = ModelInputState(version=None)
             assert state.version is None
-        except Exception:
+        except Exception:  # noqa: BLE001
             # If there's a circular import issue, that's expected
             pass
 

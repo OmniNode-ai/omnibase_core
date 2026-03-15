@@ -750,7 +750,7 @@ class ServiceTieredResolver:
             )
             self._resolution_event_publisher.publish(event)
 
-        except Exception:
+        except Exception:  # noqa: BLE001
             logger.warning(
                 "Failed to publish resolution audit event for capability '%s'; "
                 "ignoring (best-effort)",

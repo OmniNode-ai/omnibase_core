@@ -249,7 +249,7 @@ class ModelPermissionScope(BaseModel):
                 if not self._evaluate_simple_expression(expression, full_context):
                     return False
             except (
-                Exception
+                Exception  # noqa: BLE001
             ):  # fallback-ok: expression evaluation fails safe, returns False on error
                 return False  # Fail safe on evaluation errors
 

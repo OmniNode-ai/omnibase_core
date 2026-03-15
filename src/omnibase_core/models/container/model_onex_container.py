@@ -266,7 +266,7 @@ class ModelONEXContainer:
                     f"ServiceRegistry not available: {e}",
                 )
                 self._enable_service_registry = False
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # init-errors-ok: use safe defaults if ServiceRegistry initialization fails
                 emit_log_event(
                     LogLevel.ERROR,
@@ -672,7 +672,7 @@ class ModelONEXContainer:
         """
         try:
             return self.get_service_sync(protocol_type, service_name)
-        except Exception:  # fallback-ok: Optional service getter intentionally returns None when service unavailable
+        except Exception:  # noqa: BLE001  # fallback-ok: Optional service getter intentionally returns None when service unavailable
             return None
 
     def get_workflow_orchestrator(self) -> "ModelWorkflowCoordinator":
@@ -785,7 +785,7 @@ class ModelONEXContainer:
                 "registry_status": registry_status.status.value,
             }
         except (
-            Exception
+            Exception  # noqa: BLE001
         ) as e:  # fallback-ok: health check should not raise, returns degraded status
             emit_log_event(
                 LogLevel.ERROR,
@@ -854,7 +854,7 @@ class ModelONEXContainer:
                 self.get_service(object, service_name)
                 warmed_count += 1
             except (
-                Exception
+                Exception  # noqa: BLE001
             ):  # fallback-ok: service not found during cache warming is expected
                 pass
 

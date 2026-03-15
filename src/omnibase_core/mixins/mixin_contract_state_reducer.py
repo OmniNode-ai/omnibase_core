@@ -159,7 +159,7 @@ class MixinContractStateReducer:
             return transitions
 
         except (
-            Exception
+            Exception  # noqa: BLE001
         ) as e:  # fallback-ok: resilient loading returns empty list on failure
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(

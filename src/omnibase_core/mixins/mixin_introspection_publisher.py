@@ -146,7 +146,7 @@ class MixinIntrospectionPublisher:
             # fallback-ok: Introspection failures use fallback data with logging
             return self._create_fallback_introspection_data(e)
         except (
-            Exception
+            Exception  # noqa: BLE001
         ) as e:  # fallback-ok: unexpected errors should not crash introspection
             return self._create_fallback_introspection_data(e)
 
@@ -208,7 +208,7 @@ class MixinIntrospectionPublisher:
                     if len(parts) >= 3 and parts[-1].startswith("node_"):
                         return parts[-1]
         except (
-            Exception
+            Exception  # noqa: BLE001
         ):  # fallback-ok: metadata extraction uses fallback to class name
             pass
         class_name = self.__class__.__name__
@@ -235,7 +235,7 @@ class MixinIntrospectionPublisher:
                             minor=int(parts[1]),
                             patch=int(parts[2]),
                         )
-        except Exception:  # fallback-ok: version extraction uses default 1.0.0
+        except Exception:  # noqa: BLE001  # fallback-ok: version extraction uses default 1.0.0
             pass
         return ModelSemVer(major=1, minor=0, patch=0)
 
@@ -264,7 +264,7 @@ class MixinIntrospectionPublisher:
                     ):
                         # Map copyright to license field in the typed model
                         license_str = str(loader_metadata.copyright)
-        except Exception:  # fallback-ok: capabilities extraction uses defaults
+        except Exception:  # noqa: BLE001  # fallback-ok: capabilities extraction uses defaults
             pass
 
         # Create typed metadata model with extracted values
@@ -310,7 +310,7 @@ class MixinIntrospectionPublisher:
                         "configure",
                     ]:
                         actions.append(method_name)
-        except Exception:  # fallback-ok: action extraction uses health_check default
+        except Exception:  # noqa: BLE001  # fallback-ok: action extraction uses health_check default
             pass
         if not actions:
             actions = ["health_check"]
@@ -328,7 +328,7 @@ class MixinIntrospectionPublisher:
                 protocols.append("graphql")
             if hasattr(self, "http_server") or hasattr(self, "supports_http"):
                 protocols.append("http")
-        except Exception:  # fallback-ok: protocol detection uses event_bus default
+        except Exception:  # noqa: BLE001  # fallback-ok: protocol detection uses event_bus default
             pass
         return protocols
 
@@ -355,7 +355,7 @@ class MixinIntrospectionPublisher:
                 self, "supports_graphql", False
             ):
                 tags.append("graphql")
-        except Exception:  # fallback-ok: tag generation uses event_driven default
+        except Exception:  # noqa: BLE001  # fallback-ok: tag generation uses event_driven default
             pass
         return list(set(tags))
 
@@ -365,7 +365,7 @@ class MixinIntrospectionPublisher:
             if hasattr(self, "health_check"):
                 node_id = getattr(self, "_node_id", None) or "<unset>"
                 return f"/health/{node_id}"
-        except Exception:  # fallback-ok: health endpoint detection returns None
+        except Exception:  # noqa: BLE001  # fallback-ok: health endpoint detection returns None
             pass
         return None
 

@@ -235,7 +235,7 @@ class ModelServiceHealth(BaseModel):
                     message=msg,
                 )
         except (
-            Exception
+            Exception  # noqa: BLE001
         ):  # fallback-ok: URL parsing exceptions converted to validation error
             msg = "endpoint_url must be a valid URL"
             raise ModelOnexError(

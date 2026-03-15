@@ -122,7 +122,6 @@ select = ["E", "F", "W", "C90", "I", "N", "UP", "YTT", "S", "BLE", "FBT", "B", "
 ignore = [
     "S101",      # Allow assert statements in tests
     "E501",      # Line too long (technical debt - will fix incrementally)
-    "BLE001",    # Blind exception catching (technical debt)
     "E402",      # Module level import not at top (technical debt)
     "TC001",     # Type checking imports (technical debt)
     "TC003",     # Type checking imports (technical debt)

@@ -71,7 +71,7 @@ def _silent_exception_handler(loop: asyncio.AbstractEventLoop, context: dict) ->
     except (ValueError, OSError):
         # "I/O operation on closed file" - logging is already shut down
         pass
-    except Exception:
+    except Exception:  # noqa: BLE001
         pass
 
 
@@ -110,7 +110,7 @@ def _patch_asyncio_exception_handling() -> None:
             else:
                 # Re-raise other ValueError/OSError
                 raise
-        except Exception:
+        except Exception:  # noqa: BLE001
             # Any other error during exception handling - just ignore
             # We're likely shutting down anyway
             pass
@@ -162,11 +162,11 @@ def final_asyncio_cleanup():
                             loop.run_until_complete(
                                 asyncio.gather(*pending, return_exceptions=True)
                             )
-                        except Exception:
+                        except Exception:  # noqa: BLE001
                             pass
-                except Exception:
+                except Exception:  # noqa: BLE001
                     pass
-        except Exception:
+        except Exception:  # noqa: BLE001
             pass
 
     atexit.register(_cleanup_at_exit)
@@ -189,11 +189,11 @@ def final_asyncio_cleanup():
                         loop.run_until_complete(
                             asyncio.gather(*pending, return_exceptions=True)
                         )
-                    except Exception:
+                    except Exception:  # noqa: BLE001
                         pass
-            except Exception:
+            except Exception:  # noqa: BLE001
                 pass
-    except Exception:
+    except Exception:  # noqa: BLE001
         pass
 
 
@@ -243,7 +243,7 @@ def cleanup_pending_tasks():
                     # Use a short sleep to allow CancelledError to propagate
                     try:
                         loop.run_until_complete(asyncio.sleep(0.1))
-                    except Exception:
+                    except Exception:  # noqa: BLE001
                         pass
 
                     # Now gather all the cancelled tasks
@@ -251,7 +251,7 @@ def cleanup_pending_tasks():
                         loop.run_until_complete(
                             asyncio.gather(*pending, return_exceptions=True)
                         )
-                    except Exception:
+                    except Exception:  # noqa: BLE001
                         # Best effort - some tasks may still be pending
                         pass
             finally:
@@ -261,7 +261,7 @@ def cleanup_pending_tasks():
     except RuntimeError:
         # No event loop or loop already closed - this is fine
         pass
-    except Exception:
+    except Exception:  # noqa: BLE001
         # Best effort cleanup - don't fail tests due to cleanup issues
         pass
 
@@ -328,7 +328,7 @@ def service_cleanup():
                             # Task was already cancelled, await it to finish cancellation
                             with contextlib.suppress(asyncio.CancelledError, Exception):
                                 await service._health_task
-                        except Exception:
+                        except Exception:  # noqa: BLE001
                             pass
 
             # Stop service mode if running
@@ -359,7 +359,7 @@ def service_cleanup():
             loop = asyncio.get_event_loop()
             if loop and not loop.is_closed():
                 loop.run_until_complete(async_finalizer())
-        except Exception:
+        except Exception:  # noqa: BLE001
             # Best effort - cleanup_pending_tasks will catch remaining tasks
             pass
 

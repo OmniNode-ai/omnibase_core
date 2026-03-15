@@ -62,7 +62,7 @@ class ModelConfigurationBase[T](BaseModel):
             try:
                 return config_data.__dict__
             except (
-                Exception
+                Exception  # noqa: BLE001
             ):  # fallback-ok: Serialization fallback to string representation
                 return str(config_data)
         return config_data

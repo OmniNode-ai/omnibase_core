@@ -124,7 +124,7 @@ class ModelValueContainer(BaseModel):
             return True
 
         except (
-            Exception
+            Exception  # noqa: BLE001
         ):  # fallback-ok: validation method, False indicates validation failure
             return False
 
@@ -221,7 +221,7 @@ class ModelValueContainer(BaseModel):
             return True
 
         except (
-            Exception
+            Exception  # noqa: BLE001
         ):  # fallback-ok: validation method, False indicates validation failure
             return False
 

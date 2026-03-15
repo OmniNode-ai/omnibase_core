@@ -161,7 +161,7 @@ class ModelNodeCoreMetadata(BaseModel):
                     setattr(self, key, value)
             return True
         except (
-            Exception
+            Exception  # noqa: BLE001
         ):  # fallback-ok: setter returns False on failure per protocol contract
             return False
 

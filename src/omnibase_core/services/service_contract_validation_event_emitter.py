@@ -269,7 +269,7 @@ class ServiceContractValidationEventEmitter:
                     # CRITICAL: Re-raise CancelledError to honor task cancellation.
                     # Cancellation should not be collected - it must propagate immediately.
                     raise
-                except Exception as e:  # catch-all-ok: collect all errors
+                except Exception as e:  # noqa: BLE001  # catch-all-ok: collect all errors
                     errors.append((sink_name, e))
 
         self._emit_count += 1
@@ -305,7 +305,7 @@ class ServiceContractValidationEventEmitter:
                     # CRITICAL: Re-raise CancelledError to honor task cancellation.
                     # Cancellation should not be collected - it must propagate immediately.
                     raise
-                except Exception as e:  # catch-all-ok: collect all errors
+                except Exception as e:  # noqa: BLE001  # catch-all-ok: collect all errors
                     errors.append((sink_name, e))
 
         if errors:
@@ -337,7 +337,7 @@ class ServiceContractValidationEventEmitter:
                 # Mark as closed before propagating to indicate partial cleanup.
                 self._closed = True
                 raise
-            except Exception as e:  # catch-all-ok: ensure all sinks closed
+            except Exception as e:  # noqa: BLE001  # catch-all-ok: ensure all sinks closed
                 errors.append((sink_name, e))
 
         # Mark as closed regardless of errors

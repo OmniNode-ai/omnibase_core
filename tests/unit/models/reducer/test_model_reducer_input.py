@@ -1010,7 +1010,7 @@ class TestModelReducerInputThreadSafety:
                     _ = reducer_input.metadata
                     _ = reducer_input.timestamp
                 results.append(True)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         # Launch 15 threads to read concurrently
@@ -1109,7 +1109,7 @@ class TestModelReducerInputThreadSafety:
                 dict_result = reducer_input.model_dump()
                 json_result = reducer_input.model_dump_json()
                 serialized_results.append((dict_result, json_result))
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         # Launch threads to serialize concurrently

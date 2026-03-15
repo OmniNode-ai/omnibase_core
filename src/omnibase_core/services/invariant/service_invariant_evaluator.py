@@ -563,7 +563,7 @@ class ServiceInvariantEvaluator:
             passed, message, actual_value, expected_value = self._dispatch_evaluator(
                 invariant.type, invariant.config, output
             )
-        except Exception as e:  # catch-all-ok: evaluation must not crash
+        except Exception as e:  # noqa: BLE001  # catch-all-ok: evaluation must not crash
             passed = False
             message = f"Evaluation error: {type(e).__name__}: {e}"
             actual_value = None
@@ -1383,7 +1383,7 @@ class ServiceInvariantEvaluator:
         # Call the custom function
         try:
             result = func(output, **kwargs)
-        except Exception as e:  # fallback-ok: custom callable boundary - must capture all errors to return result
+        except Exception as e:  # noqa: BLE001  # fallback-ok: custom callable boundary - must capture all errors to return result
             return (
                 False,
                 f"Custom callable raised exception: {type(e).__name__}: {e}",

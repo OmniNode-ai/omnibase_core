@@ -88,7 +88,7 @@ def get_service[T](protocol_type: type[T]) -> T | None:
             # Type narrowing: cast to expected protocol type
             return service if service is not None else None
     except (
-        Exception
+        Exception  # noqa: BLE001
     ):  # fallback-ok: bootstrap service discovery, fallback to minimal services
         pass
 
@@ -110,7 +110,7 @@ def get_logging_service() -> object:
             if logger_protocol:
                 # Return protocol directly (no wrapper needed)
                 return logger_protocol
-    except Exception:  # fallback-ok: minimal logging service unavailable
+    except Exception:  # noqa: BLE001  # fallback-ok: minimal logging service unavailable
         pass
 
     # Return inline minimal logger for bootstrap
@@ -134,7 +134,7 @@ def emit_log_event(
             logging_service.emit_log_event(level, event_type, message, **kwargs)
             return
     except (
-        Exception
+        Exception  # noqa: BLE001
     ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
         pass
 
@@ -164,7 +164,7 @@ def emit_log_event_sync(
             )
             return
     except (
-        Exception
+        Exception  # noqa: BLE001
     ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
         pass
 
@@ -250,7 +250,7 @@ def get_available_services() -> list[str]:
             # Type narrowing: ensure list[str]
             return list(services) if services else []
     except (
-        Exception
+        Exception  # noqa: BLE001
     ):  # fallback-ok: bootstrap registry unavailable, return minimal services
         pass
 

@@ -236,7 +236,7 @@ class ModelResult[T, E](
             try:
                 new_value = f(self._get_value_or_raise())
                 return ModelResult.ok(new_value)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # fallback-ok: Monadic error handling - converting exceptions to error results
                 return ModelResult.err(e)
         # Pass through the original error
@@ -257,7 +257,7 @@ class ModelResult[T, E](
         try:
             new_error = f(self._get_error_or_raise())
             return ModelResult.err(new_error)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # fallback-ok: Monadic error handling - converting exceptions to error results
             return ModelResult.err(e)
 
@@ -282,7 +282,7 @@ class ModelResult[T, E](
                 # ModelResult[U, E | Exception] at runtime (same structure, wider error type)
                 result = f(self._get_value_or_raise())
                 return cast("ModelResult[U, E | Exception]", result)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # fallback-ok: Monadic error handling - converting exceptions to error results
                 return ModelResult.err(e)
         # Pass through the original error
@@ -309,7 +309,7 @@ class ModelResult[T, E](
             # ModelResult[T, F | Exception] at runtime (same structure, wider error type)
             result = f(self._get_error_or_raise())
             return cast("ModelResult[T, F | Exception]", result)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # fallback-ok: Monadic error handling - converting exceptions to error results
             return ModelResult.err(e)
 
@@ -410,7 +410,7 @@ def try_result[T](f: Callable[[], T]) -> ModelResult[T, Exception]:
     """
     try:
         return ModelResult.ok(f())
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         # fallback-ok: Monadic error handling - converting exceptions to error results
         return ModelResult.err(e)
 

@@ -342,7 +342,7 @@ class AsyncTaskLauncher:
                 result = await coro_factory()
                 elapsed = time.perf_counter() - start
                 return (index, result, elapsed)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 elapsed = time.perf_counter() - start
                 self.errors.append(e)
                 return (index, None, elapsed)
@@ -829,7 +829,7 @@ def isolated_event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
                 )
 
             new_loop.close()
-        except Exception:
+        except Exception:  # noqa: BLE001
             # Best effort cleanup
             pass
 

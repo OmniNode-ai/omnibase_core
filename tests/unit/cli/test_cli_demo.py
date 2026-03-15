@@ -539,7 +539,7 @@ class TestGetDemoRoot:
             demo_root = _get_demo_root()
             assert demo_root.name == "demo"
             assert demo_root.parent.name == "examples"
-        except Exception:
+        except Exception:  # noqa: BLE001
             # If demo directory doesn't exist, test passes
             pass
 

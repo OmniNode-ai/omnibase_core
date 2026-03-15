@@ -180,7 +180,7 @@ class MixinToolExecution:
             return input_state_class(**param_dict)
 
         except (
-            Exception
+            Exception  # noqa: BLE001
         ) as e:  # fallback-ok: resilient input parsing, fallback to dict with logging
             emit_log_event(
                 LogLevel.WARNING,

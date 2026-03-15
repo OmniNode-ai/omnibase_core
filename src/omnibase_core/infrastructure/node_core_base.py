@@ -334,7 +334,7 @@ class NodeCoreBase(ABC):
             )
 
         except (
-            BaseException
+            BaseException  # noqa: BLE001
         ) as e:  # catch-all-ok: cleanup must not raise to prevent resource leaks
             self.state["status"] = EnumNodeLifecycleStatus.CLEANUP_FAILED.value
 
@@ -426,7 +426,7 @@ class NodeCoreBase(ABC):
                 # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
                 contract_service = self.container.get_service("contract_service")  # type: ignore[arg-type]
             except (
-                Exception
+                Exception  # noqa: BLE001
             ):  # fallback-ok: contract service is optional for node operation
                 contract_service = None
 
@@ -508,7 +508,7 @@ class NodeCoreBase(ABC):
                 # checks. Result is advisory only; startup is never blocked.
                 self._run_startup_contract_validation()
 
-        except Exception as e:  # fallback-ok: contract loading failure uses defaults, graceful degradation
+        except Exception as e:  # noqa: BLE001  # fallback-ok: contract loading failure uses defaults, graceful degradation
             # Contract loading failure is not fatal
             emit_log_event(
                 LogLevel.WARNING,
@@ -532,7 +532,7 @@ class NodeCoreBase(ABC):
         contract_path: Path | None = None
         try:
             contract_path = self._find_contract_path()
-        except Exception:  # fallback-ok: contract path discovery is advisory
+        except Exception:  # noqa: BLE001  # fallback-ok: contract path discovery is advisory
             emit_log_event(
                 LogLevel.WARNING,
                 f"Warning: contract.yaml not found — running without ONEX contract ({self.__class__.__name__})",
@@ -709,7 +709,7 @@ class NodeCoreBase(ABC):
             try:
                 # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
                 event_bus = self.container.get_service("event_bus")  # type: ignore[arg-type]
-            except Exception:  # fallback-ok: event bus is optional for node operation
+            except Exception:  # noqa: BLE001  # fallback-ok: event bus is optional for node operation
                 event_bus = None
 
             # Check event bus - use try/except to avoid hasattr() deadlock with Mock
@@ -735,7 +735,7 @@ class NodeCoreBase(ABC):
                     pass
 
         except (
-            Exception
+            Exception  # noqa: BLE001
         ) as e:  # fallback-ok: event emission failure is logged but not fatal
             # Event emission failure is not fatal
             emit_log_event(

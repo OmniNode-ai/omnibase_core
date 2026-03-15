@@ -287,7 +287,7 @@ class ModelGenericMetadata(BaseModel):
                             if isinstance(value, (str, int, bool, float)):
                                 self.set_field(key, value)
             return True
-        except Exception:  # fallback-ok: protocol method must return bool, not raise
+        except Exception:  # noqa: BLE001  # fallback-ok: protocol method must return bool, not raise
             return False
 
     def serialize(self) -> dict[str, BasicValueType]:
@@ -315,7 +315,7 @@ class ModelGenericMetadata(BaseModel):
                     ):
                         return False
                 except (
-                    Exception
+                    Exception  # noqa: BLE001
                 ):  # fallback-ok: version validation, return False on any error
                     return False
 
@@ -328,10 +328,10 @@ class ModelGenericMetadata(BaseModel):
                         # Test that we can convert to python value
                         cli_value.to_python_value()
                     except (
-                        Exception
+                        Exception  # noqa: BLE001
                     ):  # fallback-ok: field conversion test, return False on any error
                         return False
 
             return True
-        except Exception:  # fallback-ok: protocol method must return bool, not raise
+        except Exception:  # noqa: BLE001  # fallback-ok: protocol method must return bool, not raise
             return False

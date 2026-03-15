@@ -155,7 +155,7 @@ def extract_tables_with_parser(
     except sqlglot_module.errors.ParseError as e:
         return ParserResult.failure(f"Parse error: {e}")
     except (
-        Exception
+        Exception  # noqa: BLE001
     ) as e:  # fallback-ok: fail-closed security - return failure to reject SQL
         return ParserResult.failure(f"Unexpected parser error: {e}")
 

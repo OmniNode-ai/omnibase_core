@@ -202,7 +202,7 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates metadata update failed safely
+        except Exception:  # noqa: BLE001  # fallback-ok: protocol method contract requires bool return - False indicates metadata update failed safely
             return False
 
     def serialize(self) -> TypedDictSerializedModel:

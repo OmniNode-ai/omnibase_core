@@ -186,7 +186,7 @@ class TestRegexPatternCache:
         """Invalid patterns that raise re.error are not stored in the cache."""
         try:
             _get_compiled_pattern(r"[invalid", 0)
-        except Exception:
+        except Exception:  # noqa: BLE001
             pass
 
         info = _get_compiled_pattern.cache_info()

@@ -428,7 +428,7 @@ def fresh_asyncio_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
         except (FileNotFoundError, OSError):
             # Race condition - files already cleaned up by parallel workers
             pass
-        except Exception:
+        except Exception:  # noqa: BLE001
             # Best effort cleanup
             pass
 
@@ -439,7 +439,7 @@ def fresh_asyncio_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
             except (FileNotFoundError, OSError, RuntimeError):
                 # Race condition or loop already closed
                 pass
-            except Exception:
+            except Exception:  # noqa: BLE001
                 pass
 
 

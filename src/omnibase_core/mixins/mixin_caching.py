@@ -355,7 +355,7 @@ class MixinCaching:
                 await self._cache_backend.close()
                 logger.info("L2 cache backend cleanup completed successfully")
             except (
-                Exception
+                Exception  # noqa: BLE001
             ) as e:  # cleanup-resilience-ok: cleanup must complete even on error
                 error = self._wrap_cache_error(e, "cleanup")
                 logger.warning(
@@ -517,7 +517,7 @@ class MixinCaching:
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "get", cache_key)
             except (
-                Exception
+                Exception  # noqa: BLE001
             ) as e:  # catch-all-ok: safety net for unexpected backend exceptions
                 await self._handle_l2_error(e, "get", cache_key)
 
@@ -583,7 +583,7 @@ class MixinCaching:
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "set", cache_key)
             except (
-                Exception
+                Exception  # noqa: BLE001
             ) as e:  # catch-all-ok: safety net for unexpected backend exceptions
                 await self._handle_l2_error(e, "set", cache_key)
 
@@ -622,7 +622,7 @@ class MixinCaching:
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "delete", cache_key)
             except (
-                Exception
+                Exception  # noqa: BLE001
             ) as e:  # catch-all-ok: safety net for unexpected backend exceptions
                 await self._handle_l2_error(e, "delete", cache_key)
 
@@ -653,7 +653,7 @@ class MixinCaching:
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "clear")
             except (
-                Exception
+                Exception  # noqa: BLE001
             ) as e:  # catch-all-ok: safety net for unexpected backend exceptions
                 await self._handle_l2_error(e, "clear")
 

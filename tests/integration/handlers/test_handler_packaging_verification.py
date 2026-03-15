@@ -230,7 +230,7 @@ class SimulatedPackageVerifier:
         # Step 1: Download artifact
         try:
             content = await self.download_artifact(packaging.artifact_reference)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # boundary-ok: download failures can be network errors, timeouts, or server errors
             return VerificationResult(
                 success=False,
@@ -266,7 +266,7 @@ class SimulatedPackageVerifier:
                         hash_verified=True,
                         signature_verified=False,
                     )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # boundary-ok: signature download failures must not crash verification
                 return VerificationResult(
                     success=False,

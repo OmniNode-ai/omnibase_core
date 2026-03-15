@@ -133,12 +133,12 @@ def test_current_approach_wrong_type_string_for_int():
         try:
             num_value = schema_value.get_number()
             print(f"   ❌ UNEXPECTED: Got number {num_value}")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"   ✅ Error raised: {e.__class__.__name__}")
             print(f"   Message: {e}")
             print("   Agent can retry? YES (clear error message)")
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"❌ Conversion failed: {e.__class__.__name__}")
         print(f"   Message: {e}")
         print("   Agent can retry? Check error message clarity")
@@ -186,7 +186,7 @@ def test_generic_approach_wrong_type_string_for_int():
                 print(f"      - {err['loc']}: {err['msg']}")
             print("   Agent can retry? YES (clear validation errors)")
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"❌ Conversion failed: {e.__class__.__name__}")
         print(f"   Message: {e}")
 
@@ -224,7 +224,7 @@ def test_current_approach_unknown_object():
         print("   - Data loss? YES (object converted to string representation)")
         print("   - Safe for distributed execution? YES (no object references)")
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"❌ Conversion failed: {e.__class__.__name__}")
         print(f"   Message: {e}")
 
@@ -261,10 +261,10 @@ def test_generic_approach_unknown_object():
         try:
             serialized = schema_value.model_dump()
             print(f"   ✅ Serialization succeeded: {serialized}")
-        except Exception as ser_e:
+        except Exception as ser_e:  # noqa: BLE001
             print(f"   ❌ Serialization failed: {ser_e}")
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"❌ Conversion failed: {e.__class__.__name__}")
         print(f"   Message: {e}")
 
@@ -331,10 +331,10 @@ def test_current_approach_nested_type_errors():
                         f"     [{i}] ⚠️  Type changed: {type(orig).__name__} -> {type(rt).__name__}"
                     )
 
-        except Exception as rt_e:
+        except Exception as rt_e:  # noqa: BLE001
             print(f"   ❌ Round-trip failed: {rt_e}")
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"❌ Conversion failed: {e.__class__.__name__}")
         print(f"   Message: {e}")
 
@@ -381,11 +381,11 @@ def test_generic_approach_nested_type_errors():
             print(
                 "   Note: May fail with non-serializable objects in distributed systems"
             )
-        except Exception as ser_e:
+        except Exception as ser_e:  # noqa: BLE001
             print(f"   ❌ Serialization failed: {ser_e}")
             print("   This would crash distributed execution!")
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"❌ Conversion failed: {e.__class__.__name__}")
         print(f"   Message: {e}")
 
@@ -457,10 +457,10 @@ def test_current_approach_serialization_safety():
                     f"   Converted to string? {isinstance(final_value['unknown_field'], str)}"
                 )
 
-            except Exception as recreate_e:
+            except Exception as recreate_e:  # noqa: BLE001
                 print(f"   ❌ Deserialization failed: {recreate_e}")
 
-        except Exception as ser_e:
+        except Exception as ser_e:  # noqa: BLE001
             print(f"   ❌ Serialization failed: {ser_e}")
 
         print("\n📊 DISTRIBUTED EXECUTION SAFETY:")
@@ -470,7 +470,7 @@ def test_current_approach_serialization_safety():
         print("   - Type preservation? Partial (unknown objects become strings)")
         print("   - Crash risk? LOW")
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"❌ Test failed: {e.__class__.__name__}")
         print(f"   Message: {e}")
 
@@ -519,13 +519,13 @@ def test_generic_approach_serialization_safety():
                 serialized_complex = schema_value_complex.model_dump()
                 print("   ✅ Serialization with unknown object succeeded")
                 print(f"   Value: {serialized_complex}")
-            except Exception as ser_complex_e:
+            except Exception as ser_complex_e:  # noqa: BLE001
                 print(
                     f"   ❌ Serialization with unknown object failed: {ser_complex_e}"
                 )
                 print("   This would crash distributed execution!")
 
-        except Exception as ser_e:
+        except Exception as ser_e:  # noqa: BLE001
             print(f"   ❌ Serialization failed: {ser_e}")
 
         print("\n📊 DISTRIBUTED EXECUTION SAFETY:")
@@ -533,7 +533,7 @@ def test_generic_approach_serialization_safety():
         print("   - Handles unknown objects? DEPENDS (may fail serialization)")
         print("   - Crash risk? MEDIUM-HIGH (if unknown objects present)")
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"❌ Test failed: {e.__class__.__name__}")
         print(f"   Message: {e}")
 
@@ -562,7 +562,7 @@ def test_current_approach_error_messages():
     try:
         num = schema_value.get_number()
         print(f"  Unexpected success: {num}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"  ✅ Error raised: {e.__class__.__name__}")
         print(f"  Message: {e}")
         print("\n  Error quality for agent debugging:")

@@ -2961,7 +2961,7 @@ class TestEnvelopeRouterConcurrencyStress:
                 result = runtime.route_envelope(envelope)
                 with lock:
                     results.append(result)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -3094,7 +3094,7 @@ class TestEnvelopeRouterConcurrencyStress:
                         invalid_state_errors.append(f"concurrent-node-{node_id}")
                     else:
                         other_errors.append(e)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     other_errors.append(e)
 
@@ -3199,7 +3199,7 @@ class TestEnvelopeRouterConcurrencyStress:
                 result = runtime.route_envelope(envelope)
                 with lock:
                     results_by_type[handler_type].append(result)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -3397,7 +3397,7 @@ class TestEnvelopeRouterConcurrencyStress:
             except ModelOnexError as e:
                 with lock:
                     handler_errors.append((handler_type, e))
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     handler_errors.append((handler_type, e))
 
@@ -3420,7 +3420,7 @@ class TestEnvelopeRouterConcurrencyStress:
             except ModelOnexError as e:
                 with lock:
                     node_errors.append((slug, e))
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     node_errors.append((slug, e))
 
@@ -3567,7 +3567,7 @@ class TestEnvelopeRouterConcurrencyStress:
                         duplicate_errors.append(thread_id)
                     else:
                         other_errors.append((thread_id, e))
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     other_errors.append((thread_id, e))
 

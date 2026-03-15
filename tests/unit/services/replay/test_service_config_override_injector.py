@@ -880,7 +880,7 @@ class TestConcurrentAccess:
                 result = injector.apply(overrides, config)
                 with lock:
                     results.append((index, result))
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 

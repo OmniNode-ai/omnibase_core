@@ -244,6 +244,6 @@ class ModelHealthStatus(BaseModel):
 try:
     ModelHealthStatus.model_rebuild()
 except (
-    Exception
+    Exception  # noqa: BLE001
 ):  # error-ok: model_rebuild may fail during import, resolved in __init__.py
     pass

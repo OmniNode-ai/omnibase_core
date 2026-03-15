@@ -387,7 +387,7 @@ class ModelNodeInformation(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
+        except Exception:  # noqa: BLE001  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def serialize(self) -> TypedDictSerializedModel:

@@ -229,7 +229,7 @@ class TestNodeOrchestratorWorkflowConcurrency:
                 )
                 result = await orchestrator.process(input_data)
                 return result
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
                 return None
 
@@ -380,7 +380,7 @@ class TestNodeOrchestratorWorkflowConcurrency:
 
                 async with lock:
                     snapshot_results.append(result)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 async with lock:
                     restore_errors.append(e)
 
@@ -440,7 +440,7 @@ class TestModelActionLeaseConcurrency:
 
                 with lock:
                     created_actions.append(action)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -548,7 +548,7 @@ class TestModelActionLeaseConcurrency:
             """Attempt to modify the action's lease (should fail)."""
             try:
                 action.lease_id = uuid4()  # type: ignore[misc]
-            except (AttributeError, Exception, TypeError) as e:
+            except (AttributeError, Exception, TypeError) as e:  # noqa: BLE001
                 with lock:
                     modification_errors.append(
                         f"Thread {thread_id}: {type(e).__name__}"
@@ -660,7 +660,7 @@ class TestOrchestratorInputOutputConcurrency:
                     }
                     with lock:
                         read_results.append(data)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -705,7 +705,7 @@ class TestOrchestratorInputOutputConcurrency:
 
                 with lock:
                     created_outputs.append(output)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -1034,7 +1034,7 @@ class TestWorkflowStateSnapshotConcurrency:
                     }
                     with lock:
                         read_results.append(data)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -1076,13 +1076,13 @@ class TestWorkflowStateSnapshotConcurrency:
             """Attempt various modifications."""
             try:
                 snapshot.current_step_index = 999  # type: ignore[misc]
-            except (AttributeError, Exception, TypeError) as e:
+            except (AttributeError, Exception, TypeError) as e:  # noqa: BLE001
                 with lock:
                     modification_errors.append(f"step_index: {type(e).__name__}")
 
             try:
                 snapshot.workflow_id = uuid4()  # type: ignore[misc]
-            except (AttributeError, Exception, TypeError) as e:
+            except (AttributeError, Exception, TypeError) as e:  # noqa: BLE001
                 with lock:
                     modification_errors.append(f"workflow_id: {type(e).__name__}")
 

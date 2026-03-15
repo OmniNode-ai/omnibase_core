@@ -155,7 +155,7 @@ class ModelValidationBase(BaseModel):
                         error_code=validation_error_code,
                     )
             except (
-                Exception
+                Exception  # noqa: BLE001
             ) as serialize_error:  # fallback-ok: serialization can raise any exception
                 self.add_validation_error(
                     message=f"Model serialization failed: {serialize_error!s}",
@@ -170,7 +170,7 @@ class ModelValidationBase(BaseModel):
 
                 json.dumps(self.model_dump(exclude={"validation"}), default=str)
             except (
-                Exception
+                Exception  # noqa: BLE001
             ) as json_error:  # fallback-ok: model_dump/json can raise any exception
                 if "circular reference" in str(json_error).lower() or isinstance(
                     json_error,

@@ -661,7 +661,7 @@ class TestLinterDoesNotRaise:
             assert warnings == [], (
                 f"Empty workflow should have zero warnings, got: {warnings}"
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             pytest.fail(f"Linter raised exception: {e}")
 
     def test_linter_handles_empty_steps(self, linter: WorkflowLinter) -> None:
@@ -697,7 +697,7 @@ class TestLinterDoesNotRaise:
             assert warnings_isolated == [], (
                 f"Empty steps should have zero isolated warnings, got: {warnings_isolated}"
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             pytest.fail(f"Linter raised exception on empty input: {e}")
 
 

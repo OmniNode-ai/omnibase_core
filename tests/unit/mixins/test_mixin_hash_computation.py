@@ -75,7 +75,7 @@ class TestHashComputationInterface:
             # we verify the interface exists
             result = model.compute_hash.__func__
             assert callable(result)
-        except Exception:
+        except Exception:  # noqa: BLE001
             pass  # Expected to fail without proper NodeMetadataBlock
 
     def test_compute_hash_accepts_optional_parameters(self):

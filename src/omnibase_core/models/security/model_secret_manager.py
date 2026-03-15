@@ -159,7 +159,7 @@ class ModelSecretManager(BaseModel):
 
                     return config
 
-                except Exception:  # fallback-ok: try next backend in chain
+                except Exception:  # noqa: BLE001  # fallback-ok: try next backend in chain
                     continue
 
                 finally:

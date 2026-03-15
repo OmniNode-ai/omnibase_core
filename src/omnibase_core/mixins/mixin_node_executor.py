@@ -120,7 +120,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                 try:
                     callback()
                 except (
-                    Exception
+                    Exception  # noqa: BLE001
                 ) as e:  # fallback-ok: user callbacks must not crash shutdown
                     # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                     self._log_error(f"Shutdown callback failed: {e}")
@@ -128,7 +128,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._executor_running = False
             self._log_info("Executor stopped successfully")
         except (
-            Exception
+            Exception  # noqa: BLE001
         ) as e:  # fallback-ok: shutdown must complete even if cleanup fails
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Error during executor shutdown: {e}")

@@ -474,7 +474,7 @@ def _get_protocol_services_cached() -> tuple[Any, Any]:
         formatter = container.get_service(ProtocolSmartLogFormatter)
         output_handler = container.get_service(ProtocolContextAwareOutputHandler)
         return (formatter, output_handler)
-    except Exception:  # fallback-ok: protocol services init must never fail
+    except Exception:  # noqa: BLE001  # fallback-ok: protocol services init must never fail
         return (None, None)
 
 
@@ -752,7 +752,7 @@ def _get_default_event_bus() -> Any | None:
             return event_bus_factory.get_event_bus()
 
         return None
-    except Exception:  # fallback-ok: logger unavailable during bootstrap
+    except Exception:  # noqa: BLE001  # fallback-ok: logger unavailable during bootstrap
         # Fallback when event bus unavailable
         return None
 
@@ -797,5 +797,5 @@ def _route_to_logger_node(
             # Fallback to simple output if protocol services unavailable
             pass
 
-    except Exception:  # fallback-ok: logger node routing failure is non-fatal
+    except Exception:  # noqa: BLE001  # fallback-ok: logger node routing failure is non-fatal
         pass

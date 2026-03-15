@@ -370,7 +370,7 @@ class TestThreadSafetyForRegex:
                     r"\d+", "abc123def"
                 )
                 results.append((success, match, error_msg))
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         thread = threading.Thread(target=worker)
@@ -401,7 +401,7 @@ class TestThreadSafetyForRegex:
                     r"(a+)+", "aaaaaa"
                 )
                 results.append((success, match, error_msg))
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         thread = threading.Thread(target=worker)
@@ -437,7 +437,7 @@ class TestThreadSafetyForRegex:
             try:
                 result = evaluator.evaluate(invariant, {"email": "test@example.com"})
                 results.append(result.passed)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         thread = threading.Thread(target=worker)

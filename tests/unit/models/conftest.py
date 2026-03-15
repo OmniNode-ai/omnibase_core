@@ -130,10 +130,10 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
                             task.exception()
                         except (asyncio.CancelledError, asyncio.InvalidStateError):
                             pass
-                        except Exception:
+                        except Exception:  # noqa: BLE001
                             # Silently ignore exceptions during forced cleanup
                             pass
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # Handle other exceptions during cancellation
                 print(
                     f"[Session Cleanup] Exception during task cancellation: {e}",
@@ -144,7 +144,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             # Restore original exception handler
             loop.set_exception_handler(old_exception_handler)
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         # Best effort cleanup - don't fail test suite due to cleanup issues
         # Use print instead of logger since log files may be closed
         print(f"[Session Cleanup] Exception during async cleanup: {e}", flush=True)

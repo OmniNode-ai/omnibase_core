@@ -192,7 +192,7 @@ class TestModelWorkflowDependencyPerformance:
                     dep = ModelDependency(name="TestDep", module=module)
                     assert dep.module == module
                     valid_count += 1
-                except Exception:
+                except Exception:  # noqa: BLE001
                     pass  # Shouldn't happen for valid modules
 
         valid_time = time.perf_counter() - start_time
@@ -329,7 +329,7 @@ class TestModelWorkflowDependencyPerformance:
                     )
                     assert new_dep.timeout_ms == timeout
                     valid_count += 1
-                except Exception:
+                except Exception:  # noqa: BLE001
                     pass
 
         valid_time = time.perf_counter() - start_time
@@ -437,7 +437,7 @@ class TestModelWorkflowDependencyPerformance:
                         with_version=(i % 3 == 0),
                     )
                     thread_results.append(True)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     thread_results.append(False)
 
             end_time = time.perf_counter()

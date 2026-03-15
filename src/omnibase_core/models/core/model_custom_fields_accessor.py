@@ -269,7 +269,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 self.string_fields[path] = str(value)
 
             return True
-        except Exception:  # fallback-ok: set_field method signature returns bool for success/failure rather than raising
+        except Exception:  # noqa: BLE001  # fallback-ok: set_field method signature returns bool for success/failure rather than raising
             return False
 
     def get_field(  # type: ignore[override]
@@ -331,7 +331,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 custom_fields = getattr(self, "custom_fields", {})
                 return custom_fields[path]
             return default
-        except Exception:  # fallback-ok: get_field returns default value on error for graceful field access
+        except Exception:  # noqa: BLE001  # fallback-ok: get_field returns default value on error for graceful field access
             return default
 
     def get_string(self, key: str, default: str = "") -> str:
@@ -517,7 +517,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 del custom_fields[path]
                 removed = True
             return removed
-        except Exception:  # fallback-ok: remove_field method signature returns bool for success/failure rather than raising
+        except Exception:  # noqa: BLE001  # fallback-ok: remove_field method signature returns bool for success/failure rather than raising
             return False
 
     def get_field_count(self) -> int:
@@ -795,7 +795,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             # compatible (str, int, float, bool, list, or None)
             self.custom_fields[key] = raw_value
             return True
-        except Exception:  # fallback-ok: set_custom_field method signature returns bool for success/failure rather than raising
+        except Exception:  # noqa: BLE001  # fallback-ok: set_custom_field method signature returns bool for success/failure rather than raising
             return False
 
     def has_custom_field(self, key: str) -> bool:
@@ -829,7 +829,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 del self.custom_fields[key]
                 return True
             return False
-        except Exception:  # fallback-ok: remove_custom_field method signature returns bool for success/failure rather than raising
+        except Exception:  # noqa: BLE001  # fallback-ok: remove_custom_field method signature returns bool for success/failure rather than raising
             return False
 
     # Protocol method implementations
@@ -841,7 +841,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:  # fallback-ok: protocol method must return bool, not raise
+        except Exception:  # noqa: BLE001  # fallback-ok: protocol method must return bool, not raise
             return False
 
     def serialize(self) -> dict[str, object]:

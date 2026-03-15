@@ -495,7 +495,7 @@ class BackendCacheRedis:
             logger.warning(
                 "Error during connection cleanup: %s", sanitize_error_message(str(e))
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # cleanup-resilience-ok: catch-all ensures cleanup never fails unexpectedly
             logger.warning(
                 "Unexpected error during connection cleanup: %s",
@@ -524,7 +524,7 @@ class BackendCacheRedis:
             logger.warning(
                 "Error closing Redis client: %s", sanitize_error_message(str(e))
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # cleanup-resilience-ok: catch-all ensures pool cleanup always runs
             logger.warning(
                 "Unexpected error closing Redis client: %s",
@@ -541,7 +541,7 @@ class BackendCacheRedis:
             logger.warning(
                 "Error disconnecting Redis pool: %s", sanitize_error_message(str(e))
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # cleanup-resilience-ok: catch-all ensures state is always reset
             logger.warning(
                 "Unexpected error disconnecting Redis pool: %s",

@@ -33,7 +33,7 @@ def _omnibase_core_version() -> str:
     """Return the installed omnibase_core package version, or 'unknown'."""
     try:
         return pkg_version("omnibase_core")
-    except Exception:  # fallback-ok: version probe is best-effort
+    except Exception:  # noqa: BLE001  # fallback-ok: version probe is best-effort
         return "unknown"
 
 
