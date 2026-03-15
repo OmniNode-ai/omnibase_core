@@ -375,7 +375,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/validation/|.*example.*).*\.py$
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/validation/|src/omnibase_core/scripts/|.*example.*).*\.py$
         stages: [pre-commit]
 
       - id: check-ai-slop
@@ -467,7 +467,8 @@ repos:
         # - validate_string_versions.py: validator script with tightly coupled internal AST visitor classes (OMN-4402)
         # - timeout_utils.py: Cross-platform timeout utility classes — split deferred to OMN-4408
         # - model_epic_state.py: Tightly coupled epic state model family (ModelEpicTicketStatus, ModelEpicWave, ModelEpicState) (OMN-4405)
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/types/typed_dict_demo\.py$|src/omnibase_core/validation/cross_repo/scanners/scanner_import_graph\.py$|src/omnibase_core/models/validation/model_rule_configs\.py$|src/omnibase_core/protocols/|src/omnibase_core/models/contracts/model_cli_contribution\.py$|src/omnibase_core/navigation/model_contract_graph\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_input\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_output\.py$|src/omnibase_core/navigation/model_backward_chaining\.py$|src/omnibase_core/models/events/model_github_pr_status_event\.py$|src/omnibase_core/models/validation/model_validation_report\.py$|src/omnibase_core/services/service_contract_validator\.py$|src/omnibase_core/validation/validator_local_paths\.py$|src/omnibase_core/navigation/model_graph_boundary\.py$|src/omnibase_core/services/service_protocol_auditor\.py$|src/omnibase_core/contracts/contract_loader\.py$|src/omnibase_core/navigation/model_action_set\.py$|src/omnibase_core/models/ticket/model_ticket_context_bundle\.py$|src/omnibase_core/validation/scripts/validate_string_versions\.py$|src/omnibase_core/validation/scripts/timeout_utils\.py$|src/omnibase_core/models/epic/model_epic_state\.py$)
+        # - validate_markdown_links.py: CLI script with tightly coupled data classes (LinkInfo, BrokenLink, ValidationResult, MarkdownLinkConfig) (OMN-5084)
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/types/typed_dict_demo\.py$|src/omnibase_core/validation/cross_repo/scanners/scanner_import_graph\.py$|src/omnibase_core/models/validation/model_rule_configs\.py$|src/omnibase_core/protocols/|src/omnibase_core/models/contracts/model_cli_contribution\.py$|src/omnibase_core/navigation/model_contract_graph\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_input\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_output\.py$|src/omnibase_core/navigation/model_backward_chaining\.py$|src/omnibase_core/models/events/model_github_pr_status_event\.py$|src/omnibase_core/models/validation/model_validation_report\.py$|src/omnibase_core/services/service_contract_validator\.py$|src/omnibase_core/validation/validator_local_paths\.py$|src/omnibase_core/navigation/model_graph_boundary\.py$|src/omnibase_core/services/service_protocol_auditor\.py$|src/omnibase_core/contracts/contract_loader\.py$|src/omnibase_core/navigation/model_action_set\.py$|src/omnibase_core/models/ticket/model_ticket_context_bundle\.py$|src/omnibase_core/validation/scripts/validate_string_versions\.py$|src/omnibase_core/validation/scripts/timeout_utils\.py$|src/omnibase_core/models/epic/model_epic_state\.py$|src/omnibase_core/scripts/validate_markdown_links\.py$)
         stages: [pre-commit]
 
       - id: validate-enum-model-imports
@@ -606,23 +607,13 @@ repos:
         exclude: ^tests/.*\.py$
         stages: [pre-commit]
 
-      # Documentation link validation - prevents broken links in CI
-      # Configuration: .markdown-link-check.json (ignore patterns, exclude files)
-      - id: validate-doc-links
-        name: ONEX Documentation Link Validation
-        entry: uv run python scripts/validation/validate-doc-links.py
-        args: [--fix-case]
-        language: system
-        pass_filenames: false
-        always_run: true
-        stages: [pre-push]  # Moved to pre-push: scans all markdown files
-
-      # Markdown link validation (PR #172 pattern from omnibase_infra)
+      # Consolidated markdown link validation (OMN-5084)
       # Validates internal markdown links point to existing files and anchors
       # Configuration: .markdown-link-check.json (ignore patterns, exclude files)
-      - id: validate-markdown-links
-        name: ONEX Markdown Link Validation
-        entry: uv run python scripts/validation/validate_markdown_links.py
+      # Replaces both validate-doc-links and validate-markdown-links hooks
+      - id: onex-validate-links
+        name: Validate markdown links
+        entry: uv run onex-validate-links --verbose
         language: system
         types: [markdown]
         pass_filenames: false
