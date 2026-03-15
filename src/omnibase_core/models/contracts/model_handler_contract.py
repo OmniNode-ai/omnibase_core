@@ -285,6 +285,11 @@ class ModelHandlerContract(BaseModel):
         description="Tags for categorization and discovery",
     )
 
+    priority: int = Field(
+        default=0,
+        description="Resolution priority. Higher number = lower priority. 0 = highest.",
+    )
+
     # ONEX_EXCLUDE: dict_str_any - extensibility metadata for contract customization
     metadata: dict[str, Any] = Field(
         default_factory=dict,
