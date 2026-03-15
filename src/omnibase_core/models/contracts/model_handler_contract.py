@@ -290,10 +290,11 @@ class ModelHandlerContract(BaseModel):
         description="Resolution priority. Higher number = lower priority. 0 = highest.",
     )
 
-    # ONEX_EXCLUDE: dict_str_any - extensibility metadata for contract customization
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional metadata for extensibility",
+    metadata: dict[str, object] = (
+        Field(  # ONEX_EXCLUDE: dict_str_any - extensibility metadata for contract customization
+            default_factory=dict,
+            description="Additional metadata for extensibility",
+        )
     )
 
     # ==========================================================================

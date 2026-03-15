@@ -20,10 +20,20 @@ EXCLUDE_COMMENT = "ONEX_EXCLUDE:"
 def check_file(path: str) -> list[str]:
     violations = []
     with open(path) as f:
-        for lineno, line in enumerate(f, 1):
-            if PATTERN.search(line) and EXCLUDE_COMMENT not in line:
+        lines = f.readlines()
+    for lineno_idx, line in enumerate(lines):
+        if PATTERN.search(line) and EXCLUDE_COMMENT not in line:
+            # Also check the next 2 lines for ONEX_EXCLUDE (ruff may wrap
+            # long Field(...) calls onto the following line)
+            found_exclude = False
+            for offset in range(1, 3):
+                if lineno_idx + offset < len(lines):
+                    if EXCLUDE_COMMENT in lines[lineno_idx + offset]:
+                        found_exclude = True
+                        break
+            if not found_exclude:
                 violations.append(
-                    f"{path}:{lineno}: untyped metadata dict — use TypedDict or add ONEX_EXCLUDE comment"
+                    f"{path}:{lineno_idx + 1}: untyped metadata dict — use TypedDict or add ONEX_EXCLUDE comment"
                 )
     return violations
 

@@ -115,10 +115,12 @@ class ModelPayloadFSMCompleted(ModelIntentPayloadBase):
         ),
     )
 
-    metadata: dict[str, object] = Field(
-        default_factory=dict,
-        description=(
-            "Optional metadata about the completion. Common keys: 'duration_ms', "
-            "'transitions', 'start_time', 'end_time'."
-        ),
+    metadata: dict[str, object] = (
+        Field(  # ONEX_EXCLUDE: dict_str_any - extensible FSM completion metadata
+            default_factory=dict,
+            description=(
+                "Optional metadata about the completion. Common keys: 'duration_ms', "
+                "'transitions', 'start_time', 'end_time'."
+            ),
+        )
     )

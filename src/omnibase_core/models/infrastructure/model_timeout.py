@@ -295,7 +295,9 @@ class ModelTimeout(BaseModel):
 
         # Create ModelCustomProperties from the metadata values
         # Convert ModelSchemaValue objects to primitive types for from_metadata
-        primitive_metadata: dict[str, object] = {}
+        primitive_metadata: dict[
+            str, object
+        ] = {}  # ONEX_EXCLUDE: dict_str_any - local variable for schema value conversion
         for key, val in metadata.items():
             # val is always ModelSchemaValue, extract primitive value for proper typing
             primitive_value = val.to_value()

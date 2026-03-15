@@ -43,9 +43,11 @@ class ModelPipelineExecutionPlan(BaseModel):
         default=None,
         description="The handler type category from the contract (for validation)",
     )
-    metadata: dict[str, object] = Field(
-        default_factory=dict,
-        description="Additional metadata about the plan",
+    metadata: dict[str, object] = (
+        Field(  # ONEX_EXCLUDE: dict_str_any - extensible pipeline plan metadata
+            default_factory=dict,
+            description="Additional metadata about the plan",
+        )
     )
 
     def get_phase_hooks(self, phase: PipelinePhase) -> list[ModelPipelineHook]:

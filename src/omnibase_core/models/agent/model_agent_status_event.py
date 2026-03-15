@@ -13,7 +13,6 @@ models/core/, which is a monitoring/resource model.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -101,9 +100,11 @@ class ModelAgentStatusEvent(BaseModel):
     created_at: datetime = Field(
         description="Timestamp of event creation. Must be injected explicitly; no default.",
     )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional metadata key-value pairs",
+    metadata: dict[str, object] = (
+        Field(  # ONEX_EXCLUDE: dict_str_any - extensible agent event metadata
+            default_factory=dict,
+            description="Additional metadata key-value pairs",
+        )
     )
 
     @field_validator("created_at")
