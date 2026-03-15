@@ -131,8 +131,8 @@ class TestModelValueContainer:
         assert container.is_valid() is False
 
     def test_is_valid_empty_string_with_metadata(self):
-        """Test is_valid with empty string with allow_empty metadata."""
-        container = ModelValueContainer(value="", metadata={"allow_empty": "true"})
+        """Test is_valid with empty string with allow_empty=True."""
+        container = ModelValueContainer(value="", allow_empty=True)
         assert container.is_valid() is True
 
     def test_is_valid_int(self):
@@ -257,8 +257,8 @@ class TestModelValueContainer:
         assert container._validate_type_specific_constraints() is False
 
     def test_validate_type_specific_constraints_empty_string_allowed(self):
-        """Test _validate_type_specific_constraints with empty string allowed."""
-        container = ModelValueContainer(value="", metadata={"allow_empty": "true"})
+        """Test _validate_type_specific_constraints with empty string allowed via allow_empty=True."""
+        container = ModelValueContainer(value="", allow_empty=True)
         assert container._validate_type_specific_constraints() is True
 
     def test_validate_type_specific_constraints_int(self):

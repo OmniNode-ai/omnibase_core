@@ -46,6 +46,10 @@ class ModelValueContainer(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     value: JsonSerializable = Field(default=..., description="The contained value")
+    allow_empty: bool = Field(
+        default=False,
+        description="When True, allows empty string values that would otherwise fail validation.",
+    )
     metadata: dict[str, str] = Field(
         default_factory=dict, description="Optional string metadata"
     )
@@ -160,7 +164,7 @@ class ModelValueContainer(BaseModel):
         # String validation
         if isinstance(self.value, str):
             # No empty strings in production containers (configurable)
-            if len(self.value) == 0 and self.metadata.get("allow_empty") != "true":
+            if len(self.value) == 0 and not self.allow_empty:
                 return False
 
         # Numeric validation
@@ -227,9 +231,9 @@ class ModelValueContainer(BaseModel):
 
         # String validation errors
         if isinstance(self.value, str):
-            if len(self.value) == 0 and self.metadata.get("allow_empty") != "true":
+            if len(self.value) == 0 and not self.allow_empty:
                 errors.append(
-                    "Empty strings not allowed (set allow_empty='true' in metadata to override)"
+                    "Empty strings not allowed (set allow_empty=True to override)"
                 )
 
         # Numeric validation errors
