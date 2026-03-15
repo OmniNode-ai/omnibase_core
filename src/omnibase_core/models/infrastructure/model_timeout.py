@@ -209,10 +209,6 @@ class ModelTimeout(BaseModel):
         super().__init__(custom_metadata=processed_metadata, **data)
 
         # Create the underlying time-based model
-        metadata = {"type": "timeout"}
-        if description:
-            metadata["description"] = description
-
         self.time_based = ModelTimeBased.timeout(
             value=timeout_seconds,
             unit=EnumTimeUnit.SECONDS,
@@ -279,7 +275,7 @@ class ModelTimeout(BaseModel):
     @property
     def description(self) -> str | None:
         """Human-readable timeout description."""
-        return self.time_based.metadata.get("description")
+        return self.time_based.description
 
     @cached_property
     def custom_properties(self) -> ModelCustomProperties:
