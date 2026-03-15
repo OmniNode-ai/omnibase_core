@@ -15,7 +15,7 @@ This guide documents the v1.0 deprecations planned for `MixinEventBus` and provi
 3. [Deprecation Categories](#deprecation-categories)
    - [Lazy Initialization Fallbacks](#1-lazy-initialization-fallbacks)
    - [Event Bus Protocol hasattr Checks](#2-event-bus-protocol-hasattr-checks)
-   - [ProtocolFromEvent Fallback](#3-protocolfrom_event-fallback)
+   - [ProtocolFromEvent Fallback](#3-protocolfromevent-fallback)
    - [Topic Validation Additions](#4-topic-validation-additions-feature)
 4. [Migration Checklist](#migration-checklist)
 5. [Code References](#code-references)

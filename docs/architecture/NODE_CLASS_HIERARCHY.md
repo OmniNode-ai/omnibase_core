@@ -23,7 +23,7 @@
 8. [Migration Paths](#migration-paths)
 9. [Common Scenarios](#common-scenarios)
 10. [When to Use Which Tier](#when-to-use-which-tier)
-11. [Naming Convention Migration (v0.4.0)](#naming-convention-migration-v040)
+11. [Naming Convention Migration (v0.4.0)](#naming-convention-migration-v040---completed)
 
 ---
 
@@ -759,7 +759,7 @@ class ValidatorHandler:
 
 ### Adding Features to NodeCoreBase
 
-To add features, **compose with mixins manually**. This pattern forms the foundation for ONEX's declarative node architecture (v0.4.0), where nodes define their behavior through configuration rather than inheritance. See [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md#declarative-patterns) for the declarative approach.
+To add features, **compose with mixins manually**. This pattern forms the foundation for ONEX's declarative node architecture (v0.4.0), where nodes define their behavior through configuration rather than inheritance. See [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md) for the declarative approach.
 
 > **v0.4.0 Recommendation**: For most use cases, prefer the top-level API:
 > `from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator`.

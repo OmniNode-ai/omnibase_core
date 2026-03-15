@@ -48,10 +48,9 @@ class TestHeadingToAnchor:
         assert _heading_to_anchor("my_heading") == "my_heading"
 
     def test_removes_inline_code(self) -> None:
-        """Inline code backticks should be removed, with hyphens collapsed."""
-        # Code is removed, leaving double space which becomes double hyphen,
-        # then collapsed to single hyphen
-        assert _heading_to_anchor("Using `code` in heading") == "using-in-heading"
+        """Inline code backticks should be stripped but code text kept (GitHub-compatible)."""
+        # GitHub keeps text inside backticks, just removes backtick delimiters
+        assert _heading_to_anchor("Using `code` in heading") == "using-code-in-heading"
 
     def test_removes_images(self) -> None:
         """Images should be removed from headings."""
@@ -61,10 +60,10 @@ class TestHeadingToAnchor:
         """Link text should be kept, URL removed."""
         assert _heading_to_anchor("[Link Text](http://example.com)") == "link-text"
 
-    def test_removes_consecutive_hyphens(self) -> None:
-        """Consecutive hyphens should be collapsed."""
-        assert _heading_to_anchor("A  B") == "a-b"
-        assert _heading_to_anchor("A - B") == "a-b"
+    def test_preserves_consecutive_hyphens(self) -> None:
+        """Consecutive hyphens should be preserved (GitHub-compatible)."""
+        assert _heading_to_anchor("A  B") == "a--b"
+        assert _heading_to_anchor("A - B") == "a---b"
 
     def test_strips_leading_trailing_hyphens(self) -> None:
         """Leading and trailing hyphens should be stripped."""

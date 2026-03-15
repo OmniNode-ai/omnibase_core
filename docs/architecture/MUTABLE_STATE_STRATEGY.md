@@ -253,7 +253,7 @@ For detailed thread safety patterns, mitigation strategies, and production check
 1. **Creating a multi-threaded service?** Use thread-local node instances
 2. **Need shared state?** Add explicit synchronization with `threading.Lock`
 3. **Using asyncio only?** Single-threaded event loop avoids most races (but watch for `run_in_executor`)
-4. **Production deployment?** Complete the [Production Checklist](../guides/THREADING.md#production-checklist)
+4. **Production deployment?** Complete the [Production Checklist](../guides/THREADING.md#8-production-checklist)
 
 ### Debug Mode
 

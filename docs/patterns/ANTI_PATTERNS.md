@@ -11,7 +11,7 @@ This document catalogs prohibited patterns in the ONEX framework. Each anti-patt
 1. [Business Logic in Nodes](#1-business-logic-in-nodes)
 2. [Container Type Confusion](#2-container-type-confusion)
 3. [ORCHESTRATOR Returning Result](#3-orchestrator-returning-result)
-4. [Skipping super().__init__(container)](#4-skipping-superinit-container)
+4. [Skipping super().__init__(container)](#4-skipping-super__init__container)
 5. [Thread-Unsafe Node Sharing](#5-thread-unsafe-node-sharing)
 6. [Reducer Side Effects](#6-reducer-side-effects)
 7. [Manual Node Wiring](#7-manual-node-wiring)

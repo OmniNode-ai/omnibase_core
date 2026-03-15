@@ -409,10 +409,20 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
       - name: Validate documentation links
         id: validate-doc-links
         run: |
-          python3 scripts/validation/validate-doc-links.py --fix-case
+          uv run onex-validate-links --verbose
 
       - name: Documentation validation summary
         if: always()

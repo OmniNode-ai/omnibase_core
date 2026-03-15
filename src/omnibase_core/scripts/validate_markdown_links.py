@@ -236,7 +236,7 @@ def _remove_code_blocks(content: str) -> str:
     """
     result_lines = []
     in_code_block = False
-    code_fence_pattern = re.compile(r"^```")
+    code_fence_pattern = re.compile(r"^\s*```")
 
     for line in content.split("\n"):
         if code_fence_pattern.match(line):
@@ -360,8 +360,8 @@ def extract_headings_as_anchors(content: str) -> set[str]:
 
 def _heading_to_anchor(heading: str) -> str:
     """Convert a heading to its GitHub-style anchor."""
-    # Remove inline code backticks
-    anchor = re.sub(r"`[^`]+`", "", heading)
+    # Strip backtick delimiters but keep code text (GitHub-compatible)
+    anchor = heading.replace("`", "")
     # Remove images
     anchor = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", anchor)
     # Remove links but keep text
@@ -370,10 +370,8 @@ def _heading_to_anchor(heading: str) -> str:
     anchor = anchor.lower()
     # Replace spaces with hyphens
     anchor = anchor.replace(" ", "-")
-    # Remove punctuation except hyphens and underscores
+    # Remove punctuation except hyphens and underscores (GitHub-compatible)
     anchor = re.sub(r"[^\w\-]", "", anchor)
-    # Remove consecutive hyphens
-    anchor = re.sub(r"-+", "-", anchor)
     # Strip leading/trailing hyphens
     anchor = anchor.strip("-")
     return anchor
