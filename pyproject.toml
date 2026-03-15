@@ -94,7 +94,12 @@ dev = [
     "prometheus-client>=0.21.0,<1.0.0",
     "types-psutil>=7.2.1.20260116",
     "sqlglot>=26.0.0,<30.0.0",
+    # Centralized governance hooks (OMN-5135)
+    "onex-change-control>=0.1.0",
 ]
+
+[tool.uv.sources]
+onex-change-control = { git = "https://github.com/OmniNode-ai/onex_change_control.git", branch = "main" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/omnibase_core"]
