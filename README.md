@@ -1,155 +1,77 @@
-# ONEX Core Framework
+# omnibase_core
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Contract-driven execution layer for agent tools and workflows.
+
+[![CI](https://github.com/OmniNode-ai/omnibase_core/actions/workflows/test.yml/badge.svg)](https://github.com/OmniNode-ai/omnibase_core/actions/workflows/test.yml)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Linting: ruff](https://img.shields.io/badge/linting-ruff-261230.svg)](https://github.com/astral-sh/ruff)
-[![Type checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy.readthedocs.io/)
-[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
-[![Framework: Core](https://img.shields.io/badge/framework-core-purple.svg)](https://github.com/OmniNode-ai/omnibase_core)
-[![Node Types: 4](https://img.shields.io/badge/node%20types-4-blue.svg)](https://github.com/OmniNode-ai/omnibase_core)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Contract-driven execution layer for tools and workflows.** Deterministic execution, zero boilerplate, full observability.
+## Install
 
-## What is ONEX?
-
-**ONEX is a declarative, contract-driven execution layer for tools and distributed workflows.** It standardizes how agents execute, communicate, and share context. Instead of custom glue code for each agent or tool, ONEX provides a deterministic execution protocol that behaves the same from local development to distributed production.
-
-Use ONEX when you need predictable, testable, observable agent tools with consistent error handling across distributed systems.
-
-## Four-Node Architecture
-
-```text
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   EFFECT    │───▶│   COMPUTE   │───▶│   REDUCER   │───▶│ORCHESTRATOR │
-│   (I/O)     │    │ (Transform) │    │(Aggregate)  │    │(Coordinate) │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
-```
-
-- **EFFECT**: External interactions (APIs, DBs, queues)
-- **COMPUTE**: Transformations and pure logic
-- **REDUCER**: State aggregation, finite state machines
-- **ORCHESTRATOR**: Multi-step workflows, coordination
-
-Unidirectional flow only. No backwards dependencies.
-
-**See**: [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
-
-## Why ONEX Exists
-
-Most agent frameworks reinvent execution logic, leading to:
-- inconsistent inputs/outputs
-- implicit state
-- opaque or framework-specific failures
-- framework/vendor lock-in
-- untestable tools
-
-ONEX solves this with:
-- typed schemas (Pydantic + protocols)
-- deterministic lifecycle
-- event-driven contracts: `ModelEventEnvelope`
-- full traceability
-- framework-agnostic design
-
-## What This Repository Provides
-
-OmniBase Core is the execution engine used by all ONEX-compatible nodes and services.
-- Base classes that remove 80+ lines of boilerplate per node
-- Protocol-driven dependency injection: `ModelONEXContainer`
-- Structured errors with proper error codes: `ModelOnexError`
-- Event system via `ModelEventEnvelope`
-- Full 4-node architecture
-- Mixins for reusable behaviors
-- Subcontracts for declarative configuration
-
-## Quick Start
-
-Install:
 ```bash
 uv add omnibase_core
 ```
 
-Minimal example:
+## Minimal Example
+
+Every ONEX node starts as a contract-driven declaration with zero custom code:
+
 ```python
-from omnibase_core.nodes import NodeCompute, ModelComputeInput, ModelComputeOutput
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes import NodeCompute
 
-class NodeCalculator(NodeCompute):
-    def __init__(self, container: ModelONEXContainer) -> None:
-        super().__init__(container)
-
-    async def process(self, input_data: ModelComputeInput) -> ModelComputeOutput:
-        value = input_data.data.get("value", 0)
-        return ModelComputeOutput(
-            result={"result": value * 2},
-            operation_id=input_data.operation_id,
-            computation_type=input_data.computation_type,
-        )
+class NodeMyFeature(NodeCompute):
+    pass  # All behavior driven by contract YAML
 ```
 
-Run tests:
-```bash
-uv run pytest
+The contract YAML defines inputs, outputs, state transitions, and configuration:
+
+```yaml
+name: node_my_feature
+version: 1.0.0
+type: COMPUTE
+input_schema: MyInput
+output_schema: MyOutput
 ```
 
-**Next**: [Node Building Guide](docs/guides/node-building/README.md)
+When you need custom logic, opt in by overriding `process()`:
 
-## How ONEX Compares
-
-- **LangChain/LangGraph**: Pipeline-first. ONEX standardizes execution semantics.
-- **Ray**: Distributed compute. ONEX focuses on agent tool determinism.
-- **Temporal**: Workflow durability. ONEX defines tool and agent interaction.
-- **Microservices**: Boundary-driven. ONEX defines the protocol services speak.
-
-## Repository Structure
-
-```text
-src/omnibase_core/
-├── backends/           # Cache (Redis) and metrics backends
-├── container/          # DI container
-├── crypto/             # Blake3 hashing, Ed25519 signing
-├── enums/              # Core enumerations (300+ enums)
-├── errors/             # Structured errors
-├── infrastructure/     # NodeCoreBase, ModelService*
-├── merge/              # Contract merge engine
-├── mixins/             # Reusable behavior mixins (40+)
-├── models/             # Pydantic models (80+ subdirectories)
-├── nodes/              # EFFECT, COMPUTE, REDUCER, ORCHESTRATOR
-├── protocols/          # Protocol interfaces
-├── rendering/          # Report renderers (CLI, HTML, JSON, Markdown)
-├── resolution/         # Dependency resolvers
-├── schemas/            # JSON Schema definitions
-├── services/           # Service implementations
-├── validation/         # Validation framework + cross-repo validators
-└── tools/              # Mypy plugins
+```python
+class NodeMyFeature(NodeCompute):
+    async def process(self, input_data):
+        # Custom logic here
+        return {"result": input_data.value * 2}
 ```
 
-**See**: [Architecture Overview](docs/architecture/overview.md)
+## Why ONEX
 
-## Advanced Topics
+| Problem | ONEX Solution |
+|---------|--------------|
+| Inconsistent tool I/O | Typed schemas (Pydantic + protocols) |
+| Implicit state | Deterministic lifecycle with contract FSMs |
+| Opaque failures | Structured errors with `ModelOnexError` |
+| Framework lock-in | Framework-agnostic protocol design |
+| Untestable tools | Pure nodes with injected dependencies |
 
-- **Subcontracts**: Declarative behavior modules. See [SUBCONTRACT_ARCHITECTURE.md](docs/architecture/SUBCONTRACT_ARCHITECTURE.md).
-- **Manifest Models**: Typed metadata loaders. See [MANIFEST_MODELS.md](docs/reference/MANIFEST_MODELS.md).
+## Key Features
 
-## Thread Safety
-
-Most ONEX nodes are not thread-safe. See [THREADING.md](docs/guides/THREADING.md).
+- **Four-node architecture**: EFFECT (I/O), COMPUTE (transform), REDUCER (aggregate), ORCHESTRATOR (coordinate) -- [details](https://github.com/OmniNode-ai/omnibase_core/blob/main/docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
+- **Contract-driven execution**: YAML contracts define behavior; code is opt-in
+- **Protocol-driven DI**: `ModelONEXContainer` for dependency injection
+- **Structured errors**: `ModelOnexError` with proper error codes and traceability
+- **Event system**: `ModelEventEnvelope` for event-driven communication
+- **40+ mixins**: Reusable behavior modules for common patterns
+- **Subcontracts**: Declarative configuration for FSM, caching, routing, and more
+- **12,000+ tests**: Comprehensive test suite with strict type checking
 
 ## Documentation
 
-**Start here**: [Node Building Guide](docs/guides/node-building/README.md)
+- [Node Building Guide](docs/guides/node-building/README.md) -- start here
+- [Architecture Overview](docs/architecture/overview.md)
+- [Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
+- [Subcontract Architecture](docs/architecture/SUBCONTRACT_ARCHITECTURE.md)
+- [Complete Documentation Index](docs/INDEX.md)
+- [CLAUDE.md](CLAUDE.md) -- developer context and conventions
 
-**Reference**: [Complete Documentation Index](docs/INDEX.md)
+## License
 
-## Development
-
-Uses [uv](https://docs.astral.sh/uv/) for package management.
-
-```bash
-uv sync --all-extras
-uv run pytest tests/
-uv run mypy src/omnibase_core/
-uv run ruff check src/ tests/
-uv run ruff format src/ tests/
-```
-
-**See**: [CONTRIBUTING.md](CONTRIBUTING.md) for PR requirements.
+[MIT](LICENSE)
