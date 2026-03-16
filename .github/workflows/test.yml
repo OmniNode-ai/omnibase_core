@@ -613,24 +613,24 @@ jobs:
   # Phase 1 - Version Pin Compliance Check (OMN-4806)
   # ---------------------------------------------------------------------------
   # Verifies that this repo's dependency pins are compliant with the shared
-  # version matrix defined in omni_home/standards/version-matrix.yaml.
-  # Depends on OMN-4803 (check_version_pins.py must exist in omni_home main).
+  # version matrix defined in onex_change_control/standards/version-matrix.yaml.
   version-pin-check:
     name: Version Pin Compliance
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Advisory until range pin support (OMN-5132) and matrix alignment land
+    continue-on-error: true
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Checkout omni_home standards
+      - name: Checkout onex_change_control standards
         uses: actions/checkout@v6
-        continue-on-error: true
         with:
-          repository: OmniNode-ai/omni_home
+          repository: OmniNode-ai/onex_change_control
           token: ${{ secrets.CROSS_REPO_PAT }}
-          path: omni_home
+          path: onex_change_control
           sparse-checkout: |
             standards/
           sparse-checkout-cone-mode: false
@@ -640,14 +640,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install dependencies
+        run: pip install pyyaml packaging
+
       - name: Check version pin compliance
-        run: |
-          SCRIPT="omni_home/standards/check_version_pins.py"
-          if [ ! -f "$SCRIPT" ]; then
-            echo "::warning::$SCRIPT not found (OMN-4803 not yet merged into omni_home main). Skipping."
-            exit 0
-          fi
-          python "$SCRIPT" --repo omnibase_core --root omni_home
+        run: python onex_change_control/standards/check_version_pins.py --repo omnibase_core --root onex_change_control --repo-path .
 
   # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
