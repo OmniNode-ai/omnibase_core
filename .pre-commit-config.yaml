@@ -740,12 +740,14 @@ repos:
         stages: [pre-commit]
 
       # OMN-5063: Block untyped metadata dict fields
+      # Centralized in onex_change_control (OMN-5135)
       - id: no-untyped-metadata
         name: No untyped metadata dict fields
-        language: python
-        entry: python scripts/check_no_untyped_metadata.py
+        language: system
+        entry: uv run check-no-untyped-metadata
         types: [python]
         exclude: ^tests/|^examples/|^scripts/
+        stages: [pre-commit]
 
 # Configuration
 default_install_hook_types: [pre-commit, pre-push]

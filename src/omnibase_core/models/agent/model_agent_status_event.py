@@ -100,8 +100,10 @@ class ModelAgentStatusEvent(BaseModel):
     created_at: datetime = Field(
         description="Timestamp of event creation. Must be injected explicitly; no default.",
     )
-    metadata: dict[str, object] = (
-        Field(  # ONEX_EXCLUDE: dict_str_any - extensible agent event metadata
+    metadata: dict[
+        str, object
+    ] = (  # ONEX_EXCLUDE: dict_str_any - extensible agent event metadata
+        Field(
             default_factory=dict,
             description="Additional metadata key-value pairs",
         )

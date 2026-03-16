@@ -88,8 +88,10 @@ class ModelContractCapabilities(BaseModel):
     # Optional Metadata Field
     # ==========================================================================
 
-    service_metadata: dict[str, object] | None = (
-        Field(  # ONEX_EXCLUDE: dict_str_any - extensible service metadata
+    service_metadata: (
+        dict[str, object] | None
+    ) = (  # ONEX_EXCLUDE: dict_str_any - extensible service metadata
+        Field(
             default=None,
             description="Optional service-level metadata for deployment and configuration",
         )

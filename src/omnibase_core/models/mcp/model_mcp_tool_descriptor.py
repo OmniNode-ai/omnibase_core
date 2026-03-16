@@ -78,10 +78,10 @@ class ModelMCPToolDescriptor(BaseModel):
     tags: list[str] = Field(
         default_factory=list, description="Categorization tags for discovery"
     )
-    metadata: dict[str, object] = (
-        Field(  # ONEX_EXCLUDE: dict_str_any - extensible tool descriptor metadata
-            default_factory=dict, description="Additional tool metadata"
-        )
+    metadata: dict[
+        str, object
+    ] = (  # ONEX_EXCLUDE: dict_str_any - extensible tool descriptor metadata
+        Field(default_factory=dict, description="Additional tool metadata")
     )
     node_name: str | None = Field(
         default=None, description="Source ONEX node name (if generated from contract)"

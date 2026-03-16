@@ -21,6 +21,8 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -99,3 +101,19 @@ jobs:
             dist/SHA256SUMS.txt
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, 'rc') }}
+
+  # ---------------------------------------------------------------------------
+  # Post-release: open dependency bump PRs in downstream repos (OMN-5109)
+  # ---------------------------------------------------------------------------
+  # When omnibase_core is released, downstream repos (omnibase_infra,
+  # omniintelligence, omnimemory, omniclaude) need their lockfiles updated.
+  dependency-cascade:
+    name: Dependency Cascade
+    needs: release
+    if: ${{ !contains(needs.release.outputs.version, 'rc') }}
+    uses: ./.github/workflows/dependency-cascade.yml
+    with:
+      package: omnibase_core
+      version: ${{ needs.release.outputs.version }}
+    secrets:
+      cross-repo-pat: ${{ secrets.CROSS_REPO_PAT }}
