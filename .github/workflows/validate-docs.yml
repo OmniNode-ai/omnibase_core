@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# Reusable workflow for markdown link validation across ONEX repos.
+# Callers use @main. If the interface changes incompatibly, tag a release
+# and update callers to pin @v1.
+#
+# Usage (repo with omnibase_core dep):
+#   jobs:
+#     docs:
+#       uses: OmniNode-ai/omnibase_core/.github/workflows/validate-docs.yml@main
+#       with:
+#         check-external: true
+#
+# Usage (repo WITHOUT omnibase_core dep):
+#   jobs:
+#     docs:
+#       uses: OmniNode-ai/omnibase_core/.github/workflows/validate-docs.yml@main
+#       with:
+#         check-external: true
+#         standalone: true
+
+name: Validate Documentation
+
+on:
+  workflow_call:
+    inputs:
+      check-external:
+        description: Check external HTTP links (slower, recommended for CI only)
+        required: false
+        default: false
+        type: boolean
+      standalone:
+        description: Install onex-validate-links as standalone tool (for repos without omnibase_core dep)
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+    env:
+      CHECK_EXTERNAL: ${{ inputs.check-external }}
+      STANDALONE: ${{ inputs.standalone }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies (with omnibase_core)
+        if: ${{ !inputs.standalone }}
+        run: uv sync
+
+      - name: Install standalone validator
+        if: ${{ inputs.standalone }}
+        run: uv tool install omnibase_core
+
+      - name: Validate markdown links
+        run: |
+          ARGS="--verbose"
+          if [ "$CHECK_EXTERNAL" = "true" ]; then
+            ARGS="$ARGS --check-external"
+          fi
+          if [ "$STANDALONE" = "true" ]; then
+            onex-validate-links $ARGS
+          else
+            uv run onex-validate-links $ARGS
+          fi
