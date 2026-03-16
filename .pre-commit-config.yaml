@@ -739,6 +739,16 @@ repos:
           session files. See OMN-4569."
         stages: [pre-commit]
 
+      # OMN-5063: Block untyped metadata dict fields
+      # Centralized in onex_change_control (OMN-5135)
+      - id: no-untyped-metadata
+        name: No untyped metadata dict fields
+        language: system
+        entry: uv run check-no-untyped-metadata
+        types: [python]
+        exclude: ^tests/|^examples/|^scripts/
+        stages: [pre-commit]
+
 # Configuration
 default_install_hook_types: [pre-commit, pre-push]
 default_stages: [pre-commit]
