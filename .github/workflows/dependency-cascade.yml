@@ -1,0 +1,230 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Dependency Cascade Workflow (OMN-2751)
+#
+# Opens dependency-bump PRs in downstream repos when a foundation package is
+# released. Each downstream repo gets a PR that runs `uv lock --upgrade-package`
+# to pick up the new version.
+#
+# Downstream mapping:
+#   omnibase_core  -> omnibase_infra, omniintelligence, omnimemory, omniclaude
+#   omnibase_spi   -> omnibase_infra, omniintelligence, omnimemory, omniclaude
+#   omnibase_infra -> omniintelligence, omnimemory, omniclaude
+#
+# This workflow is reusable so that omnibase_core and omnibase_spi can also call
+# it from their own release workflows.
+name: Dependency Cascade
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: 'Released package name (e.g. omnibase_infra)'
+        required: true
+        type: string
+      version:
+        description: 'Released version tag (e.g. v0.11.0)'
+        required: true
+        type: string
+    secrets:
+      cross-repo-pat:
+        description: >-
+          PAT with repo scope for cross-repo operations. Must be a classic PAT
+          with `repo` scope or a fine-grained PAT with Contents: read+write on
+          all downstream OmniNode-ai repos. When absent, checkout and PR
+          creation steps are skipped with a warning.
+        required: false
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Released package name (e.g. omnibase_infra)'
+        required: true
+        type: string
+      version:
+        description: 'Released version tag (e.g. v0.11.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  compute-matrix:
+    name: Compute Downstream Matrix
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
+    outputs:
+      repos: ${{ steps.matrix.outputs.repos }}
+    steps:
+      - name: Determine downstream repos
+        id: matrix
+        run: |
+          PACKAGE="${{ inputs.package }}"
+
+          case "$PACKAGE" in
+            omnibase_core)
+              REPOS='["omnibase_infra", "omniintelligence", "omnimemory", "omniclaude"]'
+              ;;
+            omnibase_spi)
+              REPOS='["omnibase_infra", "omniintelligence", "omnimemory", "omniclaude"]'
+              ;;
+            omnibase_infra)
+              REPOS='["omniintelligence", "omnimemory", "omniclaude"]'
+              ;;
+            *)
+              echo "ERROR: Unknown foundation package: $PACKAGE"
+              echo "Expected one of: omnibase_core, omnibase_spi, omnibase_infra"
+              exit 1
+              ;;
+          esac
+
+          echo "repos=$REPOS" >> $GITHUB_OUTPUT
+          echo "Downstream repos for $PACKAGE: $REPOS"
+
+  open-bump-pr:
+    name: Bump ${{ matrix.repo }}
+    needs: compute-matrix
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJson(needs.compute-matrix.outputs.repos) }}
+    steps:
+      - name: Check CROSS_REPO_PAT is configured
+        id: token_check
+        env:
+          CROSS_REPO_PAT: ${{ secrets.cross-repo-pat || secrets.CROSS_REPO_PAT }}
+        run: |
+          if [ -z "$CROSS_REPO_PAT" ]; then
+            echo "::warning::CROSS_REPO_PAT secret is not set. Skipping dependency bump for ${{ matrix.repo }}." \
+              "Set a PAT with 'repo' scope as the CROSS_REPO_PAT repository secret to enable automated dependency cascades."
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout downstream repo
+        if: steps.token_check.outputs.has_token == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: OmniNode-ai/${{ matrix.repo }}
+          token: ${{ secrets.cross-repo-pat || secrets.CROSS_REPO_PAT }}
+          fetch-depth: 1
+
+      - name: Set up uv
+        if: steps.token_check.outputs.has_token == 'true'
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.12'
+
+      - name: Set branch and PR variables
+        if: steps.token_check.outputs.has_token == 'true'
+        id: vars
+        run: |
+          VERSION="${{ inputs.version }}"
+          VERSION="${VERSION#v}"
+          PACKAGE="${{ inputs.package }}"
+          # Use hyphenated package name for the branch (PyPI convention)
+          PKG_HYPHEN="${PACKAGE//_/-}"
+          BRANCH="automation/bump-${PKG_HYPHEN}-${VERSION}"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "pkg_hyphen=$PKG_HYPHEN" >> $GITHUB_OUTPUT
+
+      - name: Create branch and upgrade lockfile
+        if: steps.token_check.outputs.has_token == 'true'
+        run: |
+          git checkout -b "${{ steps.vars.outputs.branch }}"
+
+          # Upgrade the package in the lockfile
+          uv lock --upgrade-package "${{ inputs.package }}"
+
+          # Check if anything changed
+          if git diff --quiet uv.lock; then
+            echo "SKIP=true" >> $GITHUB_ENV
+            echo "No lockfile changes -- ${{ matrix.repo }} already on latest ${{ inputs.package }}"
+          else
+            echo "SKIP=false" >> $GITHUB_ENV
+            echo "Lockfile updated with new ${{ inputs.package }} version"
+          fi
+
+      - name: Commit and push
+        if: steps.token_check.outputs.has_token == 'true' && env.SKIP == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          git commit -m "chore(deps): bump ${{ inputs.package }} to ${{ steps.vars.outputs.version }}
+
+          Automated dependency cascade from ${{ github.repository }} release ${{ inputs.version }}.
+
+          Triggered-by: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          git push origin "${{ steps.vars.outputs.branch }}"
+
+      - name: Open pull request
+        if: steps.token_check.outputs.has_token == 'true' && env.SKIP == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.cross-repo-pat || secrets.CROSS_REPO_PAT }}
+        run: |
+          # Check if a PR already exists for this branch
+          EXISTING=$(gh pr list \
+            --repo "OmniNode-ai/${{ matrix.repo }}" \
+            --head "${{ steps.vars.outputs.branch }}" \
+            --state open \
+            --json number \
+            --jq 'length')
+
+          if [ "$EXISTING" -gt 0 ]; then
+            echo "PR already exists for branch ${{ steps.vars.outputs.branch }} -- skipping"
+            exit 0
+          fi
+
+          gh pr create \
+            --repo "OmniNode-ai/${{ matrix.repo }}" \
+            --title "chore(deps): bump ${{ steps.vars.outputs.pkg_hyphen }} to ${{ steps.vars.outputs.version }}" \
+            --body "$(cat <<'PREOF'
+          ## Summary
+
+          Automated dependency bump triggered by a new release of `${{ inputs.package }}` (${{ inputs.version }}).
+
+          - Updates `uv.lock` via `uv lock --upgrade-package ${{ inputs.package }}`
+          - No source code changes -- lockfile only
+
+          ## Triggered by
+
+          Release workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          ## Test plan
+
+          - [ ] CI passes (lockfile resolution is valid)
+          - [ ] Downstream tests pass with the new dependency version
+          PREOF
+          )" \
+            --head "${{ steps.vars.outputs.branch }}" \
+            --base main
+
+      - name: Skip summary
+        if: steps.token_check.outputs.has_token == 'true' && env.SKIP == 'true'
+        run: |
+          echo "### Skipped: ${{ matrix.repo }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ matrix.repo }} already uses the latest version of ${{ inputs.package }}." >> $GITHUB_STEP_SUMMARY
+          echo "No lockfile changes needed." >> $GITHUB_STEP_SUMMARY
