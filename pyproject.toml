@@ -257,6 +257,7 @@ ignore = [
 "src/omnibase_core/validation/scripts/timeout_utils.py" = ["T201"]
 "src/omnibase_core/validation/scripts/validate_string_versions.py" = ["T201"]
 "src/omnibase_core/validation/scripts/validate_topic_names.py" = ["T201"]
+"src/omnibase_core/scripts/validate_markdown_links.py" = ["T201"]
 # Test files: print() used for debug output and test diagnostics — bulk removal deferred
 "tests/**/*.py" = ["T201"]
 
