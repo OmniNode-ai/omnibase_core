@@ -360,7 +360,7 @@ pre-commit run --all-files
 ## Related Documentation
 
 - [Docstring Guidelines](../../CLAUDE.md#docstring-guidelines) - When and how to write docstrings
-- [Import Policy](../../CLAUDE.md#import-policy) - Absolute vs relative imports
+- [CLAUDE.md](../../CLAUDE.md) - Import conventions and development standards
 - [File Naming Conventions](../../CLAUDE.md#file-naming-conventions) - Directory-specific prefixes
 
 ---
