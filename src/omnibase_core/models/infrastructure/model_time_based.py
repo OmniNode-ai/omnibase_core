@@ -42,6 +42,10 @@ class ModelTimeBased[T: (int, float)](BaseModel):
 
     value: T = Field(default=..., description="The time-based value")
     unit: EnumTimeUnit = Field(default=EnumTimeUnit.SECONDS, description="Time unit")
+    description: str | None = Field(
+        default=None,
+        description="Human-readable description of this time-based value.",
+    )
     metadata: dict[str, str] = Field(
         default_factory=dict,
         description="Additional metadata for context",
@@ -284,9 +288,7 @@ class ModelTimeBased[T: (int, float)](BaseModel):
     ) -> ModelTimeBased[T]:
         """Create a duration instance."""
         metadata = {"type": "duration"}
-        if description:
-            metadata["description"] = description
-        return cls(value=value, unit=unit, metadata=metadata)
+        return cls(value=value, unit=unit, description=description, metadata=metadata)
 
     @classmethod
     def timeout(
@@ -301,11 +303,10 @@ class ModelTimeBased[T: (int, float)](BaseModel):
     ) -> ModelTimeBased[T]:
         """Create a timeout instance."""
         metadata = {"type": "timeout"}
-        if description:
-            metadata["description"] = description
         return cls(
             value=value,
             unit=unit,
+            description=description,
             metadata=metadata,
             is_strict=is_strict,
             warning_threshold_value=warning_threshold_value,
@@ -367,12 +368,11 @@ class ModelTimeBased[T: (int, float)](BaseModel):
             timeout_seconds = max(int(min_seconds * 2), 30)
 
         metadata = {"type": "timeout"}
-        if description:
-            metadata["description"] = description
 
         return cls(
             value=timeout_seconds,
             unit=EnumTimeUnit.SECONDS,
+            description=description,
             runtime_category=category,
             metadata=metadata,
         )  # type: ignore[return-value]

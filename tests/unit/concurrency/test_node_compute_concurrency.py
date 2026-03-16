@@ -190,7 +190,7 @@ class TestModelComputeCacheConcurrency:
                     cross_key = f"key_{(task_id + 1) % task_count}_{i}"
                     cache.get(cross_key)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with results_lock:
                     errors.append(e)
 
@@ -314,7 +314,7 @@ class TestModelComputeCacheConcurrency:
                         prev_key = f"task_{task_id}_entry_{i - 1}"
                         cache.get(prev_key)  # May or may not be evicted
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with errors_lock:
                     errors.append(e)
 
@@ -443,7 +443,7 @@ class TestThreadSafeComputeCacheWrapper:
                     cross_key = f"key_{(task_id + 1) % num_tasks}_{i}"
                     cache.get(cross_key)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with errors_lock:
                     errors.append(e)
 
@@ -627,7 +627,7 @@ class TestNodeComputeParallelBatchProcessing:
                     finally:
                         loop.close()
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with errors_lock:
                     errors.append(e)
 
@@ -757,7 +757,7 @@ class TestMultiThreadingWithExecutor:
                     value = f"worker_{worker_id}_value_{i}"
                     cache.put(key, value)
                 return writes_per_worker
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with errors_lock:
                     errors.append(e)
                 return 0

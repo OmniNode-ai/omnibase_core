@@ -226,7 +226,7 @@ class {protocol_name}(Protocol):
                 # If no exception, verify we got a valid result
                 assert result is not None
                 assert isinstance(result, ModelAuditResult)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # If exception is raised, verify it's the expected one
                 assert "Extraction failed" in str(e)
 

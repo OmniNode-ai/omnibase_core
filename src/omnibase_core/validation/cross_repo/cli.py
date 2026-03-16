@@ -402,7 +402,7 @@ def main() -> int:
         return 0 if result.is_valid else 1
 
     except (
-        Exception
+        Exception  # noqa: BLE001
     ) as e:  # fallback-ok: CLI boundary must return clean error, not crash
         if args.format == "json":
             print(json.dumps({"error": str(e), "is_valid": False}))

@@ -71,7 +71,7 @@ def test_direct_instantiation_danger():
         serialized = config.model_dump()
         print("   ❌ UNEXPECTED: Serialization succeeded?!")
         print(f"   Result: {serialized}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"   💥 CRASH! Serialization failed: {e}")
         print("   This would CRASH the distributed omninode system!")
 

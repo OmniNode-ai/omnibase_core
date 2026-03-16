@@ -41,8 +41,10 @@ class ModelMCPInvocationRequest(BaseModel):
     timeout_ms: int | None = Field(
         default=None, description="Optional timeout override in milliseconds", ge=0
     )
-    metadata: dict[str, object] = Field(
-        default_factory=dict, description="Additional request metadata"
+    metadata: dict[
+        str, object
+    ] = (  # ONEX_EXCLUDE: dict_str_any - extensible MCP request metadata
+        Field(default_factory=dict, description="Additional request metadata")
     )
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)

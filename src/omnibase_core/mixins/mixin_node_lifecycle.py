@@ -200,7 +200,7 @@ class MixinNodeLifecycle:
             )
 
         # fallback-ok: event publishing is non-critical, log and continue
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
@@ -263,7 +263,7 @@ class MixinNodeLifecycle:
             )
 
         # fallback-ok: shutdown event is non-critical, log and continue
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_shutdown_event",
@@ -325,7 +325,7 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
+        except Exception as e:  # noqa: BLE001  # fallback-ok: lifecycle event emission is non-critical, log and continue
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             log_context: dict[str, JsonType] = {
                 "event_type": "lifecycle_error",
@@ -389,7 +389,7 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
+        except Exception as e:  # noqa: BLE001  # fallback-ok: lifecycle event emission is non-critical, log and continue
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             log_context: dict[str, JsonType] = {
                 "event_type": "lifecycle_error",
@@ -453,7 +453,7 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
+        except Exception as e:  # noqa: BLE001  # fallback-ok: lifecycle event emission is non-critical, log and continue
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             log_context: dict[str, JsonType] = {
                 "event_type": "lifecycle_error",
@@ -479,7 +479,7 @@ class MixinNodeLifecycle:
             try:
                 self.cleanup_event_handlers()
             # fallback-ok: cleanup failure is non-critical, log and continue
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 node_id = _get_node_id_as_uuid(self)
                 context = ModelLogContext(
                     calling_module=_COMPONENT_NAME,

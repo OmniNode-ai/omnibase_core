@@ -60,7 +60,7 @@ class TestModelReducerOutputThreadSafety:
                 assert output.processing_time_ms == 10.5
                 assert output.items_processed == 100
                 results.append(True)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         # Create multiple threads reading concurrently
@@ -155,7 +155,7 @@ class TestModelReducerOutputThreadSafety:
                 data = output.model_dump()
                 assert data["result"]["status"] == "success"
                 results.append(data)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         def serialize_to_json():
@@ -164,7 +164,7 @@ class TestModelReducerOutputThreadSafety:
                 json_str = output.model_dump_json()
                 assert "success" in json_str
                 results.append(json_str)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         # Create mixed serialization threads

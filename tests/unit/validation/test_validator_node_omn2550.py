@@ -589,13 +589,13 @@ class TestValidatorRegistry:
                 registry.register(cls.descriptor, cls)
             except ValueError:
                 pass  # Duplicate registration — expected in concurrent scenario
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 errors.append(exc)
 
         def resolve_validators() -> None:
             try:
                 registry.resolve(scope="file")
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 errors.append(exc)
 
         threads = [

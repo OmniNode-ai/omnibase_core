@@ -122,7 +122,7 @@ def sanitize_url(url: str | None) -> str:
                 safe_netloc += f":{parsed.port}"
             return urlunparse(parsed._replace(netloc=safe_netloc))
         return url
-    except Exception:  # fmt: skip  # fallback-ok: URL sanitization must never fail
+    except Exception:  # noqa: BLE001  # fmt: skip  # fallback-ok: URL sanitization must never fail
         # If URL parsing fails, return a generic safe string
         return "<url-parse-error>"
 
@@ -373,7 +373,7 @@ class BackendMetricsPrometheus:
                 self._consecutive_push_failures = 0
                 self._last_push_failure_time = None
                 return
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # catch-all-ok: retry loop captures failures for exponential backoff
                 last_exception = e
                 if attempt < self._push_retry_count - 1:

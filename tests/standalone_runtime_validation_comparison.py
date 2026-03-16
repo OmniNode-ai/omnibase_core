@@ -277,7 +277,7 @@ def test_generic_approach_unknown_object():
     try:
         serialized = schema_value.model_dump()
         print(f"   ✅ Serialization succeeded: {serialized}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"   ❌ Serialization failed: {e}")
         print("   This would CRASH distributed execution!")
 
@@ -341,7 +341,7 @@ def test_generic_approach_nested_errors():
     try:
         serialized = schema_value.model_dump()
         print("   ✅ Serialization succeeded")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"   ❌ Serialization failed: {e}")
         print("   CRASH RISK in distributed systems!")
 
@@ -415,7 +415,7 @@ def test_generic_approach_serialization():
     try:
         serialized_complex = schema_value_complex.model_dump()
         print("   ✅ Serialization succeeded")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"   ❌ Serialization failed: {e}")
         print("   CRASH RISK: HIGH")
 

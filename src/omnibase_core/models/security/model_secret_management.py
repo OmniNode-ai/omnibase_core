@@ -92,7 +92,7 @@ def validate_secret_configuration(config_type: str, **kwargs: object) -> Seriali
             # Convert Pydantic model to dict
             return result.model_dump()
         except (
-            Exception
+            Exception  # noqa: BLE001
         ) as e:  # fallback-ok: validation returns structured error dict, caller handles
             return {"is_valid": False, "error": str(e)}
 
@@ -101,7 +101,7 @@ def validate_secret_configuration(config_type: str, **kwargs: object) -> Seriali
             backend = ModelSecretBackend(**kwargs)  # type: ignore[arg-type]
             return {"is_valid": True, "backend": backend.model_dump()}
         except (
-            Exception
+            Exception  # noqa: BLE001
         ) as e:  # fallback-ok: validation returns structured error dict, caller handles
             return {"is_valid": False, "error": str(e)}
 
@@ -139,7 +139,7 @@ def get_security_recommendations(
 
         return [f"Unknown config type: {config_type}"]
 
-    except Exception as e:  # fallback-ok: recommendations return error list, non-critical helper function
+    except Exception as e:  # noqa: BLE001  # fallback-ok: recommendations return error list, non-critical helper function
         return [f"Error getting recommendations: {e}"]
 
 

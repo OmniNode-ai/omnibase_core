@@ -1029,7 +1029,7 @@ class TestNodeRoutingIntegration:
             try:
                 kind = EnumNodeType.get_node_kind(node_type)
                 successful_routings[node_type] = kind
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 failed_routings.append((node_type, e))
 
         # All mapped types should route successfully

@@ -48,7 +48,7 @@ def test_json_crash_proof():
         print("   ⚠️  model_dump() succeeded (but contains object reference)")
         print(f"   Result: {dumped}")
         print(f"   Value type: {type(dumped['value'])}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"   ❌ model_dump() failed: {e}")
 
     print("\n3️⃣ Try model_dump_json() (JSON serialization for network):")
@@ -56,7 +56,7 @@ def test_json_crash_proof():
         json_str = config.model_dump_json()
         print("   ❌ UNEXPECTED: JSON serialization succeeded?!")
         print(f"   Result: {json_str}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"   💥 JSON serialization CRASHED: {e.__class__.__name__}")
         print(f"   Error: {e}")
         print("\n   🔥 THIS IS THE CRASH that kills distributed omnodes!")

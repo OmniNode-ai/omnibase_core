@@ -1231,7 +1231,7 @@ def build(
         # Re-raise click.Exit to allow ctx.exit() to work properly
         raise
     except (
-        Exception
+        Exception  # noqa: BLE001
     ) as e:  # catch-all-ok: CLI catch-all for user-friendly error messages
         # Catches unexpected errors for user-friendly output
         emit_log_event_sync(

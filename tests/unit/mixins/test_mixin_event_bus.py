@@ -631,7 +631,7 @@ class TestMixinEventBusThreadSafety:
                 for _ in range(100):
                     bus = node._get_event_bus()
                     assert bus is mock_bus or bus is None
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         threads = [threading.Thread(target=access_bus) for _ in range(5)]
@@ -656,7 +656,7 @@ class TestMixinEventBusThreadSafety:
                 while not stop_event.is_set():
                     node._get_event_bus()
                     node._has_event_bus()
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         threads = [threading.Thread(target=access_loop) for _ in range(3)]

@@ -206,7 +206,7 @@ class TestFileKeyProviderThreadSafety:
                     provider.register_key(runtime_id, keypair.public_key_bytes)
                     # Immediately verify it was registered
                     assert provider.has_key(runtime_id)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         threads = [

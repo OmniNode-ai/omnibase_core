@@ -217,7 +217,7 @@ class TestProtocolErrorHandling:
                     result["value"] = self.value
                     if self.unsafe_value is not None:
                         result["unsafe"] = str(self.unsafe_value)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     result["error"] = str(e)
                 return result
 
@@ -235,7 +235,7 @@ class TestProtocolErrorHandling:
             def validate_instance(self) -> bool:
                 try:
                     return self.value > 0 and self.value < 100
-                except Exception:
+                except Exception:  # noqa: BLE001
                     return False
 
         model = SafeValidatableModel()

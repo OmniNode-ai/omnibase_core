@@ -187,7 +187,7 @@ class RunnerPipeline:  # ai-slop-ok: reST table
                     phase_errors = await self._execute_phase(phase, context)
                     errors.extend(phase_errors)
                 # boundary-ok: captures phase exceptions for controlled shutdown; finalize phase still runs
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     # catch-all-ok: fail-fast phase raised exception, captured for re-raise after finalize
                     exception_to_raise = e
                     break  # Stop executing phases, but finalize will still run
@@ -242,7 +242,7 @@ class RunnerPipeline:  # ai-slop-ok: reST table
                     # Only clear hook_name after successful execution
                     current_hook_name = None
                 # cleanup-resilience-ok: finalize hooks must all execute; errors captured, not raised
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     # catch-all-ok: finalize hooks must complete; errors captured for reporting
                     errors.append(
                         ModelHookError(
@@ -256,7 +256,7 @@ class RunnerPipeline:  # ai-slop-ok: reST table
                     current_hook_name = None
 
         # boundary-ok: framework-level errors during finalize become ModelHookError, never raised
-        except Exception as framework_exc:
+        except Exception as framework_exc:  # noqa: BLE001
             # catch-all-ok: framework-level error captured for error list, no exception escapes finalize
             # Include last known hook_name if available for debugging context
             hook_name_context = (

@@ -296,7 +296,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
             return True
 
         except (
-            Exception
+            Exception  # noqa: BLE001
         ):  # fallback-ok: registration method, False indicates registration failure
             return False
 

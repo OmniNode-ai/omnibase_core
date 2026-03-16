@@ -49,7 +49,7 @@ class MixinNodeSetup:
                     if mod.__file__ is not None:
                         return Path(mod.__file__).parent
                 except (
-                    Exception
+                    Exception  # noqa: BLE001
                 ):  # fallback-ok: module introspection may fail, try next class in MRO
                     continue
         # Fallback to mixin's own directory

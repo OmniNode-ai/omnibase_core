@@ -44,9 +44,13 @@ class ModelActionBase(BaseModel):
 
     # Service metadata for tool-as-a-service with strong typing
     # Uses dict[str, object] for generic service metadata values
-    service_metadata: dict[str, object] = Field(
-        default_factory=dict,
-        description="Service discovery and composition metadata",
+    service_metadata: dict[
+        str, object
+    ] = (  # ONEX_EXCLUDE: dict_str_any - generic service discovery metadata
+        Field(
+            default_factory=dict,
+            description="Service discovery and composition metadata",
+        )
     )
     tool_discovery_tags: list[str] = Field(
         default_factory=list,

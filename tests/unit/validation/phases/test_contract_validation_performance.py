@@ -372,7 +372,7 @@ class TestConcurrentValidationThreadSafety:
 
                     result = merge_validator.validate(base, patch, merged)
                     thread_results.append((result.is_valid, result.error_level_count))
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     errors.append(f"Thread {thread_id}, iteration {i}: {e}")
             return thread_results
 
@@ -384,7 +384,7 @@ class TestConcurrentValidationThreadSafety:
             for future in as_completed(futures):
                 try:
                     results.extend(future.result())
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     errors.append(str(e))
 
         # Verify no errors occurred
@@ -424,7 +424,7 @@ class TestConcurrentValidationThreadSafety:
                     contract = create_valid_contract(valid_descriptor, suffix)
                     result = expanded_validator.validate(contract)
                     thread_results.append((result.is_valid, result.error_level_count))
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     errors.append(f"Thread {thread_id}, iteration {i}: {e}")
             return thread_results
 
@@ -435,7 +435,7 @@ class TestConcurrentValidationThreadSafety:
             for future in as_completed(futures):
                 try:
                     results.extend(future.result())
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     errors.append(str(e))
 
         assert len(errors) == 0, f"Errors during concurrent validation: {errors}"
@@ -474,7 +474,7 @@ class TestConcurrentValidationThreadSafety:
 
                     with results_lock:
                         all_results.append(result.is_valid)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     with results_lock:
                         all_errors.append(f"Thread {thread_id}: {e}")
 
@@ -559,7 +559,7 @@ class TestConcurrentValidationThreadSafety:
                         key = f"{thread_id}_{i}_valid={expected_valid}"
                         results[key] = (result.is_valid, expected_valid)
 
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     with results_lock:
                         errors.append(f"Thread {thread_id}, iteration {i}: {e}")
 
@@ -628,7 +628,7 @@ class TestConcurrentValidationThreadSafety:
                             suffix,
                         )
 
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     with results_lock:
                         errors.append(f"Thread {thread_id}, iteration {i}: {e}")
 
@@ -695,7 +695,7 @@ class TestConcurrentValidationThreadSafety:
                         merge_results.append(merge_result.is_valid)
                         expanded_results.append(expanded_result.is_valid)
 
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     with results_lock:
                         errors.append(f"Thread {thread_id}: {e}")
 

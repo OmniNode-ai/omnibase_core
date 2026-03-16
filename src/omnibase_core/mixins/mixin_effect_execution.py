@@ -1622,7 +1622,7 @@ class MixinEffectExecution:
                 self.container.get_service(protocol_name)  # type: ignore[arg-type]  # String-based DI lookup for extensibility
                 registration_status[protocol_name] = True
             except (
-                Exception
+                Exception  # noqa: BLE001
             ):  # fallback-ok: service not found indicates unregistered handler
                 registration_status[protocol_name] = False
 

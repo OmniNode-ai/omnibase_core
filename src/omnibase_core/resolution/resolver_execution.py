@@ -220,11 +220,8 @@ class ExecutionResolver:
         """
         result: dict[str, _HandlerInfo] = {}
         for contract in contracts:
-            # Extract priority from metadata (default to 0 - higher number = lower priority)
-            priority_raw = contract.metadata.get("priority", 0)
-            priority = (
-                int(priority_raw) if isinstance(priority_raw, (int, float)) else 0
-            )
+            # Use typed priority field (higher number = lower priority)
+            priority = contract.priority
 
             result[contract.handler_id] = _HandlerInfo(
                 handler_id=contract.handler_id,

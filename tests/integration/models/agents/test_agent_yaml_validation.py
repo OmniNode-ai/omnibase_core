@@ -175,7 +175,7 @@ class TestAgentYAMLValidation:
                     data = yaml.safe_load(f)
                 ModelAgentDefinition.model_validate(data)
                 passed.append(yaml_file.stem)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 failed.append((yaml_file.stem, str(e)))
 
         # Print summary

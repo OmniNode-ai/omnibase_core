@@ -32,7 +32,7 @@ description: "Test contract"
         try:
             contract = load_and_validate_yaml_model(yaml_content)
             assert contract is not None
-        except Exception:
+        except Exception:  # noqa: BLE001
             # If validation fails, that's expected for minimal contract
             pass
 

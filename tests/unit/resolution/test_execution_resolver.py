@@ -111,9 +111,7 @@ def _create_contract(
             must_run=must_run,
         )
 
-    final_metadata: dict[str, Any] = {"priority": priority}
-    if metadata:
-        final_metadata.update(metadata)
+    final_metadata: dict[str, Any] = metadata or {}
 
     return ModelHandlerContract(
         handler_id=handler_id,
@@ -125,6 +123,7 @@ def _create_contract(
         execution_constraints=constraints,
         tags=tags or [],
         capability_outputs=capability_outputs or [],
+        priority=priority,
         metadata=final_metadata,
     )
 
@@ -1302,7 +1301,7 @@ class TestPhaseAssignmentConstraints:
             descriptor=ModelHandlerBehavior(node_archetype="effect"),
             input_model="test.Input",
             output_model="test.Output",
-            metadata={"priority": 0},
+            priority=0,
         )
         contracts = [effect_contract]
 
@@ -1333,7 +1332,7 @@ class TestPhaseAssignmentConstraints:
             descriptor=ModelHandlerBehavior(node_archetype="reducer"),
             input_model="test.Input",
             output_model="test.Output",
-            metadata={"priority": 0},
+            priority=0,
         )
         contracts = [reducer_contract]
 
@@ -1364,7 +1363,7 @@ class TestPhaseAssignmentConstraints:
             descriptor=ModelHandlerBehavior(node_archetype="orchestrator"),
             input_model="test.Input",
             output_model="test.Output",
-            metadata={"priority": 0},
+            priority=0,
         )
         contracts = [orchestrator_contract]
 
@@ -1397,7 +1396,7 @@ class TestPhaseAssignmentConstraints:
                 descriptor=ModelHandlerBehavior(node_archetype="compute"),
                 input_model="test.Input",
                 output_model="test.Output",
-                metadata={"priority": 0},
+                priority=0,
             ),
             ModelHandlerContract(
                 handler_id="handler.effect",
@@ -1406,7 +1405,7 @@ class TestPhaseAssignmentConstraints:
                 descriptor=ModelHandlerBehavior(node_archetype="effect"),
                 input_model="test.Input",
                 output_model="test.Output",
-                metadata={"priority": 0},
+                priority=0,
             ),
             ModelHandlerContract(
                 handler_id="handler.reducer",
@@ -1415,7 +1414,7 @@ class TestPhaseAssignmentConstraints:
                 descriptor=ModelHandlerBehavior(node_archetype="reducer"),
                 input_model="test.Input",
                 output_model="test.Output",
-                metadata={"priority": 0},
+                priority=0,
             ),
             ModelHandlerContract(
                 handler_id="handler.orchestrator",
@@ -1424,7 +1423,7 @@ class TestPhaseAssignmentConstraints:
                 descriptor=ModelHandlerBehavior(node_archetype="orchestrator"),
                 input_model="test.Input",
                 output_model="test.Output",
-                metadata={"priority": 0},
+                priority=0,
             ),
         ]
 
@@ -1462,7 +1461,7 @@ class TestPhaseAssignmentConstraints:
                 descriptor=ModelHandlerBehavior(node_archetype="compute"),
                 input_model="test.Input",
                 output_model="test.Output",
-                metadata={"priority": 0},
+                priority=0,
             ),
             ModelHandlerContract(
                 handler_id="handler.process",
@@ -1474,7 +1473,7 @@ class TestPhaseAssignmentConstraints:
                 execution_constraints=ModelExecutionConstraints(
                     requires_before=["handler:handler.validation"],
                 ),
-                metadata={"priority": 0},
+                priority=0,
             ),
             ModelHandlerContract(
                 handler_id="handler.finalize",
@@ -1486,7 +1485,7 @@ class TestPhaseAssignmentConstraints:
                 execution_constraints=ModelExecutionConstraints(
                     requires_before=["handler:handler.process"],
                 ),
-                metadata={"priority": 0},
+                priority=0,
             ),
         ]
 

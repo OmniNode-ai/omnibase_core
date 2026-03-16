@@ -483,7 +483,7 @@ class ModelCustomProperties(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates configuration failed safely
+        except Exception:  # noqa: BLE001  # fallback-ok: protocol method contract requires bool return - False indicates configuration failed safely
             return False
 
     def serialize(self) -> dict[str, object]:

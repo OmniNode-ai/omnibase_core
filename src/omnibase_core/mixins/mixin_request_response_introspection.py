@@ -214,7 +214,7 @@ class MixinRequestResponseIntrospection:
                     },
                 )
                 return
-        except Exception as e:  # fallback-ok: event handler returns early with logging, malformed events shouldn't crash node
+        except Exception as e:  # noqa: BLE001  # fallback-ok: event handler returns early with logging, malformed events shouldn't crash node
             emit_log_event_sync(
                 LogLevel.WARNING,
                 "🔍 INTROSPECTION: Failed to reconstruct ModelRequestIntrospectionEvent",
@@ -401,7 +401,7 @@ class MixinRequestResponseIntrospection:
                     {"node_name": getattr(self, "node_name", "unknown")},
                 )
 
-        except Exception as e:  # catch-all-ok: request handling errors should be caught and reported via error response
+        except Exception as e:  # noqa: BLE001  # catch-all-ok: request handling errors should be caught and reported via error response
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"❌ INTROSPECTION: Error handling request: {e!s}",
@@ -557,7 +557,7 @@ class MixinRequestResponseIntrospection:
                 and hasattr(self._event_bus, "is_connected")
             ) and not self._event_bus.is_connected():
                 return EnumNodeCurrentStatus.DEGRADED
-        except Exception:  # fallback-ok: catches non-fatal exceptions, returns DEGRADED for health reporting
+        except Exception:  # noqa: BLE001  # fallback-ok: catches non-fatal exceptions, returns DEGRADED for health reporting
             return EnumNodeCurrentStatus.DEGRADED
 
         return EnumNodeCurrentStatus.READY
@@ -621,7 +621,7 @@ class MixinRequestResponseIntrospection:
                         ),
                     )
             except (
-                Exception
+                Exception  # noqa: BLE001
             ) as e:  # fallback-ok: tool availability optional, returns partial results
                 # Registry tool enumeration failed - log for debugging but continue
                 emit_log_event_sync(
@@ -663,7 +663,7 @@ class MixinRequestResponseIntrospection:
             # psutil not available
             return None
         except (
-            Exception
+            Exception  # noqa: BLE001
         ):  # fallback-ok: resource metrics optional, returns None if unavailable
             # Error getting resource usage
             return None
@@ -687,7 +687,7 @@ class MixinRequestResponseIntrospection:
                 queue_depth=0,  # Would need queue monitoring
             )
         except (
-            Exception
+            Exception  # noqa: BLE001
         ):  # fallback-ok: performance metrics optional, returns None if unavailable
             return None
 
@@ -718,7 +718,7 @@ class MixinRequestResponseIntrospection:
                     for key, value in additional.items():
                         setattr(additional_info, key, value)
             except (
-                Exception
+                Exception  # noqa: BLE001
             ) as e:  # fallback-ok: additional info optional, returns partial results
                 # Additional info gathering failed - log for debugging but continue
                 emit_log_event_sync(

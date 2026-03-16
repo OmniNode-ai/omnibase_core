@@ -281,7 +281,7 @@ class TestModelTypedAccessor:
         try:
             serialized = accessor.serialize()
             assert isinstance(serialized, dict)
-        except Exception:
+        except Exception:  # noqa: BLE001
             # If serialization fails with complex nested types, that's acceptable
             # The test validates that it doesn't crash the application
             assert True

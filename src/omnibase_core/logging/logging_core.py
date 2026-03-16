@@ -126,9 +126,9 @@ def _get_cached_logger() -> Any:
                 try:
                     # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
                     _cached_logger = container.get_service("ProtocolLogger")  # type: ignore[arg-type]
-                except Exception:  # fallback-ok: logger init must never fail
+                except Exception:  # noqa: BLE001  # fallback-ok: logger init must never fail
                     _cached_logger = _SimpleFallbackLogger()
-            except Exception:  # fallback-ok: logger init must never fail
+            except Exception:  # noqa: BLE001  # fallback-ok: logger init must never fail
                 _cached_logger = _SimpleFallbackLogger()
 
         return _cached_logger
@@ -157,6 +157,6 @@ async def _async_emit_via_logger(
         # Use the registry-resolved logger
         logger.emit(level, message, correlation_id)
     except (
-        Exception
+        Exception  # noqa: BLE001
     ):  # fallback-ok: logger failure is non-fatal in fire-and-forget logging
         pass

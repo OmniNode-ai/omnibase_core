@@ -26,5 +26,5 @@ class ModelIntrospectionResult(BaseModel):
 
 try:
     ModelIntrospectionResult.model_rebuild()
-except Exception:  # catch-all-ok: circular import protection during model rebuild
+except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
     pass

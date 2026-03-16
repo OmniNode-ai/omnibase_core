@@ -114,7 +114,7 @@ class ModelTransaction:
                         "exception_type": exc_name,
                     },
                 )
-            except Exception as e:  # cleanup-resilience-ok: rollback must complete
+            except Exception as e:  # noqa: BLE001  # cleanup-resilience-ok: rollback must complete
                 # Catch remaining Exception subclasses (ValueError, RuntimeError,
                 # OSError, etc.) to ensure all rollback operations are attempted
                 # even if one fails. These are logged but not re-raised to maximize
@@ -129,7 +129,7 @@ class ModelTransaction:
                         "error_type": type(e).__name__,
                     },
                 )
-            except BaseException as e:
+            except BaseException as e:  # noqa: BLE001
                 # cleanup-resilience-ok: catch-all for resilience
                 # Catch any remaining BaseException subclasses not explicitly handled
                 # above (e.g., custom BaseException subclasses). Store first occurrence

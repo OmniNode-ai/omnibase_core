@@ -298,7 +298,7 @@ class MixinContractPublisher:
                 await asyncio.sleep(interval_seconds)
             except asyncio.CancelledError:
                 raise  # Propagate cancellation
-            except Exception:
+            except Exception:  # noqa: BLE001
                 # Swallow error and continue heartbeating - transient errors shouldn't
                 # stop liveness signals. Consumers can detect issues via heartbeat gaps.
                 await asyncio.sleep(interval_seconds)

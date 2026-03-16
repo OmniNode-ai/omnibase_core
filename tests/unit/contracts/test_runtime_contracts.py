@@ -957,7 +957,7 @@ class TestAllRuntimeContractsValidation:
                 assert contract.node_type in EXPECTED_NODE_TYPES.values(), (
                     f"{name}: Unexpected node_type {contract.node_type}"
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 pytest.fail(f"{name}: Validation failed with {e}")
 
     def test_all_contracts_have_metadata(self, all_contracts: dict[str, dict]) -> None:

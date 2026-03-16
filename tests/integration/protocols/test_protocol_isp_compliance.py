@@ -418,12 +418,12 @@ class TestProtocolModularityPrinciples:
                         globalns={**vars(module), **forward_ref_ns},
                         include_extras=True,
                     )
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     errors.append(
                         f"{protocol.__name__}.{method_name} type hints not resolvable: {e}"
                     )
                     continue
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(
                     f"{protocol.__name__}.{method_name} type hints not resolvable: {e}"
                 )

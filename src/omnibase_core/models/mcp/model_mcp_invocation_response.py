@@ -55,8 +55,10 @@ class ModelMCPInvocationResponse(BaseModel):
         description="Execution duration in milliseconds (sub-ms precision)",
         ge=0.0,
     )
-    metadata: dict[str, object] = Field(
-        default_factory=dict, description="Additional response metadata"
+    metadata: dict[
+        str, object
+    ] = (  # ONEX_EXCLUDE: dict_str_any - extensible MCP response metadata
+        Field(default_factory=dict, description="Additional response metadata")
     )
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -82,7 +84,10 @@ class ModelMCPInvocationResponse(BaseModel):
         correlation_id: UUID | None = None,
         request_id: UUID | None = None,
         execution_time_ms: float | None = None,
-        metadata: dict[str, object] | None = None,
+        metadata: dict[
+            str, object
+        ]  # ONEX_EXCLUDE: dict_str_any - pass-through to field
+        | None = None,
     ) -> ModelMCPInvocationResponse:
         """Create a successful response.
 
@@ -115,7 +120,10 @@ class ModelMCPInvocationResponse(BaseModel):
         correlation_id: UUID | None = None,
         request_id: UUID | None = None,
         execution_time_ms: float | None = None,
-        metadata: dict[str, object] | None = None,
+        metadata: dict[
+            str, object
+        ]  # ONEX_EXCLUDE: dict_str_any - pass-through to field
+        | None = None,
     ) -> ModelMCPInvocationResponse:
         """Create an error response.
 

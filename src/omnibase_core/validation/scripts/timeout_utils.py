@@ -141,7 +141,7 @@ def create_cleanup_function(files_to_cleanup: list[Path]) -> Callable[[], None]:
             try:
                 if file_path.exists():
                     file_path.unlink()
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 print(f"Warning: Failed to cleanup {file_path}: {e}", file=sys.stderr)
 
     return cleanup

@@ -353,7 +353,7 @@ class TestModelResultAccessor:
             # The exact structure depends on how the base model is implemented
             # We just verify it doesn't crash
             assert isinstance(data, dict)
-        except Exception:
+        except Exception:  # noqa: BLE001
             # If serialization is not supported, that's okay for now
             pass
 

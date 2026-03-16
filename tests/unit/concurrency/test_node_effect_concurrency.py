@@ -175,7 +175,7 @@ class TestNodeEffectCircuitBreakerConcurrency:
                 _ = breaker.should_allow_request()
 
                 access_count["count"] += 1
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         # Launch 15 concurrent tasks (more than 10 as specified)
@@ -287,7 +287,7 @@ class TestNodeEffectCircuitBreakerConcurrency:
                     breaker.record_failure()
                     # Minimal delay to increase race window
                     await asyncio.sleep(0.0001)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         # Launch concurrent failure recording tasks
@@ -845,7 +845,7 @@ class TestAsyncConcurrency:
 
                 with lock:
                     results.append(allowed)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 

@@ -108,10 +108,14 @@ class ModelPayloadPersistResult(ModelIntentPayloadBase):
         ge=0,
     )
 
-    metadata: dict[str, object] = Field(
-        default_factory=dict,
-        description=(
-            "Optional metadata about the result. Common keys: 'compute_ms' for "
-            "computation time, 'node_id' for origin, 'version' for result version."
-        ),
+    metadata: dict[
+        str, object
+    ] = (  # ONEX_EXCLUDE: dict_str_any - extensible persist result metadata
+        Field(
+            default_factory=dict,
+            description=(
+                "Optional metadata about the result. Common keys: 'compute_ms' for "
+                "computation time, 'node_id' for origin, 'version' for result version."
+            ),
+        )
     )

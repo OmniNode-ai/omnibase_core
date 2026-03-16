@@ -287,7 +287,7 @@ def validate_union_usage_file(
         # Return syntax error as an issue
         return 0, [f"Error parsing {file_path}: {e}"], []
     except (
-        Exception
+        Exception  # noqa: BLE001
     ) as e:  # fallback-ok: Validation errors are returned as issues, not raised
         # Return other errors as issues
         return 0, [f"Failed to validate union usage in {file_path}: {e}"], []

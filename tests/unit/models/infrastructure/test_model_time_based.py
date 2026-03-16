@@ -381,7 +381,7 @@ class TestModelTimeBasedFactoryMethods:
         assert duration.value == 30
         assert duration.unit == EnumTimeUnit.SECONDS
         assert duration.metadata["type"] == "duration"
-        assert duration.metadata["description"] == "Test duration"
+        assert duration.description == "Test duration"
 
     def test_timeout_factory(self) -> None:
         """Test timeout factory method."""
@@ -397,7 +397,7 @@ class TestModelTimeBasedFactoryMethods:
         assert timeout.value == 60
         assert timeout.unit == EnumTimeUnit.SECONDS
         assert timeout.metadata["type"] == "timeout"
-        assert timeout.metadata["description"] == "Test timeout"
+        assert timeout.description == "Test timeout"
         assert timeout.is_strict is False
         assert timeout.warning_threshold_value == 45
         assert timeout.allow_extension is True
@@ -459,7 +459,7 @@ class TestModelTimeBasedFactoryMethods:
             description="Fast operation timeout",
         )
         assert timeout.runtime_category == EnumRuntimeCategory.FAST
-        assert timeout.metadata["description"] == "Fast operation timeout"
+        assert timeout.description == "Fast operation timeout"
         assert timeout.to_seconds() <= 5  # Fast category max
 
 

@@ -218,7 +218,7 @@ class TestProtocolTypeAnnotations:
                     if "return" not in hints:
                         # Method missing return type annotation
                         missing_return_types.append(f"{path}.{name}")
-                except Exception:
+                except Exception:  # noqa: BLE001
                     # Type hint resolution failed - skip
                     continue
 
@@ -255,7 +255,7 @@ class TestProtocolTypeAnnotations:
                             continue
                         if param_name not in hints:
                             missing_param_types.append(f"{path}.{name}({param_name})")
-                except Exception:
+                except Exception:  # noqa: BLE001
                     continue
 
         # Report significant issues

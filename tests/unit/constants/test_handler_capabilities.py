@@ -708,7 +708,7 @@ class TestHandlerCapabilitiesEdgeCases:
             pytest.fail("Expected UnsupportedCapabilityError to be raised")
         except UnsupportedCapabilityError:
             pass  # Expected
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             pytest.fail(
                 f"Expected UnsupportedCapabilityError but got {type(e).__name__}: {e}"
             )

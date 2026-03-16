@@ -389,7 +389,7 @@ def health(ctx: click.Context, component: str | None) -> None:
                 click.echo(f"       {message}")
             if not is_healthy:
                 all_healthy = False
-        except Exception as e:  # catch-all-ok: health checks must not crash CLI
+        except Exception as e:  # noqa: BLE001  # catch-all-ok: health checks must not crash CLI
             # Ensures CLI stability even if health check functions fail
             # Examples: ImportError (missing modules), AttributeError (API changes),
             # RuntimeError (check logic bugs), OSError (system resource issues)

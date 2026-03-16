@@ -58,7 +58,9 @@ class TypedDictEventEnvelopeDict(TypedDict, total=False):
     request_id: UUID | None
     trace_id: UUID | None
     span_id: UUID | None
-    metadata: dict[str, object]
+    metadata: dict[
+        str, object
+    ]  # ONEX_EXCLUDE: dict_str_any - envelope metadata is inherently unstructured
     security_context: dict[str, object] | None
     onex_version: str
     envelope_version: str

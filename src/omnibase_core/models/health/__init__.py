@@ -40,7 +40,7 @@ __all__: list[str] = [
 try:
     ModelHealthStatus.model_rebuild()
     ModelToolHealth.model_rebuild()
-except Exception:
+except Exception:  # noqa: BLE001
     # init-errors-ok: model_rebuild may fail during circular import resolution, safe to ignore
     pass
 
@@ -60,6 +60,6 @@ try:
         _types_namespace={"ModelCustomFields": _ModelCustomFields}
     )
     ModelHealthCheckConfig.model_rebuild()
-except Exception:
+except Exception:  # noqa: BLE001
     # init-errors-ok: model_rebuild may fail during circular import resolution, safe to ignore
     pass

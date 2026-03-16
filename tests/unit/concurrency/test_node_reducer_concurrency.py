@@ -263,7 +263,7 @@ class TestNodeReducerFSMConcurrency:
                             getattr(result.metadata, "fsm_success", False),
                         )
                     )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 async with lock:
                     errors.append(e)
 
@@ -819,7 +819,7 @@ class TestSharedNodeReducerRaceConditions:
 
             try:
                 asyncio.run(do_transition())
-            except Exception:
+            except Exception:  # noqa: BLE001
                 pass  # Ignore errors from races
 
             with lock:

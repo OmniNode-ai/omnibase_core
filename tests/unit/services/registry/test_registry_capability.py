@@ -651,7 +651,7 @@ class TestServiceRegistryCapabilityThreadSafety:
                     tags=(f"tag{i}",),
                 )
                 registry.register(cap)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         with ThreadPoolExecutor(max_workers=10) as executor:
@@ -682,7 +682,7 @@ class TestServiceRegistryCapabilityThreadSafety:
                     result = registry.get("database.relational")
                     with lock:
                         results.append(result)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -699,7 +699,7 @@ class TestServiceRegistryCapabilityThreadSafety:
                         description=f"Description {unique_id}",
                     )
                     registry.register(cap)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -741,7 +741,7 @@ class TestServiceRegistryCapabilityThreadSafety:
 
                 # Try to unregister
                 registry.unregister(cap_id)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         with ThreadPoolExecutor(max_workers=10) as executor:
@@ -770,7 +770,7 @@ class TestServiceRegistryCapabilityThreadSafety:
                     result = registry.list_all()
                     with lock:
                         results.append(result)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         with ThreadPoolExecutor(max_workers=5) as executor:

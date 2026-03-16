@@ -78,7 +78,7 @@ class ModelTypedAccessor[T](ModelFieldAccessor):
                     else:
                         result[key] = str(value)
                 except (
-                    Exception
+                    Exception  # noqa: BLE001
                 ):  # fallback-ok: skip non-serializable attributes gracefully
                     continue
 

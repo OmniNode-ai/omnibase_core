@@ -242,7 +242,7 @@ def _resolve_forward_references() -> None:
         # model_rebuild(), so we just need to rebuild this class to pick up
         # the resolved types from ModelHealthCheckMetadata
         ModelHealthCheckConfig.model_rebuild()
-    except Exception:
+    except Exception:  # noqa: BLE001
         # init-errors-ok: model_rebuild may fail during circular import resolution
         pass
 

@@ -18,6 +18,6 @@ try:
     )
 
     ModelServiceDetectionConfig.model_rebuild()
-except Exception:
+except Exception:  # noqa: BLE001
     # init-errors-ok: may fail during circular import, safe to ignore
     pass

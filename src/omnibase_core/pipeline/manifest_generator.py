@@ -710,7 +710,7 @@ class ManifestGenerator:
         for callback in list(self._on_manifest_built):
             try:
                 callback(manifest)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # callback-resilience-ok: callbacks must not crash manifest build
                 warnings.warn(
                     f"on_manifest_built callback failed: {e!r}. "

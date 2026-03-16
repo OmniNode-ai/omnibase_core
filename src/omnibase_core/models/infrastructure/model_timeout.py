@@ -209,10 +209,6 @@ class ModelTimeout(BaseModel):
         super().__init__(custom_metadata=processed_metadata, **data)
 
         # Create the underlying time-based model
-        metadata = {"type": "timeout"}
-        if description:
-            metadata["description"] = description
-
         self.time_based = ModelTimeBased.timeout(
             value=timeout_seconds,
             unit=EnumTimeUnit.SECONDS,
@@ -279,7 +275,7 @@ class ModelTimeout(BaseModel):
     @property
     def description(self) -> str | None:
         """Human-readable timeout description."""
-        return self.time_based.metadata.get("description")
+        return self.time_based.description
 
     @cached_property
     def custom_properties(self) -> ModelCustomProperties:
@@ -299,7 +295,9 @@ class ModelTimeout(BaseModel):
 
         # Create ModelCustomProperties from the metadata values
         # Convert ModelSchemaValue objects to primitive types for from_metadata
-        primitive_metadata: dict[str, object] = {}
+        primitive_metadata: dict[
+            str, object
+        ] = {}  # ONEX_EXCLUDE: dict_str_any - local variable for schema value conversion
         for key, val in metadata.items():
             # val is always ModelSchemaValue, extract primitive value for proper typing
             primitive_value = val.to_value()

@@ -200,7 +200,7 @@ class TestModelDependencyPerformance:
                     dep = ModelDependency(**case)
                     assert dep.name == case["name"]
                     created_count += 1
-                except Exception:
+                except Exception:  # noqa: BLE001
                     pass  # Shouldn't happen with valid test cases
 
         creation_time = time.perf_counter() - start_time
@@ -481,7 +481,7 @@ class TestModelDependencyPerformance:
                             required=i % 2 == 0,
                         )
                         successes += 1
-                except Exception:
+                except Exception:  # noqa: BLE001
                     # Expected for invalid cases
                     failures += 1
 

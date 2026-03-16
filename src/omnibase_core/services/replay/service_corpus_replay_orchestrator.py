@@ -525,7 +525,7 @@ class ServiceCorpusReplayOrchestrator:
                 # Cancellation should not be retried - it must propagate immediately.
                 raise
 
-            except Exception as e:  # boundary-ok: retry logic must capture all exceptions to track attempts
+            except Exception as e:  # noqa: BLE001  # boundary-ok: retry logic must capture all exceptions to track attempts
                 last_error = e
                 retry_count += 1
 
@@ -597,6 +597,6 @@ class ServiceCorpusReplayOrchestrator:
         if callback:
             try:
                 callback(progress)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # tool-resilience-ok: callback errors must not crash replay
                 _logger.warning("Progress callback failed: %s", e)

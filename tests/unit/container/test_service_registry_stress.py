@@ -155,7 +155,7 @@ class TestServiceRegistryConcurrency:
                 with lock:
                     registration_ids.append(registration_id)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -232,7 +232,7 @@ class TestServiceRegistryConcurrency:
                 with lock:
                     registration_ids.append(registration_id)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -298,7 +298,7 @@ class TestServiceRegistryConcurrency:
                 with lock:
                     resolved_instances.append(instance)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -367,7 +367,7 @@ class TestServiceRegistryConcurrency:
                     with lock:
                         results.append(("resolve", instance))
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -429,7 +429,7 @@ class TestServiceRegistryConcurrency:
                 with lock:
                     registration_ids.append(registration_id)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -453,7 +453,7 @@ class TestServiceRegistryConcurrency:
                 with lock:
                     unregister_results.append(result)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -518,7 +518,7 @@ class TestServiceRegistryConcurrency:
                     with lock:
                         resolution_count[0] += 1
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -588,7 +588,7 @@ class TestServiceRegistryConcurrency:
                     with lock:
                         resolved_c.append(instance)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -643,7 +643,7 @@ class TestServiceRegistryConcurrency:
                 with lock:
                     disposed_counts.append(count)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -705,7 +705,7 @@ class TestServiceRegistryConcurrency:
                 with lock:
                     update_results.append(result)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -772,7 +772,7 @@ class TestServiceRegistryConcurrency:
                         )
                     )
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -839,7 +839,7 @@ class TestServiceRegistryConcurrency:
                         else:
                             failed_resolutions.append(None)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
@@ -898,7 +898,7 @@ class TestServiceRegistryConcurrency:
                 with lock:
                     all_services_results.append(services)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 with lock:
                     errors.append(e)
 
