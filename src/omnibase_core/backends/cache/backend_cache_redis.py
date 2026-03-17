@@ -22,7 +22,7 @@ Usage:
         from omnibase_core.backends.cache import BackendCacheRedis
 
         # Create and connect
-        backend = BackendCacheRedis(url="redis://localhost:6379/0")
+        backend = BackendCacheRedis(url="redis://localhost:16379/0")
         await backend.connect()
 
         # Use for caching
@@ -40,7 +40,7 @@ Usage:
         from omnibase_core.mixins import MixinCaching
         from omnibase_core.nodes import NodeCompute
 
-        backend = BackendCacheRedis(url="redis://localhost:6379/0")
+        backend = BackendCacheRedis(url="redis://localhost:16379/0")
         await backend.connect()
 
         class MyNode(NodeCompute, MixinCaching):
@@ -281,7 +281,7 @@ class BackendCacheRedis:
         Connection pooling handles concurrent access safely.
 
     Attributes:
-        url: Redis connection URL (e.g., "redis://localhost:6379/0")
+        url: Redis connection URL (e.g., "redis://localhost:16379/0")
         prefix: Optional key prefix for namespacing
         default_ttl: Default TTL in seconds (None = no expiration)
 
@@ -293,7 +293,7 @@ class BackendCacheRedis:
             async def main():
                 # Create backend with connection pool
                 backend = BackendCacheRedis(
-                    url="redis://localhost:6379/0",
+                    url="redis://localhost:16379/0",
                     prefix="myapp:",
                     default_ttl=3600,
                 )
@@ -321,7 +321,7 @@ class BackendCacheRedis:
 
     def __init__(
         self,
-        url: str = "redis://localhost:6379/0",
+        url: str = "redis://localhost:16379/0",
         prefix: str = "",
         default_ttl: int | None = None,
         max_connections: int = 10,
@@ -390,7 +390,7 @@ class BackendCacheRedis:
         Example:
             .. code-block:: python
 
-                async with BackendCacheRedis(url="redis://localhost:6379") as cache:
+                async with BackendCacheRedis(url="redis://localhost:16379") as cache:
                     await cache.set("key", "value")
                 # Connection automatically closed on exit
 

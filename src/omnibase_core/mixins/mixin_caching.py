@@ -43,7 +43,7 @@ Usage:
         from omnibase_core.nodes import NodeCompute
 
         # With L2 Redis backend
-        backend = BackendCacheRedis(url="redis://localhost:6379/0")
+        backend = BackendCacheRedis(url="redis://localhost:16379/0")
         await backend.connect()
 
         class MyComputeNode(NodeCompute, MixinCaching):
@@ -143,7 +143,7 @@ class MixinCaching:
             from omnibase_core.nodes import NodeCompute
 
             # Create Redis backend for L2
-            backend = BackendCacheRedis(url="redis://localhost:6379/0")
+            backend = BackendCacheRedis(url="redis://localhost:16379/0")
             await backend.connect()
 
             class MyNode(NodeCompute, MixinCaching):
