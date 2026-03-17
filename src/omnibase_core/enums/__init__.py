@@ -195,6 +195,7 @@ from .enum_header_transformation_type import EnumHeaderTransformationType
 from .enum_health_check_type import EnumHealthCheckType
 from .enum_health_detail_type import EnumHealthDetailType
 from .enum_health_status import EnumHealthStatus
+from .enum_health_status_value import EnumHealthStatusValue
 
 # Hub and coordination enums
 from .enum_hub_capability import EnumHubCapability
@@ -539,6 +540,7 @@ __all__ = [
     "EnumHealthCheckType",
     "EnumHealthDetailType",
     "EnumHealthStatus",  # Canonical health status (OMN-1310)
+    "EnumHealthStatusValue",  # StrEnum for ModelHealthStatus.status field (OMN-5295)
     "EnumNodeStatus",
     # Nondeterminism classification
     "EnumNondeterminismClass",

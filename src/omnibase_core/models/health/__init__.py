@@ -5,6 +5,8 @@
 Health domain models for ONEX.
 """
 
+from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
+
 from .model_baseline_health_report import ModelBaselineHealthReport
 from .model_health_attributes import ModelHealthAttributes
 from .model_health_check import ModelHealthCheck
@@ -20,6 +22,7 @@ from .model_performance_metrics import ModelPerformanceMetrics
 from .model_tool_health import ModelToolHealth
 
 __all__: list[str] = [
+    "EnumHealthStatusValue",
     "ModelBaselineHealthReport",
     "ModelHealthAttributes",
     "ModelHealthCheck",

@@ -35,6 +35,7 @@ from urllib.parse import urlparse
 from uuid import uuid4
 
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
@@ -317,7 +318,7 @@ class MixinHealthCheck:
             all_issues.extend(check_result.issues)
 
         final_health = ModelHealthStatus(
-            status=overall_status.value,
+            status=EnumHealthStatusValue(overall_status.value),
             health_score=health_score,
             issues=all_issues,
         )
@@ -497,7 +498,7 @@ class MixinHealthCheck:
             all_issues.extend(check_result.issues)
 
         return ModelHealthStatus(
-            status=overall_status.value,
+            status=EnumHealthStatusValue(overall_status.value),
             health_score=health_score,
             issues=all_issues,
         )
