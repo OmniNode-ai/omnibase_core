@@ -31,7 +31,7 @@ Usage:
         # Check if Redis is available
         if REDIS_AVAILABLE:
             # Create Redis backend
-            backend = BackendCacheRedis(url="redis://localhost:6379/0")
+            backend = BackendCacheRedis(url="redis://localhost:16379/0")
             await backend.connect()
 
             # Use with MixinCaching
