@@ -63,6 +63,9 @@ from omnibase_core.models.runtime.model_handler_behavior import (
 )
 
 if TYPE_CHECKING:
+    from omnibase_core.models.contracts.subcontracts.model_context_integrity_subcontract import (
+        ModelContextIntegritySubcontract,
+    )
     from omnibase_core.models.routing.model_trust_domain_config import (
         ModelTrustDomainConfig,
     )
@@ -300,6 +303,19 @@ class ModelHandlerContract(BaseModel):
     )
 
     # ==========================================================================
+    # Context Integrity (OMN-5230)
+    # ==========================================================================
+
+    context_integrity: ModelContextIntegritySubcontract | None = Field(
+        default=None,
+        description=(
+            "Optional context integrity subcontract for WISC enforcement. "
+            "When set, audit hooks validate that dispatched tasks operate "
+            "within the declared context budget, tool scope, and memory scope."
+        ),
+    )
+
+    # ==========================================================================
     # Trust Domain Configuration (OMN-2896 Phase 7)
     # ==========================================================================
 
@@ -529,12 +545,16 @@ __all__ = [
 
 def _rebuild_model_handler_contract() -> None:
     """Rebuild ModelHandlerContract to resolve forward references."""
+    from omnibase_core.models.contracts.subcontracts.model_context_integrity_subcontract import (
+        ModelContextIntegritySubcontract,
+    )
     from omnibase_core.models.routing.model_trust_domain_config import (
         ModelTrustDomainConfig,
     )
 
     ModelHandlerContract.model_rebuild(
         _types_namespace={
+            "ModelContextIntegritySubcontract": ModelContextIntegritySubcontract,
             "ModelTrustDomainConfig": ModelTrustDomainConfig,
         }
     )
