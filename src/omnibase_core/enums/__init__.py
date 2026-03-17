@@ -8,6 +8,8 @@ organized by functional domains for better maintainability.
 """
 
 # Action status enum (OMN-1309)
+# Audit enforcement level (OMN-5232 — context integrity)
+from .audit.enum_audit_enforcement_level import EnumAuditEnforcementLevel
 from .enum_action_status import EnumActionStatus
 
 # Architecture and system enums
@@ -597,6 +599,7 @@ __all__ = [
     "EnumBindingFunction",
     # Audit and governance domain
     "EnumAuditAction",
+    "EnumAuditEnforcementLevel",
     # Architecture and system domain
     "EnumArchitecture",
     "EnumLogFormat",
