@@ -36,16 +36,25 @@ class TestModelTopicNamingInstantiation:
     """Test cases for ModelTopicNaming instantiation."""
 
     def test_instantiation_minimal_required_fields(self):
-        """Test model creation with only required fields (domain, category)."""
+        """Test model creation with required fields (environment, domain, category)."""
         naming = ModelTopicNaming(
+            environment="dev",
             domain="user-service",
             category=EnumMessageCategory.EVENT,
         )
 
+        assert naming.environment == "dev"
         assert naming.domain == "user-service"
         assert naming.category == EnumMessageCategory.EVENT
-        assert naming.environment == "dev"  # Default
         assert naming.version == "v1"  # Default
+
+    def test_instantiation_missing_environment_raises(self):
+        """Test that omitting environment raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ModelTopicNaming(
+                domain="user-service",
+                category=EnumMessageCategory.EVENT,
+            )
 
     def test_instantiation_with_all_fields(self):
         """Test model creation with all fields provided."""
@@ -65,6 +74,7 @@ class TestModelTopicNamingInstantiation:
         """Test model creation with all message category types."""
         # EVENT
         naming_event = ModelTopicNaming(
+            environment="dev",
             domain="user",
             category=EnumMessageCategory.EVENT,
         )
@@ -72,6 +82,7 @@ class TestModelTopicNamingInstantiation:
 
         # COMMAND
         naming_command = ModelTopicNaming(
+            environment="dev",
             domain="user",
             category=EnumMessageCategory.COMMAND,
         )
@@ -79,6 +90,7 @@ class TestModelTopicNamingInstantiation:
 
         # INTENT
         naming_intent = ModelTopicNaming(
+            environment="dev",
             domain="user",
             category=EnumMessageCategory.INTENT,
         )
@@ -92,6 +104,7 @@ class TestModelTopicNamingConfig:
     def test_model_is_frozen(self):
         """Test that model is immutable (frozen=True)."""
         naming = ModelTopicNaming(
+            environment="dev",
             domain="user",
             category=EnumMessageCategory.EVENT,
         )
@@ -109,6 +122,7 @@ class TestModelTopicNamingConfig:
         """Test that extra fields are forbidden (extra='forbid')."""
         with pytest.raises(ValidationError) as exc_info:
             ModelTopicNaming(
+                environment="dev",
                 domain="user",
                 category=EnumMessageCategory.EVENT,
                 extra_field="not_allowed",  # type: ignore[call-arg]
@@ -224,6 +238,7 @@ class TestModelTopicNamingDomainValidation:
 
         for domain in valid_domains:
             naming = ModelTopicNaming(
+                environment="dev",
                 domain=domain,
                 category=EnumMessageCategory.EVENT,
             )
@@ -232,12 +247,14 @@ class TestModelTopicNamingDomainValidation:
     def test_domain_case_normalization(self):
         """Test that domain is normalized to lowercase."""
         naming = ModelTopicNaming(
+            environment="dev",
             domain="UserService",
             category=EnumMessageCategory.EVENT,
         )
         assert naming.domain == "userservice"
 
         naming_mixed = ModelTopicNaming(
+            environment="dev",
             domain="PAYMENT-GATEWAY",
             category=EnumMessageCategory.EVENT,
         )
@@ -247,6 +264,7 @@ class TestModelTopicNamingDomainValidation:
         """Test that domain starting with number raises error."""
         with pytest.raises(ValidationError) as exc_info:
             ModelTopicNaming(
+                environment="dev",
                 domain="123service",
                 category=EnumMessageCategory.EVENT,
             )
@@ -266,6 +284,7 @@ class TestModelTopicNamingDomainValidation:
         for domain in invalid_domains:
             with pytest.raises(ValidationError):
                 ModelTopicNaming(
+                    environment="dev",
                     domain=domain,
                     category=EnumMessageCategory.EVENT,
                 )
@@ -274,6 +293,7 @@ class TestModelTopicNamingDomainValidation:
         """Test that empty domain raises error."""
         with pytest.raises(ValidationError):
             ModelTopicNaming(
+                environment="dev",
                 domain="",
                 category=EnumMessageCategory.EVENT,
             )
@@ -289,6 +309,7 @@ class TestModelTopicNamingVersionValidation:
 
         for version in valid_versions:
             naming = ModelTopicNaming(
+                environment="dev",
                 domain="user",
                 category=EnumMessageCategory.EVENT,
                 version=version,
@@ -298,6 +319,7 @@ class TestModelTopicNamingVersionValidation:
     def test_default_version(self):
         """Test that default version is v1."""
         naming = ModelTopicNaming(
+            environment="dev",
             domain="user",
             category=EnumMessageCategory.EVENT,
         )
@@ -318,6 +340,7 @@ class TestModelTopicNamingVersionValidation:
         for version in invalid_versions:
             with pytest.raises(ValidationError):
                 ModelTopicNaming(
+                    environment="dev",
                     domain="user",
                     category=EnumMessageCategory.EVENT,
                     version=version,
@@ -379,6 +402,7 @@ class TestModelTopicNamingTopicSuffix:
     def test_topic_suffix_event(self):
         """Test topic_suffix for EVENT category."""
         naming = ModelTopicNaming(
+            environment="dev",
             domain="user",
             category=EnumMessageCategory.EVENT,
         )
@@ -387,6 +411,7 @@ class TestModelTopicNamingTopicSuffix:
     def test_topic_suffix_command(self):
         """Test topic_suffix for COMMAND category."""
         naming = ModelTopicNaming(
+            environment="dev",
             domain="user",
             category=EnumMessageCategory.COMMAND,
         )
@@ -395,6 +420,7 @@ class TestModelTopicNamingTopicSuffix:
     def test_topic_suffix_intent(self):
         """Test topic_suffix for INTENT category."""
         naming = ModelTopicNaming(
+            environment="dev",
             domain="user",
             category=EnumMessageCategory.INTENT,
         )
@@ -518,12 +544,12 @@ class TestModelTopicNamingFactoryMethods:
     """Test convenience factory methods."""
 
     def test_for_events_basic(self):
-        """Test for_events() with minimal args."""
-        naming = ModelTopicNaming.for_events(domain="user")
+        """Test for_events() with required environment."""
+        naming = ModelTopicNaming.for_events(domain="user", environment="dev")
 
         assert naming.domain == "user"
         assert naming.category == EnumMessageCategory.EVENT
-        assert naming.environment == "dev"  # Default
+        assert naming.environment == "dev"
         assert naming.version == "v1"  # Default
         assert naming.topic_name == "dev.user.events.v1"
 
@@ -542,8 +568,8 @@ class TestModelTopicNamingFactoryMethods:
         assert naming.topic_name == "prod.payment.events.v2"
 
     def test_for_commands_basic(self):
-        """Test for_commands() with minimal args."""
-        naming = ModelTopicNaming.for_commands(domain="order")
+        """Test for_commands() with required environment."""
+        naming = ModelTopicNaming.for_commands(domain="order", environment="dev")
 
         assert naming.domain == "order"
         assert naming.category == EnumMessageCategory.COMMAND
@@ -566,8 +592,8 @@ class TestModelTopicNamingFactoryMethods:
         assert naming.topic_name == "staging.notification.commands.v3"
 
     def test_for_intents_basic(self):
-        """Test for_intents() with minimal args."""
-        naming = ModelTopicNaming.for_intents(domain="workflow")
+        """Test for_intents() with required environment."""
+        naming = ModelTopicNaming.for_intents(domain="workflow", environment="dev")
 
         assert naming.domain == "workflow"
         assert naming.category == EnumMessageCategory.INTENT
@@ -715,6 +741,7 @@ class TestModelTopicNamingEdgeCases:
         # Domain max_length is 100
         long_domain = "a" * 100
         naming = ModelTopicNaming(
+            environment="dev",
             domain=long_domain,
             category=EnumMessageCategory.EVENT,
         )
@@ -725,6 +752,7 @@ class TestModelTopicNamingEdgeCases:
         long_domain = "a" * 101
         with pytest.raises(ValidationError):
             ModelTopicNaming(
+                environment="dev",
                 domain=long_domain,
                 category=EnumMessageCategory.EVENT,
             )
@@ -739,6 +767,7 @@ class TestModelTopicNamingEdgeCases:
     def test_single_char_domain(self):
         """Test single character domain."""
         naming = ModelTopicNaming(
+            environment="dev",
             domain="a",
             category=EnumMessageCategory.EVENT,
         )
@@ -748,6 +777,7 @@ class TestModelTopicNamingEdgeCases:
     def test_domain_with_multiple_hyphens(self):
         """Test domain with multiple consecutive hyphens."""
         naming = ModelTopicNaming(
+            environment="dev",
             domain="user--service",  # Two hyphens
             category=EnumMessageCategory.EVENT,
         )
@@ -756,6 +786,7 @@ class TestModelTopicNamingEdgeCases:
     def test_domain_ending_with_hyphen(self):
         """Test domain ending with hyphen."""
         naming = ModelTopicNaming(
+            environment="dev",
             domain="user-",
             category=EnumMessageCategory.EVENT,
         )
@@ -775,6 +806,7 @@ class TestModelTopicNamingEdgeCases:
     def test_high_version_number(self):
         """Test with high version number."""
         naming = ModelTopicNaming(
+            environment="dev",
             domain="user",
             category=EnumMessageCategory.EVENT,
             version="v999",
