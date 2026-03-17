@@ -55,8 +55,7 @@ class ModelSubscriptionCreatedEvent(ModelRuntimeEventBase):
         description="When the subscription was created (UTC)",
     )
     event_bus_type: EnumEventBusType = Field(
-        default=EnumEventBusType.INMEMORY,
-        description="Type of event bus. Use KAFKA or CLOUD in production; INMEMORY for tests only.",
+        description="Type of event bus being used (KAFKA, CLOUD, or INMEMORY). Required — no silent default.",
     )
     env: str = Field(
         default="development",
@@ -87,7 +86,7 @@ class ModelSubscriptionCreatedEvent(ModelRuntimeEventBase):
         subscription_id: UUID | None = None,
         handler_name: str | None = None,
         correlation_id: UUID | None = None,
-        event_bus_type: EnumEventBusType = EnumEventBusType.INMEMORY,
+        event_bus_type: EnumEventBusType,
         env: str = "development",
     ) -> "ModelSubscriptionCreatedEvent":
         """Factory method for creating a subscription created event."""

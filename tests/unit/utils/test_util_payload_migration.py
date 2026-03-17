@@ -178,8 +178,9 @@ class TestDictPayloadRejection:
             ModelSubscriptionCreatedEvent(
                 node_id=uuid4(),
                 topic="test.topic",
+                event_bus_type="kafka",
             ),
-            ModelRuntimeReadyEvent(),
+            ModelRuntimeReadyEvent(event_bus_type="kafka"),
             ModelWiringResultEvent(),
             ModelWiringErrorEvent(
                 error_code="TEST",
@@ -348,6 +349,7 @@ class TestConvertDictToTypedPayload:
         data = {
             "node_id": str(node_id),
             "topic": "events.test",
+            "event_bus_type": "kafka",
         }
 
         result = convert_dict_to_typed_payload(data, "SUBSCRIPTION_CREATED")
@@ -360,6 +362,7 @@ class TestConvertDictToTypedPayload:
         data = {
             "node_count": 5,
             "subscription_count": 10,
+            "event_bus_type": "kafka",
         }
 
         result = convert_dict_to_typed_payload(data, "RUNTIME_READY")
@@ -400,6 +403,7 @@ class TestConvertDictToTypedPayload:
         data = {
             "node_count": 2,
             "subscription_count": 4,
+            "event_bus_type": "kafka",
         }
 
         result = convert_dict_to_typed_payload(data, "onex.runtime.ready")
