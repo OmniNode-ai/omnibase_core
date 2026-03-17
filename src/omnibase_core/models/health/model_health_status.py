@@ -12,6 +12,8 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
+
 from .model_health_issue import ModelHealthIssue
 from .model_health_metadata import ModelHealthMetadata
 from .model_health_metric import ModelHealthMetric
@@ -30,10 +32,9 @@ class ModelHealthStatus(BaseModel):
     - Auto-healing and maintenance mode support
     """
 
-    status: str = Field(
+    status: EnumHealthStatusValue = Field(
         default=...,
         description="Primary health status",
-        pattern="^(healthy|degraded|unhealthy|unknown|custom)$",
     )
 
     health_score: float = Field(
@@ -125,7 +126,7 @@ class ModelHealthStatus(BaseModel):
         return (
             self.health_score < 0.3
             or any(issue.severity == "critical" for issue in self.issues)
-            or self.status == "unhealthy"
+            or self.status == EnumHealthStatusValue.UNHEALTHY
         )
 
     def get_critical_issues(self) -> list[ModelHealthIssue]:
@@ -206,7 +207,9 @@ class ModelHealthStatus(BaseModel):
     @classmethod
     def create_healthy(cls, score: float = 1.0) -> "ModelHealthStatus":
         """Create a healthy status instance"""
-        return cls(status="healthy", health_score=score, check_count=1)
+        return cls(
+            status=EnumHealthStatusValue.HEALTHY, health_score=score, check_count=1
+        )
 
     @classmethod
     def create_degraded(
@@ -216,7 +219,7 @@ class ModelHealthStatus(BaseModel):
     ) -> "ModelHealthStatus":
         """Create a degraded status instance"""
         return cls(
-            status="degraded",
+            status=EnumHealthStatusValue.DEGRADED,
             health_score=score,
             issues=issues if issues is not None else [],
             check_count=1,
@@ -230,7 +233,7 @@ class ModelHealthStatus(BaseModel):
     ) -> "ModelHealthStatus":
         """Create an unhealthy status instance"""
         return cls(
-            status="unhealthy",
+            status=EnumHealthStatusValue.UNHEALTHY,
             health_score=score,
             issues=issues if issues is not None else [],
             check_count=1,
