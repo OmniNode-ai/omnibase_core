@@ -6,7 +6,7 @@
 Tracks agent routing accuracy with graded scoring.
 
 Topic Constant:
-    See omnibase_core.constants.constants_topic_taxonomy:
+    See omnibase_infra.event_bus.topic_constants:
     - TOPIC_INJECTION_AGENT_MATCH
 
 Thread Safety:

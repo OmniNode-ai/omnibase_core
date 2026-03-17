@@ -231,6 +231,7 @@ class TestModelSubscriptionCreatedEvent:
         event = ModelSubscriptionCreatedEvent(
             node_id=node_id,
             topic="events.test",
+            event_bus_type="kafka",
         )
 
         assert event.node_id == node_id
@@ -239,7 +240,7 @@ class TestModelSubscriptionCreatedEvent:
         assert isinstance(event.subscription_id, UUID)
         assert event.handler_name is None
         assert isinstance(event.subscribed_at, datetime)
-        assert event.event_bus_type == "inmemory"
+        assert event.event_bus_type == "kafka"
 
     def test_instantiation_all_fields(self):
         """Test event creation with all fields provided."""
@@ -282,6 +283,7 @@ class TestModelSubscriptionCreatedEvent:
         original = ModelSubscriptionCreatedEvent.create(
             node_id=node_id,
             topic="serialized.topic",
+            event_bus_type="kafka",
         )
 
         json_str = original.model_dump_json()
@@ -447,8 +449,8 @@ class TestModelRuntimeReadyEvent:
     """Test cases for ModelRuntimeReadyEvent."""
 
     def test_instantiation_defaults(self):
-        """Test event creation with default values."""
-        event = ModelRuntimeReadyEvent()
+        """Test event creation with default values and explicit event_bus_type."""
+        event = ModelRuntimeReadyEvent(event_bus_type="kafka")
 
         assert event.event_type == "onex.runtime.ready"
         assert isinstance(event.runtime_id, UUID)
@@ -456,7 +458,7 @@ class TestModelRuntimeReadyEvent:
         assert event.subscription_count == 0
         assert isinstance(event.ready_at, datetime)
         assert event.initialization_duration_ms is None
-        assert event.event_bus_type == "inmemory"
+        assert event.event_bus_type == "kafka"
         assert event.nodes_wired == []
 
     def test_instantiation_all_fields(self):
@@ -497,6 +499,7 @@ class TestModelRuntimeReadyEvent:
         event = ModelRuntimeReadyEvent.create(
             node_count=3,
             nodes_wired=["a", "b", "c"],
+            event_bus_type="kafka",
         )
 
         assert event.node_count == 3
@@ -506,6 +509,7 @@ class TestModelRuntimeReadyEvent:
         event = ModelRuntimeReadyEvent(
             node_count=2,
             nodes_wired=["node-a", "node-b"],
+            event_bus_type="kafka",
         )
         assert event.node_count == 2
 
@@ -515,6 +519,7 @@ class TestModelRuntimeReadyEvent:
             ModelRuntimeReadyEvent(
                 node_count=5,
                 nodes_wired=["node-a", "node-b"],
+                event_bus_type="kafka",
             )
         assert "does not match" in str(exc_info.value)
 
@@ -523,6 +528,7 @@ class TestModelRuntimeReadyEvent:
         event = ModelRuntimeReadyEvent(
             node_count=0,
             nodes_wired=[],
+            event_bus_type="kafka",
         )
         assert event.node_count == 0
         assert event.nodes_wired == []
@@ -532,6 +538,7 @@ class TestModelRuntimeReadyEvent:
         original = ModelRuntimeReadyEvent.create(
             subscription_count=15,
             nodes_wired=["node-x", "node-y"],
+            event_bus_type="kafka",
         )
 
         json_str = original.model_dump_json()
@@ -884,6 +891,7 @@ class TestModelEventPayloadUnion:
             ModelSubscriptionCreatedEvent(
                 node_id=uuid4(),
                 topic="test",
+                event_bus_type="kafka",
             ),
             ModelSubscriptionFailedEvent(
                 node_id=uuid4(),
@@ -896,7 +904,7 @@ class TestModelEventPayloadUnion:
                 node_id=uuid4(),
                 topic="test",
             ),
-            ModelRuntimeReadyEvent(),
+            ModelRuntimeReadyEvent(event_bus_type="kafka"),
             ModelNodeGraphReadyEvent(),
             ModelWiringResultEvent(),
             ModelWiringErrorEvent(
@@ -923,7 +931,7 @@ class TestModelEventPayloadUnion:
                 node_type=EnumNodeKind.COMPUTE,
             ),
             ModelWiringResultEvent(success=True),
-            ModelRuntimeReadyEvent(),
+            ModelRuntimeReadyEvent(event_bus_type="kafka"),
         ]
 
         event_types = [event.event_type for event in events]

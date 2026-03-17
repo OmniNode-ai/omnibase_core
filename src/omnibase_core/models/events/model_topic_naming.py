@@ -16,7 +16,8 @@ Examples:
     - staging.payment.intents.v1
 
 Key Design Decisions:
-    1. Environment prefix enables multi-tenant isolation
+    1. Environment is a required metadata field (no default) to prevent
+       accidental "dev" leaking into production topic names
     2. Domain identifies the business domain or service
     3. Category suffix (events/commands/intents) enables message segregation
     4. Version suffix enables schema evolution
@@ -91,8 +92,9 @@ class ModelTopicNaming(BaseModel):
     )
 
     environment: str = Field(
-        default="dev",
-        description="Deployment environment (dev, staging, prod, test, local)",
+        ...,
+        description="Deployment environment (dev, staging, prod, test, local). "
+        "Required — no default to prevent accidental 'dev' leaking into production.",
         min_length=1,
         max_length=20,
     )
@@ -231,7 +233,7 @@ class ModelTopicNaming(BaseModel):
     def for_events(
         cls,
         domain: str,
-        environment: str = "dev",
+        environment: str,
         version: str = "v1",
     ) -> "ModelTopicNaming":
         """
@@ -239,7 +241,7 @@ class ModelTopicNaming(BaseModel):
 
         Args:
             domain: Business domain
-            environment: Deployment environment
+            environment: Deployment environment (required)
             version: Topic schema version
 
         Returns:
@@ -256,7 +258,7 @@ class ModelTopicNaming(BaseModel):
     def for_commands(
         cls,
         domain: str,
-        environment: str = "dev",
+        environment: str,
         version: str = "v1",
     ) -> "ModelTopicNaming":
         """
@@ -264,7 +266,7 @@ class ModelTopicNaming(BaseModel):
 
         Args:
             domain: Business domain
-            environment: Deployment environment
+            environment: Deployment environment (required)
             version: Topic schema version
 
         Returns:
@@ -281,7 +283,7 @@ class ModelTopicNaming(BaseModel):
     def for_intents(
         cls,
         domain: str,
-        environment: str = "dev",
+        environment: str,
         version: str = "v1",
     ) -> "ModelTopicNaming":
         """
@@ -289,7 +291,7 @@ class ModelTopicNaming(BaseModel):
 
         Args:
             domain: Business domain
-            environment: Deployment environment
+            environment: Deployment environment (required)
             version: Topic schema version
 
         Returns:

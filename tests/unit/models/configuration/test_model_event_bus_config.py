@@ -264,7 +264,7 @@ class TestModelEventBusConfigFactoryMethods:
     def test_default_factory_method(self):
         """Test default factory method."""
         config = ModelEventBusConfig.default()
-        assert config.bootstrap_servers == ["localhost:9092"]
+        assert config.bootstrap_servers == ["localhost:19092"]
         assert config.topics == ["onex-default"]
         assert config.security_protocol == "PLAINTEXT"
         assert config.group_id is not None

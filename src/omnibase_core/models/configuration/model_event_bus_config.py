@@ -137,7 +137,7 @@ class ModelEventBusConfig(BaseModel):
         Applies environment variable overrides for CI/local testing.
         """
         base_config = cls(
-            bootstrap_servers=["localhost:9092"],
+            bootstrap_servers=["localhost:19092"],
             topics=["onex-default"],
             group_id=uuid4(),
             security_protocol="PLAINTEXT",

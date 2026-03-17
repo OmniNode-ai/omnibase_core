@@ -51,6 +51,7 @@ See Also:
 from __future__ import annotations
 
 import re
+import warnings
 from typing import Final
 
 from omnibase_core.models.validation.model_topic_suffix_parts import (
@@ -333,6 +334,13 @@ def compose_full_topic(env_prefix: str, suffix: str) -> str:
         >>> compose_full_topic("prod", "onex.cmd.user-service.create-account.v2")
         'prod.onex.cmd.user-service.create-account.v2'
     """
+    warnings.warn(
+        "compose_full_topic is deprecated; use bare ONEX topic names "
+        "without environment prefix",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     # Normalize environment prefix
     env_normalized = env_prefix.strip().lower()
 

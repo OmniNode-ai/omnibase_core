@@ -15,6 +15,7 @@ Covers:
 """
 
 import re
+import warnings
 
 import pytest
 
@@ -585,31 +586,48 @@ class TestParseTopicSuffix:
 
 @pytest.mark.unit
 class TestComposeFullTopic:
-    """Tests for compose_full_topic function."""
+    """Tests for compose_full_topic function (deprecated)."""
+
+    def test_emits_deprecation_warning(self) -> None:
+        """Test that compose_full_topic emits a DeprecationWarning."""
+        with pytest.warns(DeprecationWarning, match="compose_full_topic is deprecated"):
+            compose_full_topic("dev", "onex.evt.omnimemory.intent-stored.v1")
 
     def test_composes_with_dev_prefix(self) -> None:
         """Test composing full topic with dev prefix."""
-        full = compose_full_topic("dev", "onex.evt.omnimemory.intent-stored.v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            full = compose_full_topic("dev", "onex.evt.omnimemory.intent-stored.v1")
         assert full == "dev.onex.evt.omnimemory.intent-stored.v1"
 
     def test_composes_with_staging_prefix(self) -> None:
         """Test composing full topic with staging prefix."""
-        full = compose_full_topic("staging", "onex.cmd.service.event.v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            full = compose_full_topic("staging", "onex.cmd.service.event.v1")
         assert full == "staging.onex.cmd.service.event.v1"
 
     def test_composes_with_prod_prefix(self) -> None:
         """Test composing full topic with prod prefix."""
-        full = compose_full_topic("prod", "onex.evt.user-service.account-created.v2")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            full = compose_full_topic(
+                "prod", "onex.evt.user-service.account-created.v2"
+            )
         assert full == "prod.onex.evt.user-service.account-created.v2"
 
     def test_composes_with_test_prefix(self) -> None:
         """Test composing full topic with test prefix."""
-        full = compose_full_topic("test", "onex.dlq.service.failed-events.v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            full = compose_full_topic("test", "onex.dlq.service.failed-events.v1")
         assert full == "test.onex.dlq.service.failed-events.v1"
 
     def test_composes_with_local_prefix(self) -> None:
         """Test composing full topic with local prefix."""
-        full = compose_full_topic("local", "onex.snapshot.service.backup.v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            full = compose_full_topic("local", "onex.snapshot.service.backup.v1")
         assert full == "local.onex.snapshot.service.backup.v1"
 
     @pytest.mark.parametrize(
@@ -618,41 +636,55 @@ class TestComposeFullTopic:
     )
     def test_all_valid_env_prefixes(self, env_prefix: str) -> None:
         """Test that all valid environment prefixes work."""
-        full = compose_full_topic(env_prefix, "onex.evt.service.event.v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            full = compose_full_topic(env_prefix, "onex.evt.service.event.v1")
         assert full == f"{env_prefix}.onex.evt.service.event.v1"
 
     def test_normalizes_env_prefix_to_lowercase(self) -> None:
         """Test that environment prefix is normalized to lowercase."""
-        full = compose_full_topic("DEV", "onex.evt.service.event.v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            full = compose_full_topic("DEV", "onex.evt.service.event.v1")
         assert full == "dev.onex.evt.service.event.v1"
 
     def test_strips_env_prefix_whitespace(self) -> None:
         """Test that whitespace is stripped from env prefix."""
-        full = compose_full_topic("  dev  ", "onex.evt.service.event.v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            full = compose_full_topic("  dev  ", "onex.evt.service.event.v1")
         assert full == "dev.onex.evt.service.event.v1"
 
     def test_validates_suffix(self) -> None:
         """Test that suffix is validated before composing."""
-        with pytest.raises(ValueError) as exc_info:
-            compose_full_topic("dev", "invalid.suffix")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            with pytest.raises(ValueError) as exc_info:
+                compose_full_topic("dev", "invalid.suffix")
         assert "Invalid topic suffix" in str(exc_info.value)
 
     def test_raises_for_empty_env_prefix(self) -> None:
         """Test that empty env prefix raises ValueError."""
-        with pytest.raises(ValueError) as exc_info:
-            compose_full_topic("", "onex.evt.service.event.v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            with pytest.raises(ValueError) as exc_info:
+                compose_full_topic("", "onex.evt.service.event.v1")
         assert "empty" in str(exc_info.value).lower()
 
     def test_raises_for_whitespace_env_prefix(self) -> None:
         """Test that whitespace-only env prefix raises ValueError."""
-        with pytest.raises(ValueError) as exc_info:
-            compose_full_topic("   ", "onex.evt.service.event.v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            with pytest.raises(ValueError) as exc_info:
+                compose_full_topic("   ", "onex.evt.service.event.v1")
         assert "empty" in str(exc_info.value).lower()
 
     def test_raises_for_invalid_env_prefix(self) -> None:
         """Test that invalid env prefix raises ValueError."""
-        with pytest.raises(ValueError) as exc_info:
-            compose_full_topic("production", "onex.evt.service.event.v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            with pytest.raises(ValueError) as exc_info:
+                compose_full_topic("production", "onex.evt.service.event.v1")
         error_msg = str(exc_info.value)
         assert "production" in error_msg
         assert "must be one of" in error_msg.lower()
@@ -671,18 +703,24 @@ class TestComposeFullTopic:
         self, env_prefix: str, description: str
     ) -> None:
         """Test that invalid environment prefixes are rejected."""
-        with pytest.raises(ValueError):
-            compose_full_topic(env_prefix, "onex.evt.service.event.v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            with pytest.raises(ValueError):
+                compose_full_topic(env_prefix, "onex.evt.service.event.v1")
 
     def test_rejects_uppercase_suffix(self) -> None:
         """Test that compose_full_topic rejects uppercase suffix (no normalization)."""
-        with pytest.raises(ValueError) as exc_info:
-            compose_full_topic("dev", "  ONEX.EVT.SERVICE.EVENT.V1  ")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            with pytest.raises(ValueError) as exc_info:
+                compose_full_topic("dev", "  ONEX.EVT.SERVICE.EVENT.V1  ")
         assert "lowercase" in str(exc_info.value).lower()
 
     def test_uses_stripped_suffix_from_parsed_result(self) -> None:
         """Test that composed topic uses stripped suffix."""
-        full = compose_full_topic("dev", "  onex.evt.service.event.v1  ")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            full = compose_full_topic("dev", "  onex.evt.service.event.v1  ")
         assert full == "dev.onex.evt.service.event.v1"
 
 
