@@ -92,6 +92,7 @@ class ModelTaskDispatch(BaseModel):
     model_config = ConfigDict(
         frozen=True,
         extra="ignore",
+        from_attributes=True,
     )
 
 

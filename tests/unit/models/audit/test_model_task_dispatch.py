@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.models.audit.model_task_dispatch import ModelTaskDispatch
 from omnibase_core.models.audit.model_task_tree import ModelTaskTree
@@ -60,11 +61,11 @@ class TestModelTaskDispatch:
         dispatch = ModelTaskDispatch(
             agent_type="onex:polymorphic-agent",
         )
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             dispatch.agent_type = "changed"  # type: ignore[misc]
 
     def test_context_budget_minimum(self) -> None:
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelTaskDispatch(
                 agent_type="onex:polymorphic-agent",
                 context_budget_tokens=0,
