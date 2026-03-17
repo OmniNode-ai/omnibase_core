@@ -8,6 +8,8 @@ organized by functional domains for better maintainability.
 """
 
 # Action status enum (OMN-1309)
+# Audit enforcement level (OMN-5232 — context integrity)
+from .audit.enum_audit_enforcement_level import EnumAuditEnforcementLevel
 from .enum_action_status import EnumActionStatus
 
 # Architecture and system enums
@@ -347,6 +349,9 @@ from .enum_resource_unit import EnumResourceUnit
 from .enum_response_header_transformation_type import (
     EnumResponseHeaderTransformationType,
 )
+
+# Retrieval source type enum (OMN-5231 — context integrity)
+from .enum_retrieval_source_type import EnumRetrievalSourceType
 from .enum_return_type import EnumReturnType
 
 # Reward target type enum (OMN-2537 — objective functions reward architecture)
@@ -582,6 +587,8 @@ __all__ = [
     "EnumNamespaceStrategy",
     # Resource domain
     "EnumResourceUnit",
+    # Retrieval source type (context integrity)
+    "EnumRetrievalSourceType",
     # URI domain
     "EnumUriType",
     # Workflow domain
@@ -597,6 +604,7 @@ __all__ = [
     "EnumBindingFunction",
     # Audit and governance domain
     "EnumAuditAction",
+    "EnumAuditEnforcementLevel",
     # Architecture and system domain
     "EnumArchitecture",
     "EnumLogFormat",

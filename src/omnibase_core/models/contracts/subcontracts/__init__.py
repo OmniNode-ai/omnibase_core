@@ -25,6 +25,7 @@ Strong typing with comprehensive type safety.
 
 # Re-export constant from canonical location
 from omnibase_core.constants import IDEMPOTENCY_DEFAULTS
+from omnibase_core.enums.enum_retrieval_source_type import EnumRetrievalSourceType
 from omnibase_core.models.core.model_health_check_result import ModelHealthCheckResult
 from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
 from omnibase_core.models.fsm.model_fsm_operation import ModelFSMOperation
@@ -53,6 +54,7 @@ from .model_compute_subcontract import ModelComputeSubcontract
 from .model_configuration_source import ModelConfigurationSource
 from .model_configuration_subcontract import ModelConfigurationSubcontract
 from .model_configuration_validation import ModelConfigurationValidation
+from .model_context_integrity_subcontract import ModelContextIntegritySubcontract
 from .model_coordination_result import ModelCoordinationResult
 from .model_coordination_rules import ModelCoordinationRules
 from .model_correlation_config import ModelCorrelationConfig
@@ -121,7 +123,9 @@ from .model_resolved_filesystem_context import ModelResolvedFilesystemContext
 from .model_resolved_http_context import ModelResolvedHttpContext
 from .model_resolved_kafka_context import ModelResolvedKafkaContext
 from .model_response_mapping import ModelResponseMapping
+from .model_retrieval_source import ModelRetrievalSource
 from .model_retry_subcontract import ModelRetrySubcontract
+from .model_return_schema import ModelReturnSchema
 from .model_route_definition import ModelRouteDefinition
 from .model_routing_metrics import ModelRoutingMetrics
 from .model_routing_subcontract import ModelRoutingSubcontract
@@ -197,6 +201,11 @@ __all__ = [
     # Compute subcontracts and components
     "ModelComputePipelineStep",
     "ModelComputeSubcontract",
+    # Context integrity subcontracts and components
+    "EnumRetrievalSourceType",
+    "ModelContextIntegritySubcontract",
+    "ModelRetrievalSource",
+    "ModelReturnSchema",
     # Configuration subcontracts and components
     "ModelConfigurationSubcontract",
     "ModelConfigurationSource",
