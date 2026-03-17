@@ -59,8 +59,7 @@ class ModelRuntimeReadyEvent(ModelRuntimeEventBase):
         description="How long initialization took in milliseconds",
     )
     event_bus_type: EnumEventBusType = Field(
-        default=EnumEventBusType.INMEMORY,
-        description="Type of event bus being used. Use KAFKA or CLOUD in production; INMEMORY for tests only.",
+        description="Type of event bus being used (KAFKA, CLOUD, or INMEMORY). Required — no silent default.",
     )
     env: str = Field(
         default="development",
@@ -107,7 +106,7 @@ class ModelRuntimeReadyEvent(ModelRuntimeEventBase):
         node_count: int | None = None,
         subscription_count: int = 0,
         initialization_duration_ms: float | None = None,
-        event_bus_type: EnumEventBusType = EnumEventBusType.INMEMORY,
+        event_bus_type: EnumEventBusType,
         nodes_wired: list[str] | None = None,
         correlation_id: UUID | None = None,
         env: str = "development",
