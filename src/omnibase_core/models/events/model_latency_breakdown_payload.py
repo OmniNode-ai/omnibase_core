@@ -6,7 +6,7 @@
 Provides detailed timing including user-perceived latency.
 
 Topic Constant:
-    See omnibase_core.constants.constants_topic_taxonomy:
+    See omnibase_infra.event_bus.topic_constants:
     - TOPIC_INJECTION_LATENCY_BREAKDOWN
 
 Thread Safety:

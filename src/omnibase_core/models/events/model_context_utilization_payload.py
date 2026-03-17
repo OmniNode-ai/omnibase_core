@@ -6,7 +6,7 @@
 Tracks whether injected context was actually used by the agent.
 
 Topic Constant:
-    See omnibase_core.constants.constants_topic_taxonomy:
+    See omnibase_infra.event_bus.topic_constants:
     - TOPIC_INJECTION_CONTEXT_UTILIZATION
 
 Thread Safety:

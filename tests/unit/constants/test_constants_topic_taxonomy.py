@@ -913,9 +913,9 @@ class TestPlatformBaselineTopicSuffixes:
     def test_platform_baseline_topic_suffixes_contains_expected_values(self) -> None:
         """Test that all expected platform baseline topics are present."""
         expected = {
-            "onex.evt.contract-registered.v1",
-            "onex.evt.contract-deregistered.v1",
-            "onex.evt.node-heartbeat.v1",
+            "onex.evt.platform.contract-registered.v1",
+            "onex.evt.platform.contract-deregistered.v1",
+            "onex.evt.platform.node-heartbeat.v1",
         }
         assert set(PLATFORM_BASELINE_TOPIC_SUFFIXES) == expected
 
@@ -947,12 +947,12 @@ class TestPlatformBaselineTopicSuffixes:
             set(PLATFORM_BASELINE_TOPIC_SUFFIXES)
         )
 
-    def test_platform_baseline_topic_suffixes_have_four_parts(self) -> None:
-        """Test that all suffixes have exactly four dot-separated parts."""
+    def test_platform_baseline_topic_suffixes_have_five_parts(self) -> None:
+        """Test that all suffixes have exactly five dot-separated parts (onex.evt.producer.name.version)."""
         for suffix in PLATFORM_BASELINE_TOPIC_SUFFIXES:
             parts = suffix.split(".")
-            assert len(parts) == 4, (
-                f"Suffix {suffix} should have 4 parts, has {len(parts)}"
+            assert len(parts) == 5, (
+                f"Suffix {suffix} should have 5 parts, has {len(parts)}"
             )
 
     def test_platform_baseline_topic_suffixes_exported(self) -> None:
