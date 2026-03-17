@@ -71,6 +71,7 @@ from omnibase_core.models.infrastructure.model_protocol_action import ModelActio
 
 # Re-export aggregator
 from .model_load_balancer import ModelLoadBalancer
+from .model_onboarding_policy import ModelOnboardingPolicy
 from .model_orchestrator import *
 from .model_orchestrator_context import ModelOrchestratorContext
 from .model_orchestrator_graph import ModelOrchestratorGraph
@@ -80,10 +81,12 @@ from .model_orchestrator_output import ModelOrchestratorOutput
 from .model_orchestrator_plan import ModelOrchestratorPlan
 from .model_orchestrator_result import ModelOrchestratorResult
 from .model_orchestrator_step import ModelOrchestratorStep
+from .model_step_verification import ModelStepVerification
 
 __all__ = [
     "ModelAction",
     "ModelLoadBalancer",
+    "ModelOnboardingPolicy",
     "ModelOrchestratorContext",
     "ModelOrchestratorGraph",
     "ModelOrchestratorInput",
@@ -92,4 +95,5 @@ __all__ = [
     "ModelOrchestratorPlan",
     "ModelOrchestratorResult",
     "ModelOrchestratorStep",
+    "ModelStepVerification",
 ]
