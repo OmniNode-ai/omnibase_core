@@ -40,7 +40,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import UTC, datetime
-from typing import cast
 
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -483,10 +482,7 @@ def create_default_execution_plan(
         phases=DEFAULT_EXECUTION_PHASES,
         ordering_policy=ModelExecutionOrderingPolicy(),
     )
-    return cast(
-        ModelExecutionPlan,
-        create_execution_plan(profile, handler_phase_mapping, created_at=created_at),
-    )
+    return create_execution_plan(profile, handler_phase_mapping, created_at=created_at)
 
 
 def get_phases_for_handlers(
