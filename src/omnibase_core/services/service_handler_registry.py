@@ -40,7 +40,6 @@ __all__ = ["ServiceHandlerRegistry"]
 import logging
 import threading
 from collections import defaultdict
-from typing import cast
 from uuid import UUID, uuid4
 
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
@@ -301,7 +300,7 @@ class ServiceHandlerRegistry:
 
         .. versionadded:: 0.4.0
         """
-        return cast(bool, self._unregister_handler_impl(handler_id))
+        return self._unregister_handler_impl(handler_id)
 
     @standard_error_handling("Handler unregistration")
     def _unregister_handler_impl(self, handler_id: str) -> bool:

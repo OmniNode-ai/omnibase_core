@@ -47,7 +47,6 @@ import json
 import logging
 import time
 from datetime import UTC, datetime
-from typing import cast
 
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -257,10 +256,7 @@ class ServiceCapabilityResolver:
 
         .. versionadded:: 0.4.0
         """
-        return cast(
-            ModelResolutionResult,
-            self._resolve_all_impl(dependencies, registry, profile),
-        )
+        return self._resolve_all_impl(dependencies, registry, profile)
 
     @standard_error_handling("Batch capability resolution")
     def _resolve_all_impl(
