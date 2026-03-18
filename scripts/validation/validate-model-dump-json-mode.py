@@ -61,9 +61,9 @@ class ModelDumpModeDetector(ast.NodeVisitor):
                         "line": node.lineno,
                         "type": "bare_model_dump",
                         "message": (
-                            "Bare model_dump() without mode=\"json\" — "
+                            'Bare model_dump() without mode="json" — '
                             "may produce non-JSON-safe types (tuples, sets, UUIDs). "
-                            "Fix: model_dump() -> model_dump(mode=\"json\")"
+                            'Fix: model_dump() -> model_dump(mode="json")'
                         ),
                     }
                 )
@@ -208,7 +208,7 @@ def main() -> int:
             print(f"    Line {violation['line']}: {violation['message']}")
         print()
 
-    print("FIX: model_dump() -> model_dump(mode=\"json\")")
+    print('FIX: model_dump() -> model_dump(mode="json")')
     print(
         "SUPPRESS: Add '# noqa: model-dump-bare' for intentional in-memory dict-to-dict usage"
     )

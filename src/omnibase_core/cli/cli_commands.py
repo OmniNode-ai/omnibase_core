@@ -323,6 +323,40 @@ def info(ctx: click.Context) -> None:
 
 @cli.command()
 @click.option(
+    "--strict",
+    is_flag=True,
+    default=False,
+    help="Fail on duplicate entry-point names.",
+)
+@click.pass_context
+def discover(ctx: click.Context, strict: bool) -> None:
+    """Discover external ONEX nodes registered via entry points."""
+    from omnibase_core.discovery.discovery_external_nodes import (
+        discover_external_nodes,
+    )
+    from omnibase_core.errors.error_node_discovery import NodeDiscoveryError
+
+    verbose = ctx.obj.get("verbose", False)
+    try:
+        nodes = discover_external_nodes(strict=strict)
+    except NodeDiscoveryError as e:
+        raise click.ClickException(str(e)) from e
+
+    if not nodes:
+        click.echo("No external ONEX nodes found.")
+        return
+
+    click.echo(f"Found {len(nodes)} external ONEX node(s):")
+    for name, node in sorted(nodes.items()):
+        click.echo(f"  {name} ({node.package_name} {node.package_version})")
+        if verbose:
+            click.echo(
+                f"    Class: {node.node_class.__module__}.{node.node_class.__name__}"
+            )
+
+
+@cli.command()
+@click.option(
     "--component",
     "-c",
     type=str,
