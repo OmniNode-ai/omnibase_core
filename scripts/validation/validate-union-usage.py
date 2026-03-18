@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
+"""# ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 Enhanced Union type usage validation for omni* repositories.
 
 Validates that Union types are used properly according to ONEX standards.
