@@ -586,6 +586,11 @@ from omnibase_core.cli.cli_validate_shape import validate_shape
 
 cli.add_command(validate_shape)
 
+# Register new (scaffolding) command group from separate module
+from omnibase_core.cli.cli_new import new_group
+
+cli.add_command(new_group, "new")
+
 
 if __name__ == "__main__":
     cli()
