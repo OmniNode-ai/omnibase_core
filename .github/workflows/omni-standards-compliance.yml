@@ -92,9 +92,39 @@ jobs:
         run: uv sync --all-extras
 
       - name: Run MyPy type checking
-        run: |
-          uv run mypy src/ --config-file=mypy.ini || true
-          # Note: Continue on MyPy errors for now during transition period
+        run: uv run mypy src/ --config-file=mypy.ini
+
+  type-union-check:
+    name: PEP 604 Type Union Check (UP007)
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Check for Optional/Union usage (PEP 604)
+        run: uv run ruff check src/ --select UP007,UP006
 
   onex-compliance:
     name: ONEX Architecture Compliance

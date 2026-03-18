@@ -225,6 +225,7 @@ class PythonASTValidator(ast.NodeVisitor):
             "command_version",  # CLI command versions
             "node_specific_version",  # Node-specific version metadata
             "database_version",  # External database version (Neo4j, Memgraph, etc.)
+            "package_version",  # External package version from importlib.metadata
             # METADATA_VERSIONS (3 fields in model_node_metadata_block.py)
             # These use regex constraints for legacy compatibility
             "metadata_version",  # Metadata block version

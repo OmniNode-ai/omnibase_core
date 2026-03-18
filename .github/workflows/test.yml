@@ -648,6 +648,35 @@ jobs:
       - name: Check version pin compliance
         run: python onex_change_control/standards/check_version_pins.py --repo omnibase_core --root onex_change_control --repo-path .
 
+  # Phase 1 validation job - ensures no internal OmniNode packages leak into
+  # [project.dependencies] (they belong in [project.optional-dependencies]).
+  sdk-boundary-check:
+    name: SDK Boundary Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Check SDK boundary (no internal hard deps)
+        run: uv run pytest tests/unit/test_no_internal_deps.py -v
+
   # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
   # ---------------------------------------------------------------------------
@@ -666,7 +695,7 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check, sdk-boundary-check]
     if: always()
 
     steps:
@@ -684,6 +713,7 @@ jobs:
           purity="${{ needs.node-purity-check.result }}"
           enum_gov="${{ needs.enum-governance.result }}"
           secrets="${{ needs.detect-secrets.result }}"
+          sdk_boundary="${{ needs.sdk-boundary-check.result }}"
 
           # Report each check
           echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
@@ -697,6 +727,7 @@ jobs:
           echo "| Node Purity Check | $purity |" >> $GITHUB_STEP_SUMMARY
           echo "| Enum Governance | $enum_gov |" >> $GITHUB_STEP_SUMMARY
           echo "| Detect Secrets | $secrets |" >> $GITHUB_STEP_SUMMARY
+          echo "| SDK Boundary Guard | $sdk_boundary |" >> $GITHUB_STEP_SUMMARY
 
           # Gate logic: all must pass
           # node-purity-check is NOT evaluated by this gate (continue-on-error until tech debt resolved)
@@ -707,7 +738,8 @@ jobs:
              [[ "$core_infra" == "success" ]] && \
              [[ "$docs" == "success" ]] && \
              [[ "$enum_gov" == "success" ]] && \
-             [[ "$secrets" == "success" ]]; then
+             [[ "$secrets" == "success" ]] && \
+             [[ "$sdk_boundary" == "success" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Quality Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
             echo "All quality checks passed."

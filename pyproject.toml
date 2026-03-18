@@ -45,7 +45,6 @@ dependencies = [
     "jsonschema>=4.25.1,<5.0.0",
     "httpx>=0.27.0,<1.0.0",
     "blake3>=1.0.8,<2.0.0",
-    "omnibase-spi==0.17.1",
     "ruamel-yaml>=0.18.0",
 ]
 
@@ -67,11 +66,12 @@ validate-string-versions = "omnibase_core.validation.scripts.validate_string_ver
 onex-validate-links = "omnibase_core.scripts.validate_markdown_links:main"
 
 [project.optional-dependencies]
+spi = ["omnibase-spi>=0.17.1"]
 cli = ["psutil>=7.2.1"]
 cache = ["redis>=5.0.0,<8.0.0"]
 metrics = ["prometheus-client>=0.21.0,<1.0.0"]
 sql-parser = ["sqlglot>=26.0.0,<31.0.0"]
-full = ["psutil>=7.2.1", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
+full = ["omnibase-spi>=0.17.1", "psutil>=7.2.1", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
 
 [dependency-groups]
 dev = [

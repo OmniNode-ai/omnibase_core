@@ -8,17 +8,18 @@
 
 1. [Repo Invariants](#repo-invariants)
 2. [Non-Goals](#non-goals)
-3. [Quick Reference](#quick-reference)
-4. [Python Development - uv](#python-development---uv)
-5. [Handler Output Constraints](#handler-output-constraints)
-6. [Forbidden Data Flow Patterns](#forbidden-data-flow-patterns)
-7. [Dependency Injection](#dependency-injection)
-8. [Error Handling](#error-handling)
-9. [Project Structure](#project-structure)
-10. [Pydantic Model Standards](#pydantic-model-standards)
-11. [Code Quality](#code-quality)
-12. [Common Pitfalls](#common-pitfalls)
-13. [Documentation](#documentation)
+3. [External SDK Surface](#external-sdk-surface)
+4. [Quick Reference](#quick-reference)
+5. [Python Development - uv](#python-development---uv)
+6. [Handler Output Constraints](#handler-output-constraints)
+7. [Forbidden Data Flow Patterns](#forbidden-data-flow-patterns)
+8. [Dependency Injection](#dependency-injection)
+9. [Error Handling](#error-handling)
+10. [Project Structure](#project-structure)
+11. [Pydantic Model Standards](#pydantic-model-standards)
+12. [Code Quality](#code-quality)
+13. [Common Pitfalls](#common-pitfalls)
+14. [Documentation](#documentation)
 
 ---
 
@@ -39,12 +40,34 @@ These are non-negotiable architectural truths:
 
 We explicitly do **NOT** optimize for:
 
-- **Backwards compatibility** - This repo has no external consumers. Schemas, APIs, and interfaces may change without deprecation periods. If something needs to change, change it. No `_deprecated` suffixes, no shims, no compatibility layers.
+- **Backwards compatibility for internal APIs** - Internal Python module paths may change without notice. The stable external surface is defined in the External SDK Surface section below.
 - **Convenience over correctness** - Contract violations fail loudly
 - **Business logic in nodes** - Nodes coordinate; handlers compute
 - **Dynamic runtime behavior** - All behavior must be contract-declared
 - **Implicit state** - All state transitions are explicit and auditable
 - **Tight coupling** - Protocol-based DI enforces loose coupling
+
+---
+
+## External SDK Surface
+
+This package is consumed by external developers. The following surfaces are **stable**
+and must not change without a deprecation path:
+
+| Surface | Contract | Example |
+|---------|----------|---------|
+| `onex` CLI commands | Command names and flags are stable | `onex init`, `onex new node`, `onex validate`, `onex discover` |
+| `onex.nodes` entry-point group | Group name is stable; external packages register nodes here | `[project.entry-points."onex.nodes"]` |
+| Generated scaffold layout | Directory structure from `onex init` / `onex new node` is stable | `src/<pkg>/nodes/<name>/contract.yaml` |
+| Contract validation | `onex validate` accepts any directory with valid contract.yaml files | No monorepo assumptions |
+
+The following are **unstable** (may change without notice):
+- Internal Python module paths (`omnibase_core.infrastructure.*`, `omnibase_core.services.*`, etc.)
+- Node base class internal APIs
+- Validation rule implementations (new rules may be added)
+
+**CI enforcement**: `test_no_internal_deps.py` prevents internal OmniNode packages
+from appearing in hard dependencies (`sdk-boundary-check` CI job).
 
 ---
 
