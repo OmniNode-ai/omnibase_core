@@ -35,11 +35,15 @@ def discover_external_nodes(*, strict: bool = False) -> dict[str, DiscoveredNode
     """
     discovered: dict[str, DiscoveredNode] = {}
     for ep in entry_points(group=ENTRY_POINT_GROUP):
+        dist = ep.dist
+        dist_name = dist.name if dist is not None else "unknown"
+        dist_version = dist.version if dist is not None else "0.0.0"
+
         if ep.name in discovered:
             existing = discovered[ep.name]
             msg = (
                 f"Duplicate entry-point name '{ep.name}': "
-                f"registered by both '{existing.package_name}' and '{ep.dist.name}'. "
+                f"registered by both '{existing.package_name}' and '{dist_name}'. "
                 f"Keeping '{existing.package_name}' (first registered)."
             )
             if strict:
@@ -53,7 +57,7 @@ def discover_external_nodes(*, strict: bool = False) -> dict[str, DiscoveredNode
             logger.warning(
                 "Failed to load entry point '%s' from '%s'",
                 ep.name,
-                ep.dist.name,
+                dist_name,
                 exc_info=True,
             )
             continue
@@ -62,7 +66,7 @@ def discover_external_nodes(*, strict: bool = False) -> dict[str, DiscoveredNode
             logger.warning(
                 "Entry point '%s' from '%s' is not a valid node class (got %s)",
                 ep.name,
-                ep.dist.name,
+                dist_name,
                 type(loaded).__name__,
             )
             continue
@@ -70,14 +74,14 @@ def discover_external_nodes(*, strict: bool = False) -> dict[str, DiscoveredNode
         discovered[ep.name] = DiscoveredNode(
             name=ep.name,
             node_class=loaded,
-            package_name=ep.dist.name,
-            package_version=ep.dist.version,
+            package_name=dist_name,
+            package_version=dist_version,
         )
         logger.info(
             "Discovered external node: %s from %s %s",
             ep.name,
-            ep.dist.name,
-            ep.dist.version,
+            dist_name,
+            dist_version,
         )
     return discovered
 
