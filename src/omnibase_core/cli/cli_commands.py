@@ -591,6 +591,11 @@ from omnibase_core.cli.cli_new import new_group
 
 cli.add_command(new_group, "new")
 
+# Register init command from separate module
+from omnibase_core.cli.cli_init import init_command
+
+cli.add_command(init_command, "init")
+
 
 if __name__ == "__main__":
     cli()
