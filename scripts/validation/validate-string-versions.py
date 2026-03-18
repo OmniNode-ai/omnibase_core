@@ -705,14 +705,17 @@ class StringVersionValidator:
                     if is_init_file:
                         # Check if the value is a string literal (quoted)
                         if (
-                            (assignment_part.startswith('"') and assignment_part.endswith('"'))
-                            or (assignment_part.startswith("'") and assignment_part.endswith("'"))
+                            assignment_part.startswith('"')
+                            and assignment_part.endswith('"')
+                        ) or (
+                            assignment_part.startswith("'")
+                            and assignment_part.endswith("'")
                         ):
                             clean_value = assignment_part.strip("\"'")
                             errors.append(
-                                f"Line {line_num}: __version__ = \"{clean_value}\" is a hardcoded "
+                                f'Line {line_num}: __version__ = "{clean_value}" is a hardcoded '
                                 f"string literal in __init__.py - use "
-                                f"importlib.metadata.version(\"package-name\") instead. "
+                                f'importlib.metadata.version("package-name") instead. '
                                 f"Bypass markers are not honored in __init__.py files."
                             )
                         # Also check for inline string after comment stripping
@@ -720,14 +723,15 @@ class StringVersionValidator:
                         elif "#" in assignment_part:
                             code_part = assignment_part.split("#", 1)[0].strip()
                             if (
-                                (code_part.startswith('"') and code_part.endswith('"'))
-                                or (code_part.startswith("'") and code_part.endswith("'"))
+                                code_part.startswith('"') and code_part.endswith('"')
+                            ) or (
+                                code_part.startswith("'") and code_part.endswith("'")
                             ):
                                 clean_value = code_part.strip("\"'")
                                 errors.append(
-                                    f"Line {line_num}: __version__ = \"{clean_value}\" is a hardcoded "
+                                    f'Line {line_num}: __version__ = "{clean_value}" is a hardcoded '
                                     f"string literal in __init__.py - use "
-                                    f"importlib.metadata.version(\"package-name\") instead. "
+                                    f'importlib.metadata.version("package-name") instead. '
                                     f"Bypass markers are not honored in __init__.py files."
                                 )
                         continue
