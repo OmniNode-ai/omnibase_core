@@ -658,7 +658,7 @@ class ServiceProtocolAuditor:
         return _QualityReport(
             file_path=file_path,
             metrics=metrics,  # type: ignore[arg-type]
-            issues=issues,  # type: ignore[assignment]
+            issues=issues,
             standards_compliance=standards_ok,
             overall_score=round(score, 2),
             recommendations=recommendations,
@@ -708,7 +708,7 @@ class ServiceProtocolAuditor:
         """
         source = self._read_file_content(file_path, content)
         if not source.strip():
-            return _QualityMetrics()  # type: ignore[return-value]
+            return _QualityMetrics()
 
         lines = source.splitlines()
         loc = len([line for line in lines if line.strip()])
@@ -717,7 +717,7 @@ class ServiceProtocolAuditor:
         try:
             tree = ast.parse(source)
         except SyntaxError:
-            return _QualityMetrics(lines_of_code=loc)  # type: ignore[return-value]
+            return _QualityMetrics(lines_of_code=loc)
 
         complexity = self._compute_cyclomatic_complexity(tree)
         maintainability = self._compute_maintainability_index(
@@ -733,7 +733,7 @@ class ServiceProtocolAuditor:
             technical_debt_score=max(0.0, (complexity - _DEFAULT_MAX_COMPLEXITY) * 2.0)
             if complexity > _DEFAULT_MAX_COMPLEXITY
             else 0.0,
-        )  # type: ignore[return-value]
+        )
 
     def detect_code_smells(
         self, file_path: str, content: str | None = None
@@ -767,7 +767,7 @@ class ServiceProtocolAuditor:
                     message="File contains syntax errors",
                     rule_id="SMELL001",
                 ),
-            ]  # type: ignore[list-item]
+            ]
 
         issues: list[_QualityIssue] = []
 
