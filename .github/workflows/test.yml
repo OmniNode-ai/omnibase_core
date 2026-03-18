@@ -618,6 +618,8 @@ jobs:
     name: Version Pin Compliance
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Skip for Dependabot PRs — CROSS_REPO_PAT is not available [OMN-5332]
+    if: github.actor != 'dependabot[bot]'
     # Advisory until range pin support (OMN-5132) and matrix alignment land
     continue-on-error: true
 
