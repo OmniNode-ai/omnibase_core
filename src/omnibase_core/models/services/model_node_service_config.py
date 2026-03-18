@@ -261,8 +261,6 @@ class ModelNodeServiceConfig(BaseModel):
         Returns:
             ModelNodeServiceConfig configured for NodeRegistry service
         """
-        from typing import cast
-
         node_registry_defaults = {
             "node_name": "node_registry",
             "docker_image": "onex/node-registry",
@@ -271,7 +269,4 @@ class ModelNodeServiceConfig(BaseModel):
             "depends_on": ["event-bus"],
         }
         config = {**node_registry_defaults, **overrides}
-        # Cast result of decorated method to preserve type
-        return cast(
-            "ModelNodeServiceConfig", cls.from_environment("node_registry", **config)
-        )
+        return cls.from_environment("node_registry", **config)
