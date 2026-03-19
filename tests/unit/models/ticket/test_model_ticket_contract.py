@@ -1404,3 +1404,39 @@ class TestResearchNotesIterables:
             context={"research_notes": ["text", 42, True, None]},
         )
         assert contract.research_notes == "text\n42\nTrue\nNone"
+
+
+# ===========================================================================
+# Contract Grace Period Tests (OMN-5461 — Bootstrap Paradox)
+# ===========================================================================
+
+
+@pytest.mark.unit
+class TestContractGracePeriod:
+    """Tests for is_contract_required() grace period logic (OMN-5461)."""
+
+    def test_old_ticket_not_required(self):
+        """Tickets created before CONTRACT_REQUIRED_AFTER are exempt."""
+        old_date = datetime(2025, 1, 1, tzinfo=UTC)
+        assert not TicketContract.is_contract_required(old_date)
+
+    def test_new_ticket_required(self):
+        """Tickets created after CONTRACT_REQUIRED_AFTER require a contract."""
+        new_date = datetime(2027, 1, 1, tzinfo=UTC)
+        assert TicketContract.is_contract_required(new_date)
+
+    def test_exact_cutoff_required(self):
+        """Tickets created exactly at CONTRACT_REQUIRED_AFTER require a contract."""
+        assert TicketContract.is_contract_required(
+            TicketContract.CONTRACT_REQUIRED_AFTER
+        )
+
+    def test_iso_string_input(self):
+        """Accepts ISO date string as input."""
+        assert not TicketContract.is_contract_required("2025-01-01T00:00:00+00:00")
+        assert TicketContract.is_contract_required("2027-01-01T00:00:00+00:00")
+
+    def test_naive_datetime_assumed_utc(self):
+        """Naive datetimes (no timezone) are assumed UTC."""
+        old_naive = datetime(2025, 1, 1)
+        assert not TicketContract.is_contract_required(old_naive)

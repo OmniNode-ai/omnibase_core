@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, ClassVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
@@ -378,6 +379,44 @@ class ModelTicketContract(BaseModel):
             f"interfaces_provided={len(self.interfaces_provided)}, "
             f"interfaces_consumed={len(self.interfaces_consumed)})"
         )
+
+    # =========================================================================
+    # Contract Grace Period (Bootstrap Paradox)
+    # =========================================================================
+
+    # Tickets created before this date are exempt from contract requirements.
+    # This handles the bootstrap paradox where tickets exist before the
+    # ModelTicketContract format was introduced (OMN-5461).
+    #
+    # Default: 2026-03-19 (the date contract enforcement was first deployed).
+    # Override via CONTRACT_REQUIRED_AFTER env var (ISO date, e.g. "2026-04-01").
+    CONTRACT_REQUIRED_AFTER: ClassVar[datetime] = datetime.fromisoformat(
+        os.environ.get("CONTRACT_REQUIRED_AFTER", "2026-03-19T00:00:00+00:00")
+    )
+
+    @classmethod
+    def is_contract_required(cls, ticket_created_at: datetime | str) -> bool:
+        """Check whether a ticket is required to have a contract.
+
+        Tickets created before CONTRACT_REQUIRED_AFTER get a grace period
+        and are NOT required to have a contract. This prevents false failures
+        when scanning pre-existing tickets that were created before the
+        contract format was introduced.
+
+        Args:
+            ticket_created_at: When the ticket was created (datetime or ISO string).
+
+        Returns:
+            True if the ticket must have a contract, False if it's in the grace period.
+        """
+        if isinstance(ticket_created_at, str):
+            ticket_created_at = datetime.fromisoformat(ticket_created_at)
+
+        # Ensure timezone-aware comparison
+        if ticket_created_at.tzinfo is None:
+            ticket_created_at = ticket_created_at.replace(tzinfo=UTC)
+
+        return ticket_created_at >= cls.CONTRACT_REQUIRED_AFTER
 
     # =========================================================================
     # YAML Serialization
