@@ -8,10 +8,19 @@ Type-safe feature flag configuration model for enabling/disabling
 features across different environments and contexts.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, Field
 
 from .model_feature_flag_metadata import ModelFeatureFlagMetadata
 from .model_feature_flag_summary import ModelFeatureFlagSummary
+
+if TYPE_CHECKING:
+    from omnibase_core.models.contracts.model_contract_feature_flag import (
+        ModelContractFeatureFlag,
+    )
 
 # Re-export from split modules
 __all__ = ["ModelFeatureFlags", "ModelFeatureFlagMetadata", "ModelFeatureFlagSummary"]
@@ -137,7 +146,7 @@ class ModelFeatureFlags(BaseModel):
         self.flags.clear()
         self.flag_metadata.clear()
 
-    def merge_flags(self, other: "ModelFeatureFlags", override: bool = True) -> None:
+    def merge_flags(self, other: ModelFeatureFlags, override: bool = True) -> None:
         """
         Merge flags from another ModelFeatureFlags instance.
 
@@ -173,7 +182,31 @@ class ModelFeatureFlags(BaseModel):
         )
 
     @classmethod
-    def create_development(cls) -> "ModelFeatureFlags":
+    def from_contract_declarations(
+        cls, declarations: list[ModelContractFeatureFlag]
+    ) -> ModelFeatureFlags:
+        """Build a ModelFeatureFlags from contract-declared feature flag definitions.
+
+        Populates flag values from ``default_value`` only -- no env or Infisical
+        resolution happens here.  That is the responsibility of the infra/service
+        layer.
+
+        Metadata (description, owner, category-as-tag) is preserved so downstream
+        consumers can inspect provenance without re-parsing the contract.
+        """
+        flags: dict[str, bool] = {}
+        metadata: dict[str, ModelFeatureFlagMetadata] = {}
+        for decl in declarations:
+            flags[decl.name] = decl.default_value
+            metadata[decl.name] = ModelFeatureFlagMetadata(
+                description=decl.description,
+                owner=decl.owner,
+                tags=[decl.category.value] if decl.category else [],
+            )
+        return cls(flags=flags, flag_metadata=metadata)
+
+    @classmethod
+    def create_development(cls) -> ModelFeatureFlags:
         """Create feature flags for development environment."""
         flags = cls(default_enabled=False)
         flags.enable("debug_mode")
@@ -185,7 +218,7 @@ class ModelFeatureFlags(BaseModel):
         return flags
 
     @classmethod
-    def create_staging(cls) -> "ModelFeatureFlags":
+    def create_staging(cls) -> ModelFeatureFlags:
         """Create feature flags for staging environment."""
         flags = cls(default_enabled=False)
         flags.enable("monitoring")
@@ -196,7 +229,7 @@ class ModelFeatureFlags(BaseModel):
         return flags
 
     @classmethod
-    def create_production(cls) -> "ModelFeatureFlags":
+    def create_production(cls) -> ModelFeatureFlags:
         """Create feature flags for production environment."""
         flags = cls(default_enabled=False)
         flags.enable("monitoring")
@@ -214,7 +247,7 @@ class ModelFeatureFlags(BaseModel):
         cls,
         env_dict: dict[str, str],
         prefix: str = "ONEX_FEATURE_",
-    ) -> "ModelFeatureFlags":
+    ) -> ModelFeatureFlags:
         """Create feature flags from environment variables."""
         flags = cls()
         for key, value in env_dict.items():

@@ -152,6 +152,9 @@ from .enum_execution_trigger import EnumExecutionTrigger
 # Failure type enums (OMN-1236)
 from .enum_failure_type import EnumFailureType
 
+# Feature flag category enum (OMN-5566)
+from .enum_feature_flag_category import EnumFeatureFlagCategory
+
 # Function-related enums
 from .enum_function_language import EnumFunctionLanguage
 
@@ -551,6 +554,7 @@ __all__ = [
     "EnumNodeType",
     "EnumOperationStatus",  # Canonical operation status (OMN-1310)
     "EnumExecutionStatus",  # Canonical execution status (OMN-1310)
+    "EnumFeatureFlagCategory",  # Feature flag categories (OMN-5566)
     "EnumValidationLevel",
     "EnumValidationMode",
     "EnumValueType",
