@@ -25,6 +25,10 @@ from omnibase_core.models.events.model_agent_match_payload import (
 from omnibase_core.models.events.model_context_utilization_payload import (
     ModelContextUtilizationPayload,
 )
+from omnibase_core.models.events.model_episode_event import (
+    TOPIC_EPISODE_BOUNDARY,
+    ModelEpisodeEvent,
+)
 from omnibase_core.models.events.model_event_payload_base import (
     ModelEventPayloadBase,
 )
@@ -152,4 +156,7 @@ __all__ = [
     "ModelGitHookEvent",
     "TOPIC_LINEAR_SNAPSHOT_EVENT",
     "ModelLinearSnapshotEvent",
+    # Episode boundary events (OMN-5559)
+    "TOPIC_EPISODE_BOUNDARY",
+    "ModelEpisodeEvent",
 ]
