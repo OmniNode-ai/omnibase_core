@@ -46,6 +46,9 @@ if TYPE_CHECKING:
     from omnibase_core.models.runtime.model_handler_behavior import (
         ModelHandlerBehavior,
     )
+from omnibase_core.models.contracts.model_contract_feature_flag import (
+    ModelContractFeatureFlag,
+)
 from omnibase_core.models.contracts.model_lifecycle_config import ModelLifecycleConfig
 from omnibase_core.models.contracts.model_performance_requirements import (
     ModelPerformanceRequirements,
@@ -223,6 +226,12 @@ class ModelContractBase(BaseModel, ABC):
     tags: list[str] = Field(
         default_factory=list,
         description="Contract classification tags",
+    )
+
+    feature_flags: list[ModelContractFeatureFlag] = Field(
+        default_factory=list,
+        description="Feature flags declared by this contract. "
+        "Extracted during introspection and surfaced in the registry API.",
     )
 
     # Execution profile for contract-driven execution
