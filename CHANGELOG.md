@@ -1,3 +1,32 @@
+## v0.29.0 (2026-03-19)
+
+### Added
+- feat(ci): deploy CodeQL security scanning to omnibase_core [OMN-5421] (#704)
+- feat(cli): add onex new node scaffolding command [OMN-5393] (#702)
+- feat(sdk): make omnibase-spi optional + add CI guard against internal deps [OMN-5391] (#698)
+- feat(sdk): add external node discovery via Python entry points [OMN-5394] (#699)
+- feat(core): add ModelStepVerification and ModelOnboardingPolicy [OMN-5262, OMN-5264] (#691)
+- feat: add ModelTaskDispatch and ModelTaskTree for audit tracking [OMN-5233] (#686)
+- feat: add EnumAuditEnforcementLevel for context integrity [OMN-5232] (#685)
+- feat: add ModelContextIntegritySubcontract for WISC enforcement [OMN-5231] (#684)
+
+### Fixed
+- fix: correct Kafka and Redis port defaults to external Docker ports [OMN-5217] (#689)
+- fix: make ModelTopicNaming.environment required, deprecate compose_full_topic [OMN-5216] (#690)
+- fix: remove INMEMORY default from event_bus_type fields [OMN-5218] (#688)
+- fix: remove divergent injection topic constants, fix baseline suffix tests [OMN-5250] (#687)
+- fix(ci): skip Version Pin Compliance for Dependabot PRs [OMN-5332] (#695)
+- fix(ci): checkout onex_change_control for version pin compliance [OMN-5132] (#683)
+
+### Changed
+- ci(omnibase_core): make mypy blocking + add ruff UP007 check [OMN-5132] (#703)
+- docs: define external SDK surface doctrine in CLAUDE.md [OMN-5395] (#700)
+- refactor(omnibase_core): convert ModelHealthStatus.status to HealthStatusEnum [OMN-5296] (#692)
+- chore(standards): fix mypy --strict errors [OMN-5132] (#697)
+- chore: wire no-hardcoded-topics pre-commit hook [OMN-5259] (#696)
+- chore(deps): bump the actions group with 2 updates (#694)
+- chore(deps-dev): update sqlglot requirement (#693)
+
 ## v0.27.0 (2026-03-13)
 
 ### Features
