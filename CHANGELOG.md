@@ -1,3 +1,12 @@
+## v0.30.0 (2026-03-20)
+
+### Added
+- feat(core): add control mode session overlay and treatment group classifier [OMN-5546] (#707)
+- feat(ticket): add contract grace period for pre-existing tickets [OMN-5461] (#706)
+- feat: contract-declared feature flags (T1-T3) [OMN-5566] (#708)
+- feat(events): add ModelEpisodeEvent for RL episode boundary tracking [OMN-5559] (#709)
+- feat(cli): add onex init project scaffolding command [OMN-5392] (#701)
+
 ## v0.29.0 (2026-03-19)
 
 ### Added
