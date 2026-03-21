@@ -173,7 +173,7 @@ TEMPORARY_ALLOWLIST: frozenset[str] = frozenset(
 # Allowlist expiration tracking - only relevant when TEMPORARY_ALLOWLIST has items
 # When adding items to the allowlist:
 #   1. Set ALLOWLIST_EXPIRATION_DATE to 6 months from addition date
-#   2. Add TODO [OMN-220] comment noting items need tickets for removal
+#   2. Add comment noting items need tickets for removal  # TODO_FORMAT_EXEMPT: describes allowlist maintenance process
 ALLOWLIST_EXPIRATION_DATE: date | None = (
     None if not TEMPORARY_ALLOWLIST else date(2026, 6, 10)
 )

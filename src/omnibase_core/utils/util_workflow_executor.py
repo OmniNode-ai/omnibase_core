@@ -744,7 +744,7 @@ async def _execute_sequential(
         # v1.0.3 Fix 35: Check global timeout before processing each step
         # If timeout has elapsed, mark remaining steps as failed and exit loop
         if time.perf_counter() > timeout_deadline:
-            timeout_triggered = True  # v1.1 observability hook (see TODO above)
+            timeout_triggered = True  # v1.1 observability hook  # TODO_FORMAT_EXEMPT: references planned v1.1 feature
             failed_steps.append(str(step.step_id))
             logging.warning(
                 f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' "
@@ -1057,7 +1057,7 @@ async def _execute_parallel(
         # v1.0.3 Fix 35: Check global timeout before processing each wave
         # If timeout has elapsed, mark remaining steps as failed and exit loop
         if time.perf_counter() > timeout_deadline:
-            timeout_triggered = True  # v1.1 observability hook (see TODO above)
+            timeout_triggered = True  # v1.1 observability hook  # TODO_FORMAT_EXEMPT: references planned v1.1 feature
             for step in remaining_steps:
                 failed_steps.append(str(step.step_id))
             logging.warning(

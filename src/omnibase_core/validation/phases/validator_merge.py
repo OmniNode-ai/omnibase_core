@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 # configuration that would fail at runtime.
 #
 # Pattern Categories:
-#   - TODO markers: TODO, TBD, FIXME
+#   - Incomplete markers: TODO, TBD, FIXME  # TODO_FORMAT_EXEMPT: documents placeholder pattern categories
 #   - Placeholder markers: PLACEHOLDER, REPLACE_ME, CHANGE_ME
 #   - Template markers: ${VAR_NAME}, {{variable}}, <PLACEHOLDER>
 #   - Empty/default markers: Empty strings, "default", "undefined"
@@ -111,7 +111,9 @@ _PLACEHOLDER_REGEX_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\$\{[^}]+\}"),  # ${VAR_NAME} style
     re.compile(r"\{\{[^}]+\}\}"),  # {{variable}} style (Jinja/Mustache)
     re.compile(r"<[A-Z_]+>"),  # <PLACEHOLDER> style
-    re.compile(r"^\s*TODO\s*:", re.IGNORECASE),  # "TODO: description" style
+    re.compile(
+        r"^\s*TODO\s*:", re.IGNORECASE
+    ),  # "TODO: description" style  # TODO_FORMAT_EXEMPT: regex pattern for placeholder detection
 )
 
 # Critical fields that must not contain placeholder values

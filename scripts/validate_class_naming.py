@@ -130,7 +130,7 @@ ALLOWED_EXCEPTIONS: set[tuple[str, str]] = {
     ("node_core_base.py", "BaseNode"),
     # Private holder classes in utils (start with underscore handled separately)
     #
-    # --- LEGACY EXCEPTIONS (TODO: Address in future refactoring) ---
+    # --- LEGACY EXCEPTIONS (address in future refactoring) ---  # TODO_FORMAT_EXEMPT: section header for legacy naming exceptions
     #
     # Enums placed in model files (should move to enums/ directory)
     ("model_coercion_mode.py", "EnumCoercionMode"),
