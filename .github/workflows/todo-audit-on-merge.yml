@@ -1,0 +1,197 @@
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# todo-audit-on-merge.yml
+#
+# Post-merge workflow: when a PR merges, check for residual TODOs
+# referencing the branch's ticket. If found, auto-create a follow-up
+# Linear ticket to track the cleanup.
+#
+# Copy this file to .github/workflows/todo-audit-on-merge.yml in each repo.
+#
+# Requires: LINEAR_API_KEY as an org/repo secret.
+# Graceful degradation: if LINEAR_API_KEY is unset, the audit is skipped.
+#
+# Branch name conventions (reuses linear-close-on-merge.yml extraction):
+#   jonahgabriel/omn-XXXX-description
+#   jonah/omn-XXXX-description
+#   epic/OMN-XXXX/OMN-YYYY/run-id
+#   OMN-XXXX-description
+#
+# Implements OMN-5689.
+
+name: TODO Audit on Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  todo-audit:
+    name: TODO Audit
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract ticket ID from branch name
+        id: extract
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        shell: bash
+        run: |
+          echo "Branch: $BRANCH"
+
+          TICKET_ID=""
+
+          # Epic branch: epic/OMN-XXXX/OMN-YYYY/...
+          if printf '%s' "$BRANCH" | grep -qiE "^epic/OMN-[0-9]+/(OMN-[0-9]+)(/|$)"; then
+            TICKET_ID=$(printf '%s' "$BRANCH" | grep -ioE "^epic/OMN-[0-9]+/(OMN-[0-9]+)(/|$)" | grep -ioE "OMN-[0-9]+" | tail -1)
+          fi
+
+          # Standard: */omn-XXXX-* or omn-XXXX-*
+          if [[ -z "$TICKET_ID" ]]; then
+            TICKET_ID=$(printf '%s' "$BRANCH" | grep -ioE "(OMN|omn)-[0-9]+" | head -1 | tr '[:lower:]' '[:upper:]')
+          fi
+
+          if [[ -z "$TICKET_ID" ]]; then
+            echo "No OMN-XXXX ticket ID found in branch '$BRANCH' -- skipping audit."
+            echo "ticket_id=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Extracted ticket ID: $TICKET_ID"
+            echo "ticket_id=$TICKET_ID" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for residual TODOs and create follow-up ticket
+        if: steps.extract.outputs.ticket_id != ''
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          TICKET_ID: ${{ steps.extract.outputs.ticket_id }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${LINEAR_API_KEY:-}" ]; then
+            echo "::warning::LINEAR_API_KEY not set -- TODO audit skipped"
+            exit 0
+          fi
+
+          echo "Scanning for residual TODOs referencing $TICKET_ID..."
+
+          # Find residual TODOs/FIXMEs/HACKs referencing this ticket
+          RESIDUALS=$(grep -rn "TODO.*${TICKET_ID}\|FIXME.*${TICKET_ID}\|HACK.*${TICKET_ID}" \
+            --include="*.py" . 2>/dev/null || true)
+
+          if [ -z "$RESIDUALS" ]; then
+            echo "No residual TODOs found for $TICKET_ID -- clean merge."
+            exit 0
+          fi
+
+          RESIDUAL_COUNT=$(echo "$RESIDUALS" | wc -l | tr -d ' ')
+          echo "Found $RESIDUAL_COUNT residual TODO(s) for $TICKET_ID:"
+          echo "$RESIDUALS"
+
+          # --- Dedup check: search for existing follow-up ticket ---
+          FOLLOWUP_TITLE="chore: clean up residual TODOs for ${TICKET_ID}"
+
+          SEARCH_RESPONSE=$(curl -s --max-time 15 -X POST https://api.linear.app/graphql \
+            -H "Authorization: $LINEAR_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\": \"{ issueSearch(query: \\\"${FOLLOWUP_TITLE}\\\", first: 5) { nodes { id identifier title description } } }\"}" \
+            2>&1)
+
+          EXISTING=$(echo "$SEARCH_RESPONSE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          nodes = data.get('data', {}).get('issueSearch', {}).get('nodes', [])
+          # Check for exact title match or metadata match
+          for n in nodes:
+              if n.get('title', '') == '${FOLLOWUP_TITLE}':
+                  print(n['identifier'])
+                  sys.exit(0)
+              desc = n.get('description', '') or ''
+              if '<!-- source: ${TICKET_ID} -->' in desc:
+                  print(n['identifier'])
+                  sys.exit(0)
+          print('')
+          " 2>/dev/null || echo "")
+
+          if [ -n "$EXISTING" ]; then
+            echo "Follow-up ticket already exists: $EXISTING -- skipping creation."
+            exit 0
+          fi
+
+          # --- Get team ID from the source ticket ---
+          TEAM_RESPONSE=$(curl -s --max-time 15 -X POST https://api.linear.app/graphql \
+            -H "Authorization: $LINEAR_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\": \"{ issue(id: \\\"$TICKET_ID\\\") { team { id } } }\"}" \
+            2>&1)
+
+          TEAM_ID=$(echo "$TEAM_RESPONSE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          issue = data.get('data', {}).get('issue')
+          if issue:
+              print(issue.get('team', {}).get('id', ''))
+          else:
+              print('')
+          " 2>/dev/null || echo "")
+
+          if [ -z "$TEAM_ID" ]; then
+            echo "Could not determine team ID from $TICKET_ID -- skipping follow-up creation."
+            exit 0
+          fi
+
+          # Validate TEAM_ID
+          if ! echo "$TEAM_ID" | grep -qE '^[0-9a-f-]+$'; then
+            echo "Invalid team ID format -- skipping."
+            exit 0
+          fi
+
+          # --- Build description ---
+          # Escape residuals for JSON
+          ESCAPED_RESIDUALS=$(echo "$RESIDUALS" | python3 -c "
+          import json, sys
+          print(json.dumps(sys.stdin.read()))
+          " 2>/dev/null | sed 's/^"//;s/"$//')
+
+          DESCRIPTION="<!-- source: ${TICKET_ID} -->\n\nResidual TODOs found after merging PR #${PR_NUMBER} in \`${REPO}\`.\n\nSource ticket: ${TICKET_ID}\n\n## Locations\n\n\`\`\`\n${ESCAPED_RESIDUALS}\n\`\`\`\n\nPlease remove or re-tag these TODOs with a new ticket number."
+
+          # --- Create follow-up ticket (priority 4 = Low) ---
+          CREATE_RESPONSE=$(curl -s --max-time 15 -X POST https://api.linear.app/graphql \
+            -H "Authorization: $LINEAR_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\": \"mutation { issueCreate(input: { title: \\\"${FOLLOWUP_TITLE}\\\", description: \\\"${DESCRIPTION}\\\", teamId: \\\"${TEAM_ID}\\\", priority: 4 }) { success issue { id identifier url } } }\"}" \
+            2>&1)
+
+          CREATED_ID=$(echo "$CREATE_RESPONSE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          issue = data.get('data', {}).get('issueCreate', {}).get('issue')
+          if issue:
+              print(issue.get('identifier', ''))
+          else:
+              print('')
+          " 2>/dev/null || echo "")
+
+          if [ -n "$CREATED_ID" ]; then
+            CREATED_URL=$(echo "$CREATE_RESPONSE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          print(data.get('data', {}).get('issueCreate', {}).get('issue', {}).get('url', ''))
+          " 2>/dev/null || echo "")
+            echo "Created follow-up ticket: $CREATED_ID ($CREATED_URL)"
+            echo "::notice::Created follow-up ticket $CREATED_ID for $RESIDUAL_COUNT residual TODO(s)"
+          else
+            echo "::warning::Failed to create follow-up ticket for residual TODOs"
+            # Non-fatal
+            exit 0
+          fi

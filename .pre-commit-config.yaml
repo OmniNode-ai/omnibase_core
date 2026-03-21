@@ -745,10 +745,12 @@ repos:
   # Centralised in onex_change_control for cross-repo enforcement.
   # Pre-existing violations excluded below — pending migration to canonical constants.
   - repo: https://github.com/OmniNode-ai/onex_change_control
-    rev: 39a09ffb2432b8b7d3f47b334b869b55c9cb4fc6
+    rev: 8d7e85bc00e7f1b1306d1cb40949be1ab6e7e91a
     hooks:
       - id: no-hardcoded-topics
         exclude: ^(src/omnibase_core/constants/constants_event_types\.py|src/omnibase_core/models/events/contract_registration/model_contract_deregistered_event\.py|src/omnibase_core/models/events/contract_registration/model_contract_registered_event\.py|src/omnibase_core/models/events/contract_registration/model_node_heartbeat_event\.py|src/omnibase_core/models/events/model_episode_event\.py|src/omnibase_core/models/events/model_git_hook_event\.py|src/omnibase_core/models/events/model_github_pr_status_event\.py|src/omnibase_core/models/events/model_linear_snapshot_event\.py|src/omnibase_core/models/events/validation/model_validation_run_completed_event\.py|src/omnibase_core/models/events/validation/model_validation_run_started_event\.py|src/omnibase_core/models/events/validation/model_validation_violations_batch_event\.py|src/omnibase_core/schemas/cli_contribution\.v1\.example\.yaml|src/omnibase_core/validation/validator_topic_suffix\.py)$
+        stages: [pre-commit]
+      - id: no-untracked-todos
         stages: [pre-commit]
 
 # Configuration
