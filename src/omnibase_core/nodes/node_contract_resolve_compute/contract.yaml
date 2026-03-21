@@ -11,6 +11,7 @@ handler_id: node.contract.resolve
 name: contract_resolve
 contract_version: {major: 1, minor: 0, patch: 0}
 node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
 
 description: >
   Canonical overlay resolution compute node. Merges an ordered list of contract patches onto a base profile
