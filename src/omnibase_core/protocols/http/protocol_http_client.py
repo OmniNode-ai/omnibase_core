@@ -320,7 +320,7 @@ class ProtocolHttpClient(Protocol):
         await session.close()
     """
 
-    # TODO(OMN-TBD): Add POST/HEAD/PUT methods if needed for advanced health checks  [NEEDS TICKET]
+    # TODO(OMN-5746): Add POST/HEAD/PUT methods if needed for advanced health checks  [NEEDS TICKET]
     # Current implementation intentionally minimal (YAGNI) - only GET is required.
     # Future use cases might include:
     #   - POST for stateful health checks

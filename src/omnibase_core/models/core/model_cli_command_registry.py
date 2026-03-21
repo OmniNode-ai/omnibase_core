@@ -255,7 +255,7 @@ class ModelCliCommandRegistry(BaseModel):
 
             # Parse arguments (simplified for now)
             # Note: Converting to empty lists of ModelArgumentDescription
-            # TODO(OMN-TBD): Extract actual argument descriptions from command metadata  [NEEDS TICKET]
+            # TODO(OMN-5746): Extract actual argument descriptions from command metadata  [NEEDS TICKET]
             from omnibase_core.models.core.model_argument_description import (
                 ModelArgumentDescription,
             )

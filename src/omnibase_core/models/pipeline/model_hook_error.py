@@ -20,7 +20,7 @@ class ModelHookError(BaseModel):
         an unexpected error occurs outside of hook invocation.
     """
 
-    # TODO(OMN-TBD): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # TODO(OMN-5745): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.
     # This workaround addresses Pydantic 2.x class identity validation issues where
     # frozen models nested in other models (e.g., in ModelPipelineResult.errors list)
     # fail isinstance() checks across pytest-xdist worker processes.
