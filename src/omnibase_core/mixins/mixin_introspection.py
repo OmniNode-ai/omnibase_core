@@ -359,7 +359,7 @@ class MixinNodeIntrospection(ABC):
         node_name = cls.get_node_name()
 
         # Get version information from resolver
-        # TODO(OMN-TBD): Implement global_resolver for version information  [NEEDS TICKET]
+        # TODO(OMN-5742): Implement global_resolver for version information  [NEEDS TICKET]
         # Once implemented, global_resolver should return ModelSemVer objects directly
 
         # Create enhanced node metadata with version information using composed models

@@ -99,7 +99,7 @@ class ModelPipelineResult(BaseModel):
         assert result.context.data["key"]["nested"] == "value"  # Unchanged!
     """
 
-    # TODO(OMN-TBD): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # TODO(OMN-5745): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.
     # This workaround addresses Pydantic 2.x class identity validation issues where
     # frozen models (and models containing frozen nested models like ModelHookError)
     # fail isinstance() checks across pytest-xdist worker processes.

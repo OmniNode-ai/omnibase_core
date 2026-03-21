@@ -102,7 +102,7 @@ def _validate_string_input(value: object, transform_name: str) -> str:
     return value
 
 
-# TODO(OMN-TBD): Create TransformationError for more specific error handling.  [NEEDS TICKET]
+# TODO(OMN-5744): Create TransformationError for more specific error handling.  [NEEDS TICKET]
 # Currently uses ModelOnexError which is generic. A dedicated TransformationError would:
 # - Enable more precise error handling in pipeline execution
 # - Allow callers to distinguish transformation failures from other error types
@@ -390,7 +390,7 @@ def transform_unicode(data: str, config: ModelTransformUnicodeConfig) -> str:
     return unicodedata.normalize(form, data)
 
 
-# TODO(OMN-TBD): Consider using shared utility omnibase_core.utils.compute_path_resolver  [NEEDS TICKET]
+# TODO(OMN-5744): Consider using shared utility omnibase_core.utils.compute_path_resolver  [NEEDS TICKET]
 # The shared utility has resolve_path() which provides equivalent functionality.
 # This function could be replaced with a thin wrapper that extracts config.path:
 #   from omnibase_core.utils.util_compute_path_resolver import resolve_path
