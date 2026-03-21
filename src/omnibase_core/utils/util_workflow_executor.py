@@ -1024,14 +1024,9 @@ async def _execute_parallel(
             - wave_context provides read-only access to prior wave outputs
         """
         try:
-            # Create step execution context with workflow context for data access
-            # TODO(OMN-656): Use _context for step execution logic that needs prior outputs.
-            # Currently scaffolded for future use cases:
-            # - Accessing prior wave outputs via _context.workflow_context
-            # - Tracking step timing via _context.started_at/_context.completed_at
-            # - Error context via _context.error
-            # The sequential execution path uses context.completed_at; parallel path
-            # will need similar integration when step execution becomes more complex.
+            # Create step execution context with workflow context for data access.
+            # WorkflowStepExecutionContext is scaffolded for future use cases
+            # (prior wave outputs, step timing, error context).
             _context = WorkflowStepExecutionContext(
                 step, workflow_id, completed_step_ids, wave_context
             )
