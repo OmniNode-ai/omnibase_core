@@ -59,7 +59,7 @@ onex.<domain>.<entity>.<event-type-suffix>
 
 # Discovery events
 "onex.discovery.request"
-"onex.discovery.response"
+"onex.discovery.events"
 "onex.introspection.request"
 "onex.introspection.response"
 

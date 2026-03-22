@@ -26,12 +26,12 @@ class ModelEventChannels(BaseModel):
             "examples": [
                 {
                     "subscribes_to": [
-                        "onex.discovery.broadcast",
+                        "onex.discovery.commands",
                         "onex.registry.query",
                         "onex.node.health_check",
                     ],
                     "publishes_to": [
-                        "onex.discovery.response",
+                        "onex.discovery.events",
                         "onex.registry.update",
                         "onex.node.status",
                     ],

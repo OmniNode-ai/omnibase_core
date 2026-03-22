@@ -14,6 +14,10 @@ from uuid import UUID
 
 from pydantic import TypeAdapter, ValidationError
 
+from omnibase_core.constants.constants_topic_taxonomy import (
+    TOPIC_DISCOVERY_COMMANDS,
+    TOPIC_DISCOVERY_EVENTS,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.logging_structured import (
@@ -78,7 +82,7 @@ class MixinDiscoveryResponder:
     Mixin for ONEX nodes to respond to discovery broadcasts.
 
     DISCOVERY RESPONDER PATTERN:
-    - All nodes listen to 'onex.discovery.broadcast' channel
+    - All nodes listen to 'onex.discovery.commands' channel
     - Respond to NODE_DISCOVERY_REQUEST events with introspection data
     - Include health status, capabilities, and full introspection
     - Rate limiting prevents discovery spam
@@ -157,7 +161,7 @@ class MixinDiscoveryResponder:
             # Subscribe to discovery broadcast channel
             # Consumer group is derived from node_identity with INTROSPECTION purpose
             self._discovery_unsubscribe = await event_bus.subscribe(
-                topic="onex.discovery.broadcast",
+                topic=TOPIC_DISCOVERY_COMMANDS,
                 node_identity=node_identity,
                 on_message=self._on_discovery_message,
                 purpose=EnumConsumerGroupPurpose.INTROSPECTION,
@@ -593,7 +597,7 @@ class MixinDiscoveryResponder:
 
                 # Publish to event bus (protocol requires topic, key, value, headers)
                 await self._discovery_event_bus.publish(
-                    topic="onex.discovery.response",
+                    topic=TOPIC_DISCOVERY_EVENTS,
                     key=None,
                     value=envelope_bytes,
                 )

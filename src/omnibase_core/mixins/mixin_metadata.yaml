@@ -3144,7 +3144,7 @@ mixin_discovery_responder:
       type: "array"
       items:
         type: "string"
-      default: ["onex.discovery.broadcast", "onex.discovery.response"]
+      default: ["onex.discovery.commands", "onex.discovery.events"]
       description: "Event bus channels for discovery communication"
 
   usage_examples:
