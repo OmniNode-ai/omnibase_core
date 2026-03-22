@@ -16,10 +16,20 @@ node_version:
   minor: 0
   patch: 0
 
+description: >-
+  Classifies customer support tickets into categories, extracts sentiment, generates summaries, and suggests
+  responses using LLM inference. #magic___^_^___line
+input_model:
+  name: "ModelSupportTicket"
+  module: "omnibase_core.models.demo.model_validate"
+  description: "Customer support ticket with subject, body, and metadata"
+
+output_model:
+  name: "ModelSupportClassificationResult"
+  module: "omnibase_core.models.demo.model_validate"
+  description: "Classification result with category, sentiment, summary, and suggested reply"
+
 metadata:
-  description: >-
-    Classifies customer support tickets into categories, extracts sentiment, generates summaries, and
-    suggests responses using LLM inference.
   author: ONEX Demo Team
   tags:
     - demo

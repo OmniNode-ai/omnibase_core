@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 ---
+# NOTE: intentionally minimal fixture — not a compliant production contract
 contract_version:
   major: 1
   minor: 0
