@@ -51,10 +51,10 @@ class ModelNodeIntrospectionResponseConfig:
                 ],
                 "event_channels": {
                     "subscribes_to": [
-                        "onex.discovery.broadcast",
+                        "onex.discovery.commands",
                         "onex.node.health_check",
                     ],
-                    "publishes_to": ["onex.discovery.response", "onex.node.status"],
+                    "publishes_to": ["onex.discovery.events", "onex.node.status"],
                 },
             },
         },

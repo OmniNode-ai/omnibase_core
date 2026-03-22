@@ -1249,7 +1249,7 @@ introspection:
 - `custom_capabilities` - Additional custom capabilities beyond auto-detected
 
 **Event Bus Integration** (2 fields):
-- `discovery_channels` - Event channels (default: `["onex.discovery.broadcast", "onex.discovery.response"]`)
+- `discovery_channels` - Event channels (default: `["onex.discovery.commands", "onex.discovery.events"]`)
 - `use_dedicated_consumer_group` - Node-specific consumer group
 
 **Response Content** (5 fields):

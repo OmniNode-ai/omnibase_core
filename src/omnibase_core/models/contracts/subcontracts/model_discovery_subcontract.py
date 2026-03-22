@@ -30,6 +30,10 @@ from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.constants.constants_topic_taxonomy import (
+    TOPIC_DISCOVERY_COMMANDS,
+    TOPIC_DISCOVERY_EVENTS,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -46,7 +50,7 @@ class ModelDiscoverySubcontract(BaseModel):
     for composition into node contracts requiring service discovery participation.
 
     DISCOVERY RESPONDER PATTERN:
-    - All nodes listen to 'onex.discovery.broadcast' channel
+    - All nodes listen to 'onex.discovery.commands' channel
     - Respond to DISCOVERY_REQUEST events with introspection data
     - Include health status, capabilities, and full introspection
     - Rate limiting prevents discovery spam
@@ -119,8 +123,8 @@ class ModelDiscoverySubcontract(BaseModel):
     # Event bus integration
     discovery_channels: list[str] = Field(
         default_factory=lambda: [
-            "onex.discovery.broadcast",
-            "onex.discovery.response",
+            TOPIC_DISCOVERY_COMMANDS,
+            TOPIC_DISCOVERY_EVENTS,
         ],
         description="Event bus channels for discovery communication",
     )

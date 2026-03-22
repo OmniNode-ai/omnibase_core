@@ -21,6 +21,10 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel
 
+from omnibase_core.constants.constants_topic_taxonomy import (
+    TOPIC_DISCOVERY_COMMANDS,
+    TOPIC_DISCOVERY_EVENTS,
+)
 from omnibase_core.mixins.mixin_discovery_responder import MixinDiscoveryResponder
 from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,
@@ -114,8 +118,8 @@ class CompliantTestNode(MixinDiscoveryResponder):
     def get_event_channels(self) -> MockEventChannels:
         """Return event channels."""
         return MockEventChannels(
-            subscribes_to=["onex.discovery.broadcast"],
-            publishes_to=["onex.discovery.response"],
+            subscribes_to=[TOPIC_DISCOVERY_COMMANDS],
+            publishes_to=[TOPIC_DISCOVERY_EVENTS],
         )
 
 
@@ -639,8 +643,8 @@ class TestEventChannels:
         assert isinstance(channels, dict)
         assert "subscribes_to" in channels
         assert "publishes_to" in channels
-        assert "onex.discovery.broadcast" in channels["subscribes_to"]
-        assert "onex.discovery.response" in channels["publishes_to"]
+        assert TOPIC_DISCOVERY_COMMANDS in channels["subscribes_to"]
+        assert TOPIC_DISCOVERY_EVENTS in channels["publishes_to"]
 
 
 @pytest.mark.unit

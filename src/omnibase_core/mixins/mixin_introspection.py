@@ -42,6 +42,10 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from omnibase_core.protocols import ProtocolEventBus
 
+from omnibase_core.constants.constants_topic_taxonomy import (
+    TOPIC_DISCOVERY_COMMANDS,
+    TOPIC_DISCOVERY_EVENTS,
+)
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
 from omnibase_core.errors import ModelOnexError
@@ -221,8 +225,8 @@ class MixinNodeIntrospection(ABC):
     def get_event_channels(cls) -> ModelEventChannels:
         """Return event channels configuration. Override to specify channels."""
         return ModelEventChannels(
-            subscribes_to=["onex.discovery.broadcast"],
-            publishes_to=["onex.discovery.response"],
+            subscribes_to=[TOPIC_DISCOVERY_COMMANDS],
+            publishes_to=[TOPIC_DISCOVERY_EVENTS],
         )
 
     @classmethod

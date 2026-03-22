@@ -429,8 +429,8 @@ The following legacy topic patterns require migration to the new taxonomy:
 
 | Legacy Topic | New Topic | Notes |
 |--------------|-----------|-------|
-| `onex.discovery.broadcast` | `onex.discovery.commands` | Discovery requests |
-| `onex.discovery.response` | `onex.discovery.events` | Discovery responses |
+| `onex.discovery.broadcast` | `onex.discovery.commands` | Discovery requests -- **DONE** |
+| `onex.discovery.response` | `onex.discovery.events` | Discovery responses -- **DONE** |
 | `onex.runtime.ready` | `onex.runtime.events` | Runtime lifecycle event |
 | `onex.runtime.node.registered` | `onex.registration.events` | Move to registration domain |
 | `dev.omninode.metrics.v1` | `onex.metrics.events` | Standardize prefix |
@@ -457,13 +457,15 @@ The following legacy topic patterns require migration to the new taxonomy:
 ### Code Migration Example
 
 ```python
-# Before (legacy)
-DISCOVERY_BROADCAST_TOPIC = "onex.discovery.broadcast"
-DISCOVERY_RESPONSE_TOPIC = "onex.discovery.response"
+# Before (deprecated)
+DISCOVERY_BROADCAST_TOPIC = "onex.discovery.broadcast"  # (deprecated)
+DISCOVERY_RESPONSE_TOPIC = "onex.discovery.response"  # (deprecated)
 
-# After (standardized)
-DISCOVERY_COMMANDS_TOPIC = "onex.discovery.commands"
-DISCOVERY_EVENTS_TOPIC = "onex.discovery.events"
+# After (current — use these)
+from omnibase_core.constants.constants_topic_taxonomy import (
+    TOPIC_DISCOVERY_COMMANDS,  # "onex.discovery.commands"
+    TOPIC_DISCOVERY_EVENTS,   # "onex.discovery.events"
+)
 DISCOVERY_INTENTS_TOPIC = "onex.discovery.intents"
 ```
 

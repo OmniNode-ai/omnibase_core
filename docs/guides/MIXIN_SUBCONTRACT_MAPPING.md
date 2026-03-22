@@ -423,8 +423,8 @@ discovery_subcontract:
 
   # Event bus integration
   discovery_channels:
-    - "onex.discovery.broadcast"
-    - "onex.discovery.response"
+    - "onex.discovery.commands"
+    - "onex.discovery.events"
   use_dedicated_consumer_group: true
 
   # Response content
