@@ -413,7 +413,7 @@ class OmniStructureValidator:
             #   - protocol_registry_aware.py (mixins)
             #   - protocol_event_bus.py (mixins)
             #   - protocol_log_context_fallback.py (logging)
-            # TODO: Complete migration of these protocols to omnibase_spi
+            # TODO(OMN-5694): Complete migration of these protocols to omnibase_spi
             max_protocols = 7 if self.repo_name == "omnibase_core" else 3
 
             if protocol_count > max_protocols:

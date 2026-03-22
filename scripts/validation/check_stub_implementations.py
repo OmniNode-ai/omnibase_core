@@ -347,7 +347,7 @@ class StubImplementationDetector(ast.NodeVisitor):
                         "Remove 'pass' and implement actual logic before return",
                     )
 
-        # Pattern 6: TODO/FIXME in docstring or comments
+        # Pattern 6: staleness markers (to-do/fix-me) in docstring or comments  # TODO_FORMAT_EXEMPT: describes stub detection pattern
         if docstring:
             if any(
                 marker in docstring.upper()

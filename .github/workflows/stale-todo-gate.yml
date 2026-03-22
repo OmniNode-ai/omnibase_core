@@ -1,0 +1,158 @@
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# stale-todo-gate.yml
+#
+# CI gate: check that TODO/FIXME/HACK comments in changed Python files
+# do not reference Linear tickets in terminal states (Done/Canceled).
+#
+# Copy this file to .github/workflows/stale-todo-gate.yml in each repo.
+#
+# Requires: LINEAR_API_KEY as an org/repo secret.
+# Graceful degradation: if LINEAR_API_KEY is unset, the check is skipped
+# (exit 0) with a visible warning.
+#
+# Implements OMN-5688.
+
+name: Stale TODO Gate
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  stale-todo-gate:
+    name: Stale TODO Gate
+    runs-on: >-
+      ${{
+        vars.USE_SELF_HOSTED_RUNNERS == 'true'
+        && 'self-hosted, omnibase-ci'
+        || 'ubuntu-latest'
+      }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for stale TODOs in changed files
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # --- Graceful degradation ---
+          if [ -z "${LINEAR_API_KEY:-}" ]; then
+            echo "::warning::LINEAR_API_KEY not set -- stale-TODO gate skipped"
+            exit 0
+          fi
+
+          # --- Collect changed .py files ---
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD -- '*.py' || true)
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No Python files changed -- nothing to check."
+            exit 0
+          fi
+
+          # --- Extract unique OMN-XXXX ticket IDs from TODO comments ---
+          TICKET_IDS=""
+          while IFS= read -r file; do
+            [ -f "$file" ] || continue
+            # Match TODO(OMN-1234), FIXME(OMN-1234), HACK(OMN-1234) in comments
+            IDS=$(grep -oE '#.*\b(TODO|FIXME|HACK)\(OMN-[0-9]+\)' "$file" 2>/dev/null \
+              | grep -oE 'OMN-[0-9]+' || true)
+            if [ -n "$IDS" ]; then
+              TICKET_IDS="$TICKET_IDS"$'\n'"$IDS"
+            fi
+          done <<< "$CHANGED_FILES"
+
+          UNIQUE_IDS=$(echo "$TICKET_IDS" | sort -u | grep -v '^$' || true)
+          if [ -z "$UNIQUE_IDS" ]; then
+            echo "No TODO ticket references found in changed files -- clean."
+            exit 0
+          fi
+
+          echo "Found ticket references: $(echo "$UNIQUE_IDS" | tr '\n' ' ')"
+
+          # --- Query Linear for ticket states ---
+          # Build a filter query to batch-check all ticket IDs
+          STALE_TICKETS=""
+          STALE_COUNT=0
+
+          while IFS= read -r TICKET_ID; do
+            [ -z "$TICKET_ID" ] && continue
+
+            # Validate format
+            if ! echo "$TICKET_ID" | grep -qE '^OMN-[0-9]+$'; then
+              continue
+            fi
+
+            RESPONSE=$(curl -s --max-time 15 -X POST https://api.linear.app/graphql \
+              -H "Authorization: $LINEAR_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\": \"{ issue(id: \\\"$TICKET_ID\\\") { identifier title state { name type } } }\"}" \
+              2>&1)
+
+            STATE_TYPE=$(echo "$RESPONSE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          issue = data.get('data', {}).get('issue')
+          if issue:
+              print(issue.get('state', {}).get('type', ''))
+          else:
+              print('NOT_FOUND')
+          " 2>/dev/null || echo "UNKNOWN")
+
+            STATE_NAME=$(echo "$RESPONSE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          issue = data.get('data', {}).get('issue')
+          if issue:
+              print(issue.get('state', {}).get('name', ''))
+          else:
+              print('')
+          " 2>/dev/null || echo "")
+
+            TITLE=$(echo "$RESPONSE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          issue = data.get('data', {}).get('issue')
+          if issue:
+              print(issue.get('title', ''))
+          else:
+              print('')
+          " 2>/dev/null || echo "")
+
+            # Terminal states: COMPLETED or CANCELED (using Linear's state type field)
+            if echo "$STATE_TYPE" | grep -qiE '^(completed|canceled|cancelled)$'; then
+              STALE_COUNT=$((STALE_COUNT + 1))
+              STALE_TICKETS="${STALE_TICKETS}  - ${TICKET_ID} (${STATE_NAME}): ${TITLE}"$'\n'
+
+              # Find which files reference this ticket
+              while IFS= read -r file; do
+                [ -f "$file" ] || continue
+                LOCATIONS=$(grep -n "TODO.*${TICKET_ID}\|FIXME.*${TICKET_ID}\|HACK.*${TICKET_ID}" "$file" 2>/dev/null || true)
+                if [ -n "$LOCATIONS" ]; then
+                  while IFS= read -r loc; do
+                    STALE_TICKETS="${STALE_TICKETS}    ${file}:${loc}"$'\n'
+                  done <<< "$LOCATIONS"
+                fi
+              done <<< "$CHANGED_FILES"
+            fi
+          done <<< "$UNIQUE_IDS"
+
+          if [ "$STALE_COUNT" -gt 0 ]; then
+            echo ""
+            echo "::error::Found ${STALE_COUNT} stale TODO(s) referencing closed/canceled tickets:"
+            echo ""
+            echo "$STALE_TICKETS"
+            echo ""
+            echo "These TODOs reference tickets that are already Done or Canceled."
+            echo "Either remove the TODO or create a new ticket for the remaining work."
+            exit 1
+          fi
+
+          echo "All ${UNIQUE_IDS_COUNT:-$(echo "$UNIQUE_IDS" | wc -l | tr -d ' ')} TODO ticket references are active -- clean."

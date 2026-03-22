@@ -62,7 +62,7 @@ ALLOWED_PATTERNS = [
 ]
 
 # Files with existing violations (technical debt) - tracked in GitHub issues
-# TODO(GitHub #XX): Fix object.__setattr__() usage outside __init__/validators
+# TODO(OMN-5694): Fix object.__setattr__() usage outside __init__/validators
 EXCLUDED_FILES = [
     "src/omnibase_core/models/metadata/node_info/model_node_core.py",  # Lines 123, 147
     "src/omnibase_core/infrastructure/node_core_base.py",  # Lines 379, 401
