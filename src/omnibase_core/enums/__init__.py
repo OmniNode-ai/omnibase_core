@@ -414,6 +414,16 @@ from .pattern_learning.enum_pattern_learning_status import EnumPatternLearningSt
 from .pattern_learning.enum_pattern_lifecycle_state import EnumPatternLifecycleState
 from .pattern_learning.enum_pattern_type import EnumPatternType
 
+# Plan workflow enums (OMN-6041 — plan-contract lifecycle)
+from .plan import (
+    PLAN_PHASE_ALLOWED_ACTIONS,
+    PLAN_VALID_TRANSITIONS,
+    EnumPlanAction,
+    EnumPlanPhase,
+    PlanAction,
+    PlanPhase,
+)
+
 # Deprecated aliases for EnumSeverity (OMN-1311 consolidation)
 # Use EnumSeverity directly in new code.
 EnumInvariantSeverity: type[EnumSeverity] = EnumSeverity
@@ -805,6 +815,13 @@ __all__ = [
     # Plan structure type domain (OMN-3868)
     "EnumPlanStructureType",
     "PlanStructureType",
+    # Plan workflow domain (OMN-6041 — plan-contract lifecycle)
+    "EnumPlanPhase",
+    "EnumPlanAction",
+    "PlanPhase",
+    "PlanAction",
+    "PLAN_PHASE_ALLOWED_ACTIONS",
+    "PLAN_VALID_TRANSITIONS",
     # Skill result status domain (OMN-3866)
     "EnumSkillResultStatus",
     "SkillResultStatus",
