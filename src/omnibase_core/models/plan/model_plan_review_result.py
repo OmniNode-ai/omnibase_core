@@ -69,7 +69,7 @@ class ModelPlanReviewResult(BaseModel):
             # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"document_fingerprint {v!r} must be exactly 16 hex characters "
-                f"(e.g., 'a1b2c3d4e5f67890')"
+                f"(e.g., 'a1b2c3d4e5f67890')"  # pragma: allowlist secret
             )
         return normalized
 
