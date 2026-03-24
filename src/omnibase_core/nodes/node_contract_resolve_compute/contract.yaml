@@ -19,12 +19,6 @@ description: >
 input_model: omnibase_core.models.nodes.contract_resolve.ModelContractResolveInput
 output_model: omnibase_core.models.nodes.contract_resolve.ModelContractResolveOutput
 
-consumed_events:
-  - onex.contract.resolve.requested
-
-produced_events:
-  - onex.contract.resolve.completed
-
 descriptor:
   node_archetype: compute
   purity: pure
