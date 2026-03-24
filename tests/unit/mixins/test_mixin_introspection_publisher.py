@@ -15,6 +15,7 @@ from pydantic import ValidationError
 
 from omnibase_core.mixins.mixin_introspection_publisher import (
     MixinIntrospectionPublisher,
+    _normalize_node_type,
 )
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
@@ -610,3 +611,218 @@ class TestMixinIntrospectionPublisher:
 
         # Tags should be unique (list converted to set internally)
         assert len(tags) == len(set(tags))
+
+
+@pytest.mark.unit
+class TestNormalizeNodeType:
+    """Test _normalize_node_type() helper for Task 3 (OMN-6408)."""
+
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            ("effect", "effect"),
+            ("compute", "compute"),
+            ("reducer", "reducer"),
+            ("orchestrator", "orchestrator"),
+            ("EFFECT", "effect"),
+            ("COMPUTE", "compute"),
+            ("EFFECT_GENERIC", "effect"),
+            ("ORCHESTRATOR_GENERIC", "orchestrator"),
+            ("REDUCER_GENERIC", "reducer"),
+            ("COMPUTE_GENERIC", "compute"),
+            ("effect_generic", "effect"),
+            ("NodeRegistrationOrchestrator", "orchestrator"),
+            ("NodeRegistryEffect", "effect"),
+            ("NodeRegistrationReducer", "reducer"),
+            ("NodeContractValidatorCompute", "compute"),
+            ("SomethingUnknown", "compute"),
+        ],
+    )
+    def test_normalize_node_type(self, raw: str, expected: str) -> None:
+        assert _normalize_node_type(raw) == expected
+
+
+@pytest.mark.unit
+class TestDescriptionField:
+    """Tests for description field threading (Tasks 1, 2, 4)."""
+
+    def test_introspection_data_description_defaults_to_none(self) -> None:
+        """Task 1: description field exists and defaults to None."""
+        data = ModelNodeIntrospectionData(
+            node_name="test_node",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            capabilities=ModelNodeCapabilities(actions=["health_check"]),
+        )
+        assert data.description is None
+
+    def test_introspection_data_description_round_trips(self) -> None:
+        """Task 1: description field round-trips through model_dump."""
+        data = ModelNodeIntrospectionData(
+            node_name="test_node",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            capabilities=ModelNodeCapabilities(actions=["health_check"]),
+            description="Routes events to handlers",
+        )
+        assert data.description == "Routes events to handlers"
+        dumped = data.model_dump()
+        assert dumped["description"] == "Routes events to handlers"
+
+    def test_event_with_description(self) -> None:
+        """Task 2: event model carries description."""
+        event = ModelNodeIntrospectionEvent.create_from_node_info(
+            node_id=uuid4(),
+            node_name="node_registry_effect",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="effect",
+            actions=["register"],
+            description="Writes node registrations to PostgreSQL",
+        )
+        assert event.description == "Writes node registrations to PostgreSQL"
+
+    def test_event_without_description_backwards_compat(self) -> None:
+        """Task 2: event without description defaults to None."""
+        event = ModelNodeIntrospectionEvent.create_from_node_info(
+            node_id=uuid4(),
+            node_name="node_registry_effect",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="effect",
+            actions=["register"],
+        )
+        assert event.description is None
+
+    def test_extract_description_from_metadata_loader(self) -> None:
+        """Task 4: _extract_node_description reads from metadata_loader."""
+        node = MockNode()
+        mock_metadata = Mock()
+        mock_metadata.description = "Orchestrates registration workflow"
+        mock_loader = Mock()
+        mock_loader.metadata = mock_metadata
+        node.metadata_loader = mock_loader
+
+        desc = node._extract_node_description()
+        assert desc == "Orchestrates registration workflow"
+
+    def test_extract_description_skips_placeholder(self) -> None:
+        """Task 4: _extract_node_description skips 'Stamped by ONEX' placeholder."""
+        node = MockNode()
+        mock_metadata = Mock()
+        mock_metadata.description = "Stamped by ONEX"
+        mock_loader = Mock()
+        mock_loader.metadata = mock_metadata
+        node.metadata_loader = mock_loader
+
+        desc = node._extract_node_description()
+        assert desc is None
+
+    def test_extract_description_none_when_no_loader(self) -> None:
+        """Task 4: _extract_node_description returns None when no loader."""
+        node = MockNode()
+        desc = node._extract_node_description()
+        assert desc is None
+
+    def test_gather_introspection_data_includes_description(self) -> None:
+        """Task 4: description flows through _gather_introspection_data."""
+        node = MockNode()
+        mock_metadata = Mock()
+        mock_metadata.description = "Orchestrates registration workflow"
+        mock_metadata.name = "node_registration_orchestrator"
+        mock_metadata.version = "1.2.0"
+        mock_metadata.author = "ONEX"
+        mock_metadata.copyright = None
+        mock_loader = Mock()
+        mock_loader.metadata = mock_metadata
+        node.metadata_loader = mock_loader
+
+        data = node._gather_introspection_data()
+        assert data.description == "Orchestrates registration workflow"
+
+    def test_capabilities_metadata_includes_description(self) -> None:
+        """Task 4: capabilities metadata description is populated from same source."""
+        node = MockNode()
+        mock_metadata = Mock()
+        mock_metadata.description = "Handles registrations"
+        mock_metadata.author = "ONEX"
+        mock_metadata.copyright = None
+        mock_loader = Mock()
+        mock_loader.metadata = mock_metadata
+        node.metadata_loader = mock_loader
+
+        capabilities = node._extract_node_capabilities()
+        assert capabilities.metadata.description == "Handles registrations"
+
+
+@pytest.mark.unit
+class TestEndToEndIntrospectionEventShape:
+    """E2E test: full pipeline from contract metadata to event (Task 9, OMN-6414)."""
+
+    def test_full_pipeline_contract_to_event(self) -> None:
+        """Mock a node with metadata_loader, verify event has correct shape."""
+
+        class NodeRegistrationOrchestrator(MixinIntrospectionPublisher):
+            def __init__(self) -> None:
+                self._node_id = uuid4()
+                self.event_bus = Mock()
+                self.metadata_loader = None
+
+            def get_node_type(self) -> str:
+                # Simulates real behavior: returns class name
+                return self.__class__.__name__
+
+        node = NodeRegistrationOrchestrator()
+
+        # Set up metadata_loader with contract data
+        mock_metadata = Mock()
+        mock_metadata.description = "Orchestrates node registration workflow"
+        mock_metadata.name = "node_registration_orchestrator"
+        mock_metadata.version = "2.1.0"
+        mock_metadata.author = "ONEX"
+        mock_metadata.copyright = "MIT"
+        mock_loader = Mock()
+        mock_loader.metadata = mock_metadata
+        node.metadata_loader = mock_loader
+
+        # Publish and capture the event
+        node._publish_introspection_event()
+
+        # Extract the event from the publish call
+        assert node.event_bus.publish.called
+        envelope = node.event_bus.publish.call_args[0][0]
+        event = envelope.payload
+
+        # Assert: description populated from contract
+        assert event.description == "Orchestrates node registration workflow"
+
+        # Assert: node_type normalized from class name to canonical archetype
+        assert event.node_type == "orchestrator"
+
+        # Assert: node_name set from metadata
+        assert event.node_name == "node_registration_orchestrator"
+
+        # Assert: version from metadata
+        assert event.version.major == 2
+        assert event.version.minor == 1
+        assert event.version.patch == 0
+
+    def test_full_pipeline_no_description_degrades(self) -> None:
+        """Node without description in metadata degrades gracefully."""
+        node = MockNode()
+        mock_metadata = Mock()
+        mock_metadata.description = None
+        mock_metadata.name = "test_node"
+        mock_metadata.version = "1.0.0"
+        mock_metadata.author = "ONEX"
+        mock_metadata.copyright = None
+        mock_loader = Mock()
+        mock_loader.metadata = mock_metadata
+        node.metadata_loader = mock_loader
+        node.event_bus = Mock()
+
+        node._publish_introspection_event()
+
+        envelope = node.event_bus.publish.call_args[0][0]
+        event = envelope.payload
+
+        # Description should be None, not crash
+        assert event.description is None
+        # node_type should still be valid
+        assert event.node_type == "compute"

@@ -29,3 +29,7 @@ class ModelNodeIntrospectionData(BaseModel):
     health_endpoint: str | None = Field(
         default=None, description="Health check endpoint"
     )
+    description: str | None = Field(
+        default=None,
+        description="Human-readable description from contract YAML",
+    )

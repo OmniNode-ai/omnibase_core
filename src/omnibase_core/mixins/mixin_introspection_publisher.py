@@ -31,6 +31,43 @@ from omnibase_core.models.mixins.model_node_introspection_data import (
 _COMPONENT_NAME = Path(__file__).stem
 DEFAULT_AUTHOR = "ONEX"
 
+_CANONICAL_NODE_TYPES = ("effect", "compute", "reducer", "orchestrator")
+
+
+def _normalize_node_type(raw: str) -> str:
+    """Normalize node type from class name or contract value to canonical form.
+
+    Handles:
+    - Direct canonical values: "effect" -> "effect"
+    - _GENERIC suffix: "EFFECT_GENERIC" -> "effect"
+    - Class name extraction: "NodeRegistrationOrchestrator" -> "orchestrator"
+    - Unknown fallback: "SomethingUnknown" -> "compute" (with warning)
+    """
+    lower = raw.lower()
+    # Direct match (already canonical)
+    if lower in _CANONICAL_NODE_TYPES:
+        return lower
+    # Strip _GENERIC suffix (contract YAML format)
+    stripped = lower.replace("_generic", "")
+    if stripped in _CANONICAL_NODE_TYPES:
+        return stripped
+    # Extract from class name (e.g., NodeRegistrationOrchestrator)
+    for canonical in _CANONICAL_NODE_TYPES:
+        if canonical in lower:
+            return canonical
+    context = ModelLogContext(
+        calling_module=_COMPONENT_NAME,
+        calling_function="_normalize_node_type",
+        calling_line=0,
+        timestamp=datetime.now().isoformat(),
+    )
+    emit_log_event_sync(
+        LogLevel.WARNING,
+        f"Unknown node_type '{raw}', defaulting to 'compute'",
+        context=context,
+    )
+    return "compute"
+
 
 class MixinIntrospectionPublisher:
     """
@@ -63,7 +100,7 @@ class MixinIntrospectionPublisher:
                     "returning one of: effect, compute, reducer, orchestrator",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
-            node_type = self.get_node_type()
+            node_type = _normalize_node_type(self.get_node_type())
             # For creating the event, we need a valid UUID - generate one if unset
             event_node_id = (
                 UUID(node_id)
@@ -79,6 +116,7 @@ class MixinIntrospectionPublisher:
                 tags=introspection_data.tags,
                 health_endpoint=introspection_data.health_endpoint,
                 correlation_id=correlation_id,
+                description=introspection_data.description,
             )
             self._publish_with_retry(introspection_event)
             context = ModelLogContext(
@@ -135,12 +173,14 @@ class MixinIntrospectionPublisher:
             capabilities = self._extract_node_capabilities()
             tags = self._generate_discovery_tags()
             health_endpoint = self._detect_health_endpoint()
+            description = self._extract_node_description()
             return ModelNodeIntrospectionData(
                 node_name=node_name,
                 version=version,
                 capabilities=capabilities,
                 tags=tags,
                 health_endpoint=health_endpoint,
+                description=description,
             )
         except PYDANTIC_MODEL_ERRORS as e:
             # fallback-ok: Introspection failures use fallback data with logging
@@ -186,6 +226,24 @@ class MixinIntrospectionPublisher:
             tags=["event_driven"],
             health_endpoint=None,
         )
+
+    def _extract_node_description(self) -> str | None:
+        """Extract description from contract metadata.
+
+        Phase 1: reads from metadata_loader.metadata.description (contract-backed source).
+        Future: may expand to additional metadata sources if node families diverge.
+        """
+        try:
+            metadata_loader = getattr(self, "metadata_loader", None)
+            if metadata_loader and hasattr(metadata_loader, "metadata"):
+                metadata = getattr(metadata_loader, "metadata", None)
+                if metadata and hasattr(metadata, "description"):
+                    desc = getattr(metadata, "description", None)
+                    if desc and desc != "Stamped by ONEX":  # Skip default placeholder
+                        return str(desc)
+        except Exception:  # noqa: BLE001  # fallback-ok: description extraction returns None
+            pass
+        return None
 
     def _extract_node_name(self) -> str:
         """Extract node name from class name or metadata."""
@@ -268,9 +326,11 @@ class MixinIntrospectionPublisher:
             pass
 
         # Create typed metadata model with extracted values
+        desc_str = self._extract_node_description()
         metadata = ModelNodeCapabilitiesMetadata(
             author=author,
             license=license_str,
+            description=desc_str,
         )
 
         return ModelNodeCapabilities(
