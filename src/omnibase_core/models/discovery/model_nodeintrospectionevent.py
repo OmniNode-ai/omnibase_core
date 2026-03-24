@@ -88,6 +88,12 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         description="Datacenter for multi-DC discovery (future)",
     )
 
+    # Contract metadata
+    description: str | None = Field(
+        default=None,
+        description="Human-readable description from contract YAML",
+    )
+
     @field_validator("node_id", mode="before")
     @classmethod
     def convert_node_id_to_uuid(cls, v: Any) -> UUID:
@@ -134,6 +140,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         actions: list[str],
         tags: list[str] | None = None,
         node_role: str | None = None,
+        description: str | None = None,
         **kwargs: Any,
     ) -> "ModelNodeIntrospectionEvent":
         """
@@ -147,6 +154,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
             actions: List of supported actions
             tags: Discovery tags
             node_role: Optional role specialization (registry, adapter, bridge, etc.)
+            description: Human-readable description from contract YAML
             **kwargs: Additional fields (e.g., health_endpoint, correlation_id)
 
         Returns:
@@ -177,5 +185,6 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
             capabilities=capabilities,
             tags=tags if tags is not None else [],
             node_role=node_role,
+            description=description,
             **kwargs,
         )
