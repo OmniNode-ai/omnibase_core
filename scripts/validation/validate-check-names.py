@@ -219,7 +219,7 @@ def _parse_required_checks(required_checks_path: Path) -> list[GateEntry]:
     The file uses a well-known structure:
       gates:
         - check_name: "Quality Gate"
-          workflow_file: test.yml
+          workflow_file: ci.yml
           workflow_job_key: quality-gate
           rationale: >
             Long text...
