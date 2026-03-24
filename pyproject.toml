@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.30.2"
+version = "0.31.0"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode.ai", email = "contact@omninode.ai"}
@@ -66,12 +66,12 @@ validate-string-versions = "omnibase_core.validation.scripts.validate_string_ver
 onex-validate-links = "omnibase_core.scripts.validate_markdown_links:main"
 
 [project.optional-dependencies]
-spi = ["omnibase-spi>=0.17.1"]
+spi = ["omnibase-spi>=0.19.1"]
 cli = ["psutil>=7.2.1"]
 cache = ["redis>=5.0.0,<8.0.0"]
 metrics = ["prometheus-client>=0.21.0,<1.0.0"]
 sql-parser = ["sqlglot>=26.0.0,<31.0.0"]
-full = ["omnibase-spi>=0.17.1", "psutil>=7.2.1", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
+full = ["omnibase-spi>=0.19.1", "psutil>=7.2.1", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
 
 [dependency-groups]
 dev = [
