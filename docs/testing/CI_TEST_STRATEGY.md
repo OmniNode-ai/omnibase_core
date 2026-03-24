@@ -294,7 +294,7 @@ For operational guidance on monitoring CI health, detecting performance regressi
 - [pytest-testmon Documentation](https://github.com/tarpas/pytest-testmon)
 - [TESTMON_USAGE.md](./TESTMON_USAGE.md) - Local testmon usage guide
 - [pytest.ini Configuration](../../pyproject.toml) - Test configuration
-- [CI Workflow](../../.github/workflows/test.yml) - GitHub Actions configuration
+- [CI Workflow](../../.github/workflows/ci.yml) - GitHub Actions configuration
 - [CI Monitoring Guide](../ci/CI_MONITORING_GUIDE.md) - Performance monitoring and alerting
 
 ---
