@@ -27,7 +27,7 @@ schema_version: 2
 # They are API-stable -- do NOT rename without the migration safety procedure.
 gates:
   - check_name: "Quality Gate"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: quality-gate
     rationale: >
       Aggregates all Phase 1 quality checks: lint (ruff + mypy), pyright, exports validation, mypy validation
@@ -35,13 +35,13 @@ gates:
       Node purity check is reported by this gate but non-blocking (continue-on-error: true). Replaces
       6+ individual branch protection checks with a single stable gate.
   - check_name: "Tests Gate"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: tests-gate
     rationale: >
       Aggregates the 20-shard parallel test matrix. Shard count can change without updating branch protection
       rules.
   - check_name: "CI Summary"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: ci-summary
     rationale: >
       Final aggregator for all gates (Quality Gate + Tests Gate). Added for uniformity across OmniNode
@@ -52,54 +52,54 @@ gates:
 # Listed here for documentation and cross-referencing purposes only.
 checks:
   - name: "Code Quality"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: lint
     aggregated_by: "Quality Gate"
 
   - name: "Pyright Type Checking"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: pyright
     aggregated_by: "Quality Gate"
 
   - name: "Exports Validation"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: exports-validation
     aggregated_by: "Quality Gate"
 
   - name: "Mypy Validation Scripts"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: mypy-validation-scripts
     aggregated_by: "Quality Gate"
 
   - name: "Core-Infra Boundary"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: core-infra-boundary
     aggregated_by: "Quality Gate"
 
   - name: "Documentation Validation"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: docs-validation
     aggregated_by: "Quality Gate"
 
   - name: "Node Purity Check"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: node-purity-check
     reported_by: "Quality Gate"
     note: "Non-blocking (continue-on-error: true) until tech debt resolved -- reported but excluded from
       pass/fail"
 
   - name: "Enum Governance Check"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: enum-governance
     aggregated_by: "Quality Gate"
 
   - name: "Detect Secrets"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: detect-secrets
     aggregated_by: "Quality Gate"
 
   - name: "Tests (Split N/20)"
-    workflow_file: test.yml
+    workflow_file: ci.yml
     workflow_job_key: test-parallel
     aggregated_by: "Tests Gate"
     note: "Matrix job -- 20 splits, aggregated by Tests Gate"
