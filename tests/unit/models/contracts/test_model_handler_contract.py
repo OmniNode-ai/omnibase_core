@@ -588,15 +588,15 @@ class TestImmutability:
         with pytest.raises(ValidationError):
             contract.name = "New Name"  # type: ignore[misc]
 
-    def test_extra_fields_forbidden(self) -> None:
-        """Test that extra fields are not allowed."""
-        with pytest.raises(ValidationError):
-            ModelHandlerContract(
-                handler_id="node.test",
-                name="Test",
-                contract_version=ModelSemVer(major=1, minor=0, patch=0),
-                descriptor=ModelHandlerBehavior(node_archetype="compute"),
-                input_model="a.Input",
-                output_model="a.Output",
-                unknown_field="value",  # type: ignore[call-arg]
-            )
+    def test_extra_fields_ignored(self) -> None:
+        """Test that extra fields are silently ignored (extra='ignore')."""
+        contract = ModelHandlerContract(
+            handler_id="node.test",
+            name="Test",
+            contract_version=ModelSemVer(major=1, minor=0, patch=0),
+            descriptor=ModelHandlerBehavior(node_archetype="compute"),
+            input_model="a.Input",
+            output_model="a.Output",
+            unknown_field="value",  # type: ignore[call-arg]
+        )
+        assert not hasattr(contract, "unknown_field")
