@@ -1,3 +1,32 @@
+## v0.32.0 (2026-03-25)
+
+### Added
+- feat(plan): add ModelPlanContract lifecycle contract [OMN-6041] (#718)
+- feat(core): add control mode session overlay and treatment group classifier [OMN-5546] (#707)
+- feat(ticket): add contract grace period for pre-existing tickets [OMN-5461] (#706)
+- feat: contract-declared feature flags (T1-T3) [OMN-5566] (#708)
+- feat(events): add ModelEpisodeEvent for RL episode boundary tracking [OMN-5559] (#709)
+- feat(cli): add onex init project scaffolding command [OMN-5392] (#701)
+- feat: add MixinTraceCapture to wire trace infrastructure into node execution (#723)
+
+### Fixed
+- fix(contracts): add importlib.resources fallback for PyPI installs [OMN-6484] (#729)
+- fix: handler contract extra=ignore + importlib fallback [OMN-6465, OMN-6466] (#727)
+- fix(core): add description field, normalize node_type, thread contract metadata through introspection pipeline [OMN-6405] (#722)
+- fix: contract health -- compute purity + runtime contracts accessor [OMN-6337, OMN-6339] (#721)
+- fix(topics): migrate hardcoded discovery topics to taxonomy constants [OMN-5834] (#716)
+- fix: complete missing fields in core contracts [OMN-5701] (#711)
+
+### Changed
+- ci: add validate-boundaries job in warn-only mode [OMN-6576] (#730)
+- ci(omnibase_core): rename test.yml -> ci.yml for cross-repo standardization [OMN-6212] (#719)
+- ci: deploy TODO enforcement hooks and workflows [OMN-5694, OMN-5695] (#714)
+- chore: replace OMN-TBD placeholders with real ticket numbers [OMN-5693] (#713)
+- chore: remove stale TODO for OMN-656 [OMN-5690] (#712)
+
+### Releases included
+- v0.31.1, v0.31.0, v0.30.2, v0.30.1, v0.30.0, v0.29.0, v0.28.0, v0.27.1, v0.27.0
+
 ## v0.30.0 (2026-03-20)
 
 ### Added
