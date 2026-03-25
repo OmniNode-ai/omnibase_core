@@ -93,7 +93,7 @@ effect_operations:
       # Scanning configuration (metadata for handler)
       metadata:
         scan_mode: directory
-        pattern: "**/*.yaml"
+        pattern: "**/*.{yaml,yml}"
         exclude_patterns:
           - "**/runtime/**"  # Don't reload runtime contracts
           - "**/_*.yaml"  # Skip disabled contracts (underscore prefix)

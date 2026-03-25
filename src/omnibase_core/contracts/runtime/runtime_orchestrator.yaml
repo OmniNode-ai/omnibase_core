@@ -187,7 +187,7 @@ workflow_coordination:
 
       # Timeout configuration
       timeout_ms: 120000  # 2 minutes total startup timeout
-      step_timeout_ms: 30000  # 30 seconds per step
+      step_timeout_ms: 65000  # 65 seconds per step (must exceed child contract timeouts of 60s)
 
       # Dependency resolution
       dependency_resolution_enabled: true
@@ -225,22 +225,22 @@ workflow_coordination:
 
   # Event subscriptions for runtime management
   subscriptions:
-    - topic: runtime.startup
+    - topic: onex.runtime.startup
       description: Trigger runtime startup sequence
-    - topic: runtime.shutdown
+    - topic: onex.runtime.shutdown
       description: Trigger graceful shutdown sequence
-    - topic: runtime.contracts.reload
+    - topic: onex.runtime.contracts.reload
       description: Trigger contract reload without full restart
 
   # Events published by runtime
   publications:
-    - topic: runtime.ready
+    - topic: onex.runtime.ready
       description: Runtime is fully initialized and ready
       payload_schema: ModelRuntimeReadyEvent
-    - topic: runtime.shutting_down
+    - topic: onex.runtime.shutting_down
       description: Runtime is beginning shutdown sequence
       payload_schema: ModelRuntimeShutdownEvent
-    - topic: runtime.error
+    - topic: onex.runtime.error
       description: Runtime encountered a critical error
       payload_schema: ModelRuntimeErrorEvent
 
