@@ -9,7 +9,8 @@ configuration.
 
 Resolution order:
     1. ``ONEX_RUNTIME_CONTRACTS_DIR`` env var (development/deployment override)
-    2. Repository-relative path (works in dev and worktrees)
+    2. ``importlib.resources`` (works in PyPI installs)
+    3. Repository-relative path (works in dev and worktrees)
 """
 
 from __future__ import annotations
@@ -23,7 +24,8 @@ def get_runtime_contracts_dir() -> Path:
 
     Resolution order:
         1. ``ONEX_RUNTIME_CONTRACTS_DIR`` env var (explicit override)
-        2. Repository-relative: ``<repo_root>/contracts/runtime/``
+        2. ``importlib.resources`` (works in PyPI installs)
+        3. Repository-relative: ``<repo_root>/contracts/runtime/``
 
     Returns:
         Path to the directory containing the 5 runtime contract YAMLs.
@@ -38,7 +40,18 @@ def get_runtime_contracts_dir() -> Path:
         if p.is_dir():
             return p
 
-    # 2. Repository-relative path (4 levels up from this file to repo root)
+    # 2. importlib.resources (works in PyPI installs)
+    try:
+        import importlib.resources as resources
+
+        contracts_ref = resources.files("omnibase_core") / "contracts" / "runtime"
+        contracts_path = Path(str(contracts_ref))
+        if contracts_path.is_dir():
+            return contracts_path
+    except (ImportError, TypeError, FileNotFoundError):
+        pass
+
+    # 3. Repository-relative path (4 levels up from this file to repo root)
     # this file: src/omnibase_core/contracts/runtime_contracts.py
     # repo root: ../../../../contracts/runtime/
     repo_root = Path(__file__).parent.parent.parent.parent
@@ -48,5 +61,5 @@ def get_runtime_contracts_dir() -> Path:
 
     raise FileNotFoundError(  # error-ok: FileNotFoundError is correct for file lookup
         "Runtime contracts not found. Set ONEX_RUNTIME_CONTRACTS_DIR or "
-        "ensure contracts/runtime/ exists in the omnibase_core repository."
+        "ensure contracts/runtime/ is packaged in the wheel."
     )
