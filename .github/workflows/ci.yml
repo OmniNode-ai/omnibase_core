@@ -892,6 +892,18 @@ jobs:
           fi
 
   # CI Summary - final aggregator for all gates (OMN-2226)
+  # Cross-repo boundary validation (OMN-6576)
+  # Warn-only mode — does not block PRs, just surfaces boundary parity issues.
+  boundary-validation:
+    name: Cross-repo boundary validation
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@main
+        with:
+          checks: "boundary-parity"
+          warn-only: "true"
+
   # API-STABLE check_name: "CI Summary"
   # Aggregates Quality Gate + Tests Gate into a single top-level status.
   # Not strictly required for omnibase_core (no path filtering on Tier A gates),
