@@ -23,7 +23,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
 
 
-def _base_data() -> dict:
+def _base_data() -> dict[str, object]:
     """Return minimal valid handler contract data."""
     return {
         "handler_id": "node.test.handler",
@@ -100,4 +100,4 @@ def test_extended_contract_is_frozen() -> None:
     data = _base_data()
     contract = ModelHandlerContractExtended(**data)
     with pytest.raises(ValidationError):
-        contract.name = "Changed"  # type: ignore[misc]
+        setattr(contract, "name", "Changed")
