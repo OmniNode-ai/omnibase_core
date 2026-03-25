@@ -76,29 +76,17 @@ class ModelHandlerContractExtended(ModelHandlerContract):
         )
     )
 
-    # Override input_model/output_model to also accept dict form used by infra
-    input_model: (
-        dict[  # type: ignore[assignment]
-            str, object
-        ]
-        | str
-    ) = (  # ONEX_EXCLUDE: dict_str_any - infra uses dict-form model refs
-        Field(
-            ...,
-            description="Input model reference (string or dict for infra-extended form)",
-        )
+    # Override input_model/output_model to also accept dict form used by infra.
+    # ONEX_EXCLUDE: dict_str_any - infra uses dict-form model refs
+    input_model: dict[str, object] | str = Field(  # type: ignore[assignment]
+        ...,
+        description="Input model reference (string or dict for infra-extended form)",
     )
 
-    output_model: (
-        dict[  # type: ignore[assignment]
-            str, object
-        ]
-        | str
-    ) = (  # ONEX_EXCLUDE: dict_str_any - infra uses dict-form model refs
-        Field(
-            ...,
-            description="Output model reference (string or dict for infra-extended form)",
-        )
+    # ONEX_EXCLUDE: dict_str_any - infra uses dict-form model refs
+    output_model: dict[str, object] | str = Field(  # type: ignore[assignment]
+        ...,
+        description="Output model reference (string or dict for infra-extended form)",
     )
 
 
