@@ -950,7 +950,9 @@ import redis  # This is just documentation
 
         assert len(analyzer.violations) == 0
 
-    def test_comments_containing_banned_names_pass(self) -> None:
+    def test_comments_containing_banned_names_pass(  # TODO_FORMAT_EXEMPT: test fixture
+        self,
+    ) -> None:
         """Test that comments with banned import names don't trigger violations."""
         skip_if_module_not_loaded()
 

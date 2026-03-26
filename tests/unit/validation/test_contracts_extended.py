@@ -350,7 +350,7 @@ operations: []
         assert len(errors) > 0
         assert any("Manual YAML detected" in error for error in errors)
 
-    def test_validate_no_manual_yaml_multiple_indicators(
+    def test_validate_no_manual_yaml_multiple_indicators(  # TODO_FORMAT_EXEMPT: test fixture
         self,
         tmp_path: Path,
     ) -> None:
@@ -375,7 +375,9 @@ operations: []
         # Should detect at least one indicator
         assert len(errors) > 0
 
-    def test_validate_no_manual_yaml_case_variations(self, tmp_path: Path) -> None:
+    def test_validate_no_manual_yaml_case_variations(  # TODO_FORMAT_EXEMPT: test fixture
+        self, tmp_path: Path
+    ) -> None:
         """Test detection with case variations of indicators."""
         gen_dir = tmp_path / "generated"
         gen_dir.mkdir()

@@ -38,7 +38,7 @@ from omnibase_core.models.discovery.model_request_introspection_event import (
     ModelRequestIntrospectionEvent,
 )
 
-# TODO: Re-enable these imports when the tools are implemented
+# TODO(OMN-6655): Re-enable these imports when the tools are implemented
 # from omnibase_core.nodes.node_registry.v1_0_0.tools.tool_discovery_coordinator import (
 #     ToolDiscoveryCoordinator,
 # )

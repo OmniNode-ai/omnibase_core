@@ -286,7 +286,7 @@ class TestModelOutputFormatOptionsStringData:
     instead of raw values. Tests are commented until this is fixed.
     """
 
-    # TODO: Uncomment these tests when create_from_string_data is fixed
+    # TODO(OMN-6655): Uncomment these tests when create_from_string_data is fixed
     # to handle ModelSchemaValue objects returned by converter registry
 
     # def test_create_from_string_data_basic(self):

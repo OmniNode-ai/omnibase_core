@@ -1009,7 +1009,7 @@ import redis  # This is just documentation
 
         assert len(checker.violations) == 0
 
-    def test_comments_containing_imports_pass(
+    def test_comments_containing_imports_pass(  # TODO_FORMAT_EXEMPT: test fixture
         self, validator: TransportValidatorModule
     ) -> None:
         """Test that comments with import names don't trigger violations."""
