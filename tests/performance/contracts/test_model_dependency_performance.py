@@ -35,67 +35,6 @@ class TestModelDependencyPerformance:
     """
 
     @pytest.mark.performance
-    @pytest.mark.skip(
-        reason="Pattern _CAMEL_TO_SNAKE_PATTERN removed in PR to reduce memory footprint"
-    )
-    def test_regex_compilation_performance(self):
-        """Test that pre-compiled regex patterns perform well."""
-        # Access class-level compiled patterns
-        module_pattern = ModelDependency._MODULE_PATTERN
-        camel_to_snake_pattern = ModelDependency._CAMEL_TO_SNAKE_PATTERN
-
-        # Test module paths for regex performance
-        test_modules = [
-            "simple.module",
-            "very.long.module.path.with.many.segments.that.could.slow.down.regex",
-            "a" * 50 + ".module",  # Long segment names
-            "omnibase_core.models.workflow.dependency_manager",
-            "service-name.sub-module.component_handler",
-        ]
-
-        # Benchmark module pattern matching
-        start_time = time.perf_counter()
-        iterations = 10000
-
-        for _ in range(iterations):
-            for module in test_modules:
-                match = module_pattern.match(module)
-                assert match is not None, f"Valid module should match: {module}"
-
-        module_time = time.perf_counter() - start_time
-        avg_module_time_us = (module_time / (iterations * len(test_modules))) * 1000000
-
-        # Benchmark camel-to-snake conversion
-        camel_cases = [
-            "SimpleClass",
-            "VeryLongClassNameWithManyWordsToTest",
-            "APIHandler",
-            "XMLParser",
-            "HTTPSConnection",
-        ]
-
-        start_time = time.perf_counter()
-
-        for _ in range(iterations):
-            for camel in camel_cases:
-                converted = camel_to_snake_pattern.sub("_", camel).lower()
-                # Just perform the conversion for timing - don't assert results
-
-        snake_time = time.perf_counter() - start_time
-        avg_snake_time_us = (snake_time / (iterations * len(camel_cases))) * 1000000
-
-        # Performance targets: <50 microseconds per operation
-        assert avg_module_time_us < 50, (
-            f"Module regex too slow: {avg_module_time_us:.2f}μs"
-        )
-        assert avg_snake_time_us < 50, (
-            f"Snake case regex too slow: {avg_snake_time_us:.2f}μs"
-        )
-
-        print(f"✅ Module regex performance: {avg_module_time_us:.2f}μs per match")
-        print(f"✅ Snake case conversion: {avg_snake_time_us:.2f}μs per conversion")
-
-    @pytest.mark.performance
     def test_security_validation_performance(self):
         """Test performance of security validation checks."""
         # Security violation patterns (should be fast to reject)
