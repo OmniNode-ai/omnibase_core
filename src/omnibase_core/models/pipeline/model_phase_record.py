@@ -55,4 +55,4 @@ class ModelPhaseRecord(BaseModel):
         """Ensure completed_at has UTC timezone info."""
         if isinstance(v, datetime) and v.tzinfo is None:
             return v.replace(tzinfo=UTC)
-        return v  # type: ignore[no-any-return]
+        return v

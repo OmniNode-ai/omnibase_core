@@ -130,9 +130,7 @@ def effect_boundary(
 
             @wraps(func)
             async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                # NOTE(OMN-1147): mypy cannot track R through async/await with ParamSpec.
-                # Safe because we're awaiting the same func that was passed in.
-                return await func(*args, **kwargs)  # type: ignore[no-any-return]
+                return await func(*args, **kwargs)
 
             # Attach metadata to the async wrapper
             setattr(async_wrapper, EFFECT_BOUNDARY_ATTR, boundary)

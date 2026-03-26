@@ -621,11 +621,11 @@ class ServiceProtocolAuditor:
 
         # Gather all issue types
         if self.enable_complexity_analysis:
-            issues.extend(await self.analyze_complexity(file_path, source))  # type: ignore[arg-type]
+            issues.extend(await self.analyze_complexity(file_path, source))
         if self.enable_style_checking:
-            issues.extend(await self.check_naming_conventions(file_path, source))  # type: ignore[arg-type]
-        issues.extend(await self.validate_documentation(file_path, source))  # type: ignore[arg-type]
-        issues.extend(self.detect_code_smells(file_path, source))  # type: ignore[arg-type]
+            issues.extend(await self.check_naming_conventions(file_path, source))
+        issues.extend(await self.validate_documentation(file_path, source))
+        issues.extend(self.detect_code_smells(file_path, source))
 
         # Determine compliance and score
         critical_count = sum(1 for i in issues if i.severity == "critical")
@@ -657,12 +657,12 @@ class ServiceProtocolAuditor:
 
         return _QualityReport(
             file_path=file_path,
-            metrics=metrics,  # type: ignore[arg-type]
+            metrics=metrics,
             issues=issues,
             standards_compliance=standards_ok,
             overall_score=round(score, 2),
             recommendations=recommendations,
-        )  # type: ignore[return-value]
+        )
 
     async def validate_directory_quality(
         self, directory_path: str, file_patterns: list[str] | None = None
@@ -854,7 +854,7 @@ class ServiceProtocolAuditor:
                         ),
                     )
 
-        return issues  # type: ignore[return-value]
+        return issues
 
     async def check_naming_conventions(
         self, file_path: str, content: str | None = None
@@ -945,7 +945,7 @@ class ServiceProtocolAuditor:
                         ),
                     )
 
-        return issues  # type: ignore[return-value]
+        return issues
 
     async def analyze_complexity(
         self, file_path: str, content: str | None = None
@@ -1002,7 +1002,7 @@ class ServiceProtocolAuditor:
                     ),
                 )
 
-        return issues  # type: ignore[return-value]
+        return issues
 
     async def validate_documentation(
         self, file_path: str, content: str | None = None
@@ -1076,7 +1076,7 @@ class ServiceProtocolAuditor:
                         ),
                     )
 
-        return issues  # type: ignore[return-value]
+        return issues
 
     def suggest_refactoring(
         self, file_path: str, content: str | None = None
@@ -1217,4 +1217,4 @@ class ServiceProtocolAuditor:
                 f"{len(failing_files)} file(s) do not meet quality standards",
             )
 
-        return result  # type: ignore[return-value]
+        return result

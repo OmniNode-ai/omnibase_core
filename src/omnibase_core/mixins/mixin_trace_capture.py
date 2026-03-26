@@ -238,7 +238,7 @@ class MixinTraceCapture:
             )
             await store.put(trace)
 
-        return result_value, trace  # type: ignore[return-value]
+        return result_value, trace
 
     # ------------------------------------------------------------------
     # Store Access
