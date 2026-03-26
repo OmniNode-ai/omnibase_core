@@ -257,8 +257,7 @@ def __getattr__(name: str) -> type:
     ):
         import omnibase_core.validation.validator_contract_linter as vcl
 
-        # NOTE(OMN-1302): Lazy import returns module constant. Safe because name checked in conditional.
-        return getattr(vcl, name)  # type: ignore[no-any-return]
+        return getattr(vcl, name)
 
     raise AttributeError(  # error-ok: required for __getattr__ protocol
         f"module {__name__!r} has no attribute {name!r}"
