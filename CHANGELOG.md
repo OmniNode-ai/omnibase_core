@@ -1,3 +1,17 @@
+## v0.33.0 (2026-03-26)
+
+### Added
+- feat(contracts): add ModelHandlerContractExtended for infra YAML fields [OMN-6483] (#728)
+
+### Fixed
+- fix: include runtime contract YAMLs as package-data [OMN-6440] (#726)
+- fix(ci): treat skipped test matrix as pass in Tests Gate [OMN-6693] (#734)
+- fix(tests): remove 52 stale skip guards for now-implemented EnumNodeType._KIND_MAP [OMN-6685] (#733)
+
+### Changed
+- chore(deps): bump actions/checkout from 4 to 6 (#725)
+- chore: standardize TODO markers with ticket references [OMN-6655] (#735)
+
 ## v0.32.0 (2026-03-25)
 
 ### Added
