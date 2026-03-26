@@ -103,9 +103,9 @@ state_transitions:
           version: {major: 1, minor: 0, patch: 0}
           condition_type: data_validation
         - condition_name: minimum_contracts_loaded
-          expression: loaded_contracts min_length 1
+          expression: loaded_contracts min_length 0
           required: true
-          description: At least one contract must be loaded
+          description: Zero or more contracts loaded (empty dir is valid per contract_loader_effect)
           version: {major: 1, minor: 0, patch: 0}
           condition_type: data_validation
       actions:
@@ -268,8 +268,11 @@ state_transitions:
       rollback_transitions:
         - transition_name: rollback_force_reload
           from_state: loading
-          to_state: ready
+          to_state: error
           trigger: undo_force_reload
+          # Rollback returns to error (not ready) because force_reload is the manual
+          # recovery path from the error state. Rolling back to ready without passing
+          # through complete_validation would violate the FSM invariant.
       version: {major: 1, minor: 0, patch: 0}
       operation_type: administrative
     - operation_name: clear_registry

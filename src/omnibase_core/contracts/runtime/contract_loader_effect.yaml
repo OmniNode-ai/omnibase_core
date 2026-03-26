@@ -60,7 +60,7 @@ effect_operations:
         handler_type: filesystem
         file_path_template: "${env.ONEX_CONTRACTS_DIR:./contracts}"
         operation: read
-        timeout_ms: 30000
+        timeout_ms: 10000  # Per-attempt timeout; 6 attempts * 10s = 60s fits in operation_timeout_ms
         atomic: false  # Read operations don't need atomicity
         create_dirs: false  # Don't create dirs for read
         encoding: utf-8
@@ -96,7 +96,7 @@ effect_operations:
         pattern: "**/*.{yaml,yml}"
         exclude_patterns:
           - "**/runtime/**"  # Don't reload runtime contracts
-          - "**/_*.yaml"  # Skip disabled contracts (underscore prefix)
+          - "**/_*.{yaml,yml}"  # Skip disabled contracts (underscore prefix)
           - "**/.*"  # Skip hidden files
           - "**/__pycache__/**"  # Skip Python cache directories
         watch_mode: true
@@ -114,11 +114,11 @@ effect_operations:
         extraction_engine: jsonpath
 
       # Override retry for scan operation
-      # Timing Validation: 500 + 1000 + 2000 + 4000 + 5000(capped) = 12500ms * 1.15 = 14375ms
-      # Worst case retry (14375ms) << timeout (60000ms) - PASS (76% margin)
+      # Timing Validation: 4 attempts * 10s = 40s + backoff (500 + 1000 + 2000 = 3500ms * 1.15 = 4025ms)
+      # Worst case ~44s << operation_timeout (60000ms) - PASS (27% margin)
       retry_policy:
         enabled: true
-        max_retries: 5
+        max_retries: 3
         backoff_strategy: exponential
         base_delay_ms: 500
         max_delay_ms: 5000
@@ -178,8 +178,9 @@ effect_operations:
         fail_on_empty: true  # Empty contract file is an error
         extraction_engine: jsonpath
 
-      # Timing Validation: 200 + 400 + 800 = 1400ms * 1.1 = 1540ms
-      # Worst case retry (1540ms) << timeout (15000ms) - PASS (90% margin)
+      # Timing Validation (retry backoff only): 200 + 400 + 800 = 1400ms * 1.1 = 1540ms
+      # Per-attempt budget: 4 attempts * 10s = 40s + 1540ms backoff = ~42s
+      # Worst case (42s) << operation_timeout (45000ms) - PASS
       retry_policy:
         enabled: true
         max_retries: 3
@@ -188,7 +189,7 @@ effect_operations:
         max_delay_ms: 2000
         jitter_factor: 0.1
 
-      operation_timeout_ms: 15000  # 15 second timeout per file
+      operation_timeout_ms: 45000  # 45s covers 4 attempts * 10s + backoff delays
 
   # Circuit breaker for filesystem operations
   circuit_breaker:
