@@ -55,9 +55,6 @@ class TestEnumNodeTypeKindMapping:
 
         CRITICAL: This test MUST pass for the system to function correctly.
         """
-        # Skip this test if _KIND_MAP doesn't exist yet (pre-refactor state)
-        if not hasattr(EnumNodeType, "_KIND_MAP"):
-            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         # UNKNOWN is intentionally unmapped - exclude it from completeness check
         all_types = set(EnumNodeType) - {EnumNodeType.UNKNOWN}
@@ -104,11 +101,6 @@ class TestEnumNodeTypeKindMapping:
         """
         # Skip this test until the refactor is complete and _KIND_MAP exists
         # At that point, all collisions should be resolved
-        if not hasattr(EnumNodeType, "_KIND_MAP"):
-            pytest.skip(
-                "EnumNodeType._KIND_MAP not yet implemented. "
-                "This test will enforce name uniqueness after refactor."
-            )
 
         kind_names = {k.name.upper() for k in EnumNodeKind}
         type_names = {t.name.upper() for t in EnumNodeType}
@@ -150,9 +142,6 @@ class TestEnumNodeTypeKindMapping:
 
         CRITICAL: Invalid mappings can cause runtime errors in node routing.
         """
-        # Skip this test if get_node_kind doesn't exist yet (pre-refactor state)
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         # Exclude UNKNOWN - it intentionally raises ModelOnexError
         for node_type in EnumNodeType:
@@ -190,9 +179,6 @@ class TestEnumNodeTypeKindMapping:
         NOTE: This test validates the STRUCTURE of the mapping, not specific
         values. Adjust assertions based on actual mapping decisions.
         """
-        # Skip this test if mapping doesn't exist yet (pre-refactor state)
-        if not hasattr(EnumNodeType, "_KIND_MAP"):
-            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         # Example semantic checks - adjust based on actual mapping
         compute_related_types = {
@@ -228,9 +214,6 @@ class TestEnumNodeTypeKindMapping:
 
         CRITICAL: Incomplete mapping causes runtime errors during node dispatch.
         """
-        # Skip this test if _KIND_MAP doesn't exist yet (pre-refactor state)
-        if not hasattr(EnumNodeType, "_KIND_MAP"):
-            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         mapping_count = len(EnumNodeType._KIND_MAP)
         # UNKNOWN is intentionally unmapped, so expected count is len - 1
@@ -258,9 +241,6 @@ class TestEnumNodeTypeKindMapping:
 
         CRITICAL: Invalid mapping values cause type errors in node routing.
         """
-        # Skip this test if _KIND_MAP doesn't exist yet (pre-refactor state)
-        if not hasattr(EnumNodeType, "_KIND_MAP"):
-            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         invalid_mappings = []
         for node_type, kind in EnumNodeType._KIND_MAP.items():
@@ -286,9 +266,6 @@ class TestEnumNodeTypeKindMapping:
         NOTE: This is a RECOMMENDATION, not a hard requirement. Some kinds
         may not have implementations yet. This test warns about unused kinds.
         """
-        # Skip this test if _KIND_MAP doesn't exist yet (pre-refactor state)
-        if not hasattr(EnumNodeType, "_KIND_MAP"):
-            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         # Count how many types map to each kind
         kind_usage = dict.fromkeys(EnumNodeKind, 0)
@@ -324,9 +301,6 @@ class TestEnumNodeTypeKindMapping:
 
         CRITICAL: Many-to-many mappings create ambiguity in node routing.
         """
-        # Skip this test if _KIND_MAP doesn't exist yet (pre-refactor state)
-        if not hasattr(EnumNodeType, "_KIND_MAP"):
-            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         # Verify each type appears exactly once in the mapping
         type_occurrences: dict[EnumNodeType, int] = {}
@@ -363,9 +337,6 @@ class TestHasNodeKind:
         All node types except UNKNOWN have kind mappings, so has_node_kind()
         should return True for them.
         """
-        # Skip this test if has_node_kind doesn't exist yet
-        if not hasattr(EnumNodeType, "has_node_kind"):
-            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
 
         # Test all types except UNKNOWN
         for node_type in EnumNodeType:
@@ -385,9 +356,6 @@ class TestHasNodeKind:
         UNKNOWN intentionally has no kind mapping, so has_node_kind() must
         return False to enable defensive programming patterns.
         """
-        # Skip this test if has_node_kind doesn't exist yet
-        if not hasattr(EnumNodeType, "has_node_kind"):
-            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
 
         result = EnumNodeType.has_node_kind(EnumNodeType.UNKNOWN)
         assert result is False, (
@@ -397,36 +365,26 @@ class TestHasNodeKind:
 
     def test_has_node_kind_for_compute_generic(self) -> None:
         """Verify has_node_kind() returns True for COMPUTE_GENERIC."""
-        if not hasattr(EnumNodeType, "has_node_kind"):
-            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
 
         assert EnumNodeType.has_node_kind(EnumNodeType.COMPUTE_GENERIC) is True
 
     def test_has_node_kind_for_effect_generic(self) -> None:
         """Verify has_node_kind() returns True for EFFECT_GENERIC."""
-        if not hasattr(EnumNodeType, "has_node_kind"):
-            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
 
         assert EnumNodeType.has_node_kind(EnumNodeType.EFFECT_GENERIC) is True
 
     def test_has_node_kind_for_reducer_generic(self) -> None:
         """Verify has_node_kind() returns True for REDUCER_GENERIC."""
-        if not hasattr(EnumNodeType, "has_node_kind"):
-            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
 
         assert EnumNodeType.has_node_kind(EnumNodeType.REDUCER_GENERIC) is True
 
     def test_has_node_kind_for_orchestrator_generic(self) -> None:
         """Verify has_node_kind() returns True for ORCHESTRATOR_GENERIC."""
-        if not hasattr(EnumNodeType, "has_node_kind"):
-            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
 
         assert EnumNodeType.has_node_kind(EnumNodeType.ORCHESTRATOR_GENERIC) is True
 
     def test_has_node_kind_for_runtime_host_generic(self) -> None:
         """Verify has_node_kind() returns True for RUNTIME_HOST_GENERIC."""
-        if not hasattr(EnumNodeType, "has_node_kind"):
-            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
 
         assert EnumNodeType.has_node_kind(EnumNodeType.RUNTIME_HOST_GENERIC) is True
 
@@ -437,8 +395,6 @@ class TestHasNodeKind:
         This test demonstrates the intended usage pattern where has_node_kind()
         is used to guard calls to get_node_kind().
         """
-        if not hasattr(EnumNodeType, "has_node_kind"):
-            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
 
         # Test the pattern with a mapped type
         node_type = EnumNodeType.COMPUTE_GENERIC
@@ -468,11 +424,6 @@ class TestHasNodeKind:
         has_node_kind() should return True if and only if the node type
         is a key in _KIND_MAP.
         """
-        if not hasattr(EnumNodeType, "has_node_kind"):
-            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
-
-        if not hasattr(EnumNodeType, "_KIND_MAP"):
-            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         for node_type in EnumNodeType:
             expected = node_type in EnumNodeType._KIND_MAP
@@ -502,9 +453,6 @@ class TestEnumNodeTypeKindMappingEdgeCases:
 
         This test ensures the design decision is preserved across refactoring.
         """
-        # Skip this test if get_node_kind doesn't exist yet (pre-refactor state)
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         # UNKNOWN must raise ValueError, NOT return a default kind
         with pytest.raises(ValueError) as exc_info:
@@ -522,9 +470,6 @@ class TestEnumNodeTypeKindMappingEdgeCases:
         This test enforces that UNKNOWN is intentionally excluded from the mapping,
         not accidentally forgotten. If UNKNOWN appears in _KIND_MAP, this test fails.
         """
-        # Skip this test if _KIND_MAP doesn't exist yet (pre-refactor state)
-        if not hasattr(EnumNodeType, "_KIND_MAP"):
-            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         assert EnumNodeType.UNKNOWN not in EnumNodeType._KIND_MAP, (
             "EnumNodeType.UNKNOWN should NOT be in _KIND_MAP. "
@@ -539,9 +484,6 @@ class TestEnumNodeTypeKindMappingEdgeCases:
         This test enforces ERROR HANDLING: the function should raise
         appropriate errors for invalid input.
         """
-        # Skip this test if get_node_kind doesn't exist yet (pre-refactor state)
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         # Test with invalid input (if the method doesn't do type checking,
         # this documents the expected behavior)
@@ -560,9 +502,6 @@ class TestEnumNodeTypeKindMappingEdgeCases:
         NOTE: Python dicts are mutable, so this test documents the
         expectation that _KIND_MAP should not be modified at runtime.
         """
-        # Skip this test if _KIND_MAP doesn't exist yet (pre-refactor state)
-        if not hasattr(EnumNodeType, "_KIND_MAP"):
-            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         # Attempt to modify (if it's a regular dict, this will succeed)
         # This test documents the behavior and can be upgraded to enforce
@@ -581,8 +520,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
 
     def test_get_core_node_types_returns_set(self) -> None:
         """Verify get_core_node_types() returns a set."""
-        if not hasattr(EnumNodeType, "get_core_node_types"):
-            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
 
         result = EnumNodeType.get_core_node_types()
         assert isinstance(result, set), (
@@ -591,8 +528,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
 
     def test_get_infrastructure_types_returns_set(self) -> None:
         """Verify get_infrastructure_types() returns a set."""
-        if not hasattr(EnumNodeType, "get_infrastructure_types"):
-            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
 
         result = EnumNodeType.get_infrastructure_types()
         assert isinstance(result, set), (
@@ -606,8 +541,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
         Core types should include all EnumNodeType values that map to:
         COMPUTE, EFFECT, REDUCER, or ORCHESTRATOR kinds.
         """
-        if not hasattr(EnumNodeType, "get_core_node_types"):
-            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
 
         core_types = EnumNodeType.get_core_node_types()
 
@@ -645,8 +578,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
         Infrastructure types should include all EnumNodeType values that map to
         RUNTIME_HOST kind.
         """
-        if not hasattr(EnumNodeType, "get_infrastructure_types"):
-            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
 
         infra_types = EnumNodeType.get_infrastructure_types()
 
@@ -670,10 +601,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
 
         A node type should be either core or infrastructure, never both.
         """
-        if not hasattr(EnumNodeType, "get_core_node_types"):
-            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
-        if not hasattr(EnumNodeType, "get_infrastructure_types"):
-            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
 
         core_types = EnumNodeType.get_core_node_types()
         infra_types = EnumNodeType.get_infrastructure_types()
@@ -690,8 +617,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
 
         UNKNOWN has no mapping, so it cannot be classified as core.
         """
-        if not hasattr(EnumNodeType, "get_core_node_types"):
-            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
 
         core_types = EnumNodeType.get_core_node_types()
         assert EnumNodeType.UNKNOWN not in core_types, (
@@ -705,8 +630,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
 
         UNKNOWN has no mapping, so it cannot be classified as infrastructure.
         """
-        if not hasattr(EnumNodeType, "get_infrastructure_types"):
-            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
 
         infra_types = EnumNodeType.get_infrastructure_types()
         assert EnumNodeType.UNKNOWN not in infra_types, (
@@ -720,12 +643,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
 
         Every type in _KIND_MAP should appear in either core or infrastructure.
         """
-        if not hasattr(EnumNodeType, "get_core_node_types"):
-            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
-        if not hasattr(EnumNodeType, "get_infrastructure_types"):
-            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
-        if not hasattr(EnumNodeType, "_KIND_MAP"):
-            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         core_types = EnumNodeType.get_core_node_types()
         infra_types = EnumNodeType.get_infrastructure_types()
@@ -748,10 +665,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
 
         For every type in the result, its kind should satisfy is_core_node_type().
         """
-        if not hasattr(EnumNodeType, "get_core_node_types"):
-            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         core_types = EnumNodeType.get_core_node_types()
 
@@ -768,10 +681,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
 
         For every type in the result, its kind should satisfy is_infrastructure_type().
         """
-        if not hasattr(EnumNodeType, "get_infrastructure_types"):
-            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         infra_types = EnumNodeType.get_infrastructure_types()
 
@@ -789,8 +698,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
         This is a key invariant: RUNTIME_HOST_GENERIC should be the only
         infrastructure type currently.
         """
-        if not hasattr(EnumNodeType, "get_infrastructure_types"):
-            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
 
         infra_types = EnumNodeType.get_infrastructure_types()
         assert EnumNodeType.RUNTIME_HOST_GENERIC in infra_types, (
@@ -803,8 +710,6 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
 
         Infrastructure types should never appear in core types.
         """
-        if not hasattr(EnumNodeType, "get_core_node_types"):
-            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
 
         core_types = EnumNodeType.get_core_node_types()
         assert EnumNodeType.RUNTIME_HOST_GENERIC not in core_types, (
@@ -837,8 +742,6 @@ class TestNodeRoutingIntegration:
         This test verifies the full routing pathway for all node types
         that should resolve to EnumNodeKind.COMPUTE.
         """
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         compute_types = [
             EnumNodeType.COMPUTE_GENERIC,
@@ -873,8 +776,6 @@ class TestNodeRoutingIntegration:
         This test verifies the full routing pathway for all node types
         that should resolve to EnumNodeKind.EFFECT.
         """
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         effect_types = [
             EnumNodeType.EFFECT_GENERIC,
@@ -901,8 +802,6 @@ class TestNodeRoutingIntegration:
         This test verifies the full routing pathway for all node types
         that should resolve to EnumNodeKind.REDUCER.
         """
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         reducer_types = [
             EnumNodeType.REDUCER_GENERIC,
@@ -928,8 +827,6 @@ class TestNodeRoutingIntegration:
         This test verifies the full routing pathway for all node types
         that should resolve to EnumNodeKind.ORCHESTRATOR.
         """
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         orchestrator_types = [
             EnumNodeType.ORCHESTRATOR_GENERIC,
@@ -957,8 +854,6 @@ class TestNodeRoutingIntegration:
         This test verifies the full routing pathway for all node types
         that should resolve to EnumNodeKind.RUNTIME_HOST.
         """
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         runtime_host_types = [
             EnumNodeType.RUNTIME_HOST_GENERIC,
@@ -980,8 +875,6 @@ class TestNodeRoutingIntegration:
         the result is always identical. Non-deterministic routing would
         cause unpredictable behavior in node dispatch.
         """
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         # Test determinism for a sample of each kind
         test_cases = [
@@ -1015,8 +908,6 @@ class TestNodeRoutingIntegration:
         and verifies that each one successfully routes to a valid EnumNodeKind.
         This is an integration-level completeness check.
         """
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         # Track successful and failed routings
         successful_routings: dict[EnumNodeType, EnumNodeKind] = {}
@@ -1054,8 +945,6 @@ class TestNodeRoutingIntegration:
         - I/O types route to effect kinds (EFFECT)
         - Infrastructure types route to infrastructure kinds (RUNTIME_HOST)
         """
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         # Semantic category mappings
         processing_types = {
@@ -1123,8 +1012,6 @@ class TestNodeRoutingIntegration:
         corresponding kind (e.g., COMPUTE). This is a fundamental invariant
         of the naming convention.
         """
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         generic_mappings = [
             (EnumNodeType.COMPUTE_GENERIC, EnumNodeKind.COMPUTE),
@@ -1150,8 +1037,6 @@ class TestNodeRoutingIntegration:
         REDUCER, ORCHESTRATOR) has at least one EnumNodeType that routes to it.
         A kind without routing sources would be unreachable in the architecture.
         """
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         core_kinds = {
             EnumNodeKind.COMPUTE,
@@ -1190,8 +1075,6 @@ class TestNodeRoutingIntegration:
         at least one EnumNodeType. Without routing sources, RUNTIME_HOST
         nodes could not be properly classified.
         """
-        if not hasattr(EnumNodeType, "get_node_kind"):
-            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
         runtime_host_sources = []
 
