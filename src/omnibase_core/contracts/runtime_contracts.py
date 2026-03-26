@@ -10,8 +10,9 @@ configuration.
 Resolution order:
     1. ``ONEX_RUNTIME_CONTRACTS_DIR`` env var (development/deployment override)
     2. ``importlib.resources`` (works in PyPI installs)
-    3. Repository-relative path (works in dev and worktrees)
-    4. ``importlib.resources`` package data from ``runtime_data`` subpackage
+    3. Package-relative path (works when pip-installed, e.g. Docker)
+    4. Repository-relative path (works in dev and worktrees)
+    5. ``importlib.resources`` package data from ``runtime_data`` subpackage
 """
 
 from __future__ import annotations
@@ -27,8 +28,9 @@ def get_runtime_contracts_dir() -> Path:
     Resolution order:
         1. ``ONEX_RUNTIME_CONTRACTS_DIR`` env var (explicit override)
         2. ``importlib.resources`` (works in PyPI installs)
-        3. Repository-relative: ``<repo_root>/contracts/runtime/``
-        4. Package data via ``importlib.resources`` from ``runtime_data``
+        3. Package-relative: ``<package>/contracts/runtime/``
+        4. Repository-relative: ``<repo_root>/contracts/runtime/``
+        5. Package data via ``importlib.resources`` from ``runtime_data``
 
     Returns:
         Path to the directory containing the 5 runtime contract YAMLs.
@@ -54,13 +56,20 @@ def get_runtime_contracts_dir() -> Path:
     except (ImportError, TypeError, FileNotFoundError):
         pass
 
-    # 3. Repository-relative path (4 levels up from this file to repo root)
+    # 3. Package-relative path (contracts installed alongside this module)
+    # this file: omnibase_core/contracts/runtime_contracts.py
+    # contracts:  omnibase_core/contracts/runtime/
+    pkg_dir = Path(__file__).parent / "runtime"
+    if pkg_dir.is_dir():
+        return pkg_dir
+
+    # 4. Repository-relative path (4 levels up from this file to repo root)
     # this file: src/omnibase_core/contracts/runtime_contracts.py
     # repo root: ../../../../contracts/runtime/
     repo_root = Path(__file__).parent.parent.parent.parent
-    pkg_dir = repo_root / "contracts" / "runtime"
-    if pkg_dir.is_dir():
-        return pkg_dir
+    repo_dir = repo_root / "contracts" / "runtime"
+    if repo_dir.is_dir():
+        return repo_dir
 
     # 4. Package data (PyPI install) — contracts are bundled inside the
     # package at omnibase_core/contracts/runtime_data/.
