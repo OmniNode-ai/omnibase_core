@@ -81,11 +81,12 @@ def test_extended_contract_accepts_dict_output_model() -> None:
 
 
 @pytest.mark.unit
-def test_base_contract_rejects_extra_fields() -> None:
-    """Base contract must still reject extra fields (extra='forbid' unchanged)."""
+def test_base_contract_ignores_extra_fields() -> None:
+    """Base contract silently ignores extra fields (extra='ignore')."""
     data = {**_base_data(), "handler_routing": {"strategy": "round-robin"}}
-    with pytest.raises(ValidationError, match="handler_routing"):
-        ModelHandlerContract(**data)
+    contract = ModelHandlerContract(**data)
+    # extra="ignore" means the field is accepted but not stored
+    assert not hasattr(contract, "handler_routing")
 
 
 @pytest.mark.unit
