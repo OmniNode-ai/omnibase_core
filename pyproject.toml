@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.31.1"
+version = "0.32.0"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode.ai", email = "contact@omninode.ai"}
@@ -104,6 +104,10 @@ onex-change-control = { git = "https://github.com/OmniNode-ai/onex_change_contro
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/omnibase_core"]
+
+[tool.hatch.build]
+# Include YAML contract files in the wheel for PyPI installs (OMN-6484)
+artifacts = ["src/omnibase_core/**/*.yaml"]
 
 [tool.ruff]
 target-version = "py312"

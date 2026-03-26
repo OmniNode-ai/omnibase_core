@@ -879,10 +879,13 @@ jobs:
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Parallel Tests (20 splits) | $parallel |" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "$parallel" == "success" ]]; then
+          # Accept "success" (tests ran and passed) or "skipped" (tests correctly
+          # skipped because upstream quality-gate was skipped, e.g. dependabot PRs
+          # that only touch .github/ files and skip version-pin-check).
+          if [[ "$parallel" == "success" || "$parallel" == "skipped" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Tests Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
-            echo "All 20 test splits passed."
+            echo "**Tests Gate: PASSED** (matrix result: $parallel)" >> $GITHUB_STEP_SUMMARY
+            echo "Test matrix result: $parallel"
             exit 0
           else
             echo "" >> $GITHUB_STEP_SUMMARY
@@ -892,6 +895,18 @@ jobs:
           fi
 
   # CI Summary - final aggregator for all gates (OMN-2226)
+  # Cross-repo boundary validation (OMN-6576)
+  # Warn-only mode — does not block PRs, just surfaces boundary parity issues.
+  boundary-validation:
+    name: Cross-repo boundary validation
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@8fde6ecec83c5b7ab9045db0066ef87ba02c087a # main 2026-03-25
+        with:
+          checks: "boundary-parity"
+          warn-only: "true"
+
   # API-STABLE check_name: "CI Summary"
   # Aggregates Quality Gate + Tests Gate into a single top-level status.
   # Not strictly required for omnibase_core (no path filtering on Tier A gates),
@@ -925,10 +940,15 @@ jobs:
           echo "| Quality Gate | $quality |" >> $GITHUB_STEP_SUMMARY
           echo "| Tests Gate | $tests |" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "$quality" == "success" ]] && [[ "$tests" == "success" ]]; then
+          # Accept "success" or "skipped" for both gates. Skipped is valid when
+          # upstream jobs are correctly skipped (e.g. dependabot PRs).
+          quality_ok=$([[ "$quality" == "success" || "$quality" == "skipped" ]] && echo true || echo false)
+          tests_ok=$([[ "$tests" == "success" || "$tests" == "skipped" ]] && echo true || echo false)
+
+          if [[ "$quality_ok" == "true" ]] && [[ "$tests_ok" == "true" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**CI Summary: ALL GATES PASSED**" >> $GITHUB_STEP_SUMMARY
-            echo "All CI gates passed."
+            echo "All CI gates passed (quality=$quality, tests=$tests)."
             exit 0
           else
             echo "" >> $GITHUB_STEP_SUMMARY

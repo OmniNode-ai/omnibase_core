@@ -632,20 +632,29 @@ class MixinEffectExecution:
                 return str(value) if value is not None else ""
 
             elif placeholder.startswith("env."):
-                # Extract from environment
-                var_name = placeholder[4:]  # Remove "env."
+                # Extract from environment.  Supports ${env.VAR:default}
+                # syntax where the value after the first colon is the
+                # fallback when the env var is unset.
+                env_expr = placeholder[4:]  # Remove "env."
+                if ":" in env_expr:
+                    var_name, default_value = env_expr.split(":", 1)
+                else:
+                    var_name = env_expr
+                    default_value = None
                 value = os.environ.get(var_name)
-                if value is None:
-                    raise ModelOnexError(
-                        message=f"Environment variable not found: {var_name}",
-                        error_code=EnumCoreErrorCode.CONFIGURATION_NOT_FOUND,
-                        context={
-                            "variable_name": var_name,
-                            "placeholder": placeholder,
-                            "operation_id": str(input_data.operation_id),
-                        },
-                    )
-                return value
+                if value is not None:
+                    return value
+                if default_value is not None:
+                    return default_value
+                raise ModelOnexError(
+                    message=f"Environment variable not found: {var_name}",
+                    error_code=EnumCoreErrorCode.CONFIGURATION_NOT_FOUND,
+                    context={
+                        "variable_name": var_name,
+                        "placeholder": placeholder,
+                        "operation_id": str(input_data.operation_id),
+                    },
+                )
 
             elif placeholder.startswith("secret."):
                 # Extract from secret service (if available)
