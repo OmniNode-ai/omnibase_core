@@ -1,3 +1,8 @@
+## v0.33.1 (2026-03-27)
+
+### Changed
+- chore: remove 11 stale type:ignore comments in service_protocol_auditor (#738)
+
 ## v0.33.0 (2026-03-26)
 
 ### Added
