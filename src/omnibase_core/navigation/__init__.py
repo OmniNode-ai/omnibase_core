@@ -29,6 +29,7 @@ Public API (OMN-2365 epic: Local Agent Graph Navigation):
     - BackwardChainingPlanner: Goal-conditioned backward chaining planner
 """
 
+from omnibase_core.navigation.integration import NavigationFacade
 from omnibase_core.navigation.model_action_set import ActionSetEnumerator, TypedAction
 from omnibase_core.navigation.model_backward_chaining import BackwardChainingPlanner
 from omnibase_core.navigation.model_contract_graph import (
@@ -97,4 +98,6 @@ __all__ = [
     "CycleDetected",
     "MaxDepthExceeded",
     "BackwardChainingPlanner",
+    # Integration facade (OMN-6599)
+    "NavigationFacade",
 ]
