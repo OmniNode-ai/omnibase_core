@@ -36,6 +36,24 @@ These are non-negotiable architectural truths:
 
 ---
 
+## Agent Behavioral Rules (OMN-6888)
+
+### Autonomous mode safety rails
+
+When operating autonomously in this repo:
+- Never disable pre-commit hooks, CI checks, or type checkers to make code pass.
+  Fix the code instead.
+- Never write state files to `~/.claude/` -- use `omni_home/.onex_state/`.
+
+### Contract-first topic definitions
+
+This repo defines the contract framework that all ONEX nodes use. Kafka topic
+declarations belong in contract YAML files (`event_bus.publish_topics` /
+`subscribe_topics`), not hardcoded in application code. The `ContractConfigExtractor`
+and validation pipeline enforce this.
+
+---
+
 ## Non-Goals
 
 We explicitly do **NOT** optimize for:
