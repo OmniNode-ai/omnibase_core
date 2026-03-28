@@ -36,12 +36,15 @@ from __future__ import annotations
 class ${node_class}:
     \"\"\"${node_type_title} node for ${node_name_display}.
 
-    TODO: Implement node logic.
+    TODO(OMN-XXXX): Implement node logic.
     \"\"\"
 
     def process(self, input_data: object) -> object:
-        \"\"\"Process input and return output.\"\"\"
-        raise NotImplementedError
+        \"\"\"Process input and return output.
+
+        TODO(OMN-XXXX): Implement ${node_type} logic for ${node_name_display}.
+        \"\"\"
+        raise NotImplementedError("${node_class}.process not yet implemented")
 """
 )
 
@@ -56,9 +59,9 @@ from __future__ import annotations
 async def handle(input_data: object) -> object:
     \"\"\"Handle ${node_name_display} logic.
 
-    TODO: Implement handler logic.
+    TODO(OMN-XXXX): Implement handler logic for ${node_name_display}.
     \"\"\"
-    raise NotImplementedError
+    raise NotImplementedError("handle() for ${node_name_display} not yet implemented")
 """
 )
 
