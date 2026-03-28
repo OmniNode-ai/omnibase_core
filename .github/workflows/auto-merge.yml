@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-6571: Automatically enable auto-merge (squash) on every PR opened
+# by jonahgabriel. Ensures PRs do not sit idle in the merge queue waiting
+# for manual enrollment.
+name: Auto-Merge
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Enable Auto-Merge
+    runs-on: ubuntu-latest
+    if: github.actor == 'jonahgabriel'
+    steps:
+      - name: Enable auto-merge (squash)
+        run: gh pr merge "${{ github.event.pull_request.number }}" --auto --squash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
