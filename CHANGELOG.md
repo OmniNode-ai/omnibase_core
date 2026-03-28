@@ -1,3 +1,12 @@
+## v0.34.0 (2026-03-28)
+
+### Added
+- feat(navigation): add NavigationFacade integration layer for cross-repo consumers [OMN-6599] (#740)
+- feat(ci): add auto-merge-on-open workflow [OMN-6571] (#742)
+
+### Fixed
+- fix(cli): add descriptive error messages to scaffolder stubs [OMN-6759] (#744)
+
 ## v0.33.1 (2026-03-27)
 
 ### Changed
