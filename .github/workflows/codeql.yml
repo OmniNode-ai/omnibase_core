@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# CodeQL caller workflow — delegates to onex_change_control reusable workflow.
+# OMN-5412
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"  # Weekly Monday 6am UTC
+
+jobs:
+  codeql:
+    uses: OmniNode-ai/onex_change_control/.github/workflows/codeql-reusable.yml@main
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
