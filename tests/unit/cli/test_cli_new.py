@@ -164,3 +164,45 @@ def test_onex_new_node_default_type_is_compute(tmp_path: Path) -> None:
     assert result.exit_code == 0
     node_dir = project / "src" / "defaults" / "nodes" / "my_node"
     assert (node_dir / "node_my_node_compute.py").exists()
+
+
+@pytest.mark.unit
+def test_onex_new_node_stubs_have_descriptive_errors(tmp_path: Path) -> None:
+    """Verify scaffolded stubs have descriptive NotImplementedError messages."""
+    project = _create_project(tmp_path, "stub_check")
+    runner = CliRunner()
+
+    result = runner.invoke(
+        cli,
+        [
+            "new",
+            "node",
+            "my-widget",
+            "--type",
+            "effect",
+            "--project-root",
+            str(project),
+        ],
+    )
+    assert result.exit_code == 0
+
+    node_dir = project / "src" / "stub_check" / "nodes" / "my_widget"
+
+    # Node file should have descriptive NotImplementedError
+    node_content = (node_dir / "node_my_widget_effect.py").read_text()
+    assert (
+        'NotImplementedError("NodeMyWidget.process not yet implemented")'
+        in node_content
+    )
+    assert "TODO(OMN-XXXX)" in node_content
+
+    # Handler should have descriptive NotImplementedError
+    handler_content = (node_dir / "handlers" / "handler_my_widget.py").read_text()
+    assert "NotImplementedError" in handler_content
+    assert "not yet implemented" in handler_content
+
+    # Models should be clean (no NotImplementedError)
+    models_content = (node_dir / "models" / "models_my_widget.py").read_text()
+    assert "NotImplementedError" not in models_content
+    assert "MyWidgetInput" in models_content
+    assert "MyWidgetOutput" in models_content
