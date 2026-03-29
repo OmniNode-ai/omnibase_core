@@ -1,11 +1,26 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""
-Tool Execution Mixin for ONEX Tool Nodes.
+"""Tool Execution Mixin for ONEX Tool Nodes (OMN-6604 adoption pattern).
 
 Provides standardized handling of tool.execution.request events,
 enabling tools to be executed via the event bus in the unified execution model.
+
+Adoption Pattern:
+    Compose this mixin with a concrete node type in downstream repos::
+
+        from omnibase_core.nodes.node_effect import NodeEffect
+        from omnibase_core.mixins.mixin_tool_execution import MixinToolExecution
+
+        class NodeMyToolEffect(NodeEffect, MixinToolExecution):
+            def process(self, input_state: object) -> object:
+                ...
+
+            def get_node_name(self) -> str:
+                return "my-tool-effect"
+
+    The mixin must come AFTER the node type in the MRO for correct
+    cooperative super() delegation.
 """
 
 import time

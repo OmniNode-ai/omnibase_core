@@ -1,6 +1,37 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
+"""Persistent Node Executor Mixin (OMN-6604 adoption pattern).
+
+Provides executor mode capabilities (persistent event loop, tool
+invocation handling, health monitoring) as an opt-in mixin.
+
+Adoption Pattern:
+    Downstream repos compose this mixin with a concrete node type in their
+    own node class. ONEX purity rules prevent pre-composed classes in
+    omnibase_core, so composition happens at the leaf node level::
+
+        # In downstream repo (e.g., omniclaude, omnimemory):
+        from omnibase_core.nodes.node_effect import NodeEffect
+        from omnibase_core.mixins.mixin_node_executor import MixinNodeExecutor
+
+        class NodeMyPersistentEffect(NodeEffect, MixinNodeExecutor):
+            async def execute_effect(self) -> None:
+                ...
+
+    For generic compute nodes, parameterize the generics::
+
+        from omnibase_core.nodes.node_compute import NodeCompute
+        from omnibase_core.mixins.mixin_node_executor import MixinNodeExecutor
+
+        class NodeMyPersistentCompute(NodeCompute[MyInput, MyOutput], MixinNodeExecutor):
+            async def execute_compute(self) -> None:
+                ...
+
+    The mixin must come AFTER the node type in the MRO for correct
+    cooperative super() delegation.
+"""
+
 import types
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast

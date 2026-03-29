@@ -533,6 +533,24 @@ class MixinHealthCheck:
             issues=[issue.message for issue in health.issues],
         )
 
+    async def get_health_report(self) -> dict[str, object]:
+        """Run all configured health probes and return aggregated results.
+
+        Runs ``health_check_async()`` and converts the result into a plain
+        dict suitable for dispatch engine health reporting (OMN-6606).
+
+        Returns:
+            Dict with ``status``, ``health_score``, ``checks`` (per-check
+            results), and ``issues`` (list of issue messages).
+        """
+        health = await self.health_check_async()
+        return {
+            "status": health.status,
+            "health_score": health.health_score,
+            "issues": [issue.message for issue in health.issues],
+            "node_class": self.__class__.__name__,
+        }
+
     def check_dependency_health(
         self,
         dependency_name: str,
