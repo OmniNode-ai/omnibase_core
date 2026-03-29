@@ -4,6 +4,10 @@
 # OMN-6571: Automatically enable auto-merge (squash) on every PR opened
 # by jonahgabriel. Ensures PRs do not sit idle in the merge queue waiting
 # for manual enrollment.
+#
+# NOTE: This job uses continue-on-error because gh pr merge --auto fails
+# if auto-merge is already enabled or the PR is in the merge queue. That
+# failure is expected and must not block the merge queue.
 name: Auto-Merge
 
 on:
@@ -21,7 +25,7 @@ jobs:
     if: github.actor == 'jonahgabriel'
     steps:
       - name: Enable auto-merge (squash)
+        continue-on-error: true
         run: gh pr merge "${{ github.event.pull_request.number }}" --auto --squash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
