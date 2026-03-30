@@ -626,7 +626,7 @@ wheels = [
 
 [[package]]
 name = "omnibase-core"
-version = "0.34.0"
+version = "0.35.0"
 source = { editable = "." }
 dependencies = [
     { name = "blake3" },
@@ -699,8 +699,8 @@ requires-dist = [
     { name = "dependency-injector", specifier = ">=4.48.3,<5.0.0" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "jsonschema", specifier = ">=4.25.1,<5.0.0" },
-    { name = "omnibase-spi", marker = "extra == 'full'", specifier = ">=0.19.1" },
-    { name = "omnibase-spi", marker = "extra == 'spi'", specifier = ">=0.19.1" },
+    { name = "omnibase-spi", marker = "extra == 'full'", specifier = ">=0.20.2" },
+    { name = "omnibase-spi", marker = "extra == 'spi'", specifier = ">=0.20.2" },
     { name = "prometheus-client", marker = "extra == 'full'", specifier = ">=0.21.0,<1.0.0" },
     { name = "prometheus-client", marker = "extra == 'metrics'", specifier = ">=0.21.0,<1.0.0" },
     { name = "psutil", marker = "extra == 'cli'", specifier = ">=7.2.1" },
@@ -742,16 +742,16 @@ dev = [
 
 [[package]]
 name = "omnibase-spi"
-version = "0.19.1"
+version = "0.20.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "omnibase-core" },
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/cd/c59725d13599dde6d5c0f5d534f1075bbc333c650b35fe4b138ed047bc4d/omnibase_spi-0.19.1.tar.gz", hash = "sha256:e6b51ad013cd225fd9fe16300c9b2696d2705fd91f76f4a21810e2e1876f369c", size = 1119413, upload-time = "2026-03-22T23:25:19.212Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a3/d1/a129c6d6f59b39830cc6ff067980d1f9e950ea77e36a4213fe23be67b6aa/omnibase_spi-0.20.2.tar.gz", hash = "sha256:a44127b14cdb0bb3e41ce6e4c6676d69803f8039df975b6bc212d8166875dbc1", size = 1119614, upload-time = "2026-03-27T03:52:10.899Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/47/3b/273b4f4d1879f366ada923f6d091ef217e42bf0e53af038cec2e995ef7d8/omnibase_spi-0.19.1-py3-none-any.whl", hash = "sha256:fe2b5d3d2ea30ca5c542f17af64bc501bc0411b904442b8ec406d4aa82321305", size = 758303, upload-time = "2026-03-22T23:25:20.679Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/3b/c4b59a1e75b2de1bdcb9c3210196748e9ee5dc5eabeed83b7c81d34a1024/omnibase_spi-0.20.2-py3-none-any.whl", hash = "sha256:194388cebb86f96c803d6ab7cd51fa67c358eb54edae07b35dece59b3fb102dd", size = 758280, upload-time = "2026-03-27T03:52:12.394Z" },
 ]
 
 [[package]]
