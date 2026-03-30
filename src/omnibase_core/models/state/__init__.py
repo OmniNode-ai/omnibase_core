@@ -1,15 +1,8 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""
-State Management Models - Abstract bases for canonical state storage.
+"""State persistence models."""
 
-Provides abstract base classes for version-controlled state management
-in pure reducer architectures.
-"""
+from omnibase_core.models.state.model_state_envelope import ModelStateEnvelope
 
-from .model_canonical_state_base import ModelCanonicalStateBase
-
-__all__ = [
-    "ModelCanonicalStateBase",
-]
+__all__ = ["ModelStateEnvelope"]

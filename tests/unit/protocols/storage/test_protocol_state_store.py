@@ -9,11 +9,9 @@ from datetime import UTC, datetime
 
 import pytest
 
-from omnibase_core.protocols.storage.protocol_state_store import (
-    ModelStateEnvelope,
-    ProtocolStateStore,
-    StateCorruptionError,
-)
+from omnibase_core.errors.error_state_corruption import StateCorruptionError
+from omnibase_core.models.state.model_state_envelope import ModelStateEnvelope
+from omnibase_core.protocols.storage.protocol_state_store import ProtocolStateStore
 
 
 @pytest.mark.unit

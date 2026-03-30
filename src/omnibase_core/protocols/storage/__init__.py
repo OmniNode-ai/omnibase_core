@@ -25,12 +25,10 @@ See Also:
     Added as part of Diff Storage Infrastructure (OMN-1149)
 """
 
+from omnibase_core.errors.error_state_corruption import StateCorruptionError
+from omnibase_core.models.state.model_state_envelope import ModelStateEnvelope
 from omnibase_core.protocols.storage.protocol_diff_store import ProtocolDiffStore
-from omnibase_core.protocols.storage.protocol_state_store import (
-    ModelStateEnvelope,
-    ProtocolStateStore,
-    StateCorruptionError,
-)
+from omnibase_core.protocols.storage.protocol_state_store import ProtocolStateStore
 from omnibase_core.protocols.storage.protocol_trace_store import ProtocolTraceStore
 
 __all__ = [

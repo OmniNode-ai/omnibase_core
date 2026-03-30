@@ -25,33 +25,11 @@ Semantics (behavioral contract):
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
-from pydantic import BaseModel, ConfigDict, Field
+from omnibase_core.models.state.model_state_envelope import ModelStateEnvelope
 
 __all__ = ["ProtocolStateStore"]
-
-
-class StateCorruptionError(Exception):
-    """Raised when persisted state is corrupt or unreadable.
-
-    Distinct from missing state (which returns None). Implementations must raise
-    this when data exists but cannot be deserialized or fails integrity checks.
-    """
-
-
-class ModelStateEnvelope(BaseModel):
-    """Wrapper for persisted state with metadata."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
-
-    node_id: str
-    scope_id: str = Field(default="default")
-    # ONEX_EXCLUDE: dict_str_any — generic state payload, schema enforced by caller
-    data: dict[str, Any]
-    written_at: datetime
-    contract_fingerprint: str = Field(default="")
 
 
 @runtime_checkable
