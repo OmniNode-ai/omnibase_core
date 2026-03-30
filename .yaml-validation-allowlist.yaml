@@ -172,6 +172,14 @@ allowed_files:
     added: "2026-03-01"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/services/state/service_state_disk.py"
+    reason: >-
+      File-based state store - uses yaml.safe_load() to deserialize persisted state YAML files, immediately
+      followed by ModelStateEnvelope.model_validate(). YAML is the persistence format for node state snapshots;
+      raw parsing is required before Pydantic validation. (OMN-7063)
+    added: "2026-03-30"
+    review: "2026-06-13"
+
   - file: "src/omnibase_core/validation/scripts/validate_string_versions.py"
     reason: >-
       Pre-commit hook validation script - uses yaml.safe_load() exclusively for basic YAML syntax checking
