@@ -26,6 +26,17 @@ See Also:
 """
 
 from omnibase_core.protocols.storage.protocol_diff_store import ProtocolDiffStore
+from omnibase_core.protocols.storage.protocol_state_store import (
+    ModelStateEnvelope,
+    ProtocolStateStore,
+    StateCorruptionError,
+)
 from omnibase_core.protocols.storage.protocol_trace_store import ProtocolTraceStore
 
-__all__ = ["ProtocolDiffStore", "ProtocolTraceStore"]
+__all__ = [
+    "ModelStateEnvelope",
+    "ProtocolDiffStore",
+    "ProtocolStateStore",
+    "ProtocolTraceStore",
+    "StateCorruptionError",
+]
