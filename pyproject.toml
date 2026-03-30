@@ -65,6 +65,14 @@ onex-validate-topics = "omnibase_core.validation.scripts.validate_topic_names:ma
 validate-string-versions = "omnibase_core.validation.scripts.validate_string_versions:main"
 onex-validate-links = "omnibase_core.scripts.validate_markdown_links:main"
 
+[project.entry-points."onex.backends"]
+event_bus_inmemory = "omnibase_core.event_bus.event_bus_inmemory:EventBusInmemory"
+state_disk = "omnibase_core.services.state.service_state_disk:ServiceStateDisk"
+
+[project.entry-points."onex.cli"]
+# Core CLI commands are registered directly via [project.scripts]
+# This group is for extensions from other packages
+
 [project.optional-dependencies]
 spi = ["omnibase-spi>=0.20.2"]
 cli = ["psutil>=7.2.1"]
