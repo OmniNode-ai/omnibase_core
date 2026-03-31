@@ -32,6 +32,9 @@ def find_duplicate_filenames(src_dir: Path) -> dict[str, list[Path]]:
     # These are pre-existing issues tracked for future cleanup
     legacy_duplicates = {
         "model_service_registry_config.py",  # core vs service versions
+        "model_compliance_check_detail.py",  # compliance_evidence vs compliance_report
+        "model_compliance_check_result.py",  # compliance_report vs compliance_scan
+        "model_compliance_report_state.py",  # compliance_evidence vs compliance_report
     }
 
     files_by_name = defaultdict(list)
