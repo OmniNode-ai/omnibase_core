@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the compliance evidence EFFECT node.
+# Writes compliance scan results to disk and emits completion event.
+#
+# See: OMN-7071 — compliance evidence EFFECT node
+
+handler_id: node.compliance.evidence
+name: compliance_evidence
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Writes the final compliance report to .onex_state/compliance/ (both a latest alias and a run-specific
+  durable copy) and emits onex.evt.core.compliance-scan-completed.v1 after the durable write is confirmed.
+
+input_model: omnibase_core.models.nodes.compliance_evidence.model_compliance_report_state.ModelComplianceReportState
+output_model: omnibase_core.models.nodes.compliance_evidence.model_compliance_evidence_output.ModelComplianceEvidenceOutput
+
+handler_routing:
+  default_handler: handler:NodeComplianceEvidenceEffect
+
+publish_topics:
+  - onex.evt.core.compliance-scan-completed.v1
+
+subscribe_topics:
+  - onex.evt.core.compliance-report-updated.v1
+
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000
