@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the compliance report reducer node.
+# Pure reducer: delta(state, check_result) -> (new_state, intents[])
+#
+# See: OMN-7070 — compliance report REDUCER node
+
+handler_id: node.compliance.report.reducer
+name: compliance_report_reducer
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: reducer
+node_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Pure reducer that accumulates per-node compliance check results into an aggregate compliance report
+  state. Tracks total/passed/failed counts, maintains a per-node results list with replace-on-duplicate
+  semantics, and includes run identity (run_id, repo_root, scan_started_at) for auditability. #magic___^_^___line
+input_model: omnibase_core.models.nodes.compliance_report.model_compliance_check_result.ModelComplianceCheckResult
+output_model: omnibase_core.models.nodes.compliance_report.model_compliance_report_state.ModelComplianceReportState
+
+descriptor:
+  node_archetype: reducer
+  purity: pure
+  idempotent: true
+  timeout_ms: 5000
