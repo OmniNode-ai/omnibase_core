@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# Compliance scan workflow contract.
+# Declares the 4-node workflow that scans, checks, aggregates, and reports
+# on contract compliance across the platform.
+#
+# See: OMN-7072 — compliance orchestrator and workflow contract
+
+workflow_id: compliance_scan
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: workflow
+description: >
+  Contract compliance verification workflow. Scans all contract.yaml files in a target directory, checks
+  each for structural compliance, aggregates results into a summary report, and writes evidence to disk.
+
+initial_command: onex.cmd.core.compliance-scan-requested.v1
+terminal_event: onex.evt.core.compliance-scan-completed.v1
+
+nodes:
+  - node_compliance_orchestrator
+  - node_compliance_scan_compute
+  - node_compliance_report_reducer
+  - node_compliance_evidence_effect
+
+event_flow:
+  - source: initial_command
+    target: node_compliance_orchestrator
+    topic: onex.cmd.core.compliance-scan-requested.v1
+
+  - source: node_compliance_orchestrator
+    target: node_compliance_scan_compute
+    topic: onex.evt.core.compliance-node-check-requested.v1
+
+  - source: node_compliance_scan_compute
+    target: node_compliance_report_reducer
+    topic: onex.evt.core.compliance-node-check-completed.v1
+
+  - source: node_compliance_report_reducer
+    target: node_compliance_evidence_effect
+    topic: onex.evt.core.compliance-report-ready.v1
+
+  - source: node_compliance_evidence_effect
+    target: terminal
+    topic: onex.evt.core.compliance-scan-completed.v1

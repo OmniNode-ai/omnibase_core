@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the compliance orchestrator node.
+# Coordinates the compliance scan workflow by fanning out
+# one check request per discovered contract.
+#
+# See: OMN-7072 — compliance orchestrator and workflow contract
+
+name: compliance_orchestrator
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: orchestrator
+node_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Orchestrates the contract compliance scan workflow. Subscribes to a scan request command, discovers
+  all contract.yaml files in the target directory, and fans out one check-requested event per discovered
+  contract. #magic___^_^___line
+handler_routing:
+  default_handler: handler:NodeComplianceOrchestrator
+
+descriptor:
+  node_archetype: orchestrator
+  purity: impure
+  idempotent: false
+  timeout_ms: 30000
+
+event_bus:
+  subscribe_topics:
+    - onex.cmd.core.compliance-scan-requested.v1
+  publish_topics:
+    - onex.evt.core.compliance-node-check-requested.v1
