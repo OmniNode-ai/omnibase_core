@@ -596,6 +596,11 @@ from omnibase_core.cli.cli_init import init_command
 
 cli.add_command(init_command, "init")
 
+# Register registry command group from separate module
+from omnibase_core.cli.cli_registry import registry
+
+cli.add_command(registry)
+
 
 if __name__ == "__main__":
     cli()
