@@ -1,3 +1,15 @@
+## v0.37.0 (2026-03-31)
+
+### Added
+- feat(cli): add onex run command for local workflow execution [OMN-7068] (#758)
+- feat(compliance): add compliance orchestrator and workflow contract [OMN-7072] (#762)
+- feat(cli): add onex compliance check command [OMN-7073] (#763)
+- feat(compliance): add compliance evidence EFFECT node [OMN-7071] (#761)
+- feat(compliance): add contract compliance scanner COMPUTE node [OMN-7069] (#759)
+
+### Fixed
+- fix: add node_name to introspection payload from contract metadata [OMN-7088] (#766)
+
 ## v0.36.0 (2026-03-31)
 
 ### Added
