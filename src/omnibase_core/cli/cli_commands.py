@@ -601,6 +601,11 @@ from omnibase_core.cli.cli_registry import registry
 
 cli.add_command(registry)
 
+# Register run command from separate module
+from omnibase_core.cli.cli_run import run_workflow
+
+cli.add_command(run_workflow)
+
 
 if __name__ == "__main__":
     cli()

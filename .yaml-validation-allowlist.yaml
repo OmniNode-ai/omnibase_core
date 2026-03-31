@@ -189,6 +189,14 @@ allowed_files:
     added: "2026-03-10"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/runtime/runtime_local.py"
+    reason: >-
+      Loads workflow contract YAML before extracting terminal_event and node list for runtime orchestration.
+      The raw dict is immediately used to configure the local runtime — no fixed Pydantic model exists
+      for workflow contracts yet. (OMN-7068)
+    added: "2026-03-30"
+    review: "2026-06-13"
+
   - file: "scripts/mixin_dependency_graph.py"
     reason: >-
       Standalone dependency graph utility - uses yaml.safe_load() to load a mixin capability mapping YAML
