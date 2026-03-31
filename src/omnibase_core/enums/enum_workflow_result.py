@@ -17,7 +17,7 @@ class EnumWorkflowResult(str, Enum):
     Values:
         COMPLETED: Terminal event received, evidence written (exit 0).
         TIMEOUT: ``--timeout`` exceeded without terminal event (exit 1).
-        PARTIAL: Some evidence written but no terminal event (exit 2).
+        PARTIAL: Some evidence written but no terminal event (exit 3).
         FAILED: Terminal event received with failure payload (exit 1).
     """
 

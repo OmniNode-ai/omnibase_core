@@ -10,7 +10,7 @@ waits for the terminal event declared in the contract.
 Terminal states:
 - COMPLETED — terminal event received, evidence written (exit 0)
 - TIMEOUT — ``--timeout`` exceeded without terminal event (exit 1)
-- PARTIAL — some evidence written but no terminal event (exit 2)
+- PARTIAL — some evidence written but no terminal event (exit 3)
 - FAILED — terminal event received with failure payload (exit 1)
 """
 
@@ -101,10 +101,24 @@ def load_workflow_contract(
         msg = f"Workflow contract not found: {path}"
         raise ModelOnexError(error_code=EnumCoreErrorCode.FILE_NOT_FOUND, message=msg)
 
-    text = path.read_text(encoding="utf-8")
-    data = yaml.safe_load(
-        text
-    )  # yaml-safe-load-ok: loading contract for Pydantic validation downstream
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        msg = f"Unable to read workflow contract: {path}"
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+            message=msg,
+        ) from exc
+    try:
+        data = yaml.safe_load(
+            text
+        )  # yaml-safe-load-ok: loading contract for Pydantic validation downstream
+    except yaml.YAMLError as exc:
+        msg = f"Workflow contract is not valid YAML: {path}"
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
+        ) from exc
 
     if not isinstance(data, dict):
         msg = f"Workflow contract must be a YAML mapping, got {type(data).__name__}"
@@ -190,7 +204,9 @@ class RuntimeLocal:
             ModelONEXContainer,
         )
 
-        container = ModelONEXContainer(enable_service_registry=True)
+        _container = ModelONEXContainer(
+            enable_service_registry=True
+        )  # used when OMN-7065 lands
         logger.info("RuntimeLocal: container created (state_root=%s)", self.state_root)
 
         # 3. Discover and wire nodes from contract

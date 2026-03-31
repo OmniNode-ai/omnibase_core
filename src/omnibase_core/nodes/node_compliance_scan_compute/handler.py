@@ -17,7 +17,7 @@ compliance checks per node, classified by verification type:
 
 ONEX node type: COMPUTE
 Input:  repo root path (str)
-Output: list[ModelComplianceCheckResult]
+Output: list[ModelScanCheckResult]
 
 .. versionadded:: OMN-7069
 """
@@ -36,8 +36,8 @@ from pydantic import BaseModel
 from omnibase_core.models.nodes.compliance_scan.model_check_result import (
     ModelCheckResult,
 )
-from omnibase_core.models.nodes.compliance_scan.model_compliance_check_result import (
-    ModelComplianceCheckResult,
+from omnibase_core.models.nodes.compliance_scan.model_scan_check_result import (
+    ModelScanCheckResult,
 )
 
 __all__ = [
@@ -61,7 +61,7 @@ class NodeComplianceScanCompute:
     8 structural checks per contract.
     """
 
-    def scan(self, repo_root: str) -> list[ModelComplianceCheckResult]:
+    def scan(self, repo_root: str) -> list[ModelScanCheckResult]:
         """Scan all contract.yaml files under repo_root.
 
         Args:
@@ -72,7 +72,7 @@ class NodeComplianceScanCompute:
         """
         root = Path(repo_root)
         contracts = sorted(root.rglob("contract.yaml"))
-        results: list[ModelComplianceCheckResult] = []
+        results: list[ModelScanCheckResult] = []
 
         for contract_path in contracts:
             result = self._check_contract(contract_path)
@@ -80,7 +80,7 @@ class NodeComplianceScanCompute:
 
         return results
 
-    def _check_contract(self, contract_path: Path) -> ModelComplianceCheckResult:
+    def _check_contract(self, contract_path: Path) -> ModelScanCheckResult:
         """Run all 8 checks on a single contract.yaml."""
         checks: list[ModelCheckResult] = []
 
@@ -145,7 +145,7 @@ class NodeComplianceScanCompute:
 
         all_passed = all(c.passed for c in checks)
 
-        return ModelComplianceCheckResult(
+        return ModelScanCheckResult(
             node_id=node_id,
             contract_path=str(contract_path),
             passed=all_passed,
