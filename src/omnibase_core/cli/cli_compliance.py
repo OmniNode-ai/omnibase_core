@@ -33,11 +33,6 @@ import yaml
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 
-# Expected workflow contract path (created by OMN-7072).
-_COMPLIANCE_WORKFLOW_PATH = (
-    Path(__file__).resolve().parent.parent / "workflows" / "compliance_workflow.yaml"
-)
-
 
 @click.group("compliance")
 def compliance_group() -> None:  # stub-ok
@@ -95,7 +90,7 @@ def check(repo_root: str, output: str) -> None:
 
         # --- 1. Contract Parse ---
         try:
-            with open(contract_path) as f:
+            with open(contract_path, encoding="utf-8") as f:
                 contract_data = yaml.safe_load(
                     f
                 )  # yaml-ok: raw YAML parse for compliance checking
@@ -231,7 +226,7 @@ def check(repo_root: str, output: str) -> None:
         "failed": sum(1 for r in results if not r["passed"]),
         "results": results,
     }
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         yaml.dump(report, f, default_flow_style=False, sort_keys=False)
 
     click.echo(

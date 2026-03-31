@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 import yaml
 from click.testing import CliRunner
@@ -34,12 +36,9 @@ class TestComplianceCommandExists:
 class TestComplianceCheckRuns:
     """Verify compliance check discovers contracts and produces output."""
 
-    def test_check_with_passing_node(self, tmp_path: object) -> None:
+    def test_check_with_passing_node(self, tmp_path: Path) -> None:
         """A minimal valid node with contract + handler file passes all checks."""
-        from pathlib import Path
-
-        tmp = Path(str(tmp_path))
-        node_dir = tmp / "nodes" / "node_test_compute"
+        node_dir = tmp_path / "nodes" / "node_test_compute"
         node_dir.mkdir(parents=True)
 
         contract = {
@@ -53,7 +52,7 @@ class TestComplianceCheckRuns:
         (node_dir / "contract.yaml").write_text(yaml.dump(contract))
         (node_dir / "handler_test.py").write_text("class HandlerTest: pass\n")
 
-        output_path = tmp / "report.yaml"
+        output_path = tmp_path / "report.yaml"
         runner = CliRunner()
         result = runner.invoke(
             cli,
@@ -61,7 +60,7 @@ class TestComplianceCheckRuns:
                 "compliance",
                 "check",
                 "--repo-root",
-                str(tmp),
+                str(tmp_path),
                 "--output",
                 str(output_path),
             ],
@@ -74,15 +73,12 @@ class TestComplianceCheckRuns:
         assert report["passed"] == 1
         assert report["failed"] == 0
 
-    def test_check_with_no_contracts(self, tmp_path: object) -> None:
+    def test_check_with_no_contracts(self, tmp_path: Path) -> None:
         """Empty directory produces no failures."""
-        from pathlib import Path
-
-        tmp = Path(str(tmp_path))
         runner = CliRunner()
         result = runner.invoke(
             cli,
-            ["compliance", "check", "--repo-root", str(tmp)],
+            ["compliance", "check", "--repo-root", str(tmp_path)],
         )
         assert result.exit_code == 0
         assert "No contract.yaml files found" in result.output

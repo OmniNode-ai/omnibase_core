@@ -17,7 +17,7 @@ description: >
   Writes the final compliance report to .onex_state/compliance/ (both a latest alias and a run-specific
   durable copy) and emits onex.evt.core.compliance-scan-completed.v1 after the durable write is confirmed.
 
-input_model: omnibase_core.models.nodes.compliance_evidence.model_compliance_report_state.ModelComplianceReportState
+input_model: omnibase_core.models.nodes.compliance_evidence.model_evidence_report_state.ModelEvidenceReportState
 output_model: omnibase_core.models.nodes.compliance_evidence.model_compliance_evidence_output.ModelComplianceEvidenceOutput
 
 handler_routing:

@@ -16,14 +16,14 @@ from pathlib import Path
 import pytest
 import yaml
 
-from omnibase_core.models.nodes.compliance_evidence.model_compliance_check_detail import (
-    ModelComplianceCheckDetail,
-)
 from omnibase_core.models.nodes.compliance_evidence.model_compliance_check_entry import (
     ModelComplianceCheckEntry,
 )
-from omnibase_core.models.nodes.compliance_evidence.model_compliance_report_state import (
-    ModelComplianceReportState,
+from omnibase_core.models.nodes.compliance_evidence.model_evidence_check_detail import (
+    ModelEvidenceCheckDetail,
+)
+from omnibase_core.models.nodes.compliance_evidence.model_evidence_report_state import (
+    ModelEvidenceReportState,
 )
 from omnibase_core.nodes.node_compliance_evidence_effect.handler import (
     NodeComplianceEvidenceEffect,
@@ -33,9 +33,9 @@ pytestmark = pytest.mark.unit
 
 
 @pytest.fixture
-def sample_report() -> ModelComplianceReportState:
+def sample_report() -> ModelEvidenceReportState:
     """Build a representative compliance report for testing."""
-    return ModelComplianceReportState(
+    return ModelEvidenceReportState(
         total=5,
         passed=4,
         failed=1,
@@ -43,27 +43,27 @@ def sample_report() -> ModelComplianceReportState:
         repo_root="/tmp/test-repo",
         scan_started_at="2026-03-30T12:00:00+00:00",
         results=[
-            ModelComplianceCheckDetail(
+            ModelEvidenceCheckDetail(
                 node_id="node_alpha",
                 passed=True,
                 checks=[ModelComplianceCheckEntry(name="contract_parse", passed=True)],
             ),
-            ModelComplianceCheckDetail(
+            ModelEvidenceCheckDetail(
                 node_id="node_beta",
                 passed=True,
                 checks=[ModelComplianceCheckEntry(name="contract_parse", passed=True)],
             ),
-            ModelComplianceCheckDetail(
+            ModelEvidenceCheckDetail(
                 node_id="node_gamma",
                 passed=True,
                 checks=[ModelComplianceCheckEntry(name="contract_parse", passed=True)],
             ),
-            ModelComplianceCheckDetail(
+            ModelEvidenceCheckDetail(
                 node_id="node_delta",
                 passed=True,
                 checks=[ModelComplianceCheckEntry(name="contract_parse", passed=True)],
             ),
-            ModelComplianceCheckDetail(
+            ModelEvidenceCheckDetail(
                 node_id="node_epsilon",
                 passed=False,
                 checks=[
@@ -76,7 +76,7 @@ def sample_report() -> ModelComplianceReportState:
 
 def test_evidence_writes_report_to_disk(
     tmp_path: Path,
-    sample_report: ModelComplianceReportState,
+    sample_report: ModelEvidenceReportState,
 ) -> None:
     """Effect node writes compliance report with correct structure."""
     handler = NodeComplianceEvidenceEffect(state_root=tmp_path)
