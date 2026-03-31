@@ -6,11 +6,11 @@
 from omnibase_core.models.nodes.compliance_scan.model_check_result import (
     ModelCheckResult,
 )
-from omnibase_core.models.nodes.compliance_scan.model_compliance_check_result import (
-    ModelComplianceCheckResult,
+from omnibase_core.models.nodes.compliance_scan.model_scan_check_result import (
+    ModelScanCheckResult,
 )
 
 __all__ = [
     "ModelCheckResult",
-    "ModelComplianceCheckResult",
+    "ModelScanCheckResult",
 ]

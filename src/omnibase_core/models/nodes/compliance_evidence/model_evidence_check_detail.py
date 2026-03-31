@@ -15,7 +15,7 @@ from omnibase_core.models.nodes.compliance_evidence.model_compliance_check_entry
 )
 
 
-class ModelComplianceCheckDetail(BaseModel):
+class ModelEvidenceCheckDetail(BaseModel):
     """Per-node compliance check result."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")

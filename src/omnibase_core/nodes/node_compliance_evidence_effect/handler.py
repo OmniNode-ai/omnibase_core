@@ -27,8 +27,8 @@ from uuid import uuid4
 
 import yaml
 
-from omnibase_core.models.nodes.compliance_evidence.model_compliance_report_state import (
-    ModelComplianceReportState,
+from omnibase_core.models.nodes.compliance_evidence.model_evidence_report_state import (
+    ModelEvidenceReportState,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class NodeComplianceEvidenceEffect:
         self._event_bus = event_bus
         self._completion_topic = completion_topic
 
-    def execute(self, report: ModelComplianceReportState) -> Path:
+    def execute(self, report: ModelEvidenceReportState) -> Path:
         """Write the compliance report and emit the completion event.
 
         Returns:
