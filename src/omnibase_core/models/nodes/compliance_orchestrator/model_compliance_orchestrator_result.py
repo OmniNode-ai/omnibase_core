@@ -17,7 +17,7 @@ __all__ = ["ModelComplianceOrchestratorResult"]
 class ModelComplianceOrchestratorResult(BaseModel):
     """Result of orchestrator fan-out — list of intents emitted."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     intents: list[ModelCheckRequestIntent] = Field(default_factory=list)
     contracts_discovered: int = 0

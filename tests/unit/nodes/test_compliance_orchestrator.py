@@ -103,13 +103,12 @@ class TestComplianceOrchestrator:
         request = ModelScanRequest(target_dir=str(tmp_path))
         result = handler.handle(request)
 
-        assert result.run_id != ""
-        assert len(result.run_id) > 0
+        assert result.run_id
 
 
 @pytest.mark.unit
-class TestComplianceWorkflowE2E:
-    """End-to-end test: 3 contracts -> orchestrator -> check intents."""
+class TestComplianceWorkflowContract:
+    """Workflow contract validation: 3 contracts -> orchestrator -> check intents."""
 
     def test_three_contracts_full_workflow(self, tmp_path: Path) -> None:
         """3 minimal contracts -> orchestrator -> correct fan-out intents."""

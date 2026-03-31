@@ -13,7 +13,7 @@ __all__ = ["ModelScanRequest"]
 class ModelScanRequest(BaseModel):
     """Input payload for a compliance scan request."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     target_dir: str
     run_id: str = ""

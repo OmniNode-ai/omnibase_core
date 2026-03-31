@@ -13,7 +13,7 @@ __all__ = ["ModelCheckRequestIntent"]
 class ModelCheckRequestIntent(BaseModel):
     """Intent to request a compliance check for a single contract."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     contract_path: str
     node_id: str
