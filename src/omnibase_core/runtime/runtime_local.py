@@ -204,7 +204,7 @@ class RuntimeLocal:
             ModelONEXContainer,
         )
 
-        _container = ModelONEXContainer(
+        self._container = ModelONEXContainer(
             enable_service_registry=True
         )  # used when OMN-7065 lands
         logger.info("RuntimeLocal: container created (state_root=%s)", self.state_root)
