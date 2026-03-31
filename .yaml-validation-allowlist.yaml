@@ -205,6 +205,13 @@ allowed_files:
     added: "2026-03-30"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/cli/cli_compliance.py"
+    reason: >-
+      Compliance CLI parses arbitrary contract.yaml files to perform structural compliance checks. Must
+      load raw YAML to inspect field presence across different contract formats. (OMN-7073)
+    added: "2026-03-30"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
