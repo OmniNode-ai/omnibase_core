@@ -752,6 +752,86 @@ class TestDescriptionField:
 
 
 @pytest.mark.unit
+class TestNodeNameResolution:
+    """Tests for node_name resolution priority chain (OMN-7088).
+
+    Priority:
+      1. Contract metadata name (metadata_loader.metadata.name)
+      2. snake_case of class name (always, not just Node-prefixed)
+      3. UUID fallback (degraded only, logged as warning)
+    """
+
+    def test_node_name_from_contract_metadata(self) -> None:
+        """Priority 1: node_name comes from contract metadata when available."""
+        node = MockNode()
+        mock_metadata = Mock()
+        mock_metadata.name = "node_registration_storage_effect"
+        mock_loader = Mock()
+        mock_loader.metadata = mock_metadata
+        node.metadata_loader = mock_loader
+
+        data = node._gather_introspection_data()
+        assert data.node_name == "node_registration_storage_effect"
+
+    def test_node_name_snake_case_from_class_name(self) -> None:
+        """Priority 2: snake_case of class name when no contract metadata."""
+
+        class NodeRegistrationStorageEffect(MixinIntrospectionPublisher):
+            def __init__(self) -> None:
+                self._node_id = uuid4()
+                self.metadata_loader = None
+
+        node = NodeRegistrationStorageEffect()
+        data = node._gather_introspection_data()
+        assert data.node_name == "node_registration_storage_effect"
+
+    def test_node_name_snake_case_non_node_prefix(self) -> None:
+        """Priority 2: snake_case works for classes not prefixed with 'Node'."""
+
+        class RegistrationStorageEffect(MixinIntrospectionPublisher):
+            def __init__(self) -> None:
+                self._node_id = uuid4()
+                self.metadata_loader = None
+
+        node = RegistrationStorageEffect()
+        data = node._gather_introspection_data()
+        assert data.node_name == "registration_storage_effect"
+
+    def test_node_name_is_never_uuid(self) -> None:
+        """node_name should not be a bare UUID in normal operation."""
+        import re as re_mod
+
+        uuid_pattern = re_mod.compile(
+            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        )
+        node = MockNode()
+        data = node._gather_introspection_data()
+        assert not uuid_pattern.match(data.node_name), (
+            f"node_name should not be a UUID, got: {data.node_name}"
+        )
+
+    def test_node_name_in_published_event(self) -> None:
+        """node_name flows through to the published introspection event."""
+        node = MockNode()
+        mock_metadata = Mock()
+        mock_metadata.name = "my_custom_node"
+        mock_metadata.version = "1.0.0"
+        mock_metadata.author = "ONEX"
+        mock_metadata.copyright = None
+        mock_metadata.description = None
+        mock_loader = Mock()
+        mock_loader.metadata = mock_metadata
+        node.metadata_loader = mock_loader
+        node.event_bus = Mock()
+
+        node._publish_introspection_event()
+
+        envelope = node.event_bus.publish.call_args[0][0]
+        event = envelope.payload
+        assert event.node_name == "my_custom_node"
+
+
+@pytest.mark.unit
 class TestEndToEndIntrospectionEventShape:
     """E2E test: full pipeline from contract metadata to event (Task 9, OMN-6414)."""
 

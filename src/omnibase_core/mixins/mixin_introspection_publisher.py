@@ -246,7 +246,13 @@ class MixinIntrospectionPublisher:
         return None
 
     def _extract_node_name(self) -> str:
-        """Extract node name from class name or metadata."""
+        """Extract node name from contract metadata or class name.
+
+        Priority chain (OMN-7088):
+          1. Contract metadata name (metadata_loader.metadata.name)
+          2. snake_case of class name (CamelCase → snake_case for all classes)
+          3. UUID fallback only in _create_fallback_introspection_data (degraded)
+        """
         try:
             metadata_loader = getattr(self, "metadata_loader", None)
             if metadata_loader and hasattr(metadata_loader, "metadata"):
@@ -269,10 +275,9 @@ class MixinIntrospectionPublisher:
             Exception  # noqa: BLE001
         ):  # fallback-ok: metadata extraction uses fallback to class name
             pass
+        # Priority 2: snake_case of class name (all classes, not just Node-prefixed)
         class_name = self.__class__.__name__
-        if class_name.startswith("Node"):
-            return re.sub("(?<!^)(?=[A-Z])", "_", class_name).lower()
-        return class_name.lower()
+        return re.sub("(?<!^)(?=[A-Z])", "_", class_name).lower()
 
     def _extract_node_version(self) -> ModelSemVer:
         """Extract node version from metadata."""
