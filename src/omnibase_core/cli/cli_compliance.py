@@ -72,8 +72,13 @@ def check(repo_root: str, output: str) -> None:
     repo_root_path = Path(repo_root).resolve()
     output_path = Path(output)
 
-    # Discover contract.yaml files
-    contracts = sorted(repo_root_path.rglob("contract.yaml"))
+    # Discover contract.yaml files (skip examples/ — demo contracts may
+    # intentionally lack handler implementations).
+    contracts = sorted(
+        p
+        for p in repo_root_path.rglob("contract.yaml")
+        if "examples" not in p.relative_to(repo_root_path).parts
+    )
 
     if not contracts:
         click.echo("No contract.yaml files found.")
@@ -105,6 +110,7 @@ def check(repo_root: str, output: str) -> None:
         # --- 2. Handler Resolution ---
         handler_ok = False
         if contract_data:
+            # Method A: handler_routing.default_handler → resolve module file
             handler_routing = contract_data.get("handler_routing", {})
             default_handler = (
                 handler_routing.get("default_handler", "")
@@ -119,28 +125,42 @@ def check(repo_root: str, output: str) -> None:
                 )
                 handler_file = contract_path.parent / f"{module_part}.py"
                 handler_ok = handler_file.exists()
+            # Method B: handler_id present + conventional handler.py exists
+            if not handler_ok and contract_data.get("handler_id"):
+                handler_ok = (contract_path.parent / "handler.py").exists()
+            # Method C: conventional handler.py exists (no routing metadata)
+            if not handler_ok:
+                handler_ok = (contract_path.parent / "handler.py").exists()
         if handler_ok:
             checks_passed.append("handler_resolution")
         else:
             checks_failed.append("handler_resolution")
 
         # --- 3. Schema Conformance ---
-        if (
-            contract_data
-            and "node_id" in contract_data
-            and "node_kind" in contract_data
-        ):
+        # Requires a node identifier (node_id or name) and a type declaration
+        # (node_type or node_kind).
+        has_identity = contract_data and (
+            "node_id" in contract_data or "name" in contract_data
+        )
+        has_type = contract_data and (
+            "node_type" in contract_data or "node_kind" in contract_data
+        )
+        if has_identity and has_type:
             checks_passed.append("schema_conformance")
         else:
             checks_failed.append("schema_conformance")
 
         # --- 4. Node Kind Constraints ---
-        if contract_data and contract_data.get("node_kind") in (
-            "COMPUTE",
-            "REDUCER",
-            "EFFECT",
-            "ORCHESTRATOR",
-        ):
+        # Accept node_type or node_kind, case-insensitive, with optional
+        # _GENERIC suffix (e.g. "COMPUTE_GENERIC", "effect").
+        _VALID_KINDS = {"compute", "reducer", "effect", "orchestrator"}
+        raw_kind = ""
+        if contract_data:
+            raw_kind = str(
+                contract_data.get("node_type", contract_data.get("node_kind", ""))
+            )
+        normalised = raw_kind.lower().removesuffix("_generic")
+        if normalised in _VALID_KINDS:
             checks_passed.append("node_kind_constraints")
         else:
             checks_failed.append("node_kind_constraints")
