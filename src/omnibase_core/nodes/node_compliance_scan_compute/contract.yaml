@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the compliance_scan compute node.
+# Scans contract.yaml files and checks structural compliance.
+#
+# See: OMN-7069 — compliance scanner COMPUTE node
+
+node_id: node_compliance_scan_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Scan a directory tree for ONEX contract.yaml files and run 8 structural compliance checks per node:
+  contract parse, handler resolution, schema conformance (2), naming policy (2), config readiness, and
+  codepath consumption. Returns per-node PASS/FAIL results classified by verification type. #magic___^_^___line
+handler_routing:
+  default_handler: handler:NodeComplianceScanCompute
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000
