@@ -1,3 +1,22 @@
+## v0.36.0 (2026-03-31)
+
+### Added
+- feat(container): add registry auto-configuration from entry points [OMN-7065] (#756)
+- feat(compliance): add compliance report REDUCER node [OMN-7070] (#760)
+- feat(cli): add onex registry status command [OMN-7066] (#755)
+- feat(event_bus): extract EventBusInmemory from omnibase_infra to core [OMN-7062]
+- feat(protocols): add ProtocolStateStore for unified state persistence [OMN-7061]
+- feat(entry_points): add onex.backends and onex.cli groups [OMN-7064] (#754)
+
+### Changed
+- ci: add onex compliance check as CI gate [OMN-7078] (#757)
+
+## v0.35.0 (2026-03-30)
+
+### Added
+- feat(compliance): add compliance scanner, evidence, and orchestrator nodes [OMN-7069, OMN-7071, OMN-7072]
+- feat(cli): add onex compliance check and run commands [OMN-7073, OMN-7068]
+
 ## v0.34.0 (2026-03-28)
 
 ### Added
