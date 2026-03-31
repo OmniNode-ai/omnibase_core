@@ -23,13 +23,15 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # ---------------------------------------------------------------------------
 
 
+async def _noop_register(*args: object, **kwargs: object) -> None:
+    """Async no-op stand-in for register_instance."""
+
+
 def _make_container_stub() -> SimpleNamespace:
     """Create a minimal container stub with a mock service_registry."""
     registry = MagicMock()
     # register_instance is async
-    registry.register_instance = MagicMock(
-        side_effect=lambda *a, **kw: asyncio.coroutine(lambda: None)()
-    )
+    registry.register_instance = MagicMock(side_effect=_noop_register)
     return SimpleNamespace(service_registry=registry)
 
 
