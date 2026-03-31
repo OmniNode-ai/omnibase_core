@@ -678,6 +678,47 @@ jobs:
         run: uv run pytest tests/unit/test_no_internal_deps.py -v
 
   # ---------------------------------------------------------------------------
+  # Phase 1 - ONEX Compliance Check
+  # ---------------------------------------------------------------------------
+  # Runs `onex compliance check` to validate contracts, handlers, and schemas.
+  # Conditional: only runs if the `onex compliance` command is available.
+  compliance:
+    name: Contract Compliance
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run compliance check
+        uses: ./.github/actions/compliance-check
+
+  # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
   # ---------------------------------------------------------------------------
   # API-STABLE check_name: "Quality Gate"
@@ -923,7 +964,7 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
-    needs: [quality-gate, tests-gate]
+    needs: [quality-gate, tests-gate, compliance]
     if: always()
 
     steps:
@@ -934,21 +975,24 @@ jobs:
 
           quality="${{ needs.quality-gate.result }}"
           tests="${{ needs.tests-gate.result }}"
+          compliance="${{ needs.compliance.result }}"
 
           echo "| Gate | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Quality Gate | $quality |" >> $GITHUB_STEP_SUMMARY
           echo "| Tests Gate | $tests |" >> $GITHUB_STEP_SUMMARY
+          echo "| Compliance | $compliance |" >> $GITHUB_STEP_SUMMARY
 
           # Accept "success" or "skipped" for both gates. Skipped is valid when
           # upstream jobs are correctly skipped (e.g. dependabot PRs).
           quality_ok=$([[ "$quality" == "success" || "$quality" == "skipped" ]] && echo true || echo false)
           tests_ok=$([[ "$tests" == "success" || "$tests" == "skipped" ]] && echo true || echo false)
+          compliance_ok=$([[ "$compliance" == "success" || "$compliance" == "skipped" ]] && echo true || echo false)
 
-          if [[ "$quality_ok" == "true" ]] && [[ "$tests_ok" == "true" ]]; then
+          if [[ "$quality_ok" == "true" ]] && [[ "$tests_ok" == "true" ]] && [[ "$compliance_ok" == "true" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**CI Summary: ALL GATES PASSED**" >> $GITHUB_STEP_SUMMARY
-            echo "All CI gates passed (quality=$quality, tests=$tests)."
+            echo "All CI gates passed (quality=$quality, tests=$tests, compliance=$compliance)."
             exit 0
           else
             echo "" >> $GITHUB_STEP_SUMMARY
@@ -957,5 +1001,6 @@ jobs:
             echo "Gate results:"
             echo "  Quality Gate: $quality"
             echo "  Tests Gate: $tests"
+            echo "  Compliance: $compliance"
             exit 1
           fi

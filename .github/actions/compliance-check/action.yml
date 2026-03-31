@@ -1,0 +1,65 @@
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# Reusable composite action for ONEX compliance checks.
+# Other repos can reference this action via:
+#   uses: OmniNode-ai/omnibase_core/.github/actions/compliance-check@main
+
+name: ONEX Compliance Check
+description: Run onex compliance check and upload report artifact
+
+inputs:
+  warn-only:
+    description: >
+      When 'true', compliance failures produce a warning annotation but do NOT fail the job. Use for repos
+      where external-service checks are expected to be absent in isolated CI.
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Check if onex compliance command exists
+      id: check-command
+      shell: bash
+      run: |
+        if uv run onex compliance check --help >/dev/null 2>&1; then
+          echo "available=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "::notice::onex compliance check command not available yet — skipping"
+          echo "available=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Run onex compliance check
+      id: compliance
+      if: steps.check-command.outputs.available == 'true'
+      shell: bash
+      run: |
+        mkdir -p .onex_state/compliance
+        if uv run onex compliance check --repo-root . --output .onex_state/compliance/report.yaml; then
+          echo "result=pass" >> "$GITHUB_OUTPUT"
+        else
+          echo "result=fail" >> "$GITHUB_OUTPUT"
+          if [[ "${{ inputs.warn-only }}" == "true" ]]; then
+            echo "::warning::ONEX compliance check reported failures (warn-only mode)"
+          else
+            echo "::error::ONEX compliance check failed"
+          fi
+        fi
+
+    - name: Upload compliance report
+      if: always() && steps.check-command.outputs.available == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: compliance-report
+        path: .onex_state/compliance/report.yaml
+        retention-days: 30
+
+    - name: Fail job on compliance failure (blocking mode)
+      if: >-
+        steps.compliance.outputs.result == 'fail' && inputs.warn-only != 'true'
+      shell: bash
+      run: |
+        echo "ONEX compliance check failed — see compliance-report artifact for details"
+        exit 1
