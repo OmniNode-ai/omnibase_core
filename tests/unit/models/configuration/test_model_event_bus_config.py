@@ -274,7 +274,9 @@ class TestModelEventBusConfigFactoryMethods:
     def test_default_factory_method_missing_env(self, monkeypatch):
         """Test default factory raises when env var is missing."""
         monkeypatch.delenv("ONEX_EVENT_BUS_BOOTSTRAP_SERVERS", raising=False)
-        with pytest.raises(ValueError, match="ONEX_EVENT_BUS_BOOTSTRAP_SERVERS must be set"):
+        with pytest.raises(
+            ValueError, match="ONEX_EVENT_BUS_BOOTSTRAP_SERVERS must be set"
+        ):
             ModelEventBusConfig.default()
 
 
