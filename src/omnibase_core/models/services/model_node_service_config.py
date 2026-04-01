@@ -214,8 +214,9 @@ class ModelNodeServiceConfig(BaseModel):
             bootstrap_servers=[
                 server.strip()
                 for server in os.getenv(
-                    "EVENT_BUS_BOOTSTRAP_SERVERS", "localhost:19092"
+                    "EVENT_BUS_BOOTSTRAP_SERVERS", ""
                 ).split(",")
+                if server.strip()
             ],
             topics=[
                 topic.strip()

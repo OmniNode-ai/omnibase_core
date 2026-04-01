@@ -261,14 +261,21 @@ class TestModelEventBusConfigMethods:
 class TestModelEventBusConfigFactoryMethods:
     """Test ModelEventBusConfig factory methods."""
 
-    def test_default_factory_method(self):
-        """Test default factory method."""
+    def test_default_factory_method(self, monkeypatch):
+        """Test default factory method reads from env."""
+        monkeypatch.setenv("ONEX_EVENT_BUS_BOOTSTRAP_SERVERS", "kafka:19092")
         config = ModelEventBusConfig.default()
-        assert config.bootstrap_servers == ["localhost:19092"]
+        assert config.bootstrap_servers == ["kafka:19092"]
         assert config.topics == ["onex-default"]
         assert config.security_protocol == "PLAINTEXT"
         assert config.group_id is not None
         assert isinstance(config.group_id, UUID)
+
+    def test_default_factory_method_missing_env(self, monkeypatch):
+        """Test default factory raises when env var is missing."""
+        monkeypatch.delenv("ONEX_EVENT_BUS_BOOTSTRAP_SERVERS", raising=False)
+        with pytest.raises(ValueError, match="ONEX_EVENT_BUS_BOOTSTRAP_SERVERS must be set"):
+            ModelEventBusConfig.default()
 
 
 @pytest.mark.unit

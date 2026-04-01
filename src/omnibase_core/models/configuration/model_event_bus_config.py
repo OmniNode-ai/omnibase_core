@@ -133,12 +133,19 @@ class ModelEventBusConfig(BaseModel):
     @classmethod
     def default(cls) -> "ModelEventBusConfig":
         """
-        Returns a canonical default config for development, testing, and CLI fallback use.
-        Applies environment variable overrides for CI/local testing.
+        Returns a canonical default config from environment variables.
+        Requires ONEX_EVENT_BUS_BOOTSTRAP_SERVERS to be set.
         """
+        servers_env = os.environ.get("ONEX_EVENT_BUS_BOOTSTRAP_SERVERS", "")
+        bootstrap_servers = [s.strip() for s in servers_env.split(",") if s.strip()]
+        if not bootstrap_servers:
+            msg = "ONEX_EVENT_BUS_BOOTSTRAP_SERVERS must be set"
+            raise ValueError(msg)
+        topics_env = os.environ.get("ONEX_EVENT_BUS_TOPICS", "onex-default")
+        topics = [t.strip() for t in topics_env.split(",") if t.strip()]
         base_config = cls(
-            bootstrap_servers=["localhost:19092"],
-            topics=["onex-default"],
+            bootstrap_servers=bootstrap_servers,
+            topics=topics,
             group_id=uuid4(),
             security_protocol="PLAINTEXT",
         )

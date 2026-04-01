@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 class ModelAPIConfig(BaseModel):
     """API server configuration for REST interface."""
 
-    host: str = Field(default="localhost", description="API host")
+    host: str = Field(..., description="API host")
     port: int = Field(default=8000, description="API port")
     workers: int = Field(default=4, description="Number of workers")
     reload: bool = Field(default=False, description="Enable auto-reload")

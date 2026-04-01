@@ -920,6 +920,13 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     @classmethod
     def load_from_env(cls, env_prefix: str = "ONEX_DB_") -> "ModelDatabaseSecureConfig":
         """Load database configuration from environment variables."""
+        host = os.getenv(f"{env_prefix}HOST")
+        if not host:
+            msg = f"Database host required: {env_prefix}HOST"
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
         password = os.getenv(f"{env_prefix}PASSWORD")
         if not password:
             msg = f"Database password required: {env_prefix}PASSWORD"
@@ -929,7 +936,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             )
 
         config_data: dict[str, object] = {
-            "host": os.getenv(f"{env_prefix}HOST", "localhost"),
+            "host": host,
             "database": os.getenv(f"{env_prefix}DATABASE", "onex_dev"),
             "username": os.getenv(f"{env_prefix}USERNAME", "onex_user"),
             "password": SecretStr(password),
@@ -997,7 +1004,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     @classmethod
     def create_postgresql(
         cls,
-        host: str = "localhost",
+        host: str,
         port: int = 5432,
         database: str = "onex_dev",
         username: str = "onex_user",
@@ -1022,7 +1029,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     @classmethod
     def create_mysql(
         cls,
-        host: str = "localhost",
+        host: str,
         port: int = 3306,
         database: str = "onex_dev",
         username: str = "onex_user",
@@ -1051,7 +1058,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     ) -> "ModelDatabaseSecureConfig":
         """Create SQLite configuration."""
         return cls(
-            host="localhost",  # Required by model but not used for SQLite
+            host="sqlite",  # Required by model but not used for SQLite
             port=0,  # Not applicable for SQLite
             database=database_path,
             username="sqlite",  # Not applicable but required by model
