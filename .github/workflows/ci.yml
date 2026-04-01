@@ -943,7 +943,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@8fde6ecec83c5b7ab9045db0066ef87ba02c087a # main 2026-03-25
+      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@13f4f879195679a5c61d3ff5854af3487fcb98f8 # main 2026-03-25
         with:
           checks: "boundary-parity"
           warn-only: "true"
