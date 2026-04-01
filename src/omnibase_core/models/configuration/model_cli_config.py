@@ -47,8 +47,8 @@ class ModelCLIConfig(BaseModel):
     # Core configuration sections
     tiers: ModelTierConfig = Field(default_factory=ModelTierConfig)
     output: ModelOutputConfig = Field(default_factory=ModelOutputConfig)
-    api: ModelAPIConfig = Field(default_factory=ModelAPIConfig)
-    database: ModelDatabaseConfig = Field(default_factory=ModelDatabaseConfig)
+    api: ModelAPIConfig | None = Field(default=None)
+    database: ModelDatabaseConfig | None = Field(default=None)
     monitoring: ModelMonitoringConfig = Field(default_factory=ModelMonitoringConfig)
 
     # Global settings

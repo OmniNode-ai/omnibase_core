@@ -1053,9 +1053,17 @@ class TestEnvironmentIntegration:
         assert config.host == "custom.example.com"
         assert config.driver == "mysql"
 
-    def test_load_from_env_missing_password(self):
-        """Test loading fails when password is missing."""
+    def test_load_from_env_missing_host(self):
+        """Test loading fails when host is missing."""
         with patch.dict(os.environ, {}, clear=True):
+            with pytest.raises(ModelOnexError) as exc_info:
+                ModelDatabaseSecureConfig.load_from_env(env_prefix="MISSING_")
+            assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+            assert "host required" in str(exc_info.value).lower()
+
+    def test_load_from_env_missing_password(self):
+        """Test loading fails when password is missing but host is set."""
+        with patch.dict(os.environ, {"MISSING_HOST": "db.example.com"}, clear=True):
             with pytest.raises(ModelOnexError) as exc_info:
                 ModelDatabaseSecureConfig.load_from_env(env_prefix="MISSING_")
             assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR

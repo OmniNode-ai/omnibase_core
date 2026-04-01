@@ -319,7 +319,7 @@ class BackendCacheRedis:
 
     def __init__(
         self,
-        url: str = "redis://localhost:16379/0",
+        url: str,
         prefix: str = "",
         default_ttl: int | None = None,
         max_connections: int = 10,

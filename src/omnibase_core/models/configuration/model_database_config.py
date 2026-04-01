@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 class ModelDatabaseConfig(BaseModel):
     """Database configuration for persistent storage."""
 
-    url: str = Field(default="postgresql://localhost/onex", description="Database URL")
+    url: str = Field(..., description="Database URL")
     pool_size: int = Field(default=10, description="Connection pool size")
     max_overflow: int = Field(default=20, description="Max pool overflow")
     pool_timeout: int = Field(default=30, description="Pool timeout seconds")
