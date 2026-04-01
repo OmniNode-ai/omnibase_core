@@ -6,7 +6,12 @@ on:
 
 jobs:
   auto-tag:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
+    if: >-
+      github.event.pull_request.merged == true &&
+      (contains(github.event.pull_request.labels.*.name, 'release') ||
+       startsWith(github.event.pull_request.title, 'release:') ||
+       startsWith(github.event.pull_request.title, 'chore: release') ||
+       startsWith(github.event.pull_request.title, 'chore(release)'))
     uses: OmniNode-ai/omnibase_core/.github/workflows/auto-tag-reusable.yml@main
     permissions:
       contents: write
