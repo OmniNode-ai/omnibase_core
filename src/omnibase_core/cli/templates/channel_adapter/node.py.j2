@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""{{ Platform }} channel adapter node — thin coordination shell."""
+
+from __future__ import annotations
+
+
+class NodeChannel{{ Platform }}Adapter:
+    """Thin shell node for the {{ Platform }} channel adapter.
+
+    Coordinates inbound/outbound handlers for {{ Platform }} messages.
+    Business logic lives in handlers, not here.
+    """
+
+    def __init__(self) -> None:
+        self.platform = "{{ platform }}"
+        self.library = "{{ library }}"
+
+    def start(self) -> None:
+        """Start the {{ Platform }} adapter.
+
+        Initializes the platform client and begins listening for events.
+        """
+        raise NotImplementedError(
+            "{{ Platform }} adapter start() not yet implemented — "
+            "wire {{ library }} client initialization here"
+        )
+
+    def stop(self) -> None:
+        """Stop the {{ Platform }} adapter gracefully."""
+        raise NotImplementedError(
+            "{{ Platform }} adapter stop() not yet implemented — "
+            "wire graceful shutdown here"
+        )

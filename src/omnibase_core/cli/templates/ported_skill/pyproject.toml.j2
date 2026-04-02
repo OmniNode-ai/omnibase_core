@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{ pkg_name }}"
+version = "{{ version }}"
+description = "{{ description }}"
+requires-python = ">=3.12"
+dependencies = [
+{% for dep in python_deps %}
+    "{{ dep }}",
+{% endfor %}
+]
+
+[project.entry-points."onex.nodes"]
+{{ node_name }} = "{{ node_name }}.node"

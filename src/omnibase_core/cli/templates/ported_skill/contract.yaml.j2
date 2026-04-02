@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+name: {{ node_name }}
+version: {{ version }}
+description: "{{ description }}"
+
+node_kind: COMPUTE
+security_tier: {{ security_tier }}
+
+capabilities:
+{% for cap in capabilities %}
+  - category: {{ cap.category }}
+    details: "{{ cap.details }}"
+    tier: {{ cap.security_tier }}
+{% endfor %}
+
+{% if env_vars %}
+dependencies:
+  env_vars:
+{% for var in env_vars %}
+    - "{{ var }}"
+{% endfor %}
+{% endif %}
+
+{% if python_deps %}
+  python:
+{% for dep in python_deps %}
+    - {{ dep }}
+{% endfor %}
+{% endif %}
+
+metadata:
+  ported_from: "{{ pkg_name }}"
+  confidence_level: {{ confidence_level }}
+  omniclaw_ported: true

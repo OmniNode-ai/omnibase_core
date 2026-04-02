@@ -612,5 +612,22 @@ from omnibase_core.cli.cli_run import run_workflow
 cli.add_command(run_workflow)
 
 
+# Register install/uninstall commands from separate module
+from omnibase_core.cli.cli_install import cli_install, cli_uninstall
+
+cli.add_command(cli_install)
+cli.add_command(cli_uninstall)
+
+# Register scaffold-channel-adapter command from separate module
+from omnibase_core.cli.cli_scaffold_channel import cli_scaffold_channel_adapter
+
+cli.add_command(cli_scaffold_channel_adapter)
+
+# Register port-openclaw command from separate module
+from omnibase_core.cli.cli_port_openclaw import cli_port_openclaw
+
+cli.add_command(cli_port_openclaw)
+
+
 if __name__ == "__main__":
     cli()
