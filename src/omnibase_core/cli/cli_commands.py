@@ -611,6 +611,11 @@ from omnibase_core.cli.cli_run import run_workflow
 
 cli.add_command(run_workflow)
 
+# Register doctor command from separate module
+from omnibase_core.cli.cli_doctor import doctor
+
+cli.add_command(doctor)
+
 
 if __name__ == "__main__":
     cli()
