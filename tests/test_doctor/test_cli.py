@@ -3,9 +3,12 @@
 
 from unittest.mock import patch
 
+import pytest
 from click.testing import CliRunner
 
 from omnibase_core.cli.cli_doctor import doctor
+
+pytestmark = pytest.mark.unit
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult

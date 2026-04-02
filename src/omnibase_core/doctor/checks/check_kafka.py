@@ -13,8 +13,14 @@ from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorChe
 
 def _parse_kafka_bootstrap() -> tuple[str, int]:
     raw = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
-    host, _, port_str = raw.partition(":")
-    return host, int(port_str) if port_str else 19092
+    first = raw.split(",")[0].strip()
+    host, sep, port_str = first.rpartition(":")
+    if not sep:
+        return first, 19092
+    try:
+        return host, int(port_str)
+    except ValueError:
+        return host, 19092
 
 
 class CheckKafka(DoctorCheckBase):

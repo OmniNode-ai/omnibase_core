@@ -3,7 +3,11 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from omnibase_core.doctor.checks.check_docker import CheckDocker
+
+pytestmark = pytest.mark.unit
 from omnibase_core.doctor.checks.check_kafka import CheckKafka
 from omnibase_core.doctor.checks.check_linear import CheckLinear
 from omnibase_core.doctor.checks.check_postgres import CheckPostgres

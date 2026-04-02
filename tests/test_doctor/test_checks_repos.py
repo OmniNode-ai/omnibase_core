@@ -3,7 +3,11 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from omnibase_core.doctor.checks.check_repos_synced import CheckReposSynced
+
+pytestmark = pytest.mark.unit
 from omnibase_core.doctor.checks.check_stale_worktrees import CheckStaleWorktrees
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 

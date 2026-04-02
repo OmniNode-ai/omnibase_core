@@ -29,8 +29,8 @@ class CheckStaleWorktrees(DoctorCheckBase):
             return ModelDoctorCheckResult(
                 name=self.check_name,
                 category=self.category,
-                status=EnumHealthStatusValue.HEALTHY,
-                message="No worktree directory found",
+                status=EnumHealthStatusValue.UNKNOWN,
+                message="Skipped: worktree directory not found",
                 duration_ms=int((time.monotonic() - start) * 1000),
             )
         tickets = list(worktree_root.iterdir())

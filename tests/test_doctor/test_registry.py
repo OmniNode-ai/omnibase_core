@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
+
+pytestmark = pytest.mark.unit
 from omnibase_core.doctor.doctor_registry import DoctorRegistry
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue

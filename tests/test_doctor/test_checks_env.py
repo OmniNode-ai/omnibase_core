@@ -3,7 +3,11 @@
 
 from unittest.mock import patch
 
+import pytest
+
 from omnibase_core.doctor.checks.check_env_vars import CheckEnvVars
+
+pytestmark = pytest.mark.unit
 from omnibase_core.doctor.checks.check_node_version import CheckNodeVersion
 from omnibase_core.doctor.checks.check_python_version import CheckPythonVersion
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory

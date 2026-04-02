@@ -3,9 +3,12 @@
 
 import json
 
+import pytest
 from click.testing import CliRunner
 
 from omnibase_core.cli.cli_doctor import doctor
+
+pytestmark = pytest.mark.integration
 
 
 def test_doctor_e2e_human_output():

@@ -3,6 +3,10 @@
 
 from importlib.metadata import entry_points
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 
 def test_onex_doctor_entry_points_registered():
     """Verify entry points are declared (may not resolve in dev without install)."""
