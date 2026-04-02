@@ -5,9 +5,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 
 from omnibase_core.cli.openclaw_analyzer import OpenClawAnalysis
+from omnibase_core.cli.openclaw_capability import OpenClawCapability
 
 # npm dependency -> Python equivalent mapping
 NPM_TO_PYTHON: dict[str, str] = {
@@ -51,13 +53,13 @@ def _resolve_python_deps(npm_deps: dict[str, str]) -> list[str]:
 
 
 def _build_api_mappings(
-    capabilities: list[object],
+    capabilities: Sequence[OpenClawCapability],
 ) -> list[dict[str, str]]:
     """Build JS->Python API mapping list from capabilities."""
     mappings: list[dict[str, str]] = []
     seen: set[str] = set()
     for cap in capabilities:
-        details = getattr(cap, "details", "")
+        details = cap.details
         # Strip trailing () for lookup
         lookup_key = details.rstrip("()")
         if lookup_key in JS_TO_PYTHON_API and lookup_key not in seen:

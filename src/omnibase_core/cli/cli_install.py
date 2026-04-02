@@ -49,7 +49,7 @@ def _rollback_install(package_name: str) -> None:
     )
 
 
-def from_yaml_contract(contract_path: Path) -> dict[str, object]:
+def from_yaml_contract(contract_path: Path) -> object:
     """Load and parse a contract.yaml file.
 
     Uses yaml.safe_load for parsing untrusted third-party contract files.
@@ -58,7 +58,7 @@ def from_yaml_contract(contract_path: Path) -> dict[str, object]:
     import yaml
 
     with open(contract_path) as f:
-        return yaml.safe_load(f)  # type: ignore[no-any-return]
+        return yaml.safe_load(f)
 
 
 def _validate_contract(contract_path: Path) -> dict[str, object]:
@@ -68,14 +68,16 @@ def _validate_contract(contract_path: Path) -> dict[str, object]:
         click.ClickException: If the contract is missing required fields.
     """
     try:
-        contract = from_yaml_contract(contract_path)
+        raw = from_yaml_contract(contract_path)
     except Exception as e:
         msg = f"contract.yaml at {contract_path} is not valid: {e}"
         raise click.ClickException(msg) from e
 
-    if not isinstance(contract, dict):
+    if not isinstance(raw, dict):
         msg = f"contract.yaml at {contract_path} is not a valid YAML mapping"
         raise click.ClickException(msg)
+
+    contract: dict[str, object] = raw
 
     required_fields = ["name", "version"]
     for field in required_fields:
@@ -87,12 +89,13 @@ def _validate_contract(contract_path: Path) -> dict[str, object]:
     if contract.get("event_bus_enabled"):
         for topic_key in ("publish_topics", "subscribe_topics"):
             topics = contract.get(topic_key, [])
-            for topic in topics:
-                if not topic.startswith("onex."):
-                    msg = f"Invalid topic format in {topic_key}: {topic} (must start with 'onex.')"
-                    raise click.ClickException(msg)
+            if isinstance(topics, list):
+                for topic in topics:
+                    if isinstance(topic, str) and not topic.startswith("onex."):
+                        msg = f"Invalid topic format in {topic_key}: {topic} (must start with 'onex.')"
+                        raise click.ClickException(msg)
 
-    return contract  # type: ignore[return-value]
+    return contract
 
 
 @click.command("install")
