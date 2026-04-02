@@ -54,7 +54,10 @@ def test_check_postgres_fail():
 
 
 def test_check_linear_pass():
-    with patch("subprocess.run") as mock_run:
+    with (
+        patch.dict("os.environ", {"LINEAR_API_KEY": "test-token"}),
+        patch("subprocess.run") as mock_run,
+    ):
         mock_run.return_value.returncode = 0
         mock_run.return_value.stdout = '{"data":{}}'
         result = CheckLinear().run()
