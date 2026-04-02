@@ -16,11 +16,14 @@ def _parse_kafka_bootstrap() -> tuple[str, int]:
     first = raw.split(",")[0].strip()
     host, sep, port_str = first.rpartition(":")
     if not sep:
-        return first, 19092
+        return (
+            first,
+            19092,
+        )  # fallback-ok: no port separator — use default Redpanda port
     try:
         return host, int(port_str)
     except ValueError:
-        return host, 19092
+        return host, 19092  # fallback-ok: non-numeric port — degrade to default port
 
 
 class CheckKafka(DoctorCheckBase):
