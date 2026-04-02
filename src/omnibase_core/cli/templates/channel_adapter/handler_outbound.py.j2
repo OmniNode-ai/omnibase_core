@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""{{ Platform }} outbound handler — sends replies back to the platform."""
+
+from __future__ import annotations
+
+from typing import Any
+
+try:
+    import {{ library }}  # noqa: F401
+except ImportError as _import_err:
+    raise ImportError(
+        "{{ library }} is required for the {{ Platform }} adapter. "
+        "Install it with: pip install {{ library }}"
+    ) from _import_err
+
+
+def handle_outbound_message(envelope: dict[str, Any]) -> None:
+    """Send a reply message to {{ Platform }}.
+
+    Args:
+        envelope: A ModelChannelEnvelope dict with reply content.
+    """
+    # TODO(OMN-7196): Implement {{ Platform }}-specific reply sending
+    # Use {{ library }} client to send the message:
+    #   - Extract channel_id and content from envelope
+    #   - Call {{ library }} send API
+    #   - Handle rate limiting and retries
+    raise NotImplementedError(
+        "{{ Platform }} outbound handler not yet implemented — "
+        "wire {{ library }} send call here"
+    )

@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+name: node_channel_{{ platform }}_adapter
+version: 0.1.0
+description: "OmniClaw {{ Platform }} channel adapter — bridges {{ Platform }} messages to/from ModelChannelEnvelope on Kafka."
+
+node_kind: EFFECT
+
+event_bus_enabled: true
+subscribe_topics:
+  - "onex.cmd.omniclaw.{{ platform }}-outbound.v1"
+publish_topics:
+  - "onex.cmd.omniclaw.channel-message-received.v1"
+  - "onex.evt.omniclaw.{{ platform }}-message-processed.v1"
+
+dependencies:
+  python:
+    - {{ library }}
+  env_vars:
+    - "{{ platform | upper }}_BOT_TOKEN"
+
+metadata:
+  platform: {{ platform }}
+  library: {{ library }}
+  omniclaw_adapter: true

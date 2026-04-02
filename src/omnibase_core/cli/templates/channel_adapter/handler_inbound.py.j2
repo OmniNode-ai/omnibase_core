@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""{{ Platform }} inbound handler — receives platform messages, emits ModelChannelEnvelope."""
+
+from __future__ import annotations
+
+import os
+from typing import Any
+
+try:
+    import {{ library }}  # noqa: F401
+except ImportError as _import_err:
+    raise ImportError(
+        "{{ library }} is required for the {{ Platform }} adapter. "
+        "Install it with: pip install {{ library }}"
+    ) from _import_err
+
+
+def get_bot_token() -> str:
+    """Read the {{ Platform }} bot token from environment."""
+    token = os.environ.get("{{ platform | upper }}_BOT_TOKEN", "")
+    if not token:
+        msg = "{{ platform | upper }}_BOT_TOKEN environment variable is not set"
+        raise RuntimeError(msg)
+    return token
+
+
+def handle_inbound_message(raw_event: dict[str, Any]) -> dict[str, Any]:
+    """Convert a raw {{ Platform }} event into a ModelChannelEnvelope dict.
+
+    Args:
+        raw_event: The raw event payload from {{ library }}.
+
+    Returns:
+        A dict conforming to the ModelChannelEnvelope schema.
+    """
+    # TODO(OMN-7196): Implement {{ Platform }}-specific message normalization
+    # Map platform fields to ModelChannelEnvelope fields:
+    #   - channel_type: "{{ platform }}"
+    #   - message_id: extract from raw_event
+    #   - channel_id: extract from raw_event
+    #   - author_id: extract from raw_event
+    #   - content: extract from raw_event
+    #   - attachments: normalize platform attachments to ModelChannelAttachment
+    raise NotImplementedError(
+        "{{ Platform }} inbound handler not yet implemented — "
+        "map {{ library }} events to ModelChannelEnvelope here"
+    )

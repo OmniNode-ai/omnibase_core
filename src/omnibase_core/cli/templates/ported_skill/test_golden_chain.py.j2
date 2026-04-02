@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""Golden chain test for ported skill: {{ pkg_name }}"""
+
+from __future__ import annotations
+
+import pytest
+
+
+@pytest.mark.skip(reason="Scaffold stub — implement handler first")
+def test_handler_returns_result() -> None:
+    """Test that the ported handler returns a valid result dict."""
+    from {{ node_name }}.handlers.handler_ported import handle
+
+    result = handle()
+    assert isinstance(result, dict)
+
+
+@pytest.mark.skip(reason="Scaffold stub — implement handler first")
+def test_contract_yaml_exists() -> None:
+    """Test that contract.yaml exists alongside the node module."""
+    from pathlib import Path
+
+    import {{ node_name }}
+
+    node_dir = Path({{ node_name }}.__file__).parent
+    contract_path = node_dir / "contract.yaml"
+    assert contract_path.exists(), f"Missing contract.yaml at {contract_path}"

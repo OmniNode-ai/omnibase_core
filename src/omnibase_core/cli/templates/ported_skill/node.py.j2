@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""Ported node: {{ pkg_name }} — {{ description }}"""
+
+from __future__ import annotations
+
+
+class {{ node_name | replace("_", " ") | title | replace(" ", "") }}:
+    """Thin shell node for ported skill {{ pkg_name }}.
+
+    Originally from OpenClaw package.
+    Security tier: {{ security_tier }}
+    Confidence level: {{ confidence_level }}
+    """
+
+    def __init__(self) -> None:
+        self.name = "{{ node_name }}"
+        self.version = "{{ version }}"
+
+    def run(self) -> dict[str, object]:
+        """Execute the ported skill logic.
+
+        Returns:
+            Result dict from the handler.
+        """
+        from {{ node_name }}.handlers.handler_ported import handle
+
+        return handle()

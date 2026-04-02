@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""Handler for ported skill: {{ pkg_name }}"""
+
+from __future__ import annotations
+
+{% if api_mappings %}
+# JS -> Python API mappings for this skill:
+{% for mapping in api_mappings %}
+# {{ mapping.js }} -> {{ mapping.python }}
+{% endfor %}
+{% endif %}
+
+
+def handle() -> dict[str, object]:
+    """Execute the ported skill logic.
+
+    Returns:
+        Result dict with skill output.
+    """
+{% if confidence_level == "requires_manual_review" %}
+    # TODO(OMN-7198): MANUAL REVIEW REQUIRED
+    # This skill was classified as requiring manual review.
+    # Detected capabilities that need human verification:
+{% for cap in capabilities %}
+    #   - {{ cap.category }}: {{ cap.details }} ({{ cap.security_tier }})
+{% endfor %}
+    raise NotImplementedError(
+        "This ported skill requires manual review before use. "
+        "Check TODO markers above for specific capabilities that need attention."
+    )
+{% else %}
+    # TODO(OMN-7198): Implement ported skill logic
+    # Original capabilities detected:
+{% for cap in capabilities %}
+    #   - {{ cap.category }}: {{ cap.details }} ({{ cap.security_tier }})
+{% endfor %}
+{% if api_mappings %}
+    # Use these Python equivalents:
+{% for mapping in api_mappings %}
+    #   {{ mapping.js }} -> {{ mapping.python }}
+{% endfor %}
+{% endif %}
+    raise NotImplementedError(
+        "Ported skill handler not yet implemented — "
+        "translate JS logic to Python using the API mappings above"
+    )
+{% endif %}

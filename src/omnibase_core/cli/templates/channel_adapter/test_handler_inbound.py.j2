@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""Tests for {{ Platform }} inbound handler."""
+
+from __future__ import annotations
+
+import pytest
+
+
+@pytest.mark.skip(reason="Scaffold stub — implement handler first")
+def test_handle_inbound_message_basic() -> None:
+    """Test that a basic {{ Platform }} message is normalized to ModelChannelEnvelope."""
+    # TODO(OMN-7196): Implement test with mock {{ library }} event
+    # 1. Create a mock raw event dict matching {{ library }}'s format
+    # 2. Call handle_inbound_message(raw_event)
+    # 3. Assert result has required ModelChannelEnvelope fields
+
+
+@pytest.mark.skip(reason="Scaffold stub — implement handler first")
+def test_handle_inbound_message_with_attachments() -> None:
+    """Test that {{ Platform }} attachments are normalized."""
+    # TODO(OMN-7196): Implement attachment normalization test
+
+
+@pytest.mark.skip(reason="Scaffold stub — implement handler first")
+def test_bot_token_required() -> None:
+    """Test that missing bot token raises RuntimeError."""
+    # TODO(OMN-7196): Test get_bot_token() with unset env var
