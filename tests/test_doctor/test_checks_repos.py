@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from omnibase_core.doctor.checks.check_repos_synced import CheckReposSynced
 from omnibase_core.doctor.checks.check_stale_worktrees import CheckStaleWorktrees
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
-from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 
 
 def test_repos_synced_all_clean():

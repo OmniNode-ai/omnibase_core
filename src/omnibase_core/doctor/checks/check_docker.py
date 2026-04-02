@@ -22,6 +22,7 @@ class CheckDocker(DoctorCheckBase):
                 ["docker", "info"],
                 capture_output=True,
                 timeout=5,
+                check=False,
             )
             ok = proc.returncode == 0
         except (FileNotFoundError, subprocess.TimeoutExpired) as e:
@@ -35,7 +36,11 @@ class CheckDocker(DoctorCheckBase):
         return ModelDoctorCheckResult(
             name=self.check_name,
             category=self.category,
-            status=EnumHealthStatusValue.HEALTHY if ok else EnumHealthStatusValue.UNHEALTHY,
-            message="Docker daemon is running" if ok else "Docker daemon not responding",
+            status=EnumHealthStatusValue.HEALTHY
+            if ok
+            else EnumHealthStatusValue.UNHEALTHY,
+            message="Docker daemon is running"
+            if ok
+            else "Docker daemon not responding",
             duration_ms=int((time.monotonic() - start) * 1000),
         )

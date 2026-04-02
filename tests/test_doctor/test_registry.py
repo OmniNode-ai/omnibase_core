@@ -1,10 +1,12 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from omnibase_core.doctor.doctor_registry import DoctorRegistry
+
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
+from omnibase_core.doctor.doctor_registry import DoctorRegistry
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
@@ -45,7 +47,9 @@ def test_discover_loads_entry_points():
     mock_ep.name = "stub"
     mock_ep.load.return_value = StubCheck
 
-    with patch("omnibase_core.doctor.doctor_registry.entry_points", return_value=[mock_ep]):
+    with patch(
+        "omnibase_core.doctor.doctor_registry.entry_points", return_value=[mock_ep]
+    ):
         registry = DoctorRegistry()
         registry.discover()
         assert len(registry.list_all()) == 1

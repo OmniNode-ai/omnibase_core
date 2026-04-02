@@ -1,8 +1,10 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-from click.testing import CliRunner
 from unittest.mock import patch
+
+from click.testing import CliRunner
+
 from omnibase_core.cli.cli_doctor import doctor
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue

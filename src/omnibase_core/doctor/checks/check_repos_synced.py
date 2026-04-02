@@ -5,6 +5,7 @@ import os
 import subprocess
 import time
 from pathlib import Path
+
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
@@ -40,15 +41,21 @@ class CheckReposSynced(DoctorCheckBase):
             try:
                 head = subprocess.run(
                     ["git", "-C", str(child), "rev-parse", "HEAD"],
-                    capture_output=True, text=True, timeout=5,
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    check=False,
                 ).stdout.strip()
                 origin = subprocess.run(
                     ["git", "-C", str(child), "rev-parse", "origin/main"],
-                    capture_output=True, text=True, timeout=5,
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    check=False,
                 ).stdout.strip()
                 if head != origin:
                     behind.append(child.name)
-            except Exception:
+            except (OSError, subprocess.SubprocessError):
                 behind.append(f"{child.name} (error)")
 
         elapsed = int((time.monotonic() - start) * 1000)

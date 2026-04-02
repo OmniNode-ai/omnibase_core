@@ -1,10 +1,9 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-import pytest
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
-from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
+from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
 
 
 def test_doctor_category_has_expected_members():

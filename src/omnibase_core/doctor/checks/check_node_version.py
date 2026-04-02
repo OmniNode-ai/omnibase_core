@@ -3,6 +3,7 @@
 
 import subprocess
 import time
+
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
@@ -19,7 +20,10 @@ class CheckNodeVersion(DoctorCheckBase):
         try:
             proc = subprocess.run(
                 ["node", "--version"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
             )
             version = proc.stdout.strip()
             ok = proc.returncode == 0
@@ -34,7 +38,9 @@ class CheckNodeVersion(DoctorCheckBase):
         return ModelDoctorCheckResult(
             name=self.check_name,
             category=self.category,
-            status=EnumHealthStatusValue.HEALTHY if ok else EnumHealthStatusValue.UNHEALTHY,
+            status=EnumHealthStatusValue.HEALTHY
+            if ok
+            else EnumHealthStatusValue.UNHEALTHY,
             message=version if ok else "Node.js not working",
             duration_ms=int((time.monotonic() - start) * 1000),
         )

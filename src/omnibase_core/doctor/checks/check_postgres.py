@@ -24,12 +24,16 @@ class CheckPostgres(DoctorCheckBase):
             conn = socket.create_connection((host, port), timeout=3)
             conn.close()
             ok = True
-        except (OSError, socket.timeout):
+        except (TimeoutError, OSError):
             ok = False
         return ModelDoctorCheckResult(
             name=self.check_name,
             category=self.category,
-            status=EnumHealthStatusValue.HEALTHY if ok else EnumHealthStatusValue.UNHEALTHY,
-            message="PostgreSQL accepting connections" if ok else "PostgreSQL not reachable",
+            status=EnumHealthStatusValue.HEALTHY
+            if ok
+            else EnumHealthStatusValue.UNHEALTHY,
+            message="PostgreSQL accepting connections"
+            if ok
+            else "PostgreSQL not reachable",
             duration_ms=int((time.monotonic() - start) * 1000),
         )

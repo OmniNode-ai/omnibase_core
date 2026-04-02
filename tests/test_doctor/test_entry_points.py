@@ -9,4 +9,6 @@ def test_onex_doctor_entry_points_registered():
     eps = entry_points(group="onex.doctor")
     # In an editable install, these should be discoverable
     names = [ep.name for ep in eps]
-    assert "docker" in names or True  # graceful: entry points may not resolve in test
+    assert (
+        "docker" in names or not names
+    )  # graceful: entry points may not resolve in test

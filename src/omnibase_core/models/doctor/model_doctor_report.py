@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 
+import click
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
@@ -51,7 +52,9 @@ class ModelDoctorReport(BaseModel):
         )
 
     def grouped(self) -> dict[EnumDoctorCategory, list[ModelDoctorCheckResult]]:
-        groups: dict[EnumDoctorCategory, list[ModelDoctorCheckResult]] = defaultdict(list)
+        groups: dict[EnumDoctorCategory, list[ModelDoctorCheckResult]] = defaultdict(
+            list
+        )
         for r in self.results:
             groups[r.category].append(r)
         return dict(groups)
@@ -63,19 +66,19 @@ class ModelDoctorReport(BaseModel):
             if not checks:
                 continue
             cat_passed = sum(1 for c in checks if c.is_passed())
-            print(f"\n{cat.value.title()} [{cat_passed}/{len(checks)} passed]")
+            click.echo(f"\n{cat.value.title()} [{cat_passed}/{len(checks)} passed]")
             for c in checks:
                 sym = _STATUS_SYMBOLS.get(c.status, "?")
                 dur = f"({c.duration_ms / 1000:.1f}s)" if c.duration_ms > 0 else ""
                 msg = f" \u2014 {c.message}" if c.message else ""
-                print(f"  {sym} {c.name}{msg} {dur}")
+                click.echo(f"  {sym} {c.name}{msg} {dur}")
 
-        print(f"\nSummary: {self.passed}/{self.total} checks passed", end="")
+        parts = [f"\nSummary: {self.passed}/{self.total} checks passed"]
         if self.failed:
-            print(f", {self.failed} failed", end="")
+            parts.append(f", {self.failed} failed")
         if self.skipped:
-            print(f", {self.skipped} skipped", end="")
-        print()
+            parts.append(f", {self.skipped} skipped")
+        click.echo("".join(parts))
 
     def render_json(self) -> str:
         return json.dumps(

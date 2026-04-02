@@ -2,16 +2,17 @@
 # SPDX-License-Identifier: MIT
 
 from unittest.mock import patch
+
 from omnibase_core.doctor.checks.check_env_vars import CheckEnvVars
-from omnibase_core.doctor.checks.check_python_version import CheckPythonVersion
 from omnibase_core.doctor.checks.check_node_version import CheckNodeVersion
+from omnibase_core.doctor.checks.check_python_version import CheckPythonVersion
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 
 
 def test_env_vars_all_set():
     env = {
-        "LINEAR_API_KEY": "lin_abc",
+        "LINEAR_API_KEY": "lin_abc",  # pragma: allowlist secret
         "OMNICLAUDE_PROJECT_ROOT": "/some/path",
     }
     with patch.dict("os.environ", env, clear=False):

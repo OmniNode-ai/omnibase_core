@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 import json
+
 from click.testing import CliRunner
+
 from omnibase_core.cli.cli_doctor import doctor
 
 

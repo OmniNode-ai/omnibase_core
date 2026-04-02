@@ -14,7 +14,9 @@ class ModelDoctorCheckResult(BaseModel):
     category: EnumDoctorCategory = Field(description="Check category for grouping")
     status: EnumHealthStatusValue = Field(description="Check result status")
     message: str = Field(default="", description="Human-readable detail")
-    duration_ms: int = Field(default=0, description="Check duration in milliseconds", ge=0)
+    duration_ms: int = Field(
+        default=0, description="Check duration in milliseconds", ge=0
+    )
 
     def is_passed(self) -> bool:
         return self.status in (EnumHealthStatusValue.HEALTHY,)

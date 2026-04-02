@@ -2,20 +2,20 @@
 # SPDX-License-Identifier: MIT
 
 import click
-from omnibase_core.doctor.doctor_registry import DoctorRegistry
+
 from omnibase_core.doctor.checks import (
     CheckDocker,
+    CheckEnvVars,
     CheckKafka,
-    CheckPostgres,
     CheckLinear,
+    CheckNodeVersion,
+    CheckPostgres,
+    CheckPythonVersion,
     CheckReposSynced,
     CheckStaleWorktrees,
-    CheckEnvVars,
-    CheckPythonVersion,
-    CheckNodeVersion,
 )
+from omnibase_core.doctor.doctor_registry import DoctorRegistry
 from omnibase_core.models.doctor.model_doctor_report import ModelDoctorReport
-
 
 # Built-in checks registered at import time
 _BUILTIN_CHECKS = [
@@ -40,7 +40,7 @@ def doctor(ctx: click.Context, use_json: bool) -> None:
 
     # Register built-ins
     for check_cls in _BUILTIN_CHECKS:
-        registry.register(check_cls)
+        registry.register(check_cls)  # type: ignore[type-abstract]
 
     # Discover entry-point checks from other packages
     registry.discover()

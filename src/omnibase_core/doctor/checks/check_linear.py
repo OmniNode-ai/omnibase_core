@@ -30,16 +30,26 @@ class CheckLinear(DoctorCheckBase):
         try:
             proc = subprocess.run(
                 [
-                    "curl", "-sf", "-o", "/dev/null", "-w", "%{http_code}",
-                    "-H", f"Authorization: {token}",
+                    "curl",
+                    "-sf",
+                    "-o",
+                    "/dev/null",
+                    "-w",
+                    "%{http_code}",
+                    "-H",
+                    f"Authorization: {token}",
                     "https://api.linear.app/graphql",
-                    "-X", "POST",
-                    "-H", "Content-Type: application/json",
-                    "-d", '{"query":"{ viewer { id } }"}',
+                    "-X",
+                    "POST",
+                    "-H",
+                    "Content-Type: application/json",
+                    "-d",
+                    '{"query":"{ viewer { id } }"}',
                 ],
                 capture_output=True,
                 text=True,
                 timeout=10,
+                check=False,
             )
             ok = proc.returncode == 0
         except (FileNotFoundError, subprocess.TimeoutExpired) as e:
@@ -53,7 +63,9 @@ class CheckLinear(DoctorCheckBase):
         return ModelDoctorCheckResult(
             name=self.check_name,
             category=self.category,
-            status=EnumHealthStatusValue.HEALTHY if ok else EnumHealthStatusValue.UNHEALTHY,
+            status=EnumHealthStatusValue.HEALTHY
+            if ok
+            else EnumHealthStatusValue.UNHEALTHY,
             message="Linear API reachable" if ok else "Linear API returned error",
             duration_ms=int((time.monotonic() - start) * 1000),
         )

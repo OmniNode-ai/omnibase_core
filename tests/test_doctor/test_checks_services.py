@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-import socket
 from unittest.mock import MagicMock, patch
+
 from omnibase_core.doctor.checks.check_docker import CheckDocker
 from omnibase_core.doctor.checks.check_kafka import CheckKafka
-from omnibase_core.doctor.checks.check_postgres import CheckPostgres
 from omnibase_core.doctor.checks.check_linear import CheckLinear
+from omnibase_core.doctor.checks.check_postgres import CheckPostgres
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 

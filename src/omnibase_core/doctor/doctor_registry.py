@@ -49,7 +49,7 @@ class DoctorRegistry:
             start = time.monotonic()
             try:
                 result = check.run()
-            except Exception as e:
+            except (OSError, TypeError, ValueError) as e:
                 result = ModelDoctorCheckResult(
                     name=check.check_name,
                     category=check.category,

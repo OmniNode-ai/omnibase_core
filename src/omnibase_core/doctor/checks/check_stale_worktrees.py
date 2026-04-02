@@ -4,6 +4,7 @@
 import os
 import time
 from pathlib import Path
+
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
@@ -11,7 +12,9 @@ from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorChe
 
 
 def _get_worktree_root() -> Path:
-    return Path(os.environ.get("OMNI_WORKTREES", "/Volumes/PRO-G40/Code/omni_worktrees"))
+    return Path(
+        os.environ.get("OMNI_WORKTREES", "/Volumes/PRO-G40/Code/omni_worktrees")
+    )
 
 
 class CheckStaleWorktrees(DoctorCheckBase):
