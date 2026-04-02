@@ -73,6 +73,17 @@ state_disk = "omnibase_core.services.state.service_state_disk:ServiceStateDisk"
 # Core CLI commands are registered directly via [project.scripts]
 # This group is for extensions from other packages
 
+[project.entry-points."onex.doctor"]
+docker = "omnibase_core.doctor.checks.check_docker:CheckDocker"
+kafka = "omnibase_core.doctor.checks.check_kafka:CheckKafka"
+postgres = "omnibase_core.doctor.checks.check_postgres:CheckPostgres"
+linear = "omnibase_core.doctor.checks.check_linear:CheckLinear"
+repos_synced = "omnibase_core.doctor.checks.check_repos_synced:CheckReposSynced"
+stale_worktrees = "omnibase_core.doctor.checks.check_stale_worktrees:CheckStaleWorktrees"
+env_vars = "omnibase_core.doctor.checks.check_env_vars:CheckEnvVars"
+python_version = "omnibase_core.doctor.checks.check_python_version:CheckPythonVersion"
+node_version = "omnibase_core.doctor.checks.check_node_version:CheckNodeVersion"
+
 [project.optional-dependencies]
 spi = ["omnibase-spi>=0.20.2"]
 cli = ["psutil>=7.2.1"]
