@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
+import os
 import subprocess
 import time
 from pathlib import Path
@@ -9,7 +10,9 @@ from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
 
-OMNI_HOME = Path("/Volumes/PRO-G40/Code/omni_home")
+
+def _get_omni_home() -> Path:
+    return Path(os.environ.get("OMNI_HOME", "/Volumes/PRO-G40/Code/omni_home"))
 
 
 class CheckReposSynced(DoctorCheckBase):
@@ -21,7 +24,16 @@ class CheckReposSynced(DoctorCheckBase):
         start = time.monotonic()
         behind: list[str] = []
         checked = 0
-        for child in OMNI_HOME.iterdir():
+        omni_home = _get_omni_home()
+        if not omni_home.exists():
+            return ModelDoctorCheckResult(
+                name=self.check_name,
+                category=self.category,
+                status=EnumHealthStatusValue.UNKNOWN,
+                message=f"Skipped: OMNI_HOME not found ({omni_home})",
+                duration_ms=int((time.monotonic() - start) * 1000),
+            )
+        for child in omni_home.iterdir():
             if not child.is_dir() or not (child / ".git").exists():
                 continue
             checked += 1
