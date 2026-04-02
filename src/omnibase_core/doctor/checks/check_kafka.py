@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
+import os
 import socket
 import time
 
@@ -10,6 +11,12 @@ from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
 
 
+def _parse_kafka_bootstrap() -> tuple[str, int]:
+    raw = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
+    host, _, port_str = raw.partition(":")
+    return host, int(port_str) if port_str else 19092
+
+
 class CheckKafka(DoctorCheckBase):
     check_id = "kafka"
     check_name = "Kafka/Redpanda"
@@ -17,8 +24,9 @@ class CheckKafka(DoctorCheckBase):
 
     def run(self) -> ModelDoctorCheckResult:
         start = time.monotonic()
+        host, port = _parse_kafka_bootstrap()
         try:
-            conn = socket.create_connection(("localhost", 19092), timeout=3)
+            conn = socket.create_connection((host, port), timeout=3)
             conn.close()
             ok = True
         except (OSError, socket.timeout):

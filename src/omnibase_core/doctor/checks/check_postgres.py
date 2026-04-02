@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
+import os
 import socket
 import time
 
@@ -17,8 +18,10 @@ class CheckPostgres(DoctorCheckBase):
 
     def run(self) -> ModelDoctorCheckResult:
         start = time.monotonic()
+        host = os.environ.get("POSTGRES_HOST", "localhost")
+        port = int(os.environ.get("POSTGRES_PORT", "5432"))
         try:
-            conn = socket.create_connection(("localhost", 5432), timeout=3)
+            conn = socket.create_connection((host, port), timeout=3)
             conn.close()
             ok = True
         except (OSError, socket.timeout):
