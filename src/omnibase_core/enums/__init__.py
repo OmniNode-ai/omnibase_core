@@ -39,6 +39,9 @@ from .enum_category_filter import EnumCategoryFilter
 # Change type enums (OMN-1196)
 from .enum_change_type import EnumChangeType
 
+# Channel type enum (OmniClaw messaging platforms - OMN-7182)
+from .enum_channel_type import EnumChannelType
+
 # Check status enum (contract.verify.replay - OMN-2759)
 from .enum_check_status import EnumCheckStatus
 
@@ -798,6 +801,8 @@ __all__ = [
     "EnumSentiment",
     "EnumSupportCategory",
     "EnumSupportChannel",
+    # Channel type domain (OmniClaw messaging platforms - OMN-7182)
+    "EnumChannelType",
     # Objective functions and reward architecture domain (OMN-2537)
     "EnumGateType",
     "EnumObjectiveLayer",
