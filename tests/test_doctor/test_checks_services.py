@@ -55,7 +55,10 @@ def test_check_postgres_fail():
 
 def test_check_linear_pass():
     with (
-        patch.dict("os.environ", {"LINEAR_API_KEY": "test-token"}),  # pragma: allowlist secret
+        patch.dict(
+            "os.environ",
+            {"LINEAR_API_KEY": "test-token"},  # pragma: allowlist secret
+        ),
         patch("subprocess.run") as mock_run,
     ):
         mock_run.return_value.returncode = 0
