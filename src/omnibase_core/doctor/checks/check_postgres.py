@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-import subprocess
+import socket
 import time
 
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
@@ -18,20 +18,11 @@ class CheckPostgres(DoctorCheckBase):
     def run(self) -> ModelDoctorCheckResult:
         start = time.monotonic()
         try:
-            proc = subprocess.run(
-                ["pg_isready", "-h", "localhost", "-p", "5432"],
-                capture_output=True,
-                timeout=5,
-            )
-            ok = proc.returncode == 0
-        except (FileNotFoundError, subprocess.TimeoutExpired) as e:
-            return ModelDoctorCheckResult(
-                name=self.check_name,
-                category=self.category,
-                status=EnumHealthStatusValue.UNHEALTHY,
-                message=str(e),
-                duration_ms=int((time.monotonic() - start) * 1000),
-            )
+            conn = socket.create_connection(("localhost", 5432), timeout=3)
+            conn.close()
+            ok = True
+        except (OSError, socket.timeout):
+            ok = False
         return ModelDoctorCheckResult(
             name=self.check_name,
             category=self.category,

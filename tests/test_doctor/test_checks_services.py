@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import patch
+import socket
+from unittest.mock import MagicMock, patch
 from omnibase_core.doctor.checks.check_docker import CheckDocker
 from omnibase_core.doctor.checks.check_kafka import CheckKafka
 from omnibase_core.doctor.checks.check_postgres import CheckPostgres
@@ -25,24 +26,27 @@ def test_check_docker_fail():
 
 
 def test_check_kafka_pass():
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "BROKER_ID\n0\n"
+    with patch("socket.create_connection", return_value=MagicMock()):
         result = CheckKafka().run()
     assert result.status == EnumHealthStatusValue.HEALTHY
 
 
 def test_check_kafka_fail():
-    with patch("subprocess.run", side_effect=FileNotFoundError):
+    with patch("socket.create_connection", side_effect=OSError("Connection refused")):
         result = CheckKafka().run()
     assert result.status == EnumHealthStatusValue.UNHEALTHY
 
 
 def test_check_postgres_pass():
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.returncode = 0
+    with patch("socket.create_connection", return_value=MagicMock()):
         result = CheckPostgres().run()
     assert result.status == EnumHealthStatusValue.HEALTHY
+
+
+def test_check_postgres_fail():
+    with patch("socket.create_connection", side_effect=OSError("Connection refused")):
+        result = CheckPostgres().run()
+    assert result.status == EnumHealthStatusValue.UNHEALTHY
 
 
 def test_check_linear_pass():
