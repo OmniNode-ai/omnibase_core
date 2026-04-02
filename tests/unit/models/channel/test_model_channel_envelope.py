@@ -122,7 +122,7 @@ class TestModelChannelEnvelope:
             ModelChannelEnvelope()  # type: ignore[call-arg]
 
     def test_channel_type_accepts_enum(self) -> None:
-        for ct in EnumChannelType:
+        for ct in list(EnumChannelType):
             env = _make_envelope(channel_type=ct)
             assert env.channel_type == ct
 

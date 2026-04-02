@@ -47,8 +47,9 @@ class TestEnumChannelType:
 
     def test_enum_membership(self) -> None:
         """Test enum membership operations."""
-        assert "discord" in EnumChannelType
-        assert "whatsapp" not in EnumChannelType
+        values = {m.value for m in EnumChannelType}
+        assert "discord" in values
+        assert "whatsapp" not in values
 
     def test_enum_deserialization(self) -> None:
         """Test that enum can be created from string values."""
