@@ -23,7 +23,9 @@ def _parse_kafka_bootstrap() -> tuple[str, int]:
     try:
         return host, int(port_str)
     except ValueError:
-        return host, 19092  # fallback-ok: non-numeric port — degrade to default port
+        raise ValueError(
+            f"KAFKA_BOOTSTRAP_SERVERS contains non-numeric port: {port_str!r}"
+        )
 
 
 class CheckKafka(DoctorCheckBase):
@@ -33,7 +35,16 @@ class CheckKafka(DoctorCheckBase):
 
     def run(self) -> ModelDoctorCheckResult:
         start = time.monotonic()
-        host, port = _parse_kafka_bootstrap()
+        try:
+            host, port = _parse_kafka_bootstrap()
+        except ValueError as exc:
+            return ModelDoctorCheckResult(
+                name=self.check_name,
+                category=self.category,
+                status=EnumHealthStatusValue.UNHEALTHY,
+                message=str(exc),
+                duration_ms=int((time.monotonic() - start) * 1000),
+            )
         try:
             conn = socket.create_connection((host, port), timeout=3)
             conn.close()

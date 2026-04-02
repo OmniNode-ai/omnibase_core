@@ -29,7 +29,7 @@ class CheckStaleWorktrees(DoctorCheckBase):
         start = time.monotonic()
         worktree_root = _get_worktree_root()
         if worktree_root is None or not worktree_root.is_dir():
-            return ModelDoctorCheckResult(
+            return ModelDoctorCheckResult(  # fallback-ok: no worktree root configured or found
                 name=self.check_name,
                 category=self.category,
                 status=EnumHealthStatusValue.UNKNOWN,
@@ -39,7 +39,7 @@ class CheckStaleWorktrees(DoctorCheckBase):
         try:
             tickets = list(worktree_root.iterdir())
         except OSError:
-            # Directory disappeared between is_dir() and iterdir() — race condition
+            # fallback-ok: directory disappeared between is_dir() and iterdir() — race condition
             return ModelDoctorCheckResult(
                 name=self.check_name,
                 category=self.category,
