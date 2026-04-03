@@ -1,3 +1,18 @@
+## v0.38.0 (2026-04-03)
+
+### Features
+- feat: add onex doctor CLI command [OMN-7344] (#774)
+- feat(cli): add OmniClaw tooling — install, scaffold, analyzer, porting [OMN-7194] (#773)
+- feat(models): add EnumChannelType and ModelChannelEnvelope for OmniClaw [OMN-7182, OMN-7183] (#772)
+
+### Bug Fixes
+- fix(core): remove all localhost fallbacks, require env vars [OMN-7227] (#771)
+- fix(ci): auto-tag workflow matches chore: release PR titles [OMN-6909] (#770)
+
+### Other Changes
+- chore(deps): update deepdiff requirement (#768)
+- chore(deps): bump OmniNode-ai/onex_change_control in the actions group (#769)
+
 ## v0.37.0 (2026-03-31)
 
 ### Added
