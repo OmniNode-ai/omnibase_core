@@ -561,18 +561,19 @@ class RuntimeLocal:
 
         # --- 6. Build and publish initial payload ---
         correlation_id = uuid.uuid4()
-        input_spec: dict[str, Any] = self._contract.get("input_model", {})
+        # ONEX_EXCLUDE: dict_str_any — input_model can be dict or dotted string
+        raw_input_spec: Any = self._contract.get("input_model", {})
 
         # input_model can be a string "module.Class" or a dict with module/class
         initial_payload = None
-        if isinstance(input_spec, str) and "." in input_spec:
+        if isinstance(raw_input_spec, str) and "." in raw_input_spec:
             # Format: "some.module.ClassName"
-            parts = input_spec.rsplit(".", 1)
+            parts = raw_input_spec.rsplit(".", 1)
             initial_payload = self._build_initial_payload(
                 {"module": parts[0], "class": parts[1]}
             )
-        elif isinstance(input_spec, dict):
-            initial_payload = self._build_initial_payload(input_spec)
+        elif isinstance(raw_input_spec, dict):
+            initial_payload = self._build_initial_payload(raw_input_spec)
 
         if initial_payload is not None:
             # Inject correlation_id if the model supports it
