@@ -3,9 +3,9 @@
 
 from .check_docker import CheckDocker
 from .check_env_vars import CheckEnvVars
+from .check_js_runtime import CheckJsRuntime
 from .check_kafka import CheckKafka
 from .check_linear import CheckLinear
-from .check_nodejs_version import CheckNodeVersion
 from .check_postgres import CheckPostgres
 from .check_python_version import CheckPythonVersion
 from .check_repos_synced import CheckReposSynced
@@ -16,7 +16,7 @@ __all__ = [
     "CheckEnvVars",
     "CheckKafka",
     "CheckLinear",
-    "CheckNodeVersion",
+    "CheckJsRuntime",
     "CheckPostgres",
     "CheckPythonVersion",
     "CheckReposSynced",

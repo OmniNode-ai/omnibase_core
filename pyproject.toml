@@ -82,7 +82,7 @@ repos_synced = "omnibase_core.doctor.checks.check_repos_synced:CheckReposSynced"
 stale_worktrees = "omnibase_core.doctor.checks.check_stale_worktrees:CheckStaleWorktrees"
 env_vars = "omnibase_core.doctor.checks.check_env_vars:CheckEnvVars"
 python_version = "omnibase_core.doctor.checks.check_python_version:CheckPythonVersion"
-node_version = "omnibase_core.doctor.checks.check_node_version:CheckNodeVersion"
+js_runtime = "omnibase_core.doctor.checks.check_js_runtime:CheckJsRuntime"
 
 [project.optional-dependencies]
 spi = ["omnibase-spi>=0.20.2"]
