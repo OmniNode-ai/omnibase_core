@@ -215,7 +215,7 @@ class RuntimeLocal:
     # variable names so that handler classes can receive secrets without
     # hard-coding os.environ lookups.
     _ENV_VAR_KWARG_MAP: dict[str, str] = {
-        "linear_api_key": "LINEAR_API_KEY",
+        "linear_api_key": "LINEAR_API_KEY",  # pragma: allowlist secret
     }
 
     def _instantiate_handler(self, module_name: str, class_name: str) -> Any:
