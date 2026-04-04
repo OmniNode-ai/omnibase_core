@@ -215,7 +215,7 @@ class RuntimeLocal:
     # variable names so that handler classes can receive secrets without
     # hard-coding os.environ lookups.
     _ENV_VAR_KWARG_MAP: dict[str, str] = {
-        "linear_api_key": "LINEAR_API_KEY",
+        "linear_api_key": "LINEAR_API_KEY",  # pragma: allowlist secret
     }
 
     def _instantiate_handler(self, module_name: str, class_name: str) -> Any:
@@ -549,7 +549,7 @@ class RuntimeLocal:
 
         # --- 6. Build and publish initial payload ---
         correlation_id = uuid.uuid4()
-        input_spec: dict[str, Any] = self._contract.get("input_model", {})
+        input_spec: dict[str, Any] | str = self._contract.get("input_model", {})
 
         # input_model can be a string "module.Class" or a dict with module/class
         initial_payload = None
