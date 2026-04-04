@@ -243,7 +243,22 @@ class RuntimeLocal:
             self._write_state()
             return self._result
 
-        handler_instance = handler_cls()
+        import os as _os
+
+        _env_kwarg_map = {
+            "linear_api_key": "LINEAR_API_KEY",
+        }
+        _handler_kwargs: dict[str, Any] = {}
+        try:
+            import inspect as _inspect
+
+            _sig = _inspect.signature(handler_cls.__init__)
+            for param_name, env_name in _env_kwarg_map.items():
+                if param_name in _sig.parameters and _os.environ.get(env_name):
+                    _handler_kwargs[param_name] = _os.environ[env_name]
+        except (ValueError, TypeError):
+            pass
+        handler_instance = handler_cls(**_handler_kwargs)
         logger.info(
             "RuntimeLocal: resolved handler %s.%s",
             handler_module_name,
@@ -251,7 +266,10 @@ class RuntimeLocal:
         )
 
         # 5. Build initial payload from contract input spec
-        initial_payload = self._build_initial_payload(self._contract.get("input", {}))
+        input_spec = handler_spec.get("input_model", {}) or self._contract.get(
+            "input", {}
+        )
+        initial_payload = self._build_initial_payload(input_spec)
 
         # 6. Invoke handler
         try:
@@ -290,7 +308,24 @@ class RuntimeLocal:
         try:
             mod = importlib.import_module(model_module)
             cls = getattr(mod, model_class)
-            return cls()
+            try:
+                return cls()
+            except (TypeError, ValueError):
+                import uuid
+                from datetime import UTC
+                from datetime import datetime as _dt
+
+                defaults: dict[str, Any] = {}
+                for field_name, field_info in cls.model_fields.items():
+                    if field_info.is_required():
+                        ann = field_info.annotation
+                        if ann is uuid.UUID or (
+                            hasattr(ann, "__origin__") and ann.__origin__ is uuid.UUID
+                        ):
+                            defaults[field_name] = uuid.uuid4()
+                        elif ann is _dt:
+                            defaults[field_name] = _dt.now(UTC)
+                return cls(**defaults)
         except (ImportError, AttributeError, TypeError) as exc:
             logger.warning(
                 "RuntimeLocal: could not build input payload from %s.%s: %s",
