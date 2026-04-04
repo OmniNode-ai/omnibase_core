@@ -19,6 +19,8 @@ from __future__ import annotations
 __all__ = ["RuntimeLocal"]
 
 import asyncio
+import importlib
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -195,55 +197,134 @@ class RuntimeLocal:
             terminal_topic,
         )
 
-        # 2. Auto-configure registry (Part 1 dependency — OMN-7065)
-        # When auto_configure_registry lands, this will call:
-        #   from omnibase_core.registry.registry_auto_configure import auto_configure_registry
-        #   container = auto_configure_registry(state_root=self.state_root)
-        # For now, create a basic container.
-        from omnibase_core.models.container.model_onex_container import (
-            ModelONEXContainer,
-        )
+        # 2. Create in-memory event bus
+        from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
 
-        self._container = ModelONEXContainer(
-            enable_service_registry=True
-        )  # used when OMN-7065 lands
-        logger.info("RuntimeLocal: container created (state_root=%s)", self.state_root)
-
-        # 3. Discover and wire nodes from contract
-        nodes = self._contract.get("nodes", [])
-        logger.info("RuntimeLocal: %d node(s) declared in contract", len(nodes))
-
-        # 4. Start bus — will use EventBusInmemory once OMN-7062 lands
+        bus = EventBusInmemory(environment="local", group="runtime-local")
+        await bus.start()
         logger.info("RuntimeLocal: event bus started (inmemory)")
 
-        # 5. Subscribe to terminal event topic
+        # 3. Subscribe to terminal event topic
+        async def _on_terminal_msg(msg: Any) -> None:
+            """Adapt async bus callback to sync terminal handler."""
+            payload = json.loads(msg.value) if isinstance(msg.value, bytes) else {}
+            self._on_terminal_event(payload)
+
+        await bus.subscribe(
+            terminal_topic,
+            on_message=_on_terminal_msg,
+            group_id="runtime-local-terminal",
+        )
         logger.info("RuntimeLocal: subscribed to terminal topic '%s'", terminal_topic)
 
-        # 6. Publish initial command envelope
-        initial_command = self._contract.get("initial_command")
-        if initial_command:
-            logger.info("RuntimeLocal: published initial command")
+        # 4. Resolve handler from contract
+        handler_spec = self._contract.get("handler", {})
+        handler_module_name = handler_spec.get("module", "")
+        handler_class_name = handler_spec.get("class", "")
 
-        # 7. Wait for terminal event or timeout
+        if not handler_module_name or not handler_class_name:
+            logger.error("Workflow contract missing handler.module or handler.class")
+            self._result = EnumWorkflowResult.FAILED
+            await bus.close()
+            self._write_state()
+            return self._result
+
         try:
-            await asyncio.wait_for(
-                self._terminal_received.wait(),
-                timeout=self.timeout,
+            mod = importlib.import_module(handler_module_name)
+            handler_cls = getattr(mod, handler_class_name)
+        except (ImportError, AttributeError) as exc:
+            logger.exception(
+                "RuntimeLocal: failed to resolve handler %s.%s",
+                handler_module_name,
+                handler_class_name,
             )
-        except TimeoutError:
-            logger.warning(
-                "RuntimeLocal: timeout after %ds without terminal event",
-                self.timeout,
-            )
-            # Check if any evidence was written (partial)
-            evidence_dir = self.state_root / "evidence"
-            if evidence_dir.exists() and any(evidence_dir.iterdir()):
-                self._result = EnumWorkflowResult.PARTIAL
-            else:
-                self._result = EnumWorkflowResult.TIMEOUT
+            self._result = EnumWorkflowResult.FAILED
+            await bus.close()
+            self._write_state()
+            return self._result
 
+        handler_instance = handler_cls()
+        logger.info(
+            "RuntimeLocal: resolved handler %s.%s",
+            handler_module_name,
+            handler_class_name,
+        )
+
+        # 5. Build initial payload from contract input spec
+        initial_payload = self._build_initial_payload(self._contract.get("input", {}))
+
+        # 6. Invoke handler
+        try:
+            handle_method = getattr(handler_instance, "handle", None)
+            if handle_method is None:
+                logger.error("Handler %s has no handle() method", handler_class_name)
+                self._result = EnumWorkflowResult.FAILED
+            elif asyncio.iscoroutinefunction(handle_method):
+                result_obj = await handle_method(initial_payload)
+                self._result = self._classify_result(result_obj)
+            else:
+                result_obj = handle_method(initial_payload)
+                self._result = self._classify_result(result_obj)
+            logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
+        except Exception:
+            logger.exception("RuntimeLocal: handler raised an exception")
+            self._result = EnumWorkflowResult.FAILED
+
+        await bus.close()
+        self._write_state()
         logger.info("RuntimeLocal: result=%s", self._result.value)
         return self._result
+
+    # ONEX_EXCLUDE: dict_str_any — input spec from workflow contract
+    def _build_initial_payload(self, input_spec: dict[str, Any]) -> Any:
+        """Import and instantiate the input model from the contract's input spec.
+
+        If the input spec declares a ``module`` and ``class``, the model is imported
+        and instantiated with defaults. Otherwise returns None (handler must accept
+        None or have its own defaults).
+        """
+        model_module = input_spec.get("module", "")
+        model_class = input_spec.get("class", "")
+        if not model_module or not model_class:
+            return None
+        try:
+            mod = importlib.import_module(model_module)
+            cls = getattr(mod, model_class)
+            return cls()
+        except (ImportError, AttributeError, TypeError) as exc:
+            logger.warning(
+                "RuntimeLocal: could not build input payload from %s.%s: %s",
+                model_module,
+                model_class,
+                exc,
+            )
+            return None
+
+    @staticmethod
+    def _classify_result(result_obj: Any) -> EnumWorkflowResult:
+        """Inspect handler return value to determine success or failure."""
+        if result_obj is None:
+            return EnumWorkflowResult.COMPLETED
+        # Check for common failure indicators on result objects
+        cycles_failed = getattr(result_obj, "cycles_failed", None)
+        if cycles_failed is not None and cycles_failed > 0:
+            return EnumWorkflowResult.FAILED
+        status = getattr(result_obj, "status", None)
+        if status == "failure":
+            return EnumWorkflowResult.FAILED
+        return EnumWorkflowResult.COMPLETED
+
+    def _write_state(self) -> None:
+        """Serialize workflow result to ``state_root/workflow_result.json``."""
+        self.state_root.mkdir(parents=True, exist_ok=True)
+        result_path = self.state_root / "workflow_result.json"
+        data = {
+            "result": self._result.value,
+            "exit_code": self.exit_code,
+            "workflow": str(self.workflow_path),
+        }
+        result_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        logger.info("RuntimeLocal: wrote state to %s", result_path)
 
     def run(self) -> EnumWorkflowResult:
         """Execute the workflow synchronously (convenience wrapper).
