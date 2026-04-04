@@ -6,9 +6,9 @@ import click
 from omnibase_core.doctor.checks import (
     CheckDocker,
     CheckEnvVars,
+    CheckJsRuntime,
     CheckKafka,
     CheckLinear,
-    CheckNodeVersion,
     CheckPostgres,
     CheckPythonVersion,
     CheckReposSynced,
@@ -27,7 +27,7 @@ _BUILTIN_CHECKS = [
     CheckStaleWorktrees,
     CheckEnvVars,
     CheckPythonVersion,
-    CheckNodeVersion,
+    CheckJsRuntime,
 ]
 
 

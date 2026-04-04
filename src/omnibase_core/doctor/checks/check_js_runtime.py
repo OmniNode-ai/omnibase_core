@@ -10,7 +10,7 @@ from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
 
 
-class CheckNodeVersion(DoctorCheckBase):
+class CheckJsRuntime(DoctorCheckBase):
     check_id = "node_version"
     check_name = "Node.js version"
     category = EnumDoctorCategory.ENVIRONMENT

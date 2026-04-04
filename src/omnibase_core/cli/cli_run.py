@@ -40,7 +40,7 @@ from omnibase_core.runtime.runtime_local import (
 )
 def run_workflow(
     workflow_path: Path,
-    state_root: str,
+    state_root: Path,
     backend: tuple[str, ...],
     timeout: int,
 ) -> None:
@@ -75,7 +75,7 @@ def run_workflow(
 
     runtime = RuntimeLocal(
         workflow_path=workflow_path,
-        state_root=Path(state_root),
+        state_root=state_root,
         backend_overrides=backend_overrides,
         timeout=timeout,
     )

@@ -8,7 +8,7 @@ import pytest
 from omnibase_core.doctor.checks.check_env_vars import CheckEnvVars
 
 pytestmark = pytest.mark.unit
-from omnibase_core.doctor.checks.check_node_version import CheckNodeVersion
+from omnibase_core.doctor.checks.check_js_runtime import CheckJsRuntime
 from omnibase_core.doctor.checks.check_python_version import CheckPythonVersion
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
@@ -44,5 +44,5 @@ def test_node_version_present():
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.returncode = 0
         mock_run.return_value.stdout = "v20.11.0\n"
-        result = CheckNodeVersion().run()
+        result = CheckJsRuntime().run()
     assert result.status == EnumHealthStatusValue.HEALTHY
