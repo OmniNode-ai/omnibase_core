@@ -673,6 +673,7 @@ class RuntimeLocal:
                 return cls()
             except (TypeError, ValueError):
                 # Auto-fill required UUID and datetime fields with defaults
+                import typing
                 from datetime import UTC
                 from datetime import datetime as _dt
 
@@ -686,6 +687,11 @@ class RuntimeLocal:
                             defaults[field_name] = _dt.now(UTC)
                         elif ann is str:
                             defaults[field_name] = ""
+                        else:
+                            # Handle tuple[T, ...] and list[T] with empty default
+                            origin = typing.get_origin(ann)
+                            if origin is tuple or origin is list:
+                                defaults[field_name] = ()
                 return cls(**defaults)
         except (ImportError, AttributeError, TypeError) as exc:
             logger.warning(
