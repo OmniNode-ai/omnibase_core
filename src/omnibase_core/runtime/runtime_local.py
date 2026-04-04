@@ -267,14 +267,31 @@ class RuntimeLocal:
     # Single-handler execution path
     # ------------------------------------------------------------------
 
-    async def _run_single_handler(self, bus: Any) -> None:
+    async def _run_single_handler(self, bus: Any, terminal_topic: str) -> None:
         """Resolve and invoke the single handler declared in the contract.
 
         If the handler returns a result directly, it is classified immediately.
         Otherwise (e.g. handler publishes to the bus and the terminal event
         arrives asynchronously), the method waits up to ``self.timeout`` seconds
         for the terminal event.
+
+        The terminal topic subscription is owned by this method (not
+        ``run_async``) so that event-driven workflows—which subscribe to
+        terminal topics via ``publish_topics``—don't receive duplicates.
         """
+
+        async def _on_terminal_msg(msg: Any) -> None:
+            """Adapt async bus callback to sync terminal handler."""
+            payload = json.loads(msg.value) if isinstance(msg.value, bytes) else {}
+            self._on_terminal_event(payload)
+
+        await bus.subscribe(
+            terminal_topic,
+            on_message=_on_terminal_msg,
+            group_id="runtime-local-terminal",
+        )
+        logger.info("RuntimeLocal: subscribed to terminal topic '%s'", terminal_topic)
+
         handler_spec = self._contract.get("handler", {})
         handler_module_name = handler_spec.get("module", "")
         handler_class_name = handler_spec.get("class", "")
@@ -615,20 +632,7 @@ class RuntimeLocal:
         await bus.start()
         logger.info("RuntimeLocal: event bus started (inmemory)")
 
-        # 3. Subscribe to terminal event topic
-        async def _on_terminal_msg(msg: Any) -> None:
-            """Adapt async bus callback to sync terminal handler."""
-            payload = json.loads(msg.value) if isinstance(msg.value, bytes) else {}
-            self._on_terminal_event(payload)
-
-        await bus.subscribe(
-            terminal_topic,
-            on_message=_on_terminal_msg,
-            group_id="runtime-local-terminal",
-        )
-        logger.info("RuntimeLocal: subscribed to terminal topic '%s'", terminal_topic)
-
-        # 4. Dispatch to appropriate execution path
+        # 3. Dispatch to appropriate execution path
         try:
             if self._has_event_routing():
                 logger.info(
@@ -641,7 +645,7 @@ class RuntimeLocal:
                     "RuntimeLocal: no handler_routing — "
                     "using single-handler execution path"
                 )
-                await self._run_single_handler(bus)
+                await self._run_single_handler(bus, terminal_topic)
         except ModelOnexError:
             self._result = EnumWorkflowResult.FAILED
         except Exception:
