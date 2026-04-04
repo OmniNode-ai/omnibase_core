@@ -215,7 +215,7 @@ class RuntimeLocal:
     # variable names so that handler classes can receive secrets without
     # hard-coding os.environ lookups.
     _ENV_VAR_KWARG_MAP: dict[str, str] = {
-        "linear_api_key": "LINEAR_API_KEY",  # pragma: allowlist secret
+        "linear_api_key": "LINEAR_API_KEY",
     }
 
     def _instantiate_handler(self, module_name: str, class_name: str) -> Any:
@@ -305,10 +305,16 @@ class RuntimeLocal:
             handler_module_name, handler_class_name
         )
 
-        # Build initial payload from handler or contract input spec
-        input_spec = handler_spec.get("input_model", {}) or self._contract.get(
-            "input", {}
-        )
+        # Build initial payload from handler or contract input spec.
+        # input_model may be a dotted string ("module.ClassName") — coerce to dict.
+        input_spec: dict[str, Any] | str = handler_spec.get(
+            "input_model", {}
+        ) or self._contract.get("input", {})
+        if isinstance(input_spec, str) and "." in input_spec:
+            module_name, class_name = input_spec.rsplit(".", 1)
+            input_spec = {"module": module_name, "class": class_name}
+        elif not isinstance(input_spec, dict):
+            input_spec = {}
         initial_payload = self._build_initial_payload(input_spec)
 
         # Invoke handler
@@ -325,9 +331,15 @@ class RuntimeLocal:
 
         # If the handler returned a result, use it directly — don't wait for
         # terminal event since single-handler workflows return synchronously.
-        classified = self._classify_result(result_obj)
-        if result_obj is not None or self._terminal_received.is_set():
-            self._result = classified
+        # If terminal_received is already set (e.g. by _on_terminal_event with a
+        # failure), preserve that result rather than overwriting with a classification
+        # of None.
+        if result_obj is not None:
+            self._result = self._classify_result(result_obj)
+            logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
+            return
+
+        if self._terminal_received.is_set():
             logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
             return
 
@@ -549,7 +561,7 @@ class RuntimeLocal:
 
         # --- 6. Build and publish initial payload ---
         correlation_id = uuid.uuid4()
-        input_spec: dict[str, Any] | str = self._contract.get("input_model", {})
+        input_spec: dict[str, Any] = self._contract.get("input_model", {})
 
         # input_model can be a string "module.Class" or a dict with module/class
         initial_payload = None
