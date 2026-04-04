@@ -5,12 +5,19 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
 from omnibase_core.runtime.runtime_local import RuntimeLocal, load_workflow_contract
+from omnibase_core.runtime.runtime_local_adapter import HandlerBusAdapter
+
+# ---------------------------------------------------------------------------
+# Shared fixtures & helpers
+# ---------------------------------------------------------------------------
 
 VALID_WORKFLOW_YAML = (
     "workflow_id: test\n"
@@ -25,6 +32,52 @@ VALID_WORKFLOW_YAML = (
     "nodes: []\n"
     "event_flow: []\n"
 )
+
+
+# -- Lightweight Pydantic models for adapter tests --
+
+from pydantic import BaseModel
+
+
+class MockInput(BaseModel):
+    correlation_id: str
+    name: str
+
+
+class MockOutput(BaseModel):
+    correlation_id: str
+    result: str
+
+
+# -- Mock bus & message --
+
+
+class MockBus:
+    """In-memory bus that records publish calls."""
+
+    def __init__(self) -> None:
+        self.published: list[tuple[str, bytes | None, bytes]] = []
+
+    async def publish(
+        self,
+        topic: str,
+        key: bytes | None,
+        value: bytes,
+        headers: Any = None,
+    ) -> None:
+        self.published.append((topic, key, value))
+
+
+class MockMessage:
+    """Minimal message object carrying a byte payload."""
+
+    def __init__(self, value: bytes) -> None:
+        self.value = value
+
+
+# ===================================================================
+# Existing RuntimeLocal tests
+# ===================================================================
 
 
 @pytest.mark.unit
@@ -65,7 +118,6 @@ def test_runtime_local_writes_state(tmp_path: Path) -> None:
     runtime.run()
     result_file = state_dir / "workflow_result.json"
     assert result_file.exists()
-    import json
 
     data = json.loads(result_file.read_text())
     assert data["result"] == "failed"
@@ -93,3 +145,405 @@ def test_runtime_local_missing_handler_spec(tmp_path: Path) -> None:
     )
     result = runtime.run()
     assert result == EnumWorkflowResult.FAILED
+
+
+# ===================================================================
+# HandlerBusAdapter unit tests
+# ===================================================================
+
+
+def _make_async_handler(
+    output: MockOutput | None = None,
+    error: Exception | None = None,
+) -> Any:
+    """Return an object with an async ``handle`` method."""
+
+    class _Handler:
+        calls: list[dict[str, Any]] = []
+
+        async def handle(self, **kwargs: Any) -> MockOutput | None:
+            self.calls.append(kwargs)
+            if error is not None:
+                raise error
+            return output
+
+    return _Handler()
+
+
+def _make_sync_handler(
+    output: MockOutput | None = None,
+    error: Exception | None = None,
+) -> Any:
+    """Return an object with a sync ``handle`` method."""
+
+    class _Handler:
+        calls: list[dict[str, Any]] = []
+
+        def handle(self, **kwargs: Any) -> MockOutput | None:
+            self.calls.append(kwargs)
+            if error is not None:
+                raise error
+            return output
+
+    return _Handler()
+
+
+def _input_bytes(correlation_id: str = "cid-1", name: str = "alice") -> bytes:
+    return (
+        MockInput(correlation_id=correlation_id, name=name).model_dump_json().encode()
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_adapter_async_handler() -> None:
+    """Adapter deserializes message, calls async handler, publishes result."""
+    expected_output = MockOutput(correlation_id="cid-1", result="ok")
+    handler = _make_async_handler(output=expected_output)
+    bus = MockBus()
+    adapter = HandlerBusAdapter(
+        handler=handler,
+        handler_name="test-async",
+        input_model_cls=MockInput,
+        output_topic="out.topic",
+        bus=bus,
+    )
+
+    msg = MockMessage(value=_input_bytes())
+    await adapter.on_message(msg)
+
+    # Handler was called with deserialized kwargs
+    assert len(handler.calls) == 1
+    assert handler.calls[0]["correlation_id"] == "cid-1"
+    assert handler.calls[0]["name"] == "alice"
+
+    # Result published to output topic
+    assert len(bus.published) == 1
+    topic, _key, value = bus.published[0]
+    assert topic == "out.topic"
+    published_data = json.loads(value)
+    assert published_data["correlation_id"] == "cid-1"
+    assert published_data["result"] == "ok"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_adapter_sync_handler() -> None:
+    """Adapter works with sync handlers too."""
+    expected_output = MockOutput(correlation_id="cid-2", result="sync-ok")
+    handler = _make_sync_handler(output=expected_output)
+    bus = MockBus()
+    adapter = HandlerBusAdapter(
+        handler=handler,
+        handler_name="test-sync",
+        input_model_cls=MockInput,
+        output_topic="out.topic",
+        bus=bus,
+    )
+
+    msg = MockMessage(value=_input_bytes(correlation_id="cid-2", name="bob"))
+    await adapter.on_message(msg)
+
+    assert len(handler.calls) == 1
+    assert handler.calls[0]["name"] == "bob"
+    assert len(bus.published) == 1
+    published_data = json.loads(bus.published[0][2])
+    assert published_data["result"] == "sync-ok"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_adapter_error_calls_on_error() -> None:
+    """When handler raises, on_error callback is invoked."""
+    handler = _make_async_handler(error=RuntimeError("boom"))
+    bus = MockBus()
+    error_called = False
+
+    def _on_error() -> None:
+        nonlocal error_called
+        error_called = True
+
+    adapter = HandlerBusAdapter(
+        handler=handler,
+        handler_name="test-err",
+        input_model_cls=MockInput,
+        output_topic="out.topic",
+        bus=bus,
+        on_error=_on_error,
+    )
+
+    msg = MockMessage(value=_input_bytes())
+    await adapter.on_message(msg)
+
+    assert error_called
+    # Nothing published on error
+    assert len(bus.published) == 0
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_adapter_bad_payload_calls_on_error() -> None:
+    """When message value can't deserialize to input model, on_error fires."""
+    handler = _make_async_handler()
+    bus = MockBus()
+    error_called = False
+
+    def _on_error() -> None:
+        nonlocal error_called
+        error_called = True
+
+    adapter = HandlerBusAdapter(
+        handler=handler,
+        handler_name="test-bad",
+        input_model_cls=MockInput,
+        output_topic="out.topic",
+        bus=bus,
+        on_error=_on_error,
+    )
+
+    # Payload missing required field "name"
+    bad_payload = json.dumps({"correlation_id": "cid-x"}).encode()
+    msg = MockMessage(value=bad_payload)
+    await adapter.on_message(msg)
+
+    assert error_called
+    assert len(handler.calls) == 0
+    assert len(bus.published) == 0
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_adapter_no_publish_when_no_output_topic() -> None:
+    """When output_topic is None, adapter doesn't publish."""
+    expected_output = MockOutput(correlation_id="cid-3", result="ignored")
+    handler = _make_async_handler(output=expected_output)
+    bus = MockBus()
+    adapter = HandlerBusAdapter(
+        handler=handler,
+        handler_name="test-no-topic",
+        input_model_cls=MockInput,
+        output_topic=None,
+        bus=bus,
+    )
+
+    msg = MockMessage(value=_input_bytes(correlation_id="cid-3"))
+    await adapter.on_message(msg)
+
+    assert len(handler.calls) == 1
+    assert len(bus.published) == 0
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_adapter_preserves_correlation_id() -> None:
+    """Correlation ID passes through input -> handler -> output."""
+    cid = "unique-correlation-42"
+
+    class _Handler:
+        async def handle(self, **kwargs: Any) -> MockOutput:
+            return MockOutput(correlation_id=kwargs["correlation_id"], result="traced")
+
+    bus = MockBus()
+    adapter = HandlerBusAdapter(
+        handler=_Handler(),
+        handler_name="test-cid",
+        input_model_cls=MockInput,
+        output_topic="trace.out",
+        bus=bus,
+    )
+
+    msg = MockMessage(value=_input_bytes(correlation_id=cid, name="eve"))
+    await adapter.on_message(msg)
+
+    assert len(bus.published) == 1
+    published_data = json.loads(bus.published[0][2])
+    assert published_data["correlation_id"] == cid
+
+
+# ===================================================================
+# Routing detection tests (_has_event_routing)
+# ===================================================================
+
+
+def _runtime_with_contract(
+    tmp_path: Path,
+    extra_yaml: str = "",
+) -> RuntimeLocal:
+    """Create a RuntimeLocal and manually load a contract with extra fields."""
+    yaml_text = VALID_WORKFLOW_YAML + extra_yaml
+    workflow = tmp_path / "test.yaml"
+    workflow.write_text(yaml_text)
+    runtime = RuntimeLocal(
+        workflow_path=workflow,
+        state_root=tmp_path / "state",
+        timeout=5,
+    )
+    # Load contract without running the full workflow
+    import yaml
+
+    runtime._contract = yaml.safe_load(yaml_text)
+    return runtime
+
+
+@pytest.mark.unit
+def test_has_event_routing_valid(tmp_path: Path) -> None:
+    """_has_event_routing returns True for valid handler_routing."""
+    runtime = _runtime_with_contract(
+        tmp_path,
+        extra_yaml=(
+            "handler_routing:\n"
+            "  handlers:\n"
+            "    - name: handler_a\n"
+            "      module: mod_a\n"
+            "      class: A\n"
+        ),
+    )
+    assert runtime._has_event_routing() is True
+
+
+@pytest.mark.unit
+def test_has_event_routing_empty_handlers(tmp_path: Path) -> None:
+    """_has_event_routing returns False when handlers list is empty."""
+    runtime = _runtime_with_contract(
+        tmp_path,
+        extra_yaml="handler_routing:\n  handlers: []\n",
+    )
+    assert runtime._has_event_routing() is False
+
+
+@pytest.mark.unit
+def test_has_event_routing_missing(tmp_path: Path) -> None:
+    """_has_event_routing returns False when no handler_routing."""
+    runtime = _runtime_with_contract(tmp_path)
+    assert runtime._has_event_routing() is False
+
+
+@pytest.mark.unit
+def test_has_event_routing_malformed(tmp_path: Path) -> None:
+    """_has_event_routing returns False for non-dict handler_routing."""
+    runtime = _runtime_with_contract(
+        tmp_path,
+        extra_yaml="handler_routing: not-a-dict\n",
+    )
+    assert runtime._has_event_routing() is False
+
+
+# ===================================================================
+# Integration test: two-handler chain
+# ===================================================================
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_two_handler_chain_end_to_end(tmp_path: Path) -> None:
+    """Two handlers chained via event bus, terminal event fires.
+
+    Handler A: receives cmd.start (MockInput), emits MockMid
+    Handler B: receives MockMid, emits MockTerminal
+    Terminal listener receives on publish_topics -> COMPLETED
+    """
+    import sys
+    import types
+
+    class MockMid(BaseModel):
+        correlation_id: str
+        intermediate: str
+
+    class MockTerminal(BaseModel):
+        correlation_id: str
+        done: bool
+
+    # Handler A: MockInput -> MockMid
+    class HandlerA:
+        async def handle(self, correlation_id: str, name: str) -> MockMid:
+            return MockMid(
+                correlation_id=correlation_id, intermediate=f"processed-{name}"
+            )
+
+    # Handler B: MockMid -> MockTerminal
+    class HandlerB:
+        async def handle(self, correlation_id: str, intermediate: str) -> MockTerminal:
+            return MockTerminal(correlation_id=correlation_id, done=True)
+
+    # Register fake modules so importlib.import_module works
+    mod_input = types.ModuleType("_test_chain_input")
+    mod_input.MockInput = MockInput  # type: ignore[attr-defined]
+    mod_mid = types.ModuleType("_test_chain_mid")
+    mod_mid.MockMid = MockMid  # type: ignore[attr-defined]
+    mod_handler_a = types.ModuleType("_test_chain_handler_a")
+    mod_handler_a.HandlerA = HandlerA  # type: ignore[attr-defined]
+    mod_handler_b = types.ModuleType("_test_chain_handler_b")
+    mod_handler_b.HandlerB = HandlerB  # type: ignore[attr-defined]
+
+    sys.modules["_test_chain_input"] = mod_input
+    sys.modules["_test_chain_mid"] = mod_mid
+    sys.modules["_test_chain_handler_a"] = mod_handler_a
+    sys.modules["_test_chain_handler_b"] = mod_handler_b
+
+    try:
+        # --- Write contract YAML ---
+        contract_yaml = (
+            "workflow_id: test_chain\n"
+            "contract_version: {major: 1, minor: 0, patch: 0}\n"
+            "node_type: workflow\n"
+            "description: Two-handler chain test\n"
+            "initial_command: cmd.start.v1\n"
+            "terminal_event: evt.done.v1\n"
+            "event_bus:\n"
+            "  subscribe_topics:\n"
+            "    - cmd.start.v1\n"
+            "    - evt.mid.v1\n"
+            "  publish_topics:\n"
+            "    - evt.done.v1\n"
+            "input_model:\n"
+            "  module: _test_chain_input\n"
+            "  class: MockInput\n"
+            "handler_routing:\n"
+            "  routing_strategy: payload_type_match\n"
+            "  handlers:\n"
+            "    - event_model:\n"
+            "        name: MockInput\n"
+            "        module: _test_chain_input\n"
+            "      handler:\n"
+            "        name: HandlerA\n"
+            "        module: _test_chain_handler_a\n"
+            "      output_events:\n"
+            "        - MockMid\n"
+            "    - event_model:\n"
+            "        name: MockMid\n"
+            "        module: _test_chain_mid\n"
+            "      handler:\n"
+            "        name: HandlerB\n"
+            "        module: _test_chain_handler_b\n"
+            "      output_events:\n"
+            "        - MockTerminal\n"
+        )
+
+        workflow = tmp_path / "chain_test.yaml"
+        workflow.write_text(contract_yaml)
+
+        runtime = RuntimeLocal(
+            workflow_path=workflow,
+            state_root=tmp_path / "state",
+            timeout=10,
+        )
+        result = await runtime.run_async()
+
+        assert result == EnumWorkflowResult.COMPLETED
+
+        # Verify state was written
+        state_file = tmp_path / "state" / "workflow_result.json"
+        assert state_file.exists()
+        state_data = json.loads(state_file.read_text())
+        assert state_data["result"] == "completed"
+        assert state_data["exit_code"] == 0
+
+    finally:
+        # Clean up fake modules
+        for mod_name in [
+            "_test_chain_input",
+            "_test_chain_mid",
+            "_test_chain_handler_a",
+            "_test_chain_handler_b",
+        ]:
+            sys.modules.pop(mod_name, None)
