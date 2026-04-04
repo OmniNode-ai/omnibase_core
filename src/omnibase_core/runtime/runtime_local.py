@@ -305,8 +305,17 @@ class RuntimeLocal:
             handler_module_name, handler_class_name
         )
 
-        # Build initial payload from contract input spec
-        initial_payload = self._build_initial_payload(self._contract.get("input", {}))
+        # Build initial payload from handler or contract input spec.
+        # input_model may be a dotted string ("module.ClassName") — coerce to dict.
+        input_spec: dict[str, Any] | str = handler_spec.get(
+            "input_model", {}
+        ) or self._contract.get("input", {})
+        if isinstance(input_spec, str) and "." in input_spec:
+            module_name, class_name = input_spec.rsplit(".", 1)
+            input_spec = {"module": module_name, "class": class_name}
+        elif not isinstance(input_spec, dict):
+            input_spec = {}
+        initial_payload = self._build_initial_payload(input_spec)
 
         # Invoke handler
         handle_method = getattr(handler_instance, "handle", None)
@@ -320,13 +329,17 @@ class RuntimeLocal:
         else:
             result_obj = handle_method(initial_payload)
 
-        # If the handler returned a classifiable result, use it directly.
-        classified = self._classify_result(result_obj)
-        if (
-            classified != EnumWorkflowResult.COMPLETED
-            or self._terminal_received.is_set()
-        ):
-            self._result = classified
+        # If the handler returned a result, use it directly — don't wait for
+        # terminal event since single-handler workflows return synchronously.
+        # If terminal_received is already set (e.g. by _on_terminal_event with a
+        # failure), preserve that result rather than overwriting with a classification
+        # of None.
+        if result_obj is not None:
+            self._result = self._classify_result(result_obj)
+            logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
+            return
+
+        if self._terminal_received.is_set():
             logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
             return
 
@@ -548,18 +561,19 @@ class RuntimeLocal:
 
         # --- 6. Build and publish initial payload ---
         correlation_id = uuid.uuid4()
-        input_spec: dict[str, Any] | str = self._contract.get("input_model", {})
+        # ONEX_EXCLUDE: dict_str_any — input_model can be dict or dotted string
+        raw_input_spec: Any = self._contract.get("input_model", {})
 
         # input_model can be a string "module.Class" or a dict with module/class
         initial_payload = None
-        if isinstance(input_spec, str) and "." in input_spec:
+        if isinstance(raw_input_spec, str) and "." in raw_input_spec:
             # Format: "some.module.ClassName"
-            parts = input_spec.rsplit(".", 1)
+            parts = raw_input_spec.rsplit(".", 1)
             initial_payload = self._build_initial_payload(
                 {"module": parts[0], "class": parts[1]}
             )
-        elif isinstance(input_spec, dict):
-            initial_payload = self._build_initial_payload(input_spec)
+        elif isinstance(raw_input_spec, dict):
+            initial_payload = self._build_initial_payload(raw_input_spec)
 
         if initial_payload is not None:
             # Inject correlation_id if the model supports it
