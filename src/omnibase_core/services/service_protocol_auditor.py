@@ -35,6 +35,7 @@ from omnibase_core.validation.validator_utils import (
 )
 
 if TYPE_CHECKING:
+    from omnibase_spi.protocols.types.protocol_base_types import ProtocolContextValue
     from omnibase_spi.protocols.validation.protocol_quality_validator import (
         ProtocolQualityIssue,
         ProtocolQualityMetrics,
@@ -42,6 +43,7 @@ if TYPE_CHECKING:
         ProtocolQualityStandards,
     )
     from omnibase_spi.protocols.validation.protocol_validation import (
+        ProtocolValidationError,
         ProtocolValidationResult,
     )
 
@@ -115,13 +117,13 @@ class _QualityReport:
     """Concrete implementation of ProtocolQualityReport."""
 
     file_path: str = ""
-    metrics: _QualityMetrics = field(default_factory=_QualityMetrics)
-    issues: list[_QualityIssue] = field(default_factory=list)
+    metrics: ProtocolQualityMetrics = field(default_factory=_QualityMetrics)
+    issues: list[ProtocolQualityIssue] = field(default_factory=list)
     standards_compliance: bool = True
     overall_score: float = 100.0
     recommendations: list[str] = field(default_factory=list)
 
-    async def get_critical_issues(self) -> list[_QualityIssue]:
+    async def get_critical_issues(self) -> list[ProtocolQualityIssue]:
         """Return only critical-severity issues."""
         return [i for i in self.issues if i.severity == "critical"]
 
@@ -133,14 +135,14 @@ class _ValidationResult:
     is_valid: bool = True
     protocol_name: str = "ProtocolQualityValidator"
     implementation_name: str = "ServiceProtocolAuditor"
-    errors: list[object] = field(default_factory=list)
-    warnings: list[object] = field(default_factory=list)
+    errors: list[ProtocolValidationError] = field(default_factory=list)
+    warnings: list[ProtocolValidationError] = field(default_factory=list)
 
     def add_error(
         self,
         error_type: str,
         message: str,
-        context: dict[str, object] | None = None,
+        context: dict[str, ProtocolContextValue] | None = None,
         severity: str | None = None,
     ) -> None:
         """Add an error to the result."""
@@ -157,7 +159,7 @@ class _ValidationResult:
         self,
         error_type: str,
         message: str,
-        context: dict[str, object] | None = None,
+        context: dict[str, ProtocolContextValue] | None = None,
     ) -> None:
         """Add a warning to the result."""
         self.warnings.append({"error_type": error_type, "message": message})
@@ -617,7 +619,7 @@ class ServiceProtocolAuditor:
         """
         source = self._read_file_content(file_path, content)
         metrics = self.calculate_quality_metrics(file_path, source)
-        issues: list[_QualityIssue] = []
+        issues: list[ProtocolQualityIssue] = []
 
         # Gather all issue types
         if self.enable_complexity_analysis:
@@ -769,7 +771,7 @@ class ServiceProtocolAuditor:
                 ),
             ]
 
-        issues: list[_QualityIssue] = []
+        issues: list[ProtocolQualityIssue] = []
 
         for node in ast.walk(tree):
             # Long functions
@@ -881,7 +883,7 @@ class ServiceProtocolAuditor:
         except SyntaxError:
             return []
 
-        issues: list[_QualityIssue] = []
+        issues: list[ProtocolQualityIssue] = []
         path = Path(file_path)
 
         for node in ast.walk(tree):
@@ -971,7 +973,7 @@ class ServiceProtocolAuditor:
         except SyntaxError:
             return []
 
-        issues: list[_QualityIssue] = []
+        issues: list[ProtocolQualityIssue] = []
         max_complexity = _DEFAULT_MAX_COMPLEXITY
         if self.standards is not None:
             max_complexity = getattr(
@@ -1029,7 +1031,7 @@ class ServiceProtocolAuditor:
         except SyntaxError:
             return []
 
-        issues: list[_QualityIssue] = []
+        issues: list[ProtocolQualityIssue] = []
 
         # Check module docstring
         if not ast.get_docstring(tree):
