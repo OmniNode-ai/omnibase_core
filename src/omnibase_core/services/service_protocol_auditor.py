@@ -129,6 +129,20 @@ class _QualityReport:
 
 
 @dataclass
+class _ConcreteValidationError:
+    """Concrete implementation of ProtocolValidationError protocol."""
+
+    error_type: str
+    message: str
+    context: dict[str, ProtocolContextValue] = field(default_factory=dict)
+    severity: str = "error"
+
+    def __str__(self) -> str:
+        """Return string representation of the error."""
+        return f"[{self.severity}] {self.error_type}: {self.message}"
+
+
+@dataclass
 class _ValidationResult:
     """Concrete implementation of ProtocolValidationResult for summaries."""
 
@@ -147,11 +161,12 @@ class _ValidationResult:
     ) -> None:
         """Add an error to the result."""
         self.errors.append(
-            {
-                "error_type": error_type,
-                "message": message,
-                "severity": severity or "error",
-            }
+            _ConcreteValidationError(
+                error_type=error_type,
+                message=message,
+                context=context or {},
+                severity=severity or "error",
+            )
         )
         self.is_valid = False
 
@@ -162,7 +177,14 @@ class _ValidationResult:
         context: dict[str, ProtocolContextValue] | None = None,
     ) -> None:
         """Add a warning to the result."""
-        self.warnings.append({"error_type": error_type, "message": message})
+        self.warnings.append(
+            _ConcreteValidationError(
+                error_type=error_type,
+                message=message,
+                context=context or {},
+                severity="warning",
+            )
+        )
 
     async def get_summary(self) -> str:
         """Get a summary of the validation result."""
