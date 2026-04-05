@@ -257,7 +257,8 @@ def __getattr__(name: str) -> type:
     ):
         import omnibase_core.validation.validator_contract_linter as vcl
 
-        return getattr(vcl, name)
+        attr: type = getattr(vcl, name)
+        return attr
 
     raise AttributeError(  # error-ok: required for __getattr__ protocol
         f"module {__name__!r} has no attribute {name!r}"

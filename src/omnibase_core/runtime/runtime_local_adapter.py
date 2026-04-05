@@ -51,7 +51,9 @@ class HandlerBusAdapter:
             payload_dict = json.loads(msg.value) if isinstance(msg.value, bytes) else {}
             correlation_id = payload_dict.get("correlation_id")
             input_model = self.input_model_cls(**payload_dict)
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: bus adapter must not crash consumer on bad messages
             logger.exception(
                 "HandlerBusAdapter: deserialization failed for %s (correlation_id=%s)",
                 self.handler_name,
@@ -74,7 +76,9 @@ class HandlerBusAdapter:
                 result = await handle_method(**input_model.model_dump())
             else:
                 result = handle_method(**input_model.model_dump())
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: bus adapter must not crash consumer on handler errors
             elapsed = time.monotonic() - start
             logger.exception(
                 "HandlerBusAdapter: %s raised after %.2fs (correlation_id=%s)",

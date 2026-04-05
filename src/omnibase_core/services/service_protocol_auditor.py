@@ -35,6 +35,7 @@ from omnibase_core.validation.validator_utils import (
 )
 
 if TYPE_CHECKING:
+    from omnibase_spi.protocols.types.protocol_base_types import ProtocolContextValue
     from omnibase_spi.protocols.validation.protocol_quality_validator import (
         ProtocolQualityIssue,
         ProtocolQualityMetrics,
@@ -42,6 +43,7 @@ if TYPE_CHECKING:
         ProtocolQualityStandards,
     )
     from omnibase_spi.protocols.validation.protocol_validation import (
+        ProtocolValidationError,
         ProtocolValidationResult,
     )
 
@@ -115,15 +117,29 @@ class _QualityReport:
     """Concrete implementation of ProtocolQualityReport."""
 
     file_path: str = ""
-    metrics: _QualityMetrics = field(default_factory=_QualityMetrics)
-    issues: list[_QualityIssue] = field(default_factory=list)
+    metrics: ProtocolQualityMetrics = field(default_factory=_QualityMetrics)
+    issues: list[ProtocolQualityIssue] = field(default_factory=list)
     standards_compliance: bool = True
     overall_score: float = 100.0
     recommendations: list[str] = field(default_factory=list)
 
-    async def get_critical_issues(self) -> list[_QualityIssue]:
+    async def get_critical_issues(self) -> list[ProtocolQualityIssue]:
         """Return only critical-severity issues."""
         return [i for i in self.issues if i.severity == "critical"]
+
+
+@dataclass
+class _ConcreteValidationError:
+    """Concrete implementation of ProtocolValidationError protocol."""
+
+    error_type: str
+    message: str
+    context: dict[str, ProtocolContextValue] = field(default_factory=dict)
+    severity: str = "error"
+
+    def __str__(self) -> str:
+        """Return string representation of the error."""
+        return f"[{self.severity}] {self.error_type}: {self.message}"
 
 
 @dataclass
@@ -133,23 +149,24 @@ class _ValidationResult:
     is_valid: bool = True
     protocol_name: str = "ProtocolQualityValidator"
     implementation_name: str = "ServiceProtocolAuditor"
-    errors: list[object] = field(default_factory=list)
-    warnings: list[object] = field(default_factory=list)
+    errors: list[ProtocolValidationError] = field(default_factory=list)
+    warnings: list[ProtocolValidationError] = field(default_factory=list)
 
     def add_error(
         self,
         error_type: str,
         message: str,
-        context: dict[str, object] | None = None,
+        context: dict[str, ProtocolContextValue] | None = None,
         severity: str | None = None,
     ) -> None:
         """Add an error to the result."""
         self.errors.append(
-            {
-                "error_type": error_type,
-                "message": message,
-                "severity": severity or "error",
-            }
+            _ConcreteValidationError(
+                error_type=error_type,
+                message=message,
+                context=context or {},
+                severity=severity or "error",
+            )
         )
         self.is_valid = False
 
@@ -157,10 +174,17 @@ class _ValidationResult:
         self,
         error_type: str,
         message: str,
-        context: dict[str, object] | None = None,
+        context: dict[str, ProtocolContextValue] | None = None,
     ) -> None:
         """Add a warning to the result."""
-        self.warnings.append({"error_type": error_type, "message": message})
+        self.warnings.append(
+            _ConcreteValidationError(
+                error_type=error_type,
+                message=message,
+                context=context or {},
+                severity="warning",
+            )
+        )
 
     async def get_summary(self) -> str:
         """Get a summary of the validation result."""
@@ -617,15 +641,15 @@ class ServiceProtocolAuditor:
         """
         source = self._read_file_content(file_path, content)
         metrics = self.calculate_quality_metrics(file_path, source)
-        issues: list[_QualityIssue] = []
+        issues: list[ProtocolQualityIssue] = []
 
         # Gather all issue types
         if self.enable_complexity_analysis:
-            issues.extend(await self.analyze_complexity(file_path, source))  # type: ignore[arg-type]  # list invariance; structurally compatible
+            issues.extend(await self.analyze_complexity(file_path, source))
         if self.enable_style_checking:
-            issues.extend(await self.check_naming_conventions(file_path, source))  # type: ignore[arg-type]  # list invariance; structurally compatible
-        issues.extend(await self.validate_documentation(file_path, source))  # type: ignore[arg-type]  # list invariance; structurally compatible
-        issues.extend(self.detect_code_smells(file_path, source))  # type: ignore[arg-type]  # list invariance; structurally compatible
+            issues.extend(await self.check_naming_conventions(file_path, source))
+        issues.extend(await self.validate_documentation(file_path, source))
+        issues.extend(self.detect_code_smells(file_path, source))
 
         # Determine compliance and score
         critical_count = sum(1 for i in issues if i.severity == "critical")
@@ -657,12 +681,12 @@ class ServiceProtocolAuditor:
 
         return _QualityReport(
             file_path=file_path,
-            metrics=metrics,  # type: ignore[arg-type]  # _QualityMetrics satisfies ProtocolQualityMetrics structurally
+            metrics=metrics,
             issues=issues,
             standards_compliance=standards_ok,
             overall_score=round(score, 2),
             recommendations=recommendations,
-        )  # type: ignore[return-value]  # _QualityReport satisfies ProtocolQualityReport structurally
+        )
 
     async def validate_directory_quality(
         self, directory_path: str, file_patterns: list[str] | None = None
@@ -769,7 +793,7 @@ class ServiceProtocolAuditor:
                 ),
             ]
 
-        issues: list[_QualityIssue] = []
+        issues: list[ProtocolQualityIssue] = []
 
         for node in ast.walk(tree):
             # Long functions
@@ -854,7 +878,7 @@ class ServiceProtocolAuditor:
                         ),
                     )
 
-        return issues  # type: ignore[return-value]  # _QualityIssue satisfies ProtocolQualityIssue structurally; list invariance
+        return issues
 
     async def check_naming_conventions(
         self, file_path: str, content: str | None = None
@@ -881,7 +905,7 @@ class ServiceProtocolAuditor:
         except SyntaxError:
             return []
 
-        issues: list[_QualityIssue] = []
+        issues: list[ProtocolQualityIssue] = []
         path = Path(file_path)
 
         for node in ast.walk(tree):
@@ -945,7 +969,7 @@ class ServiceProtocolAuditor:
                         ),
                     )
 
-        return issues  # type: ignore[return-value]  # _QualityIssue satisfies ProtocolQualityIssue structurally; list invariance
+        return issues
 
     async def analyze_complexity(
         self, file_path: str, content: str | None = None
@@ -971,7 +995,7 @@ class ServiceProtocolAuditor:
         except SyntaxError:
             return []
 
-        issues: list[_QualityIssue] = []
+        issues: list[ProtocolQualityIssue] = []
         max_complexity = _DEFAULT_MAX_COMPLEXITY
         if self.standards is not None:
             max_complexity = getattr(
@@ -1002,7 +1026,7 @@ class ServiceProtocolAuditor:
                     ),
                 )
 
-        return issues  # type: ignore[return-value]  # _QualityIssue satisfies ProtocolQualityIssue structurally; list invariance
+        return issues
 
     async def validate_documentation(
         self, file_path: str, content: str | None = None
@@ -1029,7 +1053,7 @@ class ServiceProtocolAuditor:
         except SyntaxError:
             return []
 
-        issues: list[_QualityIssue] = []
+        issues: list[ProtocolQualityIssue] = []
 
         # Check module docstring
         if not ast.get_docstring(tree):
@@ -1076,7 +1100,7 @@ class ServiceProtocolAuditor:
                         ),
                     )
 
-        return issues  # type: ignore[return-value]  # _QualityIssue satisfies ProtocolQualityIssue structurally; list invariance
+        return issues
 
     def suggest_refactoring(
         self, file_path: str, content: str | None = None
@@ -1217,4 +1241,4 @@ class ServiceProtocolAuditor:
                 f"{len(failing_files)} file(s) do not meet quality standards",
             )
 
-        return result  # type: ignore[return-value]  # _ValidationResult satisfies ProtocolValidationResult structurally; context dict variance
+        return result

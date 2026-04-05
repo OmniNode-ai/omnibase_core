@@ -140,6 +140,7 @@ class ModelEventBusConfig(BaseModel):
         bootstrap_servers = [s.strip() for s in servers_env.split(",") if s.strip()]
         if not bootstrap_servers:
             msg = "ONEX_EVENT_BUS_BOOTSTRAP_SERVERS must be set"
+            # error-ok: env var validation at config boundary
             raise ValueError(msg)
         topics_env = os.environ.get("ONEX_EVENT_BUS_TOPICS", "onex-default")
         topics = [t.strip() for t in topics_env.split(",") if t.strip()]
