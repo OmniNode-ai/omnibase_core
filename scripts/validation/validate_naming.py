@@ -200,6 +200,12 @@ class NamingConventionValidator:
         "runtime/handlers/": [
             "Handler*",  # All Handler* classes in handlers/ directory
         ],
+        # RUNTIME ADAPTER: Bus adapter in runtime/ (not runtime/handlers/)
+        # Rationale: HandlerBusAdapter bridges the bus layer to handlers. Handler* prefix
+        #            follows the same pattern as runtime/handlers/, just a different subpath.
+        "runtime/runtime_local_adapter": [
+            "HandlerBusAdapter",  # Bus adapter for handler invocation
+        ],
         "pipeline/handlers/": [
             "Handler*",  # All Handler* classes (HandlerCapabilityCaching, HandlerCapabilityMetrics)
         ],
