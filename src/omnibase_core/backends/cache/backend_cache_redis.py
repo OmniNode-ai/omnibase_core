@@ -143,7 +143,8 @@ def _get_connection_pool_class() -> type:
         RuntimeError: If redis package is not installed.
     """
     connection_module = importlib.import_module("redis.asyncio.connection")
-    return connection_module.ConnectionPool
+    pool_cls: type = connection_module.ConnectionPool
+    return pool_cls
 
 
 def _get_redis_exceptions() -> ModuleType:
@@ -165,7 +166,8 @@ def _get_redis_error_class() -> type[Exception]:
         RedisError class if redis is available, otherwise Exception.
     """
     if REDIS_AVAILABLE:
-        return _get_redis_exceptions().RedisError
+        error_cls: type[Exception] = _get_redis_exceptions().RedisError
+        return error_cls
     return Exception
 
 

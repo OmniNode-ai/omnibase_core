@@ -27,7 +27,7 @@ class DoctorRegistry:
             cid = check_class.check_id
             if cid in self._checks:
                 msg = f"Doctor check '{cid}' already registered"
-                raise ValueError(msg)
+                raise ValueError(msg)  # error-ok: registry duplicate guard
             self._checks[cid] = check_class
 
     def discover(self) -> None:

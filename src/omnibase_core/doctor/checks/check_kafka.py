@@ -23,6 +23,7 @@ def _parse_kafka_bootstrap() -> tuple[str, int]:
     try:
         return host, int(port_str)
     except ValueError:
+        # error-ok: re-raising with better message at system boundary
         raise ValueError(
             f"KAFKA_BOOTSTRAP_SERVERS contains non-numeric port: {port_str!r}"
         )

@@ -567,7 +567,7 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
             current_depth=loader.current_depth + 1,
         )
         result = nested_loader.get_single_data()
-        nested_loader.dispose()
+        nested_loader.dispose()  # type: ignore[no-untyped-call]  # yaml.SafeLoader.dispose() is untyped in typeshed
         return result
     except YAML_PARSING_ERRORS as e:
         # boundary-ok: convert YAML syntax errors to structured ModelOnexError
@@ -701,7 +701,7 @@ def load_contract(
             current_depth=0,
         )
         result = loader.get_single_data()
-        loader.dispose()
+        loader.dispose()  # type: ignore[no-untyped-call]  # yaml.SafeLoader.dispose() is untyped in typeshed
 
         if result is None:
             return {}

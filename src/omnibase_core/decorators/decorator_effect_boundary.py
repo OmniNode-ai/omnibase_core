@@ -130,7 +130,8 @@ def effect_boundary(
 
             @wraps(func)
             async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                return await func(*args, **kwargs)
+                result: R = await func(*args, **kwargs)
+                return result
 
             # Attach metadata to the async wrapper
             setattr(async_wrapper, EFFECT_BOUNDARY_ATTR, boundary)

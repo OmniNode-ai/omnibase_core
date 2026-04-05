@@ -293,7 +293,8 @@ class MixinTraceCapture:
 
             filters = ModelTraceQuery()
 
-        return await store.query(filters)
+        result: list[ModelExecutionTrace] = await store.query(filters)
+        return result
 
 
 # ---------------------------------------------------------------------------

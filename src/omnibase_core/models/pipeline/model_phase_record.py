@@ -14,7 +14,7 @@ Used as entries in ``ModelPipelineState.phase_history``.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -55,4 +55,4 @@ class ModelPhaseRecord(BaseModel):
         """Ensure completed_at has UTC timezone info."""
         if isinstance(v, datetime) and v.tzinfo is None:
             return v.replace(tzinfo=UTC)
-        return v
+        return cast(datetime, v)
