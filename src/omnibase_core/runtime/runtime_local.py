@@ -179,14 +179,21 @@ class RuntimeLocal:
         self._result: EnumWorkflowResult = EnumWorkflowResult.TIMEOUT
         self._terminal_received = asyncio.Event()
 
+        # Diagnostic tracking: events received per topic
+        self._events_received: dict[str, int] = {}
+        self._last_error: str | None = None
+        self._handlers_wired: list[str] = []
+
     # ONEX_EXCLUDE: dict_str_any — event bus payload
     def _on_terminal_event(self, payload: dict[str, Any]) -> None:
         """Callback invoked when a message arrives on the terminal_event topic."""
+        self._record_event("(terminal)")
         if self._terminal_received.is_set():
             logger.warning("Duplicate terminal event received — ignoring (first wins).")
             return
 
         status = payload.get("status", "success")
+        logger.info("RuntimeLocal: terminal event received (status=%s)", status)
         if status == "failure":
             self._result = EnumWorkflowResult.FAILED
         else:
@@ -295,6 +302,7 @@ class RuntimeLocal:
         handler_spec = self._contract.get("handler", {})
         handler_module_name = handler_spec.get("module", "")
         handler_class_name = handler_spec.get("class", "")
+        self._handlers_wired = [f"{handler_module_name}.{handler_class_name}"]
 
         if not handler_module_name or not handler_class_name:
             logger.error("Workflow contract missing handler.module or handler.class")
@@ -358,6 +366,7 @@ class RuntimeLocal:
                     correlation_id,
                 )
                 self._result = EnumWorkflowResult.TIMEOUT
+                self._log_timeout_summary()
                 return
 
         logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
@@ -507,6 +516,7 @@ class RuntimeLocal:
 
         # --- 4. Wire adapters to bus ---
         unsubscribe_handles: list[Any] = []
+        self._handlers_wired = [e.handler_name for e in resolved_entries]
 
         def _fail_callback() -> None:
             self._result = EnumWorkflowResult.FAILED
@@ -530,13 +540,20 @@ class RuntimeLocal:
                 self._result = EnumWorkflowResult.FAILED
                 return
 
+            def _make_fail_cb(name: str) -> Any:
+                def _cb() -> None:
+                    self._last_error = f"handler '{name}' failed"
+                    _fail_callback()
+
+                return _cb
+
             adapter = HandlerBusAdapter(
                 handler=handler_instance,
                 handler_name=entry.handler_name,
                 input_model_cls=input_model_cls,
                 output_topic=entry.output_topic or None,
                 bus=bus,
-                on_error=_fail_callback,
+                on_error=_make_fail_cb(entry.handler_name),
             )
 
             unsub = await bus.subscribe(
@@ -605,15 +622,37 @@ class RuntimeLocal:
         try:
             await asyncio.wait_for(self._terminal_received.wait(), timeout=self.timeout)
         except TimeoutError:
-            logger.exception(
+            logger.warning(
                 "RuntimeLocal: timeout after %ds (correlation_id=%s)",
                 self.timeout,
                 correlation_id,
             )
             self._result = EnumWorkflowResult.TIMEOUT
+            self._log_timeout_summary()
         finally:
             for unsub in unsubscribe_handles:
                 await unsub()
+
+    # ------------------------------------------------------------------
+    # Diagnostic helpers
+    # ------------------------------------------------------------------
+
+    def _record_event(self, topic: str) -> None:
+        """Increment the event counter for *topic*."""
+        self._events_received[topic] = self._events_received.get(topic, 0) + 1
+
+    def _log_timeout_summary(self) -> None:
+        """Log a diagnostic summary when the workflow times out."""
+        logger.warning("--- timeout diagnostic summary ---")
+        logger.warning("  handlers wired: %s", self._handlers_wired or "(none)")
+        if self._events_received:
+            for topic, count in self._events_received.items():
+                logger.warning("  events on '%s': %d", topic, count)
+        else:
+            logger.warning("  events received: 0 (no messages on any topic)")
+        if self._last_error:
+            logger.warning("  last error: %s", self._last_error)
+        logger.warning("--- end diagnostic summary ---")
 
     # ------------------------------------------------------------------
     # Main entry point

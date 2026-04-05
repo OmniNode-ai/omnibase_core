@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 
@@ -38,11 +39,19 @@ from omnibase_core.runtime.runtime_local import (
     show_default=True,
     help="Max execution time in seconds.",
 )
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    default=False,
+    help="Enable DEBUG-level logging (default is INFO).",
+)
 def run_workflow(
     workflow_path: Path,
     state_root: Path,
     backend: tuple[str, ...],
     timeout: int,
+    verbose: bool,
 ) -> None:
     """Run a contract-declared workflow on the local runtime.
 
@@ -61,6 +70,14 @@ def run_workflow(
         onex run workflow.yaml --timeout 60
         onex run workflow.yaml --backend event_bus=inmemory --state-root ./state
     """
+    # Configure logging so runtime diagnostics are visible
+    log_level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
+        datefmt="%H:%M:%S",
+    )
+
     # Validate workflow path exists
     if not workflow_path.exists():
         click.echo(f"Error: Workflow contract not found: {workflow_path}", err=True)
