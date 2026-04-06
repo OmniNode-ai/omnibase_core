@@ -56,11 +56,6 @@ class ModelEventBusSubcontract(BaseModel):
     )
 
     # Core event bus configuration
-    event_bus_enabled: bool = Field(
-        default=True,
-        description="Enable event bus functionality",
-    )
-
     event_bus_type: str = Field(
         default="hybrid",
         description="Event bus type: memory, hybrid, or distributed",
