@@ -28,7 +28,6 @@ class TestModelEventBusSubcontractInitialization:
         subcontract = ModelEventBusSubcontract(version=DEFAULT_VERSION)
         assert subcontract is not None
         assert isinstance(subcontract, ModelEventBusSubcontract)
-        assert subcontract.event_bus_enabled is True
         assert subcontract.event_bus_type == "hybrid"
         assert subcontract.enable_event_logging is True
         assert subcontract.correlation_tracking is True
@@ -39,14 +38,12 @@ class TestModelEventBusSubcontractInitialization:
         """Test creating event bus subcontract with custom values."""
         subcontract = ModelEventBusSubcontract(
             version=DEFAULT_VERSION,
-            event_bus_enabled=False,
             event_bus_type="memory",
             enable_event_logging=False,
             correlation_tracking=False,
             max_queue_size=5000,
             batch_size=50,
         )
-        assert subcontract.event_bus_enabled is False
         assert subcontract.event_bus_type == "memory"
         assert subcontract.enable_event_logging is False
         assert subcontract.correlation_tracking is False
@@ -175,14 +172,12 @@ class TestModelEventBusSubcontractSerialization:
         """Test event bus subcontract model_dump."""
         subcontract = ModelEventBusSubcontract(
             version=DEFAULT_VERSION,
-            event_bus_enabled=True,
             event_bus_type="distributed",
             max_queue_size=15000,
             batch_size=200,
         )
         data = subcontract.model_dump()
         assert isinstance(data, dict)
-        assert data["event_bus_enabled"] is True
         assert data["event_bus_type"] == "distributed"
         assert data["max_queue_size"] == 15000
         assert data["batch_size"] == 200
@@ -191,13 +186,11 @@ class TestModelEventBusSubcontractSerialization:
         """Test event bus subcontract model_validate."""
         data = {
             "version": {"major": 1, "minor": 0, "patch": 0},
-            "event_bus_enabled": True,
             "event_bus_type": "memory",
             "max_queue_size": 5000,
             "batch_size": 50,
         }
         subcontract = ModelEventBusSubcontract.model_validate(data)
-        assert subcontract.event_bus_enabled is True
         assert subcontract.event_bus_type == "memory"
         assert subcontract.max_queue_size == 5000
         assert subcontract.batch_size == 50
@@ -320,7 +313,6 @@ class TestModelEventBusSubcontractEdgeCases:
         """Test creating subcontract with all features disabled."""
         subcontract = ModelEventBusSubcontract(
             version=DEFAULT_VERSION,
-            event_bus_enabled=False,
             enable_event_logging=False,
             correlation_tracking=False,
             enable_lifecycle_events=False,
@@ -331,7 +323,6 @@ class TestModelEventBusSubcontractEdgeCases:
             metrics_enabled=False,
             performance_monitoring=False,
         )
-        assert subcontract.event_bus_enabled is False
         assert subcontract.enable_event_logging is False
         assert subcontract.correlation_tracking is False
         assert subcontract.enable_lifecycle_events is False

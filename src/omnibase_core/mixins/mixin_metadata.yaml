@@ -1505,11 +1505,6 @@ mixin_event_bus:
   # Configuration schema
   config_schema:
     # Core event bus configuration
-    event_bus_enabled:
-      type: "boolean"
-      default: true
-      description: "Enable event bus functionality"
-
     event_bus_type:
       type: "string"
       enum: ["redis", "kafka", "memory", "hybrid"]
@@ -1609,7 +1604,6 @@ mixin_event_bus:
     default:
       description: "Standard event bus configuration"
       config:
-        event_bus_enabled: true
         event_bus_type: "hybrid"
         correlation_tracking: true
         enable_event_logging: true
@@ -1619,7 +1613,6 @@ mixin_event_bus:
     lightweight:
       description: "Minimal overhead event publishing"
       config:
-        event_bus_enabled: true
         event_bus_type: "memory"
         enable_event_logging: false
         correlation_tracking: false
@@ -1629,7 +1622,6 @@ mixin_event_bus:
     reliable:
       description: "High reliability with retry and DLQ"
       config:
-        event_bus_enabled: true
         event_bus_type: "redis"
         max_retry_attempts: 5
         retry_delay_ms: 2000
@@ -1640,7 +1632,6 @@ mixin_event_bus:
     high_throughput:
       description: "Optimized for high event volume"
       config:
-        event_bus_enabled: true
         event_bus_type: "kafka"
         event_batch_size: 100
         event_buffer_size: 1000
@@ -1651,7 +1642,6 @@ mixin_event_bus:
     distributed_system:
       description: "Multi-node event coordination"
       config:
-        event_bus_enabled: true
         event_bus_type: "redis"
         correlation_tracking: true
         routing_key_strategy: "topic_based"

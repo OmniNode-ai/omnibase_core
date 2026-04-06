@@ -85,15 +85,14 @@ def _validate_contract(contract_path: Path) -> dict[str, object]:
             msg = f"contract.yaml missing required field: {field}"
             raise click.ClickException(msg)
 
-    # Validate topic format if event_bus_enabled
-    if contract.get("event_bus_enabled"):
-        for topic_key in ("publish_topics", "subscribe_topics"):
-            topics = contract.get(topic_key, [])
-            if isinstance(topics, list):
-                for topic in topics:
-                    if isinstance(topic, str) and not topic.startswith("onex."):
-                        msg = f"Invalid topic format in {topic_key}: {topic} (must start with 'onex.')"
-                        raise click.ClickException(msg)
+    # Validate topic format for any declared topics
+    for topic_key in ("publish_topics", "subscribe_topics"):
+        topics = contract.get(topic_key, [])
+        if isinstance(topics, list):
+            for topic in topics:
+                if isinstance(topic, str) and not topic.startswith("onex."):
+                    msg = f"Invalid topic format in {topic_key}: {topic} (must start with 'onex.')"
+                    raise click.ClickException(msg)
 
     return contract
 
