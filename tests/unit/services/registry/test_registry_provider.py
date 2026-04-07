@@ -15,7 +15,6 @@ from uuid import UUID, uuid4
 import pytest
 
 # Skip entire module due to circular import issue in ModelProviderDescriptor
-# TODO(OMN-1126): Fix circular import chain and re-enable these tests
 pytestmark = pytest.mark.skip(
     reason="Circular import: ModelProviderDescriptor -> ModelHealthStatus"
 )

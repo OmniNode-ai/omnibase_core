@@ -328,7 +328,7 @@ def _parse_policy_data(
             extends=data.get("extends"),
             discovery=discovery,
             rules=rules,
-            baselines=(),  # TODO(OMN-1774): Parse baselines in Phase 0.5
+            baselines=(),
         )
 
     except ValidationError as e:
