@@ -569,34 +569,165 @@ def test_no_terminal_event_no_default_handler_fails(tmp_path: Path) -> None:
     assert result == EnumWorkflowResult.FAILED
 
 
-@pytest.mark.unit
-def test_resolve_default_handler_bare_module(tmp_path: Path) -> None:
-    """_resolve_default_handler resolves bare module name relative to contract."""
-    # Create a fake package structure
-    pkg_dir = tmp_path / "src" / "mypkg" / "nodes" / "node_foo"
-    pkg_dir.mkdir(parents=True)
-    (tmp_path / "src" / "mypkg" / "__init__.py").touch()
-    (tmp_path / "src" / "mypkg" / "nodes" / "__init__.py").touch()
-    (tmp_path / "src" / "mypkg" / "nodes" / "node_foo" / "__init__.py").touch()
+# ===================================================================
+# handler_routing.default_handler resolution tests
+# ===================================================================
 
-    contract_path = pkg_dir / "contract.yaml"
-    contract_path.write_text(
-        "name: test\nhandler_routing:\n  default_handler: handler:MyHandler\n"
+
+@pytest.mark.unit
+def test_resolve_default_handler_returns_none_when_no_routing(
+    tmp_path: Path,
+) -> None:
+    """_resolve_default_handler returns None when handler_routing is absent."""
+    runtime = _runtime_with_contract(tmp_path)
+    assert runtime._resolve_default_handler() is None
+
+
+@pytest.mark.unit
+def test_resolve_default_handler_returns_none_for_malformed(
+    tmp_path: Path,
+) -> None:
+    """_resolve_default_handler returns None for non-dict handler_routing."""
+    runtime = _runtime_with_contract(
+        tmp_path,
+        extra_yaml="handler_routing: not-a-dict\n",
     )
+    assert runtime._resolve_default_handler() is None
+
+
+@pytest.mark.unit
+def test_resolve_default_handler_returns_none_without_colon(
+    tmp_path: Path,
+) -> None:
+    """_resolve_default_handler returns None when default_handler has no colon."""
+    runtime = _runtime_with_contract(
+        tmp_path,
+        extra_yaml="handler_routing:\n  default_handler: NoColonHere\n",
+    )
+    assert runtime._resolve_default_handler() is None
+
+
+@pytest.mark.unit
+def test_resolve_default_handler_parses_handler_colon_format(
+    tmp_path: Path,
+) -> None:
+    """_resolve_default_handler resolves handler:ClassName from a Python package dir."""
+    import sys as _sys
+
+    # Create a fake Python package in tmp_path so the contract dir is importable
+    pkg_dir = tmp_path / "fake_pkg" / "nodes" / "node_test"
+    pkg_dir.mkdir(parents=True)
+    (tmp_path / "fake_pkg" / "__init__.py").touch()
+    (tmp_path / "fake_pkg" / "nodes" / "__init__.py").touch()
+    (pkg_dir / "__init__.py").touch()
+
+    contract = pkg_dir / "contract.yaml"
+    contract.write_text(
+        "workflow_id: test\n"
+        "contract_version: {major: 1, minor: 0, patch: 0}\n"
+        "node_type: workflow\n"
+        "description: Test\n"
+        "terminal_event: evt.test.v1\n"
+        "handler_routing:\n"
+        "  default_handler: handler:MyHandler\n"
+    )
+
+    # Add tmp_path to sys.path so the module can be resolved
+    _sys.path.insert(0, str(tmp_path))
+    try:
+        runtime = RuntimeLocal(
+            workflow_path=contract,
+            state_root=tmp_path / "state",
+            timeout=5,
+        )
+        import yaml
+
+        runtime._contract = yaml.safe_load(contract.read_text())
+
+        result = runtime._resolve_default_handler()
+        assert result is not None
+        module_name, class_name = result
+        assert module_name == "fake_pkg.nodes.node_test"
+        assert class_name == "MyHandler"
+    finally:
+        _sys.path.remove(str(tmp_path))
+
+
+@pytest.mark.unit
+def test_resolve_default_handler_no_init_py(tmp_path: Path) -> None:
+    """_resolve_default_handler returns None when contract dir has no __init__.py."""
+    pkg_dir = tmp_path / "not_a_package"
+    pkg_dir.mkdir(parents=True)
+
+    contract = pkg_dir / "contract.yaml"
+    contract.write_text(
+        "workflow_id: test\n"
+        "contract_version: {major: 1, minor: 0, patch: 0}\n"
+        "node_type: workflow\n"
+        "description: Test\n"
+        "terminal_event: evt.test.v1\n"
+        "handler_routing:\n"
+        "  default_handler: handler:MyHandler\n"
+    )
+
     runtime = RuntimeLocal(
-        workflow_path=contract_path,
+        workflow_path=contract,
         state_root=tmp_path / "state",
         timeout=5,
     )
     import yaml
 
-    runtime._contract = yaml.safe_load(contract_path.read_text())
+    runtime._contract = yaml.safe_load(contract.read_text())
 
-    result = runtime._resolve_default_handler()
-    assert result is not None
-    module_name, class_name = result
-    assert class_name == "MyHandler"
-    assert module_name == "mypkg.nodes.node_foo.handler"
+    assert runtime._resolve_default_handler() is None
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_single_handler_falls_back_to_default_handler(
+    tmp_path: Path,
+) -> None:
+    """_run_single_handler uses handler_routing.default_handler when handler spec is missing."""
+    import sys as _sys
+    import types
+
+    # Create a fake handler class
+    class FakeHandler:
+        def handle(self, _payload: Any) -> Any:
+            return {"status": "success"}
+
+    fake_mod = types.ModuleType("_test_default_handler_pkg")
+    fake_mod.FakeHandler = FakeHandler  # type: ignore[attr-defined]
+    _sys.modules["_test_default_handler_pkg"] = fake_mod
+
+    # Create a package directory with __init__.py
+    pkg_dir = tmp_path / "_test_default_handler_pkg"
+    pkg_dir.mkdir()
+    (pkg_dir / "__init__.py").touch()
+
+    contract = pkg_dir / "contract.yaml"
+    contract.write_text(
+        "workflow_id: test_default\n"
+        "contract_version: {major: 1, minor: 0, patch: 0}\n"
+        "node_type: workflow\n"
+        "description: Test default handler fallback\n"
+        "terminal_event: evt.done.v1\n"
+        "handler_routing:\n"
+        "  default_handler: handler:FakeHandler\n"
+    )
+
+    _sys.path.insert(0, str(tmp_path))
+    try:
+        runtime = RuntimeLocal(
+            workflow_path=contract,
+            state_root=tmp_path / "state",
+            timeout=5,
+        )
+        result = await runtime.run_async()
+        assert result == EnumWorkflowResult.COMPLETED
+    finally:
+        _sys.path.remove(str(tmp_path))
+        _sys.modules.pop("_test_default_handler_pkg", None)
 
 
 # ===================================================================

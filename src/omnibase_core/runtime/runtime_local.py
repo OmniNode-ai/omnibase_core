@@ -24,6 +24,7 @@ import inspect
 import json
 import logging
 import os
+import sys
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -271,6 +272,72 @@ class RuntimeLocal:
         return instance
 
     # ------------------------------------------------------------------
+    # handler_routing.default_handler resolution
+    # ------------------------------------------------------------------
+
+    def _resolve_default_handler(self) -> tuple[str, str] | None:
+        """Resolve handler module and class from handler_routing.default_handler.
+
+        Parses the ``handler:ClassName`` format used in contracts that declare
+        ``handler_routing.default_handler`` instead of ``handler.module`` /
+        ``handler.class``.  The class is resolved from the Python package
+        containing the workflow contract YAML.
+
+        Returns:
+            ``(module_name, class_name)`` on success, or ``None`` if the
+            format is unrecognised or the contract directory cannot be mapped
+            to an importable module.
+        """
+        routing = self._contract.get("handler_routing")
+        if not isinstance(routing, dict):
+            return None
+
+        default_handler: str | None = routing.get("default_handler")
+        if not default_handler or ":" not in default_handler:
+            return None
+
+        _prefix, class_name = default_handler.split(":", 1)
+        if not class_name:
+            return None
+
+        # Derive the importable module from the contract's parent directory.
+        contract_dir = self.workflow_path.resolve().parent
+        if not (contract_dir / "__init__.py").exists():
+            logger.warning(
+                "RuntimeLocal: contract directory %s is not a Python package",
+                contract_dir,
+            )
+            return None
+
+        # Walk sys.path to find the longest prefix that lets us build a
+        # dotted module path from the contract directory.
+        module_name: str | None = None
+        for sp in sys.path:
+            sp_path = Path(sp).resolve()
+            try:
+                rel = contract_dir.relative_to(sp_path)
+            except ValueError:
+                continue
+            candidate = ".".join(rel.parts)
+            if module_name is None or len(candidate) > len(module_name):
+                module_name = candidate
+
+        if not module_name:
+            logger.warning(
+                "RuntimeLocal: could not derive module path for %s",
+                contract_dir,
+            )
+            return None
+
+        logger.info(
+            "RuntimeLocal: resolved default_handler '%s' -> %s.%s",
+            default_handler,
+            module_name,
+            class_name,
+        )
+        return module_name, class_name
+
+    # ------------------------------------------------------------------
     # Single-handler execution path
     # ------------------------------------------------------------------
 
@@ -302,12 +369,21 @@ class RuntimeLocal:
         handler_spec = self._contract.get("handler", {})
         handler_module_name = handler_spec.get("module", "")
         handler_class_name = handler_spec.get("class", "")
-        self._handlers_wired = [f"{handler_module_name}.{handler_class_name}"]
 
+        # Fallback: resolve from handler_routing.default_handler
         if not handler_module_name or not handler_class_name:
-            logger.error("Workflow contract missing handler.module or handler.class")
-            self._result = EnumWorkflowResult.FAILED
-            return
+            resolved = self._resolve_default_handler()
+            if resolved is not None:
+                handler_module_name, handler_class_name = resolved
+            else:
+                logger.error(
+                    "Workflow contract missing handler.module or handler.class "
+                    "and no valid handler_routing.default_handler found"
+                )
+                self._result = EnumWorkflowResult.FAILED
+                return
+
+        self._handlers_wired = [f"{handler_module_name}.{handler_class_name}"]
 
         handler_instance = self._instantiate_handler(
             handler_module_name, handler_class_name
