@@ -92,6 +92,7 @@ RULE_FINGERPRINT_FORMAT = "fingerprint_format"
 RULE_FINGERPRINT_MATCH = "fingerprint_match"
 RULE_SCHEMA_VALIDATION = "schema_validation"
 RULE_DEPRECATED_FIELD_NAMES = "deprecated_field_names"
+RULE_GOLDEN_PATH_RECOMMENDED = "golden_path_recommended"
 
 # Contract type to model class mapping
 CONTRACT_MODELS: dict[
@@ -882,6 +883,56 @@ class ValidatorContractLinter(ValidatorBase):
 
         return issues
 
+    def _validate_golden_path_recommended(
+        self,
+        data: dict[str, object],
+        path: Path,
+        rule: ModelValidatorRule | None,
+        contract: ModelValidatorSubcontract,
+    ) -> list[ModelValidationIssue]:
+        """Warn when seam contracts lack golden_path.
+
+        A contract is considered a "seam contract" if it declares event
+        subscriptions or published events, indicating it participates in
+        a cross-service pipeline that should be verified end-to-end.
+
+        Args:
+            data: Parsed YAML data.
+            path: Path to the contract file.
+            rule: The rule configuration (may be None).
+            contract: The validator contract.
+
+        Returns:
+            List of validation issues for missing golden_path.
+        """
+        issues: list[ModelValidationIssue] = []
+        severity = self._get_severity(rule, contract)
+
+        # Only warn on seam contracts (those with event wiring)
+        has_events = bool(
+            data.get("event_subscriptions")
+            or data.get("yaml_consumed_events")
+            or data.get("yaml_published_events")
+        )
+        if not has_events:
+            return issues
+
+        golden_path = data.get("golden_path")
+        if not golden_path:
+            issues.append(
+                ModelValidationIssue(
+                    severity=severity,
+                    message="Seam contract missing golden_path — add end-to-end verification steps",
+                    code=RULE_GOLDEN_PATH_RECOMMENDED,
+                    file_path=path,
+                    line_number=1,
+                    rule_name=RULE_GOLDEN_PATH_RECOMMENDED,
+                    suggestion="Add golden_path with ordered verification steps (OMN-7731)",
+                )
+            )
+
+        return issues
+
     def _validate_file(
         self,
         path: Path,
@@ -967,6 +1018,14 @@ class ValidatorContractLinter(ValidatorBase):
         if schema_rule is not None:
             issues.extend(self._validate_schema(data, path, schema_rule, contract))
 
+        golden_path_rule = self._get_rule_by_id(RULE_GOLDEN_PATH_RECOMMENDED, contract)
+        if golden_path_rule is not None:
+            issues.extend(
+                self._validate_golden_path_recommended(
+                    data, path, golden_path_rule, contract
+                )
+            )
+
         return tuple(issues)
 
 
@@ -982,6 +1041,7 @@ __all__ = [
     "RULE_DEPRECATED_FIELD_NAMES",
     "RULE_FINGERPRINT_FORMAT",
     "RULE_FINGERPRINT_MATCH",
+    "RULE_GOLDEN_PATH_RECOMMENDED",
     "RULE_MODEL_PREFIX",
     "RULE_NAMING_CONVENTION",
     "RULE_RECOMMENDED_FIELDS",

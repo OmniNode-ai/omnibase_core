@@ -66,6 +66,17 @@ class ModelYamlContract(BaseModel):
         description="Event subscription patterns for event-driven execution",
     )
 
+    # Verification and traceability (OMN-7731)
+    golden_path: list[str] | None = Field(
+        default=None,
+        description="Ordered verification steps proving end-to-end pipeline correctness",
+    )
+
+    dod_evidence: list[dict[str, str]] | None = Field(
+        default=None,
+        description="Structured Definition of Done evidence items",
+    )
+
     @model_validator(mode="before")
     @classmethod
     def reject_deprecated_version_field(cls, data: Any) -> Any:

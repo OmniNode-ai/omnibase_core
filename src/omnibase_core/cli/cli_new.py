@@ -22,6 +22,8 @@ input_model: ${package}.nodes.${node_name}.models.models_${node_name}.${input_cl
 output_model: ${package}.nodes.${node_name}.models.models_${node_name}.${output_class}
 handler_routing:
   default: ${package}.nodes.${node_name}.handlers.handler_${node_name}
+golden_path: []
+dod_evidence: []
 """
 )
 

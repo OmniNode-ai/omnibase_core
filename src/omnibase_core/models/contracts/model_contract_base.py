@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 from omnibase_core.models.contracts.model_contract_feature_flag import (
     ModelContractFeatureFlag,
 )
+from omnibase_core.models.contracts.model_dod_evidence import ModelDodEvidence
 from omnibase_core.models.contracts.model_lifecycle_config import ModelLifecycleConfig
 from omnibase_core.models.contracts.model_performance_requirements import (
     ModelPerformanceRequirements,
@@ -232,6 +233,22 @@ class ModelContractBase(BaseModel, ABC):
         default_factory=list,
         description="Feature flags declared by this contract. "
         "Extracted during introspection and surfaced in the registry API.",
+    )
+
+    # Verification and traceability (OMN-7731)
+    golden_path: list[str] = Field(
+        default_factory=list,
+        description="Ordered list of verification steps that prove this contract's "
+        "pipeline works end-to-end. Each entry is a human-readable step "
+        "(e.g., 'emit event to onex.evt.foo.v1', 'verify row in llm_cost_aggregates'). "
+        "Used by golden chain sweeps and platform readiness checks.",
+    )
+
+    dod_evidence: list[ModelDodEvidence] = Field(
+        default_factory=list,
+        description="Structured Definition of Done evidence items. "
+        "Each entry declares an evidence type and a check that must pass "
+        "before a ticket touching this contract can be marked Done.",
     )
 
     # Execution profile for contract-driven execution
