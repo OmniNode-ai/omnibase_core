@@ -581,9 +581,7 @@ def test_resolve_default_handler_bare_module(tmp_path: Path) -> None:
 
     contract_path = pkg_dir / "contract.yaml"
     contract_path.write_text(
-        "name: test\n"
-        "handler_routing:\n"
-        "  default_handler: handler:MyHandler\n"
+        "name: test\nhandler_routing:\n  default_handler: handler:MyHandler\n"
     )
     runtime = RuntimeLocal(
         workflow_path=contract_path,

@@ -765,7 +765,9 @@ class RuntimeLocal:
             result_obj = handle_method(initial_payload)
 
         self._result = self._classify_result(result_obj)
-        logger.info("RuntimeLocal: compute handler returned, result=%s", self._result.value)
+        logger.info(
+            "RuntimeLocal: compute handler returned, result=%s", self._result.value
+        )
 
     # ------------------------------------------------------------------
     # Main entry point
