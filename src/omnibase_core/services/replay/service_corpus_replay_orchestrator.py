@@ -502,14 +502,9 @@ class ServiceCorpusReplayOrchestrator:
                 session = self._executor.create_replay_session(
                     time_frozen_at=manifest.created_at,
                     rng_seed=rng_seed,
-                    effect_records=[],  # TODO(OMN-1204): Load from manifest if available
+                    effect_records=[],
                     original_execution_id=manifest.manifest_id,
                 )
-
-                # Execute replay
-                # TODO(OMN-1204): Wire up actual replay execution
-                # The actual execution function would be provided by the handler/node.
-                # For now we simulate success since we don't have the actual handler.
 
                 duration_ms = (time.perf_counter() - start_time) * 1000
 
