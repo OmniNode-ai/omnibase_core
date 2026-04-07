@@ -497,6 +497,15 @@ def _generate_patch_template(
             "# Add dependencies:",
             "# dependencies__add:",
             '#   - "some.other.contract"',
+            "",
+            "# Verification (OMN-7731):",
+            "# golden_path:",
+            '#   - "emit event to topic X"',
+            '#   - "verify row in table Y"',
+            "# dod_evidence:",
+            "#   - type: rendered_output",
+            '#     description: "Dashboard shows real data"',
+            '#     check: "npx vitest run golden-chain/my-chain.test.ts"',
         ]
     )
 

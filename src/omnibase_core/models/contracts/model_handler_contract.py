@@ -53,6 +53,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_contract_capability_dependency import (
     ModelCapabilityDependency,
 )
+from omnibase_core.models.contracts.model_dod_evidence import ModelDodEvidence
 from omnibase_core.models.contracts.model_execution_constraints import (
     ModelExecutionConstraints,
 )
@@ -300,6 +301,22 @@ class ModelHandlerContract(BaseModel):
             default_factory=dict,
             description="Additional metadata for extensibility",
         )
+    )
+
+    # ==========================================================================
+    # Verification and Traceability (OMN-7731)
+    # ==========================================================================
+
+    golden_path: list[str] = Field(
+        default_factory=list,
+        description="Ordered list of verification steps proving end-to-end pipeline "
+        "correctness. Used by golden chain sweeps and platform readiness checks.",
+    )
+
+    dod_evidence: list[ModelDodEvidence] = Field(
+        default_factory=list,
+        description="Structured Definition of Done evidence items. Each entry declares "
+        "an evidence type and check for ticket completion verification.",
     )
 
     # ==========================================================================

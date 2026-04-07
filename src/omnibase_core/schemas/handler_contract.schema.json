@@ -600,6 +600,46 @@
       "description": "Additional metadata for extensibility",
       "title": "Metadata",
       "type": "object"
+    },
+    "golden_path": {
+      "description": "Ordered list of verification steps proving end-to-end pipeline correctness",
+      "items": {
+        "type": "string"
+      },
+      "title": "Golden Path",
+      "type": "array"
+    },
+    "dod_evidence": {
+      "description": "Structured Definition of Done evidence items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Evidence category (e.g., 'rendered_output', 'integration_test')"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Human-readable description of what this evidence proves"
+          },
+          "check": {
+            "anyOf": [
+              {"type": "string", "maxLength": 500},
+              {"type": "null"}
+            ],
+            "default": null,
+            "description": "Command, URL, or test path that validates this evidence"
+          }
+        },
+        "required": ["type", "description"],
+        "additionalProperties": false
+      },
+      "title": "DoD Evidence",
+      "type": "array"
     }
   },
   "required": [

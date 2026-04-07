@@ -72,6 +72,11 @@ validation:
       severity: error
       enabled: true
 
+    - rule_id: golden_path_recommended
+      description: Seam contracts with event subscriptions should have golden_path populated
+      severity: warning
+      enabled: true
+
   suppression_comments:
     - "# contract-ok:"
     - "# ONEX_EXCLUDE: contract_lint"
