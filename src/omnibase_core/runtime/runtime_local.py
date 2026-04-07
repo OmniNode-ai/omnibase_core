@@ -658,6 +658,119 @@ class RuntimeLocal:
     # Main entry point
     # ------------------------------------------------------------------
 
+    # ------------------------------------------------------------------
+    # Compute-node execution path (no terminal_event / event bus)
+    # ------------------------------------------------------------------
+
+    def _resolve_default_handler(self) -> tuple[str, str] | None:
+        """Extract (module, class) from handler_routing.default_handler.
+
+        The ``default_handler`` field uses ``module_ref:ClassName`` format.
+        When ``module_ref`` is a bare name like ``handler``, it is resolved
+        relative to the contract file's parent package (e.g.
+        ``omnimarket.nodes.node_foo.handler`` for a contract at
+        ``.../node_foo/contract.yaml``).
+
+        Returns:
+            ``(module_name, class_name)`` or ``None`` if not resolvable.
+        """
+        routing = self._contract.get("handler_routing")
+        if not isinstance(routing, dict):
+            return None
+        default_handler = routing.get("default_handler")
+        if not default_handler or not isinstance(default_handler, str):
+            return None
+        if ":" not in default_handler:
+            return None
+
+        module_ref, class_name = default_handler.rsplit(":", 1)
+
+        # If module_ref looks like a bare name (no dots), try to resolve it
+        # relative to the contract file's parent directory using the Python
+        # package structure.
+        if "." not in module_ref:
+            contract_dir = self.workflow_path.resolve().parent
+            module_ref = self._infer_package_module(contract_dir, module_ref)
+
+        return (module_ref, class_name)
+
+    @staticmethod
+    def _infer_package_module(contract_dir: Path, relative_name: str) -> str:
+        """Infer a fully-qualified module path from a contract directory.
+
+        Walks up from *contract_dir* to find the nearest ancestor that is NOT
+        a Python package (no ``__init__.py``), then builds the dotted path.
+
+        Args:
+            contract_dir: Directory containing ``contract.yaml``.
+            relative_name: Bare module name (e.g. ``handler``).
+
+        Returns:
+            Dotted module path (e.g. ``omnimarket.nodes.node_foo.handler``).
+            Falls back to *relative_name* if the package root can't be found.
+        """
+        parts: list[str] = [relative_name]
+        current = contract_dir
+        while (current / "__init__.py").exists():
+            parts.insert(0, current.name)
+            current = current.parent
+        # Also check for src/ layout: if we stopped at a "src" directory,
+        # skip it (it's not part of the package name).
+        if parts and current.name == "src":
+            pass  # parts are already correct
+        return ".".join(parts) if len(parts) > 1 else relative_name
+
+    async def _run_compute(self) -> None:
+        """Execute a compute node's default_handler directly.
+
+        No event bus or terminal_event is needed. The handler is resolved
+        from ``handler_routing.default_handler``, instantiated, and invoked.
+        The return value determines the workflow result.
+        """
+        resolved = self._resolve_default_handler()
+        if resolved is None:
+            logger.error(
+                "RuntimeLocal: compute mode requires "
+                "handler_routing.default_handler in module:Class format"
+            )
+            self._result = EnumWorkflowResult.FAILED
+            return
+
+        module_name, class_name = resolved
+        self._handlers_wired = [f"{module_name}.{class_name}"]
+
+        handler_instance = self._instantiate_handler(module_name, class_name)
+
+        handle_method = getattr(handler_instance, "handle", None)
+        if handle_method is None:
+            logger.error("Handler %s has no handle() method", class_name)
+            self._result = EnumWorkflowResult.FAILED
+            return
+
+        # Build initial payload from contract input spec if available
+        input_spec = self._contract.get("input", {})
+        if not isinstance(input_spec, dict):
+            input_spec = {}
+        initial_payload = self._build_initial_payload(input_spec)
+
+        logger.info(
+            "RuntimeLocal: invoking compute handler %s.%s",
+            module_name,
+            class_name,
+        )
+
+        if asyncio.iscoroutinefunction(handle_method):
+            result_obj = await handle_method(initial_payload)
+        else:
+            result_obj = handle_method(initial_payload)
+
+        self._result = self._classify_result(result_obj)
+        logger.info("RuntimeLocal: compute handler returned, result=%s", self._result.value)
+
+    # ------------------------------------------------------------------
+    # Main entry point
+    # ------------------------------------------------------------------
+
     async def run_async(self) -> EnumWorkflowResult:
         """Execute the workflow asynchronously.
 
@@ -668,9 +781,34 @@ class RuntimeLocal:
         self._contract = load_workflow_contract(self.workflow_path)
 
         terminal_topic = self._contract.get("terminal_event")
+
+        # Contracts without terminal_event can still be executed if they
+        # declare handler_routing.default_handler (compute nodes).
         if not terminal_topic:
-            logger.error("Workflow contract missing 'terminal_event' topic.")
-            return EnumWorkflowResult.FAILED
+            if self._resolve_default_handler() is not None:
+                logger.info(
+                    "RuntimeLocal: no terminal_event but default_handler found — "
+                    "using compute execution path"
+                )
+                try:
+                    await self._run_compute()
+                except ModelOnexError:
+                    self._result = EnumWorkflowResult.FAILED
+                except Exception:
+                    logger.exception(
+                        "RuntimeLocal: unhandled exception during compute execution"
+                    )
+                    self._result = EnumWorkflowResult.FAILED
+                finally:
+                    self._write_state()
+                logger.info("RuntimeLocal: result=%s", self._result.value)
+                return self._result
+            else:
+                logger.error(
+                    "Workflow contract missing 'terminal_event' topic "
+                    "and no handler_routing.default_handler found."
+                )
+                return EnumWorkflowResult.FAILED
 
         logger.info(
             "RuntimeLocal: loaded contract %s, terminal_event=%s",

@@ -429,6 +429,179 @@ def test_has_event_routing_malformed(tmp_path: Path) -> None:
 
 
 # ===================================================================
+# Compute mode tests (OMN-7605)
+# ===================================================================
+
+
+COMPUTE_CONTRACT_YAML = (
+    "name: test_compute\n"
+    "contract_version: {major: 1, minor: 0, patch: 0}\n"
+    "node_type: compute\n"
+    "description: Test compute node\n"
+    "handler_routing:\n"
+    "  default_handler: _test_compute_mod:TestComputeHandler\n"
+)
+
+
+@pytest.mark.unit
+def test_compute_mode_no_terminal_event(tmp_path: Path) -> None:
+    """Compute contracts without terminal_event use direct handler execution."""
+    import sys
+    import types
+
+    class TestComputeHandler:
+        def handle(self, _input: Any = None) -> Any:
+            return type("R", (), {"status": "success"})()
+
+    mod = types.ModuleType("_test_compute_mod")
+    mod.TestComputeHandler = TestComputeHandler  # type: ignore[attr-defined]
+    sys.modules["_test_compute_mod"] = mod
+
+    try:
+        workflow = tmp_path / "compute.yaml"
+        workflow.write_text(COMPUTE_CONTRACT_YAML)
+        runtime = RuntimeLocal(
+            workflow_path=workflow,
+            state_root=tmp_path / "state",
+            timeout=5,
+        )
+        result = runtime.run()
+        assert result == EnumWorkflowResult.COMPLETED
+    finally:
+        sys.modules.pop("_test_compute_mod", None)
+
+
+@pytest.mark.unit
+def test_compute_mode_handler_failure(tmp_path: Path) -> None:
+    """Compute handler returning failure status yields FAILED result."""
+    import sys
+    import types
+
+    class FailHandler:
+        def handle(self, _input: Any = None) -> Any:
+            return type("R", (), {"status": "failure"})()
+
+    mod = types.ModuleType("_test_compute_fail_mod")
+    mod.FailHandler = FailHandler  # type: ignore[attr-defined]
+    sys.modules["_test_compute_fail_mod"] = mod
+
+    try:
+        yaml_text = (
+            "name: test_fail\n"
+            "contract_version: {major: 1, minor: 0, patch: 0}\n"
+            "node_type: compute\n"
+            "description: Failing compute\n"
+            "handler_routing:\n"
+            "  default_handler: _test_compute_fail_mod:FailHandler\n"
+        )
+        workflow = tmp_path / "fail.yaml"
+        workflow.write_text(yaml_text)
+        runtime = RuntimeLocal(
+            workflow_path=workflow,
+            state_root=tmp_path / "state",
+            timeout=5,
+        )
+        result = runtime.run()
+        assert result == EnumWorkflowResult.FAILED
+    finally:
+        sys.modules.pop("_test_compute_fail_mod", None)
+
+
+@pytest.mark.unit
+def test_compute_mode_writes_state(tmp_path: Path) -> None:
+    """Compute mode writes workflow_result.json to state_root."""
+    import sys
+    import types
+
+    class OkHandler:
+        def handle(self, _input: Any = None) -> None:
+            return None  # None -> COMPLETED
+
+    mod = types.ModuleType("_test_compute_ok_mod")
+    mod.OkHandler = OkHandler  # type: ignore[attr-defined]
+    sys.modules["_test_compute_ok_mod"] = mod
+
+    try:
+        yaml_text = (
+            "name: test_state\n"
+            "contract_version: {major: 1, minor: 0, patch: 0}\n"
+            "node_type: compute\n"
+            "description: State write test\n"
+            "handler_routing:\n"
+            "  default_handler: _test_compute_ok_mod:OkHandler\n"
+        )
+        workflow = tmp_path / "state_test.yaml"
+        workflow.write_text(yaml_text)
+        state_dir = tmp_path / "state"
+        runtime = RuntimeLocal(
+            workflow_path=workflow,
+            state_root=state_dir,
+            timeout=5,
+        )
+        runtime.run()
+
+        result_file = state_dir / "workflow_result.json"
+        assert result_file.exists()
+        data = json.loads(result_file.read_text())
+        assert data["result"] == "completed"
+        assert data["exit_code"] == 0
+    finally:
+        sys.modules.pop("_test_compute_ok_mod", None)
+
+
+@pytest.mark.unit
+def test_no_terminal_event_no_default_handler_fails(tmp_path: Path) -> None:
+    """Contract with neither terminal_event nor default_handler fails."""
+    yaml_text = (
+        "name: broken\n"
+        "contract_version: {major: 1, minor: 0, patch: 0}\n"
+        "node_type: compute\n"
+        "description: No handler\n"
+    )
+    workflow = tmp_path / "broken.yaml"
+    workflow.write_text(yaml_text)
+    runtime = RuntimeLocal(
+        workflow_path=workflow,
+        state_root=tmp_path / "state",
+        timeout=5,
+    )
+    result = runtime.run()
+    assert result == EnumWorkflowResult.FAILED
+
+
+@pytest.mark.unit
+def test_resolve_default_handler_bare_module(tmp_path: Path) -> None:
+    """_resolve_default_handler resolves bare module name relative to contract."""
+    # Create a fake package structure
+    pkg_dir = tmp_path / "src" / "mypkg" / "nodes" / "node_foo"
+    pkg_dir.mkdir(parents=True)
+    (tmp_path / "src" / "mypkg" / "__init__.py").touch()
+    (tmp_path / "src" / "mypkg" / "nodes" / "__init__.py").touch()
+    (tmp_path / "src" / "mypkg" / "nodes" / "node_foo" / "__init__.py").touch()
+
+    contract_path = pkg_dir / "contract.yaml"
+    contract_path.write_text(
+        "name: test\n"
+        "handler_routing:\n"
+        "  default_handler: handler:MyHandler\n"
+    )
+    runtime = RuntimeLocal(
+        workflow_path=contract_path,
+        state_root=tmp_path / "state",
+        timeout=5,
+    )
+    import yaml
+
+    runtime._contract = yaml.safe_load(contract_path.read_text())
+
+    result = runtime._resolve_default_handler()
+    assert result is not None
+    module_name, class_name = result
+    assert class_name == "MyHandler"
+    assert module_name == "mypkg.nodes.node_foo.handler"
+
+
+# ===================================================================
 # Integration test: two-handler chain
 # ===================================================================
 
