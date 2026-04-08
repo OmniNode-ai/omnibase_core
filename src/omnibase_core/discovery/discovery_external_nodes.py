@@ -90,7 +90,7 @@ def _is_valid_node_class(obj: object) -> bool:
     """Check that a loaded object looks like a valid ONEX node class.
 
     A valid node class must be an actual class (not an instance or function)
-    and must have either a ``process`` method or a ``contract_path`` /
+    and must have either a ``process`` / ``handle`` method or a ``contract_path`` /
     ``__onex_node_type__`` attribute.
 
     Args:
@@ -102,5 +102,6 @@ def _is_valid_node_class(obj: object) -> bool:
     if not isinstance(obj, type):
         return False
     has_process = callable(getattr(obj, "process", None))
+    has_handle = callable(getattr(obj, "handle", None))
     has_contract = hasattr(obj, "contract_path") or hasattr(obj, "__onex_node_type__")
-    return has_process or has_contract
+    return has_process or has_handle or has_contract
