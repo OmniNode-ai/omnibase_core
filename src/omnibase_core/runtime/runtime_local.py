@@ -320,13 +320,16 @@ class RuntimeLocal:
                 result = await method(initial_payload)
             else:
                 result = method(initial_payload)
-        except TypeError:
-            # The method may not accept arguments (e.g. run() with no args)
-            # or may return a tuple (run_full_cycle returns 3-tuple).
-            if asyncio.iscoroutinefunction(method):
-                result = await method()
-            else:
-                result = method()
+        except TypeError as original_exc:
+            # The method may not accept arguments (e.g. run() with no args).
+            # Retry without args; if that also fails, re-raise the original.
+            try:
+                if asyncio.iscoroutinefunction(method):
+                    result = await method()
+                else:
+                    result = method()
+            except TypeError:
+                raise original_exc from None
 
         # run_full_cycle returns (state, events, completed_event) — extract
         # the completed event for result classification.
@@ -845,8 +848,15 @@ class RuntimeLocal:
             else {}
         ) or self._contract.get("input", {})
         if isinstance(input_spec_raw, str) and "." in input_spec_raw:
-            im_module, im_class = input_spec_raw.rsplit(".", 1)
-            input_spec: dict[str, Any] = {"module": im_module, "class": im_class}
+            if not all(seg.isidentifier() for seg in input_spec_raw.split(".")):
+                logger.warning(
+                    "RuntimeLocal: invalid input_model format: %s",
+                    input_spec_raw,
+                )
+                input_spec: dict[str, Any] = {}
+            else:
+                im_module, im_class = input_spec_raw.rsplit(".", 1)
+                input_spec = {"module": im_module, "class": im_class}
         elif isinstance(input_spec_raw, dict):
             input_spec = input_spec_raw
         else:
