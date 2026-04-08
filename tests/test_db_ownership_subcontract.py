@@ -5,6 +5,8 @@
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 def test_db_tables_field_exists():
     """Contract db_ownership_subcontract must support declaring owned tables with role."""
