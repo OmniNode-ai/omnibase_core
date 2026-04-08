@@ -370,12 +370,21 @@ class RuntimeLocal:
         handler_spec = self._contract.get("handler", {})
         handler_module_name = handler_spec.get("module", "")
         handler_class_name = handler_spec.get("class", "")
-        self._handlers_wired = [f"{handler_module_name}.{handler_class_name}"]
 
+        # Fallback: resolve from handler_routing.default_handler
         if not handler_module_name or not handler_class_name:
-            logger.error("Workflow contract missing handler.module or handler.class")
-            self._result = EnumWorkflowResult.FAILED
-            return
+            resolved = self._resolve_default_handler()
+            if resolved is not None:
+                handler_module_name, handler_class_name = resolved
+            else:
+                logger.error(
+                    "Workflow contract missing handler.module or handler.class "
+                    "and no valid handler_routing.default_handler found"
+                )
+                self._result = EnumWorkflowResult.FAILED
+                return
+
+        self._handlers_wired = [f"{handler_module_name}.{handler_class_name}"]
 
         handler_instance = self._instantiate_handler(
             handler_module_name, handler_class_name
@@ -758,7 +767,20 @@ class RuntimeLocal:
         # package structure.
         if "." not in module_ref:
             contract_dir = self.workflow_path.resolve().parent
-            module_ref = self._infer_package_module(contract_dir, module_ref)
+            resolved = self._infer_package_module(contract_dir, module_ref)
+            if resolved == module_ref:
+                # Could not resolve to a package-qualified path — accept as-is
+                # only if the module is already importable (e.g. injected into
+                # sys.modules at runtime).
+                import sys as _sys
+
+                if module_ref not in _sys.modules:
+                    try:
+                        __import__(module_ref)
+                    except ImportError:
+                        return None
+            else:
+                module_ref = resolved
 
         return (module_ref, class_name)
 
