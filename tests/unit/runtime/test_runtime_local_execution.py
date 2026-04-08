@@ -647,7 +647,7 @@ def test_resolve_default_handler_parses_handler_colon_format(
         result = runtime._resolve_default_handler()
         assert result is not None
         module_name, class_name = result
-        assert module_name == "fake_pkg.nodes.node_test"
+        assert module_name == "fake_pkg.nodes.node_test.handler"
         assert class_name == "MyHandler"
     finally:
         _sys.path.remove(str(tmp_path))
