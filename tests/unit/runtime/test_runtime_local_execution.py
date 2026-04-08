@@ -694,7 +694,7 @@ async def test_single_handler_falls_back_to_default_handler(
     # Create a fake handler class
     class FakeHandler:
         def handle(self, _payload: Any) -> Any:
-            return {"status": "success"}
+            return type("R", (), {"status": "success"})()
 
     fake_mod = types.ModuleType("_test_default_handler_pkg")
     fake_mod.FakeHandler = FakeHandler  # type: ignore[attr-defined]
