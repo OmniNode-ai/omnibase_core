@@ -186,6 +186,8 @@ from .model_workflow_config import ModelWorkflowConfig
 from .model_workflow_dependency import ModelWorkflowDependency
 from .model_workflow_step import ModelWorkflowStep
 from .subcontracts import (
+    ModelDbOwnershipSubcontract,
+    ModelDbTableDeclaration,
     ModelHandlerRoutingEntry,
     ModelHandlerRoutingSubcontract,
 )
@@ -295,6 +297,9 @@ __all__ = [
     "DB_METADATA_CREATE_SQL",
     "DB_METADATA_INSERT_SQL",
     "DB_METADATA_QUERY_SQL",
+    # DB ownership subcontract (OMN-7916)
+    "ModelDbTableDeclaration",
+    "ModelDbOwnershipSubcontract",
     # Handler routing models (OMN-1295)
     "ModelHandlerRoutingEntry",
     "ModelHandlerRoutingSubcontract",
