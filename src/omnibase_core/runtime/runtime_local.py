@@ -701,10 +701,18 @@ class RuntimeLocal:
             contract_dir = self.workflow_path.resolve().parent
             resolved = self._infer_package_module(contract_dir, module_ref)
             if resolved == module_ref:
-                # Could not resolve to a package-qualified path — the contract
-                # directory is not inside a Python package.
-                return None
-            module_ref = resolved
+                # Could not resolve to a package-qualified path — accept as-is
+                # only if the module is already importable (e.g. injected into
+                # sys.modules at runtime).
+                import sys as _sys
+
+                if module_ref not in _sys.modules:
+                    try:
+                        __import__(module_ref)
+                    except ImportError:
+                        return None
+            else:
+                module_ref = resolved
 
         return (module_ref, class_name)
 
