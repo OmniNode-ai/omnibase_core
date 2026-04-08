@@ -699,7 +699,12 @@ class RuntimeLocal:
         # package structure.
         if "." not in module_ref:
             contract_dir = self.workflow_path.resolve().parent
-            module_ref = self._infer_package_module(contract_dir, module_ref)
+            resolved = self._infer_package_module(contract_dir, module_ref)
+            if resolved == module_ref:
+                # Could not resolve to a package-qualified path — the contract
+                # directory is not inside a Python package.
+                return None
+            module_ref = resolved
 
         return (module_ref, class_name)
 

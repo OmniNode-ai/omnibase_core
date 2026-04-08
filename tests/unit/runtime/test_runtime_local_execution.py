@@ -700,6 +700,10 @@ async def test_single_handler_falls_back_to_default_handler(
     fake_mod.FakeHandler = FakeHandler  # type: ignore[attr-defined]
     _sys.modules["_test_default_handler_pkg"] = fake_mod
 
+    fake_handler_mod = types.ModuleType("_test_default_handler_pkg.handler")
+    fake_handler_mod.FakeHandler = FakeHandler  # type: ignore[attr-defined]
+    _sys.modules["_test_default_handler_pkg.handler"] = fake_handler_mod
+
     # Create a package directory with __init__.py
     pkg_dir = tmp_path / "_test_default_handler_pkg"
     pkg_dir.mkdir()
@@ -727,6 +731,7 @@ async def test_single_handler_falls_back_to_default_handler(
         assert result == EnumWorkflowResult.COMPLETED
     finally:
         _sys.path.remove(str(tmp_path))
+        _sys.modules.pop("_test_default_handler_pkg.handler", None)
         _sys.modules.pop("_test_default_handler_pkg", None)
 
 
