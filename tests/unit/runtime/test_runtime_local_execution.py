@@ -718,3 +718,171 @@ async def test_two_handler_chain_end_to_end(tmp_path: Path) -> None:
             "_test_chain_handler_b",
         ]:
             sys.modules.pop(mod_name, None)
+
+
+# ===================================================================
+# Fallback method resolution tests (OMN-7788, OMN-7789)
+# ===================================================================
+
+
+@pytest.mark.unit
+def test_single_handler_fallback_to_run_full_cycle(tmp_path: Path) -> None:
+    """Handler without handle() but with run_full_cycle() completes."""
+    import sys
+    import types
+
+    class FakeResult(BaseModel):
+        cycles_failed: int = 0
+        status: str = "success"
+
+    class FakeHandler:
+        def run_full_cycle(self, command: Any = None) -> tuple[Any, list, FakeResult]:
+            return (None, [], FakeResult())
+
+    mod = types.ModuleType("_test_fallback_rfc_mod")
+    mod.FakeHandler = FakeHandler  # type: ignore[attr-defined]
+    sys.modules["_test_fallback_rfc_mod"] = mod
+
+    try:
+        yaml_text = (
+            "name: test_rfc\n"
+            "contract_version: {major: 1, minor: 0, patch: 0}\n"
+            "node_type: compute\n"
+            "description: Fallback test\n"
+            "terminal_event: evt.done.v1\n"
+            "handler:\n"
+            "  module: _test_fallback_rfc_mod\n"
+            "  class: FakeHandler\n"
+        )
+        workflow = tmp_path / "test.yaml"
+        workflow.write_text(yaml_text)
+        runtime = RuntimeLocal(
+            workflow_path=workflow,
+            state_root=tmp_path / "state",
+            timeout=5,
+        )
+        result = runtime.run()
+        assert result == EnumWorkflowResult.COMPLETED
+    finally:
+        sys.modules.pop("_test_fallback_rfc_mod", None)
+
+
+@pytest.mark.unit
+def test_single_handler_fallback_to_run(tmp_path: Path) -> None:
+    """Handler without handle() but with run() completes."""
+    import sys
+    import types
+
+    class RunResult(BaseModel):
+        status: str = "ok"
+
+    class RunHandler:
+        def run(self, payload: Any = None) -> RunResult:
+            return RunResult()
+
+    mod = types.ModuleType("_test_fallback_run_mod")
+    mod.RunHandler = RunHandler  # type: ignore[attr-defined]
+    sys.modules["_test_fallback_run_mod"] = mod
+
+    try:
+        yaml_text = (
+            "name: test_run\n"
+            "contract_version: {major: 1, minor: 0, patch: 0}\n"
+            "node_type: compute\n"
+            "description: Fallback run test\n"
+            "terminal_event: evt.done.v1\n"
+            "handler:\n"
+            "  module: _test_fallback_run_mod\n"
+            "  class: RunHandler\n"
+        )
+        workflow = tmp_path / "test.yaml"
+        workflow.write_text(yaml_text)
+        runtime = RuntimeLocal(
+            workflow_path=workflow,
+            state_root=tmp_path / "state",
+            timeout=5,
+        )
+        result = runtime.run()
+        assert result == EnumWorkflowResult.COMPLETED
+    finally:
+        sys.modules.pop("_test_fallback_run_mod", None)
+
+
+@pytest.mark.unit
+def test_compute_mode_with_top_level_handler_spec(tmp_path: Path) -> None:
+    """Compute node without terminal_event uses top-level handler spec (OMN-7789)."""
+    import sys
+    import types
+
+    class ComputeResult(BaseModel):
+        status: str = "ok"
+
+    class TopLevelHandler:
+        def handle(self, payload: Any = None) -> ComputeResult:
+            return ComputeResult()
+
+    mod = types.ModuleType("_test_toplevel_handler_mod")
+    mod.TopLevelHandler = TopLevelHandler  # type: ignore[attr-defined]
+    sys.modules["_test_toplevel_handler_mod"] = mod
+
+    try:
+        yaml_text = (
+            "name: test_toplevel\n"
+            "contract_version: {major: 1, minor: 0, patch: 0}\n"
+            "node_type: compute\n"
+            "description: Top-level handler compute test\n"
+            "handler:\n"
+            "  module: _test_toplevel_handler_mod\n"
+            "  class: TopLevelHandler\n"
+        )
+        workflow = tmp_path / "test.yaml"
+        workflow.write_text(yaml_text)
+        runtime = RuntimeLocal(
+            workflow_path=workflow,
+            state_root=tmp_path / "state",
+            timeout=5,
+        )
+        result = runtime.run()
+        assert result == EnumWorkflowResult.COMPLETED
+    finally:
+        sys.modules.pop("_test_toplevel_handler_mod", None)
+
+
+@pytest.mark.unit
+def test_compute_mode_fallback_run_full_cycle(tmp_path: Path) -> None:
+    """Compute node without terminal_event + no handle() falls back to run_full_cycle (OMN-7788)."""
+    import sys
+    import types
+
+    class CycleResult(BaseModel):
+        cycles_failed: int = 0
+
+    class CycleHandler:
+        def run_full_cycle(self, command: Any = None) -> tuple[Any, list, CycleResult]:
+            return (None, [], CycleResult())
+
+    mod = types.ModuleType("_test_compute_rfc_mod")
+    mod.CycleHandler = CycleHandler  # type: ignore[attr-defined]
+    sys.modules["_test_compute_rfc_mod"] = mod
+
+    try:
+        yaml_text = (
+            "name: test_compute_rfc\n"
+            "contract_version: {major: 1, minor: 0, patch: 0}\n"
+            "node_type: compute\n"
+            "description: Compute fallback test\n"
+            "handler:\n"
+            "  module: _test_compute_rfc_mod\n"
+            "  class: CycleHandler\n"
+        )
+        workflow = tmp_path / "test.yaml"
+        workflow.write_text(yaml_text)
+        runtime = RuntimeLocal(
+            workflow_path=workflow,
+            state_root=tmp_path / "state",
+            timeout=5,
+        )
+        result = runtime.run()
+        assert result == EnumWorkflowResult.COMPLETED
+    finally:
+        sys.modules.pop("_test_compute_rfc_mod", None)

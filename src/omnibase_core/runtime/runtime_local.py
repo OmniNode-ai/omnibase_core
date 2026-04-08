@@ -270,6 +270,74 @@ class RuntimeLocal:
         )
         return instance
 
+    # Fallback method names for handlers that lack handle().
+    _FALLBACK_METHODS: tuple[str, ...] = ("run_full_cycle", "run", "execute")
+
+    def _resolve_handler_method(
+        self, handler_instance: Any, class_name: str
+    ) -> tuple[Any, str]:
+        """Resolve the entry method on a handler instance.
+
+        Prefers ``handle()``. If absent, tries ``run_full_cycle``, ``run``,
+        ``execute`` in order. Returns ``(method, name)`` or ``(None, "")``
+        if no callable entry point is found.
+        """
+        handle_method = getattr(handler_instance, "handle", None)
+        if handle_method is not None:
+            return handle_method, "handle"
+
+        for name in self._FALLBACK_METHODS:
+            method = getattr(handler_instance, name, None)
+            if method is not None and callable(method):
+                logger.info(
+                    "RuntimeLocal: handler %s has no handle() — falling back to %s()",
+                    class_name,
+                    name,
+                )
+                return method, name
+
+        logger.error(
+            "Handler %s has no handle(), run_full_cycle(), run(), or execute() method",
+            class_name,
+        )
+        return None, ""
+
+    async def _invoke_handler_method(
+        self,
+        method: Any,
+        method_name: str,
+        handler_instance: Any,
+        initial_payload: Any,
+    ) -> Any:
+        """Invoke a handler method, adapting the call signature as needed.
+
+        ``handle()`` receives a single positional payload argument.
+        ``run_full_cycle()`` receives a typed command model as its first arg.
+        ``run()`` and ``execute()`` are tried with payload first, then without.
+        """
+        try:
+            if asyncio.iscoroutinefunction(method):
+                result = await method(initial_payload)
+            else:
+                result = method(initial_payload)
+        except TypeError as original_exc:
+            # The method may not accept arguments (e.g. run() with no args).
+            # Retry without args; if that also fails, re-raise the original.
+            try:
+                if asyncio.iscoroutinefunction(method):
+                    result = await method()
+                else:
+                    result = method()
+            except TypeError:
+                raise original_exc from None
+
+        # run_full_cycle returns (state, events, completed_event) — extract
+        # the completed event for result classification.
+        if isinstance(result, tuple) and len(result) >= 3:
+            result = result[-1]
+
+        return result
+
     # ------------------------------------------------------------------
     # Single-handler execution path
     # ------------------------------------------------------------------
@@ -325,17 +393,17 @@ class RuntimeLocal:
             input_spec = {}
         initial_payload = self._build_initial_payload(input_spec)
 
-        # Invoke handler
-        handle_method = getattr(handler_instance, "handle", None)
+        # Invoke handler — prefer handle(), fall back to run_full_cycle/run/execute
+        handle_method, method_name = self._resolve_handler_method(
+            handler_instance, handler_class_name
+        )
         if handle_method is None:
-            logger.error("Handler %s has no handle() method", handler_class_name)
             self._result = EnumWorkflowResult.FAILED
             return
 
-        if asyncio.iscoroutinefunction(handle_method):
-            result_obj = await handle_method(initial_payload)
-        else:
-            result_obj = handle_method(initial_payload)
+        result_obj = await self._invoke_handler_method(
+            handle_method, method_name, handler_instance, initial_payload
+        )
 
         # If the handler returned a result, use it directly — don't wait for
         # terminal event since single-handler workflows return synchronously.
@@ -720,18 +788,42 @@ class RuntimeLocal:
             pass  # parts are already correct
         return ".".join(parts) if len(parts) > 1 else relative_name
 
-    async def _run_compute(self) -> None:
-        """Execute a compute node's default_handler directly.
+    def _resolve_handler_spec(self) -> tuple[str, str] | None:
+        """Resolve handler (module, class) from available contract fields.
 
-        No event bus or terminal_event is needed. The handler is resolved
-        from ``handler_routing.default_handler``, instantiated, and invoked.
-        The return value determines the workflow result.
+        Checks in order:
+        1. ``handler_routing.default_handler`` (module:Class format)
+        2. Top-level ``handler.module`` + ``handler.class``
+
+        Returns:
+            ``(module_name, class_name)`` or ``None``.
         """
         resolved = self._resolve_default_handler()
+        if resolved is not None:
+            return resolved
+
+        handler_spec = self._contract.get("handler", {})
+        if isinstance(handler_spec, dict):
+            module_name = handler_spec.get("module", "")
+            class_name = handler_spec.get("class", "")
+            if module_name and class_name:
+                return (module_name, class_name)
+
+        return None
+
+    async def _run_compute(self) -> None:
+        """Execute a compute node's handler directly.
+
+        No event bus or terminal_event is needed. The handler is resolved
+        from ``handler_routing.default_handler`` or the top-level ``handler``
+        spec, instantiated, and invoked. The return value determines the
+        workflow result.
+        """
+        resolved = self._resolve_handler_spec()
         if resolved is None:
             logger.error(
                 "RuntimeLocal: compute mode requires "
-                "handler_routing.default_handler in module:Class format"
+                "handler_routing.default_handler or handler.module/class"
             )
             self._result = EnumWorkflowResult.FAILED
             return
@@ -741,28 +833,46 @@ class RuntimeLocal:
 
         handler_instance = self._instantiate_handler(module_name, class_name)
 
-        handle_method = getattr(handler_instance, "handle", None)
+        handle_method, method_name = self._resolve_handler_method(
+            handler_instance, class_name
+        )
         if handle_method is None:
-            logger.error("Handler %s has no handle() method", class_name)
             self._result = EnumWorkflowResult.FAILED
             return
 
-        # Build initial payload from contract input spec if available
-        input_spec = self._contract.get("input", {})
-        if not isinstance(input_spec, dict):
+        # Build initial payload from handler or contract input spec
+        handler_spec = self._contract.get("handler", {})
+        input_spec_raw: dict[str, Any] | str = (
+            handler_spec.get("input_model", {})
+            if isinstance(handler_spec, dict)
+            else {}
+        ) or self._contract.get("input", {})
+        if isinstance(input_spec_raw, str) and "." in input_spec_raw:
+            if not all(seg.isidentifier() for seg in input_spec_raw.split(".")):
+                logger.warning(
+                    "RuntimeLocal: invalid input_model format: %s",
+                    input_spec_raw,
+                )
+                input_spec: dict[str, Any] = {}
+            else:
+                im_module, im_class = input_spec_raw.rsplit(".", 1)
+                input_spec = {"module": im_module, "class": im_class}
+        elif isinstance(input_spec_raw, dict):
+            input_spec = input_spec_raw
+        else:
             input_spec = {}
         initial_payload = self._build_initial_payload(input_spec)
 
         logger.info(
-            "RuntimeLocal: invoking compute handler %s.%s",
+            "RuntimeLocal: invoking compute handler %s.%s (method=%s)",
             module_name,
             class_name,
+            method_name,
         )
 
-        if asyncio.iscoroutinefunction(handle_method):
-            result_obj = await handle_method(initial_payload)
-        else:
-            result_obj = handle_method(initial_payload)
+        result_obj = await self._invoke_handler_method(
+            handle_method, method_name, handler_instance, initial_payload
+        )
 
         self._result = self._classify_result(result_obj)
         logger.info(
@@ -785,11 +895,12 @@ class RuntimeLocal:
         terminal_topic = self._contract.get("terminal_event")
 
         # Contracts without terminal_event can still be executed if they
-        # declare handler_routing.default_handler (compute nodes).
+        # declare a handler (via handler_routing.default_handler or
+        # top-level handler.module/class).
         if not terminal_topic:
-            if self._resolve_default_handler() is not None:
+            if self._resolve_handler_spec() is not None:
                 logger.info(
-                    "RuntimeLocal: no terminal_event but default_handler found — "
+                    "RuntimeLocal: no terminal_event but handler found — "
                     "using compute execution path"
                 )
                 try:
@@ -808,7 +919,8 @@ class RuntimeLocal:
             else:
                 logger.error(
                     "Workflow contract missing 'terminal_event' topic "
-                    "and no handler_routing.default_handler found."
+                    "and no handler spec found (need handler_routing.default_handler "
+                    "or handler.module/class)."
                 )
                 return EnumWorkflowResult.FAILED
 
