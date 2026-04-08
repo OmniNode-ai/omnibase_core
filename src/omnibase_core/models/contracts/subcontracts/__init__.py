@@ -59,6 +59,10 @@ from .model_coordination_result import ModelCoordinationResult
 from .model_coordination_rules import ModelCoordinationRules
 from .model_correlation_config import ModelCorrelationConfig
 from .model_data_grouping import ModelDataGrouping
+from .model_db_ownership_subcontract import (
+    ModelDbOwnershipSubcontract,
+    ModelDbTableDeclaration,
+)
 from .model_dependency_health import ModelDependencyHealth
 from .model_discovery_subcontract import ModelDiscoverySubcontract
 
@@ -210,6 +214,9 @@ __all__ = [
     "ModelConfigurationSubcontract",
     "ModelConfigurationSource",
     "ModelConfigurationValidation",
+    # DB ownership subcontracts (OMN-7916)
+    "ModelDbTableDeclaration",
+    "ModelDbOwnershipSubcontract",
     # Discovery subcontracts
     "ModelDiscoverySubcontract",
     # Event type subcontracts and components
