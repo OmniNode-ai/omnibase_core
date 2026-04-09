@@ -565,6 +565,7 @@ __all__ = [
     "EnumNodeArchetype",
     "EnumNodeArchitectureType",
     "EnumNodeKind",
+    "EnumNodeRole",
     "EnumNodeType",
     "EnumOperationStatus",  # Canonical operation status (OMN-1310)
     "EnumExecutionStatus",  # Canonical execution status (OMN-1310)
