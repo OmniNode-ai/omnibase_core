@@ -144,8 +144,20 @@ class TestDiscoverExternalNodes:
         assert "typed_node" in result
 
     @pytest.mark.unit
-    def test_discover_rejects_class_without_process_or_contract(self) -> None:
-        """A plain class with no process/contract_path/__onex_node_type__ is rejected."""
+    def test_discover_accepts_handle_node(self) -> None:
+        """A class with a handle method (handler-based node) should be accepted."""
+        node_cls = type("HandlerNode", (), {"handle": lambda self, msg: None})
+        ep = _make_entry_point("handler_node", load_return=node_cls)
+
+        with patch(_EP_MODULE, return_value=[ep]):
+            result = discover_external_nodes()
+
+        assert "handler_node" in result
+        assert result["handler_node"].node_class is node_cls
+
+    @pytest.mark.unit
+    def test_discover_rejects_class_without_process_handle_or_contract(self) -> None:
+        """A plain class with no process/handle/contract_path/__onex_node_type__ is rejected."""
         node_cls = type("PlainClass", (), {})
         ep = _make_entry_point("plain_node", load_return=node_cls)
 

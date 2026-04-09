@@ -372,6 +372,7 @@ class MixinIntrospectionPublisher:
                         "health_check",
                         "validate",
                         "process",
+                        "handle",
                         "configure",
                     ]:
                         actions.append(method_name)
