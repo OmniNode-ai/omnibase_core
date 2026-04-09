@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums import EnumMetaType, EnumProtocolVersion, EnumRuntimeLanguage
 from omnibase_core.enums.enum_metadata import EnumLifecycle
+from omnibase_core.enums.enum_node_role import EnumNodeRole
 from omnibase_core.models.configuration.model_metadata_config import ModelMetadataConfig
 from omnibase_core.models.configuration.model_validators_metadata import (
     coerce_protocols_to_list,
@@ -149,6 +150,10 @@ class ModelMetadataBlock(BaseModel):
     )
     tools: ToolCollection | None = None
     lifecycle: EnumLifecycle = Field(default=EnumLifecycle.ACTIVE)
+    node_role: EnumNodeRole | None = Field(
+        default=None,
+        description="Optional architectural role of this node within a domain pipeline",
+    )
 
     @field_validator("metadata_version", mode="before")
     @classmethod
