@@ -156,6 +156,17 @@ class ModelNodeMetadataBlock(BaseModel):
     test_matrix: list[TestMatrixEntry] | None = None
     test_coverage: float | None = None  # Percentage, 0-100
 
+    # Deprecation fields - enable catalog generator to flag deprecated nodes
+    deprecated: bool = Field(default=False, description="Whether this node is deprecated")
+    deprecated_by: str | None = Field(
+        default=None,
+        description="Identifier of the replacement node (e.g., namespace URI)",
+    )
+    deprecated_reason: str | None = Field(
+        default=None,
+        description="Human-readable explanation of why this node is deprecated",
+    )
+
     # Function tools support - unified tools approach
     tools: ModelToolCollection | None = Field(
         default=None,
