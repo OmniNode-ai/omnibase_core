@@ -157,7 +157,9 @@ class ModelNodeMetadataBlock(BaseModel):
     test_coverage: float | None = None  # Percentage, 0-100
 
     # Deprecation fields - enable catalog generator to flag deprecated nodes
-    deprecated: bool = Field(default=False, description="Whether this node is deprecated")
+    deprecated: bool = Field(
+        default=False, description="Whether this node is deprecated"
+    )
     deprecated_by: str | None = Field(
         default=None,
         description="Identifier of the replacement node (e.g., namespace URI)",
