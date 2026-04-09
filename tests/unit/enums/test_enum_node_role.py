@@ -73,7 +73,7 @@ class TestEnumNodeRoleInheritance:
         assert issubclass(EnumNodeRole, Enum)
 
     def test_members_are_strings(self) -> None:
-        for member in EnumNodeRole:
+        for member in list(EnumNodeRole):
             assert isinstance(member, str)
 
     def test_string_equality(self) -> None:
@@ -93,12 +93,12 @@ class TestEnumNodeRoleSerialization:
     """Verify round-trip serialization."""
 
     def test_construct_from_string(self) -> None:
-        for member in EnumNodeRole:
+        for member in list(EnumNodeRole):
             reconstructed = EnumNodeRole(member.value)
             assert reconstructed is member
 
     def test_json_roundtrip(self) -> None:
-        for member in EnumNodeRole:
+        for member in list(EnumNodeRole):
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
             assert EnumNodeRole(deserialized) is member
@@ -206,7 +206,7 @@ class TestModelMetadataBlockNodeRole:
             ModelMetadataBlock,
         )
 
-        for role in EnumNodeRole:
+        for role in list(EnumNodeRole):
             kwargs = self._base_metadata_kwargs()
             kwargs["node_role"] = role
             m = ModelMetadataBlock(**kwargs)
