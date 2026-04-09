@@ -270,6 +270,7 @@ from .enum_node_archetype import EnumNodeArchetype
 from .enum_node_architecture_type import EnumNodeArchitectureType
 from .enum_node_kind import EnumNodeKind
 from .enum_node_requirement import EnumNodeRequirement
+from .enum_node_role import EnumNodeRole
 from .enum_node_status import EnumNodeStatus
 from .enum_node_type import EnumNodeType
 
