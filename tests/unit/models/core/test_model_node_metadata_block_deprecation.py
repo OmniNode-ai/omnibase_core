@@ -20,16 +20,16 @@ from omnibase_core.models.core.model_node_metadata_block import ModelNodeMetadat
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Minimal required fields for ModelNodeMetadataBlock
-_MINIMAL = dict(
-    name="test-node",
-    version=ModelSemVer(major=1, minor=0, patch=0),
-    author="test_author",
-    created_at="2024-01-01T00:00:00Z",
-    last_modified_at="2024-01-01T00:00:00Z",
-    hash="a" * 64,
-    entrypoint="python://main.py",
-    namespace="onex.tools.test",
-)
+_MINIMAL = {
+    "name": "test-node",
+    "version": ModelSemVer(major=1, minor=0, patch=0),
+    "author": "test_author",
+    "created_at": "2024-01-01T00:00:00Z",
+    "last_modified_at": "2024-01-01T00:00:00Z",
+    "hash": "a" * 64,
+    "entrypoint": "python://main.py",
+    "namespace": "onex.tools.test",
+}
 
 
 @pytest.mark.unit
