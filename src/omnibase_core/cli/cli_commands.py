@@ -633,6 +633,19 @@ from omnibase_core.cli.cli_port_openclaw import cli_port_openclaw
 
 cli.add_command(cli_port_openclaw)
 
+# Load CLI extension groups registered by other packages via the onex.cli entry-point group.
+# Each entry point must expose a click.Group or click.Command.
+# This enables infra packages (e.g. omnibase_infra) to contribute subcommands
+# (e.g. `onex kafka`) without creating circular imports in omnibase_core.
+import importlib.metadata
+
+for _ep in importlib.metadata.entry_points(group="onex.cli"):
+    try:
+        _cmd = _ep.load()
+        if callable(_cmd):
+            cli.add_command(_cmd, _ep.name)
+    except Exception:  # noqa: BLE001 — extension load failures must not crash the CLI
+        pass
 
 if __name__ == "__main__":
     cli()
