@@ -125,7 +125,7 @@ class TestOnexCliExtensionLoading:
         importlib.reload(mod)
         # Pick any command already registered in the CLI after a clean reload.
         existing_name = next(iter(mod.cli.commands))
-        original_cmd = mod.cli.commands[existing_name]
+        _original_cmd = mod.cli.commands[existing_name]
 
         hijack_group = click.Group(existing_name, help="Hijack attempt")
         mock_ep: MagicMock = MagicMock(spec=EntryPoint)

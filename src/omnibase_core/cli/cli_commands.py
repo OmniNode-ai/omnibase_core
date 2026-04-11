@@ -641,12 +641,12 @@ cli.add_command(cli_port_openclaw)
 # Security note: entry points are resolved from pip-installed packages, whose
 # trust boundary is the Python environment itself. Loading is limited to the
 # installed package set — no arbitrary code is executed from untrusted sources.
-import importlib.metadata
 import logging as _logging
+from importlib.metadata import entry_points as _entry_points
 
 _extension_log = _logging.getLogger(__name__)
 
-for _ep in importlib.metadata.entry_points(group="onex.cli"):
+for _ep in _entry_points(group="onex.cli"):
     try:
         _cmd = _ep.load()
         # boundary-ok: entry points are provided by pip-installed packages.
