@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from datetime import UTC, datetime
 from typing import Any, ClassVar
 
@@ -34,11 +35,14 @@ from omnibase_core.enums.plan import (
     EnumPlanPhase,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.plan.model_dod_item import ModelDoDItem
 from omnibase_core.models.plan.model_plan_document import ModelPlanDocument
 from omnibase_core.models.plan.model_plan_entry import ModelPlanEntry
 from omnibase_core.models.plan.model_plan_review_result import ModelPlanReviewResult
 from omnibase_core.models.plan.model_plan_ticket_link import ModelPlanTicketLink
 from omnibase_core.utils.util_decorators import allow_dict_str_any, allow_string_id
+
+_EPIC_ID_PATTERN = re.compile(r"^OMN-\d+$")
 
 
 @allow_string_id(reason="Plan ID is an external identifier (e.g., PLAN-OMN-5971)")
@@ -93,6 +97,56 @@ class ModelPlanContract(BaseModel):
         description="Non-core extensibility metadata (orchestration, session, etc.)",
     )
 
+    # -------------------------------------------------------------------------
+    # Enforcement-chain metadata (OMN-8421)
+    # -------------------------------------------------------------------------
+    # These fields support the plan -> epic -> tickets -> PR -> dogfood
+    # enforcement chain (OMN-8416). They live at the top level (not in
+    # context) so downstream hooks and skills get type-safe access.
+    #
+    # NAMING: `plan_phases` (plural, list) is distinct from the existing
+    # `phase: EnumPlanPhase` field above, which tracks lifecycle state
+    # (DRAFT -> REVIEWED -> TICKETED -> EXECUTING -> CLOSED). `plan_phases`
+    # is the ordered list of plan-defined phase IDs (e.g. ["P0", "P1", "P2"])
+    # that the plan decomposes its work into. They are different concepts.
+    epic_id: str | None = Field(
+        default=None,
+        description=(
+            "Linear epic identifier that this plan is realized under "
+            "(e.g. 'OMN-8416'). Must match `^OMN-\\d+$`."
+        ),
+    )
+    plan_phases: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Ordered list of plan-defined phase IDs. Distinct from "
+            "`phase: EnumPlanPhase` lifecycle state."
+        ),
+    )
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="Plan IDs that must complete before this plan starts.",
+    )
+    success_criteria: list[ModelDoDItem] = Field(
+        default_factory=list,
+        description="Definition-of-done items for this plan.",
+    )
+    halt_conditions: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Plain-string halt conditions. Structured ModelHaltCondition "
+            "support is deferred to OMN-8375 territory."
+        ),
+    )
+    supersedes: list[str] = Field(
+        default_factory=list,
+        description="Plan IDs that this plan replaces.",
+    )
+    superseded_by: str | None = Field(
+        default=None,
+        description="Plan ID that replaces this plan, if any.",
+    )
+
     # Fingerprinting and timestamps
     contract_fingerprint: str | None = Field(
         default=None, description="SHA256 fingerprint of contract state"
@@ -122,6 +176,18 @@ class ModelPlanContract(BaseModel):
     # =========================================================================
     # Validators
     # =========================================================================
+
+    @field_validator("epic_id", mode="after")
+    @classmethod
+    def _validate_epic_id(cls, v: str | None) -> str | None:
+        """Enforce OMN-<digits> format on epic_id when set."""
+        if v is None:
+            return v
+        if not _EPIC_ID_PATTERN.match(v):
+            raise ValueError(  # error-ok: Pydantic field_validator requires ValueError
+                f"epic_id {v!r} does not match required pattern '^OMN-\\d+$'"
+            )
+        return v
 
     @field_validator("created_at", "updated_at", mode="before")
     @classmethod
@@ -526,6 +592,38 @@ class ModelPlanContract(BaseModel):
                 seen.add(link.ticket_id)
                 result.append(link.ticket_id)
         return result
+
+    def is_transitively_superseded(
+        self, resolver: dict[str, ModelPlanContract]
+    ) -> bool:
+        """Walk the superseded_by chain and detect supersession.
+
+        Pure function: caller supplies the plan_id -> contract resolver.
+        Follows superseded_by pointers until one is None or a cycle is
+        detected. A cycle is treated as superseded (the chain terminates
+        abnormally).
+
+        Args:
+            resolver: Mapping of plan_id to ModelPlanContract, used to walk
+                the superseded_by chain beyond the immediate successor.
+
+        Returns:
+            True if this plan has any superseded_by pointer (directly or
+            transitively). False only when this plan has no successor.
+        """
+        if self.superseded_by is None:
+            return False
+        visited: set[str] = {self.plan_id}
+        cursor: str | None = self.superseded_by
+        while cursor is not None:
+            if cursor in visited:
+                return True
+            visited.add(cursor)
+            next_contract = resolver.get(cursor)
+            if next_contract is None:
+                return True
+            cursor = next_contract.superseded_by
+        return True
 
     def link_for_entry(self, entry_id: str) -> ModelPlanTicketLink | None:
         """Look up the ticket link for a given entry ID.

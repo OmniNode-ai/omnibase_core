@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
+from omnibase_core.models.plan.model_dod_item import DoDItem, ModelDoDItem
 from omnibase_core.models.plan.model_plan_contract import (
     ModelPlanContract,
     PlanContract,
@@ -21,6 +22,8 @@ from omnibase_core.models.plan.model_plan_ticket_link import (
 )
 
 __all__ = [
+    "DoDItem",
+    "ModelDoDItem",
     "ModelPlanContract",
     "ModelPlanDocument",
     "ModelPlanEntry",
