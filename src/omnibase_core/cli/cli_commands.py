@@ -637,15 +637,27 @@ cli.add_command(cli_port_openclaw)
 # Each entry point must expose a click.Group or click.Command.
 # This enables infra packages (e.g. omnibase_infra) to contribute subcommands
 # (e.g. `onex kafka`) without creating circular imports in omnibase_core.
+#
+# Security note: entry points are resolved from pip-installed packages, whose
+# trust boundary is the Python environment itself. Loading is limited to the
+# installed package set — no arbitrary code is executed from untrusted sources.
 import importlib.metadata
+import logging as _logging
+
+_extension_log = _logging.getLogger(__name__)
 
 for _ep in importlib.metadata.entry_points(group="onex.cli"):
     try:
         _cmd = _ep.load()
         if callable(_cmd):
             cli.add_command(_cmd, _ep.name)
-    except Exception:  # noqa: BLE001 — extension load failures must not crash the CLI
-        pass
+    except (ImportError, ModuleNotFoundError, AttributeError, TypeError) as _ext_err:
+        # Narrow catch: expected failure modes when loading a broken/missing extension.
+        # Other exception types (RuntimeError, etc.) are NOT caught here — they propagate
+        # so they are visible rather than silently swallowed.
+        _extension_log.warning(
+            "onex.cli extension %r failed to load: %s", _ep.name, _ext_err
+        )
 
 if __name__ == "__main__":
     cli()
