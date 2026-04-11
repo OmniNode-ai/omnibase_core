@@ -633,6 +633,44 @@ from omnibase_core.cli.cli_port_openclaw import cli_port_openclaw
 
 cli.add_command(cli_port_openclaw)
 
+# Load CLI extension groups registered by other packages via the onex.cli entry-point group.
+# Each entry point must expose a click.Group or click.Command.
+# This enables infra packages (e.g. omnibase_infra) to contribute subcommands
+# (e.g. `onex kafka`) without creating circular imports in omnibase_core.
+#
+# Security note: entry points are resolved from pip-installed packages, whose
+# trust boundary is the Python environment itself. Loading is limited to the
+# installed package set — no arbitrary code is executed from untrusted sources.
+import logging as _logging
+from importlib.metadata import entry_points as _entry_points
+
+_extension_log = _logging.getLogger(__name__)
+
+for _ep in _entry_points(group="onex.cli"):
+    try:
+        _cmd = _ep.load()
+        # boundary-ok: entry points are provided by pip-installed packages.
+        if isinstance(_cmd, (click.Command, click.Group)):
+            if _ep.name in cli.commands:
+                _extension_log.warning(
+                    "onex.cli extension %r conflicts with an existing command, skipping",
+                    _ep.name,
+                )
+            else:
+                cli.add_command(_cmd, _ep.name)
+        else:
+            _extension_log.warning(
+                "onex.cli extension %r is not a click.Command or click.Group (got %s), skipping",
+                _ep.name,
+                type(_cmd).__name__,
+            )
+    except (ImportError, ModuleNotFoundError, AttributeError, TypeError) as _ext_err:
+        # Narrow catch: expected failure modes when loading a broken/missing extension.
+        # RuntimeError and other unexpected exceptions are NOT caught — they propagate
+        # and remain visible rather than being silently swallowed.
+        _extension_log.warning(
+            "onex.cli extension %r failed to load: %s", _ep.name, _ext_err
+        )
 
 if __name__ == "__main__":
     cli()
