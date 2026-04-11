@@ -599,17 +599,19 @@ class ModelPlanContract(BaseModel):
         """Walk the superseded_by chain and detect supersession.
 
         Pure function: caller supplies the plan_id -> contract resolver.
-        Follows superseded_by pointers until one is None or a cycle is
-        detected. A cycle is treated as superseded (the chain terminates
-        abnormally).
+        Follows superseded_by pointers until the chain terminates at a live
+        plan (superseded_by=None), a cycle is detected, or an unresolvable
+        plan_id is encountered.
 
         Args:
             resolver: Mapping of plan_id to ModelPlanContract, used to walk
                 the superseded_by chain beyond the immediate successor.
 
         Returns:
-            True if this plan has any superseded_by pointer (directly or
-            transitively). False only when this plan has no successor.
+            True only when the chain terminates at a confirmed live successor
+            (superseded_by=None) or when a cycle is detected. False when this
+            plan has no successor or when the chain leads to an unresolvable
+            plan_id (no false-positive supersession claims).
         """
         if self.superseded_by is None:
             return False
@@ -617,12 +619,15 @@ class ModelPlanContract(BaseModel):
         cursor: str | None = self.superseded_by
         while cursor is not None:
             if cursor in visited:
+                # Cycle — treat as superseded (abnormal but confirmed non-live)
                 return True
             visited.add(cursor)
             next_contract = resolver.get(cursor)
             if next_contract is None:
-                return True
+                # Unresolvable successor — cannot confirm supersession
+                return False
             cursor = next_contract.superseded_by
+        # Loop exited with cursor=None: chain terminated at a live plan
         return True
 
     def link_for_entry(self, entry_id: str) -> ModelPlanTicketLink | None:
