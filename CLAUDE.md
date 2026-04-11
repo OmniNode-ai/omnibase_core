@@ -267,6 +267,10 @@ When spawning polymorphic agents or AI assistants:
 
 **Mutable defaults**: ALWAYS use `default_factory` — e.g. `items: list[str] = Field(default_factory=list)`
 
+### Plan Contract Enforcement Fields (OMN-8421)
+
+`ModelPlanContract` carries plan-level enforcement metadata for the OMN-8416 plan → epic → tickets → PR → dogfood chain. When adding a new plan, set `epic_id` (Linear epic in `^OMN-\d+$` format), `plan_phases`, `success_criteria` (via `ModelDoDItem`), and `halt_conditions` at the top level — not in `context`. The existing `phase: EnumPlanPhase` lifecycle field is distinct from `plan_phases: list[str]` and must not be confused.
+
 **See**: [Pydantic Best Practices](docs/conventions/PYDANTIC_BEST_PRACTICES.md)
 
 ---
