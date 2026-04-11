@@ -653,11 +653,11 @@ for _ep in importlib.metadata.entry_points(group="onex.cli"):
         # The installer (pip/uv) is the security boundary — this is the same
         # model used by pytest plugins, Babel extractors, and other Python
         # extension ecosystems. Only accept valid click.BaseCommand instances.
-        if isinstance(_cmd, click.BaseCommand):
+        if isinstance(_cmd, (click.Command, click.Group)):
             cli.add_command(_cmd, _ep.name)
         else:
             _extension_log.warning(
-                "onex.cli extension %r is not a click.BaseCommand (got %s), skipping",
+                "onex.cli extension %r is not a click.Command or click.Group (got %s), skipping",
                 _ep.name,
                 type(_cmd).__name__,
             )
