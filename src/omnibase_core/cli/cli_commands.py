@@ -649,12 +649,22 @@ _extension_log = _logging.getLogger(__name__)
 for _ep in importlib.metadata.entry_points(group="onex.cli"):
     try:
         _cmd = _ep.load()
-        if callable(_cmd):
+        # Trust boundary: entry points are provided by pip-installed packages.
+        # The installer (pip/uv) is the security boundary — this is the same
+        # model used by pytest plugins, Babel extractors, and other Python
+        # extension ecosystems. Only accept valid click.BaseCommand instances.
+        if isinstance(_cmd, click.BaseCommand):
             cli.add_command(_cmd, _ep.name)
+        else:
+            _extension_log.warning(
+                "onex.cli extension %r is not a click.BaseCommand (got %s), skipping",
+                _ep.name,
+                type(_cmd).__name__,
+            )
     except (ImportError, ModuleNotFoundError, AttributeError, TypeError) as _ext_err:
         # Narrow catch: expected failure modes when loading a broken/missing extension.
-        # Other exception types (RuntimeError, etc.) are NOT caught here — they propagate
-        # so they are visible rather than silently swallowed.
+        # RuntimeError and other unexpected exceptions are NOT caught — they propagate
+        # and remain visible rather than being silently swallowed.
         _extension_log.warning(
             "onex.cli extension %r failed to load: %s", _ep.name, _ext_err
         )

@@ -60,6 +60,29 @@ class TestOnexCliExtensionLoading:
         result = runner.invoke(reloaded_cli, ["--help"])
         assert result.exit_code == 0
 
+    def test_non_basecommand_extension_is_rejected(self) -> None:
+        """Non-click.BaseCommand callables (e.g. malicious functions) are rejected."""
+        mock_ep: MagicMock = MagicMock(spec=EntryPoint)
+        mock_ep.name = "malicious"
+
+        def _malicious_callable() -> None:
+            pass  # A callable but NOT a click.BaseCommand
+
+        mock_ep.load.return_value = _malicious_callable
+
+        with patch("importlib.metadata.entry_points", return_value=[mock_ep]):
+            import importlib
+
+            import omnibase_core.cli.cli_commands as mod
+
+            importlib.reload(mod)
+            reloaded_cli = mod.cli
+
+        runner = CliRunner()
+        result = runner.invoke(reloaded_cli, ["--help"])
+        assert result.exit_code == 0
+        assert "malicious" not in result.output
+
     def test_non_callable_extension_is_skipped(self) -> None:
         mock_ep: MagicMock = MagicMock(spec=EntryPoint)
         mock_ep.name = "notcallable"
