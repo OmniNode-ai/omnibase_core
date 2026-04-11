@@ -649,12 +649,15 @@ _extension_log = _logging.getLogger(__name__)
 for _ep in importlib.metadata.entry_points(group="onex.cli"):
     try:
         _cmd = _ep.load()
-        # Trust boundary: entry points are provided by pip-installed packages.
-        # The installer (pip/uv) is the security boundary — this is the same
-        # model used by pytest plugins, Babel extractors, and other Python
-        # extension ecosystems. Only accept valid click.BaseCommand instances.
+        # boundary-ok: entry points are provided by pip-installed packages.
         if isinstance(_cmd, (click.Command, click.Group)):
-            cli.add_command(_cmd, _ep.name)
+            if _ep.name in cli.commands:
+                _extension_log.warning(
+                    "onex.cli extension %r conflicts with an existing command, skipping",
+                    _ep.name,
+                )
+            else:
+                cli.add_command(_cmd, _ep.name)
         else:
             _extension_log.warning(
                 "onex.cli extension %r is not a click.Command or click.Group (got %s), skipping",
