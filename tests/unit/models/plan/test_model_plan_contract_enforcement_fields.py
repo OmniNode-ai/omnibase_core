@@ -152,12 +152,12 @@ class TestSupersededByChain:
         a = ModelPlanContract(plan_id="PLAN-A", document=_doc(), superseded_by="PLAN-B")
         assert a.is_transitively_superseded({"PLAN-B": b}) is True
 
-    def test_unresolvable_successor_treated_as_superseded(self) -> None:
-        """If the chain points at a plan_id the resolver doesn't know, stop walking."""
+    def test_unresolvable_successor_not_falsely_superseded(self) -> None:
+        """If the chain points to an unknown plan_id, supersession cannot be confirmed."""
         a = ModelPlanContract(
             plan_id="PLAN-A", document=_doc(), superseded_by="PLAN-UNKNOWN"
         )
-        assert a.is_transitively_superseded({}) is True
+        assert a.is_transitively_superseded({}) is False
 
     def test_is_transitively_superseded_returns_false_for_terminal_plan(self) -> None:
         """Chain that resolves to a terminal (live) plan: PLAN-A → PLAN-B (live).
