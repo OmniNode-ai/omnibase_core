@@ -1,18 +1,30 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
-# OMN-6571: Automatically enable auto-merge (squash) on every PR opened
+# OMN-6571: Automatically enable auto-merge on every PR opened
 # by jonahgabriel. Ensures PRs do not sit idle in the merge queue waiting
 # for manual enrollment.
 #
-# NOTE: This job uses continue-on-error because gh pr merge --auto fails
-# if auto-merge is already enabled or the PR is in the merge queue. That
-# failure is expected and must not block the merge queue.
+# OMN-7786: Re-trigger on review and workflow_run events so the workflow
+# re-attempts auto-merge after CodeRabbit review finishes and branch
+# protection gates clear. Silent continue-on-error removed; "already
+# enqueued" races are tolerated but real failures surface.
 name: Auto-Merge
 
 on:
   pull_request:
     types: [opened, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed]
+  workflow_run:
+    workflows: ["*"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to enable auto-merge on"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -22,10 +34,62 @@ jobs:
   auto-merge:
     name: Enable Auto-Merge
     runs-on: ubuntu-latest
-    if: github.actor == 'jonahgabriel'
     steps:
-      - name: Enable auto-merge (squash)
-        continue-on-error: true
-        run: gh pr merge "${{ github.event.pull_request.number }}" --auto --squash
+      - uses: actions/checkout@v4
+
+      - name: Resolve PR and author
+        id: resolve
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_FROM_PAYLOAD: ${{ github.event.pull_request.number }}
+          PR_FROM_DISPATCH: ${{ github.event.inputs.pr_number }}
+          PR_AUTHOR_FROM_PAYLOAD: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            pull_request|pull_request_review)
+              PR="$PR_FROM_PAYLOAD"
+              ACTOR="$PR_AUTHOR_FROM_PAYLOAD"
+              ;;
+            workflow_dispatch)
+              PR="$PR_FROM_DISPATCH"
+              ACTOR="$(gh pr view "$PR" --repo "$GH_REPO" --json author --jq '.author.login')"
+              ;;
+            workflow_run)
+              # workflow_run does not carry PR context directly; skip gracefully
+              echo "workflow_run event — no direct PR context; skipping"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+            *)
+              echo "unsupported event: $EVENT_NAME"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+          esac
+          echo "pr=$PR" >> "$GITHUB_OUTPUT"
+          echo "actor=$ACTOR" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge
+        if: steps.resolve.outputs.skip != 'true' && steps.resolve.outputs.actor == 'jonahgabriel'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ steps.resolve.outputs.pr }}
+        run: |
+          set -euo pipefail
+          # "already enqueued" race is benign — treat as success.
+          # All other failures surface loudly (no silent continue-on-error).
+          if output=$(gh pr merge "$PR" --repo "$GH_REPO" --auto --squash 2>&1); then
+            echo "auto-merge enabled: $output"
+            exit 0
+          fi
+          if echo "$output" | grep -qiE "already|enqueued"; then
+            echo "auto-merge not newly enabled (expected): $output"
+            exit 0
+          fi
+          echo "auto-merge failed: $output"
+          exit 1
