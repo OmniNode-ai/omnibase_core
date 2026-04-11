@@ -159,6 +159,43 @@ class TestSupersededByChain:
         )
         assert a.is_transitively_superseded({}) is True
 
+    def test_is_transitively_superseded_returns_false_for_terminal_plan(self) -> None:
+        """Chain that resolves to a terminal (live) plan: PLAN-A → PLAN-B (live).
+
+        PLAN-A IS superseded — its chain leads to a live plan. Confirmed True.
+        PLAN-B is terminal (superseded_by=None) — it is NOT superseded. Must be False.
+
+        This is the TDD-first guard for the W0.6 bug: the method's final
+        ``return True`` after the while loop must NOT fire for the terminal
+        plan itself.
+        """
+        terminal = ModelPlanContract(
+            plan_id="PLAN-TERMINAL", document=_doc(), superseded_by=None
+        )
+        # The terminal plan has no successor — must be False.
+        assert terminal.is_transitively_superseded({}) is False
+        # A plan that claims to be superseded by a known-live terminal → True.
+        predecessor = ModelPlanContract(
+            plan_id="PLAN-PRED", document=_doc(), superseded_by="PLAN-TERMINAL"
+        )
+        assert (
+            predecessor.is_transitively_superseded({"PLAN-TERMINAL": terminal}) is True
+        )
+
+    def test_chain_terminates_at_unresolvable_does_not_falsely_supersede(self) -> None:
+        """False-positive guard (W0.6 core bug): unknown successor must NOT claim supersession.
+
+        When a plan's superseded_by points to a plan_id not present in the
+        resolver, the chain cannot be confirmed. The method must return False
+        rather than claiming supersession with no evidence of a live successor.
+        """
+        a = ModelPlanContract(
+            plan_id="PLAN-A", document=_doc(), superseded_by="PLAN-GHOST"
+        )
+        # PLAN-GHOST is not in the resolver — no live successor confirmed.
+        # Currently returns True (false positive). Must return False after fix.
+        assert a.is_transitively_superseded({}) is False
+
 
 @pytest.mark.unit
 class TestFingerprintIncludesNewFields:
