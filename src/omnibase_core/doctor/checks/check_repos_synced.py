@@ -13,7 +13,8 @@ from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorChe
 
 
 def _get_omni_home() -> Path:
-    return Path(os.environ.get("OMNI_HOME", "/Volumes/PRO-G40/Code/omni_home"))
+    default = str(Path.home() / "Code" / "omni_home")
+    return Path(os.environ.get("OMNI_HOME", default))
 
 
 class CheckReposSynced(DoctorCheckBase):
