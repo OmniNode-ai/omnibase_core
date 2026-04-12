@@ -84,6 +84,14 @@ env_vars = "omnibase_core.doctor.checks.check_env_vars:CheckEnvVars"
 python_version = "omnibase_core.doctor.checks.check_python_version:CheckPythonVersion"
 js_runtime = "omnibase_core.doctor.checks.check_js_runtime:CheckJsRuntime"
 
+[project.entry-points."onex.nodes"]
+node_compliance_evidence_effect = "omnibase_core.nodes.node_compliance_evidence_effect"
+node_compliance_orchestrator = "omnibase_core.nodes.node_compliance_orchestrator"
+node_compliance_report_reducer = "omnibase_core.nodes.node_compliance_report_reducer"
+node_compliance_scan_compute = "omnibase_core.nodes.node_compliance_scan_compute"
+node_contract_resolve_compute = "omnibase_core.nodes.node_contract_resolve_compute"
+node_contract_verify_replay_compute = "omnibase_core.nodes.node_contract_verify_replay_compute"
+
 [project.optional-dependencies]
 spi = ["omnibase-spi>=0.20.2"]
 cli = ["psutil>=7.2.1"]
