@@ -44,6 +44,7 @@ See Also:
     - omnibase_core.types.type_effect_result: Effect-specific type aliases
     - omnibase_core.utils.compute_transformations: JSON transformation utilities
     - docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md: Node architecture patterns
+    - omnibase_compat.types.type_json: Equivalent definitions for compat consumers
 """
 
 from datetime import datetime
