@@ -27,6 +27,17 @@ See Also:
 
 from uuid import UUID
 
+from omnibase_core.constants.constants_event_types import (
+    EVENT_TYPE_ALIAS_NODE_GRAPH_READY,
+    EVENT_TYPE_ALIAS_NODE_REGISTERED,
+    EVENT_TYPE_ALIAS_NODE_UNREGISTERED,
+    EVENT_TYPE_ALIAS_RUNTIME_READY,
+    EVENT_TYPE_ALIAS_SUBSCRIPTION_CREATED,
+    EVENT_TYPE_ALIAS_SUBSCRIPTION_FAILED,
+    EVENT_TYPE_ALIAS_SUBSCRIPTION_REMOVED,
+    EVENT_TYPE_ALIAS_WIRING_ERROR,
+    EVENT_TYPE_ALIAS_WIRING_RESULT,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 
@@ -52,26 +63,26 @@ from omnibase_core.models.events.payloads.model_event_payload_union import (
 _EVENT_TYPE_TO_PAYLOAD_CLASS: dict[str, type[ModelEventPayloadUnion]] = {
     # Node lifecycle events
     "NODE_REGISTERED": ModelNodeRegisteredEvent,
-    "onex.runtime.node.registered": ModelNodeRegisteredEvent,
+    EVENT_TYPE_ALIAS_NODE_REGISTERED: ModelNodeRegisteredEvent,
     "NODE_UNREGISTERED": ModelNodeUnregisteredEvent,
-    "onex.runtime.node.unregistered": ModelNodeUnregisteredEvent,
+    EVENT_TYPE_ALIAS_NODE_UNREGISTERED: ModelNodeUnregisteredEvent,
     # Subscription events
     "SUBSCRIPTION_CREATED": ModelSubscriptionCreatedEvent,
-    "onex.runtime.subscription.created": ModelSubscriptionCreatedEvent,
+    EVENT_TYPE_ALIAS_SUBSCRIPTION_CREATED: ModelSubscriptionCreatedEvent,
     "SUBSCRIPTION_FAILED": ModelSubscriptionFailedEvent,
-    "onex.runtime.subscription.failed": ModelSubscriptionFailedEvent,
+    EVENT_TYPE_ALIAS_SUBSCRIPTION_FAILED: ModelSubscriptionFailedEvent,
     "SUBSCRIPTION_REMOVED": ModelSubscriptionRemovedEvent,
-    "onex.runtime.subscription.removed": ModelSubscriptionRemovedEvent,
+    EVENT_TYPE_ALIAS_SUBSCRIPTION_REMOVED: ModelSubscriptionRemovedEvent,
     # Runtime status events
     "RUNTIME_READY": ModelRuntimeReadyEvent,
-    "onex.runtime.ready": ModelRuntimeReadyEvent,
+    EVENT_TYPE_ALIAS_RUNTIME_READY: ModelRuntimeReadyEvent,
     "NODE_GRAPH_READY": ModelNodeGraphReadyEvent,
-    "onex.runtime.node_graph.ready": ModelNodeGraphReadyEvent,
+    EVENT_TYPE_ALIAS_NODE_GRAPH_READY: ModelNodeGraphReadyEvent,
     # Wiring events
     "WIRING_RESULT": ModelWiringResultEvent,
-    "onex.runtime.wiring.result": ModelWiringResultEvent,
+    EVENT_TYPE_ALIAS_WIRING_RESULT: ModelWiringResultEvent,
     "WIRING_ERROR": ModelWiringErrorEvent,
-    "onex.runtime.wiring.error": ModelWiringErrorEvent,
+    EVENT_TYPE_ALIAS_WIRING_ERROR: ModelWiringErrorEvent,
 }
 
 # Common field name patterns that help identify payload types
