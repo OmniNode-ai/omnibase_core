@@ -5,7 +5,7 @@ name: Omni* Ecosystem Standards Compliance
 
 on:
   push:
-    branches: [main, develop, "feature/*", "fix/*", "chore/*", "jonah/*", "jonahgabriel/*"]
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
