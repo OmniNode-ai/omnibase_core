@@ -736,7 +736,7 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check, sdk-boundary-check]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check, sdk-boundary-check, contract-compliance]
     if: always()
 
     steps:
@@ -952,6 +952,27 @@ jobs:
   # Aggregates Quality Gate + Tests Gate into a single top-level status.
   # Not strictly required for omnibase_core (no path filtering on Tier A gates),
   # but added for uniformity across all OmniNode repos.
+
+  contract-compliance:
+    name: Contract Compliance Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Clone onex_change_control
+        run: git clone --depth=1 https://github.com/OmniNode-ai/onex_change_control.git /tmp/onex_change_control
+      - name: Install pyyaml
+        run: pip install pyyaml
+      - name: Run contract compliance check
+        run: |
+          python /tmp/onex_change_control/scripts/ci/run_contract_compliance_check.py \
+            --pr ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --contracts-dir /tmp/onex_change_control/contracts
+        env:
+          EMERGENCY_BYPASS: ${{ secrets.EMERGENCY_BYPASS || '' }}
+          GH_TOKEN: ${{ github.token }}
+
   ci-summary:
     name: CI Summary
     # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
