@@ -956,7 +956,7 @@ jobs:
   contract-compliance:
     name: Contract Compliance Check
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push'
     steps:
       - uses: actions/checkout@v6
       - name: Clone onex_change_control
