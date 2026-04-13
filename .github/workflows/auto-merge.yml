@@ -83,11 +83,11 @@ jobs:
           set -euo pipefail
           # "already enqueued" race is benign — treat as success.
           # All other failures surface loudly (no silent continue-on-error).
-          if output=$(gh pr merge "$PR" --repo "$GH_REPO" --auto --squash 2>&1); then
+          if output=$(gh pr merge "$PR" --repo "$GH_REPO" --merge 2>&1); then
             echo "auto-merge enabled: $output"
             exit 0
           fi
-          if echo "$output" | grep -qiE "already|enqueued"; then
+          if echo "$output" | grep -qiE "already enqueued|already queued|auto-merge already enabled"; then
             echo "auto-merge not newly enabled (expected): $output"
             exit 0
           fi
