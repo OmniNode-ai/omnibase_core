@@ -55,6 +55,19 @@ TOPIC_GITHUB_PR_STATUS_EVENT = "onex.evt.platform.github-pr-status.v1"
 TOPIC_GIT_HOOK_EVENT = "onex.evt.platform.git-hook.v1"
 TOPIC_LINEAR_SNAPSHOT_EVENT = "onex.evt.platform.linear-snapshot.v1"
 
+# Runtime event type alias strings used in legacy payload migration (OMN-8635)
+# These are NOT Kafka topic names — they are legacy event-type identifiers used as
+# lookup keys to map wire-format strings to typed payload classes.
+EVENT_TYPE_ALIAS_NODE_REGISTERED = "onex.runtime.node.registered"
+EVENT_TYPE_ALIAS_NODE_UNREGISTERED = "onex.runtime.node.unregistered"
+EVENT_TYPE_ALIAS_SUBSCRIPTION_CREATED = "onex.runtime.subscription.created"
+EVENT_TYPE_ALIAS_SUBSCRIPTION_FAILED = "onex.runtime.subscription.failed"
+EVENT_TYPE_ALIAS_SUBSCRIPTION_REMOVED = "onex.runtime.subscription.removed"
+EVENT_TYPE_ALIAS_RUNTIME_READY = "onex.runtime.ready"
+EVENT_TYPE_ALIAS_NODE_GRAPH_READY = "onex.runtime.node_graph.ready"
+EVENT_TYPE_ALIAS_WIRING_RESULT = "onex.runtime.wiring.result"
+EVENT_TYPE_ALIAS_WIRING_ERROR = "onex.runtime.wiring.error"
+
 
 def normalize_legacy_event_type(event_type: str | TypedDictEventType | object) -> str:
     """Normalize legacy event types to consistent string format.

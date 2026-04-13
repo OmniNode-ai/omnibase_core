@@ -20,22 +20,4 @@ class ModelEventChannels(BaseModel):
         description="Event channels this node publishes events to",
     )
 
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={
-            "examples": [
-                {
-                    "subscribes_to": [
-                        "onex.discovery.commands",
-                        "onex.registry.query",
-                        "onex.node.health_check",
-                    ],
-                    "publishes_to": [
-                        "onex.discovery.events",
-                        "onex.registry.update",
-                        "onex.node.status",
-                    ],
-                },
-            ],
-        },
-    )
+    model_config = ConfigDict(extra="forbid")
