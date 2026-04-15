@@ -220,6 +220,15 @@ allowed_files:
     added: "2026-03-30"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/models/configuration/model_cli_config.py"
+    reason: >-
+      ModelCLIConfig.from_file() uses yaml.safe_load() as a bridge step before model_validate() — parses
+      the YAML file to a raw dict, validates the dict is a mapping, then immediately calls cls.model_validate(raw)
+      for full Pydantic validation. This is the exact load-then-validate pattern; raw parsing is required
+      because Path.read_text() returns a string, not a dict. (OMN-8790)
+    added: "2026-04-15"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

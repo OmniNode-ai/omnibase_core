@@ -62,7 +62,10 @@ class TestOnexInitUserConfig:
         runner = CliRunner()
         onex_home = str(tmp_path / ".onex")
 
-        runner.invoke(cli, ["init", "--user-config", "--onex-home", onex_home])
+        first_result = runner.invoke(
+            cli, ["init", "--user-config", "--onex-home", onex_home]
+        )
+        assert first_result.exit_code == 0, first_result.output
         config_file = tmp_path / ".onex" / "config.yaml"
         config_file.write_text("# sentinel\n")
 
