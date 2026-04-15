@@ -11,7 +11,6 @@ import os
 import sys
 import time
 import uuid
-from typing import Any
 
 import click
 
@@ -28,12 +27,24 @@ def _load_kafka_classes() -> tuple[type, type]:
     return mod.KafkaProducer, mod.KafkaConsumer
 
 
+def _emit_error(node_id: str, message: str, **extra: str | int) -> None:
+    """Emit a SkillRoutingError JSON envelope and exit non-zero."""
+    envelope: dict[str, str | int] = {
+        "error_type": "SkillRoutingError",
+        "message": message,
+        "node_id": node_id,
+        **extra,
+    }
+    click.echo(json.dumps(envelope, indent=2))
+    sys.exit(1)
+
+
 def publish_and_poll(
     node_id: str,
-    payload: dict[str, Any],
+    payload: dict[str, object],
     timeout: int,
     bootstrap_servers: str,
-) -> dict[str, Any] | None:
+) -> dict[str, object] | None:
     """Publish a command envelope to onex.cmd and poll for a correlated response.
 
     Returns the response dict, or None on timeout.
@@ -105,13 +116,7 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
     try:
         payload = json.loads(input_json)
     except json.JSONDecodeError as exc:
-        error = {
-            "error_type": "SkillRoutingError",
-            "message": f"Invalid JSON input: {exc}",
-            "node_id": node_id,
-        }
-        click.echo(json.dumps(error, indent=2))
-        sys.exit(1)
+        _emit_error(node_id, f"Invalid JSON input: {exc}")
 
     bootstrap_servers = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
 
@@ -123,22 +128,13 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
             bootstrap_servers=bootstrap_servers,
         )
     except (ConnectionError, OSError, ImportError) as exc:
-        error = {
-            "error_type": "SkillRoutingError",
-            "message": str(exc),
-            "node_id": node_id,
-        }
-        click.echo(json.dumps(error, indent=2))
-        sys.exit(1)
+        _emit_error(node_id, str(exc))
 
     if response is None:
-        error: dict[str, str | int] = {
-            "error_type": "SkillRoutingError",
-            "message": f"Timeout after {timeout}s waiting for response from {node_id}",
-            "node_id": node_id,
-            "timeout_seconds": timeout,
-        }
-        click.echo(json.dumps(error, indent=2))
-        sys.exit(1)
+        _emit_error(
+            node_id,
+            f"Timeout after {timeout}s waiting for response from {node_id}",
+            timeout_seconds=timeout,
+        )
 
     click.echo(json.dumps(response, indent=2))
