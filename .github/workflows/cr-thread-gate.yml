@@ -4,13 +4,15 @@ on:
     types: [opened, synchronize, reopened]
   pull_request_review:
     types: [submitted, dismissed]
+  pull_request_review_thread:
+    types: [resolved, unresolved]
   issue_comment:
     types: [created, edited, deleted]
 jobs:
   gate:
-    if: github.event_name != 'issue_comment' || github.event.issue.pull_request != null
+    if: (github.event_name != 'issue_comment' || github.event.issue.pull_request != null) && github.actor != 'dependabot[bot]'
     uses: OmniNode-ai/omniclaude/.github/workflows/cr-thread-gate.yml@main
     with:
       pr-number: ${{ github.event.pull_request.number || github.event.issue.number }}
+    secrets:
       github-token: ${{ secrets.CROSS_REPO_PAT }}
-
