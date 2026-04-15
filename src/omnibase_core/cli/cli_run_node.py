@@ -11,6 +11,7 @@ import os
 import sys
 import time
 import uuid
+from typing import Any
 
 import click
 
@@ -29,10 +30,10 @@ def _load_kafka_classes() -> tuple[type, type]:
 
 def publish_and_poll(
     node_id: str,
-    payload: dict,
+    payload: dict[str, Any],
     timeout: int,
     bootstrap_servers: str,
-) -> dict | None:
+) -> dict[str, Any] | None:
     """Publish a command envelope to onex.cmd and poll for a correlated response.
 
     Returns the response dict, or None on timeout.
@@ -131,7 +132,7 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
         sys.exit(1)
 
     if response is None:
-        error = {
+        error: dict[str, str | int] = {
             "error_type": "SkillRoutingError",
             "message": f"Timeout after {timeout}s waiting for response from {node_id}",
             "node_id": node_id,

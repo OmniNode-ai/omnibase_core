@@ -430,7 +430,7 @@ def health(ctx: click.Context, component: str | None, as_json: bool) -> None:
             ctx.exit(EnumCLIExitCode.ERROR)
 
     all_healthy = True
-    results: list[dict] = []
+    results: list[dict[str, str | bool]] = []
 
     for check_name, check_func in checks:
         try:

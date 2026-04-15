@@ -17,7 +17,7 @@ def _config_path() -> Path:
     return Path.home() / ".onex" / "config.yaml"
 
 
-def _fetch_aws_secrets(secret_name: str, region: str) -> dict:
+def _fetch_aws_secrets(secret_name: str, region: str) -> dict[str, str]:
     """Fetch secrets from AWS Secrets Manager.
 
     Returns a dict of key-value pairs from the secret.
