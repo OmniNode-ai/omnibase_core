@@ -22,7 +22,6 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
-import fnmatch
 import re
 import sys
 from dataclasses import dataclass, field
