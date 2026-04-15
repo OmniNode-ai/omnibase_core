@@ -5,7 +5,9 @@
 
 from __future__ import annotations
 
+import json as _json
 import os
+import socket
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -363,24 +365,33 @@ def discover(ctx: click.Context, strict: bool) -> None:
     default=None,
     help="Specific component to check health for.",
 )
+@click.option(
+    "--json",
+    "as_json",
+    is_flag=True,
+    default=False,
+    help="Output results as structured JSON.",
+)
 @click.pass_context
-def health(ctx: click.Context, component: str | None) -> None:
+def health(ctx: click.Context, component: str | None, as_json: bool) -> None:
     """Check health status of ONEX components.
 
-    Performs basic health checks on ONEX infrastructure.
+    Performs basic health checks on ONEX infrastructure including
+    Kafka reachability. Use --json for structured output.
     """
     verbose = ctx.obj.get("verbose", False)
 
-    click.echo("ONEX Health Check")
-    click.echo("-" * 40)
+    if not as_json:
+        click.echo("ONEX Health Check")
+        click.echo("-" * 40)
 
     checks = [
         ("Core imports", _check_core_imports),
         ("Validation system", _check_validation_system),
         ("Error handling", _check_error_handling),
+        ("Kafka reachability", _check_kafka_reachable),
     ]
 
-    # Store available component names for error messages
     available_components = [name for name, _ in checks]
 
     if component:
@@ -388,57 +399,81 @@ def health(ctx: click.Context, component: str | None) -> None:
             (name, func) for name, func in checks if component.lower() in name.lower()
         ]
         if not checks:
-            click.echo(
-                click.style(
-                    f"No health checks match component filter: '{component}'", fg="red"
+            if as_json:
+                click.echo(
+                    _json.dumps(
+                        {
+                            "error": f"No health checks match component filter: '{component}'",
+                            "available_components": available_components,
+                        },
+                        indent=2,
+                    )
                 )
-            )
-
-            # Find partial matches - components that share substrings with the filter
-            partial_matches = _find_partial_matches(component, available_components)
-            if partial_matches:
-                click.echo("\nDid you mean:")
-                for match in partial_matches:
-                    click.echo(f"  - '{match}'")
-
-            click.echo("\nAvailable components:")
-            for comp_name in available_components:
-                click.echo(f"  - {comp_name}")
-            click.echo(
-                "\nHint: Use a partial match, e.g., 'onex health --component core'"
-            )
+            else:
+                click.echo(
+                    click.style(
+                        f"No health checks match component filter: '{component}'",
+                        fg="red",
+                    )
+                )
+                partial_matches = _find_partial_matches(component, available_components)
+                if partial_matches:
+                    click.echo("\nDid you mean:")
+                    for match in partial_matches:
+                        click.echo(f"  - '{match}'")
+                click.echo("\nAvailable components:")
+                for comp_name in available_components:
+                    click.echo(f"  - {comp_name}")
+                click.echo(
+                    "\nHint: Use a partial match, e.g., 'onex health --component core'"
+                )
             ctx.exit(EnumCLIExitCode.ERROR)
 
     all_healthy = True
+    results: list[dict[str, str | bool]] = []
+
     for check_name, check_func in checks:
         try:
             is_healthy, message = check_func()
-            status = (
-                click.style("OK", fg="green")
-                if is_healthy
-                else click.style("FAIL", fg="red")
+            if not as_json:
+                status = (
+                    click.style("OK", fg="green")
+                    if is_healthy
+                    else click.style("FAIL", fg="red")
+                )
+                click.echo(f"  [{status}] {check_name}")
+                if verbose or not is_healthy:
+                    click.echo(f"       {message}")
+            results.append(
+                {"name": check_name, "healthy": is_healthy, "message": message}
             )
-            click.echo(f"  [{status}] {check_name}")
-            if verbose or not is_healthy:
-                click.echo(f"       {message}")
             if not is_healthy:
                 all_healthy = False
         except Exception as e:  # noqa: BLE001  # catch-all-ok: health checks must not crash CLI
-            # Ensures CLI stability even if health check functions fail
-            # Examples: ImportError (missing modules), AttributeError (API changes),
-            # RuntimeError (check logic bugs), OSError (system resource issues)
-            # All failures are reported gracefully without crashing the CLI
-            click.echo(f"  [{click.style('FAIL', fg='red')}] {check_name}")
-            click.echo(f"       Error: {e}")
+            if not as_json:
+                click.echo(f"  [{click.style('FAIL', fg='red')}] {check_name}")
+                click.echo(f"       Error: {e}")
+            results.append({"name": check_name, "healthy": False, "message": str(e)})
             all_healthy = False
 
-    click.echo("-" * 40)
-    if all_healthy:
-        click.echo(click.style("All health checks passed!", fg="green"))
-        ctx.exit(EnumCLIExitCode.SUCCESS)
+    if as_json:
+        click.echo(
+            _json.dumps(
+                {
+                    "overall": "healthy" if all_healthy else "unhealthy",
+                    "checks": results,
+                },
+                indent=2,
+            )
+        )
     else:
-        click.echo(click.style("Some health checks failed.", fg="red"))
-        ctx.exit(EnumCLIExitCode.ERROR)
+        click.echo("-" * 40)
+        if all_healthy:
+            click.echo(click.style("All health checks passed!", fg="green"))
+        else:
+            click.echo(click.style("Some health checks failed.", fg="red"))
+
+    ctx.exit(EnumCLIExitCode.SUCCESS if all_healthy else EnumCLIExitCode.ERROR)
 
 
 def _find_partial_matches(
@@ -556,6 +591,31 @@ def _check_error_handling() -> tuple[bool, str]:
         return False, f"Error: {e}"
 
 
+def _check_kafka_reachable() -> tuple[bool, str]:
+    """Check Kafka/Redpanda TCP reachability.
+
+    Returns:
+        Tuple of (is_healthy, message).
+    """
+    raw = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
+    first = raw.split(",")[0].strip()
+    host, sep, port_str = first.rpartition(":")
+    if not sep:
+        host, port = first, 19092
+    else:
+        try:
+            port = int(port_str)
+        except ValueError:
+            return False, f"Invalid port in KAFKA_BOOTSTRAP_SERVERS: {port_str!r}"
+
+    try:
+        conn = socket.create_connection((host, port), timeout=3)
+        conn.close()
+        return True, f"Kafka reachable at {host}:{port}"
+    except (TimeoutError, OSError):
+        return False, f"Kafka not reachable at {host}:{port}"
+
+
 # Register compliance command group from separate module
 from omnibase_core.cli.cli_compliance import compliance_group
 
@@ -632,6 +692,26 @@ cli.add_command(cli_scaffold_channel_adapter)
 from omnibase_core.cli.cli_port_openclaw import cli_port_openclaw
 
 cli.add_command(cli_port_openclaw)
+
+# Register run-node command (Kafka-based remote node execution)
+from omnibase_core.cli.cli_run_node import run_node
+
+cli.add_command(run_node)
+
+# Register bootstrap command group
+from omnibase_core.cli.cli_bootstrap import bootstrap
+
+cli.add_command(bootstrap)
+
+# Register config command group (init + get)
+from omnibase_core.cli.cli_config import config_group
+
+cli.add_command(config_group)
+
+# Register refresh-credentials command
+from omnibase_core.cli.cli_refresh_credentials import refresh_credentials
+
+cli.add_command(refresh_credentials)
 
 # Load CLI extension groups registered by other packages via the onex.cli entry-point group.
 # Each entry point must expose a click.Group or click.Command.
