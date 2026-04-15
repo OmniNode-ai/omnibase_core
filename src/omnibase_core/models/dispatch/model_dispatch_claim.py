@@ -13,7 +13,7 @@ import hashlib
 from datetime import UTC, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 def compute_blocker_id(kind: str, host: str, resource: str) -> str:
@@ -29,7 +29,7 @@ class ModelDispatchClaim(BaseModel):
     O_CREAT|O_EXCL atomicity guarantees exactly-once acquisition.
     """
 
-    model_config = {"frozen": True, "extra": "ignore"}
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     blocker_id: str = Field(
         description="sha1(kind|host|resource) — 40-char lowercase hex"
