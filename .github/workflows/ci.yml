@@ -943,7 +943,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@48268d4e93a5633762bc02171d3f3c7e091e905a # main 2026-03-25
+      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@4f14550f0d0733e0272e4550bb62221a5bb48192 # main 2026-03-25
         with:
           checks: "boundary-parity"
           warn-only: "true"
@@ -962,7 +962,7 @@ jobs:
       - name: Clone onex_change_control
         run: git clone --depth=1 https://github.com/OmniNode-ai/onex_change_control.git /tmp/onex_change_control
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           version: "0.8.3"
       - name: Validate all ticket contracts (OMN-8808 — replaces dead run_contract_compliance_check.py ref)
