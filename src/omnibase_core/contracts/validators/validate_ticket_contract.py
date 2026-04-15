@@ -15,10 +15,9 @@ from omnibase_core.contracts.validators.validation_result import ValidationResul
 from omnibase_core.models.contracts.ticket.model_linear_ticket_contract import (
     ModelTicketContract,
 )
-from omnibase_core.types.typed_dict_ticket_input import TypedDictTicketInput
 
 
-def validate_ticket_contract(ticket: TypedDictTicketInput) -> ValidationResult:
+def validate_ticket_contract(ticket: object) -> ValidationResult:
     """Validate a Linear ticket dict against ModelTicketContract.
 
     Args:
@@ -29,7 +28,7 @@ def validate_ticket_contract(ticket: TypedDictTicketInput) -> ValidationResult:
         or valid=False with a list of human-readable error strings on failure.
     """
     try:
-        ModelTicketContract(**ticket)
+        ModelTicketContract.model_validate(ticket)
         return ValidationResult(valid=True)
     except ValidationError as exc:
         errors = [
