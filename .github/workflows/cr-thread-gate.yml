@@ -13,8 +13,8 @@ on:
 jobs:
   gate:
     if: (github.event_name != 'issue_comment' || github.event.issue.pull_request != null) && github.actor != 'dependabot[bot]'
-    uses: OmniNode-ai/omniclaude/.github/workflows/cr-thread-gate.yml@b4b12ef5d0f77b9ffd39a5566c0be350222c2cd8
+    uses: OmniNode-ai/omniclaude/.github/workflows/cr-thread-gate.yml@main
     with:
       pr-number: ${{ github.event.pull_request.number || github.event.issue.number }}
     secrets:
-      github-token: ${{ secrets.CROSS_REPO_PAT }}
+      CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
