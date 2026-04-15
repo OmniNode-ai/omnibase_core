@@ -58,10 +58,6 @@ class TestEnumClaudeCodeToolNameValues:
         """Test TaskStop tool value."""
         assert EnumClaudeCodeToolName.TASK_STOP.value == "TaskStop"
 
-    def test_task_output_value(self) -> None:
-        """Test TaskOutput tool value."""
-        assert EnumClaudeCodeToolName.TASK_OUTPUT.value == "TaskOutput"
-
     def test_bash_output_value(self) -> None:
         """Test BashOutput tool value."""
         assert EnumClaudeCodeToolName.BASH_OUTPUT.value == "BashOutput"
@@ -112,9 +108,9 @@ class TestEnumClaudeCodeToolNameValues:
         assert EnumClaudeCodeToolName.UNKNOWN.value == "Unknown"
 
     def test_enum_count(self) -> None:
-        """Test that enum has at least 26 values (minimum baseline)."""
+        """Test that enum has at least 25 values (minimum baseline)."""
         values = list(EnumClaudeCodeToolName)
-        assert len(values) >= 26, f"Expected at least 26 enum values, got {len(values)}"
+        assert len(values) >= 25, f"Expected at least 25 enum values, got {len(values)}"
 
     def test_all_expected_values_present(self) -> None:
         """Test that all expected values are present."""
@@ -129,7 +125,6 @@ class TestEnumClaudeCodeToolNameValues:
             "BashOutput",
             "Task",
             "TaskStop",
-            "TaskOutput",
             "KillShell",
             "WebFetch",
             "WebSearch",
@@ -313,10 +308,6 @@ class TestEnumClaudeCodeToolNameFromString:
             == EnumClaudeCodeToolName.TASK_STOP
         )
         assert (
-            EnumClaudeCodeToolName.from_string("TaskOutput")
-            == EnumClaudeCodeToolName.TASK_OUTPUT
-        )
-        assert (
             EnumClaudeCodeToolName.from_string("BashOutput")
             == EnumClaudeCodeToolName.BASH_OUTPUT
         )
@@ -425,7 +416,6 @@ class TestEnumClaudeCodeToolNameIsFileOperation:
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
             EnumClaudeCodeToolName.TASK_STOP,
-            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
@@ -489,7 +479,6 @@ class TestEnumClaudeCodeToolNameIsSearchOperation:
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
             EnumClaudeCodeToolName.TASK_STOP,
-            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
@@ -553,7 +542,6 @@ class TestEnumClaudeCodeToolNameIsExecutionTool:
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
             EnumClaudeCodeToolName.TASK_STOP,
-            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
@@ -617,7 +605,6 @@ class TestEnumClaudeCodeToolNameIsWebOperation:
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
             EnumClaudeCodeToolName.TASK_STOP,
-            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
@@ -657,7 +644,6 @@ class TestEnumClaudeCodeToolNameIsTaskManagement:
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
             EnumClaudeCodeToolName.TASK_STOP,
-            EnumClaudeCodeToolName.TASK_OUTPUT,
         ]
 
         for tool in task_mgmt_tools:
@@ -696,13 +682,13 @@ class TestEnumClaudeCodeToolNameIsTaskManagement:
             )
 
     def test_task_management_count(self) -> None:
-        """Test that exactly 6 tools are task management tools."""
+        """Test that exactly 5 tools are task management tools."""
         count = sum(
             1
             for tool in EnumClaudeCodeToolName
             if EnumClaudeCodeToolName.is_task_management(tool)
         )
-        assert count == 6
+        assert count == 5
 
 
 # ============================================================================
@@ -745,7 +731,6 @@ class TestEnumClaudeCodeToolNameIsNotebookOperation:
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
             EnumClaudeCodeToolName.TASK_STOP,
-            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
@@ -808,7 +793,6 @@ class TestEnumClaudeCodeToolNameIsUserInteraction:
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
             EnumClaudeCodeToolName.TASK_STOP,
-            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
             EnumClaudeCodeToolName.SKILL,
@@ -873,7 +857,6 @@ class TestEnumClaudeCodeToolNameIsPlanMode:
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
             EnumClaudeCodeToolName.TASK_STOP,
-            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.SKILL,
             EnumClaudeCodeToolName.MCP,
@@ -982,7 +965,6 @@ class TestEnumClaudeCodeToolNameCategoryExclusivity:
             EnumClaudeCodeToolName.TASK_UPDATE,
             EnumClaudeCodeToolName.TASK_LIST,
             EnumClaudeCodeToolName.TASK_STOP,
-            EnumClaudeCodeToolName.TASK_OUTPUT,
             EnumClaudeCodeToolName.ASK_USER_QUESTION,
             EnumClaudeCodeToolName.ENTER_PLAN_MODE,
             EnumClaudeCodeToolName.EXIT_PLAN_MODE,
@@ -1086,6 +1068,29 @@ class TestEnumClaudeCodeToolNameImport:
         from omnibase_core.enums.hooks import claude_code
 
         assert "EnumClaudeCodeToolName" in claude_code.__all__
+
+
+# ============================================================================
+# Test: OMN-8875 — TaskOutput removed in cc 2.1.83
+# ============================================================================
+
+
+class TestTaskOutputRemoved:
+    """Verify TASK_OUTPUT was removed from the enum (OMN-8875)."""
+
+    def test_task_output_not_in_enum_values(self) -> None:
+        """TaskOutput must not appear in any enum member value."""
+        values = {member.value for member in EnumClaudeCodeToolName}
+        assert "TaskOutput" not in values
+
+    def test_task_output_attr_absent(self) -> None:
+        """TASK_OUTPUT attribute must not exist on the enum class."""
+        assert not hasattr(EnumClaudeCodeToolName, "TASK_OUTPUT")
+
+    def test_from_string_task_output_returns_unknown(self) -> None:
+        """from_string('TaskOutput') must return UNKNOWN, not a valid member."""
+        result = EnumClaudeCodeToolName.from_string("TaskOutput")
+        assert result == EnumClaudeCodeToolName.UNKNOWN
 
 
 if __name__ == "__main__":

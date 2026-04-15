@@ -26,8 +26,7 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
         - Execution: BASH, BASH_OUTPUT, TASK, KILL_SHELL
         - Web operations: WEB_FETCH, WEB_SEARCH
         - Notebook: NOTEBOOK_EDIT, NOTEBOOK_READ
-        - Task management: TASK_CREATE, TASK_GET, TASK_UPDATE, TASK_LIST,
-            TASK_STOP, TASK_OUTPUT
+        - Task management: TASK_CREATE, TASK_GET, TASK_UPDATE, TASK_LIST, TASK_STOP
         - User interaction: ASK_USER_QUESTION
         - Plan mode: ENTER_PLAN_MODE, EXIT_PLAN_MODE
         - Skills: SKILL
@@ -96,9 +95,6 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
 
     TASK_STOP = "TaskStop"
     """Stop a running background task."""
-
-    TASK_OUTPUT = "TaskOutput"
-    """Get output from a task."""
 
     # User interaction
     ASK_USER_QUESTION = "AskUserQuestion"
@@ -183,7 +179,6 @@ class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
             cls.TASK_UPDATE,
             cls.TASK_LIST,
             cls.TASK_STOP,
-            cls.TASK_OUTPUT,
         }
 
     @classmethod
