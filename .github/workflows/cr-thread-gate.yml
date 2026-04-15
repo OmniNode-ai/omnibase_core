@@ -14,5 +14,4 @@ jobs:
     uses: OmniNode-ai/omniclaude/.github/workflows/cr-thread-gate.yml@main
     with:
       pr-number: ${{ github.event.pull_request.number || github.event.issue.number }}
-    secrets:
       github-token: ${{ secrets.CROSS_REPO_PAT }}
