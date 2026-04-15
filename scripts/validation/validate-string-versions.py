@@ -246,6 +246,7 @@ class PythonASTValidator(ast.NodeVisitor):
             "route_id",  # Dispatch route identifier (human-readable, not UUID)
             "target_handler_id",  # Runtime directive target handler (human-readable, not UUID)
             "matched_route_id",  # Dispatch result matched route (human-readable)
+            "blocker_id",  # Dispatch claim dedup key: sha1(kind|host|resource) hex string (OMN-8921)
             # MANIFEST_IDENTIFIERS (execution manifest observability identifiers)
             # See: src/omnibase_core/models/manifest/ for manifest model definitions
             # These are human-readable identifiers for pipeline observability, not UUIDs
