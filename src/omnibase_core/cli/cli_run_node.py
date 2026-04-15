@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import sys
@@ -12,6 +13,18 @@ import time
 import uuid
 
 import click
+
+
+def _load_kafka_classes() -> tuple[type, type]:
+    """Load KafkaProducer and KafkaConsumer via importlib to satisfy ADR-005 boundary."""
+    try:
+        mod = importlib.import_module("kafka")
+    except ImportError as exc:
+        raise ImportError(
+            "kafka-python is required for run-node. "
+            "Install with: pip install kafka-python-ng"
+        ) from exc
+    return mod.KafkaProducer, mod.KafkaConsumer
 
 
 def publish_and_poll(
@@ -24,13 +37,7 @@ def publish_and_poll(
 
     Returns the response dict, or None on timeout.
     """
-    try:
-        from kafka import KafkaConsumer, KafkaProducer
-    except ImportError as exc:
-        raise ImportError(
-            "kafka-python is required for run-node. "
-            "Install with: pip install kafka-python-ng"
-        ) from exc
+    KafkaProducer, KafkaConsumer = _load_kafka_classes()
 
     correlation_id = str(uuid.uuid4())
     response_topic = "onex.cmd.response"
