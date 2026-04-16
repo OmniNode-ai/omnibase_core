@@ -11,10 +11,31 @@ on:
   issue_comment:
     types: [created, edited, deleted]
 jobs:
+  resolve-pr:
+    name: Resolve PR number
+    runs-on: ubuntu-latest
+    outputs:
+      pr-number: ${{ steps.pr.outputs.number }}
+      has-pr: ${{ steps.pr.outputs.has_pr }}
+    steps:
+      - id: pr
+        run: |
+          NUMBER="${{ github.event.pull_request.number }}"
+          if [ -z "$NUMBER" ]; then
+            NUMBER="${{ github.event.issue.number }}"
+          fi
+          if [ -n "$NUMBER" ]; then
+            echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
+            echo "has_pr=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "number=0" >> "$GITHUB_OUTPUT"
+            echo "has_pr=false" >> "$GITHUB_OUTPUT"
+          fi
   gate:
-    if: (github.event_name != 'issue_comment' || github.event.issue.pull_request != null) && github.actor != 'dependabot[bot]'
+    needs: resolve-pr
+    if: needs.resolve-pr.outputs.has-pr == 'true' && (github.event_name != 'issue_comment' || github.event.issue.pull_request != null) && github.actor != 'dependabot[bot]'
     uses: OmniNode-ai/omniclaude/.github/workflows/cr-thread-gate.yml@main
     with:
-      pr-number: ${{ github.event.pull_request.number || github.event.issue.number }}
+      pr-number: ${{ needs.resolve-pr.outputs.pr-number }}
     secrets:
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
