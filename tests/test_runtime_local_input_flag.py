@@ -7,7 +7,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
+
+pytestmark = pytest.mark.unit
 from omnibase_core.runtime.runtime_local import RuntimeLocal
 
 

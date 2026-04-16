@@ -426,6 +426,10 @@ class RuntimeLocal:
         # of None.
         if result_obj is not None:
             self._result = self._classify_result(result_obj)
+            # NOTE(OMN-8946): Fail-loud policy — no try/except here. If state_store.put()
+            # raises, the exception propagates and the runtime fails. Silent persistence
+            # failures defeat the purpose of this sink (user decision: "No fucking fallbacks.
+            # The runtime either works or doesn't.").
             await self._persist_reducer_projection_if_applicable(result_obj)
             await self._publish_synthesized_terminal(bus, terminal_topic)
             logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
@@ -1008,7 +1012,8 @@ class RuntimeLocal:
         is_reducer_output_shape = (
             isinstance(result_obj, dict)
             and "state" in result_obj
-            and isinstance(result_obj.get("intents", []), list)
+            and "intents" in result_obj
+            and isinstance(result_obj["intents"], list)
         )
 
         if not is_reducer_output_shape:

@@ -155,11 +155,13 @@ When spawning polymorphic agents or AI assistants:
 Synchronous-return handlers invoked via `RuntimeLocal._run_single_handler` receive
 a **runtime-synthesized terminal event** after successful result classification.
 The runtime publishes to the contract's declared `terminal_event` topic with
-payload::
+payload:
 
-    {"status": "success" | "failure",
-     "correlation_id": "<uuid>",
-     "source": "runtime_local"}
+```json
+{"status": "success" | "failure",
+ "correlation_id": "<uuid>",
+ "source": "runtime_local"}
+```
 
 The `source: "runtime_local"` field lets consumers distinguish runtime-synthesized
 terminals from handler-published ones. This semantics applies **only** to the

@@ -151,6 +151,7 @@ def run_node_by_name(
 
     resolved_contract = contract_path or _resolve_packaged_contract(node_name)
 
+    # boundary-ok: CLI boundary converts backend validation failures into user-facing stderr + exit code.
     try:
         backend_overrides = parse_backend_overrides(backend)
     except ModelOnexError as exc:

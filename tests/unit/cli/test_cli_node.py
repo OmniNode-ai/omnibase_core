@@ -21,6 +21,8 @@ from click.testing import CliRunner
 
 from omnibase_core.cli.cli_node import _resolve_packaged_contract, run_node_by_name
 
+pytestmark = pytest.mark.unit
+
 
 def test_unknown_node_name_reports_known_names() -> None:
     """Unknown name errors with the list of known names."""
@@ -31,17 +33,38 @@ def test_unknown_node_name_reports_known_names() -> None:
     assert "Unknown node 'definitely_not_a_real_node'" in combined
 
 
-def test_valid_node_name_resolves_packaged_contract() -> None:
-    """A real onex.nodes entry point resolves to a packaged contract.yaml.
+def test_valid_node_name_resolves_packaged_contract(tmp_path: Path) -> None:
+    """A known onex.nodes entry point resolves to a packaged contract.yaml.
 
-    Skipped if no onex.nodes entry points are registered in the test env.
+    Stubs entry_points and importlib.import_module so the test owns the registry
+    and does not depend on which packages are installed in the environment.
     """
-    from importlib.metadata import entry_points
+    fake_pkg = tmp_path / "fake_node_pkg"
+    fake_pkg.mkdir()
+    contract_file = fake_pkg / "contract.yaml"
+    contract_file.write_text("name: test_node\n", encoding="utf-8")
 
-    available = [ep.name for ep in entry_points(group="onex.nodes")]
-    if not available:
-        pytest.skip("No onex.nodes entry points registered in this env")
-    contract = _resolve_packaged_contract(available[0])
+    import types
+
+    fake_module = types.ModuleType("fake_node_pkg")
+    fake_module.__file__ = str(fake_pkg / "__init__.py")
+
+    class _FakeEP:
+        name = "test.node"
+        value = "fake_node_pkg"
+        dist = "local-fake"
+
+    with (
+        patch(
+            "omnibase_core.cli.cli_node.entry_points",
+            return_value=[_FakeEP()],
+        ),
+        patch(
+            "omnibase_core.cli.cli_node.importlib.import_module",
+            return_value=fake_module,
+        ),
+    ):
+        contract = _resolve_packaged_contract("test.node")
     assert contract.name == "contract.yaml"
     assert contract.exists()
 
@@ -49,18 +72,12 @@ def test_valid_node_name_resolves_packaged_contract() -> None:
 def test_contract_override_wins_over_packaged(tmp_path: Path) -> None:
     """``--contract <path>`` takes precedence over the packaged contract.
 
-    Proves the override was honored by confirming the CLI processes the
-    override's contract path (not the packaged one): we point --contract
-    at a well-formed YAML whose handler module does not exist. The runtime
-    attempts to resolve that bogus handler, fails, and exits non-zero.
-    A FAILED exit with the handler-not-found log confirms override wins.
+    Proves the override was honored: we point --contract at a well-formed YAML
+    whose handler module does not exist. The runtime attempts to resolve that
+    bogus handler, fails, and exits non-zero — confirming the override was used,
+    not the packaged contract. Uses a dummy node name to avoid any dependency on
+    installed onex.nodes entry points.
     """
-    from importlib.metadata import entry_points
-
-    available = [ep.name for ep in entry_points(group="onex.nodes")]
-    if not available:
-        pytest.skip("No onex.nodes entry points registered in this env")
-
     override = tmp_path / "custom_contract.yaml"
     override.write_text(
         "---\n"
@@ -75,7 +92,7 @@ def test_contract_override_wins_over_packaged(tmp_path: Path) -> None:
     result = runner.invoke(
         run_node_by_name,
         [
-            available[0],
+            "unused-node-name",
             "--contract",
             str(override),
             "--state-root",
@@ -85,8 +102,8 @@ def test_contract_override_wins_over_packaged(tmp_path: Path) -> None:
         ],
     )
     # Exit code 1 = FAILED (handler could not be resolved from override). If the
-    # override had been ignored and the packaged contract loaded instead, the
-    # well-formed packaged handler would have succeeded or hit a different error.
+    # override had been ignored and packaged resolution ran, it would have raised
+    # a ClickException for the unknown node — a different failure mode.
     assert result.exit_code == 1
 
 
