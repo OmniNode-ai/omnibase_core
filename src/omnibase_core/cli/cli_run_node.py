@@ -14,13 +14,15 @@ import uuid
 
 import click
 
+from omnibase_core.constants.constants_topic_taxonomy import TOPIC_CMD_RESPONSE
+
 
 def _load_kafka_classes() -> tuple[type, type]:
     """Load KafkaProducer and KafkaConsumer via importlib to satisfy ADR-005 boundary."""
     try:
         mod = importlib.import_module("kafka")
     except ImportError as exc:
-        raise ImportError(
+        raise ImportError(  # error-ok: re-raising ImportError for optional kafka-python-ng dep
             "kafka-python is required for run-node. "
             "Install with: pip install kafka-python-ng"
         ) from exc
@@ -52,7 +54,7 @@ def publish_and_poll(
     KafkaProducer, KafkaConsumer = _load_kafka_classes()
 
     correlation_id = str(uuid.uuid4())
-    response_topic = "onex.cmd.response"
+    response_topic = TOPIC_CMD_RESPONSE
 
     envelope = {
         "correlation_id": correlation_id,

@@ -233,6 +233,10 @@ RETENTION_MS_INTENTS = 86400000  # 1 day (short-lived coordination)
 RETENTION_MS_SNAPSHOTS = 604800000  # 7 days
 RETENTION_MS_AUDIT = 2592000000  # 30 days (same as events for audit trails)
 
+# CLI run-node response topic (onex.cmd.response)
+# Used by cli_run_node.py to poll for correlated command responses via Kafka.
+TOPIC_CMD_RESPONSE = "onex.cmd.response"
+
 # Platform Baseline Topic Suffixes (OMN-1652)
 # These topics are wired at runtime startup (not via contract discovery)
 # to avoid circular dependency. Full topics are composed as {env}.{suffix}.
@@ -298,6 +302,8 @@ __all__ = [
     "RETENTION_MS_INTENTS",
     "RETENTION_MS_SNAPSHOTS",
     "RETENTION_MS_AUDIT",
+    # CLI run-node
+    "TOPIC_CMD_RESPONSE",
     # Platform baseline topics (OMN-1652)
     "TOPIC_SUFFIX_CONTRACT_REGISTERED",
     "TOPIC_SUFFIX_CONTRACT_DEREGISTERED",

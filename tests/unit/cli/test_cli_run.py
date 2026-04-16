@@ -76,6 +76,7 @@ class TestRunCommand:
                 runner = CliRunner()
                 result = runner.invoke(cli, ["run", str(workflow)])
 
+        assert result.exit_code == 0
         mock_runtime.run.assert_called_once()
 
     def test_run_with_node_name_short_form(self) -> None:
@@ -91,6 +92,7 @@ class TestRunCommand:
                 runner = CliRunner()
                 result = runner.invoke(cli, ["run", "merge_sweep"])
 
+        assert result.exit_code == 0
         mock_resolve.assert_called_once_with("merge_sweep")
         mock_sub.assert_called_once()
         called_cmd = mock_sub.call_args[0][0]
@@ -109,6 +111,7 @@ class TestRunCommand:
                 runner = CliRunner()
                 result = runner.invoke(cli, ["run", "node_merge_sweep"])
 
+        assert result.exit_code == 0
         mock_sub.assert_called_once()
         called_cmd = mock_sub.call_args[0][0]
         assert called_cmd == [sys.executable, "-m", "omnimarket.nodes.node_merge_sweep"]
@@ -138,6 +141,7 @@ class TestRunCommand:
                     cli, ["run", "merge_sweep", "--dry-run", "--repo", "omnibase_core"]
                 )
 
+        assert result.exit_code == 0
         mock_sub.assert_called_once()
         called_cmd = mock_sub.call_args[0][0]
         assert "--dry-run" in called_cmd
