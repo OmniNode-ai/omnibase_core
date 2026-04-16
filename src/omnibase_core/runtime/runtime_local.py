@@ -423,6 +423,7 @@ class RuntimeLocal:
         # of None.
         if result_obj is not None:
             self._result = self._classify_result(result_obj)
+            await self._publish_synthesized_terminal(bus, terminal_topic)
             logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
             return
 
@@ -449,6 +450,49 @@ class RuntimeLocal:
                 return
 
         logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
+
+    async def _publish_synthesized_terminal(
+        self, bus: Any, terminal_topic: str
+    ) -> None:
+        """Publish a runtime-synthesized terminal event after sync-return classification.
+
+        Runtime behavior decision (OMN-8940): synchronous-return handlers in the
+        single-handler execution path bypass the bus today — ``_run_single_handler``
+        classifies the handler's return value directly and sets ``self._result`` without
+        publishing to the terminal topic. This method adopts the rule that
+        ``RuntimeLocal`` publishes a terminal event after successful classification so
+        the bus participates in every completed workflow regardless of handler return
+        style.
+
+        Payload shape::
+
+            {"status": "success" | "failure",
+             "correlation_id": "<uuid>",
+             "source": "runtime_local"}
+
+        The ``source`` field lets downstream consumers distinguish runtime-synthesized
+        from handler-published terminals. Fires for both COMPLETED and FAILED paths;
+        silence on failure would be worse than a documented failure event.
+
+        This helper is called *only* by ``_run_single_handler``. The event-driven path
+        (``_run_event_driven``) already relies on handler-published terminals and must
+        not double-emit.
+        """
+        status_payload = (
+            "success" if self._result == EnumWorkflowResult.COMPLETED else "failure"
+        )
+        await bus.publish(
+            terminal_topic,
+            None,
+            json.dumps(
+                {
+                    "status": status_payload,
+                    "correlation_id": str(uuid.uuid4()),
+                    "source": "runtime_local",
+                }
+            ).encode("utf-8"),
+        )
+        self._record_event("(terminal)")
 
     # ------------------------------------------------------------------
     # Event-driven execution path

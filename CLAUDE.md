@@ -150,6 +150,30 @@ When spawning polymorphic agents or AI assistants:
 
 **Enforcement**: Pydantic validator at `ModelHandlerOutput` constructor + runtime validation + CI `node-purity-check` job.
 
+### Runtime-synthesized terminal events (OMN-8940)
+
+Synchronous-return handlers invoked via `RuntimeLocal._run_single_handler` receive
+a **runtime-synthesized terminal event** after successful result classification.
+The runtime publishes to the contract's declared `terminal_event` topic with
+payload::
+
+    {"status": "success" | "failure",
+     "correlation_id": "<uuid>",
+     "source": "runtime_local"}
+
+The `source: "runtime_local"` field lets consumers distinguish runtime-synthesized
+terminals from handler-published ones. This semantics applies **only** to the
+single-handler execution path; the event-driven path (`_run_event_driven`) still
+relies on handler-published terminals and must not double-emit.
+
+**Rationale**: before this change, sync-return handlers like `NodeMergeSweep`
+bypassed the bus entirely — the runtime classified the return value and wrote
+state without the terminal topic ever receiving a message. That made bus-transit
+claims unprovable for the single-handler path. Runtime-synthesized terminals
+make the bus participate in every completed workflow regardless of handler
+return style. FAILED results publish with `status: "failure"` — silence on
+failure would be worse than a documented failure event.
+
 **See**: [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md), [Canonical Execution Shapes](docs/architecture/CANONICAL_EXECUTION_SHAPES.md)
 
 ---
