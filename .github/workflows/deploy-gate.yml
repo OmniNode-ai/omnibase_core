@@ -1,0 +1,96 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Wave D CI gate: runtime-change PRs must cite a ticket with deploy evidence.
+# Ticket: OMN-8912 | Epic: OMN-8908 (contract-validation-in-CI)
+# Root cause: OMN-8841 — Dockerfile.runtime changed, deploy never dispatched,
+#             deploy-agent inactive 2 days undetected.
+#
+# Required status check: "deploy-gate"
+# Must pass before merging to main on all repos with runtime code.
+
+name: Deploy Gate
+
+on:
+  pull_request:
+    branches: [main, develop]
+  merge_group:
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: "PR number to validate"
+        required: true
+
+concurrency:
+  group: deploy-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+jobs:
+  deploy-gate:
+    name: deploy-gate
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Skip on merge_group
+        if: github.event_name == 'merge_group'
+        run: |
+          echo "::notice::deploy-gate: merge_group event — skipped (validated on PR branch)."
+
+      - name: Set up Python
+        if: github.event_name != 'merge_group'
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        if: github.event_name != 'merge_group'
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        if: github.event_name != 'merge_group'
+        run: |
+          uv sync --all-extras
+          uv pip install pyyaml
+
+      - name: Get PR number
+        if: github.event_name != 'merge_group'
+        id: pr-number
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER_INPUT: ${{ inputs.pr-number }}
+          PR_NUMBER_EVENT: ${{ github.event.pull_request.number }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "pr_number=$PR_NUMBER_INPUT" >> "$GITHUB_OUTPUT"
+          else
+            echo "pr_number=$PR_NUMBER_EVENT" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run deploy gate
+        if: github.event_name != 'merge_group'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          uv run python scripts/validation/validate_pr_deploy_required.py \
+            --changed-files "$(gh pr diff ${{ steps.pr-number.outputs.pr_number }} --name-only | tr '\n' ' ')" \
+            --pr-body "$(gh pr view ${{ steps.pr-number.outputs.pr_number }} --json body -q '.body')" \
+            --contracts-dir contracts

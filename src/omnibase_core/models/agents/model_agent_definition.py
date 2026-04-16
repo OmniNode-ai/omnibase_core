@@ -87,6 +87,15 @@ class ModelAgentDefinition(BaseModel):
     success_metrics: ModelSuccessMetrics | None = None
     integration_points: ModelIntegrationPoints | None = None
     transformation_context: ModelTransformationContext | None = None
+    # Dispatch-claim registry fields (OMN-8921)
+    is_verifier: bool = Field(
+        default=False,
+        description="When True, this agent is a verification-only agent and may not dispatch further Agent() calls",
+    )
+    dispatch_category: str | None = Field(
+        default=None,
+        description="Optional category tag for dispatch claim deduplication (e.g. 'fix_containers', 'merge_sweep')",
+    )
 
 
 __all__ = ["ModelAgentDefinition"]
