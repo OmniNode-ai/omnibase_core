@@ -492,7 +492,6 @@ class RuntimeLocal:
                 }
             ).encode("utf-8"),
         )
-        self._record_event("(terminal)")
 
     # ------------------------------------------------------------------
     # Event-driven execution path
