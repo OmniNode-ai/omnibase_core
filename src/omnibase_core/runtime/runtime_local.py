@@ -167,11 +167,13 @@ class RuntimeLocal:
         *,
         state_root: Path = Path(".onex_state"),
         backend_overrides: dict[str, str] | None = None,
+        input_path: Path | None = None,
         timeout: int = 300,
     ) -> None:
         self.workflow_path = workflow_path
         self.state_root = state_root
         self.backend_overrides = backend_overrides or {}
+        self.input_path = input_path
         self.timeout = timeout
 
         # ONEX_EXCLUDE: dict_str_any — workflow contract raw YAML
@@ -911,6 +913,12 @@ class RuntimeLocal:
         Returns:
             The terminal result state.
         """
+        # TEST-ONLY PLUMBING: exposes state_root to test fixture handlers
+        # (e.g. HandlerProofNoop). Production handlers MUST NOT read
+        # ONEX_STATE_ROOT — they receive state via ProtocolStateStore DI.
+        # See OMN-8938 plan Task 3 Step 6.
+        os.environ["ONEX_STATE_ROOT"] = str(self.state_root)
+
         # 1. Load contract
         self._contract = load_workflow_contract(self.workflow_path)
 
@@ -989,9 +997,12 @@ class RuntimeLocal:
     def _build_initial_payload(self, input_spec: dict[str, Any]) -> Any:
         """Import and instantiate the input model from the contract's input spec.
 
-        If the input spec declares a ``module`` and ``class``, the model is imported
-        and instantiated with defaults. Otherwise returns None (handler must accept
-        None or have its own defaults).
+        Resolution order:
+            1. If ``self.input_path`` is set, load JSON from that file and validate
+               against the imported input model class.
+            2. Otherwise instantiate the model with defaults (auto-fill required
+               UUID, datetime, str, tuple, and list fields as appropriate).
+            3. Return None if the input spec lacks module/class.
         """
         model_module = input_spec.get("module", "")
         model_class = input_spec.get("class", "")
@@ -1000,38 +1011,74 @@ class RuntimeLocal:
         try:
             mod = importlib.import_module(model_module)
             cls = getattr(mod, model_class)
-            try:
-                return cls()
-            except (TypeError, ValueError):
-                # Auto-fill required UUID and datetime fields with defaults
-                import typing
-                from datetime import UTC
-                from datetime import datetime as _dt
-
-                defaults: dict[str, Any] = {}
-                for field_name, field_info in cls.model_fields.items():
-                    if field_info.is_required():
-                        ann = field_info.annotation
-                        if ann is uuid.UUID:
-                            defaults[field_name] = uuid.uuid4()
-                        elif ann is _dt:
-                            defaults[field_name] = _dt.now(UTC)
-                        elif ann is str:
-                            defaults[field_name] = ""
-                        else:
-                            # Handle tuple[T, ...] and list[T] with empty default
-                            origin = typing.get_origin(ann)
-                            if origin is tuple or origin is list:
-                                defaults[field_name] = ()
-                return cls(**defaults)
-        except (ImportError, AttributeError, TypeError) as exc:
+        except (ImportError, AttributeError) as exc:
             logger.warning(
-                "RuntimeLocal: could not build input payload from %s.%s: %s",
+                "RuntimeLocal: could not import input model %s.%s: %s",
                 model_module,
                 model_class,
                 exc,
             )
             return None
+
+        # Prefer --input file over defaults when provided (OMN-8938).
+        if self.input_path is not None:
+            try:
+                raw = json.loads(self.input_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                msg = f"Invalid input payload at {self.input_path}: {exc}"
+                logger.exception("RuntimeLocal: %s", msg)
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.INVALID_INPUT,
+                    message=msg,
+                ) from exc
+            try:
+                if isinstance(raw, dict):
+                    return cls(**raw)
+                return cls.model_validate(raw)
+            except (TypeError, ValueError) as exc:
+                msg = (
+                    f"Input payload at {self.input_path} does not validate against "
+                    f"{model_module}.{model_class}: {exc}"
+                )
+                logger.exception("RuntimeLocal: %s", msg)
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                ) from exc
+
+        try:
+            return cls()
+        except (TypeError, ValueError):
+            # Auto-fill required UUID and datetime fields with defaults.
+            import typing
+            from datetime import UTC
+            from datetime import datetime as _dt
+
+            defaults: dict[str, Any] = {}
+            for field_name, field_info in cls.model_fields.items():
+                if field_info.is_required():
+                    ann = field_info.annotation
+                    if ann is uuid.UUID:
+                        defaults[field_name] = uuid.uuid4()
+                    elif ann is _dt:
+                        defaults[field_name] = _dt.now(UTC)
+                    elif ann is str:
+                        defaults[field_name] = ""
+                    else:
+                        # Handle tuple[T, ...] and list[T] with empty default
+                        origin = typing.get_origin(ann)
+                        if origin is tuple or origin is list:
+                            defaults[field_name] = ()
+            try:
+                return cls(**defaults)
+            except (TypeError, ValueError) as exc:
+                logger.warning(
+                    "RuntimeLocal: could not build input payload from %s.%s: %s",
+                    model_module,
+                    model_class,
+                    exc,
+                )
+                return None
 
     @staticmethod
     def _classify_result(result_obj: Any) -> EnumWorkflowResult:

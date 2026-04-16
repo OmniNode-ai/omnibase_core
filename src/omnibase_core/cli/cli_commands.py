@@ -666,10 +666,12 @@ from omnibase_core.cli.cli_registry import registry
 
 cli.add_command(registry)
 
-# Register run command from separate module
-from omnibase_core.cli.cli_run import run_workflow
+# Register node command (local RuntimeLocal execution, name-based resolution).
+# Replaces the former `onex run <contract_path>` (OMN-7068) with `onex node <name>`.
+# See docs/plans/2026-04-16-prove-core-runtime-standalone.md § Task 3 (OMN-8938).
+from omnibase_core.cli.cli_node import run_node_by_name
 
-cli.add_command(run_workflow)
+cli.add_command(run_node_by_name)
 
 # Register doctor command from separate module
 from omnibase_core.cli.cli_doctor import doctor
