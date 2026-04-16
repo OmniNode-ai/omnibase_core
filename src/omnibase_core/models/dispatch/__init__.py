@@ -87,6 +87,10 @@ See Also:
 """
 
 from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
+from omnibase_core.models.dispatch.model_dispatch_claim import (
+    ModelDispatchClaim,
+    compute_blocker_id,
+)
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
@@ -104,10 +108,13 @@ __all__ = [
     "EnumDispatchStatus",
     "EnumTopicStandard",
     # Models
+    "ModelDispatchClaim",
     "ModelDispatchResult",
     "ModelDispatchRoute",
     "ModelHandlerOutput",
     "ModelHandlerRegistration",
     "ModelParsedTopic",
     "ModelTopicParser",
+    # Functions
+    "compute_blocker_id",
 ]
