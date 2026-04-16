@@ -186,6 +186,9 @@ class RuntimeLocal:
         self._last_error: str | None = None
         self._handlers_wired: list[str] = []
 
+        # ProtocolStateStore (resolved via DI in run_async). None if registry bootstrap fails.
+        self._state_store: Any = None
+
     # ONEX_EXCLUDE: dict_str_any — event bus payload
     def _on_terminal_event(self, payload: dict[str, Any]) -> None:
         """Callback invoked when a message arrives on the terminal_event topic."""
@@ -423,6 +426,7 @@ class RuntimeLocal:
         # of None.
         if result_obj is not None:
             self._result = self._classify_result(result_obj)
+            await self._persist_reducer_projection_if_applicable(result_obj)
             await self._publish_synthesized_terminal(bus, terminal_topic)
             logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
             return
@@ -943,8 +947,112 @@ class RuntimeLocal:
         )
 
         self._result = self._classify_result(result_obj)
+        await self._persist_reducer_projection_if_applicable(result_obj)
         logger.info(
             "RuntimeLocal: compute handler returned, result=%s", self._result.value
+        )
+
+    async def _bootstrap_state_store(self) -> None:
+        """Resolve ProtocolStateStore from the DI container (OMN-8946).
+
+        NO fallbacks. NO silent degrade. NO try/except.
+
+        The runtime either bootstraps a working state store or it does not run.
+        Failure modes (ImportError, ModelOnexError, registry errors) propagate
+        unmodified so callers see real problems instead of reducer projections
+        silently disappearing.
+
+        Uses the public `auto_configure_registry(container)` API so the
+        instance is not hardcoded — ServiceStateDisk (or whichever backend
+        wins probe resolution) is wired via entry points + local defaults at
+        `container/container_auto_config.py`.
+        """
+        from omnibase_core.container.container_auto_config import (
+            auto_configure_registry,
+        )
+        from omnibase_core.models.container.model_onex_container import (
+            ModelONEXContainer,
+        )
+        from omnibase_core.protocols.storage.protocol_state_store import (
+            ProtocolStateStore,
+        )
+
+        container = ModelONEXContainer(enable_service_registry=True)
+        await auto_configure_registry(container, state_root=self.state_root)
+        self._state_store = await container.service_registry.resolve_service(
+            ProtocolStateStore,
+        )
+        logger.info("RuntimeLocal: ProtocolStateStore resolved via DI container")
+
+    async def _persist_reducer_projection_if_applicable(
+        self,
+        result_obj: Any,
+    ) -> None:
+        """Persist reducer handler output to ProtocolStateStore when applicable.
+
+        Authority model (OMN-8946):
+            - Contract MUST declare `node_type: reducer` (authority: contract, not shape).
+            - Handler output MUST be a dict with `"state"` key AND (optionally)
+              `"intents"` as a list — matching the real reducer convention at
+              node_loop_state_reducer/handlers/handler_loop_state.py:96-110.
+
+        A dict-with-state output from a non-reducer contract is logged but NOT
+        persisted. This closes the "accidental-dict-trigger" bug class.
+
+        NO try/except around state_store.put(). If persistence fails, the
+        error propagates — silent persist failures would reintroduce exactly
+        the class of bug this task exists to fix.
+        """
+        contract_node_type = str(self._contract.get("node_type", "")).strip().lower()
+        is_reducer_contract = contract_node_type == "reducer"
+        is_reducer_output_shape = (
+            isinstance(result_obj, dict)
+            and "state" in result_obj
+            and isinstance(result_obj.get("intents", []), list)
+        )
+
+        if not is_reducer_output_shape:
+            return
+
+        if not is_reducer_contract:
+            logger.debug(
+                "RuntimeLocal: dict-with-state output ignored — contract "
+                "node_type=%r is not 'reducer' (accidental-shape-match guard)",
+                contract_node_type,
+            )
+            return
+
+        from datetime import UTC, datetime
+
+        from omnibase_core.models.state.model_state_envelope import ModelStateEnvelope
+
+        declared_node_id = (self._contract.get("node_identity") or {}).get("node_id")
+        contract_name = self._contract.get("name", "unknown_reducer")
+        node_id = declared_node_id or (
+            contract_name
+            if str(contract_name).startswith("node_")
+            else f"node_{contract_name}"
+        )
+        scope_id = (self._contract.get("node_identity") or {}).get(
+            "scope_id", "default"
+        )
+
+        # ModelStateEnvelope schema per models/state/model_state_envelope.py:
+        #   node_id, scope_id, data (dict), written_at, contract_fingerprint.
+        # The reducer's `handle()` returns `{"state": ..., "intents": ...}` — the
+        # `"state"` portion becomes `data`. The `"intents"` portion is not persisted
+        # here (intents are for downstream emission, outside the state projection).
+        envelope = ModelStateEnvelope(
+            node_id=node_id,
+            scope_id=scope_id,
+            data=result_obj["state"],
+            written_at=datetime.now(UTC),
+        )
+        await self._state_store.put(envelope)
+        logger.info(
+            "RuntimeLocal: persisted reducer projection node_id=%s scope_id=%s",
+            envelope.node_id,
+            envelope.scope_id,
         )
 
     # ------------------------------------------------------------------
@@ -962,6 +1070,12 @@ class RuntimeLocal:
         # ONEX_STATE_ROOT — they receive state via ProtocolStateStore DI.
         # See OMN-8938 plan Task 3 Step 6.
         os.environ["ONEX_STATE_ROOT"] = str(self.state_root)
+
+        # 0. Resolve ProtocolStateStore via DI (OMN-8946). Runtime now uses the
+        # registered ServiceStateDisk as a reducer sink (was previously only
+        # registered, never consumed). Gracefully degrades to None if the
+        # container cannot bootstrap.
+        await self._bootstrap_state_store()
 
         # 1. Load contract
         self._contract = load_workflow_contract(self.workflow_path)
