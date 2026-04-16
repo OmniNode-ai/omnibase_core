@@ -44,6 +44,11 @@ KNOWN_BACKEND_KEYS: frozenset[str] = frozenset(
 )
 
 
+class _StatePersistenceError(BaseException):
+    """Raised when ProtocolStateStore.put() fails; inherits BaseException so it
+    escapes broad `except Exception` handlers and surfaces as a hard failure."""
+
+
 @dataclass(frozen=True)
 class _ResolvedRoutingEntry:
     """A single resolved handler routing entry with concrete topics."""
@@ -426,11 +431,13 @@ class RuntimeLocal:
         # of None.
         if result_obj is not None:
             self._result = self._classify_result(result_obj)
-            # NOTE(OMN-8946): Fail-loud policy — no try/except here. If state_store.put()
-            # raises, the exception propagates and the runtime fails. Silent persistence
-            # failures defeat the purpose of this sink (user decision: "No fucking fallbacks.
-            # The runtime either works or doesn't.").
-            await self._persist_reducer_projection_if_applicable(result_obj)
+            # Fail-loud policy (OMN-8946): persistence errors must escape the broad
+            # except Exception blocks in run_async(). Wrap in _StatePersistenceError
+            # (BaseException subclass) so they are never silently downgraded to FAILED.
+            try:
+                await self._persist_reducer_projection_if_applicable(result_obj)
+            except Exception as _persist_exc:
+                raise _StatePersistenceError(str(_persist_exc)) from _persist_exc
             await self._publish_synthesized_terminal(bus, terminal_topic)
             logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
             return
@@ -951,7 +958,10 @@ class RuntimeLocal:
         )
 
         self._result = self._classify_result(result_obj)
-        await self._persist_reducer_projection_if_applicable(result_obj)
+        try:
+            await self._persist_reducer_projection_if_applicable(result_obj)
+        except Exception as _persist_exc:
+            raise _StatePersistenceError(str(_persist_exc)) from _persist_exc
         logger.info(
             "RuntimeLocal: compute handler returned, result=%s", self._result.value
         )
@@ -1149,6 +1159,8 @@ class RuntimeLocal:
         except Exception:
             logger.exception("RuntimeLocal: unhandled exception during execution")
             self._result = EnumWorkflowResult.FAILED
+        # _StatePersistenceError (BaseException) intentionally not caught here — it
+        # escapes to the CLI boundary so state-store failures are loud, not silent FAILED.
         finally:
             await bus.close()
             self._write_state()
@@ -1230,7 +1242,9 @@ class RuntimeLocal:
                     else:
                         # Handle tuple[T, ...] and list[T] with empty default
                         origin = typing.get_origin(ann)
-                        if origin is tuple or origin is list:
+                        if origin is list:
+                            defaults[field_name] = []
+                        elif origin is tuple:
                             defaults[field_name] = ()
             try:
                 return cls(**defaults)

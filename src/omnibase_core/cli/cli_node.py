@@ -135,7 +135,7 @@ def run_node_by_name(
     Exit codes:
         0  COMPLETED — terminal event received, evidence written
         1  FAILED / TIMEOUT — terminal event with failure or timeout exceeded
-        2  PARTIAL — evidence written but no terminal event
+        3  PARTIAL — evidence written but no terminal event
 
     \b
     Examples:
@@ -165,5 +165,10 @@ def run_node_by_name(
         input_path=input_path,
         timeout=timeout,
     )
-    runtime.run()
+    # boundary-ok: catch all runtime errors (contract-load, bootstrap, input-validation) at the CLI boundary.
+    try:
+        runtime.run()
+    except Exception as exc:  # noqa: BLE001 — CLI boundary, all errors become exit 1
+        click.echo(f"Error: {exc}", err=True)
+        sys.exit(1)
     sys.exit(runtime.exit_code)
