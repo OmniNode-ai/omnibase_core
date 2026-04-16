@@ -76,7 +76,8 @@ def test_contract_override_wins_over_packaged(tmp_path: Path) -> None:
     whose handler module does not exist. The runtime attempts to resolve that
     bogus handler, fails, and exits non-zero — confirming the override was used,
     not the packaged contract. Uses a dummy node name to avoid any dependency on
-    installed onex.nodes entry points.
+    installed onex.nodes entry points. Asserts _resolve_packaged_contract was
+    never consulted (the override path must short-circuit it entirely).
     """
     override = tmp_path / "custom_contract.yaml"
     override.write_text(
@@ -89,21 +90,28 @@ def test_contract_override_wins_over_packaged(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     runner = CliRunner()
-    result = runner.invoke(
-        run_node_by_name,
-        [
-            "unused-node-name",
-            "--contract",
-            str(override),
-            "--state-root",
-            str(tmp_path / "state"),
-            "--timeout",
-            "5",
-        ],
-    )
+    with patch(
+        "omnibase_core.cli.cli_node._resolve_packaged_contract",
+        side_effect=AssertionError(
+            "_resolve_packaged_contract must not be called when --contract is provided"
+        ),
+    ) as mock_resolve:
+        result = runner.invoke(
+            run_node_by_name,
+            [
+                "unused-node-name",
+                "--contract",
+                str(override),
+                "--state-root",
+                str(tmp_path / "state"),
+                "--timeout",
+                "5",
+            ],
+        )
+    mock_resolve.assert_not_called()
     # Exit code 1 = FAILED (handler could not be resolved from override). If the
     # override had been ignored and packaged resolution ran, it would have raised
-    # a ClickException for the unknown node — a different failure mode.
+    # AssertionError above — a different failure mode.
     assert result.exit_code == 1
 
 

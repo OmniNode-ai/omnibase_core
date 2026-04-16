@@ -1088,8 +1088,7 @@ class RuntimeLocal:
 
         # 0. Resolve ProtocolStateStore via DI (OMN-8946). Runtime now uses the
         # registered ServiceStateDisk as a reducer sink (was previously only
-        # registered, never consumed). Gracefully degrades to None if the
-        # container cannot bootstrap.
+        # registered, never consumed). NO fallbacks — failures propagate.
         await self._bootstrap_state_store()
 
         # 1. Load contract
