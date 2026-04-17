@@ -41,8 +41,8 @@ Usage::
     )
     violations = validator.check_paths([Path("omni_home")])
 
-    # CLI
-    python -m omnibase_core.validation.validator_banned_compose_vars \\
+    # CLI (per repo policy: all Python commands via uv run)
+    uv run python -m omnibase_core.validation.validator_banned_compose_vars \\
         --kernel-source ../omnibase_infra/src/omnibase_infra/runtime/service_kernel.py \\
         omni_home/
 
@@ -289,11 +289,20 @@ def _extract_env_pairs(path: Path) -> list[tuple[str, str]]:
 def _walk_env_pairs(node: object) -> list[tuple[str, str]]:
     """Yield every ``(name, value)`` pair discoverable as container env.
 
-    Handles three forms:
+    Since the validator enforces bans on env var **names**, value-less forms
+    are surfaced too (name paired with ``""``). That covers:
 
     - docker-compose ``environment:`` dict (``KEY: value``)
-    - docker-compose ``environment:`` list (``- KEY=value`` or ``- {name, value}``)
-    - k8s ``env:`` list of ``{name: KEY, value: VAL}``
+    - docker-compose ``environment:`` list — all three forms:
+        * ``- KEY=value`` — explicit value
+        * ``- KEY`` — pass-through from host env (no ``=``)
+        * ``- {name: KEY, value: VAL}`` — dict with explicit value
+        * ``- {name: KEY}`` — dict with no value (also pass-through)
+    - k8s ``env:`` list — both forms:
+        * ``- {name: KEY, value: VAL}`` — literal value
+        * ``- {name: KEY, valueFrom: {...}}`` — sourced from ConfigMap/Secret/etc.
+
+    Missing a form would be a false-negative bypass of the ban.
     """
     pairs: list[tuple[str, str]] = []
 
@@ -303,17 +312,26 @@ def _walk_env_pairs(node: object) -> list[tuple[str, str]]:
                 for env_key, env_val in value.items():
                     if isinstance(env_val, (str, int, float)):
                         pairs.append((str(env_key), str(env_val)))
+                    elif env_val is None:
+                        pairs.append((str(env_key), ""))
             elif key == "environment" and isinstance(value, list):
                 for item in value:
-                    if isinstance(item, str) and "=" in item:
-                        k, _, v = item.partition("=")
-                        pairs.append((k.strip(), v.strip()))
-                    elif isinstance(item, dict) and "name" in item and "value" in item:
-                        pairs.append((str(item["name"]), str(item["value"])))
+                    if isinstance(item, str):
+                        if "=" in item:
+                            k, _, v = item.partition("=")
+                            name = k.strip()
+                            if name:
+                                pairs.append((name, v.strip()))
+                        else:
+                            name = item.strip()
+                            if name:
+                                pairs.append((name, ""))
+                    elif isinstance(item, dict) and "name" in item:
+                        pairs.append((str(item["name"]), str(item.get("value", ""))))
             elif key == "env" and isinstance(value, list):
                 for item in value:
-                    if isinstance(item, dict) and "name" in item and "value" in item:
-                        pairs.append((str(item["name"]), str(item["value"])))
+                    if isinstance(item, dict) and "name" in item:
+                        pairs.append((str(item["name"]), str(item.get("value", ""))))
             else:
                 pairs.extend(_walk_env_pairs(value))
     elif isinstance(node, list):

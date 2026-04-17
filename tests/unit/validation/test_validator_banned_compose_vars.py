@@ -205,6 +205,69 @@ class TestValidatorBannedComposeVars:
         assert len(violations) == 1
         assert violations[0].var_name == "ONEX_INPUT_TOPIC"
 
+    def test_compose_pass_through_list_form_scanned(self, tmp_repo: Path) -> None:
+        """Compose `- VAR_NAME` (no `=`) passes value from host env; still banned."""
+        kernel = _write_kernel_with_banned_set(tmp_repo, ["ONEX_INPUT_TOPIC"])
+        compose_path = tmp_repo / "docker" / "docker-compose.yml"
+        compose_path.write_text(
+            "services:\n"
+            "  example:\n"
+            "    image: example:latest\n"
+            "    environment:\n"
+            "      - ONEX_INPUT_TOPIC\n"
+            "      - OMNI_LOG_LEVEL\n",
+            encoding="utf-8",
+        )
+
+        validator = ValidatorBannedComposeVars(kernel_source_path=kernel)
+        violations = validator.check_paths([tmp_repo])
+        assert [v.var_name for v in violations] == ["ONEX_INPUT_TOPIC"]
+
+    def test_k8s_value_from_form_scanned(self, tmp_repo: Path) -> None:
+        """k8s `valueFrom` (no `value`) must not bypass the ban."""
+        kernel = _write_kernel_with_banned_set(tmp_repo, ["ONEX_INPUT_TOPIC"])
+        k8s_path = tmp_repo / "k8s" / "deployment.yaml"
+        k8s_path.parent.mkdir(parents=True, exist_ok=True)
+        k8s_path.write_text(
+            "apiVersion: apps/v1\n"
+            "kind: Deployment\n"
+            "spec:\n"
+            "  template:\n"
+            "    spec:\n"
+            "      containers:\n"
+            "        - name: svc\n"
+            "          env:\n"
+            "            - name: ONEX_INPUT_TOPIC\n"
+            "              valueFrom:\n"
+            "                configMapKeyRef:\n"
+            "                  name: some-cm\n"
+            "                  key: topic\n"
+            "            - name: OMNI_LOG_LEVEL\n"
+            "              value: INFO\n",
+            encoding="utf-8",
+        )
+
+        validator = ValidatorBannedComposeVars(kernel_source_path=kernel)
+        violations = validator.check_paths([tmp_repo])
+        assert [v.var_name for v in violations] == ["ONEX_INPUT_TOPIC"]
+
+    def test_compose_name_only_dict_scanned(self, tmp_repo: Path) -> None:
+        """Compose ``- {name: KEY}`` (dict, no ``value``) is pass-through; still banned."""
+        kernel = _write_kernel_with_banned_set(tmp_repo, ["ONEX_INPUT_TOPIC"])
+        compose_path = tmp_repo / "docker" / "docker-compose.yml"
+        compose_path.write_text(
+            "services:\n"
+            "  example:\n"
+            "    image: example:latest\n"
+            "    environment:\n"
+            "      - name: ONEX_INPUT_TOPIC\n",
+            encoding="utf-8",
+        )
+
+        validator = ValidatorBannedComposeVars(kernel_source_path=kernel)
+        violations = validator.check_paths([tmp_repo])
+        assert [v.var_name for v in violations] == ["ONEX_INPUT_TOPIC"]
+
     def test_extra_banned_merges_with_kernel_set(self, tmp_repo: Path) -> None:
         kernel = _write_kernel_with_banned_set(tmp_repo, ["ONEX_INPUT_TOPIC"])
         _write_compose(
