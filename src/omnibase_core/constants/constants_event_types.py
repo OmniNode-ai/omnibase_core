@@ -55,6 +55,12 @@ TOPIC_GITHUB_PR_STATUS_EVENT = "onex.evt.platform.github-pr-status.v1"
 TOPIC_GIT_HOOK_EVENT = "onex.evt.platform.git-hook.v1"
 TOPIC_LINEAR_SNAPSHOT_EVENT = "onex.evt.platform.linear-snapshot.v1"
 
+# CLI run-node command topics (used by ``onex run-node`` CLI for ad-hoc node dispatch)
+# These are informal topics used only by the CLI tool for direct node invocation.
+# Production node communication uses contract-defined topics from contract.yaml.
+TOPIC_CLI_RUN_NODE_CMD = "onex.cmd"
+TOPIC_CLI_RUN_NODE_RESPONSE = "onex.cmd.response"
+
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as
 # lookup keys to map wire-format strings to typed payload classes.

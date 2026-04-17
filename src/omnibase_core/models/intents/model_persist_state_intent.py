@@ -12,12 +12,24 @@ Design Pattern:
     This separation ensures Reducer purity — the Reducer declares the desired
     outcome (persist this state envelope) without performing any I/O.
 
+Discriminated Union Membership:
+    ModelPersistStateIntent IS a full member of the ModelCoreIntent discriminated
+    union system. It defines ``kind: Literal["state.persist"]`` and participates
+    in ``ModelCorePersistStateIntent`` — a union parallel to
+    ``ModelCoreRegistrationIntent``, scoped to state-persistence intents.
+
+    Routing uses the dedicated internal topic ``onex.int.state-persist.v1``
+    rather than the registration topic. This separates state persistence traffic
+    from node registration traffic while preserving full union semantics and
+    exhaustive pattern matching in Effect nodes.
+
 Reducer → Effect Flow:
     1. Reducer emits ModelPersistStateIntent with a fully-populated envelope.
     2. The intent travels through the internal intent topic
        ``onex.int.state-persist.v1``.
-    3. node_state_persist_effect receives it, writes to the state store, and
-       emits ``ModelStatePersistedEvent`` on ``onex.evt.state.persisted.v1``.
+    3. node_state_persist_effect receives it via ``ModelCorePersistStateIntent``,
+       writes to the state store, and emits ``ModelStatePersistedEvent`` on
+       ``onex.evt.state.persisted.v1``.
 
 Fields:
     intent_id: Unique ID for this specific persist request. Distinct from
@@ -51,11 +63,13 @@ Example:
 
 See Also:
     omnibase_core.models.intents.ModelCoreIntent: Base class
+    omnibase_core.models.intents.ModelCorePersistStateIntent: Discriminated union for this intent
     omnibase_core.models.state.ModelStateEnvelope: State payload wrapper
     omnibase_core.protocols.storage.ProtocolStateStore: Persistence protocol
 """
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import Field
@@ -71,7 +85,14 @@ class ModelPersistStateIntent(ModelCoreIntent):
     the state store. The Effect node executes the actual I/O; the Reducer
     remains pure.
 
+    Routing:
+        Routes via ``onex.int.state-persist.v1`` (not the registration topic).
+        Effect nodes receive this intent as ``ModelCorePersistStateIntent``
+        and pattern-match on ``kind == "state.persist"``.
+
     Attributes:
+        kind: Discriminator literal ``"state.persist"`` for union-based routing.
+            Placed first per ONEX convention for optimal Pydantic union resolution.
         intent_id: Unique identifier for this persist request. Allows
             individual intents to be correlated even when multiple intents
             share the same ``correlation_id`` chain.
@@ -103,6 +124,14 @@ class ModelPersistStateIntent(ModelCoreIntent):
         ... )
     """
 
+    kind: Literal["state.persist"] = Field(
+        default="state.persist",
+        description=(
+            "Discriminator literal for union-based routing. "
+            "Always ``'state.persist'``. Placed first for optimal Pydantic "
+            "union resolution performance."
+        ),
+    )
     intent_id: UUID = Field(
         ...,
         description=(

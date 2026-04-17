@@ -119,7 +119,7 @@ from omnibase_core.models.intents.model_registration_record_base import (
     ModelRegistrationRecordBase,
 )
 
-# ---- Discriminated Union ----
+# ---- Discriminated Unions ----
 
 ModelCoreRegistrationIntent = Annotated[
     ModelPostgresUpsertRegistrationIntent,
@@ -138,6 +138,24 @@ Adding a new intent requires:
 3. Update all Effect dispatch handlers (exhaustive matching)
 """
 
+ModelCorePersistStateIntent = Annotated[
+    ModelPersistStateIntent,
+    Field(discriminator="kind"),
+]
+"""Discriminated union of all core state-persistence intents.
+
+Routes via ``onex.int.state-persist.v1`` (separate from the registration topic).
+Use this type for:
+- Reducer return types: ``list[ModelCorePersistStateIntent]``
+- Effect dispatch signatures: ``def execute(intent: ModelCorePersistStateIntent)``
+- Pattern matching in node_state_persist_effect
+
+Adding a new persist intent requires:
+1. Create new model file: ``model_<intent_name>_intent.py``
+2. Add to this union (next to ``ModelPersistStateIntent``)
+3. Update all Effect dispatch handlers for exhaustive matching
+"""
+
 __all__ = [
     # Base classes
     "ModelCoreIntent",
@@ -145,6 +163,7 @@ __all__ = [
     # Concrete intents
     "ModelPersistStateIntent",
     "ModelPostgresUpsertRegistrationIntent",
-    # Discriminated union
+    # Discriminated unions
     "ModelCoreRegistrationIntent",
+    "ModelCorePersistStateIntent",
 ]
