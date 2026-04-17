@@ -31,7 +31,7 @@ def _load_kafka_classes() -> tuple[type, type]:
             code=EnumCoreErrorCode.IMPORT_ERROR,
             message=(
                 "kafka-python is required for run-node. "
-                "Install with: pip install kafka-python-ng"
+                "Install with: uv add kafka-python-ng"
             ),
         ) from exc
     return mod.KafkaProducer, mod.KafkaConsumer
