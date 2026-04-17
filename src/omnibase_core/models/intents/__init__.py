@@ -109,6 +109,9 @@ from typing import Annotated
 from pydantic import Field
 
 from omnibase_core.models.intents.model_core_intent_base import ModelCoreIntent
+from omnibase_core.models.intents.model_persist_state_intent import (
+    ModelPersistStateIntent,
+)
 from omnibase_core.models.intents.model_postgres_upsert_registration_intent import (
     ModelPostgresUpsertRegistrationIntent,
 )
@@ -140,6 +143,7 @@ __all__ = [
     "ModelCoreIntent",
     "ModelRegistrationRecordBase",
     # Concrete intents
+    "ModelPersistStateIntent",
     "ModelPostgresUpsertRegistrationIntent",
     # Discriminated union
     "ModelCoreRegistrationIntent",
