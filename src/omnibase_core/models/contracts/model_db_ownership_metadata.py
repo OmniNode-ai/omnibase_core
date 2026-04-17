@@ -41,6 +41,7 @@ class ModelDbOwnershipMetadata(BaseModel):
 
     # Strict MAJOR.MINOR.PATCH only -- pre-release and build metadata suffixes
     # (e.g. "1.0.0-rc.1+build.42") are intentionally rejected.
+    # string-version-ok: DB migration schema version; Pydantic pattern validates format; ModelSemVer rejected here because pre-release suffixes are explicitly disallowed
     schema_version: str = Field(
         ...,
         min_length=1,

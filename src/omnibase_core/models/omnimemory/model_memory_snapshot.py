@@ -129,6 +129,10 @@ from omnibase_core.models.omnimemory.model_decision_record import ModelDecisionR
 from omnibase_core.models.omnimemory.model_failure_record import ModelFailureRecord
 from omnibase_core.models.omnimemory.model_memory_diff import ModelMemoryDiff
 from omnibase_core.models.omnimemory.model_subject_ref import ModelSubjectRef
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 from omnibase_core.types.type_json import JsonType
 
 
@@ -252,8 +256,8 @@ class ModelMemorySnapshot(BaseModel):
 
     # === Contract Shape ===
 
-    schema_version: str = Field(
-        default="1.0.0",
+    schema_version: ModelSemVer = Field(
+        default_factory=default_model_version,
         description="Schema version for serialization format tracking",
     )
 

@@ -14,6 +14,7 @@ import re
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumSeverity
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelRuleConfigBase(BaseModel):
@@ -158,8 +159,8 @@ class ModelRuleContractSchemaConfig(ModelRuleConfigBase):
     Validates YAML contract files against schema.
     """
 
-    schema_version: str = Field(
-        default="1.0.0",
+    schema_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Contract schema version to validate against",
     )
 

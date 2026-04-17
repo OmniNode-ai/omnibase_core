@@ -94,6 +94,7 @@ class ModelContractIdentity(BaseModel):
         description="SHA256 hash of the contract content for integrity verification",
     )
 
+    # string-version-ok: nullable external schema conformance string; sourced from contract YAML, not ONEX-owned
     schema_version: str | None = Field(
         default=None,
         description="Schema version the contract conforms to",

@@ -31,6 +31,7 @@ class ModelViolationBaseline(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    # string-version-ok: major.minor format only (not full semver); baseline file format version at YAML serialization boundary
     schema_version: str = Field(
         default="1.0",
         description="Version of the baseline file format",

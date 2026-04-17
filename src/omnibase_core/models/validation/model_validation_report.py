@@ -220,6 +220,7 @@ class ModelValidationProvenance(BaseModel):
         ),
     )
 
+    # string-version-ok: major.minor format only (not full semver); serialization boundary for report parsing
     schema_version: str = Field(
         default="1.0",
         description=(

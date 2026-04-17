@@ -14,6 +14,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
+
 
 class ModelEventHeaders(BaseModel):
     """Headers for event bus messages.
@@ -31,7 +36,7 @@ class ModelEventHeaders(BaseModel):
     )
     source: str
     event_type: str
-    schema_version: str = Field(default="1.0.0")
+    schema_version: ModelSemVer = Field(default_factory=default_model_version)
     destination: str | None = Field(default=None)
     trace_id: str | None = Field(default=None)
     span_id: str | None = Field(default=None)

@@ -111,6 +111,7 @@ class ContractState(BaseModel):
         description="Unique identifier for this contract state",
         min_length=1,
     )
+    # string-version-ok: runtime graph comparator; compared against required_schema_version guard strings (both str); converting to ModelSemVer would cascade across graph traversal and guard logic
     schema_version: str = Field(
         ...,
         description="Semantic version of the contract schema",
@@ -299,6 +300,7 @@ class RegistryNode(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     node_id: str = Field(..., min_length=1)
+    # string-version-ok: raw registry input from YAML snapshot; converted to ContractState.schema_version (also str) by ContractGraphBuilder
     schema_version: str = Field(..., min_length=1)
     capabilities: tuple[str, ...] = Field(default=())
     policy_tier: int = Field(default=0, ge=0)

@@ -53,6 +53,7 @@ class ModelDeploymentTopology(BaseModel):
 
     model_config = {"frozen": True, "extra": "forbid"}
 
+    # string-version-ok: YAML-deserialization boundary; topology files on disk carry plain strings
     schema_version: str = Field(
         description="Schema version for this topology file. Required; YAML missing it is rejected.",
     )

@@ -95,6 +95,7 @@ class ModelNodeMetadataBlock(BaseModel):
     copyright: Annotated[str, StringConstraints(min_length=1)] = Field(
         default="OmniNode Team",
     )
+    # string-version-ok: metadata block schema version; pattern-validated string at YAML contract boundary; legacy format predates ModelSemVer
     schema_version: Annotated[
         str,
         StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),
