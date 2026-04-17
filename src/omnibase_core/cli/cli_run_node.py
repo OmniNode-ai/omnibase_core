@@ -138,7 +138,7 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
             timeout=timeout,
             bootstrap_servers=bootstrap_servers,
         )
-    except (ConnectionError, OSError, ImportError) as exc:
+    except (ConnectionError, OSError, ImportError, OnexError) as exc:
         _emit_error(node_id, str(exc))
 
     if response is None:
