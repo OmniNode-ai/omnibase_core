@@ -267,23 +267,32 @@ def _is_compose_or_k8s_file(path: Path) -> bool:
     return any(component in _COMPOSE_DIR_COMPONENTS for component in path.parts)
 
 
-def _load_yaml_safely(path: Path) -> object | None:
+def _load_yaml_safely(path: Path) -> list[object]:
+    """Return every document in ``path`` as a list.
+
+    k8s manifests commonly use multi-document YAML streams (``---`` separator)
+    bundling a Deployment + Service + ConfigMap in one file. Using
+    :func:`yaml.safe_load` on such a stream raises ``ComposerError``; we must
+    use :func:`yaml.safe_load_all` to iterate each document.
+
+    Returns an empty list on any read or parse failure.
+    """
     try:
         text = path.read_text(encoding="utf-8", errors="replace")
     except (OSError, PermissionError):
-        return None
+        return []
     try:
-        return yaml.safe_load(text)
+        return [doc for doc in yaml.safe_load_all(text) if doc is not None]
     except yaml.YAMLError:
-        return None
+        return []
 
 
 def _extract_env_pairs(path: Path) -> list[tuple[str, str]]:
-    """Return every ``(var_name, value)`` pair from this file's env blocks."""
-    doc = _load_yaml_safely(path)
-    if doc is None:
-        return []
-    return _walk_env_pairs(doc)
+    """Return every ``(var_name, value)`` pair from every document in the file."""
+    pairs: list[tuple[str, str]] = []
+    for doc in _load_yaml_safely(path):
+        pairs.extend(_walk_env_pairs(doc))
+    return pairs
 
 
 def _walk_env_pairs(node: object) -> list[tuple[str, str]]:

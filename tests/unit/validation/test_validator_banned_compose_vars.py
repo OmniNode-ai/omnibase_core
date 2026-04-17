@@ -251,6 +251,40 @@ class TestValidatorBannedComposeVars:
         violations = validator.check_paths([tmp_repo])
         assert [v.var_name for v in violations] == ["ONEX_INPUT_TOPIC"]
 
+    def test_multi_doc_k8s_manifest_scanned(self, tmp_repo: Path) -> None:
+        """k8s manifests often bundle multiple documents with `---` separators."""
+        kernel = _write_kernel_with_banned_set(tmp_repo, ["ONEX_INPUT_TOPIC"])
+        k8s_path = tmp_repo / "k8s" / "bundle.yaml"
+        k8s_path.parent.mkdir(parents=True, exist_ok=True)
+        k8s_path.write_text(
+            "apiVersion: v1\n"
+            "kind: ConfigMap\n"
+            "metadata:\n"
+            "  name: cfg\n"
+            "---\n"
+            "apiVersion: apps/v1\n"
+            "kind: Deployment\n"
+            "spec:\n"
+            "  template:\n"
+            "    spec:\n"
+            "      containers:\n"
+            "        - name: svc\n"
+            "          env:\n"
+            "            - name: ONEX_INPUT_TOPIC\n"
+            "              value: requests\n"
+            "---\n"
+            "apiVersion: v1\n"
+            "kind: Service\n"
+            "metadata:\n"
+            "  name: svc\n",
+            encoding="utf-8",
+        )
+
+        validator = ValidatorBannedComposeVars(kernel_source_path=kernel)
+        violations = validator.check_paths([tmp_repo])
+        assert len(violations) == 1
+        assert violations[0].var_name == "ONEX_INPUT_TOPIC"
+
     def test_compose_name_only_dict_scanned(self, tmp_repo: Path) -> None:
         """Compose ``- {name: KEY}`` (dict, no ``value``) is pass-through; still banned."""
         kernel = _write_kernel_with_banned_set(tmp_repo, ["ONEX_INPUT_TOPIC"])
