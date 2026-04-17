@@ -1,0 +1,93 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Compose Drift — ValidatorBannedComposeVars gate [OMN-9113]
+#
+# Canonical CI gate for `omnibase_core.validation.validator_banned_compose_vars`.
+# Required status check context: "Compose Drift / validate" — matches
+# architecture-handshakes/validator-requirements.yaml::banned-compose-env-vars.
+#
+# This workflow runs on omnibase_core itself:
+#   1. unit + integration pytest for the validator (regression guard)
+#   2. self-scan of omnibase_core's own compose/k8s YAMLs against a synthetic
+#      kernel tuple sourced from the omnibase_infra kernel constant, proving
+#      the CLI is resolvable and the check is green on this repo's own tree.
+#
+# Consumer repos (omnibase_infra, omninode_infra per validator-requirements.yaml)
+# wire this by adding the hook entry to their own .pre-commit-config.yaml and
+# mirroring the `validate` job in their own CI, pointing --kernel-source at
+# their local copy of service_kernel.py.
+
+name: Compose Drift
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  merge_group:
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: compose-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout omnibase_core
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run ValidatorBannedComposeVars unit + integration tests
+        run: |
+          uv run pytest \
+            tests/unit/validation/test_validator_banned_compose_vars.py \
+            tests/integration/test_validator_banned_compose_vars_integration.py \
+            -v
+
+      - name: Self-scan omnibase_core repo for banned compose env vars
+        run: |
+          # Synthetic kernel mirrors the current `_DEPRECATED_TOPIC_ENV_VARS`
+          # tuple in omnibase_infra/src/omnibase_infra/runtime/service_kernel.py
+          # (OMN-8784). omnibase_core has no legitimate consumer of those vars,
+          # so the scan must exit 0. If omnibase_core ever adds a real compose
+          # manifest that uses them, this gate catches it before merge.
+          cat > /tmp/synthetic_kernel.py <<'EOF'
+          # Mirror of omnibase_infra service_kernel._DEPRECATED_TOPIC_ENV_VARS.
+          _DEPRECATED_TOPIC_ENV_VARS: tuple[str, ...] = (
+              "ONEX_INPUT_TOPIC",
+              "ONEX_OUTPUT_TOPIC",
+          )
+          EOF
+          uv run python -m omnibase_core.validation.validator_banned_compose_vars \
+            --kernel-source /tmp/synthetic_kernel.py \
+            .
