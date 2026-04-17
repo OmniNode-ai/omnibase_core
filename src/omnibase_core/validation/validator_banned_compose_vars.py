@@ -2,23 +2,31 @@
 # SPDX-License-Identifier: MIT
 
 """
-ValidatorBannedComposeVars — bidirectional compose↔contract topic drift.
+ValidatorBannedComposeVars — kernel-sourced banned env var detector.
 
-Builds the canonical set of ONEX topics declared by ``event_bus.subscribe_topics``
-/ ``publish_topics`` across every ``contract.yaml`` in the scanned tree, then
-compares against Docker-compose and Kubernetes manifest environment blocks.
+Scans every ``docker-compose*.yaml`` and every ``k8s/**/*.yaml`` for
+``environment:`` / ``env:`` blocks and flags any entry whose NAME appears in
+the kernel's ``_DEPRECATED_TOPIC_ENV_VARS`` constant (canonical source of
+truth for topic env vars that code no longer reads).
 
-Two drift kinds are reported:
+**Ground truth**: ``omnibase_infra/src/omnibase_infra/runtime/service_kernel.py``
+defines ``_DEPRECATED_TOPIC_ENV_VARS`` (OMN-8784). This validator parses that
+file via ``ast`` to pull the current set — single source of truth, no
+duplication.
 
-- **BANNED_VAR**: compose/k8s references an ONEX topic string (via any env var
-  value) that no contract declares. Stale compose — the OMN-8840 pattern where
-  ``ONEX_INPUT_TOPIC`` persisted after OMN-8784 removed the topic from code.
-- **MISSING_VAR**: a contract declares a topic but no compose / k8s manifest
-  exposes it as any env var value. Orphaned contract.
+The validator is layer-clean (omnibase_core cannot import omnibase_infra per
+repo layering rules). Instead it reads the kernel source as a text file and
+extracts the constant with a static AST walk.
 
-The validator deliberately ignores non-ONEX env var values (plain strings like
-``requests``, ``responses``) — the universe of drift it gates is ONEX topic
-strings matching ``onex.{kind}.{producer}.{event-name}.v{n}``.
+Drift kind reported:
+
+- **BANNED_VAR**: compose/k8s exposes an env var whose NAME is in the banned
+  set (regardless of value). Stale compose — the OMN-8840 pattern where
+  ``ONEX_INPUT_TOPIC`` survived after OMN-8784 removed it from code.
+
+``MISSING_VAR`` (forward-drift contract→compose check — for each contract's
+declared topics, verify a compose entry exposes the expected env var) is
+deferred to follow-up ticket OMN-9064. The enum value is preserved.
 
 Related ticket: OMN-9062 (trigger: OMN-8840, parent: OMN-9048).
 
@@ -28,11 +36,15 @@ Usage::
     from pathlib import Path
     from omnibase_core.validation import ValidatorBannedComposeVars
 
-    validator = ValidatorBannedComposeVars()
+    validator = ValidatorBannedComposeVars(
+        kernel_source_path=Path("../omnibase_infra/src/omnibase_infra/runtime/service_kernel.py"),
+    )
     violations = validator.check_paths([Path("omni_home")])
 
     # CLI
-    python -m omnibase_core.validation.validator_banned_compose_vars omni_home/
+    python -m omnibase_core.validation.validator_banned_compose_vars \\
+        --kernel-source ../omnibase_infra/src/omnibase_infra/runtime/service_kernel.py \\
+        omni_home/
 
 Exit codes:
     0 — no drift
@@ -41,13 +53,14 @@ Exit codes:
 
 from __future__ import annotations
 
+import ast
 import re
 import sys
 from pathlib import Path
 from typing import Final
 
 import yaml
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_compose_drift_kind import EnumComposeDriftKind
 from omnibase_core.models.validation.model_compose_drift_violation import (
@@ -55,23 +68,15 @@ from omnibase_core.models.validation.model_compose_drift_violation import (
 )
 
 # ---------------------------------------------------------------------------
-# Patterns
+# Constants
 # ---------------------------------------------------------------------------
 
-# Canonical ONEX topic form: onex.{kind}.{producer}.{event-name}.v{n}
-# Kept in lock-step with validator_topic_suffix.TOPIC_SUFFIX_PATTERN.
-_ONEX_TOPIC_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"^onex\.(cmd|evt|dlq|intent|snapshot)\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.v\d+$"
-)
+# Canonical name of the banned-set tuple in service_kernel.py.
+_BANNED_CONSTANT_NAME: Final[str] = "_DEPRECATED_TOPIC_ENV_VARS"
 
 # Filename patterns recognised as compose / k8s manifests.
 _COMPOSE_NAME_PATTERN: Final[re.Pattern[str]] = re.compile(r"^docker-compose.*\.ya?ml$")
 _COMPOSE_DIR_COMPONENTS: Final[frozenset[str]] = frozenset({"k8s", "kubernetes"})
-
-# Contract filenames (scanned for topic declarations).
-_CONTRACT_FILENAMES: Final[frozenset[str]] = frozenset(
-    {"contract.yaml", "contract.yml", "handler_contract.yaml"}
-)
 
 # Directories skipped during recursive scan.
 _SKIP_DIRS: Final[frozenset[str]] = frozenset(
@@ -93,72 +98,79 @@ _SKIP_DIRS: Final[frozenset[str]] = frozenset(
 
 
 class ValidatorBannedComposeVars(BaseModel):
-    """Bidirectional compose↔contract topic drift detector.
+    """Kernel-sourced banned env var detector for compose / k8s manifests.
 
     Stateless — each call to :meth:`check_paths` returns violations without
     mutating instance state. Safe to reuse across calls.
+
+    Args:
+        kernel_source_path: Path to ``service_kernel.py`` whose
+            ``_DEPRECATED_TOPIC_ENV_VARS`` tuple is the canonical banned set.
+            If ``None``, the validator falls back to an empty banned set
+            (hard-fail at CLI level — avoids silent pass on misconfig).
+        extra_banned: Additional env var names to treat as banned (optional
+            supplement for cross-repo cases the kernel tuple doesn't cover).
 
     Thread Safety:
         Instances are thread-safe because there is no mutable state.
     """
 
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    kernel_source_path: Path | None = Field(
+        default=None,
+        description=(
+            "Path to service_kernel.py whose _DEPRECATED_TOPIC_ENV_VARS tuple "
+            "is the canonical banned set. Required for non-trivial scans."
+        ),
+    )
+    extra_banned: frozenset[str] = Field(
+        default_factory=frozenset,
+        description="Additional env var names to treat as banned.",
+    )
+
+    def banned_env_vars(self) -> frozenset[str]:
+        """Return the resolved banned env var set.
+
+        Combines the AST-extracted kernel tuple with any ``extra_banned``
+        names supplied at construction. Empty when no sources are configured.
+        """
+        kernel_set: frozenset[str] = frozenset()
+        if self.kernel_source_path is not None:
+            kernel_set = extract_banned_env_vars_from_kernel(self.kernel_source_path)
+        return kernel_set | self.extra_banned
 
     def check_paths(self, paths: list[Path]) -> list[ModelComposeDriftViolation]:
         """Scan the given files/directories and return every drift violation."""
-        # Maps: topic -> source path / (var_name, source) for compose.
-        contract_topics: dict[str, Path] = {}
-        compose_topics: dict[str, tuple[str, Path]] = {}
+        banned = self.banned_env_vars()
+        violations: list[ModelComposeDriftViolation] = []
+
+        if not banned:
+            return violations
 
         for base in paths:
             for file_path in _iter_yaml_files(base):
-                if _is_contract_file(file_path):
-                    for topic in _extract_contract_topics(file_path):
-                        contract_topics.setdefault(topic, file_path)
-                elif _is_compose_or_k8s_file(file_path):
-                    for var_name, topic in _extract_compose_topic_refs(file_path):
-                        compose_topics.setdefault(topic, (var_name, file_path))
-
-        violations: list[ModelComposeDriftViolation] = []
-
-        # BANNED_VAR: compose references an ONEX topic no contract declares
-        for topic, (var_name, compose_path) in compose_topics.items():
-            if topic in contract_topics:
-                continue
-            violations.append(
-                ModelComposeDriftViolation(
-                    kind=EnumComposeDriftKind.BANNED_VAR,
-                    var_name=var_name,
-                    compose_path=compose_path,
-                    contract_path=None,
-                    message=(
-                        f"{compose_path} exposes env var {var_name!r} = "
-                        f"{topic!r} but no contract.yaml declares that topic "
-                        f"in event_bus.subscribe_topics / publish_topics. "
-                        f"Either declare the topic in a contract or remove "
-                        f"the stale env var from compose/k8s."
-                    ),
-                )
-            )
-
-        # MISSING_VAR: contract declares a topic no compose / k8s exposes
-        for topic, contract_path in contract_topics.items():
-            if topic in compose_topics:
-                continue
-            violations.append(
-                ModelComposeDriftViolation(
-                    kind=EnumComposeDriftKind.MISSING_VAR,
-                    var_name=_topic_to_var_hint(topic),
-                    compose_path=None,
-                    contract_path=contract_path,
-                    message=(
-                        f"{contract_path} declares topic {topic!r} but no "
-                        f"compose / k8s manifest exposes it via any env var. "
-                        f"Either wire the topic into compose/k8s or remove "
-                        f"the contract declaration."
-                    ),
-                )
-            )
+                if not _is_compose_or_k8s_file(file_path):
+                    continue
+                for var_name, value in _extract_env_pairs(file_path):
+                    if var_name not in banned:
+                        continue
+                    violations.append(
+                        ModelComposeDriftViolation(
+                            kind=EnumComposeDriftKind.BANNED_VAR,
+                            var_name=var_name,
+                            compose_path=file_path,
+                            contract_path=None,
+                            message=(
+                                f"{file_path} exposes banned env var "
+                                f"{var_name!r} (value: {value!r}). This var "
+                                f"is in the kernel's "
+                                f"{_BANNED_CONSTANT_NAME} tuple; code no "
+                                f"longer reads it (OMN-8784). Remove the "
+                                f"entry from compose/k8s."
+                            ),
+                        )
+                    )
 
         violations.sort(
             key=lambda v: (
@@ -171,7 +183,65 @@ class ValidatorBannedComposeVars(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Helpers (module-private)
+# AST-based kernel constant extractor
+# ---------------------------------------------------------------------------
+
+
+def extract_banned_env_vars_from_kernel(kernel_path: Path) -> frozenset[str]:
+    """Extract ``_DEPRECATED_TOPIC_ENV_VARS`` string literals from a kernel source file.
+
+    Parses the file with :mod:`ast` and walks module-level ``Assign`` /
+    ``AnnAssign`` nodes. Only string-literal tuple / list / set members are
+    returned — anything non-literal (expressions, imports) is skipped.
+
+    Returns an empty frozenset if the constant is missing, the file is
+    unreadable, or the file cannot be parsed — callers hard-fail on empty.
+
+    This is a static read — no code is executed.
+    """
+    try:
+        source = kernel_path.read_text(encoding="utf-8", errors="replace")
+    except (OSError, PermissionError):
+        return frozenset()
+
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return frozenset()
+
+    for node in tree.body:
+        targets: list[ast.expr] = []
+        value: ast.expr | None = None
+
+        if isinstance(node, ast.Assign):
+            targets = list(node.targets)
+            value = node.value
+        elif isinstance(node, ast.AnnAssign):
+            targets = [node.target]
+            value = node.value
+
+        if value is None:
+            continue
+
+        for target in targets:
+            if isinstance(target, ast.Name) and target.id == _BANNED_CONSTANT_NAME:
+                return _collect_string_literals(value)
+
+    return frozenset()
+
+
+def _collect_string_literals(node: ast.expr) -> frozenset[str]:
+    """Collect every ``ast.Constant`` string inside a tuple/list/set expression."""
+    names: set[str] = set()
+    if isinstance(node, (ast.Tuple, ast.List, ast.Set)):
+        for element in node.elts:
+            if isinstance(element, ast.Constant) and isinstance(element.value, str):
+                names.add(element.value)
+    return frozenset(names)
+
+
+# ---------------------------------------------------------------------------
+# Compose / k8s scanning helpers
 # ---------------------------------------------------------------------------
 
 
@@ -191,10 +261,6 @@ def _iter_yaml_files(base: Path) -> list[Path]:
     return sorted(results)
 
 
-def _is_contract_file(path: Path) -> bool:
-    return path.name in _CONTRACT_FILENAMES
-
-
 def _is_compose_or_k8s_file(path: Path) -> bool:
     if _COMPOSE_NAME_PATTERN.match(path.name):
         return True
@@ -212,46 +278,23 @@ def _load_yaml_safely(path: Path) -> object | None:
         return None
 
 
-def _extract_contract_topics(path: Path) -> list[str]:
-    """Extract every ONEX topic declared by this contract's event_bus block."""
+def _extract_env_pairs(path: Path) -> list[tuple[str, str]]:
+    """Return every ``(var_name, value)`` pair from this file's env blocks."""
     doc = _load_yaml_safely(path)
-    if not isinstance(doc, dict):
+    if doc is None:
         return []
-    event_bus = doc.get("event_bus")
-    if not isinstance(event_bus, dict):
-        return []
-
-    topics: list[str] = []
-    for key in ("subscribe_topics", "publish_topics"):
-        raw = event_bus.get(key)
-        if isinstance(raw, list):
-            topics.extend(str(item) for item in raw if isinstance(item, str))
-
-    return [topic for topic in topics if _ONEX_TOPIC_PATTERN.match(topic)]
+    return _walk_env_pairs(doc)
 
 
-def _extract_compose_topic_refs(path: Path) -> list[tuple[str, str]]:
-    """Extract every ``(var_name, topic)`` pair whose value is an ONEX topic.
+def _walk_env_pairs(node: object) -> list[tuple[str, str]]:
+    """Yield every ``(name, value)`` pair discoverable as container env.
 
     Handles three forms:
 
     - docker-compose ``environment:`` dict (``KEY: value``)
-    - docker-compose ``environment:`` list (``- KEY=value`` or ``- KEY: value``)
+    - docker-compose ``environment:`` list (``- KEY=value`` or ``- {name, value}``)
     - k8s ``env:`` list of ``{name: KEY, value: VAL}``
     """
-    doc = _load_yaml_safely(path)
-    if doc is None:
-        return []
-
-    return [
-        (var_name, value)
-        for var_name, value in _walk_env_pairs(doc)
-        if _ONEX_TOPIC_PATTERN.match(value)
-    ]
-
-
-def _walk_env_pairs(node: object) -> list[tuple[str, str]]:
-    """Yield every ``(name, value)`` pair discoverable as container env."""
     pairs: list[tuple[str, str]] = []
 
     if isinstance(node, dict):
@@ -280,15 +323,6 @@ def _walk_env_pairs(node: object) -> list[tuple[str, str]]:
     return pairs
 
 
-def _topic_to_var_hint(topic: str) -> str:
-    """Produce a human-readable identifier for MISSING_VAR reports.
-
-    Contracts declare topics, not env var names; this surfaces the topic
-    itself as the "var_name" so consumers of the report can locate it.
-    """
-    return f"<missing-topic:{topic}>"
-
-
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -299,15 +333,16 @@ def main(argv: list[str] | None = None) -> int:
 
     Exit codes:
         0 — no drift
-        2 — drift detected
+        2 — drift detected or empty banned set (misconfigured)
     """
     import argparse
 
     parser = argparse.ArgumentParser(
         prog="check-banned-compose-vars",
         description=(
-            "Detect bidirectional compose↔contract topic drift. "
-            "Exits 2 if any BANNED_VAR or MISSING_VAR violation is found."
+            "Detect compose / k8s env vars whose name is in the kernel's "
+            "_DEPRECATED_TOPIC_ENV_VARS banned set. Exits 2 on any violation "
+            "or if the banned set is empty."
         ),
     )
     parser.add_argument(
@@ -318,6 +353,22 @@ def main(argv: list[str] | None = None) -> int:
         help="Files or directories to scan (default: current directory)",
     )
     parser.add_argument(
+        "--kernel-source",
+        type=Path,
+        required=True,
+        help=(
+            "Path to service_kernel.py whose _DEPRECATED_TOPIC_ENV_VARS "
+            "tuple is the canonical banned set."
+        ),
+    )
+    parser.add_argument(
+        "--extra-banned",
+        action="append",
+        default=[],
+        metavar="VAR_NAME",
+        help="Additional env var name to treat as banned (repeatable).",
+    )
+    parser.add_argument(
         "--quiet",
         "-q",
         action="store_true",
@@ -325,28 +376,37 @@ def main(argv: list[str] | None = None) -> int:
     )
     parsed = parser.parse_args(argv)
 
-    validator = ValidatorBannedComposeVars()
+    validator = ValidatorBannedComposeVars(
+        kernel_source_path=parsed.kernel_source,
+        extra_banned=frozenset(parsed.extra_banned),
+    )
+
+    banned = validator.banned_env_vars()
+    if not banned:
+        print(
+            f"ERROR: banned set is empty. Check --kernel-source "
+            f"({parsed.kernel_source}) contains {_BANNED_CONSTANT_NAME}.",
+            file=sys.stderr,
+        )
+        return 2
+
     violations = validator.check_paths(parsed.paths)
 
     for v in violations:
-        location = v.compose_path if v.compose_path is not None else v.contract_path
-        print(f"{location}: [{v.kind.value}] {v.var_name}: {v.message}")
+        print(f"{v.compose_path}: [{v.kind.value}] {v.var_name}: {v.message}")
 
     if not parsed.quiet:
         if violations:
-            banned = sum(
-                1 for v in violations if v.kind is EnumComposeDriftKind.BANNED_VAR
-            )
-            missing = sum(
-                1 for v in violations if v.kind is EnumComposeDriftKind.MISSING_VAR
-            )
             print(
-                f"\n{len(violations)} compose/contract drift violation(s): "
-                f"{banned} BANNED_VAR, {missing} MISSING_VAR.",
+                f"\n{len(violations)} banned compose env var violation(s) "
+                f"(banned set size: {len(banned)}).",
                 file=sys.stderr,
             )
         else:
-            print("No compose/contract drift found.", file=sys.stderr)
+            print(
+                f"No banned compose env vars found (banned set size: {len(banned)}).",
+                file=sys.stderr,
+            )
 
     return 2 if violations else 0
 
