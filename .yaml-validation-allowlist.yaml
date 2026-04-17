@@ -238,6 +238,17 @@ allowed_files:
     added: "2026-04-15"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/validation/receipt_gate.py"
+    reason: >-
+      Receipt-gate CI check loads two YAML artifacts it did not author: ticket contracts (downstream-provided,
+      varying schema across repos) and ModelDodReceipt artifacts. For receipts it does the load-then-validate
+      pattern (yaml.safe_load → ModelDodReceipt.model_validate). For contracts it intentionally parses
+      raw because ticket contract schema pre-dates Pydantic models in this repo; the gate only reads a
+      small subset (dod_evidence list). Will collapse to pure Pydantic once ModelTicketContract loader
+      is available. (OMN-TBD enforcement-by-receipt)
+    added: "2026-04-17"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
