@@ -58,8 +58,8 @@ TOPIC_LINEAR_SNAPSHOT_EVENT = "onex.evt.platform.linear-snapshot.v1"
 # CLI run-node command topics (used by ``onex run-node`` CLI for ad-hoc node dispatch)
 # These are informal topics used only by the CLI tool for direct node invocation.
 # Production node communication uses contract-defined topics from contract.yaml.
-TOPIC_CLI_RUN_NODE_CMD = "onex.cmd"
-TOPIC_CLI_RUN_NODE_RESPONSE = "onex.cmd.response"
+TOPIC_CLI_RUN_NODE_CMD = "onex.cmd.platform.run-node.v1"
+TOPIC_CLI_RUN_NODE_RESPONSE = "onex.evt.platform.run-node-response.v1"
 
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as
