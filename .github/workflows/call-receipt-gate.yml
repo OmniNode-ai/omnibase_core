@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Caller workflow that invokes the reusable receipt-gate on every PR targeting main.
+#
+# Receipt-gate (omnibase_core's .github/workflows/receipt-gate.yml) enforces
+# "Enforcement by Receipt" (OMN-TBD): every PR must cite a Linear ticket whose
+# dod_evidence items all have PASS ModelDodReceipt artifacts at the canonical
+# path on onex_change_control. Missing or failing receipts block merge.
+#
+# Required-status-check name (for branch-protection): `receipt-gate / verify`.
+# Branch-protection update happens after this workflow runs cleanly on a few
+# PRs — see follow-up ticket OMN-TBD for the protection flip.
+#
+# Eats its own dogfood: this PR itself is gated by the same receipt-gate once
+# the reusable workflow is present on main (PR #834).
+
+name: Receipt Gate
+
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  verify:
+    uses: ./.github/workflows/receipt-gate.yml
