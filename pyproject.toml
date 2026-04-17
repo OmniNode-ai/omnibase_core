@@ -275,6 +275,7 @@ ignore = [
 "src/omnibase_core/models/metadata/model_example_string_reduction_improvements.py" = ["T201"]
 "src/omnibase_core/services/service_validation_suite.py" = ["T201"]
 "src/omnibase_core/validation/validator_architecture.py" = ["T201"]
+"src/omnibase_core/validation/validator_banned_compose_vars.py" = ["T201"]
 "src/omnibase_core/validation/validator_base.py" = ["T201"]
 "src/omnibase_core/validation/validator_circular_import.py" = ["T201"]
 "src/omnibase_core/validation/validator_cli.py" = ["T201"]

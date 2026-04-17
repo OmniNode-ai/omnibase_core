@@ -56,6 +56,15 @@ allowed_files:
     added: "2026-01-10"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/validation/validator_banned_compose_vars.py"
+    reason: >-
+      Cross-schema drift validator - must parse heterogeneous YAML (docker-compose services, k8s Deployment/Pod
+      manifests, contract.yaml event_bus blocks) to extract env var names/values and topic strings. No
+      single Pydantic model covers all three schemas; the validator extracts flat (var_name, topic) tuples
+      for set comparison, not typed contract validation. (OMN-9062)
+    added: "2026-04-17"
+    review: "2026-06-13"
+
   - file: "src/omnibase_core/utils/util_safe_yaml_loader.py"
     reason: >-
       Foundational utility layer that bridges raw YAML parsing and Pydantic validation - provides safe

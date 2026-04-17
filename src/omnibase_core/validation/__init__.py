@@ -122,6 +122,9 @@ from .envelope_validator import EnvelopeValidator
 
 # Import Any type validator (OMN-1291)
 from .validator_any_type import ValidatorAnyType
+from .validator_banned_compose_vars import (
+    ValidatorBannedComposeVars,
+)
 
 # Import validator base class (OMN-1291)
 from .validator_base import (
@@ -490,6 +493,8 @@ __all__ = [
     # Local path validator — detect machine-specific absolute paths
     "ValidatorLocalPaths",
     "ModelLocalPathViolation",
+    # Banned compose vars validator — compose↔contract topic drift (OMN-9062)
+    "ValidatorBannedComposeVars",
     # Naming Convention validator (OMN-1291)
     "ValidatorNamingConvention",
     "RULE_FILE_NAMING",
