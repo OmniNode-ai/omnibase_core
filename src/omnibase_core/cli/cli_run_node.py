@@ -14,15 +14,25 @@ import uuid
 
 import click
 
+from omnibase_core.constants.constants_event_types import (
+    TOPIC_CLI_RUN_NODE_CMD,
+    TOPIC_CLI_RUN_NODE_RESPONSE,
+)
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import OnexError
+
 
 def _load_kafka_classes() -> tuple[type, type]:
     """Load KafkaProducer and KafkaConsumer via importlib to satisfy ADR-005 boundary."""
     try:
         mod = importlib.import_module("kafka")
     except ImportError as exc:
-        raise ImportError(
-            "kafka-python is required for run-node. "
-            "Install with: pip install kafka-python-ng"
+        raise OnexError(
+            code=EnumCoreErrorCode.IMPORT_ERROR,
+            message=(
+                "kafka-python is required for run-node. "
+                "Install with: uv add kafka-python-ng"
+            ),
         ) from exc
     return mod.KafkaProducer, mod.KafkaConsumer
 
@@ -52,7 +62,7 @@ def publish_and_poll(
     KafkaProducer, KafkaConsumer = _load_kafka_classes()
 
     correlation_id = str(uuid.uuid4())
-    response_topic = "onex.cmd.response"
+    response_topic = TOPIC_CLI_RUN_NODE_RESPONSE
 
     envelope = {
         "correlation_id": correlation_id,
@@ -65,7 +75,7 @@ def publish_and_poll(
         bootstrap_servers=bootstrap_servers,
         value_serializer=lambda v: json.dumps(v).encode(),
     )
-    producer.send("onex.cmd", value=envelope)
+    producer.send(TOPIC_CLI_RUN_NODE_CMD, value=envelope)
     producer.flush()
     producer.close()
 
@@ -82,7 +92,8 @@ def publish_and_poll(
     try:
         for message in consumer:
             if message.value.get("correlation_id") == correlation_id:
-                return message.value
+                value: dict[str, object] = dict(message.value)
+                return value
             if time.monotonic() > deadline:
                 return None
     finally:
@@ -127,7 +138,7 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
             timeout=timeout,
             bootstrap_servers=bootstrap_servers,
         )
-    except (ConnectionError, OSError, ImportError) as exc:
+    except (ConnectionError, OSError, ImportError, OnexError) as exc:
         _emit_error(node_id, str(exc))
 
     if response is None:
