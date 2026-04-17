@@ -31,6 +31,7 @@ from omnibase_core.models.omnimemory.model_failure_record import ModelFailureRec
 from omnibase_core.models.omnimemory.model_memory_diff import ModelMemoryDiff
 from omnibase_core.models.omnimemory.model_memory_snapshot import ModelMemorySnapshot
 from omnibase_core.models.omnimemory.model_subject_ref import ModelSubjectRef
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 pytestmark = pytest.mark.unit
 
@@ -126,7 +127,7 @@ def full_snapshot_data(
         "failures": (sample_failure,),
         "cost_ledger": sample_cost_ledger,
         "execution_annotations": {"step": "validation", "attempt": 1},
-        "schema_version": "1.0.0",
+        "schema_version": ModelSemVer.parse("1.0.0"),
         "content_hash": "",
         "created_at": datetime.now(UTC),
         "tags": ("production", "critical"),
@@ -185,7 +186,7 @@ class TestModelMemorySnapshotInstantiation:
         assert snapshot.decisions == ()
         assert snapshot.failures == ()
         assert snapshot.execution_annotations == {}
-        assert snapshot.schema_version == "1.0.0"
+        assert snapshot.schema_version == ModelSemVer.parse("1.0.0")
         assert snapshot.tags == ()
 
     def test_created_at_auto_generated(
@@ -612,12 +613,12 @@ class TestModelMemorySnapshotContentHash:
         snapshot1 = ModelMemorySnapshot(
             subject=sample_subject,
             cost_ledger=sample_cost_ledger,
-            schema_version="1.0.0",
+            schema_version=ModelSemVer.parse("1.0.0"),
         )
         snapshot2 = ModelMemorySnapshot(
             subject=sample_subject,
             cost_ledger=sample_cost_ledger,
-            schema_version="2.0.0",
+            schema_version=ModelSemVer.parse("2.0.0"),
         )
 
         assert snapshot1.compute_content_hash() != snapshot2.compute_content_hash()
