@@ -85,6 +85,15 @@ allowed_files:
     added: "2025-12-12"
     review: "2026-06-13"
 
+  - file: "scripts/pin_bump.py"
+    reason: >-
+      Cross-repo SHA pin-bump engine (OMN-9050). Parses docs/downstream-repos.yaml into the PinBumpManifest
+      Pydantic model via load_manifest(); yaml.safe_load() is immediately followed by PinBumpManifest.model_validate().
+      This is the exact load-then-validate pattern - Path.read_text() returns a string, so raw parsing
+      is required before Pydantic validation.
+    added: "2026-04-17"
+    review: "2026-06-13"
+
   - file: "src/omnibase_core/utils/util_invariant_yaml_parser.py"
     reason: >-
       Parses invariant set YAML files before Pydantic validation - utility for loading user-defined validation

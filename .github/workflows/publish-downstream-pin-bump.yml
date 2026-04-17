@@ -1,0 +1,194 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-9050: automate omnibase_core SHA pin bumps across all downstream repos.
+#
+# Trigger: push to main OR manual workflow_dispatch (for the 2026-04-17 bootstrap
+# sweep and any future on-demand replays).
+#
+# For each repo declared in docs/downstream-repos.yaml with pin_sites:
+#   1. Checkout the downstream repo with CROSS_REPO_PAT.
+#   2. Run scripts/pin_bump.py to rewrite every pin_site to the new SHA.
+#   3. Commit + push a bot/bump-omnibase-core-pin-<shortsha> branch.
+#   4. Open a PR titled "chore(ci): bump omnibase_core pin to <shortsha> [bot]".
+#   5. Enable auto-merge SQUASH via GraphQL so the PR merges on green CI.
+#
+# Failures on a single downstream repo must NOT cascade — each matrix leg is
+# `continue-on-error: true` so a bad pin surface on one repo doesn't block the
+# rest. The job summary enumerates failures for human triage.
+
+name: Publish downstream pin bumps
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      override_sha:
+        description: "Override SHA (defaults to github.sha). Must be 40-char hex."
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-downstream-pin-bump-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  enumerate-repos:
+    name: Enumerate downstream repos
+    runs-on: ubuntu-latest
+    outputs:
+      repos: ${{ steps.emit.outputs.repos }}
+      new_sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve new SHA
+        id: sha
+        run: |
+          if [ -n "${{ inputs.override_sha }}" ]; then
+            echo "sha=${{ inputs.override_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install parser deps
+        run: pip install pyyaml
+
+      - name: Emit matrix from manifest
+        id: emit
+        shell: python
+        run: |
+          import json, os, yaml
+          with open("docs/downstream-repos.yaml") as f:
+              mf = yaml.safe_load(f)
+          repos = [r["name"] for r in mf["repos"] if r.get("pin_sites")]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write("repos=" + json.dumps(repos) + "\n")
+
+  bump:
+    name: "Bump: ${{ matrix.repo }}"
+    needs: enumerate-repos
+    if: needs.enumerate-repos.outputs.repos != '[]'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJson(needs.enumerate-repos.outputs.repos) }}
+    env:
+      NEW_SHA: ${{ needs.enumerate-repos.outputs.new_sha }}
+      REPO: ${{ matrix.repo }}
+    steps:
+      - name: Checkout omnibase_core (manifest + script)
+        uses: actions/checkout@v6
+        with:
+          path: omnibase_core
+
+      - name: Checkout downstream (${{ matrix.repo }})
+        uses: actions/checkout@v6
+        with:
+          repository: OmniNode-ai/${{ matrix.repo }}
+          token: ${{ secrets.CROSS_REPO_PAT }}
+          path: downstream
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install script deps
+        run: pip install pyyaml pydantic
+
+      - name: Rewrite pins
+        id: rewrite
+        working-directory: downstream
+        run: |
+          python ../omnibase_core/scripts/pin_bump.py \
+            --manifest ../omnibase_core/docs/downstream-repos.yaml \
+            --repo "$REPO" \
+            --repo-root . \
+            --new-sha "$NEW_SHA"
+
+      - name: Detect changes
+        id: diff
+        working-directory: downstream
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit + push branch
+        if: steps.diff.outputs.changed == 'true'
+        working-directory: downstream
+        env:
+          GITHUB_TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+        run: |
+          SHORT="${NEW_SHA:0:12}"
+          BRANCH="bot/bump-omnibase-core-pin-${SHORT}"
+          git config user.name "onex-pin-bump-bot"
+          git config user.email "bot@omninode.ai"
+          git checkout -b "$BRANCH"
+          git add -A
+          git commit -m "chore(ci): bump omnibase_core pin to ${SHORT} [bot] [OMN-9050]"
+          git push -u origin "$BRANCH" --force-with-lease
+
+      - name: Open PR + enable auto-merge
+        if: steps.diff.outputs.changed == 'true'
+        working-directory: downstream
+        env:
+          GITHUB_TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+        run: |
+          SHORT="${NEW_SHA:0:12}"
+          BRANCH="bot/bump-omnibase-core-pin-${SHORT}"
+          TITLE="chore(ci): bump omnibase_core pin to ${SHORT} [bot]"
+          BODY=$(cat <<EOF
+          Automated pin bump emitted by \`omnibase_core/publish-downstream-pin-bump.yml\`.
+
+          - New SHA: \`${NEW_SHA}\`
+          - Source: https://github.com/OmniNode-ai/omnibase_core/commit/${NEW_SHA}
+          - Tracking: OMN-9050
+
+          Will auto-merge on green CI. If CI regresses, DO NOT manually bump the pin to
+          paper over the failure — diagnose the handshake break instead.
+          EOF
+          )
+          PR_URL=$(gh pr create \
+            --repo "OmniNode-ai/${REPO}" \
+            --head "$BRANCH" \
+            --base main \
+            --title "$TITLE" \
+            --body "$BODY")
+          echo "Created: $PR_URL"
+
+          PR_NUMBER=$(echo "$PR_URL" | sed -E 's#.*/pull/([0-9]+).*#\1#')
+          PR_ID=$(gh api "repos/OmniNode-ai/${REPO}/pulls/${PR_NUMBER}" --jq '.node_id')
+          gh api graphql -f query='mutation($id:ID!){enablePullRequestAutoMerge(input:{pullRequestId:$id,mergeMethod:SQUASH}){pullRequest{number}}}' -f id="$PR_ID"
+
+      - name: Report no-op
+        if: steps.diff.outputs.changed == 'false'
+        run: echo "No changes for ${REPO} — pins already at ${NEW_SHA}."
+
+  summary:
+    name: Publish summary
+    needs: [enumerate-repos, bump]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo outcome
+        run: |
+          echo "Pin bump run for SHA ${{ needs.enumerate-repos.outputs.new_sha }}"
+          echo "Repos attempted: ${{ needs.enumerate-repos.outputs.repos }}"
+          echo "Per-repo outcomes are in the bump matrix; failures are non-fatal but visible here."
