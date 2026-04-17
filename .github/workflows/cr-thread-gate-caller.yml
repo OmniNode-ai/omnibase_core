@@ -1,0 +1,26 @@
+name: CR Thread Gate (caller)
+# Caller workflow for omniclaude's own PRs.
+# Produces required status check: "gate / CodeRabbit Thread Check"
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted, dismissed]
+  pull_request_review_comment:
+    types: [created, edited, deleted]
+  issue_comment:
+    types: [created, edited, deleted]
+  merge_group:
+    types: [checks_requested]
+
+jobs:
+  gate:
+    if: >-
+      github.event_name == 'merge_group' ||
+      ((github.event_name != 'issue_comment' || github.event.issue.pull_request != null) &&
+      github.actor != 'dependabot[bot]')
+    uses: OmniNode-ai/omniclaude/.github/workflows/cr-thread-gate.yml@main
+    with:
+      pr-number: ${{ format('{0}', github.event.pull_request.number || github.event.issue.number || 0) }}
+    secrets:
+      CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}

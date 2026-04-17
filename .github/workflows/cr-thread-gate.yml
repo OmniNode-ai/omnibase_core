@@ -1,20 +1,79 @@
 name: CR Thread Gate
+# Reusable workflow — call via:
+#   uses: OmniNode-ai/omniclaude/.github/workflows/cr-thread-gate.yml@main
+# Required status check string: "gate / CodeRabbit Thread Check"
+# (produced by callers whose job key is named 'gate:' and uses this workflow)
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  pull_request_review:
-    types: [submitted, dismissed]
-  pull_request_review_comment:
-    types: [created, edited, deleted]
-  pull_request_review_thread:
-    types: [resolved, unresolved]
-  issue_comment:
-    types: [created, edited, deleted]
+  workflow_call:
+    secrets:
+      CROSS_REPO_PAT:
+        description: "GitHub PAT with read:discussion scope for CR thread queries"
+        required: false
+      github-token:
+        description: "Deprecated: pass CROSS_REPO_PAT instead"
+        required: false
+    inputs:
+      repo:
+        description: "Target repo name (owner/repo or bare name). Defaults to caller's github.repository."
+        required: false
+        type: string
+        default: ""
+      pr-number:
+        description: "Pull request number to check. Pass '0' or empty to skip (merge_group context)."
+        required: false
+        type: string
+        default: ""
+
 jobs:
   gate:
-    if: (github.event_name != 'issue_comment' || github.event.issue.pull_request != null) && github.actor != 'dependabot[bot]'
-    uses: OmniNode-ai/omniclaude/.github/workflows/cr-thread-gate.yml@main
-    with:
-      pr-number: ${{ github.event.pull_request.number || github.event.issue.number }}
-    secrets:
-      CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
+    name: CodeRabbit Thread Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout omniclaude scripts
+        uses: actions/checkout@v4
+        with:
+          repository: OmniNode-ai/omniclaude
+          ref: main
+          sparse-checkout: scripts/check-unresolved-threads.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Resolve repo name
+        id: resolve-repo
+        run: |
+          REPO="${{ inputs.repo }}"
+          [ -z "$REPO" ] && REPO="${{ github.repository }}"
+          # Strip owner prefix if present (owner/repo -> repo)
+          echo "repo=${REPO##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve PR number
+        id: resolve-pr
+        run: |
+          PR="${{ inputs.pr-number }}"
+          if [ -z "$PR" ]; then
+            PR="${{ github.event.pull_request.number }}"
+          fi
+          if [ -z "$PR" ]; then
+            PR="${{ github.event.issue.number }}"
+          fi
+          echo "pr=$PR" >> "$GITHUB_OUTPUT"
+
+      - name: Check unresolved CodeRabbit threads
+        env:
+          GH_TOKEN: ${{ secrets.CROSS_REPO_PAT || secrets.github-token || secrets.GITHUB_TOKEN }}
+        run: |
+          PR="${{ steps.resolve-pr.outputs.pr }}"
+          if [ -z "$PR" ] || [ "$PR" = "0" ]; then
+            echo "No PR number — skipping (merge_group context)."
+            exit 0
+          fi
+          chmod +x scripts/check-unresolved-threads.sh
+          COUNT=$(bash scripts/check-unresolved-threads.sh \
+            "${{ github.repository_owner }}" \
+            "${{ steps.resolve-repo.outputs.repo }}" \
+            "$PR")
+          echo "Unresolved CodeRabbit threads: $COUNT"
+          if [ "$COUNT" -gt 0 ]; then
+            echo "::error::$COUNT unresolved CodeRabbit thread(s). Resolve all CR threads before merging."
+            exit 1
+          fi
+          echo "All CodeRabbit threads resolved."
