@@ -69,6 +69,7 @@ class ModelAgentDefinition(BaseModel):
     model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
 
     # Required fields (>90% presence)
+    # string-version-ok: YAML-deserialization boundary; agent definition files on disk carry plain version strings
     schema_version: str = Field(..., description="Schema version")
     agent_type: str = Field(..., description="Agent type identifier")
     agent_identity: ModelAgentIdentity

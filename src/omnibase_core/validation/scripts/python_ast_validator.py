@@ -106,11 +106,14 @@ class PythonASTValidator(ast.NodeVisitor):
             "command_version",  # CLI command versions
             "node_specific_version",  # Node-specific version metadata
             "database_version",  # External database version (Neo4j, Memgraph, etc.)
-            # METADATA_VERSIONS (3 fields in model_node_metadata_block.py)
+            # METADATA_VERSIONS (2 fields in model_node_metadata_block.py)
             # These use regex constraints for legacy compatibility
             "metadata_version",  # Metadata block version
             "protocol_version",  # Protocol version
-            "schema_version",  # Schema version
+            # Note: schema_version is intentionally NOT whitelisted here. Fields named
+            # schema_version that carry semantic versions MUST use ModelSemVer. Fields at
+            # serialization/YAML-deserialization boundaries that cannot use ModelSemVer must
+            # carry an inline `# string-version-ok: <reason>` bypass comment. [OMN-9021]
             # Note: generic "version" field not whitelisted globally to catch other violations
             # EXECUTION_CONTEXT_FIELDS (flexible identifiers)
             # See: src/omnibase_core/models/compute/model_compute_execution_context.py
