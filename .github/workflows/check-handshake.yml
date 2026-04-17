@@ -24,7 +24,7 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repo
@@ -36,3 +36,18 @@ jobs:
 
       - name: Check architecture handshake
         run: bash architecture-handshakes/check-handshake.sh .
+
+      # OMN-9115: Enforce validator-requirements.yaml so the compliance-gate
+      # spec shipped by OMN-9051 is actually consumed. Runs against
+      # omnibase_core itself; downstream repos copy this workflow and change
+      # --repo accordingly (OMN-9049 universal rollout).
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Enforce validator-requirements.yaml
+        run: |
+          uv sync --all-extras
+          uv run python -m omnibase_core.validation.validator_requirements_consumer \
+            --repo omnibase_core \
+            --repo-root . \
+            --baseline architecture-handshakes/validator-requirements-baseline.yaml
