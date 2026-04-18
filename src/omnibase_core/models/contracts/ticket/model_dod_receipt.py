@@ -125,6 +125,12 @@ class ModelDodReceipt(BaseModel):
     @field_validator("commit_sha")
     @classmethod
     def _validate_commit_sha(cls, v: str) -> str:
+        # Explicit length + case checks before regex, so uppercase/short/long
+        # strings fail identically on every test-runner configuration.
+        if not (7 <= len(v) <= 40):
+            raise ValueError(f"commit_sha must be 7-40 hex chars (git SHA), got: {v!r}")
+        if not all(c in "0123456789abcdef" for c in v):
+            raise ValueError(f"commit_sha must be 7-40 hex chars (git SHA), got: {v!r}")
         if not _SHA_RE.match(v):
             raise ValueError(f"commit_sha must be 7-40 hex chars (git SHA), got: {v!r}")
         return v
