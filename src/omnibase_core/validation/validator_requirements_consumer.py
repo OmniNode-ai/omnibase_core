@@ -49,9 +49,13 @@ from pathlib import Path
 from typing import Final
 
 import yaml
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_validator_requirement_gap_kind import (
     EnumValidatorRequirementGapKind,
+)
+from omnibase_core.enums.enum_validator_requirement_scope import (
+    EnumValidatorRequirementScope,
 )
 from omnibase_core.models.validation.model_validator_requirement_entry import (
     ModelValidatorRequirementEntry,
@@ -75,9 +79,6 @@ _CANONICAL_SPEC_PATH: Final[Path] = (
 _SILENT_SKIP_RE: Final[re.Pattern[str]] = re.compile(
     r"(\|\||;)\s*(true\b|exit\s*0\b|:(?:\s|$|[^A-Za-z0-9_]))",
 )
-
-_SCOPE_REQUIRED: Final[str] = "required"
-
 
 # Internal carrier for a single ``repos[*].hooks[*]`` entry from
 # ``.pre-commit-config.yaml``. Kept as a plain tuple (hook_id, entry) so the
@@ -139,10 +140,14 @@ class ValidatorRequirementsConsumer:
             raise ValueError(  # error-ok: spec shape validation at load boundary
                 "spec.required_validators must be a mapping"
             )
-        typed: dict[str, ModelValidatorRequirementEntry] = {
-            name: ModelValidatorRequirementEntry.model_validate(entry)
-            for name, entry in raw_validators.items()
-        }
+        typed: dict[str, ModelValidatorRequirementEntry] = {}
+        for name, entry in raw_validators.items():
+            try:
+                typed[name] = ModelValidatorRequirementEntry.model_validate(entry)
+            except ValidationError as exc:
+                raise ValueError(  # error-ok: spec shape validation at load boundary
+                    f"spec.required_validators[{name!r}] is malformed: {exc}"
+                ) from exc
         # known_repos is the canonical governed-repo list. Missing => permissive.
         raw_known = raw.get("known_repos")
         known: frozenset[str]
@@ -253,7 +258,7 @@ def _check_validator(
 
     matched_hooks = [h for h in pre_commit_hooks if _any_substring(h[0], hook_ids)]
 
-    if entry.pre_commit == _SCOPE_REQUIRED and not matched_hooks:
+    if entry.pre_commit is EnumValidatorRequirementScope.REQUIRED and not matched_hooks:
         yield ModelValidatorRequirementGap(
             repo=repo_name,
             validator=validator_name,
@@ -275,8 +280,9 @@ def _check_validator(
                 ),
             )
 
-    if entry.ci_workflow == _SCOPE_REQUIRED and not _any_substring(
-        ci_haystack, ci_keywords
+    if (
+        entry.ci_workflow is EnumValidatorRequirementScope.REQUIRED
+        and not _any_substring(ci_haystack, ci_keywords)
     ):
         yield ModelValidatorRequirementGap(
             repo=repo_name,

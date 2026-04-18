@@ -125,6 +125,70 @@ def test_consumer_rejects_malformed_spec(tmp_path: Path) -> None:
         ValidatorRequirementsConsumer.from_spec_path(bad)
 
 
+def test_consumer_normalizes_entry_validation_to_value_error(tmp_path: Path) -> None:
+    """A malformed validator entry must surface as ``ValueError`` at the loader
+    boundary (documented contract) rather than leaking Pydantic's
+    ``ValidationError`` to callers."""
+    bad = tmp_path / "bad_entry.yaml"
+    # pre_commit must be 'required'|'optional' (EnumValidatorRequirementScope);
+    # 'warn' is a scope typo that used to be accepted when the field was a bare str.
+    bad.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": {"major": 1, "minor": 1, "patch": 0},
+                "required_validators": {
+                    "bogus-validator": {
+                        "description": "x",
+                        "central_source": "x",
+                        "pre_commit": "warn",
+                        "ci_workflow": "required",
+                        "required_check_on_main": None,
+                        "silent_skip_allowed": False,
+                        "excludes": {"allowed": [], "forbidden": []},
+                        "applies_to_repos": "all",
+                    }
+                },
+                "metadata": {},
+                "known_repos": [],
+            }
+        )
+    )
+    with pytest.raises(
+        ValueError, match=r"spec.required_validators\['bogus-validator'\] is malformed"
+    ):
+        ValidatorRequirementsConsumer.from_spec_path(bad)
+
+
+def test_consumer_rejects_unknown_entry_field(tmp_path: Path) -> None:
+    """Unknown fields on a validator entry must fail loud (extra='forbid') so
+    schema drift surfaces at load time rather than silently being ignored."""
+    bad = tmp_path / "extra_field.yaml"
+    bad.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": {"major": 1, "minor": 1, "patch": 0},
+                "required_validators": {
+                    "drifty-validator": {
+                        "description": "x",
+                        "central_source": "x",
+                        "pre_commit": "required",
+                        "ci_workflow": "required",
+                        "required_check_on_main": None,
+                        "silent_skip_allowed": False,
+                        "excludes": {"allowed": [], "forbidden": []},
+                        "applies_to_repos": "all",
+                        "unexpected_drift_field": "oops",
+                    }
+                },
+                "metadata": {},
+                "known_repos": [],
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="drifty-validator"):
+        ValidatorRequirementsConsumer.from_spec_path(bad)
+
+
 # ---------------------------------------------------------------------------
 # Per-repo compliance scanning
 # ---------------------------------------------------------------------------
