@@ -87,10 +87,33 @@ jobs:
             uv pip install --system omnibase-core
           fi
 
-      - name: Run Receipt-Gate
+      - name: Resolve PR body
+        id: resolve_body
+        # merge_group events do not carry pull_request.body. Fetch it from the
+        # merge_group head_ref (format: pr-<num>-<sha>) via the GitHub API so
+        # the gate evaluates the same body across pull_request and merge_group.
         env:
-          PR_BODY: ${{ github.event.pull_request.body }}
+          GH_TOKEN: ${{ github.token }}
+          PR_EVENT_BODY: ${{ github.event.pull_request.body }}
+          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
         run: |
+          set -e
+          if [ -n "$PR_EVENT_BODY" ]; then
+            printf '%s' "$PR_EVENT_BODY" > /tmp/pr_body.txt
+          elif [ -n "$MERGE_GROUP_HEAD_REF" ]; then
+            pr_num="$(printf '%s' "$MERGE_GROUP_HEAD_REF" | sed -E 's@^.*/pr-([0-9]+)-.*$@\1@')"
+            if [ -n "$pr_num" ] && [ "$pr_num" != "$MERGE_GROUP_HEAD_REF" ]; then
+              gh pr view "$pr_num" --repo "${{ github.repository }}" --json body --jq '.body' > /tmp/pr_body.txt
+            else
+              : > /tmp/pr_body.txt
+            fi
+          else
+            : > /tmp/pr_body.txt
+          fi
+
+      - name: Run Receipt-Gate
+        run: |
+          PR_BODY="$(cat /tmp/pr_body.txt)"
           python -m omnibase_core.validation.receipt_gate_cli \
             --pr-body "$PR_BODY" \
             --contracts-dir ".onex_change_control/${{ inputs.contracts-dir }}" \
