@@ -11,12 +11,12 @@
 # pattern for precedent). Required status-check name: `receipt-gate / verify`.
 #
 # Inputs:
-#   contracts-dir:  path to ticket contract YAMLs (default:
-#                   onex_change_control/contracts — assumes the repo has a
-#                   submodule/pip-installed copy of onex_change_control OR the
-#                   workflow checks out that repo into a sibling directory)
-#   receipts-dir:   path to ModelDodReceipt YAMLs (default:
-#                   onex_change_control/drift/dod_receipts)
+#   contracts-dir:  path to ticket contract YAMLs, relative to the
+#                   onex_change_control checkout (default: contracts). The
+#                   Run Receipt-Gate step always prepends `.onex_change_control/`
+#                   since this workflow checks that repo out at that path.
+#   receipts-dir:   path to ModelDodReceipt YAMLs, relative to the
+#                   onex_change_control checkout (default: drift/dod_receipts).
 #
 # Secrets:
 #   (none — receipts + contracts are in-repo files, no API calls required)
@@ -27,15 +27,15 @@ on:
   workflow_call:
     inputs:
       contracts-dir:
-        description: Path to the contracts directory on disk.
+        description: Path to the contracts directory on disk, relative to the onex_change_control checkout.
         type: string
         required: false
-        default: onex_change_control/contracts
+        default: contracts
       receipts-dir:
-        description: Path to the dod_receipts directory on disk.
+        description: Path to the dod_receipts directory on disk, relative to the onex_change_control checkout.
         type: string
         required: false
-        default: onex_change_control/drift/dod_receipts
+        default: drift/dod_receipts
 
 permissions:
   contents: read
@@ -101,12 +101,17 @@ jobs:
         # Never fall back to PyPI — the published package has a broken transitive
         # dep (git+https omnibase-compat URL) that fails in CI.
         run: |
+          # --refresh forces uv to rebuild from the editable source even when a
+          # same-version wheel is cached locally or resolvable from PyPI. Without
+          # it, uv can resolve ./path against PyPI when pyproject.toml `version`
+          # matches a published release (e.g. feature lands on main without a
+          # version bump — see OMN-9192).
           if [ -f "./pyproject.toml" ] && grep -qE '^\s*name\s*=\s*["\x27]omnibase[-_.]core["\x27]' ./pyproject.toml 2>/dev/null; then
-            uv pip install --system -e .
+            uv pip install --system --refresh -e .
           elif [ -d "./omnibase_core" ] && [ -f "./omnibase_core/pyproject.toml" ]; then
-            uv pip install --system -e ./omnibase_compat -e ./omnibase_core
+            uv pip install --system --refresh -e ./omnibase_compat -e ./omnibase_core
           elif [ -f "./.receipt-gate-deps/omnibase_core/pyproject.toml" ]; then
-            uv pip install --system -e ./.receipt-gate-deps/omnibase_compat -e ./.receipt-gate-deps/omnibase_core
+            uv pip install --system --refresh -e ./.receipt-gate-deps/omnibase_compat -e ./.receipt-gate-deps/omnibase_core
           else
             echo "::error::omnibase_core not installable — no source checkout available"
             exit 1
