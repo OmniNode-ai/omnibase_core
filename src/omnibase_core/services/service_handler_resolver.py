@@ -60,7 +60,7 @@ _CONCRETE_PARAM_KINDS = (
 )
 
 
-class HandlerResolver:
+class ServiceHandlerResolver:
     """Ordered-precedence resolver for handler instantiation.
 
     Pure in its context argument — holds no internal state. Multiple
@@ -215,4 +215,4 @@ def _log_overlap_if_any(context: ModelHandlerResolverContext, *, chose: str) -> 
         )
 
 
-__all__ = ["HandlerResolver"]
+__all__ = ["ServiceHandlerResolver"]

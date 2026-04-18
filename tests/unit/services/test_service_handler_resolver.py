@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Unit tests for HandlerResolver (OMN-9199 Task 3).
+"""Unit tests for ServiceHandlerResolver (OMN-9199 Task 3).
 
 Each test exercises one precedence branch in isolation plus the negative
 cases described in the plan:
@@ -34,7 +34,7 @@ from omnibase_core.errors.error_service_resolution import ServiceResolutionError
 from omnibase_core.models.resolver.model_handler_resolver_context import (
     ModelHandlerResolverContext,
 )
-from omnibase_core.services.service_handler_resolver import HandlerResolver
+from omnibase_core.services.service_handler_resolver import ServiceHandlerResolver
 
 
 class _HandlerNoDeps:
@@ -72,7 +72,7 @@ def test_step_1_local_ownership_skip_when_not_owned_here() -> None:
         ownership_query=ownership,
     )
 
-    result = HandlerResolver().resolve(ctx)
+    result = ServiceHandlerResolver().resolve(ctx)
 
     assert (
         result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP
@@ -97,7 +97,7 @@ def test_step_1_local_ownership_owned_here_falls_through() -> None:
         ownership_query=ownership,
     )
 
-    result = HandlerResolver().resolve(ctx)
+    result = ServiceHandlerResolver().resolve(ctx)
 
     assert result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_ZERO_ARG
     assert isinstance(result.handler_instance, _HandlerNoDeps)
@@ -121,7 +121,7 @@ def test_step_1_duck_typed_ownership_query_without_method_ignored() -> None:
     )
 
     # Should skip Step 1 and fall through to Step 5 (zero-arg).
-    result = HandlerResolver().resolve(ctx)
+    result = ServiceHandlerResolver().resolve(ctx)
     assert result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_ZERO_ARG
 
 
@@ -143,7 +143,7 @@ def test_step_2_explicit_dep_map_wins_over_container() -> None:
         container=container,
     )
 
-    result = HandlerResolver().resolve(ctx)
+    result = ServiceHandlerResolver().resolve(ctx)
 
     assert result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_NODE_REGISTRY
     assert isinstance(result.handler_instance, _HandlerWithDeps)
@@ -164,7 +164,7 @@ def test_step_3_container_used_when_no_explicit_deps() -> None:
         container=container,
     )
 
-    result = HandlerResolver().resolve(ctx)
+    result = ServiceHandlerResolver().resolve(ctx)
 
     assert result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_CONTAINER
     assert result.handler_instance is expected
@@ -185,7 +185,7 @@ def test_step_3_container_miss_falls_through_to_zero_arg() -> None:
         container=container,
     )
 
-    result = HandlerResolver().resolve(ctx)
+    result = ServiceHandlerResolver().resolve(ctx)
 
     assert result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_ZERO_ARG
     assert isinstance(result.handler_instance, _HandlerNoDeps)
@@ -206,7 +206,7 @@ def test_step_3_container_internal_bug_propagates() -> None:
     )
 
     with pytest.raises(KeyError):
-        HandlerResolver().resolve(ctx)
+        ServiceHandlerResolver().resolve(ctx)
 
 
 @pytest.mark.unit
@@ -226,7 +226,7 @@ def test_step_3_container_without_get_service_skipped() -> None:
     )
 
     # Should not raise AttributeError; falls through to zero-arg.
-    result = HandlerResolver().resolve(ctx)
+    result = ServiceHandlerResolver().resolve(ctx)
     assert result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_ZERO_ARG
 
 
@@ -242,7 +242,7 @@ def test_step_4_event_bus_injection() -> None:
         event_bus=event_bus,
     )
 
-    result = HandlerResolver().resolve(ctx)
+    result = ServiceHandlerResolver().resolve(ctx)
 
     assert result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_EVENT_BUS
     assert isinstance(result.handler_instance, _HandlerEventBusOnly)
@@ -259,7 +259,7 @@ def test_step_5_zero_arg_construction() -> None:
         node_name="node_foo",
     )
 
-    result = HandlerResolver().resolve(ctx)
+    result = ServiceHandlerResolver().resolve(ctx)
 
     assert result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_ZERO_ARG
     assert isinstance(result.handler_instance, _HandlerNoDeps)
@@ -278,7 +278,7 @@ def test_step_6_type_error_when_unresolvable() -> None:
     )
 
     with pytest.raises(TypeError) as exc:
-        HandlerResolver().resolve(ctx)
+        ServiceHandlerResolver().resolve(ctx)
 
     msg = str(exc.value)
     assert "_HandlerWithDeps" in msg
@@ -301,7 +301,7 @@ def test_explicit_dep_type_error_surfaces_missing_key() -> None:
     )
 
     with pytest.raises(TypeError) as exc:
-        HandlerResolver().resolve(ctx)
+        ServiceHandlerResolver().resolve(ctx)
 
     assert "reducer" in str(exc.value)
 
@@ -331,7 +331,7 @@ def test_conflict_overlap_logs_debug(
         logging.DEBUG,
         logger="omnibase_core.services.service_handler_resolver",
     ):
-        HandlerResolver().resolve(ctx)
+        ServiceHandlerResolver().resolve(ctx)
 
     assert any(
         "shadowed" in rec.message.lower() or "overlap" in rec.message.lower()
@@ -352,7 +352,7 @@ def test_resolver_is_pure_in_context() -> None:
         contract_name="node_foo",
         node_name="node_foo",
     )
-    resolver = HandlerResolver()
+    resolver = ServiceHandlerResolver()
 
     first = resolver.resolve(ctx)
     second = resolver.resolve(ctx)
@@ -385,7 +385,7 @@ def test_skip_precedes_node_registry() -> None:
         },
     )
 
-    result = HandlerResolver().resolve(ctx)
+    result = ServiceHandlerResolver().resolve(ctx)
 
     assert (
         result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP
