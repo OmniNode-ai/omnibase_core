@@ -21,6 +21,8 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.ticket.model_ticket_workflow_state import (
     ModelTicketWorkflowState,
 )
@@ -87,14 +89,46 @@ def update_description_with_workflow_state(
     return description.rstrip() + contract_block
 
 
+def _validate_ticket_id(ticket_id: str) -> None:
+    """Reject ticket ids that would escape the tickets root on disk.
+
+    A valid id is a single, relative path segment containing no separators.
+    Anything else could redirect writes outside ``$ONEX_STATE_DIR/tickets``.
+    """
+    ticket_path = Path(ticket_id)
+    if (
+        not ticket_id
+        or ticket_path.is_absolute()
+        or len(ticket_path.parts) != 1
+        or ticket_path.parts[0] in {".", ".."}
+        or "/" in ticket_id
+        or "\\" in ticket_id
+    ):
+        raise ModelOnexError(
+            "ticket_id must be a single relative path segment",
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+        )
+
+
 def _tickets_dir() -> Path:
     """Resolve the on-disk tickets directory.
 
     Honors ``ONEX_STATE_DIR`` when set; otherwise falls back to
-    ``~/.onex_state``. Never reads or writes ``~/.claude/``.
+    ``~/.onex_state``. Any value that resolves into ``~/.claude`` is rejected
+    so agent-session writes can never land there (CLAUDE.md rule).
     """
     base = os.environ.get("ONEX_STATE_DIR")
-    root = Path(base) if base else Path.home() / ".onex_state"
+    root = (
+        Path(base).expanduser().resolve(strict=False)
+        if base
+        else (Path.home() / ".onex_state").resolve(strict=False)
+    )
+    claude_root = (Path.home() / ".claude").resolve(strict=False)
+    if root == claude_root or claude_root in root.parents:
+        raise ModelOnexError(
+            "ONEX_STATE_DIR must not point to ~/.claude",
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+        )
     return root / "tickets"
 
 
@@ -105,6 +139,7 @@ def persist_workflow_state_locally(
 
     Writes atomically via a ``.tmp`` sibling followed by ``os.replace``.
     """
+    _validate_ticket_id(ticket_id)
     target_dir = _tickets_dir() / ticket_id
     target_dir.mkdir(parents=True, exist_ok=True)
 

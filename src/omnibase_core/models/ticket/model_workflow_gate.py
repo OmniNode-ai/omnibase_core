@@ -7,6 +7,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.ticket.enum_ticket_types import (
+    EnumGateKind,
+    EnumTicketStepStatus,
+)
+
 
 class ModelWorkflowGate(BaseModel):
     """A human or policy gate declared during the SPEC phase."""
@@ -15,9 +20,9 @@ class ModelWorkflowGate(BaseModel):
 
     id: str = Field(default="")
     title: str = Field(default="")
-    kind: str = Field(default="human_approval")
+    kind: EnumGateKind = Field(default=EnumGateKind.HUMAN_APPROVAL)
     required: bool = Field(default=True)
-    status: str = Field(default="pending")
+    status: EnumTicketStepStatus = Field(default=EnumTicketStepStatus.PENDING)
     notes: str | None = Field(default=None)
     resolved_at: str | None = Field(default=None)
 

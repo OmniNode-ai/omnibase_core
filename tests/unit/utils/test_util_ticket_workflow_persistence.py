@@ -13,6 +13,7 @@ import yaml
 from omnibase_core.enums.ticket.enum_ticket_workflow_phase import (
     EnumTicketWorkflowPhase,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.ticket.model_ticket_workflow_state import (
     ModelTicketWorkflowState,
     ModelWorkflowQuestion,
@@ -210,3 +211,52 @@ class TestPersistWorkflowStateLocally:
         contract_path = tmp_path / "tickets" / "OMN-1234" / "contract.yaml"
         parsed = yaml.safe_load(contract_path.read_text())
         assert parsed["phase"] == "done"
+
+
+@pytest.mark.unit
+class TestTicketIdValidation:
+    """``ticket_id`` must be a single relative path segment (path-traversal guard)."""
+
+    @pytest.mark.parametrize(
+        "bad_id",
+        [
+            "",
+            "..",
+            ".",
+            "../escape",
+            "/etc/passwd",
+            "nested/OMN-1",
+            "back\\slash",
+        ],
+    )
+    def test_rejects_unsafe_ticket_id(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bad_id: str
+    ) -> None:
+        monkeypatch.setenv("ONEX_STATE_DIR", str(tmp_path))
+        with pytest.raises(ModelOnexError, match="ticket_id must be a single"):
+            persist_workflow_state_locally(bad_id, _sample_state())
+
+
+@pytest.mark.unit
+class TestClaudeRootRejection:
+    """``_tickets_dir`` must reject any config that resolves under ``~/.claude``."""
+
+    def test_rejects_direct_claude_path(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        fake_home = tmp_path / "home"
+        fake_home.mkdir()
+        monkeypatch.setattr(Path, "home", staticmethod(lambda: fake_home))
+        monkeypatch.setenv("ONEX_STATE_DIR", str(fake_home / ".claude"))
+        with pytest.raises(ModelOnexError, match=r"must not point to ~/\.claude"):
+            persist_workflow_state_locally("OMN-1234", _sample_state())
+
+    def test_rejects_claude_subdir(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        fake_home = tmp_path / "home"
+        fake_home.mkdir()
+        monkeypatch.setattr(Path, "home", staticmethod(lambda: fake_home))
+        monkeypatch.setenv("ONEX_STATE_DIR", str(fake_home / ".claude" / "nested"))
+        with pytest.raises(ModelOnexError, match=r"must not point to ~/\.claude"):
+            persist_workflow_state_locally("OMN-1234", _sample_state())

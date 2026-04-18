@@ -202,3 +202,34 @@ class TestIsDone:
             ],
         )
         assert state.is_done() is True
+
+
+@pytest.mark.unit
+class TestGateFieldStrongTyping:
+    """Gate ``kind`` / ``status`` must reject values outside their enums."""
+
+    def test_invalid_kind_rejected(self) -> None:
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):
+            ModelWorkflowGate(id="g1", kind="not_a_kind")  # type: ignore[arg-type]
+
+    def test_invalid_status_rejected(self) -> None:
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):
+            ModelWorkflowGate(id="g1", status="banana")  # type: ignore[arg-type]
+
+    def test_valid_enum_values_accepted(self) -> None:
+        from omnibase_core.enums.ticket.enum_ticket_types import (
+            EnumGateKind,
+            EnumTicketStepStatus,
+        )
+
+        gate = ModelWorkflowGate(
+            id="g1",
+            kind=EnumGateKind.POLICY_CHECK,
+            status=EnumTicketStepStatus.APPROVED,
+        )
+        assert gate.kind == EnumGateKind.POLICY_CHECK
+        assert gate.status == EnumTicketStepStatus.APPROVED
