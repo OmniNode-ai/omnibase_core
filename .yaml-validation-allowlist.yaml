@@ -258,6 +258,14 @@ allowed_files:
     added: "2026-04-17"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/cli/cli_refresh_credentials.py"
+    reason: >-
+      Loads ~/.onex/config.yaml as free-form user configuration. No fixed Pydantic schema exists for this
+      file — the config contains arbitrary AWS section fields (secret_name, region) and is read to extract
+      raw key-value pairs for Secrets Manager lookup. (OMN-9011)
+    added: "2026-04-17"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

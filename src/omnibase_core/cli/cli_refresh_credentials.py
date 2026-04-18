@@ -25,13 +25,13 @@ def _fetch_aws_secrets(secret_name: str, region: str) -> dict[str, str]:
     try:
         import boto3
     except ImportError as exc:
-        raise ImportError(
+        raise ImportError(  # error-ok: CLI boundary — propagates boto3 absence as user-facing install hint
             "boto3 is required for credential refresh. Install with: pip install boto3"
         ) from exc
 
     client = boto3.client("secretsmanager", region_name=region)
     response = client.get_secret_value(SecretId=secret_name)
-    return json.loads(response["SecretString"])
+    return dict(json.loads(response["SecretString"]))
 
 
 @click.command("refresh-credentials")
@@ -53,7 +53,9 @@ def refresh_credentials() -> None:
         sys.exit(1)
 
     with open(config_file) as f:
-        config = yaml.safe_load(f)
+        config = yaml.safe_load(
+            f
+        )  # yaml-ok: user config file, no internal Pydantic model for free-form AWS config
 
     if not config or "aws" not in config:
         click.echo(

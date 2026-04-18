@@ -1,3 +1,8 @@
+## Unreleased
+
+### Refactors
+- refactor(runtime): confirm RuntimeLocal has zero reducer-special-casing [OMN-9011] — `_persist_reducer_projection_if_applicable` was never merged to main (OMN-8946 PR #826 closed without merge); runtime is already uniform across all three execution paths.
+
 ## v0.38.0 (2026-04-03)
 
 ### Features
