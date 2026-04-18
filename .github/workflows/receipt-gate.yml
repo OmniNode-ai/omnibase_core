@@ -1,0 +1,120 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Receipt-Gate — reusable workflow enforcing "Enforcement by Receipt" (OMN-TBD).
+#
+# Every PR must cite a Linear ticket whose dod_evidence items all have PASS
+# receipts at the canonical path `<receipts-dir>/<OMN-XXXX>/<item-id>/<check-type>.yaml`.
+# A missing or failing receipt blocks merge.
+#
+# Called by per-repo workflows via `workflow_call` (see cr-thread-gate.yml
+# pattern for precedent). Required status-check name: `receipt-gate / verify`.
+#
+# Inputs:
+#   contracts-dir:  path to ticket contract YAMLs (default:
+#                   onex_change_control/contracts — assumes the repo has a
+#                   submodule/pip-installed copy of onex_change_control OR the
+#                   workflow checks out that repo into a sibling directory)
+#   receipts-dir:   path to ModelDodReceipt YAMLs (default:
+#                   onex_change_control/drift/dod_receipts)
+#
+# Secrets:
+#   (none — receipts + contracts are in-repo files, no API calls required)
+
+name: receipt-gate
+
+on:
+  workflow_call:
+    inputs:
+      contracts-dir:
+        description: Path to the contracts directory on disk.
+        type: string
+        required: false
+        default: onex_change_control/contracts
+      receipts-dir:
+        description: Path to the dod_receipts directory on disk.
+        type: string
+        required: false
+        default: onex_change_control/drift/dod_receipts
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+
+      # We need the onex_change_control repo to find contracts + receipts.
+      # In single-repo usage (omnibase_core hosting the gate), the tree is
+      # already present as a submodule or sibling checkout. In fan-out
+      # deployment, each caller repo checks out onex_change_control here.
+      - name: Check out onex_change_control (for contracts + receipts)
+        uses: actions/checkout@v4
+        with:
+          repository: OmniNode-ai/onex_change_control
+          path: .onex_change_control
+          ref: main
+          fetch-depth: 1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install omnibase_core
+        # Install from the PR's checkout first so new additions (e.g. the
+        # receipt_gate_cli shipped by this same PR) are available during the
+        # gate's bootstrap run. Fall back to PyPI for caller-repo deployments
+        # where omnibase_core is a sibling/checkout.
+        run: |
+          if [ -f "./pyproject.toml" ] && grep -q "omnibase.core\|omnibase_core" ./pyproject.toml 2>/dev/null; then
+            uv pip install --system -e .
+          elif [ -d "./omnibase_core" ] && [ -f "./omnibase_core/pyproject.toml" ]; then
+            uv pip install --system -e ./omnibase_core
+          else
+            uv pip install --system omnibase-core
+          fi
+
+      - name: Resolve PR body
+        id: resolve_body
+        # merge_group events do not carry pull_request.body. Fetch it from the
+        # merge_group head_ref (format: pr-<num>-<sha>) via the GitHub API so
+        # the gate evaluates the same body across pull_request and merge_group.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_EVENT_BODY: ${{ github.event.pull_request.body }}
+          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+        run: |
+          set -e
+          if [ -n "$PR_EVENT_BODY" ]; then
+            printf '%s' "$PR_EVENT_BODY" > /tmp/pr_body.txt
+          elif [ -n "$MERGE_GROUP_HEAD_REF" ]; then
+            pr_num="$(printf '%s' "$MERGE_GROUP_HEAD_REF" | sed -E 's@^.*/pr-([0-9]+)-.*$@\1@')"
+            if [ -n "$pr_num" ] && [ "$pr_num" != "$MERGE_GROUP_HEAD_REF" ]; then
+              gh pr view "$pr_num" --repo "${{ github.repository }}" --json body --jq '.body' > /tmp/pr_body.txt
+            else
+              : > /tmp/pr_body.txt
+            fi
+          else
+            : > /tmp/pr_body.txt
+          fi
+
+      - name: Run Receipt-Gate
+        run: |
+          PR_BODY="$(cat /tmp/pr_body.txt)"
+          python -m omnibase_core.validation.receipt_gate_cli \
+            --pr-body "$PR_BODY" \
+            --contracts-dir ".onex_change_control/${{ inputs.contracts-dir }}" \
+            --receipts-dir ".onex_change_control/${{ inputs.receipts-dir }}"
