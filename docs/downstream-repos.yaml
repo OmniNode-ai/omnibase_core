@@ -1,0 +1,90 @@
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Single source of truth for downstream repos that pin omnibase_core SHAs.
+# Consumed by .github/workflows/publish-downstream-pin-bump.yml via scripts/pin_bump.py.
+#
+# Schema:
+#   version: manifest schema version (int)
+#   repos:
+#     - name: repo short name (matches directory + GitHub repo name)
+#       owner: GitHub org (always OmniNode-ai for now)
+#       pin_sites:
+#         - path: repo-relative file path that contains a pinned SHA
+#           pattern: regex that MUST match the current pinned SHA; bump rewrites the match
+#                    to the new SHA. Must have exactly one capture group over the SHA itself.
+#       notes: optional human context
+#
+# When a new repo/file starts pinning omnibase_core, ADD it here — the bot relies on this
+# manifest, not discovery. Ticket: OMN-9050.
+
+version: 1
+repos:
+  - name: omnibase_compat
+    owner: OmniNode-ai
+    pin_sites: []
+    notes: "OMN-9049 will add check-handshake.yml here; manifest pre-declared so the bot picks it up automatically."
+
+  - name: omnibase_spi
+    owner: OmniNode-ai
+    pin_sites:
+      - path: .github/workflows/check-handshake.yml
+        pattern: "ref:\\s*([0-9a-f]{40})"
+
+  - name: omnibase_infra
+    owner: OmniNode-ai
+    pin_sites:
+      - path: .github/workflows/check-handshake.yml
+        pattern: "ref:\\s*([0-9a-f]{40})"
+
+  - name: omniclaude
+    owner: OmniNode-ai
+    pin_sites:
+      - path: .github/workflows/check-handshake.yml
+        pattern: "ref:\\s*([0-9a-f]{40})"
+      - path: .github/workflows/ci.yml
+        pattern: "ref:\\s*([0-9a-f]{40})"
+
+  - name: omnidash
+    owner: OmniNode-ai
+    pin_sites:
+      - path: .github/workflows/check-handshake.yml
+        pattern: "ref:\\s*([0-9a-f]{40})"
+      - path: .github/workflows/type-sync-check.yml
+        pattern: "ref:\\s*([0-9a-f]{40})"
+      - path: .github/workflows/onex-schema-compat.yml
+        pattern: "ref:\\s*([0-9a-f]{40})"
+
+  - name: omniintelligence
+    owner: OmniNode-ai
+    pin_sites:
+      - path: .github/workflows/check-handshake.yml
+        pattern: "ref:\\s*([0-9a-f]{40})"
+
+  - name: omnimarket
+    owner: OmniNode-ai
+    pin_sites: []
+    notes: "OMN-9049 will add check-handshake.yml here; manifest pre-declared."
+
+  - name: omnimemory
+    owner: OmniNode-ai
+    pin_sites:
+      - path: .github/workflows/check-handshake.yml
+        pattern: "ref:\\s*([0-9a-f]{40})"
+
+  - name: omninode_infra
+    owner: OmniNode-ai
+    pin_sites:
+      - path: .github/workflows/check-handshake.yml
+        pattern: "ref:\\s*([0-9a-f]{40})"
+
+  - name: omniweb
+    owner: OmniNode-ai
+    pin_sites: []
+    notes: "OMN-9049 will add check-handshake.yml here; manifest pre-declared."
+
+  - name: onex_change_control
+    owner: OmniNode-ai
+    pin_sites: []
+    notes: "OMN-9049 will add check-handshake.yml here; manifest pre-declared."

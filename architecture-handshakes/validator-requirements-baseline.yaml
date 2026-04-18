@@ -47,9 +47,6 @@
   validator: no-untracked-todos
   kind: MISSING_CI_WORKFLOW
 - repo: omnibase_core
-  validator: pydantic-patterns
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
   validator: self-gating-workflows
   kind: MISSING_PRE_COMMIT
 - repo: omnibase_core

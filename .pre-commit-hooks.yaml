@@ -40,3 +40,17 @@
   types: [python]
   exclude: ^(tests/|archived/|archive/|examples/prototypes/).*\.py$
   stages: [pre-commit]
+
+- id: validator-banned-compose-vars
+  name: ValidatorBannedComposeVars (kernel-sourced banned env vars in compose/k8s)
+  description: >
+    Flags any docker-compose or k8s manifest that exposes an env var whose NAME appears in the kernel's
+    `_DEPRECATED_TOPIC_ENV_VARS` tuple (OMN-8784 canonical source). Direct OMN-8840 regression guard —
+    ONEX_INPUT_TOPIC persisted in compose after code removal. Consumer repos MUST override `args:` to
+    pass `--kernel-source` pointing at their vendored/checked-out service_kernel.py path.
+  language: python
+  entry: python -m omnibase_core.validation.validator_banned_compose_vars
+  files: (docker-compose.*\.ya?ml|k8s/.*\.ya?ml|kubernetes/.*\.ya?ml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]

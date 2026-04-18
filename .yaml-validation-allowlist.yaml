@@ -94,6 +94,15 @@ allowed_files:
     added: "2025-12-12"
     review: "2026-06-13"
 
+  - file: "scripts/pin_bump.py"
+    reason: >-
+      Cross-repo SHA pin-bump engine (OMN-9050). Parses docs/downstream-repos.yaml into the PinBumpManifest
+      Pydantic model via load_manifest(); yaml.safe_load() is immediately followed by PinBumpManifest.model_validate().
+      This is the exact load-then-validate pattern - Path.read_text() returns a string, so raw parsing
+      is required before Pydantic validation.
+    added: "2026-04-17"
+    review: "2026-06-13"
+
   - file: "src/omnibase_core/utils/util_invariant_yaml_parser.py"
     reason: >-
       Parses invariant set YAML files before Pydantic validation - utility for loading user-defined validation
@@ -236,6 +245,17 @@ allowed_files:
       for full Pydantic validation. This is the exact load-then-validate pattern; raw parsing is required
       because Path.read_text() returns a string, not a dict. (OMN-8790)
     added: "2026-04-15"
+    review: "2026-06-13"
+
+  - file: "src/omnibase_core/validation/receipt_gate.py"
+    reason: >-
+      Receipt-gate CI check loads two YAML artifacts it did not author: ticket contracts (downstream-provided,
+      varying schema across repos) and ModelDodReceipt artifacts. For receipts it does the load-then-validate
+      pattern (yaml.safe_load → ModelDodReceipt.model_validate). For contracts it intentionally parses
+      raw because ticket contract schema pre-dates Pydantic models in this repo; the gate only reads a
+      small subset (dod_evidence list). Will collapse to pure Pydantic once ModelTicketContract loader
+      is available. (OMN-TBD enforcement-by-receipt)
+    added: "2026-04-17"
     review: "2026-06-13"
 
 # Specific filenames that are allowed (matched by basename)
