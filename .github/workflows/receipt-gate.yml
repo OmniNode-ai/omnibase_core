@@ -11,12 +11,12 @@
 # pattern for precedent). Required status-check name: `receipt-gate / verify`.
 #
 # Inputs:
-#   contracts-dir:  path to ticket contract YAMLs (default:
-#                   onex_change_control/contracts — assumes the repo has a
-#                   submodule/pip-installed copy of onex_change_control OR the
-#                   workflow checks out that repo into a sibling directory)
-#   receipts-dir:   path to ModelDodReceipt YAMLs (default:
-#                   onex_change_control/drift/dod_receipts)
+#   contracts-dir:  path to ticket contract YAMLs, relative to the
+#                   onex_change_control checkout (default: contracts). The
+#                   Run Receipt-Gate step always prepends `.onex_change_control/`
+#                   since this workflow checks that repo out at that path.
+#   receipts-dir:   path to ModelDodReceipt YAMLs, relative to the
+#                   onex_change_control checkout (default: drift/dod_receipts).
 #
 # Secrets:
 #   (none — receipts + contracts are in-repo files, no API calls required)
