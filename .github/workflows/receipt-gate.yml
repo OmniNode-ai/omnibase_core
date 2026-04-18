@@ -74,10 +74,18 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Install omnibase_core
+        # Install from the PR's checkout first so new additions (e.g. the
+        # receipt_gate_cli shipped by this same PR) are available during the
+        # gate's bootstrap run. Fall back to PyPI for caller-repo deployments
+        # where omnibase_core is a sibling/checkout.
         run: |
-          uv pip install --system omnibase-core || \
-            uv pip install --system -e ./omnibase_core || \
-            echo "::warning::omnibase_core install path not found; falling back to source checkout"
+          if [ -f "./pyproject.toml" ] && grep -q "omnibase.core\|omnibase_core" ./pyproject.toml 2>/dev/null; then
+            uv pip install --system -e .
+          elif [ -d "./omnibase_core" ] && [ -f "./omnibase_core/pyproject.toml" ]; then
+            uv pip install --system -e ./omnibase_core
+          else
+            uv pip install --system omnibase-core
+          fi
 
       - name: Run Receipt-Gate
         env:
