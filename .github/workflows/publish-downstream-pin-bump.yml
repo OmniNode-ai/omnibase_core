@@ -165,13 +165,24 @@ jobs:
           paper over the failure — diagnose the handshake break instead.
           EOF
           )
-          PR_URL=$(gh pr create \
-            --repo "OmniNode-ai/${REPO}" \
-            --head "$BRANCH" \
-            --base main \
-            --title "$TITLE" \
-            --body "$BODY")
-          echo "Created: $PR_URL"
+          # Check for existing open PR from this branch first — gh pr create
+          # errors if one exists (no --upsert flag). When rerun from push, the
+          # existing PR already has our commits; just update the PR body and
+          # continue to the auto-merge step.
+          PR_URL=$(gh pr list --repo "OmniNode-ai/${REPO}" --head "$BRANCH" --state open --json url --jq '.[0].url // empty')
+          if [[ -z "$PR_URL" ]]; then
+            PR_URL=$(gh pr create \
+              --repo "OmniNode-ai/${REPO}" \
+              --head "$BRANCH" \
+              --base main \
+              --title "$TITLE" \
+              --body "$BODY")
+            echo "Created: $PR_URL"
+          else
+            echo "Existing PR found: $PR_URL — updating body"
+            PR_NUMBER=$(echo "$PR_URL" | sed -E 's#.*/pull/([0-9]+).*#\1#')
+            gh pr edit "$PR_NUMBER" --repo "OmniNode-ai/${REPO}" --title "$TITLE" --body "$BODY" || true
+          fi
 
           PR_NUMBER=$(echo "$PR_URL" | sed -E 's#.*/pull/([0-9]+).*#\1#')
           PR_ID=$(gh api "repos/OmniNode-ai/${REPO}/pulls/${PR_NUMBER}" --jq '.node_id')
