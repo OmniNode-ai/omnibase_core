@@ -47,6 +47,7 @@ making them thread-safe for concurrent read access.
 .. versionadded:: 0.4.0
 """
 
+from omnibase_core.models.projectors.model_dashboard_hint import ModelDashboardHint
 from omnibase_core.models.projectors.model_idempotency_config import (
     ModelIdempotencyConfig,
 )
@@ -72,6 +73,7 @@ from omnibase_core.models.projectors.model_projector_schema import ModelProjecto
 
 __all__ = [
     "EVENT_NAME_PATTERN",
+    "ModelDashboardHint",
     "ModelIdempotencyConfig",
     "ModelPartialUpdateOperation",
     "ModelProjectionIntent",
