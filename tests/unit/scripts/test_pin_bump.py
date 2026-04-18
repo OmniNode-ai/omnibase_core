@@ -33,8 +33,8 @@ from pin_bump import (  # type: ignore[import-not-found]
     load_manifest,
 )
 
-OLD_SHA = "330a344cdb9c5dedd04a46dfbb0b63dae0baccfb"
-NEW_SHA = "abcdef0123456789abcdef0123456789abcdef01"
+OLD_SHA = "330a344cdb9c5dedd04a46dfbb0b63dae0baccfb"  # pragma: allowlist secret
+NEW_SHA = "abcdef0123456789abcdef0123456789abcdef01"  # pragma: allowlist secret
 
 
 @pytest.fixture
