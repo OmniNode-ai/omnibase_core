@@ -60,7 +60,7 @@ def _write_receipt(
         "check_value": check_value,
         "status": status,
         "run_timestamp": datetime.now(tz=UTC).isoformat(),
-        "commit_sha": "a1b2c3d4e5f6",
+        "commit_sha": "a1b2c3d4e5f6",  # pragma: allowlist secret
         "runner": "test-runner",
     }
     if overrides:

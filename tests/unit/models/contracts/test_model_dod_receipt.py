@@ -22,7 +22,7 @@ def _base_fields() -> dict:
         "check_value": "gh pr view --json state -q .state",
         "status": EnumReceiptStatus.PASS,
         "run_timestamp": datetime.now(tz=UTC),
-        "commit_sha": "a1b2c3d4e5f6",
+        "commit_sha": "a1b2c3d4e5f6",  # pragma: allowlist secret
         "runner": "ci-receipt-gate",
     }
 
