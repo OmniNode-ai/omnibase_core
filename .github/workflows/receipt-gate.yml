@@ -101,7 +101,7 @@ jobs:
         # Never fall back to PyPI — the published package has a broken transitive
         # dep (git+https omnibase-compat URL) that fails in CI.
         run: |
-          if [ -f "./pyproject.toml" ] && grep -q "omnibase.core\|omnibase_core" ./pyproject.toml 2>/dev/null; then
+          if [ -f "./pyproject.toml" ] && grep -qE '^\s*name\s*=\s*["\x27]omnibase[-_.]core["\x27]' ./pyproject.toml 2>/dev/null; then
             uv pip install --system -e .
           elif [ -d "./omnibase_core" ] && [ -f "./omnibase_core/pyproject.toml" ]; then
             uv pip install --system -e ./omnibase_compat -e ./omnibase_core
