@@ -1571,3 +1571,100 @@ class TestModelProjectorContractRepr:
         assert "version='1.0.0'" in result
         assert "events=1" in result
         assert "indexes=2" in result
+
+
+@pytest.mark.unit
+class TestModelProjectorContractDashboardHint:
+    """Tests for the optional dashboard presentation hint field."""
+
+    def test_projector_contract_accepts_dashboard_hint(self) -> None:
+        """Contract accepts a ModelDashboardHint and preserves its fields."""
+        from omnibase_core.enums.enum_dashboard_widget_type import (
+            EnumDashboardWidgetType,
+        )
+        from omnibase_core.models.projectors import (
+            ModelDashboardHint,
+            ModelProjectorBehavior,
+            ModelProjectorColumn,
+            ModelProjectorContract,
+            ModelProjectorSchema,
+        )
+
+        column = ModelProjectorColumn(
+            name="id",
+            type="UUID",
+            source="event.payload.id",
+        )
+
+        schema = ModelProjectorSchema(
+            table="test",
+            primary_key="id",
+            columns=[column],
+        )
+
+        behavior = ModelProjectorBehavior(mode="upsert")
+
+        hint = ModelDashboardHint(
+            widget_type=EnumDashboardWidgetType.TILE,
+            label="Test Tile",
+            group="tests",
+            priority=50,
+            time_series=False,
+            unit="count",
+        )
+
+        contract = ModelProjectorContract(
+            projector_kind="materialized_view",
+            projector_id="test-projector",
+            name="Test",
+            version="1.0.0",
+            aggregate_type="test",
+            consumed_events=["test.created.v1"],
+            projection_schema=schema,
+            behavior=behavior,
+            dashboard=hint,
+        )
+
+        assert contract.dashboard is not None
+        assert contract.dashboard.widget_type == EnumDashboardWidgetType.TILE
+        assert contract.dashboard.label == "Test Tile"
+        assert contract.dashboard.group == "tests"
+        assert contract.dashboard.priority == 50
+        assert contract.dashboard.time_series is False
+        assert contract.dashboard.unit == "count"
+
+    def test_projector_contract_dashboard_field_is_optional(self) -> None:
+        """dashboard defaults to None when not specified."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorBehavior,
+            ModelProjectorColumn,
+            ModelProjectorContract,
+            ModelProjectorSchema,
+        )
+
+        column = ModelProjectorColumn(
+            name="id",
+            type="UUID",
+            source="event.payload.id",
+        )
+
+        schema = ModelProjectorSchema(
+            table="test",
+            primary_key="id",
+            columns=[column],
+        )
+
+        behavior = ModelProjectorBehavior(mode="upsert")
+
+        contract = ModelProjectorContract(
+            projector_kind="materialized_view",
+            projector_id="test-projector",
+            name="Test",
+            version="1.0.0",
+            aggregate_type="test",
+            consumed_events=["test.created.v1"],
+            projection_schema=schema,
+            behavior=behavior,
+        )
+
+        assert contract.dashboard is None

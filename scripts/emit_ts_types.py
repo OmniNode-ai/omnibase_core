@@ -17,10 +17,6 @@ The output is a JSON object of the form:
 
 Downstream consumer: omnidash-v2 pipes this through json-schema-to-typescript
 to emit src/shared/types/generated/onex-models.ts.
-
-Note: ``ModelDashboardHint`` is planned (Part 1 of the dashboard local-integration
-plan) but not yet in the tree. It will be added to ``MODELS`` once that lands.
-See docs/plans/2026-04-17-dashboard-local-integration.md in omni_home.
 """
 
 from __future__ import annotations
@@ -32,6 +28,7 @@ from typing import TYPE_CHECKING
 
 from omnibase_core.models.notifications import ModelStateTransitionNotification
 from omnibase_core.models.projectors import (
+    ModelDashboardHint,
     ModelProjectorBehavior,
     ModelProjectorColumn,
     ModelProjectorContract,
@@ -48,6 +45,7 @@ MODELS: dict[str, type[BaseModel]] = {
     "ModelProjectorColumn": ModelProjectorColumn,
     "ModelProjectorBehavior": ModelProjectorBehavior,
     "ModelProjectorIndex": ModelProjectorIndex,
+    "ModelDashboardHint": ModelDashboardHint,
     "ModelStateTransitionNotification": ModelStateTransitionNotification,
 }
 

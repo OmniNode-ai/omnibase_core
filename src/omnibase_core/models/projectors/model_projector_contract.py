@@ -90,6 +90,7 @@ from typing import ClassVar, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.models.projectors.model_dashboard_hint import ModelDashboardHint
 from omnibase_core.models.projectors.model_partial_update_operation import (
     ModelPartialUpdateOperation,
 )
@@ -252,6 +253,11 @@ class ModelProjectorContract(BaseModel):
             "updates like heartbeats or state transitions."
         ),
         json_schema_extra={"default": []},
+    )
+
+    dashboard: ModelDashboardHint | None = Field(
+        default=None,
+        description="Optional presentation hint for dashboard rendering.",
     )
 
     @field_validator("consumed_events")
@@ -428,6 +434,7 @@ class ModelProjectorContract(BaseModel):
                 self.projection_schema,
                 self.behavior,
                 tuple(self.partial_updates),
+                self.dashboard,
             )
         )
 

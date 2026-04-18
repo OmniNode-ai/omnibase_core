@@ -98,6 +98,9 @@ from .enum_customer_tier import EnumCustomerTier
 from .enum_dashboard_status import EnumDashboardStatus
 from .enum_dashboard_theme import EnumDashboardTheme
 
+# Dashboard widget type (registry-driven dashboard Part 1 - OMN-9207)
+from .enum_dashboard_widget_type import EnumDashboardWidgetType
+
 # Security-related enums
 from .enum_data_classification import EnumDataClassification
 
@@ -762,6 +765,8 @@ __all__ = [
     "EnumDashboardStatus",
     "EnumDashboardTheme",
     "EnumWidgetType",
+    # Dashboard widget type (registry-driven dashboard Part 1 - OMN-9207)
+    "EnumDashboardWidgetType",
     # Event priority domain (OMN-1308)
     "EnumEventPriority",
     # Event sink type domain (OMN-1151)
