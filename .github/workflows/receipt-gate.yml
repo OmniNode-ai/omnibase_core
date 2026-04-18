@@ -73,18 +73,43 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      # Check out omnibase_compat + omnibase_core from source when running in a
+      # caller repo (not omnibase_core itself). This avoids the broken PyPI
+      # fallback where omnibase-core's published package references a git+https
+      # URL for omnibase-compat that no longer resolves.
+      - name: Check out omnibase_compat (transitive dep)
+        if: "! hashFiles('./src/omnibase_compat/__init__.py') && ! hashFiles('./omnibase_compat/pyproject.toml')"
+        uses: actions/checkout@v4
+        with:
+          repository: OmniNode-ai/omnibase_compat
+          path: .receipt-gate-deps/omnibase_compat
+          ref: main
+          fetch-depth: 1
+
+      - name: Check out omnibase_core (for receipt-gate deps)
+        if: "! hashFiles('./src/omnibase_core/__init__.py') && ! hashFiles('./omnibase_core/pyproject.toml')"
+        uses: actions/checkout@v4
+        with:
+          repository: OmniNode-ai/omnibase_core
+          path: .receipt-gate-deps/omnibase_core
+          ref: main
+          fetch-depth: 1
+
       - name: Install omnibase_core
-        # Install from the PR's checkout first so new additions (e.g. the
-        # receipt_gate_cli shipped by this same PR) are available during the
-        # gate's bootstrap run. Fall back to PyPI for caller-repo deployments
-        # where omnibase_core is a sibling/checkout.
+        # Install from the PR's in-tree checkout (omnibase_core repo itself),
+        # or a sibling checkout, or the .receipt-gate-deps source checkouts.
+        # Never fall back to PyPI — the published package has a broken transitive
+        # dep (git+https omnibase-compat URL) that fails in CI.
         run: |
           if [ -f "./pyproject.toml" ] && grep -q "omnibase.core\|omnibase_core" ./pyproject.toml 2>/dev/null; then
             uv pip install --system -e .
           elif [ -d "./omnibase_core" ] && [ -f "./omnibase_core/pyproject.toml" ]; then
-            uv pip install --system -e ./omnibase_core
+            uv pip install --system -e ./omnibase_compat -e ./omnibase_core
+          elif [ -f "./.receipt-gate-deps/omnibase_core/pyproject.toml" ]; then
+            uv pip install --system -e ./.receipt-gate-deps/omnibase_compat -e ./.receipt-gate-deps/omnibase_core
           else
-            uv pip install --system omnibase-core
+            echo "::error::omnibase_core not installable — no source checkout available"
+            exit 1
           fi
 
       - name: Resolve PR body
