@@ -33,7 +33,9 @@ Layering (permanent, see §"Layering Invariants" in the plan):
     available in a future phase, tighten here first.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Self
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_handler_resolution_outcome import (
     EnumHandlerResolutionOutcome,
@@ -78,6 +80,53 @@ class ModelHandlerResolution(BaseModel):
             "on successful resolution."
         ),
     )
+
+    @model_validator(mode="after")
+    def _enforce_outcome_invariants(self) -> Self:
+        """Enforce outcome-dependent invariants per module docstring contract.
+
+        SKIP outcome:
+            - handler_instance MUST be None
+            - skipped_handler and skipped_reason MUST be non-empty
+
+        All other outcomes:
+            - handler_instance MUST NOT be None
+            - skipped_handler and skipped_reason MUST be empty strings
+
+        Comparison uses `==` (value equality), not `is` (identity), per the
+        Pydantic/enum convention. See OMN-9196.
+        """
+        is_skip = (
+            self.outcome
+            == EnumHandlerResolutionOutcome.RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP
+        )
+        if is_skip:
+            if self.handler_instance is not None:
+                raise ValueError(
+                    "SKIP outcome requires handler_instance=None; "
+                    f"got {type(self.handler_instance).__name__}"
+                )
+            if not self.skipped_handler:
+                raise ValueError("SKIP outcome requires non-empty skipped_handler")
+            if not self.skipped_reason:
+                raise ValueError("SKIP outcome requires non-empty skipped_reason")
+        else:
+            if self.handler_instance is None:
+                raise ValueError(
+                    f"Non-skip outcome {self.outcome.name} requires "
+                    "handler_instance to be non-None"
+                )
+            if self.skipped_handler:
+                raise ValueError(
+                    f"Non-skip outcome {self.outcome.name} requires "
+                    "skipped_handler to be empty"
+                )
+            if self.skipped_reason:
+                raise ValueError(
+                    f"Non-skip outcome {self.outcome.name} requires "
+                    "skipped_reason to be empty"
+                )
+        return self
 
 
 __all__ = ["ModelHandlerResolution"]

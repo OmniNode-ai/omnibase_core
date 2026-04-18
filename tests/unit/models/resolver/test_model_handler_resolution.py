@@ -31,37 +31,57 @@ class TestModelHandlerResolutionFrozen:
     def test_resolution_is_frozen(self) -> None:
         res = ModelHandlerResolution(
             outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_NODE_REGISTRY,
+            handler_instance=object(),
         )
         with pytest.raises(ValidationError):
-            res.skipped_reason = "Mutated"  # type: ignore[misc]
+            res.skipped_reason = "Mutated"  # type: ignore[misc]  # NOTE(OMN-9196): intentional assignment to frozen field verifies immutability enforcement
 
     def test_resolution_rejects_extra_fields(self) -> None:
         with pytest.raises(ValidationError):
             ModelHandlerResolution(
                 outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_NODE_REGISTRY,
-                unknown_field="x",  # type: ignore[call-arg]
+                handler_instance=object(),
+                unknown_field="x",  # type: ignore[call-arg]  # NOTE(OMN-9196): intentional unknown kwarg verifies extra='forbid' rejection
             )
 
 
 @pytest.mark.unit
 class TestModelHandlerResolutionDefaults:
-    """Default-value contract for optional fields."""
+    """Default-value contract for optional fields on SKIP outcome.
 
-    def test_handler_instance_defaults_none(self) -> None:
+    Note: the cross-field validator rejects non-skip outcomes without a
+    handler_instance, and rejects skip outcomes without skip metadata. These
+    tests therefore use the SKIP outcome (which permits default=None for
+    handler_instance) and verify the default semantics of skipped_*
+    via the minimal valid SKIP construction.
+    """
+
+    def test_handler_instance_defaults_none_on_skip(self) -> None:
         res = ModelHandlerResolution(
-            outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_NODE_REGISTRY,
+            outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP,
+            skipped_handler="HandlerFoo",
+            skipped_reason="not hosted",
         )
         assert res.handler_instance is None
 
-    def test_skipped_handler_defaults_empty_string(self) -> None:
+    def test_non_skip_requires_handler_instance(self) -> None:
+        """Cross-field invariant: non-skip outcomes must carry an instance."""
+        with pytest.raises(ValidationError):
+            ModelHandlerResolution(
+                outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_NODE_REGISTRY,
+            )
+
+    def test_skipped_handler_empty_on_successful_resolution(self) -> None:
         res = ModelHandlerResolution(
             outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_NODE_REGISTRY,
+            handler_instance=object(),
         )
         assert res.skipped_handler == ""
 
-    def test_skipped_reason_defaults_empty_string(self) -> None:
+    def test_skipped_reason_empty_on_successful_resolution(self) -> None:
         res = ModelHandlerResolution(
             outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_NODE_REGISTRY,
+            handler_instance=object(),
         )
         assert res.skipped_reason == ""
 
@@ -72,7 +92,7 @@ class TestModelHandlerResolutionRequiredFields:
 
     def test_missing_outcome_raises(self) -> None:
         with pytest.raises(ValidationError):
-            ModelHandlerResolution()  # type: ignore[call-arg]
+            ModelHandlerResolution()  # type: ignore[call-arg]  # NOTE(OMN-9196): intentional missing required arg verifies outcome is mandatory
 
 
 @pytest.mark.unit
@@ -83,7 +103,16 @@ class TestModelHandlerResolutionOutcomeAcceptsAllEnumValues:
     def test_accepts_every_outcome_member(
         self, outcome: EnumHandlerResolutionOutcome
     ) -> None:
-        res = ModelHandlerResolution(outcome=outcome)
+        # Cross-field invariant: SKIP requires skip metadata; non-SKIP requires
+        # handler_instance. Supply both so each enum value constructs successfully.
+        if outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP:
+            res = ModelHandlerResolution(
+                outcome=outcome,
+                skipped_handler="HandlerFoo",
+                skipped_reason="not hosted here",
+            )
+        else:
+            res = ModelHandlerResolution(outcome=outcome, handler_instance=object())
         assert res.outcome is outcome
 
 
@@ -112,6 +141,61 @@ class TestModelHandlerResolutionSkipMode:
             handler_instance=sentinel_instance,
         )
         assert res.handler_instance is sentinel_instance
+
+
+@pytest.mark.unit
+class TestModelHandlerResolutionOutcomeInvariants:
+    """Cross-field validator: outcome dictates handler_instance + skip metadata.
+
+    Per module docstring contract:
+        - SKIP outcome: handler_instance MUST be None; skipped_* MUST be non-empty
+        - Non-SKIP outcome: handler_instance MUST NOT be None; skipped_* MUST be empty
+    """
+
+    def test_skip_outcome_rejects_non_none_handler_instance(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelHandlerResolution(
+                outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP,
+                handler_instance=object(),
+                skipped_handler="HandlerFoo",
+                skipped_reason="not hosted",
+            )
+
+    def test_skip_outcome_rejects_empty_skipped_handler(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelHandlerResolution(
+                outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP,
+                skipped_reason="not hosted",
+            )
+
+    def test_skip_outcome_rejects_empty_skipped_reason(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelHandlerResolution(
+                outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP,
+                skipped_handler="HandlerFoo",
+            )
+
+    def test_non_skip_outcome_rejects_none_handler_instance(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelHandlerResolution(
+                outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_NODE_REGISTRY,
+            )
+
+    def test_non_skip_outcome_rejects_populated_skipped_handler(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelHandlerResolution(
+                outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_NODE_REGISTRY,
+                handler_instance=object(),
+                skipped_handler="HandlerFoo",
+            )
+
+    def test_non_skip_outcome_rejects_populated_skipped_reason(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelHandlerResolution(
+                outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_NODE_REGISTRY,
+                handler_instance=object(),
+                skipped_reason="not hosted",
+            )
 
 
 @pytest.mark.unit

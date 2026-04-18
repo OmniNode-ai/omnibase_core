@@ -87,7 +87,7 @@ def test_local_node_names_is_immutable_post_construction() -> None:
     """Pydantic frozen config forbids reassigning fields after construction."""
     svc = ServiceLocalHandlerOwnershipQuery(local_node_names=frozenset({"a"}))
     with pytest.raises(ValidationError):
-        svc.local_node_names = frozenset({"b"})  # type: ignore[misc]
+        svc.local_node_names = frozenset({"b"})  # type: ignore[misc]  # NOTE(OMN-9200): intentional assignment to frozen field verifies immutability enforcement
 
 
 @pytest.mark.unit
@@ -96,4 +96,4 @@ def test_frozenset_field_rejects_mutation_attempts() -> None:
     svc = ServiceLocalHandlerOwnershipQuery(local_node_names=frozenset({"a"}))
     # frozenset has no .add() — AttributeError, not silent success
     with pytest.raises(AttributeError):
-        svc.local_node_names.add("b")  # type: ignore[attr-defined]
+        svc.local_node_names.add("b")  # type: ignore[attr-defined]  # NOTE(OMN-9200): intentional call to non-existent mutator verifies frozenset has no .add()

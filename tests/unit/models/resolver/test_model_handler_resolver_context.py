@@ -35,7 +35,7 @@ def _make_minimal_context(**overrides: object) -> ModelHandlerResolverContext:
         "node_name": "node_foo",
     }
     base.update(overrides)
-    return ModelHandlerResolverContext(**base)  # type: ignore[arg-type]
+    return ModelHandlerResolverContext(**base)  # type: ignore[arg-type]  # NOTE(OMN-9196): dict[str, object] splat into Pydantic model with typed fields; mypy cannot narrow kwargs from a generic mapping
 
 
 @pytest.mark.unit
@@ -46,7 +46,7 @@ class TestModelHandlerResolverContextFrozen:
         """Plan Step 4: mutation must raise ValidationError."""
         ctx = _make_minimal_context()
         with pytest.raises(ValidationError):
-            ctx.handler_name = "Mutated"  # type: ignore[misc]
+            ctx.handler_name = "Mutated"  # type: ignore[misc]  # NOTE(OMN-9196): intentional assignment to frozen field verifies immutability enforcement
 
     def test_context_rejects_extra_fields(self) -> None:
         """Plan Step 4: extra='forbid' rejects unknown kwargs."""
@@ -57,7 +57,7 @@ class TestModelHandlerResolverContextFrozen:
                 handler_name="HandlerFoo",
                 contract_name="node_foo",
                 node_name="node_foo",
-                unknown_field="x",  # type: ignore[call-arg]
+                unknown_field="x",  # type: ignore[call-arg]  # NOTE(OMN-9196): intentional unknown kwarg verifies extra='forbid' rejection
             )
 
 
@@ -99,7 +99,7 @@ class TestModelHandlerResolverContextRequiredFields:
         }
         kwargs.pop(missing_field)
         with pytest.raises(ValidationError):
-            ModelHandlerResolverContext(**kwargs)  # type: ignore[arg-type]
+            ModelHandlerResolverContext(**kwargs)  # type: ignore[arg-type]  # NOTE(OMN-9196): dict[str, object] splat into Pydantic model with typed fields; mypy cannot narrow kwargs from a generic mapping
 
     @pytest.mark.parametrize(
         "empty_field",
