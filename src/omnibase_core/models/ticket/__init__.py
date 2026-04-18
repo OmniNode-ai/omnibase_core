@@ -75,9 +75,21 @@ from omnibase_core.models.ticket.model_ticket_contract import (
     ModelTicketContract,
     TicketContract,
 )
+from omnibase_core.models.ticket.model_ticket_workflow_state import (
+    ModelTicketWorkflowState,
+)
 from omnibase_core.models.ticket.model_verification_step import (
     ModelVerificationStep,
     VerificationStep,
+)
+from omnibase_core.models.ticket.model_workflow_context import ModelWorkflowContext
+from omnibase_core.models.ticket.model_workflow_gate import ModelWorkflowGate
+from omnibase_core.models.ticket.model_workflow_question import ModelWorkflowQuestion
+from omnibase_core.models.ticket.model_workflow_requirement import (
+    ModelWorkflowRequirement,
+)
+from omnibase_core.models.ticket.model_workflow_verification import (
+    ModelWorkflowVerification,
 )
 
 __all__ = [
@@ -126,4 +138,12 @@ __all__ = [
     "ModelTCBConstraint",
     "ModelTCBAssumption",
     "ModelTCBProvenance",
+    # Workflow state (distinct from ModelTicketContract) — FSM state embedded
+    # in Linear ticket descriptions by the ticket-work handler.
+    "ModelTicketWorkflowState",
+    "ModelWorkflowContext",
+    "ModelWorkflowGate",
+    "ModelWorkflowQuestion",
+    "ModelWorkflowRequirement",
+    "ModelWorkflowVerification",
 ]

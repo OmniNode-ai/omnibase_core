@@ -65,6 +65,16 @@ allowed_files:
     added: "2026-04-17"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/utils/util_ticket_workflow_persistence.py"
+    reason: >-
+      Persistence helper for ModelTicketWorkflowState YAML embedded inside Linear ticket descriptions
+      (Markdown-fenced yaml blocks). extract_workflow_state must degrade gracefully to None on malformed
+      input (arbitrary Markdown content) rather than raising, so direct yaml.safe_load + Pydantic model_validate
+      is used. Routing through util_safe_yaml_loader would require a lazy import to avoid a circular dependency
+      through omnibase_core.mixins. (OMN-9142)
+    added: "2026-04-18"
+    review: "2026-06-13"
+
   - file: "src/omnibase_core/utils/util_safe_yaml_loader.py"
     reason: >-
       Foundational utility layer that bridges raw YAML parsing and Pydantic validation - provides safe
