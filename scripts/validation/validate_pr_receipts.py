@@ -11,7 +11,7 @@ Exit codes:
     1 — gate failed (missing/failing receipts, no ticket ref, corrupt artifacts)
 
 Usage (CI):
-    python scripts/validation/validate_pr_receipts.py \
+    uv run python scripts/validation/validate_pr_receipts.py \
         --pr-body "$(gh pr view $PR --json body -q .body)" \
         --contracts-dir onex_change_control/contracts \
         --receipts-dir onex_change_control/drift/dod_receipts

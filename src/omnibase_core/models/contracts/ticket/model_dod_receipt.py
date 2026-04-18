@@ -30,7 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 
 _TICKET_ID_RE = re.compile(r"^OMN-\d+$")
-_SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
+_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
 
 
 class ModelDodReceipt(BaseModel):

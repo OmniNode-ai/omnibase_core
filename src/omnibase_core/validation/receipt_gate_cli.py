@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Receipt-Gate CLI — `python -m omnibase_core.validation.receipt_gate_cli ...`.
+"""Receipt-Gate CLI — `uv run python -m omnibase_core.validation.receipt_gate_cli ...`.
 
 Importable CLI entrypoint for the receipt-gate GitHub Actions workflow. Keeps
 the gate logic discoverable as a module (not buried under scripts/).
