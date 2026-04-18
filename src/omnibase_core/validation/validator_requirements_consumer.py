@@ -42,6 +42,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from collections.abc import Iterable
 from pathlib import Path
@@ -67,34 +68,15 @@ _CANONICAL_SPEC_PATH: Final[Path] = (
     / "validator-requirements.yaml"
 )
 
-# Patterns that indicate a silent-skip wrapper in a pre-commit hook entry.
-# feedback_no_informational_gates: every check blocks. ``|| true`` / ``; exit 0``
-# / ``|| exit 0`` turn a failure into a pass and are forbidden.
-_SILENT_SKIP_MARKERS: Final[tuple[str, ...]] = (
-    "|| true",
-    "|| exit 0",
-    "; exit 0",
-    "; true",
+# Regex matching silent-skip wrappers in a pre-commit hook entry. Catches
+# formatting variants: ``|| true``, ``||true``, ``|| exit 0``, ``;exit 0``,
+# ``&& : || true`` etc. feedback_no_informational_gates: every check blocks;
+# any of these turn a failure into a pass and are forbidden.
+_SILENT_SKIP_RE: Final[re.Pattern[str]] = re.compile(
+    r"(\|\||;)\s*(true\b|exit\s*0\b|:(?:\s|$|[^A-Za-z0-9_]))",
 )
 
 _SCOPE_REQUIRED: Final[str] = "required"
-
-_KNOWN_REPOS: Final[frozenset[str]] = frozenset(
-    {
-        "omniclaude",
-        "omnibase_compat",
-        "omnibase_core",
-        "omnibase_spi",
-        "omnibase_infra",
-        "omnidash",
-        "omnimarket",
-        "omniintelligence",
-        "omnimemory",
-        "omninode_infra",
-        "omniweb",
-        "onex_change_control",
-    }
-)
 
 
 # Internal carrier for a single ``repos[*].hooks[*]`` entry from
@@ -104,7 +86,7 @@ _PreCommitHook = tuple[str, str]
 
 
 def _hook_is_silent_skip(hook: _PreCommitHook) -> bool:
-    return any(marker in hook[1] for marker in _SILENT_SKIP_MARKERS)
+    return _SILENT_SKIP_RE.search(hook[1]) is not None
 
 
 class ValidatorRequirementsConsumer:
@@ -116,8 +98,13 @@ class ValidatorRequirementsConsumer:
     a worktree or downstream checkout.
     """
 
-    def __init__(self, validators: dict[str, ModelValidatorRequirementEntry]) -> None:
+    def __init__(
+        self,
+        validators: dict[str, ModelValidatorRequirementEntry],
+        known_repos: frozenset[str] = frozenset(),
+    ) -> None:
         self.validators = validators
+        self._known_repos = known_repos
 
     # ---------------------------------------------------------------
     # Constructors
@@ -156,7 +143,14 @@ class ValidatorRequirementsConsumer:
             name: ModelValidatorRequirementEntry.model_validate(entry)
             for name, entry in raw_validators.items()
         }
-        return cls(validators=typed)
+        # known_repos is the canonical governed-repo list. Missing => permissive.
+        raw_known = raw.get("known_repos")
+        known: frozenset[str]
+        if isinstance(raw_known, list) and all(isinstance(r, str) for r in raw_known):
+            known = frozenset(raw_known)
+        else:
+            known = frozenset()
+        return cls(validators=typed, known_repos=known)
 
     # ---------------------------------------------------------------
     # Scan entry point
@@ -171,12 +165,14 @@ class ValidatorRequirementsConsumer:
         """Scan a target repo's pre-commit and CI configuration.
 
         Raises:
-            ValueError: If ``repo_name`` is not a known OmniNode repo.
-                Unknown repos are a typo class — fail loudly.
+            ValueError: If ``repo_name`` is not listed in the spec's
+                ``known_repos`` (typos fail loud). When the spec omits that
+                key the check is permissive.
         """
-        if repo_name not in _KNOWN_REPOS:
+        if self._known_repos and repo_name not in self._known_repos:
             raise ValueError(  # error-ok: CLI argument validation at call boundary
-                f"unknown repo {repo_name!r}; expected one of {sorted(_KNOWN_REPOS)}"
+                f"unknown repo {repo_name!r}; expected one of "
+                f"{sorted(self._known_repos)}"
             )
 
         pre_commit_hooks = self._load_pre_commit_hooks(repo_root)

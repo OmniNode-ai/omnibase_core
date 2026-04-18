@@ -199,6 +199,32 @@ def test_scan_flags_warning_mode_wrapper(tmp_path: Path) -> None:
     ) in kinds
 
 
+def test_scan_flags_silent_skip_formatting_variants(tmp_path: Path) -> None:
+    """The silent-skip detector must catch formatting variants without spaces
+    or with alternative no-op commands (``||true``, ``;exit 0``, ``&& :``)."""
+    from omnibase_core.validation.validator_requirements_consumer import (
+        _hook_is_silent_skip,
+    )
+
+    variants = [
+        ("validate-local-paths", "bash -c 'run-x ||true'"),
+        ("validate-local-paths", "bash -c 'run-x ||exit 0'"),
+        ("validate-local-paths", "bash -c 'run-x ;exit 0'"),
+        ("validate-local-paths", "bash -c 'run-x ;true'"),
+        ("validate-local-paths", "bash -c 'run-x || :'"),
+    ]
+    for hid, entry in variants:
+        assert _hook_is_silent_skip((hid, entry)), (
+            f"Silent-skip detector missed variant: {entry!r}"
+        )
+
+    # Negative control: not a silent-skip wrapper (``&&`` propagates failures,
+    # ``|| false`` still returns non-zero on failure).
+    assert not _hook_is_silent_skip(("validate", "bash -c 'run-x && verify'"))
+    assert not _hook_is_silent_skip(("validate", "bash -c 'run-x || false'"))
+    assert not _hook_is_silent_skip(("validate", "run-x"))
+
+
 def test_scan_respects_applies_to_repos(tmp_path: Path) -> None:
     """A validator that does not apply to the target repo must NOT produce
     gaps even if its pre-commit hook id is absent. For example, omniweb (PHP)

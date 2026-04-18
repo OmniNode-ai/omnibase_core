@@ -17,8 +17,26 @@
 
 schema_version:
   major: 1
-  minor: 1
+  minor: 2
   patch: 0
+
+# Canonical list of all OmniNode repos governed by this spec. The consumer
+# uses this list to reject typos in repo arguments. Keep in sync when
+# onboarding/offboarding a repo; adding a repo here without wiring its
+# validators will surface as gaps on the next handshake run.
+known_repos:
+  - omniclaude
+  - omnibase_compat
+  - omnibase_core
+  - omnibase_spi
+  - omnibase_infra
+  - omnidash
+  - omnimarket
+  - omniintelligence
+  - omnimemory
+  - omninode_infra
+  - omniweb
+  - onex_change_control
 
 # Scopes:
 #   - pre_commit: "required" | "optional"  — entry in .pre-commit-config.yaml
