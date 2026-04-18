@@ -29,7 +29,12 @@ SPEC_PATH = (
 # Minimum number of validators the DoD requires. The ticket asks for >= 10.
 MIN_VALIDATORS = 10
 
-REQUIRED_TOP_LEVEL_KEYS = {"schema_version", "required_validators", "metadata"}
+REQUIRED_TOP_LEVEL_KEYS = {
+    "schema_version",
+    "required_validators",
+    "metadata",
+    "known_repos",
+}
 
 REQUIRED_VALIDATOR_FIELDS = {
     "description",
