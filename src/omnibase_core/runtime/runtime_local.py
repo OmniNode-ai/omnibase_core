@@ -498,6 +498,28 @@ class RuntimeLocal:
     # ------------------------------------------------------------------
 
     @staticmethod
+    def _resolve_handler_input_topic(
+        entry: dict[str, Any],
+        idx: int,
+        subscribe_topics: list[str],
+    ) -> str | None:
+        """Resolve the input topic for a single handler entry.
+
+        Prefers an explicit ``subscribe_topic`` field on the handler entry.
+        Falls back to positional lookup (``subscribe_topics[idx]``) for
+        backward-compatible contracts that omit the field.
+
+        Returns the resolved topic string, or ``None`` if neither source
+        provides a valid topic (e.g. terminal reducer with no positional slot).
+        """
+        explicit = entry.get("subscribe_topic")
+        if explicit:
+            return str(explicit)
+        if idx < len(subscribe_topics):
+            return subscribe_topics[idx]
+        return None
+
+    @staticmethod
     def _validate_routing(
         routing: dict[str, Any],
         subscribe_topics: list[str],
@@ -505,20 +527,19 @@ class RuntimeLocal:
     ) -> list[str]:
         """Validate handler routing entries against topic lists.
 
+        Uses a map-based check: every handler must resolve an input topic that
+        exists in ``subscribe_topics`` (via explicit ``subscribe_topic`` field
+        or positional fallback). Terminal reducers with no ``publish_topic`` /
+        ``output_events`` are valid — they do not require padding.
+
         Returns:
             List of validation error messages (empty means valid).
         """
         handlers: list[dict[str, Any]] = routing.get("handlers", [])
         errors: list[str] = []
+        input_topic_set = set(subscribe_topics)
 
-        # Positional alignment check
-        if len(subscribe_topics) != len(handlers):
-            errors.append(
-                f"subscribe_topics length ({len(subscribe_topics)}) != "
-                f"handlers length ({len(handlers)})"
-            )
-
-        # Per-entry field validation
+        # Per-entry field and topic validation
         for i, entry in enumerate(handlers):
             prefix = f"handlers[{i}]"
             em = entry.get("event_model", {})
@@ -531,6 +552,17 @@ class RuntimeLocal:
                 errors.append(f"{prefix}.handler.name is missing")
             if not hd.get("module"):
                 errors.append(f"{prefix}.handler.module is missing")
+
+            # Resolve input topic; terminal reducers with no positional slot are
+            # valid (no error) — they simply receive no events via the bus.
+            resolved_topic = RuntimeLocal._resolve_handler_input_topic(
+                entry, i, subscribe_topics
+            )
+            if resolved_topic is not None and resolved_topic not in input_topic_set:
+                errors.append(
+                    f"{prefix}.subscribe_topic '{resolved_topic}' is not in "
+                    f"event_bus.subscribe_topics"
+                )
 
         # Collect all event_model.name values and publish_topics for output
         # validation
@@ -579,9 +611,19 @@ class RuntimeLocal:
                 first_output = output_events[0]
                 downstream_idx = name_to_topic_idx.get(first_output)
                 if downstream_idx is not None:
-                    output_topic = subscribe_topics[downstream_idx]
+                    downstream_entry = handlers[downstream_idx]
+                    downstream_topic = self._resolve_handler_input_topic(
+                        downstream_entry, downstream_idx, subscribe_topics
+                    )
+                    output_topic = downstream_topic or ""
                 elif publish_topics:
                     output_topic = publish_topics[0]
+
+            # Terminal reducers may have no input topic (no positional slot and
+            # no explicit subscribe_topic) — use empty string to skip bus wiring.
+            input_topic = (
+                self._resolve_handler_input_topic(entry, i, subscribe_topics) or ""
+            )
 
             resolved.append(
                 _ResolvedRoutingEntry(
@@ -590,7 +632,7 @@ class RuntimeLocal:
                     handler_name=hd.get("name", "unknown"),
                     event_model_module=em.get("module", ""),
                     event_model_class=em.get("name", ""),
-                    input_topic=subscribe_topics[i],
+                    input_topic=input_topic,
                     output_topic=output_topic,
                 )
             )
@@ -677,6 +719,15 @@ class RuntimeLocal:
                 bus=bus,
                 on_error=_make_fail_cb(entry.handler_name),
             )
+
+            if not entry.input_topic:
+                # Terminal reducer: no input topic, no bus subscription needed.
+                logger.info(
+                    "RuntimeLocal: handler '%s' has no input_topic — "
+                    "skipping bus subscription (terminal reducer)",
+                    entry.handler_name,
+                )
+                continue
 
             unsub = await bus.subscribe(
                 entry.input_topic,
