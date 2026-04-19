@@ -23,7 +23,6 @@ import types
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
@@ -101,7 +100,9 @@ def test_runtime_local_does_not_import_protocol_state_store() -> None:
     - import-level references (``from ... import ProtocolStateStore``)
     - the deleted direct-persistence hook name
     """
-    import omnibase_core.runtime.runtime_local as rl_module
+    import importlib
+
+    rl_module = importlib.import_module("omnibase_core.runtime.runtime_local")
 
     source_file = inspect.getfile(rl_module)
     source_lines = Path(source_file).read_text(encoding="utf-8").splitlines()
@@ -129,11 +130,21 @@ def test_runtime_local_does_not_import_protocol_state_store() -> None:
 
 
 class _SingleHandlerWithIntent:
-    """Simulates a reducer handler that returns a result carrying persist intent."""
+    """Simulates a reducer handler that returns a result carrying persist intent.
 
-    def __init__(self, intent: ModelPersistStateIntent) -> None:
-        self._intent = intent
-        self.state_store_put_calls: list[Any] = []
+    The runtime instantiates handlers with no args; ``intent`` is supplied via
+    the class attribute ``_intent_fixture`` set by the test at runtime (see
+    test_single_handler_path_does_not_call_state_store_put).
+    """
+
+    _intent_fixture: ModelPersistStateIntent | None = None
+
+    def __init__(self) -> None:
+        if self.__class__._intent_fixture is None:
+            raise AssertionError(
+                "_intent_fixture not configured before handler construction"
+            )
+        self._intent = self.__class__._intent_fixture
 
     def handle(self, _payload: Any = None) -> _SingleHandlerResult:
         return _SingleHandlerResult(
@@ -165,8 +176,6 @@ def test_single_handler_path_does_not_call_state_store_put(
     mod._SingleHandlerResult = _SingleHandlerResult  # type: ignore[attr-defined]
     sys.modules[mod_name] = mod
 
-    mock_state_store = MagicMock()
-
     try:
         yaml_text = _base_contract_yaml(
             handler_module=mod_name,
@@ -175,22 +184,24 @@ def test_single_handler_path_does_not_call_state_store_put(
         workflow = tmp_path / "contract.yaml"
         workflow.write_text(yaml_text)
 
+        # Inject the intent into the handler so it carries ModelPersistStateIntent
+        mod._SingleHandlerWithIntent._intent_fixture = intent  # type: ignore[attr-defined]
+
         runtime = RuntimeLocal(
             workflow_path=workflow,
             state_root=tmp_path / "state",
             timeout=5,
         )
-        # Inject the intent into the handler so it carries ModelPersistStateIntent
-        mod._SingleHandlerWithIntent._intent_fixture = intent  # type: ignore[attr-defined]
 
         result = runtime.run()
 
-        # Runtime must complete (or fail gracefully) — the key assertion is
-        # that the mock state store was never touched
-        assert result in (EnumWorkflowResult.COMPLETED, EnumWorkflowResult.FAILED)
-        mock_state_store.put.assert_not_called()
+        # The success path is the key assertion; no fallback to FAILED. The
+        # *absence* of any ProtocolStateStore.put call in this code path is
+        # guaranteed structurally by test_runtime_local_does_not_import_protocol_state_store.
+        assert result == EnumWorkflowResult.COMPLETED
 
     finally:
+        mod._SingleHandlerWithIntent._intent_fixture = None  # type: ignore[attr-defined]
         sys.modules.pop(mod_name, None)
 
 
@@ -271,8 +282,6 @@ def test_compute_path_does_not_call_state_store_put(tmp_path: Path) -> None:
     mod._ComputeHandler = _ComputeHandler  # type: ignore[attr-defined]
     sys.modules[mod_name] = mod
 
-    mock_state_store = MagicMock()
-
     try:
         yaml_text = (
             "name: test-compute-persist\n"
@@ -293,8 +302,9 @@ def test_compute_path_does_not_call_state_store_put(tmp_path: Path) -> None:
         )
         result = runtime.run()
 
+        # Absence of ProtocolStateStore.put in _run_compute is guaranteed
+        # structurally by test_runtime_local_does_not_import_protocol_state_store.
         assert result == EnumWorkflowResult.COMPLETED
-        mock_state_store.put.assert_not_called()
 
     finally:
         sys.modules.pop(mod_name, None)
@@ -441,8 +451,6 @@ async def test_event_driven_path_publishes_persist_intent_on_bus(
     ]:
         sys.modules[name] = mod
 
-    mock_state_store = MagicMock()
-
     try:
         contract_yaml = (
             "workflow_id: test-evtdrv-persist\n"
@@ -490,8 +498,9 @@ async def test_event_driven_path_publishes_persist_intent_on_bus(
         )
         result = await runtime.run_async()
 
+        # Absence of ProtocolStateStore.put in _run_event_driven is guaranteed
+        # structurally by test_event_driven_path_does_not_import_state_store.
         assert result == EnumWorkflowResult.COMPLETED
-        mock_state_store.put.assert_not_called()
 
         state_file = tmp_path / "state" / "workflow_result.json"
         assert state_file.exists()
@@ -544,7 +553,9 @@ def test_all_three_paths_share_no_state_store_wiring() -> None:
     Note: doc-comment mentions of 'ProtocolStateStore' are acceptable;
     we target functional code patterns only.
     """
-    import omnibase_core.runtime.runtime_local as rl_module
+    import importlib
+
+    rl_module = importlib.import_module("omnibase_core.runtime.runtime_local")
 
     source = Path(inspect.getfile(rl_module)).read_text(encoding="utf-8")
     lines = source.splitlines()
