@@ -46,6 +46,10 @@ dependencies = [
     "httpx>=0.27.0,<1.0.0",
     "blake3>=1.0.8,<2.0.0",
     "ruamel-yaml>=0.18.0",
+    # omnibase_compat provides run_coro_sync (PR #64 / OMN-9237, merged 2026-04-19)
+    # for sync-from-async bridging in get_service_sync + get_model_onex_container_sync.
+    # Upper bound pinned to <1 per semver convention; current compat series is 0.3.x.
+    "omnibase-compat>=0.3.1,<1.0.0",
 ]
 
 [project.urls]
@@ -128,6 +132,9 @@ dev = [
 
 [tool.uv.sources]
 onex-change-control = { git = "https://github.com/OmniNode-ai/onex_change_control.git", branch = "main" }
+# Pinned to compat main post-OMN-9237 (run_coro_sync helper in src/omnibase_compat/concurrency/).
+# PyPI release v0.3.1 (2026-03-30) predates PR #64 — switch to PyPI pin after compat v0.4.0 ships.
+omnibase-compat = { git = "https://github.com/OmniNode-ai/omnibase_compat.git", branch = "main" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/omnibase_core"]
