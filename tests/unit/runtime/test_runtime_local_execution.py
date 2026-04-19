@@ -1040,7 +1040,7 @@ async def test_adapter_none_return_no_publish() -> None:
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_adapter_unsupported_return_type_raises_on_error() -> None:
-    """Handler returning int/str → on_error fires with TypeError message."""
+    """Handler returning unsupported type → ModelOnexError raised, on_error fires, nothing published."""
 
     class IntHandler:
         async def handle(self, **kwargs: Any) -> int:
