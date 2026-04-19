@@ -37,7 +37,8 @@ See Also:
 
 # NOTE(OMN-1302): I001 (import order) disabled - Dual-Import Pattern for DI container (see OMN-1261).
 
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
+from collections.abc import Coroutine
 
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
@@ -133,6 +134,35 @@ from omnibase_core.protocols.compute import ProtocolToolCache
 #    model_onex_container -> container_service_registry -> models/container/__init__ -> model_onex_container
 
 T = TypeVar("T")
+
+
+def _run_coro_sync(coro: "Coroutine[Any, Any, T]") -> T:
+    """Run a coroutine to completion from sync code, safe inside a running loop.
+
+    ``asyncio.run()`` raises ``RuntimeError`` when called from inside a running
+    event loop. That happens during async auto-wiring, when handler ``__init__``
+    methods (which are inherently sync — Python doesn't allow ``async __init__``)
+    call ``container.get_service_sync(...)`` while the wiring coroutine is being
+    awaited.
+
+    When no loop is running, this falls through to ``asyncio.run()`` — the
+    cheap path. When a loop IS running, the coroutine is dispatched to a
+    short-lived thread with its own event loop, and the calling thread blocks
+    on ``Thread.join()`` until it completes. This is O(thread-spawn) but
+    correct; callers should prefer ``get_service_async()`` when they can.
+    """
+    import concurrent.futures
+
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        # No running loop — cheap path
+        return asyncio.run(coro)
+
+    # Running loop detected — dispatch to a worker thread with its own loop.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(asyncio.run, coro).result()
+
 
 # === CORE CONTAINER DEFINITION ===
 
@@ -512,6 +542,24 @@ class ModelONEXContainer:
                 RuntimeError,
                 ValueError,
             ) as registry_error:
+                # Preserve narrow ServiceResolutionError so HandlerResolver Step 3
+                # can distinguish "service not registered — fall through to
+                # event_bus/zero-arg" from "real wiring failure". Wrapping
+                # everything in DEPENDENCY_UNAVAILABLE broke all auto-wiring.
+                from omnibase_core.errors.error_service_resolution import (
+                    ServiceResolutionError,
+                )
+
+                if isinstance(registry_error, ServiceResolutionError):
+                    emit_log_event(
+                        LogLevel.DEBUG,
+                        f"ServiceRegistry miss (documented): {protocol_name}",
+                        {
+                            "error": str(registry_error),
+                            "correlation_id": str(final_correlation_id),
+                        },
+                    )
+                    raise
                 # Fail fast - ServiceRegistry is the only resolution mechanism when enabled
                 emit_log_event(
                     LogLevel.ERROR,
@@ -552,6 +600,12 @@ class ModelONEXContainer:
         """
         Synchronous service resolution with optional performance monitoring.
 
+        Works from both sync and async contexts: when called from inside a
+        running event loop (e.g. handler __init__ during async auto-wiring),
+        the coroutine runs in a short-lived thread with its own event loop
+        to avoid ``RuntimeError: asyncio.run() cannot be called from a
+        running event loop``.
+
         Args:
             protocol_type: Protocol interface to resolve
             service_name: Optional service name
@@ -561,7 +615,7 @@ class ModelONEXContainer:
         """
         if not self.enable_performance_cache or not self.performance_monitor:
             # Standard resolution without performance monitoring
-            return asyncio.run(self.get_service_async(protocol_type, service_name))
+            return _run_coro_sync(self.get_service_async(protocol_type, service_name))
 
         # Enhanced resolution with performance monitoring
         correlation_id = f"svc_{int(time.time() * 1000)}_{service_name or 'default'}"
@@ -583,7 +637,7 @@ class ModelONEXContainer:
                     )
 
             # Perform actual service resolution
-            service_instance = asyncio.run(
+            service_instance = _run_coro_sync(
                 self.get_service_async(protocol_type, service_name)
             )
 
@@ -1070,8 +1124,14 @@ def get_model_onex_container_sync() -> ModelONEXContainer:
     (via contextvars). If no container exists, it creates a new one
     and sets it in the context.
 
-    Note: This creates a new event loop for each call when no container
-    is available. Prefer using get_model_onex_container() in async code.
+    Worker-thread fallback (OMN-9200): when called from inside a running
+    event loop (e.g. handler ``__init__`` during async auto-wiring), the
+    underlying ``create_model_onex_container()`` coroutine is dispatched
+    to a short-lived worker thread via ``_run_coro_sync()``. The calling
+    thread blocks on ``Thread.join()`` until it completes. When no loop
+    is running, the coroutine runs in-process via ``asyncio.run()`` as
+    before. Prefer ``get_model_onex_container()`` (async) in async code
+    to avoid the thread-offload overhead.
 
     Returns:
         ModelONEXContainer: The container instance for the current context
@@ -1082,9 +1142,9 @@ def get_model_onex_container_sync() -> ModelONEXContainer:
         return container
 
     # No container exists - create one
-    # asyncio.run creates a new context, so the container set inside
-    # won't propagate back. We need to capture and set it here.
-    container = asyncio.run(create_model_onex_container())
+    # _run_coro_sync works whether or not an event loop is already running,
+    # so this path is safe from both sync and async callers.
+    container = _run_coro_sync(create_model_onex_container())
 
     # Set in context for future access
     set_current_container(container)
