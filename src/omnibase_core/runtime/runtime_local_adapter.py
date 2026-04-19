@@ -13,6 +13,8 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+from pydantic import BaseModel
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -107,8 +109,6 @@ class HandlerBusAdapter:
         if not self.output_topic:
             return
         try:
-            from pydantic import BaseModel
-
             if isinstance(result, BaseModel):
                 output_bytes = result.model_dump_json().encode("utf-8")
             elif isinstance(result, dict):
