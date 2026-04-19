@@ -105,29 +105,28 @@ jobs:
           # and reinstall these specific packages regardless of whether a
           # same-version wheel is cached locally or resolvable from PyPI.
           #
-          # Two-pass install (OMN-9198, see docs/diagnosis-omn-9198-receipt-gate-still-pulls-pypi.md):
-          #   Pass 1: install omnibase_compat editable (with PyPI available
-          #           so pydantic/etc. resolve). uv may still resolve
-          #           omnibase-core transitively from PyPI into the cache.
-          #   Pass 2: install omnibase_core editable with --no-index, forcing
-          #           uv to use the local source checkout even when a cached
-          #           PyPI wheel exists. All transitive deps are already
-          #           satisfied by pass 1, so --no-index doesn't break.
+          # Single-pass install: install both omnibase_compat AND omnibase_core
+          # editable in one resolver pass so uv can see both `-e <path>`
+          # registrations simultaneously. This avoids the --no-index failure
+          # observed in OMN-9198 where pass 2 could not resolve a self-dep
+          # constraint against its own editable install.
+          #
+          # --reinstall-package omnibase-core + --refresh ensures the local
+          # editable source is preferred over any cached PyPI wheel, satisfying
+          # the original OMN-9198 concern without breaking resolution.
           if [ -f "./pyproject.toml" ] && grep -qE '^\s*name\s*=\s*["\x27]omnibase[-_.]core["\x27]' ./pyproject.toml 2>/dev/null; then
             uv pip install --system --refresh --reinstall-package omnibase-core -e .
           elif [ -d "./omnibase_core" ] && [ -f "./omnibase_core/pyproject.toml" ]; then
             uv pip install --system --refresh \
               --reinstall-package omnibase-compat \
-              -e ./omnibase_compat
-            uv pip install --system --refresh --no-index \
               --reinstall-package omnibase-core \
+              -e ./omnibase_compat \
               -e ./omnibase_core
           elif [ -f "./.receipt-gate-deps/omnibase_core/pyproject.toml" ]; then
             uv pip install --system --refresh \
               --reinstall-package omnibase-compat \
-              -e ./.receipt-gate-deps/omnibase_compat
-            uv pip install --system --refresh --no-index \
               --reinstall-package omnibase-core \
+              -e ./.receipt-gate-deps/omnibase_compat \
               -e ./.receipt-gate-deps/omnibase_core
           else
             echo "::error::omnibase_core not installable — no source checkout available"
