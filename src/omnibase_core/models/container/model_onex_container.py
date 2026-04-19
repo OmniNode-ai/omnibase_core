@@ -42,6 +42,7 @@ from collections.abc import Coroutine
 
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
+from omnibase_core.errors.error_service_resolution import ServiceResolutionError
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import (
     SerializableValue,
@@ -546,10 +547,8 @@ class ModelONEXContainer:
                 # can distinguish "service not registered — fall through to
                 # event_bus/zero-arg" from "real wiring failure". Wrapping
                 # everything in DEPENDENCY_UNAVAILABLE broke all auto-wiring.
-                from omnibase_core.errors.error_service_resolution import (
-                    ServiceResolutionError,
-                )
-
+                # See docs/plans/2026-04-19-runtime-permanent-fix-and-regression-guard-part-1.md § Task 8
+                # and docs/tracking/2026-04-19-runtime-hot-patch-snapshots.md § fix #3.
                 if isinstance(registry_error, ServiceResolutionError):
                     emit_log_event(
                         LogLevel.DEBUG,
