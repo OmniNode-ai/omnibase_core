@@ -48,6 +48,7 @@ __all__ = [
     "projection",
     "providers",
     "registration",
+    "resolver",  # HandlerResolver input/output models (OMN-9195/OMN-9196)
     "results",
     "routing",  # Tiered resolution routing models (OMN-2890)
     "skill",  # Skill execution result models (OMN-3867)
