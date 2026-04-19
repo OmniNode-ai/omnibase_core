@@ -1176,11 +1176,16 @@ def test_validate_routing_missing_required_fields() -> None:
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_terminal_reducer_end_to_end(tmp_path: Path) -> None:
-    """Terminal reducer workflow: HandlerA emits to bus; HandlerB is terminal (no output topic).
+    """Terminal reducer workflow: three-handler chain where HandlerC is terminal.
 
-    HandlerB has a subscribe_topic but no output_events and no publish_topics entry
-    for its output. The workflow completes when HandlerA's output reaches the
-    publish_topics topic.
+    HandlerA: cmd.start.v1 → EventB (on evt.mid.v1)
+    HandlerB: evt.mid.v1 → EventC (on evt.done.v1, terminal)
+    HandlerC: subscribe_topic: evt.done.v1, no output_events — terminal reducer.
+
+    HandlerC uses an explicit subscribe_topic with no padding required.
+    The terminal event fires when HandlerB publishes EventC to evt.done.v1.
+    HandlerC is wired to evt.done.v1 via explicit subscribe_topic, and the
+    side-effect assertion verifies it actually ran.
     """
     import sys
     import types
@@ -1190,70 +1195,103 @@ async def test_terminal_reducer_end_to_end(tmp_path: Path) -> None:
 
     class EventB(BaseModel):
         correlation_id: str
-        reduced: bool = True
+        step: str = "mid"
+
+    class EventC(BaseModel):
+        correlation_id: str
+        step: str = "done"
+        status: str = "success"
 
     class HandlerA:
         async def handle(self, correlation_id: str) -> EventB:
             return EventB(correlation_id=correlation_id)
 
-    class HandlerBTerminal:
-        """Terminal reducer — processes EventB but emits nothing downstream."""
+    class HandlerB:
+        async def handle(self, correlation_id: str, step: str) -> EventC:
+            return EventC(correlation_id=correlation_id)
 
-        async def handle(self, correlation_id: str, reduced: bool) -> None:
-            return None
+    terminal_calls: list[str] = []
 
-    mod_event_a = types.ModuleType("_test_tr_event_a")
+    class HandlerCTerminal:
+        """Terminal reducer — processes EventC but has no output_events.
+
+        Uses explicit subscribe_topic without requiring positional padding.
+        """
+
+        async def handle(self, correlation_id: str, step: str, status: str) -> None:
+            terminal_calls.append(correlation_id)
+
+    mod_event_a = types.ModuleType("_test_tr2_event_a")
     mod_event_a.EventA = EventA  # type: ignore[attr-defined]
-    mod_event_b = types.ModuleType("_test_tr_event_b")
+    mod_event_b = types.ModuleType("_test_tr2_event_b")
     mod_event_b.EventB = EventB  # type: ignore[attr-defined]
-    mod_handler_a = types.ModuleType("_test_tr_handler_a")
+    mod_event_c = types.ModuleType("_test_tr2_event_c")
+    mod_event_c.EventC = EventC  # type: ignore[attr-defined]
+    mod_handler_a = types.ModuleType("_test_tr2_handler_a")
     mod_handler_a.HandlerA = HandlerA  # type: ignore[attr-defined]
-    mod_handler_b = types.ModuleType("_test_tr_handler_b")
-    mod_handler_b.HandlerBTerminal = HandlerBTerminal  # type: ignore[attr-defined]
+    mod_handler_b = types.ModuleType("_test_tr2_handler_b")
+    mod_handler_b.HandlerB = HandlerB  # type: ignore[attr-defined]
+    mod_handler_c = types.ModuleType("_test_tr2_handler_c")
+    mod_handler_c.HandlerCTerminal = HandlerCTerminal  # type: ignore[attr-defined]
 
     for name, mod in [
-        ("_test_tr_event_a", mod_event_a),
-        ("_test_tr_event_b", mod_event_b),
-        ("_test_tr_handler_a", mod_handler_a),
-        ("_test_tr_handler_b", mod_handler_b),
+        ("_test_tr2_event_a", mod_event_a),
+        ("_test_tr2_event_b", mod_event_b),
+        ("_test_tr2_event_c", mod_event_c),
+        ("_test_tr2_handler_a", mod_handler_a),
+        ("_test_tr2_handler_b", mod_handler_b),
+        ("_test_tr2_handler_c", mod_handler_c),
     ]:
         sys.modules[name] = mod
 
     try:
+        # subscribe_topics contains evt.done.v1 so HandlerC can wire to it.
+        # publish_topics also contains evt.done.v1 as the terminal.
+        # HandlerC uses explicit subscribe_topic — no positional padding required
+        # (only 2 handlers use positional slots; HandlerC uses its own field).
         contract_yaml = (
             "workflow_id: test_terminal_reducer\n"
             "contract_version: {major: 1, minor: 0, patch: 0}\n"
             "node_type: workflow\n"
             "description: Terminal reducer test\n"
             "initial_command: cmd.start.v1\n"
-            "terminal_event: evt.mid.v1\n"
+            "terminal_event: evt.done.v1\n"
             "event_bus:\n"
             "  subscribe_topics:\n"
             "    - cmd.start.v1\n"
             "    - evt.mid.v1\n"
+            "    - evt.done.v1\n"
             "  publish_topics:\n"
-            "    - evt.mid.v1\n"
+            "    - evt.done.v1\n"
             "input_model:\n"
-            "  module: _test_tr_event_a\n"
+            "  module: _test_tr2_event_a\n"
             "  class: EventA\n"
             "handler_routing:\n"
             "  routing_strategy: payload_type_match\n"
             "  handlers:\n"
             "    - event_model:\n"
             "        name: EventA\n"
-            "        module: _test_tr_event_a\n"
+            "        module: _test_tr2_event_a\n"
             "      handler:\n"
             "        name: HandlerA\n"
-            "        module: _test_tr_handler_a\n"
+            "        module: _test_tr2_handler_a\n"
             "      output_events:\n"
             "        - EventB\n"
             "    - event_model:\n"
             "        name: EventB\n"
-            "        module: _test_tr_event_b\n"
+            "        module: _test_tr2_event_b\n"
             "      handler:\n"
-            "        name: HandlerBTerminal\n"
-            "        module: _test_tr_handler_b\n"
-            "      subscribe_topic: evt.mid.v1\n"
+            "        name: HandlerB\n"
+            "        module: _test_tr2_handler_b\n"
+            "      output_events:\n"
+            "        - EventC\n"
+            "    - event_model:\n"
+            "        name: EventC\n"
+            "        module: _test_tr2_event_c\n"
+            "      handler:\n"
+            "        name: HandlerCTerminal\n"
+            "        module: _test_tr2_handler_c\n"
+            "      subscribe_topic: evt.done.v1\n"
             "      output_events: []\n"
         )
         workflow = tmp_path / "terminal_reducer.yaml"
@@ -1266,12 +1304,15 @@ async def test_terminal_reducer_end_to_end(tmp_path: Path) -> None:
         )
         result = await runtime.run_async()
         assert result == EnumWorkflowResult.COMPLETED
+        assert len(terminal_calls) > 0, "HandlerCTerminal was never invoked"
 
     finally:
         for name in [
-            "_test_tr_event_a",
-            "_test_tr_event_b",
-            "_test_tr_handler_a",
-            "_test_tr_handler_b",
+            "_test_tr2_event_a",
+            "_test_tr2_event_b",
+            "_test_tr2_event_c",
+            "_test_tr2_handler_a",
+            "_test_tr2_handler_b",
+            "_test_tr2_handler_c",
         ]:
             sys.modules.pop(name, None)

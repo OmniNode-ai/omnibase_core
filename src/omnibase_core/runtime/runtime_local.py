@@ -512,8 +512,10 @@ class RuntimeLocal:
         Returns the resolved topic string, or ``None`` if neither source
         provides a valid topic (e.g. terminal reducer with no positional slot).
         """
-        explicit = entry.get("subscribe_topic")
-        if explicit:
+        if "subscribe_topic" in entry:
+            explicit = entry["subscribe_topic"]
+            if explicit is None:
+                return None
             return str(explicit)
         if idx < len(subscribe_topics):
             return subscribe_topics[idx]
