@@ -567,7 +567,7 @@ class ServiceRegistry:
             # narrow subclass of ModelOnexError specifically signaling
             # "service-not-registered"; HandlerResolver catches it at Step 3 to
             # fall through to event_bus/zero-arg rather than failing the whole
-            # auto-wiring pass. See services.ServiceHandlerResolver.
+            # auto-wiring pass. See services.ServiceHandlerResolver. [OMN-9242]
             if interface_name not in self._interface_map:
                 available_interfaces = sorted(self._interface_map.keys())
                 msg = (
