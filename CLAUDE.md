@@ -86,6 +86,9 @@ The following are **unstable** (may change without notice):
 
 **CI enforcement**: `test_no_internal_deps.py` prevents internal OmniNode packages
 from appearing in hard dependencies (`sdk-boundary-check` CI job).
+`omnibase-compat` is the single exemption — per `omni_home/CLAUDE.md` §7
+(`compat -> core -> spi -> infra`), compat is the shared substrate every
+OmniNode repo is allowed to hard-depend on.
 
 ---
 
