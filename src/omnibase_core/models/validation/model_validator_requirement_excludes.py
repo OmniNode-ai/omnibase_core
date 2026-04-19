@@ -23,10 +23,8 @@ class ModelValidatorRequirementExcludes(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     allowed: list[str] = Field(
-        default_factory=list,
         description="Path regex patterns that this validator SKIPS by design.",
     )
     forbidden: list[str] = Field(
-        default_factory=list,
         description="Path regex patterns that are NEVER allowed in 'allowed'.",
     )
