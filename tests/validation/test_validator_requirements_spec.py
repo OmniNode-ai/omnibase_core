@@ -29,7 +29,12 @@ SPEC_PATH = (
 # Minimum number of validators the DoD requires. The ticket asks for >= 10.
 MIN_VALIDATORS = 10
 
-REQUIRED_TOP_LEVEL_KEYS = {"schema_version", "required_validators", "metadata"}
+REQUIRED_TOP_LEVEL_KEYS = {
+    "schema_version",
+    "required_validators",
+    "metadata",
+    "known_repos",
+}
 
 REQUIRED_VALIDATOR_FIELDS = {
     "description",
@@ -40,6 +45,11 @@ REQUIRED_VALIDATOR_FIELDS = {
     "silent_skip_allowed",
     "excludes",
     "applies_to_repos",
+    # OMN-9115: matcher fields used by the enforcement consumer so
+    # .pre-commit-config.yaml / .github/workflows/*.yml scans are driven by
+    # the spec rather than hardcoded in the consumer.
+    "pre_commit_hook_ids",
+    "ci_workflow_keywords",
 }
 
 VALID_SCOPE_VALUES = {"required", "optional"}

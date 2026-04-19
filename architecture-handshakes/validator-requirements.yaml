@@ -3,8 +3,8 @@
 #
 # This file is the single source of truth for which validators must be wired
 # on every repo's pre-commit + CI + branch protection. The handshake verifier
-# (check-handshake-validators.py) reads this spec and cross-references each
-# downstream repo's .pre-commit-config.yaml + .github/workflows/ + branch
+# (validator_requirements_consumer.py) reads this spec and cross-references
+# each downstream repo's .pre-commit-config.yaml + .github/workflows/ + branch
 # protection required-checks, and fails loud on any missing/mis-configured
 # validator.
 #
@@ -12,12 +12,31 @@
 # OMN-9050 pin-bump bot: spec change → bot opens a bump PR on every downstream
 # repo → each repo's handshake workflow fails until wiring is added.
 #
-# See: OMN-9048 (validator standardization epic), OMN-9051 (this file's owner).
+# See: OMN-9048 (validator standardization epic), OMN-9051 (spec),
+#      OMN-9115 (spec consumer + enforcement wiring).
 
 schema_version:
   major: 1
-  minor: 0
+  minor: 2
   patch: 0
+
+# Canonical list of all OmniNode repos governed by this spec. The consumer
+# uses this list to reject typos in repo arguments. Keep in sync when
+# onboarding/offboarding a repo; adding a repo here without wiring its
+# validators will surface as gaps on the next handshake run.
+known_repos:
+  - omniclaude
+  - omnibase_compat
+  - omnibase_core
+  - omnibase_spi
+  - omnibase_infra
+  - omnidash
+  - omnimarket
+  - omniintelligence
+  - omnimemory
+  - omninode_infra
+  - omniweb
+  - onex_change_control
 
 # Scopes:
 #   - pre_commit: "required" | "optional"  — entry in .pre-commit-config.yaml
@@ -31,6 +50,12 @@ schema_version:
 #     "all" = all 12. Override with a list for validators that legitimately
 #     skip some repos (e.g., Python validators skip omniweb PHP).
 #   - central_source: canonical module/script location
+#   - pre_commit_hook_ids: list of acceptable pre-commit hook id substrings.
+#     The consumer accepts any repo whose .pre-commit-config.yaml contains at
+#     least one hook whose id matches one of these substrings.
+#   - ci_workflow_keywords: list of acceptable CI workflow step-name / run-line
+#     substrings. The consumer accepts any repo whose .github/workflows/*.yml
+#     contains at least one step mentioning one of these keywords.
 
 required_validators:
 
@@ -43,6 +68,12 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "validate-local-paths / validate"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "validate-local-paths"
+      - "check-local-paths"
+    ci_workflow_keywords:
+      - "validator_local_paths"
+      - "validate-local-paths"
     excludes:
       allowed: ["^tests/fixtures/", "^docs/"]
       forbidden: ["^tests/$", "^tests/[^f]", "^src/"]
@@ -56,6 +87,12 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "SPDX Headers / validate"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "validate-spdx-headers"
+      - "spdx-headers"
+    ci_workflow_keywords:
+      - "spdx"
+      - "onex spdx validate"
     excludes:
       allowed: ["\\.md$", "\\.ya?ml$", "\\.json$"]
       forbidden: ["^tests/", "^src/"]
@@ -69,6 +106,11 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "ARCH-Invariants / no-hardcoded-topics"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "no-hardcoded-topics"
+    ci_workflow_keywords:
+      - "no-hardcoded-topics"
+      - "hardcoded-topics"
     excludes:
       allowed: ["^docs/", "\\.yaml$"]
       forbidden: ["^src/", "^tests/"]
@@ -91,6 +133,12 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "Stub Implementations / check"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "check-stub-implementations"
+      - "stub-implementations"
+    ci_workflow_keywords:
+      - "check_stub_implementations"
+      - "stub-implementations"
     excludes:
       allowed: ["^tests/"]
       forbidden: ["^src/"]
@@ -111,6 +159,12 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "Enum Governance / validate"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "check-enum-governance"
+      - "enum-governance"
+    ci_workflow_keywords:
+      - "checker_enum_governance"
+      - "enum-governance"
     excludes:
       allowed: ["^tests/"]
       forbidden: ["^src/"]
@@ -133,6 +187,12 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "Naming Conventions / validate"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "validate-naming-conventions"
+      - "validate-file-naming-conventions"
+    ci_workflow_keywords:
+      - "naming-conventions"
+      - "validate_naming"
     excludes:
       allowed: ["^tests/", "^archived/"]
       forbidden: ["^src/"]
@@ -155,6 +215,12 @@ required_validators:
     ci_workflow: optional
     required_check_on_main: null
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "check-self-gating-workflows"
+      - "self-gating-workflows"
+    ci_workflow_keywords:
+      - "check_self_gating_workflows"
+      - "self-gating"
     excludes:
       allowed: []
       forbidden: []
@@ -170,6 +236,10 @@ required_validators:
     ci_workflow: optional
     required_check_on_main: null
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "branch-protection-rollout-guard"
+    ci_workflow_keywords:
+      - "branch_protection_verifier"
     excludes:
       allowed: []
       forbidden: []
@@ -184,6 +254,10 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "Security Gate / bandit"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "bandit"
+    ci_workflow_keywords:
+      - "bandit"
     excludes:
       allowed: ["^tests/", "^examples/"]
       forbidden: ["^src/"]
@@ -206,6 +280,11 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "Quality Gate / mypy"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "mypy-type-check"
+      - "mypy"
+    ci_workflow_keywords:
+      - "mypy"
     excludes:
       allowed: ["^tests/"]
       forbidden: ["^src/"]
@@ -227,6 +306,12 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "Quality Gate / ruff"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "ruff-format"
+      - "ruff-fix"
+      - "ruff"
+    ci_workflow_keywords:
+      - "ruff"
     excludes:
       allowed: []
       forbidden: []
@@ -250,6 +335,13 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "AI Slop / check"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "check-ai-slop"
+      - "aislop"
+    ci_workflow_keywords:
+      - "aislop"
+      - "ai-slop"
+      - "check_ai_slop"
     excludes:
       allowed: ["^docs/", "^CHANGELOG\\.md$"]
       forbidden: ["^src/"]
@@ -263,6 +355,12 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "Pydantic Patterns / validate"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "validate-pydantic-patterns"
+      - "validate-pydantic-conventions"
+      - "pydantic-patterns"
+    ci_workflow_keywords:
+      - "pydantic"
     excludes:
       allowed: ["^tests/"]
       forbidden: ["^src/"]
@@ -284,6 +382,12 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "Single Class / validate"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "onex-single-class-per-file"
+      - "single-class-per-file"
+    ci_workflow_keywords:
+      - "single-class-per-file"
+      - "single_class"
     excludes:
       allowed: ["^tests/"]
       forbidden: ["^src/"]
@@ -305,6 +409,11 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "Security Gate / detect-secrets"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "detect-secrets"
+    ci_workflow_keywords:
+      - "detect-secrets"
+      - "detect_secrets"
     excludes:
       allowed: ["\\.secrets\\.baseline$", "^tests/fixtures/"]
       forbidden: []
@@ -318,6 +427,11 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "ARCH-Invariants / no-untracked-todos"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "no-untracked-todos"
+    ci_workflow_keywords:
+      - "no-untracked-todos"
+      - "untracked-todos"
     excludes:
       allowed: ["^docs/"]
       forbidden: ["^src/", "^tests/"]
@@ -332,6 +446,12 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "ARCH-002 / no-transport-imports"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "validate-no-transport-imports"
+      - "no-transport-imports"
+    ci_workflow_keywords:
+      - "validate_no_transport_imports"
+      - "no-transport-imports"
     excludes:
       allowed: ["^tests/", "^src/.*/runtime/", "^src/.*/api/", "^src/.*/adapters/"]
       forbidden: ["^src/.*/nodes/"]
@@ -354,6 +474,14 @@ required_validators:
     ci_workflow: required
     required_check_on_main: "Compose Drift / validate"
     silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "validator-banned-compose-vars"
+      - "banned-compose-vars"
+      - "banned-compose-env-vars"
+    ci_workflow_keywords:
+      - "validator_banned_compose_vars"
+      - "banned-compose-vars"
+      - "banned-compose-env-vars"
     excludes:
       allowed: []
       forbidden: []
@@ -364,7 +492,7 @@ required_validators:
 # Handshake metadata
 
 metadata:
-  generated_by: "manually authored (OMN-9051)"
+  generated_by: "manually authored (OMN-9051); consumer added OMN-9115"
   last_updated: "2026-04-17"
   next_review: "on any new validator addition — single source of truth, change propagates via OMN-9050
     bot"
@@ -372,5 +500,6 @@ metadata:
     - OMN-9048  # validator standardization epic
     - OMN-9049  # universal handshake coverage
     - OMN-9050  # pin-bump bot
-    - OMN-9051  # this file's owner
+    - OMN-9051  # spec file owner
     - OMN-9058  # env-store abstraction
+    - OMN-9115  # spec consumer + enforcement wiring

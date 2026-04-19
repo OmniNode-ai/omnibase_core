@@ -1,0 +1,60 @@
+---
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Accepted validator-requirement gaps for omnibase_core.
+#
+# This file is the ratchet baseline for validator_requirements_consumer.py.
+# Each entry is a gap the consumer would otherwise report against
+# architecture-handshakes/validator-requirements.yaml. The handshake gate
+# blocks:
+#
+#   - any NEW gap not listed here (regression)
+#   - any entry here that the consumer no longer reproduces (stale baseline;
+#     must be removed once the validator is wired)
+#
+# Individual entries close as OMN-9048 sub-tickets land. Remove each entry
+# when the corresponding wiring work lands in this repo. See
+# docs/audits/2026-04-17-validator-inventory.md for the per-validator roadmap.
+#
+# Spec consumer: OMN-9115. Baseline pattern mirrors validate-dict-any-usage
+# (pre-commit-config --max-violations), which is the established ratchet
+# precedent in this repo.
+- repo: omnibase_core
+  validator: bandit-security
+  kind: MISSING_CI_WORKFLOW
+- repo: omnibase_core
+  validator: bandit-security
+  kind: MISSING_PRE_COMMIT
+- repo: omnibase_core
+  validator: detect-secrets
+  kind: MISSING_PRE_COMMIT
+- repo: omnibase_core
+  validator: enum-governance
+  kind: SILENT_SKIP_WRAPPER
+- repo: omnibase_core
+  validator: hardcoded-local-paths
+  kind: MISSING_CI_WORKFLOW
+- repo: omnibase_core
+  validator: hardcoded-local-paths
+  kind: MISSING_PRE_COMMIT
+- repo: omnibase_core
+  validator: naming-conventions
+  kind: SILENT_SKIP_WRAPPER
+- repo: omnibase_core
+  validator: no-hardcoded-topics
+  kind: MISSING_CI_WORKFLOW
+- repo: omnibase_core
+  validator: no-untracked-todos
+  kind: MISSING_CI_WORKFLOW
+- repo: omnibase_core
+  validator: self-gating-workflows
+  kind: MISSING_PRE_COMMIT
+- repo: omnibase_core
+  validator: single-class-per-file
+  kind: MISSING_CI_WORKFLOW
+- repo: omnibase_core
+  validator: spdx-headers
+  kind: MISSING_CI_WORKFLOW
+- repo: omnibase_core
+  validator: stub-implementations
+  kind: MISSING_CI_WORKFLOW
