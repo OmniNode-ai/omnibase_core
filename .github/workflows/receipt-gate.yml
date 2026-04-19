@@ -101,17 +101,24 @@ jobs:
         # Never fall back to PyPI — the published package has a broken transitive
         # dep (git+https omnibase-compat URL) that fails in CI.
         run: |
-          # --refresh forces uv to rebuild from the editable source even when a
-          # same-version wheel is cached locally or resolvable from PyPI. Without
-          # it, uv can resolve ./path against PyPI when pyproject.toml `version`
-          # matches a published release (e.g. feature lands on main without a
-          # version bump — see OMN-9192).
+          # --refresh + --reinstall-package force uv to rebuild the editable source
+          # and reinstall these specific packages regardless of whether a
+          # same-version wheel is cached locally or resolvable from PyPI.
+          # Without --reinstall-package, uv can resolve ./path against PyPI when
+          # pyproject.toml `version` matches a published release (e.g. feature
+          # lands on main without a version bump — see OMN-9191/OMN-9192
+          # diagnosis: docs/diagnosis-omn-9198-verify-gate-receipt-cli.md).
+          # Transitive deps still resolve normally from PyPI.
           if [ -f "./pyproject.toml" ] && grep -qE '^\s*name\s*=\s*["\x27]omnibase[-_.]core["\x27]' ./pyproject.toml 2>/dev/null; then
-            uv pip install --system --refresh -e .
+            uv pip install --system --refresh --reinstall-package omnibase-core -e .
           elif [ -d "./omnibase_core" ] && [ -f "./omnibase_core/pyproject.toml" ]; then
-            uv pip install --system --refresh -e ./omnibase_compat -e ./omnibase_core
+            uv pip install --system --refresh \
+              --reinstall-package omnibase-compat --reinstall-package omnibase-core \
+              -e ./omnibase_compat -e ./omnibase_core
           elif [ -f "./.receipt-gate-deps/omnibase_core/pyproject.toml" ]; then
-            uv pip install --system --refresh -e ./.receipt-gate-deps/omnibase_compat -e ./.receipt-gate-deps/omnibase_core
+            uv pip install --system --refresh \
+              --reinstall-package omnibase-compat --reinstall-package omnibase-core \
+              -e ./.receipt-gate-deps/omnibase_compat -e ./.receipt-gate-deps/omnibase_core
           else
             echo "::error::omnibase_core not installable — no source checkout available"
             exit 1
