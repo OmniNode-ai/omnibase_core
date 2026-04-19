@@ -117,13 +117,27 @@ jobs:
           # first, so omnibase_core's constraint on compat is already satisfied
           # by editable when pass 2 runs, avoiding --no-index entirely).
           uv pip uninstall --system omnibase-core omnibase-compat 2>/dev/null || true
+
+          # Resolve compat install path independently from core — sibling
+          # ./omnibase_compat may exist even when the workspace is the
+          # omnibase_core repo itself, and mixed layouts are common.
+          if [ -f "./omnibase_compat/pyproject.toml" ]; then
+            compat_path="./omnibase_compat"
+          elif [ -f "./.receipt-gate-deps/omnibase_compat/pyproject.toml" ]; then
+            compat_path="./.receipt-gate-deps/omnibase_compat"
+          else
+            compat_path=""
+          fi
+
+          if [ -n "$compat_path" ]; then
+            uv pip install --system --refresh -e "$compat_path"
+          fi
+
           if [ -f "./pyproject.toml" ] && grep -qE '^\s*name\s*=\s*["\x27]omnibase[-_.]core["\x27]' ./pyproject.toml 2>/dev/null; then
             uv pip install --system --refresh -e .
-          elif [ -d "./omnibase_core" ] && [ -f "./omnibase_core/pyproject.toml" ]; then
-            uv pip install --system --refresh -e ./omnibase_compat
+          elif [ -f "./omnibase_core/pyproject.toml" ]; then
             uv pip install --system --refresh -e ./omnibase_core
           elif [ -f "./.receipt-gate-deps/omnibase_core/pyproject.toml" ]; then
-            uv pip install --system --refresh -e ./.receipt-gate-deps/omnibase_compat
             uv pip install --system --refresh -e ./.receipt-gate-deps/omnibase_core
           else
             echo "::error::omnibase_core not installable — no source checkout available"
