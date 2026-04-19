@@ -101,33 +101,30 @@ jobs:
         # Never fall back to PyPI — the published package has a broken transitive
         # dep (git+https omnibase-compat URL) that fails in CI.
         run: |
-          # --refresh + --reinstall-package force uv to rebuild the editable source
-          # and reinstall these specific packages regardless of whether a
-          # same-version wheel is cached locally or resolvable from PyPI.
+          # OMN-9198 history:
+          #   - PR #850 two-pass with --no-index on pass 2 failed: uv couldn't
+          #     satisfy the caller's `omnibase-core>=X` constraint against the
+          #     editable path with index disabled.
+          #   - PR #851 single-pass with `--reinstall-package -e ./path` still
+          #     pulled the PyPI wheel: the editable source and published wheel
+          #     share version 0.39.0, and uv's preference order
+          #     (cached → index → path) wins even under --refresh.
           #
-          # Single-pass install: install both omnibase_compat AND omnibase_core
-          # editable in one resolver pass so uv can see both `-e <path>`
-          # registrations simultaneously. This avoids the --no-index failure
-          # observed in OMN-9198 where pass 2 could not resolve a self-dep
-          # constraint against its own editable install.
-          #
-          # --reinstall-package omnibase-core + --refresh ensures the local
-          # editable source is preferred over any cached PyPI wheel, satisfying
-          # the original OMN-9198 concern without breaking resolution.
+          # Fix: explicit uninstall-then-install-editable. Clearing the cached
+          # wheel eliminates uv's preferred target, forcing it to build from
+          # the editable path. Split installs let each editable resolve its own
+          # transitive deps against PyPI cleanly (pass 1 installs omnibase_compat
+          # first, so omnibase_core's constraint on compat is already satisfied
+          # by editable when pass 2 runs, avoiding --no-index entirely).
+          uv pip uninstall --system omnibase-core omnibase-compat 2>/dev/null || true
           if [ -f "./pyproject.toml" ] && grep -qE '^\s*name\s*=\s*["\x27]omnibase[-_.]core["\x27]' ./pyproject.toml 2>/dev/null; then
-            uv pip install --system --refresh --reinstall-package omnibase-core -e .
+            uv pip install --system --refresh -e .
           elif [ -d "./omnibase_core" ] && [ -f "./omnibase_core/pyproject.toml" ]; then
-            uv pip install --system --refresh \
-              --reinstall-package omnibase-compat \
-              --reinstall-package omnibase-core \
-              -e ./omnibase_compat \
-              -e ./omnibase_core
+            uv pip install --system --refresh -e ./omnibase_compat
+            uv pip install --system --refresh -e ./omnibase_core
           elif [ -f "./.receipt-gate-deps/omnibase_core/pyproject.toml" ]; then
-            uv pip install --system --refresh \
-              --reinstall-package omnibase-compat \
-              --reinstall-package omnibase-core \
-              -e ./.receipt-gate-deps/omnibase_compat \
-              -e ./.receipt-gate-deps/omnibase_core
+            uv pip install --system --refresh -e ./.receipt-gate-deps/omnibase_compat
+            uv pip install --system --refresh -e ./.receipt-gate-deps/omnibase_core
           else
             echo "::error::omnibase_core not installable — no source checkout available"
             exit 1
