@@ -118,16 +118,14 @@ jobs:
           elif [ -d "./omnibase_core" ] && [ -f "./omnibase_core/pyproject.toml" ]; then
             uv pip install --system --refresh \
               --reinstall-package omnibase-compat \
-              -e ./omnibase_compat
-            uv pip install --system --refresh --no-index \
               --reinstall-package omnibase-core \
+              -e ./omnibase_compat \
               -e ./omnibase_core
           elif [ -f "./.receipt-gate-deps/omnibase_core/pyproject.toml" ]; then
             uv pip install --system --refresh \
               --reinstall-package omnibase-compat \
-              -e ./.receipt-gate-deps/omnibase_compat
-            uv pip install --system --refresh --no-index \
               --reinstall-package omnibase-core \
+              -e ./.receipt-gate-deps/omnibase_compat \
               -e ./.receipt-gate-deps/omnibase_core
           else
             echo "::error::omnibase_core not installable — no source checkout available"
