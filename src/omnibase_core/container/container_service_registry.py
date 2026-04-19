@@ -18,6 +18,7 @@ from omnibase_core.enums import (
     EnumOperationStatus,
     EnumServiceLifecycle,
 )
+from omnibase_core.errors.error_service_resolution import ServiceResolutionError
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
@@ -562,7 +563,11 @@ class ServiceRegistry:
                 interface.__name__ if hasattr(interface, "__name__") else str(interface)
             )
 
-            # Find registrations for interface
+            # Find registrations for interface. ServiceResolutionError is a
+            # narrow subclass of ModelOnexError specifically signaling
+            # "service-not-registered"; HandlerResolver catches it at Step 3 to
+            # fall through to event_bus/zero-arg rather than failing the whole
+            # auto-wiring pass. See services.ServiceHandlerResolver.
             if interface_name not in self._interface_map:
                 available_interfaces = sorted(self._interface_map.keys())
                 msg = (
@@ -570,7 +575,7 @@ class ServiceRegistry:
                     f"Available interfaces: {', '.join(available_interfaces) if available_interfaces else 'none'}. "
                     f"Register a service using register_service() or register_instance() before attempting resolution."
                 )
-                raise ModelOnexError(
+                raise ServiceResolutionError(
                     message=msg,
                     error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
                 )
@@ -582,7 +587,7 @@ class ServiceRegistry:
                     f"The interface was previously registered but all registrations have been removed. "
                     f"Re-register a service implementation for this interface."
                 )
-                raise ModelOnexError(
+                raise ServiceResolutionError(
                     message=msg,
                     error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
                 )

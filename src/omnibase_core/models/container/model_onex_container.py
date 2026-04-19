@@ -542,6 +542,24 @@ class ModelONEXContainer:
                 RuntimeError,
                 ValueError,
             ) as registry_error:
+                # Preserve narrow ServiceResolutionError so HandlerResolver Step 3
+                # can distinguish "service not registered — fall through to
+                # event_bus/zero-arg" from "real wiring failure". Wrapping
+                # everything in DEPENDENCY_UNAVAILABLE broke all auto-wiring.
+                from omnibase_core.errors.error_service_resolution import (
+                    ServiceResolutionError,
+                )
+
+                if isinstance(registry_error, ServiceResolutionError):
+                    emit_log_event(
+                        LogLevel.DEBUG,
+                        f"ServiceRegistry miss (documented): {protocol_name}",
+                        {
+                            "error": str(registry_error),
+                            "correlation_id": str(final_correlation_id),
+                        },
+                    )
+                    raise
                 # Fail fast - ServiceRegistry is the only resolution mechanism when enabled
                 emit_log_event(
                     LogLevel.ERROR,
@@ -1106,8 +1124,14 @@ def get_model_onex_container_sync() -> ModelONEXContainer:
     (via contextvars). If no container exists, it creates a new one
     and sets it in the context.
 
-    Note: This creates a new event loop for each call when no container
-    is available. Prefer using get_model_onex_container() in async code.
+    Worker-thread fallback (OMN-9200): when called from inside a running
+    event loop (e.g. handler ``__init__`` during async auto-wiring), the
+    underlying ``create_model_onex_container()`` coroutine is dispatched
+    to a short-lived worker thread via ``_run_coro_sync()``. The calling
+    thread blocks on ``Thread.join()`` until it completes. When no loop
+    is running, the coroutine runs in-process via ``asyncio.run()`` as
+    before. Prefer ``get_model_onex_container()`` (async) in async code
+    to avoid the thread-offload overhead.
 
     Returns:
         ModelONEXContainer: The container instance for the current context
