@@ -36,6 +36,9 @@ from omnibase_core.enums.ticket.enum_ticket_types import (
     Status,
     VerificationKind,
 )
+from omnibase_core.enums.ticket.enum_ticket_workflow_phase import (
+    EnumTicketWorkflowPhase,
+)
 
 __all__ = [
     "EnumTicketPhase",
@@ -59,4 +62,5 @@ __all__ = [
     "DefinitionLocation",
     "EnumInterfaceSurface",
     "InterfaceSurface",
+    "EnumTicketWorkflowPhase",
 ]
