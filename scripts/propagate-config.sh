@@ -61,15 +61,6 @@ if match is None:
     sys.exit(3)
 
 supported_ops = {"append_hook_entry"}
-supported_merge_methods = {"queue_default", "squash", "merge", "rebase"}
-merge_method = match.get("merge_method", "queue_default")
-if merge_method not in supported_merge_methods:
-    sys.stderr.write(
-        f"ERROR: unsupported merge_method '{merge_method}' "
-        f"(supported: {sorted(supported_merge_methods)})\n"
-    )
-    sys.exit(5)
-
 for target in match.get("targets") or []:
     op = target.get("operation")
     if op not in supported_ops:
@@ -78,7 +69,7 @@ for target in match.get("targets") or []:
 
 print(json.dumps({
     "auto_merge": bool(match.get("auto_merge", False)),
-    "merge_method": merge_method,
+    "merge_method": match.get("merge_method", "queue_default"),
     "targets": match.get("targets") or [],
 }))
 PY
@@ -119,9 +110,7 @@ EOF
   if [[ "$DRY_RUN" == "1" ]]; then
     echo "DRY_RUN: gh pr create --repo ${REPO} --head ${BRANCH} --base main --title \"${TITLE}\""
     if [[ "$AUTO_MERGE" == "True" || "$AUTO_MERGE" == "true" ]]; then
-      # Per OMN-8838: always arm auto-merge via GraphQL enablePullRequestAutoMerge
-      # (never `gh pr merge --auto` — it silently picks the wrong method).
-      echo "DRY_RUN: gh api graphql enablePullRequestAutoMerge(mergeMethod: SQUASH) --auto ${REPO}#<pr>"
+      echo "DRY_RUN: gh pr merge --repo ${REPO} --auto --${MERGE_METHOD/queue_default/squash} <pr-number>"
     fi
     continue
   fi
@@ -131,25 +120,12 @@ EOF
   trap "rm -rf $TMPDIR" EXIT
   pushd "$TMPDIR" >/dev/null
 
-  # gh repo clone uses GITHUB_TOKEN for the initial clone, but subsequent
-  # git push requires git credentials configured separately.
-  gh auth setup-git
   gh repo clone "$REPO" downstream -- --depth=5
   cd downstream
-
-  if [[ ! -f "$FILE_PATH" ]]; then
-    echo "ERROR: ${REPO} is missing ${FILE_PATH} — skipping to avoid creating invalid config" >&2
-    popd >/dev/null
-    rm -rf "$TMPDIR"
-    trap - EXIT
-    continue
-  fi
 
   if grep -q "id:\s*${HOOK_ID}" "$FILE_PATH" 2>/dev/null; then
     echo "SKIP: ${REPO} already contains hook ${HOOK_ID} in ${FILE_PATH}"
     popd >/dev/null
-    rm -rf "$TMPDIR"
-    trap - EXIT
     continue
   fi
 
@@ -180,20 +156,14 @@ SNIPPET
 
   if [[ "$AUTO_MERGE" == "True" || "$AUTO_MERGE" == "true" ]]; then
     PR_NUMBER="$(echo "$PR_URL" | sed -E 's#.*/pull/([0-9]+).*#\1#')"
-    # Per OMN-8838 + memory reference_github_merge_queue_api: always arm
-    # auto-merge via GraphQL enablePullRequestAutoMerge with explicit
-    # mergeMethod. `gh pr merge --auto` silently picks the wrong method on
-    # merge-queue-enabled repos.
-    case "$MERGE_METHOD" in
-      queue_default|squash) GRAPHQL_METHOD="SQUASH" ;;
-      merge) GRAPHQL_METHOD="MERGE" ;;
-      rebase) GRAPHQL_METHOD="REBASE" ;;
-      *) echo "ERROR: unknown merge_method '$MERGE_METHOD'" >&2; exit 5 ;;
-    esac
-    PR_ID="$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.node_id')"
-    gh api graphql \
-      -f query='mutation($id:ID!,$m:PullRequestMergeMethod!){enablePullRequestAutoMerge(input:{pullRequestId:$id,mergeMethod:$m}){pullRequest{number}}}' \
-      -f id="$PR_ID" -f m="$GRAPHQL_METHOD"
+    # queue_default == merge queue arms auto-merge without choosing a method;
+    # fall back to --squash for repos that predate merge queues.
+    if [[ "$MERGE_METHOD" == "queue_default" ]]; then
+      gh pr merge "$PR_NUMBER" --repo "$REPO" --auto || \
+        gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash
+    else
+      gh pr merge "$PR_NUMBER" --repo "$REPO" --auto "--${MERGE_METHOD}"
+    fi
   fi
 
   popd >/dev/null

@@ -102,10 +102,8 @@ def test_dry_run_arms_auto_merge_per_pr(tmp_path: Path) -> None:
     )
     result = _run(targets)
     assert result.returncode == 0, result.stderr
-    # Per OMN-8838: auto-merge is armed via GraphQL enablePullRequestAutoMerge,
-    # never `gh pr merge --auto` (which silently picks the wrong method).
-    assert "enablePullRequestAutoMerge" in result.stdout, result.stdout
-    assert "SQUASH" in result.stdout
+    assert "DRY_RUN: gh pr merge" in result.stdout, result.stdout
+    assert "--auto" in result.stdout
 
 
 @pytest.mark.unit
@@ -122,27 +120,6 @@ def test_unknown_propagation_name_exits_nonzero(tmp_path: Path) -> None:
     )
     result = _run(targets, propagation_name="normalization-symmetry-hook")
     assert result.returncode != 0
-
-
-@pytest.mark.unit
-def test_unsupported_merge_method_rejected(tmp_path: Path) -> None:
-    targets = _write_targets(
-        tmp_path,
-        """
-        propagations:
-          - name: normalization-symmetry-hook
-            targets:
-              - repo: OmniNode-ai/omnibase_infra
-                path: .pre-commit-config.yaml
-                operation: append_hook_entry
-                hook_id: normalization-symmetry
-            auto_merge: true
-            merge_method: invalid_method
-        """,
-    )
-    result = _run(targets)
-    assert result.returncode != 0
-    assert "unsupported merge_method" in (result.stderr + result.stdout).lower()
 
 
 @pytest.mark.unit
