@@ -1,0 +1,72 @@
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-9344: declarative target list for cross-repo config propagation.
+# Consumed by .github/workflows/propagate-config.yml via scripts/propagate-config.sh.
+#
+# Schema:
+#   propagations:
+#     - name: stable identifier (matches what the workflow's PROPAGATION_NAME
+#             input routes on — must be unique)
+#       source: optional source file in omnibase_core that documents the entry
+#       targets:
+#         - repo: OmniNode-ai/<name>
+#           path: file inside the target repo to edit
+#           operation: one of [append_hook_entry]
+#           hook_id: identifier used for idempotency + the hook's `id:` field
+#       auto_merge: true|false — arm gh pr merge --auto on every PR
+#       merge_method: queue_default | squash | merge | rebase
+#
+# Add a new propagation by appending a top-level entry. Add or remove target
+# repos by editing the `targets` list. No code changes required — the bot
+# re-reads this file on every run.
+#
+# First consumer: OMN-9333 normalization-symmetry validator rollout.
+
+propagations:
+  - name: normalization-symmetry-hook
+    source: .pre-commit-hooks.yaml
+    targets:
+      - repo: OmniNode-ai/omnibase_compat
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: normalization-symmetry
+      - repo: OmniNode-ai/omnibase_spi
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: normalization-symmetry
+      - repo: OmniNode-ai/omnibase_infra
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: normalization-symmetry
+      - repo: OmniNode-ai/omniclaude
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: normalization-symmetry
+      - repo: OmniNode-ai/omnidash
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: normalization-symmetry
+      - repo: OmniNode-ai/omniintelligence
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: normalization-symmetry
+      - repo: OmniNode-ai/omnimarket
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: normalization-symmetry
+      - repo: OmniNode-ai/omnimemory
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: normalization-symmetry
+      - repo: OmniNode-ai/omninode_infra
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: normalization-symmetry
+      - repo: OmniNode-ai/onex_change_control
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: normalization-symmetry
+    auto_merge: true
+    merge_method: queue_default

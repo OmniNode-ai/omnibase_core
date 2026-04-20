@@ -1,0 +1,107 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-9344: cross-repo config propagator bot.
+#
+# Trigger: on release published, or manual workflow_dispatch for on-demand
+# sweeps (e.g. bootstrapping a new validator rollout without cutting a tag).
+#
+# For each target declared in .github/propagation-targets.yaml under the
+# selected propagation name, the bot:
+#   1. Clones the target repo with CROSS_REPO_PAT.
+#   2. Appends the declared hook block to the target file (skips if already
+#      present — idempotent).
+#   3. Commits to a bot/propagate-<name>-<tag> branch and opens a PR.
+#   4. Arms gh pr merge --auto per the propagation's merge_method.
+#
+# Failures on one target MUST NOT block the rest — each matrix leg is
+# continue-on-error so a bad config surface on one repo doesn't cascade.
+
+name: Propagate config across downstream repos
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      propagation_name:
+        description: "Propagation name from propagation-targets.yaml (e.g. normalization-symmetry-hook)"
+        required: true
+      release_tag:
+        description: "Release tag for traceability (defaults to 'manual-<run_id>')"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: propagate-config-${{ github.event.release.tag_name || inputs.propagation_name }}
+  cancel-in-progress: false
+
+jobs:
+  propagate:
+    name: Propagate ${{ inputs.propagation_name || 'release-triggered' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install parser deps
+        run: pip install pyyaml
+
+      - name: Resolve propagation name
+        id: name
+        run: |
+          if [[ -n "${{ inputs.propagation_name }}" ]]; then
+            echo "name=${{ inputs.propagation_name }}" >> "$GITHUB_OUTPUT"
+          else
+            # Default for release-triggered runs: current first-consumer rollout.
+            echo "name=normalization-symmetry-hook" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [[ -n "${{ github.event.release.tag_name }}" ]]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          elif [[ -n "${{ inputs.release_tag }}" ]]; then
+            echo "tag=${{ inputs.release_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=manual-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run propagator
+        env:
+          GITHUB_TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+          PROPAGATION_NAME: ${{ steps.name.outputs.name }}
+          PROPAGATION_RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+        run: bash scripts/propagate-config.sh
+
+  dry-run-ci-check:
+    # Runs on every push/PR to this repo so regressions in the script or
+    # targets file are caught before a real release fires the bot. Uses
+    # PROPAGATION_DRY_RUN=1 so no cross-repo side effects occur.
+    name: Dry-run sanity check
+    if: github.event_name != 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install parser deps
+        run: pip install pyyaml
+
+      - name: Execute dry-run
+        env:
+          GITHUB_TOKEN: dry-run-token
+          PROPAGATION_NAME: normalization-symmetry-hook
+          PROPAGATION_DRY_RUN: "1"
+        run: bash scripts/propagate-config.sh
