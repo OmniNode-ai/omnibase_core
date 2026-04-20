@@ -159,6 +159,7 @@ jobs:
           # Without hatchling pre-installed, uv cannot build the editable source.
           uv pip install --system \
             'hatchling' \
+            'editables' \
             'pydantic>=2.12.5,<3.0.0' \
             'pyyaml>=6.0.2,<7.0.0' \
             'dependency-injector>=4.48.3,<5.0.0' \
