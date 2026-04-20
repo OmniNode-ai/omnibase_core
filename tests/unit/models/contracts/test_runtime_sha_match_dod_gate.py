@@ -77,8 +77,8 @@ def _make_evidence_items(
 def _make_output_json(
     *,
     runtime_host: str = "192.168.86.201",  # onex-allow-internal-ip: test fixture only
-    deployed_sha: str = "abc123def456",
-    merge_sha: str = "abc123def456",
+    deployed_sha: str = "abc123def456",  # pragma: allowlist secret
+    merge_sha: str = "abc123def456",  # pragma: allowlist secret
     match: bool = True,
 ) -> str:
     return json.dumps(
@@ -212,8 +212,8 @@ class TestClassifyRuntimeShaMatchReceipt:
         receipt = _base_receipt(
             status=EnumReceiptStatus.PASS,
             actual_output=_make_output_json(
-                deployed_sha="deadbeef1234",
-                merge_sha="deadbeef1234",
+                deployed_sha="deadbeef1234",  # pragma: allowlist secret
+                merge_sha="deadbeef1234",  # pragma: allowlist secret
                 match=True,
             ),
         )
@@ -288,3 +288,24 @@ class TestDodGuardBlocksWithoutRuntimeShaReceipt:
             evidence_items=items,
             receipts=[],
         )
+
+    def test_duplicate_sha_checks_on_same_item_raises(self) -> None:
+        item = ModelDodEvidenceItem(
+            id="dod-sha-dup",
+            description="Duplicate SHA checks",
+            checks=[
+                ModelDodEvidenceCheck(
+                    check_type=CHECK_TYPE_RUNTIME_SHA_MATCH, check_value=_PROBE_CMD
+                ),
+                ModelDodEvidenceCheck(
+                    check_type=CHECK_TYPE_RUNTIME_SHA_MATCH,
+                    check_value=_PROBE_CMD + " --extra",
+                ),
+            ],
+        )
+        with pytest.raises(ModelOnexError):
+            assert_runtime_sha_receipts_present(
+                ticket_id="OMN-9356",
+                evidence_items=[item],
+                receipts=[],
+            )

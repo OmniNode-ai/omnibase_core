@@ -118,9 +118,19 @@ def assert_runtime_sha_receipts_present(
             receipt classifies as blocking.
     """
     sha_checks: list[tuple[str, str]] = []
+    seen_keys: set[str] = set()
     for item in evidence_items:
         for check in item.checks:
             if check.check_type == CHECK_TYPE_RUNTIME_SHA_MATCH:
+                if item.id in seen_keys:
+                    raise ModelOnexError(
+                        message=(
+                            f"evidence item {item.id!r} has multiple runtime_sha_match checks; "
+                            "only one check per (evidence_item_id, check_type) is supported"
+                        ),
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    )
+                seen_keys.add(item.id)
                 sha_checks.append((item.id, check.check_value))
 
     if not sha_checks:
