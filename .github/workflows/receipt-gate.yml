@@ -163,10 +163,23 @@ jobs:
             'blake3>=1.0.8,<2.0.0' \
             'ruamel-yaml>=0.18.0'
 
-          # --no-deps forces uv to skip candidate selection for omnibase-core.
-          # Install the editable path exactly, without resolving its declared
-          # deps (already present from the seed step above).
-          uv pip install --system --no-deps \
+          # OMN-9198 follow-up: PR #863 (--no-deps alone) worked in omnibase_core's
+          # OWN PRs (core_path=".") but FAILED in downstream callers where
+          # core_path=".receipt-gate-deps/omnibase_core". Evidence from
+          # omnibase_infra PR #1351 run 24656453993: with --no-deps + -e <subpath>,
+          # uv's resolver STILL considered the PyPI index and chose it over the
+          # editable (log: `Resolved 1 package in 134ms / Downloading omnibase-core
+          # (5.1MiB) / + omnibase-core==0.39.0` — no `(from file://...)` suffix).
+          #
+          # Root cause refinement: `.` (self-project) gets special treatment from
+          # uv's resolver and always wins. Any other -e path is just one candidate
+          # competing with the index, and at matching versions uv picks index.
+          #
+          # Fix: add --no-index alongside --no-deps. With --no-deps there are no
+          # transitive deps to resolve (already seeded above), so --no-index won't
+          # break PR #850's problem of unsatisfiable version constraints — it just
+          # removes the index candidate that was winning over the -e path.
+          uv pip install --system --no-deps --no-index \
             --reinstall-package omnibase-core \
             -e "$core_path"
 
