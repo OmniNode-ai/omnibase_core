@@ -135,6 +135,19 @@ _ERR_DUPLICATE_CONSECUTIVE_HISTORY = (
     "state transition sequence."
 )
 
+# Reserved prefix for FSM executor-internal context keys. User-supplied metadata
+# keys starting with this prefix are stripped at context-build time and a
+# warning is logged. See CONTRACT_DRIVEN_NODEREDUCER_V1_0.md "Context Construction".
+_FSM_RESERVED_KEY_PREFIX: str = "_fsm_"
+
+# System-assigned context keys built from ``ModelReducerInput`` by
+# ``_build_fsm_context``. User metadata keys that collide with any of these are
+# ignored (system values take precedence) and a warning is logged.
+# Keep in sync with the system keys constructed in ``_build_fsm_context``.
+_SYSTEM_CONTEXT_KEYS: frozenset[str] = frozenset(
+    {"input_data", "reduction_type", "operation_id"}
+)
+
 
 class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
     """
@@ -391,18 +404,9 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         # If trigger is provided in metadata, use it; otherwise default to "process"
         trigger = input_data.metadata.trigger or "process"
 
-        # Build context from input data - context contains serializable values
-        # Convert metadata to dict for context (excluding None values)
-        metadata_dict = input_data.metadata.model_dump(exclude_none=True)
-        # Cast input_data.data to JsonType since T_Input should be JSON-serializable
-        # but the generic type doesn't encode this constraint
-        input_data_value: JsonType = cast(JsonType, input_data.data)
-        context: SerializedDict = {
-            "input_data": input_data_value,
-            "reduction_type": input_data.reduction_type.value,
-            "operation_id": str(input_data.operation_id),
-            **metadata_dict,
-        }
+        # Build FSM context from input. See _build_fsm_context for the full
+        # construction contract (system keys, reserved-key handling, etc.).
+        context = self._build_fsm_context(input_data)
 
         # Execute FSM transition with timing measurement
         start_time = time.perf_counter()
@@ -482,6 +486,98 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         )
 
         return output
+
+    def _build_fsm_context(
+        self,
+        input_data: ModelReducerInput[T_Input],
+    ) -> "SerializedDict":
+        """
+        Build the FSM execution context from a reducer input.
+
+        Context construction is the NodeReducer's responsibility (see
+        CONTRACT_DRIVEN_NODEREDUCER_V1_0.md "Context Construction"). The FSM
+        executor treats context as readonly and never injects its own keys.
+
+        The returned dict contains:
+
+        - ``input_data``: The full ``input_data.data`` value.
+        - ``reduction_type``: ``str`` form of the reduction enum.
+        - ``operation_id``: ``str(uuid)`` of the operation.
+        - Every non-``None`` key from ``input_data.metadata``, with two exceptions:
+
+          1. Keys beginning with ``_fsm_`` (the reserved prefix for FSM
+             executor-internal state) are dropped and a warning is logged.
+          2. Keys that collide with any system-assigned key above are dropped
+             (system values take precedence) and a warning is logged.
+
+        Args:
+            input_data: The reducer input whose metadata, data, and operation_id
+                are merged into the FSM context.
+
+        Returns:
+            A new ``SerializedDict`` suitable for passing to the FSM executor.
+            The dict is a shallow copy — callers MAY mutate the top-level map
+            but MUST NOT mutate nested structures (the executor treats context
+            as readonly).
+        """
+        # Shallow-dump the typed metadata to a plain dict (skip None defaults).
+        metadata_dict: dict[str, JsonType] = input_data.metadata.model_dump(
+            exclude_none=True
+        )
+
+        # Partition user metadata into accepted / reserved-prefix / system-collision.
+        reserved_prefix_keys: list[str] = []
+        colliding_system_keys: list[str] = []
+        accepted_metadata: dict[str, JsonType] = {}
+        for key, value in metadata_dict.items():
+            if key.startswith(_FSM_RESERVED_KEY_PREFIX):
+                reserved_prefix_keys.append(key)
+                continue
+            if key in _SYSTEM_CONTEXT_KEYS:
+                colliding_system_keys.append(key)
+                continue
+            accepted_metadata[key] = value
+
+        if reserved_prefix_keys:
+            emit_log_event(
+                LogLevel.WARNING,
+                (
+                    "NodeReducer dropped metadata keys using reserved "
+                    f"'{_FSM_RESERVED_KEY_PREFIX}' prefix: "
+                    f"{sorted(reserved_prefix_keys)}"
+                ),
+                {
+                    "node_id": str(self.node_id),
+                    "operation_id": str(input_data.operation_id),
+                    "reserved_keys": sorted(reserved_prefix_keys),
+                },
+            )
+
+        if colliding_system_keys:
+            emit_log_event(
+                LogLevel.WARNING,
+                (
+                    "NodeReducer dropped metadata keys colliding with "
+                    f"system-assigned context keys: "
+                    f"{sorted(colliding_system_keys)}"
+                ),
+                {
+                    "node_id": str(self.node_id),
+                    "operation_id": str(input_data.operation_id),
+                    "colliding_keys": sorted(colliding_system_keys),
+                },
+            )
+
+        # Cast input_data.data to JsonType since T_Input should be JSON-serializable
+        # but the generic type doesn't encode this constraint.
+        input_data_value: JsonType = cast(JsonType, input_data.data)
+        context: SerializedDict = {
+            "input_data": input_data_value,
+            "reduction_type": input_data.reduction_type.value,
+            "operation_id": str(input_data.operation_id),
+            **accepted_metadata,
+        }
+        return context
 
     def _build_projection_intents(
         self,
