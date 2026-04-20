@@ -150,6 +150,19 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # Producer/Consumer Normalization Symmetry (OMN-9333)
+      # BLOCKING — would have caught OMN-9215 whitespace-strip asymmetry at commit time.
+      # Scans all .py under src/ for TopicBase producer (.send/.produce/.publish/.emit)
+      # vs consumer (.subscribe/.lookup/handler_for) call sites and flags any topic with
+      # divergent .strip() chains between sides. Std-lib only; no warn-only mode.
+      - id: normalization-symmetry
+        name: ONEX Producer/Consumer Normalization Symmetry (OMN-9333)
+        entry: uv run python -m omnibase_core.validation.checker_normalization_symmetry src
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
   # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:
@@ -470,7 +483,8 @@ repos:
         # - model_epic_state.py: Tightly coupled epic state model family (ModelEpicTicketStatus, ModelEpicWave, ModelEpicState) (OMN-4405)
         # - validate_markdown_links.py: CLI script with tightly coupled data classes (LinkInfo, BrokenLink, ValidationResult, MarkdownLinkConfig) (OMN-5084)
         # - runtime_local.py: Private _ResolvedRoutingEntry co-located with RuntimeLocal (internal dataclass)
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/types/typed_dict_demo\.py$|src/omnibase_core/validation/cross_repo/scanners/scanner_import_graph\.py$|src/omnibase_core/models/validation/model_rule_configs\.py$|src/omnibase_core/protocols/|src/omnibase_core/models/contracts/model_cli_contribution\.py$|src/omnibase_core/navigation/model_contract_graph\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_input\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_output\.py$|src/omnibase_core/navigation/model_backward_chaining\.py$|src/omnibase_core/models/events/model_github_pr_status_event\.py$|src/omnibase_core/models/validation/model_validation_report\.py$|src/omnibase_core/services/service_contract_validator\.py$|src/omnibase_core/validation/validator_local_paths\.py$|src/omnibase_core/navigation/model_graph_boundary\.py$|src/omnibase_core/services/service_protocol_auditor\.py$|src/omnibase_core/contracts/contract_loader\.py$|src/omnibase_core/navigation/model_action_set\.py$|src/omnibase_core/models/ticket/model_ticket_context_bundle\.py$|src/omnibase_core/validation/scripts/validate_string_versions\.py$|src/omnibase_core/validation/scripts/timeout_utils\.py$|src/omnibase_core/models/epic/model_epic_state\.py$|src/omnibase_core/scripts/validate_markdown_links\.py$|src/omnibase_core/runtime/runtime_local\.py$)
+        # - checker_normalization_symmetry.py: Tightly coupled AST visitor + small result dataclasses (TopicUse, SymmetryIssue) — same pattern as checker_enum_governance.py (OMN-9333)
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/validation/checker_normalization_symmetry\.py$|src/omnibase_core/types/typed_dict_demo\.py$|src/omnibase_core/validation/cross_repo/scanners/scanner_import_graph\.py$|src/omnibase_core/models/validation/model_rule_configs\.py$|src/omnibase_core/protocols/|src/omnibase_core/models/contracts/model_cli_contribution\.py$|src/omnibase_core/navigation/model_contract_graph\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_input\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_output\.py$|src/omnibase_core/navigation/model_backward_chaining\.py$|src/omnibase_core/models/events/model_github_pr_status_event\.py$|src/omnibase_core/models/validation/model_validation_report\.py$|src/omnibase_core/services/service_contract_validator\.py$|src/omnibase_core/validation/validator_local_paths\.py$|src/omnibase_core/navigation/model_graph_boundary\.py$|src/omnibase_core/services/service_protocol_auditor\.py$|src/omnibase_core/contracts/contract_loader\.py$|src/omnibase_core/navigation/model_action_set\.py$|src/omnibase_core/models/ticket/model_ticket_context_bundle\.py$|src/omnibase_core/validation/scripts/validate_string_versions\.py$|src/omnibase_core/validation/scripts/timeout_utils\.py$|src/omnibase_core/models/epic/model_epic_state\.py$|src/omnibase_core/scripts/validate_markdown_links\.py$|src/omnibase_core/runtime/runtime_local\.py$)
         stages: [pre-commit]
 
       - id: validate-enum-model-imports
