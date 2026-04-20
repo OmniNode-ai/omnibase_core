@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Example: two-handler chain (backward-compatible positional routing, OMN-9262)
+#
+# Both handlers use positional slots from subscribe_topics:
+#   [0] cmd.start.v1  -> HandlerA  (positional slot 0)
+#   [1] evt.mid.v1    -> HandlerB  (positional slot 1)
+#
+# This form remains fully supported after the map-based validator was introduced.
+# The validator now checks that each resolved topic is in subscribe_topics --
+# the strict len(subscribe_topics)==len(handlers) check is gone.
+
+workflow_id: two_handler_chain_example
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: workflow
+description: >
+  Two-handler chain example demonstrating backward-compatible positional routing. Both handlers resolve
+  their input topic by positional index in subscribe_topics. #magic___^_^___line
+initial_command: cmd.start.v1
+terminal_event: evt.done.v1
+
+event_bus:
+  subscribe_topics:
+    - cmd.start.v1
+    - evt.mid.v1
+  publish_topics:
+    - evt.done.v1
+
+handler_routing:
+  routing_strategy: payload_type_match
+  handlers:
+    - event_model:
+        name: StartCommand
+        module: placeholder.events
+      handler:
+        name: HandlerA
+        module: placeholder.handlers
+      output_events:
+        - MidEvent
+    - event_model:
+        name: MidEvent
+        module: placeholder.events
+      handler:
+        name: HandlerB
+        module: placeholder.handlers
+      output_events:
+        - DoneEvent
