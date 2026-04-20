@@ -149,9 +149,16 @@ jobs:
             exit 1
           fi
 
-          # Seed omnibase_core's transitive deps from PyPI before the --no-deps
-          # editable install below. Keep in sync with omnibase_core/pyproject.toml.
+          # Seed omnibase_core's transitive deps from PyPI before the --no-deps +
+          # --no-index editable install below. Keep in sync with
+          # omnibase_core/pyproject.toml [dependencies].
+          #
+          # Also includes `hatchling` (build backend from [build-system.requires])
+          # because the editable install below uses --no-index, which disables
+          # PyPI lookups for EVERYTHING including build-system requirements.
+          # Without hatchling pre-installed, uv cannot build the editable source.
           uv pip install --system \
+            'hatchling' \
             'pydantic>=2.12.5,<3.0.0' \
             'pyyaml>=6.0.2,<7.0.0' \
             'dependency-injector>=4.48.3,<5.0.0' \
@@ -179,7 +186,10 @@ jobs:
           # transitive deps to resolve (already seeded above), so --no-index won't
           # break PR #850's problem of unsatisfiable version constraints — it just
           # removes the index candidate that was winning over the -e path.
-          uv pip install --system --no-deps --no-index \
+          # --no-build-isolation: use hatchling from the env (seeded above) rather
+          # than letting uv spin up an isolated build env that would also need
+          # PyPI (which --no-index disables).
+          uv pip install --system --no-deps --no-index --no-build-isolation \
             --reinstall-package omnibase-core \
             -e "$core_path"
 
