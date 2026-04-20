@@ -101,33 +101,29 @@ jobs:
         # Never fall back to PyPI — the published package has a broken transitive
         # dep (git+https omnibase-compat URL) that fails in CI.
         run: |
-          # OMN-9198 history:
-          #   - PR #850 two-pass with --no-index on pass 2 failed: uv couldn't
-          #     satisfy the caller's `omnibase-core>=X` constraint against the
-          #     editable path with index disabled.
-          #   - PR #851 single-pass with `--reinstall-package -e ./path` still
-          #     pulled the PyPI wheel: the editable source and published wheel
-          #     share version 0.39.0, and uv's preference order
-          #     (cached → index → path) wins even under --refresh.
+          # OMN-9198 history (see docs/diagnosis-omn-9198-receipt-gate-v3-resolver-prefers-index.md):
+          #   - PR #850 --no-index on pass 2: uv couldn't satisfy caller's
+          #     `omnibase-core>=X` with index disabled.
+          #   - PR #851 single-pass `--reinstall-package -e`: uv preferred the
+          #     PyPI wheel over editable when both advertised 0.39.0.
+          #   - PR #854 uninstall-then-install-editable: uv rebuilt the PyPI
+          #     sdist instead of using the -e path.
+          #   - PR #855 `--no-binary omnibase-core`: uv obeyed the no-wheel rule
+          #     but built from the PyPI SOURCE (sdist), not from -e, because
+          #     index and -e both ship 0.39.0.
           #
-          # Fix: explicit uninstall-then-install-editable. Clearing the cached
-          # wheel eliminates uv's preferred target, forcing it to build from
-          # the editable path. Split installs let each editable resolve its own
-          # transitive deps against PyPI cleanly (pass 1 installs omnibase_compat
-          # first, so omnibase_core's constraint on compat is already satisfied
-          # by editable when pass 2 runs, avoiding --no-index entirely).
-          # Belt-and-suspenders editable install for omnibase-core:
-          #   - uninstall clears any prior install (wheel or editable) from site-packages
-          #   - --reinstall-package + --refresh-package force fresh build of the named
-          #     package regardless of caches
-          #   - --no-binary omnibase-core forbids using a pre-built wheel, so uv must
-          #     build from the -e source path (PR #854 fix was not enough on its own:
-          #     uv still preferred the PyPI wheel for omnibase-core even after the
-          #     uninstall, because the resolver picked the cached index entry ahead
-          #     of the editable path target)
+          # Root cause: `-e path` REGISTERS a candidate with uv's resolver but
+          # does not MANDATE it. When an index candidate matches the same version,
+          # uv picks either — and empirically picks the index (sdist or wheel).
           #
-          # omnibase-compat does not hit this problem — it works with plain -e — so
-          # it keeps the simpler install shape.
+          # Fix: skip uv's resolver for omnibase-core entirely. Install transitive
+          # deps explicitly from PyPI first, then `uv pip install --no-deps -e <path>`
+          # to tell uv "install exactly this path, do not consult the index".
+          # --no-deps is the only flag that fully bypasses candidate-selection.
+          #
+          # The explicit dep list below mirrors omnibase_core/pyproject.toml
+          # [dependencies]. If core adds a new runtime dep this list must be
+          # updated (tracked as OMN-FOLLOWUP pre-merge drift check).
           uv pip uninstall --system omnibase-core omnibase-compat 2>/dev/null || true
 
           if [ -f "./omnibase_compat/pyproject.toml" ]; then
@@ -153,10 +149,25 @@ jobs:
             exit 1
           fi
 
+          # Seed omnibase_core's transitive deps from PyPI before the --no-deps
+          # editable install below. Keep in sync with omnibase_core/pyproject.toml.
           uv pip install --system \
+            'pydantic>=2.12.5,<3.0.0' \
+            'pyyaml>=6.0.2,<7.0.0' \
+            'dependency-injector>=4.48.3,<5.0.0' \
+            'deepdiff>=8.0.0,<10.0.0' \
+            'click>=8.3.1,<9.0.0' \
+            'cryptography>=46.0.3,<47.0.0' \
+            'jsonschema>=4.25.1,<5.0.0' \
+            'httpx>=0.27.0,<1.0.0' \
+            'blake3>=1.0.8,<2.0.0' \
+            'ruamel-yaml>=0.18.0'
+
+          # --no-deps forces uv to skip candidate selection for omnibase-core.
+          # Install the editable path exactly, without resolving its declared
+          # deps (already present from the seed step above).
+          uv pip install --system --no-deps \
             --reinstall-package omnibase-core \
-            --refresh-package omnibase-core \
-            --no-binary omnibase-core \
             -e "$core_path"
 
       - name: Verify receipt_gate_cli importable
