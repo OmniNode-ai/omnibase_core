@@ -110,7 +110,9 @@ EOF
   if [[ "$DRY_RUN" == "1" ]]; then
     echo "DRY_RUN: gh pr create --repo ${REPO} --head ${BRANCH} --base main --title \"${TITLE}\""
     if [[ "$AUTO_MERGE" == "True" || "$AUTO_MERGE" == "true" ]]; then
-      echo "DRY_RUN: gh pr merge --repo ${REPO} --auto --${MERGE_METHOD/queue_default/squash} <pr-number>"
+      # Per OMN-8838: always arm auto-merge via GraphQL enablePullRequestAutoMerge
+      # (never `gh pr merge --auto` — it silently picks the wrong method).
+      echo "DRY_RUN: gh api graphql enablePullRequestAutoMerge(mergeMethod: SQUASH) --auto ${REPO}#<pr>"
     fi
     continue
   fi
@@ -156,14 +158,20 @@ SNIPPET
 
   if [[ "$AUTO_MERGE" == "True" || "$AUTO_MERGE" == "true" ]]; then
     PR_NUMBER="$(echo "$PR_URL" | sed -E 's#.*/pull/([0-9]+).*#\1#')"
-    # queue_default == merge queue arms auto-merge without choosing a method;
-    # fall back to --squash for repos that predate merge queues.
-    if [[ "$MERGE_METHOD" == "queue_default" ]]; then
-      gh pr merge "$PR_NUMBER" --repo "$REPO" --auto || \
-        gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash
-    else
-      gh pr merge "$PR_NUMBER" --repo "$REPO" --auto "--${MERGE_METHOD}"
-    fi
+    # Per OMN-8838 + memory reference_github_merge_queue_api: always arm
+    # auto-merge via GraphQL enablePullRequestAutoMerge with explicit
+    # mergeMethod. `gh pr merge --auto` silently picks the wrong method on
+    # merge-queue-enabled repos.
+    case "$MERGE_METHOD" in
+      queue_default|squash) GRAPHQL_METHOD="SQUASH" ;;
+      merge) GRAPHQL_METHOD="MERGE" ;;
+      rebase) GRAPHQL_METHOD="REBASE" ;;
+      *) echo "ERROR: unknown merge_method '$MERGE_METHOD'" >&2; exit 5 ;;
+    esac
+    PR_ID="$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.node_id')"
+    gh api graphql \
+      -f query='mutation($id:ID!,$m:PullRequestMergeMethod!){enablePullRequestAutoMerge(input:{pullRequestId:$id,mergeMethod:$m}){pullRequest{number}}}' \
+      -f id="$PR_ID" -f m="$GRAPHQL_METHOD"
   fi
 
   popd >/dev/null

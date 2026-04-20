@@ -102,8 +102,10 @@ def test_dry_run_arms_auto_merge_per_pr(tmp_path: Path) -> None:
     )
     result = _run(targets)
     assert result.returncode == 0, result.stderr
-    assert "DRY_RUN: gh pr merge" in result.stdout, result.stdout
-    assert "--auto" in result.stdout
+    # Per OMN-8838: auto-merge is armed via GraphQL enablePullRequestAutoMerge,
+    # never `gh pr merge --auto` (which silently picks the wrong method).
+    assert "enablePullRequestAutoMerge" in result.stdout, result.stdout
+    assert "SQUASH" in result.stdout
 
 
 @pytest.mark.unit
