@@ -985,6 +985,91 @@ def test_compute_mode_with_top_level_handler_spec(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.asyncio
+async def test_adapter_dict_return_publishes_json() -> None:
+    """Reducer returning dict → bus receives valid JSON envelope."""
+
+    class DictHandler:
+        async def handle(self, **kwargs: Any) -> dict[str, Any]:
+            return {"correlation_id": kwargs.get("correlation_id"), "status": "ok"}
+
+    bus = MockBus()
+    adapter = HandlerBusAdapter(
+        handler=DictHandler(),
+        handler_name="test-dict",
+        input_model_cls=MockInput,
+        output_topic="out.dict",
+        bus=bus,
+    )
+
+    msg = MockMessage(value=_input_bytes(correlation_id="cid-dict"))
+    await adapter.on_message(msg)
+
+    assert len(bus.published) == 1
+    topic, _key, value = bus.published[0]
+    assert topic == "out.dict"
+    data = json.loads(value)
+    assert data["correlation_id"] == "cid-dict"
+    assert data["status"] == "ok"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_adapter_none_return_no_publish() -> None:
+    """Handler returning None → no message published."""
+
+    class NoneHandler:
+        async def handle(self, **kwargs: Any) -> None:
+            return None
+
+    bus = MockBus()
+    adapter = HandlerBusAdapter(
+        handler=NoneHandler(),
+        handler_name="test-none",
+        input_model_cls=MockInput,
+        output_topic="out.none",
+        bus=bus,
+    )
+
+    msg = MockMessage(value=_input_bytes(correlation_id="cid-none"))
+    await adapter.on_message(msg)
+
+    assert len(bus.published) == 0
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_adapter_unsupported_return_type_raises_on_error() -> None:
+    """Handler returning unsupported type → ModelOnexError raised, on_error fires, nothing published."""
+
+    class IntHandler:
+        async def handle(self, **kwargs: Any) -> int:
+            return 42
+
+    bus = MockBus()
+    error_called = False
+
+    def _on_error() -> None:
+        nonlocal error_called
+        error_called = True
+
+    adapter = HandlerBusAdapter(
+        handler=IntHandler(),
+        handler_name="test-int",
+        input_model_cls=MockInput,
+        output_topic="out.int",
+        bus=bus,
+        on_error=_on_error,
+    )
+
+    msg = MockMessage(value=_input_bytes(correlation_id="cid-int"))
+    await adapter.on_message(msg)
+
+    assert error_called
+    assert len(bus.published) == 0
+
+
+@pytest.mark.unit
 def test_compute_mode_fallback_run_full_cycle(tmp_path: Path) -> None:
     """Compute node without terminal_event + no handle() falls back to run_full_cycle (OMN-7788)."""
     import sys
