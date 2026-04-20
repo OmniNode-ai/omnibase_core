@@ -24,6 +24,11 @@ from omnibase_core.models.errors import ModelOnexError
 # No leading/trailing dots, no consecutive dots, no special characters except dots
 _TOPIC_SEGMENT_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 
+# Canonical ONEX topic pattern: onex.(cmd|evt|dlq|i*).<service>.<event>.v<N>
+_CANONICAL_TOPIC_PATTERN = re.compile(
+    r"^onex\.(cmd|evt|dlq|i[a-z0-9_-]*)\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.v\d+$"
+)
+
 
 class TopicBase(StrEnum):
     """Base topic names (without environment prefix).
@@ -681,6 +686,14 @@ def build_topic(base: str) -> str:
     """
     base = _validate_topic_segment(base, "base")
     _validate_topic_name(base)
+    if not _CANONICAL_TOPIC_PATTERN.match(base):
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+            message=(
+                f"Topic {base!r} does not match canonical ONEX format "
+                "onex.(cmd|evt|dlq|i*).<service>.<event>.v<N>"
+            ),
+        )
     return base
 
 
@@ -706,4 +719,12 @@ def build_agent_inbox_directed_topic(agent_id: str) -> str:
         'onex.evt.omniclaude.agent-inbox.agent-001.v1'
     """
     agent_id = _validate_topic_segment(agent_id, "agent_id")
+    if not _TOPIC_SEGMENT_PATTERN.fullmatch(agent_id):
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+            message=(
+                f"agent_id must be a single valid topic segment "
+                f"(alphanumeric, hyphens, underscores only), got: {agent_id!r}"
+            ),
+        )
     return f"{AGENT_INBOX_DIRECTED_BASE}.{agent_id}.v1"

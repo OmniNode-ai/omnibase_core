@@ -109,6 +109,16 @@ class NormalizationSymmetryChecker(ast.NodeVisitor):
         self.topic_uses: list[TopicUse] = []
         self._name_bindings: dict[str, tuple[str, tuple[str, ...]]] = {}
 
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        # Isolate name bindings per function scope so a topic binding from one
+        # function cannot be incorrectly resolved in a sibling function.
+        saved = self._name_bindings
+        self._name_bindings = {}
+        self.generic_visit(node)
+        self._name_bindings = saved
+
+    visit_AsyncFunctionDef = visit_FunctionDef  # type: ignore[assignment]  # noqa: N815
+
     def visit_Assign(self, node: ast.Assign) -> None:
         if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
             topic_name, normalizations = self._extract_topic_use(node.value)
@@ -238,17 +248,25 @@ def scan_source_tree(root: Path) -> list[SymmetryIssue]:
         if producer_chains == consumer_chains:
             continue
 
-        producer = producers[0]
-        consumer = consumers[0]
+        # Find representative divergent producer/consumer pair: pick the first
+        # producer whose normalization chain differs from any consumer's chain.
+        divergent_producer = next(
+            (p for p in producers if p.normalizations not in consumer_chains),
+            producers[0],
+        )
+        divergent_consumer = next(
+            (c for c in consumers if c.normalizations not in producer_chains),
+            consumers[0],
+        )
         issues.append(
             SymmetryIssue(
                 topic_name=topic_name,
-                producer_file=producer.file_path,
-                producer_line=producer.line_number,
-                producer_normalizations=producer.normalizations,
-                consumer_file=consumer.file_path,
-                consumer_line=consumer.line_number,
-                consumer_normalizations=consumer.normalizations,
+                producer_file=divergent_producer.file_path,
+                producer_line=divergent_producer.line_number,
+                producer_normalizations=divergent_producer.normalizations,
+                consumer_file=divergent_consumer.file_path,
+                consumer_line=divergent_consumer.line_number,
+                consumer_normalizations=divergent_consumer.normalizations,
             )
         )
 

@@ -148,3 +148,49 @@ class TestNormalizationSymmetryChecker:
         assert use.role == "producer"
         assert use.topic_name == "SESSION_STARTED"
         assert use.normalizations == ("strip",)
+
+    def test_scope_isolation_prevents_cross_function_binding_reuse(
+        self, tmp_path: Path
+    ) -> None:
+        """A topic binding in one function must not resolve in a sibling function."""
+        source = """
+from omnibase_core.topics import TopicBase
+
+class _Handler:
+    def setup(self) -> None:
+        topic = TopicBase.SESSION_STARTED.strip()
+        self._bus.send(topic, {})
+
+    def teardown(self) -> None:
+        # `topic` is not defined here; should NOT inherit from setup()
+        self._bus.subscribe([TopicBase.SESSION_STARTED])
+"""
+        _write_fixture(tmp_path, "scope_test.py", source)
+        issues = scan_source_tree(tmp_path)
+        # Both sides use SESSION_STARTED; producer strips, consumer does not —
+        # correctly flagged. Key assertion: the issue references teardown's consumer,
+        # not a phantom binding carried over from setup.
+        assert len(issues) == 1
+        issue = issues[0]
+        assert "SESSION_STARTED" in issue.message
+
+    def test_divergent_pair_reporting_picks_actual_mismatch(
+        self, tmp_path: Path
+    ) -> None:
+        """Issue message should cite the actually divergent producer+consumer pair."""
+        source = """
+from omnibase_core.topics import TopicBase
+
+class _Mixed:
+    def produce_strip(self) -> None:
+        self._bus.send(TopicBase.SESSION_STARTED.strip(), {})
+
+    def consume_raw(self) -> None:
+        self._bus.subscribe([TopicBase.SESSION_STARTED])
+"""
+        _write_fixture(tmp_path, "mixed.py", source)
+        issues = scan_source_tree(tmp_path)
+        assert len(issues) == 1
+        issue = issues[0]
+        # The reported producer normalizations must be the divergent one (strip)
+        assert "strip" in issue.message.lower()

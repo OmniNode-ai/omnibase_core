@@ -116,3 +116,25 @@ class TestAgentInboxDirectedTopic:
     def test_rejects_none_agent_id(self) -> None:
         with pytest.raises(ModelOnexError, match="agent_id must not be None"):
             build_agent_inbox_directed_topic(None)  # type: ignore[arg-type]
+
+    def test_rejects_dotted_agent_id(self) -> None:
+        with pytest.raises(ModelOnexError, match="single valid topic segment"):
+            build_agent_inbox_directed_topic("agent.001")
+
+    def test_rejects_agent_id_with_hash(self) -> None:
+        with pytest.raises(ModelOnexError, match="single valid topic segment"):
+            build_agent_inbox_directed_topic("agent#1")
+
+
+class TestBuildTopicCanonicalEnforcement:
+    def test_non_canonical_short_name_rejected(self) -> None:
+        with pytest.raises(ModelOnexError, match="canonical ONEX format"):
+            build_topic("abc")
+
+    def test_non_canonical_two_segment_rejected(self) -> None:
+        with pytest.raises(ModelOnexError, match="canonical ONEX format"):
+            build_topic("foo.bar")
+
+    def test_non_canonical_missing_version_rejected(self) -> None:
+        with pytest.raises(ModelOnexError, match="canonical ONEX format"):
+            build_topic("onex.evt.omniclaude.session-started")
