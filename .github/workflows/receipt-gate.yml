@@ -149,9 +149,17 @@ jobs:
             exit 1
           fi
 
-          # Seed omnibase_core's transitive deps from PyPI before the --no-deps
-          # editable install below. Keep in sync with omnibase_core/pyproject.toml.
+          # Seed omnibase_core's transitive deps from PyPI before the --no-deps +
+          # --no-index editable install below. Keep in sync with
+          # omnibase_core/pyproject.toml [dependencies].
+          #
+          # Also includes `hatchling` (build backend from [build-system.requires])
+          # because the editable install below uses --no-index, which disables
+          # PyPI lookups for EVERYTHING including build-system requirements.
+          # Without hatchling pre-installed, uv cannot build the editable source.
           uv pip install --system \
+            'hatchling' \
+            'editables' \
             'pydantic>=2.12.5,<3.0.0' \
             'pyyaml>=6.0.2,<7.0.0' \
             'dependency-injector>=4.48.3,<5.0.0' \
@@ -163,10 +171,26 @@ jobs:
             'blake3>=1.0.8,<2.0.0' \
             'ruamel-yaml>=0.18.0'
 
-          # --no-deps forces uv to skip candidate selection for omnibase-core.
-          # Install the editable path exactly, without resolving its declared
-          # deps (already present from the seed step above).
-          uv pip install --system --no-deps \
+          # OMN-9198 follow-up: PR #863 (--no-deps alone) worked in omnibase_core's
+          # OWN PRs (core_path=".") but FAILED in downstream callers where
+          # core_path=".receipt-gate-deps/omnibase_core". Evidence from
+          # omnibase_infra PR #1351 run 24656453993: with --no-deps + -e <subpath>,
+          # uv's resolver STILL considered the PyPI index and chose it over the
+          # editable (log: `Resolved 1 package in 134ms / Downloading omnibase-core
+          # (5.1MiB) / + omnibase-core==0.39.0` — no `(from file://...)` suffix).
+          #
+          # Root cause refinement: `.` (self-project) gets special treatment from
+          # uv's resolver and always wins. Any other -e path is just one candidate
+          # competing with the index, and at matching versions uv picks index.
+          #
+          # Fix: add --no-index alongside --no-deps. With --no-deps there are no
+          # transitive deps to resolve (already seeded above), so --no-index won't
+          # break PR #850's problem of unsatisfiable version constraints — it just
+          # removes the index candidate that was winning over the -e path.
+          # --no-build-isolation: use hatchling from the env (seeded above) rather
+          # than letting uv spin up an isolated build env that would also need
+          # PyPI (which --no-index disables).
+          uv pip install --system --no-deps --no-index --no-build-isolation \
             --reinstall-package omnibase-core \
             -e "$core_path"
 
