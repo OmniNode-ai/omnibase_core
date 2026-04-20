@@ -125,6 +125,14 @@ EOF
   gh repo clone "$REPO" downstream -- --depth=5
   cd downstream
 
+  if [[ ! -f "$FILE_PATH" ]]; then
+    echo "ERROR: ${REPO} is missing ${FILE_PATH} — skipping to avoid creating invalid config" >&2
+    popd >/dev/null
+    rm -rf "$TMPDIR"
+    trap - EXIT
+    continue
+  fi
+
   if grep -q "id:\s*${HOOK_ID}" "$FILE_PATH" 2>/dev/null; then
     echo "SKIP: ${REPO} already contains hook ${HOOK_ID} in ${FILE_PATH}"
     popd >/dev/null
