@@ -123,19 +123,39 @@ class TestModelTriageFinding:
 
 
 class TestModelProbeResult:
-    def test_error_requires_message_convention(self) -> None:
-        """Convention check: ERROR status should surface an error_message.
+    def test_error_requires_message(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelTriageProbeResult(
+                probe_name="broken",
+                status=EnumProbeStatus.ERROR,
+                duration_ms=1200,
+            )
 
-        The model does not enforce this at the schema level, but the
-        orchestrator relies on it. This test locks the convention.
-        """
+    def test_timeout_requires_message(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelTriageProbeResult(
+                probe_name="slow",
+                status=EnumProbeStatus.TIMEOUT,
+                duration_ms=30000,
+            )
+
+    def test_error_with_message_accepted(self) -> None:
         result = ModelTriageProbeResult(
             probe_name="broken",
             status=EnumProbeStatus.ERROR,
             duration_ms=1200,
-            error_message="timeout after 1200ms",
+            error_message="connection refused",
         )
-        assert result.error_message
+        assert result.error_message == "connection refused"
+
+    def test_success_rejects_error_message(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelTriageProbeResult(
+                probe_name="ok",
+                status=EnumProbeStatus.SUCCESS,
+                duration_ms=50,
+                error_message="should not be here",
+            )
 
     def test_success_allows_empty_error(self) -> None:
         result = ModelTriageProbeResult(
@@ -200,3 +220,18 @@ class TestModelTriageReport:
             completed_at=end,
         )
         assert report.total_duration_ms == 1500
+
+    def test_completed_before_started_rejected(self) -> None:
+        start = datetime(2026, 4, 20, 12, 0, 0, tzinfo=UTC)
+        end = start - timedelta(seconds=1)
+        with pytest.raises(ValidationError):
+            ModelTriageReport(
+                run_id="t",
+                started_at=start,
+                completed_at=end,
+            )
+
+    def test_equal_timestamps_accepted(self) -> None:
+        ts = datetime(2026, 4, 20, 12, 0, 0, tzinfo=UTC)
+        report = ModelTriageReport(run_id="t", started_at=ts, completed_at=ts)
+        assert report.total_duration_ms == 0

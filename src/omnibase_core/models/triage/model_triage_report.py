@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_triage_probe_status import EnumProbeStatus
 from omnibase_core.enums.enum_triage_severity import EnumTriageSeverity
@@ -34,6 +34,12 @@ class ModelTriageReport(BaseModel):
     )
     probe_results: list[ModelTriageProbeResult] = Field(default_factory=list)
     ranked_findings: list[ModelTriageFinding] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_time_window(self) -> ModelTriageReport:
+        if self.completed_at < self.started_at:
+            raise ValueError("completed_at must be greater than or equal to started_at")
+        return self
 
     @property
     def total_duration_ms(self) -> int:
