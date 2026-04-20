@@ -100,8 +100,8 @@ class TestModelRuntimeShaMatchOutput:
     def test_valid_matching_sha(self) -> None:
         out = ModelRuntimeShaMatchOutput(
             runtime_host="192.168.86.201",
-            deployed_sha="abc123def456",
-            merge_sha="abc123def456",
+            deployed_sha="abc123def456",  # pragma: allowlist secret
+            merge_sha="abc123def456",  # pragma: allowlist secret
             match=True,
         )
         assert out.match is True
@@ -109,8 +109,8 @@ class TestModelRuntimeShaMatchOutput:
     def test_valid_mismatched_sha(self) -> None:
         out = ModelRuntimeShaMatchOutput(
             runtime_host="192.168.86.201",
-            deployed_sha="aaaaaaaaaaaa",
-            merge_sha="bbbbbbbbbbbb",
+            deployed_sha="aaaaaaaaaaaa",  # pragma: allowlist secret
+            merge_sha="bbbbbbbbbbbb",  # pragma: allowlist secret
             match=False,
         )
         assert out.match is False
@@ -183,8 +183,8 @@ class TestClassifyRuntimeShaMatchReceipt:
         receipt = _base_receipt(
             status=EnumReceiptStatus.PASS,
             actual_output=_make_output_json(
-                deployed_sha="aaaaaaaaaaaa",
-                merge_sha="bbbbbbbbbbbb",
+                deployed_sha="aaaaaaaaaaaa",  # pragma: allowlist secret
+                merge_sha="bbbbbbbbbbbb",  # pragma: allowlist secret
                 match=False,
             ),
         )
@@ -245,8 +245,8 @@ class TestDodGuardBlocksWithoutRuntimeShaReceipt:
             commit_sha="abc123def456",  # pragma: allowlist secret
             runner="ci",
             actual_output=_make_output_json(
-                deployed_sha="abc123def456",
-                merge_sha="abc123def456",
+                deployed_sha="abc123def456",  # pragma: allowlist secret
+                merge_sha="abc123def456",  # pragma: allowlist secret
                 match=True,
             ),
         )
@@ -268,8 +268,8 @@ class TestDodGuardBlocksWithoutRuntimeShaReceipt:
             commit_sha="abc123def456",  # pragma: allowlist secret
             runner="ci",
             actual_output=_make_output_json(
-                deployed_sha="aaaaaaaaaaaa",
-                merge_sha="bbbbbbbbbbbb",
+                deployed_sha="aaaaaaaaaaaa",  # pragma: allowlist secret
+                merge_sha="bbbbbbbbbbbb",  # pragma: allowlist secret
                 match=False,
             ),
         )
