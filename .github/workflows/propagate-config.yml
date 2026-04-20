@@ -20,6 +20,18 @@
 name: Propagate config across downstream repos
 
 on:
+  push:
+    paths:
+      - .github/workflows/propagate-config.yml
+      - .github/propagation-targets.yaml
+      - scripts/propagate-config.sh
+      - tests/scripts/test_propagate_config.py
+  pull_request:
+    paths:
+      - .github/workflows/propagate-config.yml
+      - .github/propagation-targets.yaml
+      - scripts/propagate-config.sh
+      - tests/scripts/test_propagate_config.py
   release:
     types: [published]
   workflow_dispatch:
