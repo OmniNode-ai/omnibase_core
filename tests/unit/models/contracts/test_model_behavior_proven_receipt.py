@@ -109,6 +109,31 @@ class TestModelBehaviorProvenReceiptValidators:
         with pytest.raises(ValidationError):
             ModelBehaviorProvenReceipt(**fields)
 
+    @pytest.mark.parametrize(
+        "field_name",
+        ["evidence_item_id", "command_run", "query"],
+    )
+    @pytest.mark.parametrize("blank", ["   ", "\t", "\n", " \t\n "])
+    def test_whitespace_only_required_field_rejected(
+        self, field_name: str, blank: str
+    ) -> None:
+        fields = _base_fields()
+        fields[field_name] = blank
+        with pytest.raises(ValidationError, match=field_name):
+            ModelBehaviorProvenReceipt(**fields)
+
+    def test_whitespace_only_observed_state_rejected(self) -> None:
+        fields = _base_fields()
+        fields["observed_state"] = "   "
+        with pytest.raises(ValidationError, match="observed_state"):
+            ModelBehaviorProvenReceipt(**fields)
+
+    def test_none_observed_state_still_accepted(self) -> None:
+        fields = _base_fields()
+        fields["observed_state"] = None
+        receipt = ModelBehaviorProvenReceipt(**fields)
+        assert receipt.observed_state is None
+
 
 @pytest.mark.unit
 class TestBehaviorProvenEvidenceItemIntegration:

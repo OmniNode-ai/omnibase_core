@@ -24,7 +24,7 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.ticket.enum_behavior_proven_assertion import (
     EnumBehaviorProvenAssertion,
@@ -96,6 +96,20 @@ class ModelBehaviorProvenReceipt(BaseModel):
     def _validate_ticket_id(cls, v: str) -> str:
         if not _TICKET_ID_RE.match(v):
             raise ValueError(f"ticket_id must match OMN-\\d+, got: {v!r}")
+        return v
+
+    @field_validator("evidence_item_id", "command_run", "query")
+    @classmethod
+    def _reject_blank_required_strings(cls, v: str, info: ValidationInfo) -> str:
+        if not v.strip():
+            raise ValueError(f"{info.field_name} must not be blank")
+        return v
+
+    @field_validator("observed_state")
+    @classmethod
+    def _reject_blank_observed_state(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError("observed_state must not be blank when provided")
         return v
 
     @field_validator("observed_at")
