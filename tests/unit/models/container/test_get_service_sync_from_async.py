@@ -100,35 +100,37 @@ def test_get_model_onex_container_sync_does_not_crash_inside_running_loop() -> N
     asyncio.run(_scenario())
 
 
-@pytest.mark.unit
-def test_container_delegates_to_compat_run_coro_sync() -> None:
-    """Source must use ``omnibase_compat.concurrency.run_coro_sync``, not an inline copy.
+def _collect_asyncio_run_lines_outside_except(source: str) -> list[int]:
+    """Return line numbers of asyncio.run() calls NOT inside an except ImportError handler.
 
-    This lock-in prevents a future rebase from silently reintroducing the
-    inline ``_run_coro_sync`` helper (as existed in PR #853) — which would
-    defeat the purpose of extracting the helper into ``omnibase_compat``.
+    The canonical import of run_coro_sync is wrapped in a try/except ImportError
+    fallback (OMN-9241 SDK-boundary fix): the except branch contains an inline
+    equivalent that must call asyncio.run() internally. That single allowed
+    occurrence is exempted here; any asyncio.run() outside that block is a bug.
     """
-    source = inspect.getsource(model_onex_container)
-
-    # Contract-first: the canonical import is present.
-    assert "from omnibase_compat.concurrency import run_coro_sync" in source, (
-        "model_onex_container.py must import run_coro_sync from "
-        "omnibase_compat.concurrency (OMN-9237). The inline _run_coro_sync "
-        "helper from PR #853 is superseded and should be removed."
-    )
-
-    # Explicitly assert no duplicate inline helper definition remains.
-    assert "def _run_coro_sync" not in source, (
-        "Inline _run_coro_sync helper must be removed in favor of the compat "
-        "shim import. Found a local def _run_coro_sync in "
-        "model_onex_container.py."
-    )
-
-    # All three call sites were swapped — no asyncio.run(...) call nodes
-    # remain for the sync bridges. Use AST walk rather than substring match
-    # so docstring prose mentioning "asyncio.run()" doesn't trip the check.
     tree = ast.parse(source)
-    asyncio_run_calls: list[int] = []
+
+    # Collect line ranges covered by `except ImportError:` handlers.
+    except_ranges: list[tuple[int, int]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Try):
+            continue
+        for handler in node.handlers:
+            if handler.type is None:
+                continue
+            names = [handler.type.id] if isinstance(handler.type, ast.Name) else []
+            if "ImportError" in names and handler.body:
+                start = handler.lineno
+                end = max(
+                    getattr(n, "lineno", start)
+                    for n in ast.walk(ast.Module(body=handler.body, type_ignores=[]))
+                )
+                except_ranges.append((start, end))
+
+    def in_except_import_error(lineno: int) -> bool:
+        return any(start <= lineno <= end for start, end in except_ranges)
+
+    violations: list[int] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
@@ -138,10 +140,47 @@ def test_container_delegates_to_compat_run_coro_sync() -> None:
             and func.attr == "run"
             and isinstance(func.value, ast.Name)
             and func.value.id == "asyncio"
+            and not in_except_import_error(node.lineno)
         ):
-            asyncio_run_calls.append(node.lineno)
+            violations.append(node.lineno)
+    return violations
+
+
+@pytest.mark.unit
+def test_container_delegates_to_compat_run_coro_sync() -> None:
+    """Source must use ``omnibase_compat.concurrency.run_coro_sync``, not an inline copy.
+
+    This lock-in prevents a future rebase from silently reintroducing the
+    inline ``_run_coro_sync`` helper (as existed in PR #853) — which would
+    defeat the purpose of extracting the helper into ``omnibase_compat``.
+
+    omnibase-compat is an optional dep (SDK boundary rule). The import is
+    wrapped in try/except ImportError with an inline fallback that calls
+    asyncio.run() internally — that one location is exempted by the AST check.
+    """
+    source = inspect.getsource(model_onex_container)
+
+    # Contract-first: the canonical try-import pattern is present.
+    assert "from omnibase_compat.concurrency import run_coro_sync" in source, (
+        "model_onex_container.py must attempt to import run_coro_sync from "
+        "omnibase_compat.concurrency (OMN-9237). The inline _run_coro_sync "
+        "helper from PR #853 is superseded and should be removed."
+    )
+
+    # Explicitly assert no duplicate private inline helper definition remains.
+    assert "def _run_coro_sync" not in source, (
+        "Inline _run_coro_sync helper must be removed in favor of the compat "
+        "shim import. Found a local def _run_coro_sync in "
+        "model_onex_container.py."
+    )
+
+    # All three production call sites must delegate to run_coro_sync, not
+    # asyncio.run() directly. asyncio.run() inside an except ImportError fallback
+    # is explicitly allowed (see OMN-9241 SDK-boundary fix).
+    asyncio_run_calls = _collect_asyncio_run_lines_outside_except(source)
     assert not asyncio_run_calls, (
-        "model_onex_container.py must not call asyncio.run() directly — "
-        "all three sync-from-async call sites should delegate to "
-        f"run_coro_sync(...). Lingering calls at line(s): {asyncio_run_calls}"
+        "model_onex_container.py must not call asyncio.run() directly outside "
+        "an except ImportError fallback — all three sync-from-async call sites "
+        "should delegate to run_coro_sync(...). "
+        f"Lingering calls at line(s): {asyncio_run_calls}"
     )

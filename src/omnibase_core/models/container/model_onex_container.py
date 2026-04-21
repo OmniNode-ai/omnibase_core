@@ -76,6 +76,7 @@ if TYPE_CHECKING:
         ProtocolPerformanceMonitor,
     )
 
+import asyncio
 import os
 import tempfile
 import threading
@@ -85,12 +86,24 @@ from pathlib import Path
 # Import needed for type annotations
 from uuid import UUID, uuid4
 
-# OMN-9241: delegate sync-from-async coroutine execution to the canonical
-# helper in omnibase_compat (OMN-9237, PR #64). Supersedes the inline
-# _run_coro_sync helper from PR #853 — all three sync call sites below
-# (get_service_sync standard path, get_service_sync performance-cached path,
-# get_model_onex_container_sync) now dispatch through run_coro_sync.
-from omnibase_compat.concurrency import run_coro_sync
+# OMN-9241: prefer the canonical helper from omnibase_compat (OMN-9237, PR #64)
+# when installed; fall back to an inline equivalent so omnibase-core works as a
+# standalone SDK without the optional compat extra.
+try:
+    from omnibase_compat.concurrency import run_coro_sync
+except ImportError:
+    import concurrent.futures
+    from collections.abc import Coroutine
+    from typing import Any
+
+    def run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:  # type: ignore[misc]
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(coro)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            return executor.submit(asyncio.run, coro).result()
+
 
 # Import context-based container management
 from omnibase_core.context.context_application import (
