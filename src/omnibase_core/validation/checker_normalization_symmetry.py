@@ -117,7 +117,7 @@ class NormalizationSymmetryChecker(ast.NodeVisitor):
         self.generic_visit(node)
         self._name_bindings = saved
 
-    visit_AsyncFunctionDef = visit_FunctionDef  # type: ignore[assignment]  # noqa: N815
+    visit_AsyncFunctionDef = visit_FunctionDef  # type: ignore[assignment]  # NOTE(OMN-9333): alias assignment — async variant shares sync visitor; mypy flags method-vs-function type mismatch  # noqa: N815
 
     def visit_Assign(self, node: ast.Assign) -> None:
         if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
