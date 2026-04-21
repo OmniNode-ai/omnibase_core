@@ -9,6 +9,11 @@
 # re-attempts auto-merge after CodeRabbit review finishes and branch
 # protection gates clear. Silent continue-on-error removed; "already
 # enqueued" races are tolerated but real failures surface.
+#
+# OMN-9398: Add explicit enqueuePullRequest step after arming auto-merge.
+# Arming auto-merge (gh pr merge --auto) is not the same as enqueuing —
+# the PR sits armed but idle until enqueuePullRequest is called. This was
+# the root cause of the #869 incident (1hr idle → ejected → manual rescue).
 name: Auto-Merge
 
 on:
@@ -93,3 +98,24 @@ jobs:
           fi
           echo "auto-merge failed: $output"
           exit 1
+
+      - name: Force enqueue to merge queue
+        if: steps.resolve.outputs.skip != 'true' && steps.resolve.outputs.actor == 'jonahgabriel'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ steps.resolve.outputs.pr }}
+        run: |
+          set -euo pipefail
+          OWNER="${GH_REPO%/*}"
+          NAME="${GH_REPO#*/}"
+          PR_ID=$(gh api graphql -f query='{repository(owner:"'"$OWNER"'",name:"'"$NAME"'"){pullRequest(number:'"$PR"'){id}}}' --jq '.data.repository.pullRequest.id')
+          if [ -z "$PR_ID" ] || [ "$PR_ID" = "null" ]; then
+            echo "could not resolve PR id"; exit 0
+          fi
+          if output=$(gh api graphql -f query='mutation($prId:ID!){enqueuePullRequest(input:{pullRequestId:$prId}){mergeQueueEntry{position}}}' -f prId="$PR_ID" 2>&1); then
+            echo "enqueued: $output"
+          else
+            # Tolerate "already in queue" / "merge queue not enabled" / "not mergeable yet"
+            echo "enqueue attempt result (tolerated): $output"
+          fi
