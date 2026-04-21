@@ -5,6 +5,15 @@
 
 Internal packages belong in [project.optional-dependencies] so that
 omnibase-core can be installed as a standalone SDK.
+
+Exception -- ``omnibase-compat``: per ``omni_home/CLAUDE.md`` section 7 (repo
+layering ``compat -> core -> spi -> infra``), ``omnibase-compat`` is the
+designated shared substrate every OmniNode repo is allowed to hard-depend on.
+It is the ONLY OmniNode package ``omnibase_core`` may list in
+``[project.dependencies]``. All other OmniNode packages (spi, infra,
+intelligence, memory, claude, change-control, onex-change-control,
+omninode-infra) must remain in optional-dependencies so core stays
+installable as a standalone SDK.
 """
 
 import tomllib
@@ -19,7 +28,6 @@ OMNINODE_PACKAGES = {
     "omninode-memory",
     "omninode-claude",
     "onex-change-control",
-    "omnibase-compat",
     "omninode-infra",
 }
 
