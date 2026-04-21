@@ -45,7 +45,7 @@ The CI comment says "12,198 total tests / 20 splits = ~610 tests/split". Actual 
 With 38,805 tests / 20 splits = ~1,940 tests per split running on **2-worker GitHub ubuntu-latest runners** (2 CPUs), each split processes ~970 tests per worker — this produces the observed 14-18 min runtimes.
 
 Confirmed via split 8 CI log:
-```
+```text
 created: 2/2 workers
 2 workers [1941 items]
 ```
