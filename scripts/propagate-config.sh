@@ -102,7 +102,7 @@ for i in $(seq 0 $((TARGET_COUNT - 1))); do
   FILE_PATH="$(python3 -c 'import json,sys;i=int(sys.argv[2]);print(json.loads(sys.argv[1])["targets"][i]["path"])' "$PROPAGATION_JSON" "$i")"
   HOOK_ID="$(python3 -c 'import json,sys;i=int(sys.argv[2]);print(json.loads(sys.argv[1])["targets"][i]["hook_id"])' "$PROPAGATION_JSON" "$i")"
 
-  TITLE="chore(ci): propagate ${PROPAGATION_NAME} to ${FILE_PATH} [bot]"
+  TITLE="chore(ci): propagate ${PROPAGATION_NAME} to ${FILE_PATH} [bot] [OMN-9344]"
   BODY=$(cat <<EOF
 Automated config propagation emitted by \`omnibase_core/propagate-config.yml\`.
 
@@ -117,6 +117,7 @@ EOF
 )
 
   if [[ "$DRY_RUN" == "1" ]]; then
+    echo "DRY_RUN: gh pr list --repo ${REPO} --state open --search \"propagate ${PROPAGATION_NAME}\" (dedup check)"
     echo "DRY_RUN: gh pr create --repo ${REPO} --head ${BRANCH} --base main --title \"${TITLE}\""
     if [[ "$AUTO_MERGE" == "True" || "$AUTO_MERGE" == "true" ]]; then
       # Per OMN-8838: always arm auto-merge via GraphQL enablePullRequestAutoMerge
@@ -136,6 +137,20 @@ EOF
   gh auth setup-git
   gh repo clone "$REPO" downstream -- --depth=5
   cd downstream
+
+  # Dedup: skip if an open bot PR for this propagation already exists. Each
+  # workflow_dispatch gets a unique manual-<run_id> tag, so without this check
+  # every re-run opens a fresh PR even though the previous one is still open.
+  EXISTING_PR="$(gh pr list --repo "$REPO" --state open \
+    --search "propagate ${PROPAGATION_NAME}" --json number,headRefName \
+    --jq "[.[] | select(.headRefName | startswith(\"bot/propagate-${PROPAGATION_NAME}-\"))] | first | .number" 2>/dev/null || true)"
+  if [[ -n "$EXISTING_PR" && "$EXISTING_PR" != "null" ]]; then
+    echo "SKIP: ${REPO} already has open PR #${EXISTING_PR} for propagation ${PROPAGATION_NAME}"
+    popd >/dev/null
+    rm -rf "$TMPDIR"
+    trap - EXIT
+    continue
+  fi
 
   if [[ ! -f "$FILE_PATH" ]]; then
     echo "ERROR: ${REPO} is missing ${FILE_PATH} — skipping to avoid creating invalid config" >&2
@@ -171,7 +186,7 @@ SNIPPET
   git config user.email "bot@omninode.ai"
   git checkout -b "$BRANCH"
   git add "$FILE_PATH"
-  git commit -m "chore(ci): propagate ${PROPAGATION_NAME} [bot] [OMN-9344]"
+  git commit -m "chore(ci): propagate ${PROPAGATION_NAME} [bot]"
   git push -u origin "$BRANCH" --force-with-lease
 
   PR_URL="$(gh pr create --repo "$REPO" --head "$BRANCH" --base main \
