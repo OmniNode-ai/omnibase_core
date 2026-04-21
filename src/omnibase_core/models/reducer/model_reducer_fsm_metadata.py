@@ -27,7 +27,7 @@ See Also:
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -126,13 +126,21 @@ class ModelReducerFsmMetadata(BaseModel):
         default=None,
         description=("Human-readable reason the transition failed. None on success."),
     )
-    failed_conditions: list[str] | None = Field(
+    failed_conditions: tuple[str, ...] | None = Field(
         default=None,
         description=(
             "Names of conditions/guards that evaluated falsy. None on "
             "success or when no conditions were evaluated."
         ),
     )
+
+    @field_validator("failed_conditions", mode="before")
+    @classmethod
+    def _coerce_failed_conditions(cls, v: object) -> tuple[str, ...] | None:
+        if isinstance(v, list):
+            return tuple(v)
+        return v  # type: ignore[return-value]
+
     error: str | None = Field(
         default=None,
         description=(

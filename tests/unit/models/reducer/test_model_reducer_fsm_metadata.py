@@ -77,7 +77,7 @@ class TestInstantiation:
         )
         assert metadata.fsm_transition_success is False
         assert metadata.failure_reason == "Guard not satisfied"
-        assert metadata.failed_conditions == ["has_input_data", "queue_not_full"]
+        assert metadata.failed_conditions == ("has_input_data", "queue_not_full")
 
     def test_error_field_for_unexpected_exception(self) -> None:
         """`error` is distinct from `failure_reason` and carries exception text."""
@@ -123,7 +123,7 @@ class TestValidation:
                 fsm_transition_success="not-a-bool",  # type: ignore[arg-type]
             )
 
-    def test_rejects_non_list_failed_conditions(self) -> None:
+    def test_rejects_non_sequence_failed_conditions(self) -> None:
         with pytest.raises(ValidationError):
             ModelReducerFsmMetadata(
                 fsm_state="IDLE",
@@ -131,14 +131,24 @@ class TestValidation:
                 failed_conditions="guard_a",  # type: ignore[arg-type]
             )
 
-    def test_accepts_empty_failed_conditions_list(self) -> None:
-        """An empty list is a legal value — distinct from None."""
+    def test_accepts_list_failed_conditions_coerced_to_tuple(self) -> None:
+        """List input is coerced to tuple for immutability."""
+        metadata = ModelReducerFsmMetadata(
+            fsm_state="IDLE",
+            fsm_transition_success=False,
+            failed_conditions=["guard_a", "guard_b"],
+        )
+        assert metadata.failed_conditions == ("guard_a", "guard_b")
+        assert isinstance(metadata.failed_conditions, tuple)
+
+    def test_accepts_empty_failed_conditions(self) -> None:
+        """An empty tuple is a legal value — distinct from None."""
         metadata = ModelReducerFsmMetadata(
             fsm_state="IDLE",
             fsm_transition_success=False,
             failed_conditions=[],
         )
-        assert metadata.failed_conditions == []
+        assert metadata.failed_conditions == ()
 
 
 class TestFrozen:
@@ -176,7 +186,7 @@ class TestRoundTrip:
             fsm_transition_success=False,
             fsm_transition_name="start",
             failure_reason="Guard failed",
-            failed_conditions=["has_input"],
+            failed_conditions=("has_input",),
             error=None,
         )
         restored = ModelReducerFsmMetadata.from_dict(original.to_dict())
