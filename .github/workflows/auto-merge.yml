@@ -116,6 +116,11 @@ jobs:
           if output=$(gh api graphql -f query='mutation($prId:ID!){enqueuePullRequest(input:{pullRequestId:$prId}){mergeQueueEntry{position}}}' -f prId="$PR_ID" 2>&1); then
             echo "enqueued: $output"
           else
-            # Tolerate "already in queue" / "merge queue not enabled" / "not mergeable yet"
-            echo "enqueue attempt result (tolerated): $output"
+            # Tolerate only known benign states.
+            if echo "$output" | grep -qiE "already (in|enqueued|queued)|merge queue (is )?not enabled|not mergeable"; then
+              echo "enqueue attempt result (tolerated): $output"
+              exit 0
+            fi
+            echo "enqueue failed: $output"
+            exit 1
           fi
