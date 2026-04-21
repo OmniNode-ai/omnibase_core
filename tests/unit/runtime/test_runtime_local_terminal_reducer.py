@@ -131,6 +131,7 @@ async def test_terminal_reducer_workflow_writes_state_to_disk(tmp_path: Path) ->
             "  subscribe_topics:\n"
             "    - cmd.tr.v1\n"
             "    - evt.tr.mid.v1\n"
+            "    - evt.tr.unused.v1\n"
             "    - evt.tr.done.v1\n"
             "  publish_topics:\n"
             "    - evt.tr.done.v1\n"
