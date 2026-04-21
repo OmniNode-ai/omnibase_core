@@ -117,7 +117,7 @@ jobs:
             echo "enqueued: $output"
           else
             # Tolerate only known benign states.
-            if echo "$output" | grep -qiE "already (in|enqueued|queued)|merge queue (is )?not enabled|not mergeable"; then
+            if echo "$output" | grep -qiE "already (in|enqueued|queued)|merge queue (is )?not enabled|not mergeable|required status check"; then
               echo "enqueue attempt result (tolerated): $output"
               exit 0
             fi
