@@ -10,6 +10,7 @@ Models for FSM-driven state management:
 - ModelReducerContext: Handler context (deliberately excludes time injection)
 - ModelIntent: Side effect declaration for pure FSM pattern
 - ModelIntentPublishResult: Result of publishing an intent
+- ModelReducerFsmMetadata: Typed 7-key FSM metadata contract
 - UtilConflictResolver: Conflict resolution strategies (moved from ModelConflictResolver)
 - UtilStreamingWindow: Time-based windowing for streaming (moved from ModelStreamingWindow)
 
@@ -30,6 +31,7 @@ __all__ = [
     "ModelIntent",
     "ModelIntentPublishResult",
     "ModelReducerContext",
+    "ModelReducerFsmMetadata",
     "ModelReducerInput",
     "ModelReducerOutput",
     "ModelStreamingWindow",  # DEPRECATED alias, use UtilStreamingWindow
@@ -44,6 +46,9 @@ from omnibase_core.models.reducer.model_intent_publish_result import (
     ModelIntentPublishResult,
 )
 from omnibase_core.models.reducer.model_reducer_context import ModelReducerContext
+from omnibase_core.models.reducer.model_reducer_fsm_metadata import (
+    ModelReducerFsmMetadata,
+)
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 
