@@ -176,6 +176,9 @@ async def test_terminal_reducer_workflow_writes_state_to_disk(tmp_path: Path) ->
         result = await runtime.run_async()
 
         assert result == EnumWorkflowResult.COMPLETED
+        assert len(terminal_invocations) == 1, (
+            "Terminal reducer HandlerCTerminal was not invoked"
+        )
 
         state_file = tmp_path / "state" / "workflow_result.json"
         assert state_file.exists(), "workflow_result.json was not written to disk"
