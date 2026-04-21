@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Example: terminal reducer without subscribe_topics padding (OMN-9262)
+#
+# Before OMN-9262 the strict positional validator required:
+#   len(subscribe_topics) == len(handlers)
+# Callers had to pad subscribe_topics with an unused topic for terminal reducers:
+#
+#   subscribe_topics:
+#     - cmd.start.v1
+#     - evt.mid.v1
+#     - __pad.terminal.v1   # artificial entry, consumed by nobody
+#
+# After OMN-9262 the map-based validator allows two clean alternatives:
+#
+#   A) Terminal reducer with explicit subscribe_topic field (used below):
+#      HandlerCTerminal sets subscribe_topic: evt.done.v1.
+#      subscribe_topics does not need a dummy padding entry.
+#
+#   B) Terminal reducer with no bus wiring at all:
+#      Omit subscribe_topic; handler beyond the positional list gets no slot.
+#      subscribe_topics can be shorter than the handler list.
+
+workflow_id: terminal_reducer_example
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: workflow
+description: >
+  Terminal reducer workflow demonstrating OMN-9262 map-based validation. HandlerCTerminal uses an explicit
+  subscribe_topic field; subscribe_topics does not require a dummy padding entry to satisfy a length check.
+
+initial_command: cmd.start.v1
+terminal_event: evt.done.v1
+
+event_bus:
+  subscribe_topics:
+    - cmd.start.v1
+    - evt.mid.v1
+    - evt.done.v1
+  publish_topics:
+    - evt.done.v1
+
+handler_routing:
+  routing_strategy: payload_type_match
+  handlers:
+    - event_model:
+        name: StartCommand
+        module: placeholder.events
+      handler:
+        name: HandlerA
+        module: placeholder.handlers
+      output_events:
+        - MidEvent
+    - event_model:
+        name: MidEvent
+        module: placeholder.events
+      handler:
+        name: HandlerB
+        module: placeholder.handlers
+      output_events:
+        - DoneEvent
+    - event_model:
+        name: DoneEvent
+        module: placeholder.events
+      handler:
+        name: HandlerCTerminal
+        module: placeholder.handlers
+      subscribe_topic: evt.done.v1  # Explicit field -- no positional padding needed
+      output_events: []

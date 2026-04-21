@@ -1107,3 +1107,297 @@ def test_compute_mode_fallback_run_full_cycle(tmp_path: Path) -> None:
         assert result == EnumWorkflowResult.COMPLETED
     finally:
         sys.modules.pop("_test_compute_rfc_mod", None)
+
+
+# ===================================================================
+# _validate_routing map-based checks (OMN-9262)
+# ===================================================================
+
+
+def _make_handler_entry(
+    event_name: str = "MyEvent",
+    event_module: str = "mod.events",
+    handler_name: str = "MyHandler",
+    handler_module: str = "mod.handlers",
+    output_events: list[str] | None = None,
+    subscribe_topic: str | None = None,
+) -> dict[str, Any]:
+    entry: dict[str, Any] = {
+        "event_model": {"name": event_name, "module": event_module},
+        "handler": {"name": handler_name, "module": handler_module},
+        "output_events": output_events or [],
+    }
+    if subscribe_topic is not None:
+        entry["subscribe_topic"] = subscribe_topic
+    return entry
+
+
+@pytest.mark.unit
+def test_validate_routing_map_based_happy_path() -> None:
+    """Map-based validation passes when all handlers have input topics in subscribe_topics."""
+    routing = {
+        "handlers": [
+            _make_handler_entry(
+                "EventA", handler_name="HandlerA", output_events=["EventB"]
+            ),
+            _make_handler_entry("EventB", handler_name="HandlerB"),
+        ]
+    }
+    errors = RuntimeLocal._validate_routing(
+        routing,
+        subscribe_topics=["topic.a.v1", "topic.b.v1"],
+        publish_topics=["topic.done.v1"],
+    )
+    assert errors == []
+
+
+@pytest.mark.unit
+def test_validate_routing_terminal_reducer_no_padding() -> None:
+    """Terminal reducer with explicit subscribe_topic requires no padding of subscribe_topics."""
+    routing = {
+        "handlers": [
+            _make_handler_entry(
+                "EventA",
+                handler_name="HandlerA",
+                output_events=["EventB"],
+            ),
+            _make_handler_entry(
+                "EventB",
+                handler_name="HandlerB",
+                subscribe_topic="topic.b.v1",
+            ),
+        ]
+    }
+    # Only one subscribe_topic declared (for HandlerA); HandlerB uses explicit field.
+    errors = RuntimeLocal._validate_routing(
+        routing,
+        subscribe_topics=["topic.a.v1", "topic.b.v1"],
+        publish_topics=[],
+    )
+    assert errors == []
+
+
+@pytest.mark.unit
+def test_validate_routing_terminal_reducer_no_input_topic() -> None:
+    """Terminal reducer with no subscribe_topic and no positional slot is valid (no bus wiring)."""
+    routing = {
+        "handlers": [
+            _make_handler_entry("EventA", handler_name="HandlerA"),
+            # Handler at index 1, but subscribe_topics only has 1 entry — no slot.
+            _make_handler_entry("EventB", handler_name="TerminalReducer"),
+        ]
+    }
+    errors = RuntimeLocal._validate_routing(
+        routing,
+        subscribe_topics=["topic.a.v1"],
+        publish_topics=[],
+    )
+    assert errors == []
+
+
+@pytest.mark.unit
+def test_validate_routing_explicit_subscribe_topic_not_in_list() -> None:
+    """Explicit subscribe_topic that is not in subscribe_topics is an error."""
+    routing = {
+        "handlers": [
+            _make_handler_entry(
+                "EventA",
+                handler_name="HandlerA",
+                subscribe_topic="topic.unknown.v1",
+            ),
+        ]
+    }
+    errors = RuntimeLocal._validate_routing(
+        routing,
+        subscribe_topics=["topic.a.v1"],
+        publish_topics=[],
+    )
+    assert len(errors) == 1
+    assert "topic.unknown.v1" in errors[0]
+    assert "not in event_bus.subscribe_topics" in errors[0]
+
+
+@pytest.mark.unit
+def test_validate_routing_orphan_output_still_detected() -> None:
+    """Orphan output_events (no downstream and no publish_topics) still produces an error."""
+    routing = {
+        "handlers": [
+            _make_handler_entry(
+                "EventA",
+                handler_name="HandlerA",
+                output_events=["UnknownEvent"],
+            ),
+        ]
+    }
+    errors = RuntimeLocal._validate_routing(
+        routing,
+        subscribe_topics=["topic.a.v1"],
+        publish_topics=[],
+    )
+    assert any("UnknownEvent" in e for e in errors)
+
+
+@pytest.mark.unit
+def test_validate_routing_missing_required_fields() -> None:
+    """Missing event_model.name / handler.module are still caught."""
+    routing = {
+        "handlers": [
+            {
+                "event_model": {"module": "mod.events"},
+                "handler": {"name": "HandlerA"},
+                "output_events": [],
+            }
+        ]
+    }
+    errors = RuntimeLocal._validate_routing(
+        routing,
+        subscribe_topics=["topic.a.v1"],
+        publish_topics=[],
+    )
+    assert any("event_model.name is missing" in e for e in errors)
+    assert any("handler.module is missing" in e for e in errors)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_terminal_reducer_end_to_end(tmp_path: Path) -> None:
+    """Terminal reducer workflow: three-handler chain where HandlerC is terminal.
+
+    HandlerA: cmd.start.v1 → EventB (on evt.mid.v1)
+    HandlerB: evt.mid.v1 → EventC (on evt.done.v1, terminal)
+    HandlerC: subscribe_topic: evt.done.v1, no output_events — terminal reducer.
+
+    HandlerC uses an explicit subscribe_topic with no padding required.
+    The terminal event fires when HandlerB publishes EventC to evt.done.v1.
+    HandlerC is wired to evt.done.v1 via explicit subscribe_topic, and the
+    side-effect assertion verifies it actually ran.
+    """
+    import sys
+    import types
+
+    class EventA(BaseModel):
+        correlation_id: str
+
+    class EventB(BaseModel):
+        correlation_id: str
+        step: str = "mid"
+
+    class EventC(BaseModel):
+        correlation_id: str
+        step: str = "done"
+        status: str = "success"
+
+    class HandlerA:
+        async def handle(self, correlation_id: str) -> EventB:
+            return EventB(correlation_id=correlation_id)
+
+    class HandlerB:
+        async def handle(self, correlation_id: str, step: str) -> EventC:
+            return EventC(correlation_id=correlation_id)
+
+    terminal_calls: list[str] = []
+
+    class HandlerCTerminal:
+        """Terminal reducer — processes EventC but has no output_events.
+
+        Uses explicit subscribe_topic without requiring positional padding.
+        """
+
+        async def handle(self, correlation_id: str, step: str, status: str) -> None:
+            terminal_calls.append(correlation_id)
+
+    mod_event_a = types.ModuleType("_test_tr2_event_a")
+    mod_event_a.EventA = EventA  # type: ignore[attr-defined]
+    mod_event_b = types.ModuleType("_test_tr2_event_b")
+    mod_event_b.EventB = EventB  # type: ignore[attr-defined]
+    mod_event_c = types.ModuleType("_test_tr2_event_c")
+    mod_event_c.EventC = EventC  # type: ignore[attr-defined]
+    mod_handler_a = types.ModuleType("_test_tr2_handler_a")
+    mod_handler_a.HandlerA = HandlerA  # type: ignore[attr-defined]
+    mod_handler_b = types.ModuleType("_test_tr2_handler_b")
+    mod_handler_b.HandlerB = HandlerB  # type: ignore[attr-defined]
+    mod_handler_c = types.ModuleType("_test_tr2_handler_c")
+    mod_handler_c.HandlerCTerminal = HandlerCTerminal  # type: ignore[attr-defined]
+
+    for name, mod in [
+        ("_test_tr2_event_a", mod_event_a),
+        ("_test_tr2_event_b", mod_event_b),
+        ("_test_tr2_event_c", mod_event_c),
+        ("_test_tr2_handler_a", mod_handler_a),
+        ("_test_tr2_handler_b", mod_handler_b),
+        ("_test_tr2_handler_c", mod_handler_c),
+    ]:
+        sys.modules[name] = mod
+
+    try:
+        # subscribe_topics contains evt.done.v1 so HandlerC can wire to it.
+        # publish_topics also contains evt.done.v1 as the terminal.
+        # HandlerC uses explicit subscribe_topic — no positional padding required
+        # (only 2 handlers use positional slots; HandlerC uses its own field).
+        contract_yaml = (
+            "workflow_id: test_terminal_reducer\n"
+            "contract_version: {major: 1, minor: 0, patch: 0}\n"
+            "node_type: workflow\n"
+            "description: Terminal reducer test\n"
+            "initial_command: cmd.start.v1\n"
+            "terminal_event: evt.done.v1\n"
+            "event_bus:\n"
+            "  subscribe_topics:\n"
+            "    - cmd.start.v1\n"
+            "    - evt.mid.v1\n"
+            "    - evt.done.v1\n"
+            "  publish_topics:\n"
+            "    - evt.done.v1\n"
+            "input_model:\n"
+            "  module: _test_tr2_event_a\n"
+            "  class: EventA\n"
+            "handler_routing:\n"
+            "  routing_strategy: payload_type_match\n"
+            "  handlers:\n"
+            "    - event_model:\n"
+            "        name: EventA\n"
+            "        module: _test_tr2_event_a\n"
+            "      handler:\n"
+            "        name: HandlerA\n"
+            "        module: _test_tr2_handler_a\n"
+            "      output_events:\n"
+            "        - EventB\n"
+            "    - event_model:\n"
+            "        name: EventB\n"
+            "        module: _test_tr2_event_b\n"
+            "      handler:\n"
+            "        name: HandlerB\n"
+            "        module: _test_tr2_handler_b\n"
+            "      output_events:\n"
+            "        - EventC\n"
+            "    - event_model:\n"
+            "        name: EventC\n"
+            "        module: _test_tr2_event_c\n"
+            "      handler:\n"
+            "        name: HandlerCTerminal\n"
+            "        module: _test_tr2_handler_c\n"
+            "      subscribe_topic: evt.done.v1\n"
+            "      output_events: []\n"
+        )
+        workflow = tmp_path / "terminal_reducer.yaml"
+        workflow.write_text(contract_yaml)
+
+        runtime = RuntimeLocal(
+            workflow_path=workflow,
+            state_root=tmp_path / "state",
+            timeout=10,
+        )
+        result = await runtime.run_async()
+        assert result == EnumWorkflowResult.COMPLETED
+        assert len(terminal_calls) > 0, "HandlerCTerminal was never invoked"
+
+    finally:
+        for name in [
+            "_test_tr2_event_a",
+            "_test_tr2_event_b",
+            "_test_tr2_event_c",
+            "_test_tr2_handler_a",
+            "_test_tr2_handler_b",
+            "_test_tr2_handler_c",
+        ]:
+            sys.modules.pop(name, None)
