@@ -38,7 +38,7 @@ gates:
     workflow_file: ci.yml
     workflow_job_key: tests-gate
     rationale: >
-      Aggregates the 20-shard parallel test matrix. Shard count can change without updating branch protection
+      Aggregates the 40-shard parallel test matrix. Shard count can change without updating branch protection
       rules.
   - check_name: "CI Summary"
     workflow_file: ci.yml
@@ -98,15 +98,15 @@ checks:
     workflow_job_key: detect-secrets
     aggregated_by: "Quality Gate"
 
-  - name: "Tests (Split N/20)"
+  - name: "Tests (Split N/40)"
     workflow_file: ci.yml
     workflow_job_key: test-parallel
     aggregated_by: "Tests Gate"
-    note: "Matrix job -- 20 splits, aggregated by Tests Gate"
+    note: "Matrix job -- 40 splits, aggregated by Tests Gate"
 
 # ── Explicitly excluded ───────────────────────────────────────────────────────
 excluded_checks:
-  - name: "Tests (Split 1/20) through Tests (Split 20/20)"
+  - name: "Tests (Split 1/40) through Tests (Split 40/40)"
     reason: "Individual matrix legs -- aggregated by Tests Gate"
 
   - name: "Test Summary"
