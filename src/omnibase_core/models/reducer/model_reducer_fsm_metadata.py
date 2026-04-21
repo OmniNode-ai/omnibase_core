@@ -29,6 +29,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_reducer_fsm_metadata import (
     TypedDictReducerFsmMetadata,
 )
@@ -171,7 +173,25 @@ class ModelReducerFsmMetadata(BaseModel):
             Validated ``ModelReducerFsmMetadata`` instance.
 
         Raises:
-            pydantic.ValidationError: If required keys are missing, types
-                are wrong, or extra keys are present.
+            ModelOnexError: If any of the 7 contract keys are missing.
+            pydantic.ValidationError: If types are wrong or extra keys are present.
         """
+        required_keys = {
+            "fsm_state",
+            "fsm_previous_state",
+            "fsm_transition_success",
+            "fsm_transition_name",
+            "failure_reason",
+            "failed_conditions",
+            "error",
+        }
+        missing_keys = required_keys - set(data.keys())
+        if missing_keys:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                message=(
+                    "Reducer FSM metadata must include all 7 contract keys; "
+                    f"missing: {sorted(missing_keys)}"
+                ),
+            )
         return cls.model_validate(data)

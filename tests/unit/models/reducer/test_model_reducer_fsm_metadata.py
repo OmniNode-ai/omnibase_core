@@ -201,7 +201,9 @@ class TestRoundTrip:
         assert set(payload.keys()) == expected_keys
 
     def test_from_dict_rejects_extra_keys(self) -> None:
-        with pytest.raises(ValidationError):
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+        with pytest.raises((ModelOnexError, ValidationError)):
             ModelReducerFsmMetadata.from_dict(
                 {
                     "fsm_state": "IDLE",
@@ -210,10 +212,27 @@ class TestRoundTrip:
                 }
             )
 
-    def test_from_dict_accepts_missing_optional_keys(self) -> None:
-        """from_dict handles omitted optionals by using defaults."""
+    def test_from_dict_requires_all_7_keys(self) -> None:
+        """from_dict enforces the 7-key contract — partial dicts are rejected."""
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+        with pytest.raises(ModelOnexError, match="missing"):
+            ModelReducerFsmMetadata.from_dict(
+                {"fsm_state": "IDLE", "fsm_transition_success": True}
+            )
+
+    def test_from_dict_accepts_none_optionals_when_all_keys_present(self) -> None:
+        """from_dict accepts all 7 keys with None for optional fields."""
         metadata = ModelReducerFsmMetadata.from_dict(
-            {"fsm_state": "IDLE", "fsm_transition_success": True}
+            {
+                "fsm_state": "IDLE",
+                "fsm_previous_state": None,
+                "fsm_transition_success": True,
+                "fsm_transition_name": None,
+                "failure_reason": None,
+                "failed_conditions": None,
+                "error": None,
+            }
         )
         assert metadata.fsm_previous_state is None
         assert metadata.fsm_transition_name is None
