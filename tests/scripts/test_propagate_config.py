@@ -49,6 +49,56 @@ def _run(
 
 
 @pytest.mark.unit
+def test_pr_title_includes_ticket_ref(tmp_path: Path) -> None:
+    targets = _write_targets(
+        tmp_path,
+        """
+        propagations:
+          - name: normalization-symmetry-hook
+            targets:
+              - repo: OmniNode-ai/omnibase_infra
+                path: .pre-commit-config.yaml
+                operation: append_hook_entry
+                hook_id: normalization-symmetry
+            auto_merge: false
+            merge_method: queue_default
+        """,
+    )
+    result = _run(targets)
+    assert result.returncode == 0, result.stderr
+    create_lines = [
+        line for line in result.stdout.splitlines() if "gh pr create" in line
+    ]
+    assert len(create_lines) == 1
+    assert "OMN-9344" in create_lines[0], (
+        f"PR title missing OMN-9344 ticket ref: {create_lines[0]}"
+    )
+
+
+@pytest.mark.unit
+def test_dry_run_emits_dedup_check(tmp_path: Path) -> None:
+    targets = _write_targets(
+        tmp_path,
+        """
+        propagations:
+          - name: normalization-symmetry-hook
+            targets:
+              - repo: OmniNode-ai/omnibase_infra
+                path: .pre-commit-config.yaml
+                operation: append_hook_entry
+                hook_id: normalization-symmetry
+            auto_merge: false
+            merge_method: queue_default
+        """,
+    )
+    result = _run(targets)
+    assert result.returncode == 0, result.stderr
+    assert "dedup check" in result.stdout, (
+        f"Expected dedup check in dry-run output: {result.stdout}"
+    )
+
+
+@pytest.mark.unit
 def test_dry_run_emits_one_pr_per_target(tmp_path: Path) -> None:
     targets = _write_targets(
         tmp_path,
