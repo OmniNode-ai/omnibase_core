@@ -128,6 +128,20 @@ EOF
   fi
 
   # Live path (executed inside GitHub Actions runner with gh + git configured).
+
+  # Dedup: refuse to create a second PR if one is already open for this branch.
+  # Uses exit-status check instead of || true to surface auth/API failures.
+  if ! EXISTING_PR="$(gh pr list --repo "$REPO" --state open \
+    --search "propagate ${PROPAGATION_NAME}" --json number,headRefName \
+    --jq "[.[] | select(.headRefName | startswith(\"bot/propagate-${PROPAGATION_NAME}-\"))] | first | .number" 2>/dev/null)"; then
+    echo "ERROR: dedup check failed for ${REPO}; refusing to proceed blindly" >&2
+    continue
+  fi
+  if [[ -n "$EXISTING_PR" && "$EXISTING_PR" != "null" ]]; then
+    echo "SKIP: ${REPO} already has open PR #${EXISTING_PR} for branch ${BRANCH}"
+    continue
+  fi
+
   TMPDIR="$(mktemp -d)"
   trap "rm -rf $TMPDIR" EXIT
   pushd "$TMPDIR" >/dev/null
