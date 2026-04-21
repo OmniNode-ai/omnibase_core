@@ -148,6 +148,8 @@ EOF
   if grep -q "id:\s*${HOOK_ID}" "$FILE_PATH" 2>/dev/null; then
     echo "SKIP: ${REPO} already contains hook ${HOOK_ID} in ${FILE_PATH}"
     popd >/dev/null
+    rm -rf "$TMPDIR"
+    trap - EXIT
     continue
   fi
 
