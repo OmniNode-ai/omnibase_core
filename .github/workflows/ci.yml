@@ -42,13 +42,13 @@ jobs:
   #     This is the API-stable check_name for branch protection
   #
   # Phase 2 - Full Test Suite (after quality-gate passes):
-  #   - test-parallel: 20 splits of full test suite (~3 min each)
+  #   - test-parallel: 40 splits of full test suite (~7-9 min each)
   #     Depends on: quality-gate
   #     This ensures type errors and lint failures are caught BEFORE
-  #     spawning 20 parallel test runners (saves ~60 runner-minutes on failure)
+  #     spawning 40 parallel test runners (saves ~120 runner-minutes on failure)
   #
   # Phase 3 - Gates and Summary:
-  #   - tests-gate: Aggregates 20-shard test matrix results (API-stable gate)
+  #   - tests-gate: Aggregates 40-shard test matrix results (API-stable gate)
   #   - ci-summary: Final aggregator for all gates
   #
   # This ordering ensures:
@@ -796,20 +796,20 @@ jobs:
   # Phase 2 - Full Test Suite
   # ---------------------------------------------------------------------------
 
-  # Parallel test execution - split into 20 groups for speed and memory management
+  # Parallel test execution - split into 40 groups for speed and memory management
   # Split strategy rationale:
-  #   - 12,198 total tests / 20 splits = ~610 tests/split
-  #   - Target: 1.5-3 minutes per split (prevents runner timeouts/cancellations)
-  #   - 20x parallelization speedup vs sequential execution
-  #   - Increased from 16 to 20 splits to eliminate Split 10 timeout issues
-  #   - Shorter per-split runtime reduces probability of external runner shutdown
+  #   - 38,805 total tests / 40 splits = ~970 tests/split on 2-CPU ubuntu-latest runners
+  #   - Target: 7-9 minutes per split (down from 14-18 min with 20 splits)
+  #   - 40x parallelization speedup vs sequential execution
+  #   - Increased from 20 to 40 splits: test count grew 3x (12K → 38K) since last bump
+  #   - Duration-aware splitting via .test_durations cache eliminates outlier splits
   #
   # Dependency rationale (fail-fast optimization):
   #   - quality-gate: Aggregates all Phase 1 checks (lint, pyright, exports, etc.)
-  #   - This ensures quality failures are caught BEFORE spawning 20 test runners
-  #   - Saves ~60 runner-minutes on validation failures
+  #   - This ensures quality failures are caught BEFORE spawning 40 test runners
+  #   - Saves ~120 runner-minutes on validation failures
   test-parallel:
-    name: Tests (Split ${{ matrix.split }}/20)
+    name: Tests (Split ${{ matrix.split }}/40)
     needs: [quality-gate]
     # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
     runs-on: >-
@@ -821,17 +821,17 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
-    timeout-minutes: 30
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -848,7 +848,15 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
-      - name: Run test split ${{ matrix.split }}/20
+      - name: Restore test durations cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .test_durations
+          key: test-durations-${{ github.sha }}
+          restore-keys: |
+            test-durations-
+
+      - name: Run test split ${{ matrix.split }}/40
         env:
           # OMN-3327: Performance tests use CI_RUNNER_TYPE to relax thresholds on
           # shared self-hosted runners (15-25% lower throughput vs dedicated runners)
@@ -863,20 +871,28 @@ jobs:
             }}
         run: |
           uv run pytest tests/ \
-            --splits 20 \
+            --splits 40 \
             --group ${{ matrix.split }} \
+            --store-durations \
+            --durations-path .test_durations \
             -n auto \
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
             --junitxml=junit-${{ matrix.split }}.xml
           # Per-test timeout: 60 seconds prevents infinite hangs
-          #   - Longest test: ~30 seconds (2x safety margin)
-          #   - Thread method: Avoids signal handler issues in parallel execution
-          #   - No false positives observed at this threshold
+          # --store-durations: saves per-test timing so subsequent runs balance by
+          #   duration rather than count (eliminates outlier splits)
           # All splits use -n auto (full parallelism) - shorter splits reduce
           # resource pressure and runner cancellation probability
           # Note: Coverage collection disabled - use local pytest-cov for coverage reports
+
+      - name: Save test durations (split 1 only, after full suite data accumulated)
+        if: matrix.split == 1
+        uses: actions/cache/save@v4
+        with:
+          path: .test_durations
+          key: test-durations-${{ github.sha }}
 
       - name: Upload test results
         if: always()
@@ -890,7 +906,7 @@ jobs:
   # Phase 3 - Gates and Summary
   # ---------------------------------------------------------------------------
 
-  # Tests Gate - aggregates 20-shard test matrix results
+  # Tests Gate - aggregates 40-shard test matrix results
   # API-STABLE check_name: "Tests Gate"
   # Shard count can change without updating branch protection rules.
   tests-gate:
@@ -918,7 +934,7 @@ jobs:
 
           echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Parallel Tests (20 splits) | $parallel |" >> $GITHUB_STEP_SUMMARY
+          echo "| Parallel Tests (40 splits) | $parallel |" >> $GITHUB_STEP_SUMMARY
 
           # Accept "success" (tests ran and passed) or "skipped" (tests correctly
           # skipped because upstream quality-gate was skipped, e.g. dependabot PRs
