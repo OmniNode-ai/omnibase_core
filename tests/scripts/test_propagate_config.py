@@ -125,6 +125,27 @@ def test_unknown_propagation_name_exits_nonzero(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_unsupported_merge_method_rejected(tmp_path: Path) -> None:
+    targets = _write_targets(
+        tmp_path,
+        """
+        propagations:
+          - name: normalization-symmetry-hook
+            targets:
+              - repo: OmniNode-ai/omnibase_infra
+                path: .pre-commit-config.yaml
+                operation: append_hook_entry
+                hook_id: normalization-symmetry
+            auto_merge: true
+            merge_method: invalid_method
+        """,
+    )
+    result = _run(targets)
+    assert result.returncode != 0
+    assert "unsupported merge_method" in (result.stderr + result.stdout).lower()
+
+
+@pytest.mark.unit
 def test_unsupported_operation_rejected(tmp_path: Path) -> None:
     targets = _write_targets(
         tmp_path,

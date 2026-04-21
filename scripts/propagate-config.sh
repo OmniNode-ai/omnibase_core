@@ -61,6 +61,15 @@ if match is None:
     sys.exit(3)
 
 supported_ops = {"append_hook_entry"}
+supported_merge_methods = {"queue_default", "squash", "merge", "rebase"}
+merge_method = match.get("merge_method", "queue_default")
+if merge_method not in supported_merge_methods:
+    sys.stderr.write(
+        f"ERROR: unsupported merge_method '{merge_method}' "
+        f"(supported: {sorted(supported_merge_methods)})\n"
+    )
+    sys.exit(5)
+
 for target in match.get("targets") or []:
     op = target.get("operation")
     if op not in supported_ops:
@@ -69,7 +78,7 @@ for target in match.get("targets") or []:
 
 print(json.dumps({
     "auto_merge": bool(match.get("auto_merge", False)),
-    "merge_method": match.get("merge_method", "queue_default"),
+    "merge_method": merge_method,
     "targets": match.get("targets") or [],
 }))
 PY
@@ -122,6 +131,9 @@ EOF
   trap "rm -rf $TMPDIR" EXIT
   pushd "$TMPDIR" >/dev/null
 
+  # gh repo clone uses GITHUB_TOKEN for the initial clone, but subsequent
+  # git push requires git credentials configured separately.
+  gh auth setup-git
   gh repo clone "$REPO" downstream -- --depth=5
   cd downstream
 
