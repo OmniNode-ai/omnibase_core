@@ -849,7 +849,7 @@ jobs:
         run: uv sync --all-extras
 
       - name: Restore test durations cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .test_durations
           key: test-durations-${{ github.sha }}
@@ -889,7 +889,7 @@ jobs:
 
       - name: Save test durations (split 1 only, after full suite data accumulated)
         if: matrix.split == 1
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .test_durations
           key: test-durations-${{ github.sha }}
@@ -959,7 +959,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@4f14550f0d0733e0272e4550bb62221a5bb48192 # main 2026-03-25
+      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@0b6da92ccb1b837ad82375c8ab64fc5491c4c042 # main 2026-03-25
         with:
           checks: "boundary-parity"
           warn-only: "true"

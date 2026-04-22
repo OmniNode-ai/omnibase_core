@@ -48,7 +48,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Check out PR head
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 1
@@ -58,7 +58,7 @@ jobs:
       # already present as a submodule or sibling checkout. In fan-out
       # deployment, each caller repo checks out onex_change_control here.
       - name: Check out onex_change_control (for contracts + receipts)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: OmniNode-ai/onex_change_control
           path: .onex_change_control
@@ -66,12 +66,12 @@ jobs:
           fetch-depth: 1
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       # Check out omnibase_compat + omnibase_core from source when running in a
       # caller repo (not omnibase_core itself). This avoids the broken PyPI
@@ -79,7 +79,7 @@ jobs:
       # URL for omnibase-compat that no longer resolves.
       - name: Check out omnibase_compat (transitive dep)
         if: "! hashFiles('./src/omnibase_compat/__init__.py') && ! hashFiles('./omnibase_compat/pyproject.toml')"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: OmniNode-ai/omnibase_compat
           path: .receipt-gate-deps/omnibase_compat
@@ -88,7 +88,7 @@ jobs:
 
       - name: Check out omnibase_core (for receipt-gate deps)
         if: "! hashFiles('./src/omnibase_core/__init__.py') && ! hashFiles('./omnibase_core/pyproject.toml')"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: OmniNode-ai/omnibase_core
           path: .receipt-gate-deps/omnibase_core
