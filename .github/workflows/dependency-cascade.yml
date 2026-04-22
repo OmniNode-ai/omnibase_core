@@ -8,9 +8,13 @@
 # to pick up the new version.
 #
 # Downstream mapping:
-#   omnibase_core  -> omnibase_infra, omniintelligence, omnimemory, omniclaude
+#   omnibase_core  -> omnibase_infra, omniintelligence, omnimemory, omniclaude, onex_change_control
 #   omnibase_spi   -> omnibase_infra, omniintelligence, omnimemory, omniclaude
 #   omnibase_infra -> omniintelligence, omnimemory, omniclaude
+#
+# Note (OMN-9425): onex_change_control depends on omnibase-core only (not spi/infra);
+# see onex_change_control/pyproject.toml. If ccc later adds spi or infra deps,
+# extend the corresponding cases below.
 #
 # This workflow is reusable so that omnibase_core and omnibase_spi can also call
 # it from their own release workflows.
@@ -72,7 +76,7 @@ jobs:
 
           case "$PACKAGE" in
             omnibase_core)
-              REPOS='["omnibase_infra", "omniintelligence", "omnimemory", "omniclaude"]'
+              REPOS='["omnibase_infra", "omniintelligence", "omnimemory", "omniclaude", "onex_change_control"]'
               ;;
             omnibase_spi)
               REPOS='["omnibase_infra", "omniintelligence", "omnimemory", "omniclaude"]'
