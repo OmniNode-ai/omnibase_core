@@ -998,6 +998,8 @@ class RuntimeLocal:
             handle_method, method_name, handler_instance, initial_payload
         )
 
+        if result_obj is not None:
+            self._handler_result = result_obj
         self._result = self._classify_result(result_obj)
         logger.info(
             "RuntimeLocal: compute handler returned, result=%s", self._result.value
@@ -1217,6 +1219,8 @@ class RuntimeLocal:
                     )
                     data["handler_result"] = serialized
             except (TypeError, ValueError, OverflowError):
+                # fallback-ok: persist a best-effort representation when the
+                # handler result cannot be fully serialized to JSON.
                 data["handler_result"] = repr(self._handler_result)
         result_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
         logger.info("RuntimeLocal: wrote state to %s", result_path)
