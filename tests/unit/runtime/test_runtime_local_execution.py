@@ -550,6 +550,69 @@ def test_compute_mode_writes_state(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_compute_mode_persists_handler_result(tmp_path: Path) -> None:
+    """Compute mode sets _handler_result and writes handler_result to workflow_result.json.
+
+    Regression: _run_compute() previously classified result_obj but never assigned
+    self._handler_result, so workflow_result.json omitted 'handler_result' for the
+    main CLI path (onex node <name> --input <file>). OMN-9467.
+    """
+    import sys
+    import types
+
+    from pydantic import BaseModel
+
+    class _HandlerOutput(BaseModel):
+        status: str
+        data: str
+
+    class _ResultHandler:
+        def handle(self, _input: Any = None) -> _HandlerOutput:
+            return _HandlerOutput(status="success", data="compute-result")
+
+    mod = types.ModuleType("_test_compute_handler_result_mod")
+    mod._ResultHandler = _ResultHandler  # type: ignore[attr-defined]
+    sys.modules["_test_compute_handler_result_mod"] = mod
+
+    try:
+        yaml_text = (
+            "name: test_handler_result\n"
+            "contract_version: {major: 1, minor: 0, patch: 0}\n"
+            "node_type: compute\n"
+            "description: handler_result persistence test\n"
+            "handler_routing:\n"
+            "  default_handler: _test_compute_handler_result_mod:_ResultHandler\n"
+        )
+        workflow = tmp_path / "handler_result.yaml"
+        workflow.write_text(yaml_text)
+        state_dir = tmp_path / "state"
+        runtime = RuntimeLocal(
+            workflow_path=workflow,
+            state_root=state_dir,
+            timeout=5,
+        )
+        result = runtime.run()
+        assert result == EnumWorkflowResult.COMPLETED
+
+        # _handler_result must be set on the runtime instance
+        assert runtime._handler_result is not None
+        assert isinstance(runtime._handler_result, _HandlerOutput)
+        assert runtime._handler_result.data == "compute-result"
+
+        # workflow_result.json must include handler_result
+        result_file = state_dir / "workflow_result.json"
+        assert result_file.exists()
+        data = json.loads(result_file.read_text())
+        assert "handler_result" in data, (
+            "handler_result missing from workflow_result.json"
+        )
+        assert data["handler_result"]["status"] == "success"
+        assert data["handler_result"]["data"] == "compute-result"
+    finally:
+        sys.modules.pop("_test_compute_handler_result_mod", None)
+
+
+@pytest.mark.unit
 def test_no_terminal_event_no_default_handler_fails(tmp_path: Path) -> None:
     """Contract with neither terminal_event nor default_handler fails."""
     yaml_text = (
