@@ -185,6 +185,8 @@ class RuntimeLocal:
         self._events_received: dict[str, int] = {}
         self._last_error: str | None = None
         self._handlers_wired: list[str] = []
+        self._terminal_payload: dict[str, Any] | None = None
+        self._handler_result: Any = None
 
     # ONEX_EXCLUDE: dict_str_any — event bus payload
     def _on_terminal_event(self, payload: dict[str, Any]) -> None:
@@ -196,6 +198,7 @@ class RuntimeLocal:
 
         status = payload.get("status", "success")
         logger.info("RuntimeLocal: terminal event received (status=%s)", status)
+        self._terminal_payload = payload
         if status == "failure":
             self._result = EnumWorkflowResult.FAILED
         else:
@@ -422,6 +425,7 @@ class RuntimeLocal:
         # failure), preserve that result rather than overwriting with a classification
         # of None.
         if result_obj is not None:
+            self._handler_result = result_obj
             self._result = self._classify_result(result_obj)
             await self._publish_synthesized_terminal(bus, terminal_topic)
             logger.info("RuntimeLocal: handler returned, result=%s", self._result.value)
@@ -1194,11 +1198,26 @@ class RuntimeLocal:
         """Serialize workflow result to ``state_root/workflow_result.json``."""
         self.state_root.mkdir(parents=True, exist_ok=True)
         result_path = self.state_root / "workflow_result.json"
-        data = {
+        data: dict[str, Any] = {
             "result": self._result.value,
             "exit_code": self.exit_code,
             "workflow": str(self.workflow_path),
         }
+        if self._terminal_payload is not None:
+            data["terminal_payload"] = self._terminal_payload
+        if self._handler_result is not None:
+            try:
+                if hasattr(self._handler_result, "model_dump"):
+                    data["handler_result"] = self._handler_result.model_dump(
+                        mode="json"
+                    )
+                else:
+                    serialized = json.loads(
+                        json.dumps(self._handler_result, default=repr)
+                    )
+                    data["handler_result"] = serialized
+            except (TypeError, ValueError, OverflowError):
+                data["handler_result"] = repr(self._handler_result)
         result_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
         logger.info("RuntimeLocal: wrote state to %s", result_path)
 
