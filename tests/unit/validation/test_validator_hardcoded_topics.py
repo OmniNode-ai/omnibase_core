@@ -430,6 +430,23 @@ class TestEdgeCases:
         env_issues = [i for i in result.issues if i.code == _RULE_TOPIC_ENV_VAR]
         assert len(env_issues) == 1
 
+    def test_detects_indented_env_var_assignment(self, tmp_path: Path) -> None:
+        # Lines nested inside functions, conditionals, or YAML blocks are
+        # common. The regex must not require start-of-line with zero
+        # indentation.
+        p = _write(
+            tmp_path,
+            """\
+            def configure():
+                INPUT_TOPIC = "onex.evt.test.v1"
+            """,
+        )
+        v = ValidatorHardcodedTopics(contract=_make_contract())
+        result = v.validate_file(p)
+        env_issues = [i for i in result.issues if i.code == _RULE_TOPIC_ENV_VAR]
+        assert len(env_issues) == 1
+        assert env_issues[0].line_number == 2
+
     def test_comment_header_does_not_gate_env_var_detection(
         self, tmp_path: Path
     ) -> None:

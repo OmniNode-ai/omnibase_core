@@ -59,7 +59,7 @@ from omnibase_core.validation.validator_base import ValidatorBase
 _ONEX_TOPIC_LITERAL = re.compile(r"""["']onex\.(cmd|evt|dlq)\.[^"'\s]+["']""")
 
 _TOPIC_ENV_VAR = re.compile(
-    r"""^(?:export\s+|ENV\s+)?[A-Z][A-Z0-9_]*_TOPIC\b[A-Z0-9_]*\s*[:=]""",
+    r"""^\s*(?:export\s+|ENV\s+)?[A-Z][A-Z0-9_]*_TOPIC\b[A-Z0-9_]*\s*[:=]""",
 )
 
 _LINE_SUPPRESSION_MARKERS: frozenset[str] = frozenset(
