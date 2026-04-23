@@ -25,6 +25,9 @@ from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStream
 from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.models.reducer.model_reducer_fsm_metadata import (
+    ModelReducerFsmMetadata,
+)
 
 
 class ModelReducerOutput[T_Output](BaseModel):
@@ -97,6 +100,13 @@ class ModelReducerOutput[T_Output](BaseModel):
         metadata: Typed metadata for tracking and correlation (source, trace_id,
             correlation_id, group_key, partition_id, window_id, tags, trigger).
             Replaces dict[str, str] with ModelReducerMetadata for type safety.
+            FSM keys (fsm_state, fsm_previous_state, etc.) are also stored as
+            extras on this field for dict-compatible consumers; use ``fsm_metadata``
+            for typed access.
+        fsm_metadata: Typed FSM metadata carrying the 7-key contract (OMN-597).
+            Populated by ``NodeReducer.process`` when an FSM transition executes.
+            ``None`` for non-FSM reducer outputs. Logically consistent with the
+            FSM extras in ``metadata`` — both represent the same transition data.
         timestamp: When this output was created (auto-generated).
 
     Migration from dict[str, str] metadata:
@@ -175,6 +185,14 @@ class ModelReducerOutput[T_Output](BaseModel):
         default_factory=ModelReducerMetadata,
         description="Typed metadata for tracking and correlation (source, trace_id, "
         "correlation_id, group_key, partition_id, window_id, tags, trigger)",
+    )
+    fsm_metadata: ModelReducerFsmMetadata | None = Field(
+        default=None,
+        description=(
+            "Typed 7-key FSM metadata contract (OMN-597). Populated by NodeReducer.process "
+            "when an FSM transition executes; None for non-FSM outputs. Logically "
+            "consistent with the FSM extra keys in `metadata`."
+        ),
     )
     timestamp: datetime = Field(default_factory=datetime.now)
 
