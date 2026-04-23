@@ -445,8 +445,12 @@ class TestNodeReducerDeterministicOutput:
             # Extract deterministic fields (exclude timing and timestamps)
             output_snapshot = {
                 "fsm_state": getattr(result.metadata, "fsm_state", None),
-                "fsm_transition": getattr(result.metadata, "fsm_transition", None),
-                "fsm_success": getattr(result.metadata, "fsm_success", None),
+                "fsm_transition_name": getattr(
+                    result.metadata, "fsm_transition_name", None
+                ),
+                "fsm_transition_success": getattr(
+                    result.metadata, "fsm_transition_success", None
+                ),
                 "operation_id": str(result.operation_id),
                 "reduction_type": result.reduction_type.value,
                 "items_processed": result.items_processed,
@@ -522,12 +526,12 @@ class TestNodeReducerDeterministicOutput:
         assert getattr(first_result.metadata, "fsm_state", None) == getattr(
             second_result.metadata, "fsm_state", None
         )
-        assert getattr(first_result.metadata, "fsm_transition", None) == getattr(
-            second_result.metadata, "fsm_transition", None
+        assert getattr(first_result.metadata, "fsm_transition_name", None) == getattr(
+            second_result.metadata, "fsm_transition_name", None
         )
-        assert getattr(first_result.metadata, "fsm_success", None) == getattr(
-            second_result.metadata, "fsm_success", None
-        )
+        assert getattr(
+            first_result.metadata, "fsm_transition_success", None
+        ) == getattr(second_result.metadata, "fsm_transition_success", None)
         assert first_result.result == second_result.result
         assert first_result.items_processed == second_result.items_processed
 
@@ -624,8 +628,8 @@ class TestNodeReducerStateSerializationDeterminism:
         assert getattr(result1.metadata, "fsm_state", None) == getattr(
             result2.metadata, "fsm_state", None
         )
-        assert getattr(result1.metadata, "fsm_transition", None) == getattr(
-            result2.metadata, "fsm_transition", None
+        assert getattr(result1.metadata, "fsm_transition_name", None) == getattr(
+            result2.metadata, "fsm_transition_name", None
         )
 
     @pytest.mark.asyncio
@@ -726,8 +730,12 @@ class TestNodeReducerNoHiddenEntropy:
             # Extract FSM-related metadata (exclude trigger which is input)
             fsm_metadata = {
                 "fsm_state": getattr(result.metadata, "fsm_state", None),
-                "fsm_transition": getattr(result.metadata, "fsm_transition", None),
-                "fsm_success": getattr(result.metadata, "fsm_success", None),
+                "fsm_transition_name": getattr(
+                    result.metadata, "fsm_transition_name", None
+                ),
+                "fsm_transition_success": getattr(
+                    result.metadata, "fsm_transition_success", None
+                ),
             }
             metadata_snapshots.append(fsm_metadata)
 

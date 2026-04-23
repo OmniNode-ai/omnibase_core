@@ -23,6 +23,7 @@ from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
+from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
     ModelFSMStateDefinition,
@@ -42,6 +43,56 @@ from omnibase_core.models.reducer.payloads.model_payload_projection_intent impor
     ModelPayloadProjectionIntent,
 )
 from omnibase_core.types.type_json import JsonType
+
+# 7-key FSM metadata contract (OMN-596, BETA-02).
+# All seven keys must be present in every ``ModelReducerOutput.metadata`` value
+# emitted by ``NodeReducer.process``. Values may be ``None`` (for optional fields)
+# but missing keys raise ``ModelOnexError`` with ``CONTRACT_VALIDATION_ERROR``.
+# Sourced from ``CONTRACT_DRIVEN_NODEREDUCER_V1_0.md`` and mirrors
+# ``ModelReducerFsmMetadata`` (OMN-595, BETA-01).
+_FSM_METADATA_REQUIRED_KEYS: frozenset[str] = frozenset(
+    {
+        "fsm_state",
+        "fsm_previous_state",
+        "fsm_transition_success",
+        "fsm_transition_name",
+        "failure_reason",
+        "failed_conditions",
+        "error",
+    }
+)
+_ERR_FSM_METADATA_MISSING_KEYS = (
+    "Reducer output metadata is missing required FSM contract keys: {missing}. "
+    "All 7 keys of the v1.0.4 metadata contract must be present (values may be "
+    "None). See ModelReducerFsmMetadata for the canonical schema."
+)
+
+
+def _validate_fsm_metadata_keys(metadata: ModelReducerMetadata) -> None:
+    """Enforce the 7-key FSM metadata contract on reducer output metadata.
+
+    Raises a ``ModelOnexError`` with ``CONTRACT_VALIDATION_ERROR`` if any of the
+    seven keys declared in ``ModelReducerFsmMetadata`` is absent from the
+    metadata model. Keys may carry a ``None`` value (for optional fields such
+    as ``failure_reason`` on a successful transition) — the contract forbids
+    *omission*, not *null values*.
+
+    Uses ``model_fields_set`` plus ``model_extra`` because the FSM keys are
+    stored as extra fields on ``ModelReducerMetadata`` (``extra='allow'``),
+    not as declared attributes.
+    """
+    present: set[str] = set(metadata.model_fields_set)
+    extras = metadata.model_extra or {}
+    present.update(extras.keys())
+    missing = _FSM_METADATA_REQUIRED_KEYS - present
+    if missing:
+        raise ModelOnexError(
+            message=_ERR_FSM_METADATA_MISSING_KEYS.format(
+                missing=sorted(missing),
+            ),
+            error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+        )
+
 
 # Clock skew tolerance for snapshot timestamp validation
 SNAPSHOT_FUTURE_TOLERANCE_SECONDS: int = 60
@@ -362,20 +413,47 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         )
         processing_time_ms = (time.perf_counter() - start_time) * 1000
 
-        # Create reducer output with FSM result
+        # Create reducer output with FSM result.
+        #
         # SAFETY: Preserve input metadata with NO data loss by using the typed model directly.
-        # ModelReducerOutput.metadata is now ModelReducerMetadata (typed), so we can copy
+        # ModelReducerOutput.metadata is ModelReducerMetadata (typed), so we can copy
         # the input metadata and add FSM-specific fields without lossy string conversion.
         # This preserves UUIDs (partition_id, window_id), lists (tags), and other structured types.
+        #
+        # 7-Key Metadata Contract (OMN-596, BETA-02):
+        # All 7 keys declared in ModelReducerFsmMetadata / CONTRACT_DRIVEN_NODEREDUCER_V1_0.md
+        # MUST be present in every output metadata, even if their value is None.
+        # Keys stored as extra fields via extra="allow" in ModelReducerMetadata; validated
+        # post-hoc by _validate_fsm_metadata_keys to enforce presence.
+        #
+        # Key derivation:
+        #   fsm_state             -> fsm_result.new_state (always populated, including failure)
+        #   fsm_previous_state    -> fsm_result.old_state
+        #   fsm_transition_success-> fsm_result.success
+        #   fsm_transition_name   -> fsm_result.transition_name (None if no transition dispatched)
+        #   failure_reason        -> fsm_result.error when success=False and it reads as an
+        #                            expected rejection (guard/condition failure);
+        #                            None on success
+        #   failed_conditions     -> None at this layer (FSMTransitionResult does not expose
+        #                            the list today; follow-up to thread through
+        #                            util_fsm_executor — see ModelReducerFsmMetadata docstring)
+        #   error                 -> fsm_result.error when success=False and it represents
+        #                            an unexpected exception path; None on success
+        failure_reason = fsm_result.error if not fsm_result.success else None
+        error_value = fsm_result.error if not fsm_result.success else None
         output_metadata = input_data.metadata.model_copy(
             update={
-                # Add FSM-specific fields to metadata
-                # Note: These are stored as extra fields via extra="allow" in ModelReducerMetadata
                 "fsm_state": fsm_result.new_state,
-                "fsm_transition": fsm_result.transition_name or "none",
-                "fsm_success": fsm_result.success,  # Keep as bool, not stringified
+                "fsm_previous_state": fsm_result.old_state,
+                "fsm_transition_success": fsm_result.success,
+                "fsm_transition_name": fsm_result.transition_name,
+                "failure_reason": failure_reason,
+                "failed_conditions": None,
+                "error": error_value,
             }
         )
+        # Enforce 7-key contract: raises ModelOnexError if any key is missing.
+        _validate_fsm_metadata_keys(output_metadata)
 
         # Build projection intents as ModelIntent instances with typed payloads.
         # These replace any direct projector calls that previously existed in the reducer.

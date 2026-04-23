@@ -236,7 +236,7 @@ def discover_yaml_files_optimized(base_path: Path) -> Iterator[Path]:
             # Skip archived directories and test fixtures early
             dirs_to_skip = []
             for dir_name in dirs:
-                if dir_name in ("archived", "__pycache__") or dir_name.startswith("."):
+                if dir_name in ("archived", "__pycache__", "architecture-handshakes") or dir_name.startswith("."):
                     dirs_to_skip.append(dir_name)
 
             # Remove from dirs to prevent os.walk from recursing

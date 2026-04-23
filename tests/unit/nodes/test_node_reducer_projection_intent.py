@@ -735,11 +735,11 @@ class TestNodeReducerProjectionNoRegression:
         assert getattr(result1.metadata, "fsm_state", None) == getattr(
             result2.metadata, "fsm_state", None
         )
-        assert getattr(result1.metadata, "fsm_transition", None) == getattr(
-            result2.metadata, "fsm_transition", None
+        assert getattr(result1.metadata, "fsm_transition_name", None) == getattr(
+            result2.metadata, "fsm_transition_name", None
         )
-        assert getattr(result1.metadata, "fsm_success", None) == getattr(
-            result2.metadata, "fsm_success", None
+        assert getattr(result1.metadata, "fsm_transition_success", None) == getattr(
+            result2.metadata, "fsm_transition_success", None
         )
 
     @pytest.mark.asyncio

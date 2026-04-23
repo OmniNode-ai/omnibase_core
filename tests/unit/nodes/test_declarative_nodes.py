@@ -200,7 +200,7 @@ class TestNodeReducer:
 
         # Check FSM transition occurred
         assert getattr(result.metadata, "fsm_state", None) == "processing"
-        assert getattr(result.metadata, "fsm_success", None) in (
+        assert getattr(result.metadata, "fsm_transition_success", None) in (
             True,
             "True",
         )  # Can be bool or string
