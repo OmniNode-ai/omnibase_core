@@ -19,10 +19,10 @@ class TestModelTaskDispatch:
 
     def test_minimal_construction(self) -> None:
         dispatch = ModelTaskDispatch(
-            agent_type="onex:polymorphic-agent",
+            agent_type="onex:general-purpose",
         )
         assert isinstance(dispatch.task_id, UUID)
-        assert dispatch.agent_type == "onex:polymorphic-agent"
+        assert dispatch.agent_type == "onex:general-purpose"
         assert dispatch.parent_task_id is None
         assert dispatch.tool_scope == []
         assert dispatch.context_budget_tokens is None
@@ -40,7 +40,7 @@ class TestModelTaskDispatch:
         dispatch = ModelTaskDispatch(
             task_id=task_uuid,
             parent_task_id=parent_uuid,
-            agent_type="onex:polymorphic-agent",
+            agent_type="onex:general-purpose",
             tool_scope=["Bash", "Read", "Write"],
             context_budget_tokens=50000,
             session_id=session_uuid,
@@ -59,7 +59,7 @@ class TestModelTaskDispatch:
 
     def test_frozen_immutability(self) -> None:
         dispatch = ModelTaskDispatch(
-            agent_type="onex:polymorphic-agent",
+            agent_type="onex:general-purpose",
         )
         with pytest.raises(ValidationError):
             dispatch.agent_type = "changed"  # type: ignore[misc]
@@ -67,7 +67,7 @@ class TestModelTaskDispatch:
     def test_context_budget_minimum(self) -> None:
         with pytest.raises(ValidationError):
             ModelTaskDispatch(
-                agent_type="onex:polymorphic-agent",
+                agent_type="onex:general-purpose",
                 context_budget_tokens=0,
             )
 
@@ -80,7 +80,7 @@ class TestModelTaskTree:
         self,
         task_id: UUID | None = None,
         parent_task_id: UUID | None = None,
-        agent_type: str = "onex:polymorphic-agent",
+        agent_type: str = "onex:general-purpose",
     ) -> ModelTaskDispatch:
         return ModelTaskDispatch(
             task_id=task_id or uuid4(),

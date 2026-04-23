@@ -51,7 +51,7 @@ class ModelTaskDispatch(BaseModel):
         ...,
         min_length=1,
         max_length=256,
-        description="Type of agent dispatched (e.g., 'onex:polymorphic-agent')",
+        description="Type of agent dispatched (e.g., 'onex:general-purpose')",
     )
 
     tool_scope: list[str] = Field(
