@@ -393,3 +393,56 @@ class TestEdgeCases:
         result = v.validate_file(p)
         env_issues = [i for i in result.issues if i.code == _RULE_TOPIC_ENV_VAR]
         assert len(env_issues) == 0
+
+    def test_detects_unversioned_literal(self, tmp_path: Path) -> None:
+        p = _write(
+            tmp_path,
+            """TOPIC = "onex.evt.billing.charge_succeeded"\n""",
+        )
+        v = ValidatorHardcodedTopics(contract=_make_contract())
+        result = v.validate_file(p)
+        literal_issues = [i for i in result.issues if i.code == _RULE_TOPIC_LITERAL]
+        assert len(literal_issues) == 1
+
+    def test_detects_export_topic_env_var(self, tmp_path: Path) -> None:
+        p = _write(
+            tmp_path,
+            """\
+            export INPUT_TOPIC=onex.cmd.user.created.v1
+            """,
+            name="deploy.sh",
+        )
+        v = ValidatorHardcodedTopics(contract=_make_contract())
+        result = v.validate_file(p)
+        env_issues = [i for i in result.issues if i.code == _RULE_TOPIC_ENV_VAR]
+        assert len(env_issues) == 1
+
+    def test_detects_dockerfile_env_topic(self, tmp_path: Path) -> None:
+        p = _write(
+            tmp_path,
+            """\
+            ENV INPUT_TOPIC=onex.cmd.user.created.v1
+            """,
+            name="Dockerfile",
+        )
+        v = ValidatorHardcodedTopics(contract=_make_contract())
+        result = v.validate_file(p)
+        env_issues = [i for i in result.issues if i.code == _RULE_TOPIC_ENV_VAR]
+        assert len(env_issues) == 1
+
+    def test_comment_header_does_not_gate_env_var_detection(
+        self, tmp_path: Path
+    ) -> None:
+        p = _write(
+            tmp_path,
+            """\
+            # Module header line one
+            # Module header line two
+            INPUT_TOPIC = "onex.evt.test.v1"
+            """,
+        )
+        v = ValidatorHardcodedTopics(contract=_make_contract())
+        result = v.validate_file(p)
+        env_issues = [i for i in result.issues if i.code == _RULE_TOPIC_ENV_VAR]
+        assert len(env_issues) == 1
+        assert env_issues[0].line_number == 3

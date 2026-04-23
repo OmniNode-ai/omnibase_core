@@ -56,11 +56,10 @@ from omnibase_core.models.contracts.subcontracts.model_validator_subcontract imp
 )
 from omnibase_core.validation.validator_base import ValidatorBase
 
-_ONEX_TOPIC_LITERAL = re.compile(r"""["']onex\.(cmd|evt|dlq)\.[a-z0-9._-]+\.v\d+["']""")
+_ONEX_TOPIC_LITERAL = re.compile(r"""["']onex\.(cmd|evt|dlq)\.[^"'\s]+["']""")
 
 _TOPIC_ENV_VAR = re.compile(
-    r"""^[A-Z_]*(?:INPUT|OUTPUT|_)_?TOPIC\b[A-Z_]*\s*[:=]""",
-    re.MULTILINE,
+    r"""^(?:export\s+|ENV\s+)?[A-Z][A-Z0-9_]*_TOPIC\b[A-Z0-9_]*\s*[:=]""",
 )
 
 _LINE_SUPPRESSION_MARKERS: frozenset[str] = frozenset(
@@ -149,31 +148,27 @@ class ValidatorHardcodedTopics(ValidatorBase):
                     )
                 )
 
-        stripped = text.lstrip()
-        if stripped and not stripped.startswith(("#", "---", "contract_kind:")):
-            for match in _TOPIC_ENV_VAR.finditer(text):
-                matched_line = text[: match.start()].count("\n") + 1
-                if matched_line > len(lines):
-                    continue
-                line_text = lines[matched_line - 1]
-                if self._line_is_suppressed(line_text):
-                    continue
-                enabled, severity = self._get_rule_config(_RULE_TOPIC_ENV_VAR, contract)
-                if not enabled:
-                    continue
-                issues.append(
-                    ModelValidationIssue(
-                        severity=severity,
-                        message=(
-                            f"hardcoded topic env-var assignment: {match.group().strip()!r}"
-                            " -- derive from contract subscriptions"
-                        ),
-                        code=_RULE_TOPIC_ENV_VAR,
-                        file_path=path,
-                        line_number=matched_line,
-                        rule_name=_RULE_TOPIC_ENV_VAR,
-                    )
+            if line.lstrip().startswith(("#", "//")):
+                continue
+            env_match = _TOPIC_ENV_VAR.match(line)
+            if env_match is None:
+                continue
+            enabled, severity = self._get_rule_config(_RULE_TOPIC_ENV_VAR, contract)
+            if not enabled:
+                continue
+            issues.append(
+                ModelValidationIssue(
+                    severity=severity,
+                    message=(
+                        f"hardcoded topic env-var assignment: {env_match.group().strip()!r}"
+                        " -- derive from contract subscriptions"
+                    ),
+                    code=_RULE_TOPIC_ENV_VAR,
+                    file_path=path,
+                    line_number=lineno,
+                    rule_name=_RULE_TOPIC_ENV_VAR,
                 )
+            )
 
         return tuple(issues)
 
