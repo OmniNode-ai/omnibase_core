@@ -1,0 +1,31 @@
+{
+  "agents_cli": {
+    "info_exit": 0,
+    "info_stdout": "CLI version:        0.1.1\nCLI install path:   /Users/jonah/.local/share/uv/tools/google-agents-cli/lib/python3.12/site-packages/google/agents/cli\nInstalled skills:   none\n\nNo agent project found in the current directory or any parent.\n  Run this command from within a project, or create one:\n    agents-cli create my-agent",
+    "ok": true,
+    "version_exit": 0,
+    "version_stdout": "agents-cli, version 0.1.1"
+  },
+  "gemini": {
+    "elapsed_seconds": 0.696,
+    "model": "gemini-2.5-flash",
+    "ok": true,
+    "status": 200,
+    "text": "OK"
+  },
+  "probed_at": "2026-04-23T20:12:13.257443+00:00",
+  "qwen_completion": {
+    "elapsed_seconds": 3.105,
+    "ok": true,
+    "status": 200,
+    "text": "\n\nOK"
+  },
+  "qwen_models": {
+    "elapsed_seconds": 0.029,
+    "expected_model_available": true,
+    "model_ids": [
+      "cyankiwi/Qwen3-Coder-30B-A3B-Instruct-AWQ-4bit"
+    ],
+    "status": 200
+  }
+}
