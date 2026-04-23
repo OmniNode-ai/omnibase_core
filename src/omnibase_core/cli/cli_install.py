@@ -150,8 +150,14 @@ def _install_oncp(
             raise click.ClickException("Cannot read metadata.yaml from archive")
         metadata = yaml.safe_load(mf)
 
-    package_name = metadata.get("name", "unknown")
-    package_version = metadata.get("version", "unknown")
+    if not isinstance(metadata, dict):
+        raise click.ClickException("metadata.yaml is not a valid YAML mapping")
+    package_name = metadata.get("name")
+    package_version = metadata.get("version")
+    if not package_name or not package_version:
+        raise click.ClickException(
+            "Invalid .oncp archive: metadata.yaml missing required 'name' or 'version'"
+        )
     install_path = registry_dir / package_name
 
     if verbose:
@@ -174,9 +180,9 @@ def _install_oncp(
         shutil.rmtree(install_path)
 
     with tarfile.open(archive_path, "r:gz") as tar:
-        # NOTE(OMN-7537): .oncp archives are produced by `onex pack` which
-        # validates all contents. extractall is safe here.
-        tar.extractall(path=install_path)
+        # Use PEP 706 data filter to reject absolute paths, symlink escapes,
+        # and any member that would resolve outside install_path.
+        tar.extractall(path=install_path, filter="data")
 
     # Validate contract after unpacking
     contract_path = install_path / "contract.yaml"
