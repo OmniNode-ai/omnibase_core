@@ -260,7 +260,7 @@ class TestNodeReducerFSMConcurrency:
                     results.append(
                         (
                             getattr(result.metadata, "fsm_state", None),
-                            getattr(result.metadata, "fsm_success", False),
+                            getattr(result.metadata, "fsm_transition_success", False),
                         )
                     )
             except Exception as e:  # noqa: BLE001

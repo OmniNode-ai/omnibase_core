@@ -315,7 +315,7 @@ class TestReducerIntegration:
 
         # Verify output metadata contains FSM state info
         assert result.metadata.model_extra.get("fsm_state") == "processing"
-        assert result.metadata.model_extra.get("fsm_success") is True
+        assert result.metadata.model_extra.get("fsm_transition_success") is True
 
         # Verify intents were emitted (for persistence, metrics, etc.)
         assert len(result.intents) > 0
@@ -734,7 +734,7 @@ class TestReducerIntegration:
         )
 
         # Transition fails - state stays at validating but we get a failure result
-        assert result_fail.metadata.model_extra.get("fsm_success") is False
+        assert result_fail.metadata.model_extra.get("fsm_transition_success") is False
         assert reducer.get_current_state() == "validating"
 
         # Step 3: Restore to saved state (simulating recovery after examining failure)
@@ -758,7 +758,7 @@ class TestReducerIntegration:
         )
 
         # Verify successful transition
-        assert result_success.metadata.model_extra.get("fsm_success") is True
+        assert result_success.metadata.model_extra.get("fsm_transition_success") is True
         assert reducer.get_current_state() == "executing"
 
         # Step 5: Complete the workflow

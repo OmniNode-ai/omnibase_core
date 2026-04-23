@@ -645,7 +645,7 @@ class TestReducerIntegration:
 
         # Assert: Verify output metadata contains FSM info
         assert result.metadata.model_extra.get("fsm_state") == "processing"
-        assert result.metadata.model_extra.get("fsm_success") is True
+        assert result.metadata.model_extra.get("fsm_transition_success") is True
 
     def test_invalid_transition_raises_error(
         self, reducer_with_contract_factory: ReducerWithContractFactory
@@ -695,7 +695,7 @@ class TestReducerIntegration:
    - Initial state before transition
    - Current state after transition
    - State history accumulation
-   - Output metadata containing FSM state info (`fsm_state`, `fsm_success`)
+   - Output metadata containing the full 7-key FSM contract (`fsm_state`, `fsm_previous_state`, `fsm_transition_success`, `fsm_transition_name`, `failure_reason`, `failed_conditions`, `error`)
 
 **5. Error Path Testing**: Invalid triggers should raise `ModelOnexError` with descriptive messages, and the FSM state should remain unchanged.
 
