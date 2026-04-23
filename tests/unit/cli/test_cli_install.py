@@ -22,9 +22,10 @@ def _make_oncp(
     metadata: object,
     contract: dict[str, object] | None = None,
     extra_members: list[tuple[str, bytes]] | None = None,
+    archive_name: str = "test_node-1.0.0.oncp",
 ) -> Path:
     """Build a minimal .oncp archive in tmp_path and return its path."""
-    archive = tmp_path / "test_node-1.0.0.oncp"
+    archive = tmp_path / archive_name
 
     if contract is None:
         contract = {"name": "test_node", "version": "1.0.0"}
@@ -55,7 +56,9 @@ class TestInstallOncpMetadataValidation:
             "omnibase_core.cli.cli_install._get_registry_dir",
             return_value=tmp_path / "registry",
         ):
-            with pytest.raises(click.ClickException, match="missing required 'name'"):
+            with pytest.raises(
+                click.ClickException, match="'name' must be a non-empty"
+            ):
                 _install_oncp(archive, dry_run=True, upgrade=False, verbose=False)
 
     def test_missing_version_raises(self, tmp_path: Path) -> None:
@@ -64,7 +67,9 @@ class TestInstallOncpMetadataValidation:
             "omnibase_core.cli.cli_install._get_registry_dir",
             return_value=tmp_path / "registry",
         ):
-            with pytest.raises(click.ClickException, match="missing required"):
+            with pytest.raises(
+                click.ClickException, match="'version' must be a non-empty"
+            ):
                 _install_oncp(archive, dry_run=True, upgrade=False, verbose=False)
 
     def test_non_mapping_metadata_raises(self, tmp_path: Path) -> None:
@@ -76,19 +81,67 @@ class TestInstallOncpMetadataValidation:
             with pytest.raises(click.ClickException, match="not a valid YAML mapping"):
                 _install_oncp(archive, dry_run=True, upgrade=False, verbose=False)
 
+    def test_non_string_name_raises(self, tmp_path: Path) -> None:
+        archive = _make_oncp(tmp_path, metadata={"name": 12345, "version": "1.0.0"})
+        with patch(
+            "omnibase_core.cli.cli_install._get_registry_dir",
+            return_value=tmp_path / "registry",
+        ):
+            with pytest.raises(
+                click.ClickException, match="'name' must be a non-empty"
+            ):
+                _install_oncp(archive, dry_run=True, upgrade=False, verbose=False)
+
+
+@pytest.mark.unit
+class TestInstallOncpUnsafeNameRejection:
+    """Guard against path-escape via crafted metadata.yaml 'name' values.
+
+    ``install_path = registry_dir / package_name`` plus the ``--upgrade``
+    path's ``shutil.rmtree(install_path)`` means an attacker-controlled
+    ``name`` like ``"../outside"`` could otherwise delete arbitrary dirs
+    outside the registry. These tests lock in the rejection.
+    """
+
+    @pytest.mark.parametrize(
+        "unsafe_name",
+        [
+            "../escape",
+            "nested/path",
+            "double/../nest",
+            "leading/slash",
+            ".",
+            "..",
+            "/absolute/name",
+            "back\\slash",
+        ],
+    )
+    def test_unsafe_name_rejected(self, tmp_path: Path, unsafe_name: str) -> None:
+        archive = _make_oncp(
+            tmp_path,
+            metadata={"name": unsafe_name, "version": "1.0.0"},
+            archive_name="unsafe-1.0.0.oncp",
+        )
+        with patch(
+            "omnibase_core.cli.cli_install._get_registry_dir",
+            return_value=tmp_path / "registry",
+        ):
+            with pytest.raises(click.ClickException, match="safe package basename"):
+                _install_oncp(archive, dry_run=True, upgrade=False, verbose=False)
+
 
 @pytest.mark.unit
 class TestInstallOncpPathTraversal:
-    """Guard against CVE-2007-4559 class extraction attacks.
+    """Guard against CVE-2007-4559 class tar extraction attacks.
 
-    PEP 706 ``filter="data"`` semantics: absolute paths are silently
-    neutralized (leading "/" stripped), and symlinks / device files
-    are rejected with a ``FilterError``. We assert the absolute-path
-    member never escapes ``install_path``.
+    Combined with the PEP 706 ``filter="data"`` + staging-dir-then-move
+    flow, tar members that attempt to escape or alias outside install_path
+    must either be neutralized or rejected, and the real install dir must
+    never be touched on failure.
     """
 
     def test_traversal_member_neutralized_by_data_filter(self, tmp_path: Path) -> None:
-        """A member with ``..`` traversal must not escape install_path."""
+        """A member with ``..`` traversal must not escape the staging dir."""
         registry = tmp_path / "registry"
         malicious = tmp_path / "node-1.0.0.oncp"
         sentinel_outside = tmp_path / "escape.txt"
@@ -108,7 +161,6 @@ class TestInstallOncpPathTraversal:
                 "contract.yaml",
                 yaml.safe_dump({"name": "node", "version": "1.0.0"}).encode(),
             )
-            # Attempt traversal: would land in tmp_path/escape.txt without filter.
             traversal = tarfile.TarInfo(name="../escape.txt")
             traversal.size = 3
             tar.addfile(traversal, io.BytesIO(b"pwn"))
@@ -117,12 +169,12 @@ class TestInstallOncpPathTraversal:
             "omnibase_core.cli.cli_install._get_registry_dir",
             return_value=registry,
         ):
-            # The ``data`` filter raises OutsideDestinationError for ``..``.
             with pytest.raises(tarfile.TarError):
                 _install_oncp(malicious, dry_run=False, upgrade=False, verbose=False)
 
-        # The sentinel outside install_path must never have been written.
         assert not sentinel_outside.exists()
+        # Staging failure must not leave a partial install behind.
+        assert not (registry / "node").exists()
 
     def test_absolute_path_member_neutralized_by_data_filter(
         self, tmp_path: Path
@@ -156,10 +208,53 @@ class TestInstallOncpPathTraversal:
         ):
             _install_oncp(malicious, dry_run=False, upgrade=False, verbose=False)
 
-        # If the data filter is active, the leading "/" was stripped and the
-        # file was written under install_path, NOT at /tmp/absolute-escape.txt.
         install_path = registry / "node"
         assert (install_path / "tmp" / "absolute-escape.txt").exists()
+        # No file at the absolute path outside the registry.
         assert not Path("/tmp/absolute-escape.txt").exists() or (
             Path("/tmp/absolute-escape.txt").read_text() != "pwn"
         )
+
+
+@pytest.mark.unit
+class TestInstallOncpAtomicity:
+    """The staging-dir flow keeps --dry-run validating and --upgrade atomic."""
+
+    def test_dry_run_validates_contract_before_returning(self, tmp_path: Path) -> None:
+        """--dry-run must surface a broken contract.yaml, not silently pass."""
+        # contract.yaml missing required 'name' field.
+        archive = _make_oncp(
+            tmp_path,
+            metadata={"name": "node", "version": "1.0.0"},
+            contract={"version": "1.0.0"},
+        )
+        with patch(
+            "omnibase_core.cli.cli_install._get_registry_dir",
+            return_value=tmp_path / "registry",
+        ):
+            with pytest.raises(click.ClickException, match=r"contract\.yaml missing"):
+                _install_oncp(archive, dry_run=True, upgrade=False, verbose=False)
+
+    def test_failed_upgrade_preserves_existing_install(self, tmp_path: Path) -> None:
+        """If the new archive's contract fails to validate, the old install survives."""
+        registry = tmp_path / "registry"
+        install_path = registry / "node"
+        install_path.mkdir(parents=True)
+        (install_path / "sentinel.txt").write_text("OLD_VERSION")
+
+        # New archive with an invalid contract.yaml (missing required 'name').
+        bad_archive = _make_oncp(
+            tmp_path,
+            metadata={"name": "node", "version": "2.0.0"},
+            contract={"version": "2.0.0"},
+        )
+
+        with patch(
+            "omnibase_core.cli.cli_install._get_registry_dir",
+            return_value=registry,
+        ):
+            with pytest.raises(click.ClickException):
+                _install_oncp(bad_archive, dry_run=False, upgrade=True, verbose=False)
+
+        # Old install must be untouched.
+        assert (install_path / "sentinel.txt").read_text() == "OLD_VERSION"

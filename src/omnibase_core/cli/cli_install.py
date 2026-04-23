@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import tempfile
 from pathlib import Path
 
 import click
@@ -152,11 +153,30 @@ def _install_oncp(
 
     if not isinstance(metadata, dict):
         raise click.ClickException("metadata.yaml is not a valid YAML mapping")
-    package_name = metadata.get("name")
-    package_version = metadata.get("version")
-    if not package_name or not package_version:
+    raw_name = metadata.get("name")
+    raw_version = metadata.get("version")
+    if not isinstance(raw_name, str) or not raw_name.strip():
         raise click.ClickException(
-            "Invalid .oncp archive: metadata.yaml missing required 'name' or 'version'"
+            "Invalid .oncp archive: metadata.yaml 'name' must be a non-empty string"
+        )
+    if not isinstance(raw_version, str) or not raw_version.strip():
+        raise click.ClickException(
+            "Invalid .oncp archive: metadata.yaml 'version' must be a non-empty string"
+        )
+    package_name = raw_name.strip()
+    package_version = raw_version.strip()
+    # Reject path-like names that would let install_path escape registry_dir.
+    # shutil.rmtree(install_path) on --upgrade would otherwise target an
+    # attacker-chosen location.
+    if (
+        package_name in {".", ".."}
+        or "/" in package_name
+        or "\\" in package_name
+        or Path(package_name).is_absolute()
+    ):
+        raise click.ClickException(
+            "Invalid .oncp archive: metadata.yaml 'name' must be a safe package basename "
+            "(no path separators, no '.'/'..', no absolute paths)"
         )
     install_path = registry_dir / package_name
 
@@ -170,29 +190,33 @@ def _install_oncp(
             "Use --upgrade to replace."
         )
 
-    if dry_run:
-        click.echo(f"\nDry run: would unpack {archive_path.name} to {install_path}")
-        click.echo(f"  Archive members: {len(members)}")
-        return []
+    # Stage extraction in a temp dir so --dry-run exercises real validation
+    # and --upgrade is atomic: the existing install is only removed once the
+    # new archive has successfully extracted AND its contract has validated.
+    registry_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=registry_dir) as tmp_dir:
+        staged_path = Path(tmp_dir) / package_name
+        with tarfile.open(archive_path, "r:gz") as tar:
+            # PEP 706 data filter rejects absolute paths, traversal, symlink
+            # escapes, and device files.
+            tar.extractall(path=staged_path, filter="data")
 
-    # Unpack archive
-    if install_path.exists():
-        shutil.rmtree(install_path)
+        contract = _validate_contract(staged_path / "contract.yaml")
 
-    with tarfile.open(archive_path, "r:gz") as tar:
-        # Use PEP 706 data filter to reject absolute paths, symlink escapes,
-        # and any member that would resolve outside install_path.
-        tar.extractall(path=install_path, filter="data")
+        if dry_run:
+            click.echo(f"\nDry run: would unpack {archive_path.name} to {install_path}")
+            click.echo(f"  Archive members: {len(members)}")
+            return [contract]
 
-    # Validate contract after unpacking
-    contract_path = install_path / "contract.yaml"
-    contract = _validate_contract(contract_path)
+        if install_path.exists():
+            shutil.rmtree(install_path)
+        shutil.move(str(staged_path), str(install_path))
 
     # Register in local registry
     registry = _load_registry()
     registry[package_name] = {
         "package": package_name,
-        "version": str(package_version),
+        "version": package_version,
         "source": "oncp",
         "path": str(install_path),
         "archive": str(archive_path),
