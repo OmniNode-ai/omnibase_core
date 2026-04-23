@@ -138,6 +138,7 @@ from .validator_contract_pipeline import (
     ContractValidationPipeline,
     ModelExpandedContractResult,
 )
+from .validator_hardcoded_topics import ValidatorHardcodedTopics
 from .validator_local_paths import (
     ModelLocalPathViolation,
     ValidatorLocalPaths,
@@ -495,6 +496,8 @@ __all__ = [
     "ModelLocalPathViolation",
     # Banned compose vars validator — compose↔contract topic drift (OMN-9062)
     "ValidatorBannedComposeVars",
+    # Hardcoded topics validator — reject topic string literals (OMN-9152)
+    "ValidatorHardcodedTopics",
     # Naming Convention validator (OMN-1291)
     "ValidatorNamingConvention",
     "RULE_FILE_NAMING",
