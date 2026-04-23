@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: hardcoded_topics
+  validator_name: Hardcoded Topics Validator
+  validator_description: |
+    Rejects hardcoded ONEX topic string literals and *_TOPIC env-var
+    assignments outside approved source-of-truth files.
+
+    Detects:
+    - Quoted strings matching onex.(cmd|evt|dlq).*.vN
+    - Assignments to INPUT_TOPIC / OUTPUT_TOPIC / *_TOPIC env vars
+
+    Approved files (topic registries, contract YAML, enum modules) are
+    exempt.  Lines can be suppressed with: # onex-topic-sot,
+    # onex-topic-test-fixture, # onex-topic-doc-example,
+    # onex-topic-allow: <reason>
+
+  target_patterns:
+    - "**/*.py"
+    - "**/*.yaml"
+    - "**/*.yml"
+    - "**/*.sh"
+    - "**/*.env*"
+    - "**/Dockerfile*"
+    - "**/docker-compose*.yml"
+
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/test_*.py"
+    - "**/*_test.py"
+    - "**/tests/**"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+
+  rules:
+    - rule_id: hardcoded_topic_literal
+      description: >-
+        Rejects quoted onex.(cmd|evt|dlq).* topic strings outside approved constant files.  Use TopicBase
+        / contract.yaml instead.
+      severity: error
+      enabled: true
+
+    - rule_id: hardcoded_topic_env_var
+      description: >-
+        Rejects *_TOPIC env-var assignments that bypass contract-driven topic catalog.  Derive topics
+        from contract subscriptions.
+      severity: error
+      enabled: true
+
+  suppression_comments:
+    - "# onex-topic-sot"
+    - "# onex-topic-test-fixture"
+    - "# onex-topic-doc-example"
+    - "# onex-topic-allow:"
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

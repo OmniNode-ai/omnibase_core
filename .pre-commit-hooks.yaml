@@ -54,3 +54,16 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-hardcoded-topics-v2
+  name: Hardcoded ONEX Topic Strings (contract-driven)
+  description: >
+    Reject hardcoded onex.(cmd|evt|dlq).* topic strings and *_TOPIC env-var assignments outside approved
+    constant files. Contract-driven with per-rule enable/disable and line-level suppression markers. Suppression:
+    # onex-topic-sot, # onex-topic-test-fixture, # onex-topic-doc-example, # onex-topic-allow: <reason>
+  language: python
+  entry: python -m omnibase_core.validation.validator_hardcoded_topics
+  types_or: [python, yaml, shell, dockerfile]
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
