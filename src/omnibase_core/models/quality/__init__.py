@@ -5,8 +5,12 @@
 
 from .model_mypy_finding import ModelMypyFinding
 from .model_ruff_finding import ModelRuffFinding
+from .model_type_debt_priority import ModelTypeDebtPriority
+from .model_type_debt_report import ModelTypeDebtReport
 
 __all__ = [
     "ModelMypyFinding",
     "ModelRuffFinding",
+    "ModelTypeDebtPriority",
+    "ModelTypeDebtReport",
 ]
