@@ -731,7 +731,20 @@ def scan_skill(skill_path: Path) -> list[RoutingViolation]:
 
     # Whole-document dispatch evidence: a code-fenced command, an inline-code
     # dispatch reference, or a prose "Publish to onex.cmd.*" declaration.
+    # Also check prompt.md in the same directory — some skills (e.g. session)
+    # keep the canonical dispatch command there to satisfy per-skill audit gates
+    # that count onex-run occurrences across all files in the skill directory.
     document_dispatches = total_shell_dispatches + _count_document_dispatches(content)
+    if document_dispatches == 0:
+        prompt_md = skill_path.parent / "prompt.md"
+        if prompt_md.exists():
+            prompt_content = prompt_md.read_text(encoding="utf-8")
+            prompt_blocks = extract_code_blocks(prompt_content)
+            for block in prompt_blocks:
+                if block.language in SHELL_LANGUAGES:
+                    count, _ = check_shell_block(skill_name, skill_path, block)
+                    document_dispatches += count
+            document_dispatches += _count_document_dispatches(prompt_content)
     if document_dispatches == 0:
         violations.append(
             RoutingViolation(
@@ -742,8 +755,8 @@ def scan_skill(skill_path: Path) -> list[RoutingViolation]:
                 message=(
                     "Deterministic skill must declare at least one node "
                     "dispatch (`onex run-node` / `onex node` in a shell block "
-                    "or inline code, OR a Kafka publish to an `onex.cmd.*` "
-                    "topic). None found."
+                    "or inline code in SKILL.md or prompt.md, OR a Kafka "
+                    "publish to an `onex.cmd.*` topic). None found."
                 ),
             )
         )
