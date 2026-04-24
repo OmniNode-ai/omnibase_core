@@ -15,7 +15,7 @@ Usage (CI):
         --contracts-dir contracts/
 
 Exit codes:
-    0  - Gate passed (no runtime change, override token, or deploy evidence found)
+    0  - Gate passed (no runtime change, or deploy evidence found)
     1  - Gate failed (runtime change detected but no deploy evidence)
 """
 
@@ -26,7 +26,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Pattern
+from re import Pattern
 
 import yaml
 
@@ -40,6 +40,7 @@ RUNTIME_PATH_PATTERNS = [
     "docker/docker-compose*.yml",
     "docker/docker-compose*.yaml",
     "docker/**/*.Dockerfile",
+    "Dockerfile*",
     # Node handlers + contracts (omnibase_infra)
     "src/omnibase_infra/nodes/*/handlers/*.py",
     "src/omnibase_infra/nodes/*/handlers/*/*.py",
@@ -49,18 +50,29 @@ RUNTIME_PATH_PATTERNS = [
     "src/omnibase_infra/runtime/**/*.py",
     # Alert daemon (today's incident path — OMN-8870/OMN-8841)
     "scripts/monitor_logs.py",
-    # omnimarket node handlers
+    # omnimarket node handlers + runtime-touching paths only
     "src/omnimarket/nodes/*/handlers/*.py",
     "src/omnimarket/nodes/*/contract.yaml",
-    # Any pip-installable package source (direct children or nested)
-    "src/omnibase_*/*.py",
-    "src/omnibase_*/**/*.py",
-    "src/omnimarket/*.py",
-    "src/omnimarket/**/*.py",
+    "src/omnimarket/nodes/*/runtime/**/*.py",
+    "src/omnimarket/services/**/*.py",
+    # Cross-repo node handlers and runtime paths (OMN-9685: narrowed from catch-all)
+    # Use both flat and nested forms since ** requires at least one path segment
+    "src/*/nodes/**/*.py",
+    "src/*/runtime/*.py",
+    "src/*/runtime/**/*.py",
+    "src/*/handlers/*.py",
+    "src/*/handlers/**/*.py",
+    "src/*/services/*.py",
+    "src/*/services/**/*.py",
+    "src/*/cli/*.py",
+    "src/*/cli/**/*.py",
+    # Contract files trigger deploy (behavior change)
+    "**/contract.yaml",
 ]
 
 # Deploy evidence: a dod_evidence check whose check_value contains one of these.
 DEPLOY_KEYWORDS = ["docker exec", "rpk topic produce", "deploy"]
+
 
 def _glob_to_regex(pattern: str) -> Pattern[str]:
     """Convert a glob pattern (with ** support) to a compiled regex."""
@@ -84,9 +96,6 @@ _COMPILED_RUNTIME_PATTERNS: list[Pattern[str]] = [
 ]
 
 
-# Override token in PR body (case-insensitive, logs friction)
-OVERRIDE_PATTERN = re.compile(r"\[skip-deploy-gate:\s*(.+?)\]", re.IGNORECASE)
-
 # Ticket ID pattern in PR body / commit messages
 TICKET_PATTERN = re.compile(r"\bOMN-(\d+)\b", re.IGNORECASE)
 
@@ -95,7 +104,6 @@ TICKET_PATTERN = re.compile(r"\bOMN-(\d+)\b", re.IGNORECASE)
 class DeployGateResult:
     passed: bool
     skipped: bool = False
-    friction_logged: bool = False
     message: str = ""
     runtime_paths_hit: list[str] = field(default_factory=list)
     tickets_checked: list[str] = field(default_factory=list)
@@ -148,21 +156,6 @@ def validate_pr_deploy_gate(
             message="No runtime paths touched — deploy gate skipped.",
         )
 
-    # Check for override token
-    override_match = OVERRIDE_PATTERN.search(pr_body)
-    if override_match:
-        reason = override_match.group(1).strip()
-        return DeployGateResult(
-            passed=True,
-            skipped=False,
-            friction_logged=True,
-            runtime_paths_hit=runtime_hits,
-            message=(
-                f"[skip-deploy-gate] override accepted: {reason!r}. "
-                "FRICTION: deploy gate bypassed — ensure manual deploy is tracked."
-            ),
-        )
-
     # Extract cited ticket IDs from PR body
     ticket_ids = [f"OMN-{m}" for m in TICKET_PATTERN.findall(pr_body)]
 
@@ -173,8 +166,9 @@ def validate_pr_deploy_gate(
             message=(
                 "DEPLOY GATE FAILED: PR touches runtime paths but cites no OMN-XXXX ticket. "
                 f"Runtime paths: {runtime_hits}. "
-                "Add a ticket with a deploy DoD item or use [skip-deploy-gate: <reason>]. "
-                "See OMN-8912 and today's incident (OMN-8841)."
+                "Add a dod_evidence item with check_value containing 'deploy', "
+                "'docker exec', or 'rpk topic produce' to the cited ticket contract. "
+                "See OMN-8912 and OMN-9685."
             ),
         )
 
@@ -195,13 +189,12 @@ def validate_pr_deploy_gate(
             )
 
     # No ticket had deploy evidence
-    missing = [
-        t for t in ticket_ids
-        if not (contracts_dir / f"{t}.yaml").exists()
-    ]
+    missing = [t for t in ticket_ids if not (contracts_dir / f"{t}.yaml").exists()]
     no_deploy = [
-        t for t in ticket_ids
-        if (contracts_dir / f"{t}.yaml").exists() and not has_deploy_evidence(contracts_dir / f"{t}.yaml")
+        t
+        for t in ticket_ids
+        if (contracts_dir / f"{t}.yaml").exists()
+        and not has_deploy_evidence(contracts_dir / f"{t}.yaml")
     ]
 
     parts: list[str] = [
@@ -216,7 +209,8 @@ def validate_pr_deploy_gate(
             f"'docker exec', 'rpk topic produce', or 'deploy'): {no_deploy}."
         )
     parts.append(
-        "Add a dod_evidence item with deploy check_value, or use [skip-deploy-gate: <reason>]. "
+        "Add a dod_evidence item with check_value containing 'deploy', 'docker exec', or "
+        "'rpk topic produce' to the cited ticket contract. "
         "Root cause: OMN-8841 (deploy-agent inactive 2 days post-Dockerfile change). "
         "Gate: OMN-8912."
     )
@@ -259,9 +253,7 @@ def main(argv: list[str] | None = None) -> int:
         contracts_dir=contracts_dir,
     )
 
-    if result.friction_logged:
-        print(f"::warning::{result.message}")
-    elif result.passed:
+    if result.passed:
         print(f"::notice::{result.message}")
     else:
         print(f"::error::{result.message}")
