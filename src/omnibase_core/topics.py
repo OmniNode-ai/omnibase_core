@@ -552,6 +552,13 @@ class TopicBase(StrEnum):
     BUILD_LOOP_FAILED = "onex.evt.omnibase-infra.build-loop-failed.v1"
     """Emitted by the build-loop orchestrator when a build cycle fails."""
 
+    # ==========================================================================
+    # omniweb content authoring topics (OMN-9659)
+    # Lifecycle: Integration — consumed by node_content_projection (omnimarket)
+    # ==========================================================================
+    CONTENT_UPDATED = "onex.evt.omniweb.content-updated.v1"
+    """Emitted when landing page YAML content is authored and committed."""
+
 
 def _validate_topic_segment(segment: str, name: str) -> str:
     """Validate a single topic segment (prefix or base segment).

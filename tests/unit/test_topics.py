@@ -126,6 +126,12 @@ class TestAgentInboxDirectedTopic:
             build_agent_inbox_directed_topic("agent#1")
 
 
+def test_content_updated_topic_in_topicbase() -> None:
+    from omnibase_core.topics import TopicBase
+
+    assert TopicBase.CONTENT_UPDATED == "onex.evt.omniweb.content-updated.v1"
+
+
 class TestBuildTopicCanonicalEnforcement:
     def test_non_canonical_short_name_rejected(self) -> None:
         with pytest.raises(ModelOnexError, match="canonical ONEX format"):
