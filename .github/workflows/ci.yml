@@ -414,9 +414,14 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
       - name: Run AST-based skill routing validator (OMN-8765)
         run: |
-          python3 scripts/validate_deterministic_skill_routing.py \
+          python scripts/validate_deterministic_skill_routing.py \
             --skills-root _external/omniclaude/plugins/onex/skills
 
       - name: Skill routing summary
