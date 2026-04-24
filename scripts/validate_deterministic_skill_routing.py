@@ -42,9 +42,6 @@ Additionally, the markdown body must still reference ``SkillRoutingError``
 with the ``do not produce prose`` directive (inherited from OMN-8749) so that
 the markdown contract matches the AST contract.
 
-Skills without a backing node (S17 scope) are excluded via
-``MISSING_NODE_SKILLS``.
-
 Exit codes:
     0  All Tier 1 deterministic skills pass
     1  One or more violations found (blocking), or invalid invocation
@@ -56,11 +53,14 @@ from __future__ import annotations
 
 import argparse
 import ast
+import logging
 import re
 import shlex
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Skill classification (mirrors OMN-8749)
@@ -86,17 +86,6 @@ TIER1_DETERMINISTIC_SKILLS: frozenset[str] = frozenset(
         "session",
         "start_environment",
         "verify_plugin",
-    }
-)
-
-MISSING_NODE_SKILLS: frozenset[str] = frozenset(
-    {
-        "bus_audit",
-        "dod_sweep",
-        "env_parity",
-        "gap",
-        "integration_sweep",
-        "pr_watch",
     }
 )
 
@@ -131,6 +120,12 @@ SUBPROCESS_ORCHESTRATION_CALLS: frozenset[tuple[str, str]] = frozenset(
         ("os", "popen"),
     }
 )
+
+SUBPROCESS_BANNED_NAMES: frozenset[str] = frozenset(
+    {"run", "Popen", "call", "check_call", "check_output"}
+)
+
+OS_BANNED_NAMES: frozenset[str] = frozenset({"system", "popen"})
 
 # ---------------------------------------------------------------------------
 # Violation codes
@@ -255,6 +250,15 @@ class PythonBlockAnalyzer(ast.NodeVisitor):
         self.skill_path = skill_path
         self.block = block
         self.violations: list[RoutingViolation] = []
+        # Track aliases so ``import subprocess as sp`` and ``from subprocess
+        # import run`` still trip the subprocess-orchestration check. Always
+        # include the module names themselves to preserve the default binding.
+        self._subprocess_aliases: set[str] = {"subprocess"}
+        self._os_aliases: set[str] = {"os"}
+        # Names imported directly from subprocess/os (``from subprocess import run``)
+        # map local-name -> canonical (module, attr) so bare ``run(...)`` calls
+        # are recognised as subprocess orchestration.
+        self._direct_orch_calls: dict[str, tuple[str, str]] = {}
 
     def _abs_line(self, node_lineno: int) -> int:
         # +1 because the fence itself sits on block.start_line, body starts next line.
@@ -262,6 +266,10 @@ class PythonBlockAnalyzer(ast.NodeVisitor):
 
     def visit_Import(self, node: ast.Import) -> None:
         for alias in node.names:
+            if alias.name == "subprocess":
+                self._subprocess_aliases.add(alias.asname or alias.name)
+            elif alias.name == "os":
+                self._os_aliases.add(alias.asname or alias.name)
             banned = _banned_module_root(alias.name)
             if banned is not None:
                 self.violations.append(
@@ -279,6 +287,20 @@ class PythonBlockAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        if node.module == "subprocess":
+            for alias in node.names:
+                if alias.name in SUBPROCESS_BANNED_NAMES:
+                    self._direct_orch_calls[alias.asname or alias.name] = (
+                        "subprocess",
+                        alias.name,
+                    )
+        elif node.module == "os":
+            for alias in node.names:
+                if alias.name in OS_BANNED_NAMES:
+                    self._direct_orch_calls[alias.asname or alias.name] = (
+                        "os",
+                        alias.name,
+                    )
         if node.module is not None:
             banned = _banned_module_root(node.module)
             if banned is not None:
@@ -302,8 +324,12 @@ class PythonBlockAnalyzer(ast.NodeVisitor):
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
             owner = func.value.id
             attr = func.attr
-            pair = (owner, attr)
-            if pair in SUBPROCESS_ORCHESTRATION_CALLS:
+            in_subprocess = (
+                owner in self._subprocess_aliases and attr in SUBPROCESS_BANNED_NAMES
+            )
+            in_os = owner in self._os_aliases and attr in OS_BANNED_NAMES
+            if in_subprocess or in_os:
+                canonical_module = "subprocess" if in_subprocess else "os"
                 self.violations.append(
                     RoutingViolation(
                         skill_name=self.skill_name,
@@ -311,11 +337,25 @@ class PythonBlockAnalyzer(ast.NodeVisitor):
                         check=CHECK_SUBPROCESS_ORCH,
                         line_number=self._abs_line(node.lineno),
                         message=(
-                            f"Subprocess orchestration call '{owner}.{attr}(...)' "
+                            f"Subprocess orchestration call '{canonical_module}.{attr}(...)' "
                             "is not allowed around the dispatch."
                         ),
                     )
                 )
+        elif isinstance(func, ast.Name) and func.id in self._direct_orch_calls:
+            canonical_module, canonical_attr = self._direct_orch_calls[func.id]
+            self.violations.append(
+                RoutingViolation(
+                    skill_name=self.skill_name,
+                    skill_path=self.skill_path,
+                    check=CHECK_SUBPROCESS_ORCH,
+                    line_number=self._abs_line(node.lineno),
+                    message=(
+                        f"Subprocess orchestration call '{canonical_module}.{canonical_attr}(...)' "
+                        "is not allowed around the dispatch."
+                    ),
+                )
+            )
         # Detect chained attribute calls like client.messages.create(...).
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Attribute):
             inner = func.value
@@ -344,18 +384,15 @@ def check_python_block(
     try:
         tree = ast.parse(block.source)
     except SyntaxError as exc:
-        # Many skills embed pseudocode; we log but don't block on parse errors.
-        return [
-            RoutingViolation(
-                skill_name=skill_name,
-                skill_path=skill_path,
-                check=CHECK_PARSE_ERROR,
-                line_number=block.start_line,
-                message=(
-                    f"Skipping unparseable python block (line {exc.lineno}): {exc.msg}"
-                ),
-            )
-        ]
+        # Many skills embed pseudocode; log and skip without emitting a
+        # blocking violation so ``main()`` does not fail on narrative blocks.
+        logger.info(
+            "Skipping unparseable python block in %s (line %s): %s",
+            skill_path,
+            exc.lineno,
+            exc.msg,
+        )
+        return []
     analyzer = PythonBlockAnalyzer(skill_name, skill_path, block)
     analyzer.visit(tree)
     return analyzer.violations
@@ -618,9 +655,12 @@ def _branch_tests_failure(raw: str) -> bool:
 # ---------------------------------------------------------------------------
 
 # Inline-code dispatch: `onex run-node X` or `onex node X` or
-# `uv run onex node X` — captured from a markdown backtick span.
+# `uv run onex node X` — captured from a markdown backtick span. The target
+# must be a real node identifier (alnum / underscore / dot / hyphen), not a
+# placeholder like ``<node_name>`` which would let the boilerplate routing
+# sentence satisfy the contract without naming any node.
 _INLINE_DISPATCH_RE = re.compile(
-    r"`(?:uv\s+run\s+)?onex\s+(?:run-node|node|run)\s+\S+`"
+    r"`(?:uv\s+run\s+)?onex\s+(?:run-node|node|run)\s+[A-Za-z0-9_][A-Za-z0-9_.\-]*`"
 )
 
 # Publish declaration: "Publish to `onex.cmd.foo.bar.v1`" or
@@ -628,7 +668,8 @@ _INLINE_DISPATCH_RE = re.compile(
 # (publish / dispatch / emit / send) followed by an onex.cmd.* topic within
 # the same line, tolerating backticks and angle brackets around the topic.
 _PUBLISH_DECLARATION_RE = re.compile(
-    r"(?:publish|dispatch(?:es)?|emit|sends?)\b[^\n`]{0,80}"
+    r"(?:publish(?:es|ed)?|dispatch(?:es|ed)?|emit(?:s|ted)?|sends?)\b"
+    r"[^\n`]{0,80}"
     r"`?(onex\.cmd\.[A-Za-z0-9_\-]+(?:\.[A-Za-z0-9_\-]+)+)`?",
     re.IGNORECASE,
 )

@@ -25,6 +25,8 @@ from types import ModuleType
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 SCRIPT_PATH = (
     Path(__file__).resolve().parents[3]
     / "scripts"
@@ -457,3 +459,112 @@ def test_main_single_skill_flag(validator_mod: ModuleType, tmp_path: Path) -> No
         ["--skills-root", str(tmp_path), "--skill", clean_name]
     )
     assert exit_code == 0
+
+
+# ---------------------------------------------------------------------------
+# CodeRabbit review hardening (OMN-8765, post-merge follow-ups)
+# ---------------------------------------------------------------------------
+
+
+def test_flags_subprocess_orch_via_aliased_import(
+    validator_mod: ModuleType, tmp_path: Path
+) -> None:
+    """`import subprocess as sp; sp.run(...)` must still trip the check."""
+    body = (
+        "---\ndescription: aliased subprocess\n---\n\n"
+        "```bash\nonex run-node node_x\n```\n\n"
+        "```python\n"
+        "import subprocess as sp\n"
+        "sp.run(['onex', 'run-node', 'x'])\n"
+        "```\n\n" + _SKILL_ROUTING_CONTRACT
+    )
+    violations = _scan(validator_mod, tmp_path, "alias_sub", body)
+    assert validator_mod.CHECK_SUBPROCESS_ORCH in _violation_codes(violations)
+
+
+def test_flags_subprocess_orch_via_from_import(
+    validator_mod: ModuleType, tmp_path: Path
+) -> None:
+    """`from subprocess import run; run(...)` must still trip the check."""
+    body = (
+        "---\ndescription: from-import subprocess\n---\n\n"
+        "```bash\nonex run-node node_x\n```\n\n"
+        "```python\n"
+        "from subprocess import run\n"
+        "run(['onex', 'run-node', 'x'])\n"
+        "```\n\n" + _SKILL_ROUTING_CONTRACT
+    )
+    violations = _scan(validator_mod, tmp_path, "from_sub", body)
+    assert validator_mod.CHECK_SUBPROCESS_ORCH in _violation_codes(violations)
+
+
+def test_flags_os_system_via_from_import(
+    validator_mod: ModuleType, tmp_path: Path
+) -> None:
+    """`from os import system; system(...)` must trip the subprocess-orch check."""
+    body = (
+        "---\ndescription: from-import os.system\n---\n\n"
+        "```bash\nonex run-node node_x\n```\n\n"
+        "```python\n"
+        "from os import system\n"
+        "system('onex run-node x')\n"
+        "```\n\n" + _SKILL_ROUTING_CONTRACT
+    )
+    violations = _scan(validator_mod, tmp_path, "from_os", body)
+    assert validator_mod.CHECK_SUBPROCESS_ORCH in _violation_codes(violations)
+
+
+def test_unparseable_python_block_is_not_blocking(
+    validator_mod: ModuleType, tmp_path: Path
+) -> None:
+    """Pseudocode in a python fence must log and skip, not emit a violation."""
+    body = (
+        "---\ndescription: pseudocode\n---\n\n"
+        "```bash\nonex run-node node_x\n```\n\n"
+        "```python\n"
+        "# pseudocode, not parseable:\n"
+        "if thing => other: do the stuff\n"
+        "```\n\n" + _SKILL_ROUTING_CONTRACT
+    )
+    violations = _scan(validator_mod, tmp_path, "pseudocode", body)
+    codes = _violation_codes(violations)
+    assert validator_mod.CHECK_PARSE_ERROR not in codes
+    assert violations == [], (
+        "An unparseable python block should be skipped silently, not treated "
+        f"as a violation; got {violations}"
+    )
+
+
+def test_placeholder_inline_dispatch_does_not_satisfy_contract(
+    validator_mod: ModuleType, tmp_path: Path
+) -> None:
+    """Boilerplate ``onex node <node_name>`` placeholder must NOT satisfy dispatch."""
+    # Deliberately strip real dispatch fences; only the routing-contract
+    # placeholder sentence references ``onex node <node_name>``.
+    body = (
+        "---\ndescription: placeholder only\n---\n\n"
+        "# placeholder_only\n\n"
+        "Plain prose with no real dispatch.\n\n"
+        "## Routing Contract\n\n"
+        "Dispatch must use `onex node <node_name>`. Non-zero exit emits a "
+        "`SkillRoutingError` JSON envelope — surface it directly, do not "
+        "produce prose.\n"
+    )
+    violations = _scan(validator_mod, tmp_path, "placeholder_only", body)
+    assert validator_mod.CHECK_DISPATCH_COUNT in _violation_codes(violations)
+
+
+def test_real_inline_dispatch_satisfies_contract(
+    validator_mod: ModuleType, tmp_path: Path
+) -> None:
+    """A concrete inline-code dispatch with a real node identifier still counts."""
+    body = (
+        "---\ndescription: inline concrete dispatch\n---\n\n"
+        "Invoke via `onex run-node node_merge_sweep_compute` for the sweep.\n\n"
+        + _SKILL_ROUTING_CONTRACT
+    )
+    violations = _scan(validator_mod, tmp_path, "inline_real", body)
+    assert violations == [], (
+        "An inline-code dispatch pointing to a real node should satisfy the "
+        f"dispatch requirement; got {violations}"
+    )
