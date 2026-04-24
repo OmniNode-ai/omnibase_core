@@ -77,6 +77,7 @@ _APPROVED_BASENAMES: frozenset[str] = frozenset(
         "topics.ts",
         "topics.yaml",
         "topic_constants.py",
+        "constants.py",
         "constants_event_types.py",
         "constants_topic_taxonomy.py",
         "platform_topic_suffixes.py",
@@ -85,6 +86,10 @@ _APPROVED_BASENAMES: frozenset[str] = frozenset(
         "contract_topic_extractor.py",
         "check_topic_drift.py",
         "validator_topic_suffix.py",
+        "topic_allowlist.yaml",
+        "topic_registry.yaml",
+        "service_topic_registry.py",
+        "validation_exemptions.yaml",
     }
 )
 
