@@ -287,6 +287,26 @@ allowed_files:
     added: "2026-04-17"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/cli/cli_pack.py"
+    reason: >-
+      onex pack CLI must parse heterogeneous third-party metadata.yaml + contract.yaml files from arbitrary
+      node directories before any Pydantic model applies. contract.yaml schemas vary by node type (ModelContractCompute,
+      ModelContractEffect, ModelContractReducer, ModelContractOrchestrator), so raw YAML parsing is required
+      to route to the correct model. metadata.yaml is a thin descriptor consumed before any registry lookup.
+      Both sites validate required keys explicitly (mapping check, name/version presence) before use.
+      Parallels cli_install.py pattern (OMN-7537).
+    added: "2026-04-24"
+    review: "2026-06-13"
+
+  - file: "src/omnibase_core/cli/cli_config.py"
+    reason: >-
+      onex config get reads ~/.onex/config.yaml as free-form user configuration. No fixed Pydantic schema
+      exists for this file — the config is a thin key-value YAML with optional sections (kafka, logging,
+      aws). Raw yaml.safe_load() is required to support dotted-key access (e.g. kafka.bootstrap_servers)
+      before any Pydantic model applies. Parallels cli_refresh_credentials.py pattern (OMN-9011).
+    added: "2026-04-24"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

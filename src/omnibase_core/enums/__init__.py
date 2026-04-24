@@ -209,6 +209,9 @@ from .enum_health_detail_type import EnumHealthDetailType
 from .enum_health_status import EnumHealthStatus
 from .enum_health_status_value import EnumHealthStatusValue
 
+# Hook bitmask gating (OMN-9611)
+from .enum_hook_bit import EnumHookBit, hook_enabled
+
 # Hub and coordination enums
 from .enum_hub_capability import EnumHubCapability
 
@@ -663,6 +666,9 @@ __all__ = [
     "EnumHandlerTypeCategory",
     # Hash algorithm domain (handler packaging OMN-1119)
     "EnumHashAlgorithm",
+    # Hook bitmask gating (OMN-9611)
+    "EnumHookBit",
+    "hook_enabled",
     # Version and contract domain
     "EnumVersionStatus",
     "EnumContractCompliance",
