@@ -7,6 +7,7 @@ ONEX event models.
 Event models for coordination and domain events in the ONEX framework.
 """
 
+from omnibase_core.enums.enum_content_kind import EnumContentKind
 from omnibase_core.enums.enum_topic_taxonomy import (
     EnumCleanupPolicy,
     EnumTopicType,
@@ -21,6 +22,12 @@ from omnibase_core.models.events.contract_registration import (
 )
 from omnibase_core.models.events.model_agent_match_payload import (
     ModelAgentMatchPayload,
+)
+from omnibase_core.models.events.model_content_updated_event import (
+    ModelContentPayload,
+)
+from omnibase_core.models.events.model_content_updated_event_envelope import (
+    ModelContentUpdatedEvent,
 )
 from omnibase_core.models.events.model_context_utilization_payload import (
     ModelContextUtilizationPayload,
@@ -159,4 +166,8 @@ __all__ = [
     # Episode boundary events (OMN-5559)
     "TOPIC_EPISODE_BOUNDARY",
     "ModelEpisodeEvent",
+    # Content authoring events (OMN-9660)
+    "EnumContentKind",
+    "ModelContentPayload",
+    "ModelContentUpdatedEvent",
 ]
