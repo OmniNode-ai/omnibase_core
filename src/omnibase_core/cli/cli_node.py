@@ -14,7 +14,7 @@ See ``docs/plans/2026-04-16-prove-core-runtime-standalone.md`` § Task 3.
 
 from __future__ import annotations
 
-import importlib
+import importlib.util
 import logging
 import sys
 from importlib.metadata import entry_points
@@ -51,20 +51,23 @@ def _resolve_packaged_contract(node_name: str) -> Path:
             f"Duplicate entry-point name '{node_name}' registered by: {sources}. "
             "Disambiguate by uninstalling the conflicting package."
         )
-    module_path = matches[0].value
-    try:
-        mod = importlib.import_module(module_path)
-    except ImportError as exc:
+    module_path = _entry_point_module(matches[0].value)
+    spec = importlib.util.find_spec(module_path)
+    if spec is None:
         raise click.ClickException(
-            f"Failed to import node module '{module_path}': {exc}"
-        ) from exc
+            f"Failed to resolve node module '{module_path}' from installed metadata."
+        )
 
-    if mod.__file__ is None:
+    if spec.submodule_search_locations:
+        module_dir = Path(next(iter(spec.submodule_search_locations))).resolve()
+    elif spec.origin is not None:
+        module_dir = Path(spec.origin).resolve().parent
+    else:
         raise click.ClickException(
-            f"Node '{node_name}' module '{module_path}' has no __file__; "
+            f"Node '{node_name}' module '{module_path}' has no origin; "
             "cannot locate packaged contract.yaml under current packaging convention."
         )
-    module_dir = Path(mod.__file__).resolve().parent
+
     contract = module_dir / "contract.yaml"
     if not contract.exists():
         raise click.ClickException(
@@ -73,6 +76,11 @@ def _resolve_packaged_contract(node_name: str) -> Path:
             "Use --contract to point at the actual contract location."
         )
     return contract
+
+
+def _entry_point_module(value: str) -> str:
+    """Return the importable module portion of an entry-point value."""
+    return value.split(":", 1)[0].strip()
 
 
 @click.command("node")

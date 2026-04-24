@@ -1,0 +1,55 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-9592
+summary: "Implement ONCP install isolation or lazy node entry-point loading for metadata-scoped dependencies"
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - "public_api"
+evidence_requirements:
+  - kind: "ci"
+    description: "omnibase_core PR checks pass, including deploy-gate"
+    command: "gh pr checks <pr-number> --repo OmniNode-ai/omnibase_core --watch"
+  - kind: "manual"
+    description: "Focused entry-point discovery and ONCP install tests pass"
+    command: "PYTHONPATH=src uv run pytest tests/unit/discovery/test_discovery_external_nodes.py tests/unit/cli/test_cli_node.py
+      tests/unit/cli/test_cli_install.py -q"
+  - kind: "manual"
+    description: "Post-deploy runtime smoke proves metadata discovery does not import node modules"
+    command: "docker exec ${RUNTIME_CONTAINER:-omninode-runtime} python -c \"from omnibase_core.discovery.discovery_external_nodes
+      import discover_external_nodes; nodes = discover_external_nodes(); assert isinstance(nodes, dict)\""
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "Focused unit tests cover lazy discovery, packaged contract lookup, and ONCP install
+      validation"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "PYTHONPATH=src uv run pytest tests/unit/discovery/test_discovery_external_nodes.py
+          tests/unit/cli/test_cli_node.py tests/unit/cli/test_cli_install.py -q"
+  - id: "dod-002"
+    description: "Touched Python surfaces pass lint, format, and type checks"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "PYTHONPATH=src uv run ruff check src/omnibase_core/cli/cli_install.py src/omnibase_core/cli/cli_node.py
+          src/omnibase_core/cli/cli_commands.py src/omnibase_core/discovery/discovery_external_nodes.py
+          tests/unit/cli/test_cli_install.py tests/unit/cli/test_cli_node.py tests/unit/discovery/test_discovery_external_nodes.py
+          && PYTHONPATH=src uv run ruff format --check src/omnibase_core/cli/cli_install.py src/omnibase_core/cli/cli_node.py
+          src/omnibase_core/cli/cli_commands.py src/omnibase_core/discovery/discovery_external_nodes.py
+          tests/unit/cli/test_cli_install.py tests/unit/cli/test_cli_node.py tests/unit/discovery/test_discovery_external_nodes.py
+          && PYTHONPATH=src uv run mypy src/omnibase_core/cli/cli_install.py src/omnibase_core/cli/cli_node.py
+          src/omnibase_core/cli/cli_commands.py src/omnibase_core/discovery/discovery_external_nodes.py
+          tests/unit/cli/test_cli_install.py tests/unit/cli/test_cli_node.py tests/unit/discovery/test_discovery_external_nodes.py"
+  - id: "dod-003"
+    description: "Post-deploy runtime smoke confirms discovery remains metadata-only in the runtime image"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "docker exec ${RUNTIME_CONTAINER:-omninode-runtime} python -c \"from omnibase_core.discovery.discovery_external_nodes
+          import discover_external_nodes; nodes = discover_external_nodes(); assert isinstance(nodes,
+          dict)\""

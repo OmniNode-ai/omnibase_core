@@ -13,6 +13,7 @@ Covers the 5 CLI migration branches:
 
 from __future__ import annotations
 
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 from unittest.mock import patch
 
@@ -95,13 +96,13 @@ def test_missing_packaged_contract_reports_convention_violation(tmp_path: Path) 
     fake_pkg = tmp_path / "fake_pkg"
     fake_pkg.mkdir()
     (fake_pkg / "__init__.py").write_text("", encoding="utf-8")
+    spec = ModuleSpec("fake_pkg", loader=None, is_package=True)
+    spec.submodule_search_locations = [str(fake_pkg)]
 
     class _FakeEP:
         name = "node_has_no_contract"
         value = "fake_pkg"
         dist = "local-fake"
-
-    fake_module = type("FakeMod", (), {"__file__": str(fake_pkg / "__init__.py")})
 
     with (
         patch(
@@ -109,13 +110,48 @@ def test_missing_packaged_contract_reports_convention_violation(tmp_path: Path) 
             return_value=[_FakeEP()],
         ),
         patch(
-            "omnibase_core.cli.cli_node.importlib.import_module",
-            return_value=fake_module,
+            "omnibase_core.cli.cli_node.importlib.util.find_spec",
+            return_value=spec,
         ),
     ):
         with pytest.raises(Exception) as exc_info:
             _resolve_packaged_contract("node_has_no_contract")
     assert "packaging convention" in str(exc_info.value)
+
+
+def test_packaged_contract_resolution_does_not_import_node_module(
+    tmp_path: Path,
+) -> None:
+    """Contract lookup uses module specs so optional deps are not imported."""
+    fake_pkg = tmp_path / "fake_pkg"
+    fake_pkg.mkdir()
+    (fake_pkg / "contract.yaml").write_text(
+        "name: fake\ncontract_version: {major: 1, minor: 0, patch: 0}\n"
+        "node_type: COMPUTE_GENERIC\n",
+        encoding="utf-8",
+    )
+    spec = ModuleSpec("fake_pkg", loader=None, is_package=True)
+    spec.submodule_search_locations = [str(fake_pkg)]
+
+    class _FakeEP:
+        name = "node_has_contract"
+        value = "fake_pkg:Node"
+        dist = "local-fake"
+
+    with (
+        patch(
+            "omnibase_core.cli.cli_node.entry_points",
+            return_value=[_FakeEP()],
+        ),
+        patch(
+            "omnibase_core.cli.cli_node.importlib.util.find_spec",
+            return_value=spec,
+        ) as find_spec,
+    ):
+        contract = _resolve_packaged_contract("node_has_contract")
+
+    assert contract == fake_pkg / "contract.yaml"
+    find_spec.assert_called_once_with("fake_pkg")
 
 
 def test_input_file_not_found_surfaces_cli_error(tmp_path: Path) -> None:

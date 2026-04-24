@@ -11,6 +11,7 @@ Supports two installation modes:
 from __future__ import annotations
 
 import importlib.metadata
+import importlib.util
 import json
 import shutil
 import subprocess
@@ -63,54 +64,68 @@ def _rollback_install(pkg: str) -> None:
 
 
 def _validate_contract(contract_path: Path) -> dict[str, object]:
-    """Validate a contract.yaml file and return its contents.
+    """Validate a contract.yaml file with the Pydantic contract model.
 
     Raises:
-        click.ClickException: If the contract is missing required fields.
+        click.ClickException: If the contract is malformed or invalid.
     """
-    # NOTE(OMN-7537): contract.yaml is an external contract file with varying
-    # schemas across node types. yaml.safe_load is the correct approach for
-    # reading untrusted third-party contract files.
-    import yaml
+    from pydantic import ValidationError
 
     try:
-        with open(contract_path) as f:
-            raw = yaml.safe_load(f)
+        from omnibase_core.contracts.contract_loader import load_contract
+        from omnibase_core.models.contracts.model_yaml_contract import (
+            ModelYamlContract,
+        )
+
+        contract = load_contract(contract_path)
+        ModelYamlContract.model_validate(contract)
     except Exception as e:
+        if isinstance(e, click.ClickException):
+            raise
         msg = f"contract.yaml at {contract_path} is not valid: {e}"
+        if isinstance(e, ValidationError):
+            msg = f"contract.yaml at {contract_path} failed model validation: {e}"
         raise click.ClickException(msg) from e
 
-    if not isinstance(raw, dict):
-        msg = f"contract.yaml at {contract_path} is not a valid YAML mapping"
-        raise click.ClickException(msg)
-
-    contract: dict[str, object] = raw
-
     # name is always required
-    if "name" not in contract:
+    raw_name = contract.get("name")
+    if not isinstance(raw_name, str) or not raw_name.strip():
         msg = "contract.yaml missing required field: name"
         raise click.ClickException(msg)
 
-    # version may be 'version', 'contract_version', or 'node_version'
-    has_version = (
-        "contract_version" in contract
-        or "node_version" in contract
-        or "version" in contract
-    )
-    if not has_version:
-        msg = "contract.yaml missing version field"
+    if "contract_version" not in contract:
+        msg = "contract.yaml missing required field: contract_version"
         raise click.ClickException(msg)
 
-    # Validate topic format for any declared topics
-    for topic_key in ("publish_topics", "subscribe_topics"):
-        topics = contract.get(topic_key, [])
-        if isinstance(topics, list):
-            for topic in topics:
-                if isinstance(topic, str) and not topic.startswith("onex."):
-                    msg = f"Invalid topic format in {topic_key}: {topic} (must start with 'onex.')"
-                    raise click.ClickException(msg)
-
     return contract
+
+
+def _entry_point_module(value: str) -> str:
+    """Return the importable module portion of an entry-point value."""
+    return value.split(":", 1)[0].strip()
+
+
+def _resolve_entry_point_contract_path(entry_point_value: str) -> Path:
+    """Resolve a packaged contract path without importing the node module."""
+    module_path = _entry_point_module(entry_point_value)
+    spec = importlib.util.find_spec(module_path)
+    if spec is None:
+        raise click.ClickException(
+            f"Cannot resolve module {module_path} from installed metadata"
+        )
+    if spec.submodule_search_locations:
+        module_dir = Path(next(iter(spec.submodule_search_locations))).resolve()
+    elif spec.origin is not None:
+        module_dir = Path(spec.origin).resolve().parent
+    else:
+        raise click.ClickException(
+            f"Module {module_path} has no import origin for contract resolution"
+        )
+
+    contract_path = module_dir / "contract.yaml"
+    if not contract_path.exists():
+        raise click.ClickException(f"Missing contract.yaml in {module_path}")
+    return contract_path
 
 
 def _install_oncp(
@@ -328,22 +343,11 @@ def cli_install(
     validated_contracts: list[dict[str, object]] = []
     for ep in matching:
         try:
-            module = importlib.import_module(ep.module)
-        except ImportError as e:
+            contract_path = _resolve_entry_point_contract_path(ep.value)
+        except click.ClickException:
             if not dry_run:
                 _rollback_install(package_path)
-            raise click.ClickException(f"Cannot import module {ep.module}: {e}") from e
-
-        if module.__file__ is None:
-            if not dry_run:
-                _rollback_install(package_path)
-            raise click.ClickException(f"Module {ep.module} has no __file__ attribute")
-
-        contract_path = Path(module.__file__).parent / "contract.yaml"
-        if not contract_path.exists():
-            if not dry_run:
-                _rollback_install(package_path)
-            raise click.ClickException(f"Missing contract.yaml in {ep.module}")
+            raise
 
         try:
             contract = _validate_contract(contract_path)

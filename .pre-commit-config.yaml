@@ -251,13 +251,14 @@ repos:
       # Exclusions:
       # - typed_dict_demo.py: sample_id and ticket_id are external corpus identifiers, not internal UUIDs (OMN-1396)
       # - doctor_check_base.py: check_id is a semantic identifier ("kafka", "postgres"), not a version string
+      # - contracts/OMN-*.yaml: ticket-contract schema is owned by onex_change_control and currently requires string schema_version
       - id: validate-string-versions
         name: ONEX String Version Anti-Pattern Detection
         entry: uv run python scripts/validation/validate-string-versions.py
         language: system
         pass_filenames: true
         files: ^.*\.(py|yaml|yml)$
-        exclude: ^(tests/fixtures/validation/|archived/|archive/|src/omnibase_core/protocols/|src/omnibase_core/validation/validator_|src/omnibase_core/validation/visitor_|src/omnibase_core/models/contracts/subcontracts/model_validator_|src/omnibase_core/types/typed_dict_demo\.py|examples/contracts/handlers/|src/omnibase_core/models/ticket/model_ticket_context_bundle\.py$|src/omnibase_core/models/epic/model_epic_state\.py$|src/omnibase_core/doctor/doctor_check_base\.py$)
+        exclude: ^(tests/fixtures/validation/|archived/|archive/|contracts/OMN-[0-9]+\.yaml$|src/omnibase_core/protocols/|src/omnibase_core/validation/validator_|src/omnibase_core/validation/visitor_|src/omnibase_core/models/contracts/subcontracts/model_validator_|src/omnibase_core/types/typed_dict_demo\.py|examples/contracts/handlers/|src/omnibase_core/models/ticket/model_ticket_context_bundle\.py$|src/omnibase_core/models/epic/model_epic_state\.py$|src/omnibase_core/doctor/doctor_check_base\.py$)
         stages: [pre-commit]
 
       - id: validate-archived-imports
