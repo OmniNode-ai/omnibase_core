@@ -842,7 +842,6 @@ def test_workflow_debug(self, capfd):
 ## Related Documentation
 
 - [Testing Guide](../guides/TESTING_GUIDE.md) - Comprehensive testing strategies
-- [CI Test Strategy](CI_TEST_STRATEGY.md) - CI/CD test configuration
 - [Parallel Testing](PARALLEL_TESTING.md) - Parallel test execution
 - [CI Monitoring Guide](../ci/CI_MONITORING_GUIDE.md) - CI performance monitoring
 - [Error Handling](../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error handling patterns

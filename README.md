@@ -1,76 +1,148 @@
 # omnibase_core
 
-Contract-driven execution layer for agent tools and workflows.
+`omnibase_core` is the ONEX platform kernel. It owns node execution, contracts,
+core models, validation tooling, and the canonical architecture vocabulary used
+by downstream OmniNode repos.
 
 [![CI](https://github.com/OmniNode-ai/omnibase_core/actions/workflows/test.yml/badge.svg)](https://github.com/OmniNode-ai/omnibase_core/actions/workflows/test.yml)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Install
+## Who Uses It
+
+Use this repo when you need to:
+
+- Use ONEX core types, nodes, contracts, and validation tools.
+- Build a contract-driven EFFECT, COMPUTE, REDUCER, or ORCHESTRATOR node.
+- Extend Core internals such as validation, contracts, node execution, handlers,
+  model conventions, or runtime-development scaffolding.
+
+Downstream runtime implementations, infrastructure clients, workflow packages,
+dashboard projections, and thin wrapper tooling should link back here for Core
+architecture and validation truth rather than duplicating it.
+
+## What This Repo Owns
+
+- ONEX node base classes and execution vocabulary.
+- Contract models, handler contracts, subcontracts, and contract validation.
+- Core event envelopes, error models, container patterns, and dependency
+  injection conventions.
+- Core documentation standards for ONEX architecture and node construction.
+- Shared validation entrypoints such as `onex-validate-links`,
+  `onex-validate-topics`, `check-local-paths`, and string-version checks.
+
+## What This Repo Does Not Own
+
+- Concrete infrastructure, Kafka/Postgres/Infisical clients, runtime host
+  deployment, or registration operations. Those belong in `omnibase_infra`.
+- Protocol-only service interfaces for downstream implementation packages.
+  Those belong in `omnibase_spi`.
+- Zero-upstream structural DTOs and compatibility shims. Those belong in
+  `omnibase_compat`.
+- Portable workflow package ownership. That belongs in `omnimarket`.
+
+## Track 1: Use The Package
+
+Install:
 
 ```bash
 uv add omnibase_core
 ```
 
-## Minimal Example
+Install optional surfaces only when needed:
 
-Every ONEX node starts as a contract-driven declaration with zero custom code:
+```bash
+uv add "omnibase_core[spi]"
+uv add "omnibase_core[compat]"
+uv add "omnibase_core[full]"
+```
+
+Common imports:
+
+```python
+from omnibase_core.nodes import NodeCompute
+from omnibase_core.models import ModelOnexError
+```
+
+Core is a Python 3.12+ package. Package metadata, optional dependency groups,
+and CLI entrypoints are declared in `pyproject.toml`.
+
+## Track 2: Build A Node
+
+Every ONEX node starts from one of the four core archetypes:
+
+- EFFECT: external I/O
+- COMPUTE: transformation and validation
+- REDUCER: state aggregation
+- ORCHESTRATOR: workflow coordination
+
+Minimal COMPUTE node:
 
 ```python
 from omnibase_core.nodes import NodeCompute
 
+
 class NodeMyFeature(NodeCompute):
-    pass  # All behavior driven by contract YAML
+    pass
 ```
 
-The contract YAML defines inputs, outputs, state transitions, and configuration:
+The preferred path is contract-driven: YAML declares inputs, outputs,
+capabilities, bindings, and lifecycle constraints; custom Python behavior is
+added only when the contract cannot express the behavior.
 
-```yaml
-name: node_my_feature
-version: 1.0.0
-type: COMPUTE
-input_schema: MyInput
-output_schema: MyOutput
+Start here:
+
+- [Quick Start](docs/getting-started/QUICK_START.md)
+- [First Node Tutorial](docs/getting-started/FIRST_NODE.md)
+- [Node Building Guide](docs/guides/node-building/README.md)
+- [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
+
+## Track 3: Extend Validation Or Runtime Internals
+
+Core owns validators and development/runtime internals that other repos consume.
+Use these commands before changing validation, contracts, docs, or architecture
+surface:
+
+```bash
+uv sync --dev --frozen
+uv run onex-validate-links --verbose
+uv run pytest tests/ -q
 ```
 
-When you need custom logic, opt in by overriding `process()`:
+Focused validation entrypoints:
 
-```python
-class NodeMyFeature(NodeCompute):
-    async def process(self, input_data):
-        # Custom logic here
-        return {"result": input_data.value * 2}
+```bash
+uv run onex-validate-topics . --verbose
+uv run check-local-paths docs src scripts
+uv run validate-string-versions src
 ```
 
-## Why ONEX
+For ownership, downstream-consumer guidance, and cross-repo usage, see
+[Validation Ownership](docs/reference/VALIDATION_OWNERSHIP.md).
 
-| Problem | ONEX Solution |
-|---------|--------------|
-| Inconsistent tool I/O | Typed schemas (Pydantic + protocols) |
-| Implicit state | Deterministic lifecycle with contract FSMs |
-| Opaque failures | Structured errors with `ModelOnexError` |
-| Framework lock-in | Framework-agnostic protocol design |
-| Untestable tools | Pure nodes with injected dependencies |
+## Documentation Map
 
-## Key Features
+[docs/INDEX.md](docs/INDEX.md) is the canonical full docs map.
 
-- **Four-node architecture**: EFFECT (I/O), COMPUTE (transform), REDUCER (aggregate), ORCHESTRATOR (coordinate) -- [details](https://github.com/OmniNode-ai/omnibase_core/blob/main/docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
-- **Contract-driven execution**: YAML contracts define behavior; code is opt-in
-- **Protocol-driven DI**: `ModelONEXContainer` for dependency injection
-- **Structured errors**: `ModelOnexError` with proper error codes and traceability
-- **Event system**: `ModelEventEnvelope` for event-driven communication
-- **40+ mixins**: Reusable behavior modules for common patterns
-- **Subcontracts**: Declarative configuration for FSM, caching, routing, and more
-- **12,000+ tests**: Comprehensive test suite with strict type checking
+High-signal entrypoints:
 
-## Documentation
-
-- [Node Building Guide](docs/guides/node-building/README.md) -- start here
 - [Architecture Overview](docs/architecture/overview.md)
-- [Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
-- [Subcontract Architecture](docs/architecture/SUBCONTRACT_ARCHITECTURE.md)
-- [Complete Documentation Index](docs/INDEX.md)
-- [CLAUDE.md](CLAUDE.md) -- developer context and conventions
+- [Contract System](docs/architecture/CONTRACT_SYSTEM.md)
+- [Handler Contract Guide](docs/contracts/HANDLER_CONTRACT_GUIDE.md)
+- [Validation Ownership](docs/reference/VALIDATION_OWNERSHIP.md)
+- [Validation Framework](docs/reference/VALIDATION_FRAMEWORK.md)
+- [ADR Index](docs/decisions/README.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
+
+## Current Versus Historical Docs
+
+Root `README.md`, `CLAUDE.md`, and `docs/INDEX.md` are the primary human entry
+surfaces. Dated plans and migration notes are historical or execution context
+unless a stable architecture, reference, runbook, or migration page explicitly
+promotes them.
+
+Current topic naming truth lives in Core topic validators and standards docs.
 
 ## License
 

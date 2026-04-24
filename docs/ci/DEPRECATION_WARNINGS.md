@@ -216,7 +216,6 @@ This validation is now enforced by default in `pyproject.toml` since v0.5.0.
 ## Related Documentation
 
 - [CI Monitoring Guide](CI_MONITORING_GUIDE.md) - CI health monitoring
-- [CI Test Strategy](../testing/CI_TEST_STRATEGY.md) - Overall test strategy
 - [Testing Guide](../guides/TESTING_GUIDE.md) - Comprehensive testing documentation
 
 ---

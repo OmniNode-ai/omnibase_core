@@ -406,7 +406,7 @@ class TestMyFeaturePerformance:
             - Medium: Linear scaling from small
             - Large: Pydantic validation dominates + GC triggers
 
-        See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md
+        Keep threshold rationale inline with the benchmark.
         """
         def operation():
             # Your operation here
@@ -1078,10 +1078,10 @@ class TestPerformanceRegression:
 
 ## Related Documentation
 
-- [Performance Benchmark Thresholds](../performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md) - Threshold rationale and adjustment guide
 - [CI Monitoring Guide](../ci/CI_MONITORING_GUIDE.md) - CI performance monitoring
 - [Parallel Testing](./PARALLEL_TESTING.md) - Test parallelization strategy
-- [CI Test Strategy](./CI_TEST_STRATEGY.md) - Overall CI testing approach
+- Keep current benchmark thresholds and rationale near the benchmark code that
+  enforces them.
 
 ---
 
@@ -1106,7 +1106,7 @@ class TestPerformanceRegression:
 2. Calculate P95 + 2*StdDev
 3. Apply 2x CI multiplier
 4. Document in docstring
-5. Reference `PERFORMANCE_BENCHMARK_THRESHOLDS.md`
+5. Include current threshold rationale near the benchmark
 
 ### When Performance Test Fails
 
