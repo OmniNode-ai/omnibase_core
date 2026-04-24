@@ -43,13 +43,28 @@ from omnibase_core.models.contracts.ticket.model_receipt_gate_result import (
 
 TICKET_PATTERN = re.compile(r"\bOMN-(\d+)\b", re.IGNORECASE)
 CLOSING_KEYWORD_PATTERN = re.compile(
-    r"(?:Closes|Fixes|Resolves|Implements)[:\s]+OMN-(\d+)",
+    r"\b(?:Closes|Fixes|Resolves|Implements)\b[:\s]+OMN-(\d+)\b",
     re.IGNORECASE,
 )
 OVERRIDE_PATTERN = re.compile(r"\[skip-receipt-gate:\s*(.+?)\]", re.IGNORECASE)
 
 
 def _extract_ticket_ids(pr_body: str, pr_title: str | None = None) -> list[str]:
+    """Return sorted unique ticket IDs cited by this PR.
+
+    Precedence: body closing-keyword matches (CLOSING_KEYWORD_PATTERN) are
+    checked first; if any are found they are returned exclusively (sorted,
+    deduplicated, prefixed "OMN-").  Only when the body yields no matches does
+    the function fall back to scanning pr_title with TICKET_PATTERN.  Returns
+    [] when neither source yields a match.
+
+    Args:
+        pr_body: Full PR description text.
+        pr_title: Optional PR title used as fallback when body has no matches.
+
+    Returns:
+        Sorted list of "OMN-<N>" strings, empty if none found.
+    """
     closing_matches = CLOSING_KEYWORD_PATTERN.findall(pr_body)
     if closing_matches:
         return sorted({f"OMN-{m}" for m in closing_matches})
