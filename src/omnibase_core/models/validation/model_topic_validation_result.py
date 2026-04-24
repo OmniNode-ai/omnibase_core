@@ -20,7 +20,7 @@ Example:
     >>> # Valid result
     >>> result = ModelTopicValidationResult(
     ...     is_valid=True,
-    ...     suffix="onex.evt.omnimemory.intent-stored.v1",
+    ...     suffix="onex.evt.omnimemory.intent-stored.v1",  # onex-topic-doc-example
     ...     error=None,
     ...     parsed=some_parsed_parts,
     ... )
@@ -70,7 +70,7 @@ class ModelTopicValidationResult(BaseModel):
         >>> # Successful validation
         >>> result = ModelTopicValidationResult(
         ...     is_valid=True,
-        ...     suffix="onex.evt.user-service.account-created.v1",
+        ...     suffix="onex.evt.user-service.account-created.v1",  # onex-topic-doc-example
         ...     error=None,
         ...     parsed=parsed_parts,
         ... )

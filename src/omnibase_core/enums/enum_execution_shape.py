@@ -109,7 +109,7 @@ class EnumMessageCategory(StrValueHelper, str, Enum):
 
         The matching is segment-based to prevent false positives. For example:
         - "onex.user.events" matches EVENT (segment "events" exists)
-        - "onex.evt.platform.node-introspection.v1" matches EVENT (segment "evt")
+        - "onex.evt.platform.node-introspection.v1" matches EVENT (segment "evt")  # onex-topic-doc-example
         - "dev.eventsource.data.v1" does NOT match ("eventsource" != "events")
 
         Note:
@@ -128,7 +128,7 @@ class EnumMessageCategory(StrValueHelper, str, Enum):
         Example:
             >>> EnumMessageCategory.from_topic("user.events")
             <EnumMessageCategory.EVENT: 'event'>
-            >>> EnumMessageCategory.from_topic("onex.evt.platform.node-introspection.v1")
+            >>> EnumMessageCategory.from_topic("onex.evt.platform.node-introspection.v1")  # onex-topic-doc-example
             <EnumMessageCategory.EVENT: 'event'>
             >>> EnumMessageCategory.from_topic("dev.user.events.v1")
             <EnumMessageCategory.EVENT: 'event'>
