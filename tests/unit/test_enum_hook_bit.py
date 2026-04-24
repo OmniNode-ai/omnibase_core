@@ -92,3 +92,26 @@ class TestHookEnabled:
         monkeypatch.setenv("ONEX_HOOKS_MASK", "not-a-number")
         for m in EnumHookBit:
             assert hook_enabled(m) is True
+
+    def test_explicit_negative_mask_minus_one_is_fail_open(self) -> None:
+        for m in EnumHookBit:
+            assert hook_enabled(m, mask=-1) is True, (
+                f"{m.name}: mask=-1 should fail-open (True), not silently disable"
+            )
+
+    def test_explicit_negative_mask_minus_two_is_fail_open(self) -> None:
+        # -2 in Python two's complement: bit 0 is clear, so CI_REMINDER would
+        # return False if negative masks were evaluated as-is.
+        for m in EnumHookBit:
+            assert hook_enabled(m, mask=-2) is True, (
+                f"{m.name}: mask=-2 must fail-open, not clear bit 0"
+            )
+
+    def test_env_negative_mask_is_fail_open(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("ONEX_HOOKS_MASK", "-2")
+        for m in EnumHookBit:
+            assert hook_enabled(m) is True, (
+                f"{m.name}: ONEX_HOOKS_MASK=-2 must fail-open"
+            )

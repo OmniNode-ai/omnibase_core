@@ -105,17 +105,25 @@ def hook_enabled(bit: EnumHookBit, mask: int | None = None) -> bool:
         bit: The hook bit to test.
         mask: Explicit mask. If None, reads `ONEX_HOOKS_MASK` from env,
               accepts hex (`0x...`), binary (`0b...`), or decimal literal.
-              Malformed or missing => default mask (all-on).
+              Malformed, missing, or negative => default mask (all-on).
+
+    Negative masks are rejected (fail-open) because Python's arbitrary-precision
+    integers allow e.g. ``-2 & (1<<0) == 0``, which would silently disable
+    specific hooks and violate the fail-open contract.
     """
-    if mask is None:
-        raw = os.environ.get("ONEX_HOOKS_MASK")
-        if raw is None:
-            mask = _DEFAULT_MASK
-        else:
-            try:
-                mask = int(raw, 0)
-            except (
-                ValueError
-            ):  # fallback-ok: fail-open on malformed mask favors hook continuity
-                mask = _DEFAULT_MASK
-    return bool(mask & bit)
+    if mask is not None:
+        if mask < 0:
+            return True  # fail-open: negative masks silently disable bits
+        return bool(mask & int(bit))
+    raw = os.environ.get("ONEX_HOOKS_MASK")
+    if raw is None:
+        return bool(_DEFAULT_MASK & int(bit))
+    try:
+        parsed = int(raw, 0)
+    except (
+        ValueError
+    ):  # fallback-ok: fail-open on malformed mask favors hook continuity
+        return True
+    if parsed < 0:
+        return True  # fail-open: reject negative masks from env
+    return bool(parsed & int(bit))
