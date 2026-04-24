@@ -90,6 +90,18 @@ _APPROVED_BASENAMES: frozenset[str] = frozenset(
         "topic_registry.yaml",
         "service_topic_registry.py",
         "validation_exemptions.yaml",
+        "enum_artifact_topic.py",
+        "enum_github_topic.py",
+        "enum_omnibase_infra_topic.py",
+        "enum_omniclaude_topic.py",
+        "enum_omniintelligence_topic.py",
+        "enum_omnimemory_topic.py",
+        "enum_platform_topic.py",
+        "enum_router_topic.py",
+        "enum_rsd_topic.py",
+        "enum_runtime_topic.py",
+        "enum_skill_topic.py",
+        "enum_validation_topic.py",
     }
 )
 
