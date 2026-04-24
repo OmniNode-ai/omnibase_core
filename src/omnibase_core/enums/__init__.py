@@ -79,6 +79,7 @@ from .enum_compute_step_type import EnumComputeStepType
 
 # Consumer group purpose enum (event bus subscription - PR #476)
 from .enum_consumer_group_purpose import EnumConsumerGroupPurpose
+from .enum_content_kind import EnumContentKind
 from .enum_contract_compliance import EnumContractCompliance
 
 # Contract diff change type enum (semantic contract diffing)
@@ -536,6 +537,8 @@ __all__ = [
     "EnumArtifactType",
     # Category filter domain
     "EnumCategoryFilter",
+    # Content kind domain (omniweb-v2 landing page sections, OMN-9658)
+    "EnumContentKind",
     # Security domain
     "EnumDataClassification",
     "EnumSecurityProfile",
