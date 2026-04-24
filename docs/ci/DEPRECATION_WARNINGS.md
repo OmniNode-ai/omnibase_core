@@ -81,7 +81,7 @@ filterwarnings = [
 
 ## How to Address Deprecation Warnings
 
-### Identify Warnings
+### Step 1: Identify Warnings
 
 Run the test suite and review deprecation warnings in the output:
 
@@ -93,7 +93,7 @@ uv run pytest tests/
 uv run pytest tests/ -W default::DeprecationWarning
 ```
 
-### Categorize Warnings
+### Step 2: Categorize Warnings
 
 Deprecation warnings typically fall into these categories:
 
@@ -103,7 +103,7 @@ Deprecation warnings typically fall into these categories:
 | **Dependencies** | Third-party library deprecations | Update library or suppress |
 | **Python stdlib** | Python version-specific deprecations | Update code patterns |
 
-### Resolve Internal Warnings
+### Step 3: Resolve Internal Warnings
 
 For warnings in omnibase_core code:
 
@@ -123,7 +123,7 @@ from new_module import new_function
 new_function()
 ```
 
-### Handle Dependency Warnings
+### Step 4: Handle Dependency Warnings
 
 For warnings from third-party libraries:
 
@@ -131,7 +131,7 @@ For warnings from third-party libraries:
 2. **Update dependency** if possible: `poetry update library-name`
 3. **If no update available**, consider targeted suppression (see below)
 
-### Targeted Suppression (Last Resort)
+### Step 5: Targeted Suppression (Last Resort)
 
 If a warning cannot be resolved (e.g., waiting for upstream fix), add a targeted suppression:
 

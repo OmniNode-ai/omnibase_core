@@ -293,13 +293,13 @@ uv run pytest tests/integration/ --durations=10 -v
 
 ## Writing New Integration Tests
 
-### Choose the Right Location
+### Step 1: Choose the Right Location
 
 - **New domain?** Create `tests/integration/test_<domain>_integration.py`
 - **Existing domain?** Add to existing test file
 - **Mixin tests?** Place in `tests/integration/mixins/`
 
-### Use Fixtures from conftest.py
+### Step 2: Use Fixtures from conftest.py
 
 The `tests/integration/conftest.py` provides shared fixtures:
 
@@ -322,7 +322,7 @@ def compute_execution_context_factory() -> ComputeContextFactory:
     return _create_context
 ```
 
-### Apply Required Markers
+### Step 3: Apply Required Markers
 
 ```python
 import pytest
@@ -343,7 +343,7 @@ class TestMyFeatureIntegration:
         pass
 ```
 
-### Mock External Dependencies Appropriately
+### Step 4: Mock External Dependencies Appropriately
 
 For integration tests, mock only external systems (databases, message queues) not internal components:
 
@@ -385,7 +385,7 @@ def container_with_kafka(self, mock_kafka_client):
     return container
 ```
 
-### Follow Test Structure
+### Step 5: Follow Test Structure
 
 ```python
 @pytest.mark.integration
