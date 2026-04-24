@@ -82,6 +82,17 @@ allowed_files:
     added: "2024-10-15"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/cli/cli_install.py"
+    reason: >-
+      onex pack/install CLI must parse heterogeneous third-party contract.yaml + metadata.yaml files from
+      .oncp archives before any Pydantic model applies. contract.yaml schemas vary by node type (ModelContractCompute,
+      ModelContractEffect, ModelContractReducer, ModelContractOrchestrator), so detect_contract_model()
+      requires raw YAML to route to the correct model. metadata.yaml is a thin descriptor (name + version
+      + entry_points) consumed before the registry lookup. Both sites validate required keys explicitly
+      (mapping check, name/version presence) before use. (OMN-7537)
+    added: "2026-04-23"
+    review: "2026-06-13"
+
   - file: "src/omnibase_core/validation/validator_contracts.py"
     reason: >-
       Central orchestrator for YAML contract file parsing and validation - provides high-level API for

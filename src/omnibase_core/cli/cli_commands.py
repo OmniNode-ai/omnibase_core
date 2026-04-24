@@ -700,6 +700,11 @@ from omnibase_core.cli.cli_run_node import run_node
 
 cli.add_command(run_node)
 
+# Register pack command
+from omnibase_core.cli.cli_pack import cli_pack
+
+cli.add_command(cli_pack)
+
 # Register bootstrap command group
 from omnibase_core.cli.cli_bootstrap import bootstrap
 
