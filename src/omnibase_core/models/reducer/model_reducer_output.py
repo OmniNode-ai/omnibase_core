@@ -18,7 +18,7 @@ import math
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
@@ -275,3 +275,30 @@ class ModelReducerOutput[T_Output](BaseModel):
                 },
             )
         return v
+
+    @model_validator(mode="after")
+    def _enforce_fsm_metadata_extras_consistency(
+        self,
+    ) -> "ModelReducerOutput[T_Output]":
+        # When fsm_metadata is set, every FSM key present in metadata extras must
+        # match its counterpart in the typed model. Prevents constructing an
+        # output with divergent typed-vs-dict FSM state outside NodeReducer.process.
+        if self.fsm_metadata is None:
+            return self
+        fsm_dict = self.fsm_metadata.to_dict()
+        extras = self.metadata.model_extra or {}
+        mismatched = sorted(
+            key
+            for key, value in fsm_dict.items()
+            if key in extras and extras[key] != value
+        )
+        if mismatched:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=(
+                    "fsm_metadata and metadata extras must carry identical FSM "
+                    "values for overlapping keys"
+                ),
+                context={"mismatched_keys": mismatched},
+            )
+        return self
