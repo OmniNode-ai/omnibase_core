@@ -34,6 +34,7 @@ jobs:
   #   - node-purity-check: Declarative node purity guarantees
   #   - mypy-validation-scripts: Type check validation scripts
   #   - core-infra-boundary: Transport/I/O import validation (ADR-005)
+  #   - check-deterministic-skills: AST-based SkillRoutingError enforcement (OMN-8765)
   #   - enum-governance: Enum architectural standards validation (OMN-1313)
   #   - detect-secrets: Baseline security scan (detect-secrets)
   #
@@ -382,6 +383,56 @@ jobs:
           echo "- No gRPC or WebSocket libraries" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "See: docs/decisions/ADR-005-core-infra-dependency-boundary.md" >> $GITHUB_STEP_SUMMARY
+
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Deterministic Skill Routing Gate (OMN-8765) — enforces that every Tier 1
+  # deterministic skill in omniclaude routes through `onex run-node` / `onex
+  # node` (or a Kafka publish) and surfaces `SkillRoutingError`. Blocking gate.
+  check-deterministic-skills:
+    name: Deterministic Skill Routing
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout omnibase_core
+        uses: actions/checkout@v6
+
+      - name: Checkout omniclaude (skill source)
+        uses: actions/checkout@v6
+        with:
+          repository: OmniNode-ai/omniclaude
+          path: _external/omniclaude
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run AST-based skill routing validator (OMN-8765)
+        run: |
+          python3 scripts/validate_deterministic_skill_routing.py \
+            --skills-root _external/omniclaude/plugins/onex/skills
+
+      - name: Skill routing summary
+        if: always()
+        run: |
+          echo "## Deterministic Skill Routing (OMN-8765)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "AST-based CI lint gate — verifies every Tier 1 deterministic" >> $GITHUB_STEP_SUMMARY
+          echo "skill:" >> $GITHUB_STEP_SUMMARY
+          echo "- declares a node dispatch (\`onex run-node\` / \`onex node\` /" >> $GITHUB_STEP_SUMMARY
+          echo "  Kafka publish to \`onex.cmd.*\`)" >> $GITHUB_STEP_SUMMARY
+          echo "- imports zero LLM SDKs (anthropic/openai/google.generativeai)" >> $GITHUB_STEP_SUMMARY
+          echo "- does not wrap dispatch in subprocess orchestration" >> $GITHUB_STEP_SUMMARY
+          echo "- does not call \`client.messages.create\` / completion APIs" >> $GITHUB_STEP_SUMMARY
+          echo "- does not contain conditional prose fallback branches" >> $GITHUB_STEP_SUMMARY
+          echo "- references \`SkillRoutingError\` with \`do not produce prose\`" >> $GITHUB_STEP_SUMMARY
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Quick documentation check (not blocking test-parallel)
@@ -736,7 +787,7 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check, sdk-boundary-check, contract-compliance]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check, sdk-boundary-check, contract-compliance]
     if: always()
 
     steps:
@@ -750,6 +801,7 @@ jobs:
           exports="${{ needs.exports-validation.result }}"
           mypy_scripts="${{ needs.mypy-validation-scripts.result }}"
           core_infra="${{ needs.core-infra-boundary.result }}"
+          det_skills="${{ needs.check-deterministic-skills.result }}"
           docs="${{ needs.docs-validation.result }}"
           purity="${{ needs.node-purity-check.result }}"
           enum_gov="${{ needs.enum-governance.result }}"
@@ -764,6 +816,7 @@ jobs:
           echo "| Exports Validation | $exports |" >> $GITHUB_STEP_SUMMARY
           echo "| Mypy Validation Scripts | $mypy_scripts |" >> $GITHUB_STEP_SUMMARY
           echo "| Core-Infra Boundary | $core_infra |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deterministic Skill Routing | $det_skills |" >> $GITHUB_STEP_SUMMARY
           echo "| Documentation Validation | $docs |" >> $GITHUB_STEP_SUMMARY
           echo "| Node Purity Check | $purity |" >> $GITHUB_STEP_SUMMARY
           echo "| Enum Governance | $enum_gov |" >> $GITHUB_STEP_SUMMARY
@@ -777,6 +830,7 @@ jobs:
              [[ "$exports" == "success" ]] && \
              [[ "$mypy_scripts" == "success" ]] && \
              [[ "$core_infra" == "success" ]] && \
+             [[ "$det_skills" == "success" ]] && \
              [[ "$docs" == "success" ]] && \
              [[ "$enum_gov" == "success" ]] && \
              [[ "$secrets" == "success" ]] && \
