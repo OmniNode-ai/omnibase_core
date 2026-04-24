@@ -9,7 +9,6 @@ from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (
 from omnibase_core.models.runtime.model_descriptor_retry_policy import (
     ModelDescriptorRetryPolicy,
 )
-from omnibase_core.models.runtime.model_domain_plugin import ModelDomainPluginConfig
 from omnibase_core.models.runtime.model_domain_plugin_result import (
     ModelDomainPluginResult,
 )
@@ -38,7 +37,6 @@ __all__ = [
     "ModelDescriptorRetryPolicy",
     "ModelDescriptorCircuitBreaker",
     "ModelHandlerMetadata",
-    "ModelDomainPluginConfig",
     "ModelDomainPluginResult",
     "ModelRuntimeDirective",
     "ModelRuntimeNodeInstance",
