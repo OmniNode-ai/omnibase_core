@@ -4,6 +4,10 @@
 
 from __future__ import annotations
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 
 def test_domain_plugin_result_importable_from_compat_module() -> None:
     """The SPI protocol imports both domain plugin models from one module."""
