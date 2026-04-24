@@ -80,7 +80,7 @@ class TestReceiptGateTicketRef:
         assert not result.passed
         assert "cites no" in result.message.lower()
 
-    def test_ticket_ref_parsed_case_insensitive(self, tmp_path: Path) -> None:
+    def test_closing_keyword_case_insensitive(self, tmp_path: Path) -> None:
         contracts = tmp_path / "contracts"
         receipts = tmp_path / "receipts"
         _write_contract(contracts, "OMN-9084")
@@ -91,7 +91,94 @@ class TestReceiptGateTicketRef:
             check_type="command",
         )
         result = validate_pr_receipts(
-            pr_body="feat: thing [omn-9084]",
+            pr_body="closes omn-9084",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+        )
+        assert result.passed
+
+
+@pytest.mark.unit
+class TestReceiptGateGreedyRegression:
+    """Regression tests for OMN-9574 — bare OMN-XXXX must NOT trigger receipt checks."""
+
+    def test_bare_omn_token_in_body_no_closing_keyword_does_not_require_receipt(
+        self, tmp_path: Path
+    ) -> None:
+        """Bare OMN-1234 with no closing keyword → no citation → gate fails with 'no ticket ref'."""
+        result = validate_pr_receipts(
+            pr_body="This PR relates to OMN-1234 (see issue tracker)",
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+        )
+        assert not result.passed
+        assert "cites no" in result.message.lower()
+
+    def test_bare_omn_token_does_not_require_receipt_even_when_contract_exists(
+        self, tmp_path: Path
+    ) -> None:
+        """A bare mention must not trigger receipt check even if the contract file exists."""
+        contracts = tmp_path / "contracts"
+        _write_contract(contracts, "OMN-9600")
+        result = validate_pr_receipts(
+            pr_body="Related to OMN-9600 (no closing keyword)",
+            contracts_dir=contracts,
+            receipts_dir=tmp_path / "receipts",
+        )
+        assert not result.passed
+        assert "cites no" in result.message.lower()
+
+    def test_closes_keyword_required_for_receipt_check(self, tmp_path: Path) -> None:
+        """Closes OMN-1234 triggers the full receipt check."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-1234")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-1234",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+        result = validate_pr_receipts(
+            pr_body="Closes OMN-1234.",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+        )
+        assert result.passed
+
+    def test_fixes_keyword_triggers_receipt_check(self, tmp_path: Path) -> None:
+        """Fixes OMN-1234 triggers the receipt check."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-1234")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-1234",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+        result = validate_pr_receipts(
+            pr_body="Fixes OMN-1234",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+        )
+        assert result.passed
+
+    def test_closes_keyword_lowercase_triggers_receipt_check(
+        self, tmp_path: Path
+    ) -> None:
+        """closes OMN-1234 (lowercase) triggers the receipt check (case-insensitive)."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-1234")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-1234",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+        result = validate_pr_receipts(
+            pr_body="closes OMN-1234",
             contracts_dir=contracts,
             receipts_dir=receipts,
         )
@@ -102,7 +189,7 @@ class TestReceiptGateTicketRef:
 class TestReceiptGateContractPresence:
     def test_missing_contract_fails(self, tmp_path: Path) -> None:
         result = validate_pr_receipts(
-            pr_body="OMN-9999",
+            pr_body="Closes OMN-9999",
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
         )
@@ -113,7 +200,7 @@ class TestReceiptGateContractPresence:
         contracts = tmp_path / "contracts"
         _write_contract(contracts, "OMN-9084", dod_evidence=[])
         result = validate_pr_receipts(
-            pr_body="OMN-9084",
+            pr_body="Closes OMN-9084",
             contracts_dir=contracts,
             receipts_dir=tmp_path / "receipts",
         )
@@ -125,7 +212,7 @@ class TestReceiptGateContractPresence:
         contracts.mkdir()
         (contracts / "OMN-9084.yaml").write_text("!!! not: valid: yaml: [")
         result = validate_pr_receipts(
-            pr_body="OMN-9084",
+            pr_body="Closes OMN-9084",
             contracts_dir=contracts,
             receipts_dir=tmp_path / "receipts",
         )
@@ -146,7 +233,7 @@ class TestReceiptGateReceiptPresence:
             check_type="command",
         )
         result = validate_pr_receipts(
-            pr_body="OMN-9084",
+            pr_body="Closes OMN-9084",
             contracts_dir=contracts,
             receipts_dir=receipts,
         )
@@ -157,7 +244,7 @@ class TestReceiptGateReceiptPresence:
         contracts = tmp_path / "contracts"
         _write_contract(contracts, "OMN-9084")
         result = validate_pr_receipts(
-            pr_body="OMN-9084",
+            pr_body="Closes OMN-9084",
             contracts_dir=contracts,
             receipts_dir=tmp_path / "receipts",
         )
@@ -176,7 +263,7 @@ class TestReceiptGateReceiptPresence:
             status="FAIL",
         )
         result = validate_pr_receipts(
-            pr_body="OMN-9084",
+            pr_body="Closes OMN-9084",
             contracts_dir=contracts,
             receipts_dir=receipts,
         )
@@ -191,7 +278,7 @@ class TestReceiptGateReceiptPresence:
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text("!!! not: valid: [")
         result = validate_pr_receipts(
-            pr_body="OMN-9084",
+            pr_body="Closes OMN-9084",
             contracts_dir=contracts,
             receipts_dir=receipts,
         )
@@ -213,7 +300,7 @@ class TestReceiptGateReceiptPresence:
             overrides={"ticket_id": "OMN-DIFFERENT"},
         )
         result = validate_pr_receipts(
-            pr_body="OMN-9084",
+            pr_body="Closes OMN-9084",
             contracts_dir=contracts,
             receipts_dir=receipts,
         )
@@ -235,7 +322,7 @@ class TestReceiptGateMultiTicket:
         )
         # OMN-9085 receipt missing
         result = validate_pr_receipts(
-            pr_body="OMN-9084 OMN-9085",
+            pr_body="Closes OMN-9084. Closes OMN-9085",
             contracts_dir=contracts,
             receipts_dir=receipts,
         )
@@ -255,7 +342,7 @@ class TestReceiptGateMultiTicket:
                 check_type="command",
             )
         result = validate_pr_receipts(
-            pr_body="OMN-9084 OMN-9085",
+            pr_body="Closes OMN-9084. Closes OMN-9085",
             contracts_dir=contracts,
             receipts_dir=receipts,
         )
@@ -283,6 +370,76 @@ class TestReceiptGateOverride:
         )
         # Empty/whitespace reason doesn't count as a legitimate override
         assert not result.passed or result.friction_logged
-        # Regex requires at least one non-whitespace char in the reason — the
-        # `.+?` greedy-but-at-least-one means whitespace matches a single space
-        # minimum. The `.strip()` call catches the empty-after-strip case.
+
+
+@pytest.mark.unit
+class TestReceiptGateClosingKeywords:
+    def test_closing_keyword_preferred_over_bare_mention(self, tmp_path: Path) -> None:
+        """When body has closing keyword, only the cited ticket is checked (not bare mentions)."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-5678")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-5678",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+        result = validate_pr_receipts(
+            pr_body="Related to OMN-1234, closes OMN-5678",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+        )
+        assert result.passed
+        assert result.tickets_checked == ["OMN-5678"]
+
+    def test_pr_title_fallback_when_body_has_no_closing_keywords(
+        self, tmp_path: Path
+    ) -> None:
+        """No closing keyword in body → fall back to OMN-XXXX tokens in title."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-9084")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-9084",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+        result = validate_pr_receipts(
+            pr_body="See description in the title",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            pr_title="fix(OMN-9084): some fix",
+        )
+        assert result.passed
+        assert result.tickets_checked == ["OMN-9084"]
+
+    def test_closing_keyword_variants(self, tmp_path: Path) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-1111")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-1111",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+        for keyword in ("Closes", "Fixes", "Resolves", "Implements"):
+            result = validate_pr_receipts(
+                pr_body=f"{keyword} OMN-1111",
+                contracts_dir=contracts,
+                receipts_dir=receipts,
+            )
+            assert result.passed, f"Failed for keyword: {keyword}"
+
+    def test_no_title_no_closing_keyword_fails(self, tmp_path: Path) -> None:
+        """No closing keyword in body AND no title → no citation → FAIL."""
+        result = validate_pr_receipts(
+            pr_body="no tickets here",
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+            pr_title="also no tickets",
+        )
+        assert not result.passed
+        assert "cites no" in result.message.lower()
