@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-Unit tests for ConcurrencyContractSpec (OMN-7839).
+Unit tests for ModelConcurrencyContractSpec (OMN-7839).
 
 Covers:
 - Defaults (``max_parallel=1``, ``model_concurrency_aware=False``).
@@ -25,7 +25,7 @@ from omnibase_core.models.contracts import (
     ModelPerformanceRequirements,
 )
 from omnibase_core.models.contracts.model_concurrency_contract_spec import (
-    ConcurrencyContractSpec,
+    ModelConcurrencyContractSpec,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -47,16 +47,16 @@ def _minimal_performance() -> ModelPerformanceRequirements:
 
 
 @pytest.mark.unit
-class TestConcurrencyContractSpecDefaults:
+class TestModelConcurrencyContractSpecDefaults:
     """Default-field behavior."""
 
     def test_default_values(self) -> None:
-        spec = ConcurrencyContractSpec()
+        spec = ModelConcurrencyContractSpec()
         assert spec.max_parallel == 1
         assert spec.model_concurrency_aware is False
 
     def test_explicit_values(self) -> None:
-        spec = ConcurrencyContractSpec(
+        spec = ModelConcurrencyContractSpec(
             max_parallel=5,
             model_concurrency_aware=True,
         )
@@ -65,32 +65,32 @@ class TestConcurrencyContractSpecDefaults:
 
 
 @pytest.mark.unit
-class TestConcurrencyContractSpecValidation:
+class TestModelConcurrencyContractSpecValidation:
     """Negative-path validation."""
 
     def test_max_parallel_below_one_rejected(self) -> None:
         with pytest.raises(ValidationError):
-            ConcurrencyContractSpec(max_parallel=0)
+            ModelConcurrencyContractSpec(max_parallel=0)
 
     def test_max_parallel_negative_rejected(self) -> None:
         with pytest.raises(ValidationError):
-            ConcurrencyContractSpec(max_parallel=-3)
+            ModelConcurrencyContractSpec(max_parallel=-3)
 
     def test_unknown_field_rejected(self) -> None:
         with pytest.raises(ValidationError):
-            ConcurrencyContractSpec(max_parallel=2, bogus_field=True)  # type: ignore[call-arg]
+            ModelConcurrencyContractSpec(max_parallel=2, bogus_field=True)  # type: ignore[call-arg]
 
     def test_wrong_type_for_model_concurrency_aware_rejected(self) -> None:
         with pytest.raises(ValidationError):
-            ConcurrencyContractSpec(model_concurrency_aware="not-a-bool")  # type: ignore[arg-type]
+            ModelConcurrencyContractSpec(model_concurrency_aware="not-a-bool")  # type: ignore[arg-type]
 
 
 @pytest.mark.unit
-class TestConcurrencyContractSpecSerialization:
+class TestModelConcurrencyContractSpecSerialization:
     """Roundtrip dict <-> model."""
 
     def test_dump_and_reload(self) -> None:
-        original = ConcurrencyContractSpec(
+        original = ModelConcurrencyContractSpec(
             max_parallel=8,
             model_concurrency_aware=True,
         )
@@ -99,7 +99,7 @@ class TestConcurrencyContractSpecSerialization:
             "max_parallel": 8,
             "model_concurrency_aware": True,
         }
-        reloaded = ConcurrencyContractSpec.model_validate(payload)
+        reloaded = ModelConcurrencyContractSpec.model_validate(payload)
         assert reloaded == original
 
 
@@ -126,7 +126,7 @@ class TestConcurrencyBlockOnContractBase:
 
     def test_contract_with_concurrency_block_validates(self) -> None:
         kwargs = self._base_contract_kwargs()
-        kwargs["concurrency"] = ConcurrencyContractSpec(
+        kwargs["concurrency"] = ModelConcurrencyContractSpec(
             max_parallel=4,
             model_concurrency_aware=True,
         )
@@ -143,7 +143,7 @@ class TestConcurrencyBlockOnContractBase:
             "model_concurrency_aware": False,
         }
         contract = ModelContractCompute(**kwargs)
-        assert isinstance(contract.concurrency, ConcurrencyContractSpec)
+        assert isinstance(contract.concurrency, ModelConcurrencyContractSpec)
         assert contract.concurrency.max_parallel == 2
         assert contract.concurrency.model_concurrency_aware is False
 

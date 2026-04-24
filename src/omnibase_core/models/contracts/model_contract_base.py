@@ -47,7 +47,7 @@ if TYPE_CHECKING:
         ModelHandlerBehavior,
     )
 from omnibase_core.models.contracts.model_concurrency_contract_spec import (
-    ConcurrencyContractSpec,
+    ModelConcurrencyContractSpec,
 )
 from omnibase_core.models.contracts.model_contract_feature_flag import (
     ModelContractFeatureFlag,
@@ -277,7 +277,7 @@ class ModelContractBase(BaseModel, ABC):
     # runtime and model router when scheduling work. Distinct from
     # ``behavior.concurrency_policy`` which governs single-handler invocation
     # semantics rather than node-level parallelism caps.
-    concurrency: ConcurrencyContractSpec | None = Field(
+    concurrency: ModelConcurrencyContractSpec | None = Field(
         default=None,
         description="Contract-level concurrency cap and optional coupling to "
         "model-registry concurrency limits. None means the runtime uses its "

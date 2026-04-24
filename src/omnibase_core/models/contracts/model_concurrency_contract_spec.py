@@ -21,7 +21,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ConcurrencyContractSpec(BaseModel):
+class ModelConcurrencyContractSpec(BaseModel):
     """
     Contract-level concurrency requirements for a node.
 
@@ -31,7 +31,7 @@ class ConcurrencyContractSpec(BaseModel):
     respect the concurrency limits published by the model registry.
 
     Example:
-        >>> spec = ConcurrencyContractSpec(
+        >>> spec = ModelConcurrencyContractSpec(
         ...     max_parallel=5,
         ...     model_concurrency_aware=True,
         ... )
