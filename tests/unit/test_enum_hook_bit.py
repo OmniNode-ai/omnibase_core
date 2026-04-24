@@ -6,9 +6,11 @@ from __future__ import annotations
 
 import enum
 
-import pytest  # noqa: TC002
+import pytest
 
 from omnibase_core.enums.enum_hook_bit import EnumHookBit, hook_enabled
+
+pytestmark = pytest.mark.unit
 
 # Frozen GATE count from Task 1 inventory. Update only when the inventory doc changes.
 _N_GATE = 57

@@ -114,8 +114,8 @@ def hook_enabled(bit: EnumHookBit, mask: int | None = None) -> bool:
         else:
             try:
                 mask = int(raw, 0)
-            except ValueError:
-                # Fail-open favors hook continuity over honoring broken user config.
-                # A CLI warning on write is a follow-up (OMN-9614).
+            except (
+                ValueError
+            ):  # fallback-ok: fail-open on malformed mask favors hook continuity
                 mask = _DEFAULT_MASK
     return bool(mask & bit)
