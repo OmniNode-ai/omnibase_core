@@ -9,14 +9,15 @@ Carries the full contract YAML for replay capability (OMN-1651).
 
 from pydantic import ConfigDict, Field
 
+from omnibase_core.constants.constants_event_types import (
+    TOPIC_CONTRACT_REGISTERED_EVENT as _CANONICAL,
+)
 from omnibase_core.models.events.model_runtime_event_base import ModelRuntimeEventBase
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 __all__ = ["ModelContractRegisteredEvent", "CONTRACT_REGISTERED_EVENT"]
 
-# Full topic name for Kafka/event bus publishing (onex.evt.<type>.v1 format).
-# The short event type identifier ("contract-registered") is in constants_event_types.py.
-CONTRACT_REGISTERED_EVENT = "onex.evt.contract-registered.v1"
+CONTRACT_REGISTERED_EVENT = _CANONICAL
 
 
 class ModelContractRegisteredEvent(ModelRuntimeEventBase):

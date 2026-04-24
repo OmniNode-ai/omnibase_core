@@ -18,13 +18,16 @@ from enum import Enum
 
 from pydantic import ConfigDict, Field
 
+from omnibase_core.constants.constants_event_types import (
+    TOPIC_GITHUB_PR_STATUS_EVENT as _CANONICAL,
+)
 from omnibase_core.models.events.model_runtime_event_base import (
     ModelRuntimeEventBase,
 )
 
 __all__ = ["ModelGitHubPRStatusEvent", "TOPIC_GITHUB_PR_STATUS_EVENT", "TriageState"]
 
-TOPIC_GITHUB_PR_STATUS_EVENT = "onex.evt.platform.github-pr-status.v1"
+TOPIC_GITHUB_PR_STATUS_EVENT = _CANONICAL
 
 
 class TriageState(str, Enum):

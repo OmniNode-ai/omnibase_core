@@ -9,6 +9,9 @@ Part of the contract registration subsystem (OMN-1651).
 
 from pydantic import ConfigDict, Field
 
+from omnibase_core.constants.constants_event_types import (
+    TOPIC_CONTRACT_DEREGISTERED_EVENT as _CANONICAL,
+)
 from omnibase_core.enums.events.enum_deregistration_reason import (
     EnumDeregistrationReason,
 )
@@ -17,9 +20,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 __all__ = ["ModelContractDeregisteredEvent", "CONTRACT_DEREGISTERED_EVENT"]
 
-# Full topic name for Kafka/event bus publishing (onex.evt.<type>.v1 format).
-# The short event type identifier ("contract-deregistered") is in constants_event_types.py.
-CONTRACT_DEREGISTERED_EVENT = "onex.evt.contract-deregistered.v1"
+CONTRACT_DEREGISTERED_EVENT = _CANONICAL
 
 
 class ModelContractDeregisteredEvent(ModelRuntimeEventBase):

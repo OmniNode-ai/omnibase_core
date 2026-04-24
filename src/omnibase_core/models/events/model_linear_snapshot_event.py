@@ -18,13 +18,16 @@ from uuid import UUID
 
 from pydantic import ConfigDict, Field
 
+from omnibase_core.constants.constants_event_types import (
+    TOPIC_LINEAR_SNAPSHOT_EVENT as _CANONICAL,
+)
 from omnibase_core.models.events.model_runtime_event_base import (
     ModelRuntimeEventBase,
 )
 
 __all__ = ["ModelLinearSnapshotEvent", "TOPIC_LINEAR_SNAPSHOT_EVENT"]
 
-TOPIC_LINEAR_SNAPSHOT_EVENT = "onex.evt.platform.linear-snapshot.v1"
+TOPIC_LINEAR_SNAPSHOT_EVENT = _CANONICAL
 
 
 class ModelLinearSnapshotEvent(ModelRuntimeEventBase):

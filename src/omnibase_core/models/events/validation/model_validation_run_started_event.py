@@ -36,13 +36,16 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
+from omnibase_core.constants.constants_event_types import (
+    TOPIC_VALIDATION_RUN_STARTED_EVENT as _CANONICAL,
+)
 from omnibase_core.models.events.validation.model_validation_event_base import (
     ModelValidationEventBase,
 )
 
 __all__ = ["ModelValidationRunStartedEvent", "VALIDATION_RUN_STARTED_EVENT"]
 
-VALIDATION_RUN_STARTED_EVENT = "onex.evt.validation.cross-repo-run-started.v1"
+VALIDATION_RUN_STARTED_EVENT = _CANONICAL
 
 
 class ModelValidationRunStartedEvent(ModelValidationEventBase):
@@ -79,7 +82,7 @@ class ModelValidationRunStartedEvent(ModelValidationEventBase):
         ...     baseline_applied=False,
         ... )
         >>> event.event_type
-        'onex.evt.validation.cross-repo-run-started.v1'
+        'onex.evt.validation.cross-repo-run-started.v1'  # onex-topic-doc-example
 
     .. versionadded:: 0.13.0
     """
