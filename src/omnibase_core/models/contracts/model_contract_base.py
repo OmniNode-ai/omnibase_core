@@ -46,6 +46,9 @@ if TYPE_CHECKING:
     from omnibase_core.models.runtime.model_handler_behavior import (
         ModelHandlerBehavior,
     )
+from omnibase_core.models.contracts.model_concurrency_contract_spec import (
+    ConcurrencyContractSpec,
+)
 from omnibase_core.models.contracts.model_contract_feature_flag import (
     ModelContractFeatureFlag,
 )
@@ -267,6 +270,18 @@ class ModelContractBase(BaseModel, ABC):
         description="Handler behavior configuration defining purity, idempotency, "
         "concurrency, isolation, and observability. "
         "Set when created via profile factory, None for manually created contracts.",
+    )
+
+    # Contract-level concurrency requirements (OMN-7839)
+    # Declared under the ``concurrency:`` block of contract.yaml. Read by the
+    # runtime and model router when scheduling work. Distinct from
+    # ``behavior.concurrency_policy`` which governs single-handler invocation
+    # semantics rather than node-level parallelism caps.
+    concurrency: ConcurrencyContractSpec | None = Field(
+        default=None,
+        description="Contract-level concurrency cap and optional coupling to "
+        "model-registry concurrency limits. None means the runtime uses its "
+        "default (serialized dispatch) for this node.",
     )
 
     # ONEX Infrastructure Extension Fields (OMN-1588)
