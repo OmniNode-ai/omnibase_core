@@ -12,6 +12,9 @@ organized by functional domains for better maintainability.
 from .audit.enum_audit_enforcement_level import EnumAuditEnforcementLevel
 from .enum_action_status import EnumActionStatus
 
+# Agent protocol enum (OMN-9622 — A2A wire protocol classification)
+from .enum_agent_protocol import EnumAgentProtocol
+
 # Architecture and system enums
 from .enum_architecture import EnumArchitecture
 
@@ -846,6 +849,8 @@ __all__ = [
     "EnumProofKind",
     # Proof type domain (capability attestation verification - OMN-2892)
     "EnumProofType",
+    # Agent protocol domain (A2A wire protocol classification - OMN-9622)
+    "EnumAgentProtocol",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

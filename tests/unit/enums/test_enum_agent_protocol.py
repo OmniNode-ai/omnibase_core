@@ -33,7 +33,7 @@ class TestEnumAgentProtocol:
         assert EnumAgentProtocol.A2A == "A2A"
 
     def test_enum_membership(self) -> None:
-        assert EnumAgentProtocol.A2A in EnumAgentProtocol
+        assert EnumAgentProtocol.A2A in list(EnumAgentProtocol)
 
     def test_enum_from_value(self) -> None:
         assert EnumAgentProtocol("A2A") is EnumAgentProtocol.A2A
