@@ -88,7 +88,7 @@ jobs:
           set -euo pipefail
           # "already enqueued" race is benign — treat as success.
           # All other failures surface loudly (no silent continue-on-error).
-          if output=$(gh pr merge "$PR" --repo "$GH_REPO" --auto 2>&1); then
+          if output=$(gh pr merge "$PR" --repo "$GH_REPO" --auto --squash 2>&1); then
             echo "auto-merge enabled: $output"
             exit 0
           fi
@@ -113,7 +113,7 @@ jobs:
           if [ -z "$PR_ID" ] || [ "$PR_ID" = "null" ]; then
             echo "could not resolve PR id"; exit 0
           fi
-          if output=$(gh api graphql -f query='mutation($prId:ID!){enqueuePullRequest(input:{pullRequestId:$prId}){mergeQueueEntry{position}}}' -f prId="$PR_ID" 2>&1); then
+          if output=$(gh api graphql -f query='mutation($prId:ID!){enqueuePullRequest(input:{pullRequestId:$prId,mergeMethod:SQUASH}){mergeQueueEntry{position}}}' -f prId="$PR_ID" 2>&1); then
             echo "enqueued: $output"
           else
             # Tolerate only known benign states.
