@@ -42,7 +42,22 @@ from omnibase_core.models.contracts.ticket.model_receipt_gate_result import (
 )
 
 TICKET_PATTERN = re.compile(r"\bOMN-(\d+)\b", re.IGNORECASE)
+CLOSING_KEYWORD_PATTERN = re.compile(
+    r"(?:Closes|Fixes|Resolves|Implements)[:\s]+OMN-(\d+)",
+    re.IGNORECASE,
+)
 OVERRIDE_PATTERN = re.compile(r"\[skip-receipt-gate:\s*(.+?)\]", re.IGNORECASE)
+
+
+def _extract_ticket_ids(pr_body: str, pr_title: str | None = None) -> list[str]:
+    closing_matches = CLOSING_KEYWORD_PATTERN.findall(pr_body)
+    if closing_matches:
+        return sorted({f"OMN-{m}" for m in closing_matches})
+    if pr_title:
+        title_matches = TICKET_PATTERN.findall(pr_title)
+        if title_matches:
+            return sorted({f"OMN-{m}" for m in title_matches})
+    return []
 
 
 def _iter_dod_evidence(contract_data: object) -> list[tuple[str, str, str]]:
@@ -133,6 +148,7 @@ def validate_pr_receipts(
     pr_body: str,
     contracts_dir: Path,
     receipts_dir: Path,
+    pr_title: str | None = None,
 ) -> ModelReceiptGateResult:
     """Run the receipt-gate against a PR's body + the repo's contracts + receipts."""
     override = OVERRIDE_PATTERN.search(pr_body)
@@ -149,7 +165,7 @@ def validate_pr_receipts(
                 ),
             )
 
-    ticket_ids = sorted({f"OMN-{m}" for m in TICKET_PATTERN.findall(pr_body)})
+    ticket_ids = _extract_ticket_ids(pr_body, pr_title)
     if not ticket_ids:
         return ModelReceiptGateResult(
             passed=False,
@@ -239,6 +255,7 @@ def validate_pr_receipts(
 
 
 __all__ = [
+    "CLOSING_KEYWORD_PATTERN",
     "OVERRIDE_PATTERN",
     "TICKET_PATTERN",
     "validate_pr_receipts",

@@ -32,6 +32,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--pr-body", required=True, help="Full PR description text.")
     parser.add_argument(
+        "--pr-title",
+        default=None,
+        help="PR title text (used as fallback when body has no closing keywords).",
+    )
+    parser.add_argument(
         "--contracts-dir",
         default="onex_change_control/contracts",
         help="Directory containing OMN-XXXX.yaml ticket contracts.",
@@ -47,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
         pr_body=args.pr_body,
         contracts_dir=Path(args.contracts_dir),
         receipts_dir=Path(args.receipts_dir),
+        pr_title=args.pr_title,
     )
 
     if result.friction_logged:

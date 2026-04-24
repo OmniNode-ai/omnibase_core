@@ -286,3 +286,93 @@ class TestReceiptGateOverride:
         # Regex requires at least one non-whitespace char in the reason — the
         # `.+?` greedy-but-at-least-one means whitespace matches a single space
         # minimum. The `.strip()` call catches the empty-after-strip case.
+
+
+@pytest.mark.unit
+class TestReceiptGateClosingKeywords:
+    def test_closing_keyword_preferred_over_mention(self, tmp_path: Path) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-5678")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-5678",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+        result = validate_pr_receipts(
+            pr_body="Related to OMN-1234, closes OMN-5678",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+        )
+        assert result.passed
+        assert result.tickets_checked == ["OMN-5678"]
+
+    def test_no_closing_keyword_falls_back_to_all_mentions(
+        self, tmp_path: Path
+    ) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-1234")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-1234",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+        result = validate_pr_receipts(
+            pr_body="Working on OMN-1234",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+        )
+        assert result.passed
+        assert result.tickets_checked == ["OMN-1234"]
+
+    def test_pr_title_fallback_when_body_has_no_closing_keywords(
+        self, tmp_path: Path
+    ) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-9084")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-9084",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+        result = validate_pr_receipts(
+            pr_body="See description in the title",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            pr_title="fix(OMN-9084): some fix",
+        )
+        assert result.passed
+        assert result.tickets_checked == ["OMN-9084"]
+
+    def test_closing_keyword_variants(self, tmp_path: Path) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-1111")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-1111",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+        for keyword in ("Closes", "Fixes", "Resolves", "Implements"):
+            result = validate_pr_receipts(
+                pr_body=f"{keyword} OMN-1111",
+                contracts_dir=contracts,
+                receipts_dir=receipts,
+            )
+            assert result.passed, f"Failed for keyword: {keyword}"
+
+    def test_no_title_no_body_tickets_fails(self, tmp_path: Path) -> None:
+        result = validate_pr_receipts(
+            pr_body="no tickets here",
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+            pr_title="also no tickets",
+        )
+        assert not result.passed
+        assert "cites no" in result.message.lower()
