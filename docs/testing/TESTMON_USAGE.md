@@ -62,7 +62,7 @@ uv run pytest tests/
 
 ## CI/CD Integration Strategy
 
-See [CI_TEST_STRATEGY.md](./CI_TEST_STRATEGY.md) for recommended CI test approach.
+Use the active CI workflow and [CI Monitoring Guide](../ci/CI_MONITORING_GUIDE.md) for current CI test behavior.
 
 ## When Testmon May Miss Tests
 
@@ -120,7 +120,6 @@ uv run pytest --testmon-noselect
 
 ## Related Documentation
 
-- [CI Test Strategy](./CI_TEST_STRATEGY.md) - Comprehensive CI/CD test approach
 - [Testing Guide](../guides/TESTING_GUIDE.md) - Overall testing philosophy
 - [pytest Documentation](https://docs.pytest.org/) - pytest reference
 

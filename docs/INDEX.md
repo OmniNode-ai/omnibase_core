@@ -9,6 +9,8 @@ Welcome to the ONEX Core (`omnibase_core`) documentation.
 | Source | Purpose | Authority |
 |--------|---------|-----------|
 | **[CLAUDE.md](../CLAUDE.md)** | Coding standards, rules, conventions | **Authoritative** - definitive rules for agents and developers |
+| **[README.md](../README.md)** | Repo entrypoint, ownership boundary, start paths | Authoritative human entrypoint |
+| **[docs/INDEX.md](INDEX.md)** | Canonical docs map | Authoritative docs index |
 | **docs/** | Explanations, examples, tutorials, references | Supplementary - context and how-to guidance |
 
 **When in conflict, CLAUDE.md takes precedence.** This separation ensures:
@@ -18,6 +20,7 @@ Welcome to the ONEX Core (`omnibase_core`) documentation.
 
 **Quick Reference:**
 - Need a rule? Check [CLAUDE.md](../CLAUDE.md)
+- Need the repo role and start path? Check [README.md](../README.md)
 - Need an explanation? Check [docs/](.)
 - Need an example? Check [docs/guides/](guides/node-building/README.md) or [docs/patterns/](patterns/CIRCUIT_BREAKER_PATTERN.md)
 
@@ -50,6 +53,7 @@ Welcome to the ONEX Core (`omnibase_core`) documentation.
 | See a complete tutorial | [Node Building Guide](guides/node-building/README.md) |
 | Use a production template | [Node Templates](guides/templates/COMPUTE_NODE_TEMPLATE.md) |
 | Understand the architecture | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
+| Find validator ownership | [Validation Ownership](reference/VALIDATION_OWNERSHIP.md) |
 | Handle errors properly | [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md) |
 | Find implementation patterns | [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md) |
 | Run the demo system | [Beta Demo Guide](demo/BETA_DEMO_GUIDE.md) |
@@ -64,11 +68,12 @@ New to ONEX? Start here.
 
 | Document | Description |
 |----------|-------------|
-| [Installation](getting-started/installation.md) | Environment setup with Poetry |
+| [Installation](getting-started/installation.md) | Environment setup |
 | [Quick Start](getting-started/QUICK_START.md) | First 10 minutes with omnibase_core |
 | [First Node](getting-started/FIRST_NODE.md) | Build your first simple node |
 | [README](../README.md) | Project overview and setup |
 | [CONTRIBUTING](../CONTRIBUTING.md) | How to contribute |
+| [SECURITY](../SECURITY.md) | Security reporting and validator expectations |
 
 ### Guides
 
@@ -114,6 +119,7 @@ Understand how ONEX works.
 
 | Document | Description |
 |----------|-------------|
+| [Architecture Index](architecture/README.md) | Current architecture map and migration/history boundary |
 | [Architecture Overview](architecture/overview.md) | High-level system design |
 | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX node archetypes |
 | [Canonical Execution Shapes](architecture/CANONICAL_EXECUTION_SHAPES.md) | Allowed/forbidden data flow patterns |
@@ -150,6 +156,7 @@ Comprehensive reference documentation.
 | [Enums API](reference/api/enums.md) | Enumeration reference |
 | [Utils API](reference/api/utils.md) | Utility function reference |
 | [Service Wrappers](reference/SERVICE_WRAPPERS.md) | Pre-composed node classes |
+| [Validation Ownership](reference/VALIDATION_OWNERSHIP.md) | Core-owned validator entrypoints and downstream consumption |
 | [Validation Framework](reference/VALIDATION_FRAMEWORK.md) | Validation tools reference |
 | [Contract Validator API](reference/CONTRACT_VALIDATOR_API.md) | Contract validation API |
 | [CLAUDE.md](../CLAUDE.md) | Coding standards and rules |
@@ -214,11 +221,28 @@ Testing documentation and CI/CD.
 | Document | Description |
 |----------|-------------|
 | [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies |
+| [Validation Ownership](reference/VALIDATION_OWNERSHIP.md) | Which validators Core owns and how downstream repos consume them |
+| [Topic Validation Status](validation/TOPIC_VALIDATION_STATUS.md) | Current topic-validator status and cleanup boundary |
 | [Integration Testing](testing/INTEGRATION_TESTING.md) | Integration test patterns |
 | [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) | CI performance monitoring |
 | [Parallel Testing](testing/PARALLEL_TESTING.md) | Parallel test execution |
-| [CI Test Strategy](testing/CI_TEST_STRATEGY.md) | CI/CD test strategy |
 | [Core Purity Failure](ci/CORE_PURITY_FAILURE.md) | Fixing purity check failures |
+
+### Historical And Migration Context
+
+Dated plans and migration notes are context by default, not current source of
+truth. Promote current runtime behavior, ownership, or workflow guidance into
+stable architecture, reference, runbook, or migration docs before linking it as
+primary guidance.
+
+Historical reports, design drafts, old benchmark snapshots, and one-off
+diagnosis files are not primary `omnibase_core` documentation. Current
+repository-relevant guidance must be extracted into stable Core architecture,
+reference, guide, standard, or decision docs.
+
+Current boundary for topic cleanup:
+
+- Current topic validation is documented in [Validation Ownership](reference/VALIDATION_OWNERSHIP.md) and [Topic Validation Status](validation/TOPIC_VALIDATION_STATUS.md).
 
 ### Demo
 

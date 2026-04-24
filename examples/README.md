@@ -1,8 +1,8 @@
 # Example Contracts - Deprecation Notice
 
-> **v1.0.5 Compliance Notice**: Per `CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md` Fix 56
-> (Example Contract Location), example workflow contracts MUST NOT reside in
-> `omnibase_core`. This directory is scheduled for migration.
+> **Compliance Notice**: Example workflow contracts should not be treated as
+> current Core product documentation. Current example-contract guidance must
+> live in this repository when it affects this repository.
 
 ## Current Status: DEPRECATED
 
@@ -42,5 +42,5 @@ these files will be updated to use the new location after migration.
 ## Related
 
 - **Ticket**: OMN-664 ([BETA-07] NodeOrchestrator v1.0.5 Compliance)
-- **Spec**: `docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md`
+- **Spec context**: example-contract location guidance summarized in this file
 - **Fix Reference**: v1.0.5 Fix 56 - Example Contract Location

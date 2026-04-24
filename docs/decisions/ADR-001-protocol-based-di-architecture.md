@@ -447,7 +447,7 @@ The codebase contains TODO comments that are often misinterpreted as "legacy reg
 ```python
 # FUTURE (v2.0): Protocol integrations now available in omnibase-spi v0.2.0 (at time of writing)
 # These protocols enable external service discovery and database pooling.
-# Ready for implementation - Tracking: https://github.com/OmniNode-ai/omnibase_spi/issues/42
+# Ready for implementation - Tracking: internal protocol follow-up
 ```
 
 ### get_service Method - model_onex_container.py (commit 20d603dd)

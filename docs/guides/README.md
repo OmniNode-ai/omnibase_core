@@ -82,7 +82,6 @@ Core development patterns and practices.
 | [Protocol Discovery Guide](./PROTOCOL_DISCOVERY_GUIDE.md) | Service discovery via protocols |
 | [Pipeline Hook Registry](./PIPELINE_HOOK_REGISTRY.md) | Registering and using pipeline hooks |
 | [Execution Corpus Guide](./EXECUTION_CORPUS_GUIDE.md) | Working with execution corpora |
-| [Version Field Automation Strategy](./VERSION_FIELD_AUTOMATION_STRATEGY.md) | Automating version field management |
 
 ### Testing and Performance Guides
 
