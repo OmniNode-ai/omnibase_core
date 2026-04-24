@@ -16,13 +16,16 @@ from __future__ import annotations
 
 from pydantic import ConfigDict, Field
 
+from omnibase_core.constants.constants_event_types import (
+    TOPIC_GIT_HOOK_EVENT as _CANONICAL,
+)
 from omnibase_core.models.events.model_runtime_event_base import (
     ModelRuntimeEventBase,
 )
 
 __all__ = ["ModelGitHookEvent", "TOPIC_GIT_HOOK_EVENT"]
 
-TOPIC_GIT_HOOK_EVENT = "onex.evt.platform.git-hook.v1"
+TOPIC_GIT_HOOK_EVENT = _CANONICAL
 
 
 class ModelGitHookEvent(ModelRuntimeEventBase):

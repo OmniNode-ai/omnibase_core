@@ -42,12 +42,14 @@ LOGGING_AUDIT_EVENT = "omninode.logging.audit.v1"
 LOGGING_SECURITY_EVENT = "omninode.logging.security.v1"
 
 # Contract registration events (OMN-1652)
-# NOTE: These are SHORT event type identifiers used for event classification and routing.
-# The full topic names (e.g., "onex.evt.contract-registered.v1") are defined alongside
-# the event models in omnibase_core.models.events.contract_registration.
 EVENT_TYPE_CONTRACT_REGISTERED = "contract-registered"
 EVENT_TYPE_CONTRACT_DEREGISTERED = "contract-deregistered"
 EVENT_TYPE_NODE_HEARTBEAT = "node-heartbeat"
+
+# Full Kafka topic names for contract registration events
+TOPIC_CONTRACT_REGISTERED_EVENT = "onex.evt.contract-registered.v1"
+TOPIC_CONTRACT_DEREGISTERED_EVENT = "onex.evt.contract-deregistered.v1"
+TOPIC_NODE_HEARTBEAT_EVENT = "onex.evt.node-heartbeat.v1"
 
 # Workflow automation event topics (OMN-2655, OMN-2813)
 # Normalized to 5-segment format: onex.{kind}.{producer}.{event}.v{n}
@@ -60,6 +62,16 @@ TOPIC_LINEAR_SNAPSHOT_EVENT = "onex.evt.platform.linear-snapshot.v1"
 # Production node communication uses contract-defined topics from contract.yaml.
 TOPIC_CLI_RUN_NODE_CMD = "onex.cmd.platform.run-node.v1"
 TOPIC_CLI_RUN_NODE_RESPONSE = "onex.evt.platform.run-node-response.v1"
+
+# Omniintelligence event topics
+TOPIC_EPISODE_BOUNDARY = "onex.evt.omniintelligence.episode-boundary.v1"
+
+# Validation event topics
+TOPIC_VALIDATION_RUN_COMPLETED_EVENT = "onex.evt.validation.cross-repo-run-completed.v1"
+TOPIC_VALIDATION_RUN_STARTED_EVENT = "onex.evt.validation.cross-repo-run-started.v1"
+TOPIC_VALIDATION_VIOLATIONS_BATCH_EVENT = (
+    "onex.evt.validation.cross-repo-violations-batch.v1"
+)
 
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as

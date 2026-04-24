@@ -13,9 +13,9 @@ Models:
     ModelNodeHeartbeatEvent: Node liveness heartbeat.
 
 Event Type Constants:
-    CONTRACT_REGISTERED_EVENT: "onex.evt.contract-registered.v1"
-    CONTRACT_DEREGISTERED_EVENT: "onex.evt.contract-deregistered.v1"
-    NODE_HEARTBEAT_EVENT: "onex.evt.node-heartbeat.v1"
+    CONTRACT_REGISTERED_EVENT: see TOPIC_CONTRACT_REGISTERED_EVENT in constants_event_types
+    CONTRACT_DEREGISTERED_EVENT: see TOPIC_CONTRACT_DEREGISTERED_EVENT in constants_event_types
+    NODE_HEARTBEAT_EVENT: see TOPIC_NODE_HEARTBEAT_EVENT in constants_event_types
 """
 
 from omnibase_core.models.events.contract_registration.model_contract_deregistered_event import (

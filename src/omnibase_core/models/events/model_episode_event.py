@@ -27,6 +27,10 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.constants.constants_event_types import (
+    TOPIC_EPISODE_BOUNDARY as _CANONICAL,
+)
+
 # JSON-safe value type for schemaless fields (decision snapshots, actions,
 # outcome metrics). These vary by surface and are stored as JSONB in the
 # read-model, so a recursive JSON type is the correct representation.
@@ -40,7 +44,7 @@ __all__ = [
     "TOPIC_EPISODE_BOUNDARY",
 ]
 
-TOPIC_EPISODE_BOUNDARY = "onex.evt.omniintelligence.episode-boundary.v1"
+TOPIC_EPISODE_BOUNDARY = _CANONICAL
 
 
 class ModelEpisodeEvent(BaseModel):

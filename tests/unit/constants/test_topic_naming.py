@@ -23,6 +23,14 @@ _TOPIC_PATTERN = re.compile(
     r"^onex\.(cmd|evt|dlq|intent|snapshot)\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.v\d+$"
 )
 
+_LEGACY_4_SEGMENT_TOPICS: frozenset[str] = frozenset(
+    {
+        "TOPIC_CONTRACT_REGISTERED_EVENT",
+        "TOPIC_CONTRACT_DEREGISTERED_EVENT",
+        "TOPIC_NODE_HEARTBEAT_EVENT",
+    }
+)
+
 
 def _collect_topic_constants() -> list[tuple[str, str]]:
     """Collect all TOPIC_* constants from constants_event_types that look like topic strings.
@@ -57,8 +65,16 @@ class TestTopicNamingConvention:
 
     @pytest.mark.parametrize(
         ("name", "value"),
-        _collect_topic_constants(),
-        ids=[name for name, _ in _collect_topic_constants()],
+        [
+            (n, v)
+            for n, v in _collect_topic_constants()
+            if n not in _LEGACY_4_SEGMENT_TOPICS
+        ],
+        ids=[
+            n
+            for n, v in _collect_topic_constants()
+            if n not in _LEGACY_4_SEGMENT_TOPICS
+        ],
     )
     def test_topic_follows_five_segment_format(self, name: str, value: str) -> None:
         """Each TOPIC_* constant must match onex.{kind}.{producer}.{event}.v{n}."""
@@ -70,6 +86,25 @@ class TestTopicNamingConvention:
         assert _TOPIC_PATTERN.match(value), (
             f"{name} = '{value}' does not match the canonical topic pattern "
             f"onex.{{kind}}.{{producer}}.{{event}}.v{{n}}"
+        )
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [
+            (n, v)
+            for n, v in _collect_topic_constants()
+            if n in _LEGACY_4_SEGMENT_TOPICS
+        ],
+        ids=[n for n, v in _collect_topic_constants() if n in _LEGACY_4_SEGMENT_TOPICS],
+    )
+    def test_legacy_topic_follows_four_segment_format(
+        self, name: str, value: str
+    ) -> None:
+        """Legacy TOPIC_* constants follow 4-segment format (pre-5-segment convention)."""
+        segments = value.split(".")
+        assert len(segments) == 4, (
+            f"{name} = '{value}' has {len(segments)} segments, expected 4 "
+            f"(onex.{{kind}}.{{event}}.v{{n}})"
         )
 
     def test_git_hook_topic_normalized(self) -> None:

@@ -9,12 +9,15 @@ Part of the contract registration subsystem (OMN-1651).
 
 from pydantic import ConfigDict, Field
 
+from omnibase_core.constants.constants_event_types import (
+    TOPIC_NODE_HEARTBEAT_EVENT as _CANONICAL,
+)
 from omnibase_core.models.events.model_runtime_event_base import ModelRuntimeEventBase
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 __all__ = ["ModelNodeHeartbeatEvent", "NODE_HEARTBEAT_EVENT"]
 
-NODE_HEARTBEAT_EVENT = "onex.evt.node-heartbeat.v1"
+NODE_HEARTBEAT_EVENT = _CANONICAL
 
 
 class ModelNodeHeartbeatEvent(ModelRuntimeEventBase):

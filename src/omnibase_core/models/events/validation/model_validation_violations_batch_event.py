@@ -35,6 +35,9 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
+from omnibase_core.constants.constants_event_types import (
+    TOPIC_VALIDATION_VIOLATIONS_BATCH_EVENT as _CANONICAL,
+)
 from omnibase_core.models.events.validation.model_validation_event_base import (
     ModelValidationEventBase,
 )
@@ -47,7 +50,7 @@ __all__ = [
     "VALIDATION_VIOLATIONS_BATCH_EVENT",
 ]
 
-VALIDATION_VIOLATIONS_BATCH_EVENT = "onex.evt.validation.cross-repo-violations-batch.v1"
+VALIDATION_VIOLATIONS_BATCH_EVENT = _CANONICAL
 
 
 class ModelValidationViolationsBatchEvent(ModelValidationEventBase):
