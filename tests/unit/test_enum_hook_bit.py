@@ -40,11 +40,11 @@ class TestEnumHookBit:
     def test_member_count_matches_inventory(self) -> None:
         assert len(list(EnumHookBit)) == _N_GATE
 
-    def test_default_mask_width_matches_enum(self) -> None:
+    def test_default_mask_covers_all_members(self) -> None:
         from omnibase_core.enums.enum_hook_bit import _DEFAULT_MASK
 
-        expected = (1 << len(EnumHookBit)) - 1
-        assert expected == _DEFAULT_MASK
+        for m in EnumHookBit:
+            assert _DEFAULT_MASK & m, f"{m.name} not covered by _DEFAULT_MASK"
 
     def test_default_mask_is_not_hardcoded_0xffffffff(self) -> None:
         from omnibase_core.enums.enum_hook_bit import _DEFAULT_MASK

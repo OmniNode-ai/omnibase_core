@@ -13,6 +13,8 @@ broken user config. A CLI warning on write is a follow-up (OMN-9614).
 
 from __future__ import annotations
 
+import functools
+import operator
 import os
 from enum import IntEnum, unique
 
@@ -89,10 +91,11 @@ class EnumHookBit(IntEnum):
     SESSION_START_ONEX_CLI_PIN_CHECK = 1 << 56
 
 
-# Default mask is derived dynamically from the enum width so adding the 65th
-# member does NOT silently truncate the default to 64 bits. The generator
-# (Task 3) emits the equivalent literal into hook_bits.sh at generation time.
-_DEFAULT_MASK: int = (1 << len(EnumHookBit)) - 1
+# Default mask ORs all actual member values — correct even after tombstones are
+# added (which lower len() but leave high bit positions in active members).
+# (1 << len()) - 1 would silently disable the highest bits once any member is
+# tombstoned. The generator (Task 3) emits the equivalent literal into hook_bits.sh.
+_DEFAULT_MASK: int = functools.reduce(operator.or_, (int(m) for m in EnumHookBit))
 
 
 def hook_enabled(bit: EnumHookBit, mask: int | None = None) -> bool:
@@ -102,7 +105,7 @@ def hook_enabled(bit: EnumHookBit, mask: int | None = None) -> bool:
         bit: The hook bit to test.
         mask: Explicit mask. If None, reads `ONEX_HOOKS_MASK` from env,
               accepts hex (`0x...`), binary (`0b...`), or decimal literal.
-              Malformed or missing => default mask (all-on, width-matched to enum).
+              Malformed or missing => default mask (all-on).
     """
     if mask is None:
         raw = os.environ.get("ONEX_HOOKS_MASK")
@@ -115,4 +118,4 @@ def hook_enabled(bit: EnumHookBit, mask: int | None = None) -> bool:
                 # Fail-open favors hook continuity over honoring broken user config.
                 # A CLI warning on write is a follow-up (OMN-9614).
                 mask = _DEFAULT_MASK
-    return bool(mask & int(bit))
+    return bool(mask & bit)
