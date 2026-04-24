@@ -27,6 +27,7 @@ def _make_entry_point(
     """Create a mock entry point with the given properties."""
     ep = MagicMock()
     ep.name = name
+    ep.value = f"{dist_name.replace('-', '_')}.{name}"
     ep.dist = MagicMock()
     ep.dist.name = dist_name
     ep.dist.version = dist_version
@@ -56,7 +57,7 @@ class TestDiscoverExternalNodes:
         ep = _make_entry_point("my_node", load_return=node_cls)
 
         with patch(_EP_MODULE, return_value=[ep]):
-            result = discover_external_nodes()
+            result = discover_external_nodes(load_classes=True)
 
         assert "my_node" in result
         node = result["my_node"]
@@ -65,6 +66,20 @@ class TestDiscoverExternalNodes:
         assert node.node_class is node_cls
         assert node.package_name == "my-plugin"
         assert node.package_version == "1.0.0"
+        assert node.entry_point_value == "my_plugin.my_node"
+
+    @pytest.mark.unit
+    def test_discover_does_not_import_entry_points_by_default(self) -> None:
+        ep = _make_entry_point(
+            "node_with_optional_deps", load_raises=ImportError("missing dependency")
+        )
+
+        with patch(_EP_MODULE, return_value=[ep]):
+            result = discover_external_nodes()
+
+        assert "node_with_optional_deps" in result
+        assert result["node_with_optional_deps"].node_class is None
+        ep.load.assert_not_called()
 
     @pytest.mark.unit
     def test_discover_skips_failing_entry_point(self) -> None:
@@ -73,7 +88,7 @@ class TestDiscoverExternalNodes:
         )
 
         with patch(_EP_MODULE, return_value=[ep]):
-            result = discover_external_nodes()
+            result = discover_external_nodes(load_classes=True)
 
         assert result == {}
 
@@ -89,7 +104,7 @@ class TestDiscoverExternalNodes:
         )
 
         with patch(_EP_MODULE, return_value=[ep_a, ep_b]):
-            result = discover_external_nodes()
+            result = discover_external_nodes(load_classes=True)
 
         # Should keep first registered
         assert len(result) == 1
@@ -109,7 +124,7 @@ class TestDiscoverExternalNodes:
 
         with patch(_EP_MODULE, return_value=[ep_a, ep_b]):
             with pytest.raises(NodeDiscoveryError, match="Duplicate entry-point name"):
-                discover_external_nodes(strict=True)
+                discover_external_nodes(strict=True, load_classes=True)
 
     @pytest.mark.unit
     def test_discover_rejects_non_class_entry_point(self) -> None:
@@ -117,7 +132,7 @@ class TestDiscoverExternalNodes:
         ep = _make_entry_point("func_node", load_return=lambda: None)
 
         with patch(_EP_MODULE, return_value=[ep]):
-            result = discover_external_nodes()
+            result = discover_external_nodes(load_classes=True)
 
         assert result == {}
 
@@ -128,7 +143,7 @@ class TestDiscoverExternalNodes:
         ep = _make_entry_point("contract_node", load_return=node_cls)
 
         with patch(_EP_MODULE, return_value=[ep]):
-            result = discover_external_nodes()
+            result = discover_external_nodes(load_classes=True)
 
         assert "contract_node" in result
 
@@ -139,7 +154,7 @@ class TestDiscoverExternalNodes:
         ep = _make_entry_point("typed_node", load_return=node_cls)
 
         with patch(_EP_MODULE, return_value=[ep]):
-            result = discover_external_nodes()
+            result = discover_external_nodes(load_classes=True)
 
         assert "typed_node" in result
 
@@ -150,7 +165,7 @@ class TestDiscoverExternalNodes:
         ep = _make_entry_point("handler_node", load_return=node_cls)
 
         with patch(_EP_MODULE, return_value=[ep]):
-            result = discover_external_nodes()
+            result = discover_external_nodes(load_classes=True)
 
         assert "handler_node" in result
         assert result["handler_node"].node_class is node_cls
@@ -162,6 +177,6 @@ class TestDiscoverExternalNodes:
         ep = _make_entry_point("plain_node", load_return=node_cls)
 
         with patch(_EP_MODULE, return_value=[ep]):
-            result = discover_external_nodes()
+            result = discover_external_nodes(load_classes=True)
 
         assert result == {}

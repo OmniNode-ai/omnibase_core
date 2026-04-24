@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import io
 import tarfile
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 from unittest.mock import patch
 
@@ -13,7 +14,10 @@ import click
 import pytest
 import yaml
 
-from omnibase_core.cli.cli_install import _install_oncp
+from omnibase_core.cli.cli_install import (
+    _install_oncp,
+    _resolve_entry_point_contract_path,
+)
 
 
 def _make_oncp(
@@ -28,7 +32,11 @@ def _make_oncp(
     archive = tmp_path / archive_name
 
     if contract is None:
-        contract = {"name": "test_node", "version": "1.0.0"}
+        contract = {
+            "name": "test_node",
+            "contract_version": {"major": 1, "minor": 0, "patch": 0},
+            "node_type": "COMPUTE_GENERIC",
+        }
 
     with tarfile.open(archive, "w:gz") as tar:
 
@@ -60,6 +68,32 @@ class TestInstallOncpMetadataValidation:
                 click.ClickException, match="'name' must be a non-empty"
             ):
                 _install_oncp(archive, dry_run=True, upgrade=False, verbose=False)
+
+
+@pytest.mark.unit
+class TestInstallEntrypointContractResolution:
+    """Entry-point contract lookup must not import node code."""
+
+    def test_resolves_contract_from_module_spec(self, tmp_path: Path) -> None:
+        node_dir = tmp_path / "node_pkg"
+        node_dir.mkdir()
+        contract = node_dir / "contract.yaml"
+        contract.write_text(
+            "name: node\ncontract_version: {major: 1, minor: 0, patch: 0}\n"
+            "node_type: COMPUTE_GENERIC\n",
+            encoding="utf-8",
+        )
+        spec = ModuleSpec("node_pkg", loader=None, is_package=True)
+        spec.submodule_search_locations = [str(node_dir)]
+
+        with patch(
+            "omnibase_core.cli.cli_install.importlib.util.find_spec",
+            return_value=spec,
+        ) as find_spec:
+            resolved = _resolve_entry_point_contract_path("node_pkg:Node")
+
+        assert resolved == contract
+        find_spec.assert_called_once_with("node_pkg")
 
     def test_missing_version_raises(self, tmp_path: Path) -> None:
         archive = _make_oncp(tmp_path, metadata={"name": "test_node"})
@@ -159,7 +193,13 @@ class TestInstallOncpPathTraversal:
             )
             _add(
                 "contract.yaml",
-                yaml.safe_dump({"name": "node", "version": "1.0.0"}).encode(),
+                yaml.safe_dump(
+                    {
+                        "name": "node",
+                        "contract_version": {"major": 1, "minor": 0, "patch": 0},
+                        "node_type": "COMPUTE_GENERIC",
+                    }
+                ).encode(),
             )
             traversal = tarfile.TarInfo(name="../escape.txt")
             traversal.size = 3
@@ -196,7 +236,13 @@ class TestInstallOncpPathTraversal:
             )
             _add(
                 "contract.yaml",
-                yaml.safe_dump({"name": "node", "version": "1.0.0"}).encode(),
+                yaml.safe_dump(
+                    {
+                        "name": "node",
+                        "contract_version": {"major": 1, "minor": 0, "patch": 0},
+                        "node_type": "COMPUTE_GENERIC",
+                    }
+                ).encode(),
             )
             absolute = tarfile.TarInfo(name="/tmp/absolute-escape.txt")
             absolute.size = 3
@@ -226,7 +272,10 @@ class TestInstallOncpAtomicity:
         archive = _make_oncp(
             tmp_path,
             metadata={"name": "node", "version": "1.0.0"},
-            contract={"version": "1.0.0"},
+            contract={
+                "contract_version": {"major": 1, "minor": 0, "patch": 0},
+                "node_type": "COMPUTE_GENERIC",
+            },
         )
         with patch(
             "omnibase_core.cli.cli_install._get_registry_dir",
@@ -246,7 +295,10 @@ class TestInstallOncpAtomicity:
         bad_archive = _make_oncp(
             tmp_path,
             metadata={"name": "node", "version": "2.0.0"},
-            contract={"version": "2.0.0"},
+            contract={
+                "contract_version": {"major": 2, "minor": 0, "patch": 0},
+                "node_type": "COMPUTE_GENERIC",
+            },
         )
 
         with patch(

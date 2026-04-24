@@ -352,9 +352,7 @@ def discover(ctx: click.Context, strict: bool) -> None:
     for name, node in sorted(nodes.items()):
         click.echo(f"  {name} ({node.package_name} {node.package_version})")
         if verbose:
-            click.echo(
-                f"    Class: {node.node_class.__module__}.{node.node_class.__name__}"
-            )
+            click.echo(f"    Entry point: {node.entry_point_value}")
 
 
 @cli.command()
