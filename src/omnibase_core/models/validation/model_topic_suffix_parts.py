@@ -25,7 +25,7 @@ Example:
     ...     producer="omnimemory",
     ...     event_name="intent-stored",
     ...     version=1,
-    ...     raw_suffix="onex.evt.omnimemory.intent-stored.v1",
+    ...     raw_suffix="onex.evt.omnimemory.intent-stored.v1",  # onex-topic-doc-example
     ... )
     >>> parts.kind
     'evt'
@@ -86,7 +86,7 @@ class ModelTopicSuffixParts(BaseModel):
         ...     producer="user-service",
         ...     event_name="account-created",
         ...     version=1,
-        ...     raw_suffix="onex.evt.user-service.account-created.v1",
+        ...     raw_suffix="onex.evt.user-service.account-created.v1",  # onex-topic-doc-example
         ... )
         >>> parts.producer
         'user-service'

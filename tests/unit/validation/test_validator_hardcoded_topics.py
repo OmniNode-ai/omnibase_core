@@ -463,3 +463,19 @@ class TestEdgeCases:
         env_issues = [i for i in result.issues if i.code == _RULE_TOPIC_ENV_VAR]
         assert len(env_issues) == 1
         assert env_issues[0].line_number == 3
+
+    def test_class_attribute_with_type_annotation_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        p = _write(
+            tmp_path,
+            """\
+            class MyPublisher:
+                INTENT_TOPIC: str = TOPIC_EVENT_PUBLISH_INTENT
+                OUTPUT_TOPIC: ClassVar[str] = SOME_TOPIC
+            """,
+        )
+        v = ValidatorHardcodedTopics(contract=_make_contract())
+        result = v.validate_file(p)
+        env_issues = [i for i in result.issues if i.code == _RULE_TOPIC_ENV_VAR]
+        assert len(env_issues) == 0
