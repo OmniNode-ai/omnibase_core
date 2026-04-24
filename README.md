@@ -61,7 +61,7 @@ Common imports:
 
 ```python
 from omnibase_core.nodes import NodeCompute
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core import ModelOnexError
 ```
 
 Core is a Python 3.12+ package. Package metadata, optional dependency groups,
@@ -142,7 +142,11 @@ surfaces. Dated plans and migration notes are historical or execution context
 unless a stable architecture, reference, runbook, or migration page explicitly
 promotes them.
 
-Current topic naming truth lives in Core topic validators and standards docs.
+Known active context:
+
+- The hardcoded-topic cleanup plan in the umbrella `omni_home` docs is an
+  execution plan, not the current architecture source of truth.
+- Current topic naming truth lives in Core topic validators and standards docs.
 
 ## License
 

@@ -1,0 +1,46 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-9623
+summary: "Add EnumModelRoutingBackend + EnumAgentTaskLifecycleType for A2A delegation bridge"
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "ci"
+    description: "omnibase_core PR checks pass including deploy-gate"
+    command: "gh pr checks 900 --repo OmniNode-ai/omnibase_core --watch"
+  - kind: "manual"
+    description: "Unit tests for both new enums pass"
+    command: "PYTHONPATH=src uv run pytest tests/unit/enums/test_enum_model_routing_backend.py tests/unit/enums/test_enum_agent_task_lifecycle_type.py
+      -v"
+  - kind: "manual"
+    description: "mypy --strict passes on both new enum files"
+    command: "PYTHONPATH=src uv run mypy src/omnibase_core/enums/enum_model_routing_backend.py src/omnibase_core/enums/enum_agent_task_lifecycle_type.py
+      --strict"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "21 unit tests across both new enum files pass"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "PYTHONPATH=src uv run pytest tests/unit/enums/test_enum_model_routing_backend.py
+          tests/unit/enums/test_enum_agent_task_lifecycle_type.py -v"
+  - id: "dod-002"
+    description: "mypy --strict clean on both new enum files"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "PYTHONPATH=src uv run mypy src/omnibase_core/enums/enum_model_routing_backend.py
+          src/omnibase_core/enums/enum_agent_task_lifecycle_type.py --strict"
+  - id: "dod-003"
+    description: "Post-deploy runtime smoke: both enums are importable in the runtime container"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "docker exec ${RUNTIME_CONTAINER:-omninode-runtime} python -c \"from omnibase_core.enums.enum_model_routing_backend
+          import EnumModelRoutingBackend; from omnibase_core.enums.enum_agent_task_lifecycle_type import
+          EnumAgentTaskLifecycleType; assert EnumModelRoutingBackend.BIFROST and EnumAgentTaskLifecycleType.COMPLETED\""
