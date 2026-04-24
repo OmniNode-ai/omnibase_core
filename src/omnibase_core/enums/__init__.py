@@ -228,6 +228,9 @@ from .enum_injection_scope import EnumInjectionScope
 from .enum_invariant_report_status import EnumInvariantReportStatus
 from .enum_invariant_type import EnumInvariantType
 
+# Invocation kind enum (OMN-9621 - A2A delegation routing axis)
+from .enum_invocation_kind import EnumInvocationKind
+
 # Label violation type enum (OMN-1367 - observability cardinality)
 from .enum_label_violation_type import EnumLabelViolationType
 
@@ -720,6 +723,7 @@ __all__ = [
     "EnumRegistryType",
     # Service-related domain (includes DI container OMN-1308)
     "EnumInjectionScope",
+    "EnumInvocationKind",
     "EnumServiceHealthStatus",
     "EnumServiceLifecycle",
     "EnumServiceMode",
