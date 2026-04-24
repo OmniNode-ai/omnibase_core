@@ -109,18 +109,6 @@ BANNED_LLM_ATTR_CALLS: frozenset[tuple[str, str]] = frozenset(
     }
 )
 
-SUBPROCESS_ORCHESTRATION_CALLS: frozenset[tuple[str, str]] = frozenset(
-    {
-        ("subprocess", "run"),
-        ("subprocess", "Popen"),
-        ("subprocess", "call"),
-        ("subprocess", "check_call"),
-        ("subprocess", "check_output"),
-        ("os", "system"),
-        ("os", "popen"),
-    }
-)
-
 SUBPROCESS_BANNED_NAMES: frozenset[str] = frozenset(
     {"run", "Popen", "call", "check_call", "check_output"}
 )
@@ -303,7 +291,25 @@ class PythonBlockAnalyzer(ast.NodeVisitor):
                     )
         if node.module is not None:
             banned = _banned_module_root(node.module)
-            if banned is not None:
+            # Also catch ``from google import generativeai`` where the module
+            # root is ``google`` but the name completes a banned SDK path.
+            banned_alias: str | None = None
+            if banned is None:
+                banned_alias = next(
+                    (
+                        alias.name
+                        for alias in node.names
+                        if _banned_module_root(f"{node.module}.{alias.name}")
+                        is not None
+                    ),
+                    None,
+                )
+            if banned is not None or banned_alias is not None:
+                import_repr = (
+                    f"from {node.module} import {banned_alias}"
+                    if banned_alias is not None
+                    else f"from {node.module} import ..."
+                )
                 self.violations.append(
                     RoutingViolation(
                         skill_name=self.skill_name,
@@ -311,7 +317,7 @@ class PythonBlockAnalyzer(ast.NodeVisitor):
                         check=CHECK_LLM_IMPORT,
                         line_number=self._abs_line(node.lineno),
                         message=(
-                            f"LLM SDK import 'from {node.module} import ...' is not "
+                            f"LLM SDK import '{import_repr}' is not "
                             "allowed in a deterministic skill shim."
                         ),
                     )
@@ -507,8 +513,12 @@ def _line_is_dispatch(tokens: tuple[str, ...], raw: str) -> bool:
     if not head_tokens:
         return False
 
-    if head_tokens[0] == "onex" and len(head_tokens) >= 3:
-        subcmd = head_tokens[1]
+    # Accept both ``onex run-node X`` and ``uv run onex run-node X``.
+    onex_tokens = head_tokens
+    if len(head_tokens) >= 2 and head_tokens[0] == "uv" and head_tokens[1] == "run":
+        onex_tokens = head_tokens[2:]
+    if onex_tokens and onex_tokens[0] == "onex" and len(onex_tokens) >= 3:
+        subcmd = onex_tokens[1]
         if subcmd in {"run", "run-node", "node"}:
             return True
 
