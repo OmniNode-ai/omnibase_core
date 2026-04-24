@@ -35,7 +35,7 @@ def _config_path() -> Path:
 
 
 @click.group("config")
-def config_group() -> None:
+def config_group() -> None:  # stub-ok
     """Manage ONEX configuration."""
 
 

@@ -113,7 +113,7 @@ def hook_enabled(bit: EnumHookBit, mask: int | None = None) -> bool:
     """
     if mask is not None:
         if mask < 0:
-            return True  # fail-open: negative masks silently disable bits
+            return True  # fallback-ok: reject negative explicit mask, preserve hook continuity
         return bool(mask & int(bit))
     raw = os.environ.get("ONEX_HOOKS_MASK")
     if raw is None:
@@ -125,5 +125,5 @@ def hook_enabled(bit: EnumHookBit, mask: int | None = None) -> bool:
     ):  # fallback-ok: fail-open on malformed mask favors hook continuity
         return True
     if parsed < 0:
-        return True  # fail-open: reject negative masks from env
+        return True  # fallback-ok: reject negative env mask, preserve hook continuity
     return bool(parsed & int(bit))

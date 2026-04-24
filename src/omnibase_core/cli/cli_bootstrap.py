@@ -16,7 +16,7 @@ def _config_path() -> Path:
 
 
 @click.group("bootstrap")
-def bootstrap() -> None:
+def bootstrap() -> None:  # stub-ok
     """Bootstrap commands for ONEX standalone configuration."""
 
 
