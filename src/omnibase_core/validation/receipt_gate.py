@@ -68,6 +68,7 @@ def _extract_ticket_ids(pr_body: str, pr_title: str | None = None) -> list[str]:
     closing_matches = CLOSING_KEYWORD_PATTERN.findall(pr_body)
     if closing_matches:
         return sorted({f"OMN-{m}" for m in closing_matches})
+    # fallback-ok: Title ticket extraction is only used when body has no closing-keyword ticket.
     if pr_title:
         title_matches = TICKET_PATTERN.findall(pr_title)
         if title_matches:
