@@ -46,3 +46,12 @@ dod_evidence:
         check_value: "python3 -c \"import re; p=re.compile(r'\\\\b(?:Closes|Fixes|Resolves|Implements)\\\\b[:\\\\s]+OMN-(\\\\d+)\\\\b',
           re.IGNORECASE); assert not p.search('discloses OMN-1234'); assert p.search('Closes: OMN-1234');
           print('PASS')\""
+  - id: dod-004
+    description: "Closing-keyword regex verified on deployed runtime: import succeeds and CLOSING_KEYWORD_PATTERN
+      matches expected forms"
+    source: generated
+    checks:
+      - check_type: command
+        check_value: "docker exec omninode-runtime python -c \"from omnibase_core.validation.receipt_gate
+          import CLOSING_KEYWORD_PATTERN; assert CLOSING_KEYWORD_PATTERN.search('Closes OMN-9574'); print('deploy-verify
+          OK')\""
