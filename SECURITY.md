@@ -28,8 +28,8 @@ Run the relevant validators before changing security-sensitive code, docs, or
 configuration:
 
 ```bash
-uv run python scripts/validation/validate-secrets.py src/
-uv run python scripts/validation/validate-hardcoded-env-vars.py src/
+uv run python scripts/validation/validate-secrets.py docs/ tests/ src/
+uv run python scripts/validation/validate-hardcoded-env-vars.py docs/ tests/ src/
 uv run check-local-paths docs src scripts
 uv run onex-validate-links --verbose
 ```
