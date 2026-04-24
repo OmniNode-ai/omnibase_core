@@ -76,9 +76,12 @@ class TestModelConcurrencyContractSpecValidation:
         with pytest.raises(ValidationError):
             ModelConcurrencyContractSpec(max_parallel=-3)
 
-    def test_unknown_field_rejected(self) -> None:
-        with pytest.raises(ValidationError):
-            ModelConcurrencyContractSpec(max_parallel=2, bogus_field=True)  # type: ignore[call-arg]
+    def test_unknown_field_ignored_for_forward_compat(self) -> None:
+        """Contract-facing models use ``extra='ignore'`` so future YAML
+        contracts declaring fields this model doesn't know about still load."""
+        spec = ModelConcurrencyContractSpec(max_parallel=2, bogus_field=True)  # type: ignore[call-arg]
+        assert spec.max_parallel == 2
+        assert not hasattr(spec, "bogus_field")
 
     def test_wrong_type_for_model_concurrency_aware_rejected(self) -> None:
         with pytest.raises(ValidationError):

@@ -66,7 +66,7 @@ class ModelConcurrencyContractSpec(BaseModel):
     )
 
     model_config = ConfigDict(
-        extra="forbid",
+        extra="ignore",
         validate_assignment=True,
         validate_default=True,
     )
