@@ -95,6 +95,10 @@ class TestEnumAgentCapability:
         """Test that language capability enum value is present."""
         assert EnumAgentCapability.MULTILINGUAL.value == "multilingual"
 
+    def test_enum_values_task_management(self):
+        """Test that task management capability enum values are present."""
+        assert EnumAgentCapability.TECH_DEBT_TRIAGE.value == "tech_debt_triage"
+
     def test_string_representation(self):
         """Test string representation of enum values."""
         # Note: EnumAgentCapability doesn't override __str__, so it uses default
@@ -210,14 +214,15 @@ class TestEnumAgentCapabilityIntegration:
     def test_enum_iteration(self):
         """Test iterating over enum values."""
         capabilities = list(EnumAgentCapability)
-        # Should have 22 capabilities total
-        assert len(capabilities) == 22
+        # Should have 23 capabilities total
+        assert len(capabilities) == 23
 
         # Verify key capabilities are present
         capability_values = [c.value for c in capabilities]
         assert "code_generation" in capability_values
         assert "reasoning" in capability_values
         assert "multimodal" in capability_values
+        assert "tech_debt_triage" in capability_values
 
     def test_json_serialization(self):
         """Test JSON serialization compatibility."""

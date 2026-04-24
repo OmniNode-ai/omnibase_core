@@ -50,6 +50,9 @@ class EnumAgentCapability(StrValueHelper, str, Enum):
     # Language support
     MULTILINGUAL = "multilingual"
 
+    # Task management
+    TECH_DEBT_TRIAGE = "tech_debt_triage"
+
     def is_code_related(self) -> bool:
         """Check if this is a code-related capability."""
         return self.value.startswith("code_")
