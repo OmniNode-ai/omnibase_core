@@ -113,7 +113,7 @@ jobs:
           if [ -z "$PR_ID" ] || [ "$PR_ID" = "null" ]; then
             echo "could not resolve PR id"; exit 0
           fi
-          if output=$(gh api graphql -f query='mutation($prId:ID!){enqueuePullRequest(input:{pullRequestId:$prId,mergeMethod:SQUASH}){mergeQueueEntry{position}}}' -f prId="$PR_ID" 2>&1); then
+          if output=$(gh api graphql -f query='mutation($prId:ID!){enqueuePullRequest(input:{pullRequestId:$prId}){mergeQueueEntry{position}}}' -f prId="$PR_ID" 2>&1); then
             echo "enqueued: $output"
           else
             # Tolerate only known benign states.
