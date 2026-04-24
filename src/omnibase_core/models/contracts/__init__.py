@@ -96,6 +96,7 @@ from .model_cli_contribution import (
     ModelCliInvocation,
 )
 from .model_compensation_plan import ModelCompensationPlan
+from .model_concurrency_contract_spec import ModelConcurrencyContractSpec
 from .model_condition_value_list import ModelConditionValueList
 from .model_conflict_resolution_config import ModelConflictResolutionConfig
 from .model_consumed_event_entry import ModelConsumedEventEntry
@@ -266,6 +267,7 @@ __all__ = [
     "ModelOutputTransformationConfig",
     "ModelParallelConfig",
     "ModelMemoryManagementConfig",
+    "ModelConcurrencyContractSpec",
     "ModelPerformanceRequirements",
     "ModelReductionConfig",
     "ModelStreamingConfig",
