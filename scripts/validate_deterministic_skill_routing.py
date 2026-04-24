@@ -464,6 +464,21 @@ def _tokenize_shell(block: CodeBlock) -> list[ShellLine]:
                 tokens=tokens,
             )
         )
+    if buffer:
+        assert buffer_start is not None
+        logical = " ".join(segment.strip() for segment in buffer).strip()
+        if logical and not logical.startswith("#"):
+            try:
+                tokens = tuple(shlex.split(logical, comments=True, posix=True))
+            except ValueError:
+                tokens = (logical,)
+            result.append(
+                ShellLine(
+                    abs_line=block.start_line + buffer_start,
+                    raw=logical,
+                    tokens=tokens,
+                )
+            )
     return result
 
 
@@ -519,7 +534,9 @@ def _line_is_dispatch(tokens: tuple[str, ...], raw: str) -> bool:
         onex_tokens = head_tokens[2:]
     if onex_tokens and onex_tokens[0] == "onex" and len(onex_tokens) >= 3:
         subcmd = onex_tokens[1]
-        if subcmd in {"run", "run-node", "node"}:
+        target = onex_tokens[2]
+        invalid_target = target.startswith("-") or "<" in target or ">" in target
+        if subcmd in {"run", "run-node", "node"} and not invalid_target:
             return True
 
     # Kafka publish with onex.cmd.* topic anywhere in the command.
@@ -539,7 +556,8 @@ def _is_wrapped_dispatch(raw: str) -> bool:
     We detect the wrapper pattern when one of the "-c" wrappers contains the
     onex command string literally.
     """
-    if "onex run" not in raw and "onex node" not in raw:
+    lowered = raw.lower()
+    if "onex" not in lowered:
         return False
     wrapper_prefixes = (
         "python -c",
@@ -548,8 +566,9 @@ def _is_wrapped_dispatch(raw: str) -> bool:
         "sh -c",
         "zsh -c",
     )
-    lowered = raw.lower()
-    return any(prefix in lowered for prefix in wrapper_prefixes)
+    if not any(prefix in lowered for prefix in wrapper_prefixes):
+        return False
+    return re.search(r"\bonex\b[^A-Za-z0-9]+(?:run-node|run|node)\b", lowered) is not None
 
 
 def _is_prose_fallback(line: ShellLine) -> bool:
@@ -562,7 +581,14 @@ def _is_prose_fallback(line: ShellLine) -> bool:
     We require a prose verb at the head of the command (after env assignments),
     and the raw line must contain a word hinting at fallback / degrade / prose.
     """
-    head = line.tokens[0] if line.tokens else ""
+    idx = 0
+    while idx < len(line.tokens) and "=" in line.tokens[idx] and not line.tokens[idx].startswith("-"):
+        name = line.tokens[idx].split("=", 1)[0]
+        if name and name.replace("_", "").isalnum() and name[0].isalpha():
+            idx += 1
+            continue
+        break
+    head = line.tokens[idx] if idx < len(line.tokens) else ""
     if head not in _PROSE_FALLBACK_VERBS:
         return False
     hint_re = re.compile(
