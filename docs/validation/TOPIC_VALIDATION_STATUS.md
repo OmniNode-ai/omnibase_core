@@ -46,10 +46,10 @@ Failure categories:
 
 ## Cleanup Boundary
 
-The umbrella plan
-`docs/plans/2026-04-24-omnibase-core-hardcoded-topics-cleanup.md` tracks cleanup
-sequencing. That plan is execution context, not the current topic architecture
-source of truth.
+Cleanup sequencing was executed across PRs #890 (OMN-9589, OMN-9588, OMN-9591)
+and #892 (OMN-9586, OMN-9587). Remaining violations are tracked in OMN-9599.
+That history is execution context, not the current topic architecture source of
+truth.
 
 Current truth lives in:
 

@@ -61,7 +61,7 @@ Common imports:
 
 ```python
 from omnibase_core.nodes import NodeCompute
-from omnibase_core.models import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 ```
 
 Core is a Python 3.12+ package. Package metadata, optional dependency groups,
