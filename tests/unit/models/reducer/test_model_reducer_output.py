@@ -1773,3 +1773,85 @@ class TestModelReducerOutputImmutability:
         # to model fields, not the contents of those fields
         output.result["data"]["values"].append(4)
         assert output.result["data"]["values"] == [1, 2, 3, 4]
+
+
+@pytest.mark.unit
+class TestFsmMetadataExtrasInvariant:
+    """ModelReducerOutput must reject divergent fsm_metadata vs metadata extras."""
+
+    def _fsm(self, **overrides) -> "ModelReducerFsmMetadata":
+        from omnibase_core.models.reducer.model_reducer_fsm_metadata import (
+            ModelReducerFsmMetadata,
+        )
+
+        defaults = {
+            "fsm_state": "running",
+            "fsm_previous_state": "pending",
+            "fsm_transition_success": True,
+            "fsm_transition_name": "start",
+            "failure_reason": None,
+            "failed_conditions": None,
+            "error": None,
+        }
+        defaults.update(overrides)
+        return ModelReducerFsmMetadata(**defaults)
+
+    def test_construction_with_matching_extras_succeeds(self):
+        fsm = self._fsm()
+        metadata = ModelReducerMetadata(**fsm.to_dict())
+        output = ModelReducerOutput[int](
+            result=1,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=0.0,
+            items_processed=1,
+            metadata=metadata,
+            fsm_metadata=fsm,
+        )
+        assert output.fsm_metadata is fsm
+
+    def test_construction_with_missing_extras_succeeds(self):
+        # Overlapping-keys rule: absent extras are not a conflict.
+        fsm = self._fsm()
+        output = ModelReducerOutput[int](
+            result=1,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=0.0,
+            items_processed=1,
+            metadata=ModelReducerMetadata(),
+            fsm_metadata=fsm,
+        )
+        assert output.fsm_metadata is fsm
+
+    def test_construction_with_divergent_extras_raises(self):
+        fsm = self._fsm(fsm_state="running")
+        divergent_extras = dict(fsm.to_dict())
+        divergent_extras["fsm_state"] = "halted"
+        metadata = ModelReducerMetadata(**divergent_extras)
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelReducerOutput[int](
+                result=1,
+                operation_id=uuid4(),
+                reduction_type=EnumReductionType.FOLD,
+                processing_time_ms=0.0,
+                items_processed=1,
+                metadata=metadata,
+                fsm_metadata=fsm,
+            )
+        # ModelOnexError wraps user-supplied context under additional_context.context.
+        mismatched = exc_info.value.context["additional_context"]["context"][
+            "mismatched_keys"
+        ]
+        assert "fsm_state" in mismatched
+
+    def test_construction_without_fsm_metadata_skips_validator(self):
+        output = ModelReducerOutput[int](
+            result=1,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=0.0,
+            items_processed=1,
+            metadata=ModelReducerMetadata(fsm_state="running"),
+        )
+        assert output.fsm_metadata is None

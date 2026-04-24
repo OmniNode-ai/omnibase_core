@@ -18,13 +18,16 @@ import math
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
 from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.models.reducer.model_reducer_fsm_metadata import (
+    ModelReducerFsmMetadata,
+)
 
 
 class ModelReducerOutput[T_Output](BaseModel):
@@ -97,6 +100,13 @@ class ModelReducerOutput[T_Output](BaseModel):
         metadata: Typed metadata for tracking and correlation (source, trace_id,
             correlation_id, group_key, partition_id, window_id, tags, trigger).
             Replaces dict[str, str] with ModelReducerMetadata for type safety.
+            FSM keys (fsm_state, fsm_previous_state, etc.) are also stored as
+            extras on this field for dict-compatible consumers; use ``fsm_metadata``
+            for typed access.
+        fsm_metadata: Typed FSM metadata carrying the 7-key contract (OMN-597).
+            Populated by ``NodeReducer.process`` when an FSM transition executes.
+            ``None`` for non-FSM reducer outputs. Logically consistent with the
+            FSM extras in ``metadata`` — both represent the same transition data.
         timestamp: When this output was created (auto-generated).
 
     Migration from dict[str, str] metadata:
@@ -175,6 +185,14 @@ class ModelReducerOutput[T_Output](BaseModel):
         default_factory=ModelReducerMetadata,
         description="Typed metadata for tracking and correlation (source, trace_id, "
         "correlation_id, group_key, partition_id, window_id, tags, trigger)",
+    )
+    fsm_metadata: ModelReducerFsmMetadata | None = Field(
+        default=None,
+        description=(
+            "Typed 7-key FSM metadata contract (OMN-597). Populated by NodeReducer.process "
+            "when an FSM transition executes; None for non-FSM outputs. Logically "
+            "consistent with the FSM extra keys in `metadata`."
+        ),
     )
     timestamp: datetime = Field(default_factory=datetime.now)
 
@@ -257,3 +275,30 @@ class ModelReducerOutput[T_Output](BaseModel):
                 },
             )
         return v
+
+    @model_validator(mode="after")
+    def _enforce_fsm_metadata_extras_consistency(
+        self,
+    ) -> "ModelReducerOutput[T_Output]":
+        # When fsm_metadata is set, every FSM key present in metadata extras must
+        # match its counterpart in the typed model. Prevents constructing an
+        # output with divergent typed-vs-dict FSM state outside NodeReducer.process.
+        if self.fsm_metadata is None:
+            return self
+        fsm_dict = self.fsm_metadata.to_dict()
+        extras = self.metadata.model_extra or {}
+        mismatched = sorted(
+            key
+            for key, value in fsm_dict.items()
+            if key in extras and extras[key] != value
+        )
+        if mismatched:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=(
+                    "fsm_metadata and metadata extras must carry identical FSM "
+                    "values for overlapping keys"
+                ),
+                context={"mismatched_keys": mismatched},
+            )
+        return self

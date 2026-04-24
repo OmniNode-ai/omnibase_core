@@ -37,6 +37,9 @@ from omnibase_core.models.projectors.model_projection_intent import (
     ModelProjectionIntent,
 )
 from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.models.reducer.model_reducer_fsm_metadata import (
+    ModelReducerFsmMetadata,
+)
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 from omnibase_core.models.reducer.payloads.model_payload_projection_intent import (
@@ -441,17 +444,25 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         #                            an unexpected exception path; None on success
         failure_reason = fsm_result.error if not fsm_result.success else None
         error_value = fsm_result.error if not fsm_result.success else None
-        output_metadata = input_data.metadata.model_copy(
-            update={
-                "fsm_state": fsm_result.new_state,
-                "fsm_previous_state": fsm_result.old_state,
-                "fsm_transition_success": fsm_result.success,
-                "fsm_transition_name": fsm_result.transition_name,
-                "failure_reason": failure_reason,
-                "failed_conditions": None,
-                "error": error_value,
-            }
+
+        # Build the typed FSM metadata model (OMN-597).
+        # This is the single source of truth for all 7 contract keys; the dict
+        # extras below are derived from it to guarantee logical consistency.
+        fsm_metadata = ModelReducerFsmMetadata(
+            fsm_state=fsm_result.new_state,
+            fsm_previous_state=fsm_result.old_state,
+            fsm_transition_success=fsm_result.success,
+            fsm_transition_name=fsm_result.transition_name,
+            failure_reason=failure_reason,
+            failed_conditions=None,
+            error=error_value,
         )
+        # Derive the dict representation from the typed model.
+        # Using to_dict() guarantees the extras and the typed field stay in sync —
+        # any future field addition in ModelReducerFsmMetadata propagates here
+        # automatically without a second manual update.
+        fsm_dict = fsm_metadata.to_dict()
+        output_metadata = input_data.metadata.model_copy(update=dict(fsm_dict))
         # Enforce 7-key contract: raises ModelOnexError if any key is missing.
         _validate_fsm_metadata_keys(output_metadata)
 
@@ -478,7 +489,8 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             streaming_mode=input_data.streaming_mode,
             batches_processed=1,
             intents=all_intents,  # FSM intents + projection intents
-            metadata=output_metadata,  # Typed metadata with FSM fields
+            metadata=output_metadata,  # Typed metadata with FSM dict extras
+            fsm_metadata=fsm_metadata,  # Typed 7-key FSM metadata (OMN-597)
         )
 
         return output
