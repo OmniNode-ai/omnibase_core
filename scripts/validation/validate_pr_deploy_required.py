@@ -67,8 +67,9 @@ RUNTIME_PATH_PATTERNS = [
     "src/*/services/**/*.py",
     "src/*/cli/*.py",
     "src/*/cli/**/*.py",
-    # Contract files trigger deploy (behavior change)
-    "**/contract.yaml",
+    # Contract files trigger deploy (behavior change) — scoped to src/ to avoid
+    # matching test fixtures and example directories.
+    "src/**/contract.yaml",
 ]
 
 # Deploy evidence: a dod_evidence check whose check_value contains one of these.
