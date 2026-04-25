@@ -163,3 +163,53 @@ class TestHandlerMissingFails:
         assert len(results[0].checks) == 8
         check_ids = [c.check_id for c in results[0].checks]
         assert check_ids == [1, 2, 3, 4, 5, 6, 7, 8]
+
+
+class TestSourceOnlyFlag:
+    """source_only=True excludes contracts under .venv directories (OMN-9537)."""
+
+    def test_source_only_excludes_venv_contracts(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        source_dir = tmp_path / "src" / "mypkg" / "nodes" / "node_real"
+        source_dir.mkdir(parents=True)
+        (source_dir / "contract.yaml").write_text(
+            "node_id: node_real\nnode_kind: COMPUTE\n"
+        )
+
+        venv_dir = (
+            tmp_path
+            / ".venv"
+            / "lib"
+            / "python3.12"
+            / "site-packages"
+            / "some_dep"
+            / "nodes"
+            / "node_dep"
+        )
+        venv_dir.mkdir(parents=True)
+        (venv_dir / "contract.yaml").write_text(
+            "node_id: node_dep\nnode_kind: EFFECT\n"
+        )
+
+        results = scanner.scan(str(tmp_path), source_only=True)
+        assert len(results) == 1
+        assert results[0].node_id == "node_real"
+
+    def test_source_only_false_includes_venv_contracts(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        source_dir = tmp_path / "src" / "node_real"
+        source_dir.mkdir(parents=True)
+        (source_dir / "contract.yaml").write_text(
+            "node_id: node_real\nnode_kind: COMPUTE\n"
+        )
+
+        venv_dir = tmp_path / ".venv" / "lib" / "node_dep"
+        venv_dir.mkdir(parents=True)
+        (venv_dir / "contract.yaml").write_text(
+            "node_id: node_dep\nnode_kind: EFFECT\n"
+        )
+
+        results = scanner.scan(str(tmp_path), source_only=False)
+        assert len(results) == 2

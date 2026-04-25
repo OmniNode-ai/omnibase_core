@@ -61,17 +61,24 @@ class NodeComplianceScanCompute:
     8 structural checks per contract.
     """
 
-    def scan(self, repo_root: str) -> list[ModelScanCheckResult]:
+    def scan(
+        self, repo_root: str, *, source_only: bool = False
+    ) -> list[ModelScanCheckResult]:
         """Scan all contract.yaml files under repo_root.
 
         Args:
             repo_root: Absolute path to the repository root.
+            source_only: When True, skip any contract.yaml found under a .venv
+                directory. Eliminates ~94% false-positive handler_resolution
+                failures caused by pip-installed packages (OMN-9537).
 
         Returns:
             List of per-node compliance results.
         """
         root = Path(repo_root)
         contracts = sorted(root.rglob("contract.yaml"))
+        if source_only:
+            contracts = [c for c in contracts if ".venv" not in c.parts]
         results: list[ModelScanCheckResult] = []
 
         for contract_path in contracts:
