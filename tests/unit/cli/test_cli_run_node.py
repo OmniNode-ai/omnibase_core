@@ -230,7 +230,7 @@ class TestPublishAndPoll:
         from omnibase_core.errors import OnexError
 
         with patch.dict(sys.modules, {"confluent_kafka": None}):
-            with pytest.raises((OnexError, ImportError)):
+            with pytest.raises(OnexError, match="confluent-kafka is required"):
                 publish_and_poll(
                     node_id="x",
                     payload={},

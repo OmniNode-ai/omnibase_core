@@ -69,7 +69,8 @@ def publish_and_poll(
 
     # Subscribe consumer before producing so a fast responder cannot deliver
     # the reply before partition assignment (auto.offset.reset="latest" would
-    # skip it otherwise).
+    # skip it otherwise). Consumer is created first so the finally block below
+    # always runs close() even if Producer/produce/flush raise synchronously.
     consumer = Consumer(
         {
             "bootstrap.servers": bootstrap_servers,
@@ -91,28 +92,29 @@ def publish_and_poll(
                 )
             )
 
-    producer = Producer({"bootstrap.servers": bootstrap_servers})
-    producer.produce(
-        topic=TOPIC_CLI_RUN_NODE_CMD,
-        value=json.dumps(envelope).encode(),
-        on_delivery=_on_delivery,
-    )
-    pending = producer.flush(timeout=10.0)
-    if pending:
-        consumer.close()
-        raise OnexError(
-            code=EnumCoreErrorCode.RUNTIME_ERROR,
-            message=f"Kafka flush timed out with {pending} queued message(s)",
-        )
-
-    if delivery_error:
-        consumer.close()
-        raise delivery_error[0]
-
     deadline = time.monotonic() + timeout
     try:
-        while time.monotonic() < deadline:
-            remaining = deadline - time.monotonic()
+        producer = Producer({"bootstrap.servers": bootstrap_servers})
+        producer.produce(
+            topic=TOPIC_CLI_RUN_NODE_CMD,
+            value=json.dumps(envelope).encode(),
+            on_delivery=_on_delivery,
+        )
+        pending = producer.flush(timeout=10.0)
+        if pending:
+            raise OnexError(
+                code=EnumCoreErrorCode.RUNTIME_ERROR,
+                message=f"Kafka flush timed out with {pending} queued message(s)",
+            )
+
+        if delivery_error:
+            raise delivery_error[0]
+
+        while True:
+            now = time.monotonic()
+            remaining = deadline - now
+            if remaining <= 0:
+                break
             msg = consumer.poll(timeout=min(remaining, 1.0))
             if msg is None:
                 continue
