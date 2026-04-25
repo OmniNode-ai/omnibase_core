@@ -19,7 +19,7 @@ from omnibase_core.constants.constants_event_types import (
     TOPIC_CLI_RUN_NODE_RESPONSE,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.errors import OnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 def _emit_error(node_id: str, message: str, **extra: str | int) -> None:
@@ -50,7 +50,7 @@ def publish_and_poll(
         Producer = _ck.Producer  # type: ignore[attr-defined]
         Consumer = _ck.Consumer  # type: ignore[attr-defined]
     except ImportError as exc:
-        raise OnexError(
+        raise ModelOnexError(
             code=EnumCoreErrorCode.IMPORT_ERROR,
             message=(
                 "confluent-kafka is required for run-node. "
@@ -81,12 +81,22 @@ def publish_and_poll(
     )
     consumer.subscribe([TOPIC_CLI_RUN_NODE_RESPONSE])
 
+    # Poll until partition assignment is complete before producing the request.
+    # subscribe() is asynchronous — assignment only happens during poll(). Without
+    # this, a fast responder can produce the reply before the consumer holds any
+    # partition, causing auto.offset.reset="latest" to skip it.
+    assign_deadline = time.monotonic() + 10.0
+    while not consumer.assignment():
+        if time.monotonic() >= assign_deadline:
+            break
+        consumer.poll(timeout=0.1)
+
     delivery_error: list[Exception] = []
 
     def _on_delivery(err: object, _msg: object) -> None:
         if err is not None:
             delivery_error.append(
-                OnexError(
+                ModelOnexError(
                     code=EnumCoreErrorCode.RUNTIME_ERROR,
                     message=f"Kafka delivery failed: {err}",
                 )
@@ -102,7 +112,7 @@ def publish_and_poll(
         )
         pending = producer.flush(timeout=10.0)
         if pending:
-            raise OnexError(
+            raise ModelOnexError(
                 code=EnumCoreErrorCode.RUNTIME_ERROR,
                 message=f"Kafka flush timed out with {pending} queued message(s)",
             )
@@ -171,7 +181,7 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
             timeout=timeout,
             bootstrap_servers=bootstrap_servers,
         )
-    except (ConnectionError, OSError, ImportError, OnexError) as exc:
+    except (ConnectionError, OSError, ImportError, ModelOnexError) as exc:
         _emit_error(node_id, str(exc))
 
     if response is None:

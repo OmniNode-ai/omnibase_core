@@ -81,16 +81,25 @@ class TestPublishAndPoll:
         mock_producer.flush.return_value = 0  # all messages delivered
         mock_consumer = MagicMock()
         mock_consumer.poll.return_value = None  # timeout immediately
+        mock_consumer.assignment.return_value = [
+            object()
+        ]  # already assigned — skip wait
+
+        # Simulate: assign_deadline call → 1000, deadline call → 1000,
+        # first loop iteration now → 1050 (remaining = -45, breaks immediately)
+        _monotonic_values = iter([1000.0, 1000.0, 1050.0])
 
         with (
-            patch("omnibase_core.cli.cli_run_node.time") as mock_time,
+            patch(
+                "omnibase_core.cli.cli_run_node.time.monotonic",
+                side_effect=_monotonic_values,
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.time.time", return_value=1234567890.0
+            ),
             patch(_PATCH_CONSUMER, return_value=mock_consumer),
             patch(_PATCH_PRODUCER, return_value=mock_producer),
         ):
-            mock_time.time.return_value = 1234567890.0
-            start = 1000.0
-            mock_time.monotonic.side_effect = [start, start + 10.0]  # deadline exceeded
-
             publish_and_poll(
                 node_id="test-node",
                 payload={"foo": "bar"},
@@ -152,16 +161,24 @@ class TestPublishAndPoll:
         mock_producer.flush.return_value = 0  # all messages delivered
         mock_consumer = MagicMock()
         mock_consumer.poll.return_value = None
+        mock_consumer.assignment.return_value = [
+            object()
+        ]  # already assigned — skip wait
+
+        # assign_deadline → 1000, deadline → 1000, first now → 1050 (breaks)
+        _monotonic_values = iter([1000.0, 1000.0, 1050.0])
 
         with (
-            patch("omnibase_core.cli.cli_run_node.time") as mock_time,
+            patch(
+                "omnibase_core.cli.cli_run_node.time.monotonic",
+                side_effect=_monotonic_values,
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.time.time", return_value=1234567890.0
+            ),
             patch(_PATCH_CONSUMER, return_value=mock_consumer),
             patch(_PATCH_PRODUCER, return_value=mock_producer),
         ):
-            mock_time.time.return_value = 1234567890.0
-            start = 1000.0
-            mock_time.monotonic.side_effect = [start, start + 31.0]
-
             result = publish_and_poll(
                 node_id="my-node",
                 payload={},
@@ -183,18 +200,25 @@ class TestPublishAndPoll:
             corr = group_id.removeprefix("onex-run-node-")
             msg = self._make_mock_message(corr)
             consumer.poll.return_value = msg
+            # assignment returns truthy so the assign-wait loop exits immediately
+            consumer.assignment.return_value = [object()]
             captured_consumer.append(consumer)
             return consumer
 
+        # assign_deadline → 1000, deadline → 1000, first now → 999 (remaining=29>0, enters loop)
+        _monotonic_values = iter([1000.0, 1000.0, 999.0])
+
         with (
-            patch("omnibase_core.cli.cli_run_node.time") as mock_time,
+            patch(
+                "omnibase_core.cli.cli_run_node.time.monotonic",
+                side_effect=_monotonic_values,
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.time.time", return_value=1234567890.0
+            ),
             patch(_PATCH_CONSUMER, side_effect=_make_consumer),
             patch(_PATCH_PRODUCER, return_value=mock_producer),
         ):
-            start = 1000.0
-            mock_time.time.return_value = 1234567890.0
-            mock_time.monotonic.side_effect = [start, start + 0.1, start + 0.2]
-
             result = publish_and_poll(
                 node_id="my-node",
                 payload={},
@@ -281,16 +305,24 @@ class TestRunNodeCommand:
         mock_producer.flush.return_value = 0  # all messages delivered
         mock_consumer = MagicMock()
         mock_consumer.poll.return_value = None
+        mock_consumer.assignment.return_value = [
+            object()
+        ]  # already assigned — skip wait
+
+        # assign_deadline → 1000, deadline → 1000, first now → 1050 (breaks)
+        _monotonic_values = iter([1000.0, 1000.0, 1050.0])
 
         with (
-            patch("omnibase_core.cli.cli_run_node.time") as mock_time,
+            patch(
+                "omnibase_core.cli.cli_run_node.time.monotonic",
+                side_effect=_monotonic_values,
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.time.time", return_value=1234567890.0
+            ),
             patch(_PATCH_CONSUMER, return_value=mock_consumer),
             patch(_PATCH_PRODUCER, return_value=mock_producer),
         ):
-            mock_time.time.return_value = 1234567890.0
-            start = 1000.0
-            mock_time.monotonic.side_effect = [start, start + 35.0]
-
             result = runner.invoke(
                 run_node, ["test-node", "--input", '{"x": 1}', "--timeout", "30"]
             )
