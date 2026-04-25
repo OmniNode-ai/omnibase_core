@@ -610,6 +610,20 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # ONEX Deterministic Skill Routing (OMN-8765)
+      # AST-based CI gate enforcing that every Tier 1 deterministic skill in
+      # omniclaude routes through `onex run-node` / `onex node` (or a Kafka
+      # publish) and surfaces `SkillRoutingError` on routing failure. Skips
+      # when the omniclaude sibling clone is absent (e.g., contributors who
+      # have not cloned the full omni_home registry).
+      - id: validate-deterministic-skill-routing
+        name: ONEX Deterministic Skill Routing (OMN-8765)
+        entry: bash scripts/pre_commit_validate_deterministic_skills.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       # ONEX Kafka/Listener API Prevention (OMN-1747, OMN-1745)
       # Prevents reintroduction of Kafka and listener management APIs removed from core.
       # omnibase_core must be transport-agnostic - use EventBusSubcontractWiring
