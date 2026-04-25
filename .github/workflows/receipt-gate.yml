@@ -236,8 +236,10 @@ jobs:
           set -e
           if [ -n "$PR_NUMBER" ]; then
             # pull_request event: always fetch live body so re-runs see edits.
-            if gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body --jq '.body' > /tmp/pr_body.txt 2>/dev/null; then
-              gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json title --jq '.title' > /tmp/pr_title.txt
+            # Single API call fetches both fields to minimise rate-limit consumption.
+            if pr_json="$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body,title 2>/dev/null)"; then
+              printf '%s' "$pr_json" | jq -r '.body' > /tmp/pr_body.txt
+              printf '%s' "$pr_json" | jq -r '.title' > /tmp/pr_title.txt
             else
               # API unavailable — fall back to event payload with a warning.
               echo "::warning::gh pr view failed for PR #${PR_NUMBER}; using event payload (may be stale)"
