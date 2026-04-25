@@ -23,7 +23,7 @@ class TestEnumInvocationKind:
         assert str(EnumInvocationKind.MODEL) == "model"
 
     def test_equality(self) -> None:
-        assert EnumInvocationKind.AGENT is EnumInvocationKind.AGENT
+        assert EnumInvocationKind.AGENT is not EnumInvocationKind.MODEL
         assert EnumInvocationKind.AGENT != EnumInvocationKind.MODEL
 
     def test_str_comparison(self) -> None:
