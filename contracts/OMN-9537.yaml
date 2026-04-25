@@ -1,0 +1,35 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-9537
+summary: "compliance-scanner source_only flag — filter .venv contracts from scan"
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: tests
+    description: "10 unit tests for source_only flag pass"
+    command: "uv run pytest tests/unit/nodes/node_compliance_scan_compute/ -v -m unit"
+  - kind: ci
+    description: "omnibase_core PR #907 CI checks pass"
+    command: "gh pr checks 907 --repo OmniNode-ai/omnibase_core --watch"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-001
+    description: "Unit tests for source_only flag pass (10/10)"
+    source: generated
+    checks:
+      - check_type: file_exists
+        check_value: "drift/dod_receipts/OMN-9537/dod-001/file_exists.yaml"
+  - id: dod-002
+    description: "deploy-gate evidence: source_only adds only a bool kwarg to scan(); no Dockerfile, kernel,
+      or runtime handler path changed — no runtime restart required"
+    source: generated
+    checks:
+      - check_type: file_exists
+        check_value: "drift/dod_receipts/OMN-9537/dod-002/file_exists.yaml"
+      - check_type: command
+        check_value: "echo 'deploy-gate: source_only is a scan-filter kwarg only — no Dockerfile, kernel,
+          auto_wiring, or service_kernel.py changes; no runtime deploy required'"
