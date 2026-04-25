@@ -23,7 +23,7 @@ class TestEnumInvocationKind:
         assert str(EnumInvocationKind.MODEL) == "model"
 
     def test_equality(self) -> None:
-        assert EnumInvocationKind.AGENT == EnumInvocationKind.AGENT
+        assert EnumInvocationKind.AGENT is EnumInvocationKind.AGENT
         assert EnumInvocationKind.AGENT != EnumInvocationKind.MODEL
 
     def test_str_comparison(self) -> None:
@@ -31,8 +31,9 @@ class TestEnumInvocationKind:
         assert EnumInvocationKind.MODEL == "model"
 
     def test_membership(self) -> None:
-        assert EnumInvocationKind.AGENT in EnumInvocationKind
-        assert EnumInvocationKind.MODEL in EnumInvocationKind
+        members = list(EnumInvocationKind)
+        assert EnumInvocationKind.AGENT in members
+        assert EnumInvocationKind.MODEL in members
 
     def test_json_serialization(self) -> None:
         data = {"kind": EnumInvocationKind.AGENT.value}
