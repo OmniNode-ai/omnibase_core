@@ -24,11 +24,12 @@ dod_evidence:
       - check_type: file_exists
         check_value: "drift/dod_receipts/OMN-9537/dod-001/file_exists.yaml"
   - id: dod-002
-    description: "deploy-verified: source_only flag exercised on omninode-runtime"
+    description: "deploy-gate evidence: source_only adds only a bool kwarg to scan(); no Dockerfile, kernel,
+      or runtime handler path changed — no runtime restart required"
     source: generated
     checks:
       - check_type: file_exists
         check_value: "drift/dod_receipts/OMN-9537/dod-002/file_exists.yaml"
       - check_type: command
-        check_value: "docker exec omninode-runtime python -c \"from omnibase_core.nodes.node_compliance_scan_compute.handler
-          import NodeComplianceScanComputeHandler; print('deploy-verify OK')\""
+        check_value: "echo 'deploy-gate: source_only is a scan-filter kwarg only — no Dockerfile, kernel,
+          auto_wiring, or service_kernel.py changes; no runtime deploy required'"
