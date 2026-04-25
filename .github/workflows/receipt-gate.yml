@@ -218,19 +218,34 @@ jobs:
 
       - name: Resolve PR body
         id: resolve_body
-        # merge_group events do not carry pull_request.body. Fetch it from the
-        # merge_group head_ref (format: pr-<num>-<sha>) via the GitHub API so
-        # the gate evaluates the same body across pull_request and merge_group.
+        # Always fetch the PR body fresh from the GitHub API to avoid stale
+        # cached event payloads on re-runs (OMN-9717). github.event.pull_request.body
+        # is frozen at workflow trigger time — if the PR body is edited after CI
+        # fires, a re-run still reads the old body. Fetching via gh pr view
+        # guarantees the live body regardless of when the re-run happens.
+        #
+        # merge_group events do not carry pull_request.body. Derive the PR number
+        # from merge_group.head_ref (format: pr-<num>-<sha>) and fetch via API.
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_EVENT_BODY: ${{ github.event.pull_request.body }}
           PR_EVENT_TITLE: ${{ github.event.pull_request.title }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
         run: |
           set -e
-          if [ -n "$PR_EVENT_BODY" ]; then
-            printf '%s' "$PR_EVENT_BODY" > /tmp/pr_body.txt
-            printf '%s' "$PR_EVENT_TITLE" > /tmp/pr_title.txt
+          if [ -n "$PR_NUMBER" ]; then
+            # pull_request event: always fetch live body so re-runs see edits.
+            # Single API call fetches both fields to minimise rate-limit consumption.
+            if pr_json="$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body,title 2>/dev/null)"; then
+              printf '%s' "$pr_json" | jq -r '.body' > /tmp/pr_body.txt
+              printf '%s' "$pr_json" | jq -r '.title' > /tmp/pr_title.txt
+            else
+              # API unavailable — fall back to event payload with a warning.
+              echo "::warning::gh pr view failed for PR #${PR_NUMBER}; using event payload (may be stale)"
+              printf '%s' "$PR_EVENT_BODY" > /tmp/pr_body.txt
+              printf '%s' "$PR_EVENT_TITLE" > /tmp/pr_title.txt
+            fi
           elif [ -n "$MERGE_GROUP_HEAD_REF" ]; then
             pr_num="$(printf '%s' "$MERGE_GROUP_HEAD_REF" | sed -E 's@^.*/pr-([0-9]+)-.*$@\1@')"
             if [ -n "$pr_num" ] && [ "$pr_num" != "$MERGE_GROUP_HEAD_REF" ]; then
