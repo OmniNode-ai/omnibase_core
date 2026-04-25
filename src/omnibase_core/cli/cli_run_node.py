@@ -51,7 +51,7 @@ def publish_and_poll(
         Consumer = _ck.Consumer  # type: ignore[attr-defined]
     except ImportError as exc:
         raise ModelOnexError(
-            code=EnumCoreErrorCode.IMPORT_ERROR,
+            error_code=EnumCoreErrorCode.IMPORT_ERROR,
             message=(
                 "confluent-kafka is required for run-node. "
                 "Install with: uv add omnibase-core[kafka]"
@@ -73,7 +73,7 @@ def publish_and_poll(
         if err is not None:
             delivery_error.append(
                 ModelOnexError(
-                    code=EnumCoreErrorCode.RUNTIME_ERROR,
+                    error_code=EnumCoreErrorCode.RUNTIME_ERROR,
                     message=f"Kafka delivery failed: {err}",
                 )
             )
@@ -98,7 +98,7 @@ def publish_and_poll(
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise ModelOnexError(
-                    code=EnumCoreErrorCode.RUNTIME_ERROR,
+                    error_code=EnumCoreErrorCode.RUNTIME_ERROR,
                     message="Timed out waiting for Kafka consumer partition assignment",
                 )
             consumer.poll(timeout=min(remaining, 0.1))
@@ -112,7 +112,7 @@ def publish_and_poll(
         pending = producer.flush(timeout=10.0)
         if pending:
             raise ModelOnexError(
-                code=EnumCoreErrorCode.RUNTIME_ERROR,
+                error_code=EnumCoreErrorCode.RUNTIME_ERROR,
                 message=f"Kafka flush timed out with {pending} queued message(s)",
             )
 
