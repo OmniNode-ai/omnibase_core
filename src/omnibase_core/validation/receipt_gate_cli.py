@@ -32,6 +32,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--pr-body", required=True, help="Full PR description text.")
     parser.add_argument(
+        "--pr-title",
+        default="",
+        help="PR title (informational, not used for receipt matching).",
+    )
+    parser.add_argument(
         "--contracts-dir",
         default="onex_change_control/contracts",
         help="Directory containing OMN-XXXX.yaml ticket contracts.",
