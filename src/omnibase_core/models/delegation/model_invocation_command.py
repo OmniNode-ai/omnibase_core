@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from omnibase_core.enums.enum_agent_protocol import EnumAgentProtocol
 from omnibase_core.enums.enum_invocation_kind import EnumInvocationKind
@@ -29,6 +29,22 @@ class ModelInvocationCommand(BaseModel):
     model_backend: str | None = None
     target_ref: str
     payload: dict[str, ModelSchemaValue] = {}
+
+    @model_validator(mode="after")
+    def _validate_kind_invariants(self) -> ModelInvocationCommand:
+        if (
+            self.invocation_kind is EnumInvocationKind.AGENT
+            and self.agent_protocol is None
+        ):
+            msg = "agent_protocol is required when invocation_kind is AGENT"
+            raise ValueError(msg)
+        if (
+            self.invocation_kind is EnumInvocationKind.MODEL
+            and self.model_backend is None
+        ):
+            msg = "model_backend is required when invocation_kind is MODEL"
+            raise ValueError(msg)
+        return self
 
 
 __all__ = ["ModelInvocationCommand"]

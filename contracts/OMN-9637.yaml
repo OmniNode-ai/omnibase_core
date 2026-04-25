@@ -30,5 +30,7 @@ dod_evidence:
     source: generated
     checks:
       - check_type: command
-        check_value: "echo 'deploy-gate: delegation models are pure Pydantic BaseModel additions — no
-          Dockerfile, kernel, auto_wiring, or service_kernel.py changes; no runtime deploy required'"
+        check_value: "bash -lc 'set -euo pipefail; if git diff --name-only origin/main...HEAD | grep -E
+          \"(^|/)Dockerfile$|(^|/)service_kernel\\.py$|(^|/)kernel/|(^|/)auto_wiring/\"; then echo \"deploy-gate
+          failed: forbidden runtime files changed\"; exit 1; fi; echo \"deploy-gate: clean — no forbidden
+          runtime files changed\"'"

@@ -41,11 +41,12 @@ class TestModelInvocationCommand:
             task_id=_TASK_ID,
             correlation_id=_CORR_ID,
             invocation_kind=EnumInvocationKind.AGENT,
+            agent_protocol=EnumAgentProtocol.A2A,
             target_ref="adk-scout",
         )
         assert cmd.task_id == _TASK_ID
         assert cmd.invocation_kind is EnumInvocationKind.AGENT
-        assert cmd.agent_protocol is None
+        assert cmd.agent_protocol is EnumAgentProtocol.A2A
         assert cmd.payload == {}
 
     def test_with_protocol_and_payload(self) -> None:
@@ -65,10 +66,29 @@ class TestModelInvocationCommand:
             task_id=_TASK_ID,
             correlation_id=_CORR_ID,
             invocation_kind=EnumInvocationKind.MODEL,
+            model_backend="qwen3",
             target_ref="qwen3",
         )
         with pytest.raises(Exception):
             cmd.target_ref = "changed"  # type: ignore[misc]
+
+    def test_agent_without_protocol_raises(self) -> None:
+        with pytest.raises(ValidationError, match="agent_protocol is required"):
+            ModelInvocationCommand(
+                task_id=_TASK_ID,
+                correlation_id=_CORR_ID,
+                invocation_kind=EnumInvocationKind.AGENT,
+                target_ref="adk-scout",
+            )
+
+    def test_model_without_backend_raises(self) -> None:
+        with pytest.raises(ValidationError, match="model_backend is required"):
+            ModelInvocationCommand(
+                task_id=_TASK_ID,
+                correlation_id=_CORR_ID,
+                invocation_kind=EnumInvocationKind.MODEL,
+                target_ref="qwen3",
+            )
 
 
 @pytest.mark.unit
@@ -94,7 +114,7 @@ class TestModelAgentTaskLifecycleEvent:
             error="timeout",
         )
         assert evt.error == "timeout"
-        assert "k" in evt.artifact  # type: ignore[operator]
+        assert evt.artifact is not None and "k" in evt.artifact
 
 
 @pytest.mark.unit
@@ -148,17 +168,26 @@ class TestModelA2ATaskRequest:
 @pytest.mark.unit
 class TestModelA2ATaskResponse:
     def test_minimal(self) -> None:
-        resp = ModelA2ATaskResponse(remote_task_handle="t-123", status="working")
+        resp = ModelA2ATaskResponse(
+            remote_task_handle="t-123",
+            status=EnumAgentTaskLifecycleType.PROGRESS,
+        )
         assert resp.artifacts == []
         assert resp.error is None
 
     def test_with_artifacts(self) -> None:
         resp = ModelA2ATaskResponse(
             remote_task_handle="t-123",
-            status="completed",
+            status=EnumAgentTaskLifecycleType.COMPLETED,
             artifacts=[{"result": ModelSchemaValue.from_value("done")}],
         )
         assert len(resp.artifacts) == 1
+
+    def test_invalid_status_raises(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelA2ATaskResponse(
+                remote_task_handle="t-123", status="not_a_valid_status"
+            )
 
 
 @pytest.mark.unit
@@ -176,6 +205,19 @@ class TestModelRemoteTaskState:
         )
         assert state.status is EnumAgentTaskLifecycleType.SUBMITTED
         assert state.completed_at is None
+
+    def test_agent_without_protocol_raises(self) -> None:
+        with pytest.raises(ValidationError, match="protocol is required"):
+            ModelRemoteTaskState(
+                task_id=_TASK_ID,
+                invocation_kind=EnumInvocationKind.AGENT,
+                protocol=None,
+                target_ref="adk-scout",
+                correlation_id=_CORR_ID,
+                status=EnumAgentTaskLifecycleType.SUBMITTED,
+                submitted_at=_NOW,
+                updated_at=_NOW,
+            )
 
     def test_model_validate_from_dict(self) -> None:
         data = {

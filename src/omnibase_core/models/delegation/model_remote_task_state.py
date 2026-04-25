@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from omnibase_core.enums.enum_agent_protocol import EnumAgentProtocol
 from omnibase_core.enums.enum_agent_task_lifecycle_type import (
@@ -38,6 +38,13 @@ class ModelRemoteTaskState(BaseModel):
     updated_at: datetime
     completed_at: datetime | None = None
     error: str | None = None
+
+    @model_validator(mode="after")
+    def _validate_protocol_for_kind(self) -> ModelRemoteTaskState:
+        if self.invocation_kind is EnumInvocationKind.AGENT and self.protocol is None:
+            msg = "protocol is required when invocation_kind is AGENT"
+            raise ValueError(msg)
+        return self
 
 
 __all__ = ["ModelRemoteTaskState"]
