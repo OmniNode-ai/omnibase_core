@@ -289,6 +289,7 @@ ignore = [
 "src/omnibase_core/validation/validator_cli.py" = ["T201"]
 "src/omnibase_core/validation/receipt_gate_cli.py" = ["T201"]
 "scripts/validation/validate_pr_receipts.py" = ["T201"]
+"scripts/validation/validate_pr_deploy_required.py" = ["T201"]
 "src/omnibase_core/validation/validator_contracts.py" = ["T201"]
 "src/omnibase_core/validation/validator_local_paths.py" = ["T201"]
 "src/omnibase_core/validation/validator_patterns.py" = ["T201"]
