@@ -12,8 +12,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from omnibase_core.cli.cli_run_node import publish_and_poll, run_node
-
 pytestmark = pytest.mark.unit
 
 # Producer and Consumer are imported inside publish_and_poll (lazy import), so
@@ -22,19 +20,46 @@ _PATCH_PRODUCER = "confluent_kafka.Producer"
 _PATCH_CONSUMER = "confluent_kafka.Consumer"
 
 
+def _make_mock_message(
+    correlation_id: str, extra: dict[str, object] | None = None
+) -> MagicMock:
+    msg = MagicMock()
+    msg.error.return_value = None
+    data: dict[str, object] = {"correlation_id": correlation_id, "status": "ok"}
+    if extra:
+        data.update(extra)
+    msg.value.return_value = json.dumps(data).encode()
+    return msg
+
+
+def _make_assigned_consumer(
+    config: dict[str, object] | None = None,
+    poll_side_effect: object = None,
+    poll_return_value: object = None,
+) -> MagicMock:
+    """Return a mock Consumer whose assignment() is truthy (already assigned)."""
+    consumer = MagicMock()
+    consumer.assignment.return_value = [object()]
+    if poll_side_effect is not None:
+        consumer.poll.side_effect = poll_side_effect
+    elif poll_return_value is not None:
+        consumer.poll.return_value = poll_return_value
+    else:
+        consumer.poll.return_value = None
+    return consumer
+
+
 class TestCliRunNodeNoKafkaPythonImport:
     """Assert that kafka-python (module ``kafka``) is NOT imported at module load time."""
 
     def test_kafka_python_not_imported_at_module_level(self) -> None:
         import importlib
-
-        # Re-import the module in an isolated namespace to avoid false-positive
-        # from other test modules that may have imported kafka before this test.
         import importlib.util
 
+        # Import symbols locally so the module-level import below doesn't affect this test
         spec = importlib.util.find_spec("omnibase_core.cli.cli_run_node")
         assert spec is not None
-        # Verify the module itself does not trigger a kafka-python import
+        # Verify the module itself does not trigger a kafka-python import on reload
         saved = sys.modules.pop("kafka", None)
         try:
             importlib.reload(importlib.import_module("omnibase_core.cli.cli_run_node"))
@@ -65,28 +90,16 @@ class TestCliRunNodeNoKafkaPythonImport:
 class TestPublishAndPoll:
     """Test publish_and_poll with stubbed confluent_kafka Producer and Consumer."""
 
-    def _make_mock_message(
-        self, correlation_id: str, extra: dict[str, object] | None = None
-    ) -> MagicMock:
-        msg = MagicMock()
-        msg.error.return_value = None
-        data: dict[str, object] = {"correlation_id": correlation_id, "status": "ok"}
-        if extra:
-            data.update(extra)
-        msg.value.return_value = json.dumps(data).encode()
-        return msg
-
     def test_produce_call_shape(self) -> None:
+        from omnibase_core.cli.cli_run_node import publish_and_poll
+
         mock_producer = MagicMock()
         mock_producer.flush.return_value = 0  # all messages delivered
-        mock_consumer = MagicMock()
-        mock_consumer.poll.return_value = None  # timeout immediately
-        mock_consumer.assignment.return_value = [
-            object()
-        ]  # already assigned — skip wait
+        mock_consumer = _make_assigned_consumer()
 
-        # Simulate: assign_deadline call → 1000, deadline call → 1000,
-        # first loop iteration now → 1050 (remaining = -45, breaks immediately)
+        # assign_deadline call → 1000, deadline call → 1000,
+        # assignment wait: remaining>0, consumer.assignment() truthy → skip loop body
+        # first poll-loop now → 1050 (remaining = -45, breaks immediately)
         _monotonic_values = iter([1000.0, 1000.0, 1050.0])
 
         with (
@@ -113,6 +126,8 @@ class TestPublishAndPoll:
         mock_producer.flush.assert_called_once_with(timeout=10.0)
 
     def test_returns_correlated_message(self) -> None:
+        from omnibase_core.cli.cli_run_node import publish_and_poll
+
         original_uuid4 = __import__("uuid").uuid4
 
         corr_id_holder: list[str] = []
@@ -129,8 +144,9 @@ class TestPublishAndPoll:
             consumer = MagicMock()
             group_id = str(config.get("group.id", ""))
             corr = group_id.removeprefix("onex-run-node-")
-            msg = self._make_mock_message(corr)
+            msg = _make_mock_message(corr)
             consumer.poll.side_effect = [None, msg]
+            consumer.assignment.return_value = [object()]
             return consumer
 
         with (
@@ -143,7 +159,7 @@ class TestPublishAndPoll:
         ):
             start = 1000.0
             mock_time.time.return_value = 1234567890.0
-            # Use return_value so monotonic() never exhausts regardless of call count
+            # return_value so monotonic() never exhausts regardless of call count
             mock_time.monotonic.return_value = start
 
             result = publish_and_poll(
@@ -157,15 +173,13 @@ class TestPublishAndPoll:
         assert result.get("status") == "ok"
 
     def test_returns_none_on_timeout(self) -> None:
+        from omnibase_core.cli.cli_run_node import publish_and_poll
+
         mock_producer = MagicMock()
         mock_producer.flush.return_value = 0  # all messages delivered
-        mock_consumer = MagicMock()
-        mock_consumer.poll.return_value = None
-        mock_consumer.assignment.return_value = [
-            object()
-        ]  # already assigned — skip wait
+        mock_consumer = _make_assigned_consumer()
 
-        # assign_deadline → 1000, deadline → 1000, first now → 1050 (breaks)
+        # deadline call → 1000, first now → 1050 (remaining = -45, breaks)
         _monotonic_values = iter([1000.0, 1000.0, 1050.0])
 
         with (
@@ -190,6 +204,8 @@ class TestPublishAndPoll:
         mock_consumer.close.assert_called_once()
 
     def test_consumer_closed_on_match(self) -> None:
+        from omnibase_core.cli.cli_run_node import publish_and_poll
+
         mock_producer = MagicMock()
         mock_producer.flush.return_value = 0  # all messages delivered
         captured_consumer: list[MagicMock] = []
@@ -198,15 +214,14 @@ class TestPublishAndPoll:
             consumer = MagicMock()
             group_id = str(config.get("group.id", ""))
             corr = group_id.removeprefix("onex-run-node-")
-            msg = self._make_mock_message(corr)
+            msg = _make_mock_message(corr)
             consumer.poll.return_value = msg
-            # assignment returns truthy so the assign-wait loop exits immediately
             consumer.assignment.return_value = [object()]
             captured_consumer.append(consumer)
             return consumer
 
-        # assign_deadline → 1000, deadline → 1000, first now → 999 (remaining=29>0, enters loop)
-        _monotonic_values = iter([1000.0, 1000.0, 999.0])
+        # deadline → 1000, first now → 999 (remaining=29>0, enters poll loop)
+        _monotonic_values = iter([1000.0, 999.0])
 
         with (
             patch(
@@ -231,11 +246,12 @@ class TestPublishAndPoll:
         captured_consumer[0].close.assert_called_once()
 
     def test_flush_pending_raises_onerror(self) -> None:
+        from omnibase_core.cli.cli_run_node import publish_and_poll
         from omnibase_core.errors import OnexError
 
         mock_producer = MagicMock()
         mock_producer.flush.return_value = 1  # simulates queued message timeout
-        mock_consumer = MagicMock()
+        mock_consumer = _make_assigned_consumer()
 
         with (
             patch(_PATCH_PRODUCER, return_value=mock_producer),
@@ -251,6 +267,7 @@ class TestPublishAndPoll:
         mock_consumer.close.assert_called_once()
 
     def test_raises_onerror_when_confluent_kafka_missing(self) -> None:
+        from omnibase_core.cli.cli_run_node import publish_and_poll
         from omnibase_core.errors import OnexError
 
         with patch.dict(sys.modules, {"confluent_kafka": None}):
@@ -263,6 +280,7 @@ class TestPublishAndPoll:
                 )
 
     def test_delivery_failure_raises_onerror(self) -> None:
+        from omnibase_core.cli.cli_run_node import publish_and_poll
         from omnibase_core.errors import OnexError
 
         def _make_failing_producer(config: dict[str, object]) -> MagicMock:
@@ -276,7 +294,7 @@ class TestPublishAndPoll:
             producer.produce.side_effect = _produce
             return producer
 
-        mock_consumer = MagicMock()
+        mock_consumer = _make_assigned_consumer()
 
         with (
             patch(_PATCH_PRODUCER, side_effect=_make_failing_producer),
@@ -295,22 +313,22 @@ class TestRunNodeCommand:
     """Test the click run-node command via CliRunner."""
 
     def test_invalid_json_exits_nonzero(self) -> None:
+        from omnibase_core.cli.cli_run_node import run_node
+
         runner = CliRunner()
         result = runner.invoke(run_node, ["test-node", "--input", "not-json"])
         assert result.exit_code != 0
 
     def test_timeout_response_exits_nonzero(self) -> None:
+        from omnibase_core.cli.cli_run_node import run_node
+
         runner = CliRunner()
         mock_producer = MagicMock()
         mock_producer.flush.return_value = 0  # all messages delivered
-        mock_consumer = MagicMock()
-        mock_consumer.poll.return_value = None
-        mock_consumer.assignment.return_value = [
-            object()
-        ]  # already assigned — skip wait
+        mock_consumer = _make_assigned_consumer()
 
-        # assign_deadline → 1000, deadline → 1000, first now → 1050 (breaks)
-        _monotonic_values = iter([1000.0, 1000.0, 1050.0])
+        # deadline → 1000, first now → 1050 (breaks immediately)
+        _monotonic_values = iter([1000.0, 1050.0])
 
         with (
             patch(
@@ -331,3 +349,20 @@ class TestRunNodeCommand:
         output = json.loads(result.output)
         assert output["error_type"] == "SkillRoutingError"
         assert "Timeout" in output["message"]
+
+
+class TestCliRunNodeNoKafkaPythonImportIsolated:
+    """Verify kafka module isolation without top-level module import."""
+
+    def test_kafka_python_not_imported_at_module_level(self) -> None:
+        import importlib
+
+        saved = sys.modules.pop("kafka", None)
+        try:
+            importlib.reload(importlib.import_module("omnibase_core.cli.cli_run_node"))
+            assert "kafka" not in sys.modules, (
+                "kafka-python must not be imported at module level in cli_run_node"
+            )
+        finally:
+            if saved is not None:
+                sys.modules["kafka"] = saved

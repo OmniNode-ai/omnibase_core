@@ -67,30 +67,6 @@ def publish_and_poll(
         "timestamp": time.time(),
     }
 
-    # Subscribe consumer before producing so a fast responder cannot deliver
-    # the reply before partition assignment (auto.offset.reset="latest" would
-    # skip it otherwise). Consumer is created first so the finally block below
-    # always runs close() even if Producer/produce/flush raise synchronously.
-    consumer = Consumer(
-        {
-            "bootstrap.servers": bootstrap_servers,
-            "group.id": f"onex-run-node-{correlation_id}",
-            "auto.offset.reset": "latest",
-            "enable.auto.commit": False,
-        }
-    )
-    consumer.subscribe([TOPIC_CLI_RUN_NODE_RESPONSE])
-
-    # Poll until partition assignment is complete before producing the request.
-    # subscribe() is asynchronous — assignment only happens during poll(). Without
-    # this, a fast responder can produce the reply before the consumer holds any
-    # partition, causing auto.offset.reset="latest" to skip it.
-    assign_deadline = time.monotonic() + 10.0
-    while not consumer.assignment():
-        if time.monotonic() >= assign_deadline:
-            break
-        consumer.poll(timeout=0.1)
-
     delivery_error: list[Exception] = []
 
     def _on_delivery(err: object, _msg: object) -> None:
@@ -103,7 +79,30 @@ def publish_and_poll(
             )
 
     deadline = time.monotonic() + timeout
+    consumer = Consumer(
+        {
+            "bootstrap.servers": bootstrap_servers,
+            "group.id": f"onex-run-node-{correlation_id}",
+            "auto.offset.reset": "latest",
+            "enable.auto.commit": False,
+        }
+    )
     try:
+        # Subscribe and wait for partition assignment before producing.
+        # subscribe() is asynchronous — assignment only happens during poll().
+        # Waiting here (within the caller's deadline) ensures a fast responder
+        # cannot produce the reply before this consumer holds partitions
+        # (auto.offset.reset="latest" would skip any pre-assignment messages).
+        consumer.subscribe([TOPIC_CLI_RUN_NODE_RESPONSE])
+        while not consumer.assignment():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise ModelOnexError(
+                    code=EnumCoreErrorCode.RUNTIME_ERROR,
+                    message="Timed out waiting for Kafka consumer partition assignment",
+                )
+            consumer.poll(timeout=min(remaining, 0.1))
+
         producer = Producer({"bootstrap.servers": bootstrap_servers})
         producer.produce(
             topic=TOPIC_CLI_RUN_NODE_CMD,
