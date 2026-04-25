@@ -287,14 +287,10 @@ class ModelContractBase(BaseModel, ABC):
         "default (serialized dispatch) for this node.",
     )
 
-    # Behavioral execution profile (OMN-9748, first slice of ModelContractBase decomposition)
-    # Groups the four core behavioral fields extracted from inline position.
-    # Inline equivalents (max_concurrency, execution_timeout_ms, retry_attempts, idempotent)
-    # are intentionally absent from ModelContractBase — callers should use behavior_spec.
     behavior_spec: ModelContractBehaviorSpec = Field(
         default_factory=ModelContractBehaviorSpec,
-        description="Behavioral execution profile: concurrency cap, timeout, retry policy, "
-        "and idempotency flag. First-slice extraction from ModelContractBase decomposition.",
+        description="Behavioral execution profile: concurrency cap, execution timeout, "
+        "retry policy, and idempotency flag.",
     )
 
     # ONEX Infrastructure Extension Fields (OMN-1588)
