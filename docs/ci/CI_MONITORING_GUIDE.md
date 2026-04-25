@@ -746,7 +746,6 @@ gh run watch
 ## References
 
 - **[CLAUDE.md](../../CLAUDE.md)** - Development standards and CI configuration
-- **[CI_TEST_STRATEGY.md](../testing/CI_TEST_STRATEGY.md)** - Overall CI test strategy
 - **[PARALLEL_TESTING.md](../testing/PARALLEL_TESTING.md)** - Parallel testing configuration
 - **[DEPRECATION_WARNINGS.md](DEPRECATION_WARNINGS.md)** - Deprecation warning configuration (historical, v0.5.0 migration completed)
 - **GitHub Actions Workflow**: [`.github/workflows/test.yml`](../../.github/workflows/ci.yml)

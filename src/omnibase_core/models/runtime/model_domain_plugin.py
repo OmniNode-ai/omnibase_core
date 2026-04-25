@@ -9,8 +9,11 @@ from typing import Any
 from uuid import UUID
 
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.runtime.model_domain_plugin_result import (
+    ModelDomainPluginResult,
+)
 
-__all__: list[str] = ["ModelDomainPluginConfig"]
+__all__: list[str] = ["ModelDomainPluginConfig", "ModelDomainPluginResult"]
 
 
 @dataclass

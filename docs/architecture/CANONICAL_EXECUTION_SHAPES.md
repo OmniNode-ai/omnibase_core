@@ -1089,7 +1089,6 @@ The **gated registration path** is reserved for administrative or exceptional re
 | **Gated** | `RegisterNodeRequested` COMMAND | Shape 4 | Yes | Manual |
 
 > **See Also**:
-> - [Registration Trigger Design](REGISTRATION_TRIGGER_DESIGN.md) for detailed implementation, FSM states, and sequence diagrams
 > - [ADR-004: Registration Trigger Architecture](../decisions/ADR-004-registration-trigger-architecture.md) for architectural decision rationale
 
 ---
@@ -1105,7 +1104,6 @@ The **gated registration path** is reserved for administrative or exceptional re
 | [Node Purity Guarantees](NODE_PURITY_GUARANTEES.md) | Purity enforcement for COMPUTE/REDUCER |
 | [Node Types Guide](../guides/node-building/02_NODE_TYPES.md) | When to use each node type |
 | [Node Building Guide](../guides/node-building/README.md) | How to implement nodes |
-| [Registration Trigger Design](REGISTRATION_TRIGGER_DESIGN.md) | Registration workflow implementation details |
 | [ADR-004: Registration Trigger Architecture](../decisions/ADR-004-registration-trigger-architecture.md) | Architectural decision for registration triggers |
 
 ### See Also

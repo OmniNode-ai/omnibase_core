@@ -33,8 +33,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pr-body", required=True, help="Full PR description text.")
     parser.add_argument(
         "--pr-title",
-        default="",
-        help="PR title (informational, not used for receipt matching).",
+        default=None,
+        help="PR title text (used as fallback when body has no closing keywords).",
     )
     parser.add_argument(
         "--contracts-dir",
@@ -52,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
         pr_body=args.pr_body,
         contracts_dir=Path(args.contracts_dir),
         receipts_dir=Path(args.receipts_dir),
+        pr_title=args.pr_title,
     )
 
     if result.friction_logged:

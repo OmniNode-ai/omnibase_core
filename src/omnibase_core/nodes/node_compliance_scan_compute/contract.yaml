@@ -7,6 +7,7 @@
 #
 # See: OMN-7069 — compliance scanner COMPUTE node
 
+name: node_compliance_scan_compute
 node_id: node_compliance_scan_compute
 node_type: compute
 node_version: {major: 1, minor: 0, patch: 0}

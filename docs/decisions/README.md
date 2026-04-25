@@ -126,7 +126,6 @@ What was decided?
 ## Supporting Documents
 
 - [ADR Best Practices Guide](ADR_BEST_PRACTICES.md) - How to write and maintain ADRs
-- [ADR Fixes Summary](ADR_FIXES_SUMMARY.md) - Summary of fixes applied to ADR documents (PR #205)
 
 ---
 

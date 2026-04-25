@@ -7,9 +7,9 @@
 **Last Updated**: 2026-02-14
 
 **Related Documents**:
-- [Performance Benchmark Thresholds](../performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md)
 - [CI Monitoring Guide](./CI_MONITORING_GUIDE.md)
-- [Model Reducer Output Benchmarks](../performance/MODEL_REDUCER_OUTPUT_BENCHMARKS.md)
+- Current benchmark thresholds and rationale should live with the benchmark code
+  that enforces them.
 
 ---
 
@@ -309,7 +309,8 @@ def test_model_creation_performance(
 
 ### Recommended Enhancement: Environment-Aware Thresholds
 
-**Status**: ⚠️ Proposed (documented in PERFORMANCE_BENCHMARK_THRESHOLDS.md)
+**Status**: Proposed. Current threshold rationale belongs inline with the
+benchmark that enforces it.
 
 **Configuration** (tests/performance/conftest.py - NOT YET IMPLEMENTED):
 
@@ -755,7 +756,7 @@ diff performance-results/benchmark_20251216_*.log
         # - Local P95: 0.8ms, StdDev: 0.1ms
         # - Calculated: 0.8 + 2*0.1 = 1.0ms
         # - CI multiplier: 1.0 * 2 = 2.0ms (GitHub Actions variance)
-        # - See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md
+        # - Document threshold rationale inline with the benchmark.
         pytest.param(10, 1.0, id="small_10_items"),
     ],
 )
@@ -786,7 +787,7 @@ diff performance-results/benchmark_20251216_*.log
 
 **Required Documentation**:
 - Test docstring with baseline and rationale
-- Threshold table in PERFORMANCE_BENCHMARK_THRESHOLDS.md
+- Inline threshold table or current benchmark-local rationale
 - Commit message explaining threshold changes
 - Performance report in PR description (if relevant)
 

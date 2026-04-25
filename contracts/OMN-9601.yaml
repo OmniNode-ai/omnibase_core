@@ -1,0 +1,46 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-9601
+summary: "Restore domain plugin result compatibility import for SPI runtime models"
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "ci"
+    description: "omnibase_core PR #901 CI checks pass"
+    command: "gh pr checks 901 --repo OmniNode-ai/omnibase_core --watch"
+  - kind: "manual"
+    description: "Regression tests for both import paths pass"
+    command: "PYTHONPATH=src uv run pytest tests/unit/models/runtime/test_model_domain_plugin.py -v"
+  - kind: "manual"
+    description: "mypy --strict passes on all touched runtime model files"
+    command: "PYTHONPATH=src uv run mypy src/omnibase_core/models/runtime/model_domain_plugin.py src/omnibase_core/models/runtime/model_domain_plugin_result.py
+      src/omnibase_core/models/runtime/__init__.py --strict"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "Regression tests pass for both ModelDomainPluginResult import paths (compat module +
+      runtime __init__)"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "PYTHONPATH=src uv run pytest tests/unit/models/runtime/test_model_domain_plugin.py
+          -v"
+  - id: "dod-002"
+    description: "mypy --strict clean on all touched runtime model files"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "PYTHONPATH=src uv run mypy src/omnibase_core/models/runtime/model_domain_plugin.py
+          src/omnibase_core/models/runtime/model_domain_plugin_result.py src/omnibase_core/models/runtime/__init__.py
+          --strict"
+  - id: "dod-003"
+    description: "Post-deploy runtime smoke: ModelDomainPluginResult is importable in the runtime container"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "docker exec ${RUNTIME_CONTAINER:-omninode-runtime} python -c \"from omnibase_core.models.runtime.model_domain_plugin_result
+          import ModelDomainPluginResult; assert ModelDomainPluginResult\""

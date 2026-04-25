@@ -686,7 +686,6 @@ jobs:
 | Topic | Document |
 |-------|----------|
 | Current required checks (v1) | `.github/required-checks.yaml` |
-| CI test strategy | `docs/testing/CI_TEST_STRATEGY.md` |
 | CI monitoring guide | `docs/ci/CI_MONITORING_GUIDE.md` |
 | Core-infra boundary (ADR-005) | `docs/decisions/ADR-005-core-infra-dependency-boundary.md` |
 | Standard doc layout | `docs/standards/STANDARD_DOC_LAYOUT.md` |

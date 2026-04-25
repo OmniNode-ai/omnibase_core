@@ -385,7 +385,6 @@ Before deploying ONEX nodes in production:
 | Topic | Document |
 |-------|----------|
 | Effect timeout specification | [EFFECT_TIMEOUT_BEHAVIOR.md](../architecture/EFFECT_TIMEOUT_BEHAVIOR.md) |
-| NodeEffect architecture | [CONTRACT_DRIVEN_NODEEFFECT_V1_0.md](../architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md) |
 | Four-node architecture | [ONEX_FOUR_NODE_ARCHITECTURE.md](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
 | Debug thread safety constant | [constants_effect.py](../../src/omnibase_core/constants/constants_effect.py) |
 | Effect execution mixin | [mixin_effect_execution.py](../../src/omnibase_core/mixins/mixin_effect_execution.py) |

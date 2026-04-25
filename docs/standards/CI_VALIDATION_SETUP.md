@@ -78,7 +78,7 @@ Fields:
 To validate links that reference other repos (e.g., `omnibase_spi/docs/REGISTRY.md`):
 
 ```bash
-uv run onex-validate-links --verbose --cross-repo-root /path/to/omni_home
+uv run onex-validate-links --verbose --cross-repo-root /path/to/workspace
 ```
 
 ## CLI Reference

@@ -43,7 +43,8 @@ These are non-negotiable architectural truths:
 When operating autonomously in this repo:
 - Never disable pre-commit hooks, CI checks, or type checkers to make code pass.
   Fix the code instead.
-- Never write state files to `~/.claude/` -- use `omni_home/.onex_state/`.
+- Never write state files to `~/.claude/` -- use the workspace-local
+  `.onex_state/` directory.
 
 ### Contract-first topic definitions
 
@@ -86,8 +87,7 @@ The following are **unstable** (may change without notice):
 
 **CI enforcement**: `test_no_internal_deps.py` prevents internal OmniNode packages
 from appearing in hard dependencies (`sdk-boundary-check` CI job).
-`omnibase-compat` is the single exemption — per `omni_home/CLAUDE.md` §7
-(`compat -> core -> spi -> infra`), compat is the shared substrate every
+`omnibase-compat` is the single exemption: compat is the shared substrate every
 OmniNode repo is allowed to hard-depend on.
 
 ---

@@ -6,7 +6,7 @@
 > **Status**: Documentation
 > **Scope**: omnibase_core
 > **Last Updated**: 2025-12-09
-> **Related**: [CONTRACT_DRIVEN_NODEEFFECT_V1_0.md](CONTRACT_DRIVEN_NODEEFFECT_V1_0.md), [THREADING.md](../guides/THREADING.md)
+> **Related**: [THREADING.md](../guides/THREADING.md)
 
 ---
 
@@ -426,7 +426,6 @@ See [THREADING.md](../guides/THREADING.md) for:
 
 ## See Also
 
-- [CONTRACT_DRIVEN_NODEEFFECT_V1_0.md](CONTRACT_DRIVEN_NODEEFFECT_V1_0.md) - Full NodeEffect specification
 - [THREADING.md](../guides/THREADING.md) - Thread safety guidelines
 - [MixinEffectExecution](../../src/omnibase_core/mixins/mixin_effect_execution.py) - Implementation source
 - [constants_effect.py](../../src/omnibase_core/constants/constants_effect.py) - Timeout constants
