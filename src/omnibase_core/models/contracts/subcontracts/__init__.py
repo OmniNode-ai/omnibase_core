@@ -55,6 +55,7 @@ from .model_configuration_source import ModelConfigurationSource
 from .model_configuration_subcontract import ModelConfigurationSubcontract
 from .model_configuration_validation import ModelConfigurationValidation
 from .model_context_integrity_subcontract import ModelContextIntegritySubcontract
+from .model_contract_behavior_spec import ModelContractBehaviorSpec
 from .model_coordination_result import ModelCoordinationResult
 from .model_coordination_rules import ModelCoordinationRules
 from .model_correlation_config import ModelCorrelationConfig
@@ -200,6 +201,8 @@ __all__ = [
     "ModelCacheInvalidation",
     "ModelCacheKeyStrategy",
     "ModelCachePerformance",
+    # Behavioral execution profile (first slice of ModelContractBase decomposition)
+    "ModelContractBehaviorSpec",
     # Circuit breaker subcontracts
     "ModelCircuitBreakerSubcontract",
     # Compute subcontracts and components
