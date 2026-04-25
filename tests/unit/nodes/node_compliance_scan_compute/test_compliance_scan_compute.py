@@ -211,8 +211,12 @@ class TestSourceOnlyFlag:
             "node_id: node_dep\nnode_kind: EFFECT\n"
         )
 
+        # Explicit source_only=False
         results = scanner.scan(str(tmp_path), source_only=False)
         assert len(results) == 2
+        # No-arg call must also include .venv contracts (default=False is backwards-compat)
+        results_default = scanner.scan(str(tmp_path))
+        assert len(results_default) == 2
 
     def test_source_only_excludes_bare_venv_dir(
         self, scanner: NodeComplianceScanCompute, tmp_path: Path
