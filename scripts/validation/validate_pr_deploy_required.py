@@ -57,6 +57,7 @@ RUNTIME_PATH_PATTERNS = [
     "src/omnimarket/services/**/*.py",
     # Cross-repo node handlers and runtime paths (OMN-9685: narrowed from catch-all)
     # Use both flat and nested forms since ** requires at least one path segment
+    "src/*/nodes/*.py",
     "src/*/nodes/**/*.py",
     "src/*/runtime/*.py",
     "src/*/runtime/**/*.py",

@@ -108,6 +108,11 @@ class TestFindRuntimePaths:
         assert len(hits) == 1
         assert "handler" in hits[0]
 
+    def test_top_level_node_module_matched(self) -> None:
+        files = ["src/omnibase_core/nodes/node_contract_resolve_compute.py"]
+        hits = find_runtime_paths(files)
+        assert len(hits) == 1
+
 
 # ---------------------------------------------------------------------------
 # validate_pr_deploy_gate — integration tests using tmp contracts dir
