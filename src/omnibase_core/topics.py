@@ -464,6 +464,15 @@ class TopicBase(StrEnum):
     The runtime subscribes to this topic via EventBusSubcontractWiring.
     """
 
+    INVOCATION_COMMAND = "onex.cmd.omnibase-infra.invocation.v1"
+    """Command emitted after routing selects a concrete invocation path."""
+
+    REMOTE_AGENT_INVOKE = "onex.cmd.omnibase-infra.remote-agent-invoke.v1"
+    """Command consumed by the remote-agent invoke effect."""
+
+    AGENT_TASK_LIFECYCLE = "onex.evt.omnibase-infra.agent-task-lifecycle.v1"
+    """Lifecycle events emitted by remote-agent task transports."""
+
     # ==========================================================================
     # Team lifecycle topics (OMN-7026)
     # Unified event schema for all dispatch surfaces (team_worker,
