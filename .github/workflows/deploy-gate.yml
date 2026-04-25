@@ -3,7 +3,7 @@
 #
 # Wave D CI gate: runtime-change PRs must cite a ticket with deploy evidence.
 # Ticket: OMN-8912 | DGM-Phase6 (OMN-9734): thin caller — validator lives in omniclaude.
-# After omniclaude PR #1418 merges, update ref from branch name to @main.
+# Ref pinned to SHA 16d9355f (omniclaude jonah/omn-9734-dgm-phase6-dedupe); update to @main after omniclaude PR #1418 merges.
 #
 # Required status check: "deploy-gate"
 # Must pass before merging to main on all repos with runtime code.
@@ -21,7 +21,6 @@ concurrency:
 
 jobs:
   deploy-gate:
-    uses: OmniNode-ai/omniclaude/.github/workflows/deploy-gate-reusable.yml@jonah/omn-9734-dgm-phase6-dedupe
-    secrets: inherit
+    uses: OmniNode-ai/omniclaude/.github/workflows/deploy-gate-reusable.yml@16d9355f0e53592bc3b88893d31fb093d6c2f38f
     with:
       contracts-dir: contracts
