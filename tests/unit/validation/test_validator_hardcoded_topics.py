@@ -19,6 +19,7 @@ from omnibase_core.models.contracts.subcontracts.model_validator_subcontract imp
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.validation.validator_hardcoded_topics import (
+    _EXCLUDED_PATH_PARTS,
     _RULE_TOPIC_ENV_VAR,
     _RULE_TOPIC_LITERAL,
     ValidatorHardcodedTopics,
@@ -479,3 +480,80 @@ class TestEdgeCases:
         result = v.validate_file(p)
         env_issues = [i for i in result.issues if i.code == _RULE_TOPIC_ENV_VAR]
         assert len(env_issues) == 0
+
+
+@pytest.mark.unit
+class TestGeneratedPathExclusion:
+    """Verify that generated/vendored directories are excluded regardless of contract config."""
+
+    def test_venv_site_packages_skipped(self, tmp_path: Path) -> None:
+        venv_file = (
+            tmp_path
+            / ".venv"
+            / "lib"
+            / "python3.12"
+            / "site-packages"
+            / "kafka"
+            / "topics.py"
+        )
+        venv_file.parent.mkdir(parents=True)
+        venv_file.write_text('TOPIC = "onex.evt.test.a.v1"\n')
+        v = ValidatorHardcodedTopics(
+            contract=_make_contract(
+                rules=[
+                    ModelValidatorRule(
+                        rule_id=_RULE_TOPIC_LITERAL,
+                        description="t",
+                        severity=EnumSeverity.ERROR,
+                        enabled=True,
+                    ),
+                ]
+            )
+        )
+        assert v._is_excluded(venv_file)
+        result = v.validate(tmp_path)
+        assert result.is_valid
+
+    def test_legitimate_src_file_scanned(self, tmp_path: Path) -> None:
+        src_file = tmp_path / "src" / "legitimate.py"
+        src_file.parent.mkdir(parents=True)
+        src_file.write_text('TOPIC = "onex.evt.test.a.v1"\n')
+        v = ValidatorHardcodedTopics(contract=_make_contract())
+        assert not v._is_excluded(src_file)
+        result = v.validate_file(src_file)
+        assert not result.is_valid
+
+    def test_nested_venv_skipped(self, tmp_path: Path) -> None:
+        nested = tmp_path / "pkg" / ".venv" / ".venv" / "site-packages" / "foo.py"
+        nested.parent.mkdir(parents=True)
+        nested.write_text('TOPIC = "onex.evt.test.a.v1"\n')
+        v = ValidatorHardcodedTopics(contract=_make_contract())
+        assert v._is_excluded(nested)
+
+    def test_excluded_path_parts_completeness(self) -> None:
+        expected = {
+            ".venv",
+            "__pycache__",
+            "build",
+            "dist",
+            ".pytest_cache",
+            ".ruff_cache",
+            ".mypy_cache",
+            "node_modules",
+            ".git",
+        }
+        assert expected <= _EXCLUDED_PATH_PARTS
+
+    def test_pycache_skipped(self, tmp_path: Path) -> None:
+        pycache_file = tmp_path / "src" / "__pycache__" / "foo.cpython-312.pyc"
+        pycache_file.parent.mkdir(parents=True)
+        pycache_file.write_text('TOPIC = "onex.evt.test.a.v1"\n')
+        v = ValidatorHardcodedTopics(contract=_make_contract())
+        assert v._is_excluded(pycache_file)
+
+    def test_dot_git_skipped(self, tmp_path: Path) -> None:
+        git_file = tmp_path / ".git" / "COMMIT_EDITMSG"
+        git_file.parent.mkdir(parents=True)
+        git_file.write_text('TOPIC = "onex.evt.test.a.v1"\n')
+        v = ValidatorHardcodedTopics(contract=_make_contract())
+        assert v._is_excluded(git_file)

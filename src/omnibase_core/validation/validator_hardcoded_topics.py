@@ -103,6 +103,23 @@ _APPROVED_SUFFIXES: frozenset[str] = frozenset(
 _RULE_TOPIC_LITERAL = "hardcoded_topic_literal"
 _RULE_TOPIC_ENV_VAR = "hardcoded_topic_env_var"
 
+# Path parts that are always excluded regardless of contract configuration.
+# This provides defense-in-depth for programmatic usage with minimal contracts
+# (e.g. tests that construct ModelValidatorSubcontract with exclude_patterns=[]).
+_EXCLUDED_PATH_PARTS: frozenset[str] = frozenset(
+    {
+        ".venv",
+        "__pycache__",
+        "build",
+        "dist",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".mypy_cache",
+        "node_modules",
+        ".git",
+    }
+)
+
 
 class ValidatorHardcodedTopics(ValidatorBase):
     """Reject hardcoded ONEX topic strings outside approved constant files.
@@ -113,6 +130,11 @@ class ValidatorHardcodedTopics(ValidatorBase):
     """
 
     validator_id: ClassVar[str] = "hardcoded_topics"
+
+    def _is_excluded(self, path: Path) -> bool:
+        if any(part in _EXCLUDED_PATH_PARTS for part in path.parts):
+            return True
+        return super()._is_excluded(path)
 
     def _validate_file(
         self,
