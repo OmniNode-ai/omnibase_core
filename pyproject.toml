@@ -99,10 +99,11 @@ spi = ["omnibase-spi>=0.20.2"]
 # model_onex_container falls back to an inline equivalent when not installed.
 compat = ["omnibase-compat>=0.3.1,<1.0.0"]
 cli = ["psutil>=7.2.1"]
+kafka = ["confluent-kafka>=2.12.0,<3.0.0"]
 cache = ["redis>=5.0.0,<8.0.0"]
 metrics = ["prometheus-client>=0.21.0,<1.0.0"]
 sql-parser = ["sqlglot>=26.0.0,<31.0.0"]
-full = ["omnibase-spi>=0.20.2", "omnibase-compat>=0.3.1,<1.0.0", "psutil>=7.2.1", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
+full = ["omnibase-spi>=0.20.2", "omnibase-compat>=0.3.1,<1.0.0", "psutil>=7.2.1", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
 
 [dependency-groups]
 dev = [
@@ -123,6 +124,7 @@ dev = [
     "interrogate>=1.7.0",
     "hypothesis>=6.150",
     "psutil>=7.2.1",
+    "confluent-kafka>=2.12.0,<3.0.0",
     "prometheus-client>=0.21.0,<1.0.0",
     "types-psutil>=7.2.1.20260116",
     "sqlglot>=26.0.0,<31.0.0",

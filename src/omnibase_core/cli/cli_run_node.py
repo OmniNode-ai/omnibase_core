@@ -22,21 +22,6 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import OnexError
 
 
-def _load_kafka_classes() -> tuple[type, type]:
-    """Load KafkaProducer and KafkaConsumer via importlib to satisfy ADR-005 boundary."""
-    try:
-        mod = importlib.import_module("kafka")
-    except ImportError as exc:
-        raise OnexError(
-            code=EnumCoreErrorCode.IMPORT_ERROR,
-            message=(
-                "kafka-python is required for run-node. "
-                "Install with: uv add kafka-python-ng"
-            ),
-        ) from exc
-    return mod.KafkaProducer, mod.KafkaConsumer
-
-
 def _emit_error(node_id: str, message: str, **extra: str | int) -> None:
     """Emit a SkillRoutingError JSON envelope and exit non-zero."""
     envelope: dict[str, str | int] = {
@@ -59,10 +44,20 @@ def publish_and_poll(
 
     Returns the response dict, or None on timeout.
     """
-    KafkaProducer, KafkaConsumer = _load_kafka_classes()
+    try:
+        _ck = importlib.import_module("confluent_kafka")
+        Producer = _ck.Producer  # type: ignore[attr-defined]
+        Consumer = _ck.Consumer  # type: ignore[attr-defined]
+    except ImportError as exc:
+        raise OnexError(
+            code=EnumCoreErrorCode.IMPORT_ERROR,
+            message=(
+                "confluent-kafka is required for run-node. "
+                "Install with: uv add omnibase-core[kafka]"
+            ),
+        ) from exc
 
     correlation_id = str(uuid.uuid4())
-    response_topic = TOPIC_CLI_RUN_NODE_RESPONSE
 
     envelope = {
         "correlation_id": correlation_id,
@@ -71,31 +66,56 @@ def publish_and_poll(
         "timestamp": time.time(),
     }
 
-    producer = KafkaProducer(
-        bootstrap_servers=bootstrap_servers,
-        value_serializer=lambda v: json.dumps(v).encode(),
-    )
-    producer.send(TOPIC_CLI_RUN_NODE_CMD, value=envelope)
-    producer.flush()
-    producer.close()
+    delivery_error: list[Exception] = []
 
-    consumer = KafkaConsumer(
-        response_topic,
-        bootstrap_servers=bootstrap_servers,
-        value_deserializer=lambda v: json.loads(v.decode()),
-        auto_offset_reset="latest",
-        consumer_timeout_ms=timeout * 1000,
-        group_id=f"onex-run-node-{correlation_id}",
+    def _on_delivery(err: object, _msg: object) -> None:
+        if err is not None:
+            delivery_error.append(
+                OnexError(
+                    code=EnumCoreErrorCode.RUNTIME_ERROR,
+                    message=f"Kafka delivery failed: {err}",
+                )
+            )
+
+    producer = Producer({"bootstrap.servers": bootstrap_servers})
+    producer.produce(
+        topic=TOPIC_CLI_RUN_NODE_CMD,
+        value=json.dumps(envelope).encode(),
+        on_delivery=_on_delivery,
     )
+    producer.flush(timeout=10.0)
+
+    if delivery_error:
+        raise delivery_error[0]
+
+    consumer = Consumer(
+        {
+            "bootstrap.servers": bootstrap_servers,
+            "group.id": f"onex-run-node-{correlation_id}",
+            "auto.offset.reset": "latest",
+            "enable.auto.commit": False,
+        }
+    )
+    consumer.subscribe([TOPIC_CLI_RUN_NODE_RESPONSE])
 
     deadline = time.monotonic() + timeout
     try:
-        for message in consumer:
-            if message.value.get("correlation_id") == correlation_id:
-                value: dict[str, object] = dict(message.value)
-                return value
-            if time.monotonic() > deadline:
-                return None
+        while time.monotonic() < deadline:
+            remaining = deadline - time.monotonic()
+            msg = consumer.poll(timeout=min(remaining, 1.0))
+            if msg is None:
+                continue
+            if msg.error():
+                continue
+            raw = msg.value()
+            if raw is None:
+                continue
+            try:
+                data: dict[str, object] = json.loads(raw.decode())
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+            if data.get("correlation_id") == correlation_id:
+                return data
     finally:
         consumer.close()
 
