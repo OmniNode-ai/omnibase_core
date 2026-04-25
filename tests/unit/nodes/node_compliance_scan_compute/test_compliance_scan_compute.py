@@ -213,3 +213,23 @@ class TestSourceOnlyFlag:
 
         results = scanner.scan(str(tmp_path), source_only=False)
         assert len(results) == 2
+
+    def test_source_only_excludes_bare_venv_dir(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        source_dir = tmp_path / "src" / "node_real"
+        source_dir.mkdir(parents=True)
+        (source_dir / "contract.yaml").write_text(
+            "node_id: node_real\nnode_kind: COMPUTE\n"
+        )
+
+        # "venv" (no dot) is also pruned
+        venv_dir = tmp_path / "venv" / "lib" / "node_dep"
+        venv_dir.mkdir(parents=True)
+        (venv_dir / "contract.yaml").write_text(
+            "node_id: node_dep\nnode_kind: EFFECT\n"
+        )
+
+        results = scanner.scan(str(tmp_path), source_only=True)
+        assert len(results) == 1
+        assert results[0].node_id == "node_real"

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import ast
 import importlib
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -53,6 +54,9 @@ _TOPIC_PATTERN = re.compile(
 _COMPUTE_KINDS = {"compute", "COMPUTE"}
 _ORCHESTRATOR_KINDS = {"orchestrator", "ORCHESTRATOR"}
 
+# Directory names treated as virtual environments — pruned during source_only walk
+_VENV_DIR_NAMES = {".venv", "venv", "env", ".env"}
+
 
 class NodeComplianceScanCompute:
     """Compliance scanner compute handler.
@@ -68,17 +72,19 @@ class NodeComplianceScanCompute:
 
         Args:
             repo_root: Absolute path to the repository root.
-            source_only: When True, skip any contract.yaml found under a .venv
-                directory. Eliminates ~94% false-positive handler_resolution
+            source_only: When True, prune virtual-environment directories
+                (.venv, venv, env, .env) during the walk so they are never
+                traversed. Eliminates ~94% false-positive handler_resolution
                 failures caused by pip-installed packages (OMN-9537).
 
         Returns:
             List of per-node compliance results.
         """
         root = Path(repo_root)
-        contracts = sorted(root.rglob("contract.yaml"))
         if source_only:
-            contracts = [c for c in contracts if ".venv" not in c.parts]
+            contracts = sorted(self._walk_source_only(root))
+        else:
+            contracts = sorted(root.rglob("contract.yaml"))
         results: list[ModelScanCheckResult] = []
 
         for contract_path in contracts:
@@ -86,6 +92,17 @@ class NodeComplianceScanCompute:
             results.append(result)
 
         return results
+
+    @staticmethod
+    def _walk_source_only(root: Path) -> list[Path]:
+        """Walk root, pruning venv directories before descending into them."""
+        found: list[Path] = []
+        for dirpath, dirnames, filenames in os.walk(root):
+            # Prune venv dirs in-place so os.walk does not descend into them
+            dirnames[:] = [d for d in dirnames if d not in _VENV_DIR_NAMES]
+            if "contract.yaml" in filenames:
+                found.append(Path(dirpath) / "contract.yaml")
+        return found
 
     def _check_contract(self, contract_path: Path) -> ModelScanCheckResult:
         """Run all 8 checks on a single contract.yaml."""
