@@ -113,6 +113,14 @@ class TestModelRoutingRule:
         with pytest.raises(ValidationError):
             ModelRoutingRule.model_validate({"invocation_kind": "agent"})
 
+    def test_agent_rule_without_protocol_raises(self) -> None:
+        with pytest.raises(ValidationError, match="agent_protocol is required"):
+            ModelRoutingRule(
+                capability=EnumAgentCapability.TECH_DEBT_TRIAGE,
+                invocation_kind=EnumInvocationKind.AGENT,
+                target_ref="adk-scout",
+            )
+
 
 @pytest.mark.unit
 class TestModelTargetAgent:

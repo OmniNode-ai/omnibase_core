@@ -464,6 +464,20 @@ class TopicBase(StrEnum):
     The runtime subscribes to this topic via EventBusSubcontractWiring.
     """
 
+    REMOTE_AGENT_INVOKE = "onex.cmd.omnibase-infra.remote-agent-invoke.v1"
+    """Command consumed by node_remote_agent_invoke_effect to submit and watch A2A tasks.
+
+    Emitted by the delegation orchestrator dispatch resolver when routing to
+    the AGENT invocation kind. (OMN-9637)
+    """
+
+    AGENT_TASK_LIFECYCLE = "onex.evt.omnibase-infra.agent-task-lifecycle.v1"
+    """Lifecycle event emitted by node_remote_agent_invoke_effect for each A2A state transition.
+
+    Published back to the orchestrator pipeline after each poll result from the
+    remote A2A peer. (OMN-9637)
+    """
+
     # ==========================================================================
     # Team lifecycle topics (OMN-7026)
     # Unified event schema for all dispatch surfaces (team_worker,
