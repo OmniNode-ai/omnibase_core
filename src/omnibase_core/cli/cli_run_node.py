@@ -46,6 +46,7 @@ def publish_and_poll(
     """
     try:
         _ck = importlib.import_module("confluent_kafka")
+        # NOTE(OMN-9715): lazy importlib import preserves ADR-005 transport boundary; attr-defined suppressed because confluent_kafka stubs are incomplete
         Producer = _ck.Producer  # type: ignore[attr-defined]
         Consumer = _ck.Consumer  # type: ignore[attr-defined]
     except ImportError as exc:
@@ -66,6 +67,19 @@ def publish_and_poll(
         "timestamp": time.time(),
     }
 
+    # Subscribe consumer before producing so a fast responder cannot deliver
+    # the reply before partition assignment (auto.offset.reset="latest" would
+    # skip it otherwise).
+    consumer = Consumer(
+        {
+            "bootstrap.servers": bootstrap_servers,
+            "group.id": f"onex-run-node-{correlation_id}",
+            "auto.offset.reset": "latest",
+            "enable.auto.commit": False,
+        }
+    )
+    consumer.subscribe([TOPIC_CLI_RUN_NODE_RESPONSE])
+
     delivery_error: list[Exception] = []
 
     def _on_delivery(err: object, _msg: object) -> None:
@@ -83,20 +97,17 @@ def publish_and_poll(
         value=json.dumps(envelope).encode(),
         on_delivery=_on_delivery,
     )
-    producer.flush(timeout=10.0)
+    pending = producer.flush(timeout=10.0)
+    if pending:
+        consumer.close()
+        raise OnexError(
+            code=EnumCoreErrorCode.RUNTIME_ERROR,
+            message=f"Kafka flush timed out with {pending} queued message(s)",
+        )
 
     if delivery_error:
+        consumer.close()
         raise delivery_error[0]
-
-    consumer = Consumer(
-        {
-            "bootstrap.servers": bootstrap_servers,
-            "group.id": f"onex-run-node-{correlation_id}",
-            "auto.offset.reset": "latest",
-            "enable.auto.commit": False,
-        }
-    )
-    consumer.subscribe([TOPIC_CLI_RUN_NODE_RESPONSE])
 
     deadline = time.monotonic() + timeout
     try:

@@ -26,9 +26,24 @@ class TestCliRunNodeNoKafkaPythonImport:
     """Assert that kafka-python (module ``kafka``) is NOT imported at module load time."""
 
     def test_kafka_python_not_imported_at_module_level(self) -> None:
-        assert "kafka" not in sys.modules, (
-            "kafka-python must not be imported at module level in cli_run_node"
-        )
+        import importlib
+
+        # Re-import the module in an isolated namespace to avoid false-positive
+        # from other test modules that may have imported kafka before this test.
+        import importlib.util
+
+        spec = importlib.util.find_spec("omnibase_core.cli.cli_run_node")
+        assert spec is not None
+        # Verify the module itself does not trigger a kafka-python import
+        saved = sys.modules.pop("kafka", None)
+        try:
+            importlib.reload(importlib.import_module("omnibase_core.cli.cli_run_node"))
+            assert "kafka" not in sys.modules, (
+                "kafka-python must not be imported at module level in cli_run_node"
+            )
+        finally:
+            if saved is not None:
+                sys.modules["kafka"] = saved
 
     def test_confluent_kafka_import_path_used(self) -> None:
         import importlib.util
@@ -63,6 +78,7 @@ class TestPublishAndPoll:
 
     def test_produce_call_shape(self) -> None:
         mock_producer = MagicMock()
+        mock_producer.flush.return_value = 0  # all messages delivered
         mock_consumer = MagicMock()
         mock_consumer.poll.return_value = None  # timeout immediately
 
@@ -98,6 +114,7 @@ class TestPublishAndPoll:
             return uid
 
         mock_producer = MagicMock()
+        mock_producer.flush.return_value = 0  # all messages delivered
 
         def _make_consumer(config: dict[str, object]) -> MagicMock:
             consumer = MagicMock()
@@ -132,6 +149,7 @@ class TestPublishAndPoll:
 
     def test_returns_none_on_timeout(self) -> None:
         mock_producer = MagicMock()
+        mock_producer.flush.return_value = 0  # all messages delivered
         mock_consumer = MagicMock()
         mock_consumer.poll.return_value = None
 
@@ -156,6 +174,8 @@ class TestPublishAndPoll:
 
     def test_consumer_closed_on_match(self) -> None:
         mock_producer = MagicMock()
+        mock_producer.flush.return_value = 0  # all messages delivered
+        captured_consumer: list[MagicMock] = []
 
         def _make_consumer(config: dict[str, object]) -> MagicMock:
             consumer = MagicMock()
@@ -163,6 +183,7 @@ class TestPublishAndPoll:
             corr = group_id.removeprefix("onex-run-node-")
             msg = self._make_mock_message(corr)
             consumer.poll.return_value = msg
+            captured_consumer.append(consumer)
             return consumer
 
         with (
@@ -182,6 +203,28 @@ class TestPublishAndPoll:
             )
 
         assert result is not None
+        assert len(captured_consumer) == 1
+        captured_consumer[0].close.assert_called_once()
+
+    def test_flush_pending_raises_onerror(self) -> None:
+        from omnibase_core.errors import OnexError
+
+        mock_producer = MagicMock()
+        mock_producer.flush.return_value = 1  # simulates queued message timeout
+        mock_consumer = MagicMock()
+
+        with (
+            patch(_PATCH_PRODUCER, return_value=mock_producer),
+            patch(_PATCH_CONSUMER, return_value=mock_consumer),
+        ):
+            with pytest.raises(OnexError, match="flush timed out"):
+                publish_and_poll(
+                    node_id="x",
+                    payload={},
+                    timeout=5,
+                    bootstrap_servers="localhost:19092",
+                )
+        mock_consumer.close.assert_called_once()
 
     def test_raises_onerror_when_confluent_kafka_missing(self) -> None:
         from omnibase_core.errors import OnexError
@@ -235,6 +278,7 @@ class TestRunNodeCommand:
     def test_timeout_response_exits_nonzero(self) -> None:
         runner = CliRunner()
         mock_producer = MagicMock()
+        mock_producer.flush.return_value = 0  # all messages delivered
         mock_consumer = MagicMock()
         mock_consumer.poll.return_value = None
 
