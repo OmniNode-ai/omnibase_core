@@ -495,7 +495,7 @@ def _is_cli_banner_line(raw: str) -> bool:
     run-node`` starts with ``onex`` (or with an env-prefix like ``ENV=...``).
     """
     lowered = raw.lower().lstrip()
-    for banner in ("usage:", "example:", "example:", "run via:", "see ", "see:"):
+    for banner in ("usage:", "example:", "run via:", "see ", "see:"):
         if lowered.startswith(banner):
             return True
     return False
