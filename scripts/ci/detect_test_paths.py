@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import argparse
+import sys
 from pathlib import Path
 
 from scripts.ci.test_selection_loader import (
@@ -156,3 +158,47 @@ def _split_count_for(selected_paths: list[str]) -> int:
     if n <= 16:
         return 4
     return 5
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Resolve change-aware test paths")
+    parser.add_argument(
+        "--changed-files-from",
+        type=Path,
+        required=True,
+        help="Path to a file with one changed-file path per line.",
+    )
+    parser.add_argument("--ref-name", required=True)
+    parser.add_argument("--event-name", default="pull_request")
+    parser.add_argument(
+        "--adjacency",
+        type=Path,
+        default=Path(__file__).parent / "test_selection_adjacency.yaml",
+    )
+    parser.add_argument(
+        "--feature-flag",
+        choices=("on", "off"),
+        default="on",
+        help="When 'off', emit a FEATURE_FLAG_OFF full-suite selection regardless of changed files.",
+    )
+    args = parser.parse_args(argv)
+
+    changed = [
+        line.strip()
+        for line in args.changed_files_from.read_text().splitlines()
+        if line.strip()
+    ]
+    selection = compute_selection(
+        changed_files=changed,
+        adjacency_path=args.adjacency,
+        ref_name=args.ref_name,
+        event_name=args.event_name,
+        feature_flag_enabled=(args.feature_flag == "on"),
+    )
+    sys.stdout.write(selection.model_dump_json())
+    sys.stdout.write("\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
