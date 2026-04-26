@@ -47,7 +47,10 @@ def _base_receipt(
     status: EnumReceiptStatus = EnumReceiptStatus.PASS,
     actual_output: str | None = None,
 ) -> ModelDodReceipt:
+    # `runtime_sha_match` is not in EXECUTABLE_CHECK_TYPES, so probe_stdout
+    # may be empty without violating the adversarial invariants.
     return ModelDodReceipt(
+        schema_version="1.0.0",
         ticket_id="OMN-9356",
         evidence_item_id="dod-sha-001",
         check_type=check_type,
@@ -56,6 +59,9 @@ def _base_receipt(
         run_timestamp=datetime.now(tz=UTC),
         commit_sha="a1b2c3d4e5f6",  # pragma: allowlist secret
         runner="integration-sweep-verifier",
+        verifier="foreground-runtime-sha-verifier",
+        probe_command=_PROBE_CMD,
+        probe_stdout=actual_output or "abc123def456\n",  # pragma: allowlist secret
         actual_output=actual_output,
     )
 
@@ -236,6 +242,7 @@ class TestDodGuardBlocksWithoutRuntimeShaReceipt:
 
     def test_pass_receipt_clears_guard(self) -> None:
         receipt = ModelDodReceipt(
+            schema_version="1.0.0",
             ticket_id="OMN-9356",
             evidence_item_id="dod-sha-001",
             check_type="runtime_sha_match",
@@ -244,6 +251,9 @@ class TestDodGuardBlocksWithoutRuntimeShaReceipt:
             run_timestamp=datetime.now(tz=UTC),
             commit_sha="abc123def456",  # pragma: allowlist secret
             runner="ci",
+            verifier="dod-guard-verifier",
+            probe_command=_PROBE_CMD,
+            probe_stdout="abc123def456\n",  # pragma: allowlist secret
             actual_output=_make_output_json(
                 deployed_sha="abc123def456",  # pragma: allowlist secret
                 merge_sha="abc123def456",  # pragma: allowlist secret
@@ -259,6 +269,7 @@ class TestDodGuardBlocksWithoutRuntimeShaReceipt:
 
     def test_fail_receipt_still_blocks(self) -> None:
         receipt = ModelDodReceipt(
+            schema_version="1.0.0",
             ticket_id="OMN-9356",
             evidence_item_id="dod-sha-001",
             check_type="runtime_sha_match",
@@ -267,6 +278,9 @@ class TestDodGuardBlocksWithoutRuntimeShaReceipt:
             run_timestamp=datetime.now(tz=UTC),
             commit_sha="abc123def456",  # pragma: allowlist secret
             runner="ci",
+            verifier="dod-guard-verifier",
+            probe_command=_PROBE_CMD,
+            probe_stdout="mismatch detected\n",
             actual_output=_make_output_json(
                 deployed_sha="aaaaaaaaaaaa",  # pragma: allowlist secret
                 merge_sha="bbbbbbbbbbbb",  # pragma: allowlist secret

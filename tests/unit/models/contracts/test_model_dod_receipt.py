@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -14,8 +15,16 @@ from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
 
 
-def _base_fields() -> dict:
+def _base_fields() -> dict[str, Any]:
+    """Return a baseline kwargs dict for a valid PASS receipt.
+
+    Independent verifier and runner identities and a non-empty
+    ``probe_stdout`` keep this fixture out of the ADVISORY downgrade paths
+    so callers that only test unrelated invariants (e.g. ticket_id format)
+    see PASS as the resulting status.
+    """
     return {
+        "schema_version": "1.0.0",
         "ticket_id": "OMN-9084",
         "evidence_item_id": "dod-001",
         "check_type": "command",
@@ -24,6 +33,9 @@ def _base_fields() -> dict:
         "run_timestamp": datetime.now(tz=UTC),
         "commit_sha": "a1b2c3d4e5f6",  # pragma: allowlist secret
         "runner": "ci-receipt-gate",
+        "verifier": "foreground-receipt-gate-2026-04-26",
+        "probe_command": "gh pr view --json state -q .state",
+        "probe_stdout": "OPEN\n",
     }
 
 
@@ -151,3 +163,158 @@ class TestModelDodReceiptStatusEnum:
         fields["status"] = "MAYBE"
         with pytest.raises(ValidationError):
             ModelDodReceipt(**fields)
+
+
+@pytest.mark.unit
+class TestEnumReceiptStatusMembers:
+    """OMN-9786: enum exposes exactly {PASS, FAIL, ADVISORY, PENDING}."""
+
+    def test_enum_receipt_status_values(self) -> None:
+        assert {s.value for s in EnumReceiptStatus} == {
+            "PASS",
+            "FAIL",
+            "ADVISORY",
+            "PENDING",
+        }
+
+
+@pytest.mark.unit
+class TestModelDodReceiptAdversarialInvariants:
+    """OMN-9786: Centralized Transition Policy enforced by model validator."""
+
+    def test_receipt_with_distinct_verifier_and_runner_is_pass(self) -> None:
+        receipt = ModelDodReceipt(
+            schema_version="1.0.0",
+            ticket_id="OMN-9762",
+            evidence_item_id="dod-001",
+            check_type="command",
+            check_value="gh pr checks 916 --repo OmniNode-ai/omnibase_core",
+            runner="worker-N1762",
+            verifier="foreground-2026-04-26-session-abc",
+            probe_command="gh pr checks 916 --repo OmniNode-ai/omnibase_core",
+            probe_stdout="...all checks passed...",
+            exit_code=0,
+            run_timestamp=datetime(2026, 4, 26, 12, 0, 0, tzinfo=UTC),
+            status=EnumReceiptStatus.PASS,
+            commit_sha="a1b2c3d4e5f6",  # pragma: allowlist secret
+        )
+        assert receipt.status is EnumReceiptStatus.PASS
+
+    def test_receipt_with_verifier_equal_runner_is_advisory(self) -> None:
+        # Even if caller passes status=PASS, model must downgrade to ADVISORY.
+        receipt = ModelDodReceipt(
+            schema_version="1.0.0",
+            ticket_id="OMN-9762",
+            evidence_item_id="dod-001",
+            check_type="command",
+            check_value="gh pr checks 916",
+            runner="worker-N1762",
+            verifier="worker-N1762",
+            probe_command="gh pr checks 916",
+            probe_stdout="all green",
+            exit_code=0,
+            run_timestamp=datetime(2026, 4, 26, 12, 0, 0, tzinfo=UTC),
+            status=EnumReceiptStatus.PASS,
+            commit_sha="a1b2c3d4e5f6",  # pragma: allowlist secret
+        )
+        assert receipt.status is EnumReceiptStatus.ADVISORY
+
+    def test_receipt_with_empty_probe_stdout_for_command_type_fails(self) -> None:
+        with pytest.raises(ValidationError, match="probe_stdout"):
+            ModelDodReceipt(
+                schema_version="1.0.0",
+                ticket_id="OMN-9762",
+                evidence_item_id="dod-001",
+                check_type="command",
+                check_value="gh pr checks 916",
+                runner="worker-N1762",
+                verifier="foreground-X",
+                probe_command="gh pr checks 916",
+                probe_stdout="",  # empty stdout for a command check is rejected
+                exit_code=0,
+                run_timestamp=datetime(2026, 4, 26, 12, 0, 0, tzinfo=UTC),
+                status=EnumReceiptStatus.PASS,
+                commit_sha="a1b2c3d4e5f6",  # pragma: allowlist secret
+            )
+
+    @pytest.mark.parametrize(
+        "executable_check_type", ["command", "test_passes", "endpoint", "grep"]
+    )
+    def test_empty_probe_stdout_fails_for_all_executable_check_types(
+        self, executable_check_type: str
+    ) -> None:
+        with pytest.raises(ValidationError, match="probe_stdout"):
+            ModelDodReceipt(
+                schema_version="1.0.0",
+                ticket_id="OMN-9762",
+                evidence_item_id="dod-001",
+                check_type=executable_check_type,
+                check_value="probe",
+                runner="worker-A",
+                verifier="foreground-B",
+                probe_command="probe",
+                probe_stdout="   \n  ",  # whitespace-only also rejected
+                run_timestamp=datetime(2026, 4, 26, 12, 0, 0, tzinfo=UTC),
+                status=EnumReceiptStatus.PASS,
+                commit_sha="a1b2c3d4e5f6",  # pragma: allowlist secret
+            )
+
+    def test_receipt_file_exists_check_alone_demoted_to_advisory(self) -> None:
+        # file_exists is weak proof; status downgrades to ADVISORY regardless
+        # of verifier/runner identity. Empty probe_stdout is allowed for this
+        # check_type because file_exists has no stdout.
+        receipt = ModelDodReceipt(
+            schema_version="1.0.0",
+            ticket_id="OMN-9762",
+            evidence_item_id="dod-001",
+            check_type="file_exists",
+            check_value="drift/dod_receipts/OMN-9762/dod-001/file_exists.yaml",
+            runner="worker-N1762",
+            verifier="foreground-X",
+            probe_command=(
+                "test -f drift/dod_receipts/OMN-9762/dod-001/file_exists.yaml"
+            ),
+            probe_stdout="",  # file_exists has no stdout; allowed for this check_type
+            exit_code=0,
+            run_timestamp=datetime(2026, 4, 26, 12, 0, 0, tzinfo=UTC),
+            status=EnumReceiptStatus.PASS,
+            commit_sha="a1b2c3d4e5f6",  # pragma: allowlist secret
+        )
+        assert receipt.status is EnumReceiptStatus.ADVISORY
+
+    @pytest.mark.parametrize(
+        "bad_version",
+        ["1.0", "v1.0.0", "1", "abc", "", "1.0.0.0"],
+    )
+    def test_invalid_schema_version_rejected(self, bad_version: str) -> None:
+        fields = _base_fields()
+        fields["schema_version"] = bad_version
+        with pytest.raises(ValidationError, match="schema_version"):
+            ModelDodReceipt(**fields)
+
+    @pytest.mark.parametrize(
+        "good_version",
+        ["1.0.0", "0.0.0", "1.2.3-beta.1", "2.10.99+build.123"],
+    )
+    def test_valid_schema_version_accepted(self, good_version: str) -> None:
+        fields = _base_fields()
+        fields["schema_version"] = good_version
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.schema_version == good_version
+
+    def test_advisory_status_passes_through_when_set_explicitly(self) -> None:
+        # Caller asks for ADVISORY directly — the validator must not error,
+        # and downgrade rules become no-ops because status is already ADVISORY.
+        fields = _base_fields()
+        fields["status"] = EnumReceiptStatus.ADVISORY
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.status is EnumReceiptStatus.ADVISORY
+
+    def test_pending_status_accepted(self) -> None:
+        fields = _base_fields()
+        fields["status"] = EnumReceiptStatus.PENDING
+        # PENDING for an executable check_type still requires probe_stdout
+        # (the check has been "allocated" with captured output even if it's
+        # not yet a terminal PASS/FAIL); leave probe_stdout populated.
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.status is EnumReceiptStatus.PENDING
