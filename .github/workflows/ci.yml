@@ -855,10 +855,10 @@ jobs:
   # Phase 1.6 - Detect Changes (shadow mode)
   # ---------------------------------------------------------------------------
   # Runs detect_test_paths and emits 5 outputs for shadow-mode comparison.
-  # The 40-split test-parallel matrix remains unchanged until OMN-9852 wires it.
+  # Outputs consumed by test-parallel (OMN-9852): matrix, split_count, is_full_suite, selected_paths.
 
   detect-changes:
-    name: Detect Changes (shadow)
+    name: Detect Changes
     needs: quality-gate
     runs-on: ubuntu-latest
     if: always() && needs.quality-gate.result == 'success'
@@ -932,21 +932,19 @@ jobs:
   # Phase 2 - Full Test Suite
   # ---------------------------------------------------------------------------
 
-  # Parallel test execution - split into 40 groups for speed and memory management
-  # Split strategy rationale:
-  #   - 38,805 total tests / 40 splits = ~970 tests/split on 2-CPU ubuntu-latest runners
-  #   - Target: 7-9 minutes per split (down from 14-18 min with 20 splits)
-  #   - 40x parallelization speedup vs sequential execution
-  #   - Increased from 20 to 40 splits: test count grew 3x (12K → 38K) since last bump
-  #   - Duration-aware splitting via .test_durations cache eliminates outlier splits
+  # Parallel test execution — matrix shape driven by detect-changes output (OMN-9852).
+  # When ENABLE_SMART_TESTS is off (default), detect-changes emits a 40-shard matrix
+  # with full_suite_reason=FEATURE_FLAG_OFF so the full-suite pytest step runs.
+  # When the flag is on and the change set is small, detect-changes emits a smaller
+  # matrix and selected_paths, activating the smart-selection pytest step instead.
   #
   # Dependency rationale (fail-fast optimization):
   #   - quality-gate: Aggregates all Phase 1 checks (lint, pyright, exports, etc.)
-  #   - This ensures quality failures are caught BEFORE spawning 40 test runners
-  #   - Saves ~120 runner-minutes on validation failures
+  #   - detect-changes: provides matrix shape, split_count, selected_paths, is_full_suite
+  #   - This ensures quality failures are caught BEFORE spawning N test runners
   test-parallel:
-    name: Tests (Split ${{ matrix.split }}/40)
-    needs: [quality-gate]
+    name: Tests (Split ${{ matrix.split }}/${{ needs.detect-changes.outputs.split_count }})
+    needs: [quality-gate, detect-changes]
     # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
     runs-on: >-
       ${{
@@ -957,11 +955,12 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
+    if: always() && needs.quality-gate.result == 'success'
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]
+        split: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
 
     steps:
       - name: Checkout code
@@ -992,7 +991,34 @@ jobs:
           restore-keys: |
             test-durations-
 
-      - name: Run test split ${{ matrix.split }}/40
+      - name: Run pytest (smart selection)
+        if: vars.ENABLE_SMART_TESTS == 'true' && needs.detect-changes.outputs.is_full_suite == 'false'
+        env:
+          # OMN-3327: Performance tests use CI_RUNNER_TYPE to relax thresholds on
+          # shared self-hosted runners (15-25% lower throughput vs dedicated runners)
+          CI_RUNNER_TYPE: >-
+            ${{
+              (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+               (github.event_name == 'push' ||
+                github.event_name == 'workflow_dispatch' ||
+                github.event_name == 'schedule'))
+              && 'self-hosted'
+              || 'github-hosted'
+            }}
+        run: |
+          paths=$(echo '${{ needs.detect-changes.outputs.selected_paths }}' | jq -r '.[]')
+          uv run pytest $paths \
+            --ignore=tests/integration \
+            --splits ${{ needs.detect-changes.outputs.split_count }} \
+            --group ${{ matrix.split }} \
+            -n auto \
+            --timeout=60 \
+            --timeout-method=thread \
+            --tb=short \
+            --junitxml=junit-${{ matrix.split }}.xml
+
+      - name: Run pytest (full suite)
+        if: vars.ENABLE_SMART_TESTS != 'true' || needs.detect-changes.outputs.is_full_suite == 'true'
         env:
           # OMN-3327: Performance tests use CI_RUNNER_TYPE to relax thresholds on
           # shared self-hosted runners (15-25% lower throughput vs dedicated runners)
@@ -1017,12 +1043,6 @@ jobs:
             --timeout-method=thread \
             --tb=short \
             --junitxml=junit-${{ matrix.split }}.xml
-          # Per-test timeout: 60 seconds prevents infinite hangs
-          # --store-durations: saves per-test timing so subsequent runs balance by
-          #   duration rather than count (eliminates outlier splits)
-          # All splits use -n auto (full parallelism) - shorter splits reduce
-          # resource pressure and runner cancellation probability
-          # Note: Coverage collection disabled - use local pytest-cov for coverage reports
 
       - name: Save test durations (split 1 only, after full suite data accumulated)
         if: matrix.split == 1

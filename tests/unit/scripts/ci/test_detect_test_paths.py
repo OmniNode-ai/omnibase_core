@@ -145,3 +145,21 @@ def test_small_change_returns_smart_selection_no_reason() -> None:
     assert "tests/unit/cli/" in selection.selected_paths
     assert 1 <= selection.split_count <= 5
     assert selection.matrix == list(range(1, selection.split_count + 1))
+
+
+# ---------------------------------------------------------------------------
+# Task 10: feature_flag_off branch
+# ---------------------------------------------------------------------------
+
+
+def test_feature_flag_off_returns_full_suite() -> None:
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/cli/foo.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        feature_flag_enabled=False,
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.FEATURE_FLAG_OFF
+    assert selection.split_count == 40
+    assert selection.matrix == list(range(1, 41))
