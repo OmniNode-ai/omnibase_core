@@ -413,6 +413,9 @@ from .enum_skill_result_status import EnumSkillResultStatus, SkillResultStatus
 # State update operation enum
 from .enum_state_update_operation import EnumStateUpdateOperation
 
+# Validator mode enum (OMN-9767 — corpus classification/normalization layer Phase 3, parent OMN-9757)
+from .enum_validator_mode import EnumValidatorMode
+
 # Event enums (contract registration - OMN-1651)
 from .events.enum_deregistration_reason import EnumDeregistrationReason
 
@@ -584,6 +587,8 @@ __all__ = [
     "EnumNondeterminismClass",
     # Normalization family (OMN-9759 — corpus classification, parent OMN-9757)
     "EnumNormalizationFamily",
+    # Validator mode (OMN-9767 — corpus classification Phase 3, parent OMN-9757)
+    "EnumValidatorMode",
     # Node domain
     "EnumNodeArchetype",
     "EnumNodeArchitectureType",
