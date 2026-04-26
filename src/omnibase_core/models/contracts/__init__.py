@@ -115,6 +115,7 @@ from .model_contract_orchestrator import ModelContractOrchestrator
 from .model_contract_patch import ModelContractPatch
 from .model_contract_reducer import ModelContractReducer
 from .model_contract_version import ModelContractVersion
+from .model_corpus_classification import ModelCorpusClassification
 
 # Database repository contract models (OMN-1782)
 from .model_db_operation import ModelDbOperation
@@ -204,6 +205,7 @@ __all__ = [
     "ModelContractNodeMetadata",
     "ModelContractNormalizationConfig",
     "ModelContractVersion",
+    "ModelCorpusClassification",
     "ModelDependency",
     "ModelDependencySpec",
     "DependencyType",
