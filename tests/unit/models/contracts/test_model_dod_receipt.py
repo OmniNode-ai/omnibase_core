@@ -284,7 +284,17 @@ class TestModelDodReceiptAdversarialInvariants:
 
     @pytest.mark.parametrize(
         "bad_version",
-        ["1.0", "v1.0.0", "1", "abc", "", "1.0.0.0"],
+        [
+            "1.0",
+            "v1.0.0",
+            "1",
+            "abc",
+            "",
+            "1.0.0.0",
+            "01.0.0",  # SemVer 2.0.0: leading zero in MAJOR rejected
+            "1.02.0",  # leading zero in MINOR
+            "1.0.03",  # leading zero in PATCH
+        ],
     )
     def test_invalid_schema_version_rejected(self, bad_version: str) -> None:
         fields = _base_fields()
@@ -294,7 +304,19 @@ class TestModelDodReceiptAdversarialInvariants:
 
     @pytest.mark.parametrize(
         "good_version",
-        ["1.0.0", "0.0.0", "1.2.3-beta.1", "2.10.99+build.123"],
+        [
+            "1.0.0",
+            "0.0.0",
+            "1.2.3-beta.1",
+            "2.10.99+build.123",
+            "1.0.0-rc.1+build-7",  # SemVer 2.0.0: build metadata may contain hyphens
+            "1.0.0-alpha",
+            "1.0.0-alpha.1",
+            "1.0.0-0.3.7",
+            "1.0.0-x.7.z.92",
+            "10.20.30",
+            "1.1.2-prerelease+meta",
+        ],
     )
     def test_valid_schema_version_accepted(self, good_version: str) -> None:
         fields = _base_fields()
@@ -310,11 +332,59 @@ class TestModelDodReceiptAdversarialInvariants:
         receipt = ModelDodReceipt(**fields)
         assert receipt.status is EnumReceiptStatus.ADVISORY
 
-    def test_pending_status_accepted(self) -> None:
+    def test_pending_status_accepted_with_stdout(self) -> None:
         fields = _base_fields()
         fields["status"] = EnumReceiptStatus.PENDING
-        # PENDING for an executable check_type still requires probe_stdout
-        # (the check has been "allocated" with captured output even if it's
-        # not yet a terminal PASS/FAIL); leave probe_stdout populated.
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.status is EnumReceiptStatus.PENDING
+
+    def test_pending_executable_check_allows_empty_probe_stdout(self) -> None:
+        """PENDING means probe was allocated but not yet executed — empty stdout
+        is the correct representation. Without this exemption, callers would
+        be forced to invent fake stdout to express the pending state."""
+        fields = _base_fields()
+        fields["status"] = EnumReceiptStatus.PENDING
+        fields["probe_stdout"] = ""
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.status is EnumReceiptStatus.PENDING
+        assert receipt.probe_stdout == ""
+
+    def test_self_attestation_preserves_fail_status(self) -> None:
+        """FAIL must survive verifier == runner — collapsing FAIL into
+        ADVISORY would erase the meaning of the failure outcome."""
+        fields = _base_fields()
+        fields["status"] = EnumReceiptStatus.FAIL
+        fields["runner"] = "worker-X"
+        fields["verifier"] = "worker-X"  # self-attestation
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.status is EnumReceiptStatus.FAIL
+
+    def test_self_attestation_preserves_pending_status(self) -> None:
+        """PENDING must survive verifier == runner — a queued probe with
+        a single-identity verifier is still pending, not advisory."""
+        fields = _base_fields()
+        fields["status"] = EnumReceiptStatus.PENDING
+        fields["runner"] = "worker-X"
+        fields["verifier"] = "worker-X"
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.status is EnumReceiptStatus.PENDING
+
+    def test_file_exists_preserves_fail_status(self) -> None:
+        """FAIL must survive a weak-proof check_type — the probe ran and the
+        file was not present; that outcome must remain visible as FAIL."""
+        fields = _base_fields()
+        fields["check_type"] = "file_exists"
+        fields["status"] = EnumReceiptStatus.FAIL
+        fields["probe_stdout"] = ""  # file_exists has no stdout
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.status is EnumReceiptStatus.FAIL
+
+    def test_file_exists_preserves_pending_status(self) -> None:
+        """PENDING must survive a weak-proof check_type — a queued
+        file_exists probe is still pending, not advisory."""
+        fields = _base_fields()
+        fields["check_type"] = "file_exists"
+        fields["status"] = EnumReceiptStatus.PENDING
+        fields["probe_stdout"] = ""
         receipt = ModelDodReceipt(**fields)
         assert receipt.status is EnumReceiptStatus.PENDING

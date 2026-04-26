@@ -47,9 +47,17 @@ from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 
 _TICKET_ID_RE = re.compile(r"^OMN-\d+$")
 _SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
-# Mirrors `SEMVER_PATTERN` in `omnibase_core.validation.phases.validator_expanded_contract`.
-# Inlined here to avoid a contracts-models → validation circular import.
-_SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$")
+# SemVer 2.0.0 — official regex from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+# Rejects leading zeros in numeric core (e.g. "01.0.0"), allows pre-release
+# identifiers with dot-separated alphanumerics and hyphens (e.g. "1.0.0-rc.1"),
+# and allows build metadata containing hyphens (e.g. "1.0.0+build-7"). Inlined
+# here to avoid a contracts-models → validation circular import.
+_SEMVER_RE = re.compile(
+    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+    r"(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)"
+    r"(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
+    r"(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
+)
 
 # check_types whose proof requires captured stdout. Listed here (not in the
 # validator body) so the policy is grep-able and easy to extend.
@@ -86,11 +94,11 @@ class ModelDodReceipt(BaseModel):
 
     schema_version: str = Field(
         ...,
-        max_length=20,
         description=(
-            "SemVer for the receipt schema. Pins downstream consumers so "
-            "future field additions can negotiate compatibility instead of "
-            "silently dropping fields."
+            "SemVer 2.0.0 string for the receipt schema. Pins downstream "
+            "consumers so future field additions can negotiate compatibility "
+            "instead of silently dropping fields. Validated by the official "
+            "SemVer 2.0.0 regex (see ``_SEMVER_RE``)."
         ),
     )
     ticket_id: str = Field(
@@ -238,34 +246,44 @@ class ModelDodReceipt(BaseModel):
         Order matters:
 
         1. Executable check_types with empty stdout raise immediately —
-           the receipt is structurally invalid, not just weak.
-        2. Self-attestation (verifier == runner) downgrades to ADVISORY.
-        3. file_exists (and other weak proof types) downgrade to ADVISORY.
-           Applied after self-attestation so "weak proof" wins over "PASS"
-           even when verifier and runner are independent.
+           the receipt is structurally invalid, not just weak. PENDING
+           is exempt: by definition the probe was allocated but not yet
+           executed, so empty stdout is the expected representation.
+        2. Self-attestation (verifier == runner) downgrades PASS to
+           ADVISORY. FAIL and PENDING outcomes are preserved — they
+           carry distinct meaning (probe ran and failed; probe queued
+           but unexecuted) that ADVISORY would erase.
+        3. file_exists (and other weak proof types) downgrade PASS to
+           ADVISORY. FAIL and PENDING are preserved for the same reason
+           as Rule 2.
 
         Rule (4) — schema_version SemVer match — is enforced as a field
         validator above, before this method runs.
         """
         # Rule 3: executable check_types must have non-empty probe_stdout.
-        if self.check_type in EXECUTABLE_CHECK_TYPES and not self.probe_stdout.strip():
+        # PENDING is exempt — an unexecuted probe has no stdout by definition.
+        if (
+            self.status is not EnumReceiptStatus.PENDING
+            and self.check_type in EXECUTABLE_CHECK_TYPES
+            and not self.probe_stdout.strip()
+        ):
             raise ValueError(
                 f"probe_stdout required for executable check_type "
                 f"{self.check_type!r}; receipts with empty stdout are "
                 f"indistinguishable from probes that never ran"
             )
 
-        # Rule 1: self-attestation downgrades to ADVISORY.
-        if (
-            self.verifier == self.runner
-            and self.status is not EnumReceiptStatus.ADVISORY
-        ):
+        # Rule 1: self-attestation downgrades PASS to ADVISORY.
+        # FAIL and PENDING are preserved — collapsing them into ADVISORY
+        # would erase meaningful outcomes (probe failed, probe queued).
+        if self.verifier == self.runner and self.status is EnumReceiptStatus.PASS:
             object.__setattr__(self, "status", EnumReceiptStatus.ADVISORY)
 
-        # Rule 2: weak-proof check_types downgrade to ADVISORY.
+        # Rule 2: weak-proof check_types downgrade PASS to ADVISORY.
+        # FAIL and PENDING are preserved for the same reason.
         if (
             self.check_type in WEAK_PROOF_CHECK_TYPES
-            and self.status is not EnumReceiptStatus.ADVISORY
+            and self.status is EnumReceiptStatus.PASS
         ):
             object.__setattr__(self, "status", EnumReceiptStatus.ADVISORY)
 
