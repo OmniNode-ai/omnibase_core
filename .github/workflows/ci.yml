@@ -1007,6 +1007,7 @@ jobs:
             }}
         run: |
           uv run pytest tests/ \
+            --ignore=tests/integration \
             --splits 40 \
             --group ${{ matrix.split }} \
             --store-durations \
@@ -1039,6 +1040,64 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
+  # Integration Tests — always-run 4-split matrix (OMN-9851)
+  # ---------------------------------------------------------------------------
+  tests-integration:
+    name: Integration Tests (Split ${{ matrix.split }}/4)
+    needs: [quality-gate, detect-changes]
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
+    timeout-minutes: 30
+    if: always() && needs.quality-gate.result == 'success'
+    strategy:
+      fail-fast: false
+      matrix:
+        split: [1, 2, 3, 4]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run integration tests (split ${{ matrix.split }}/4)
+        run: |
+          uv run pytest tests/integration/ \
+            --splits 4 --group ${{ matrix.split }} \
+            -n auto --timeout=120 --tb=short \
+            --junitxml=junit-int-${{ matrix.split }}.xml
+
+      - name: Upload junit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-int-${{ matrix.split }}
+          path: junit-int-${{ matrix.split }}.xml
+
+  # ---------------------------------------------------------------------------
   # Phase 3 - Gates and Summary
   # ---------------------------------------------------------------------------
 
@@ -1057,7 +1116,7 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
-    needs: [test-parallel]
+    needs: [test-parallel, tests-integration]
     if: always()
 
     steps:
@@ -1067,23 +1126,26 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           parallel="${{ needs.test-parallel.result }}"
+          integration="${{ needs.tests-integration.result }}"
 
           echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Parallel Tests (40 splits) | $parallel |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests (4 splits) | $integration |" >> $GITHUB_STEP_SUMMARY
 
           # Accept "success" (tests ran and passed) or "skipped" (tests correctly
           # skipped because upstream quality-gate was skipped, e.g. dependabot PRs
           # that only touch .github/ files and skip version-pin-check).
-          if [[ "$parallel" == "success" || "$parallel" == "skipped" ]]; then
+          if [[ ("$parallel" == "success" || "$parallel" == "skipped") && \
+                ("$integration" == "success" || "$integration" == "skipped") ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Tests Gate: PASSED** (matrix result: $parallel)" >> $GITHUB_STEP_SUMMARY
-            echo "Test matrix result: $parallel"
+            echo "**Tests Gate: PASSED** (unit=$parallel integration=$integration)" >> $GITHUB_STEP_SUMMARY
+            echo "Test matrix result: unit=$parallel integration=$integration"
             exit 0
           else
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Tests Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
-            echo "Test matrix result: $parallel"
+            echo "::error::tests gate failed (unit=$parallel integration=$integration)"
             exit 1
           fi
 
