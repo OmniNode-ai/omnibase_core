@@ -44,5 +44,5 @@ class ModelAdjacencyMap(BaseModel):
 
 
 def load_adjacency_map(path: Path) -> ModelAdjacencyMap:
-    raw = yaml.safe_load(path.read_text())
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     return ModelAdjacencyMap.model_validate(raw)
