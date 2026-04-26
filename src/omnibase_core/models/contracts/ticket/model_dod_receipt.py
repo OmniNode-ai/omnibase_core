@@ -24,14 +24,25 @@ The receipt is the canonical "did this actually happen" probe artifact.
 Four invariants are enforced by ``enforce_adversarial_invariants`` to keep
 self-attested or structurally-weak proof from satisfying the gate:
 
-1. ``verifier == runner`` (self-attestation) → status auto-downgraded to
-   ``ADVISORY``. Independent verification is required for PASS.
-2. ``check_type == "file_exists"`` → status auto-downgraded to ``ADVISORY``.
-   File presence proves a write, not that the behavior under test occurred.
+1. ``verifier == runner`` (self-attestation) AND ``status == PASS`` →
+   status auto-downgraded to ``ADVISORY``. Independent verification is
+   required for PASS. ``FAIL`` and ``PENDING`` are preserved — they
+   carry distinct meaning that ADVISORY would erase. Identity strings
+   are compared after stripping surrounding whitespace, so
+   ``"worker-A"`` and ``"worker-A "`` cannot be used to bypass this
+   rule.
+2. ``check_type == "file_exists"`` AND ``status == PASS`` → status
+   auto-downgraded to ``ADVISORY``. File presence proves a write, not
+   that the behavior under test occurred. ``FAIL`` and ``PENDING`` are
+   preserved for the same reason as Rule 1.
 3. ``check_type in {command, test_passes, endpoint, grep}`` AND empty
-   ``probe_stdout`` → ``ValueError``. An executable check that produced no
-   captured output is indistinguishable from "never ran".
-4. ``schema_version`` must be a valid SemVer string (per the canonical
+   ``probe_stdout`` AND ``status != PENDING`` → ``ValueError``. An
+   executable check that produced no captured output is
+   indistinguishable from "never ran". ``PENDING`` is exempt because by
+   definition the probe was allocated but not yet executed — empty
+   stdout is the correct representation.
+4. ``schema_version`` must be a valid SemVer 2.0.0 string (per the
+   official regex inlined as ``_SEMVER_RE``; mirrors
    ``SEMVER_PATTERN`` in :mod:`omnibase_core.validation.phases`).
 """
 
@@ -149,9 +160,11 @@ class ModelDodReceipt(BaseModel):
         min_length=1,
         max_length=200,
         description=(
-            "Identity that verified the probe output. Must differ from "
-            "``runner`` for non-ADVISORY status — self-attestation "
-            "(verifier == runner) auto-downgrades to ADVISORY."
+            "Identity that verified the probe output. For ``PASS`` "
+            "receipts it must differ from ``runner`` — self-attestation "
+            "(verifier == runner, comparison is whitespace-stripped) "
+            "auto-downgrades to ADVISORY. ``FAIL`` and ``PENDING`` are "
+            "preserved regardless of verifier identity."
         ),
     )
     probe_command: str = Field(
@@ -200,6 +213,22 @@ class ModelDodReceipt(BaseModel):
             "to merge gate invocations. None for receipts not tied to a PR."
         ),
     )
+
+    @field_validator("runner", "verifier")
+    @classmethod
+    def _normalize_identity(cls, v: str) -> str:
+        """Strip surrounding whitespace and reject whitespace-only identities.
+
+        Without normalization, ``runner="worker-A"`` and
+        ``verifier="worker-A "`` (note trailing space) would compare
+        unequal under Rule 1, allowing self-attestation to bypass the
+        ADVISORY downgrade. Normalizing here means every consumer of the
+        receipt sees a single canonical form.
+        """
+        normalized = v.strip()
+        if not normalized:
+            raise ValueError("runner/verifier must contain non-whitespace characters")
+        return normalized
 
     @field_validator("ticket_id")
     @classmethod
@@ -276,6 +305,9 @@ class ModelDodReceipt(BaseModel):
         # Rule 1: self-attestation downgrades PASS to ADVISORY.
         # FAIL and PENDING are preserved — collapsing them into ADVISORY
         # would erase meaningful outcomes (probe failed, probe queued).
+        # ``runner`` and ``verifier`` have already been normalized
+        # (whitespace-stripped) by ``_normalize_identity``, so a raw ``==``
+        # is sufficient and cannot be bypassed by trailing-space padding.
         if self.verifier == self.runner and self.status is EnumReceiptStatus.PASS:
             object.__setattr__(self, "status", EnumReceiptStatus.ADVISORY)
 

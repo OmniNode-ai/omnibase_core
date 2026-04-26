@@ -388,3 +388,31 @@ class TestModelDodReceiptAdversarialInvariants:
         fields["probe_stdout"] = ""
         receipt = ModelDodReceipt(**fields)
         assert receipt.status is EnumReceiptStatus.PENDING
+
+    def test_self_attestation_not_bypassable_by_whitespace(self) -> None:
+        """``runner="worker-A"`` and ``verifier="worker-A "`` must not slip
+        past Rule 1 — identity strings are whitespace-stripped before the
+        equality comparison so trailing/leading spaces cannot be used to
+        evade the ADVISORY downgrade."""
+        fields = _base_fields()
+        fields["runner"] = "worker-A"
+        fields["verifier"] = "worker-A "  # trailing space
+        receipt = ModelDodReceipt(**fields)
+        # Both identity strings normalized to "worker-A"; Rule 1 fires.
+        assert receipt.runner == "worker-A"
+        assert receipt.verifier == "worker-A"
+        assert receipt.status is EnumReceiptStatus.ADVISORY
+
+    @pytest.mark.parametrize("blank", ["", "   ", "\t", "\n  \t"])
+    def test_whitespace_only_identity_rejected(self, blank: str) -> None:
+        """Whitespace-only ``runner`` or ``verifier`` must be rejected at
+        construction — silently empty identities would make every receipt
+        self-attest under Rule 1 (both normalize to '')."""
+        fields = _base_fields()
+        fields["runner"] = blank
+        with pytest.raises(ValidationError):
+            ModelDodReceipt(**fields)
+        fields = _base_fields()
+        fields["verifier"] = blank
+        with pytest.raises(ValidationError):
+            ModelDodReceipt(**fields)
