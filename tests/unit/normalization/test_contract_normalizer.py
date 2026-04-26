@@ -117,3 +117,31 @@ def test_idempotent() -> None:
     twice = normalize_io_model_ref(once)
     assert once == twice
     assert twice["input_model"] == "bar.Foo"
+
+
+@pytest.mark.unit
+def test_incomplete_dict_module_only_preserved() -> None:
+    raw: dict[str, object] = {"input_model": {"module": "foo.bar.models"}}
+    result = normalize_io_model_ref(raw)
+    assert result["input_model"] == {"module": "foo.bar.models"}
+
+
+@pytest.mark.unit
+def test_incomplete_dict_name_only_preserved() -> None:
+    raw: dict[str, object] = {"input_model": {"name": "ModelFooRequest"}}
+    result = normalize_io_model_ref(raw)
+    assert result["input_model"] == {"name": "ModelFooRequest"}
+
+
+@pytest.mark.unit
+def test_dict_with_empty_module_preserved() -> None:
+    raw: dict[str, object] = {"input_model": {"name": "ModelFoo", "module": ""}}
+    result = normalize_io_model_ref(raw)
+    assert result["input_model"] == {"name": "ModelFoo", "module": ""}
+
+
+@pytest.mark.unit
+def test_dict_with_non_string_fields_preserved() -> None:
+    raw: dict[str, object] = {"input_model": {"name": "ModelFoo", "module": 42}}
+    result = normalize_io_model_ref(raw)
+    assert result["input_model"] == {"name": "ModelFoo", "module": 42}

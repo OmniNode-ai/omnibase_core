@@ -52,11 +52,11 @@ def strip_legacy_metadata(raw: Mapping[str, object]) -> dict[str, object]:
 def _normalize_single_io_ref(value: dict[str, object] | str | None) -> str | None:
     if value is None or isinstance(value, str):
         return value
-    module = str(value.get("module", "") or "")
-    name = str(value.get("name", "") or "")
-    if module and name:
+    module = value.get("module")
+    name = value.get("name")
+    if isinstance(module, str) and isinstance(name, str) and module and name:
         return f"{module}.{name}"
-    return module or name or None
+    return None
 
 
 def normalize_io_model_ref(raw: dict[str, object]) -> dict[str, object]:
