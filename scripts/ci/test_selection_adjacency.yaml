@@ -1,0 +1,90 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# scripts/ci/test_selection_adjacency.yaml
+# Static adjacency map from src/omnibase_core/<module> to dependent modules.
+# When a key module changes, every module in `reverse_deps` ALSO has its tests run.
+# Treated as CI contract data — manually curated, reviewed in PRs that change it.
+
+schema_version: 1
+
+# `shared_modules` is a FULL-SUITE ESCALATION POLICY, not an architectural ontology.
+# Listing a module here means "if this module changes, run the full suite" — it does
+# NOT claim the module is fundamentally more important than others, nor does it map
+# to a permanent layering invariant. Curate based on operational risk + import fan-out.
+# Removing a module from this list is allowed once we have shadow data showing its
+# changes don't surface broad regressions.
+shared_modules:
+  - models
+  - contracts
+  - enums
+  - validation
+  - runtime
+  - event_bus
+
+# Per-repo full-suite escalation thresholds.
+thresholds:
+  modules_changed_for_full_suite: 8
+
+# Test infrastructure — any change forces the full suite.
+test_infrastructure_paths:
+  - tests/conftest.py
+  - tests/fixtures/
+  - tests/pytest.ini
+  - pytest.ini
+  - pyproject.toml
+
+# Reverse dependency edges. Key = changed module; value = modules that import it.
+# When `models` changes, also run tests for everything in `models.reverse_deps`.
+# Note: shared_modules entries here are not consulted at runtime
+# (they trigger full suite first), but kept for completeness/documentation.
+adjacency:
+  models:
+    reverse_deps: [nodes, contracts, runtime, validation, services, factories, container]
+  contracts:
+    reverse_deps: [nodes, runtime, validation]
+  enums:
+    reverse_deps: [models, contracts, nodes, validation, runtime]
+  validation:
+    reverse_deps: [nodes, runtime, services]
+  runtime:
+    reverse_deps: [nodes, services, container]
+  event_bus:
+    reverse_deps: [runtime, services, nodes]
+  container:
+    reverse_deps: [services, nodes, runtime]
+  protocols:
+    reverse_deps: [nodes, services, factories]
+  errors:
+    reverse_deps: [models, runtime, nodes, services]
+  # Leaf modules with no reverse_deps still appear so the loader can validate
+  # that every src/omnibase_core/<dir> has an entry.
+  backends: {reverse_deps: []}
+  cli: {reverse_deps: []}
+  constants: {reverse_deps: []}
+  context: {reverse_deps: [nodes, runtime]}
+  crypto: {reverse_deps: []}
+  decorators: {reverse_deps: []}
+  discovery: {reverse_deps: [nodes, runtime]}
+  doctor: {reverse_deps: []}
+  factories: {reverse_deps: [nodes, container]}
+  infrastructure: {reverse_deps: []}
+  integrations: {reverse_deps: []}
+  logging: {reverse_deps: []}
+  merge: {reverse_deps: []}
+  mixins: {reverse_deps: [models, nodes]}
+  navigation: {reverse_deps: []}
+  nodes: {reverse_deps: []}
+  normalization: {reverse_deps: [models, nodes]}
+  overlays: {reverse_deps: []}
+  package: {reverse_deps: []}
+  pipeline: {reverse_deps: [nodes]}
+  rendering: {reverse_deps: []}
+  resolution: {reverse_deps: [nodes, runtime]}
+  schemas: {reverse_deps: [models]}
+  scripts: {reverse_deps: []}
+  services: {reverse_deps: [nodes]}
+  tools: {reverse_deps: []}
+  types: {reverse_deps: [models]}
+  utils: {reverse_deps: []}
+  workflows: {reverse_deps: [nodes]}

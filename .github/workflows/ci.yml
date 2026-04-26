@@ -852,24 +852,99 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
+  # Phase 1.6 - Detect Changes (shadow mode)
+  # ---------------------------------------------------------------------------
+  # Runs detect_test_paths and emits 5 outputs for shadow-mode comparison.
+  # Outputs consumed by test-parallel (OMN-9852): matrix, split_count, is_full_suite, selected_paths.
+
+  detect-changes:
+    name: Detect Changes
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    if: always() && needs.quality-gate.result == 'success'
+    outputs:
+      is_full_suite: ${{ steps.detect.outputs.is_full_suite }}
+      full_suite_reason: ${{ steps.detect.outputs.full_suite_reason }}
+      split_count: ${{ steps.detect.outputs.split_count }}
+      matrix: ${{ steps.detect.outputs.matrix }}
+      selected_paths: ${{ steps.detect.outputs.selected_paths }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Compute changed files
+        id: diff
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            git fetch --no-tags --depth=1 origin "$base" || true
+            git diff --name-only "$base"...HEAD > changed.txt
+          else
+            git diff --name-only HEAD~1 HEAD > changed.txt || echo "" > changed.txt
+          fi
+          echo "Changed files:"
+          cat changed.txt
+
+      - name: Resolve test selection
+        id: detect
+        env:
+          FLAG: ${{ vars.ENABLE_SMART_TESTS == 'true' && 'on' || 'off' }}
+        run: |
+          uv run python -m scripts.ci.detect_test_paths \
+            --changed-files-from changed.txt \
+            --ref-name "${{ github.ref_name }}" \
+            --event-name "${{ github.event_name }}" \
+            --feature-flag "$FLAG" \
+            > selection.json
+          cat selection.json
+          is_full=$(jq -r '.is_full_suite' selection.json)
+          reason=$(jq -r '.full_suite_reason // ""' selection.json)
+          split_count=$(jq -r '.split_count' selection.json)
+          matrix=$(jq -c '.matrix' selection.json)
+          paths=$(jq -c '.selected_paths' selection.json)
+          echo "is_full_suite=$is_full" >> "$GITHUB_OUTPUT"
+          echo "full_suite_reason=$reason" >> "$GITHUB_OUTPUT"
+          echo "split_count=$split_count" >> "$GITHUB_OUTPUT"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "selected_paths=$paths" >> "$GITHUB_OUTPUT"
+
+      - name: Upload selection artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-selection
+          path: selection.json
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
   # Phase 2 - Full Test Suite
   # ---------------------------------------------------------------------------
 
-  # Parallel test execution - split into 40 groups for speed and memory management
-  # Split strategy rationale:
-  #   - 38,805 total tests / 40 splits = ~970 tests/split on 2-CPU ubuntu-latest runners
-  #   - Target: 7-9 minutes per split (down from 14-18 min with 20 splits)
-  #   - 40x parallelization speedup vs sequential execution
-  #   - Increased from 20 to 40 splits: test count grew 3x (12K → 38K) since last bump
-  #   - Duration-aware splitting via .test_durations cache eliminates outlier splits
+  # Parallel test execution — matrix shape driven by detect-changes output (OMN-9852).
+  # When ENABLE_SMART_TESTS is off (default), detect-changes emits a 40-shard matrix
+  # with full_suite_reason=FEATURE_FLAG_OFF so the full-suite pytest step runs.
+  # When the flag is on and the change set is small, detect-changes emits a smaller
+  # matrix and selected_paths, activating the smart-selection pytest step instead.
   #
   # Dependency rationale (fail-fast optimization):
   #   - quality-gate: Aggregates all Phase 1 checks (lint, pyright, exports, etc.)
-  #   - This ensures quality failures are caught BEFORE spawning 40 test runners
-  #   - Saves ~120 runner-minutes on validation failures
+  #   - detect-changes: provides matrix shape, split_count, selected_paths, is_full_suite
+  #   - This ensures quality failures are caught BEFORE spawning N test runners
   test-parallel:
-    name: Tests (Split ${{ matrix.split }}/40)
-    needs: [quality-gate]
+    name: Tests (Split ${{ matrix.split }}/${{ needs.detect-changes.outputs.split_count }})
+    needs: [quality-gate, detect-changes]
     # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
     runs-on: >-
       ${{
@@ -880,11 +955,12 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
+    if: always() && needs.quality-gate.result == 'success'
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]
+        split: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
 
     steps:
       - name: Checkout code
@@ -915,7 +991,34 @@ jobs:
           restore-keys: |
             test-durations-
 
-      - name: Run test split ${{ matrix.split }}/40
+      - name: Run pytest (smart selection)
+        if: vars.ENABLE_SMART_TESTS == 'true' && needs.detect-changes.outputs.is_full_suite == 'false'
+        env:
+          # OMN-3327: Performance tests use CI_RUNNER_TYPE to relax thresholds on
+          # shared self-hosted runners (15-25% lower throughput vs dedicated runners)
+          CI_RUNNER_TYPE: >-
+            ${{
+              (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+               (github.event_name == 'push' ||
+                github.event_name == 'workflow_dispatch' ||
+                github.event_name == 'schedule'))
+              && 'self-hosted'
+              || 'github-hosted'
+            }}
+        run: |
+          paths=$(echo '${{ needs.detect-changes.outputs.selected_paths }}' | jq -r '.[]')
+          uv run pytest $paths \
+            --ignore=tests/integration \
+            --splits ${{ needs.detect-changes.outputs.split_count }} \
+            --group ${{ matrix.split }} \
+            -n auto \
+            --timeout=60 \
+            --timeout-method=thread \
+            --tb=short \
+            --junitxml=junit-${{ matrix.split }}.xml
+
+      - name: Run pytest (full suite)
+        if: vars.ENABLE_SMART_TESTS != 'true' || needs.detect-changes.outputs.is_full_suite == 'true'
         env:
           # OMN-3327: Performance tests use CI_RUNNER_TYPE to relax thresholds on
           # shared self-hosted runners (15-25% lower throughput vs dedicated runners)
@@ -930,6 +1033,7 @@ jobs:
             }}
         run: |
           uv run pytest tests/ \
+            --ignore=tests/integration \
             --splits 40 \
             --group ${{ matrix.split }} \
             --store-durations \
@@ -939,12 +1043,6 @@ jobs:
             --timeout-method=thread \
             --tb=short \
             --junitxml=junit-${{ matrix.split }}.xml
-          # Per-test timeout: 60 seconds prevents infinite hangs
-          # --store-durations: saves per-test timing so subsequent runs balance by
-          #   duration rather than count (eliminates outlier splits)
-          # All splits use -n auto (full parallelism) - shorter splits reduce
-          # resource pressure and runner cancellation probability
-          # Note: Coverage collection disabled - use local pytest-cov for coverage reports
 
       - name: Save test durations (split 1 only, after full suite data accumulated)
         if: matrix.split == 1
@@ -960,6 +1058,64 @@ jobs:
           name: test-results-${{ matrix.split }}
           path: junit-${{ matrix.split }}.xml
           retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Integration Tests — always-run 4-split matrix (OMN-9851)
+  # ---------------------------------------------------------------------------
+  tests-integration:
+    name: Integration Tests (Split ${{ matrix.split }}/4)
+    needs: [quality-gate, detect-changes]
+    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    runs-on: >-
+      ${{
+        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
+         (github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'))
+        && fromJSON('["self-hosted","omnibase-ci"]')
+        || fromJSON('["ubuntu-latest"]')
+      }}
+    timeout-minutes: 30
+    if: always() && needs.quality-gate.result == 'success'
+    strategy:
+      fail-fast: false
+      matrix:
+        split: [1, 2, 3, 4]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run integration tests (split ${{ matrix.split }}/4)
+        run: |
+          uv run pytest tests/integration/ \
+            --splits 4 --group ${{ matrix.split }} \
+            -n auto --timeout=120 --tb=short \
+            --junitxml=junit-int-${{ matrix.split }}.xml
+
+      - name: Upload junit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-int-${{ matrix.split }}
+          path: junit-int-${{ matrix.split }}.xml
 
   # ---------------------------------------------------------------------------
   # Phase 3 - Gates and Summary
@@ -980,7 +1136,7 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
-    needs: [test-parallel]
+    needs: [test-parallel, tests-integration]
     if: always()
 
     steps:
@@ -990,23 +1146,26 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           parallel="${{ needs.test-parallel.result }}"
+          integration="${{ needs.tests-integration.result }}"
 
           echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Parallel Tests (40 splits) | $parallel |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests (4 splits) | $integration |" >> $GITHUB_STEP_SUMMARY
 
           # Accept "success" (tests ran and passed) or "skipped" (tests correctly
           # skipped because upstream quality-gate was skipped, e.g. dependabot PRs
           # that only touch .github/ files and skip version-pin-check).
-          if [[ "$parallel" == "success" || "$parallel" == "skipped" ]]; then
+          if [[ ("$parallel" == "success" || "$parallel" == "skipped") && \
+                ("$integration" == "success" || "$integration" == "skipped") ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Tests Gate: PASSED** (matrix result: $parallel)" >> $GITHUB_STEP_SUMMARY
-            echo "Test matrix result: $parallel"
+            echo "**Tests Gate: PASSED** (unit=$parallel integration=$integration)" >> $GITHUB_STEP_SUMMARY
+            echo "Test matrix result: unit=$parallel integration=$integration"
             exit 0
           else
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Tests Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
-            echo "Test matrix result: $parallel"
+            echo "::error::tests gate failed (unit=$parallel integration=$integration)"
             exit 1
           fi
 
