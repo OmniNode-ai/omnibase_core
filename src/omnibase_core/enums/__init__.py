@@ -82,6 +82,9 @@ from .enum_compute_step_type import EnumComputeStepType
 
 # Consumer group purpose enum (event bus subscription - PR #476)
 from .enum_consumer_group_purpose import EnumConsumerGroupPurpose
+
+# Contract bucket enum (corpus classification + normalization layer - OMN-9758)
+from .enum_contract_bucket import EnumContractBucket
 from .enum_contract_compliance import EnumContractCompliance
 
 # Contract diff change type enum (semantic contract diffing)
@@ -678,6 +681,8 @@ __all__ = [
     # Version and contract domain
     "EnumVersionStatus",
     "EnumContractCompliance",
+    # Contract bucket domain (corpus classification + normalization - OMN-9758)
+    "EnumContractBucket",
     # Contract diff domain (semantic contract diffing)
     "EnumContractDiffChangeType",
     # State management domain
