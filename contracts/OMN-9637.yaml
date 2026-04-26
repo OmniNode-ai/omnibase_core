@@ -1,0 +1,36 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-9637
+summary: "delegation models — ModelInvocationCommand, ModelAgentTaskLifecycleEvent, ModelRoutingRule,
+  ModelTargetAgent, ModelA2ATaskRequest/Response, ModelRemoteTaskState"
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: tests
+    description: "delegation model unit tests pass"
+    command: "uv run pytest tests/unit/models/delegation/ -v -m unit"
+  - kind: ci
+    description: "omnibase_core PR CI checks pass"
+    command: "gh pr checks <PR_NUM> --repo OmniNode-ai/omnibase_core --watch"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-001
+    description: "All seven delegation models import and pass unit tests"
+    source: generated
+    checks:
+      - check_type: file_exists
+        check_value: "drift/dod_receipts/OMN-9637/dod-001/file_exists.yaml"
+  - id: dod-002
+    description: "deploy-gate evidence: pure Pydantic model additions only — no Dockerfile, kernel, auto_wiring,
+      or service_kernel.py changes; no runtime restart required"
+    source: generated
+    checks:
+      - check_type: command
+        check_value: "bash -lc 'set -euo pipefail; if git diff --name-only origin/main...HEAD | grep -E
+          \"(^|/)Dockerfile$|(^|/)service_kernel\\.py$|(^|/)kernel/|(^|/)auto_wiring/\"; then echo \"deploy-gate
+          failed: forbidden runtime files changed\"; exit 1; fi; echo \"deploy-gate: clean — no forbidden
+          runtime files changed\"'"
