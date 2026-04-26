@@ -3,15 +3,20 @@
 
 """Contract normalizer functions (parent epic OMN-9757).
 
-Each function in this module is a pure dict->dict transform that takes a
-raw legacy contract dict (parsed YAML) and returns a new dict closer to
-the canonical schema. They are intentionally narrow, one migration
-family per function, so they can be composed into a pipeline and
-audited independently.
+Canonical migration-audit layer for legacy contract YAML. Each function is a
+pure ``dict -> dict`` transform that derives a single canonical contract field
+from an older corpus shape so the strict typed models can validate it. The
+layer is invoked deliberately by the migration_audit validator mode and the
+batch-validator CLI (Task 11/12, OMN-9768/9769) -- never by the runtime read
+path.
 
-These are compatibility-stripping helpers, not semantic-preserving
-migrations. Content that is dropped or rewritten here must be captured
-by the caller before normalization runs if it needs to be retained.
+Architecturally settled in OMN-9757: canonical models stay
+``extra="forbid"``; corpus is classified before validation; per-family
+normalization is explicit, versioned, and logged. These transforms are not
+deprecated bridges or backwards-compatibility shims for live code -- they are
+the audit-mode entry point that lets the platform inventory legacy contracts
+without loosening the canonical schema. Dropped or rewritten content is the
+caller's responsibility to preserve elsewhere.
 
 Functions in this module:
     - strip_legacy_metadata (OMN-9761): drops the legacy ``metadata`` block
