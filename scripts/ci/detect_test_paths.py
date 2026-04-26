@@ -37,14 +37,24 @@ def resolve_test_paths(
 
 
 def _resolve(changed_files: list[str], config: ModelAdjacencyMap) -> list[str]:
+    direct_modules: set[str] = set()
     selected: set[str] = set()
+
     for path in changed_files:
         if path.startswith(SRC_PREFIX):
             module = path[len(SRC_PREFIX) :].split("/", 1)[0]
             if module in config.adjacency:
-                selected.add(f"{TEST_UNIT_PREFIX}{module}/")
+                direct_modules.add(module)
         elif path.startswith(TEST_UNIT_PREFIX):
             parts = path.split("/")
             if len(parts) >= 3:
                 selected.add(f"{TEST_UNIT_PREFIX}{parts[2]}/")
+
+    expanded: set[str] = set(direct_modules)
+    for module in direct_modules:
+        expanded.update(config.adjacency[module].reverse_deps)
+
+    for module in expanded:
+        selected.add(f"{TEST_UNIT_PREFIX}{module}/")
+
     return sorted(selected)

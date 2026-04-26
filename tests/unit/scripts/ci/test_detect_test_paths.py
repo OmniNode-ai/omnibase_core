@@ -36,3 +36,33 @@ def test_unknown_source_path_falls_back_to_full_suite_signal() -> None:
     changed_files = ["docs/README.md", ".github/workflows/foo.yml"]
     paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
     assert paths == []
+
+
+def test_change_in_models_expands_to_exact_set() -> None:
+    changed_files = ["src/omnibase_core/models/foo.py"]
+    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
+    # models is in shared_modules — full-suite escalation lives in compute_selection
+    # (Task 6). resolve_test_paths returns the *expanded* unit-test dirs only.
+    expected = sorted(
+        f"tests/unit/{m}/"
+        for m in (
+            "models",
+            "nodes",
+            "contracts",
+            "runtime",
+            "validation",
+            "services",
+            "factories",
+            "container",
+        )
+    )
+    assert paths == expected
+
+
+def test_change_in_protocols_expands_to_exact_set() -> None:
+    changed_files = ["src/omnibase_core/protocols/foo.py"]
+    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
+    expected = sorted(
+        f"tests/unit/{m}/" for m in ("protocols", "nodes", "services", "factories")
+    )
+    assert paths == expected
