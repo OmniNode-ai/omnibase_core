@@ -106,6 +106,7 @@ from .model_fsm_subcontract import ModelFSMSubcontract
 from .model_handler_routing_entry import ModelHandlerRoutingEntry
 from .model_handler_routing_subcontract import ModelHandlerRoutingSubcontract
 from .model_health_check_subcontract import ModelHealthCheckSubcontract
+from .model_hook_activation import ModelHookActivation
 from .model_introspection_subcontract import ModelIntrospectionSubcontract
 from .model_lifecycle_subcontract import ModelLifecycleSubcontract
 from .model_load_balancing import ModelLoadBalancing
@@ -251,6 +252,7 @@ __all__ = [
     "ModelDependencyHealth",
     "ModelHealthCheckResult",
     "ModelHealthCheckSubcontract",
+    "ModelHookActivation",
     "ModelNodeHealthStatus",
     # Introspection subcontracts
     "ModelIntrospectionSubcontract",
