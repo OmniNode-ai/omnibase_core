@@ -10,9 +10,8 @@ family per function, so they can be composed into a pipeline and
 audited independently.
 
 These are compatibility-stripping helpers, not semantic-preserving
-migrations. Content that is dropped here (e.g. ``metadata.author``)
-must be captured by the caller before normalization runs if it needs
-to be retained.
+migrations. Content that is dropped or rewritten here must be captured
+by the caller before normalization runs if it needs to be retained.
 
 Functions in this module:
     - strip_legacy_metadata (OMN-9761): drops the legacy ``metadata`` block
@@ -21,6 +20,8 @@ Functions in this module:
       legacy event_bus block and top-level topic list keys.
     - normalize_io_model_ref (OMN-9763): converts dict-shaped
       ``input_model`` / ``output_model`` refs to dotted-string form.
+    - normalize_handler_routing (OMN-9764): derives canonical
+      handler-routing fields from legacy handler declarations.
     - normalize_omnimarket_v0_contract (OMN-9765): strips legacy omnimarket
       v0 handler, descriptor, and terminal_event blocks while hoisting
       handler.input_model when needed.
@@ -28,7 +29,8 @@ Functions in this module:
 
 from __future__ import annotations
 
-import copy as _copy
+import copy
+import re
 from collections.abc import Mapping
 
 from omnibase_core.types.type_json import JsonType
@@ -40,6 +42,12 @@ _LEGACY_METADATA_KEYS: frozenset[str] = frozenset(
 _LEGACY_EVENT_BUS_KEYS: frozenset[str] = frozenset(
     {"event_bus", "subscribe_topics", "publish_topics", "topics"}
 )
+
+_DEFAULT_HANDLER_ROUTING_VERSION: dict[str, int] = {"major": 1, "minor": 0, "patch": 0}
+_MULTI_OP_FLAG: str = "multi_operation_requires_human_review"
+
+_PASCAL_TO_SNAKE_BOUNDARY_1 = re.compile(r"(.)([A-Z][a-z]+)")
+_PASCAL_TO_SNAKE_BOUNDARY_2 = re.compile(r"([a-z0-9])([A-Z])")
 
 
 def strip_legacy_metadata(raw: Mapping[str, object]) -> dict[str, object]:
@@ -119,6 +127,63 @@ def normalize_io_model_ref(raw: dict[str, object]) -> dict[str, object]:
     return result
 
 
+def _pascal_to_snake(name: str) -> str:
+    s1 = _PASCAL_TO_SNAKE_BOUNDARY_1.sub(r"\1_\2", name)
+    return _PASCAL_TO_SNAKE_BOUNDARY_2.sub(r"\1_\2", s1).lower()
+
+
+def normalize_handler_routing(raw: dict[str, object]) -> dict[str, object]:
+    """Normalize legacy ``handler_routing`` block to canonical subcontract shape.
+
+    Adds the default version, derives ``routing_key`` from
+    ``supported_operations``/``handler_type``, and derives ``handler_key`` by
+    snake-casing ``handler.name``. Multi-op handlers receive
+    ``_normalization_flag = "multi_operation_requires_human_review"`` because
+    picking ``ops[0]`` as the routing key is a synthetic guess.
+
+    No-op when ``handler_routing`` is absent. Input is never mutated.
+    """
+    if "handler_routing" not in raw:
+        return raw
+
+    result = copy.deepcopy(raw)
+    hr = result["handler_routing"]
+    if not isinstance(hr, dict):
+        return result
+
+    if "version" not in hr:
+        hr["version"] = dict(_DEFAULT_HANDLER_ROUTING_VERSION)
+
+    raw_handlers = hr.get("handlers", [])
+    if not isinstance(raw_handlers, list):
+        return result
+
+    normalized_handlers: list[object] = []
+    for h in raw_handlers:
+        if not isinstance(h, dict):
+            normalized_handlers.append(h)
+            continue
+        nh: dict[str, object] = dict(h)
+        if "routing_key" not in nh:
+            ops_raw = nh.get("supported_operations", [])
+            ops = ops_raw if isinstance(ops_raw, list) else []
+            if len(ops) == 1:
+                nh["routing_key"] = ops[0]
+            elif len(ops) > 1:
+                nh["routing_key"] = ops[0]
+                nh["_normalization_flag"] = _MULTI_OP_FLAG
+            elif "handler_type" in nh:
+                nh["routing_key"] = nh["handler_type"]
+        if "handler_key" not in nh:
+            nested = nh.get("handler", {})
+            name = nested.get("name", "") if isinstance(nested, dict) else ""
+            if isinstance(name, str) and name:
+                nh["handler_key"] = _pascal_to_snake(name)
+        normalized_handlers.append(nh)
+    hr["handlers"] = normalized_handlers
+    return result
+
+
 def is_omnimarket_v0(raw: dict[str, object]) -> bool:
     """Return True iff ``raw`` carries the omnimarket v0 contract shape.
 
@@ -143,7 +208,7 @@ def normalize_omnimarket_v0_contract(raw: dict[str, object]) -> dict[str, object
     The only field salvaged is ``handler.input_model``, which is hoisted
     to a root-level ``input_model`` when not already present.
     """
-    result = _copy.deepcopy(raw)
+    result = copy.deepcopy(raw)
     handler_block = result.pop("handler", None)
     result.pop("descriptor", None)
     result.pop("terminal_event", None)
@@ -154,3 +219,13 @@ def normalize_omnimarket_v0_contract(raw: dict[str, object]) -> dict[str, object
     ):
         result["input_model"] = handler_block["input_model"]
     return result
+
+
+__all__ = [
+    "is_omnimarket_v0",
+    "normalize_event_bus",
+    "normalize_handler_routing",
+    "normalize_io_model_ref",
+    "normalize_omnimarket_v0_contract",
+    "strip_legacy_metadata",
+]

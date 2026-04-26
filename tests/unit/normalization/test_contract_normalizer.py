@@ -12,6 +12,7 @@ Phase 2 of the corpus classification and normalization layer. Tests cover:
       topics).
     - normalize_io_model_ref (OMN-9763): converts dict-shaped
       input_model/output_model refs to canonical dotted-string form.
+    - normalize_handler_routing (OMN-9764): derives canonical routing fields.
     - normalize_omnimarket_v0_contract (OMN-9765): strips legacy omnimarket
       v0 handler, descriptor, and terminal_event blocks while hoisting
       handler.input_model when needed.
@@ -30,6 +31,7 @@ import pytest
 from omnibase_core.normalization.contract_normalizer import (
     is_omnimarket_v0,
     normalize_event_bus,
+    normalize_handler_routing,
     normalize_io_model_ref,
     normalize_omnimarket_v0_contract,
     strip_legacy_metadata,
@@ -84,7 +86,7 @@ class TestStripLegacyMetadata:
 
 
 @pytest.mark.unit
-def test_dict_shape_to_string() -> None:
+def test_io_model_ref_dict_shape_to_string() -> None:
     raw: dict[str, object] = {
         "name": "node_foo",
         "input_model": {
@@ -100,7 +102,7 @@ def test_dict_shape_to_string() -> None:
 
 
 @pytest.mark.unit
-def test_string_shape_passthrough() -> None:
+def test_io_model_ref_string_shape_passthrough() -> None:
     raw: dict[str, object] = {
         "name": "node_foo",
         "input_model": "foo.bar.ModelFooRequest",
@@ -110,7 +112,7 @@ def test_string_shape_passthrough() -> None:
 
 
 @pytest.mark.unit
-def test_missing_field_not_added() -> None:
+def test_io_model_ref_missing_field_not_added() -> None:
     raw: dict[str, object] = {"name": "node_foo"}
     result = normalize_io_model_ref(raw)
     assert "input_model" not in result
@@ -118,7 +120,7 @@ def test_missing_field_not_added() -> None:
 
 
 @pytest.mark.unit
-def test_does_not_mutate_input() -> None:
+def test_io_model_ref_does_not_mutate_input() -> None:
     raw: dict[str, object] = {"input_model": {"name": "Foo", "module": "bar"}}
     raw_copy: dict[str, object] = {
         "input_model": {"name": "Foo", "module": "bar"},
@@ -128,7 +130,7 @@ def test_does_not_mutate_input() -> None:
 
 
 @pytest.mark.unit
-def test_idempotent() -> None:
+def test_io_model_ref_idempotent() -> None:
     raw: dict[str, object] = {"input_model": {"name": "Foo", "module": "bar"}}
     once = normalize_io_model_ref(raw)
     twice = normalize_io_model_ref(once)
@@ -137,28 +139,28 @@ def test_idempotent() -> None:
 
 
 @pytest.mark.unit
-def test_incomplete_dict_module_only_preserved() -> None:
+def test_io_model_ref_incomplete_dict_module_only_preserved() -> None:
     raw: dict[str, object] = {"input_model": {"module": "foo.bar.models"}}
     result = normalize_io_model_ref(raw)
     assert result["input_model"] == {"module": "foo.bar.models"}
 
 
 @pytest.mark.unit
-def test_incomplete_dict_name_only_preserved() -> None:
+def test_io_model_ref_incomplete_dict_name_only_preserved() -> None:
     raw: dict[str, object] = {"input_model": {"name": "ModelFooRequest"}}
     result = normalize_io_model_ref(raw)
     assert result["input_model"] == {"name": "ModelFooRequest"}
 
 
 @pytest.mark.unit
-def test_dict_with_empty_module_preserved() -> None:
+def test_io_model_ref_dict_with_empty_module_preserved() -> None:
     raw: dict[str, object] = {"input_model": {"name": "ModelFoo", "module": ""}}
     result = normalize_io_model_ref(raw)
     assert result["input_model"] == {"name": "ModelFoo", "module": ""}
 
 
 @pytest.mark.unit
-def test_dict_with_non_string_fields_preserved() -> None:
+def test_io_model_ref_dict_with_non_string_fields_preserved() -> None:
     raw: dict[str, object] = {"input_model": {"name": "ModelFoo", "module": 42}}
     result = normalize_io_model_ref(raw)
     assert result["input_model"] == {"name": "ModelFoo", "module": 42}
@@ -306,3 +308,95 @@ class TestNormalizeOmnimarketV0Contract:
         raw_copy = copy.deepcopy(raw)
         normalize_omnimarket_v0_contract(raw)
         assert raw == raw_copy
+
+
+@pytest.mark.unit
+def test_handler_routing_adds_version_default() -> None:
+    raw = {"handler_routing": {"routing_strategy": "operation_match", "handlers": []}}
+    result = normalize_handler_routing(raw)
+    assert result["handler_routing"]["version"] == {"major": 1, "minor": 0, "patch": 0}
+
+
+@pytest.mark.unit
+def test_handler_routing_derives_routing_key_from_supported_operation() -> None:
+    raw = {
+        "handler_routing": {
+            "routing_strategy": "operation_match",
+            "handlers": [
+                {
+                    "handler_type": "auth_gate",
+                    "supported_operations": ["auth_gate.evaluate"],
+                    "handler": {"name": "HandlerAuthGate", "module": "foo.bar"},
+                }
+            ],
+        }
+    }
+    result = normalize_handler_routing(raw)
+    h = result["handler_routing"]["handlers"][0]
+    assert h["routing_key"] == "auth_gate.evaluate"
+    assert h["handler_key"] == "handler_auth_gate"
+
+
+@pytest.mark.unit
+def test_handler_routing_preserves_non_dict_handler_entries() -> None:
+    raw = {
+        "handler_routing": {
+            "routing_strategy": "operation_match",
+            "handlers": [
+                "legacy-malformed-handler",
+                {
+                    "handler_type": "auth_gate",
+                    "supported_operations": ["auth_gate.evaluate"],
+                },
+            ],
+        }
+    }
+    result = normalize_handler_routing(raw)
+    handlers = result["handler_routing"]["handlers"]
+    assert handlers[0] == "legacy-malformed-handler"
+    assert handlers[1]["routing_key"] == "auth_gate.evaluate"
+
+
+@pytest.mark.unit
+def test_handler_routing_multi_operation_handler_flagged() -> None:
+    raw = {
+        "handler_routing": {
+            "routing_strategy": "operation_match",
+            "handlers": [
+                {
+                    "handler_type": "foo",
+                    "supported_operations": ["foo.a", "foo.b"],
+                    "handler": {"name": "HandlerFoo", "module": "bar"},
+                }
+            ],
+        }
+    }
+    result = normalize_handler_routing(raw)
+    h = result["handler_routing"]["handlers"][0]
+    assert h["routing_key"] == "foo.a"
+    assert h.get("_normalization_flag") == "multi_operation_requires_human_review"
+
+
+@pytest.mark.unit
+def test_handler_routing_passthrough_when_absent() -> None:
+    raw = {"name": "node_foo"}
+    result = normalize_handler_routing(raw)
+    assert result == raw
+
+
+@pytest.mark.unit
+def test_handler_routing_does_not_mutate_input() -> None:
+    raw = {
+        "handler_routing": {
+            "handlers": [
+                {
+                    "handler_type": "x",
+                    "supported_operations": ["x.y"],
+                    "handler": {"name": "H", "module": "m"},
+                }
+            ]
+        }
+    }
+    raw_copy = copy.deepcopy(raw)
+    normalize_handler_routing(raw)
+    assert raw == raw_copy
