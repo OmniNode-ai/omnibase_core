@@ -90,6 +90,34 @@ class TestModelInvocationCommand:
                 target_ref="qwen3",
             )
 
+    def test_agent_with_model_backend_raises(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="model_backend must be None when invocation_kind is AGENT",
+        ):
+            ModelInvocationCommand(
+                task_id=_TASK_ID,
+                correlation_id=_CORR_ID,
+                invocation_kind=EnumInvocationKind.AGENT,
+                agent_protocol=EnumAgentProtocol.A2A,
+                model_backend="qwen3",
+                target_ref="adk-scout",
+            )
+
+    def test_model_with_agent_protocol_raises(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="agent_protocol must be None when invocation_kind is MODEL",
+        ):
+            ModelInvocationCommand(
+                task_id=_TASK_ID,
+                correlation_id=_CORR_ID,
+                invocation_kind=EnumInvocationKind.MODEL,
+                model_backend="qwen3",
+                agent_protocol=EnumAgentProtocol.A2A,
+                target_ref="qwen3",
+            )
+
 
 @pytest.mark.unit
 class TestModelAgentTaskLifecycleEvent:

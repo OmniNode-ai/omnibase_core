@@ -39,10 +39,22 @@ class ModelInvocationCommand(BaseModel):
             msg = "agent_protocol is required when invocation_kind is AGENT"
             raise ValueError(msg)
         if (
+            self.invocation_kind is EnumInvocationKind.AGENT
+            and self.model_backend is not None
+        ):
+            msg = "model_backend must be None when invocation_kind is AGENT"
+            raise ValueError(msg)
+        if (
             self.invocation_kind is EnumInvocationKind.MODEL
             and self.model_backend is None
         ):
             msg = "model_backend is required when invocation_kind is MODEL"
+            raise ValueError(msg)
+        if (
+            self.invocation_kind is EnumInvocationKind.MODEL
+            and self.agent_protocol is not None
+        ):
+            msg = "agent_protocol must be None when invocation_kind is MODEL"
             raise ValueError(msg)
         return self
 
