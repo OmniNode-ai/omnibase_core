@@ -1124,9 +1124,11 @@ jobs:
   # Phase 3 - Gates and Summary
   # ---------------------------------------------------------------------------
 
-  # Tests Gate - aggregates 40-shard test matrix results
+  # Tests Gate - aggregates test matrix results (dynamic shard count via OMN-9852)
   # API-STABLE check_name: "Tests Gate"
   # Shard count can change without updating branch protection rules.
+  # GitHub Actions auto-aggregates matrix shard results into a single job result,
+  # so this gate works for any matrix size (1, 4, 5, or 40 shards). No hardcoded count needed.
   tests-gate:
     name: Tests Gate
     # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
@@ -1153,7 +1155,7 @@ jobs:
 
           echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Parallel Tests (40 splits) | $parallel |" >> $GITHUB_STEP_SUMMARY
+          echo "| Parallel Tests (dynamic splits) | $parallel |" >> $GITHUB_STEP_SUMMARY
           echo "| Integration Tests (4 splits) | $integration |" >> $GITHUB_STEP_SUMMARY
 
           # Accept "success" (tests ran and passed) or "skipped" (tests correctly
