@@ -568,7 +568,9 @@ def _is_wrapped_dispatch(raw: str) -> bool:
     )
     if not any(prefix in lowered for prefix in wrapper_prefixes):
         return False
-    return re.search(r"\bonex\b[^A-Za-z0-9]+(?:run-node|run|node)\b", lowered) is not None
+    return (
+        re.search(r"\bonex\b[^A-Za-z0-9]+(?:run-node|run|node)\b", lowered) is not None
+    )
 
 
 def _is_prose_fallback(line: ShellLine) -> bool:
@@ -582,7 +584,11 @@ def _is_prose_fallback(line: ShellLine) -> bool:
     and the raw line must contain a word hinting at fallback / degrade / prose.
     """
     idx = 0
-    while idx < len(line.tokens) and "=" in line.tokens[idx] and not line.tokens[idx].startswith("-"):
+    while (
+        idx < len(line.tokens)
+        and "=" in line.tokens[idx]
+        and not line.tokens[idx].startswith("-")
+    ):
         name = line.tokens[idx].split("=", 1)[0]
         if name and name.replace("_", "").isalnum() and name[0].isalpha():
             idx += 1
