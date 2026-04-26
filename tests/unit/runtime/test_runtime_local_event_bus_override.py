@@ -7,6 +7,8 @@ Covers ``RuntimeLocal._create_event_bus`` selection logic:
 - default (no override) returns ``EventBusInmemory``
 - ``event_bus=kafka`` discovers the entry point under ``onex.backends`` and
   instantiates the registered class via its ``default()`` factory
+- unsupported ``event_bus`` values are rejected up-front (no silent fallback,
+  per CodeRabbit MAJOR finding on PR #919)
 - missing entry point raises ``ModelOnexError`` (fail-fast, no silent fallback)
 - ``kafka_bootstrap`` override is surfaced via ``KAFKA_BOOTSTRAP_SERVERS`` env
   for the duration of construction and restored afterward
@@ -27,6 +29,7 @@ from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.runtime.runtime_local import (
     KNOWN_BACKEND_KEYS,
+    SUPPORTED_EVENT_BUS_VALUES,
     RuntimeLocal,
     parse_backend_overrides,
 )
@@ -89,6 +92,67 @@ def test_create_event_bus_explicit_inmemory(workflow_path: Path) -> None:
     )
     bus = runtime._create_event_bus()
     assert isinstance(bus, EventBusInmemory)
+
+
+# ---------------------------------------------------------------------------
+# Unsupported event_bus values are rejected (no silent fallback) — CR MAJOR
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_supported_event_bus_values_set() -> None:
+    """Whitelist matches the documented contract."""
+    assert frozenset({"inmemory", "kafka"}) == SUPPORTED_EVENT_BUS_VALUES
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "bad_value",
+    ["kafak", "redis", "rabbitmq", "Kafka", "KAFKA", "in-memory", "", " "],
+)
+def test_create_event_bus_rejects_unsupported_value(
+    workflow_path: Path, bad_value: str
+) -> None:
+    """Typo or unsupported backend name fails fast — does NOT silently fall through to in-memory."""
+    runtime = RuntimeLocal(
+        workflow_path=workflow_path,
+        backend_overrides={"event_bus": bad_value},
+    )
+
+    with pytest.raises(ModelOnexError) as exc_info:
+        runtime._create_event_bus()
+
+    assert exc_info.value.error_code == EnumCoreErrorCode.CONFIGURATION_ERROR
+    # Error message must name the offending value AND list the supported set
+    # so operators can fix the typo without grepping the source.
+    assert repr(bad_value) in str(exc_info.value) or bad_value in str(exc_info.value)
+    assert "inmemory" in str(exc_info.value)
+    assert "kafka" in str(exc_info.value)
+
+
+@pytest.mark.unit
+def test_create_event_bus_rejection_does_not_invoke_kafka_path(
+    workflow_path: Path,
+) -> None:
+    """Bad value must be caught BEFORE entry-point lookup runs."""
+    runtime = RuntimeLocal(
+        workflow_path=workflow_path,
+        backend_overrides={"event_bus": "kafak"},  # typo for kafka
+    )
+
+    fake_eps = MagicMock()
+    fake_eps.select = MagicMock(return_value=[])
+
+    with patch(
+        "omnibase_core.runtime.runtime_local.importlib.metadata.entry_points",
+        return_value=fake_eps,
+    ):
+        with pytest.raises(ModelOnexError):
+            runtime._create_event_bus()
+
+    # If the rejection short-circuits correctly, entry-point lookup is never
+    # invoked (proves the validation runs before the kafka dispatcher).
+    fake_eps.select.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

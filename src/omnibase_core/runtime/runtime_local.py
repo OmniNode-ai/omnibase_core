@@ -57,6 +57,14 @@ KNOWN_BACKEND_KEYS: frozenset[str] = frozenset(
 _BACKEND_ENTRY_POINT_GROUP: str = "onex.backends"
 _KAFKA_EVENT_BUS_ENTRY_POINT: str = "event_bus_kafka"
 
+# Whitelist of accepted ``backend_overrides['event_bus']`` values. Anything
+# outside this set is a typo (e.g. ``event_bus=kafak``) or a misconfigured
+# stack and is rejected with ``CONFIGURATION_ERROR`` rather than silently
+# downgrading to the in-memory bus. ``inmemory`` and the in-tree default
+# (no override) both resolve to ``EventBusInmemory``; ``kafka`` resolves via
+# the ``onex.backends`` entry-point group.
+SUPPORTED_EVENT_BUS_VALUES: frozenset[str] = frozenset({"inmemory", "kafka"})
+
 
 @dataclass(frozen=True)
 class _ResolvedRoutingEntry:
@@ -1026,9 +1034,9 @@ class RuntimeLocal:
     def _create_event_bus(self) -> Any:
         """Construct the event bus implementation requested by ``backend_overrides``.
 
-        Default behavior (no override or ``event_bus`` not set) returns
-        ``EventBusInmemory(environment="local", group="runtime-local")`` —
-        identical to the pre-OMN-9776 hardcoded path.
+        Default behavior (no override or explicit ``event_bus=inmemory``)
+        returns ``EventBusInmemory(environment="local", group="runtime-local")``
+        — identical to the pre-OMN-9776 hardcoded path.
 
         When ``backend_overrides['event_bus'] == 'kafka'``, the bus class is
         discovered via the ``onex.backends`` entry-point group (omnibase_infra
@@ -1041,13 +1049,30 @@ class RuntimeLocal:
         ``backend_overrides['kafka_bootstrap']`` is also supplied, it takes
         precedence over the env var and over the default.
 
+        Any other value (``"kafak"``, ``"redis"``, etc.) is rejected up-front:
+        silent fallback to in-memory hides typos and misconfigured stacks, and
+        running with the wrong backend is a far more dangerous failure mode
+        than a clear startup error.
+
         Raises:
-            ModelOnexError: If ``event_bus=kafka`` is requested but the
-                ``onex.backends:event_bus_kafka`` entry point is not installed
-                or fails to load — fail-fast rather than silently downgrading
-                to in-memory.
+            ModelOnexError: If ``event_bus`` is set to a value not in
+                ``SUPPORTED_EVENT_BUS_VALUES``. Also raised if ``event_bus=kafka``
+                is requested but the ``onex.backends:event_bus_kafka`` entry
+                point is not installed or fails to load — fail-fast rather
+                than silently downgrading to in-memory.
         """
         bus_kind = self.backend_overrides.get("event_bus", "inmemory")
+
+        if bus_kind not in SUPPORTED_EVENT_BUS_VALUES:
+            sorted_values = ", ".join(sorted(SUPPORTED_EVENT_BUS_VALUES))
+            msg = (
+                f"Unsupported backend override event_bus={bus_kind!r}. "
+                f"Supported values: {sorted_values}."
+            )
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message=msg,
+            )
 
         if bus_kind == "kafka":
             return self._create_kafka_event_bus()
