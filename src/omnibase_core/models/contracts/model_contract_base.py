@@ -58,6 +58,9 @@ from omnibase_core.models.contracts.model_performance_requirements import (
     ModelPerformanceRequirements,
 )
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
+from omnibase_core.models.contracts.subcontracts.model_contract_behavior_spec import (
+    ModelContractBehaviorSpec,
+)
 from omnibase_core.models.contracts.subcontracts.model_protocol_dependency import (
     ModelProtocolDependency,
 )
@@ -282,6 +285,12 @@ class ModelContractBase(BaseModel, ABC):
         description="Contract-level concurrency cap and optional coupling to "
         "model-registry concurrency limits. None means the runtime uses its "
         "default (serialized dispatch) for this node.",
+    )
+
+    behavior_spec: ModelContractBehaviorSpec = Field(
+        default_factory=ModelContractBehaviorSpec,
+        description="Behavioral execution profile: concurrency cap, execution timeout, "
+        "retry policy, and idempotency flag.",
     )
 
     # ONEX Infrastructure Extension Fields (OMN-1588)
