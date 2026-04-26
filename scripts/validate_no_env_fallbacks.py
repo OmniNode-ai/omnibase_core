@@ -43,10 +43,10 @@ FALLBACK_PATTERNS = [
 
 # Lines that are clearly docstrings/comments/examples are excluded
 SKIP_PATTERNS = [
-    re.compile(r'^\s*#'),          # Comments
-    re.compile(r'^\s*["\']'),      # Docstring lines
-    re.compile(r'^\s*>>>'),        # Doctest examples
-    re.compile(r'^\s*\.\.\s'),     # RST continuation
+    re.compile(r"^\s*#"),  # Comments
+    re.compile(r'^\s*["\']'),  # Docstring lines
+    re.compile(r"^\s*>>>"),  # Doctest examples
+    re.compile(r"^\s*\.\.\s"),  # RST continuation
 ]
 
 
@@ -74,11 +74,11 @@ def scan_file(filepath: Path) -> list[tuple[int, str]]:
                 in_docstring = False
                 docstring_delim = None
                 break
-            elif not in_docstring and count == 1:
+            if not in_docstring and count == 1:
                 in_docstring = True
                 docstring_delim = delim
                 break
-            elif count >= 2:
+            if count >= 2:
                 # Opens and closes on same line
                 break
 
