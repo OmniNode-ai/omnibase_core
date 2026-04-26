@@ -37,7 +37,6 @@ def classify_contract_path(
         when the classification is ambiguous.
     """
     parts = path.parts
-    path_str = path.as_posix()
     raw_dict: dict[str, object] = raw or {}
     raw_node_type_value = raw_dict.get("node_type")
     raw_node_type: str | None = (
@@ -46,7 +45,7 @@ def classify_contract_path(
     reasons: list[str] = []
     confidence: float | None = None
 
-    if "/integrations/" in path_str:
+    if "integrations" in parts:
         bucket = EnumContractBucket.INTEGRATION_CONTRACT
         reasons.append("matched */integrations/* glob")
     elif "nodes" not in parts:

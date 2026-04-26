@@ -53,6 +53,11 @@ class TestBucketAssignment:
         assert result.bucket is EnumContractBucket.INTEGRATION_CONTRACT
         assert len(result.reasons) > 0
 
+    def test_integration_contract_bucket_relative_path(self) -> None:
+        path = Path("integrations/github_webhook/contract.yaml")
+        result = classify_contract_path(path)
+        assert result.bucket is EnumContractBucket.INTEGRATION_CONTRACT
+
     def test_package_contract_not_under_nodes(self) -> None:
         path = Path(
             "omnibase_infra/src/omnibase_infra/contracts/verification/contract.yaml"
@@ -177,7 +182,7 @@ class TestModelCorpusClassificationStructure:
         )
         result = classify_contract_path(path)
         with pytest.raises(Exception):
-            result.bucket = EnumContractBucket.UNKNOWN  # type: ignore[misc]
+            result.bucket = EnumContractBucket.UNKNOWN  # type: ignore[misc]  # NOTE(OMN-9760): intentional mutation attempt to verify frozen model
 
     def test_extra_fields_forbidden(self) -> None:
         from pydantic import ValidationError
@@ -187,5 +192,5 @@ class TestModelCorpusClassificationStructure:
                 path=Path("a/b/contract.yaml"),
                 bucket=EnumContractBucket.UNKNOWN,
                 requires_validation=False,
-                bogus_field="x",  # type: ignore[call-arg]
+                bogus_field="x",  # type: ignore[call-arg]  # NOTE(OMN-9760): intentional extra field to verify extra="forbid"
             )
