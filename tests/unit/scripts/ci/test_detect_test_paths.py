@@ -66,3 +66,82 @@ def test_change_in_protocols_expands_to_exact_set() -> None:
         f"tests/unit/{m}/" for m in ("protocols", "nodes", "services", "factories")
     )
     assert paths == expected
+
+
+# ---------------------------------------------------------------------------
+# Task 6: compute_selection escalation tests
+# ---------------------------------------------------------------------------
+
+from scripts.ci.detect_test_paths import compute_selection
+from scripts.ci.test_selection_models import (
+    EnumFullSuiteReason,
+)
+
+
+def test_shared_module_change_escalates_to_full_suite() -> None:
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/models/foo.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.SHARED_MODULE
+    assert selection.split_count == 40
+    assert selection.matrix == list(range(1, 41))
+
+
+def test_test_infrastructure_change_escalates_to_full_suite() -> None:
+    selection = compute_selection(
+        changed_files=["tests/conftest.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
+
+
+def test_threshold_module_count_escalates() -> None:
+    # 8 distinct, non-shared modules changed → THRESHOLD_MODULES.
+    changed_files = [
+        f"src/omnibase_core/{m}/x.py"
+        for m in [
+            "cli",
+            "constants",
+            "decorators",
+            "logging",
+            "merge",
+            "navigation",
+            "package",
+            "rendering",
+        ]
+    ]
+    selection = compute_selection(
+        changed_files=changed_files,
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.THRESHOLD_MODULES
+
+
+def test_main_branch_always_full_suite() -> None:
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/cli/x.py"],
+        adjacency_path=ADJ,
+        ref_name="main",
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.MAIN_BRANCH
+
+
+def test_small_change_returns_smart_selection_no_reason() -> None:
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/cli/foo.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is False
+    assert selection.full_suite_reason is None
+    assert "tests/unit/cli/" in selection.selected_paths
+    assert 1 <= selection.split_count <= 5
+    assert selection.matrix == list(range(1, selection.split_count + 1))
