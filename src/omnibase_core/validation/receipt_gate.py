@@ -19,9 +19,30 @@ Decision matrix:
     - Receipt file unparseable           → FAIL ("corrupt receipt")
     - Receipt schema invalid             → FAIL ("invalid receipt")
     - Receipt path↔content mismatch      → FAIL (declared id != lookup id)
-    - Receipt status != PASS             → FAIL ("failing receipt")
-    - Override token in PR body          → PASS with friction ("override accepted")
-    - All checks have PASS receipts      → PASS
+    - Receipt missing verifier field     → FAIL ("missing verifier")
+    - Receipt missing probe_command/stdout → FAIL ("missing probe_command|probe_stdout")
+    - Receipt verifier == runner          → FAIL ("self-attestation: ... ADVISORY")
+    - Receipt status != PASS              → FAIL ("failing receipt (ADVISORY|FAIL|PENDING)")
+    - Override token in PR body           → PASS with friction ("override accepted")
+    - All checks have PASS receipts       → PASS
+
+Adversarial invariants (OMN-9788)
+---------------------------------
+The gate enforces four invariants on every receipt before accepting it as
+proof. These mirror the OMN-9786 ``ModelDodReceipt`` model invariants but
+are surfaced as gate-level errors so the failure message tells the operator
+exactly which adversarial guarantee was missed:
+
+1. ``verifier`` field MUST be present and non-empty (rejects legacy /
+   pre-OMN-9786 receipts that elide the field).
+2. ``probe_command`` AND ``probe_stdout`` fields MUST be present; both
+   must be non-whitespace after stripping.
+3. ``verifier`` MUST differ from ``runner`` (rejects self-attestation).
+4. Final ``status`` MUST be ``PASS`` (rejects ADVISORY, FAIL, PENDING).
+
+Invariants 1-3 are enforced as pre-schema lookups so missing-field
+errors mention the field name even when other validation errors would
+otherwise mask the problem.
 """
 
 from __future__ import annotations
@@ -101,6 +122,82 @@ def _iter_dod_evidence(contract_data: object) -> list[tuple[str, str, str]]:
     return triples
 
 
+def _check_adversarial_invariants_raw(raw: object, receipt_path: Path) -> str | None:
+    """Pre-schema guard for the adversarial fields (OMN-9788).
+
+    Runs before ``ModelDodReceipt.model_validate`` so missing-field errors
+    mention the field name explicitly (``verifier``, ``probe_command``,
+    ``probe_stdout``). Without this, pydantic's "Field required" message
+    surfaces all missing fields together and the operator cannot tell
+    which adversarial invariant was violated.
+
+    Returns:
+        ``None`` if the raw payload has all four required adversarial
+        fields populated with non-whitespace strings. Otherwise an
+        operator-facing failure reason naming the missing/empty field.
+    """
+    if not isinstance(raw, dict):
+        return None  # downstream schema validation will catch non-dict
+    for field in ("verifier", "probe_command", "probe_stdout"):
+        if field not in raw:
+            return (
+                f"receipt at {receipt_path} missing required adversarial field "
+                f"{field!r} (OMN-9786 invariant)"
+            )
+    # verifier and probe_command must be non-whitespace; probe_stdout may be
+    # empty for non-executable check_types, so the model layer enforces the
+    # executable-only stdout rule.
+    for field in ("verifier", "probe_command"):
+        value = raw.get(field)
+        if not isinstance(value, str) or not value.strip():
+            return (
+                f"receipt at {receipt_path} field {field!r} is empty or "
+                f"whitespace-only (OMN-9786 invariant)"
+            )
+    return None
+
+
+def _check_adversarial_invariants_validated(
+    receipt: ModelDodReceipt, receipt_path: Path
+) -> str | None:
+    """Post-schema adversarial check (OMN-9788).
+
+    The model layer downgrades ``verifier == runner`` PASS receipts to
+    ADVISORY and weak-proof check_types likewise; this function reports
+    the resulting status with a message naming the adversarial rule so
+    the operator sees ``advisory`` or ``self-attestation`` rather than
+    a bare status code.
+
+    Returns:
+        ``None`` if the receipt resolves to ``EnumReceiptStatus.PASS``.
+        Otherwise an operator-facing failure reason.
+    """
+    # Identities are already whitespace-stripped by the model's
+    # ``_normalize_identity`` field validator.
+    if receipt.verifier == receipt.runner:
+        # Model auto-downgraded PASS → ADVISORY; surface the cause.
+        return (
+            f"receipt at {receipt_path} self-attestation rejected: "
+            f"verifier={receipt.verifier!r} == runner={receipt.runner!r} "
+            f"(status auto-downgraded to ADVISORY by OMN-9786 transition policy)"
+        )
+    if receipt.status is EnumReceiptStatus.ADVISORY:
+        return (
+            f"failing receipt (ADVISORY) at {receipt_path}: advisory-only "
+            f"proof does not satisfy the receipt-gate; an independent "
+            f"verifier must sign off with status=PASS"
+        )
+    if receipt.status is EnumReceiptStatus.PENDING:
+        return (
+            f"failing receipt (PENDING) at {receipt_path}: probe was "
+            f"allocated but not executed; rerun the probe and produce a "
+            f"PASS receipt before merging"
+        )
+    if receipt.status is not EnumReceiptStatus.PASS:
+        return f"failing receipt ({receipt.status.value}) at {receipt_path}"
+    return None
+
+
 def _check_one_receipt(
     ticket_id: str,
     evidence_item_id: str,
@@ -128,6 +225,13 @@ def _check_one_receipt(
     except (yaml.YAMLError, OSError) as e:
         return fail(f"corrupt receipt at {receipt_path}: {e}")
 
+    # Pre-schema adversarial guard: missing/empty verifier, probe_command,
+    # probe_stdout fields must produce a clear "missing <field>" message
+    # before pydantic's bulk "Field required" error fires (OMN-9788).
+    adversarial_raw_failure = _check_adversarial_invariants_raw(raw, receipt_path)
+    if adversarial_raw_failure is not None:
+        return fail(adversarial_raw_failure)
+
     try:
         receipt = ModelDodReceipt.model_validate(raw)
     except ValidationError as e:
@@ -148,8 +252,14 @@ def _check_one_receipt(
             f"receipt at {receipt_path} declares check_type={receipt.check_type!r}, "
             f"expected {check_type!r}"
         )
-    if receipt.status is not EnumReceiptStatus.PASS:
-        return fail(f"failing receipt ({receipt.status.value}) at {receipt_path}")
+
+    # Post-schema adversarial guard: surface ADVISORY / PENDING / self-
+    # attestation with a message that names the rule (OMN-9788).
+    adversarial_validated_failure = _check_adversarial_invariants_validated(
+        receipt, receipt_path
+    )
+    if adversarial_validated_failure is not None:
+        return fail(adversarial_validated_failure)
 
     return ModelReceiptCheckResult(
         ticket_id=ticket_id,
