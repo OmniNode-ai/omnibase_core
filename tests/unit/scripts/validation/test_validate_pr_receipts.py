@@ -54,6 +54,7 @@ def _write_receipt(
     p = receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
     p.parent.mkdir(parents=True, exist_ok=True)
     data = {
+        "schema_version": "1.0.0",
         "ticket_id": ticket_id,
         "evidence_item_id": evidence_item_id,
         "check_type": check_type,
@@ -62,6 +63,13 @@ def _write_receipt(
         "run_timestamp": datetime.now(tz=UTC).isoformat(),
         "commit_sha": "a1b2c3d4e5f6",  # pragma: allowlist secret
         "runner": "test-runner",
+        # OMN-9786 adversarial fields. verifier must differ from runner so
+        # the transition policy does not auto-downgrade PASS → ADVISORY.
+        "verifier": "test-verifier",
+        "probe_command": check_value,
+        # Non-empty stdout so executable check_types ("command", etc.) do
+        # not raise "probe_stdout required for executable check_type".
+        "probe_stdout": "test stdout",
     }
     if overrides:
         data.update(overrides)
