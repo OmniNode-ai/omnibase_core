@@ -20,6 +20,7 @@ __all__ = ["RuntimeLocal"]
 
 import asyncio
 import importlib
+import importlib.metadata
 import inspect
 import json
 import logging
@@ -39,9 +40,30 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 logger = logging.getLogger(__name__)
 
 # Known backend protocol keys that --backend can override.
+# kafka_bootstrap is a Kafka-specific tuning knob: when ``event_bus=kafka`` is
+# selected, callers may pass ``--backend kafka_bootstrap=host:port`` to override
+# the default bootstrap server (otherwise read from ``KAFKA_BOOTSTRAP_SERVERS``
+# env var or ``ModelKafkaEventBusConfig`` defaults).
 KNOWN_BACKEND_KEYS: frozenset[str] = frozenset(
-    {"event_bus", "state_store", "metrics", "tracing"}
+    {"event_bus", "state_store", "metrics", "tracing", "kafka_bootstrap"}
 )
+
+# Entry-point group that backend providers (e.g. omnibase_infra) register under.
+# omnibase_core MUST NOT import omnibase_infra directly (compat→core→spi→infra
+# layering is enforced by sdk-boundary-check CI). Instead, when the runtime
+# needs a non-default bus implementation it discovers the class via this
+# ``importlib.metadata`` group, which omnibase_infra populates in its
+# ``[project.entry-points."onex.backends"]`` table.
+_BACKEND_ENTRY_POINT_GROUP: str = "onex.backends"
+_KAFKA_EVENT_BUS_ENTRY_POINT: str = "event_bus_kafka"
+
+# Whitelist of accepted ``backend_overrides['event_bus']`` values. Anything
+# outside this set is a typo (e.g. ``event_bus=kafak``) or a misconfigured
+# stack and is rejected with ``CONFIGURATION_ERROR`` rather than silently
+# downgrading to the in-memory bus. ``inmemory`` and the in-tree default
+# (no override) both resolve to ``EventBusInmemory``; ``kafka`` resolves via
+# the ``onex.backends`` entry-point group.
+SUPPORTED_EVENT_BUS_VALUES: frozenset[str] = frozenset({"inmemory", "kafka"})
 
 
 @dataclass(frozen=True)
@@ -1006,6 +1028,141 @@ class RuntimeLocal:
         )
 
     # ------------------------------------------------------------------
+    # Event bus construction
+    # ------------------------------------------------------------------
+
+    def _create_event_bus(self) -> Any:
+        """Construct the event bus implementation requested by ``backend_overrides``.
+
+        Default behavior (no override or explicit ``event_bus=inmemory``)
+        returns ``EventBusInmemory(environment="local", group="runtime-local")``
+        — identical to the pre-OMN-9776 hardcoded path.
+
+        When ``backend_overrides['event_bus'] == 'kafka'``, the bus class is
+        discovered via the ``onex.backends`` entry-point group (omnibase_infra
+        registers ``event_bus_kafka`` there). This indirection is mandatory:
+        omnibase_core cannot import omnibase_infra directly (compat→core→spi→infra
+        layering, enforced by sdk-boundary-check CI).
+
+        The Kafka bus is instantiated through its ``default()`` factory, which
+        applies ``KAFKA_BOOTSTRAP_SERVERS`` env var overrides. When
+        ``backend_overrides['kafka_bootstrap']`` is also supplied, it takes
+        precedence over the env var and over the default.
+
+        Any other value (``"kafak"``, ``"redis"``, etc.) is rejected up-front:
+        silent fallback to in-memory hides typos and misconfigured stacks, and
+        running with the wrong backend is a far more dangerous failure mode
+        than a clear startup error.
+
+        Raises:
+            ModelOnexError: If ``event_bus`` is set to a value not in
+                ``SUPPORTED_EVENT_BUS_VALUES``. Also raised if ``event_bus=kafka``
+                is requested but the ``onex.backends:event_bus_kafka`` entry
+                point is not installed or fails to load — fail-fast rather
+                than silently downgrading to in-memory.
+        """
+        bus_kind = self.backend_overrides.get("event_bus", "inmemory")
+
+        if bus_kind not in SUPPORTED_EVENT_BUS_VALUES:
+            sorted_values = ", ".join(sorted(SUPPORTED_EVENT_BUS_VALUES))
+            msg = (
+                f"Unsupported backend override event_bus={bus_kind!r}. "
+                f"Supported values: {sorted_values}."
+            )
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message=msg,
+            )
+
+        if bus_kind == "kafka":
+            return self._create_kafka_event_bus()
+
+        from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
+
+        bus = EventBusInmemory(environment="local", group="runtime-local")
+        logger.info("RuntimeLocal: event bus selected (inmemory)")
+        return bus
+
+    def _create_kafka_event_bus(self) -> Any:
+        """Discover and instantiate the Kafka event bus via entry points.
+
+        The provider (omnibase_infra) registers
+        ``event_bus_kafka = "omnibase_infra.event_bus.event_bus_kafka:EventBusKafka"``
+        under the ``onex.backends`` group. We look it up by name, instantiate
+        through ``EventBusKafka.default()`` (which resolves
+        ``KAFKA_BOOTSTRAP_SERVERS``), and apply a ``kafka_bootstrap`` override
+        when provided.
+        """
+        backend_eps = importlib.metadata.entry_points().select(
+            group=_BACKEND_ENTRY_POINT_GROUP
+        )
+
+        kafka_ep = next(
+            (ep for ep in backend_eps if ep.name == _KAFKA_EVENT_BUS_ENTRY_POINT),
+            None,
+        )
+        if kafka_ep is None:
+            msg = (
+                "Requested event_bus=kafka but no entry point named "
+                f"'{_KAFKA_EVENT_BUS_ENTRY_POINT}' is registered under "
+                f"'{_BACKEND_ENTRY_POINT_GROUP}'. Install omnibase-infra to "
+                "provide EventBusKafka."
+            )
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message=msg,
+            )
+
+        try:
+            bus_cls = kafka_ep.load()
+        except (ImportError, AttributeError, ModuleNotFoundError) as exc:
+            msg = (
+                f"Failed to load Kafka event bus entry point "
+                f"'{_KAFKA_EVENT_BUS_ENTRY_POINT}' from "
+                f"'{_BACKEND_ENTRY_POINT_GROUP}': {exc}"
+            )
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message=msg,
+            ) from exc
+
+        try:
+            default_factory = bus_cls.default
+        except AttributeError as exc:
+            msg = (
+                f"Kafka event bus class {bus_cls!r} has no default() factory; "
+                "cannot construct from RuntimeLocal."
+            )
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message=msg,
+            ) from exc
+
+        # ``default()`` reads ``KAFKA_BOOTSTRAP_SERVERS`` via
+        # ``apply_environment_overrides``. Surface ``--backend kafka_bootstrap=...``
+        # by setting that env var for the duration of construction so we do not
+        # reach into private attributes of the Kafka bus instance.
+        bootstrap_override = self.backend_overrides.get("kafka_bootstrap")
+        prior_env = os.environ.get("KAFKA_BOOTSTRAP_SERVERS")
+        try:
+            if bootstrap_override is not None:
+                os.environ["KAFKA_BOOTSTRAP_SERVERS"] = bootstrap_override
+            bus = default_factory()
+        finally:
+            if bootstrap_override is not None:
+                if prior_env is None:
+                    os.environ.pop("KAFKA_BOOTSTRAP_SERVERS", None)
+                else:
+                    os.environ["KAFKA_BOOTSTRAP_SERVERS"] = prior_env
+
+        logger.info(
+            "RuntimeLocal: event bus selected (kafka, bootstrap=%s)",
+            bootstrap_override
+            or os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "<default>"),
+        )
+        return bus
+
+    # ------------------------------------------------------------------
     # Main entry point
     # ------------------------------------------------------------------
 
@@ -1062,12 +1219,9 @@ class RuntimeLocal:
             terminal_topic,
         )
 
-        # 2. Create in-memory event bus
-        from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
-
-        bus = EventBusInmemory(environment="local", group="runtime-local")
+        # 2. Create event bus per backend_overrides (default: in-memory).
+        bus = self._create_event_bus()
         await bus.start()
-        logger.info("RuntimeLocal: event bus started (inmemory)")
 
         # 3. Dispatch to appropriate execution path
         try:
