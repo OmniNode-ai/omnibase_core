@@ -291,6 +291,9 @@ from .enum_node_type import EnumNodeType
 
 # Nondeterminism classification (OMN-1115 — mixin-to-handler migration)
 from .enum_nondeterminism_class import EnumNondeterminismClass
+
+# Normalization family enum (OMN-9759 — corpus classification/normalization layer, parent OMN-9757)
+from .enum_normalization_family import EnumNormalizationFamily
 from .enum_notification_method import EnumNotificationMethod
 from .enum_numeric_value_type import EnumNumericValueType
 
@@ -576,6 +579,8 @@ __all__ = [
     "EnumNodeStatus",
     # Nondeterminism classification
     "EnumNondeterminismClass",
+    # Normalization family (OMN-9759 — corpus classification, parent OMN-9757)
+    "EnumNormalizationFamily",
     # Node domain
     "EnumNodeArchetype",
     "EnumNodeArchitectureType",
