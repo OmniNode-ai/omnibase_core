@@ -57,8 +57,9 @@ class TestEnumNormalizationFamily:
 
     def test_enum_membership(self) -> None:
         """Membership lookup by value."""
-        assert "family_legacy_event_bus" in EnumNormalizationFamily
-        assert "family_does_not_exist" not in EnumNormalizationFamily
+        values = {member.value for member in EnumNormalizationFamily}
+        assert "family_legacy_event_bus" in values
+        assert "family_does_not_exist" not in values
 
     def test_enum_deserialization(self) -> None:
         """Constructible from value string."""
