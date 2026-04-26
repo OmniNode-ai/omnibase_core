@@ -1,21 +1,23 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Tests for contract_normalizer.strip_legacy_metadata (OMN-9761).
+"""Unit tests for omnibase_core.normalization.contract_normalizer (OMN-9761, OMN-9763).
 
-Phase 2 Task 4 of the corpus classification and normalization layer
-(parent epic OMN-9757). strip_legacy_metadata is a compatibility-stripping
-function: it makes legacy YAML pass canonical validation by removing
-legacy top-level fields (metadata block, contract_name, node_name).
+Covers two compatibility-stripping normalizers:
 
-NOTE: this normalizer is migration scaffolding, not a semantic-preserving
-transform. Callers that need to retain dropped content (e.g. metadata.author)
-must capture it from the raw dict before invoking the normalizer.
+- ``strip_legacy_metadata`` (OMN-9761): removes legacy top-level fields
+  (metadata block, contract_name, node_name) so legacy YAML passes
+  canonical validation. Migration scaffolding, not semantic-preserving.
+- ``normalize_io_model_ref`` (OMN-9763): converts dict-shaped
+  ``input_model``/``output_model`` refs to canonical dotted-string form.
 """
 
 import pytest
 
-from omnibase_core.normalization.contract_normalizer import strip_legacy_metadata
+from omnibase_core.normalization.contract_normalizer import (
+    normalize_io_model_ref,
+    strip_legacy_metadata,
+)
 
 
 @pytest.mark.unit
@@ -62,3 +64,56 @@ class TestStripLegacyMetadata:
         raw_copy = {"name": "foo", "metadata": {"author": "x"}}
         strip_legacy_metadata(raw)
         assert raw == raw_copy
+
+
+@pytest.mark.unit
+def test_dict_shape_to_string() -> None:
+    raw: dict[str, object] = {
+        "name": "node_foo",
+        "input_model": {
+            "name": "ModelFooRequest",
+            "module": "foo.bar.models",
+            "description": "...",
+        },
+        "output_model": {"name": "ModelFooResult", "module": "foo.bar.models"},
+    }
+    result = normalize_io_model_ref(raw)
+    assert result["input_model"] == "foo.bar.models.ModelFooRequest"
+    assert result["output_model"] == "foo.bar.models.ModelFooResult"
+
+
+@pytest.mark.unit
+def test_string_shape_passthrough() -> None:
+    raw: dict[str, object] = {
+        "name": "node_foo",
+        "input_model": "foo.bar.ModelFooRequest",
+    }
+    result = normalize_io_model_ref(raw)
+    assert result["input_model"] == "foo.bar.ModelFooRequest"
+
+
+@pytest.mark.unit
+def test_missing_field_not_added() -> None:
+    raw: dict[str, object] = {"name": "node_foo"}
+    result = normalize_io_model_ref(raw)
+    assert "input_model" not in result
+    assert "output_model" not in result
+
+
+@pytest.mark.unit
+def test_does_not_mutate_input() -> None:
+    raw: dict[str, object] = {"input_model": {"name": "Foo", "module": "bar"}}
+    raw_copy: dict[str, object] = {
+        "input_model": {"name": "Foo", "module": "bar"},
+    }
+    normalize_io_model_ref(raw)
+    assert raw == raw_copy
+
+
+@pytest.mark.unit
+def test_idempotent() -> None:
+    raw: dict[str, object] = {"input_model": {"name": "Foo", "module": "bar"}}
+    once = normalize_io_model_ref(raw)
+    twice = normalize_io_model_ref(once)
+    assert once == twice
+    assert twice["input_model"] == "bar.Foo"

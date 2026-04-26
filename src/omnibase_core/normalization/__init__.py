@@ -13,7 +13,14 @@ per-function docstrings for what is dropped or rewritten.
 
 from __future__ import annotations
 
-from omnibase_core.normalization.contract_normalizer import strip_legacy_metadata
+from omnibase_core.normalization.contract_normalizer import (
+    normalize_io_model_ref,
+    strip_legacy_metadata,
+)
 from omnibase_core.normalization.corpus_classifier import classify_contract_path
 
-__all__ = ["classify_contract_path", "strip_legacy_metadata"]
+__all__ = [
+    "classify_contract_path",
+    "normalize_io_model_ref",
+    "strip_legacy_metadata",
+]

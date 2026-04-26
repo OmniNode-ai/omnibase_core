@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Contract normalizer functions (OMN-9761, Phase 2 Task 4).
+"""Contract normalizer functions (OMN-9761, OMN-9763).
 
 Each function in this module is a pure dict→dict transform that takes a
 raw legacy contract dict (parsed YAML) and returns a new dict closer to
@@ -14,6 +14,8 @@ migrations. Content that is dropped here (e.g. ``metadata.author``)
 must be captured by the caller before normalization runs if it needs
 to be retained.
 """
+
+from __future__ import annotations
 
 from collections.abc import Mapping
 
@@ -45,3 +47,38 @@ def strip_legacy_metadata(raw: Mapping[str, object]) -> dict[str, object]:
         the raw dict before calling this function if it must be retained.
     """
     return {k: v for k, v in raw.items() if k not in _LEGACY_METADATA_KEYS}
+
+
+def _normalize_single_io_ref(value: dict[str, object] | str | None) -> str | None:
+    if value is None or isinstance(value, str):
+        return value
+    module = str(value.get("module", "") or "")
+    name = str(value.get("name", "") or "")
+    if module and name:
+        return f"{module}.{name}"
+    return module or name or None
+
+
+def normalize_io_model_ref(raw: dict[str, object]) -> dict[str, object]:
+    """Convert dict-shaped ``input_model``/``output_model`` refs to dotted-string canonical form.
+
+    Legacy contracts often expressed model references as
+    ``{"name": "ModelFooRequest", "module": "foo.bar.models"}``. The canonical
+    typed contract model expects a single dotted string ``"foo.bar.models.ModelFooRequest"``.
+
+    Behavior:
+    - ``{name: X, module: Y}`` -> ``"Y.X"``
+    - String passthrough unchanged
+    - Missing field not injected
+    - Does not mutate input; idempotent
+    """
+    result = dict(raw)
+    for field in ("input_model", "output_model"):
+        if field not in result:
+            continue
+        value = result[field]
+        if value is None or isinstance(value, (str, dict)):
+            normalized = _normalize_single_io_ref(value)
+            if normalized is not None:
+                result[field] = normalized
+    return result
