@@ -1044,8 +1044,11 @@ jobs:
             --tb=short \
             --junitxml=junit-${{ matrix.split }}.xml
 
-      - name: Save test durations (split 1 only, after full suite data accumulated)
-        if: matrix.split == 1
+      - name: Save test durations (full suite only, split 1)
+        if: |
+          needs.detect-changes.outputs.is_full_suite == 'true' &&
+          matrix.split == 1 &&
+          success()
         uses: actions/cache/save@v4
         with:
           path: .test_durations
