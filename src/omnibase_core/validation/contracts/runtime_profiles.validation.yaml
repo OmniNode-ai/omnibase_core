@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: runtime_profiles
+  validator_name: Runtime Profiles Validator
+  validator_description: |
+    Enforces that every node contract whose event_bus subscribes to at
+    least one onex.cmd.* topic also declares runtime_profiles (top-level
+    or under descriptor). Allowlist:
+      src/omnibase_core/validation/data/runtime_profiles_allowlist.yaml
+    Plan: docs/plans/2026-04-26-runtime-lifecycle-hardening-plan.md (Task 4).
+    Linear: OMN-9886.
+
+  target_patterns:
+    - "**/contract.yaml"
+    - "**/handler_contract.yaml"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: runtime_profiles_missing
+      description: >-
+        Reject command-consuming contracts (any event_bus subscription on onex.cmd.*) that omit runtime_profiles.
+        Declare 'runtime_profiles: [<profile>]' at the top level or under 'descriptor', or add the node
+        id to the allowlist with a reason.
+      severity: error
+      enabled: true
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
