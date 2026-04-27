@@ -18,9 +18,9 @@ from enum import Enum
 class EnumContractCompleteness(str, Enum):
     """Completeness level of a ModelTicketContract.
 
-    Used by the contract_completeness field on ModelTicketContract (OMN-9582).
-    Values are uppercase strings to match YAML serialization convention used
-    across on-disk contracts in onex_change_control.
+    Intended for use as the contract_completeness field on ModelTicketContract
+    (added in OMN-9582 Task 2). Values are uppercase strings to match YAML
+    serialization convention used across on-disk contracts in onex_change_control.
     """
 
     STUB = "STUB"
