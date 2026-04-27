@@ -23,6 +23,11 @@ handler_routing:
 descriptor:
   node_archetype: orchestrator
   purity: impure
+  # OMN-9886 / runtime-lifecycle Wave 1: orchestrator with impure handler
+  # belongs to the effects runtime (matches build_loop_orchestrator
+  # precedent in omnimarket).
+  runtime_profiles:
+    - effects
   idempotent: false
   timeout_ms: 30000
 
