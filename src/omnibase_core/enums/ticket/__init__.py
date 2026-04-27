@@ -3,6 +3,9 @@
 
 """Ticket workflow enums for contract-driven execution."""
 
+from omnibase_core.enums.ticket.enum_contract_interface_surface import (
+    EnumContractInterfaceSurface,
+)
 from omnibase_core.enums.ticket.enum_definition_format import (
     DefinitionFormat,
     EnumDefinitionFormat,
@@ -63,4 +66,6 @@ __all__ = [
     "EnumInterfaceSurface",
     "InterfaceSurface",
     "EnumTicketWorkflowPhase",
+    # OMN-10064: contract governance enums
+    "EnumContractInterfaceSurface",
 ]

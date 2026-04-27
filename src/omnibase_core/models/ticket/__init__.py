@@ -42,10 +42,21 @@ from omnibase_core.models.ticket.model_clarifying_question import (
     ClarifyingQuestion,
     ModelClarifyingQuestion,
 )
+from omnibase_core.models.ticket.model_contract_dod_item import ModelContractDodItem
+from omnibase_core.models.ticket.model_emergency_bypass import ModelEmergencyBypass
+from omnibase_core.models.ticket.model_evidence_requirement import (
+    ModelEvidenceRequirement,
+)
 from omnibase_core.models.ticket.model_gate import (
     Gate,
     ModelGate,
 )
+from omnibase_core.models.ticket.model_golden_path import ModelGoldenPath
+from omnibase_core.models.ticket.model_golden_path_assertion import (
+    ModelGoldenPathAssertion,
+)
+from omnibase_core.models.ticket.model_golden_path_input import ModelGoldenPathInput
+from omnibase_core.models.ticket.model_golden_path_output import ModelGoldenPathOutput
 from omnibase_core.models.ticket.model_interface_consumed import (
     InterfaceConsumed,
     ModelInterfaceConsumed,
@@ -138,6 +149,14 @@ __all__ = [
     "ModelTCBConstraint",
     "ModelTCBAssumption",
     "ModelTCBProvenance",
+    # OMN-10064: OCC-origin merged models
+    "ModelContractDodItem",
+    "ModelEmergencyBypass",
+    "ModelEvidenceRequirement",
+    "ModelGoldenPath",
+    "ModelGoldenPathAssertion",
+    "ModelGoldenPathInput",
+    "ModelGoldenPathOutput",
     # Workflow state (distinct from ModelTicketContract) — FSM state embedded
     # in Linear ticket descriptions by the ticket-work handler.
     "ModelTicketWorkflowState",
