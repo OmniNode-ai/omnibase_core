@@ -11,16 +11,22 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ModelAdjacencyEntry(BaseModel):
+    """Adjacency metadata for a module, including reverse dependencies."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
     reverse_deps: list[str] = Field(default_factory=list)
 
 
 class ModelThresholds(BaseModel):
+    """Thresholds that govern when CI escalates to full-suite execution."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
     modules_changed_for_full_suite: int = Field(..., ge=1)
 
 
 class ModelAdjacencyMap(BaseModel):
+    """Validated static adjacency-map contract loaded from YAML."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_version: int = Field(..., ge=1)
@@ -31,6 +37,7 @@ class ModelAdjacencyMap(BaseModel):
 
     @model_validator(mode="after")
     def validate_shared_modules_in_adjacency(self) -> ModelAdjacencyMap:
+        """Enforce cross-section integrity between shared modules and adjacency graph."""
         for shared in self.shared_modules:
             if shared not in self.adjacency:
                 raise ValueError(f"shared_module '{shared}' has no adjacency entry")
@@ -44,5 +51,6 @@ class ModelAdjacencyMap(BaseModel):
 
 
 def load_adjacency_map(path: Path) -> ModelAdjacencyMap:
+    """Load adjacency YAML from `path` and return a validated `ModelAdjacencyMap`."""
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     return ModelAdjacencyMap.model_validate(raw)
