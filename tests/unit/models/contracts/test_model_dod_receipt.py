@@ -449,3 +449,27 @@ class TestModelDodReceiptConsolidationFields:
         receipt = ModelDodReceipt(**fields)
         assert receipt.branch == "main"
         assert receipt.working_dir == "/workspace"
+
+    def test_blank_branch_rejected(self) -> None:
+        fields = _base_fields()
+        fields["branch"] = "   "
+        with pytest.raises(ValidationError, match="non-blank"):
+            ModelDodReceipt(**fields)
+
+    def test_relative_working_dir_rejected(self) -> None:
+        fields = _base_fields()
+        fields["working_dir"] = "relative/path"
+        with pytest.raises(ValidationError, match="absolute"):
+            ModelDodReceipt(**fields)
+
+    def test_working_dir_none_accepted(self) -> None:
+        fields = _base_fields()
+        fields["working_dir"] = None
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.working_dir is None
+
+    def test_branch_none_accepted(self) -> None:
+        fields = _base_fields()
+        fields["branch"] = None
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.branch is None

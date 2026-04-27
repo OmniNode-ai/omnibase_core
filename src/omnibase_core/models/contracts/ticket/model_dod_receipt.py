@@ -228,6 +228,22 @@ class ModelDodReceipt(BaseModel):
         ),
     )
 
+    @field_validator("branch")
+    @classmethod
+    def _validate_branch(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError(
+                "branch must be non-blank when provided; use None for unknown"
+            )
+        return v
+
+    @field_validator("working_dir")
+    @classmethod
+    def _validate_working_dir(cls, v: str | None) -> str | None:
+        if v is not None and not v.startswith("/"):
+            raise ValueError("working_dir must be an absolute path (start with '/')")
+        return v
+
     @field_validator("runner", "verifier")
     @classmethod
     def _normalize_identity(cls, v: str) -> str:

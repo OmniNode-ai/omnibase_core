@@ -46,8 +46,10 @@ to `tuple[ModelDodReceipt, ...]`. The `failure_class` field on `ModelVerifierChe
 is encoded in `probe_stdout` (the captured stderr/stdout of the verification command).
 The `passed` field is derived from `status == PASS`.
 
-The `ModelVerifierCheckResult` class and the `model_verifier_output.py` file are
-**deleted**; no backwards-compat re-exports are added per CLAUDE.md policy.
+The `ModelVerifierCheckResult` class is **deleted in the downstream
+onex_change_control PR** (follow-up); no backwards-compat re-exports are added
+per CLAUDE.md policy. This omnibase_core PR only adds the `branch` and
+`working_dir` fields — the deletion lands in onex_change_control separately.
 
 ### Forward-compatibility with OMN-9132
 
