@@ -55,10 +55,17 @@ def parse_event_bus(contract: dict[str, object]) -> ModelEventBusParseResult:
             f"event_bus must be a mapping, got {type(event_bus).__name__}",
         )
 
+    unknown = sorted(set(event_bus.keys()) - _RECOGNIZED_KEYS)
+    if unknown:
+        raise EventBusContractShapeError(
+            "event_bus contains unrecognized keys; "
+            f"got keys {unknown!r}, expected only 'subscribe_topics' or 'subscribe'",
+        )
+
     subscriptions: list[ModelEventBusSubscription] = []
 
-    classic = event_bus.get("subscribe_topics")
-    if classic is not None:
+    if "subscribe_topics" in event_bus:
+        classic = event_bus["subscribe_topics"]
         if not isinstance(classic, list):
             raise EventBusContractShapeError(
                 "event_bus.subscribe_topics must be a list of topic strings",
@@ -70,8 +77,8 @@ def parse_event_bus(contract: dict[str, object]) -> ModelEventBusParseResult:
                 )
             subscriptions.append(ModelEventBusSubscription(topic=topic))
 
-    nested = event_bus.get("subscribe")
-    if nested is not None:
+    if "subscribe" in event_bus:
+        nested = event_bus["subscribe"]
         if not isinstance(nested, list):
             raise EventBusContractShapeError(
                 "event_bus.subscribe must be a list of subscription mappings",
@@ -97,13 +104,6 @@ def parse_event_bus(contract: dict[str, object]) -> ModelEventBusParseResult:
                     consumer_group=consumer_group,
                 ),
             )
-
-    if classic is None and nested is None and event_bus:
-        unknown = sorted(set(event_bus.keys()) - _RECOGNIZED_KEYS)
-        raise EventBusContractShapeError(
-            "event_bus contains no recognized subscription shape; "
-            f"got keys {unknown!r}, expected 'subscribe_topics' or 'subscribe'",
-        )
 
     return ModelEventBusParseResult(subscriptions=subscriptions)
 

@@ -74,3 +74,27 @@ def test_event_bus_not_a_mapping_raises() -> None:
     contract = {"event_bus": ["onex.evt.foo.v1"]}
     with pytest.raises(EventBusContractShapeError):
         parse_event_bus(contract)
+
+
+@pytest.mark.unit
+def test_unknown_key_alongside_known_shape_raises() -> None:
+    contract = {
+        "event_bus": {
+            "subscribe_topics": ["onex.evt.foo.v1"],
+            "subscrbe_topics": ["onex.evt.typo.v1"],
+        },
+    }
+    with pytest.raises(EventBusContractShapeError, match="subscrbe_topics"):
+        parse_event_bus(contract)
+
+
+@pytest.mark.unit
+def test_unknown_key_alongside_nested_shape_raises() -> None:
+    contract = {
+        "event_bus": {
+            "subscribe": [{"topic": "onex.evt.bar.v1"}],
+            "subscrbe": [{"topic": "onex.evt.typo.v1"}],
+        },
+    }
+    with pytest.raises(EventBusContractShapeError, match="subscrbe"):
+        parse_event_bus(contract)
