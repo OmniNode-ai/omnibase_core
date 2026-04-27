@@ -5,7 +5,7 @@
 
 import pytest
 
-from omnibase_core.contracts.parser_event_bus import parse_event_bus
+from omnibase_core.contracts.contract_parser_event_bus import parse_event_bus
 from omnibase_core.errors.error_event_bus_contract_shape import (
     EventBusContractShapeError,
 )
