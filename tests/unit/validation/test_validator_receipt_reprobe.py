@@ -10,8 +10,8 @@ MERGED is unverified until probe confirms"). It is **not** full historical
 replay: environment, side effects, time, and external state may differ.
 
 Coverage:
-- Allowlisted always-pass probe ("true") returns PASS.
-- Allowlisted always-fail probe ("false") returns FAIL with exit_code in detail.
+- Test-only always-pass probe ("true") returns PASS when fixture-allowlisted.
+- Test-only always-fail probe ("false") returns FAIL with exit_code in detail.
 - Non-allowlisted probe ("rm -rf /") returns FAIL with allowlist in detail.
 - Missing probe_command returns FAIL.
 - Exit-code mismatch returns FAIL.
@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import pytest
 
+from omnibase_core.validation import validator_receipt_reprobe
 from omnibase_core.validation.validator_receipt_reprobe import (
     PROBE_COMMAND_ALLOWLIST,
     PROBE_REEXEC_TIMEOUT_SECONDS,
@@ -32,12 +33,24 @@ from omnibase_core.validation.validator_receipt_reprobe import (
 pytestmark = pytest.mark.unit
 
 
+@pytest.fixture
+def allow_test_probe_commands(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Permit deterministic true/false probes only inside tests."""
+    monkeypatch.setattr(
+        validator_receipt_reprobe,
+        "PROBE_COMMAND_ALLOWLIST",
+        (*PROBE_COMMAND_ALLOWLIST, "true", "false"),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Plan-mandated test cases (Task 9, Step 1)
 # ---------------------------------------------------------------------------
 
 
-def test_reexecute_passing_probe_returns_pass() -> None:
+def test_reexecute_passing_probe_returns_pass(
+    allow_test_probe_commands: None,
+) -> None:
     """A receipt whose probe is always-pass and whose recorded exit_code is 0
     should re-execute to PASS.
     """
@@ -59,7 +72,9 @@ def test_reexecute_passing_probe_returns_pass() -> None:
     assert status == "PASS", detail
 
 
-def test_reexecute_failing_probe_returns_fail() -> None:
+def test_reexecute_failing_probe_returns_fail(
+    allow_test_probe_commands: None,
+) -> None:
     """A receipt that records exit_code=0 but whose probe currently exits
     non-zero must FAIL with the mismatch reported in the detail.
     """
@@ -151,7 +166,9 @@ def test_reexecute_empty_probe_command_returns_fail() -> None:
     assert "probe_command" in detail.lower()
 
 
-def test_reexecute_exit_code_mismatch_returns_fail() -> None:
+def test_reexecute_exit_code_mismatch_returns_fail(
+    allow_test_probe_commands: None,
+) -> None:
     """Recorded exit_code=1 but probe currently returns 0 → FAIL.
 
     Even though "true" exits 0 successfully, the receipt claimed it exited 1,
@@ -176,7 +193,9 @@ def test_reexecute_exit_code_mismatch_returns_fail() -> None:
     assert "exit_code" in detail.lower()
 
 
-def test_reexecute_missing_exit_code_field_returns_fail() -> None:
+def test_reexecute_missing_exit_code_field_returns_fail(
+    allow_test_probe_commands: None,
+) -> None:
     """A receipt without exit_code cannot be checked for parity."""
     receipt: dict[str, object] = {
         "schema_version": "1.0.0",
@@ -194,6 +213,29 @@ def test_reexecute_missing_exit_code_field_returns_fail() -> None:
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
     assert status == "FAIL"
     assert "exit_code" in detail.lower()
+
+
+def test_reexecute_bool_exit_code_returns_fail(
+    allow_test_probe_commands: None,
+) -> None:
+    """A YAML bool is not a valid process exit-code integer."""
+    receipt: dict[str, object] = {
+        "schema_version": "1.0.0",
+        "ticket_id": "OMN-A",
+        "evidence_item_id": "dod-001",
+        "check_type": "command",
+        "check_value": "true",
+        "probe_command": "true",
+        "probe_stdout": "",
+        "exit_code": True,
+        "runner": "worker",
+        "verifier": "foreground-X",
+        "run_timestamp": "2026-04-26T12:00:00Z",
+        "status": "PASS",
+    }
+    status, detail = verify_receipt_by_reexecuting_probe(receipt)
+    assert status == "FAIL"
+    assert "exit_code must be int, got bool" in detail
 
 
 # ---------------------------------------------------------------------------
@@ -214,8 +256,6 @@ def test_allowlist_contains_exact_plan_prefixes() -> None:
         "uv run pytest",
         "test -f",
         "test -d",
-        "true",
-        "false",
     }
     assert set(PROBE_COMMAND_ALLOWLIST) == expected
 
@@ -317,7 +357,10 @@ def test_non_allowlisted_probe_is_rejected(probe: str) -> None:
         "test -files /tmp/x",  # NOTE(OMN-9789): would pass naive startswith("test -f")
     ],
 )
-def test_command_boundary_prevents_prefix_smuggling(probe: str) -> None:
+def test_command_boundary_prevents_prefix_smuggling(
+    probe: str,
+    allow_test_probe_commands: None,
+) -> None:
     """Allowlist matching must be on a command boundary, not a raw substring.
 
     A naive ``str.startswith`` check would let ``trueevil`` slip past a

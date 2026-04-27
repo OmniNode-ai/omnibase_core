@@ -26,10 +26,10 @@ the cheapest available externalization of trust.
 
 Safety: probes execute via ``subprocess.run(shell=False)`` with arguments
 split by ``shlex.split`` — there is no shell interpolation. Only commands
-whose stripped form starts with one of the prefixes in
-:data:`PROBE_COMMAND_ALLOWLIST` are allowed to run. Anything else fails
-fast with detail mentioning ``allowlist``. Each probe is wall-clock-capped
-at :data:`PROBE_REEXEC_TIMEOUT_SECONDS`.
+whose stripped form matches one of the command-boundary prefixes in
+:data:`PROBE_COMMAND_ALLOWLIST` are allowed to run. Anything else fails fast
+with detail mentioning ``allowlist``. Each probe is wall-clock-capped at
+:data:`PROBE_REEXEC_TIMEOUT_SECONDS`.
 
 Public API: :func:`verify_receipt_by_reexecuting_probe` (single-receipt)
 and :func:`verify_receipts_by_reexecuting_probes` (batch, producing a
@@ -64,11 +64,12 @@ from omnibase_core.models.contracts.ticket.model_receipt_reprobe_result import (
 # ---------------------------------------------------------------------------
 
 # Command-prefix allowlist for re-execution. A probe is permitted to run only
-# if its stripped form starts with one of these strings. Listing here (not in
-# code body) makes the policy grep-able and easy to extend by ticket review.
+# if its stripped form matches one of these prefixes on a command boundary.
+# Listing here (not in code body) makes the policy grep-able and easy to extend
+# by ticket review.
 #
 # Ordering is documentation, not semantics — the membership check is
-# whitespace-stripped prefix match.
+# whitespace-stripped command-boundary prefix match.
 PROBE_COMMAND_ALLOWLIST: tuple[str, ...] = (
     "gh pr view",
     "gh pr checks",
@@ -78,8 +79,6 @@ PROBE_COMMAND_ALLOWLIST: tuple[str, ...] = (
     "uv run pytest",
     "test -f",
     "test -d",
-    "true",  # for testing
-    "false",  # for testing
 )
 
 # Wall-clock cap per probe re-execution. Anything slower indicates the probe
@@ -153,7 +152,7 @@ def verify_receipt_by_reexecuting_probe(
             "receipt has no exit_code field; cannot verify re-execution parity",
         )
     expected_exit = receipt.get("exit_code")
-    if not isinstance(expected_exit, int):
+    if type(expected_exit) is not int:
         return (
             "FAIL",
             f"receipt.exit_code must be int, got {type(expected_exit).__name__}",
@@ -162,8 +161,8 @@ def verify_receipt_by_reexecuting_probe(
     try:
         result = subprocess.run(
             shlex.split(probe),
-            capture_output=True,
-            text=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             timeout=PROBE_REEXEC_TIMEOUT_SECONDS,
             check=False,
         )
