@@ -16,8 +16,14 @@ from __future__ import annotations
 
 from omnibase_core.normalization.contract_normalizer import (
     normalize_event_bus,
+    normalize_io_model_ref,
     strip_legacy_metadata,
 )
 from omnibase_core.normalization.corpus_classifier import classify_contract_path
 
-__all__ = ["classify_contract_path", "normalize_event_bus", "strip_legacy_metadata"]
+__all__ = [
+    "classify_contract_path",
+    "normalize_event_bus",
+    "normalize_io_model_ref",
+    "strip_legacy_metadata",
+]
