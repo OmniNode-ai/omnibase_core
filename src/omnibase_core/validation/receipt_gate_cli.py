@@ -37,6 +37,11 @@ from omnibase_core.validation.validator_receipt_reprobe import (
 )
 
 
+def _escape_github_actions_message(message: str) -> str:
+    """Escape a GitHub Actions workflow command message payload."""
+    return message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
@@ -93,7 +98,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.reexecute_probes:
         report = verify_receipts_by_reexecuting_probes(Path(args.receipts_dir))
         for r in report.results:
-            line = (
+            line = _escape_github_actions_message(
                 f"{r.status.value}: {r.ticket_id}/{r.evidence_item_id}/{r.check_type} "
                 f"({r.receipt_path}): {r.detail}"
             )
