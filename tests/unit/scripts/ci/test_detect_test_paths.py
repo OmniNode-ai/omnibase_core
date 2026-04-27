@@ -23,6 +23,14 @@ def test_test_only_change_runs_only_changed_test_dir() -> None:
     assert paths == ["tests/unit/nodes/"]
 
 
+def test_root_level_unit_test_file_maps_to_unit_root() -> None:
+    # Root-level files like tests/unit/test_foo.py must NOT produce
+    # tests/unit/test_foo.py/ (an invalid directory target).
+    changed_files = ["tests/unit/test_foo.py"]
+    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
+    assert paths == ["tests/unit/"]
+
+
 def test_integration_test_only_change_does_not_select_unit_tests() -> None:
     # Integration test changes do not contribute to unit-job selection;
     # the integration job runs all integration tests on every PR anyway.

@@ -3,11 +3,14 @@
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from scripts.ci.test_selection_loader import (
     ModelAdjacencyMap,
     load_adjacency_map,
 )
+
+pytestmark = pytest.mark.unit
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 
@@ -33,7 +36,7 @@ adjacency:
 """
     tmp = tmp_path / "bad_adj.yaml"
     tmp.write_text(bad_yaml)
-    with pytest.raises(ValueError, match="shared_module 'does_not_exist'"):
+    with pytest.raises(ValidationError, match="shared_module 'does_not_exist'"):
         load_adjacency_map(tmp)
 
 

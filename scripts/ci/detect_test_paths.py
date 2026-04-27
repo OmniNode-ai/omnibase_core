@@ -54,9 +54,12 @@ def _resolve(changed_files: list[str], config: ModelAdjacencyMap) -> list[str]:
             if module in config.adjacency:
                 direct_modules.add(module)
         elif path.startswith(TEST_UNIT_PREFIX):
-            parts = path.split("/")
-            if len(parts) >= 3:
-                selected.add(f"{TEST_UNIT_PREFIX}{parts[2]}/")
+            rel = path[len(TEST_UNIT_PREFIX) :]
+            head, sep, _ = rel.partition("/")
+            if sep and head:
+                selected.add(f"{TEST_UNIT_PREFIX}{head}/")
+            elif rel:
+                selected.add(TEST_UNIT_PREFIX)
 
     expanded: set[str] = set(direct_modules)
     for module in direct_modules:
