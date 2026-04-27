@@ -9,6 +9,8 @@ from scripts.ci.test_selection_loader import (
     load_adjacency_map,
 )
 
+pytestmark = pytest.mark.unit
+
 REPO_ROOT = Path(__file__).resolve().parents[4]
 
 

@@ -2,7 +2,11 @@
 # SPDX-License-Identifier: MIT
 from pathlib import Path
 
+import pytest
+
 from scripts.ci.detect_test_paths import resolve_test_paths
+
+pytestmark = pytest.mark.unit
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 ADJ = REPO_ROOT / "scripts/ci/test_selection_adjacency.yaml"
