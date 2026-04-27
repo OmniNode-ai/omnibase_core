@@ -82,6 +82,15 @@ allowed_files:
     added: "2024-10-15"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/utils/util_dod_receipt_migration.py"
+    reason: >-
+      Legacy DoD receipt migration utility (OMN-9790). Pre-OMN-9786 receipts cannot validate against the
+      new ModelDodReceipt schema by definition - the migration's purpose is to backfill the missing fields
+      so they can. Raw yaml.safe_load is required to read the legacy payload before rewriting it as a
+      ModelDodReceipt-compatible mapping.
+    added: "2026-04-26"
+    review: "2026-06-13"
+
   - file: "src/omnibase_core/cli/cli_install.py"
     reason: >-
       onex pack/install CLI must parse heterogeneous third-party contract.yaml + metadata.yaml files from
