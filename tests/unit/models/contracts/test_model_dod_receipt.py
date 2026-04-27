@@ -416,3 +416,36 @@ class TestModelDodReceiptAdversarialInvariants:
         fields["verifier"] = blank
         with pytest.raises(ValidationError):
             ModelDodReceipt(**fields)
+
+
+@pytest.mark.unit
+class TestModelDodReceiptConsolidationFields:
+    """OMN-9792: extended fields for EvidenceReceipt + ModelVerifierCheckResult migration."""
+
+    def test_branch_field_optional_defaults_none(self) -> None:
+        receipt = ModelDodReceipt(**_base_fields())
+        assert receipt.branch is None
+
+    def test_branch_field_accepts_string(self) -> None:
+        fields = _base_fields()
+        fields["branch"] = "jonah/omn-9792-consolidate-receipts"
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.branch == "jonah/omn-9792-consolidate-receipts"
+
+    def test_working_dir_field_optional_defaults_none(self) -> None:
+        receipt = ModelDodReceipt(**_base_fields())
+        assert receipt.working_dir is None
+
+    def test_working_dir_field_accepts_string(self) -> None:
+        fields = _base_fields()
+        fields["working_dir"] = "/home/runner/work/omnibase_core"
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.working_dir == "/home/runner/work/omnibase_core"
+
+    def test_both_branch_and_working_dir_together(self) -> None:
+        fields = _base_fields()
+        fields["branch"] = "main"
+        fields["working_dir"] = "/workspace"
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.branch == "main"
+        assert receipt.working_dir == "/workspace"
