@@ -2,7 +2,12 @@
 # SPDX-License-Identifier: MIT
 from pathlib import Path
 
-from scripts.ci.detect_test_paths import resolve_test_paths
+import pytest
+
+from scripts.ci.detect_test_paths import compute_selection, resolve_test_paths
+from scripts.ci.test_selection_models import EnumFullSuiteReason
+
+pytestmark = pytest.mark.unit
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 ADJ = REPO_ROOT / "scripts/ci/test_selection_adjacency.yaml"
@@ -68,14 +73,21 @@ def test_change_in_protocols_expands_to_exact_set() -> None:
     assert paths == expected
 
 
+def test_unknown_module_fails_fast() -> None:
+    changed_files = ["src/omnibase_core/not_a_real_module/foo.py"]
+    with pytest.raises(ValueError, match="missing from adjacency map"):
+        resolve_test_paths(changed_files, adjacency_path=ADJ)
+
+
+def test_root_level_src_file_skipped() -> None:
+    changed_files = ["src/omnibase_core/__init__.py"]
+    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
+    assert paths == []
+
+
 # ---------------------------------------------------------------------------
 # Task 6: compute_selection escalation tests
 # ---------------------------------------------------------------------------
-
-from scripts.ci.detect_test_paths import compute_selection
-from scripts.ci.test_selection_models import (
-    EnumFullSuiteReason,
-)
 
 
 def test_shared_module_change_escalates_to_full_suite() -> None:

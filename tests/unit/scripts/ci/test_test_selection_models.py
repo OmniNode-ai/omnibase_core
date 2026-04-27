@@ -8,6 +8,8 @@ from scripts.ci.test_selection_models import (
     ModelTestSelection,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def test_full_suite_selection_serializes_with_reason() -> None:
     selection = ModelTestSelection(

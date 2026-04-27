@@ -11,16 +11,22 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ModelAdjacencyEntry(BaseModel):
+    """Adjacency entry for a single source module."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
     reverse_deps: list[str] = Field(default_factory=list)
 
 
 class ModelThresholds(BaseModel):
+    """Threshold values that trigger full-suite behavior."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
     modules_changed_for_full_suite: int = Field(..., ge=1)
 
 
 class ModelAdjacencyMap(BaseModel):
+    """Validated static adjacency configuration used for CI test selection."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_version: int = Field(..., ge=1)
@@ -44,5 +50,6 @@ class ModelAdjacencyMap(BaseModel):
 
 
 def load_adjacency_map(path: Path) -> ModelAdjacencyMap:
+    """Load and validate adjacency YAML from disk."""
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     return ModelAdjacencyMap.model_validate(raw)

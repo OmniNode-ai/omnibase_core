@@ -50,9 +50,17 @@ def _resolve(changed_files: list[str], config: ModelAdjacencyMap) -> list[str]:
 
     for path in changed_files:
         if path.startswith(SRC_PREFIX):
-            module = path[len(SRC_PREFIX) :].split("/", 1)[0]
-            if module in config.adjacency:
-                direct_modules.add(module)
+            relative = path[len(SRC_PREFIX) :]
+            parts = relative.split("/", 1)
+            if len(parts) < 2:
+                continue
+            module = parts[0]
+            if module not in config.adjacency:
+                raise ValueError(
+                    f"Module '{module}' missing from adjacency map; "
+                    "update scripts/ci/test_selection_adjacency.yaml"
+                )
+            direct_modules.add(module)
         elif path.startswith(TEST_UNIT_PREFIX):
             parts = path.split("/")
             if len(parts) >= 3:
