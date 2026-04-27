@@ -42,7 +42,7 @@ def _legacy_yaml_payload() -> dict[str, Any]:
         "check_value": "drift/dod_receipts/OMN-9409/dod-001/file_exists.yaml",
         "status": "PASS",
         "run_timestamp": "2026-04-23T23:15:00Z",
-        "commit_sha": "e22100e230d412379f798be58fd49234b4fb821a",
+        "commit_sha": "e22100e230d412379f798be58fd49234b4fb821a",  # pragma: allowlist secret
         "runner": "polish-infra-1390",
         "actual_output": "...",
         "exit_code": 0,
@@ -69,32 +69,46 @@ class TestMigrateReceiptFileYaml:
         assert migrated["probe_stdout"] == SENTINEL_PROBE_STDOUT
         assert migrated["schema_version"] == SENTINEL_SCHEMA_VERSION
 
-    def test_migration_preserves_original_status_in_history_field(
+    def test_migration_preserves_original_status_in_sidecar(
         self, tmp_path: Path
     ) -> None:
-        """``original_status`` must record the prior status verbatim."""
+        """``original_status`` must be recorded in the sidecar audit file.
+
+        The sidecar lives next to the receipt because ``ModelDodReceipt``
+        is ``extra="forbid"`` — writing audit metadata onto the receipt
+        itself would break model validation.
+        """
         receipt_path = tmp_path / "file_exists.yaml"
         receipt_path.write_text(yaml.safe_dump(_legacy_yaml_payload()))
 
         migrate_receipt_file(receipt_path)
 
         migrated = yaml.safe_load(receipt_path.read_text())
-        assert migrated["original_status"] == "PASS"
         assert migrated["status"] == "ADVISORY"
+        # Audit metadata MUST NOT leak onto the receipt itself.
+        assert "original_status" not in migrated
+        assert "migrated_at" not in migrated
 
-    def test_migration_records_iso_migrated_at_field(self, tmp_path: Path) -> None:
-        """``migrated_at`` must be an ISO-8601 string (timezone-aware)."""
+        sidecar = tmp_path / "file_exists.migration.yaml"
+        assert sidecar.exists()
+        audit = yaml.safe_load(sidecar.read_text())
+        assert audit["original_status"] == "PASS"
+        assert audit["receipt_file"] == "file_exists.yaml"
+
+    def test_migration_records_iso_migrated_at_in_sidecar(self, tmp_path: Path) -> None:
+        """``migrated_at`` must be an ISO-8601 string in the sidecar."""
         receipt_path = tmp_path / "file_exists.yaml"
         receipt_path.write_text(yaml.safe_dump(_legacy_yaml_payload()))
 
         migrate_receipt_file(receipt_path)
 
-        migrated = yaml.safe_load(receipt_path.read_text())
+        sidecar = tmp_path / "file_exists.migration.yaml"
+        audit = yaml.safe_load(sidecar.read_text())
         # ISO-8601 strings include 'T' separator and a timezone marker.
-        assert "T" in migrated["migrated_at"]
-        assert migrated["migrated_at"].endswith("+00:00") or migrated[
-            "migrated_at"
-        ].endswith("Z")
+        assert "T" in audit["migrated_at"]
+        assert audit["migrated_at"].endswith("+00:00") or audit["migrated_at"].endswith(
+            "Z"
+        )
 
     def test_missing_status_filled_with_unknown_sentinel(self, tmp_path: Path) -> None:
         """A legacy file with no ``status`` field still migrates cleanly."""
@@ -105,7 +119,9 @@ class TestMigrateReceiptFileYaml:
 
         migrated = yaml.safe_load(receipt_path.read_text())
         assert migrated["status"] == "ADVISORY"
-        assert migrated["original_status"] == "UNKNOWN"
+        sidecar = tmp_path / "file_exists.migration.yaml"
+        audit = yaml.safe_load(sidecar.read_text())
+        assert audit["original_status"] == "UNKNOWN"
 
 
 @pytest.mark.unit
@@ -120,7 +136,11 @@ class TestMigrateReceiptFileJson:
         migrated = json.loads(receipt_path.read_text())
         assert migrated["status"] == "ADVISORY"
         assert migrated["verifier"] == LEGACY_VERIFIER_SENTINEL
-        assert migrated["original_status"] == "PASS"
+        # Audit metadata must live in the sidecar, not the receipt itself.
+        assert "original_status" not in migrated
+        sidecar = tmp_path / "dod_report.migration.json"
+        audit = json.loads(sidecar.read_text())
+        assert audit["original_status"] == "PASS"
 
 
 @pytest.mark.unit

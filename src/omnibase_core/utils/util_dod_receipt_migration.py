@@ -9,8 +9,15 @@ Receipts on disk that pre-date that change cannot validate against the new
 schema and would silently degrade the receipt-gate to FAIL.
 
 This module rewrites legacy receipts in-place so they validate as ADVISORY
-(per the Centralized Transition Policy in :mod:`omnibase_core.models.contracts.ticket.model_dod_receipt`)
-while preserving the prior status in an ``original_status`` audit field.
+(per the Centralized Transition Policy in :mod:`omnibase_core.models.contracts.ticket.model_dod_receipt`).
+
+The receipt itself is rewritten to satisfy the post-OMN-9786 schema. Audit
+metadata about the migration (the prior ``status`` value and the migration
+timestamp) is written to a sidecar file alongside the receipt — never into
+the receipt body, because ``ModelDodReceipt`` is configured with
+``extra="forbid"`` and would reject unknown top-level keys. The sidecar is
+named ``<receipt_stem>.migration.<format>`` (yaml or json, matching the
+receipt's own format).
 
 Two entry points are exposed:
 
@@ -21,9 +28,8 @@ Two entry points are exposed:
 Both functions are idempotent: a receipt that already carries a ``verifier``
 field is treated as already-migrated and left byte-identical.
 
-The CLI entry point lives in
-``omnibase_core/scripts/migrate_dod_receipts.py`` so this module can be
-imported without side effects.
+The CLI entry point lives in ``scripts/migrate_dod_receipts.py`` (at repo
+root) so this module can be imported without side effects.
 """
 
 from __future__ import annotations
@@ -138,9 +144,25 @@ def _serialize(data: dict[str, Any], format_tag: str) -> str:
     )
 
 
+def _sidecar_path(receipt_path: Path, format_tag: str) -> Path:
+    """Return the path for the migration audit sidecar next to ``receipt_path``.
+
+    The sidecar uses the same format as the receipt so a human inspecting
+    the directory sees a single consistent file format.
+    """
+    suffix = ".yaml" if format_tag == "yaml" else ".json"
+    return receipt_path.with_name(f"{receipt_path.stem}.migration{suffix}")
+
+
 @allow_dict_any(reason="Migrating heterogeneous receipt YAML/JSON payloads in place")
 def migrate_receipt_file(path: Path) -> bool:
     """Migrate a single receipt file in place.
+
+    The receipt body is rewritten to satisfy ``ModelDodReceipt`` (status
+    downgraded to ADVISORY plus the four OMN-9786 sentinel fields). Audit
+    metadata (``original_status``, ``migrated_at``) is written to a sidecar
+    file next to the receipt — ``ModelDodReceipt`` is configured with
+    ``extra="forbid"`` and would reject those keys on the receipt itself.
 
     Returns ``True`` if the file was rewritten, ``False`` if it was left
     untouched (already migrated or unsupported suffix).
@@ -170,10 +192,15 @@ def migrate_receipt_file(path: Path) -> bool:
     migrated["probe_command"] = SENTINEL_PROBE_COMMAND
     migrated["probe_stdout"] = SENTINEL_PROBE_STDOUT
     migrated["schema_version"] = SENTINEL_SCHEMA_VERSION
-    migrated["original_status"] = original_status
-    migrated["migrated_at"] = datetime.now(tz=UTC).isoformat()
+
+    audit: dict[str, Any] = {
+        "original_status": original_status,
+        "migrated_at": datetime.now(tz=UTC).isoformat(),
+        "receipt_file": path.name,
+    }
 
     path.write_text(_serialize(migrated, format_tag))
+    _sidecar_path(path, format_tag).write_text(_serialize(audit, format_tag))
     return True
 
 
@@ -206,6 +233,12 @@ def migrate_receipts_in_root(root: Path, *, dry_run: bool = False) -> tuple[int,
                 continue
             suffix = path.suffix.lower()
             if suffix not in _YAML_SUFFIXES and suffix not in _JSON_SUFFIXES:
+                continue
+            # Skip sidecar audit files written by previous migration runs;
+            # they are not receipts and would otherwise be misclassified.
+            if path.name.endswith(
+                (".migration.yaml", ".migration.yml", ".migration.json")
+            ):
                 continue
             if dry_run:
                 # Re-parse to decide modified-vs-skipped without writing.
