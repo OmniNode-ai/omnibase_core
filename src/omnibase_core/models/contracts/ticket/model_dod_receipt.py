@@ -213,6 +213,36 @@ class ModelDodReceipt(BaseModel):
             "to merge gate invocations. None for receipts not tied to a PR."
         ),
     )
+    branch: str | None = Field(
+        default=None,
+        description=(
+            "Git branch the check was executed on. Migrated from EvidenceReceipt "
+            "(OMN-9792). None when branch information is not available or relevant."
+        ),
+    )
+    working_dir: str | None = Field(
+        default=None,
+        description=(
+            "Absolute path to the working directory where the check ran. Migrated "
+            "from EvidenceReceipt (OMN-9792). None when not applicable."
+        ),
+    )
+
+    @field_validator("branch")
+    @classmethod
+    def _validate_branch(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError(
+                "branch must be non-blank when provided; use None for unknown"
+            )
+        return v
+
+    @field_validator("working_dir")
+    @classmethod
+    def _validate_working_dir(cls, v: str | None) -> str | None:
+        if v is not None and not v.startswith("/"):
+            raise ValueError("working_dir must be an absolute path (start with '/')")
+        return v
 
     @field_validator("runner", "verifier")
     @classmethod
