@@ -19,7 +19,6 @@ from omnibase_core.models.runtime.model_handler_metadata import ModelHandlerMeta
 from omnibase_core.models.runtime.model_runtime_aliveness_probe import (
     DEFAULT_TIMEOUT_SECONDS,
     TIMEOUT_ENV_VAR,
-    FailureState,
     ModelRuntimeAlivenessProbeCommand,
 )
 from omnibase_core.models.runtime.model_runtime_aliveness_probe_receipt import (
@@ -53,7 +52,6 @@ __all__ = [
     # Aliveness probe contract (Wave 3)
     "ModelRuntimeAlivenessProbeCommand",
     "ModelRuntimeAlivenessProbeReceipt",
-    "FailureState",
     "DEFAULT_TIMEOUT_SECONDS",
     "TIMEOUT_ENV_VAR",
     # Directive payload types (re-exported for convenience)

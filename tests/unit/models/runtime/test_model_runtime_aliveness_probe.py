@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_probe_failure_state import EnumProbeFailureState
 from omnibase_core.models.runtime.model_runtime_aliveness_probe import (
     ModelRuntimeAlivenessProbeCommand,
 )
@@ -83,7 +84,7 @@ def _receipt_kwargs() -> dict[str, object]:
 
 def test_receipt_pass_requires_empty_failure_states() -> None:
     kwargs = _receipt_kwargs()
-    kwargs["failure_states"] = ("timeout",)
+    kwargs["failure_states"] = (EnumProbeFailureState.TIMEOUT,)
     with pytest.raises(ValidationError):
         ModelRuntimeAlivenessProbeReceipt(**kwargs)  # type: ignore[arg-type]
 

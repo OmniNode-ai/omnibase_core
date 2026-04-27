@@ -15,7 +15,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.models.runtime.model_runtime_aliveness_probe import FailureState
+from omnibase_core.enums.enum_probe_failure_state import EnumProbeFailureState
 
 __all__ = ["ModelRuntimeAlivenessProbeReceipt"]
 
@@ -34,7 +34,7 @@ class ModelRuntimeAlivenessProbeReceipt(BaseModel):
 
     correlation_id: str = Field(..., min_length=1)
     status: Literal["PASS", "FAIL"]
-    failure_states: tuple[FailureState, ...] = Field(default=())
+    failure_states: tuple[EnumProbeFailureState, ...] = Field(default=())
     terminal_event_observed: bool
     projection_row_observed: bool
     lag_at_sample: int | None = Field(

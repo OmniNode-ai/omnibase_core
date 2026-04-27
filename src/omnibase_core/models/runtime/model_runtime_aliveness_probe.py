@@ -13,24 +13,18 @@ projection).
 from __future__ import annotations
 
 import os
-from typing import Any, Literal, Self
+from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.enums.enum_probe_failure_state import EnumProbeFailureState
 
 DEFAULT_TIMEOUT_SECONDS = 30
 TIMEOUT_ENV_VAR = "RUNTIME_ALIVENESS_TIMEOUT_SECONDS"
 
-FailureState = Literal[
-    "timeout",
-    "terminal_failure_emitted",
-    "projection_write_failed",
-    "lag_above_threshold",
-]
-
 __all__ = [
     "DEFAULT_TIMEOUT_SECONDS",
     "TIMEOUT_ENV_VAR",
-    "FailureState",
     "ModelRuntimeAlivenessProbeCommand",
 ]
 
@@ -90,7 +84,7 @@ class ModelRuntimeAlivenessProbeCommand(BaseModel):
         gt=0,
         description="Wall-clock probe budget; default 30, configurable via env RUNTIME_ALIVENESS_TIMEOUT_SECONDS",
     )
-    failure_states: tuple[FailureState, ...] = Field(
+    failure_states: tuple[EnumProbeFailureState, ...] = Field(
         default=(),
         description="Always empty on the command; populated only on the receipt outcome",
     )
