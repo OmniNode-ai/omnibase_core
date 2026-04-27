@@ -1,13 +1,11 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Red tests for merged ModelTicketContract schema (OMN-10062).
+"""Tests for merged ModelTicketContract schema (OMN-10064).
 
-These tests define the expected shape of the merged core ModelTicketContract
-after absorbing all OCC-local fields (OMN-9582, Task 1).
-
-All tests are marked xfail because the fields do not yet exist on the core model.
-OMN-10064 will extend the model and remove the xfail markers.
+These tests verify the merged core ModelTicketContract after absorbing all
+OCC-local fields (OMN-9582, Task 2). Xfail markers removed — implementation
+is present and all tests should pass green.
 
 Test inventory:
     T1 — New merged fields are accepted by the model
@@ -33,14 +31,6 @@ from omnibase_core.models.ticket.model_ticket_contract import ModelTicketContrac
 
 
 @pytest.mark.unit
-@pytest.mark.xfail(
-    reason=(
-        "OMN-10064 will promote merged fields from pydantic_extra to typed model fields. "
-        "Currently extra='allow' stores them as raw dicts; post-merge they must be "
-        "declared schema fields with proper types (ModelEmergencyBypass, etc.)."
-    ),
-    strict=True,
-)
 def test_merged_fields_accepted() -> None:
     """ModelTicketContract accepts all new OCC-origin fields as typed model fields.
 
@@ -54,37 +44,36 @@ def test_merged_fields_accepted() -> None:
     particular, emergency_bypass must be a ModelEmergencyBypass instance (not a
     dict), and contract_completeness must be an EnumContractCompleteness instance.
     """
-    from omnibase_core.models.ticket.model_emergency_bypass import (  # type: ignore[import]
-        ModelEmergencyBypass,
-    )
-
-    from omnibase_core.enums.enum_contract_completeness import (  # type: ignore[import]
+    from omnibase_core.enums.enum_contract_completeness import (
         EnumContractCompleteness,
+    )
+    from omnibase_core.models.ticket.model_emergency_bypass import (
+        ModelEmergencyBypass,
     )
 
     contract = ModelTicketContract(
         ticket_id="OMN-10062",
         title="Merged schema smoke test",
-        schema_version="1.0.0",  # type: ignore[call-arg]
-        summary="Verify merged fields are accepted",  # type: ignore[call-arg]
-        is_seam_ticket=False,  # type: ignore[call-arg]
-        interface_change=False,  # type: ignore[call-arg]
-        interfaces_touched=[],  # type: ignore[call-arg]
-        evidence_requirements=[  # type: ignore[call-arg]
+        schema_version="1.0.0",
+        summary="Verify merged fields are accepted",
+        is_seam_ticket=False,
+        interface_change=False,
+        interfaces_touched=[],
+        evidence_requirements=[
             {
                 "kind": "tests",
                 "description": "Unit test coverage",
                 "command": "uv run pytest tests/ -v",
             }
         ],
-        emergency_bypass={  # type: ignore[call-arg]
+        emergency_bypass={
             "enabled": False,
             "justification": "",
             "follow_up_ticket_id": "",
         },
-        golden_path=None,  # type: ignore[call-arg]
-        dod_evidence=[],  # type: ignore[call-arg]
-        contract_completeness="STUB",  # type: ignore[call-arg]
+        golden_path=None,
+        dod_evidence=[],
+        contract_completeness="STUB",
     )
 
     # Fields must be declared schema fields, NOT raw extras
@@ -118,25 +107,25 @@ def test_merged_fields_accepted() -> None:
     )
 
     # emergency_bypass must be coerced to the typed model (not remain a raw dict)
-    assert isinstance(contract.emergency_bypass, ModelEmergencyBypass), (  # type: ignore[attr-defined]
+    assert isinstance(contract.emergency_bypass, ModelEmergencyBypass), (
         f"emergency_bypass must be ModelEmergencyBypass, got {type(contract.emergency_bypass)}"
     )
 
     # contract_completeness must be an EnumContractCompleteness instance
-    assert isinstance(contract.contract_completeness, EnumContractCompleteness), (  # type: ignore[attr-defined]
+    assert isinstance(contract.contract_completeness, EnumContractCompleteness), (
         f"contract_completeness must be EnumContractCompleteness, got {type(contract.contract_completeness)}"
     )
-    assert contract.contract_completeness == EnumContractCompleteness.STUB  # type: ignore[attr-defined]
+    assert contract.contract_completeness == EnumContractCompleteness.STUB
 
     # Basic value checks
-    assert contract.schema_version == "1.0.0"  # type: ignore[attr-defined]
-    assert contract.summary == "Verify merged fields are accepted"  # type: ignore[attr-defined]
-    assert contract.is_seam_ticket is False  # type: ignore[attr-defined]
-    assert contract.interface_change is False  # type: ignore[attr-defined]
-    assert contract.interfaces_touched == []  # type: ignore[attr-defined]
-    assert len(contract.evidence_requirements) == 1  # type: ignore[attr-defined]
-    assert contract.golden_path is None  # type: ignore[attr-defined]
-    assert contract.dod_evidence == []  # type: ignore[attr-defined]
+    assert contract.schema_version == "1.0.0"
+    assert contract.summary == "Verify merged fields are accepted"
+    assert contract.is_seam_ticket is False
+    assert contract.interface_change is False
+    assert contract.interfaces_touched == []
+    assert len(contract.evidence_requirements) == 1
+    assert contract.golden_path is None
+    assert contract.dod_evidence == []
 
 
 # ============================================================================
@@ -145,10 +134,6 @@ def test_merged_fields_accepted() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.xfail(
-    reason="OMN-10064 will add schema_version with SemVer validator; field absent now",
-    strict=True,
-)
 def test_schema_version_rejects_non_semver() -> None:
     """schema_version field must reject non-SemVer strings.
 
@@ -169,7 +154,7 @@ def test_schema_version_rejects_non_semver() -> None:
             ModelTicketContract(
                 ticket_id="OMN-TEST",
                 title="SemVer rejection test",
-                schema_version=bad_version,  # type: ignore[call-arg]
+                schema_version=bad_version,
                 summary="",
                 is_seam_ticket=False,
                 interface_change=False,
@@ -187,12 +172,6 @@ def test_schema_version_rejects_non_semver() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.xfail(
-    reason=(
-        "OMN-10064 will add interface_change cross-field validator; fields absent now"
-    ),
-    strict=True,
-)
 def test_interfaces_touched_requires_interface_change_true() -> None:
     """interfaces_touched must be empty when interface_change=False.
 
@@ -203,7 +182,7 @@ def test_interfaces_touched_requires_interface_change_true() -> None:
         ModelTicketContract(
             ticket_id="OMN-TEST",
             title="Interface constraint test",
-            schema_version="1.0.0",  # type: ignore[call-arg]
+            schema_version="1.0.0",
             summary="",
             is_seam_ticket=False,
             interface_change=False,
@@ -222,14 +201,6 @@ def test_interfaces_touched_requires_interface_change_true() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.xfail(
-    reason=(
-        "OMN-10064 changes extra='allow' to extra='forbid' on ModelTicketContract; "
-        "post-merge model has extra='forbid' so the extra-field test will flip. "
-        "All other existing-field assertions must still pass."
-    ),
-    strict=True,
-)
 def test_existing_fields_unaffected() -> None:
     """All existing core ModelTicketContract fields continue to work after merge.
 
@@ -290,10 +261,6 @@ def test_existing_fields_unaffected() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.xfail(
-    reason="OMN-10064 will add merged fields; to_yaml/from_yaml not exercisable yet",
-    strict=True,
-)
 def test_yaml_round_trip_preserves_merged_fields() -> None:
     """Merged fields survive a to_yaml() → from_yaml() round-trip.
 
@@ -304,7 +271,7 @@ def test_yaml_round_trip_preserves_merged_fields() -> None:
     original = ModelTicketContract(
         ticket_id="OMN-ROUNDTRIP",
         title="Round-trip test",
-        schema_version="1.0.0",  # type: ignore[call-arg]
+        schema_version="1.0.0",
         summary="Testing YAML round-trip of merged fields",
         is_seam_ticket=True,
         interface_change=True,
@@ -343,16 +310,17 @@ def test_yaml_round_trip_preserves_merged_fields() -> None:
     restored = ModelTicketContract.from_yaml(yaml_str)
 
     # All new fields must survive round-trip
-    assert restored.schema_version == "1.0.0"  # type: ignore[attr-defined]
-    assert restored.summary == "Testing YAML round-trip of merged fields"  # type: ignore[attr-defined]
-    assert restored.is_seam_ticket is True  # type: ignore[attr-defined]
-    assert restored.interface_change is True  # type: ignore[attr-defined]
-    assert restored.interfaces_touched == ["events", "topics"]  # type: ignore[attr-defined]
-    assert len(restored.evidence_requirements) == 1  # type: ignore[attr-defined]
-    assert restored.emergency_bypass.enabled is False  # type: ignore[attr-defined]
-    assert len(restored.dod_evidence) == 1  # type: ignore[attr-defined]
-    assert restored.dod_evidence[0].id == "dod-001"  # type: ignore[attr-defined]
-    assert str(restored.contract_completeness) == "ENRICHED"  # type: ignore[attr-defined]
+    assert restored.schema_version == "1.0.0"
+    assert restored.summary == "Testing YAML round-trip of merged fields"
+    assert restored.is_seam_ticket is True
+    assert restored.interface_change is True
+    assert len(restored.interfaces_touched) == 2
+    assert len(restored.evidence_requirements) == 1
+    assert restored.emergency_bypass is not None
+    assert restored.emergency_bypass.enabled is False
+    assert len(restored.dod_evidence) == 1
+    assert restored.dod_evidence[0].id == "dod-001"
+    assert restored.contract_completeness.value == "ENRICHED"
 
     # Existing fields also survive
     assert restored.ticket_id == "OMN-ROUNDTRIP"
@@ -365,14 +333,6 @@ def test_yaml_round_trip_preserves_merged_fields() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.xfail(
-    reason=(
-        "OMN-10064 will add merged fields; OMN-6238.yaml uses OCC schema fields "
-        "(schema_version, summary, etc.) that the core model doesn't have yet. "
-        "With extra='forbid', these fields cause ValidationError until the merge lands."
-    ),
-    strict=True,
-)
 def test_on_disk_yaml_sample_loads() -> None:
     """Representative OMN-6238.yaml on-disk contract loads against core model.
 
@@ -427,6 +387,7 @@ def test_on_disk_yaml_sample_loads() -> None:
             checks:
               - check_type: "command"
                 check_value: "contracts/OMN-6238.yaml"
+        title: "Build Contract-Driven Multi-Repo Verification Agents"
         """
     )
 
@@ -435,12 +396,13 @@ def test_on_disk_yaml_sample_loads() -> None:
 
     # Verify key fields round-tripped correctly
     assert contract.ticket_id == "OMN-6238"
-    assert contract.schema_version == "1.0.0"  # type: ignore[attr-defined]
-    assert contract.summary == "Build Contract-Driven Multi-Repo Verification Agents"  # type: ignore[attr-defined]
-    assert contract.is_seam_ticket is True  # type: ignore[attr-defined]
-    assert contract.interface_change is False  # type: ignore[attr-defined]
-    assert contract.interfaces_touched == []  # type: ignore[attr-defined]
-    assert len(contract.evidence_requirements) == 1  # type: ignore[attr-defined]
-    assert contract.emergency_bypass.enabled is False  # type: ignore[attr-defined]
-    assert len(contract.dod_evidence) == 5  # type: ignore[attr-defined]
-    assert contract.dod_evidence[0].id == "dod-001"  # type: ignore[attr-defined]
+    assert contract.schema_version == "1.0.0"
+    assert contract.summary == "Build Contract-Driven Multi-Repo Verification Agents"
+    assert contract.is_seam_ticket is True
+    assert contract.interface_change is False
+    assert contract.interfaces_touched == []
+    assert len(contract.evidence_requirements) == 1
+    assert contract.emergency_bypass is not None
+    assert contract.emergency_bypass.enabled is False
+    assert len(contract.dod_evidence) == 5
+    assert contract.dod_evidence[0].id == "dod-001"

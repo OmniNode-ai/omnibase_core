@@ -4,6 +4,18 @@
 """TicketContract model for contract-driven ticket execution.
 
 Provides the main contract model for the /ticket-work skill automation system.
+
+OMN-10064 / OMN-9582: Extended to absorb all OCC-local fields from
+onex_change_control.models.model_ticket_contract (the "dual model" problem).
+After this merge, OCC converts its local ModelTicketContract to a re-export.
+
+Mutability audit 2026-04-27: OCC callers confirmed — no caller uses hash()
+or frozen semantics on ModelTicketContract. Callers reviewed:
+  onex_change_control/src/onex_change_control/scripts/validate_yaml.py
+  onex_change_control/src/onex_change_control/validation/ (pattern-only, no model mutation)
+  omniclaude/plugins/onex/skills/_lib/contract_generator/generate_contract.py
+Safe to keep mutable (not frozen). Merged model uses extra="forbid" matching
+OCC strict mode.
 """
 
 from __future__ import annotations
@@ -11,12 +23,21 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from datetime import UTC, datetime
 from typing import Any, ClassVar
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
+from omnibase_core.enums.enum_contract_completeness import EnumContractCompleteness
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.ticket import (
     PHASE_ALLOWED_ACTIONS,
@@ -24,11 +45,20 @@ from omnibase_core.enums.ticket import (
     EnumTicketPhase,
     EnumTicketStepStatus,
 )
+from omnibase_core.enums.ticket.enum_contract_interface_surface import (
+    EnumContractInterfaceSurface,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.ticket.model_clarifying_question import (
     ModelClarifyingQuestion,
 )
+from omnibase_core.models.ticket.model_contract_dod_item import ModelContractDodItem
+from omnibase_core.models.ticket.model_emergency_bypass import ModelEmergencyBypass
+from omnibase_core.models.ticket.model_evidence_requirement import (
+    ModelEvidenceRequirement,
+)
 from omnibase_core.models.ticket.model_gate import ModelGate
+from omnibase_core.models.ticket.model_golden_path import ModelGoldenPath
 from omnibase_core.models.ticket.model_interface_consumed import (
     ModelInterfaceConsumed,
 )
@@ -38,6 +68,17 @@ from omnibase_core.models.ticket.model_interface_provided import (
 from omnibase_core.models.ticket.model_requirement import ModelRequirement
 from omnibase_core.models.ticket.model_verification_step import ModelVerificationStep
 from omnibase_core.utils.util_decorators import allow_dict_str_any, allow_string_id
+
+# SemVer pattern (basic only: major.minor.patch, no pre-release or build metadata).
+# Ported from onex_change_control.validation.patterns.SEMVER_PATTERN.
+# Rejects leading zeros per SemVer spec.
+_SEMVER_PATTERN: re.Pattern[str] = re.compile(
+    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$"
+)
+
+# Security constraints (matching OCC values to prevent DoS)
+_MAX_STRING_LENGTH = 10000
+_MAX_LIST_ITEMS = 1000
 
 
 @allow_string_id(reason="External Linear ticket identifier (e.g., OMN-1807)")
@@ -51,14 +92,107 @@ class ModelTicketContract(BaseModel):
     from intake through implementation and review. It enforces phase-based
     action restrictions and tracks verification and approval gates.
 
+    OMN-10064 / OMN-9582 merged fields (absorbed from OCC-local model):
+        schema_version, summary, is_seam_ticket, interface_change,
+        interfaces_touched, evidence_requirements, emergency_bypass,
+        golden_path, dod_evidence, contract_completeness.
+
     Mutability:
         This model is mutable (NOT frozen) to allow state updates during
         workflow execution. Use update_fingerprint() after modifications.
+        OCC callers audited 2026-04-27 — none use hash() or frozen semantics.
+
+    Schema Strictness:
+        extra="forbid" matches OCC strict mode. The context field retains
+        dict[str, Any] intentionally — extra="forbid" applies to top-level
+        model fields only, not to values inside typed fields.
 
     YAML Persistence:
         The contract is designed to be serialized to/from YAML for persistence.
         Use to_yaml() and from_yaml() methods for serialization.
     """
+
+    # =========================================================================
+    # OCC-origin merged fields (OMN-10064 / OMN-9582)
+    # =========================================================================
+
+    # Schema version for YAML wire format compatibility
+    # string-version-ok: YAML/JSON wire; format validated by field_validator
+    schema_version: str = Field(
+        default="1.0.0",
+        description="Schema version (SemVer format, e.g., '1.0.0')",
+        max_length=20,
+    )
+
+    # Human-readable summary (OCC required → core optional with empty default
+    # so existing on-disk YAMLs that omit summary continue to load)
+    summary: str = Field(
+        default="",
+        description="Human-readable summary of the ticket",
+        max_length=_MAX_STRING_LENGTH,
+    )
+
+    # Seam ticket flag — marks cross-repo interface-touching tickets
+    is_seam_ticket: bool = Field(
+        default=False,
+        description="Whether this ticket touches cross-repo interfaces",
+    )
+
+    # Interface change flag — cross-field validated with interfaces_touched
+    interface_change: bool = Field(
+        default=False,
+        description="Whether this ticket changes interface surfaces",
+    )
+
+    # Interface surfaces touched; must be empty when interface_change=False
+    interfaces_touched: list[EnumContractInterfaceSurface] = Field(
+        default_factory=list,
+        description="Interface surfaces touched by this ticket",
+        max_length=_MAX_LIST_ITEMS,
+    )
+
+    # Evidence requirements (what proof is required before Done)
+    evidence_requirements: list[ModelEvidenceRequirement] = Field(
+        default_factory=list,
+        description="Evidence requirements for ticket completion",
+        max_length=_MAX_LIST_ITEMS,
+    )
+
+    # Emergency bypass (optional — existing YAMLs without it still load)
+    emergency_bypass: ModelEmergencyBypass | None = Field(
+        default=None,
+        description="Emergency bypass configuration (None = not configured)",
+    )
+
+    # Golden path event chain test (optional)
+    golden_path: ModelGoldenPath | None = Field(
+        default=None,
+        description=(
+            "Optional golden path event chain test declaration. "
+            "When present, declares an input-to-output contract test for the "
+            "node pipeline associated with this ticket."
+        ),
+    )
+
+    # DoD evidence items (executable checks for receipt gate)
+    dod_evidence: list[ModelContractDodItem] = Field(
+        default_factory=list,
+        description=(
+            "Definition of Done evidence items. Maps Linear DoD bullets "
+            "to executable checks for automated verification."
+        ),
+        max_length=_MAX_LIST_ITEMS,
+    )
+
+    # Contract completeness level (drives tooling decisions)
+    contract_completeness: EnumContractCompleteness = Field(
+        default=EnumContractCompleteness.STUB,
+        description="Completeness level of this contract",
+    )
+
+    # =========================================================================
+    # Original core fields (unchanged by OMN-10064)
+    # =========================================================================
 
     # Ticket identification
     # string-id-ok: External Linear ticket identifier (e.g., OMN-1807)
@@ -119,24 +253,65 @@ class ModelTicketContract(BaseModel):
         description="When the contract was last updated (UTC)",
     )
 
-    # ConfigDict rationale:
-    # - extra="allow": YAML contracts may accumulate additional tool-specific or
-    #   plugin-specific fields during workflow execution. Using "allow" (rather than
-    #   the usual "forbid") ensures graceful deserialization when new optional fields
-    #   are added to persisted contracts.
+    # ConfigDict rationale (OMN-10064 update):
+    # - extra="forbid": matches OCC strict mode. Callers audited — none pass
+    #   unknown keys to ModelTicketContract directly. The context field retains
+    #   dict[str, Any] for arbitrary workflow-execution keys (extra="forbid"
+    #   applies to top-level model fields only).
     # - NOT frozen: The contract is mutated in-place during workflow execution
     #   (phase transitions, fingerprint updates, adding questions/requirements).
+    #   OCC callers audited 2026-04-27 — no caller uses hash() or frozen semantics.
     #   Callers must call update_fingerprint() after mutations.
     # - from_attributes=True: Required for pytest-xdist where workers import classes
     #   independently (see Pydantic Model Standards in CLAUDE.md).
     model_config = ConfigDict(
-        extra="allow",
+        extra="forbid",
         from_attributes=True,
     )
 
     # =========================================================================
     # Validators
     # =========================================================================
+
+    @field_validator("schema_version")
+    @classmethod
+    def _validate_schema_version(cls, v: str) -> str:
+        """Validate schema_version is basic SemVer format (major.minor.patch).
+
+        Rejects:
+          - Non-SemVer strings (e.g., "abc", "1.0")
+          - Leading zeros (e.g., "01.0.0" per SemVer spec)
+          - Pre-release suffixes (e.g., "1.0.0-alpha")
+          - Build metadata (e.g., "1.0.0+build")
+        """
+        if not _SEMVER_PATTERN.match(v):
+            msg = (
+                f"schema_version: invalid SemVer format {v!r}. "
+                "Expected major.minor.patch (e.g., '1.0.0'). "
+                "Pre-release suffixes and build metadata are not supported."
+            )
+            raise ValueError(msg)
+        return v
+
+    @model_validator(mode="after")
+    def _validate_interface_constraints(self) -> ModelTicketContract:
+        """Validate that interfaces_touched is empty when interface_change=False.
+
+        Cross-field validator ported from OCC ModelTicketContract:
+        if interface_change is False and interfaces_touched is non-empty,
+        raise ValidationError. This prevents a logical contradiction where
+        surfaces are listed but no interface change is declared.
+
+        interface_change=True with empty interfaces_touched is allowed
+        (categorization may be pending at contract creation time).
+        """
+        if not self.interface_change and self.interfaces_touched:
+            msg = (
+                "interfaces_touched must be empty when interface_change is false. "
+                "If no interfaces are touched, set interfaces_touched to []."
+            )
+            raise ValueError(msg)
+        return self
 
     @field_validator("created_at", "updated_at", mode="before")
     @classmethod

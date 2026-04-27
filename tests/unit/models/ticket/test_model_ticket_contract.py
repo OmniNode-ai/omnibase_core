@@ -1159,18 +1159,16 @@ class TestEdgeCases:
             q = ClarifyingQuestion(id="q", text="Q", category=cat)  # type: ignore[arg-type]
             assert q.category == cat
 
-    def test_extra_fields_allowed_on_contract(self):
-        """TicketContract allows extra fields for extensibility."""
-        # Create via model_validate to include extra field
+    def test_extra_fields_forbidden_on_contract(self):
+        """TicketContract rejects unknown top-level fields after OCC merge."""
         data = {
             "ticket_id": "OMN-EXTRA",
             "title": "Extra Fields Test",
-            "custom_field": "custom_value",  # Extra field
+            "custom_field": "custom_value",
         }
-        contract = TicketContract.model_validate(data)
 
-        # Extra field should be accessible
-        assert getattr(contract, "custom_field", None) == "custom_value"
+        with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+            TicketContract.model_validate(data)
 
 
 # =============================================================================
