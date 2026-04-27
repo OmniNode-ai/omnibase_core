@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""LifecycleChain — ordered sequence of dispatch lifecycle events for a single
+"""ModelLifecycleChain — ordered sequence of dispatch lifecycle events for a single
 correlation_id, with FSM transition rules (OMN-9885 / Wave 4 of
 runtime-lifecycle-hardening plan)."""
 
@@ -41,7 +41,7 @@ def _heartbeat_required_seconds() -> int:
     return value
 
 
-class LifecycleChain(BaseModel):
+class ModelLifecycleChain(BaseModel):
     """Ordered sequence of lifecycle events for a single correlation_id.
 
     Mutable on purpose: callers append events via `transition_to` so the FSM
@@ -70,7 +70,7 @@ class LifecycleChain(BaseModel):
             raise
 
     @model_validator(mode="after")
-    def _validate_initial_chain(self) -> "LifecycleChain":
+    def _validate_initial_chain(self) -> "ModelLifecycleChain":
         if not self.events:
             return self
         if self.events[0].state is not EnumDispatchLifecycleState.ACCEPTED:
@@ -139,5 +139,5 @@ class LifecycleChain(BaseModel):
 __all__ = [
     "DEFAULT_HEARTBEAT_REQUIRED_SECONDS",
     "HEARTBEAT_REQUIRED_ENV_VAR",
-    "LifecycleChain",
+    "ModelLifecycleChain",
 ]

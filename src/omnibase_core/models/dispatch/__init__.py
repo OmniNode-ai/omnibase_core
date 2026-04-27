@@ -113,7 +113,7 @@ from omnibase_core.models.dispatch.model_handler_registration import (
 from omnibase_core.models.dispatch.model_lifecycle_chain import (
     DEFAULT_HEARTBEAT_REQUIRED_SECONDS,
     HEARTBEAT_REQUIRED_ENV_VAR,
-    LifecycleChain,
+    ModelLifecycleChain,
 )
 from omnibase_core.models.dispatch.model_topic_parser import (
     EnumTopicStandard,
@@ -134,7 +134,7 @@ __all__ = [
     "LifecycleEmitterError",
     "LifecycleTransitionError",
     # Models
-    "LifecycleChain",
+    "ModelLifecycleChain",
     "ModelDispatchClaim",
     "ModelDispatchLifecycleEvent",
     "ModelDispatchResult",

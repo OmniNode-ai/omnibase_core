@@ -24,7 +24,7 @@ from omnibase_core.models.dispatch.model_dispatch_lifecycle_event import (
 from omnibase_core.models.dispatch.model_lifecycle_chain import (
     DEFAULT_HEARTBEAT_REQUIRED_SECONDS,
     HEARTBEAT_REQUIRED_ENV_VAR,
-    LifecycleChain,
+    ModelLifecycleChain,
 )
 
 
@@ -104,7 +104,7 @@ def test_lifecycle_event_state_enum_exact() -> None:
 @pytest.mark.unit
 def test_dlq_only_after_terminal_failure_and_budget_exhausted() -> None:
     """Plan acceptance: dlq requires terminal_failure first AND retry budget == 0."""
-    chain = LifecycleChain(events=[_accepted(), _started(), _terminal_failure()])
+    chain = ModelLifecycleChain(events=[_accepted(), _started(), _terminal_failure()])
 
     with pytest.raises(LifecycleTransitionError, match="retry budget"):
         chain.transition_to(_dlq(), retry_budget_remaining=2)
@@ -115,7 +115,7 @@ def test_dlq_only_after_terminal_failure_and_budget_exhausted() -> None:
 
 @pytest.mark.unit
 def test_dlq_without_prior_terminal_failure_rejected() -> None:
-    chain = LifecycleChain(events=[_accepted(), _started()])
+    chain = ModelLifecycleChain(events=[_accepted(), _started()])
     with pytest.raises(LifecycleTransitionError, match="terminal_failure"):
         chain.transition_to(_dlq(), retry_budget_remaining=0)
 
@@ -125,7 +125,7 @@ def test_heartbeat_required_only_above_60s(monkeypatch: pytest.MonkeyPatch) -> N
     """Plan acceptance: heartbeat required iff wall-clock duration > 60s (default)."""
     monkeypatch.delenv(HEARTBEAT_REQUIRED_ENV_VAR, raising=False)
 
-    long_chain = LifecycleChain(
+    long_chain = ModelLifecycleChain(
         events=[
             _accepted(),
             _started(),
@@ -134,7 +134,7 @@ def test_heartbeat_required_only_above_60s(monkeypatch: pytest.MonkeyPatch) -> N
     long_chain.duration_seconds_override = 90
     assert long_chain.heartbeat_required is True
 
-    short_chain = LifecycleChain(events=[_accepted(), _started()])
+    short_chain = ModelLifecycleChain(events=[_accepted(), _started()])
     short_chain.duration_seconds_override = 10
     assert short_chain.heartbeat_required is False
 
@@ -146,7 +146,7 @@ def test_heartbeat_threshold_configurable_via_env(
     """Default threshold of 60s can be overridden by env var."""
     monkeypatch.setenv(HEARTBEAT_REQUIRED_ENV_VAR, "5")
 
-    chain = LifecycleChain(events=[_accepted(), _started()])
+    chain = ModelLifecycleChain(events=[_accepted(), _started()])
     chain.duration_seconds_override = 10
     assert chain.heartbeat_required is True
 
@@ -275,18 +275,18 @@ def test_emitter_consumer_for_started_passes() -> None:
 @pytest.mark.unit
 def test_chain_must_start_with_accepted() -> None:
     with pytest.raises(LifecycleTransitionError, match="must start with"):
-        LifecycleChain(events=[_started()])
+        ModelLifecycleChain(events=[_started()])
 
 
 @pytest.mark.unit
 def test_chain_correlation_id_mismatch_rejected() -> None:
     with pytest.raises(LifecycleTransitionError, match="correlation_id"):
-        LifecycleChain(events=[_accepted("a"), _started("b")])
+        ModelLifecycleChain(events=[_accepted("a"), _started("b")])
 
 
 @pytest.mark.unit
 def test_chain_terminal_state_blocks_further_transitions() -> None:
-    chain = LifecycleChain(
+    chain = ModelLifecycleChain(
         events=[
             _accepted(),
             _started(),
@@ -336,5 +336,5 @@ def test_chain_observed_duration_uses_emitted_at_when_no_override() -> None:
         consumer_group="g",
         consumer_host="h",
     )
-    chain = LifecycleChain(events=[accepted, started])
+    chain = ModelLifecycleChain(events=[accepted, started])
     assert chain.observed_duration_seconds == 120
