@@ -1,0 +1,122 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""Unit tests for ModelReceiptReprobeResult / ModelReceiptReprobeReport (OMN-9789)."""
+
+from __future__ import annotations
+
+import pytest
+from pydantic import ValidationError
+
+from omnibase_core.models.contracts.ticket.model_receipt_reprobe_report import (
+    ModelReceiptReprobeReport,
+)
+from omnibase_core.models.contracts.ticket.model_receipt_reprobe_result import (
+    ModelReceiptReprobeResult,
+    ReprobeStatus,
+)
+
+pytestmark = pytest.mark.unit
+
+
+def test_result_is_frozen() -> None:
+    """ModelReceiptReprobeResult must be immutable once created."""
+    result = ModelReceiptReprobeResult(
+        receipt_path="/tmp/r.yaml",
+        ticket_id="OMN-1",
+        evidence_item_id="dod-001",
+        check_type="command",
+        status=ReprobeStatus.PASS,
+        detail="ok",
+    )
+    with pytest.raises(
+        Exception
+    ):  # NOTE(OMN-9789): Pydantic frozen-mutation exception class varies by version; assert rejection only
+        result.status = ReprobeStatus.FAIL  # type: ignore[misc]  # NOTE(OMN-9789): intentional frozen-model mutation test
+
+
+def test_result_rejects_extra_fields() -> None:
+    """extra='forbid' guards against schema drift."""
+    with pytest.raises(ValidationError):
+        ModelReceiptReprobeResult(
+            receipt_path="/tmp/r.yaml",
+            ticket_id="OMN-1",
+            evidence_item_id="dod-001",
+            check_type="command",
+            status=ReprobeStatus.PASS,
+            detail="ok",
+            extra_field="nope",  # type: ignore[call-arg]  # NOTE(OMN-9789): intentional extra-field rejection test
+        )
+
+
+def test_result_rejects_unknown_status() -> None:
+    """Status must be one of the ReprobeStatus options."""
+    with pytest.raises(ValidationError):
+        ModelReceiptReprobeResult(
+            receipt_path="/tmp/r.yaml",
+            ticket_id="OMN-1",
+            evidence_item_id="dod-001",
+            check_type="command",
+            status="UNKNOWN",  # type: ignore[arg-type]  # NOTE(OMN-9789): intentional invalid ReprobeStatus test
+            detail="bad",
+        )
+
+
+def test_report_passed_is_true_when_empty() -> None:
+    """Vacuous truth — no receipts = no failures."""
+    report = ModelReceiptReprobeReport(receipts_dir="/tmp", results=[])
+    assert report.passed is True
+    assert report.failures == []
+
+
+def test_report_passed_is_true_when_all_pass() -> None:
+    report = ModelReceiptReprobeReport(
+        receipts_dir="/tmp",
+        results=[
+            ModelReceiptReprobeResult(
+                receipt_path="/tmp/a.yaml",
+                ticket_id="OMN-1",
+                evidence_item_id="dod-001",
+                check_type="command",
+                status=ReprobeStatus.PASS,
+                detail="ok",
+            ),
+            ModelReceiptReprobeResult(
+                receipt_path="/tmp/b.yaml",
+                ticket_id="OMN-2",
+                evidence_item_id="dod-001",
+                check_type="command",
+                status=ReprobeStatus.PASS,
+                detail="ok",
+            ),
+        ],
+    )
+    assert report.passed is True
+    assert report.failures == []
+
+
+def test_report_passed_is_false_when_any_fail() -> None:
+    fail = ModelReceiptReprobeResult(
+        receipt_path="/tmp/b.yaml",
+        ticket_id="OMN-2",
+        evidence_item_id="dod-001",
+        check_type="command",
+        status=ReprobeStatus.FAIL,
+        detail="exit_code mismatch",
+    )
+    report = ModelReceiptReprobeReport(
+        receipts_dir="/tmp",
+        results=[
+            ModelReceiptReprobeResult(
+                receipt_path="/tmp/a.yaml",
+                ticket_id="OMN-1",
+                evidence_item_id="dod-001",
+                check_type="command",
+                status=ReprobeStatus.PASS,
+                detail="ok",
+            ),
+            fail,
+        ],
+    )
+    assert report.passed is False
+    assert report.failures == [fail]

@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Runtime-profiles validator allowlist (OMN-9886).
+#
+# Each entry exempts a single node id from
+# `ValidatorRuntimeProfiles`. Every entry MUST carry a non-empty `reason`
+# string explaining WHY the node is allowed to subscribe to a `onex.cmd.*`
+# topic without declaring `runtime_profiles`. The loader rejects empty or
+# missing reasons (`ALLOWLIST_REASON_REQUIRED`).
+#
+# Adding a node id here is a deliberate ownership statement: someone has
+# audited the contract and decided that no specific runtime profile owns
+# its command-side handler. Drop-in additions to silence the gate are not
+# allowed and will be flagged in code review.
+#
+# Schema:
+#   allowlist:
+#     - node_id: <name from contract.yaml>
+#       reason: <free-text justification, non-empty>
+
+allowlist: []

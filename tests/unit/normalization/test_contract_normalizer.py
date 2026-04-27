@@ -1,23 +1,32 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Unit tests for omnibase_core.normalization.contract_normalizer (OMN-9761, OMN-9763).
+"""Tests for contract_normalizer functions (parent epic OMN-9757).
 
-Covers two compatibility-stripping normalizers:
+Phase 2 of the corpus classification and normalization layer. Tests cover:
+    - strip_legacy_metadata (OMN-9761, Task 4): removes legacy top-level
+      fields (metadata block, contract_name, node_name) so legacy YAML
+      passes canonical validation.
+    - normalize_event_bus (OMN-9762): strips the legacy event_bus block
+      and top-level topic list keys (subscribe_topics, publish_topics,
+      topics).
+    - normalize_io_model_ref (OMN-9763): converts dict-shaped
+      input_model/output_model refs to canonical dotted-string form.
 
-- ``strip_legacy_metadata`` (OMN-9761): removes legacy top-level fields
-  (metadata block, contract_name, node_name) so legacy YAML passes
-  canonical validation. Migration scaffolding, not semantic-preserving.
-- ``normalize_io_model_ref`` (OMN-9763): converts dict-shaped
-  ``input_model``/``output_model`` refs to canonical dotted-string form.
+NOTE: these normalizers are migration scaffolding, not semantic-preserving
+transforms. Callers that need to retain dropped content (e.g. metadata.author
+or event_bus.subscribe_topics) must capture it from the raw dict before
+invoking the normalizer.
 """
 
 import pytest
 
 from omnibase_core.normalization.contract_normalizer import (
+    normalize_event_bus,
     normalize_io_model_ref,
     strip_legacy_metadata,
 )
+from omnibase_core.types.type_json import JsonType
 
 
 @pytest.mark.unit
@@ -145,3 +154,74 @@ def test_dict_with_non_string_fields_preserved() -> None:
     raw: dict[str, object] = {"input_model": {"name": "ModelFoo", "module": 42}}
     result = normalize_io_model_ref(raw)
     assert result["input_model"] == {"name": "ModelFoo", "module": 42}
+
+
+@pytest.mark.unit
+class TestNormalizeEventBus:
+    """Test cases for normalize_event_bus (family_legacy_event_bus)."""
+
+    def test_strips_event_bus_block(self) -> None:
+        """The full legacy event_bus block is removed."""
+        raw: dict[str, JsonType] = {
+            "name": "node_foo_effect",
+            "event_bus": {
+                "subscribe_topics": ["onex.evt.foo.bar.v1"],
+                "publish_topics": ["onex.evt.foo.baz.v1"],
+                "consumer_group": "node_foo",
+            },
+        }
+        result = normalize_event_bus(raw)
+        assert "event_bus" not in result
+
+    def test_strips_top_level_topic_list_keys(self) -> None:
+        """Top-level subscribe_topics, publish_topics, and topics keys are dropped."""
+        raw: dict[str, JsonType] = {
+            "name": "node_foo_effect",
+            "subscribe_topics": ["onex.evt.foo.in.v1"],
+            "publish_topics": ["onex.evt.foo.out.v1"],
+            "topics": ["onex.evt.foo.aux.v1"],
+        }
+        result = normalize_event_bus(raw)
+        assert "subscribe_topics" not in result
+        assert "publish_topics" not in result
+        assert "topics" not in result
+        assert result == {"name": "node_foo_effect"}
+
+    def test_preserves_non_event_bus_fields(self) -> None:
+        """Fields outside the legacy event-bus key set are preserved verbatim."""
+        raw: dict[str, JsonType] = {
+            "name": "node_foo",
+            "node_type": "EFFECT_GENERIC",
+            "event_bus": {},
+        }
+        result = normalize_event_bus(raw)
+        assert result["name"] == "node_foo"
+        assert result["node_type"] == "EFFECT_GENERIC"
+        assert "event_bus" not in result
+
+    def test_idempotent_when_no_event_bus(self) -> None:
+        """Calling on a clean dict returns an equal dict."""
+        raw: dict[str, JsonType] = {"name": "node_foo"}
+        result = normalize_event_bus(raw)
+        assert result == raw
+
+    def test_idempotent_under_repeated_application(self) -> None:
+        """Two applications produce the same result as one."""
+        raw: dict[str, JsonType] = {
+            "name": "node_foo",
+            "event_bus": {"subscribe_topics": ["t"]},
+            "publish_topics": ["p"],
+        }
+        once = normalize_event_bus(raw)
+        twice = normalize_event_bus(once)
+        assert once == twice
+
+    def test_does_not_mutate_input(self) -> None:
+        """Input dict is not modified in place."""
+        raw: dict[str, JsonType] = {
+            "name": "foo",
+            "event_bus": {"subscribe_topics": ["t"]},
+        }
+        raw_copy = dict(raw)
+        normalize_event_bus(raw)
+        assert raw == raw_copy
