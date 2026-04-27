@@ -246,7 +246,7 @@ git push
 - Run ID: **PENDING**
 - `selection.json` content:
 
-  ```json
+  ```text
   PENDING
   ```
 
@@ -259,11 +259,12 @@ git push
 - Run ID: **PENDING**
 - `selection.json` content:
 
-  ```json
+  ```text
   PENDING
   ```
 
 - Unit shard count: **PENDING** (expected: 40)
+- Integration shard count: **PENDING** (expected: 4)
 
 ### Branch-Protection Contexts
 
