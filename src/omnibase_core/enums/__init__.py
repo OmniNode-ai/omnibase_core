@@ -85,6 +85,9 @@ from .enum_consumer_group_purpose import EnumConsumerGroupPurpose
 
 # Contract bucket enum (corpus classification + normalization layer - OMN-9758)
 from .enum_contract_bucket import EnumContractBucket
+
+# Contract completeness enum (OMN-10063 / OMN-9582 — contract_completeness field)
+from .enum_contract_completeness import EnumContractCompleteness
 from .enum_contract_compliance import EnumContractCompliance
 
 # Contract diff change type enum (semantic contract diffing)
@@ -693,6 +696,8 @@ __all__ = [
     "EnumContractCompliance",
     # Contract bucket domain (corpus classification + normalization - OMN-9758)
     "EnumContractBucket",
+    # Contract completeness domain (OMN-10063 / OMN-9582)
+    "EnumContractCompleteness",
     # Contract diff domain (semantic contract diffing)
     "EnumContractDiffChangeType",
     # State management domain
