@@ -220,6 +220,30 @@ class TestMigrateReceiptFileMalformedInput:
         with pytest.raises(ModelOnexError, match="does not exist"):
             migrate_receipt_file(receipt_path)
 
+    def test_directory_path_raises_value_error(self, tmp_path: Path) -> None:
+        receipt_path = tmp_path / "directory.yaml"
+        receipt_path.mkdir()
+
+        with pytest.raises(ModelOnexError, match="is not a file"):
+            migrate_receipt_file(receipt_path)
+
+    def test_read_failure_raises_value_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        receipt_path = tmp_path / "file_exists.yaml"
+        receipt_path.write_text(yaml.safe_dump(_legacy_yaml_payload()))
+        original_read_text = Path.read_text
+
+        def fail_read_text(self: Path, *args: Any, **kwargs: Any) -> str:
+            if self == receipt_path:
+                raise OSError("permission denied")
+            return original_read_text(self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "read_text", fail_read_text)
+
+        with pytest.raises(ModelOnexError, match="failed to read receipt"):
+            migrate_receipt_file(receipt_path)
+
 
 @pytest.mark.unit
 class TestMigrateReceiptsInRoot:

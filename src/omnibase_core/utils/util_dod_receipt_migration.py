@@ -43,6 +43,7 @@ import yaml
 
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Sentinel values backfilled into legacy receipts. ``verifier`` is the
@@ -58,7 +59,7 @@ SENTINEL_SCHEMA_VERSION = "0.0.0"
 # Status assigned to migrated receipts. ADVISORY is non-blocking but
 # visible — exactly the right signal for "this came from before the
 # adversarial-invariants policy and cannot be retroactively trusted".
-_MIGRATED_STATUS = "ADVISORY"
+_MIGRATED_STATUS = EnumReceiptStatus.ADVISORY.value
 
 # Subdirectories under a repo root that hold receipts. Order matters only
 # for the deterministic walk in :func:`migrate_receipts_in_root`.
@@ -87,7 +88,22 @@ def _parse(path: Path) -> tuple[dict[str, Any], str]:
             context={"path": str(path)},
         )
 
-    text = path.read_text()
+    if not path.is_file():
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"receipt path is not a file: {path}",
+            context={"path": str(path)},
+        )
+
+    try:
+        text = path.read_text()
+    except OSError as exc:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"failed to read receipt {path}: {exc}",
+            context={"path": str(path), "error": str(exc)},
+        ) from exc
+
     suffix = path.suffix.lower()
     if suffix in _YAML_SUFFIXES:
         try:
