@@ -107,6 +107,11 @@ def _probe_in_allowlist(probe: str) -> bool:
     return False
 
 
+def _nonempty_or_star(value: object) -> str:
+    """Return stripped non-empty strings; use '*' for missing/invalid IDs."""
+    return value.strip() if isinstance(value, str) and value.strip() else "*"
+
+
 # ---------------------------------------------------------------------------
 # Single-receipt verifier (plan-mandated dict-based signature)
 # ---------------------------------------------------------------------------
@@ -142,19 +147,19 @@ def verify_receipt_by_reexecuting_probe(
     """
     probe = receipt.get("probe_command", "")
     if not isinstance(probe, str) or not probe:
-        return "FAIL", "receipt has no probe_command field"
+        return ReprobeStatus.FAIL, "receipt has no probe_command field"
     if not _probe_in_allowlist(probe):
-        return "FAIL", f"probe_command not in allowlist: {probe!r}"
+        return ReprobeStatus.FAIL, f"probe_command not in allowlist: {probe!r}"
 
     if "exit_code" not in receipt:
         return (
-            "FAIL",
+            ReprobeStatus.FAIL,
             "receipt has no exit_code field; cannot verify re-execution parity",
         )
     expected_exit = receipt.get("exit_code")
     if type(expected_exit) is not int:
         return (
-            "FAIL",
+            ReprobeStatus.FAIL,
             f"receipt.exit_code must be int, got {type(expected_exit).__name__}",
         )
 
@@ -168,16 +173,16 @@ def verify_receipt_by_reexecuting_probe(
         )
     except subprocess.TimeoutExpired as e:
         return (
-            "FAIL",
+            ReprobeStatus.FAIL,
             f"probe re-execution timed out after {PROBE_REEXEC_TIMEOUT_SECONDS}s: {e}",
         )
     except (OSError, ValueError) as e:
         # OSError: binary not found, perms; ValueError: shlex unbalanced quotes
-        return "FAIL", f"probe re-execution failed: {e}"
+        return ReprobeStatus.FAIL, f"probe re-execution failed: {e}"
 
     if result.returncode != expected_exit:
         return (
-            "FAIL",
+            ReprobeStatus.FAIL,
             (
                 f"re-execution exit_code={result.returncode} does not match "
                 f"receipt.exit_code={expected_exit}"
@@ -185,10 +190,10 @@ def verify_receipt_by_reexecuting_probe(
         )
     if result.returncode != 0:
         return (
-            "FAIL",
+            ReprobeStatus.FAIL,
             f"probe failed on re-execution (exit_code={result.returncode})",
         )
-    return "PASS", "probe re-execution matches receipt"
+    return ReprobeStatus.PASS, "probe re-execution matches receipt"
 
 
 # ---------------------------------------------------------------------------
@@ -213,7 +218,16 @@ def verify_receipts_by_reexecuting_probes(
     if not receipts_dir.is_dir():
         return ModelReceiptReprobeReport(
             receipts_dir=str(receipts_dir),
-            results=[],
+            results=[
+                ModelReceiptReprobeResult(
+                    receipt_path=str(receipts_dir),
+                    ticket_id="*",
+                    evidence_item_id="*",
+                    check_type="*",
+                    status=ReprobeStatus.FAIL,
+                    detail=f"receipts_dir is not a directory: {receipts_dir}",
+                )
+            ],
         )
 
     for receipt_path in sorted(receipts_dir.rglob("*.yaml")):
@@ -230,7 +244,7 @@ def verify_receipts_by_reexecuting_probes(
                     ticket_id="*",
                     evidence_item_id="*",
                     check_type="*",
-                    status="FAIL",
+                    status=ReprobeStatus.FAIL,
                     detail=f"corrupt receipt: {e}",
                 )
             )
@@ -243,7 +257,7 @@ def verify_receipts_by_reexecuting_probes(
                     ticket_id="*",
                     evidence_item_id="*",
                     check_type="*",
-                    status="FAIL",
+                    status=ReprobeStatus.FAIL,
                     detail=f"receipt root is not a mapping: {type(raw).__name__}",
                 )
             )
@@ -256,11 +270,9 @@ def verify_receipts_by_reexecuting_probes(
         results.append(
             ModelReceiptReprobeResult(
                 receipt_path=str(receipt_path),
-                ticket_id=ticket_id if isinstance(ticket_id, str) else "*",
-                evidence_item_id=(
-                    evidence_item_id if isinstance(evidence_item_id, str) else "*"
-                ),
-                check_type=check_type if isinstance(check_type, str) else "*",
+                ticket_id=_nonempty_or_star(ticket_id),
+                evidence_item_id=_nonempty_or_star(evidence_item_id),
+                check_type=_nonempty_or_star(check_type),
                 status=status,
                 detail=detail,
             )
@@ -304,13 +316,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"::notice::no receipts found under {args.receipts_dir}")
         return 0
 
-    failures = [r for r in report.results if r.status != "PASS"]
+    failures = [r for r in report.results if r.status != ReprobeStatus.PASS]
     for r in report.results:
         line = (
-            f"{r.status}: {r.ticket_id}/{r.evidence_item_id}/{r.check_type} "
+            f"{r.status.value}: {r.ticket_id}/{r.evidence_item_id}/{r.check_type} "
             f"({r.receipt_path}): {r.detail}"
         )
-        if r.status == "PASS":
+        if r.status == ReprobeStatus.PASS:
             print(f"::notice::{line}")
         else:
             print(f"::error::{line}")
@@ -330,6 +342,7 @@ def main(argv: list[str] | None = None) -> int:
 __all__ = [
     "PROBE_COMMAND_ALLOWLIST",
     "PROBE_REEXEC_TIMEOUT_SECONDS",
+    "ReprobeStatus",
     "verify_receipt_by_reexecuting_probe",
     "verify_receipts_by_reexecuting_probes",
 ]

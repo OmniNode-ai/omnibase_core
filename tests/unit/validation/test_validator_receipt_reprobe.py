@@ -27,7 +27,9 @@ from omnibase_core.validation import validator_receipt_reprobe
 from omnibase_core.validation.validator_receipt_reprobe import (
     PROBE_COMMAND_ALLOWLIST,
     PROBE_REEXEC_TIMEOUT_SECONDS,
+    ReprobeStatus,
     verify_receipt_by_reexecuting_probe,
+    verify_receipts_by_reexecuting_probes,
 )
 
 pytestmark = pytest.mark.unit
@@ -69,7 +71,7 @@ def test_reexecute_passing_probe_returns_pass(
         "status": "PASS",
     }
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
-    assert status == "PASS", detail
+    assert status == ReprobeStatus.PASS, detail
 
 
 def test_reexecute_failing_probe_returns_fail(
@@ -93,7 +95,7 @@ def test_reexecute_failing_probe_returns_fail(
         "status": "PASS",
     }
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
-    assert status == "FAIL"
+    assert status == ReprobeStatus.FAIL
     assert "exit_code" in detail.lower()
 
 
@@ -116,7 +118,7 @@ def test_reexecute_only_runs_probes_in_allowlist() -> None:
         "status": "PASS",
     }
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
-    assert status == "FAIL"
+    assert status == ReprobeStatus.FAIL
     assert "allowlist" in detail.lower()
 
 
@@ -141,7 +143,7 @@ def test_reexecute_missing_probe_command_returns_fail() -> None:
         "status": "PASS",
     }
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
-    assert status == "FAIL"
+    assert status == ReprobeStatus.FAIL
     assert "probe_command" in detail.lower()
 
 
@@ -162,7 +164,7 @@ def test_reexecute_empty_probe_command_returns_fail() -> None:
         "status": "PASS",
     }
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
-    assert status == "FAIL"
+    assert status == ReprobeStatus.FAIL
     assert "probe_command" in detail.lower()
 
 
@@ -189,7 +191,7 @@ def test_reexecute_exit_code_mismatch_returns_fail(
         "status": "PASS",
     }
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
-    assert status == "FAIL"
+    assert status == ReprobeStatus.FAIL
     assert "exit_code" in detail.lower()
 
 
@@ -211,7 +213,7 @@ def test_reexecute_missing_exit_code_field_returns_fail(
         "status": "PASS",
     }
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
-    assert status == "FAIL"
+    assert status == ReprobeStatus.FAIL
     assert "exit_code" in detail.lower()
 
 
@@ -234,8 +236,52 @@ def test_reexecute_bool_exit_code_returns_fail(
         "status": "PASS",
     }
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
-    assert status == "FAIL"
+    assert status == ReprobeStatus.FAIL
     assert "exit_code must be int, got bool" in detail
+
+
+def test_batch_reprobe_fails_closed_for_missing_receipts_dir(tmp_path) -> None:
+    """A typoed receipts path must fail closed instead of passing vacuously."""
+    receipts_dir = tmp_path / "missing"
+
+    report = verify_receipts_by_reexecuting_probes(receipts_dir)
+
+    assert report.passed is False
+    assert len(report.results) == 1
+    result = report.results[0]
+    assert result.receipt_path == str(receipts_dir)
+    assert result.status == ReprobeStatus.FAIL
+    assert "not a directory" in result.detail
+
+
+def test_batch_reprobe_normalizes_empty_identifiers_to_star(tmp_path) -> None:
+    """Empty receipt identifiers must not abort report construction."""
+    receipts_dir = tmp_path / "receipts"
+    receipts_dir.mkdir()
+    receipt_path = receipts_dir / "receipt.yaml"
+    receipt_path.write_text(
+        "\n".join(
+            [
+                "ticket_id: '   '",
+                "evidence_item_id: ''",
+                "check_type: []",
+                "probe_command: not-allowlisted",
+                "exit_code: 0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    report = verify_receipts_by_reexecuting_probes(receipts_dir)
+
+    assert report.passed is False
+    assert len(report.results) == 1
+    result = report.results[0]
+    assert result.ticket_id == "*"
+    assert result.evidence_item_id == "*"
+    assert result.check_type == "*"
+    assert result.status == ReprobeStatus.FAIL
+    assert "allowlist" in result.detail
 
 
 # ---------------------------------------------------------------------------
@@ -306,7 +352,7 @@ def test_allowlisted_prefix_with_args_passes_allowlist(probe: str) -> None:
     assert "allowlist" not in detail.lower(), (
         f"Allowlisted probe was rejected: {detail}"
     )
-    assert status in ("PASS", "FAIL")
+    assert status in (ReprobeStatus.PASS, ReprobeStatus.FAIL)
 
 
 @pytest.mark.parametrize(
@@ -342,7 +388,7 @@ def test_non_allowlisted_probe_is_rejected(probe: str) -> None:
         "status": "PASS",
     }
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
-    assert status == "FAIL"
+    assert status == ReprobeStatus.FAIL
     assert "allowlist" in detail.lower()
 
 
@@ -383,7 +429,7 @@ def test_command_boundary_prevents_prefix_smuggling(
         "status": "PASS",
     }
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
-    assert status == "FAIL"
+    assert status == ReprobeStatus.FAIL
     assert "allowlist" in detail.lower(), (
         f"Boundary-smuggled probe should be rejected by allowlist: {detail}"
     )

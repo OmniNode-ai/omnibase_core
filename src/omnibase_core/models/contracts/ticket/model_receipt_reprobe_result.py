@@ -12,14 +12,9 @@ it is an audit artifact.
 
 from __future__ import annotations
 
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field
 
-# String literal status values mirror the plan's ``tuple[str, str]`` API and
-# avoid coupling re-probe outcomes to ``EnumReceiptStatus`` (which carries
-# extra meaning — ADVISORY, PENDING — that does not apply to re-probe).
-ReprobeStatus = Literal["PASS", "FAIL"]
+from omnibase_core.enums.enum_reprobe_status import EnumReprobeStatus as ReprobeStatus
 
 
 class ModelReceiptReprobeResult(BaseModel):

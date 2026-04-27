@@ -13,6 +13,7 @@ from omnibase_core.models.contracts.ticket.model_receipt_reprobe_report import (
 )
 from omnibase_core.models.contracts.ticket.model_receipt_reprobe_result import (
     ModelReceiptReprobeResult,
+    ReprobeStatus,
 )
 
 pytestmark = pytest.mark.unit
@@ -25,13 +26,13 @@ def test_result_is_frozen() -> None:
         ticket_id="OMN-1",
         evidence_item_id="dod-001",
         check_type="command",
-        status="PASS",
+        status=ReprobeStatus.PASS,
         detail="ok",
     )
     with pytest.raises(
         Exception
     ):  # NOTE(OMN-9789): Pydantic frozen-mutation exception class varies by version; assert rejection only
-        result.status = "FAIL"  # type: ignore[misc]
+        result.status = ReprobeStatus.FAIL  # type: ignore[misc]  # NOTE(OMN-9789): intentional frozen-model mutation test
 
 
 def test_result_rejects_extra_fields() -> None:
@@ -42,21 +43,21 @@ def test_result_rejects_extra_fields() -> None:
             ticket_id="OMN-1",
             evidence_item_id="dod-001",
             check_type="command",
-            status="PASS",
+            status=ReprobeStatus.PASS,
             detail="ok",
             extra_field="nope",  # type: ignore[call-arg]  # NOTE(OMN-9789): intentional extra-field rejection test
         )
 
 
 def test_result_rejects_unknown_status() -> None:
-    """Status must be one of the Literal options."""
+    """Status must be one of the ReprobeStatus options."""
     with pytest.raises(ValidationError):
         ModelReceiptReprobeResult(
             receipt_path="/tmp/r.yaml",
             ticket_id="OMN-1",
             evidence_item_id="dod-001",
             check_type="command",
-            status="UNKNOWN",  # type: ignore[arg-type]  # NOTE(OMN-9789): intentional invalid Literal test
+            status="UNKNOWN",  # type: ignore[arg-type]  # NOTE(OMN-9789): intentional invalid ReprobeStatus test
             detail="bad",
         )
 
@@ -77,7 +78,7 @@ def test_report_passed_is_true_when_all_pass() -> None:
                 ticket_id="OMN-1",
                 evidence_item_id="dod-001",
                 check_type="command",
-                status="PASS",
+                status=ReprobeStatus.PASS,
                 detail="ok",
             ),
             ModelReceiptReprobeResult(
@@ -85,7 +86,7 @@ def test_report_passed_is_true_when_all_pass() -> None:
                 ticket_id="OMN-2",
                 evidence_item_id="dod-001",
                 check_type="command",
-                status="PASS",
+                status=ReprobeStatus.PASS,
                 detail="ok",
             ),
         ],
@@ -100,7 +101,7 @@ def test_report_passed_is_false_when_any_fail() -> None:
         ticket_id="OMN-2",
         evidence_item_id="dod-001",
         check_type="command",
-        status="FAIL",
+        status=ReprobeStatus.FAIL,
         detail="exit_code mismatch",
     )
     report = ModelReceiptReprobeReport(
@@ -111,7 +112,7 @@ def test_report_passed_is_false_when_any_fail() -> None:
                 ticket_id="OMN-1",
                 evidence_item_id="dod-001",
                 check_type="command",
-                status="PASS",
+                status=ReprobeStatus.PASS,
                 detail="ok",
             ),
             fail,

@@ -32,6 +32,7 @@ from pathlib import Path
 
 from omnibase_core.validation.receipt_gate import validate_pr_receipts
 from omnibase_core.validation.validator_receipt_reprobe import (
+    ReprobeStatus,
     verify_receipts_by_reexecuting_probes,
 )
 
@@ -93,10 +94,10 @@ def main(argv: list[str] | None = None) -> int:
         report = verify_receipts_by_reexecuting_probes(Path(args.receipts_dir))
         for r in report.results:
             line = (
-                f"{r.status}: {r.ticket_id}/{r.evidence_item_id}/{r.check_type} "
+                f"{r.status.value}: {r.ticket_id}/{r.evidence_item_id}/{r.check_type} "
                 f"({r.receipt_path}): {r.detail}"
             )
-            if r.status == "PASS":
+            if r.status == ReprobeStatus.PASS:
                 print(f"::notice::{line}")
             else:
                 print(f"::error::{line}")

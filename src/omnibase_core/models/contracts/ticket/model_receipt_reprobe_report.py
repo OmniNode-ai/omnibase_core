@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.contracts.ticket.model_receipt_reprobe_result import (
     ModelReceiptReprobeResult,
+    ReprobeStatus,
 )
 
 
@@ -41,12 +42,12 @@ class ModelReceiptReprobeReport(BaseModel):
     @property
     def passed(self) -> bool:
         """True iff every result is PASS (or there are no results)."""
-        return all(r.status == "PASS" for r in self.results)
+        return all(r.status == ReprobeStatus.PASS for r in self.results)
 
     @property
     def failures(self) -> list[ModelReceiptReprobeResult]:
         """All non-PASS results, in walk order."""
-        return [r for r in self.results if r.status != "PASS"]
+        return [r for r in self.results if r.status != ReprobeStatus.PASS]
 
 
 __all__ = ["ModelReceiptReprobeReport"]
