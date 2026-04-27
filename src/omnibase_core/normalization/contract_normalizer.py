@@ -3,10 +3,10 @@
 
 """Contract normalizer functions (parent epic OMN-9757).
 
-Each function in this module is a pure dict→dict transform that takes a
+Each function in this module is a pure dict->dict transform that takes a
 raw legacy contract dict (parsed YAML) and returns a new dict closer to
-the canonical schema. They are intentionally narrow — one migration
-family per function — so they can be composed into a pipeline and
+the canonical schema. They are intentionally narrow, one migration
+family per function, so they can be composed into a pipeline and
 audited independently.
 
 These are compatibility-stripping helpers, not semantic-preserving
@@ -21,10 +21,14 @@ Functions in this module:
       legacy event_bus block and top-level topic list keys.
     - normalize_io_model_ref (OMN-9763): converts dict-shaped
       ``input_model`` / ``output_model`` refs to dotted-string form.
+    - normalize_omnimarket_v0_contract (OMN-9765): strips legacy omnimarket
+      v0 handler, descriptor, and terminal_event blocks while hoisting
+      handler.input_model when needed.
 """
 
 from __future__ import annotations
 
+import copy as _copy
 from collections.abc import Mapping
 
 from omnibase_core.types.type_json import JsonType
@@ -89,16 +93,18 @@ def normalize_event_bus(raw: dict[str, JsonType]) -> dict[str, JsonType]:
 
 
 def normalize_io_model_ref(raw: dict[str, object]) -> dict[str, object]:
-    """Convert dict-shaped ``input_model``/``output_model`` refs to dotted-string canonical form.
+    """Convert dict-shaped ``input_model``/``output_model`` refs to strings.
 
     Legacy contracts often expressed model references as
     ``{"name": "ModelFooRequest", "module": "foo.bar.models"}``. The canonical
-    typed contract model expects a single dotted string ``"foo.bar.models.ModelFooRequest"``.
+    typed contract model expects a single dotted string
+    ``"foo.bar.models.ModelFooRequest"``.
 
     Behavior:
     - ``{name: X, module: Y}`` -> ``"Y.X"``
     - String passthrough unchanged
     - Missing field not injected
+    - Incomplete dict refs preserved
     - Does not mutate input; idempotent
     """
     result = dict(raw)
@@ -110,4 +116,41 @@ def normalize_io_model_ref(raw: dict[str, object]) -> dict[str, object]:
             normalized = _normalize_single_io_ref(value)
             if normalized is not None:
                 result[field] = normalized
+    return result
+
+
+def is_omnimarket_v0(raw: dict[str, object]) -> bool:
+    """Return True iff ``raw`` carries the omnimarket v0 contract shape.
+
+    The v0 shape is identified by a top-level ``handler`` dict that
+    declares a ``class`` field. This is the legacy shape used by the
+    82-file omnimarket cohort prior to the canonical contract layout.
+    """
+    handler = raw.get("handler")
+    return isinstance(handler, dict) and "class" in handler
+
+
+def normalize_omnimarket_v0_contract(raw: dict[str, object]) -> dict[str, object]:
+    """Rewrite an omnimarket v0 contract dict to the canonical shape.
+
+    Compatibility-stripping transform, not a semantic migration. The
+    ``handler``, ``descriptor``, and ``terminal_event`` blocks are dropped
+    entirely; ``descriptor.node_archetype``, ``descriptor.timeout_ms``,
+    and the ``terminal_event`` topic string are not carried forward.
+    Callers that need this information must extract it before running
+    the normalizer.
+
+    The only field salvaged is ``handler.input_model``, which is hoisted
+    to a root-level ``input_model`` when not already present.
+    """
+    result = _copy.deepcopy(raw)
+    handler_block = result.pop("handler", None)
+    result.pop("descriptor", None)
+    result.pop("terminal_event", None)
+    if (
+        isinstance(handler_block, dict)
+        and "input_model" in handler_block
+        and "input_model" not in result
+    ):
+        result["input_model"] = handler_block["input_model"]
     return result
