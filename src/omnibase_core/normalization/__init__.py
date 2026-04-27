@@ -17,6 +17,7 @@ from __future__ import annotations
 from omnibase_core.normalization.contract_normalizer import (
     is_omnimarket_v0,
     normalize_event_bus,
+    normalize_io_model_ref,
     normalize_omnimarket_v0_contract,
     strip_legacy_metadata,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "classify_contract_path",
     "is_omnimarket_v0",
     "normalize_event_bus",
+    "normalize_io_model_ref",
     "normalize_omnimarket_v0_contract",
     "strip_legacy_metadata",
 ]

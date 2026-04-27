@@ -19,6 +19,8 @@ Functions in this module:
       and the duplicate ``contract_name`` / ``node_name`` aliases.
     - normalize_event_bus (OMN-9762, family_legacy_event_bus): strips the
       legacy event_bus block and top-level topic list keys.
+    - normalize_io_model_ref (OMN-9763): converts dict-shaped
+      ``input_model`` / ``output_model`` refs to dotted-string form.
     - normalize_omnimarket_v0_contract (OMN-9765): strips legacy omnimarket
       v0 handler, descriptor, and terminal_event blocks while hoisting
       handler.input_model when needed.
@@ -65,6 +67,16 @@ def strip_legacy_metadata(raw: Mapping[str, object]) -> dict[str, object]:
     return {k: v for k, v in raw.items() if k not in _LEGACY_METADATA_KEYS}
 
 
+def _normalize_single_io_ref(value: dict[str, object] | str | None) -> str | None:
+    if value is None or isinstance(value, str):
+        return value
+    module = value.get("module")
+    name = value.get("name")
+    if isinstance(module, str) and isinstance(name, str) and module and name:
+        return f"{module}.{name}"
+    return None
+
+
 def normalize_event_bus(raw: dict[str, JsonType]) -> dict[str, JsonType]:
     """Strip the legacy event_bus block and top-level topic list keys.
 
@@ -78,6 +90,33 @@ def normalize_event_bus(raw: dict[str, JsonType]) -> dict[str, JsonType]:
     the keys that would otherwise fail validation.
     """
     return {k: v for k, v in raw.items() if k not in _LEGACY_EVENT_BUS_KEYS}
+
+
+def normalize_io_model_ref(raw: dict[str, object]) -> dict[str, object]:
+    """Convert dict-shaped ``input_model``/``output_model`` refs to strings.
+
+    Legacy contracts often expressed model references as
+    ``{"name": "ModelFooRequest", "module": "foo.bar.models"}``. The canonical
+    typed contract model expects a single dotted string
+    ``"foo.bar.models.ModelFooRequest"``.
+
+    Behavior:
+    - ``{name: X, module: Y}`` -> ``"Y.X"``
+    - String passthrough unchanged
+    - Missing field not injected
+    - Incomplete dict refs preserved
+    - Does not mutate input; idempotent
+    """
+    result = dict(raw)
+    for field in ("input_model", "output_model"):
+        if field not in result:
+            continue
+        value = result[field]
+        if value is None or isinstance(value, (str, dict)):
+            normalized = _normalize_single_io_ref(value)
+            if normalized is not None:
+                result[field] = normalized
+    return result
 
 
 def is_omnimarket_v0(raw: dict[str, object]) -> bool:
