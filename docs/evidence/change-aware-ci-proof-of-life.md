@@ -186,7 +186,7 @@ gh api "repos/OmniNode-ai/omnibase_core/branches/main/protection/required_status
 
 Expected output (exactly these three, no extras):
 
-```
+```text
 CI Summary
 Quality Gate
 Tests Gate
@@ -261,7 +261,7 @@ git push
 
 ### Branch-Protection Contexts
 
-```
+```text
 PENDING
 ```
 
@@ -269,7 +269,7 @@ PENDING
 
 ### Durations Cache State
 
-```
+```text
 PENDING
 ```
 
