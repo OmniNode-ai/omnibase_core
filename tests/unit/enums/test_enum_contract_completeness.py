@@ -10,6 +10,7 @@ Covers OMN-10063 (Task 1.5 of OMN-9582): Create EnumContractCompleteness in omni
 from enum import Enum
 
 import pytest
+
 from omnibase_core.enums.enum_contract_completeness import EnumContractCompleteness
 
 
