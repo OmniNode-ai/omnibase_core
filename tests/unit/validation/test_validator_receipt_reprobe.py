@@ -304,3 +304,43 @@ def test_non_allowlisted_probe_is_rejected(probe: str) -> None:
     status, detail = verify_receipt_by_reexecuting_probe(receipt)
     assert status == "FAIL"
     assert "allowlist" in detail.lower()
+
+
+@pytest.mark.parametrize(
+    "probe",
+    [
+        "trueevil",  # NOTE(OMN-9789): would pass naive startswith("true")
+        "falseflag --foo",  # NOTE(OMN-9789): would pass naive startswith("false")
+        "gh pr viewx 123",  # NOTE(OMN-9789): would pass naive startswith("gh pr view")
+        "gh pr checksum",  # NOTE(OMN-9789): would pass naive startswith("gh pr checks")
+        "gh apifoo",  # NOTE(OMN-9789): would pass naive startswith("gh api")
+        "test -files /tmp/x",  # NOTE(OMN-9789): would pass naive startswith("test -f")
+    ],
+)
+def test_command_boundary_prevents_prefix_smuggling(probe: str) -> None:
+    """Allowlist matching must be on a command boundary, not a raw substring.
+
+    A naive ``str.startswith`` check would let ``trueevil`` slip past a
+    ``"true"`` prefix and ``gh pr viewx`` slip past ``"gh pr view"``. The
+    allowlist gate must require the prefix to either equal the probe or be
+    followed by whitespace.
+    """
+    receipt: dict[str, object] = {
+        "schema_version": "1.0.0",
+        "ticket_id": "OMN-A",
+        "evidence_item_id": "dod-001",
+        "check_type": "command",
+        "check_value": "x",
+        "probe_command": probe,
+        "probe_stdout": "",
+        "exit_code": 0,
+        "runner": "worker",
+        "verifier": "foreground-X",
+        "run_timestamp": "2026-04-26T12:00:00Z",
+        "status": "PASS",
+    }
+    status, detail = verify_receipt_by_reexecuting_probe(receipt)
+    assert status == "FAIL"
+    assert "allowlist" in detail.lower(), (
+        f"Boundary-smuggled probe should be rejected by allowlist: {detail}"
+    )

@@ -93,9 +93,19 @@ PROBE_REEXEC_TIMEOUT_SECONDS: int = 120
 
 
 def _probe_in_allowlist(probe: str) -> bool:
-    """Return True iff the probe's stripped form starts with any allowlisted prefix."""
+    """Return True iff the probe matches an allowlisted prefix on a command boundary.
+
+    Plain ``str.startswith`` is too permissive: ``"trueevil"`` would slip past a
+    ``"true"`` prefix, and ``"gh pr viewx"`` would slip past ``"gh pr view"``.
+    Each prefix is treated as a command form: the probe must equal the prefix or
+    be followed by whitespace.
+    """
     stripped = probe.strip()
-    return any(stripped.startswith(prefix) for prefix in PROBE_COMMAND_ALLOWLIST)
+    for prefix in PROBE_COMMAND_ALLOWLIST:
+        canonical = prefix.rstrip()
+        if stripped == canonical or stripped.startswith(f"{canonical} "):
+            return True
+    return False
 
 
 # ---------------------------------------------------------------------------
