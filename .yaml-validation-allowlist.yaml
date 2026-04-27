@@ -82,6 +82,15 @@ allowed_files:
     added: "2024-10-15"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/utils/util_dod_receipt_migration.py"
+    reason: >-
+      Legacy DoD receipt migration utility (OMN-9790). Pre-OMN-9786 receipts cannot validate against the
+      new ModelDodReceipt schema by definition - the migration's purpose is to backfill the missing fields
+      so they can. Raw yaml.safe_load is required to read the legacy payload before rewriting it as a
+      ModelDodReceipt-compatible mapping.
+    added: "2026-04-26"
+    review: "2026-06-13"
+
   - file: "src/omnibase_core/cli/cli_install.py"
     reason: >-
       onex pack/install CLI must parse heterogeneous third-party contract.yaml + metadata.yaml files from
@@ -277,6 +286,16 @@ allowed_files:
       small subset (dod_evidence list). Will collapse to pure Pydantic once ModelTicketContract loader
       is available. (OMN-TBD enforcement-by-receipt)
     added: "2026-04-17"
+    review: "2026-06-13"
+
+  - file: "src/omnibase_core/validation/validator_receipt_reprobe.py"
+    reason: >-
+      Re-probe verification mode (OMN-9789) walks legacy ModelDodReceipt YAML artifacts and re-runs each
+      recorded probe_command. Receipts may be older than the current ModelDodReceipt schema, so the verifier
+      intentionally inspects raw mappings to extract probe_command/exit_code without binding to the current
+      model. Schema enforcement is the receipt-gate's job (above); this verifier answers the narrower
+      question of whether the recorded probe still exits as recorded. (OMN-9789)
+    added: "2026-04-26"
     review: "2026-06-13"
 
   - file: "src/omnibase_core/cli/cli_refresh_credentials.py"

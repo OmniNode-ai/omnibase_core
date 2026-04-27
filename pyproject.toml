@@ -290,6 +290,7 @@ ignore = [
 "src/omnibase_core/validation/validator_circular_import.py" = ["T201"]
 "src/omnibase_core/validation/validator_cli.py" = ["T201"]
 "src/omnibase_core/validation/receipt_gate_cli.py" = ["T201"]
+"src/omnibase_core/validation/validator_receipt_reprobe.py" = ["T201"]  # CLI output for re-probe verification (OMN-9789)
 "scripts/validation/validate_pr_receipts.py" = ["T201"]
 "scripts/validation/validate_pr_deploy_required.py" = ["T201"]
 "src/omnibase_core/validation/validator_contracts.py" = ["T201"]
@@ -305,6 +306,7 @@ ignore = [
 "scripts/pin_bump.py" = ["T201"]  # CLI output for publish-downstream-pin-bump workflow [OMN-9050]
 "scripts/emit_ts_types.py" = ["T201"]  # CLI output for omnidash-v2 TS type generation
 "scripts/validate_deterministic_skill_routing.py" = ["T201"]  # CLI output for CI gate report
+"scripts/migrate_dod_receipts.py" = ["T201"]  # CLI output for legacy DoD receipt migration [OMN-9790]
 # Test files: print() used for debug output and test diagnostics — bulk removal deferred
 "tests/**/*.py" = ["T201"]
 
