@@ -64,6 +64,11 @@ git checkout -b jonah/omn-9861-proof-cli origin/main
 echo "" >> src/omnibase_core/cli/__init__.py
 git add src/omnibase_core/cli/__init__.py
 git commit -m "chore(OMN-9861): proof-of-life — cli whitespace edit"
+
+# Before pushing the smart-suite branch, record the existing test-durations cache keys.
+gh api "repos/OmniNode-ai/omnibase_core/actions/caches?key=test-durations" \
+  --jq '.actions_caches[].key' | sort > /tmp/cache-keys-before.txt
+
 git push -u origin jonah/omn-9861-proof-cli
 
 gh pr create \
@@ -124,6 +129,25 @@ gh run view $RUN_ID --repo OmniNode-ai/omnibase_core --json jobs \
 ```
 
 Expected: `1` and `4` respectively.
+
+---
+
+### Verify no cache write in smart-suite mode
+
+```bash
+# After the small PR completes, record the cache keys again.
+gh api "repos/OmniNode-ai/omnibase_core/actions/caches?key=test-durations" \
+  --jq '.actions_caches[].key' | sort > /tmp/cache-keys-after.txt
+
+# Verify no new entries were created (diff must be empty).
+diff /tmp/cache-keys-before.txt /tmp/cache-keys-after.txt
+```
+
+Expected: `diff` produces no output. Any added line beginning with `> test-durations-`
+indicates a conditional cache write fired in smart-suite mode and is a regression.
+
+Attach both `/tmp/cache-keys-before.txt` and `/tmp/cache-keys-after.txt` to the
+"Durations Cache State" subsection of the evidence below.
 
 ---
 
@@ -210,30 +234,7 @@ gh api "repos/OmniNode-ai/omnibase_core/actions/caches?key=test-durations" \
 ```
 
 Expected: at least one entry with `key` starting `test-durations-` and `size_in_bytes > 0`.
-
-After the cli-only (smart-suite) run, capture before/after cache state and diff
-to prove no conditional cache write occurred:
-
-```bash
-# Before the smart-suite PR is opened — record the existing test-durations cache keys.
-gh api "repos/OmniNode-ai/omnibase_core/actions/caches?key=test-durations" \
-  --jq '.actions_caches[].key' | sort > /tmp/cache-keys-before.txt
-
-# Open the small (cli-only) PR and let it run to completion.
-
-# After the smart-suite run completes — record the cache keys again.
-gh api "repos/OmniNode-ai/omnibase_core/actions/caches?key=test-durations" \
-  --jq '.actions_caches[].key' | sort > /tmp/cache-keys-after.txt
-
-# Verify no new entries were created (diff must be empty).
-diff /tmp/cache-keys-before.txt /tmp/cache-keys-after.txt
-```
-
-Expected: `diff` produces no output. Any added line beginning with `> test-durations-`
-indicates a conditional cache write fired in smart-suite mode and is a regression.
-
-Attach both `/tmp/cache-keys-before.txt` and `/tmp/cache-keys-after.txt` to the
-"Durations Cache State" subsection of the evidence below.
+The smart-suite no-write check is captured earlier, bracketing the small PR run.
 
 ---
 
