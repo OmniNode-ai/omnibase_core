@@ -16,6 +16,14 @@ from omnibase_core.models.runtime.model_handler_behavior import (
     ModelHandlerBehavior,
 )
 from omnibase_core.models.runtime.model_handler_metadata import ModelHandlerMetadata
+from omnibase_core.models.runtime.model_runtime_aliveness_probe import (
+    DEFAULT_TIMEOUT_SECONDS,
+    TIMEOUT_ENV_VAR,
+    ModelRuntimeAlivenessProbeCommand,
+)
+from omnibase_core.models.runtime.model_runtime_aliveness_probe_receipt import (
+    ModelRuntimeAlivenessProbeReceipt,
+)
 from omnibase_core.models.runtime.model_runtime_directive import ModelRuntimeDirective
 from omnibase_core.models.runtime.model_runtime_node_instance import (
     ModelRuntimeNodeInstance,
@@ -41,6 +49,11 @@ __all__ = [
     "ModelRuntimeDirective",
     "ModelRuntimeNodeInstance",
     "NodeInstance",
+    # Aliveness probe contract (Wave 3)
+    "ModelRuntimeAlivenessProbeCommand",
+    "ModelRuntimeAlivenessProbeReceipt",
+    "DEFAULT_TIMEOUT_SECONDS",
+    "TIMEOUT_ENV_VAR",
     # Directive payload types (re-exported for convenience)
     "ModelDirectivePayload",
     "ModelDirectivePayloadBase",
