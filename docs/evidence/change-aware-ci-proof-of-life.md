@@ -85,8 +85,9 @@ gh pr checks $SMALL_PR --repo OmniNode-ai/omnibase_core --watch
 # Get the run ID for the workflow run triggered by this PR
 RUN_ID=$(gh run list --repo OmniNode-ai/omnibase_core \
   --branch jonah/omn-9861-proof-cli \
-  --json databaseId,headBranch,status \
-  --jq '[.[] | select(.status=="completed")] | first | .databaseId')
+  --json databaseId,headBranch,status,conclusion \
+  --jq '[.[] | select(.status=="completed" and .conclusion=="success")] | first | .databaseId')
+test -n "$RUN_ID" && test "$RUN_ID" != "null" || { echo "No successful run found"; exit 1; }
 echo "Run ID: $RUN_ID"
 
 # Download the test-selection artifact
@@ -149,8 +150,9 @@ gh pr checks $SHARED_PR --repo OmniNode-ai/omnibase_core --watch
 
 SHARED_RUN_ID=$(gh run list --repo OmniNode-ai/omnibase_core \
   --branch jonah/omn-9861-proof-shared \
-  --json databaseId,status \
-  --jq '[.[] | select(.status=="completed")] | first | .databaseId')
+  --json databaseId,status,conclusion \
+  --jq '[.[] | select(.status=="completed" and .conclusion=="success")] | first | .databaseId')
+test -n "$SHARED_RUN_ID" && test "$SHARED_RUN_ID" != "null" || { echo "No successful shared run found"; exit 1; }
 
 gh run download $SHARED_RUN_ID \
   --repo OmniNode-ai/omnibase_core \
@@ -173,6 +175,10 @@ cat /tmp/sel-shared/selection.json | jq .
 # Unit shards — expect 40
 gh run view $SHARED_RUN_ID --repo OmniNode-ai/omnibase_core --json jobs \
   --jq '[.jobs[] | select(.name | startswith("Tests (Split "))] | length'
+
+# Integration shards — expect 4
+gh run view $SHARED_RUN_ID --repo OmniNode-ai/omnibase_core --json jobs \
+  --jq '[.jobs[] | select(.name | startswith("Integration Tests (Split "))] | length'
 ```
 
 ---
