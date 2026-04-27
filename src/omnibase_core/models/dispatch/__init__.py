@@ -86,16 +86,34 @@ See Also:
     omnibase_core.models.events.ModelEventEnvelope: Event wrapper with routing info
 """
 
+from omnibase_core.enums.enum_dispatch_lifecycle_emitter import (
+    EnumDispatchLifecycleEmitter,
+)
+from omnibase_core.enums.enum_dispatch_lifecycle_state import (
+    EnumDispatchLifecycleState,
+)
 from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
+from omnibase_core.errors.error_lifecycle_emitter import LifecycleEmitterError
+from omnibase_core.errors.error_lifecycle_transition import (
+    LifecycleTransitionError,
+)
 from omnibase_core.models.dispatch.model_dispatch_claim import (
     ModelDispatchClaim,
     compute_blocker_id,
+)
+from omnibase_core.models.dispatch.model_dispatch_lifecycle_event import (
+    ModelDispatchLifecycleEvent,
 )
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.dispatch.model_handler_registration import (
     ModelHandlerRegistration,
+)
+from omnibase_core.models.dispatch.model_lifecycle_chain import (
+    DEFAULT_HEARTBEAT_REQUIRED_SECONDS,
+    HEARTBEAT_REQUIRED_ENV_VAR,
+    ModelLifecycleChain,
 )
 from omnibase_core.models.dispatch.model_topic_parser import (
     EnumTopicStandard,
@@ -104,11 +122,21 @@ from omnibase_core.models.dispatch.model_topic_parser import (
 )
 
 __all__ = [
+    # Constants
+    "DEFAULT_HEARTBEAT_REQUIRED_SECONDS",
+    "HEARTBEAT_REQUIRED_ENV_VAR",
     # Enums
+    "EnumDispatchLifecycleEmitter",
+    "EnumDispatchLifecycleState",
     "EnumDispatchStatus",
     "EnumTopicStandard",
+    # Errors
+    "LifecycleEmitterError",
+    "LifecycleTransitionError",
     # Models
+    "ModelLifecycleChain",
     "ModelDispatchClaim",
+    "ModelDispatchLifecycleEvent",
     "ModelDispatchResult",
     "ModelDispatchRoute",
     "ModelHandlerOutput",
