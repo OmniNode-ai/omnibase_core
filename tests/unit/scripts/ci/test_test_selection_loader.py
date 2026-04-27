@@ -12,6 +12,7 @@ from scripts.ci.test_selection_loader import (
 REPO_ROOT = Path(__file__).resolve().parents[4]
 
 
+@pytest.mark.unit
 def test_load_adjacency_map_parses_repo_yaml() -> None:
     config_path = REPO_ROOT / "scripts/ci/test_selection_adjacency.yaml"
     config = load_adjacency_map(config_path)
@@ -21,6 +22,7 @@ def test_load_adjacency_map_parses_repo_yaml() -> None:
     assert "models" in config.adjacency
 
 
+@pytest.mark.unit
 def test_load_rejects_unknown_shared_module(tmp_path: Path) -> None:
     bad_yaml = """
 schema_version: 1
@@ -37,6 +39,7 @@ adjacency:
         load_adjacency_map(tmp)
 
 
+@pytest.mark.unit
 def test_every_src_module_has_adjacency_entry() -> None:
     config_path = REPO_ROOT / "scripts/ci/test_selection_adjacency.yaml"
     config = load_adjacency_map(config_path)

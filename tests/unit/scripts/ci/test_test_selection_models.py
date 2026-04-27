@@ -9,6 +9,7 @@ from scripts.ci.test_selection_models import (
 )
 
 
+@pytest.mark.unit
 def test_full_suite_selection_serializes_with_reason() -> None:
     selection = ModelTestSelection(
         selected_paths=["tests/"],
@@ -27,6 +28,7 @@ def test_full_suite_selection_serializes_with_reason() -> None:
     }
 
 
+@pytest.mark.unit
 def test_smart_selection_disallows_full_suite_reason() -> None:
     with pytest.raises(ValidationError):
         ModelTestSelection(
@@ -38,6 +40,7 @@ def test_smart_selection_disallows_full_suite_reason() -> None:
         )
 
 
+@pytest.mark.unit
 def test_matrix_length_matches_split_count() -> None:
     with pytest.raises(ValidationError):
         ModelTestSelection(
