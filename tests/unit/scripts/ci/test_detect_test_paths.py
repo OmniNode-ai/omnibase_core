@@ -2,7 +2,11 @@
 # SPDX-License-Identifier: MIT
 from pathlib import Path
 
+import pytest
+
 from scripts.ci.detect_test_paths import resolve_test_paths
+
+pytestmark = pytest.mark.unit
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 ADJ = REPO_ROOT / "scripts/ci/test_selection_adjacency.yaml"
@@ -161,5 +165,36 @@ def test_feature_flag_off_returns_full_suite() -> None:
     )
     assert selection.is_full_suite is True
     assert selection.full_suite_reason == EnumFullSuiteReason.FEATURE_FLAG_OFF
+    assert selection.split_count == 40
+    assert selection.matrix == list(range(1, 41))
+
+
+# ---------------------------------------------------------------------------
+# OMN-9855: schedule + merge_group event escalation
+# ---------------------------------------------------------------------------
+
+
+def test_schedule_event_escalates_to_full_suite() -> None:
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/cli/foo.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        event_name="schedule",
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.SCHEDULED
+    assert selection.split_count == 40
+    assert selection.matrix == list(range(1, 41))
+
+
+def test_merge_group_event_escalates_to_full_suite() -> None:
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/cli/foo.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        event_name="merge_group",
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.MERGE_GROUP
     assert selection.split_count == 40
     assert selection.matrix == list(range(1, 41))

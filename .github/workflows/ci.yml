@@ -10,6 +10,8 @@ on:
     branches: [main]
   merge_group:
   workflow_dispatch:
+  schedule:
+    - cron: "13 7 * * *"   # 07:13 UTC nightly
 
 # Prevent auto-cancellation of running workflows when new commits are pushed
 # This ensures test splits actually run to completion instead of being skipped
