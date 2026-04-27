@@ -52,7 +52,7 @@ All must show `MERGED`. If any show `OPEN`, abort and wait.
 
 ---
 
-### Step 1: Open the small-scope PR (cli module — non-shared)
+### Open the small-scope PR (cli module — non-shared)
 
 Create a one-line whitespace-only edit to `src/omnibase_core/cli/__init__.py`:
 
@@ -76,7 +76,7 @@ Record the PR number: **SMALL_PR=<N>**
 
 ---
 
-### Step 2: Wait for CI and download the test-selection artifact
+### Wait for CI and download the test-selection artifact
 
 ```bash
 # Wait for CI to complete on the small PR
@@ -110,7 +110,7 @@ cat /tmp/sel-small/selection.json | jq .
 
 ---
 
-### Step 3: Confirm matrix shard counts (small PR)
+### Confirm matrix shard counts (small PR)
 
 ```bash
 # Unit shards — expect 1
@@ -126,7 +126,7 @@ Expected: `1` and `4` respectively.
 
 ---
 
-### Step 4: Open the shared-module PR
+### Open the shared-module PR
 
 ```bash
 git fetch origin main
@@ -177,7 +177,7 @@ gh run view $SHARED_RUN_ID --repo OmniNode-ai/omnibase_core --json jobs \
 
 ---
 
-### Step 5: Verify branch-protection gates
+### Verify branch-protection gates
 
 ```bash
 gh api "repos/OmniNode-ai/omnibase_core/branches/main/protection/required_status_checks/contexts" \
@@ -194,7 +194,7 @@ Tests Gate
 
 ---
 
-### Step 6: Verify durations cache
+### Verify durations cache
 
 After the shared-module PR (full suite) runs:
 
@@ -211,7 +211,7 @@ After the cli-only (smart-suite) run:
 
 ---
 
-### Step 7: Amend this document with live evidence
+### Amend this document with live evidence
 
 Replace the "Pending Evidence" section below with:
 - Small PR number and run ID
