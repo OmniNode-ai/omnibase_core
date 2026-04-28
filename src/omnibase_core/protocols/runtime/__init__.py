@@ -65,5 +65,13 @@ from omnibase_core.protocols.runtime.protocol_handler_registry import (
 from omnibase_core.protocols.runtime.protocol_message_handler import (
     ProtocolMessageHandler,
 )
+from omnibase_core.protocols.runtime.protocol_runtime_skill_client import (
+    ProtocolRuntimeSkillClient,
+)
 
-__all__ = ["ProtocolHandler", "ProtocolHandlerRegistry", "ProtocolMessageHandler"]
+__all__ = [
+    "ProtocolHandler",
+    "ProtocolHandlerRegistry",
+    "ProtocolMessageHandler",
+    "ProtocolRuntimeSkillClient",
+]
