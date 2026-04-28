@@ -37,11 +37,17 @@ class TestModelDodCheckMergedFields:
 
     def test_check_type_rejects_non_string(self) -> None:
         with pytest.raises(ValidationError):
-            ModelDodCheck(check_type=123, check_value="some value")  # type: ignore[arg-type]
+            ModelDodCheck(  # NOTE(OMN-10066): intentional non-str input to assert validation
+                check_type=123,  # type: ignore[arg-type]
+                check_value="some value",
+            )
 
     def test_check_value_rejects_non_string(self) -> None:
         with pytest.raises(ValidationError):
-            ModelDodCheck(check_type="command", check_value=42)  # type: ignore[arg-type]
+            ModelDodCheck(  # NOTE(OMN-10066): intentional non-str input to assert validation
+                check_type="command",
+                check_value=42,  # type: ignore[arg-type]
+            )
 
     def test_behavior_proven_construction(self) -> None:
         check = ModelDodCheck(check_type="behavior_proven", check_value="test_name")
