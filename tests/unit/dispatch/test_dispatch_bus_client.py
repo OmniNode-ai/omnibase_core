@@ -59,55 +59,56 @@ async def test_dispatch_bus_client_request_round_trips_on_inmemory_bus(
 
     bus = EventBusInmemory(environment="test", group="pattern-b")
     await bus.start()
+    try:
 
-    async def broker(message: ModelEventMessage) -> None:
-        command_envelope = ModelEventEnvelope[
-            ModelDispatchBusCommand
-        ].model_validate_json(message.value)
-        terminal_payload = ModelDispatchBusTerminalResult(
-            correlation_id=command_envelope.payload.correlation_id,
-            status="completed",
-            payload={
-                "accepted": True,
-                "command_name": command_envelope.payload.command_name,
-            },
+        async def broker(message: ModelEventMessage) -> None:
+            command_envelope = ModelEventEnvelope[
+                ModelDispatchBusCommand
+            ].model_validate_json(message.value)
+            terminal_payload = ModelDispatchBusTerminalResult(
+                correlation_id=command_envelope.payload.correlation_id,
+                status="completed",
+                payload={
+                    "accepted": True,
+                    "command_name": command_envelope.payload.command_name,
+                },
+            )
+            terminal_envelope = ModelEventEnvelope[ModelDispatchBusTerminalResult](
+                payload=terminal_payload,
+                correlation_id=command_envelope.payload.correlation_id,
+                event_type=route.terminal_topic,
+                payload_type=ModelDispatchBusTerminalResult.__name__,
+                source_tool="pattern-b-broker",
+            )
+            headers = ModelEventHeaders(
+                source="pattern-b-broker",
+                event_type=route.terminal_topic,
+                timestamp=datetime.now(UTC),
+                correlation_id=command_envelope.payload.correlation_id,
+            )
+            await bus.publish(
+                route.terminal_topic,
+                None,
+                terminal_envelope.model_dump_json().encode("utf-8"),
+                headers,
+            )
+
+        await bus.subscribe(
+            route.command_topic, group_id="pattern-b-broker", on_message=broker
         )
-        terminal_envelope = ModelEventEnvelope[ModelDispatchBusTerminalResult](
-            payload=terminal_payload,
-            correlation_id=command_envelope.payload.correlation_id,
-            event_type=route.terminal_topic,
-            payload_type=ModelDispatchBusTerminalResult.__name__,
-            source_tool="pattern-b-broker",
-        )
-        headers = ModelEventHeaders(
-            source="pattern-b-broker",
-            event_type=route.terminal_topic,
-            timestamp=datetime.now(UTC),
-            correlation_id=command_envelope.payload.correlation_id,
-        )
-        await bus.publish(
-            route.terminal_topic,
-            None,
-            terminal_envelope.model_dump_json().encode("utf-8"),
-            headers,
+
+        client = DispatchBusClient(bus, source="codex")
+        result = await client.request(
+            route,
+            command_name="delegate-task",
+            payload={"prompt": "test prompt"},
+            timeout_seconds=1,
         )
 
-    await bus.subscribe(
-        route.command_topic, group_id="pattern-b-broker", on_message=broker
-    )
-
-    client = DispatchBusClient(bus, source="codex")
-    result = await client.request(
-        route,
-        command_name="delegate-task",
-        payload={"prompt": "test prompt"},
-        timeout_seconds=1,
-    )
-
-    assert result.status == "completed"
-    assert result.payload == {"accepted": True, "command_name": "delegate-task"}
-
-    await bus.close()
+        assert result.status == "completed"
+        assert result.payload == {"accepted": True, "command_name": "delegate-task"}
+    finally:
+        await bus.close()
 
 
 @pytest.mark.unit
@@ -119,17 +120,17 @@ async def test_dispatch_bus_client_returns_timeout_result(tmp_path: Path) -> Non
 
     bus = EventBusInmemory(environment="test", group="pattern-b")
     await bus.start()
+    try:
+        client = DispatchBusClient(bus, source="codex")
+        result = await client.request(
+            route,
+            command_name="delegate-task",
+            payload={"prompt": "test prompt"},
+            timeout_seconds=1,
+        )
 
-    client = DispatchBusClient(bus, source="codex")
-    result = await client.request(
-        route,
-        command_name="delegate-task",
-        payload={"prompt": "test prompt"},
-        timeout_seconds=1,
-    )
-
-    assert result.status == "timeout"
-    assert result.error_message is not None
-    assert "Timed out" in result.error_message
-
-    await bus.close()
+        assert result.status == "timeout"
+        assert result.error_message is not None
+        assert "Timed out" in result.error_message
+    finally:
+        await bus.close()

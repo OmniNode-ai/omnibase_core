@@ -278,6 +278,7 @@ ignore = [
 "src/omnibase_core/infrastructure/node_base.py" = ["I001"]  # Import order to avoid circular dependencies
 "src/omnibase_core/models/container/model_onex_container.py" = ["I001"]  # Dual-Import Pattern (OMN-1261)
 # T201 per-file-ignores: intentional print() for CLI output, validation reports, and script output [OMN-5080]
+"src/omnibase_core/cli/substrate_gates/_base.py" = ["T201"]
 "src/omnibase_core/cli/cli_spdx.py" = ["T201"]
 "src/omnibase_core/mixins/mixin_cli_handler.py" = ["T201"]
 "src/omnibase_core/models/container/model_enhanced_logger.py" = ["T201"]
