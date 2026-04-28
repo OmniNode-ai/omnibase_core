@@ -28,6 +28,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.models.contracts.ticket.model_dod_check import ModelDodCheck
 from omnibase_core.models.contracts.ticket.model_dod_evidence_check import (
     ModelDodEvidenceCheck,
 )
@@ -103,4 +104,4 @@ class ModelDodEvidenceItem(BaseModel):
         return self
 
 
-__all__ = ["SOLE_FILE_EXISTS_ERROR_TOKEN", "ModelDodEvidenceItem"]
+__all__ = ["SOLE_FILE_EXISTS_ERROR_TOKEN", "ModelDodCheck", "ModelDodEvidenceItem"]
