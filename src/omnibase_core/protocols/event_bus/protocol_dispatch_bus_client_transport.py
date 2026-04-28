@@ -26,7 +26,8 @@ class ProtocolDispatchBusClientTransport(Protocol):
         key: bytes | None,
         value: bytes,
         headers: ModelEventHeaders | None = None,
-    ) -> None: ...
+    ) -> None:
+        pass
 
     async def subscribe(
         self,
@@ -37,7 +38,8 @@ class ProtocolDispatchBusClientTransport(Protocol):
         group_id: str | None = None,
         purpose: EnumConsumerGroupPurpose = EnumConsumerGroupPurpose.CONSUME,
         required_for_readiness: bool = False,
-    ) -> Callable[[], Awaitable[None]]: ...
+    ) -> Callable[[], Awaitable[None]]:
+        pass
 
 
 __all__ = ["ProtocolDispatchBusClientTransport"]

@@ -174,6 +174,7 @@ class DispatchBusClient:
         timeout_seconds: int,
     ) -> ModelDispatchBusTerminalResult:
         """Wait for the correlated terminal result on the broker route."""
+        parsed_correlation_id = command_uuid(correlation_id)
         unsubscribe, result_queue = await self.wait_for_result(
             route,
             correlation_id=correlation_id,
@@ -182,7 +183,7 @@ class DispatchBusClient:
             return await asyncio.wait_for(result_queue.get(), timeout=timeout_seconds)
         except TimeoutError:
             return ModelDispatchBusTerminalResult(
-                correlation_id=command_uuid(correlation_id),
+                correlation_id=parsed_correlation_id,
                 status="timeout",
                 error_message=(
                     "Timed out waiting for Pattern B broker terminal result."
