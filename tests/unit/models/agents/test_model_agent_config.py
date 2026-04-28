@@ -31,7 +31,9 @@ class TestModelActivationPatterns:
 
     def test_missing_explicit_triggers_raises(self) -> None:
         with pytest.raises(ValidationError) as exc_info:
-            ModelActivationPatterns(context_triggers=["some context"])  # type: ignore[call-arg]
+            ModelActivationPatterns.model_validate(
+                {"context_triggers": ["some context"]}
+            )
         assert "explicit_triggers" in str(exc_info.value)
 
     def test_empty_explicit_triggers_raises(self) -> None:
@@ -40,9 +42,8 @@ class TestModelActivationPatterns:
         assert "explicit_triggers" in str(exc_info.value)
 
     def test_extra_fields_ignored(self) -> None:
-        patterns = ModelActivationPatterns(
-            explicit_triggers=["test"],
-            unknown_field="ignored",  # type: ignore[call-arg]
+        patterns = ModelActivationPatterns.model_validate(
+            {"explicit_triggers": ["test"], "unknown_field": "ignored"}
         )
         assert patterns.explicit_triggers == ["test"]
         assert not hasattr(patterns, "unknown_field")
