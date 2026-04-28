@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""RED test: assert all 14 overseer enums exist at the new core path."""
+"""Assert all 14 overseer enums exist at the new core path."""
 
 import pytest
 
