@@ -14,6 +14,7 @@ from omnibase_core.enums.ticket.enum_definition_location import (
     DefinitionLocation,
     EnumDefinitionLocation,
 )
+from omnibase_core.enums.ticket.enum_dod_check_type import EnumDodCheckType
 from omnibase_core.enums.ticket.enum_interface_kind import (
     EnumInterfaceKind,
     InterfaceKind,
@@ -68,4 +69,6 @@ __all__ = [
     "EnumTicketWorkflowPhase",
     # OMN-10064: contract governance enums
     "EnumContractInterfaceSurface",
+    # OMN-10241: DoD evidence check types
+    "EnumDodCheckType",
 ]

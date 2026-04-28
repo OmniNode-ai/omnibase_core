@@ -131,6 +131,13 @@ def assert_runtime_sha_receipts_present(
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     )
                 seen_keys.add(item.id)
+                if not isinstance(check.check_value, str):
+                    raise ModelOnexError(
+                        message=(
+                            f"evidence item {item.id!r} runtime_sha_match check_value must be a string"
+                        ),
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    )
                 sha_checks.append((item.id, check.check_value))
 
     if not sha_checks:
