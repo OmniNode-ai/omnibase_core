@@ -50,10 +50,19 @@ class ModelEvalRun(BaseModel):
 
     @model_validator(mode="after")
     def validate_timeline(self) -> ModelEvalRun:
-        if self.completed_at is not None and self.completed_at < self.started_at:
-            raise ValueError(
-                f"completed_at ({self.completed_at}) must not precede started_at ({self.started_at})"
-            )
+        if self.completed_at is not None:
+            try:
+                invalid_order = self.completed_at < self.started_at
+            except TypeError as exc:
+                raise ValueError(
+                    f"Cannot compare completed_at ({self.completed_at!r}) and "
+                    f"started_at ({self.started_at!r}): mismatched tzinfo"
+                ) from exc
+            if invalid_order:
+                raise ValueError(
+                    f"completed_at ({self.completed_at}) must not precede "
+                    f"started_at ({self.started_at})"
+                )
         return self
 
     def get_metric(self, metric_type: EnumEvalMetricType) -> float | None:

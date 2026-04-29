@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.governance.model_handler_compliance_result import (
     ModelHandlerComplianceResult,
@@ -50,3 +50,34 @@ class ModelComplianceSweepReport(BaseModel):
         default_factory=list,
         description="Handlers that gained violations since last sweep",
     )
+
+    @model_validator(mode="after")
+    def validate_aggregates(self) -> ModelComplianceSweepReport:
+        categorized = (
+            self.compliant_count
+            + self.imperative_count
+            + self.hybrid_count
+            + self.allowlisted_count
+            + self.missing_contract_count
+        )
+        if categorized != self.total_handlers:
+            raise ValueError(
+                f"total_handlers ({self.total_handlers}) must equal sum of all "
+                f"verdict counts ({categorized})"
+            )
+        if self.total_handlers == 0:
+            if self.compliant_pct != 0.0:
+                raise ValueError("compliant_pct must be 0 when total_handlers is 0")
+        else:
+            expected_pct = (self.compliant_count / self.total_handlers) * 100.0
+            if abs(self.compliant_pct - expected_pct) > 1e-6:
+                raise ValueError(
+                    f"compliant_pct ({self.compliant_pct}) must match "
+                    f"compliant_count/total_handlers ({expected_pct:.6f})"
+                )
+        for key, count in self.violation_histogram.items():
+            if count < 0:
+                raise ValueError(
+                    f"violation_histogram[{key!r}] must be non-negative, got {count}"
+                )
+        return self
