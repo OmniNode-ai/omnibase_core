@@ -17,8 +17,12 @@ class ModelWireFieldConstraints(BaseModel):
 
     ge: float | None = Field(default=None, description="Greater than or equal to")
     le: float | None = Field(default=None, description="Less than or equal to")
-    min_length: int | None = Field(default=None, description="Minimum string length")
-    max_length: int | None = Field(default=None, description="Maximum string length")
+    min_length: int | None = Field(
+        default=None, ge=0, description="Minimum string length"
+    )
+    max_length: int | None = Field(
+        default=None, ge=0, description="Maximum string length"
+    )
     enum: list[str] | None = Field(default=None, description="Allowed enum values")
 
     @model_validator(mode="after")

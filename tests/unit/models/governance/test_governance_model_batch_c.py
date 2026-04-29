@@ -161,6 +161,19 @@ class TestGovernanceBatchCWireSchema:
         with pytest.raises(ValidationError):
             ModelWireFieldConstraints(min_length=10, max_length=1)
 
+    def test_model_wire_field_constraints_rejects_negative_lengths(self) -> None:
+        from pydantic import ValidationError
+
+        from omnibase_core.models.governance.model_wire_field_constraints import (
+            ModelWireFieldConstraints,
+        )
+
+        with pytest.raises(ValidationError):
+            ModelWireFieldConstraints(min_length=-1)
+
+        with pytest.raises(ValidationError):
+            ModelWireFieldConstraints(max_length=-1)
+
     def test_model_wire_schema_contract_rejects_duplicate_active_renames(self) -> None:
         from pydantic import ValidationError
 
