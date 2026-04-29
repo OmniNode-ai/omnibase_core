@@ -1,6 +1,7 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-10212
+title: "Gate 1 identity field optionality"
 summary: "Gate 1: ban optional defaults for identity field names"
 is_seam_ticket: false
 interface_change: false
