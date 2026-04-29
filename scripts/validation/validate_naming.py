@@ -287,6 +287,15 @@ class NamingConventionValidator:
         ],
         # Note: Duplicate "pipeline/replay/" entry removed - consolidated above (OMN-1298)
         # ExecutorReplay and ReplaySession follow correct naming patterns and don't need exemptions.
+        # SUBSTRATE GATE CHECKS: AST-based enforcement checks for substrate policy
+        # Location: cli/substrate_gates/ - Gate check implementations
+        # Rationale: Gate check classes (BaseGateCheck, *Check) are AST analysis utilities,
+        #            not Pydantic models. They follow the *Check suffix convention matching
+        #            the Checker* pattern in validation/ (OMN-10212).
+        "cli/substrate_gates/": [
+            "BaseGateCheck",  # Abstract base for all substrate gate checks (OMN-10211)
+            "*Check",  # All *Check gate implementations (IdentityFieldOptionalityCheck, etc.) (OMN-10212)
+        ],
     }
 
     @staticmethod
