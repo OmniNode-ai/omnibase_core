@@ -5,7 +5,11 @@
 
 from __future__ import annotations
 
+import pytest
+
 from omnibase_core.topics import TopicBase, build_topic
+
+pytestmark = pytest.mark.unit
 
 
 def test_cost_projection_snapshot_topic_values() -> None:

@@ -24,9 +24,9 @@ from omnibase_core.models.errors import ModelOnexError
 # No leading/trailing dots, no consecutive dots, no special characters except dots
 _TOPIC_SEGMENT_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 
-# Canonical ONEX topic pattern: onex.(cmd|evt|dlq|snapshot|i*).<service>.<event>.v<N>
+# Canonical ONEX topic pattern: onex.(cmd|evt|dlq|snapshot|intent).<service>.<event>.v<N>
 _CANONICAL_TOPIC_PATTERN = re.compile(
-    r"^onex\.(cmd|evt|dlq|snapshot|i[a-z0-9_-]*)\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*\.v\d+$"
+    r"^onex\.(cmd|evt|dlq|snapshot|intent)\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*\.v\d+$"
 )
 
 
@@ -711,7 +711,7 @@ def build_topic(base: str) -> str:
             error_code=EnumCoreErrorCode.INVALID_INPUT,
             message=(
                 f"Topic {base!r} does not match canonical ONEX format "
-                "onex.(cmd|evt|dlq|snapshot|i*).<service>.<event>[.<event>...].v<N>"
+                "onex.(cmd|evt|dlq|snapshot|intent).<service>.<event>[.<event>...].v<N>"
             ),
         )
     return base
