@@ -16,6 +16,10 @@ from omnibase_core.models.runtime.model_handler_behavior import (
     ModelHandlerBehavior,
 )
 from omnibase_core.models.runtime.model_handler_metadata import ModelHandlerMetadata
+from omnibase_core.models.runtime.model_runtime_address import ModelRuntimeAddress
+from omnibase_core.models.runtime.model_runtime_address_registry import (
+    ModelRuntimeAddressRegistry,
+)
 from omnibase_core.models.runtime.model_runtime_aliveness_probe import (
     DEFAULT_TIMEOUT_SECONDS,
     TIMEOUT_ENV_VAR,
@@ -37,6 +41,9 @@ from omnibase_core.models.runtime.model_runtime_skill_request import (
 )
 from omnibase_core.models.runtime.model_runtime_skill_response import (
     ModelRuntimeSkillResponse,
+)
+from omnibase_core.models.runtime.model_runtime_target_selector import (
+    ModelRuntimeTargetSelector,
 )
 from omnibase_core.models.runtime.payloads import (
     ModelCancelExecutionPayload,
@@ -61,6 +68,9 @@ __all__ = [
     "ModelRuntimeSkillError",
     "ModelRuntimeSkillRequest",
     "ModelRuntimeSkillResponse",
+    "ModelRuntimeAddress",
+    "ModelRuntimeAddressRegistry",
+    "ModelRuntimeTargetSelector",
     # Aliveness probe contract (Wave 3)
     "ModelRuntimeAlivenessProbeCommand",
     "ModelRuntimeAlivenessProbeReceipt",

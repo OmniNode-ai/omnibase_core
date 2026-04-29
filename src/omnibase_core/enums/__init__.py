@@ -388,6 +388,7 @@ from .enum_return_type import EnumReturnType
 
 # Reward target type enum (OMN-2537 — objective functions reward architecture)
 from .enum_reward_target_type import EnumRewardTargetType
+from .enum_runtime_selection_mode import EnumRuntimeSelectionMode
 
 # Security-related enums
 from .enum_security_profile import EnumSecurityProfile
@@ -643,6 +644,7 @@ __all__ = [
     "EnumNodeMetadataField",
     "EnumProtocolVersion",
     "EnumRuntimeLanguage",
+    "EnumRuntimeSelectionMode",
     "EnumMetadataToolComplexity",
     "EnumMetadataToolStatus",
     "EnumMetadataToolType",
