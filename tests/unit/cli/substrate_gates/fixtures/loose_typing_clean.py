@@ -31,5 +31,8 @@ class ModelWithAiSlopOk(BaseModel):
 
 
 class ProtocolClean(Protocol):
-    def handle(self, request: str) -> None: ...
-    def process(self, data: dict[str, str]) -> None: ...
+    def handle(self, request: str) -> None:
+        raise NotImplementedError
+
+    def process(self, data: dict[str, str]) -> None:
+        raise NotImplementedError

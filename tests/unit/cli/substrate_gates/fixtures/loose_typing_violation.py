@@ -24,16 +24,20 @@ class ModelWithMappingAny(BaseModel):
 
 
 class ProtocolWithAnyArg(Protocol):
-    def handle(self, arg: Any) -> None: ...
+    def handle(self, arg: Any) -> None:
+        raise NotImplementedError
 
 
 class ProtocolWithDictAnyArg(Protocol):
-    def process(self, data: dict[str, Any]) -> None: ...
+    def process(self, data: dict[str, Any]) -> None:
+        raise NotImplementedError
 
 
 class ProtocolWithKwargsAny(Protocol):
-    def run(self, **kwargs: Any) -> None: ...
+    def run(self, **kwargs: Any) -> None:
+        raise NotImplementedError
 
 
 class ProtocolWithKwargsObject(Protocol):
-    def execute(self, **kwargs: object) -> None: ...
+    def execute(self, **kwargs: object) -> None:
+        raise NotImplementedError
