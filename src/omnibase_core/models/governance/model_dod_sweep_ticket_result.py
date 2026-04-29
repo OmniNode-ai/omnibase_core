@@ -3,10 +3,11 @@
 
 """ModelDodSweepTicketResult — DoD compliance result for a single ticket."""
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.governance.enum_dod_sweep_check import EnumDodSweepCheck
 from omnibase_core.enums.governance.enum_invariant_status import EnumInvariantStatus
 from omnibase_core.models.governance.model_dod_sweep_check_result import (
     ModelDodSweepCheckResult,
@@ -17,6 +18,9 @@ class ModelDodSweepTicketResult(BaseModel):
     """DoD compliance result for a single ticket."""
 
     model_config = ConfigDict(frozen=True)
+    expected_dod_checks: ClassVar[frozenset[EnumDodSweepCheck]] = frozenset(
+        EnumDodSweepCheck
+    )
 
     # string-id-ok: Linear ticket ID (e.g., OMN-1234), not a DB UUID
     ticket_id: str = Field(..., description="Linear ticket ID (e.g., OMN-1234)")
@@ -31,7 +35,7 @@ class ModelDodSweepTicketResult(BaseModel):
         default=None, description="ISO date when ticket was completed"
     )
     checks: list[ModelDodSweepCheckResult] = Field(
-        ..., description="Results for all 6 DoD checks", max_length=10
+        ..., description="Results for all 6 DoD checks", min_length=6, max_length=6
     )
     overall_status: EnumInvariantStatus = Field(
         default=EnumInvariantStatus.UNKNOWN,
@@ -48,6 +52,11 @@ class ModelDodSweepTicketResult(BaseModel):
 
     @model_validator(mode="after")
     def derive_overall_status(self) -> "ModelDodSweepTicketResult":
+        actual_checks = {check.check for check in self.checks}
+        if actual_checks != self.expected_dod_checks:
+            msg = "checks must contain each DoD check exactly once"
+            raise ValueError(msg)
+
         if self.exempted and self.exemption_reason is None:
             msg = "exemption_reason is required when exempted is true"
             raise ValueError(msg)

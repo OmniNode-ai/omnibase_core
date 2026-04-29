@@ -28,7 +28,12 @@ from omnibase_core.models.governance.model_readiness_dimension import (
 
 _MAX_STRING_LENGTH = 10000
 _MAX_LIST_ITEMS = 500
-_SEMVER_PATTERN = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
+_SEMVER_PATTERN = re.compile(
+    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+    r"(?:-((?:0|[1-9A-Za-z-][0-9A-Za-z-]*)"
+    r"(?:\.(?:0|[1-9A-Za-z-][0-9A-Za-z-]*))*))?"
+    r"(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
+)
 
 __all__ = [
     "ModelDogfoodScorecard",
@@ -48,31 +53,31 @@ class ModelDogfoodScorecard(BaseModel):
 
     # string-version-ok: wire type serialized to YAML/JSON at scorecard boundary
     schema_version: str = Field(
-        default="1.0.0", description="Scorecard schema version (SemVer)", max_length=20
+        default="1.0.0", description="Scorecard schema version (SemVer)", max_length=50
     )
     captured_at: str = Field(
         ...,
         description="ISO 8601 timestamp when this scorecard was captured",
-        max_length=30,
+        max_length=40,
     )
     run_id: str = Field(
         ...,
         description="Unique identifier for this scorecard run",
         max_length=_MAX_STRING_LENGTH,
     )
-    readiness_dimensions: list[ModelReadinessDimension] = Field(
-        default_factory=list, max_length=_MAX_LIST_ITEMS
+    readiness_dimensions: tuple[ModelReadinessDimension, ...] = Field(
+        default_factory=tuple, max_length=_MAX_LIST_ITEMS
     )
-    golden_chains: list[ModelGoldenChainHealth] = Field(
-        default_factory=list, max_length=_MAX_LIST_ITEMS
+    golden_chains: tuple[ModelGoldenChainHealth, ...] = Field(
+        default_factory=tuple, max_length=_MAX_LIST_ITEMS
     )
-    endpoints: list[ModelEndpointHealth] = Field(
-        default_factory=list, max_length=_MAX_LIST_ITEMS
+    endpoints: tuple[ModelEndpointHealth, ...] = Field(
+        default_factory=tuple, max_length=_MAX_LIST_ITEMS
     )
     delegation: ModelDelegationHealth | None = Field(default=None)
     infrastructure: ModelInfrastructureHealth | None = Field(default=None)
-    regressions: list[ModelDogfoodRegression] = Field(
-        default_factory=list, max_length=_MAX_LIST_ITEMS
+    regressions: tuple[ModelDogfoodRegression, ...] = Field(
+        default_factory=tuple, max_length=_MAX_LIST_ITEMS
     )
     overall_status: EnumDogfoodStatus = Field(
         ..., description="Aggregate health status across all dimensions"
@@ -82,7 +87,10 @@ class ModelDogfoodScorecard(BaseModel):
     @classmethod
     def validate_schema_version(cls, value: str) -> str:
         if not _SEMVER_PATTERN.match(value):
-            msg = f"Invalid schema_version: {value}. Expected SemVer (e.g., '1.0.0')"
+            msg = (
+                f"Invalid schema_version: {value}. Expected full SemVer "
+                "(e.g., '1.0.0', '1.0.0-alpha.1', or '1.0.0+build.7')"
+            )
             raise ValueError(msg)
         return value
 

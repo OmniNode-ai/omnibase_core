@@ -31,7 +31,7 @@ class ModelIntegrationProbeResult(BaseModel):
         ..., description="Probe result: PASS, FAIL, or UNKNOWN"
     )
     reason: EnumProbeReason | None = Field(
-        default=None, description="Reason code when status is UNKNOWN or skipped"
+        default=None, description="Reason code when status is UNKNOWN"
     )
     detail: Annotated[str | None, Field(max_length=_MAX_STRING_LENGTH)] = Field(
         default=None, description="Human-readable detail about the probe outcome"

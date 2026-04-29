@@ -9,6 +9,21 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 
+def _complete_dod_checks() -> list[object]:
+    from omnibase_core.enums.governance.enum_dod_sweep_check import EnumDodSweepCheck
+    from omnibase_core.enums.governance.enum_invariant_status import (
+        EnumInvariantStatus,
+    )
+    from omnibase_core.models.governance.model_dod_sweep_check_result import (
+        ModelDodSweepCheckResult,
+    )
+
+    return [
+        ModelDodSweepCheckResult(check=check, status=EnumInvariantStatus.PASS)
+        for check in EnumDodSweepCheck
+    ]
+
+
 @pytest.mark.unit
 class TestGovernanceBatchDImports:
     """Assert all Batch D governance models importable from omnibase_core.models.governance.*"""
@@ -299,11 +314,13 @@ def test_dod_sweep_ticket_result_rejects_exemption_reason_mismatch() -> None:
         ModelDodSweepTicketResult,
     )
 
+    checks = _complete_dod_checks()
+
     with pytest.raises(ValidationError, match="required"):
         ModelDodSweepTicketResult(
             ticket_id="OMN-10248",
             title="Batch D",
-            checks=[],
+            checks=checks,
             exempted=True,
         )
 
@@ -311,8 +328,37 @@ def test_dod_sweep_ticket_result_rejects_exemption_reason_mismatch() -> None:
         ModelDodSweepTicketResult(
             ticket_id="OMN-10248",
             title="Batch D",
-            checks=[],
+            checks=checks,
             exemption_reason="not exempt",
+        )
+
+
+@pytest.mark.unit
+def test_dod_sweep_ticket_result_requires_exact_six_check_set() -> None:
+    from omnibase_core.enums.governance.enum_dod_sweep_check import EnumDodSweepCheck
+    from omnibase_core.enums.governance.enum_invariant_status import (
+        EnumInvariantStatus,
+    )
+    from omnibase_core.models.governance.model_dod_sweep_check_result import (
+        ModelDodSweepCheckResult,
+    )
+    from omnibase_core.models.governance.model_dod_sweep_ticket_result import (
+        ModelDodSweepTicketResult,
+    )
+
+    duplicate_checks = [
+        ModelDodSweepCheckResult(
+            check=EnumDodSweepCheck.CONTRACT_EXISTS,
+            status=EnumInvariantStatus.PASS,
+        )
+        for _ in range(6)
+    ]
+
+    with pytest.raises(ValidationError, match="each DoD check exactly once"):
+        ModelDodSweepTicketResult(
+            ticket_id="OMN-10248",
+            title="Batch D",
+            checks=duplicate_checks,
         )
 
 
@@ -359,6 +405,32 @@ def test_dogfood_scorecard_rejects_invalid_wire_formats() -> None:
             run_id="run-1",
             overall_status=EnumDogfoodStatus.PASS,
         )
+
+
+@pytest.mark.unit
+def test_dogfood_scorecard_accepts_full_semver_and_immutable_collections() -> None:
+    from omnibase_core.enums.governance.enum_dogfood_status import EnumDogfoodStatus
+    from omnibase_core.models.governance.model_dogfood_scorecard import (
+        ModelDogfoodScorecard,
+    )
+    from omnibase_core.models.governance.model_readiness_dimension import (
+        ModelReadinessDimension,
+    )
+
+    scorecard = ModelDogfoodScorecard(
+        schema_version="1.0.0-alpha.1+build.7",
+        captured_at="2026-04-29T12:34:56.123456+00:00",
+        run_id="run-1",
+        readiness_dimensions=[
+            ModelReadinessDimension(
+                name="queue", status=EnumDogfoodStatus.PASS, evidence="ok"
+            )
+        ],
+        overall_status=EnumDogfoodStatus.PASS,
+    )
+
+    assert isinstance(scorecard.readiness_dimensions, tuple)
+    assert not hasattr(scorecard.readiness_dimensions, "append")
 
 
 @pytest.mark.unit
