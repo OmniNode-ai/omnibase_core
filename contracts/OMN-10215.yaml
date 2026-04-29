@@ -1,6 +1,7 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-10215
+title: "Gate 3 environment silent fallback"
 summary: "Gate 3: ban silent environment fallback reads"
 is_seam_ticket: false
 interface_change: false
