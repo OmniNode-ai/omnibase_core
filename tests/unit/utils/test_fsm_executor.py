@@ -1572,3 +1572,216 @@ class TestCorrelationIdPropagation:
         ]
         assert len(persist_intents) == 1
         assert persist_intents[0].payload.correlation_id == specific_uuid
+
+
+@pytest.fixture
+def self_loop_fsm() -> ModelFSMSubcontract:
+    """FSM with a self-loop transition (from_state == to_state)."""
+    return ModelFSMSubcontract(
+        state_machine_name="self_loop_fsm",
+        state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+        description="FSM exercising self-loop transitions",
+        version=ModelSemVer(major=1, minor=0, patch=0),
+        states=[
+            ModelFSMStateDefinition(
+                state_name="active",
+                state_type="operational",
+                description="Active state that self-loops on heartbeat",
+                is_terminal=False,
+                entry_actions=["log_active_entry"],
+                exit_actions=["log_active_exit"],
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+        ],
+        initial_state="active",
+        terminal_states=[],
+        error_states=[],
+        transitions=[
+            ModelFSMStateTransition(
+                transition_name="heartbeat",
+                from_state="active",
+                to_state="active",
+                trigger="tick",
+                priority=1,
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+        ],
+        operations=[],
+        persistence_enabled=True,
+        recovery_enabled=False,
+    )
+
+
+@pytest.fixture
+def self_loop_fsm_no_persistence() -> ModelFSMSubcontract:
+    """Self-loop FSM with persistence_enabled=False."""
+    return ModelFSMSubcontract(
+        state_machine_name="self_loop_no_persist_fsm",
+        state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+        description="Self-loop FSM with persistence disabled",
+        version=ModelSemVer(major=1, minor=0, patch=0),
+        states=[
+            ModelFSMStateDefinition(
+                state_name="active",
+                state_type="operational",
+                description="Active state that self-loops on heartbeat",
+                is_terminal=False,
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+        ],
+        initial_state="active",
+        terminal_states=[],
+        error_states=[],
+        transitions=[
+            ModelFSMStateTransition(
+                transition_name="heartbeat",
+                from_state="active",
+                to_state="active",
+                trigger="tick",
+                priority=1,
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+        ],
+        operations=[],
+        persistence_enabled=False,
+        recovery_enabled=False,
+    )
+
+
+@pytest.fixture
+def self_loop_fsm_conditional() -> ModelFSMSubcontract:
+    """Self-loop FSM whose self-loop transition has a required condition."""
+    return ModelFSMSubcontract(
+        state_machine_name="self_loop_conditional_fsm",
+        state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+        description="Self-loop FSM with a required condition",
+        version=ModelSemVer(major=1, minor=0, patch=0),
+        states=[
+            ModelFSMStateDefinition(
+                state_name="active",
+                state_type="operational",
+                description="Active state with conditional self-loop",
+                is_terminal=False,
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+        ],
+        initial_state="active",
+        terminal_states=[],
+        error_states=[],
+        transitions=[
+            ModelFSMStateTransition(
+                transition_name="guarded_heartbeat",
+                from_state="active",
+                to_state="active",
+                trigger="tick",
+                priority=1,
+                conditions=[
+                    ModelFSMTransitionCondition(
+                        condition_name="ready",
+                        condition_type="field_check",
+                        expression="ready equals true",
+                        required=True,
+                    )
+                ],
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+        ],
+        operations=[],
+        persistence_enabled=True,
+        recovery_enabled=False,
+    )
+
+
+@pytest.mark.unit
+class TestSelfLoopPersistence:
+    """Self-loop transition semantics (OMN-611, v1.0.5 clarification).
+
+    Per CONTRACT_DRIVEN_NODEREDUCER_V1_0.md Self-Loop Behavior section:
+    - Self-loops (from_state == to_state) with success=True MUST emit
+      persist_state intent when persistence_enabled is true.
+    - Entry/exit actions MUST still execute (exit first, then entry).
+    - Self-loops MUST NOT be treated as no-ops.
+    - Failed self-loop transitions (conditions unmet) MUST NOT emit persistence.
+    """
+
+    @pytest.mark.asyncio
+    async def test_self_loop_emits_persist_state_when_enabled(
+        self, self_loop_fsm: ModelFSMSubcontract
+    ) -> None:
+        result = await execute_transition(self_loop_fsm, "active", "tick", {})
+
+        assert result.success
+        assert result.old_state == "active"
+        assert result.new_state == "active"
+        assert result.transition_name == "heartbeat"
+
+        persist_intents = [
+            i for i in result.intents if i.intent_type == "persist_state"
+        ]
+        assert len(persist_intents) == 1
+
+        payload = persist_intents[0].payload
+        assert payload.state_key == "fsm:self_loop_fsm:state"
+        assert payload.state_data["fsm_name"] == "self_loop_fsm"
+        assert payload.state_data["state"] == "active"
+        assert payload.state_data["previous_state"] == "active"
+
+    @pytest.mark.asyncio
+    async def test_self_loop_does_not_emit_persist_state_when_disabled(
+        self, self_loop_fsm_no_persistence: ModelFSMSubcontract
+    ) -> None:
+        result = await execute_transition(
+            self_loop_fsm_no_persistence, "active", "tick", {}
+        )
+
+        assert result.success
+        assert result.new_state == "active"
+        persist_intents = [
+            i for i in result.intents if i.intent_type == "persist_state"
+        ]
+        assert len(persist_intents) == 0
+
+    @pytest.mark.asyncio
+    async def test_self_loop_executes_exit_then_entry_actions(
+        self, self_loop_fsm: ModelFSMSubcontract
+    ) -> None:
+        result = await execute_transition(self_loop_fsm, "active", "tick", {})
+
+        action_intents = [
+            i for i in result.intents if i.intent_type == "fsm_state_action"
+        ]
+        # Preserve emission order: exit actions come before entry actions
+        action_types = [i.payload.action_type for i in action_intents]
+        assert action_types == ["on_exit", "on_enter"]
+
+        action_names = [i.payload.action_name for i in action_intents]
+        assert action_names == ["log_active_exit", "log_active_entry"]
+
+    @pytest.mark.asyncio
+    async def test_self_loop_failed_conditions_does_not_emit_persist_state(
+        self, self_loop_fsm_conditional: ModelFSMSubcontract
+    ) -> None:
+        # ready=false → required condition unmet → success=False → no persistence
+        result = await execute_transition(
+            self_loop_fsm_conditional, "active", "tick", {"ready": False}
+        )
+
+        assert not result.success
+        assert result.new_state == "active"
+        persist_intents = [
+            i for i in result.intents if i.intent_type == "persist_state"
+        ]
+        assert len(persist_intents) == 0
+
+    @pytest.mark.asyncio
+    async def test_self_loop_emits_metric_intent(
+        self, self_loop_fsm: ModelFSMSubcontract
+    ) -> None:
+        result = await execute_transition(self_loop_fsm, "active", "tick", {})
+
+        metric_intents = [i for i in result.intents if i.intent_type == "record_metric"]
+        assert len(metric_intents) == 1
+        labels = metric_intents[0].payload.labels
+        assert labels["from_state"] == "active"
+        assert labels["to_state"] == "active"
+        assert labels["trigger"] == "tick"

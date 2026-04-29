@@ -194,6 +194,11 @@ async def execute_transition(
     intents.extend(entry_intents)
 
     # 8. Create persistence intent if enabled
+    # Self-loop semantics (OMN-611, CONTRACT_DRIVEN_NODEREDUCER_V1_0.md
+    # "Self-Loop Persistence"): when transition.to_state == current_state and
+    # success=True, a persist_state intent MUST still be emitted (when
+    # persistence_enabled is true) so the successful transition is recorded
+    # for audit/idempotency even though the state value is unchanged.
     if fsm.persistence_enabled:
         intents.append(
             ModelIntent(
