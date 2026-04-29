@@ -30,5 +30,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: command
-        check_value: "echo 'deploy-gate: OMN-10212 changes only substrate_gates static analysis code;
-          no Docker image, runtime process, broker topic, or service deploy is required'"
+        check_value: "git fetch origin main && git diff --name-only origin/main...HEAD | python -c \"import
+          sys; allowed=('src/omnibase_core/cli/substrate_gates/','tests/unit/cli/substrate_gates/','scripts/validation/validate_naming.py','contracts/OMN-10212.yaml');
+          bad=[p.strip() for p in sys.stdin if p.strip() and not p.strip().startswith(allowed)]; assert
+          not bad, 'Unexpected deploy/runtime paths: '+', '.join(bad)\""

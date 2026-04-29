@@ -72,6 +72,21 @@ def _annotation_is_optional(annotation: ast.expr) -> bool:
     return False
 
 
+def _base_name_matches_basemodel(base: ast.expr) -> bool:
+    """Return True for BaseModel references, including pydantic.BaseModel."""
+    if isinstance(base, ast.Name):
+        return base.id == "BaseModel"
+    if isinstance(base, ast.Attribute):
+        return base.attr == "BaseModel"
+    if isinstance(base, ast.Subscript):
+        return _base_name_matches_basemodel(base.value)
+    return False
+
+
+def _inherits_from_basemodel(node: ast.ClassDef) -> bool:
+    return any(_base_name_matches_basemodel(base) for base in node.bases)
+
+
 class IdentityFieldOptionalityCheck(BaseGateCheck):
     """Gate 1: detect T | None = None (or Optional[T] = None) on identity fields."""
 
@@ -84,34 +99,52 @@ class IdentityFieldOptionalityCheck(BaseGateCheck):
         violations: list[GateViolation] = []
 
         for node in ast.walk(tree):
-            # Pydantic model fields: class-level annotated assignments
-            if isinstance(node, ast.AnnAssign):
-                target = node.target
-                if not isinstance(target, ast.Name):
-                    continue
-                field_name = target.id
-                if field_name not in IDENTITY_FIELD_NAMES:
-                    continue
-                if not _is_optional_with_none_default(node.annotation, node.value):
-                    continue
-                lineno = node.lineno
-                if has_allow_annotation(source_lines, lineno):
-                    continue
-                violations.append(
-                    GateViolation(
-                        path=path,
-                        line=lineno,
-                        message=(
-                            f"identity field '{field_name}' must not be optional with a "
-                            f"None default (T | None = None or Optional[T] = None); "
-                            f"use a required field or add '# substrate-allow: <reason>'"
-                        ),
-                    )
+            if isinstance(node, ast.ClassDef) and _inherits_from_basemodel(node):
+                violations.extend(
+                    self._check_pydantic_model_fields(node, source_lines, path)
                 )
 
             # Function / async function arguments
             elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 violations.extend(self._check_function_args(node, source_lines, path))
+
+        return violations
+
+    def _check_pydantic_model_fields(
+        self,
+        class_node: ast.ClassDef,
+        source_lines: list[str],
+        path: Path,
+    ) -> list[GateViolation]:
+        violations: list[GateViolation] = []
+
+        for statement in class_node.body:
+            if not isinstance(statement, ast.AnnAssign):
+                continue
+            target = statement.target
+            if not isinstance(target, ast.Name):
+                continue
+            field_name = target.id
+            if field_name not in IDENTITY_FIELD_NAMES:
+                continue
+            if not _is_optional_with_none_default(
+                statement.annotation, statement.value
+            ):
+                continue
+            lineno = statement.lineno
+            if has_allow_annotation(source_lines, lineno):
+                continue
+            violations.append(
+                GateViolation(
+                    path=path,
+                    line=lineno,
+                    message=(
+                        f"identity field '{field_name}' must not be optional with a "
+                        f"None default (T | None = None or Optional[T] = None); "
+                        f"use a required field or add '# substrate-allow: <reason>'"
+                    ),
+                )
+            )
 
         return violations
 
@@ -126,7 +159,7 @@ class IdentityFieldOptionalityCheck(BaseGateCheck):
 
         # Build list of (arg, default) pairs for regular args and kwonly args.
         # For regular args, defaults are right-aligned against the args list.
-        all_regular_args = args.args + args.posonlyargs
+        all_regular_args = args.posonlyargs + args.args
         n_defaults = len(args.defaults)
         n_args = len(all_regular_args)
         # Pair each arg with its default (None if no default)

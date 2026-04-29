@@ -13,6 +13,8 @@ from omnibase_core.cli.substrate_gates.identity_field_optionality import (
     IdentityFieldOptionalityCheck,
 )
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture
 def fixtures_dir() -> Path:
@@ -47,6 +49,21 @@ class TestIdentityFieldOptionalityCheck:
         violations = gate.run([f])
         assert any("correlation_id" in v.message for v in violations)
 
+    def test_plain_annotations_are_not_pydantic_field_violations(
+        self, tmp_path: Path
+    ) -> None:
+        f = tmp_path / "plain_annotations.py"
+        f.write_text(
+            "from __future__ import annotations\n"
+            "from uuid import UUID\n"
+            "correlation_id: UUID | None = None\n"
+            "class Plain:\n"
+            "    session_id: UUID | None = None\n"
+        )
+        gate = IdentityFieldOptionalityCheck()
+        violations = gate.run([f])
+        assert violations == []
+
     def test_function_arg_violation_detected(self, tmp_path: Path) -> None:
         f = tmp_path / "handler.py"
         f.write_text(
@@ -57,6 +74,19 @@ class TestIdentityFieldOptionalityCheck:
         gate = IdentityFieldOptionalityCheck()
         violations = gate.run([f])
         assert any("session_id" in v.message for v in violations)
+
+    def test_positional_only_function_arg_violation_detected(
+        self, tmp_path: Path
+    ) -> None:
+        f = tmp_path / "handler_posonly.py"
+        f.write_text(
+            "from __future__ import annotations\n"
+            "from uuid import UUID\n"
+            "def handle(correlation_id: UUID | None = None, /, other: int = 1) -> None: ...\n"
+        )
+        gate = IdentityFieldOptionalityCheck()
+        violations = gate.run([f])
+        assert any("correlation_id" in v.message for v in violations)
 
     def test_async_function_arg_violation_detected(self, tmp_path: Path) -> None:
         f = tmp_path / "async_handler.py"
