@@ -1,6 +1,7 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-10217
+title: "Gate 4 silent except pass"
 summary: "Gate 4: ban silent except pass handlers"
 is_seam_ticket: false
 interface_change: false
