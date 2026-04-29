@@ -17,9 +17,11 @@ import pytest
 from omnibase_core.scripts.validate_markdown_links import (
     BrokenLink,
     LinkInfo,
+    MarkdownLinkConfig,
     ValidationResult,
     _heading_to_anchor,
     extract_headings_as_anchors,
+    find_markdown_files,
     is_external_link,
     is_http_link,
     normalize_url_for_validation,
@@ -896,3 +898,97 @@ class TestLinkInfoMissingReference:
             source_file=Path("test.md"),
         )
         assert link.display_link == "[Link Text](./docs/readme.md)"
+
+
+@pytest.mark.unit
+class TestMarkdownLinkConfigExclusions:
+    """Tests for MarkdownLinkConfig exclusion patterns.
+
+    OMN-9607: validates that omni_worktrees/** and plugins/**/.venv/**
+    exclusion patterns work correctly so that nested worktree .venv paths
+    (which contain third-party READMEs with broken links) are excluded from
+    the cross-repo docs validation scan.
+    """
+
+    def test_omni_worktrees_excluded(self, tmp_path: Path) -> None:
+        """Files under omni_worktrees/** must be excluded from scanning."""
+        # Build a directory structure that mimics a worktree .venv path
+        worktree_venv = (
+            tmp_path / "omni_worktrees" / "OMN-1234" / "somerepo" / ".venv" / "lib"
+        )
+        worktree_venv.mkdir(parents=True)
+        broken_md = worktree_venv / "README.md"
+        broken_md.write_text("[broken](./nonexistent.md)\n", encoding="utf-8")
+
+        # A real doc that should be included
+        real_doc = tmp_path / "docs" / "README.md"
+        real_doc.parent.mkdir(parents=True)
+        real_doc.write_text("# Real doc\n\nContent.\n", encoding="utf-8")
+
+        config = MarkdownLinkConfig.from_dict(
+            {
+                "excludeFiles": [
+                    "omni_worktrees/**",
+                    ".venv/**",
+                ],
+            }
+        )
+
+        found = list(find_markdown_files(tmp_path, config.exclude_files))
+
+        assert real_doc in found, "Real doc should be found"
+        # The broken_md under omni_worktrees/ should NOT be in the found list
+        assert broken_md not in found, "omni_worktrees path must be excluded"
+
+    def test_plugins_venv_excluded(self, tmp_path: Path) -> None:
+        """Files under plugins/**/.venv/** must be excluded from scanning."""
+        plugin_venv = (
+            tmp_path / "plugins" / "onex" / "lib" / ".venv" / "lib" / "python3.13"
+        )
+        plugin_venv.mkdir(parents=True)
+        broken_md = plugin_venv / "Privacy.md"
+        broken_md.write_text(
+            "[broken](../README.md)\n[also broken](./C_API.md)\n", encoding="utf-8"
+        )
+
+        real_doc = tmp_path / "README.md"
+        real_doc.write_text("# Repo root\n\nContent.\n", encoding="utf-8")
+
+        config = MarkdownLinkConfig.from_dict(
+            {
+                "excludeFiles": [
+                    "plugins/**/.venv/**",
+                    ".venv/**",
+                ],
+            }
+        )
+
+        found = list(find_markdown_files(tmp_path, config.exclude_files))
+        assert real_doc in found, "Root README.md should be found"
+        assert broken_md not in found, "plugins/.venv path must be excluded"
+
+    def test_normal_docs_not_excluded(self, tmp_path: Path) -> None:
+        """Normal documentation files must not be excluded by worktree patterns."""
+        normal_docs = [
+            tmp_path / "README.md",
+            tmp_path / "docs" / "INDEX.md",
+            tmp_path / "docs" / "architecture" / "OVERVIEW.md",
+        ]
+        for doc in normal_docs:
+            doc.parent.mkdir(parents=True, exist_ok=True)
+            doc.write_text("# Doc\n\nContent.\n", encoding="utf-8")
+
+        config = MarkdownLinkConfig.from_dict(
+            {
+                "excludeFiles": [
+                    "omni_worktrees/**",
+                    ".venv/**",
+                    "plugins/**/.venv/**",
+                    "plugins/**/lib/.venv/**",
+                ],
+            }
+        )
+
+        found = set(find_markdown_files(tmp_path, config.exclude_files))
+        for doc in normal_docs:
+            assert doc in found, f"{doc.name} must not be excluded by worktree patterns"

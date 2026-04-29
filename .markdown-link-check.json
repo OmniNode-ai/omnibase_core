@@ -53,7 +53,10 @@
     ".ruff_cache/**",
     "build/**",
     "dist/**",
-    "htmlcov/**"
+    "htmlcov/**",
+    "omni_worktrees/**",
+    "plugins/**/.venv/**",
+    "plugins/**/lib/.venv/**"
   ],
   "checkExternal": false
 }
