@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ModelRepoComplianceBreakdown(BaseModel):
@@ -22,3 +22,13 @@ class ModelRepoComplianceBreakdown(BaseModel):
         default_factory=list,
         description="Most common violation types in this repo",
     )
+
+    @model_validator(mode="after")
+    def validate_counts(self) -> ModelRepoComplianceBreakdown:
+        categorized = self.compliant + self.imperative + self.hybrid
+        if categorized != self.total_handlers:
+            raise ValueError(
+                f"total_handlers ({self.total_handlers}) must equal "
+                f"compliant + imperative + hybrid ({categorized})"
+            )
+        return self

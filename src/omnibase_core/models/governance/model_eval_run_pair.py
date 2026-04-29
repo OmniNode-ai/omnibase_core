@@ -5,8 +5,9 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.governance.enum_eval_mode import EnumEvalMode
 from omnibase_core.enums.governance.enum_eval_verdict import EnumEvalVerdict
 from omnibase_core.models.governance.model_eval_run import ModelEvalRun
 
@@ -27,3 +28,18 @@ class ModelEvalRunPair(BaseModel):
         description="Per-metric delta (on - off). Negative = ONEX saves.",
     )
     verdict: EnumEvalVerdict = Field(..., description="Overall verdict for this pair")
+
+    @model_validator(mode="after")
+    def validate_pair_consistency(self) -> ModelEvalRunPair:
+        if (
+            self.onex_on_run.task_id != self.task_id
+            or self.onex_off_run.task_id != self.task_id
+        ):
+            raise ValueError(
+                "task_id must match both onex_on_run.task_id and onex_off_run.task_id"
+            )
+        if self.onex_on_run.mode != EnumEvalMode.ONEX_ON:
+            raise ValueError("onex_on_run.mode must be ONEX_ON")
+        if self.onex_off_run.mode != EnumEvalMode.ONEX_OFF:
+            raise ValueError("onex_off_run.mode must be ONEX_OFF")
+        return self

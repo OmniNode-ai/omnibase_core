@@ -32,7 +32,7 @@ class ModelComplianceSweepReport(BaseModel):
         ..., description="Missing contract handler count", ge=0
     )
     compliant_pct: float = Field(
-        ..., description="Percentage of compliant handlers (0-100)"
+        ..., description="Percentage of compliant handlers (0-100)", ge=0.0, le=100.0
     )
     violation_histogram: dict[str, int] = Field(
         default_factory=dict,

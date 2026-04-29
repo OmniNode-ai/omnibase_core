@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ModelEvalSummary(BaseModel):
@@ -38,3 +38,15 @@ class ModelEvalSummary(BaseModel):
     pattern_hit_rate_on: float = Field(
         ..., description="How often patterns were used when ONEX is on", ge=0.0, le=1.0
     )
+
+    @model_validator(mode="after")
+    def validate_counts(self) -> ModelEvalSummary:
+        categorized = (
+            self.onex_better_count + self.onex_worse_count + self.neutral_count
+        )
+        if categorized != self.total_tasks:
+            raise ValueError(
+                f"total_tasks ({self.total_tasks}) must equal "
+                f"onex_better_count + onex_worse_count + neutral_count ({categorized})"
+            )
+        return self

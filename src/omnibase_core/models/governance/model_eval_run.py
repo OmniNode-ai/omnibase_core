@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.governance.enum_eval_metric_type import EnumEvalMetricType
 from omnibase_core.enums.governance.enum_eval_mode import EnumEvalMode
@@ -47,6 +47,14 @@ class ModelEvalRun(BaseModel):
         default_factory=dict,
         description="Relevant ENABLE_* flags at time of run",
     )
+
+    @model_validator(mode="after")
+    def validate_timeline(self) -> ModelEvalRun:
+        if self.completed_at is not None and self.completed_at < self.started_at:
+            raise ValueError(
+                f"completed_at ({self.completed_at}) must not precede started_at ({self.started_at})"
+            )
+        return self
 
     def get_metric(self, metric_type: EnumEvalMetricType) -> float | None:
         """Return the value of a specific metric type, or None if not collected."""

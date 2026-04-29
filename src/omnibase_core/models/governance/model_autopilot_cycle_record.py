@@ -5,11 +5,14 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.governance.enum_autopilot_cycle_status import (
     EnumAutopilotCycleStatus,
 )
+from omnibase_core.enums.governance.enum_autopilot_mode import EnumAutopilotMode
 from omnibase_core.models.governance.model_autopilot_step_result import (
     ModelAutopilotStepResult,
 )
@@ -27,10 +30,10 @@ class ModelAutopilotCycleRecord(BaseModel):
     schema_version: str = Field(..., description="Schema version (SemVer)")
     # string-id-ok: opaque autopilot cycle correlation identifier, not a DB primary key
     cycle_id: str = Field(..., description="Unique cycle identifier")
-    mode: str = Field(..., description="Autopilot mode: close-out or build")
-    started_at: str = Field(..., description="ISO datetime when cycle started")
-    completed_at: str | None = Field(
-        default=None, description="ISO datetime when cycle completed"
+    mode: EnumAutopilotMode = Field(..., description="Autopilot operating mode")
+    started_at: datetime = Field(..., description="When cycle started")
+    completed_at: datetime | None = Field(
+        default=None, description="When cycle completed"
     )
     steps: list[ModelAutopilotStepResult] = Field(
         default_factory=list, description="Per-step results"
@@ -40,5 +43,7 @@ class ModelAutopilotCycleRecord(BaseModel):
         description="Cycle completion status",
     )
     consecutive_noop_count: int = Field(
-        default=0, description="Prior consecutive cycles with zero tickets"
+        default=0,
+        description="Prior consecutive cycles with zero tickets",
+        ge=0,
     )

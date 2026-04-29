@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.governance.model_eval_run_pair import ModelEvalRunPair
 from omnibase_core.models.governance.model_eval_summary import ModelEvalSummary
@@ -33,3 +33,15 @@ class ModelEvalReport(BaseModel):
         ..., description="Individual task comparisons"
     )
     summary: ModelEvalSummary = Field(..., description="Aggregated summary statistics")
+
+    @model_validator(mode="after")
+    def validate_summary_alignment(self) -> ModelEvalReport:
+        if self.summary.total_tasks != len(self.pairs):
+            raise ValueError(
+                f"summary.total_tasks={self.summary.total_tasks} does not match "
+                f"len(pairs)={len(self.pairs)}"
+            )
+        task_ids = [pair.task_id for pair in self.pairs]
+        if len(task_ids) != len(set(task_ids)):
+            raise ValueError("pairs must contain unique task_id values")
+        return self

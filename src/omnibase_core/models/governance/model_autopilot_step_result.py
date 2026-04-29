@@ -28,12 +28,14 @@ class ModelAutopilotStepResult(BaseModel):
         default=None, description="Why step was skipped or failed"
     )
     duration_seconds: float = Field(
-        default=0.0, description="Wall-clock execution time"
+        default=0.0, description="Wall-clock execution time", ge=0.0
     )
 
     @field_validator("reason")
     @classmethod
     def skipped_requires_reason(cls, v: str | None, info: ValidationInfo) -> str | None:
-        if info.data.get("status") == EnumAutopilotStepStatus.SKIPPED and not v:
+        if info.data.get("status") == EnumAutopilotStepStatus.SKIPPED and (
+            v is None or not v.strip()
+        ):
             raise ValueError("Skipped step must provide a non-empty reason")
         return v
