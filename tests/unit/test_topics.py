@@ -33,6 +33,7 @@ class TestTopicBase:
             TopicBase.CLAUDE_HOOK_EVENT
             == "onex.cmd.omniintelligence.claude-hook-event.v1"
         )
+        assert TopicBase.WASTE_DETECTED == "onex.evt.omniintelligence.waste-detected.v1"
 
     def test_is_str_enum(self) -> None:
         for topic in TopicBase:
