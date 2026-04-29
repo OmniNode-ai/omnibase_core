@@ -18,7 +18,7 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 class TestSilentExceptPassGate:
     def test_violation_fixture_has_violations(self) -> None:
         gate = SilentExceptPassGate()
-        violations = gate.run([FIXTURES_DIR / "except_violation.py"])
+        violations = gate.run([FIXTURES_DIR / "except_violation.fixture"])
         assert len(violations) >= 4, (
             f"expected >=4 violations, got {len(violations)}: {violations}"
         )
