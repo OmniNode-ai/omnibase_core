@@ -1,6 +1,7 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-10219
+title: "Gate 5 protocol kwargs object"
 summary: "Gate 5: ban loose **kwargs annotations in Protocol method signatures"
 is_seam_ticket: false
 interface_change: false
