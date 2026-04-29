@@ -714,5 +714,100 @@ class TestModelFSMTransitionResultImport:
         assert result.new_state == "direct_import"
 
 
+@pytest.mark.unit
+class TestModelFSMTransitionResultFailureType:
+    """Tests for failure_type field on ModelFSMTransitionResult."""
+
+    def test_failure_type_none_on_success(self):
+        """failure_type must be None when transition succeeds."""
+        result = ModelFSMTransitionResult(
+            success=True,
+            new_state="running",
+            old_state="idle",
+        )
+        assert result.failure_type is None
+
+    def test_failure_type_guard_rejection(self):
+        """failure_type can be set to 'guard_rejection' on a failed transition."""
+        result = ModelFSMTransitionResult(
+            success=False,
+            new_state="idle",
+            old_state="idle",
+            error="Transition conditions not met",
+            failure_type="guard_rejection",
+        )
+        assert result.failure_type == "guard_rejection"
+        assert result.error == "Transition conditions not met"
+
+    def test_failure_type_exception(self):
+        """failure_type can be set to 'exception' on an unexpected-exception failure."""
+        result = ModelFSMTransitionResult(
+            success=False,
+            new_state="idle",
+            old_state="idle",
+            error="Unexpected error",
+            failure_type="exception",
+        )
+        assert result.failure_type == "exception"
+
+    def test_failure_type_none_on_failure_without_category(self):
+        """failure_type defaults to None even on failure when not explicitly set."""
+        result = ModelFSMTransitionResult(
+            success=False,
+            new_state="idle",
+            old_state="idle",
+            error="Some error",
+        )
+        assert result.failure_type is None
+
+    def test_failure_type_invalid_value_rejected(self):
+        """Invalid failure_type literals are rejected by Pydantic."""
+        with pytest.raises(ValidationError):
+            ModelFSMTransitionResult(
+                success=False,
+                new_state="idle",
+                old_state="idle",
+                failure_type="unknown_category",  # type: ignore[arg-type]
+            )
+
+    def test_failure_type_serialized_in_model_dump(self):
+        """failure_type is included in model_dump output."""
+        result = ModelFSMTransitionResult(
+            success=False,
+            new_state="idle",
+            old_state="idle",
+            error="Transition conditions not met",
+            failure_type="guard_rejection",
+        )
+        data = result.model_dump()
+        assert "failure_type" in data
+        assert data["failure_type"] == "guard_rejection"
+
+    def test_failure_type_roundtrip(self):
+        """failure_type survives serialize → model_validate roundtrip."""
+        original = ModelFSMTransitionResult(
+            success=False,
+            new_state="idle",
+            old_state="idle",
+            error="Transition conditions not met",
+            failure_type="guard_rejection",
+            failed_conditions=["has_data"],
+            timestamp="2024-01-01T00:00:00+00:00",
+        )
+        data = original.model_dump()
+        restored = ModelFSMTransitionResult.model_validate(data)
+        assert restored.failure_type == "guard_rejection"
+        assert restored.failed_conditions == ("has_data",)
+
+    def test_failed_conditions_default_none(self):
+        """failed_conditions defaults to None on success and non-condition failures."""
+        result = ModelFSMTransitionResult(
+            success=True,
+            new_state="running",
+            old_state="idle",
+        )
+        assert result.failed_conditions is None
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

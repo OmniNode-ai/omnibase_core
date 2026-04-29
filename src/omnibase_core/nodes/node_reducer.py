@@ -434,16 +434,21 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         #   fsm_previous_state    -> fsm_result.old_state
         #   fsm_transition_success-> fsm_result.success
         #   fsm_transition_name   -> fsm_result.transition_name (None if no transition dispatched)
-        #   failure_reason        -> fsm_result.error when success=False and it reads as an
-        #                            expected rejection (guard/condition failure);
-        #                            None on success
-        #   failed_conditions     -> None at this layer (FSMTransitionResult does not expose
-        #                            the list today; follow-up to thread through
-        #                            util_fsm_executor — see ModelReducerFsmMetadata docstring)
-        #   error                 -> fsm_result.error when success=False and it represents
-        #                            an unexpected exception path; None on success
-        failure_reason = fsm_result.error if not fsm_result.success else None
-        error_value = fsm_result.error if not fsm_result.success else None
+        #   failure_reason        -> fsm_result.error when failure_type=="guard_rejection"
+        #                            (expected condition/guard rejection); None on success
+        #   failed_conditions     -> fsm_result.failed_conditions
+        #   error                 -> fsm_result.error when failure_type=="exception"
+        #                            (unexpected exception path); None on success
+        failure_reason = (
+            fsm_result.error
+            if not fsm_result.success and fsm_result.failure_type == "guard_rejection"
+            else None
+        )
+        error_value = (
+            fsm_result.error
+            if not fsm_result.success and fsm_result.failure_type == "exception"
+            else None
+        )
 
         # Build the typed FSM metadata model (OMN-597).
         # This is the single source of truth for all 7 contract keys; the dict
@@ -454,7 +459,7 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             fsm_transition_success=fsm_result.success,
             fsm_transition_name=fsm_result.transition_name,
             failure_reason=failure_reason,
-            failed_conditions=None,
+            failed_conditions=fsm_result.failed_conditions,
             error=error_value,
         )
         # Derive the dict representation from the typed model.
