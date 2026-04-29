@@ -294,3 +294,141 @@ class TestMixinFSMExecution:
 
         # State should remain idle
         assert node.get_current_fsm_state() == "idle"
+
+
+@pytest.mark.unit
+class TestStateMutationProtection:
+    """OMN-604: ``_fsm_state`` MUST NOT change unless ``result.success=True``.
+
+    Pins the three invariants from CONTRACT_DRIVEN_NODEREDUCER_V1_0_4_DELTA:
+
+    1. ``result.success=False`` leaves ``_fsm_state`` unchanged (state + history).
+    2. ``ModelOnexError`` (or any exception) from the executor leaves ``_fsm_state``
+       unchanged.
+    3. Only ``result.success=True`` mutates state, and the mutation is atomic
+       (a failure constructing the new ``FSMState`` restores the prior snapshot).
+    """
+
+    @pytest.mark.asyncio
+    async def test_success_false_does_not_mutate_state(
+        self, test_fsm: ModelFSMSubcontract, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from omnibase_core.mixins import mixin_fsm_execution as module
+        from omnibase_core.models.fsm.model_fsm_transition_result import (
+            ModelFSMTransitionResult,
+        )
+
+        node = MockNode()
+        node.initialize_fsm_state(test_fsm, context={"seed": 1})
+        prior_snapshot = node._fsm_state
+        prior_state = node.get_current_fsm_state()
+        prior_history = list(node.get_fsm_state_history())
+
+        async def fake_execute_transition(*args: object, **kwargs: object) -> object:
+            return ModelFSMTransitionResult(
+                success=False,
+                new_state="idle",
+                old_state="idle",
+                transition_name="conditions_unmet",
+                intents=(),
+                error="Transition conditions not met",
+            )
+
+        monkeypatch.setattr(module, "execute_transition", fake_execute_transition)
+
+        result = await node.execute_fsm_transition(
+            test_fsm, trigger="start", context={"runtime": "data"}
+        )
+
+        assert result.success is False
+        assert node.get_current_fsm_state() == prior_state
+        assert node.get_fsm_state_history() == prior_history
+        # Identity check: the snapshot object itself was not replaced.
+        assert node._fsm_state is prior_snapshot
+
+    @pytest.mark.asyncio
+    async def test_model_onex_error_does_not_mutate_state(
+        self, test_fsm: ModelFSMSubcontract
+    ) -> None:
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+        node = MockNode()
+        node.initialize_fsm_state(test_fsm, context={"seed": 1})
+        prior_snapshot = node._fsm_state
+        prior_state = node.get_current_fsm_state()
+        prior_history = list(node.get_fsm_state_history())
+
+        with pytest.raises(ModelOnexError):
+            await node.execute_fsm_transition(
+                test_fsm, trigger="no_such_trigger", context={}
+            )
+
+        assert node.get_current_fsm_state() == prior_state
+        assert node.get_fsm_state_history() == prior_history
+        assert node._fsm_state is prior_snapshot
+
+    @pytest.mark.asyncio
+    async def test_arbitrary_exception_does_not_mutate_state(
+        self, test_fsm: ModelFSMSubcontract, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from omnibase_core.mixins import mixin_fsm_execution as module
+
+        node = MockNode()
+        node.initialize_fsm_state(test_fsm)
+        prior_snapshot = node._fsm_state
+
+        async def boom(*args: object, **kwargs: object) -> object:
+            raise RuntimeError("executor exploded")
+
+        monkeypatch.setattr(module, "execute_transition", boom)
+
+        with pytest.raises(RuntimeError, match="executor exploded"):
+            await node.execute_fsm_transition(test_fsm, trigger="start", context={})
+
+        assert node._fsm_state is prior_snapshot
+        assert node.get_current_fsm_state() == "idle"
+
+    @pytest.mark.asyncio
+    async def test_success_true_advances_state_and_history(
+        self, test_fsm: ModelFSMSubcontract
+    ) -> None:
+        node = MockNode()
+        node.initialize_fsm_state(test_fsm)
+        assert node.get_current_fsm_state() == "idle"
+        assert node.get_fsm_state_history() == []
+
+        result = await node.execute_fsm_transition(
+            test_fsm, trigger="start", context={}
+        )
+
+        assert result.success is True
+        assert node.get_current_fsm_state() == "running"
+        assert node.get_fsm_state_history() == ["idle"]
+
+    @pytest.mark.asyncio
+    async def test_state_construction_failure_restores_prior_snapshot(
+        self, test_fsm: ModelFSMSubcontract, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """If FSMState construction itself raises, prior snapshot must remain.
+
+        Guards the post-success-classification mutation path: a refactor that
+        moved the assignment before construction would silently violate the
+        invariant — this test pins it.
+        """
+        from omnibase_core.mixins import mixin_fsm_execution as module
+
+        node = MockNode()
+        node.initialize_fsm_state(test_fsm, context={"seed": 1})
+        prior_snapshot = node._fsm_state
+        prior_state = node.get_current_fsm_state()
+
+        def exploding_fsm_state(*args: object, **kwargs: object) -> object:
+            raise ValueError("simulated FSMState construction failure")
+
+        monkeypatch.setattr(module, "FSMState", exploding_fsm_state)
+
+        with pytest.raises(ValueError, match="simulated"):
+            await node.execute_fsm_transition(test_fsm, trigger="start", context={})
+
+        assert node._fsm_state is prior_snapshot
+        assert node.get_current_fsm_state() == prior_state

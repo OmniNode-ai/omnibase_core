@@ -73,6 +73,20 @@ class MixinFSMExecution:
         Pure function delegation: delegates to utils/util_fsm_executor.execute_transition()
         which returns (new_state, intents) without side effects.
 
+        State Mutation Protection (CONTRACT_DRIVEN_NODEREDUCER_V1_0_4_DELTA, OMN-604):
+            Internal ``_fsm_state`` is mutated **only** when the executor returns
+            ``result.success=True``. The implementation guarantees:
+
+            - On ``result.success=False``: ``_fsm_state`` MUST remain unchanged.
+            - On ``ModelOnexError`` (or any other exception, including
+              ``BaseException`` subclasses such as cancellation signals):
+              ``_fsm_state`` MUST remain unchanged. The pre-transition snapshot
+              is restored before the exception propagates.
+            - Only successful transitions advance state and history.
+
+            This invariant guarantees: "no transition performed" ⇒ state really
+            didn't move, even if new-state construction itself raises.
+
         Args:
             fsm_contract: FSM subcontract from node contract
             trigger: Event triggering the transition
@@ -80,6 +94,11 @@ class MixinFSMExecution:
 
         Returns:
             FSMTransitionResult with new state and intents
+
+        Raises:
+            ModelOnexError: If the executor cannot perform the transition
+                (invalid current state, no matching transition, invalid target
+                state). ``_fsm_state`` is unchanged when this is raised.
 
         Example:
             result = await self.execute_fsm_transition(
@@ -95,33 +114,43 @@ class MixinFSMExecution:
                 for intent in result.intents:
                     print(f"Intent: {intent.intent_type}")
         """
-        # Get current state (or use initial state)
+        # Snapshot prior state so any failure path can prove non-mutation.
+        # The only mutation site is the final reassignment below; on any raise
+        # before it, the pre-transition reference is restored explicitly so
+        # the invariant survives future refactors that might reorder operations.
+        prior_state = self._fsm_state
+
         current_state = (
-            self._fsm_state.current_state
-            if self._fsm_state
-            else fsm_contract.initial_state
+            prior_state.current_state if prior_state else fsm_contract.initial_state
         )
 
-        # Execute transition using pure function from utils
-        result = await execute_transition(
-            fsm_contract,
-            current_state,
-            trigger,
-            context,
-        )
+        try:
+            result = await execute_transition(
+                fsm_contract,
+                current_state,
+                trigger,
+                context,
+            )
+        except BaseException:
+            self._fsm_state = prior_state
+            raise
 
-        # Update internal state if successful
-        if result.success:
-            # Create new FSMState with updated current state and history
-            # Use list spread to maintain immutability by creating new list
-            previous_history = self._fsm_state.history if self._fsm_state else []
+        if not result.success:
+            return result
+
+        try:
+            previous_history = prior_state.history if prior_state else []
             new_history = [*previous_history, result.old_state]
-            self._fsm_state = FSMState(
+            new_fsm_state = FSMState(
                 current_state=result.new_state,
                 context=context,
                 history=new_history,
             )
+        except BaseException:
+            self._fsm_state = prior_state
+            raise
 
+        self._fsm_state = new_fsm_state
         return result
 
     async def validate_fsm_contract(
