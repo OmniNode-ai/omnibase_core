@@ -3,7 +3,7 @@
 **Date:** 2026-04-29
 **Ticket:** OMN-9607 — Task 13: Cross-repo docs validation gate and freshness sweep wiring
 **Validator:** `uv run onex-validate-links --verbose` (per-repo) and cross-repo scan
-**Executed from:** `/Users/jonah/Code/omni_home/omnibase_core` (owner of `onex-validate-links`)
+**Executed from:** `$OMNI_HOME/omnibase_core` (owner of `onex-validate-links`)
 
 ---
 

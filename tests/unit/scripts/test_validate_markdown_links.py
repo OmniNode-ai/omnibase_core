@@ -900,6 +900,7 @@ class TestLinkInfoMissingReference:
         assert link.display_link == "[Link Text](./docs/readme.md)"
 
 
+@pytest.mark.unit
 class TestMarkdownLinkConfigExclusions:
     """Tests for MarkdownLinkConfig exclusion patterns.
 
@@ -934,9 +935,8 @@ class TestMarkdownLinkConfigExclusions:
         )
 
         found = list(find_markdown_files(tmp_path, config.exclude_files))
-        found_names = [f.name for f in found]
 
-        assert "README.md" in found_names, "Real doc should be found"
+        assert real_doc in found, "Real doc should be found"
         # The broken_md under omni_worktrees/ should NOT be in the found list
         assert broken_md not in found, "omni_worktrees path must be excluded"
 
