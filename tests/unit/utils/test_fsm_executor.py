@@ -1283,6 +1283,29 @@ class TestFSMFailureType:
         assert result.failed_conditions is None
         assert result.error is not None
 
+    @pytest.mark.asyncio
+    async def test_invalid_target_state_returns_exception_failure(
+        self, simple_fsm: ModelFSMSubcontract
+    ):
+        """Runtime target-state errors are returned as failed transition results."""
+        broken_transition = simple_fsm.transitions[0].model_copy(
+            update={"to_state": "missing_state"}
+        )
+        broken_fsm = simple_fsm.model_copy(
+            update={"transitions": [broken_transition, *simple_fsm.transitions[1:]]}
+        )
+
+        result = await execute_transition(broken_fsm, "idle", "start_event", {})
+
+        assert not result.success
+        assert result.new_state == "idle"
+        assert result.old_state == "idle"
+        assert result.transition_name == "start"
+        assert result.failure_type == "exception"
+        assert result.failed_conditions is None
+        assert result.error is not None
+        assert "Invalid target state: missing_state" in result.error
+
 
 @pytest.mark.unit
 class TestCorrelationIdPropagation:
