@@ -55,8 +55,6 @@ from omnibase_core.types.type_fsm_context import FSMContextType
 from omnibase_core.utils.util_fsm_expression_parser import parse_expression
 from omnibase_core.utils.util_fsm_operators import evaluate_equals, evaluate_not_equals
 
-TRANSITION_FAILURE_ERRORS = (*VALIDATION_ERRORS, ModelOnexError)
-
 
 async def execute_transition(
     fsm: ModelFSMSubcontract,
@@ -197,7 +195,17 @@ async def execute_transition(
             fsm, target_state_def, "entry", context
         )
         intents.extend(entry_intents)
-    except TRANSITION_FAILURE_ERRORS as exc:
+    except ModelOnexError as exc:
+        return FSMTransitionResult(
+            success=False,
+            new_state=current_state,
+            old_state=current_state,
+            transition_name=transition.transition_name,
+            intents=tuple(intents),
+            error=str(exc),
+            failure_type="exception",
+        )
+    except VALIDATION_ERRORS as exc:
         return FSMTransitionResult(
             success=False,
             new_state=current_state,
