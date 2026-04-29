@@ -139,8 +139,8 @@ async def execute_transition(
         )
 
     # 3. Evaluate transition conditions
-    conditions_met = await _evaluate_conditions(transition, context)
-    if not conditions_met:
+    failed_conditions = await _evaluate_failed_conditions(transition, context)
+    if failed_conditions:
         # Create intent to log condition failure
         intents.append(
             ModelIntent(
@@ -166,32 +166,45 @@ async def execute_transition(
             transition_name=transition.transition_name,
             intents=tuple(intents),  # Convert to tuple for immutability
             error="Transition conditions not met",
+            failure_type="guard_rejection",
+            failed_conditions=failed_conditions,
         )
 
-    # 4. Execute exit actions from current state
-    exit_intents = await _execute_state_actions(fsm, state_def, "exit", context)
-    intents.extend(exit_intents)
+    try:
+        # 4. Execute exit actions from current state
+        exit_intents = await _execute_state_actions(fsm, state_def, "exit", context)
+        intents.extend(exit_intents)
 
-    # 5. Execute transition actions
-    transition_intents = await _execute_transition_actions(
-        transition, context, correlation_id=fsm.correlation_id
-    )
-    intents.extend(transition_intents)
-
-    # 6. Get target state definition
-    target_state_def = _get_state_definition(fsm, transition.to_state)
-    if not target_state_def:
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=f"Invalid target state: {transition.to_state}",
-            context={"fsm": fsm.state_machine_name, "state": transition.to_state},
+        # 5. Execute transition actions
+        transition_intents = await _execute_transition_actions(
+            transition, context, correlation_id=fsm.correlation_id
         )
+        intents.extend(transition_intents)
 
-    # 7. Execute entry actions for new state
-    entry_intents = await _execute_state_actions(
-        fsm, target_state_def, "entry", context
-    )
-    intents.extend(entry_intents)
+        # 6. Get target state definition
+        target_state_def = _get_state_definition(fsm, transition.to_state)
+        if not target_state_def:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid target state: {transition.to_state}",
+                context={"fsm": fsm.state_machine_name, "state": transition.to_state},
+            )
+
+        # 7. Execute entry actions for new state
+        entry_intents = await _execute_state_actions(
+            fsm, target_state_def, "entry", context
+        )
+        intents.extend(entry_intents)
+    except VALIDATION_ERRORS as exc:
+        return FSMTransitionResult(
+            success=False,
+            new_state=current_state,
+            old_state=current_state,
+            transition_name=transition.transition_name,
+            intents=tuple(intents),
+            error=str(exc),
+            failure_type="exception",
+        )
 
     # 8. Create persistence intent if enabled
     if fsm.persistence_enabled:
@@ -423,9 +436,18 @@ async def _evaluate_conditions(
     Returns:
         True if all conditions met, False otherwise
     """
-    if not transition.conditions:
-        return True
+    return not await _evaluate_failed_conditions(transition, context)
 
+
+async def _evaluate_failed_conditions(
+    transition: ModelFSMStateTransition,
+    context: FSMContextType,
+) -> tuple[str, ...]:
+    """Return names of required transition conditions that evaluated false."""
+    if not transition.conditions:
+        return ()
+
+    failed: list[str] = []
     for condition in transition.conditions:
         # Skip optional conditions if not required
         if not condition.required:
@@ -435,9 +457,9 @@ async def _evaluate_conditions(
         condition_met = await _evaluate_single_condition(condition, context)
 
         if not condition_met:
-            return False
+            failed.append(condition.condition_name)
 
-    return True
+    return tuple(failed)
 
 
 def _get_nested_field_value(context: FSMContextType, field_path: str) -> object:

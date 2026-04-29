@@ -1234,6 +1234,57 @@ class TestExpressionValidation:
 
 
 @pytest.mark.unit
+class TestFSMFailureType:
+    """Test that failure_type is correctly populated by execute_transition."""
+
+    @pytest.mark.asyncio
+    async def test_success_has_no_failure_type(self, simple_fsm: ModelFSMSubcontract):
+        """On success, failure_type must be None."""
+        result = await execute_transition(simple_fsm, "idle", "start_event", {})
+        assert result.success
+        assert result.failure_type is None
+
+    @pytest.mark.asyncio
+    async def test_guard_rejection_sets_failure_type(
+        self, fsm_with_conditions: ModelFSMSubcontract
+    ):
+        """Condition-not-met path sets failure_type to 'guard_rejection'."""
+        context = {"data_count_len": 0}
+        result = await execute_transition(fsm_with_conditions, "idle", "start", context)
+        assert not result.success
+        assert result.failure_type == "guard_rejection"
+        assert result.failed_conditions == ("has_data",)
+
+    @pytest.mark.asyncio
+    async def test_guard_rejection_error_field_populated(
+        self, fsm_with_conditions: ModelFSMSubcontract
+    ):
+        """Guard rejection: error field is populated; failure_type discriminates category."""
+        context = {"data_count_len": 0}
+        result = await execute_transition(fsm_with_conditions, "idle", "start", context)
+        assert not result.success
+        assert result.failure_type == "guard_rejection"
+        assert result.error == "Transition conditions not met"
+
+    @pytest.mark.asyncio
+    async def test_exception_sets_failure_type(self, simple_fsm: ModelFSMSubcontract):
+        """Unexpected action-construction errors are categorized as exception failures."""
+        broken_state = simple_fsm.states[0].model_copy(
+            update={"exit_actions": [object()]}
+        )
+        broken_fsm = simple_fsm.model_copy(
+            update={"states": [broken_state, *simple_fsm.states[1:]]}
+        )
+
+        result = await execute_transition(broken_fsm, "idle", "start_event", {})
+
+        assert not result.success
+        assert result.failure_type == "exception"
+        assert result.failed_conditions is None
+        assert result.error is not None
+
+
+@pytest.mark.unit
 class TestCorrelationIdPropagation:
     """Test correlation_id propagation from FSMSubcontract to intent payloads.
 

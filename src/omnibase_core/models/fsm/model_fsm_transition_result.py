@@ -16,6 +16,7 @@ Deep Immutability:
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -56,6 +57,12 @@ class ModelFSMTransitionResult(BaseModel):
         intents: Tuple of intents generated for side effect execution.
         metadata: Sorted tuple of key-value pairs for deterministic hashing.
         error: Error message if the transition failed, None otherwise.
+        failure_type: Discriminates guard/condition rejections from unexpected
+            exceptions. "guard_rejection" when a required condition evaluated to
+            False; "exception" when an unhandled exception caused the failure.
+            None on success or when the failure path is unknown.
+        failed_conditions: Names of conditions that evaluated false and rejected
+            the transition. None on success or non-condition failures.
         timestamp: ISO-format UTC timestamp (timezone-aware) of result creation.
     """
 
@@ -88,6 +95,20 @@ class ModelFSMTransitionResult(BaseModel):
     error: str | None = Field(
         default=None,
         description="Error message if transition failed",
+    )
+    failure_type: Literal["guard_rejection", "exception"] | None = Field(
+        default=None,
+        description=(
+            "Discriminates failure category: 'guard_rejection' for condition failures, "
+            "'exception' for unexpected exceptions, None on success"
+        ),
+    )
+    failed_conditions: tuple[str, ...] | None = Field(
+        default=None,
+        description=(
+            "Names of required conditions that evaluated false. None on success "
+            "or non-condition failures."
+        ),
     )
     timestamp: str = Field(
         default_factory=lambda: datetime.now(UTC).isoformat(),
@@ -128,6 +149,16 @@ class ModelFSMTransitionResult(BaseModel):
             return tuple(sorted(v.items(), key=lambda x: x[0]))
         # If already tuple, sort for deterministic ordering
         return tuple(sorted(v, key=lambda x: x[0]))
+
+    @field_validator("failed_conditions", mode="before")
+    @classmethod
+    def _convert_failed_conditions_to_tuple(
+        cls, v: list[object] | tuple[object, ...] | None
+    ) -> tuple[object, ...] | None:
+        """Convert failed condition lists to tuples for deep immutability."""
+        if v is None:
+            return None
+        return convert_list_to_tuple(v)
 
     model_config = ConfigDict(
         extra="ignore",
