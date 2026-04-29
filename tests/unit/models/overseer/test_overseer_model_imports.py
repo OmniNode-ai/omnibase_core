@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import pytest
 from pydantic import BaseModel
 
 from omnibase_core.models.ticket.model_evidence_requirement import (
@@ -12,6 +13,7 @@ from omnibase_core.models.ticket.model_evidence_requirement import (
 )
 
 
+@pytest.mark.unit
 class TestOverseerModelImports:
     """Assert all overseer model classes importable from omnibase_core.models.overseer.*."""
 

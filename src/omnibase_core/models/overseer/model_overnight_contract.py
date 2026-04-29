@@ -36,7 +36,7 @@ class ModelOvernightContract(BaseModel):
     max_cost_usd: float = 5.0
     max_duration_seconds: int = 28800
     dry_run: bool = False
-    phases: tuple[ModelOvernightPhaseSpec, ...]
+    phases: tuple[ModelOvernightPhaseSpec, ...] = Field(..., min_length=1)
     halt_conditions: tuple[ModelOvernightHaltCondition, ...] = Field(
         default_factory=tuple
     )

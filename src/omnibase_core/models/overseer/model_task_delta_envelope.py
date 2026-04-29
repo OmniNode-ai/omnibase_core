@@ -50,7 +50,12 @@ class ModelTaskDeltaEnvelope(BaseModel, frozen=True, extra="forbid"):
     ) -> Mapping[str, Any] | None:
         if value is None:
             return None
-        return MappingProxyType(dict(value))
+        try:
+            return MappingProxyType(dict(value))
+        except TypeError as exc:
+            raise ValueError(
+                "payload must be a mapping"
+            ) from exc  # error-ok: Pydantic field_validator requires ValueError
 
 
 __all__ = ["ModelTaskDeltaEnvelope"]

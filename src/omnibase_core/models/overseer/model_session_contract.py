@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.overseer.model_session_halt_condition import (
     ModelSessionHaltCondition,
@@ -36,20 +36,7 @@ class ModelSessionContract(BaseModel):
     dry_run: bool = False
     phases: tuple[ModelSessionPhaseSpec, ...] = Field(..., min_length=1)
     halt_conditions: tuple[ModelSessionHaltCondition, ...] = Field(
-        default_factory=lambda: (
-            ModelSessionHaltCondition(
-                condition_id="cost_ceiling",
-                description="Stop if accumulated cost exceeds ceiling",
-                check_type="cost_ceiling",
-                threshold=5.0,
-            ),
-            ModelSessionHaltCondition(
-                condition_id="phase_failure_limit",
-                description="Stop after 3 consecutive phase failures",
-                check_type="phase_failure_count",
-                threshold=3.0,
-            ),
-        )
+        default_factory=tuple
     )
     standing_orders: tuple[str, ...] = Field(default_factory=tuple)
     required_outcomes: tuple[str, ...] = Field(
@@ -58,6 +45,30 @@ class ModelSessionContract(BaseModel):
             "platform_readiness_gate_passed",
         )
     )
+
+    @model_validator(mode="after")
+    def _apply_default_halt_conditions(self) -> ModelSessionContract:
+        if self.halt_conditions:
+            return self
+        object.__setattr__(
+            self,
+            "halt_conditions",
+            (
+                ModelSessionHaltCondition(
+                    condition_id="cost_ceiling",
+                    description="Stop if accumulated cost exceeds ceiling",
+                    check_type="cost_ceiling",
+                    threshold=self.max_cost_usd,
+                ),
+                ModelSessionHaltCondition(
+                    condition_id="phase_failure_limit",
+                    description="Stop after 3 consecutive phase failures",
+                    check_type="phase_failure_count",
+                    threshold=3.0,
+                ),
+            ),
+        )
+        return self
 
 
 __all__ = ["ModelSessionContract"]

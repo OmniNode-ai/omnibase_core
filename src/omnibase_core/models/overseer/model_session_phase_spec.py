@@ -17,7 +17,7 @@ class ModelSessionPhaseSpec(BaseModel):
 
     phase_name: str
     required: bool = True
-    timeout_seconds: int = 3600
+    timeout_seconds: int = Field(default=3600, gt=0)
     halt_on_failure: bool = False
     success_criteria: list[str] = Field(default_factory=list)
     dispatch_items: tuple[ModelDispatchItem, ...] = ()
