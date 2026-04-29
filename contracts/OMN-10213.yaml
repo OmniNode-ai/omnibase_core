@@ -1,6 +1,7 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-10213
+title: "Gate 2 loose typing in internal models"
 summary: "Gate 2: ban loose typing in internal Pydantic models and Protocol signatures"
 is_seam_ticket: false
 interface_change: false
