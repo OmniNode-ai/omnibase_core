@@ -87,6 +87,31 @@ def _inherits_from_basemodel(node: ast.ClassDef) -> bool:
     return any(_base_name_matches_basemodel(base) for base in node.bases)
 
 
+def _collect_basemodel_like_classes(tree: ast.Module) -> frozenset[str]:
+    """Return local class names that directly or transitively inherit BaseModel."""
+    class_nodes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
+    derived = {
+        class_node.name
+        for class_node in class_nodes
+        if _inherits_from_basemodel(class_node)
+    }
+
+    changed = True
+    while changed:
+        changed = False
+        for class_node in class_nodes:
+            if class_node.name in derived:
+                continue
+            if any(
+                isinstance(base, ast.Name) and base.id in derived
+                for base in class_node.bases
+            ):
+                derived.add(class_node.name)
+                changed = True
+
+    return frozenset(derived)
+
+
 class IdentityFieldOptionalityCheck(BaseGateCheck):
     """Gate 1: detect T | None = None (or Optional[T] = None) on identity fields."""
 
@@ -97,9 +122,10 @@ class IdentityFieldOptionalityCheck(BaseGateCheck):
         path: Path,
     ) -> list[GateViolation]:
         violations: list[GateViolation] = []
+        basemodel_like_classes = _collect_basemodel_like_classes(tree)
 
         for node in ast.walk(tree):
-            if isinstance(node, ast.ClassDef) and _inherits_from_basemodel(node):
+            if isinstance(node, ast.ClassDef) and node.name in basemodel_like_classes:
                 violations.extend(
                     self._check_pydantic_model_fields(node, source_lines, path)
                 )

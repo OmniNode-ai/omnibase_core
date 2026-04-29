@@ -64,6 +64,23 @@ class TestIdentityFieldOptionalityCheck:
         violations = gate.run([f])
         assert violations == []
 
+    def test_indirect_basemodel_subclass_field_violation_detected(
+        self, tmp_path: Path
+    ) -> None:
+        f = tmp_path / "indirect_model.py"
+        f.write_text(
+            "from __future__ import annotations\n"
+            "from uuid import UUID\n"
+            "from pydantic import BaseModel\n"
+            "class MyBase(BaseModel):\n"
+            "    pass\n"
+            "class Child(MyBase):\n"
+            "    session_id: UUID | None = None\n"
+        )
+        gate = IdentityFieldOptionalityCheck()
+        violations = gate.run([f])
+        assert any("session_id" in v.message for v in violations)
+
     def test_function_arg_violation_detected(self, tmp_path: Path) -> None:
         f = tmp_path / "handler.py"
         f.write_text(
