@@ -13,8 +13,6 @@ from omnibase_core.enums.governance.enum_doc_staleness_verdict import (
 from omnibase_core.models.governance.model_doc_reference import ModelDocReference
 
 _MAX_LIST_ITEMS = 10000
-_STALENESS_THRESHOLD = 0.3
-_STALE_DAYS_THRESHOLD = 30
 
 
 class ModelDocFreshnessResult(BaseModel):
