@@ -1,0 +1,33 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-10219
+summary: "Gate 5: ban loose **kwargs annotations in Protocol method signatures"
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: tests
+    description: "Substrate gate unit tests pass"
+    command: "uv run pytest tests/unit/cli/substrate_gates/ -q"
+  - kind: ci
+    description: "omnibase_core PR 965 checks pass"
+    command: "gh pr checks 965 --repo OmniNode-ai/omnibase_core"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-001
+    description: "Protocol kwargs object gate is present in PR 965"
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "gh pr diff 965 --repo OmniNode-ai/omnibase_core | grep -q 'protocol_kwargs_object'"
+  - id: dod-002
+    description: "Deploy-gate evidence: substrate gate is a static pre-commit CLI check, not a runtime
+      service"
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "echo 'deploy-gate: OMN-10219 changes only substrate_gates static analysis code;
+          no Docker image, runtime process, broker topic, or service deploy is required'"
