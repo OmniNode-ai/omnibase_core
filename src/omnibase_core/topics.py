@@ -75,6 +75,8 @@ class TopicBase(StrEnum):
     UTILIZATION_SCORING_CMD = "onex.cmd.omniintelligence.utilization-scoring.v1"
     # LLM call completed: cost telemetry for omnidash llm_cost_aggregates (OMN-7570)
     LLM_CALL_COMPLETED = "onex.evt.omniintelligence.llm-call-completed.v1"
+    # Waste detected: computed cost-waste findings from LLM call telemetry (OMN-10341)
+    WASTE_DETECTED = "onex.evt.omniintelligence.waste-detected.v1"
     # Savings estimation: cloud-vs-local counterfactual for projection/API consumers
     SAVINGS_ESTIMATED = "onex.evt.omnibase-infra.savings-estimated.v1"
     # Cost-projection snapshot topics (consumed by omnidash widgets in OMN-10282)
