@@ -23,7 +23,7 @@ class ModelDbBoundaryException(BaseModel):
     Each exception must have a review date and explicit justification.
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     repo: str = Field(..., description="Repository containing the exception")
     file: str = Field(..., description="Exact file path within the repository")

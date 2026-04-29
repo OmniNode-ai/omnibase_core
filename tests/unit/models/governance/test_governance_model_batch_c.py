@@ -67,6 +67,18 @@ class TestGovernanceBatchCWireSchema:
 
         assert issubclass(ModelWireCiGate, BaseModel)
 
+    def test_model_wire_ci_gate_rejects_unknown_fields(self) -> None:
+        from pydantic import ValidationError
+
+        from omnibase_core.models.governance.model_wire_ci_gate import ModelWireCiGate
+
+        with pytest.raises(ValidationError):
+            ModelWireCiGate(
+                test_file="tests/test_wire.py",
+                test_class="TestWire",
+                unchecked="ignored",
+            )
+
     def test_model_wire_schema_contract_is_base_model(self) -> None:
         from omnibase_core.models.governance.model_wire_schema_contract import (
             ModelWireSchemaContract,
@@ -133,6 +145,64 @@ class TestGovernanceBatchCWireSchema:
                 required_fields=[
                     ModelWireRequiredField(name="dup", type=EnumWireFieldType.STRING),
                     ModelWireRequiredField(name="dup", type=EnumWireFieldType.STRING),
+                ],
+            )
+
+    def test_model_wire_field_constraints_rejects_contradictions(self) -> None:
+        from pydantic import ValidationError
+
+        from omnibase_core.models.governance.model_wire_field_constraints import (
+            ModelWireFieldConstraints,
+        )
+
+        with pytest.raises(ValidationError):
+            ModelWireFieldConstraints(ge=10, le=1)
+
+        with pytest.raises(ValidationError):
+            ModelWireFieldConstraints(min_length=10, max_length=1)
+
+    def test_model_wire_schema_contract_rejects_duplicate_active_renames(self) -> None:
+        from pydantic import ValidationError
+
+        from omnibase_core.enums.governance.enum_wire_field_type import (
+            EnumWireFieldType,
+        )
+        from omnibase_core.models.governance.model_wire_consumer import (
+            ModelWireConsumer,
+        )
+        from omnibase_core.models.governance.model_wire_producer import (
+            ModelWireProducer,
+        )
+        from omnibase_core.models.governance.model_wire_renamed_field import (
+            ModelWireRenamedField,
+        )
+        from omnibase_core.models.governance.model_wire_required_field import (
+            ModelWireRequiredField,
+        )
+        from omnibase_core.models.governance.model_wire_schema_contract import (
+            ModelWireSchemaContract,
+        )
+
+        with pytest.raises(ValidationError):
+            ModelWireSchemaContract(
+                topic="onex.evt.test.thing_happened.v1",
+                schema_version="1.0.0",
+                producer=ModelWireProducer(repo="r", file="f.py"),
+                consumer=ModelWireConsumer(repo="r", file="f.py", model="M"),
+                required_fields=[
+                    ModelWireRequiredField(name="event_id", type=EnumWireFieldType.UUID)
+                ],
+                renamed_fields=[
+                    ModelWireRenamedField(
+                        producer_name="old_id",
+                        canonical_name="event_id",
+                        shim_status="active",
+                    ),
+                    ModelWireRenamedField(
+                        producer_name="old_id",
+                        canonical_name="event_uuid",
+                        shim_status="active",
+                    ),
                 ],
             )
 
@@ -251,6 +321,29 @@ class TestGovernanceBatchCDbBoundary:
                 review_by="not-a-date",
             )
 
+    def test_model_db_boundary_exception_rejects_unknown_fields(self) -> None:
+        from pydantic import ValidationError
+
+        from omnibase_core.enums.governance.enum_db_boundary import (
+            EnumDbBoundaryReasonCategory,
+        )
+        from omnibase_core.models.governance.model_db_boundary_exception import (
+            ModelDbBoundaryException,
+        )
+
+        with pytest.raises(ValidationError):
+            ModelDbBoundaryException(
+                repo="omnimarket",
+                file="src/handler.py",
+                usage="x",
+                reason_category=EnumDbBoundaryReasonCategory.READ_MODEL,
+                justification="x",
+                owner="jonah",
+                approved_by="jonah",
+                review_by="2026-12",
+                untracked=True,
+            )
+
 
 @pytest.mark.unit
 class TestGovernanceBatchCMigrationSpec:
@@ -303,4 +396,15 @@ class TestGovernanceBatchCMigrationSpec:
                 tests_passed=2,
                 tests_failed=1,
                 passed=True,
+            )
+
+        with pytest.raises(ValidationError):
+            # all checks are successful, so passed=False is inconsistent.
+            ModelMigrationValidationResult(
+                handler_path="src/handler.py",
+                contract_dispatch_loads=True,
+                test_inputs_count=3,
+                tests_passed=3,
+                tests_failed=0,
+                passed=False,
             )

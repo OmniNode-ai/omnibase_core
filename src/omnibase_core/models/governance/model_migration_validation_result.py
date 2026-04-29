@@ -47,14 +47,16 @@ class ModelMigrationValidationResult(BaseModel):
                 f"!= test_inputs_count ({self.test_inputs_count})"
             )
             raise ValueError(msg)
-        if self.passed and (
-            not self.contract_dispatch_loads
-            or self.tests_failed != 0
-            or self.tests_passed != self.test_inputs_count
-        ):
+        expected_passed = (
+            self.contract_dispatch_loads
+            and self.tests_failed == 0
+            and self.tests_passed == self.test_inputs_count
+        )
+        if self.passed != expected_passed:
             msg = (
-                "passed=True requires contract_dispatch_loads=True, "
-                "tests_failed=0, and all tests passed"
+                "passed must equal "
+                "contract_dispatch_loads=True, tests_failed=0, "
+                "and tests_passed == test_inputs_count"
             )
             raise ValueError(msg)
         return self

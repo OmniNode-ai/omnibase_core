@@ -41,7 +41,7 @@ class ModelWireSchemaContract(BaseModel):
     contract spec defined in OMN-7357.
     """
 
-    model_config = ConfigDict(frozen=True, extra="ignore")
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     topic: str = Field(..., description="Kafka topic name")
     schema_version: str = Field(
@@ -88,6 +88,19 @@ class ModelWireSchemaContract(BaseModel):
         overlap = set(required_names) & set(optional_names)
         if overlap:
             msg = f"Field names appear in both required and optional: {sorted(overlap)}"
+            raise ValueError(msg)
+
+        active_producer_names = [
+            r.producer_name for r in self.renamed_fields if r.shim_status == "active"
+        ]
+        active_dupes = [
+            n for n in active_producer_names if active_producer_names.count(n) > 1
+        ]
+        if active_dupes:
+            msg = (
+                "Duplicate active renamed_fields producer_name values: "
+                f"{sorted(set(active_dupes))}"
+            )
             raise ValueError(msg)
 
         return self
