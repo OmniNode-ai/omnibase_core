@@ -986,7 +986,7 @@ jobs:
         run: uv sync --all-extras
 
       - name: Restore test durations cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .test_durations
           key: test-durations-${{ github.sha }}
@@ -1051,7 +1051,7 @@ jobs:
           needs.detect-changes.outputs.is_full_suite == 'true' &&
           matrix.split == 1 &&
           success()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .test_durations
           key: test-durations-${{ github.sha }}
@@ -1117,7 +1117,7 @@ jobs:
 
       - name: Upload junit
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: junit-int-${{ matrix.split }}
           path: junit-int-${{ matrix.split }}.xml
@@ -1184,7 +1184,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@4f14550f0d0733e0272e4550bb62221a5bb48192 # main 2026-03-25
+      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@36865708ae7ecec2f8c5942a1db30a8b3420a879 # main 2026-03-25
         with:
           checks: "boundary-parity"
           warn-only: "true"

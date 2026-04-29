@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout omniclaude scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: OmniNode-ai/omniclaude
           ref: main
