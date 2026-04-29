@@ -58,8 +58,8 @@ class TestSilentExceptPassGate:
         )
         gate = SilentExceptPassGate()
         violations = gate.run([violation_fixture])
-        assert len(violations) >= 4, (
-            f"expected >=4 violations, got {len(violations)}: {violations}"
+        assert len(violations) == 4, (
+            f"expected 4 violations, got {len(violations)}: {violations}"
         )
 
     def test_clean_fixture_has_no_violations(self) -> None:
