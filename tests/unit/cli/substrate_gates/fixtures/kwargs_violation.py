@@ -9,24 +9,30 @@ from typing import Any, Protocol
 
 
 class ViolationKwargsObject(Protocol):
-    def execute(self, **kwargs: object) -> None: ...
+    def execute(self, **kwargs: object) -> None:
+        raise NotImplementedError
 
 
 class ViolationKwargsAny(Protocol):
-    def run(self, **kwargs: Any) -> None: ...
+    def run(self, **kwargs: Any) -> None:
+        raise NotImplementedError
 
 
 class ViolationArgsObject(Protocol):
-    def call(self, *args: object) -> None: ...
+    def call(self, *args: object) -> None:
+        raise NotImplementedError
 
 
 class ViolationArgsAny(Protocol):
-    def invoke(self, *args: Any) -> None: ...
+    def invoke(self, *args: Any) -> None:
+        raise NotImplementedError
 
 
 class ViolationBothAny(Protocol):
-    def dispatch(self, *args: Any, **kwargs: Any) -> None: ...
+    def dispatch(self, *args: Any, **kwargs: Any) -> None:
+        raise NotImplementedError
 
 
 class ViolationBothObject(Protocol):
-    def process(self, *args: object, **kwargs: object) -> None: ...
+    def process(self, *args: object, **kwargs: object) -> None:
+        raise NotImplementedError

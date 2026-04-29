@@ -14,6 +14,8 @@ from omnibase_core.cli.substrate_gates.protocol_kwargs_object import (
     main,
 )
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture
 def gate() -> ProtocolKwargsObjectGate:

@@ -9,24 +9,30 @@ from typing import Any, Protocol
 
 
 class CleanExplicitParams(Protocol):
-    def execute(self, name: str, value: int) -> None: ...
+    def execute(self, name: str, value: int) -> None:
+        raise NotImplementedError
 
 
 class CleanNoVarargs(Protocol):
-    def run(self, x: int, y: str) -> None: ...
+    def run(self, x: int, y: str) -> None:
+        raise NotImplementedError
 
 
 class CleanAllowAnnotated(Protocol):
-    def call(self, **kwargs: object) -> None: ...  # substrate-allow: vestigial-protocol
+    def call(self, **kwargs: object) -> None:  # substrate-allow: vestigial-protocol
+        raise NotImplementedError
 
 
 class CleanNonProtocol:
-    def execute(self, **kwargs: object) -> None: ...
+    def execute(self, **kwargs: object) -> None:
+        raise NotImplementedError
 
 
 class CleanNonProtocolAny:
-    def run(self, *args: Any, **kwargs: Any) -> None: ...
+    def run(self, *args: Any, **kwargs: Any) -> None:
+        raise NotImplementedError
 
 
 class CleanTypedKwargs(Protocol):
-    def dispatch(self, **kwargs: str) -> None: ...
+    def dispatch(self, **kwargs: str) -> None:
+        raise NotImplementedError
