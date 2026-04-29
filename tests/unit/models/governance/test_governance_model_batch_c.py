@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Red tests for governance model Batch C — wire schema, contract dependency, DB boundary (OMN-10247)."""
+"""Unit tests for governance model Batch C wire schema and boundary models."""
 
 from __future__ import annotations
 
