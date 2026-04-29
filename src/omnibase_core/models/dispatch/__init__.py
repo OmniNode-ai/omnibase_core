@@ -97,6 +97,15 @@ from omnibase_core.errors.error_lifecycle_emitter import LifecycleEmitterError
 from omnibase_core.errors.error_lifecycle_transition import (
     LifecycleTransitionError,
 )
+from omnibase_core.models.dispatch.model_dispatch_bus_command import (
+    ModelDispatchBusCommand,
+)
+from omnibase_core.models.dispatch.model_dispatch_bus_route import (
+    ModelDispatchBusRoute,
+)
+from omnibase_core.models.dispatch.model_dispatch_bus_terminal_result import (
+    ModelDispatchBusTerminalResult,
+)
 from omnibase_core.models.dispatch.model_dispatch_claim import (
     ModelDispatchClaim,
     compute_blocker_id,
@@ -136,6 +145,9 @@ __all__ = [
     # Models
     "ModelLifecycleChain",
     "ModelDispatchClaim",
+    "ModelDispatchBusCommand",
+    "ModelDispatchBusRoute",
+    "ModelDispatchBusTerminalResult",
     "ModelDispatchLifecycleEvent",
     "ModelDispatchResult",
     "ModelDispatchRoute",

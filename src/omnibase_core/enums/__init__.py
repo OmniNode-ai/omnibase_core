@@ -523,6 +523,22 @@ from .enum_workflow_coordination import EnumFailureRecoveryStrategy
 from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 from .enum_workflow_status import EnumWorkflowStatus
 
+# Overseer domain (Wave 2 migration from OCC - OMN-10244)
+from .overseer.enum_artifact_store_action import EnumArtifactStoreAction
+from .overseer.enum_capability_tier import EnumCapabilityTier
+from .overseer.enum_code_repository_action import EnumCodeRepositoryAction
+from .overseer.enum_context_bundle_level import EnumContextBundleLevel
+from .overseer.enum_event_bus_action import EnumEventBusAction
+from .overseer.enum_failure_class import EnumFailureClass
+from .overseer.enum_llm_provider_action import EnumLLMProviderAction
+from .overseer.enum_notification_action import EnumNotificationAction
+from .overseer.enum_process_runner_state import EnumProcessRunnerState
+from .overseer.enum_provider import EnumProvider
+from .overseer.enum_retry_type import EnumRetryType
+from .overseer.enum_risk_level import EnumRiskLevel
+from .overseer.enum_ticket_service_action import EnumTicketServiceAction
+from .overseer.enum_verifier_verdict import EnumVerifierVerdict
+
 # NOTE: ModelEnumStatusMigrator is defined in models.core.model_status_migrator
 # It was moved from enums to eliminate circular imports
 # Users should import it directly: from omnibase_core.models.core.model_status_migrator import ModelEnumStatusMigrator
@@ -889,4 +905,19 @@ __all__ = [
     # - "EnumToolHealthStatus" (module doesn't exist)
     # - "EnumToolMissingReason" (module doesn't exist)
     # - "EnumTreeSyncStatus" (module doesn't exist)
+    # Overseer domain (Wave 2 migration from OCC - OMN-10244)
+    "EnumArtifactStoreAction",
+    "EnumCapabilityTier",
+    "EnumCodeRepositoryAction",
+    "EnumContextBundleLevel",
+    "EnumEventBusAction",
+    "EnumFailureClass",
+    "EnumLLMProviderAction",
+    "EnumNotificationAction",
+    "EnumProcessRunnerState",
+    "EnumProvider",
+    "EnumRetryType",
+    "EnumRiskLevel",
+    "EnumTicketServiceAction",
+    "EnumVerifierVerdict",
 ]
