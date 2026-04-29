@@ -3,6 +3,10 @@
 
 """Governance models for the ONEX platform."""
 
+from omnibase_core.models.governance.model_canary_tier import ModelCanaryTier
+from omnibase_core.models.governance.model_canary_tier_assignments import (
+    ModelCanaryTierAssignments,
+)
 from omnibase_core.models.governance.model_contract_dependency_input import (
     ModelContractDependencyInput,
 )
@@ -70,6 +74,8 @@ from omnibase_core.models.governance.model_wire_schema_contract import (
 )
 
 __all__ = [
+    "ModelCanaryTier",
+    "ModelCanaryTierAssignments",
     "ModelContractDependencyInput",
     "ModelContractDependencyOutput",
     "ModelContractDriftInput",
