@@ -56,9 +56,7 @@ def test_auto_config_registers_local_defaults_with_no_entry_points(
         "omnibase_core.container.container_auto_config.importlib.metadata.entry_points",
         return_value=SimpleNamespace(select=lambda group: []),
     ):
-        asyncio.get_event_loop().run_until_complete(
-            auto_configure_registry(container, state_root=str(tmp_path))
-        )
+        asyncio.run(auto_configure_registry(container, state_root=str(tmp_path)))
 
 
 @pytest.mark.unit
@@ -91,9 +89,7 @@ def test_auto_config_discovers_authoritative_entry_point(
         ),
         caplog.at_level(logging.INFO),
     ):
-        asyncio.get_event_loop().run_until_complete(
-            auto_configure_registry(container, state_root=str(tmp_path))
-        )
+        asyncio.run(auto_configure_registry(container, state_root=str(tmp_path)))
 
     assert "Override registered: ProtocolEventBus" in caplog.text
     assert "kafka" in caplog.text
@@ -141,9 +137,7 @@ def test_auto_config_rejects_ambiguous_authoritative(tmp_path: object) -> None:
         ),
         pytest.raises(ModelOnexError, match="Multiple authoritative backends"),
     ):
-        asyncio.get_event_loop().run_until_complete(
-            auto_configure_registry(container, state_root=str(tmp_path))
-        )
+        asyncio.run(auto_configure_registry(container, state_root=str(tmp_path)))
 
 
 @pytest.mark.unit
@@ -171,9 +165,7 @@ def test_auto_config_skips_non_authoritative_entry_point(tmp_path: object) -> No
         "omnibase_core.container.container_auto_config.importlib.metadata.entry_points",
         return_value=SimpleNamespace(select=lambda group: [fake_ep]),
     ):
-        asyncio.get_event_loop().run_until_complete(
-            auto_configure_registry(container, state_root=str(tmp_path))
-        )
+        asyncio.run(auto_configure_registry(container, state_root=str(tmp_path)))
 
     # No error, no override — REACHABLE is not enough
 
