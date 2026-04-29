@@ -3,7 +3,7 @@
 
 """ModelRepoDocSummary — summary of doc freshness results for a single repository."""
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ModelRepoDocSummary(BaseModel):
@@ -19,3 +19,11 @@ class ModelRepoDocSummary(BaseModel):
     broken_references: int = Field(
         ..., description="Total broken references across docs", ge=0
     )
+
+    @model_validator(mode="after")
+    def validate_doc_counts(self) -> "ModelRepoDocSummary":
+        counted_docs = self.fresh + self.stale + self.broken
+        if counted_docs > self.total_docs:
+            msg = "fresh, stale, and broken counts cannot exceed total_docs"
+            raise ValueError(msg)
+        return self

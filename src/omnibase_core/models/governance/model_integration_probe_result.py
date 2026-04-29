@@ -7,7 +7,7 @@ import re
 from datetime import date
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.governance.enum_integration_surface import (
     EnumIntegrationSurface,
@@ -56,3 +56,13 @@ class ModelIntegrationProbeResult(BaseModel):
             msg = f"Invalid calendar date: {v}. {e!s}"
             raise ValueError(msg) from e
         return v
+
+    @model_validator(mode="after")
+    def validate_reason_consistency(self) -> "ModelIntegrationProbeResult":
+        if self.status == EnumInvariantStatus.UNKNOWN and self.reason is None:
+            msg = "reason is required when status is UNKNOWN"
+            raise ValueError(msg)
+        if self.status != EnumInvariantStatus.UNKNOWN and self.reason is not None:
+            msg = "reason is only allowed when status is UNKNOWN"
+            raise ValueError(msg)
+        return self

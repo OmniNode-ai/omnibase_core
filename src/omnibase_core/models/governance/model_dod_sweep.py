@@ -82,6 +82,24 @@ class ModelDodSweepResult(BaseModel):
         return v
 
     @model_validator(mode="after")
+    def validate_mode_inputs(self) -> "ModelDodSweepResult":
+        if self.mode == "batch":
+            if self.lookback_days is None:
+                msg = "lookback_days is required for batch mode"
+                raise ValueError(msg)
+            if self.target_id is not None:
+                msg = "target_id is only allowed for targeted mode"
+                raise ValueError(msg)
+        if self.mode == "targeted":
+            if self.target_id is None:
+                msg = "target_id is required for targeted mode"
+                raise ValueError(msg)
+            if self.lookback_days is not None:
+                msg = "lookback_days is only allowed for batch mode"
+                raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
     def derive_aggregates(self) -> "ModelDodSweepResult":
         tickets = self.tickets
         passed = sum(

@@ -48,6 +48,13 @@ class ModelDodSweepTicketResult(BaseModel):
 
     @model_validator(mode="after")
     def derive_overall_status(self) -> "ModelDodSweepTicketResult":
+        if self.exempted and self.exemption_reason is None:
+            msg = "exemption_reason is required when exempted is true"
+            raise ValueError(msg)
+        if not self.exempted and self.exemption_reason is not None:
+            msg = "exemption_reason is only allowed when exempted is true"
+            raise ValueError(msg)
+
         if self.exempted:
             object.__setattr__(self, "overall_status", EnumInvariantStatus.UNKNOWN)
             return self

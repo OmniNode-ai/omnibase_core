@@ -5,7 +5,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.governance.model_doc_freshness_result import (
     ModelDocFreshnessResult,
@@ -47,3 +47,18 @@ class ModelDocFreshnessSweepReport(BaseModel):
         description="Top 10 docs by staleness score",
         max_length=10,
     )
+
+    @model_validator(mode="after")
+    def validate_aggregate_counts(self) -> "ModelDocFreshnessSweepReport":
+        verdict_total = (
+            self.fresh_count + self.stale_count + self.broken_count + self.unknown_count
+        )
+        if verdict_total != self.total_docs:
+            msg = "fresh, stale, broken, and unknown counts must equal total_docs"
+            raise ValueError(msg)
+
+        reference_total = self.broken_reference_count + self.stale_reference_count
+        if reference_total > self.total_references:
+            msg = "broken and stale reference counts cannot exceed total_references"
+            raise ValueError(msg)
+        return self

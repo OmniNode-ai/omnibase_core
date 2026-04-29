@@ -25,7 +25,7 @@ class ModelDogfoodRegression(BaseModel):
         description="Dotted path to the regressed field",
         max_length=_MAX_STRING_LENGTH,
     )
-    severity: EnumRegressionSeverity = Field(..., description="CRITICAL or WARN")
+    severity: EnumRegressionSeverity = Field(..., description="CRITICAL, WARN, or NONE")
     previous_value: str = Field(
         ...,
         description="String representation of the previous value",
