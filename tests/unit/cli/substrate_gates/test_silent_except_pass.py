@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 
@@ -16,9 +17,47 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 @pytest.mark.unit
 class TestSilentExceptPassGate:
-    def test_violation_fixture_has_violations(self) -> None:
+    def test_violation_fixture_has_violations(self, tmp_path: Path) -> None:
+        violation_fixture = tmp_path / "except_violation.py"
+        violation_fixture.write_text(
+            dedent(
+                """
+                def may_raise() -> None:
+                    raise ValueError("fixture")
+
+
+                def bare_except() -> None:
+                    try:
+                        may_raise()
+                    except:
+                        pass
+
+
+                def except_exception() -> None:
+                    try:
+                        may_raise()
+                    except Exception:
+                        pass
+
+
+                def except_base_exception() -> None:
+                    try:
+                        may_raise()
+                    except BaseException:
+                        pass
+
+
+                def except_tuple() -> None:
+                    try:
+                        may_raise()
+                    except (Exception, ValueError):
+                        pass
+                """
+            ),
+            encoding="utf-8",
+        )
         gate = SilentExceptPassGate()
-        violations = gate.run([FIXTURES_DIR / "except_violation.fixture"])
+        violations = gate.run([violation_fixture])
         assert len(violations) >= 4, (
             f"expected >=4 violations, got {len(violations)}: {violations}"
         )
