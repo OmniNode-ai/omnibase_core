@@ -65,7 +65,9 @@ adjacency:
   context: {reverse_deps: [nodes, runtime]}
   crypto: {reverse_deps: []}
   decorators: {reverse_deps: []}
+  dispatch: {reverse_deps: []}
   discovery: {reverse_deps: [nodes, runtime]}
+  dispatch: {reverse_deps: []}
   doctor: {reverse_deps: []}
   factories: {reverse_deps: [nodes, container]}
   infrastructure: {reverse_deps: []}
