@@ -1,0 +1,46 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-9572
+summary: "Add FSM transition failure discriminator and preserve typed failure handling"
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: tests
+    description: "Focused FSM executor and reducer metadata regression tests pass"
+    command: "PYTHONPATH=src uv run pytest tests/unit/models/fsm/test_model_fsm_transition_result.py tests/unit/utils/test_fsm_executor.py
+      tests/unit/models/reducer/test_model_reducer_fsm_metadata.py tests/unit/nodes/test_node_reducer_fsm_metadata_consistency.py
+      -q"
+  - kind: manual
+    description: "Strict mypy passes for util_fsm_executor typed exception handling"
+    command: "uv run mypy src/omnibase_core/utils/util_fsm_executor.py --strict"
+  - kind: ci
+    description: "omnibase_core PR #980 checks pass, including receipt and deploy gates"
+    command: "gh pr checks 980 --repo OmniNode-ai/omnibase_core --watch"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-001
+    description: "Focused FSM executor and reducer metadata tests passed locally"
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "PYTHONPATH=src uv run pytest tests/unit/models/fsm/test_model_fsm_transition_result.py
+          tests/unit/utils/test_fsm_executor.py tests/unit/models/reducer/test_model_reducer_fsm_metadata.py
+          tests/unit/nodes/test_node_reducer_fsm_metadata_consistency.py -q"
+  - id: dod-002
+    description: "Strict mypy passed for util_fsm_executor typed exception handling"
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "uv run mypy src/omnibase_core/utils/util_fsm_executor.py --strict"
+  - id: dod-deploy
+    description: "Post-merge deploy validation required for node_reducer runtime path: import NodeReducer
+      inside the runtime container"
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "deploy: docker exec omninode-runtime python -c \"from omnibase_core.nodes.node_reducer
+          import NodeReducer; print('OMN-9572 node_reducer deploy validation import OK')\""
