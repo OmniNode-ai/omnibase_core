@@ -29,6 +29,15 @@ from omnibase_core.models.runtime.model_runtime_node_instance import (
     ModelRuntimeNodeInstance,
     NodeInstance,
 )
+from omnibase_core.models.runtime.model_runtime_skill_error import (
+    ModelRuntimeSkillError,
+)
+from omnibase_core.models.runtime.model_runtime_skill_request import (
+    ModelRuntimeSkillRequest,
+)
+from omnibase_core.models.runtime.model_runtime_skill_response import (
+    ModelRuntimeSkillResponse,
+)
 from omnibase_core.models.runtime.payloads import (
     ModelCancelExecutionPayload,
     ModelDelayUntilPayload,
@@ -49,6 +58,9 @@ __all__ = [
     "ModelRuntimeDirective",
     "ModelRuntimeNodeInstance",
     "NodeInstance",
+    "ModelRuntimeSkillError",
+    "ModelRuntimeSkillRequest",
+    "ModelRuntimeSkillResponse",
     # Aliveness probe contract (Wave 3)
     "ModelRuntimeAlivenessProbeCommand",
     "ModelRuntimeAlivenessProbeReceipt",
