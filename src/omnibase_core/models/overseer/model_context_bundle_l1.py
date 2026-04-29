@@ -27,8 +27,7 @@ class ModelContextBundleL1(ModelContextBundleL0, frozen=True, extra="forbid"):
     Adds ticket metadata and summary on top of L0.
     """
 
-    # NOTE(OMN-10251): mypy cannot narrow Enum member default to Literal[EnumMember] — structural subtyping false positive.
-    level: Literal[EnumContextBundleLevel.L1] = Field(  # type: ignore[assignment]
+    level: Literal[EnumContextBundleLevel.L1] = Field(  # type: ignore[assignment]  # NOTE(OMN-10251): pydantic Field default narrowing to Literal[EnumMember] is a mypy false positive.
         default=EnumContextBundleLevel.L1,
         description="Context bundle level.",
     )
