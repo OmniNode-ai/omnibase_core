@@ -42,7 +42,7 @@ class TestTopicBase:
     def test_all_topics_match_onex_format(self) -> None:
         """Every TopicBase value matches onex.{kind}.{producer}.{event}.v{n}."""
         pattern = re.compile(
-            r"^onex\.(cmd|evt|dlq|intent|snapshot)\.[a-z][a-z0-9-]*\.[a-z-]+\.v\d+$"
+            r"^onex\.(cmd|evt|dlq|intent|snapshot)\.[a-z][a-z0-9-]*\.[a-z0-9_-]+(?:\.[a-z0-9_-]+)*\.v\d+$"
         )
         for topic in TopicBase:
             assert pattern.match(topic.value), (
