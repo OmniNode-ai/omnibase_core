@@ -1,0 +1,34 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-10213
+title: "Gate 2 loose typing in internal models"
+summary: "Gate 2: ban loose typing in internal Pydantic models and Protocol signatures"
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: tests
+    description: "Substrate loose-typing gate unit tests pass"
+    command: "uv run pytest tests/unit/cli/substrate_gates/test_loose_typing_in_internal.py -q"
+  - kind: ci
+    description: "omnibase_core PR 968 checks pass"
+    command: "gh pr checks 968 --repo OmniNode-ai/omnibase_core"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-001
+    description: "Loose typing gate is present in PR 968"
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "gh pr diff 968 --repo OmniNode-ai/omnibase_core | grep -q 'loose_typing_in_internal'"
+  - id: dod-002
+    description: "Deploy-gate evidence: substrate gate is a static pre-commit CLI check, not a runtime
+      service"
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "echo 'deploy-gate: OMN-10213 changes only substrate_gates static analysis code;
+          no Docker image, runtime process, broker topic, or service deploy is required'"

@@ -3,6 +3,10 @@
 
 """Governance models for the ONEX platform."""
 
+from omnibase_core.models.governance.model_canary_tier import ModelCanaryTier
+from omnibase_core.models.governance.model_canary_tier_assignments import (
+    ModelCanaryTierAssignments,
+)
 from omnibase_core.models.governance.model_day_close import ModelDayClose
 from omnibase_core.models.governance.model_day_close_actual_repo import (
     ModelDayCloseActualRepo,
@@ -73,6 +77,8 @@ from omnibase_core.models.governance.model_readiness_dimension import (
 from omnibase_core.models.governance.model_repo_doc_summary import ModelRepoDocSummary
 
 __all__ = [
+    "ModelCanaryTier",
+    "ModelCanaryTierAssignments",
     "ModelDayClose",
     "ModelDayCloseActualRepo",
     "ModelDayCloseDriftDetected",
