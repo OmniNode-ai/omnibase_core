@@ -21,6 +21,7 @@ class ModelContextBundleL4(ModelContextBundleL3, frozen=True, extra="forbid"):
     Adds full dependency graph and raw context payload on top of L3.
     """
 
+    # NOTE(OMN-10251): mypy cannot narrow Enum member default to Literal[EnumMember] — structural subtyping false positive.
     level: Literal[EnumContextBundleLevel.L4] = Field(  # type: ignore[assignment]
         default=EnumContextBundleLevel.L4,
         description="Context bundle level.",

@@ -21,6 +21,7 @@ class ModelContextBundleL2(ModelContextBundleL1, frozen=True, extra="forbid"):
     Adds entrypoint and file-scope information on top of L1.
     """
 
+    # NOTE(OMN-10251): mypy cannot narrow Enum member default to Literal[EnumMember] — structural subtyping false positive.
     level: Literal[EnumContextBundleLevel.L2] = Field(  # type: ignore[assignment]
         default=EnumContextBundleLevel.L2,
         description="Context bundle level.",

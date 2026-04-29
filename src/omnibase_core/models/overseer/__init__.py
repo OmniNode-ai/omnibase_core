@@ -3,7 +3,7 @@
 
 """Overseer models namespace (OMN-10251).
 
-13 model files migrated from OCC into omnibase_core.models.overseer.
+20 model files migrated from OCC into omnibase_core.models.overseer.
 ModelEvidenceRequirement collision resolved: OCC overseer version is
 ModelWorkerEvidenceRequirement; core's ModelEvidenceRequirement is unchanged.
 """
