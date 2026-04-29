@@ -53,7 +53,7 @@ class ModelDogfoodScorecard(BaseModel):
 
     # boundary-ok: wire type serialized to YAML/JSON at scorecard boundary
     schema_version: str = Field(
-        default="1.0.0", description="Scorecard schema version (SemVer)", max_length=50
+        default="1.0.0", description="Scorecard schema version (SemVer)"
     )
     captured_at: str = Field(
         ...,

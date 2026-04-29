@@ -5,11 +5,18 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 from pydantic import BaseModel, ValidationError
 
+if TYPE_CHECKING:
+    from omnibase_core.models.governance.model_dod_sweep_check_result import (
+        ModelDodSweepCheckResult,
+    )
 
-def _complete_dod_checks() -> list[object]:
+
+def _complete_dod_checks() -> list[ModelDodSweepCheckResult]:
     from omnibase_core.enums.governance.enum_dod_sweep_check import EnumDodSweepCheck
     from omnibase_core.enums.governance.enum_invariant_status import (
         EnumInvariantStatus,
@@ -417,18 +424,22 @@ def test_dogfood_scorecard_accepts_full_semver_and_immutable_collections() -> No
         ModelReadinessDimension,
     )
 
+    long_semver = "1.0.0-alpha." + ("segment." * 8) + "segment+build.7"
+
     scorecard = ModelDogfoodScorecard(
-        schema_version="1.0.0-alpha.1+build.7",
+        schema_version=long_semver,
         captured_at="2026-04-29T12:34:56.123456+00:00",
         run_id="run-1",
-        readiness_dimensions=[
+        readiness_dimensions=(
             ModelReadinessDimension(
                 name="queue", status=EnumDogfoodStatus.PASS, evidence="ok"
-            )
-        ],
+            ),
+        ),
         overall_status=EnumDogfoodStatus.PASS,
     )
 
+    assert len(long_semver) > 50
+    assert scorecard.schema_version == long_semver
     assert isinstance(scorecard.readiness_dimensions, tuple)
     assert not hasattr(scorecard.readiness_dimensions, "append")
 
