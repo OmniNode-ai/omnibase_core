@@ -51,7 +51,7 @@ class ModelDogfoodScorecard(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    # string-version-ok: wire type serialized to YAML/JSON at scorecard boundary
+    # boundary-ok: wire type serialized to YAML/JSON at scorecard boundary
     schema_version: str = Field(
         default="1.0.0", description="Scorecard schema version (SemVer)", max_length=50
     )
@@ -86,6 +86,7 @@ class ModelDogfoodScorecard(BaseModel):
     @field_validator("schema_version")
     @classmethod
     def validate_schema_version(cls, value: str) -> str:
+        """Validate full SemVer, including optional prerelease and build metadata."""
         if not _SEMVER_PATTERN.match(value):
             msg = (
                 f"Invalid schema_version: {value}. Expected full SemVer "
@@ -97,6 +98,7 @@ class ModelDogfoodScorecard(BaseModel):
     @field_validator("captured_at")
     @classmethod
     def validate_captured_at(cls, value: str) -> str:
+        """Validate ISO 8601 timestamps while accepting a trailing Z timezone marker."""
         normalized = value.replace("Z", "+00:00")
         try:
             datetime.fromisoformat(normalized)
