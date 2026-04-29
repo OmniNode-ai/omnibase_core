@@ -5,12 +5,16 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from omnibase_core.models.ticket.model_evidence_requirement import (
     ModelEvidenceRequirement,
 )
+
+pytestmark = pytest.mark.unit
 
 
 @pytest.mark.unit
@@ -201,7 +205,7 @@ class TestOverseerModelImports:
             ModelWorkerEvidenceRequirement,
         )
 
-        assert ModelWorkerEvidenceRequirement is not ModelEvidenceRequirement
+        assert id(ModelWorkerEvidenceRequirement) != id(ModelEvidenceRequirement)
         overseer_fields = set(ModelWorkerEvidenceRequirement.model_fields.keys())
         core_fields = set(ModelEvidenceRequirement.model_fields.keys())
         assert overseer_fields != core_fields
@@ -232,19 +236,148 @@ class TestOverseerModelImports:
 
         contract = ModelWorkerContract(worker_name="test-worker")
         assert contract.worker_name == "test-worker"
-        assert ModelWorkerEvidenceRequirement is not ModelEvidenceRequirement
+        assert id(ModelWorkerEvidenceRequirement) != id(ModelEvidenceRequirement)
 
     def test_enum_task_status_values(self) -> None:
         from omnibase_core.enums.overseer.enum_task_status import EnumTaskStatus
 
-        assert EnumTaskStatus.PENDING == "pending"
-        assert EnumTaskStatus.COMPLETED == "completed"
-        assert EnumTaskStatus.FAILED == "failed"
+        assert EnumTaskStatus.PENDING.value == "pending"
+        assert EnumTaskStatus.COMPLETED.value == "completed"
+        assert EnumTaskStatus.FAILED.value == "failed"
 
     def test_enum_completion_outcome_values(self) -> None:
         from omnibase_core.enums.overseer.enum_completion_outcome import (
             EnumCompletionOutcome,
         )
 
-        assert EnumCompletionOutcome.SUCCESS == "success"
-        assert EnumCompletionOutcome.FAILURE == "failure"
+        assert EnumCompletionOutcome.SUCCESS.value == "success"
+        assert EnumCompletionOutcome.FAILURE.value == "failure"
+
+    def test_context_bundle_l2_freezes_sequence_fields(self) -> None:
+        from omnibase_core.models.overseer.model_context_bundle_l2 import (
+            ModelContextBundleL2,
+        )
+
+        bundle = ModelContextBundleL2(
+            run_id="run-1",
+            task_id="task-1",
+            role="worker",
+            fsm_state="running",
+            ticket_id="OMN-10251",
+            summary="summary",
+            entrypoints=("src/a.py",),
+            file_scope=("src/a.py", "tests/a.py"),
+        )
+
+        assert bundle.entrypoints == ("src/a.py",)
+        assert bundle.file_scope == ("src/a.py", "tests/a.py")
+
+    def test_overnight_contract_requires_at_least_one_phase(self) -> None:
+        from datetime import UTC, datetime
+
+        from omnibase_core.models.overseer.model_overnight_contract import (
+            ModelOvernightContract,
+        )
+
+        with pytest.raises(ValidationError):
+            ModelOvernightContract(
+                session_id="session-1",
+                created_at=datetime.now(UTC),
+                phases=(),
+            )
+
+    def test_overnight_phase_required_outcomes_are_enums(self) -> None:
+        from omnibase_core.enums.overseer.enum_completion_outcome import (
+            EnumCompletionOutcome,
+        )
+        from omnibase_core.models.overseer.model_overnight_phase_spec import (
+            ModelOvernightPhaseSpec,
+        )
+
+        phase = ModelOvernightPhaseSpec.model_validate(
+            {
+                "phase_name": "merge",
+                "required_outcomes": ["success"],
+            }
+        )
+
+        assert phase.required_outcomes == (EnumCompletionOutcome.SUCCESS,)
+
+    def test_session_contract_default_cost_halt_uses_max_cost(self) -> None:
+        from datetime import UTC, datetime
+
+        from omnibase_core.models.overseer.model_session_contract import (
+            ModelSessionContract,
+        )
+        from omnibase_core.models.overseer.model_session_phase_spec import (
+            ModelSessionPhaseSpec,
+        )
+
+        contract = ModelSessionContract(
+            session_id="session-1",
+            created_at=datetime.now(UTC),
+            max_cost_usd=12.5,
+            phases=(ModelSessionPhaseSpec(phase_name="merge"),),
+        )
+
+        cost_condition = contract.halt_conditions[0]
+        assert cost_condition.condition_id == "cost_ceiling"
+        assert cost_condition.threshold == 12.5
+
+    def test_session_phase_rejects_non_positive_timeout(self) -> None:
+        from omnibase_core.models.overseer.model_session_phase_spec import (
+            ModelSessionPhaseSpec,
+        )
+
+        with pytest.raises(ValidationError):
+            ModelSessionPhaseSpec(phase_name="merge", timeout_seconds=0)
+
+    def test_task_payloads_are_immutable_and_validate_as_value_errors(self) -> None:
+        from omnibase_core.enums.overseer.enum_task_status import EnumTaskStatus
+        from omnibase_core.models.overseer.model_task_delta_envelope import (
+            ModelTaskDeltaEnvelope,
+        )
+        from omnibase_core.models.overseer.model_task_state_envelope import (
+            ModelTaskStateEnvelope,
+        )
+
+        delta = ModelTaskDeltaEnvelope(task_id="task-1", payload={"a": 1})
+        state = ModelTaskStateEnvelope(
+            task_id="task-1",
+            status=EnumTaskStatus.PENDING,
+            domain="test",
+            node_id="node-1",
+            payload={"a": 1},
+        )
+
+        def mutate_payload(payload: Any) -> None:
+            payload["b"] = 2
+
+        with pytest.raises(TypeError):
+            mutate_payload(delta.payload)
+        with pytest.raises(TypeError):
+            mutate_payload(state.payload)
+        bad_payload: Any = object()
+        with pytest.raises(ValidationError):
+            ModelTaskDeltaEnvelope(task_id="task-1", payload=bad_payload)
+        with pytest.raises(ValidationError):
+            ModelTaskStateEnvelope(
+                task_id="task-1",
+                status=EnumTaskStatus.PENDING,
+                domain="test",
+                node_id="node-1",
+                payload=bad_payload,
+            )
+
+    def test_worker_contract_boundary_validation_uses_value_errors(self) -> None:
+        from omnibase_core.models.overseer.model_worker_contract import (
+            ModelWorkerContract,
+            load_worker_contract,
+        )
+
+        with pytest.raises(ValueError, match="worker contract data must be a mapping"):
+            load_worker_contract("not-a-mapping")
+        with pytest.raises(ValidationError):
+            ModelWorkerContract.model_validate(
+                {"worker_name": "worker", "required_evidence": "bad"}
+            )

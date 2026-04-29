@@ -25,11 +25,11 @@ class ModelContextBundleL2(ModelContextBundleL1, frozen=True, extra="forbid"):
         default=EnumContextBundleLevel.L2,
         description="Context bundle level.",
     )
-    entrypoints: list[str] = Field(
+    entrypoints: tuple[str, ...] = Field(
         ..., description="Suggested code entrypoints for the task."
     )
-    file_scope: list[str] = Field(
-        default_factory=list,
+    file_scope: tuple[str, ...] = Field(
+        default_factory=tuple,
         description="Files in scope for the task.",
     )
 

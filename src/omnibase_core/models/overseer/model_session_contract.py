@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -47,7 +48,7 @@ class ModelSessionContract(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _apply_default_halt_conditions(self) -> ModelSessionContract:
+    def _apply_default_halt_conditions(self) -> Self:
         if self.halt_conditions:
             return self
         object.__setattr__(

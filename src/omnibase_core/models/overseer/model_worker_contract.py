@@ -17,8 +17,6 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.functional_validators import AfterValidator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.overseer.model_worker_evidence_requirement import (
     ModelWorkerEvidenceRequirement,
 )
@@ -26,9 +24,8 @@ from omnibase_core.models.overseer.model_worker_evidence_requirement import (
 
 def _validate_semver(v: str) -> str:
     if not _re.fullmatch(r"\d+\.\d+\.\d+", v):
-        raise ModelOnexError(
-            message=f"schema_version must match x.y.z, got {v!r}",
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        raise ValueError(  # error-ok: Pydantic AfterValidator must raise ValueError.
+            f"schema_version must match x.y.z, got {v!r}"
         )
     return v
 
@@ -75,16 +72,12 @@ class ModelWorkerContract(BaseModel):
         if value is None:
             return MappingProxyType({})
         if not isinstance(value, Mapping):
-            raise ModelOnexError(
-                message="required_evidence must be a mapping",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            )
+            raise ValueError("required_evidence must be a mapping")
         coerced: dict[str, tuple[ModelWorkerEvidenceRequirement, ...]] = {}
         for k, v in value.items():
             if not isinstance(v, (list, tuple)):
-                raise ModelOnexError(
-                    message=f"required_evidence[{k!r}] must be a list, got {type(v).__name__}",
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                raise ValueError(
+                    f"required_evidence[{k!r}] must be a list, got {type(v).__name__}"
                 )
             items: list[ModelWorkerEvidenceRequirement] = []
             for item in v:
@@ -93,12 +86,9 @@ class ModelWorkerContract(BaseModel):
                 elif isinstance(item, dict):
                     items.append(ModelWorkerEvidenceRequirement.model_validate(item))
                 else:
-                    raise ModelOnexError(
-                        message=(
-                            f"required_evidence[{k!r}] items must be dicts or "
-                            f"ModelWorkerEvidenceRequirement, got {type(item).__name__}"
-                        ),
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    raise ValueError(
+                        f"required_evidence[{k!r}] items must be dicts or "
+                        f"ModelWorkerEvidenceRequirement, got {type(item).__name__}"
                     )
             coerced[k] = tuple(items)
         return MappingProxyType(coerced)
@@ -146,9 +136,8 @@ class ModelWorkerContract(BaseModel):
 def load_worker_contract(data: Any) -> ModelWorkerContract:
     """Validate a ModelWorkerContract from an already-parsed mapping."""
     if not isinstance(data, Mapping):
-        raise ModelOnexError(
-            message=f"worker contract data must be a mapping, got {type(data).__name__}",
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        raise ValueError(  # error-ok: Pydantic-style boundary validation.
+            f"worker contract data must be a mapping, got {type(data).__name__}"
         )
     return ModelWorkerContract.model_validate(dict(data))
 
