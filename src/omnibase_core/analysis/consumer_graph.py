@@ -23,10 +23,17 @@ def build_consumer_graph(repo_root: Path) -> dict[str, int]:
     if head_sha and cache_path.is_file():
         try:
             cached = json.loads(cache_path.read_text(encoding="utf-8"))
-            if cached.get("sha") == head_sha:
-                return {k: v for k, v in cached.items() if k != "sha"}
+            if isinstance(cached, dict) and cached.get("sha") == head_sha:
+                return {
+                    k: v
+                    for k, v in cached.items()
+                    if k != "sha" and isinstance(k, str) and isinstance(v, int)
+                }
         except (json.JSONDecodeError, OSError):
-            pass
+            # Cache reads are best-effort; invalid or unreadable cache forces recompute.
+            counts = _compute(repo_root)
+            _write_cache(cache_path, head_sha, counts)
+            return counts
 
     counts = _compute(repo_root)
     _write_cache(cache_path, head_sha, counts)
@@ -62,4 +69,5 @@ def _write_cache(cache_path: Path, sha: str | None, counts: dict[str, int]) -> N
         payload: dict[str, object] = {"sha": sha, **counts}
         cache_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     except OSError:
-        pass
+        # Cache writes are best-effort; callers already have the computed graph.
+        return
