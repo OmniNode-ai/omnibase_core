@@ -12,6 +12,8 @@ from omnibase_core.models.analysis.model_semantic_diff_report import (
 )
 from omnibase_core.models.analysis.model_symbol_change import ModelSymbolChange
 
+pytestmark = pytest.mark.unit
+
 
 def test_enum_diff_severity_members() -> None:
     assert {v.value for v in EnumDiffSeverity} == {"critical", "high", "medium", "low"}
@@ -49,7 +51,8 @@ def test_model_symbol_change_frozen() -> None:
         consumers_count=3,
     )
     with pytest.raises(Exception):
-        sc.symbol_name = "other"  # type: ignore[misc]  # NOTE(OMN-10371): intentional frozen-model mutation check
+        # NOTE(OMN-10372): Intentional mutation verifies the frozen model contract.
+        sc.symbol_name = "other"  # type: ignore[misc]
 
 
 def test_model_symbol_change_fields() -> None:
@@ -77,7 +80,8 @@ def test_model_semantic_diff_report_frozen() -> None:
     )
     report = ModelSemanticDiffReport(changes=(sc,), total_consumers_affected=0)
     with pytest.raises(Exception):
-        report.total_consumers_affected = 5  # type: ignore[misc]  # NOTE(OMN-10371): intentional frozen-model mutation check
+        # NOTE(OMN-10372): Intentional mutation verifies the frozen model contract.
+        report.total_consumers_affected = 5  # type: ignore[misc]
 
 
 def test_model_semantic_diff_report_fields() -> None:

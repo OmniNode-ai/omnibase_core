@@ -1,11 +1,15 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
+import pytest
+
 from omnibase_core.analysis.semantic_diff import compute_diff
 from omnibase_core.enums.enum_diff_severity import EnumChangeKind, EnumDiffSeverity
 from omnibase_core.models.analysis.model_semantic_diff_report import (
     ModelSemanticDiffReport,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def _kinds(report: ModelSemanticDiffReport) -> list[str]:
@@ -172,6 +176,11 @@ def test_total_consumers_affected():
     new = ""
     report = compute_diff(old, new, file_path="x.py", consumers_count=3)
     assert report.total_consumers_affected == 3
+
+
+def test_negative_consumers_count_rejected():
+    with pytest.raises(ValueError, match="consumers_count"):
+        compute_diff("", "", file_path="x.py", consumers_count=-1)
 
 
 # --- return type is correct ---

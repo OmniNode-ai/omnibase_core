@@ -7,6 +7,8 @@ import re
 import tree_sitter_python as tspython
 from tree_sitter import Language, Node, Parser
 
+from omnibase_core.types.typed_dict_symbol_metadata import SymbolKind, SymbolTable
+
 _PY_LANGUAGE = Language(tspython.language())
 _PARSER = Parser(_PY_LANGUAGE)
 
@@ -37,20 +39,34 @@ def _extract_signature_and_body(node: Node, source_lines: list[str]) -> tuple[st
     return signature, body_source
 
 
+def _node_text(node: Node) -> str:
+    return node.text.decode() if node.text else ""
+
+
+def _definition_node(node: Node) -> Node:
+    if node.type != "decorated_definition":
+        return node
+
+    for child in node.children:
+        if child.type in {"class_definition", "function_definition"}:
+            return child
+    return node
+
+
 def _process_function(
     node: Node,
     source_lines: list[str],
-    result: dict[str, dict],  # type: ignore[type-arg]
+    result: SymbolTable,
     class_name: str | None = None,
 ) -> None:
     name_nodes = [c for c in node.children if c.type == "identifier"]
     if not name_nodes:
         return
-    func_name = name_nodes[0].text.decode() if name_nodes[0].text else ""
+    func_name = _node_text(name_nodes[0])
     full_name = f"{class_name}.{func_name}" if class_name else func_name
 
     signature, body_source = _extract_signature_and_body(node, source_lines)
-    kind = "method" if class_name else "function"
+    kind: SymbolKind = "method" if class_name else "function"
 
     result[full_name] = {
         "kind": kind,
@@ -64,12 +80,12 @@ def _process_function(
 def _process_class(
     node: Node,
     source_lines: list[str],
-    result: dict[str, dict],  # type: ignore[type-arg]
+    result: SymbolTable,
 ) -> None:
     name_nodes = [c for c in node.children if c.type == "identifier"]
     if not name_nodes:
         return
-    class_name = name_nodes[0].text.decode() if name_nodes[0].text else ""
+    class_name = _node_text(name_nodes[0])
 
     signature, body_source = _extract_signature_and_body(node, source_lines)
 
@@ -86,11 +102,12 @@ def _process_class(
         return
     block = block_nodes[0]
     for child in block.children:
-        if child.type == "function_definition":
-            _process_function(child, source_lines, result, class_name=class_name)
+        definition = _definition_node(child)
+        if definition.type == "function_definition":
+            _process_function(definition, source_lines, result, class_name=class_name)
 
 
-def extract_symbols(content: str) -> dict[str, dict]:  # type: ignore[type-arg]
+def extract_symbols(content: str) -> SymbolTable:
     """Parse Python source and return per-symbol metadata for all top-level functions, classes, and their methods."""
     if not content.strip():
         return {}
@@ -100,11 +117,12 @@ def extract_symbols(content: str) -> dict[str, dict]:  # type: ignore[type-arg]
     root = tree.root_node
     source_lines = content.splitlines(keepends=True)
 
-    result: dict[str, dict] = {}  # type: ignore[type-arg]
+    result: SymbolTable = {}
     for node in root.children:
-        if node.type == "function_definition":
-            _process_function(node, source_lines, result)
-        elif node.type == "class_definition":
-            _process_class(node, source_lines, result)
+        definition = _definition_node(node)
+        if definition.type == "function_definition":
+            _process_function(definition, source_lines, result)
+        elif definition.type == "class_definition":
+            _process_class(definition, source_lines, result)
 
     return result

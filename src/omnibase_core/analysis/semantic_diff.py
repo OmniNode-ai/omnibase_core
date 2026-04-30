@@ -9,6 +9,7 @@ from omnibase_core.models.analysis.model_semantic_diff_report import (
     ModelSemanticDiffReport,
 )
 from omnibase_core.models.analysis.model_symbol_change import ModelSymbolChange
+from omnibase_core.types.typed_dict_symbol_metadata import TypedDictSymbolMetadata
 
 _GUARD_PATTERN = re.compile(
     r"(?i)(guard|check|validate|verify|ensure|assert|require)",
@@ -26,8 +27,8 @@ _KIND_SEVERITY: dict[EnumChangeKind, EnumDiffSeverity] = {
 }
 
 
-def _line_count(sym: dict) -> int:  # type: ignore[type-arg]
-    return int(sym["end_line"]) - int(sym["start_line"]) + 1
+def _line_count(sym: TypedDictSymbolMetadata) -> int:
+    return sym["end_line"] - sym["start_line"] + 1
 
 
 def _is_guard(name: str) -> bool:
@@ -40,9 +41,9 @@ def _strip_name(signature: str, name: str) -> str:
 
 
 def _rename_tolerance(
-    old_sym: dict,  # type: ignore[type-arg]
+    old_sym: TypedDictSymbolMetadata,
     old_name: str,
-    new_sym: dict,  # type: ignore[type-arg]
+    new_sym: TypedDictSymbolMetadata,
     new_name: str,
 ) -> bool:
     """True if name-normalized signatures match AND line counts are within 20%."""
@@ -79,6 +80,16 @@ def compute_diff(
     file_path: str,
     consumers_count: int,
 ) -> ModelSemanticDiffReport:
+    """Return a symbol-level semantic diff report for two Python source snapshots.
+
+    Raises:
+        ValueError: If ``consumers_count`` is negative.
+    """
+    if consumers_count < 0:
+        raise ValueError(  # error-ok: public API intentionally rejects bad input.
+            "consumers_count must be greater than or equal to 0",
+        )
+
     old_symbols = extract_symbols(old_source)
     new_symbols = extract_symbols(new_source)
 

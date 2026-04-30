@@ -40,6 +40,18 @@ def delta(x, y):
     return x + y
 """
 
+DECORATED_SYMBOLS = """\
+@route("/items")
+def list_items():
+    return []
+
+@dataclass
+class Item:
+    @property
+    def name(self):
+        return "item"
+"""
+
 
 @pytest.mark.unit
 def test_simple_function_extracted():
@@ -119,6 +131,17 @@ def test_multi_symbol_all_extracted():
     assert "Beta" in result
     assert "Beta.gamma" in result
     assert "delta" in result
+
+
+@pytest.mark.unit
+def test_decorated_symbols_extracted():
+    result = extract_symbols(DECORATED_SYMBOLS)
+    assert "list_items" in result
+    assert "Item" in result
+    assert "Item.name" in result
+    assert result["list_items"]["kind"] == "function"
+    assert result["Item"]["kind"] == "class"
+    assert result["Item.name"]["kind"] == "method"
 
 
 @pytest.mark.unit
