@@ -20,17 +20,5 @@ class EnumUsageSource(StrValueHelper, str, Enum):
 
     @classmethod
     def _missing_(cls, value: object) -> EnumUsageSource | None:
-        """Accept legacy LLM usage-source tokens during the vocabulary migration."""
-        if not isinstance(value, str):
-            return None
-
-        legacy_api = "A" + "PI"
-        legacy_missing = "MISS" + "ING"
-        legacy_aliases = {
-            legacy_api: cls.MEASURED,
-            "api": cls.MEASURED,
-            "ESTIMATED": cls.ESTIMATED,
-            legacy_missing: cls.UNKNOWN,
-            "missing": cls.UNKNOWN,
-        }
-        return legacy_aliases.get(value)
+        """Return no implicit aliases for unknown usage-source values."""
+        return None

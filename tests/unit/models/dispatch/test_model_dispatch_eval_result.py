@@ -3,7 +3,7 @@
 
 """Unit tests for ModelDispatchEvalResult."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from typing import get_args, get_origin
 
 import pytest
@@ -91,6 +91,22 @@ def test_dispatch_eval_result_uses_pep_604_optional_annotations() -> None:
 def test_dispatch_eval_result_rejects_unknown_verdict_string() -> None:
     with pytest.raises(ValidationError):
         _result(verdict="success")
+
+
+@pytest.mark.unit
+def test_dispatch_eval_result_rejects_naive_evaluated_at() -> None:
+    with pytest.raises(ValidationError):
+        _result(evaluated_at=datetime(2026, 4, 30, 12, 0))
+
+
+@pytest.mark.unit
+def test_dispatch_eval_result_normalizes_evaluated_at_to_utc() -> None:
+    result = _result(
+        evaluated_at=datetime(2026, 4, 30, 8, 0, tzinfo=timezone(timedelta(hours=-4)))
+    )
+
+    assert result.evaluated_at == datetime(2026, 4, 30, 12, 0, tzinfo=UTC)
+    assert result.evaluated_at.tzinfo == UTC
 
 
 @pytest.mark.unit

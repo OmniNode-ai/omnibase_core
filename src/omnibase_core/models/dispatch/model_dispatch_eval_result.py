@@ -3,9 +3,9 @@
 
 """Dispatch evaluation result model."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_dispatch_verdict import EnumDispatchVerdict
 from omnibase_core.models.cost import ModelCostProvenance
@@ -44,3 +44,11 @@ class ModelDispatchEvalResult(BaseModel):
     eval_latency_ms: int = Field(
         description="Evaluation latency in milliseconds.", ge=0
     )
+
+    @field_validator("evaluated_at")
+    @classmethod
+    def validate_evaluated_at(cls, value: datetime) -> datetime:
+        """Require UTC-aware evaluation timestamps."""
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("evaluated_at must be timezone-aware")
+        return value.astimezone(UTC)
