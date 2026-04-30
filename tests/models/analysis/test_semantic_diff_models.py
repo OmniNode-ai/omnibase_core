@@ -51,8 +51,7 @@ def test_model_symbol_change_frozen() -> None:
         consumers_count=3,
     )
     with pytest.raises(Exception):
-        # NOTE(OMN-10372): Intentional mutation verifies the frozen model contract.
-        sc.symbol_name = "other"  # type: ignore[misc]
+        sc.symbol_name = "other"  # type: ignore[misc,unused-ignore]  # NOTE(OMN-10372): intentional frozen-model mutation test.
 
 
 def test_model_symbol_change_fields() -> None:
@@ -80,8 +79,7 @@ def test_model_semantic_diff_report_frozen() -> None:
     )
     report = ModelSemanticDiffReport(changes=(sc,), total_consumers_affected=0)
     with pytest.raises(Exception):
-        # NOTE(OMN-10372): Intentional mutation verifies the frozen model contract.
-        report.total_consumers_affected = 5  # type: ignore[misc]
+        report.total_consumers_affected = 5  # type: ignore[misc,unused-ignore]  # NOTE(OMN-10372): intentional frozen-model mutation test.
 
 
 def test_model_semantic_diff_report_fields() -> None:

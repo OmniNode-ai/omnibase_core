@@ -19,4 +19,4 @@ class TypedDictSymbolMetadata(TypedDict):
 
 type SymbolTable = dict[str, TypedDictSymbolMetadata]
 
-__all__ = ["SymbolKind", "SymbolTable", "TypedDictSymbolMetadata"]
+__all__ = ["TypedDictSymbolMetadata"]
