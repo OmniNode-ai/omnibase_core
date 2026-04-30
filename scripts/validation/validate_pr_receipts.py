@@ -7,7 +7,7 @@
 See `omnibase_core.validation.receipt_gate` for the decision matrix.
 
 Exit codes:
-    0 — gate passed (all receipts present + PASS, or override accepted)
+    0 — gate passed (all receipts present + PASS, or approved skip token accepted)
     1 — gate failed (missing/failing receipts, no ticket ref, corrupt artifacts)
 
 Usage (CI):

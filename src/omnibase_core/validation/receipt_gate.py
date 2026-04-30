@@ -319,8 +319,8 @@ def validate_pr_receipts(
             message=(
                 "RECEIPT GATE FAILED: PR body cites no OMN-XXXX ticket. "
                 "Every PR must cite a ticket whose dod_evidence proves the work. "
-                "Use [skip-receipt-gate: <reason>] if this is a truly ticket-less "
-                "change (rare — chore/docs/emergency hotfix)."
+                "Add a closing-keyword ticket reference and the corresponding "
+                "dod_evidence receipts before merging."
             ),
         )
 

@@ -4,7 +4,8 @@
 """Unit tests for the Receipt-Gate library (`omnibase_core.validation.receipt_gate`).
 
 Covers the full decision matrix: no-ticket, no-contract, missing-receipt,
-failing-receipt, corrupt-receipt, receipt-path-mismatch, all-PASS, override.
+failing-receipt, corrupt-receipt, receipt-path-mismatch, all-PASS, skip-token
+hardening.
 """
 
 from __future__ import annotations
@@ -359,25 +360,38 @@ class TestReceiptGateMultiTicket:
 
 @pytest.mark.unit
 class TestReceiptGateOverride:
-    def test_override_passes_with_friction(self, tmp_path: Path) -> None:
+    def test_skip_token_fails_without_approval_receipt(self, tmp_path: Path) -> None:
         result = validate_pr_receipts(
             pr_body="fix: emergency hotfix [skip-receipt-gate: prod down OMN-1]",
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
         )
+        assert not result.passed
+        assert not result.friction_logged
+        assert "skip-*" in result.message
+        assert "skip-token-allowed" in result.message
+
+    def test_skip_token_passes_with_approval_receipt(self, tmp_path: Path) -> None:
+        result = validate_pr_receipts(
+            pr_body=(
+                "fix: emergency hotfix [skip-receipt-gate: prod down OMN-1]\n"
+                "# skip-token-allowed: USER-APPROVAL-OMN-10347"
+            ),
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+        )
         assert result.passed
         assert result.friction_logged
-        assert "prod down OMN-1" in result.message
+        assert "USER-APPROVAL-OMN-10347" in result.message
 
     def test_empty_reason_does_not_override(self, tmp_path: Path) -> None:
-        """Override must include a non-empty reason — empty falls through to FAIL."""
         result = validate_pr_receipts(
             pr_body="[skip-receipt-gate:     ]",
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
         )
-        # Empty/whitespace reason doesn't count as a legitimate override
-        assert not result.passed or result.friction_logged
+        assert not result.passed
+        assert not result.friction_logged
 
 
 @pytest.mark.unit
