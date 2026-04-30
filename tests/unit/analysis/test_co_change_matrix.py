@@ -4,6 +4,8 @@ import pytest
 
 from omnibase_core.analysis.co_change_matrix import build_cochange_matrix
 
+pytestmark = pytest.mark.unit
+
 
 def test_pair_counts() -> None:
     commits = [
