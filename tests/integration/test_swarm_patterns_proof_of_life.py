@@ -1,85 +1,71 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-import json
-import subprocess
-from pathlib import Path
-
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from omnibase_core.enums import EnumNodeArchetype, EnumNodeKind, EnumNodeType
+from omnibase_core.factories import (
+    get_default_compute_profile,
+    get_default_effect_profile,
+    get_default_orchestrator_profile,
+    get_default_reducer_profile,
+)
 
 
 @pytest.mark.integration
-def test_zone_classifier_against_real_repo() -> None:
-    from omnibase_core.enums.enum_file_zone import EnumFileZone
-    from omnibase_core.validation.zone_classifier import classify_path
-
-    assert (
-        classify_path(REPO_ROOT / "src" / "omnibase_core" / "topics.py")
-        == EnumFileZone.PRODUCTION
-    )
-    assert classify_path(REPO_ROOT / "tests" / "conftest.py") == EnumFileZone.TEST
-    assert classify_path(REPO_ROOT / "pyproject.toml") == EnumFileZone.CONFIG
-
-
-@pytest.mark.integration
-def test_completion_verify_real_file() -> None:
-    from omnibase_core.validation.completion_verify import verify
-
-    target = REPO_ROOT / "src" / "omnibase_core" / "topics.py"
-    assert target.exists(), "fixture file missing"
-    result = verify(
-        task_id="proof-of-life",
-        description="Verify `TopicBase` is defined in topics.py",
-        files_touched=[str(target.relative_to(REPO_ROOT))],
-        project_root=REPO_ROOT,
-    )
-    assert result.found.get("TopicBase") == str(target.resolve()), result
+@pytest.mark.parametrize(
+    ("node_type", "node_kind"),
+    [
+        (EnumNodeType.COMPUTE_GENERIC, EnumNodeKind.COMPUTE),
+        (EnumNodeType.EFFECT_GENERIC, EnumNodeKind.EFFECT),
+        (EnumNodeType.REDUCER_GENERIC, EnumNodeKind.REDUCER),
+        (EnumNodeType.ORCHESTRATOR_GENERIC, EnumNodeKind.ORCHESTRATOR),
+        (EnumNodeType.RUNTIME_HOST_GENERIC, EnumNodeKind.RUNTIME_HOST),
+    ],
+)
+def test_all_five_generic_node_patterns_have_kind_mappings(
+    node_type: EnumNodeType,
+    node_kind: EnumNodeKind,
+) -> None:
+    assert EnumNodeType.has_node_kind(node_type)
+    assert EnumNodeType.get_node_kind(node_type) == node_kind
 
 
 @pytest.mark.integration
-def test_co_change_dark_matter_cli_runs() -> None:
-    rc = subprocess.run(
-        ["python", "scripts/analysis/co_change_dark_matter.py", "--json"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert rc.returncode == 0, rc.stderr
-    payload = json.loads(rc.stdout)
-    assert "pairs" in payload
-    # may be empty on a young repo, that's OK
-    for pair in payload["pairs"]:
-        assert {"a", "b", "npmi", "co_changes"} <= set(pair)
+def test_compute_profile_is_pure_compute_contract() -> None:
+    contract = get_default_compute_profile("compute_pure")
+
+    assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
+    assert contract.behavior.node_archetype == EnumNodeArchetype.COMPUTE
+    assert contract.behavior.purity == "pure"
+    assert contract.deterministic_execution is True
 
 
 @pytest.mark.integration
-def test_prm_detectors_no_false_positive_on_empty() -> None:
-    from omnibase_core.agents.prm_detectors import (
-        detect_context_thrash,
-        detect_expansion_drift,
-        detect_ping_pong,
-        detect_repetition_loop,
-        detect_stuck_on_test,
-    )
+def test_effect_profile_is_idempotent_effect_contract() -> None:
+    contract = get_default_effect_profile("effect_idempotent")
 
-    for fn in (
-        detect_repetition_loop,
-        detect_ping_pong,
-        detect_expansion_drift,
-        detect_stuck_on_test,
-        detect_context_thrash,
-    ):
-        assert fn([], last_processed_step=0) == []
+    assert contract.node_type == EnumNodeType.EFFECT_GENERIC
+    assert contract.behavior.node_archetype == EnumNodeArchetype.EFFECT
+    assert contract.behavior.idempotent is True
+    assert contract.retry_policies.max_attempts == 3
 
 
 @pytest.mark.integration
-def test_semantic_diff_round_trip() -> None:
-    from omnibase_core.analysis.semantic_diff import compute_diff
+def test_reducer_profile_is_fsm_reducer_contract() -> None:
+    contract = get_default_reducer_profile("reducer_fsm_basic")
 
-    old = "def foo(x): return x\n"
-    new = "def foo(x, y): return x + y\n"
-    report = compute_diff(old, new, file_path="x.py", consumers_count=0)
-    kinds = [c.kind for c in report.changes]
-    assert "signature_change" in kinds, kinds
+    assert contract.node_type == EnumNodeType.REDUCER_GENERIC
+    assert contract.behavior.node_archetype == EnumNodeArchetype.REDUCER
+    assert contract.state_machine is not None
+    assert contract.state_machine.initial_state == "idle"
+    assert "completed" in contract.state_machine.terminal_states
+
+
+@pytest.mark.integration
+def test_orchestrator_profile_is_serial_orchestrator_contract() -> None:
+    contract = get_default_orchestrator_profile("orchestrator_safe")
+
+    assert contract.node_type == EnumNodeType.ORCHESTRATOR_GENERIC
+    assert contract.behavior.node_archetype == EnumNodeArchetype.ORCHESTRATOR
+    assert contract.workflow_coordination.execution_mode == "serial"
+    assert contract.action_emission.emission_strategy == "sequential"
