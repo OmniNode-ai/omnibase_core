@@ -93,6 +93,7 @@ from omnibase_core.enums.enum_dispatch_lifecycle_state import (
     EnumDispatchLifecycleState,
 )
 from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
+from omnibase_core.enums.enum_dispatch_verdict import EnumDispatchVerdict
 from omnibase_core.errors.error_lifecycle_emitter import LifecycleEmitterError
 from omnibase_core.errors.error_lifecycle_transition import (
     LifecycleTransitionError,
@@ -110,6 +111,9 @@ from omnibase_core.models.dispatch.model_dispatch_claim import (
     ModelDispatchClaim,
     compute_blocker_id,
 )
+from omnibase_core.models.dispatch.model_dispatch_eval_result import (
+    ModelDispatchEvalResult,
+)
 from omnibase_core.models.dispatch.model_dispatch_lifecycle_event import (
     ModelDispatchLifecycleEvent,
 )
@@ -124,6 +128,7 @@ from omnibase_core.models.dispatch.model_lifecycle_chain import (
     HEARTBEAT_REQUIRED_ENV_VAR,
     ModelLifecycleChain,
 )
+from omnibase_core.models.dispatch.model_model_call_record import ModelCallRecord
 from omnibase_core.models.dispatch.model_topic_parser import (
     EnumTopicStandard,
     ModelParsedTopic,
@@ -138,6 +143,7 @@ __all__ = [
     "EnumDispatchLifecycleEmitter",
     "EnumDispatchLifecycleState",
     "EnumDispatchStatus",
+    "EnumDispatchVerdict",
     "EnumTopicStandard",
     # Errors
     "LifecycleEmitterError",
@@ -149,8 +155,10 @@ __all__ = [
     "ModelDispatchBusRoute",
     "ModelDispatchBusTerminalResult",
     "ModelDispatchLifecycleEvent",
+    "ModelDispatchEvalResult",
     "ModelDispatchResult",
     "ModelDispatchRoute",
+    "ModelCallRecord",
     "ModelHandlerOutput",
     "ModelHandlerRegistration",
     "ModelParsedTopic",
