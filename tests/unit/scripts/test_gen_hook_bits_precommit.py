@@ -7,23 +7,20 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
-def _resolve_omni_home() -> Path:
+def _resolve_omni_home() -> Path | None:
     env = os.environ.get("OMNI_HOME")
     if env:
         return Path(env)
     for candidate in (REPO_ROOT.parent.parent.parent, REPO_ROOT.parent):
         if (candidate / "omniclaude").is_dir():
             return candidate
-    msg = f"Cannot resolve OMNI_HOME from REPO_ROOT={REPO_ROOT}"
-    raise RuntimeError(msg)
-
-
-OMNI_HOME = _resolve_omni_home()
+    return None
 
 
 def _ids(cfg_path: Path) -> set[str]:
@@ -41,13 +38,18 @@ def test_hook_bits_drift_registered_in_omnibase_core() -> None:
 
 
 def test_hook_bits_drift_registered_in_omniclaude() -> None:
-    worktree = REPO_ROOT.parent / "omniclaude" / ".pre-commit-config.yaml"
-    canonical = OMNI_HOME / "omniclaude" / ".pre-commit-config.yaml"
-    for p in [worktree, canonical]:
-        if p.exists():
-            ids = _ids(p)
-            if "hook-bits-drift" in ids:
-                return
+    candidates = [REPO_ROOT.parent / "omniclaude" / ".pre-commit-config.yaml"]
+    if omni_home := _resolve_omni_home():
+        candidates.append(omni_home / "omniclaude" / ".pre-commit-config.yaml")
+
+    existing = [p for p in candidates if p.exists()]
+    if not existing:
+        pytest.skip("omniclaude checkout not available")
+
+    for p in existing:
+        ids = _ids(p)
+        if "hook-bits-drift" in ids:
+            return
     raise AssertionError(
         "hook-bits-drift not found in any omniclaude .pre-commit-config.yaml"
     )
