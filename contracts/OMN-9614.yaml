@@ -1,6 +1,7 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-9614
+title: "Add onex hooks CLI subcommands"
 summary: "Add onex hooks CLI subcommands for ONEX_HOOKS_MASK management"
 is_seam_ticket: false
 interface_change: true
