@@ -97,6 +97,18 @@ def test_cli_missing_required_args_exits_nonzero() -> None:
 
 
 @pytest.mark.unit
+def test_cli_unavailable_base_ref_emits_empty_advisory_report() -> None:
+    """CLI stays advisory when a shallow checkout lacks the requested base ref."""
+    result = _run_cli(
+        "--base", "refs/heads/omn-missing-base", "--head", "HEAD", "--json"
+    )
+    assert result.returncode == 0, f"stderr: {result.stderr}"
+    assert "base ref" in result.stderr
+    payload = json.loads(result.stdout)
+    assert payload == {"changes": [], "total_consumers_affected": 0}
+
+
+@pytest.mark.unit
 def test_cli_json_change_fields() -> None:
     """Each change entry has the required fields."""
     result = _run_cli("--base", "origin/main", "--head", "HEAD", "--json")
