@@ -48,7 +48,9 @@ otherwise mask the problem.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import yaml
 from pydantic import ValidationError
@@ -61,6 +63,7 @@ from omnibase_core.models.contracts.ticket.model_receipt_check_result import (
 from omnibase_core.models.contracts.ticket.model_receipt_gate_result import (
     ModelReceiptGateResult,
 )
+from omnibase_core.validation.completion_verify import verify as _completion_verify
 
 TICKET_PATTERN = re.compile(r"\bOMN-(\d+)\b", re.IGNORECASE)
 CLOSING_KEYWORD_PATTERN = re.compile(
@@ -380,8 +383,13 @@ def validate_pr_receipts(
     )
 
 
+EVIDENCE_HANDLERS: dict[str, Callable[..., Any]] = {}
+EVIDENCE_HANDLERS["completion-verify"] = _completion_verify
+
+
 __all__ = [
     "CLOSING_KEYWORD_PATTERN",
+    "EVIDENCE_HANDLERS",
     "OVERRIDE_PATTERN",
     "TICKET_PATTERN",
     "validate_pr_receipts",
