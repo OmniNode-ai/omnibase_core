@@ -1,0 +1,86 @@
+name: Semantic Diff Labeler
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  label:
+    name: AST Risk Labeler
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run semantic diff
+        id: diff
+        run: |
+          uv run python scripts/analysis/semantic_diff.py \
+            --base origin/${{ github.base_ref }} \
+            --head HEAD \
+            --json > /tmp/semantic_diff_report.json
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Apply risk labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('/tmp/semantic_diff_report.json', 'utf8'));
+            const changes = report.changes || [];
+
+            const severities = new Set(changes.map(c => c.severity));
+            const existingLabels = context.payload.pull_request.labels.map(l => l.name);
+
+            const riskLabels = ['risk:critical', 'risk:high'];
+
+            // Remove stale risk labels before applying fresh ones
+            for (const label of existingLabels) {
+              if (riskLabels.includes(label)) {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  name: label,
+                }).catch(() => {});
+              }
+            }
+
+            // Apply new labels based on highest severity found
+            if (severities.has('critical')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['risk:critical'],
+              });
+              core.summary.addRaw('Applied label: **risk:critical**');
+            } else if (severities.has('high')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['risk:high'],
+              });
+              core.summary.addRaw('Applied label: **risk:high**');
+            } else {
+              core.summary.addRaw('No risk label applied (medium/low changes only).');
+            }
+
+            await core.summary.write();
