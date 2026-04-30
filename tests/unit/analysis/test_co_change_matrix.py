@@ -51,4 +51,5 @@ def test_pairs_are_sorted_tuples() -> None:
 def test_matrix_is_frozen() -> None:
     m = build_cochange_matrix([["a.py", "b.py"]])
     with pytest.raises((AttributeError, TypeError)):
+        # NOTE(OMN-10361): intentional forbidden assignment to verify frozen dataclass behavior.
         m.total_commits = 99  # type: ignore[misc]
