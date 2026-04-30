@@ -13,6 +13,7 @@ Six cases as required by the plan:
 
 Also tests:
     - free-text token (space in id) → FAIL (OVERRIDE_PATTERN rejects)
+    - placeholder token (<token>) → falls through to ticket extraction
     - missing scope_pr_numbers → FAIL
     - no allowlist_path provided → FAIL
 """
@@ -160,6 +161,26 @@ class TestSkipTokenAllowlist:
         msg = result.message.lower()
         assert "self" in msg or "self-approval" in msg or "jonahgabriel" in msg
 
+    def test_self_approved_fails_case_insensitively(self, tmp_path: Path) -> None:
+        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
+        _write_allowlist(
+            allowlist,
+            [_valid_entry(entry_id="appr-self-case", granted_by="JonahGabriel")],
+        )
+
+        result = validate_pr_receipts(
+            pr_body="[skip-receipt-gate: appr-self-case]",
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+            allowlist_path=allowlist,
+            pr_author="jonahgabriel",
+            current_repo="omnibase_core",
+            current_pr_number=999,
+        )
+
+        assert not result.passed
+        assert "self" in result.message.lower()
+
     def test_valid_entry_passes_with_friction(self, tmp_path: Path) -> None:
         allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
         _write_allowlist(
@@ -208,6 +229,19 @@ class TestSkipTokenEdgeCases:
         # Falls through to ticket extraction → no ticket → FAIL.
         assert not result.passed
         assert "no omn" in result.message.lower() or "ticket" in result.message.lower()
+
+    def test_placeholder_token_not_matched_by_override_pattern(
+        self, tmp_path: Path
+    ) -> None:
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-10417. Documents the [skip-receipt-gate: <token>] syntax."
+            ),
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+        )
+
+        assert not result.message.startswith("[skip-receipt-gate]")
 
     def test_missing_scope_pr_numbers_in_entry_fails(self, tmp_path: Path) -> None:
         allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"

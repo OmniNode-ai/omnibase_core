@@ -98,9 +98,12 @@ CLOSING_KEYWORD_PATTERN = re.compile(
     r"\b(?:Closes|Fixes|Resolves|Implements)\b[:\s]+OMN-(\d+)\b",
     re.IGNORECASE,
 )
-# Matches [skip-receipt-gate: <token>] — token must be a non-whitespace identifier
-# to reject free-text reasons. UUID-style, slug, or alphanumeric IDs are all accepted.
-OVERRIDE_PATTERN = re.compile(r"\[skip-receipt-gate:\s*(\S+)\s*\]", re.IGNORECASE)
+# Matches [skip-receipt-gate: <token>] — token must be a safe identifier to
+# reject free-text reasons and placeholder examples such as "<token>".
+OVERRIDE_PATTERN = re.compile(
+    r"\[skip-receipt-gate:\s*([A-Za-z0-9._-]+)\s*\]",
+    re.IGNORECASE,
+)
 
 
 def _extract_ticket_ids(pr_body: str, pr_title: str | None = None) -> list[str]:
@@ -377,7 +380,7 @@ def _validate_skip_token(
     if (
         pr_author
         and isinstance(granted_by, str)
-        and granted_by.strip() == pr_author.strip()
+        and granted_by.strip().casefold() == pr_author.strip().casefold()
     ):
         return (
             False,

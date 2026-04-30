@@ -234,6 +234,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_EVENT_BODY: ${{ github.event.pull_request.body }}
           PR_EVENT_TITLE: ${{ github.event.pull_request.title }}
+          PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
         run: |
           set -e
@@ -250,7 +251,7 @@ jobs:
               echo "::warning::gh pr view failed for PR #${PR_NUMBER}; using event payload (may be stale)"
               printf '%s' "$PR_EVENT_BODY" > /tmp/pr_body.txt
               printf '%s' "$PR_EVENT_TITLE" > /tmp/pr_title.txt
-              : > /tmp/pr_author.txt
+              printf '%s' "$PR_EVENT_AUTHOR" > /tmp/pr_author.txt
               printf '%s' "$PR_NUMBER" > /tmp/pr_number.txt
             fi
           elif [ -n "$MERGE_GROUP_HEAD_REF" ]; then

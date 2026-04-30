@@ -70,6 +70,21 @@ if [[ -z "$ID" || -z "$GRANTED_BY" || -z "$REPO" || -z "$PR_NUMBER" || -z "$OCC_
   exit 1
 fi
 
+if [[ ! "$ID" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "ERROR: --id must contain only letters, digits, dot, underscore, and hyphen." >&2
+  exit 1
+fi
+
+if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ || "$PR_NUMBER" -le 0 ]]; then
+  echo "ERROR: --pr-number must be a positive integer." >&2
+  exit 1
+fi
+
+if [[ ! "$DAYS" =~ ^[0-9]+$ || "$DAYS" -lt 1 || "$DAYS" -gt 365 ]]; then
+  echo "ERROR: --days must be an integer between 1 and 365." >&2
+  exit 1
+fi
+
 ALLOWLIST="$OCC_PATH/allowlists/skip_token_approvals.yaml"
 if [[ ! -f "$ALLOWLIST" ]]; then
   echo "ERROR: allowlist not found at $ALLOWLIST" >&2
