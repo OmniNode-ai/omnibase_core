@@ -16,6 +16,16 @@ def test_pascalcase() -> None:
     assert "ModelFoo" in extract_identifiers("Add ModelFoo to the ticket")
 
 
+def test_pascalcase_ignores_single_capitalized_words() -> None:
+    out = extract_identifiers("Add ModelFoo to the ticket")
+    assert "Add" not in out
+
+
+def test_pascalcase_long_near_match() -> None:
+    out = extract_identifiers(f"A{'a' * 10_000} lowercase")
+    assert out == []
+
+
 def test_dotted_config_key() -> None:
     assert "auth.token.expiry" in extract_identifiers("Set auth.token.expiry to 3600")
 
