@@ -29,7 +29,56 @@ from omnibase_core.models.analysis.model_semantic_diff_report import (
 from omnibase_core.models.analysis.model_symbol_change import ModelSymbolChange
 
 
+def _git_ref_exists(ref: str, repo_root: Path) -> bool:
+    return (
+        subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", ref],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        ).returncode
+        == 0
+    )
+
+
+def _ensure_ref_available(ref: str, repo_root: Path) -> bool:
+    if _git_ref_exists(ref, repo_root):
+        return True
+
+    if ref.startswith("origin/"):
+        branch = ref.removeprefix("origin/")
+        subprocess.run(
+            [
+                "git",
+                "fetch",
+                "--depth=1",
+                "origin",
+                f"refs/heads/{branch}:refs/remotes/origin/{branch}",
+            ],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    return _git_ref_exists(ref, repo_root)
+
+
 def _git_changed_py_files(base: str, head: str, repo_root: Path) -> list[Path]:
+    if not _ensure_ref_available(base, repo_root):
+        print(  # noqa: T201
+            f"warning: base ref {base!r} is unavailable; emitting empty advisory report",
+            file=sys.stderr,
+        )
+        return []
+    if not _ensure_ref_available(head, repo_root):
+        print(  # noqa: T201
+            f"warning: head ref {head!r} is unavailable; emitting empty advisory report",
+            file=sys.stderr,
+        )
+        return []
+
     result = subprocess.run(
         [
             "git",
@@ -43,8 +92,15 @@ def _git_changed_py_files(base: str, head: str, repo_root: Path) -> list[Path]:
         cwd=repo_root,
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
     )
+    if result.returncode != 0:
+        print(  # noqa: T201
+            "warning: git diff failed for "
+            f"{base!r}...{head!r}: {result.stderr.strip()}",
+            file=sys.stderr,
+        )
+        return []
     return [repo_root / line for line in result.stdout.splitlines() if line]
 
 
