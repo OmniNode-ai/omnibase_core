@@ -100,7 +100,7 @@ hook_bits_is_enabled() {
 """
     )
 
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:

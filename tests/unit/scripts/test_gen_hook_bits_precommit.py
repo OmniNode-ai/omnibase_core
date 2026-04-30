@@ -41,5 +41,13 @@ def test_hook_bits_drift_registered_in_omnibase_core() -> None:
 
 
 def test_hook_bits_drift_registered_in_omniclaude() -> None:
-    ids = _ids(OMNI_HOME / "omniclaude" / ".pre-commit-config.yaml")
-    assert "hook-bits-drift" in ids
+    worktree = REPO_ROOT.parent / "omniclaude" / ".pre-commit-config.yaml"
+    canonical = OMNI_HOME / "omniclaude" / ".pre-commit-config.yaml"
+    for p in [worktree, canonical]:
+        if p.exists():
+            ids = _ids(p)
+            if "hook-bits-drift" in ids:
+                return
+    raise AssertionError(
+        "hook-bits-drift not found in any omniclaude .pre-commit-config.yaml"
+    )
