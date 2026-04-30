@@ -67,7 +67,12 @@ CLOSING_KEYWORD_PATTERN = re.compile(
     r"\b(?:Closes|Fixes|Resolves|Implements)\b[:\s]+OMN-(\d+)\b",
     re.IGNORECASE,
 )
-OVERRIDE_PATTERN = re.compile(r"\[skip-receipt-gate:\s*(.+?)\]", re.IGNORECASE)
+# Matches any [skip-*: ...] bypass token (OMN-10347: Rule #10 enforcement).
+SKIP_TOKEN_PATTERN = re.compile(r"\[skip-[a-zA-Z][^]]*\]", re.IGNORECASE)
+# Legacy alias kept for __all__ / external callers; same as SKIP_TOKEN_PATTERN.
+OVERRIDE_PATTERN = SKIP_TOKEN_PATTERN
+# Explicit user-approval escape hatch: # skip-token-allowed: <non-empty-receipt-id>
+ALLOWLIST_PATTERN = re.compile(r"#\s*skip-token-allowed:\s*(\S+)", re.IGNORECASE)
 
 
 def _extract_ticket_ids(pr_body: str, pr_title: str | None = None) -> list[str]:
@@ -277,19 +282,35 @@ def validate_pr_receipts(
     pr_title: str | None = None,
 ) -> ModelReceiptGateResult:
     """Run the receipt-gate against a PR's body + the repo's contracts + receipts."""
-    override = OVERRIDE_PATTERN.search(pr_body)
-    if override:
-        reason = override.group(1).strip()
-        if reason:
+    # OMN-10347 (Rule #10): ANY [skip-*] token is a hard gate FAIL unless paired
+    # with an explicit # skip-token-allowed: <receipt-id> approval receipt.
+    skip_match = SKIP_TOKEN_PATTERN.search(pr_body)
+    if skip_match:
+        allowlist_match = ALLOWLIST_PATTERN.search(pr_body)
+        if allowlist_match:
+            receipt_id = allowlist_match.group(1).strip()
             return ModelReceiptGateResult(
                 passed=True,
                 friction_logged=True,
                 message=(
-                    f"[skip-receipt-gate] override accepted: {reason!r}. "
+                    f"[skip-*] token {skip_match.group(0)!r} present but explicit "
+                    f"approval receipt {receipt_id!r} found. "
                     "FRICTION LOGGED: receipt gate bypassed — every override must be "
                     "tracked and closed within 7 days."
                 ),
             )
+        return ModelReceiptGateResult(
+            passed=False,
+            message=(
+                f"RECEIPT GATE FAILED: PR body contains a [skip-*] bypass token "
+                f"({skip_match.group(0)!r}) without a valid approval receipt. "
+                "Per CLAUDE.md Rule #10, bypass tokens are not permitted without "
+                "explicit user approval. Fix: add dod_evidence proving the work, "
+                "OR add '# skip-token-allowed: <receipt-id>' with a traceable "
+                "approval receipt issued by the user. "
+                "Self-written justifications do NOT qualify."
+            ),
+        )
 
     ticket_ids = _extract_ticket_ids(pr_body, pr_title)
     if not ticket_ids:
@@ -381,8 +402,10 @@ def validate_pr_receipts(
 
 
 __all__ = [
+    "ALLOWLIST_PATTERN",
     "CLOSING_KEYWORD_PATTERN",
     "OVERRIDE_PATTERN",
+    "SKIP_TOKEN_PATTERN",
     "TICKET_PATTERN",
     "validate_pr_receipts",
 ]
