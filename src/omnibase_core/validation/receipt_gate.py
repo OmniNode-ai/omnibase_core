@@ -23,8 +23,13 @@ Decision matrix:
     - Receipt missing probe_command/stdout → FAIL ("missing probe_command|probe_stdout")
     - Receipt verifier == runner          → FAIL ("self-attestation: ... ADVISORY")
     - Receipt status != PASS              → FAIL ("failing receipt (ADVISORY|FAIL|PENDING)")
-    - Override token in PR body           → PASS with friction ("override accepted")
-    - All checks have PASS receipts       → PASS
+    - Override token: free-text reason   → FAIL (must use approved allowlist id)
+    - Override token: unknown id         → FAIL ("unknown approval id")
+    - Override token: expired            → FAIL ("approval expired")
+    - Override token: scope mismatch     → FAIL ("approval not scoped to this repo/PR")
+    - Override token: self-approved      → FAIL ("self-approval rejected")
+    - Override token: valid allowlist id → PASS with friction ("override accepted")
+    - All checks have PASS receipts      → PASS
 
 Adversarial invariants (OMN-9788)
 ---------------------------------
@@ -43,11 +48,37 @@ exactly which adversarial guarantee was missed:
 Invariants 1-3 are enforced as pre-schema lookups so missing-field
 errors mention the field name even when other validation errors would
 otherwise mask the problem.
+
+Skip-token allowlist (OMN-10417)
+---------------------------------
+``[skip-receipt-gate: <approval-id>]`` requires ``<approval-id>`` to exist
+in ``onex_change_control/allowlists/skip_token_approvals.yaml``.  Free-text
+reasons are rejected.  Allowlist schema:
+
+    approvals:
+      - id: <str>
+        granted_by: <github-login>
+        granted_at: <ISO-8601>
+        expires_at: <ISO-8601>
+        scope_repos: [<repo>, ...]
+        scope_pr_numbers: [<int>, ...]   # REQUIRED
+
+Rejection criteria (all hard FAIL, no bypass):
+    - ``approval-id`` not found in allowlist
+    - ``expires_at`` in the past
+    - current repo not in ``scope_repos``
+    - current PR not in ``scope_pr_numbers``
+    - ``granted_by == pr_author`` (self-approval)
+    - ``scope_pr_numbers`` missing or empty in the allowlist entry
+
+Every accepted bypass logs to CI output with the allowlist entry id, granted_by,
+and scope for audit traceability.
 """
 
 from __future__ import annotations
 
 import re
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -67,7 +98,9 @@ CLOSING_KEYWORD_PATTERN = re.compile(
     r"\b(?:Closes|Fixes|Resolves|Implements)\b[:\s]+OMN-(\d+)\b",
     re.IGNORECASE,
 )
-OVERRIDE_PATTERN = re.compile(r"\[skip-receipt-gate:\s*(.+?)\]", re.IGNORECASE)
+# Matches [skip-receipt-gate: <token>] — token must be a non-whitespace identifier
+# to reject free-text reasons. UUID-style, slug, or alphanumeric IDs are all accepted.
+OVERRIDE_PATTERN = re.compile(r"\[skip-receipt-gate:\s*(\S+)\s*\]", re.IGNORECASE)
 
 
 def _extract_ticket_ids(pr_body: str, pr_title: str | None = None) -> list[str]:
@@ -270,26 +303,198 @@ def _check_one_receipt(
     )
 
 
+def _validate_skip_token(
+    approval_id: str,
+    pr_author: str | None,
+    current_repo: str | None,
+    current_pr_number: int | None,
+    allowlist_path: Path,
+) -> tuple[bool, str]:
+    """Validate a skip-receipt-gate approval ID against the allowlist.
+
+    Args:
+        approval_id: The bare identifier from ``[skip-receipt-gate: <id>]``.
+        pr_author: GitHub login of the PR author. None disables self-approval check.
+        current_repo: Repo name (e.g. ``omnibase_core``) to scope check. None disables.
+        current_pr_number: PR number to scope check. None disables.
+        allowlist_path: Path to ``skip_token_approvals.yaml``.
+
+    Returns:
+        ``(True, audit_message)`` when the token is valid and accepted.
+        ``(False, rejection_reason)`` for every rejection case.
+    """
+    if not allowlist_path.exists():
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: allowlist not found at {allowlist_path}. "
+            "Use scripts/grant-skip-approval.sh to create an approved entry.",
+        )
+
+    try:
+        with allowlist_path.open(encoding="utf-8") as fh:
+            raw = yaml.safe_load(fh)
+    except (yaml.YAMLError, OSError) as e:
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: allowlist corrupt at {allowlist_path}: {e}",
+        )
+
+    if not isinstance(raw, dict):
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: allowlist at {allowlist_path} is not a YAML mapping",
+        )
+
+    approvals = raw.get("approvals", [])
+    if not isinstance(approvals, list):
+        return (
+            False,
+            "[skip-receipt-gate] REJECTED: allowlist 'approvals' key is not a list",
+        )
+
+    entry = next(
+        (a for a in approvals if isinstance(a, dict) and a.get("id") == approval_id),
+        None,
+    )
+    if entry is None:
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: approval id {approval_id!r} not found in allowlist. "
+            "Use scripts/grant-skip-approval.sh to create an approved entry.",
+        )
+
+    # scope_pr_numbers is REQUIRED — missing or empty means the entry is invalid.
+    scope_prs = entry.get("scope_pr_numbers")
+    if not scope_prs or not isinstance(scope_prs, list) or len(scope_prs) == 0:
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: allowlist entry {approval_id!r} missing or empty "
+            "'scope_pr_numbers' — every approval must be scoped to specific PR numbers.",
+        )
+
+    # Self-approval: granted_by must not equal the PR author.
+    granted_by = entry.get("granted_by", "")
+    if (
+        pr_author
+        and isinstance(granted_by, str)
+        and granted_by.strip() == pr_author.strip()
+    ):
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: self-approval — approval {approval_id!r} was "
+            f"granted by {granted_by!r} who is also the PR author. "
+            "A different team member must grant the approval.",
+        )
+
+    # Expiry check — deterministic: compare against current UTC time.
+    expires_at_raw = entry.get("expires_at")
+    if expires_at_raw is not None:
+        try:
+            if isinstance(expires_at_raw, str):
+                expires_at = datetime.fromisoformat(expires_at_raw)
+            elif isinstance(expires_at_raw, datetime):
+                expires_at = expires_at_raw
+            else:
+                # error-ok: internal sentinel immediately re-caught by enclosing except (ValueError, TypeError)
+                raise ValueError(f"unexpected type: {type(expires_at_raw)}")
+            # Make timezone-aware if naive (assume UTC).
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=UTC)
+            now_utc = datetime.now(tz=UTC)
+            if now_utc > expires_at:
+                return (
+                    False,
+                    f"[skip-receipt-gate] REJECTED: approval {approval_id!r} expired at "
+                    f"{expires_at.isoformat()} (now={now_utc.isoformat()}). "
+                    "Use scripts/grant-skip-approval.sh to create a new entry.",
+                )
+        except (ValueError, TypeError) as e:
+            return (
+                False,
+                f"[skip-receipt-gate] REJECTED: approval {approval_id!r} has unparseable "
+                f"expires_at {expires_at_raw!r}: {e}",
+            )
+
+    # Repo scope check.
+    scope_repos = entry.get("scope_repos", [])
+    if current_repo is not None and isinstance(scope_repos, list) and scope_repos:
+        if current_repo not in scope_repos:
+            return (
+                False,
+                f"[skip-receipt-gate] REJECTED: approval {approval_id!r} is scoped to repos "
+                f"{scope_repos!r} but current repo is {current_repo!r}.",
+            )
+
+    # PR number scope check.
+    if current_pr_number is not None and isinstance(scope_prs, list):
+        if current_pr_number not in scope_prs:
+            return (
+                False,
+                f"[skip-receipt-gate] REJECTED: approval {approval_id!r} is scoped to PR numbers "
+                f"{scope_prs!r} but current PR is #{current_pr_number}.",
+            )
+
+    audit_msg = (
+        f"[skip-receipt-gate] BYPASS ACCEPTED: approval={approval_id!r} "
+        f"granted_by={granted_by!r} "
+        f"scope_repos={scope_repos!r} scope_pr_numbers={scope_prs!r}. "
+        "FRICTION LOGGED: receipt gate bypassed — every override must be "
+        "tracked and closed within 7 days."
+    )
+    return (True, audit_msg)
+
+
 def validate_pr_receipts(
     pr_body: str,
     contracts_dir: Path,
     receipts_dir: Path,
     pr_title: str | None = None,
+    allowlist_path: Path | None = None,
+    pr_author: str | None = None,
+    current_repo: str | None = None,
+    current_pr_number: int | None = None,
 ) -> ModelReceiptGateResult:
-    """Run the receipt-gate against a PR's body + the repo's contracts + receipts."""
+    """Run the receipt-gate against a PR's body + the repo's contracts + receipts.
+
+    Args:
+        pr_body: Full PR description text.
+        contracts_dir: Directory containing OMN-<ticket-id>.yaml ticket contracts.
+        receipts_dir: Directory tree containing ModelDodReceipt YAML files.
+        pr_title: Optional PR title; used as fallback ticket extraction source.
+        allowlist_path: Path to ``onex_change_control/allowlists/skip_token_approvals.yaml``.
+            When None, any ``[skip-receipt-gate: <id>]`` token is rejected because
+            there is no allowlist to verify against.
+        pr_author: GitHub login of the PR author. Used for self-approval check.
+        current_repo: Repository name (e.g. ``omnibase_core``). Used for scope check.
+        current_pr_number: PR number. Used for scope check.
+    """
     override = OVERRIDE_PATTERN.search(pr_body)
     if override:
-        reason = override.group(1).strip()
-        if reason:
+        approval_id = override.group(1).strip()
+        if allowlist_path is None:
             return ModelReceiptGateResult(
-                passed=True,
-                friction_logged=True,
+                passed=False,
                 message=(
-                    f"[skip-receipt-gate] override accepted: {reason!r}. "
-                    "FRICTION LOGGED: receipt gate bypassed — every override must be "
-                    "tracked and closed within 7 days."
+                    f"[skip-receipt-gate] REJECTED: token {approval_id!r} present but "
+                    "no allowlist_path provided to the gate. "
+                    "Pass --allowlist-path pointing to "
+                    "onex_change_control/allowlists/skip_token_approvals.yaml."
                 ),
             )
+        accepted, message = _validate_skip_token(
+            approval_id=approval_id,
+            pr_author=pr_author,
+            current_repo=current_repo,
+            current_pr_number=current_pr_number,
+            allowlist_path=allowlist_path,
+        )
+        if not accepted:
+            return ModelReceiptGateResult(passed=False, message=message)
+        return ModelReceiptGateResult(
+            passed=True,
+            friction_logged=True,
+            message=message,
+        )
 
     ticket_ids = _extract_ticket_ids(pr_body, pr_title)
     if not ticket_ids:
@@ -298,7 +503,7 @@ def validate_pr_receipts(
             message=(
                 "RECEIPT GATE FAILED: PR body cites no OMN-XXXX ticket. "
                 "Every PR must cite a ticket whose dod_evidence proves the work. "
-                "Use [skip-receipt-gate: <reason>] if this is a truly ticket-less "
+                "Use [skip-receipt-gate: <approval-id>] if this is a truly ticket-less "
                 "change (rare — chore/docs/emergency hotfix)."
             ),
         )
@@ -384,5 +589,6 @@ __all__ = [
     "CLOSING_KEYWORD_PATTERN",
     "OVERRIDE_PATTERN",
     "TICKET_PATTERN",
+    "_validate_skip_token",
     "validate_pr_receipts",
 ]
