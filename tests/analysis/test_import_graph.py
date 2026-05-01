@@ -117,7 +117,6 @@ def test_python_relative_import_rejects_package_escape(tmp_path: Path) -> None:
     g = build_import_graph(tmp_path)
     assert g.edges_out.get("pkg/a.py", set()) == set()
 
-
 def test_python_relative_from_import_submodule_detected(tmp_path: Path) -> None:
     pkg = tmp_path / "pkg"
     nested = pkg / "nested"

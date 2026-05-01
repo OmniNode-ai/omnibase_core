@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPT = (
     Path(__file__).resolve().parents[2]
     / "scripts"
@@ -22,10 +24,12 @@ def _run(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str
         capture_output=True,
         text=True,
         check=False,
+        timeout=30,
         cwd=str(cwd) if cwd else None,
     )
 
 
+@pytest.mark.unit
 class TestJsonFlag:
     def test_json_flag_exits_0(self, tmp_path: Path) -> None:
         result = _run("--json", cwd=tmp_path)
@@ -55,6 +59,7 @@ class TestJsonFlag:
         assert payload == {"pairs": []}
 
 
+@pytest.mark.unit
 class TestWriteStateFlag:
     def test_write_state_creates_file(self, tmp_path: Path) -> None:
         result = _run("--write-state", cwd=tmp_path)
@@ -88,6 +93,7 @@ class TestWriteStateFlag:
         assert state_dir.exists()
 
 
+@pytest.mark.unit
 class TestNoArgsHumanReadable:
     def test_no_args_exits_0(self, tmp_path: Path) -> None:
         result = _run(cwd=tmp_path)
