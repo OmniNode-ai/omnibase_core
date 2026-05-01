@@ -193,16 +193,12 @@ def _resolve_js_specifier(
     import_dir = importing_file.parent
     candidate = (import_dir / spec).resolve()
 
-    # Try exact path, then with common extensions
-    for attempt in [
+    attempts = [
         candidate,
-        candidate.with_suffix(".js"),
-        candidate.with_suffix(".jsx"),
-        candidate.with_suffix(".ts"),
-        candidate.with_suffix(".tsx"),
-        candidate / "index.js",
-        candidate / "index.ts",
-    ]:
+        *(candidate.with_suffix(ext) for ext in _JS_EXTS),
+        *(candidate / f"index{ext}" for ext in _JS_EXTS),
+    ]
+    for attempt in attempts:
         if attempt.is_file():
             try:
                 return str(attempt.relative_to(repo_root))

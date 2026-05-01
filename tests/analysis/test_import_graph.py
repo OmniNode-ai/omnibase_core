@@ -131,3 +131,26 @@ def test_edges_out_keys_are_repo_relative(tmp_path: Path) -> None:
 def test_empty_repo(tmp_path: Path) -> None:
     g = build_import_graph(tmp_path)
     assert g.edges_out == {}
+
+
+@pytest.mark.parametrize(
+    ("import_spec", "target"),
+    [
+        ("./direct", "direct.mjs"),
+        ("./direct", "direct.cjs"),
+        ("./widget", "widget/index.jsx"),
+        ("./widget", "widget/index.tsx"),
+        ("./widget", "widget/index.mjs"),
+        ("./widget", "widget/index.cjs"),
+    ],
+)
+def test_js_resolution_uses_all_declared_extensions(
+    tmp_path: Path, import_spec: str, target: str
+) -> None:
+    source = tmp_path / "page.ts"
+    target_path = tmp_path / target
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    source.write_text(f"import value from '{import_spec}';\n")
+    target_path.write_text("export default 1;\n")
+    g = build_import_graph(tmp_path)
+    assert target in g.edges_out["page.ts"]

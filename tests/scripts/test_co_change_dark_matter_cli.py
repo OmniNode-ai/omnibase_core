@@ -92,6 +92,15 @@ class TestWriteStateFlag:
         assert result.returncode == 0
         assert state_dir.exists()
 
+    def test_write_state_uses_repo_root_from_subdirectory(self, tmp_path: Path) -> None:
+        (tmp_path / ".git").mkdir()
+        subdir = tmp_path / "nested"
+        subdir.mkdir()
+        result = _run("--write-state", cwd=subdir)
+        assert result.returncode == 0, result.stderr
+        assert (tmp_path / ".onex_state" / "co-change-map.json").exists()
+        assert not (subdir / ".onex_state" / "co-change-map.json").exists()
+
 
 @pytest.mark.unit
 class TestNoArgsHumanReadable:
