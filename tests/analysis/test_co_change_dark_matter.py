@@ -7,6 +7,7 @@ from omnibase_core.analysis.co_change_dark_matter import find_dark_matter
 from omnibase_core.analysis.co_change_matrix import (
     CoChangeMatrix,
     build_cochange_matrix,
+    compute_npmi,
 )
 from omnibase_core.analysis.import_graph import ImportGraph
 
@@ -83,6 +84,9 @@ class TestCoChangeCountFilter:
 
 
 class TestNpmiFilter:
+    def test_npmi_perfect_coupling_returns_one(self) -> None:
+        assert compute_npmi(1.0, 1.0, 1.0) == 1.0
+
     def test_low_npmi_pair_excluded(self) -> None:
         # a.py and b.py co-change 3 times out of 100 commits each → low NPMI
         commits = [["a.py", "b.py"]] * 3 + [["a.py"]] * 47 + [["b.py"]] * 47
