@@ -1,6 +1,6 @@
 # omnibase_core
 
-`omnibase_core` is the ONEX platform kernel. It owns node execution, contracts,
+`omnibase_core` is the ONEX (OmniNode eXecution) platform kernel. It owns node execution, contracts,
 core models, validation tooling, and the canonical architecture vocabulary used
 by downstream OmniNode repos.
 

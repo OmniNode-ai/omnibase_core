@@ -40,11 +40,11 @@ test_infrastructure_paths:
 # (they trigger full suite first), but kept for completeness/documentation.
 adjacency:
   models:
-    reverse_deps: [nodes, contracts, runtime, validation, services, factories, container]
+    reverse_deps: [analysis, nodes, contracts, runtime, validation, services, factories, container]
   contracts:
     reverse_deps: [nodes, runtime, validation]
   enums:
-    reverse_deps: [models, contracts, nodes, validation, runtime]
+    reverse_deps: [analysis, models, contracts, nodes, validation, runtime]
   validation:
     reverse_deps: [nodes, runtime, services]
   runtime:
@@ -59,6 +59,7 @@ adjacency:
     reverse_deps: [models, runtime, nodes, services]
   # Leaf modules with no reverse_deps still appear so the loader can validate
   # that every src/omnibase_core/<dir> has an entry.
+  analysis: {reverse_deps: []}
   backends: {reverse_deps: []}
   cli: {reverse_deps: []}
   constants: {reverse_deps: []}
