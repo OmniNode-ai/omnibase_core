@@ -72,6 +72,16 @@ def test_logic_change_detected():
     assert change.severity == EnumDiffSeverity.MEDIUM
 
 
+def test_one_line_body_only_change_is_logic_change():
+    old = "def foo(x): return x\n"
+    new = "def foo(x): return x * 2\n"
+    report = compute_diff(old, new, file_path="x.py", consumers_count=0)
+    assert EnumChangeKind.SIGNATURE_CHANGE not in _kinds(report)
+    change = _by_name(report, "foo")
+    assert change is not None
+    assert change.kind == EnumChangeKind.LOGIC_CHANGE
+
+
 # --- no change (same body + signature) ---
 
 

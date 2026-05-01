@@ -95,6 +95,15 @@ def test_body_hash_changes_with_body():
 
 
 @pytest.mark.unit
+def test_one_line_function_body_not_in_signature():
+    r1 = extract_symbols("def foo(x): return x\n")
+    r2 = extract_symbols("def foo(x): return x * 2\n")
+    assert r1["foo"]["signature"] == "def foo(x):"
+    assert r2["foo"]["signature"] == "def foo(x):"
+    assert r1["foo"]["body_hash"] != r2["foo"]["body_hash"]
+
+
+@pytest.mark.unit
 def test_class_extracted():
     result = extract_symbols(CLASS_WITH_METHODS)
     assert "MyClass" in result

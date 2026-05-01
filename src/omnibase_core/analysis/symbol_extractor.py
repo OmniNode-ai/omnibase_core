@@ -31,11 +31,22 @@ def _extract_signature_and_body(node: Node, source_lines: list[str]) -> tuple[st
 
     block = block_nodes[0]
     sig_line = source_lines[node.start_point[0]]
-    signature = _collapse_whitespace(sig_line.rstrip("\n"))
-
     body_start = block.start_point[0]
     body_end = node.end_point[0]
-    body_source = "".join(source_lines[body_start : body_end + 1])
+
+    if body_start == node.start_point[0]:
+        colon_index = sig_line.find(":", node.start_point[1])
+        if colon_index >= 0:
+            signature_source = sig_line[: colon_index + 1]
+            body_source = sig_line[colon_index + 1 :]
+        else:
+            signature_source = sig_line[: block.start_point[1]]
+            body_source = sig_line[block.start_point[1] :]
+    else:
+        signature_source = sig_line.rstrip("\n")
+        body_source = "".join(source_lines[body_start : body_end + 1])
+
+    signature = _collapse_whitespace(signature_source.rstrip("\n"))
     return signature, body_source
 
 
