@@ -98,12 +98,17 @@ CLOSING_KEYWORD_PATTERN = re.compile(
     r"\b(?:Closes|Fixes|Resolves|Implements)\b[:\s]+OMN-(\d+)\b",
     re.IGNORECASE,
 )
+# Matches any [skip-*: ...] bypass token (OMN-10347: Rule #10 enforcement).
+SKIP_TOKEN_PATTERN = re.compile(r"\[skip-[a-zA-Z][^]]*\]", re.IGNORECASE)
 # Matches [skip-receipt-gate: <token>] — token must be a safe identifier to
 # reject free-text reasons and placeholder examples such as "<token>".
 OVERRIDE_PATTERN = re.compile(
     r"\[skip-receipt-gate:\s*([A-Za-z0-9._-]+)\s*\]",
     re.IGNORECASE,
 )
+# Inline marker pattern used only to reject the superseded approval syntax.
+# Receipt-gate bypass requires the central allowlist checked by _validate_skip_token.
+ALLOWLIST_PATTERN = re.compile(r"#\s*skip-token-allowed:\s*(\S+)", re.IGNORECASE)
 
 
 def _extract_ticket_ids(pr_body: str, pr_title: str | None = None) -> list[str]:
@@ -486,6 +491,18 @@ def validate_pr_receipts(
         current_pr_number: PR number. Required for skip tokens.
     """
     override = OVERRIDE_PATTERN.search(pr_body)
+    skip_match = SKIP_TOKEN_PATTERN.search(pr_body)
+    if skip_match and override is None:
+        return ModelReceiptGateResult(
+            passed=False,
+            message=(
+                f"RECEIPT GATE FAILED: PR body contains a [skip-*] bypass token "
+                f"({skip_match.group(0)!r}) that is not an approved receipt-gate "
+                "allowlist token. Use [skip-receipt-gate: <approval-id>] with "
+                "a central allowlist entry scoped to this repo and PR, or add "
+                "dod_evidence proving the work."
+            ),
+        )
     if override:
         approval_id = override.group(1).strip()
         if allowlist_path is None:
@@ -620,8 +637,10 @@ def validate_pr_receipts(
 
 
 __all__ = [
+    "ALLOWLIST_PATTERN",
     "CLOSING_KEYWORD_PATTERN",
     "OVERRIDE_PATTERN",
+    "SKIP_TOKEN_PATTERN",
     "TICKET_PATTERN",
     "_validate_skip_token",
     "validate_pr_receipts",

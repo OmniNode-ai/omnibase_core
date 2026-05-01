@@ -4,7 +4,8 @@
 """Unit tests for the Receipt-Gate library (`omnibase_core.validation.receipt_gate`).
 
 Covers the full decision matrix: no-ticket, no-contract, missing-receipt,
-failing-receipt, corrupt-receipt, receipt-path-mismatch, all-PASS, override.
+failing-receipt, corrupt-receipt, receipt-path-mismatch, all-PASS, skip-token
+hardening.
 """
 
 from __future__ import annotations
@@ -416,16 +417,28 @@ class TestReceiptGateOverride:
         )
         assert not result.passed
         assert not result.friction_logged
-        assert "cites no" in result.message.lower()
+        assert "skip-*" in result.message
+        assert "allowlist token" in result.message
+
+    def test_inline_skip_token_allowed_does_not_override(self, tmp_path: Path) -> None:
+        result = validate_pr_receipts(
+            pr_body=(
+                "fix: emergency hotfix [skip-receipt-gate: prod down OMN-1]\n"
+                "# skip-token-allowed: USER-APPROVAL-OMN-10347"
+            ),
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+        )
+        assert not result.passed
+        assert not result.friction_logged
+        assert "allowlist token" in result.message
 
     def test_empty_reason_does_not_override(self, tmp_path: Path) -> None:
-        """Override must include a non-empty reason — empty falls through to FAIL."""
         result = validate_pr_receipts(
             pr_body="[skip-receipt-gate:     ]",
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
         )
-        # Empty/whitespace reason doesn't count as a legitimate override
         assert not result.passed
         assert not result.friction_logged
 

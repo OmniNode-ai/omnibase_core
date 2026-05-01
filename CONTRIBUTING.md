@@ -1,6 +1,6 @@
 # Contributing to omnibase_core
 
-Thank you for your interest in contributing to omnibase_core! This document provides guidelines for contributing to the ONEX (OmniNode Execution System) core framework.
+Thank you for your interest in contributing to omnibase_core! This document provides guidelines for contributing to the ONEX (OmniNode eXecution) core framework.
 
 ## Table of Contents
 

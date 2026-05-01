@@ -12,8 +12,8 @@ Six cases as required by the plan:
     6. valid            — all checks pass → PASS with friction_logged=True
 
 Also tests:
-    - free-text token (space in id) → FAIL (OVERRIDE_PATTERN rejects)
-    - placeholder token (<token>) → falls through to ticket extraction
+    - free-text token (space in id) → FAIL (not an approval-id token)
+    - placeholder token (<token>) → FAIL without treating docs syntax as approval
     - missing scope_pr_numbers → FAIL
     - no allowlist_path provided → FAIL
     - missing PR context for allowlist skip → FAIL
@@ -224,16 +224,15 @@ class TestSkipTokenEdgeCases:
         self, tmp_path: Path
     ) -> None:
         """A token with spaces is not a bare identifier — OVERRIDE_PATTERN won't match it
-        and the gate proceeds to ticket extraction (which finds no ticket → FAIL)."""
+        and the broader skip-token guard rejects it."""
         result = validate_pr_receipts(
             pr_body="[skip-receipt-gate: this is a free text reason]",
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
         )
-        # OVERRIDE_PATTERN requires \S+ (no whitespace), so this doesn't match.
-        # Falls through to ticket extraction → no ticket → FAIL.
         assert not result.passed
-        assert "no omn" in result.message.lower() or "ticket" in result.message.lower()
+        assert "skip-*" in result.message
+        assert "allowlist token" in result.message
 
     def test_placeholder_token_not_matched_by_override_pattern(
         self, tmp_path: Path
@@ -246,6 +245,7 @@ class TestSkipTokenEdgeCases:
             receipts_dir=tmp_path / "receipts",
         )
 
+        assert not result.passed
         assert not result.message.startswith("[skip-receipt-gate]")
 
     def test_missing_scope_pr_numbers_in_entry_fails(self, tmp_path: Path) -> None:
