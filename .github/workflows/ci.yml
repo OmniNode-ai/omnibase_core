@@ -856,16 +856,73 @@ jobs:
   # ---------------------------------------------------------------------------
   # Phase 1.6a - Zone Filter (OMN-10356, reusable in OMN-10400)
   # ---------------------------------------------------------------------------
-  # Delegates to .github/workflows/zone-filter.yml so all repos share one
-  # classifier. Dogfoods the caller's working tree via use-local-classifier
-  # so we test the version we're shipping in this PR.
+  # Runs the caller branch's classifier inline. The reusable workflow added in
+  # this PR cannot be called by required CI until it exists on main, because
+  # GitHub cannot materialize jobs for a new local workflow_call target.
   zone-filter:
+    name: Zone Filter (docs-only check)
     needs: quality-gate
     if: always() && needs.quality-gate.result == 'success'
-    uses: ./.github/workflows/zone-filter.yml
-    with:
-      python-version: "3.12"
-      use-local-classifier: true
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.zone.outputs.docs_only }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Compute changed files
+        id: diff
+        env:
+          GH_BEFORE: ${{ github.event.before }}
+          GH_SHA: ${{ github.sha }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            git fetch --no-tags --depth=1 origin "$base" || true
+            FILES=$(git diff --name-only "$base"...HEAD | tr '\n' ',')
+          elif [ "${{ github.event_name }}" = "push" ] \
+            && [ -n "$GH_BEFORE" ] \
+            && [ "$GH_BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            git fetch --no-tags --depth=1 origin "$GH_BEFORE" || true
+            FILES=$(git diff --name-only "$GH_BEFORE" "$GH_SHA" | tr '\n' ',')
+          else
+            FILES=""
+          fi
+          echo "changed_files=$FILES" >> "$GITHUB_OUTPUT"
+
+      - name: Run zone-diff filter
+        id: zone
+        env:
+          ZONE_DIFF_FILTER_FAKE_DIFF: ${{ steps.diff.outputs.changed_files }}
+          PYTHONPATH: src
+        run: |
+          if [ -z "$ZONE_DIFF_FILTER_FAKE_DIFF" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "Zone filter: no reliable diff for this event - full matrix will run." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          set +e
+          python scripts/zone_diff_filter.py --check docs-only
+          RC=$?
+          if [ $RC -eq 0 ]; then
+            echo "docs_only=true" >> "$GITHUB_OUTPUT"
+            echo "Zone filter: DOCS-ONLY - heavy matrix may be skipped." >> "$GITHUB_STEP_SUMMARY"
+          elif [ $RC -eq 1 ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "Zone filter: production/mixed diff - full matrix will run." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Zone filter exited with unexpected code $RC - defaulting to full matrix." >&2
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "Zone filter: ERROR (rc=$RC) - defaulting to full matrix." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   # ---------------------------------------------------------------------------
   # Phase 1.6 - Detect Changes (shadow mode)
