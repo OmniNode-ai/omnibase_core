@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
-# Receipt-Gate — reusable workflow enforcing "Enforcement by Receipt" (OMN-TBD).
+# Receipt-Gate — reusable workflow enforcing "Enforcement by Receipt" (OMN-10419).
 #
 # Every PR must cite a Linear ticket whose dod_evidence items all have PASS
 # receipts at the canonical path `<receipts-dir>/<OMN-XXXX>/<item-id>/<check-type>.yaml`.
@@ -17,6 +17,16 @@
 #                   since this workflow checks that repo out at that path.
 #   receipts-dir:   path to ModelDodReceipt YAMLs, relative to the
 #                   onex_change_control checkout (default: drift/dod_receipts).
+#
+# Evidence-Source pinning (OMN-10419 / T6a):
+#   PRs opened after this workflow's merge SHA must include a line in the PR body:
+#     Evidence-Source: OCC#<PR-number>    # an open OCC PR
+#     Evidence-Source: <40-char-sha>      # a merged OCC commit
+#   The gate resolves the commit-ish to an exact head SHA and checks out
+#   onex_change_control at that exact SHA — never at main. This prevents
+#   retroactive evidence pushes from satisfying prior PRs (invariant I7).
+#   OCC fetch failure → hard FAIL; no fallback to main (invariant I8).
+#   The job explicitly disables GHA cache so merge_group re-fires fully (I9).
 #
 # Secrets:
 #   (none — receipts + contracts are in-repo files, no API calls required)
@@ -46,6 +56,12 @@ jobs:
     name: verify
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # OMN-10419 invariant I9: disable GHA cache + artifact reuse so merge_group
+    # entry always re-evaluates fully. No stale PASS from a previous run can
+    # satisfy the gate on a new merge_group event.
+    env:
+      ACTIONS_CACHE_URL: ""
+      ACTIONS_RUNTIME_URL: ""
     steps:
       - name: Check out PR head
         uses: actions/checkout@v6
@@ -53,22 +69,133 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 1
 
-      - name: Resolve OCC main SHA
-        id: occ_ref
+      # OMN-10419: Resolve Evidence-Source commit-ish to an exact OCC SHA before
+      # checking out onex_change_control. Accepts two forms:
+      #   OCC#<number> — open PR head SHA (resolved via GitHub API)
+      #   <sha>        — merged commit SHA (validated as ancestor of OCC main)
+      # Writes the resolved exact SHA to /tmp/occ_sha.txt.
+      # Hard FAIL on OCC fetch failure — no fallback to main (invariant I8).
+      # Cutoff: only PRs opened after OMN-10419's merge SHA are required to
+      # include Evidence-Source. The PR creation date is compared against the
+      # cutoff commit's authored date from OCC's git log.
+      - name: Resolve Evidence-Source
+        id: resolve_evidence_source
         if: github.repository != 'OmniNode-ai/onex_change_control'
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+          PR_CREATED_AT: ${{ github.event.pull_request.created_at }}
         run: |
           set -euo pipefail
-          sha="$(gh api repos/OmniNode-ai/onex_change_control/git/ref/heads/main --jq '.object.sha')"
-          if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then
-            echo "::error::could not resolve immutable onex_change_control/main SHA"
+
+          # Derive the PR number for both pull_request and merge_group events.
+          if [ -n "${PR_NUMBER:-}" ]; then
+            resolved_pr_num="$PR_NUMBER"
+            pr_created_at="${PR_CREATED_AT:-}"
+          elif [ -n "${MERGE_GROUP_HEAD_REF:-}" ]; then
+            resolved_pr_num="$(printf '%s' "$MERGE_GROUP_HEAD_REF" | sed -E 's@^.*/pr-([0-9]+)-.*$@\1@')"
+            if [ -z "$resolved_pr_num" ] || [ "$resolved_pr_num" = "$MERGE_GROUP_HEAD_REF" ]; then
+              resolved_pr_num=""
+            fi
+            if [ -n "$resolved_pr_num" ]; then
+              pr_created_at="$(gh pr view "$resolved_pr_num" --repo "${{ github.repository }}" --json createdAt --jq '.createdAt' 2>/dev/null || true)"
+            else
+              pr_created_at=""
+            fi
+          else
+            resolved_pr_num=""
+            pr_created_at=""
+          fi
+
+          # Fetch PR body (needed to extract Evidence-Source line).
+          if [ -n "$resolved_pr_num" ]; then
+            pr_body="$(gh pr view "$resolved_pr_num" --repo "${{ github.repository }}" --json body --jq '.body' 2>/dev/null || true)"
+          else
+            pr_body=""
+          fi
+
+          # Extract Evidence-Source line.
+          # Accepts: "Evidence-Source: OCC#1234" or "Evidence-Source: <sha>"
+          evidence_source="$(printf '%s' "$pr_body" | grep -iE '^Evidence-Source:[[:space:]]+\S' | head -1 | sed -E 's/^Evidence-Source:[[:space:]]*//' | tr -d '[:space:]' || true)"
+
+          # Determine the cutoff commit date from OCC using the pinned SHA.
+          # The cutoff SHA is the merge commit for OMN-10419 (this PR).
+          # Until this PR is merged, EVIDENCE_SOURCE_CUTOFF_SHA is "PENDING_MERGE"
+          # and the cutoff check is skipped (all PRs are pre-cutoff).
+          OCC_CUTOFF_SHA="PENDING_MERGE"
+
+          cutoff_epoch=0
+          if [ "$OCC_CUTOFF_SHA" != "PENDING_MERGE" ]; then
+            # Resolve the cutoff date from OCC without a full checkout — use the
+            # GitHub API's commit endpoint.
+            cutoff_date="$(gh api "repos/OmniNode-ai/onex_change_control/commits/${OCC_CUTOFF_SHA}" --jq '.commit.committer.date' 2>/dev/null || true)"
+            if [ -n "$cutoff_date" ]; then
+              cutoff_epoch="$(date -d "$cutoff_date" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$cutoff_date" +%s 2>/dev/null || echo 0)"
+            fi
+          fi
+
+          # Check if this PR is before the cutoff (grandfathered).
+          pr_epoch=0
+          if [ -n "$pr_created_at" ]; then
+            pr_epoch="$(date -d "$pr_created_at" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$pr_created_at" +%s 2>/dev/null || echo 0)"
+          fi
+
+          if [ "$cutoff_epoch" -gt 0 ] && [ "$pr_epoch" -gt 0 ] && [ "$pr_epoch" -lt "$cutoff_epoch" ]; then
+            # PR predates cutoff — Evidence-Source not required.
+            echo "::notice::Evidence-Source not required: PR predates OMN-10419 cutoff (pr_epoch=${pr_epoch} < cutoff_epoch=${cutoff_epoch}). Falling back to OCC main."
+            echo "PENDING_MERGE" > /tmp/occ_sha.txt
+            echo "occ_sha=PENDING_MERGE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # If no Evidence-Source line present, hard fail.
+          if [ -z "$evidence_source" ]; then
+            echo "::error::RECEIPT GATE FAILED: PR body is missing required 'Evidence-Source:' line (OMN-10419). Add one of: 'Evidence-Source: OCC#<PR-number>' or 'Evidence-Source: <occ-sha>'"
             exit 1
           fi
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+          # Resolve the commit-ish to an exact OCC SHA.
+          if printf '%s' "$evidence_source" | grep -qiE '^OCC#[0-9]+$'; then
+            # OCC PR form: resolve to the current head SHA of that PR.
+            occ_pr_num="$(printf '%s' "$evidence_source" | sed -E 's/^OCC#//i')"
+            occ_sha="$(gh pr view "$occ_pr_num" --repo "OmniNode-ai/onex_change_control" --json headRefOid --jq '.headRefOid' 2>/dev/null || true)"
+            if [ -z "$occ_sha" ]; then
+              echo "::error::RECEIPT GATE FAILED: OCC PR #${occ_pr_num} could not be resolved — OCC unavailable or PR not found. Cannot verify evidence (OMN-10419 invariant I8)."
+              exit 1
+            fi
+          elif printf '%s' "$evidence_source" | grep -qiE '^[0-9a-f]{7,40}$'; then
+            # SHA form: validate it is an ancestor of OCC main or the head of an open OCC PR.
+            occ_sha="$evidence_source"
+            # First: check if it is an ancestor of OCC main.
+            is_ancestor="$(gh api "repos/OmniNode-ai/onex_change_control/compare/HEAD...${occ_sha}" --jq '.status' 2>/dev/null || true)"
+            if [ "$is_ancestor" = "behind" ] || [ "$is_ancestor" = "identical" ]; then
+              : # ancestor of main — valid
+            else
+              # Not an ancestor of main: check if it matches any open OCC PR head.
+              matched_pr="$(gh pr list --repo "OmniNode-ai/onex_change_control" --state open --json number,headRefOid --jq ".[] | select(.headRefOid | startswith(\"${occ_sha}\")) | .number" 2>/dev/null | head -1 || true)"
+              if [ -z "$matched_pr" ]; then
+                echo "::error::RECEIPT GATE FAILED: Evidence-Source SHA '${occ_sha}' is neither an ancestor of OCC main nor the head of an open OCC PR. Provide a valid OCC commit or open-PR head (OMN-10419)."
+                exit 1
+              fi
+            fi
+          else
+            echo "::error::RECEIPT GATE FAILED: Evidence-Source value '${evidence_source}' is not a valid OCC#<number> or hex SHA. Accepted forms: 'OCC#1234' or '<sha>' (OMN-10419)."
+            exit 1
+          fi
+
+          # Write the resolved exact SHA for subsequent steps.
+          printf '%s' "$occ_sha" > /tmp/occ_sha.txt
+          # Expose as step output for the checkout step's ref field.
+          echo "occ_sha=${occ_sha}" >> "$GITHUB_OUTPUT"
+          echo "::notice::Evidence-Source resolved to OCC SHA: ${occ_sha}"
 
       # We need the onex_change_control repo to find contracts + receipts.
-      # Downstream callers must read it through the pinned SHA resolved above;
+      # OMN-10419: checkout at the exact SHA resolved above (never at main).
+      # This prevents retroactive evidence pushes from satisfying prior PRs (I7).
+      # OCC fetch failure → hard FAIL via the preceding Resolve Evidence-Source step.
+      # The ref uses the step output: "PENDING_MERGE" for pre-cutoff PRs falls
+      # back to main; any real SHA pins the checkout to that exact commit.
       # onex_change_control PRs are the only exception and validate evidence
       # inside the PR checkout to avoid circular "already on main" dependency.
       - name: Check out onex_change_control (for contracts + receipts)
@@ -77,8 +204,64 @@ jobs:
         with:
           repository: OmniNode-ai/onex_change_control
           path: .onex_change_control
-          ref: ${{ steps.occ_ref.outputs.sha }}
+          ref: ${{ steps.resolve_evidence_source.outputs.occ_sha == 'PENDING_MERGE' && 'main' || steps.resolve_evidence_source.outputs.occ_sha || 'main' }}
           fetch-depth: 1
+
+      # OMN-10419 Finding 2: assert that the contract for the cited ticket exists
+      # at the pinned OCC SHA. A valid commit-ish with no contract for this
+      # ticket (e.g., predates the ticket) is a hard FAIL.
+      - name: Assert contract exists at pinned OCC SHA
+        if: github.repository != 'OmniNode-ai/onex_change_control'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+        run: |
+          set -euo pipefail
+
+          # Skip if pre-cutoff (occ_sha.txt contains PENDING_MERGE).
+          if [ -f /tmp/occ_sha.txt ]; then
+            occ_sha="$(cat /tmp/occ_sha.txt)"
+            if [ "$occ_sha" = "PENDING_MERGE" ]; then
+              echo "::notice::Pre-cutoff PR — skipping contract existence assertion."
+              exit 0
+            fi
+          fi
+
+          # Derive PR number.
+          if [ -n "${PR_NUMBER:-}" ]; then
+            resolved_pr_num="$PR_NUMBER"
+          elif [ -n "${MERGE_GROUP_HEAD_REF:-}" ]; then
+            resolved_pr_num="$(printf '%s' "$MERGE_GROUP_HEAD_REF" | sed -E 's@^.*/pr-([0-9]+)-.*$@\1@')"
+            [ "$resolved_pr_num" = "$MERGE_GROUP_HEAD_REF" ] && resolved_pr_num=""
+          else
+            resolved_pr_num=""
+          fi
+
+          # Extract ticket IDs from PR title (most direct source).
+          if [ -n "$resolved_pr_num" ]; then
+            pr_title="$(gh pr view "$resolved_pr_num" --repo "${{ github.repository }}" --json title --jq '.title' 2>/dev/null || true)"
+          else
+            pr_title=""
+          fi
+
+          ticket_ids="$(printf '%s' "$pr_title" | grep -oiE 'OMN-[0-9]+' | sort -u || true)"
+          if [ -z "$ticket_ids" ]; then
+            # No ticket in title — receipt_gate_cli will handle the "no ticket" error.
+            exit 0
+          fi
+
+          # Assert each cited ticket has a contract file at the pinned OCC SHA.
+          contracts_dir=".onex_change_control/${{ inputs.contracts-dir }}"
+          fail=0
+          while IFS= read -r ticket_id; do
+            contract_path="${contracts_dir}/${ticket_id}.yaml"
+            if [ ! -f "$contract_path" ]; then
+              echo "::error::RECEIPT GATE FAILED: Evidence-Source predates this ticket's contract — ${contract_path} does not exist at the pinned OCC SHA. The cited OCC commit predates the contract for ${ticket_id} (OMN-10419 Finding 2)."
+              fail=1
+            fi
+          done <<< "$ticket_ids"
+          exit "$fail"
 
       - name: Set up Python 3.13
         uses: actions/setup-python@v6
