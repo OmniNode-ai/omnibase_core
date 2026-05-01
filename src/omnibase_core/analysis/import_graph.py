@@ -18,6 +18,10 @@ class ImportGraph:
     edges_out: dict[str, set[str]] = field(default_factory=dict)
 
 
+def _to_repo_rel(path: Path, repo_root: Path) -> str:
+    return path.relative_to(repo_root).as_posix()
+
+
 def build_import_graph(repo_root: Path) -> ImportGraph:
     """Build a static import graph for Python and JS/TS files under repo_root."""
     graph = ImportGraph()
@@ -36,13 +40,13 @@ def build_import_graph(repo_root: Path) -> ImportGraph:
             js_files.append(path)
 
     for path in py_files:
-        rel = str(path.relative_to(repo_root))
+        rel = _to_repo_rel(path, repo_root)
         edges = _parse_python_imports(path, repo_root, python_search_roots)
         if edges:
             graph.edges_out[rel] = edges
 
     for path in js_files:
-        rel = str(path.relative_to(repo_root))
+        rel = _to_repo_rel(path, repo_root)
         edges = _parse_js_imports(path, repo_root)
         if edges:
             graph.edges_out[rel] = edges
@@ -77,7 +81,7 @@ def _parse_python_imports(
                 )
 
     edges: set[str] = set()
-    src_rel = str(path.relative_to(repo_root))
+    src_rel = _to_repo_rel(path, repo_root)
 
     for module_name in imports:
         resolved = _resolve_python_module(module_name, repo_root, search_roots)
@@ -149,11 +153,11 @@ def _resolve_python_module(
         # Try as package (directory with __init__.py)
         pkg_path = search_root / candidate_rel / "__init__.py"
         if pkg_path.is_file():
-            return str(pkg_path.relative_to(repo_root))
+            return _to_repo_rel(pkg_path, repo_root)
         # Try as module file
         mod_path = search_root / candidate_rel.with_suffix(".py")
         if mod_path.is_file():
-            return str(mod_path.relative_to(repo_root))
+            return _to_repo_rel(mod_path, repo_root)
 
     return None
 
@@ -165,7 +169,7 @@ def _parse_js_imports(path: Path, repo_root: Path) -> set[str]:
     except OSError:
         return set()
 
-    src_rel = str(path.relative_to(repo_root))
+    src_rel = _to_repo_rel(path, repo_root)
     edges: set[str] = set()
 
     source = _strip_js_comments(source)
@@ -408,7 +412,7 @@ def _resolve_js_specifier(
     for attempt in attempts:
         if attempt.is_file():
             try:
-                return str(attempt.relative_to(repo_root))
+                return _to_repo_rel(attempt, repo_root)
             except ValueError:
                 return None
 
