@@ -13,7 +13,7 @@ from omnibase_core.enums.enum_hook_bit import EnumHookBit, hook_enabled
 pytestmark = pytest.mark.unit
 
 # Frozen GATE count from Task 1 inventory. Update only when the inventory doc changes.
-_N_GATE = 58
+_N_GATE = 59
 
 
 class TestEnumHookBit:
