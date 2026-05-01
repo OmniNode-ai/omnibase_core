@@ -38,6 +38,59 @@ def test_classify_docs() -> None:
     assert classify_path(Path("docs/architecture.md")) == EnumFileZone.DOCS
 
 
+def test_classify_contracts_yaml_is_docs() -> None:
+    # Top-level contracts/ holds OCC ticket contracts — declarative evidence,
+    # no runtime impact, must skip the heavy matrix.
+    assert classify_path(Path("contracts/OMN-10411.yaml")) == EnumFileZone.DOCS
+
+
+def test_classify_dod_receipts_yaml_is_docs() -> None:
+    assert (
+        classify_path(Path("drift/dod_receipts/OMN-10411/dod-001/command.yaml"))
+        == EnumFileZone.DOCS
+    )
+
+
+def test_classify_allowlists_yaml_is_docs() -> None:
+    assert classify_path(Path("allowlists/skip_tokens.yaml")) == EnumFileZone.DOCS
+
+
+def test_classify_evidence_yaml_is_docs() -> None:
+    # Legacy .evidence/ tree
+    assert classify_path(Path(".evidence/OMN-9999/proof.yaml")) == EnumFileZone.DOCS
+
+
+def test_src_contracts_yaml_stays_production() -> None:
+    # Crucially: a contracts/ directory inside src/ is package code, not
+    # declarative evidence — production gate must still apply.
+    assert (
+        classify_path(Path("src/omnibase_core/nodes/foo/contracts/contract.yaml"))
+        == EnumFileZone.PRODUCTION
+    )
+
+
+def test_root_contract_yaml_stays_production_via_src() -> None:
+    # node-local contract.yaml under src/ — runtime behavior, full matrix.
+    assert (
+        classify_path(Path("src/omnimarket/nodes/node_foo/contract.yaml"))
+        == EnumFileZone.PRODUCTION
+    )
+
+
+def test_pyproject_toml_stays_config() -> None:
+    # Sanity: build/runtime config at repo root is still CONFIG, not DOCS.
+    assert classify_path(Path("pyproject.toml")) == EnumFileZone.CONFIG
+
+
+def test_metadata_yaml_stays_config() -> None:
+    assert classify_path(Path("metadata.yaml")) == EnumFileZone.CONFIG
+
+
+def test_workflow_yaml_stays_config() -> None:
+    # CI workflows are not declarative evidence — they affect every run.
+    assert classify_path(Path(".github/workflows/ci.yml")) == EnumFileZone.CONFIG
+
+
 def test_classify_build() -> None:
     assert classify_path(Path("scripts/deploy.sh")) == EnumFileZone.BUILD
 

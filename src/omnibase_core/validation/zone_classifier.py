@@ -10,7 +10,19 @@ from omnibase_core.enums.enum_file_zone import EnumFileZone
 
 _GENERATED_MARKERS = ("__pycache__", "dist/", ".generated.", "node_modules/")
 _TEST_PREFIXES = ("tests/", "test/")
-_DOCS_PREFIXES = ("docs/", "standards/")
+# Declarative-evidence trees: contract YAML, DoD receipts, allowlists,
+# legacy .evidence/. These never affect runtime — receipt-gate validates
+# them independently — so they short-circuit the heavy CI matrix the same
+# way docs do. Production contract.yaml inside src/ is unaffected because
+# the PRODUCTION check runs first.
+_DOCS_PREFIXES = (
+    "docs/",
+    "standards/",
+    "contracts/",
+    "drift/dod_receipts/",
+    "allowlists/",
+    ".evidence/",
+)
 _BUILD_PREFIXES = ("scripts/",)
 _BUILD_NAMES = {"Dockerfile", "docker-compose.yml", "docker-compose.yaml", "Makefile"}
 _CONFIG_SUFFIXES = (".yaml", ".yml", ".toml", ".json", ".ini")
