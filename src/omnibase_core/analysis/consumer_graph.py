@@ -26,6 +26,7 @@ def build_consumer_graph(repo_root: Path) -> dict[str, int]:
             if cached.get("sha") == head_sha:
                 return {k: v for k, v in cached.items() if k != "sha"}
         except (json.JSONDecodeError, OSError):
+            # Cache misses and corrupt cache files fall back to recomputation.
             pass
 
     counts = _compute(repo_root)
@@ -62,4 +63,5 @@ def _write_cache(cache_path: Path, sha: str | None, counts: dict[str, int]) -> N
         payload: dict[str, object] = {"sha": sha, **counts}
         cache_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     except OSError:
+        # Consumer graph caching is best effort; callers still receive counts.
         pass
