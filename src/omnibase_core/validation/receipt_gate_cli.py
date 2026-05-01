@@ -94,6 +94,24 @@ def main(argv: list[str] | None = None) -> int:
         help="OMN-10417: PR number. Used for skip-token scope check.",
     )
     parser.add_argument(
+        "--evidence-ticket",
+        default=None,
+        help=(
+            "OMN-10420: OMN-XXXX ticket id from 'Evidence-Ticket:' PR body line. "
+            "When provided, identity binding is enforced across PR title, branch name, "
+            "contract ticket_id, and receipt ticket_id. When omitted, auto-detected "
+            "from the PR body; if absent there too, the gate fails."
+        ),
+    )
+    parser.add_argument(
+        "--branch-name",
+        default=None,
+        help=(
+            "OMN-10420: Git branch name of the PR head. Used for axis-2 identity "
+            "binding (branch must reference the same ticket as Evidence-Ticket)."
+        ),
+    )
+    parser.add_argument(
         "--reexecute-probes",
         action="store_true",
         default=False,
@@ -115,6 +133,8 @@ def main(argv: list[str] | None = None) -> int:
         pr_author=args.pr_author,
         current_repo=args.current_repo,
         current_pr_number=args.current_pr_number,
+        evidence_ticket=args.evidence_ticket,
+        branch_name=args.branch_name,
     )
 
     if result.friction_logged:
