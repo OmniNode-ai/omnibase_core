@@ -2,18 +2,28 @@
 # SPDX-License-Identifier: MIT
 
 
+from typing import Literal
+
+import pytest
+
+import omnibase_core.agents.prm_escalation as prm_escalation
 from omnibase_core.agents.prm_escalation import EscalationTracker
 from omnibase_core.enums.enum_prm_pattern import EnumPrmPattern
 from omnibase_core.models.agents.model_prm_match import ModelPrmMatch
 
+pytestmark = pytest.mark.unit
 
-def _make_match(dedup_key: str, severity_level: int = 1) -> ModelPrmMatch:
+
+def _make_match(
+    dedup_key: str,
+    severity_level: Literal[1, 2, 3] = 1,
+) -> ModelPrmMatch:
     return ModelPrmMatch(
         pattern=EnumPrmPattern.REPETITION_LOOP,
         affected_agents=("agent_a",),
         affected_targets=("target_x",),
         step_range=(0, 5),
-        severity_level=severity_level,  # type: ignore[arg-type]
+        severity_level=severity_level,
         dedup_key=dedup_key,
     )
 
@@ -86,3 +96,34 @@ def test_shared_state_across_tracker_instances() -> None:
     tracker_b.process(_make_match("key-h"))
     result = tracker_b.process(_make_match("key-h"))
     assert result.severity_level == 3
+
+
+def test_session_state_evicts_oldest_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    EscalationTracker.reset_all_sessions()
+    monkeypatch.setattr(prm_escalation, "_MAX_SESSION_STATE_ENTRIES", 2)
+
+    oldest = EscalationTracker(session_id="session-oldest")
+    oldest.process(_make_match("key-i"))
+    EscalationTracker(session_id="session-middle")
+
+    EscalationTracker(session_id="session-newest")
+
+    result = oldest.process(_make_match("key-i"))
+
+    assert result.severity_level == 1
+    assert list(prm_escalation._SESSION_STATE) == [
+        "session-newest",
+        "session-oldest",
+    ]
+
+
+def test_session_state_can_be_reset() -> None:
+    tracker = EscalationTracker(session_id="session-reset")
+    tracker.process(_make_match("key-k"))
+
+    EscalationTracker.reset_session("session-reset")
+    result = tracker.process(_make_match("key-k"))
+
+    assert result.severity_level == 1

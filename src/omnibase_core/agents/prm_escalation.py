@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import threading
+from collections import OrderedDict
 
 from omnibase_core.agents.prm_course_corrections import (
     HARD_STOP_SENTINEL,
@@ -12,21 +13,45 @@ from omnibase_core.models.agents.model_escalation_result import ModelEscalationR
 from omnibase_core.models.agents.model_prm_match import ModelPrmMatch
 
 # Global session state: session_id → {dedup_key → hit_count}
-_SESSION_STATE: dict[str, dict[str, int]] = {}
+_MAX_SESSION_STATE_ENTRIES = 1024
+_SESSION_STATE: OrderedDict[str, dict[str, int]] = OrderedDict()
 _STATE_LOCK = threading.Lock()
+
+
+def _session_state_for_locked(session_id: str) -> dict[str, int]:
+    session = _SESSION_STATE.get(session_id)
+    if session is not None:
+        _SESSION_STATE.move_to_end(session_id)
+        return session
+
+    if len(_SESSION_STATE) >= _MAX_SESSION_STATE_ENTRIES:
+        _SESSION_STATE.popitem(last=False)
+
+    session = {}
+    _SESSION_STATE[session_id] = session
+    return session
 
 
 class EscalationTracker:
     def __init__(self, session_id: str) -> None:
         self._session_id = session_id
         with _STATE_LOCK:
-            if session_id not in _SESSION_STATE:
-                _SESSION_STATE[session_id] = {}
+            _session_state_for_locked(session_id)
+
+    @staticmethod
+    def reset_session(session_id: str) -> None:
+        with _STATE_LOCK:
+            _SESSION_STATE.pop(session_id, None)
+
+    @staticmethod
+    def reset_all_sessions() -> None:
+        with _STATE_LOCK:
+            _SESSION_STATE.clear()
 
     def process(self, match: ModelPrmMatch) -> ModelEscalationResult:
         key = match.dedup_key
         with _STATE_LOCK:
-            session = _SESSION_STATE[self._session_id]
+            session = _session_state_for_locked(self._session_id)
             session[key] = session.get(key, 0) + 1
             count = session[key]
 
