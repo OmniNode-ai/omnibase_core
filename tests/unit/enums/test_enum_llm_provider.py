@@ -114,7 +114,7 @@ class TestEnumLlmProvider:
 
     def test_requires_api_key_method(self):
         """Test the requires_api_key method — all use SSO/OAuth (OMN-7835)."""
-        for provider in EnumLlmProvider:
+        for provider in EnumLlmProvider.__members__.values():
             assert provider.requires_api_key() is False
 
     def test_enum_provider_types(self):
@@ -133,7 +133,7 @@ class TestEnumLlmProvider:
             EnumLlmProvider.LITELLM,
         }
 
-        all_providers = set(EnumLlmProvider)
+        all_providers = set(EnumLlmProvider.__members__.values())
         assert commercial_providers.union(local_providers) == all_providers
 
         # Verify no providers require API keys (SSO/OAuth, OMN-7835)
