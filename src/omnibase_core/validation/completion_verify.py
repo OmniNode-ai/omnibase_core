@@ -75,6 +75,22 @@ def verify(
     files_touched: list[str] | None,
     project_root: Path,
 ) -> ModelCompletionVerifyResult:
+    """Verify described identifiers against resolved project file targets.
+
+    Args:
+        task_id: Ticket or task identifier copied into the result.
+        description: Completion text scanned for identifier mentions.
+        files_touched: Relative file targets; ``None`` or empty means no known
+            files and produces a skipped result.
+        project_root: Repository root used to resolve and bound file targets.
+
+    Returns:
+        A frozen result with found and missing identifiers. Unreadable targets
+        are skipped so remaining files can still satisfy the verification.
+
+    Raises:
+        ValueError: If a resolved file target escapes ``project_root``.
+    """
     targets = resolve_file_targets(description, project_root, files_touched or [])
     if not targets:
         return ModelCompletionVerifyResult(
@@ -91,7 +107,11 @@ def verify(
         for t in targets:
             if not t.is_file():
                 continue
-            if ident in t.read_text(errors="ignore"):
+            try:
+                content = t.read_text(errors="ignore")
+            except OSError:
+                continue
+            if ident in content:
                 found[ident] = str(t)
                 break
     missing = [i for i in idents if i not in found]

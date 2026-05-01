@@ -11,6 +11,7 @@ from omnibase_core.models.validation.model_completion_verify_result import (
 from omnibase_core.validation.completion_verify import verify
 
 
+@pytest.mark.unit
 def test_verify_finds_identifier(tmp_path: Path) -> None:
     f = tmp_path / "src" / "x.py"
     f.parent.mkdir(parents=True)
@@ -27,6 +28,7 @@ def test_verify_finds_identifier(tmp_path: Path) -> None:
     assert not result.skipped
 
 
+@pytest.mark.unit
 def test_verify_missing(tmp_path: Path) -> None:
     f = tmp_path / "src" / "x.py"
     f.parent.mkdir(parents=True)
@@ -40,6 +42,7 @@ def test_verify_missing(tmp_path: Path) -> None:
     assert "fooBar" in result.missing
 
 
+@pytest.mark.unit
 def test_verify_skips_when_no_files(tmp_path: Path) -> None:
     result = verify(
         task_id="OMN-RESEARCH",
@@ -51,6 +54,7 @@ def test_verify_skips_when_no_files(tmp_path: Path) -> None:
     assert result.skipped_reason is not None
 
 
+@pytest.mark.unit
 def test_verify_multiple_identifiers_across_files(tmp_path: Path) -> None:
     src = tmp_path / "src"
     src.mkdir(parents=True)
@@ -67,6 +71,7 @@ def test_verify_multiple_identifiers_across_files(tmp_path: Path) -> None:
     assert result.missing == []
 
 
+@pytest.mark.unit
 def test_verify_skips_when_empty_files_touched(tmp_path: Path) -> None:
     result = verify(
         task_id="OMN-3",
@@ -76,6 +81,38 @@ def test_verify_skips_when_empty_files_touched(tmp_path: Path) -> None:
     )
     assert result.skipped
     assert result.skipped_reason is not None
+
+
+@pytest.mark.unit
+def test_verify_continues_when_target_is_unreadable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    src = tmp_path / "src"
+    src.mkdir(parents=True)
+    unreadable = src / "unreadable.py"
+    unreadable.write_text("def fooBar(): ...")
+    readable = src / "readable.py"
+    readable.write_text("def fooBar(): ...")
+    original_read_text = Path.read_text
+
+    def read_text_or_raise(
+        self: Path, encoding: str | None = None, errors: str | None = None
+    ) -> str:
+        if self == unreadable.resolve():
+            raise OSError("permission denied")
+        return original_read_text(self, encoding=encoding, errors=errors)
+
+    monkeypatch.setattr(Path, "read_text", read_text_or_raise)
+
+    result = verify(
+        task_id="OMN-4",
+        description="Implement `fooBar`",
+        files_touched=["src/unreadable.py", "src/readable.py"],
+        project_root=tmp_path,
+    )
+
+    assert result.found == {"fooBar": str(readable.resolve())}
+    assert result.missing == []
 
 
 @pytest.mark.unit
@@ -90,4 +127,5 @@ def test_verify_returns_frozen_result(tmp_path: Path) -> None:
         project_root=tmp_path,
     )
     with pytest.raises(Exception):
+        # NOTE(OMN-10360): intentional frozen-model mutation assertion.
         result.task_id = "CHANGED"  # type: ignore[misc]
