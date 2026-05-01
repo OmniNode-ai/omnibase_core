@@ -66,6 +66,39 @@ def main(argv: list[str] | None = None) -> int:
         help="Directory tree containing ModelDodReceipt YAML files.",
     )
     parser.add_argument(
+        "--current-repo",
+        default=None,
+        help=(
+            "Repository short name supplied by newer receipt-gate workflows. "
+            "Accepted for workflow compatibility."
+        ),
+    )
+    parser.add_argument(
+        "--allowlist-path",
+        default=None,
+        help=(
+            "Path to skip-token approval allowlist supplied by newer "
+            "receipt-gate workflows. Accepted for workflow compatibility."
+        ),
+    )
+    parser.add_argument(
+        "--pr-author",
+        default=None,
+        help=(
+            "PR author supplied by newer receipt-gate workflows. Accepted for "
+            "workflow compatibility."
+        ),
+    )
+    parser.add_argument(
+        "--current-pr-number",
+        type=int,
+        default=None,
+        help=(
+            "PR number supplied by newer receipt-gate workflows. Accepted for "
+            "workflow compatibility."
+        ),
+    )
+    parser.add_argument(
         "--reexecute-probes",
         action="store_true",
         default=False,
