@@ -91,7 +91,7 @@ def main() -> int:
         return 0
 
     if "--write-state" in args:
-        state_dir = cwd / ".onex_state"
+        state_dir = repo_root / ".onex_state"
         state_dir.mkdir(parents=True, exist_ok=True)
         state_file = state_dir / "co-change-map.json"
         state_file.write_text(json.dumps({"pairs": list(pairs)}, indent=2))

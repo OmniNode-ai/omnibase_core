@@ -117,6 +117,7 @@ def test_python_relative_import_rejects_package_escape(tmp_path: Path) -> None:
     g = build_import_graph(tmp_path)
     assert g.edges_out.get("pkg/a.py", set()) == set()
 
+
 def test_python_relative_from_import_submodule_detected(tmp_path: Path) -> None:
     pkg = tmp_path / "pkg"
     nested = pkg / "nested"
@@ -222,3 +223,26 @@ def test_js_multiline_esm_import_detected(tmp_path: Path) -> None:
     b.write_text("export const foo = 1; export const bar = 2;\n")
     g = build_import_graph(tmp_path)
     assert "utils.ts" in g.edges_out["a.ts"]
+
+
+@pytest.mark.parametrize(
+    ("import_spec", "target"),
+    [
+        ("./direct", "direct.mjs"),
+        ("./direct", "direct.cjs"),
+        ("./widget", "widget/index.jsx"),
+        ("./widget", "widget/index.tsx"),
+        ("./widget", "widget/index.mjs"),
+        ("./widget", "widget/index.cjs"),
+    ],
+)
+def test_js_resolution_uses_all_declared_extensions(
+    tmp_path: Path, import_spec: str, target: str
+) -> None:
+    source = tmp_path / "page.ts"
+    target_path = tmp_path / target
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    source.write_text(f"import value from '{import_spec}';\n")
+    target_path.write_text("export default 1;\n")
+    g = build_import_graph(tmp_path)
+    assert target in g.edges_out["page.ts"]
