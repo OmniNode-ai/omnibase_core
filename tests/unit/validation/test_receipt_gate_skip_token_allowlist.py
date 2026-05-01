@@ -16,6 +16,7 @@ Also tests:
     - placeholder token (<token>) → falls through to ticket extraction
     - missing scope_pr_numbers → FAIL
     - no allowlist_path provided → FAIL
+    - missing PR context for allowlist skip → FAIL
 """
 
 from __future__ import annotations
@@ -73,6 +74,7 @@ class TestSkipTokenAllowlist:
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
             allowlist_path=allowlist,
+            pr_author="worker-A",
             current_repo="omnibase_core",
             current_pr_number=999,
         )
@@ -93,6 +95,7 @@ class TestSkipTokenAllowlist:
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
             allowlist_path=allowlist,
+            pr_author="worker-A",
             current_repo="omnibase_core",
             current_pr_number=999,
         )
@@ -113,6 +116,7 @@ class TestSkipTokenAllowlist:
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
             allowlist_path=allowlist,
+            pr_author="worker-A",
             current_repo="omnibase_core",
             current_pr_number=999,
         )
@@ -133,6 +137,7 @@ class TestSkipTokenAllowlist:
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
             allowlist_path=allowlist,
+            pr_author="worker-A",
             current_repo="omnibase_core",
             current_pr_number=999,
         )
@@ -260,6 +265,7 @@ class TestSkipTokenEdgeCases:
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
             allowlist_path=allowlist,
+            pr_author="worker-A",
             current_repo="omnibase_core",
             current_pr_number=999,
         )
@@ -281,3 +287,37 @@ class TestSkipTokenEdgeCases:
             "allowlist" in result.message.lower()
             or "no allowlist" in result.message.lower()
         )
+
+    @pytest.mark.parametrize(
+        "missing_name", ["pr_author", "current_repo", "current_pr_number"]
+    )
+    def test_allowlist_skip_requires_full_pr_context(
+        self,
+        tmp_path: Path,
+        missing_name: str,
+    ) -> None:
+        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
+        _write_allowlist(allowlist, [_valid_entry(entry_id="appr-valid")])
+        pr_author: str | None = "worker-A"
+        current_repo: str | None = "omnibase_core"
+        current_pr_number: int | None = 999
+        if missing_name == "pr_author":
+            pr_author = None
+        elif missing_name == "current_repo":
+            current_repo = None
+        else:
+            current_pr_number = None
+
+        result = validate_pr_receipts(
+            pr_body="[skip-receipt-gate: appr-valid]",
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+            allowlist_path=allowlist,
+            pr_author=pr_author,
+            current_repo=current_repo,
+            current_pr_number=current_pr_number,
+        )
+
+        assert not result.passed
+        assert missing_name in result.message
+        assert "required PR context is missing" in result.message

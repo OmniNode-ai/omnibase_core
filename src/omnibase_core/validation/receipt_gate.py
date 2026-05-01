@@ -317,9 +317,9 @@ def _validate_skip_token(
 
     Args:
         approval_id: The bare identifier from ``[skip-receipt-gate: <id>]``.
-        pr_author: GitHub login of the PR author. None disables self-approval check.
-        current_repo: Repo name (e.g. ``omnibase_core``) to scope check. None disables.
-        current_pr_number: PR number to scope check. None disables.
+        pr_author: GitHub login of the PR author for self-approval checks.
+        current_repo: Repo name (e.g. ``omnibase_core``) to scope check.
+        current_pr_number: PR number to scope check.
         allowlist_path: Path to ``skip_token_approvals.yaml``.
 
     Returns:
@@ -467,9 +467,9 @@ def validate_pr_receipts(
         allowlist_path: Path to ``onex_change_control/allowlists/skip_token_approvals.yaml``.
             When None, any ``[skip-receipt-gate: <id>]`` token is rejected because
             there is no allowlist to verify against.
-        pr_author: GitHub login of the PR author. Used for self-approval check.
-        current_repo: Repository name (e.g. ``omnibase_core``). Used for scope check.
-        current_pr_number: PR number. Used for scope check.
+        pr_author: GitHub login of the PR author. Required for skip tokens.
+        current_repo: Repository name (e.g. ``omnibase_core``). Required for skip tokens.
+        current_pr_number: PR number. Required for skip tokens.
     """
     override = OVERRIDE_PATTERN.search(pr_body)
     if override:
@@ -482,6 +482,25 @@ def validate_pr_receipts(
                     "no allowlist_path provided to the gate. "
                     "Pass --allowlist-path pointing to "
                     "onex_change_control/allowlists/skip_token_approvals.yaml."
+                ),
+            )
+        if pr_author is None or current_repo is None or current_pr_number is None:
+            missing_context = [
+                name
+                for name, value in (
+                    ("pr_author", pr_author),
+                    ("current_repo", current_repo),
+                    ("current_pr_number", current_pr_number),
+                )
+                if value is None
+            ]
+            return ModelReceiptGateResult(
+                passed=False,
+                message=(
+                    f"[skip-receipt-gate] REJECTED: token {approval_id!r} present but "
+                    f"required PR context is missing: {', '.join(missing_context)}. "
+                    "Pass --pr-author, --current-repo, and --current-pr-number so "
+                    "self-approval and repo/PR scope checks cannot be bypassed."
                 ),
             )
         accepted, message = _validate_skip_token(
