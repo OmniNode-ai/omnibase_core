@@ -160,12 +160,14 @@ def parse_evidence_source(pr_body: str) -> tuple[str | None, str | None]:
         - Present but invalid form: returns ``(None, None)`` with the caller
           responsible for detecting the presence via EVIDENCE_SOURCE_ANY_PATTERN.
     """
-    m_pr = EVIDENCE_SOURCE_OCC_PR_PATTERN.search(pr_body)
-    if m_pr:
-        return (m_pr.group(1), None)
-    m_sha = EVIDENCE_SOURCE_SHA_PATTERN.search(pr_body)
-    if m_sha:
-        return (None, m_sha.group(1))
+    for line in pr_body.splitlines():
+        if not line.lower().startswith("evidence-source:"):
+            continue
+        if m_pr := EVIDENCE_SOURCE_OCC_PR_PATTERN.fullmatch(line):
+            return (m_pr.group(1), None)
+        if m_sha := EVIDENCE_SOURCE_SHA_PATTERN.fullmatch(line):
+            return (None, m_sha.group(1))
+        break
     return (None, None)
 
 

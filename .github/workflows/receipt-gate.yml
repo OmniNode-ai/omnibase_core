@@ -117,7 +117,7 @@ jobs:
 
           # Extract Evidence-Source line.
           # Accepts: "Evidence-Source: OCC#1234" or "Evidence-Source: <sha>"
-          evidence_source="$(printf '%s' "$pr_body" | grep -iE '^Evidence-Source:[[:space:]]+\S' | head -1 | sed -E 's/^Evidence-Source:[[:space:]]*//' | tr -d '[:space:]' || true)"
+          evidence_source="$(printf '%s' "$pr_body" | grep -iE '^Evidence-Source:[[:space:]]+\S' | head -1 | sed -E 's/^Evidence-Source:[[:space:]]*//; s/^[[:space:]]+//; s/[[:space:]]+$//' || true)"
 
           # Determine the cutoff commit date from OCC using the pinned SHA.
           # The cutoff SHA is the merge commit for OMN-10419 (this PR).
@@ -125,14 +125,19 @@ jobs:
           # and the cutoff check is skipped (all PRs are pre-cutoff).
           OCC_CUTOFF_SHA="PENDING_MERGE"
 
+          if [ "$OCC_CUTOFF_SHA" = "PENDING_MERGE" ]; then
+            echo "::notice::Evidence-Source not required: OMN-10419 cutoff SHA is PENDING_MERGE, so this run is treated as pre-cutoff."
+            echo "PENDING_MERGE" > /tmp/occ_sha.txt
+            echo "occ_sha=PENDING_MERGE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           cutoff_epoch=0
-          if [ "$OCC_CUTOFF_SHA" != "PENDING_MERGE" ]; then
-            # Resolve the cutoff date from OCC without a full checkout — use the
-            # GitHub API's commit endpoint.
-            cutoff_date="$(gh api "repos/OmniNode-ai/onex_change_control/commits/${OCC_CUTOFF_SHA}" --jq '.commit.committer.date' 2>/dev/null || true)"
-            if [ -n "$cutoff_date" ]; then
-              cutoff_epoch="$(date -d "$cutoff_date" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$cutoff_date" +%s 2>/dev/null || echo 0)"
-            fi
+          # Resolve the cutoff date from OCC without a full checkout — use the
+          # GitHub API's commit endpoint.
+          cutoff_date="$(gh api "repos/OmniNode-ai/onex_change_control/commits/${OCC_CUTOFF_SHA}" --jq '.commit.committer.date' 2>/dev/null || true)"
+          if [ -n "$cutoff_date" ]; then
+            cutoff_epoch="$(date -d "$cutoff_date" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$cutoff_date" +%s 2>/dev/null || echo 0)"
           fi
 
           # Check if this PR is before the cutoff (grandfathered).
@@ -170,14 +175,19 @@ jobs:
             # First: check if it is an ancestor of OCC main.
             is_ancestor="$(gh api "repos/OmniNode-ai/onex_change_control/compare/HEAD...${occ_sha}" --jq '.status' 2>/dev/null || true)"
             if [ "$is_ancestor" = "behind" ] || [ "$is_ancestor" = "identical" ]; then
-              : # ancestor of main — valid
+              occ_sha="$(gh api "repos/OmniNode-ai/onex_change_control/commits/${occ_sha}" --jq '.sha' 2>/dev/null || true)"
+              if [ -z "$occ_sha" ]; then
+                echo "::error::RECEIPT GATE FAILED: Evidence-Source SHA could not be canonicalized to a full OCC commit SHA (OMN-10419)."
+                exit 1
+              fi
             else
               # Not an ancestor of main: check if it matches any open OCC PR head.
-              matched_pr="$(gh pr list --repo "OmniNode-ai/onex_change_control" --state open --json number,headRefOid --jq ".[] | select(.headRefOid | startswith(\"${occ_sha}\")) | .number" 2>/dev/null | head -1 || true)"
-              if [ -z "$matched_pr" ]; then
+              matched_head="$(gh pr list --repo "OmniNode-ai/onex_change_control" --state open --json headRefOid --jq ".[] | select(.headRefOid | startswith(\"${occ_sha}\")) | .headRefOid" 2>/dev/null | head -1 || true)"
+              if [ -z "$matched_head" ]; then
                 echo "::error::RECEIPT GATE FAILED: Evidence-Source SHA '${occ_sha}' is neither an ancestor of OCC main nor the head of an open OCC PR. Provide a valid OCC commit or open-PR head (OMN-10419)."
                 exit 1
               fi
+              occ_sha="$matched_head"
             fi
           else
             echo "::error::RECEIPT GATE FAILED: Evidence-Source value '${evidence_source}' is not a valid OCC#<number> or hex SHA. Accepted forms: 'OCC#1234' or '<sha>' (OMN-10419)."

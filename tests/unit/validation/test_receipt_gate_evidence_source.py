@@ -83,10 +83,22 @@ class TestParseEvidenceSource:
         assert sha is None
 
     def test_occ_pr_form_takes_precedence_over_sha(self) -> None:
-        """If OCC#NNN appears first in the body, it is returned."""
+        """If OCC#NNN is the first Evidence-Source line, it is returned."""
         body = "Evidence-Source: OCC#100\nEvidence-Source: abc1234\n"
         pr_num, sha = parse_evidence_source(body)
         assert pr_num == "100"
+        assert sha is None
+
+    def test_first_evidence_source_line_wins_when_sha_precedes_occ(self) -> None:
+        body = "Evidence-Source: abc1234\nEvidence-Source: OCC#100\n"
+        pr_num, sha = parse_evidence_source(body)
+        assert pr_num is None
+        assert sha == "abc1234"
+
+    def test_invalid_first_evidence_source_line_stops_parsing(self) -> None:
+        body = "Evidence-Source: OCC# 100\nEvidence-Source: OCC#101\n"
+        pr_num, sha = parse_evidence_source(body)
+        assert pr_num is None
         assert sha is None
 
     def test_sha_only_when_no_occ_pr(self) -> None:
@@ -363,6 +375,12 @@ class TestReceiptGateWorkflowShapeOMN10419:
         assert "ACTIONS_RUNTIME_URL" in job_env, (
             "job env must set ACTIONS_RUNTIME_URL to disable GHA artifact reuse (OMN-10419 invariant I9)"
         )
+        assert job_env["ACTIONS_CACHE_URL"] == "", (
+            "job env must set ACTIONS_CACHE_URL to a blank value to disable GHA cache (OMN-10419 invariant I9)"
+        )
+        assert job_env["ACTIONS_RUNTIME_URL"] == "", (
+            "job env must set ACTIONS_RUNTIME_URL to a blank value to disable GHA artifact reuse (OMN-10419 invariant I9)"
+        )
 
     def test_resolve_step_script_hard_fails_on_missing_evidence_source(self) -> None:
         """Resolve Evidence-Source step must contain exit 1 for missing Evidence-Source."""
@@ -407,6 +425,33 @@ class TestReceiptGateWorkflowShapeOMN10419:
                     "Resolve Evidence-Source must include cutoff logic for pre-cutoff PRs "
                     "(backwards compatibility — OMN-10419)"
                 )
+                assert 'OCC_CUTOFF_SHA" = "PENDING_MERGE"' in script, (
+                    "Resolve Evidence-Source must short-circuit while the OMN-10419 cutoff "
+                    "SHA is PENDING_MERGE"
+                )
+                return
+        pytest.fail("Resolve Evidence-Source step not found")
+
+    def test_resolve_step_preserves_evidence_source_interior_whitespace(self) -> None:
+        data = yaml.safe_load(WORKFLOW_PATH.read_text())
+        steps: list[dict[object, object]] = data["jobs"]["verify"]["steps"]
+        for step in steps:
+            if "Resolve Evidence-Source" in str(step.get("name", "")):
+                script = str(step.get("run", ""))
+                assert "tr -d '[:space:]'" not in script
+                assert "s/[[:space:]]+$//" in script
+                return
+        pytest.fail("Resolve Evidence-Source step not found")
+
+    def test_resolve_step_canonicalizes_sha_form_to_full_oid(self) -> None:
+        data = yaml.safe_load(WORKFLOW_PATH.read_text())
+        steps: list[dict[object, object]] = data["jobs"]["verify"]["steps"]
+        for step in steps:
+            if "Resolve Evidence-Source" in str(step.get("name", "")):
+                script = str(step.get("run", ""))
+                assert "commits/${occ_sha}" in script
+                assert "matched_head" in script
+                assert "headRefOid" in script
                 return
         pytest.fail("Resolve Evidence-Source step not found")
 
