@@ -1,0 +1,44 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-10348
+title: "Define ONEX (OmniNode eXecution) on first use across all canonical repo docs"
+summary: "Add canonical ONEX expansion on first use in primary doc entrypoints; correct stale/wrong expansions
+  in secondary docs"
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: ci
+    description: "omnibase_core PR 985 checks pass"
+    command: "gh pr checks 985 --repo OmniNode-ai/omnibase_core"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-001
+    description: "README.md updated with ONEX (OmniNode eXecution) on first use"
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "gh pr diff 985 --repo OmniNode-ai/omnibase_core | grep -q 'OmniNode eXecution'"
+  - id: dod-002
+    description: "CONTRIBUTING.md corrected from wrong expansion to canonical form"
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "gh pr diff 985 --repo OmniNode-ai/omnibase_core | grep -q 'OmniNode eXecution'"
+  - id: dod-003
+    description: "docs/standards/onex_terminology.md corrected from hallucinated expansion to canonical
+      form"
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "gh pr diff 985 --repo OmniNode-ai/omnibase_core | grep -q 'OmniNode eXecution'"
+  - id: dod-004
+    description: "Deploy-gate evidence: docs-only change, no Docker image or runtime service deploy required"
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "echo 'deploy-gate: OMN-10348 changes only markdown documentation; no Docker image,
+          runtime process, broker topic, or service deploy is required'"
