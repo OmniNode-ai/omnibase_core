@@ -12,7 +12,7 @@ _JS_REQUIRE = re.compile(r"""require\s*\(\s*['"]([^'"]+)['"]\s*\)""")
 _JS_IMPORT = re.compile(
     r"""(?:^|\s)import\s+(?:[\w*{},\s]+\s+from\s+)?['"]([^'"]+)['"]""", re.MULTILINE
 )
-_JS_EXTS = {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"}
+_JS_EXTS = (".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs")
 _PY_EXTS = {".py"}
 
 
