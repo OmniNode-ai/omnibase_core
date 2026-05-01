@@ -50,6 +50,7 @@ def test_change_in_models_expands_to_exact_set() -> None:
     expected = sorted(
         f"tests/unit/{m}/"
         for m in (
+            "analysis",
             "models",
             "nodes",
             "contracts",
