@@ -40,10 +40,11 @@ class TestGenHookBitsHeader:
 
 
 class TestGenHookBitsEnumCoverage:
-    def test_every_member_in_associative_array(self, tmp_path: Path) -> None:
+    def test_every_member_in_portable_case_table(self, tmp_path: Path) -> None:
         content = _generated_content(tmp_path)
         for m in EnumHookBit:
-            assert f"[{m.name}]=0x{int(m):x}" in content
+            assert f"{m.name}) echo 0x{int(m):x} ;;" in content
+        assert "declare -g -A" not in content
 
     def test_default_mask_equals_or_of_all_bits(self, tmp_path: Path) -> None:
         expected = functools.reduce(operator.or_, (int(m) for m in EnumHookBit))
@@ -100,7 +101,7 @@ class TestGenHookBitsBashExecution:
             [
                 "bash",
                 "-c",
-                f'source "{out}" && hook_bits_is_enabled "$HOOK_BITS_DEFAULT_MASK" "${{HOOK_BITS_BY_NAME[CI_REMINDER]}}" && echo OK',
+                f'source "{out}" && hook_bits_is_enabled "$HOOK_BITS_DEFAULT_MASK" "$(hook_bits_bit_for_name CI_REMINDER)" && echo OK',
             ],
             capture_output=True,
             text=True,
@@ -116,7 +117,7 @@ class TestGenHookBitsBashExecution:
             [
                 "bash",
                 "-c",
-                f'source "{out}" && hook_bits_is_enabled 0 "${{HOOK_BITS_BY_NAME[CI_REMINDER]}}" && echo OK || echo NOPE',
+                f'source "{out}" && hook_bits_is_enabled 0 "$(hook_bits_bit_for_name CI_REMINDER)" && echo OK || echo NOPE',
             ],
             capture_output=True,
             text=True,

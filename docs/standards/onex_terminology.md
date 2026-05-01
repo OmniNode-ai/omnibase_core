@@ -34,7 +34,7 @@
 
 ## Overview
 
-The ONEX (Open Node Execution) framework defines a structured vocabulary for building distributed, event-driven systems. This document provides canonical definitions for the 9 core concepts that form the foundation of the ONEX architecture.
+The ONEX (OmniNode eXecution) framework defines a structured vocabulary for building distributed, event-driven systems. This document provides canonical definitions for the 9 core concepts that form the foundation of the ONEX architecture.
 
 **Core Design Principles**:
 - **Unidirectional Data Flow**: EFFECT -> COMPUTE -> REDUCER -> ORCHESTRATOR
