@@ -77,6 +77,7 @@ and scope for audit traceability.
 
 from __future__ import annotations
 
+import hashlib
 import re
 from datetime import UTC, datetime
 from pathlib import Path
@@ -92,6 +93,10 @@ from omnibase_core.models.contracts.ticket.model_receipt_check_result import (
 from omnibase_core.models.contracts.ticket.model_receipt_gate_result import (
     ModelReceiptGateResult,
 )
+
+# PRs opened after this UTC datetime must include contract_sha256 in receipts;
+# earlier PRs get ADVISORY downgrade for the 7-day legacy window (OMN-10421).
+_CONTRACT_SHA256_REQUIRED_AFTER = datetime(2026, 4, 30, 0, 0, 0, tzinfo=UTC)
 
 TICKET_PATTERN = re.compile(r"\bOMN-(\d+)\b", re.IGNORECASE)
 CLOSING_KEYWORD_PATTERN = re.compile(
@@ -111,6 +116,11 @@ OVERRIDE_PATTERN = re.compile(
 # Inline marker pattern used only to reject the superseded approval syntax.
 # Receipt-gate bypass requires the central allowlist checked by _validate_skip_token.
 ALLOWLIST_PATTERN = re.compile(r"#\s*skip-token-allowed:\s*(\S+)", re.IGNORECASE)
+
+
+def compute_contract_sha256(contract_path: Path) -> str:
+    """Return the SHA-256 hex digest of a contract YAML file's raw bytes."""
+    return hashlib.sha256(contract_path.read_bytes()).hexdigest()
 
 
 def _extract_ticket_ids(pr_body: str, pr_title: str | None = None) -> list[str]:
@@ -246,6 +256,8 @@ def _check_one_receipt(
     evidence_item_id: str,
     check_type: str,
     receipts_dir: Path,
+    contract_path: Path | None = None,
+    pr_opened_at: datetime | None = None,
 ) -> ModelReceiptCheckResult:
     """Verify exactly one (ticket, evidence, check) has a PASS receipt on disk."""
     receipt_path = receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
@@ -303,6 +315,43 @@ def _check_one_receipt(
     )
     if adversarial_validated_failure is not None:
         return fail(adversarial_validated_failure)
+
+    # Hash-binding check (OMN-10421, invariant I4): verify the contract has
+    # not mutated since this receipt was produced. Only active when the caller
+    # supplies pr_opened_at — callers that omit it get no hash enforcement
+    # (backward-compatible with pre-OMN-10421 call sites).
+    if (
+        contract_path is not None
+        and contract_path.exists()
+        and pr_opened_at is not None
+    ):
+        actual_sha = compute_contract_sha256(contract_path)
+        if receipt.contract_sha256 is None:
+            is_post_cutoff = pr_opened_at >= _CONTRACT_SHA256_REQUIRED_AFTER
+            if is_post_cutoff:
+                return fail(
+                    f"receipt at {receipt_path} missing required contract_sha256 field "
+                    f"(OMN-10421): receipts produced after {_CONTRACT_SHA256_REQUIRED_AFTER.date()} "
+                    "must record the contract hash. Rerun probes to produce a new receipt."
+                )
+            # Pre-cutoff PR: ADVISORY downgrade — field expected soon but not yet required.
+            return ModelReceiptCheckResult(
+                ticket_id=ticket_id,
+                evidence_item_id=evidence_item_id,
+                check_type=check_type,
+                passed=False,
+                reason=(
+                    f"receipt at {receipt_path} missing contract_sha256 (ADVISORY — "
+                    "legacy receipt within 7-day migration window; rerun probes to bind "
+                    "the receipt to the current contract hash)"
+                ),
+            )
+        if receipt.contract_sha256 != actual_sha:
+            return fail(
+                f"contract mutated post-receipt; rerun probes. "
+                f"receipt contract_sha256={receipt.contract_sha256!r} but "
+                f"sha256({contract_path})={actual_sha!r}"
+            )
 
     return ModelReceiptCheckResult(
         ticket_id=ticket_id,
@@ -482,6 +531,7 @@ def validate_pr_receipts(
     pr_author: str | None = None,
     current_repo: str | None = None,
     current_pr_number: int | None = None,
+    pr_opened_at: datetime | None = None,
 ) -> ModelReceiptGateResult:
     """Run the receipt-gate against a PR's body + the repo's contracts + receipts.
 
@@ -496,6 +546,9 @@ def validate_pr_receipts(
         pr_author: GitHub login of the PR author. Required for skip tokens.
         current_repo: Repository name (e.g. ``omnibase_core``). Required for skip tokens.
         current_pr_number: PR number. Required for skip tokens.
+        pr_opened_at: UTC datetime when the PR was opened. Used to determine whether
+            missing ``contract_sha256`` is a hard FAIL (post-cutoff) or ADVISORY
+            (within the 7-day legacy migration window). When None, treated as post-cutoff.
     """
     override = OVERRIDE_PATTERN.search(pr_body)
     skip_match = SKIP_TOKEN_PATTERN.search(pr_body)
@@ -611,7 +664,14 @@ def validate_pr_receipts(
 
         for item_id, check_type, _check_value in triples:
             all_checks.append(
-                _check_one_receipt(ticket_id, item_id, check_type, receipts_dir)
+                _check_one_receipt(
+                    ticket_id,
+                    item_id,
+                    check_type,
+                    receipts_dir,
+                    contract_path=contract_path,
+                    pr_opened_at=pr_opened_at,
+                )
             )
 
     failures = [c for c in all_checks if not c.passed]
@@ -649,5 +709,7 @@ __all__ = [
     "OVERRIDE_PATTERN",
     "SKIP_TOKEN_PATTERN",
     "TICKET_PATTERN",
+    "_CONTRACT_SHA256_REQUIRED_AFTER",
+    "compute_contract_sha256",
     "validate_pr_receipts",
 ]
