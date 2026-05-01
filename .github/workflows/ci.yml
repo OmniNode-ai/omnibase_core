@@ -854,6 +854,68 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
+  # Phase 1.6a - Zone Filter (OMN-10356)
+  # ---------------------------------------------------------------------------
+  # Classifies all changed files using zone_diff_filter.py.
+  # If every changed file is in the DOCS zone (exit 0), the test matrix jobs
+  # are skipped entirely to save CI minutes on docs-only PRs.
+  zone-filter:
+    name: Zone Filter (docs-only check)
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    if: always() && needs.quality-gate.result == 'success'
+    outputs:
+      docs_only: ${{ steps.zone.outputs.docs_only }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Compute changed files
+        id: diff
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            git fetch --no-tags --depth=1 origin "$base" || true
+            FILES=$(git diff --name-only "$base"...HEAD | tr '\n' ',')
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | tr '\n' ',' || echo "")
+          fi
+          echo "changed_files=$FILES" >> "$GITHUB_OUTPUT"
+
+      - name: Run zone-diff filter
+        id: zone
+        run: |
+          ZONE_DIFF_FILTER_FAKE_DIFF="${{ steps.diff.outputs.changed_files }}" \
+            uv run python scripts/zone_diff_filter.py --check docs-only
+          RC=$?
+          if [ $RC -eq 0 ]; then
+            echo "docs_only=true" >> "$GITHUB_OUTPUT"
+            echo "Zone filter: DOCS-ONLY — test matrix will be skipped." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "Zone filter: production/mixed diff — full test matrix will run." >> "$GITHUB_STEP_SUMMARY"
+          fi
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
   # Phase 1.6 - Detect Changes (shadow mode)
   # ---------------------------------------------------------------------------
   # Runs detect_test_paths and emits 5 outputs for shadow-mode comparison.
@@ -861,9 +923,9 @@ jobs:
 
   detect-changes:
     name: Detect Changes
-    needs: quality-gate
+    needs: [quality-gate, zone-filter]
     runs-on: ubuntu-latest
-    if: always() && needs.quality-gate.result == 'success'
+    if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
     outputs:
       is_full_suite: ${{ steps.detect.outputs.is_full_suite }}
       full_suite_reason: ${{ steps.detect.outputs.full_suite_reason }}
@@ -946,7 +1008,7 @@ jobs:
   #   - This ensures quality failures are caught BEFORE spawning N test runners
   test-parallel:
     name: Tests (Split ${{ matrix.split }}/${{ needs.detect-changes.outputs.split_count }})
-    needs: [quality-gate, detect-changes]
+    needs: [quality-gate, zone-filter, detect-changes]
     # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
     runs-on: >-
       ${{
@@ -957,7 +1019,7 @@ jobs:
         && fromJSON('["self-hosted","omnibase-ci"]')
         || fromJSON('["ubuntu-latest"]')
       }}
-    if: always() && needs.quality-gate.result == 'success'
+    if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -1069,7 +1131,7 @@ jobs:
   # ---------------------------------------------------------------------------
   tests-integration:
     name: Integration Tests (Split ${{ matrix.split }}/4)
-    needs: [quality-gate, detect-changes]
+    needs: [quality-gate, zone-filter, detect-changes]
     # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
     runs-on: >-
       ${{
@@ -1081,7 +1143,7 @@ jobs:
         || fromJSON('["ubuntu-latest"]')
       }}
     timeout-minutes: 30
-    if: always() && needs.quality-gate.result == 'success'
+    if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
     strategy:
       fail-fast: false
       matrix:
