@@ -59,6 +59,7 @@ adjacency:
     reverse_deps: [models, runtime, nodes, services]
   # Leaf modules with no reverse_deps still appear so the loader can validate
   # that every src/omnibase_core/<dir> has an entry.
+  adapters: {reverse_deps: []}
   agents: {reverse_deps: []}
   analysis: {reverse_deps: []}
   backends: {reverse_deps: []}
