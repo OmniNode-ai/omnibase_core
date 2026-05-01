@@ -21,6 +21,12 @@ def test_single_module_change_resolves_to_one_test_dir() -> None:
     assert paths == ["tests/unit/cli/"]
 
 
+def test_agents_module_change_resolves_to_agents_tests() -> None:
+    changed_files = ["src/omnibase_core/agents/prm_detectors.py"]
+    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
+    assert paths == ["tests/unit/agents/"]
+
+
 def test_test_only_change_runs_only_changed_test_dir() -> None:
     changed_files = ["tests/unit/nodes/test_foo.py"]
     paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
