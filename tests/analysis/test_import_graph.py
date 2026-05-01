@@ -97,6 +97,21 @@ def test_python_relative_import_detected(tmp_path: Path) -> None:
     assert "pkg/b.py" in g.edges_out["pkg/a.py"]
 
 
+def test_python_relative_from_import_submodule_detected(tmp_path: Path) -> None:
+    pkg = tmp_path / "pkg"
+    nested = pkg / "nested"
+    nested.mkdir(parents=True)
+    (pkg / "__init__.py").write_text("")
+    (nested / "__init__.py").write_text("")
+    (nested / "submodule.py").write_text("VALUE = 1\n")
+    a = pkg / "a.py"
+    a.write_text("from .nested import submodule\n")
+    g = build_import_graph(tmp_path)
+    assert {"pkg/nested/__init__.py", "pkg/nested/submodule.py"}.issubset(
+        g.edges_out["pkg/a.py"]
+    )
+
+
 def test_python_from_import_submodules_detected(tmp_path: Path) -> None:
     pkg = tmp_path / "pkg"
     pkg.mkdir()
@@ -168,3 +183,22 @@ def test_js_comment_and_string_imports_are_ignored(tmp_path: Path) -> None:
     real.write_text("export const value = 2;\n")
     g = build_import_graph(tmp_path)
     assert g.edges_out["a.js"] == {"real.js"}
+
+
+def test_js_multiline_esm_import_detected(tmp_path: Path) -> None:
+    a = tmp_path / "a.ts"
+    b = tmp_path / "utils.ts"
+    a.write_text(
+        "\n".join(
+            [
+                "import {",
+                "  foo,",
+                "  bar,",
+                "} from './utils';",
+                "export const value = foo + bar;",
+            ]
+        )
+    )
+    b.write_text("export const foo = 1; export const bar = 2;\n")
+    g = build_import_graph(tmp_path)
+    assert "utils.ts" in g.edges_out["a.ts"]

@@ -4,13 +4,9 @@
 """Static import graph builder for Python and JavaScript/TypeScript files."""
 
 import ast
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-_JS_IMPORT = re.compile(
-    r"""(?:^|\s)import\s+(?:[\w*{},\s]+\s+from\s+)?['"]([^'"]+)['"]""", re.MULTILINE
-)
 _JS_EXTS = (".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs")
 _PY_EXTS = (".py",)
 
@@ -116,8 +112,16 @@ def _relative_import_names(
     base_parts = package_parts[: len(package_parts) - node.level + 1]
     if node.module:
         base_parts.extend(node.module.split("."))
-        return [".".join(base_parts)]
-    return [".".join([*base_parts, alias.name]) for alias in node.names]
+        names = [".".join(base_parts)]
+        names.extend(
+            ".".join([*base_parts, alias.name])
+            for alias in node.names
+            if alias.name != "*"
+        )
+        return names
+    return [
+        ".".join([*base_parts, alias.name]) for alias in node.names if alias.name != "*"
+    ]
 
 
 def _nearest_search_root(path: Path, search_roots: list[Path]) -> Path | None:
@@ -284,14 +288,110 @@ def _iter_js_require_specifiers(source: str) -> list[str]:
 
 
 def _iter_js_import_specifiers(source: str) -> list[str]:
-    """Return static import specifiers from source lines that begin with import."""
+    """Return static import specifiers that appear outside JS string literals."""
     specifiers: list[str] = []
-    for line in source.splitlines():
-        stripped = line.lstrip()
-        if not stripped.startswith(("import ", "import'", 'import"')):
+    i = 0
+    quote: str | None = None
+    escape = False
+    while i < len(source):
+        char = source[i]
+        if quote is not None:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == quote:
+                quote = None
+            i += 1
             continue
-        specifiers.extend(match.group(1) for match in _JS_IMPORT.finditer(stripped))
+        if char in {"'", '"', "`"}:
+            quote = char
+            i += 1
+            continue
+        if not source.startswith("import", i):
+            i += 1
+            continue
+        before = source[i - 1] if i > 0 else ""
+        after = source[i + len("import")] if i + len("import") < len(source) else ""
+        if before.isidentifier() or after.isidentifier():
+            i += 1
+            continue
+        cursor = i + len("import")
+        while cursor < len(source) and source[cursor].isspace():
+            cursor += 1
+        if cursor < len(source) and source[cursor] == "(":
+            i = cursor + 1
+            continue
+        if literal := _read_js_string_literal(source, cursor):
+            specifier, end = literal
+            specifiers.append(specifier)
+            i = end
+            continue
+        from_pos = _find_js_keyword(source, "from", cursor)
+        if from_pos is None:
+            i += 1
+            continue
+        cursor = from_pos + len("from")
+        while cursor < len(source) and source[cursor].isspace():
+            cursor += 1
+        if literal := _read_js_string_literal(source, cursor):
+            specifier, end = literal
+            specifiers.append(specifier)
+            i = end
+            continue
+        i += 1
     return specifiers
+
+
+def _read_js_string_literal(source: str, cursor: int) -> tuple[str, int] | None:
+    """Read a quoted JavaScript string literal at cursor."""
+    if cursor >= len(source) or source[cursor] not in {"'", '"'}:
+        return None
+    quote = source[cursor]
+    cursor += 1
+    start = cursor
+    while cursor < len(source):
+        if source[cursor] == "\\":
+            cursor += 2
+            continue
+        if source[cursor] == quote:
+            return source[start:cursor], cursor + 1
+        cursor += 1
+    return None
+
+
+def _find_js_keyword(source: str, keyword: str, cursor: int) -> int | None:
+    """Find a keyword before the next statement boundary, ignoring strings."""
+    quote: str | None = None
+    escape = False
+    while cursor < len(source):
+        char = source[cursor]
+        if quote is not None:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == quote:
+                quote = None
+            cursor += 1
+            continue
+        if char in {"'", '"', "`"}:
+            quote = char
+            cursor += 1
+            continue
+        if char == ";":
+            return None
+        if source.startswith(keyword, cursor):
+            before = source[cursor - 1] if cursor > 0 else ""
+            after = (
+                source[cursor + len(keyword)]
+                if cursor + len(keyword) < len(source)
+                else ""
+            )
+            if not before.isidentifier() and not after.isidentifier():
+                return cursor
+        cursor += 1
+    return None
 
 
 def _resolve_js_specifier(
