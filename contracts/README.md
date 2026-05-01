@@ -1,6 +1,10 @@
 # ONEX Contracts
 
-This directory contains YAML contract definitions for ONEX nodes.
+This directory contains runtime YAML contract definitions for ONEX nodes.
+
+Ticket-level `OMN-*.yaml` contracts are centralized in
+`onex_change_control/contracts/`. Do not add new ticket contracts to this
+repository; add them to the central change-control repository instead.
 
 ## Directory Structure
 

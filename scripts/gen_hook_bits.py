@@ -48,10 +48,24 @@ def render() -> str:
     lines.append(f"HOOK_BITS_DEFAULT_MASK=0x{default_mask:x}")
     lines.append("")
 
-    lines.append("declare -g -A HOOK_BITS_BY_NAME=(")
+    lines.append(
+        """\
+# hook_bits_bit_for_name NAME
+#   Prints the bit assigned to NAME. Bash 3.2 has no associative arrays, and
+#   Claude hook launchers use the system bash on macOS, so keep this table as a
+#   portable case statement instead of `declare -A`.
+hook_bits_bit_for_name() {
+    case "${1:-}" in"""
+    )
     for m in EnumHookBit:
-        lines.append(f"  [{m.name}]=0x{int(m):x}")
-    lines.append(")")
+        lines.append(f"        {m.name}) echo 0x{int(m):x} ;;")
+    lines.extend(
+        [
+            "        *) return 1 ;;",
+            "    esac",
+            "}",
+        ]
+    )
     lines.append("")
 
     lines.append(
@@ -100,7 +114,7 @@ hook_bits_is_enabled() {
 """
     )
 
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:

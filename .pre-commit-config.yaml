@@ -163,6 +163,17 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # Hook bitmask drift check (OMN-9615)
+      # Regenerates hook_bits.sh from EnumHookBit and fails if the committed
+      # artifact is stale. Fires when the enum or generator changes.
+      - id: hook-bits-drift
+        name: hook_bits.sh drift check (regenerate if EnumHookBit changes)
+        entry: uv run python scripts/check_hook_bits_drift.py
+        language: system
+        pass_filenames: false
+        files: ^(src/omnibase_core/enums/enum_hook_bit\.py|scripts/gen_hook_bits\.py|scripts/check_hook_bits_drift\.py)$
+        stages: [pre-commit]
+
   # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:
