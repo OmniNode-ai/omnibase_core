@@ -355,16 +355,22 @@ def _validate_skip_token(
             "[skip-receipt-gate] REJECTED: allowlist 'approvals' key is not a list",
         )
 
-    entry = next(
-        (a for a in approvals if isinstance(a, dict) and a.get("id") == approval_id),
-        None,
-    )
-    if entry is None:
+    matches = [
+        a for a in approvals if isinstance(a, dict) and a.get("id") == approval_id
+    ]
+    if not matches:
         return (
             False,
             f"[skip-receipt-gate] REJECTED: approval id {approval_id!r} not found in allowlist. "
             "Use scripts/grant-skip-approval.sh to create an approved entry.",
         )
+    if len(matches) > 1:
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: approval id {approval_id!r} appears "
+            f"{len(matches)} times in the allowlist. Approval ids must be unique.",
+        )
+    entry = matches[0]
 
     # scope_pr_numbers is REQUIRED — missing or empty means the entry is invalid.
     scope_prs = entry.get("scope_pr_numbers")
@@ -376,12 +382,15 @@ def _validate_skip_token(
         )
 
     # Self-approval: granted_by must not equal the PR author.
-    granted_by = entry.get("granted_by", "")
-    if (
-        pr_author
-        and isinstance(granted_by, str)
-        and granted_by.strip().casefold() == pr_author.strip().casefold()
-    ):
+    granted_by_raw = entry.get("granted_by")
+    if not isinstance(granted_by_raw, str) or not granted_by_raw.strip():
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: allowlist entry {approval_id!r} missing or empty "
+            "'granted_by' — every approval must record the approver login.",
+        )
+    granted_by = granted_by_raw.strip()
+    if pr_author and granted_by.casefold() == pr_author.strip().casefold():
         return (
             False,
             f"[skip-receipt-gate] REJECTED: self-approval — approval {approval_id!r} was "

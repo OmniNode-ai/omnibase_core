@@ -273,6 +273,61 @@ class TestSkipTokenEdgeCases:
         assert not result.passed
         assert "scope_pr_numbers" in result.message
 
+    def test_duplicate_approval_ids_fail_closed(self, tmp_path: Path) -> None:
+        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
+        _write_allowlist(
+            allowlist,
+            [
+                _valid_entry(entry_id="appr-duplicate", scope_pr_numbers=[999]),
+                _valid_entry(entry_id="appr-duplicate", scope_pr_numbers=[1000]),
+            ],
+        )
+
+        result = validate_pr_receipts(
+            pr_body="[skip-receipt-gate: appr-duplicate]",
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+            allowlist_path=allowlist,
+            pr_author="worker-A",
+            current_repo="omnibase_core",
+            current_pr_number=999,
+        )
+
+        assert not result.passed
+        assert "duplicate" in result.message.lower()
+        assert "unique" in result.message.lower()
+
+    @pytest.mark.parametrize("granted_by", [None, "", "   "])
+    def test_missing_or_blank_granted_by_fails(
+        self,
+        tmp_path: Path,
+        granted_by: object,
+    ) -> None:
+        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
+        entry: dict[object, object] = {
+            "id": "appr-no-grantor",
+            "granted_at": "2026-04-30T00:00:00+00:00",
+            "expires_at": _future(),
+            "scope_repos": ["omnibase_core"],
+            "scope_pr_numbers": [999],
+        }
+        if granted_by is not None:
+            entry["granted_by"] = granted_by
+        _write_allowlist(allowlist, [entry])
+
+        result = validate_pr_receipts(
+            pr_body="[skip-receipt-gate: appr-no-grantor]",
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+            allowlist_path=allowlist,
+            pr_author="worker-A",
+            current_repo="omnibase_core",
+            current_pr_number=999,
+        )
+
+        assert not result.passed
+        assert "granted_by" in result.message
+
     @pytest.mark.parametrize("scope_repos", [None, [], "omnibase_core"])
     def test_missing_or_invalid_scope_repos_in_entry_fails(
         self,
