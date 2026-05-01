@@ -54,6 +54,9 @@ class TestSkipTokenPattern:
     def test_no_match_on_clean_body(self) -> None:
         assert not SKIP_TOKEN_PATTERN.search("Closes OMN-9999\nNormal PR body.")
 
+    def test_no_match_on_placeholder_example(self) -> None:
+        assert not SKIP_TOKEN_PATTERN.search("[skip-receipt-gate: <token>]")
+
     def test_case_insensitive_skip_receipt_gate(self) -> None:
         assert SKIP_TOKEN_PATTERN.search("[Skip-Receipt-Gate: reason]")
 

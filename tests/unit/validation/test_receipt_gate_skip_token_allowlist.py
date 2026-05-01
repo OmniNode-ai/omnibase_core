@@ -273,6 +273,30 @@ class TestSkipTokenEdgeCases:
         assert not result.passed
         assert "scope_pr_numbers" in result.message
 
+    def test_missing_expires_at_in_entry_fails(self, tmp_path: Path) -> None:
+        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
+        entry: dict[object, object] = {
+            "id": "appr-no-expiry",
+            "granted_by": "platform-lead",
+            "granted_at": "2026-04-30T00:00:00+00:00",
+            "scope_repos": ["omnibase_core"],
+            "scope_pr_numbers": [999],
+        }
+        _write_allowlist(allowlist, [entry])
+
+        result = validate_pr_receipts(
+            pr_body="[skip-receipt-gate: appr-no-expiry]",
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+            allowlist_path=allowlist,
+            pr_author="worker-A",
+            current_repo="omnibase_core",
+            current_pr_number=999,
+        )
+
+        assert not result.passed
+        assert "expires_at" in result.message
+
     def test_duplicate_approval_ids_fail_closed(self, tmp_path: Path) -> None:
         allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
         _write_allowlist(

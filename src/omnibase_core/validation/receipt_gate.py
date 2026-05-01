@@ -98,8 +98,10 @@ CLOSING_KEYWORD_PATTERN = re.compile(
     r"\b(?:Closes|Fixes|Resolves|Implements)\b[:\s]+OMN-(\d+)\b",
     re.IGNORECASE,
 )
-# Matches any [skip-*: ...] bypass token (OMN-10347: Rule #10 enforcement).
-SKIP_TOKEN_PATTERN = re.compile(r"\[skip-[a-zA-Z][^]]*\]", re.IGNORECASE)
+# Matches any real [skip-*: ...] bypass token (OMN-10347: Rule #10 enforcement).
+# Angle-bracket placeholders such as [skip-receipt-gate: <token>] are docs
+# examples, not executable bypass tokens.
+SKIP_TOKEN_PATTERN = re.compile(r"\[skip-[a-zA-Z][^\]<>]*\]", re.IGNORECASE)
 # Matches [skip-receipt-gate: <token>] — token must be a safe identifier to
 # reject free-text reasons and placeholder examples such as "<token>".
 OVERRIDE_PATTERN = re.compile(
@@ -405,32 +407,37 @@ def _validate_skip_token(
 
     # Expiry check — deterministic: compare against current UTC time.
     expires_at_raw = entry.get("expires_at")
-    if expires_at_raw is not None:
-        try:
-            if isinstance(expires_at_raw, str):
-                expires_at = datetime.fromisoformat(expires_at_raw)
-            elif isinstance(expires_at_raw, datetime):
-                expires_at = expires_at_raw
-            else:
-                # error-ok: internal sentinel immediately re-caught by enclosing except (ValueError, TypeError)
-                raise ValueError(f"unexpected type: {type(expires_at_raw)}")
-            # Make timezone-aware if naive (assume UTC).
-            if expires_at.tzinfo is None:
-                expires_at = expires_at.replace(tzinfo=UTC)
-            now_utc = datetime.now(tz=UTC)
-            if now_utc > expires_at:
-                return (
-                    False,
-                    f"[skip-receipt-gate] REJECTED: approval {approval_id!r} expired at "
-                    f"{expires_at.isoformat()} (now={now_utc.isoformat()}). "
-                    "Use scripts/grant-skip-approval.sh to create a new entry.",
-                )
-        except (ValueError, TypeError) as e:
+    if expires_at_raw is None:
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: allowlist entry {approval_id!r} missing "
+            "'expires_at' — every approval must expire.",
+        )
+    try:
+        if isinstance(expires_at_raw, str):
+            expires_at = datetime.fromisoformat(expires_at_raw)
+        elif isinstance(expires_at_raw, datetime):
+            expires_at = expires_at_raw
+        else:
+            # error-ok: internal sentinel immediately re-caught by enclosing except (ValueError, TypeError)
+            raise ValueError(f"unexpected type: {type(expires_at_raw)}")
+        # Make timezone-aware if naive (assume UTC).
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=UTC)
+        now_utc = datetime.now(tz=UTC)
+        if now_utc > expires_at:
             return (
                 False,
-                f"[skip-receipt-gate] REJECTED: approval {approval_id!r} has unparseable "
-                f"expires_at {expires_at_raw!r}: {e}",
+                f"[skip-receipt-gate] REJECTED: approval {approval_id!r} expired at "
+                f"{expires_at.isoformat()} (now={now_utc.isoformat()}). "
+                "Use scripts/grant-skip-approval.sh to create a new entry.",
             )
+    except (ValueError, TypeError) as e:
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: approval {approval_id!r} has unparseable "
+            f"expires_at {expires_at_raw!r}: {e}",
+        )
 
     # Repo scope check.
     scope_repos = entry.get("scope_repos")
@@ -642,6 +649,5 @@ __all__ = [
     "OVERRIDE_PATTERN",
     "SKIP_TOKEN_PATTERN",
     "TICKET_PATTERN",
-    "_validate_skip_token",
     "validate_pr_receipts",
 ]
