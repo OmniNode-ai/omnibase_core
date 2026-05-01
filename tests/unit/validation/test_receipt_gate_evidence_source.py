@@ -260,7 +260,6 @@ class TestReceiptGateEvidenceSourceIntegration:
         workflow. In the Python layer, the symptom is: the OCC checkout at the
         old SHA has no contract file, so validate_pr_receipts sees no contract.
         """
-        ticket_id = "OMN-10419"
         contracts_dir = tmp_path / "contracts"
         receipts_dir = tmp_path / "receipts"
         # Simulate OCC state at old SHA: contract does NOT exist yet.
