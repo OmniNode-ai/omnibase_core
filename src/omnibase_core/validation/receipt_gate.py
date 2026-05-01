@@ -548,7 +548,8 @@ def validate_pr_receipts(
         current_pr_number: PR number. Required for skip tokens.
         pr_opened_at: UTC datetime when the PR was opened. Used to determine whether
             missing ``contract_sha256`` is a hard FAIL (post-cutoff) or ADVISORY
-            (within the 7-day legacy migration window). When None, treated as post-cutoff.
+            (within the 7-day legacy migration window). When None, the hash-binding
+            check is skipped because no PR-open timestamp is available.
     """
     override = OVERRIDE_PATTERN.search(pr_body)
     skip_match = SKIP_TOKEN_PATTERN.search(pr_body)
