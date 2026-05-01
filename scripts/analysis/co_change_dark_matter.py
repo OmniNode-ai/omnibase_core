@@ -28,6 +28,8 @@ if _SCRIPT_SRC.is_dir():
 import json
 import subprocess
 
+from omnibase_core.types.typed_dict_dark_matter_pair import TypedDictDarkMatterPair
+
 
 def _git_commits(repo_root: Path) -> list[list[str]]:
     """Return per-commit file lists from git log."""
@@ -65,7 +67,7 @@ def _find_repo_root(start: Path) -> Path:
     return current
 
 
-def _analyse(repo_root: Path) -> list[dict[str, object]]:
+def _analyse(repo_root: Path) -> list[TypedDictDarkMatterPair]:
     """Build matrix, import graph, and run dark matter filter."""
     from omnibase_core.analysis.co_change_dark_matter import find_dark_matter
     from omnibase_core.analysis.co_change_matrix import build_cochange_matrix
@@ -74,7 +76,7 @@ def _analyse(repo_root: Path) -> list[dict[str, object]]:
     commits = _git_commits(repo_root)
     matrix = build_cochange_matrix(commits)
     import_graph = build_import_graph(repo_root)
-    return find_dark_matter(matrix, import_graph)  # type: ignore[return-value]
+    return find_dark_matter(matrix, import_graph)
 
 
 def main() -> int:

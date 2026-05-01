@@ -3,12 +3,16 @@
 
 """Tests for the co-change dark matter filter pipeline."""
 
+import pytest
+
 from omnibase_core.analysis.co_change_dark_matter import find_dark_matter
 from omnibase_core.analysis.co_change_matrix import (
     CoChangeMatrix,
     build_cochange_matrix,
 )
 from omnibase_core.analysis.import_graph import ImportGraph
+
+pytestmark = pytest.mark.unit
 
 
 def _make_matrix(commits: list[list[str]]) -> CoChangeMatrix:

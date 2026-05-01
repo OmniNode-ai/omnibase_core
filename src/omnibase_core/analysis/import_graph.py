@@ -24,6 +24,7 @@ class ImportGraph:
 def build_import_graph(repo_root: Path) -> ImportGraph:
     graph = ImportGraph()
     repo_root = repo_root.resolve()
+    python_search_roots = _python_search_roots(repo_root)
 
     py_files: list[Path] = []
     js_files: list[Path] = []
@@ -38,7 +39,7 @@ def build_import_graph(repo_root: Path) -> ImportGraph:
 
     for path in py_files:
         rel = str(path.relative_to(repo_root))
-        edges = _parse_python_imports(path, repo_root)
+        edges = _parse_python_imports(path, repo_root, python_search_roots)
         if edges:
             graph.edges_out[rel] = edges
 
@@ -51,12 +52,14 @@ def build_import_graph(repo_root: Path) -> ImportGraph:
     return graph
 
 
-def _parse_python_imports(path: Path, repo_root: Path) -> set[str]:
+def _parse_python_imports(
+    path: Path, repo_root: Path, search_roots: list[Path]
+) -> set[str]:
     """Extract imported module paths from a Python file, resolved to repo-relative paths."""
     try:
         source = path.read_text(encoding="utf-8", errors="ignore")
         tree = ast.parse(source, filename=str(path))
-    except SyntaxError:
+    except (OSError, SyntaxError):
         return set()
 
     imports: list[str] = []
@@ -65,34 +68,84 @@ def _parse_python_imports(path: Path, repo_root: Path) -> set[str]:
             for alias in node.names:
                 imports.append(alias.name)
         elif isinstance(node, ast.ImportFrom):
-            if node.module:
+            if node.level > 0:
+                imports.extend(_relative_import_names(node, path, search_roots))
+            elif node.module:
                 imports.append(node.module)
+                imports.extend(
+                    f"{node.module}.{alias.name}"
+                    for alias in node.names
+                    if alias.name != "*"
+                )
 
     edges: set[str] = set()
     src_rel = str(path.relative_to(repo_root))
 
     for module_name in imports:
-        resolved = _resolve_python_module(module_name, path, repo_root)
+        resolved = _resolve_python_module(module_name, repo_root, search_roots)
         if resolved and resolved != src_rel:
             edges.add(resolved)
 
     return edges
 
 
+def _python_search_roots(repo_root: Path) -> list[Path]:
+    """Return module-resolution roots once per graph build."""
+    roots = [repo_root]
+    roots.extend(path for path in repo_root.rglob("src") if path.is_dir())
+    return roots
+
+
+def _relative_import_names(
+    node: ast.ImportFrom, importing_file: Path, search_roots: list[Path]
+) -> list[str]:
+    """Convert an ast.ImportFrom relative import into candidate dotted modules."""
+    root = _nearest_search_root(importing_file, search_roots)
+    if root is None:
+        return []
+    try:
+        package_parts = list(importing_file.parent.relative_to(root).parts)
+    except ValueError:
+        return []
+
+    if node.level > len(package_parts):
+        return []
+
+    base_parts = package_parts[: len(package_parts) - node.level + 1]
+    if node.module:
+        base_parts.extend(node.module.split("."))
+        names = [".".join(base_parts)]
+        names.extend(
+            ".".join([*base_parts, alias.name])
+            for alias in node.names
+            if alias.name != "*"
+        )
+        return names
+    return [
+        ".".join([*base_parts, alias.name]) for alias in node.names if alias.name != "*"
+    ]
+
+
+def _nearest_search_root(path: Path, search_roots: list[Path]) -> Path | None:
+    """Return the deepest configured search root containing path."""
+    for root in sorted(
+        search_roots, key=lambda candidate: len(candidate.parts), reverse=True
+    ):
+        try:
+            path.relative_to(root)
+        except ValueError:
+            continue
+        return root
+    return None
+
+
 def _resolve_python_module(
-    module_name: str, importing_file: Path, repo_root: Path
+    module_name: str, repo_root: Path, search_roots: list[Path]
 ) -> str | None:
     """Convert a dotted module name to a repo-relative file path."""
     # Convert dotted module to path segments
     parts = module_name.split(".")
     candidate_rel = Path(*parts)
-
-    # Search from repo root and common src layouts
-    search_roots = [repo_root]
-    for src_dir in repo_root.rglob("src"):
-        if src_dir.is_dir():
-            search_roots.append(src_dir)
-            break
 
     for search_root in search_roots:
         # Try as package (directory with __init__.py)
@@ -100,16 +153,6 @@ def _resolve_python_module(
         if pkg_path.is_file():
             return str(pkg_path.relative_to(repo_root))
         # Try as module file
-        mod_path = search_root / candidate_rel.with_suffix(".py")
-        if mod_path.is_file():
-            return str(mod_path.relative_to(repo_root))
-
-    # Try relative to the importing file's directory
-    import_dir = importing_file.parent
-    for search_root in [import_dir]:
-        pkg_path = search_root / candidate_rel / "__init__.py"
-        if pkg_path.is_file():
-            return str(pkg_path.relative_to(repo_root))
         mod_path = search_root / candidate_rel.with_suffix(".py")
         if mod_path.is_file():
             return str(mod_path.relative_to(repo_root))

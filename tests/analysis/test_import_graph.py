@@ -5,7 +5,11 @@
 
 from pathlib import Path
 
+import pytest
+
 from omnibase_core.analysis.import_graph import build_import_graph
+
+pytestmark = pytest.mark.unit
 
 
 def test_python_from_import_detected(tmp_path: Path) -> None:
@@ -79,6 +83,39 @@ def test_python_import_in_subpackage(tmp_path: Path) -> None:
     b.write_text("def bar(): ...\n")
     g = build_import_graph(tmp_path)
     assert "pkg/b.py" in g.edges_out["pkg/a.py"]
+
+
+def test_python_relative_import_detected(tmp_path: Path) -> None:
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("")
+    a = pkg / "a.py"
+    b = pkg / "b.py"
+    a.write_text("from . import b\n")
+    b.write_text("VALUE = 1\n")
+    g = build_import_graph(tmp_path)
+    assert "pkg/b.py" in g.edges_out["pkg/a.py"]
+
+
+def test_python_relative_import_rejects_top_level_escape(tmp_path: Path) -> None:
+    a = tmp_path / "a.py"
+    b = tmp_path / "b.py"
+    a.write_text("from . import b\n")
+    b.write_text("VALUE = 1\n")
+    g = build_import_graph(tmp_path)
+    assert g.edges_out.get("a.py", set()) == set()
+
+
+def test_python_relative_import_rejects_package_escape(tmp_path: Path) -> None:
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("")
+    a = pkg / "a.py"
+    b = tmp_path / "b.py"
+    a.write_text("from .. import b\n")
+    b.write_text("VALUE = 1\n")
+    g = build_import_graph(tmp_path)
+    assert g.edges_out.get("pkg/a.py", set()) == set()
 
 
 def test_edges_out_keys_are_repo_relative(tmp_path: Path) -> None:
