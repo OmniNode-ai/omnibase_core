@@ -226,46 +226,86 @@ jobs:
         #
         # merge_group events do not carry pull_request.body. Derive the PR number
         # from merge_group.head_ref (format: pr-<num>-<sha>) and fetch via API.
+        #
+        # OMN-10417: also capture PR author login and resolved PR number for
+        # skip-token self-approval and scope checks.
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_EVENT_BODY: ${{ github.event.pull_request.body }}
           PR_EVENT_TITLE: ${{ github.event.pull_request.title }}
+          PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
         run: |
           set -e
           if [ -n "$PR_NUMBER" ]; then
             # pull_request event: always fetch live body so re-runs see edits.
             # Single API call fetches both fields to minimise rate-limit consumption.
-            if pr_json="$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body,title 2>/dev/null)"; then
+            if pr_json="$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body,title,author 2>/dev/null)"; then
               printf '%s' "$pr_json" | jq -r '.body' > /tmp/pr_body.txt
               printf '%s' "$pr_json" | jq -r '.title' > /tmp/pr_title.txt
+              printf '%s' "$pr_json" | jq -r '.author.login' > /tmp/pr_author.txt
+              printf '%s' "$PR_NUMBER" > /tmp/pr_number.txt
             else
               # API unavailable — fall back to event payload with a warning.
               echo "::warning::gh pr view failed for PR #${PR_NUMBER}; using event payload (may be stale)"
               printf '%s' "$PR_EVENT_BODY" > /tmp/pr_body.txt
               printf '%s' "$PR_EVENT_TITLE" > /tmp/pr_title.txt
+              printf '%s' "$PR_EVENT_AUTHOR" > /tmp/pr_author.txt
+              printf '%s' "$PR_NUMBER" > /tmp/pr_number.txt
             fi
           elif [ -n "$MERGE_GROUP_HEAD_REF" ]; then
             pr_num="$(printf '%s' "$MERGE_GROUP_HEAD_REF" | sed -E 's@^.*/pr-([0-9]+)-.*$@\1@')"
             if [ -n "$pr_num" ] && [ "$pr_num" != "$MERGE_GROUP_HEAD_REF" ]; then
-              gh pr view "$pr_num" --repo "${{ github.repository }}" --json body,title --jq '.body' > /tmp/pr_body.txt
-              gh pr view "$pr_num" --repo "${{ github.repository }}" --json title --jq '.title' > /tmp/pr_title.txt
+              pr_json="$(gh pr view "$pr_num" --repo "${{ github.repository }}" --json body,title,author)"
+              printf '%s' "$pr_json" | jq -r '.body' > /tmp/pr_body.txt
+              printf '%s' "$pr_json" | jq -r '.title' > /tmp/pr_title.txt
+              printf '%s' "$pr_json" | jq -r '.author.login' > /tmp/pr_author.txt
+              printf '%s' "$pr_num" > /tmp/pr_number.txt
             else
               : > /tmp/pr_body.txt
               : > /tmp/pr_title.txt
+              : > /tmp/pr_author.txt
+              : > /tmp/pr_number.txt
             fi
           else
             : > /tmp/pr_body.txt
             : > /tmp/pr_title.txt
+            : > /tmp/pr_author.txt
+            : > /tmp/pr_number.txt
           fi
 
       - name: Run Receipt-Gate
         run: |
           PR_BODY="$(cat /tmp/pr_body.txt)"
           PR_TITLE="$(cat /tmp/pr_title.txt)"
+          PR_AUTHOR="$(cat /tmp/pr_author.txt 2>/dev/null || true)"
+          PR_NUMBER_RESOLVED="$(cat /tmp/pr_number.txt 2>/dev/null || true)"
+          REPO_NAME="${{ github.repository }}"
+          REPO_SHORT="${REPO_NAME##*/}"
+
+          ALLOWLIST_ARG=""
+          if [ -f ".onex_change_control/allowlists/skip_token_approvals.yaml" ]; then
+            ALLOWLIST_ARG="--allowlist-path .onex_change_control/allowlists/skip_token_approvals.yaml"
+          fi
+
+          PR_AUTHOR_ARG=""
+          if [ -n "$PR_AUTHOR" ]; then
+            PR_AUTHOR_ARG="--pr-author $PR_AUTHOR"
+          fi
+
+          PR_NUMBER_ARG=""
+          if [ -n "$PR_NUMBER_RESOLVED" ]; then
+            PR_NUMBER_ARG="--current-pr-number $PR_NUMBER_RESOLVED"
+          fi
+
+          # shellcheck disable=SC2086
           python -m omnibase_core.validation.receipt_gate_cli \
             --pr-body "$PR_BODY" \
             --pr-title "$PR_TITLE" \
             --contracts-dir ".onex_change_control/${{ inputs.contracts-dir }}" \
-            --receipts-dir ".onex_change_control/${{ inputs.receipts-dir }}"
+            --receipts-dir ".onex_change_control/${{ inputs.receipts-dir }}" \
+            --current-repo "$REPO_SHORT" \
+            $ALLOWLIST_ARG \
+            $PR_AUTHOR_ARG \
+            $PR_NUMBER_ARG

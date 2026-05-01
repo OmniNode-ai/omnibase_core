@@ -1,0 +1,61 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-9614
+title: "Add onex hooks CLI subcommands"
+summary: "Add onex hooks CLI subcommands for ONEX_HOOKS_MASK management"
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - "public_api"
+evidence_requirements:
+  - kind: "ci"
+    description: "omnibase_core PR #1013 checks pass, including deploy-gate"
+    command: "gh pr checks 1013 --repo OmniNode-ai/omnibase_core --watch"
+  - kind: "manual"
+    description: "Focused onex hooks CLI unit tests pass"
+    command: "PYTHONPATH=src uv run pytest tests/unit/cli/test_cli_hooks.py -q"
+  - kind: "manual"
+    description: "Touched CLI files pass lint, format, and type checks"
+    command: "PYTHONPATH=src uv run ruff check src/omnibase_core/cli/cli_commands.py src/omnibase_core/cli/cli_hooks.py
+      tests/unit/cli/test_cli_hooks.py && PYTHONPATH=src uv run ruff format --check src/omnibase_core/cli/cli_commands.py
+      src/omnibase_core/cli/cli_hooks.py tests/unit/cli/test_cli_hooks.py && PYTHONPATH=src uv run mypy
+      src/omnibase_core/cli/cli_commands.py src/omnibase_core/cli/cli_hooks.py tests/unit/cli/test_cli_hooks.py
+      --strict"
+  - kind: "manual"
+    description: "Post-deploy runtime smoke proves the onex hooks CLI group is importable and registered"
+    command: "docker exec ${RUNTIME_CONTAINER:-omninode-runtime} python -c \"from click.testing import
+      CliRunner; from omnibase_core.cli.cli_commands import cli; result = CliRunner().invoke(cli, ['hooks',
+      'mask']); assert result.exit_code == 0, result.output; assert result.output.strip().startswith('0x');
+      print('OMN-9614 onex hooks deploy validation OK')\""
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "Focused onex hooks CLI unit tests cover list, mask, enable, disable, unknown names,
+      and env-file preservation"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "PYTHONPATH=src uv run pytest tests/unit/cli/test_cli_hooks.py -q"
+  - id: "dod-002"
+    description: "Touched CLI files pass lint, format, and type checks"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "PYTHONPATH=src uv run ruff check src/omnibase_core/cli/cli_commands.py src/omnibase_core/cli/cli_hooks.py
+          tests/unit/cli/test_cli_hooks.py && PYTHONPATH=src uv run ruff format --check src/omnibase_core/cli/cli_commands.py
+          src/omnibase_core/cli/cli_hooks.py tests/unit/cli/test_cli_hooks.py && PYTHONPATH=src uv run
+          mypy src/omnibase_core/cli/cli_commands.py src/omnibase_core/cli/cli_hooks.py tests/unit/cli/test_cli_hooks.py
+          --strict"
+  - id: "dod-003"
+    description: "Post-deploy runtime smoke confirms the deployed runtime imports the onex CLI and executes
+      hooks mask"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "docker exec ${RUNTIME_CONTAINER:-omninode-runtime} python -c \"from click.testing
+          import CliRunner; from omnibase_core.cli.cli_commands import cli; result = CliRunner().invoke(cli,
+          ['hooks', 'mask']); assert result.exit_code == 0, result.output; assert result.output.strip().startswith('0x');
+          print('OMN-9614 onex hooks deploy validation OK')\""

@@ -718,6 +718,11 @@ from omnibase_core.cli.cli_refresh_credentials import refresh_credentials
 
 cli.add_command(refresh_credentials)
 
+# Register hooks command group (list, mask, enable, disable) [OMN-9614]
+from omnibase_core.cli.cli_hooks import hooks_group
+
+cli.add_command(hooks_group)
+
 # Load CLI extension groups registered by other packages via the onex.cli entry-point group.
 # Each entry point must expose a click.Group or click.Command.
 # This enables infra packages (e.g. omnibase_infra) to contribute subcommands
