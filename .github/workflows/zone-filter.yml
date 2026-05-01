@@ -66,13 +66,27 @@ jobs:
 
       - name: Compute changed files
         id: diff
+        env:
+          GH_BEFORE: ${{ github.event.before }}
+          GH_SHA: ${{ github.sha }}
         run: |
+          # `pull_request` carries an exact merge-base; trust it.
+          # `push` carries `before` (last pushed sha) — diff push range.
+          # Anything else (manual / schedule / merge_group with no event.before):
+          # leave FILES empty so downstream logic forces docs_only=false. We
+          # never fall back to HEAD~1 because that misses commits in a
+          # multi-commit push and produces wrong-skip on nightly/manual runs.
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             base="${{ github.event.pull_request.base.sha }}"
             git fetch --no-tags --depth=1 origin "$base" || true
             FILES=$(git diff --name-only "$base"...HEAD | tr '\n' ',')
+          elif [ "${{ github.event_name }}" = "push" ] \
+            && [ -n "$GH_BEFORE" ] \
+            && [ "$GH_BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            git fetch --no-tags --depth=1 origin "$GH_BEFORE" || true
+            FILES=$(git diff --name-only "$GH_BEFORE" "$GH_SHA" | tr '\n' ',')
           else
-            FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | tr '\n' ',' || echo "")
+            FILES=""
           fi
           echo "changed_files=$FILES" >> "$GITHUB_OUTPUT"
 
@@ -103,6 +117,15 @@ jobs:
           ZONE_DIFF_FILTER_FAKE_DIFF: ${{ steps.diff.outputs.changed_files }}
           PYTHONPATH: .zone-pkg
         run: |
+          # No reliable diff (manual / schedule / merge_group without before
+          # ref): force docs_only=false so the full matrix runs. The script
+          # itself treats empty diff as docs-only, which is wrong for these
+          # event types — we want the conservative answer here.
+          if [ -z "$ZONE_DIFF_FILTER_FAKE_DIFF" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "Zone filter: no reliable diff for this event — full matrix will run." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           set +e
           python .zone-pkg/zone_diff_filter.py --check docs-only
           RC=$?

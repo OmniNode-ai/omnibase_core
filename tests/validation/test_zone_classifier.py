@@ -2,8 +2,12 @@
 # SPDX-License-Identifier: MIT
 from pathlib import Path
 
+import pytest
+
 from omnibase_core.enums.enum_file_zone import EnumFileZone
 from omnibase_core.validation.zone_classifier import classify_path
+
+pytestmark = pytest.mark.unit
 
 
 def test_classify_production() -> None:
@@ -93,6 +97,27 @@ def test_workflow_yaml_stays_config() -> None:
 
 def test_classify_build() -> None:
     assert classify_path(Path("scripts/deploy.sh")) == EnumFileZone.BUILD
+
+
+def test_existing_contracts_file_classifies_as_docs(tmp_path: Path) -> None:
+    # Regression for CodeRabbit finding on PR #1023: when the changed file
+    # actually exists on disk, classify_path() previously resolved it to an
+    # absolute path (e.g. /tmp/.../contracts/X.yaml) and the bare
+    # `s.startswith("contracts/")` check missed it, dropping the file into
+    # CONFIG and defeating the docs-only short-circuit in CI.
+    target = tmp_path / "contracts" / "OMN-1234.yaml"
+    target.parent.mkdir(parents=True)
+    target.write_text("---\n")
+    assert classify_path(target) == EnumFileZone.DOCS
+
+
+def test_existing_dod_receipts_file_classifies_as_docs(tmp_path: Path) -> None:
+    target = (
+        tmp_path / "drift" / "dod_receipts" / "OMN-1234" / "dod-001" / "command.yaml"
+    )
+    target.parent.mkdir(parents=True)
+    target.write_text("status: PASS\n")
+    assert classify_path(target) == EnumFileZone.DOCS
 
 
 def test_symlink_resolved_before_classification(tmp_path: Path) -> None:

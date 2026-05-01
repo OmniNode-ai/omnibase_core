@@ -50,7 +50,14 @@ def classify_path(path: Path) -> EnumFileZone:
     if resolved.name in _BUILD_NAMES:
         return EnumFileZone.BUILD
 
-    if any(s.startswith(p) for p in _DOCS_PREFIXES) or resolved.suffix == ".md":
+    # Match prefixes anywhere in the path: when the file actually exists on
+    # disk, `resolved` is an absolute path (e.g. /repo/contracts/foo.yaml),
+    # so a plain startswith("contracts/") would miss it. Mirrors the TEST
+    # check's pattern.
+    if (
+        any(s.startswith(p) or f"/{p}" in f"/{s}" for p in _DOCS_PREFIXES)
+        or resolved.suffix == ".md"
+    ):
         return EnumFileZone.DOCS
 
     if resolved.suffix in _CONFIG_SUFFIXES:
