@@ -97,6 +97,27 @@ def test_python_relative_import_detected(tmp_path: Path) -> None:
     assert "pkg/b.py" in g.edges_out["pkg/a.py"]
 
 
+def test_python_relative_import_rejects_top_level_escape(tmp_path: Path) -> None:
+    a = tmp_path / "a.py"
+    b = tmp_path / "b.py"
+    a.write_text("from . import b\n")
+    b.write_text("VALUE = 1\n")
+    g = build_import_graph(tmp_path)
+    assert g.edges_out.get("a.py", set()) == set()
+
+
+def test_python_relative_import_rejects_package_escape(tmp_path: Path) -> None:
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("")
+    a = pkg / "a.py"
+    b = tmp_path / "b.py"
+    a.write_text("from .. import b\n")
+    b.write_text("VALUE = 1\n")
+    g = build_import_graph(tmp_path)
+    assert g.edges_out.get("pkg/a.py", set()) == set()
+
+
 def test_python_relative_from_import_submodule_detected(tmp_path: Path) -> None:
     pkg = tmp_path / "pkg"
     nested = pkg / "nested"

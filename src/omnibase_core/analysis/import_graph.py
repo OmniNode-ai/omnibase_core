@@ -106,7 +106,7 @@ def _relative_import_names(
     except ValueError:
         return []
 
-    if node.level > len(package_parts) + 1:
+    if node.level > len(package_parts):
         return []
 
     base_parts = package_parts[: len(package_parts) - node.level + 1]
