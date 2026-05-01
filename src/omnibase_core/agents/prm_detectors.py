@@ -194,6 +194,9 @@ def detect_stuck_on_test(
     threshold: int = 3,
 ) -> list[ModelPrmMatch]:
     """Group by target file. Count edit→test_fail→edit cycles. Threshold default 3."""
+    if threshold <= 0:
+        raise ValueError("threshold > 0 required")  # error-ok: invalid public threshold
+
     if not entries:
         return []
 
@@ -261,6 +264,9 @@ def detect_context_thrash(
     threshold: int = 5,
 ) -> list[ModelPrmMatch]:
     """≥5 consecutive new-target steps without revisits → match."""
+    if threshold <= 0:
+        raise ValueError("threshold > 0 required")  # error-ok: invalid public threshold
+
     if not entries:
         return []
 

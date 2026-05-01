@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
+import pytest
+
 from omnibase_core.agents.prm_detectors import (
     detect_context_thrash,
     detect_expansion_drift,
@@ -10,6 +12,8 @@ from omnibase_core.agents.prm_detectors import (
 )
 from omnibase_core.enums.enum_prm_pattern import EnumPrmPattern
 from omnibase_core.models.agents.model_trajectory_entry import ModelTrajectoryEntry
+
+pytestmark = pytest.mark.unit
 
 
 def _entry(
@@ -193,6 +197,15 @@ class TestDetectExpansionDrift:
 
 
 class TestDetectStuckOnTest:
+    def test_invalid_threshold_raises_before_empty_entries_return(self) -> None:
+        with pytest.raises(ValueError, match="threshold > 0 required"):
+            detect_stuck_on_test([], last_processed_step=0, threshold=0)
+
+    def test_negative_threshold_raises(self) -> None:
+        entries = [_entry(1, "A", "edit", "foo.py")]
+        with pytest.raises(ValueError, match="threshold > 0 required"):
+            detect_stuck_on_test(entries, last_processed_step=0, threshold=-1)
+
     def test_empty_returns_empty(self) -> None:
         assert detect_stuck_on_test([], last_processed_step=0) == []
 
@@ -267,6 +280,15 @@ class TestDetectStuckOnTest:
 
 
 class TestDetectContextThrash:
+    def test_invalid_threshold_raises_before_empty_entries_return(self) -> None:
+        with pytest.raises(ValueError, match="threshold > 0 required"):
+            detect_context_thrash([], last_processed_step=0, threshold=0)
+
+    def test_negative_threshold_raises(self) -> None:
+        entries = [_entry(1, "A", "edit", "foo.py")]
+        with pytest.raises(ValueError, match="threshold > 0 required"):
+            detect_context_thrash(entries, last_processed_step=0, threshold=-1)
+
     def test_empty_returns_empty(self) -> None:
         assert detect_context_thrash([], last_processed_step=0) == []
 
