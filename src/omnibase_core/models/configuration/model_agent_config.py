@@ -30,7 +30,10 @@ class ModelAgentConfig(BaseModel):
         default="claude-3-sonnet-20240229",
         description="Claude model to use for the agent",
     )
-    api_key: str = Field(description="Anthropic API key for authentication")
+    api_key: str | None = Field(
+        default=None,
+        description="API key for authentication (optional — SSO/OAuth used when absent, per OMN-7835)",
+    )
     permissions: ModelAgentPermissions = Field(
         description="Agent permission configuration",
     )
