@@ -90,6 +90,7 @@ class EnumHookBit(IntEnum):
     SESSION_START = 1 << 55
     SESSION_START_ONEX_CLI_PIN_CHECK = 1 << 56
     HANDOFF_NUDGE = 1 << 57
+    TASK_BOUNDARY_TESTS = 1 << 58
 
 
 # Default mask ORs all actual member values — correct even after tombstones are
