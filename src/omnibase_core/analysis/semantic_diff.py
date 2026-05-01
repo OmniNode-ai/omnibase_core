@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import re
+from difflib import SequenceMatcher
 
 from omnibase_core.analysis.symbol_extractor import extract_symbols
 from omnibase_core.enums.enum_diff_severity import EnumChangeKind, EnumDiffSeverity
@@ -46,10 +47,14 @@ def _rename_tolerance(
     new_sym: TypedDictSymbolMetadata,
     new_name: str,
 ) -> bool:
-    """True if name-normalized signatures match AND line counts are within 20%."""
+    """True when a delete/add pair is similar enough to classify as a refactor."""
     old_sig = _strip_name(old_sym["signature"], old_name)
     new_sig = _strip_name(new_sym["signature"], new_name)
     if old_sig != new_sig:
+        return False
+    if old_sym["kind"] != new_sym["kind"]:
+        return False
+    if SequenceMatcher(None, old_name, new_name).ratio() < 0.6:
         return False
     old_lines = _line_count(old_sym)
     new_lines = _line_count(new_sym)
@@ -124,8 +129,8 @@ def compute_diff(
     # Rename detection: pair removed R with added A if signatures match + line tolerance
     renamed_removed: set[str] = set()
     renamed_added: set[str] = set()
-    for r_name, r_sym in removed.items():
-        for a_name, a_sym in added.items():
+    for r_name, r_sym in sorted(removed.items()):
+        for a_name, a_sym in sorted(added.items()):
             if a_name in renamed_added:
                 continue
             if _rename_tolerance(r_sym, r_name, a_sym, a_name):
@@ -159,5 +164,5 @@ def compute_diff(
 
     return ModelSemanticDiffReport(
         changes=tuple(changes),
-        total_consumers_affected=consumers_count,
+        total_consumers_affected=consumers_count if changes else 0,
     )

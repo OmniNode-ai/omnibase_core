@@ -6,7 +6,8 @@
 Usage:
     python scripts/analysis/semantic_diff.py --base origin/main --head HEAD --json
 
-Exits 0 always — changes are advisory. Gating is opt-in via separate workflows.
+Exits 0 on completed analysis; argparse usage errors still exit non-zero.
+Detected changes are advisory. Gating is opt-in via separate workflows.
 """
 
 from __future__ import annotations
@@ -84,7 +85,7 @@ def _git_changed_py_files(base: str, head: str, repo_root: Path) -> list[Path]:
             "git",
             "diff",
             "--name-only",
-            "--diff-filter=ACM",
+            "--diff-filter=ACMDR",
             f"{base}...{head}",
             "--",
             "*.py",
@@ -133,7 +134,8 @@ def _compute_report(base: str, head: str, repo_root: Path) -> ModelSemanticDiffR
         consumers = consumer_graph.get(rel, 0)
         report = compute_diff(old_source, new_source, rel, consumers)
         all_changes.extend(report.changes)
-        total_consumers += consumers
+        if report.changes:
+            total_consumers += consumers
 
     return ModelSemanticDiffReport(
         changes=tuple(all_changes),
