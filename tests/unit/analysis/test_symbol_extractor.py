@@ -72,6 +72,38 @@ def test_signature_whitespace_collapsed():
 
 
 @pytest.mark.unit
+def test_multiline_signature_is_fully_extracted():
+    source = """\
+def foo(
+    x: int,
+    y: str,
+) -> str:
+    return y * x
+"""
+    result = extract_symbols(source)
+    assert result["foo"]["signature"] == "def foo( x: int, y: str, ) -> str:"
+
+
+@pytest.mark.unit
+def test_decorated_symbols_are_extracted():
+    source = """\
+@top_level
+def decorated_func() -> None:
+    pass
+
+@decorate_class
+class Decorated:
+    @staticmethod
+    def helper() -> int:
+        return 1
+"""
+    result = extract_symbols(source)
+    assert "decorated_func" in result
+    assert "Decorated" in result
+    assert "Decorated.helper" in result
+
+
+@pytest.mark.unit
 def test_body_hash_is_sha256_hex():
     result = extract_symbols(SIMPLE_FUNCTION)
     body_hash = result["foo"]["body_hash"]

@@ -22,6 +22,14 @@ class ImportGraph:
 
 
 def build_import_graph(repo_root: Path) -> ImportGraph:
+    """Build a repo-relative import graph for Python and JS/TS source files.
+
+    Args:
+        repo_root: Repository root whose source files should be scanned.
+
+    Returns:
+        ImportGraph mapping each importing file to repo-relative imported files.
+    """
     graph = ImportGraph()
     repo_root = repo_root.resolve()
 
@@ -56,27 +64,89 @@ def _parse_python_imports(path: Path, repo_root: Path) -> set[str]:
     try:
         source = path.read_text(encoding="utf-8", errors="ignore")
         tree = ast.parse(source, filename=str(path))
-    except SyntaxError:
+    except (OSError, SyntaxError):
         return set()
 
-    imports: list[str] = []
+    imports: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                imports.append(alias.name)
+                resolved = _resolve_python_module(alias.name, path, repo_root)
+                if resolved:
+                    imports.add(resolved)
         elif isinstance(node, ast.ImportFrom):
-            if node.module:
-                imports.append(node.module)
+            imports.update(_resolve_python_import_from(node, path, repo_root))
 
     edges: set[str] = set()
     src_rel = str(path.relative_to(repo_root))
 
-    for module_name in imports:
-        resolved = _resolve_python_module(module_name, path, repo_root)
-        if resolved and resolved != src_rel:
-            edges.add(resolved)
+    for imported_rel in imports:
+        if imported_rel != src_rel:
+            edges.add(imported_rel)
 
     return edges
+
+
+def _resolve_python_import_from(
+    node: ast.ImportFrom, importing_file: Path, repo_root: Path
+) -> set[str]:
+    if node.level == 0:
+        return _resolve_absolute_import_from(node, importing_file, repo_root)
+
+    package_dir = importing_file.parent
+    base_dir = package_dir
+    for _ in range(node.level - 1):
+        base_dir = base_dir.parent
+
+    module_parts = node.module.split(".") if node.module else []
+    module_base = base_dir.joinpath(*module_parts)
+    resolved: set[str] = set()
+    if node.module:
+        module_resolved = _resolve_python_path_candidate(module_base, repo_root)
+        if module_resolved:
+            resolved.add(module_resolved)
+
+    for alias in node.names:
+        if alias.name == "*":
+            continue
+        alias_candidate = module_base.joinpath(*alias.name.split("."))
+        alias_resolved = _resolve_python_path_candidate(alias_candidate, repo_root)
+        if alias_resolved:
+            resolved.add(alias_resolved)
+
+    return resolved
+
+
+def _resolve_absolute_import_from(
+    node: ast.ImportFrom, importing_file: Path, repo_root: Path
+) -> set[str]:
+    resolved: set[str] = set()
+    if node.module:
+        module_resolved = _resolve_python_module(node.module, importing_file, repo_root)
+        if module_resolved:
+            resolved.add(module_resolved)
+        for alias in node.names:
+            if alias.name == "*":
+                continue
+            alias_module = f"{node.module}.{alias.name}"
+            alias_resolved = _resolve_python_module(
+                alias_module, importing_file, repo_root
+            )
+            if alias_resolved:
+                resolved.add(alias_resolved)
+    return resolved
+
+
+def _resolve_python_path_candidate(candidate: Path, repo_root: Path) -> str | None:
+    pkg_path = candidate / "__init__.py"
+    if pkg_path.is_file():
+        return str(pkg_path.relative_to(repo_root))
+
+    mod_path = candidate.with_suffix(".py")
+    if mod_path.is_file():
+        return str(mod_path.relative_to(repo_root))
+
+    return None
 
 
 def _resolve_python_module(
