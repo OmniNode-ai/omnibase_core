@@ -16,8 +16,10 @@ _SESSION_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 
 def _validate_session_id(session_id: str) -> str:
     if not isinstance(session_id, str):
-        # error-ok: typed local validation rejects non-string session IDs
-        raise TypeError(f"session_id must be a string, got {type(session_id).__name__}")
+        # error-ok: boundary validation rejects non-string session IDs
+        raise ValueError(
+            f"session_id must be a string, got {type(session_id).__name__}"
+        )
 
     normalized = session_id.strip()
     if not _SESSION_ID_PATTERN.fullmatch(normalized):
@@ -44,6 +46,7 @@ class TrajectoryStore:
         self._lock = threading.Lock()
 
     def append(self, entry: ModelTrajectoryEntry) -> None:
+        """Append one entry to JSONL and the bounded in-memory cache under a lock."""
         with self._lock:
             line = json.dumps(entry.model_dump(mode="json")) + "\n"
             with self._jsonl_path.open("a", encoding="utf-8") as fh:
@@ -54,6 +57,7 @@ class TrajectoryStore:
                     self._cache.popleft()
 
     def read_recent(self, n: int) -> list[ModelTrajectoryEntry]:
+        """Return the newest cached entries; zero returns empty and negative counts fail."""
         if n < 0:
             # error-ok: CodeRabbit review requires ValueError for negative n
             raise ValueError("n must be greater than or equal to 0")
