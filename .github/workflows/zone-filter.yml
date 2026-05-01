@@ -1,0 +1,142 @@
+name: Zone Filter (Reusable)
+
+# Classifies the caller PR's diff using omnibase_core's zone_classifier.
+# Emits docs_only=true when every changed file is in the DOCS zone (which
+# now includes contracts/, drift/dod_receipts/, allowlists/, .evidence/),
+# letting caller workflows skip heavy CI matrix jobs on pure
+# documentation/declarative-evidence PRs.
+#
+# Source of truth lives in OmniNode-ai/omnibase_core. This reusable
+# workflow shallow-checks-out the classifier and runs it against the
+# caller's diff so all repos share one rule set.
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: "Python version used to run the classifier"
+        required: false
+        default: "3.12"
+        type: string
+      omnibase-core-ref:
+        description: "Ref of OmniNode-ai/omnibase_core providing the classifier (default: main)"
+        required: false
+        default: "main"
+        type: string
+      use-local-classifier:
+        description: "If true, skip the omnibase_core checkout and use the caller's working tree (for omnibase_core dogfooding)."
+        required: false
+        default: false
+        type: boolean
+    outputs:
+      docs_only:
+        description: "true when every changed file is in the DOCS zone, false otherwise"
+        value: ${{ jobs.classify.outputs.docs_only }}
+
+jobs:
+  classify:
+    name: Zone Filter (docs-only check)
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.zone.outputs.docs_only }}
+
+    steps:
+      - name: Checkout caller repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Checkout omnibase_core classifier
+        if: ${{ !inputs.use-local-classifier }}
+        uses: actions/checkout@v6
+        with:
+          repository: OmniNode-ai/omnibase_core
+          ref: ${{ inputs.omnibase-core-ref }}
+          path: .zone-filter-core
+          sparse-checkout: |
+            scripts/zone_diff_filter.py
+            src/omnibase_core/enums/enum_file_zone.py
+            src/omnibase_core/validation/zone_classifier.py
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Compute changed files
+        id: diff
+        env:
+          GH_BEFORE: ${{ github.event.before }}
+          GH_SHA: ${{ github.sha }}
+        run: |
+          # `pull_request` carries an exact merge-base; trust it.
+          # `push` carries `before` (last pushed sha) — diff push range.
+          # Anything else (manual / schedule / merge_group with no event.before):
+          # leave FILES empty so downstream logic forces docs_only=false. We
+          # never fall back to HEAD~1 because that misses commits in a
+          # multi-commit push and produces wrong-skip on nightly/manual runs.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            git fetch --no-tags --depth=1 origin "$base" || true
+            FILES=$(git diff --name-only "$base"...HEAD | tr '\n' ',')
+          elif [ "${{ github.event_name }}" = "push" ] \
+            && [ -n "$GH_BEFORE" ] \
+            && [ "$GH_BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            git fetch --no-tags --depth=1 origin "$GH_BEFORE" || true
+            FILES=$(git diff --name-only "$GH_BEFORE" "$GH_SHA" | tr '\n' ',')
+          else
+            FILES=""
+          fi
+          echo "changed_files=$FILES" >> "$GITHUB_OUTPUT"
+
+      - name: Stage classifier as standalone module
+        # The on-disk omnibase_core/__init__.py calls importlib.metadata.version
+        # which fails when the package isn't installed (CI runners don't have it).
+        # We assemble the two pure-stdlib modules into a fresh package tree so
+        # the classifier imports without touching the heavy package init.
+        run: |
+          set -eu
+          if [ "${{ inputs.use-local-classifier }}" = "true" ]; then
+            SRC_ROOT="."
+          else
+            SRC_ROOT=".zone-filter-core"
+          fi
+          mkdir -p .zone-pkg/omnibase_core/enums .zone-pkg/omnibase_core/validation
+          # Empty __init__.py files — bypass the heavy parent init.
+          : > .zone-pkg/omnibase_core/__init__.py
+          : > .zone-pkg/omnibase_core/enums/__init__.py
+          : > .zone-pkg/omnibase_core/validation/__init__.py
+          cp "$SRC_ROOT/src/omnibase_core/enums/enum_file_zone.py" .zone-pkg/omnibase_core/enums/
+          cp "$SRC_ROOT/src/omnibase_core/validation/zone_classifier.py" .zone-pkg/omnibase_core/validation/
+          cp "$SRC_ROOT/scripts/zone_diff_filter.py" .zone-pkg/zone_diff_filter.py
+
+      - name: Run zone-diff filter
+        id: zone
+        env:
+          ZONE_DIFF_FILTER_FAKE_DIFF: ${{ steps.diff.outputs.changed_files }}
+          PYTHONPATH: .zone-pkg
+        run: |
+          # No reliable diff (manual / schedule / merge_group without before
+          # ref): force docs_only=false so the full matrix runs. The script
+          # itself treats empty diff as docs-only, which is wrong for these
+          # event types — we want the conservative answer here.
+          if [ -z "$ZONE_DIFF_FILTER_FAKE_DIFF" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "Zone filter: no reliable diff for this event — full matrix will run." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          set +e
+          python .zone-pkg/zone_diff_filter.py --check docs-only
+          RC=$?
+          if [ $RC -eq 0 ]; then
+            echo "docs_only=true" >> "$GITHUB_OUTPUT"
+            echo "Zone filter: DOCS-ONLY — heavy matrix may be skipped." >> "$GITHUB_STEP_SUMMARY"
+          elif [ $RC -eq 1 ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "Zone filter: production/mixed diff — full matrix will run." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Zone filter exited with unexpected code $RC — defaulting to full matrix." >&2
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "Zone filter: ERROR (rc=$RC) — defaulting to full matrix." >> "$GITHUB_STEP_SUMMARY"
+          fi
