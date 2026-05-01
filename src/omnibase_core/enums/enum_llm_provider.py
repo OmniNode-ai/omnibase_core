@@ -28,8 +28,13 @@ class EnumLlmProvider(StrValueHelper, str, Enum):
         return self in {self.LOCAL, self.LITELLM}
 
     def requires_api_key(self) -> bool:
-        """Check if this provider requires an API key."""
-        return self in {self.CLAUDE, self.OPENAI, self.GEMINI, self.ANTHROPIC}
+        """Check if this provider requires an API key.
+
+        Per OMN-7467/OMN-7835, all frontier providers use SSO/OAuth.
+        Only GLM (Zhipu AI) requires an explicit API key, but GLM is
+        not represented in this enum. All members here use SSO/OAuth.
+        """
+        return False
 
 
 __all__ = ["EnumLlmProvider"]
