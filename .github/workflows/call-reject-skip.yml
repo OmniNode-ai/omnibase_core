@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-10422 (Wave 5): Caller — re-scan skip-gate bypass tokens at merge_group entry.
+#
+# Invokes the omniclaude-hosted reusable workflow on pull_request and merge_group.
+# On merge_group, the reusable workflow resolves the PR via head SHA and asserts
+# exactly-one-PR (invariant I10). Cache is not reused across events (invariant I9).
+#
+# Required-status-check name: `scan / reject-skip-gate-token`
+# Wire via: Settings → Branches → main → Require status checks → add the check name above.
+
+name: Reject skip-gate bypass tokens
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  call-reject-skip-token:
+    uses: OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@main
+    secrets: inherit
