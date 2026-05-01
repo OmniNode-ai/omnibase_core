@@ -8,7 +8,6 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-_JS_REQUIRE = re.compile(r"""require\s*\(\s*['"]([^'"]+)['"]\s*\)""")
 _JS_IMPORT = re.compile(
     r"""(?:^|\s)import\s+(?:[\w*{},\s]+\s+from\s+)?['"]([^'"]+)['"]""", re.MULTILINE
 )
@@ -62,7 +61,7 @@ def _parse_python_imports(
     try:
         source = path.read_text(encoding="utf-8", errors="ignore")
         tree = ast.parse(source, filename=str(path))
-    except SyntaxError:
+    except (OSError, SyntaxError):
         return set()
 
     imports: list[str] = []
@@ -75,6 +74,11 @@ def _parse_python_imports(
                 imports.extend(_relative_import_names(node, path, search_roots))
             elif node.module:
                 imports.append(node.module)
+                imports.extend(
+                    f"{node.module}.{alias.name}"
+                    for alias in node.names
+                    if alias.name != "*"
+                )
 
     edges: set[str] = set()
     src_rel = str(path.relative_to(repo_root))
@@ -160,11 +164,11 @@ def _parse_js_imports(path: Path, repo_root: Path) -> set[str]:
     src_rel = str(path.relative_to(repo_root))
     edges: set[str] = set()
 
-    specifiers: list[str] = []
-    for m in _JS_REQUIRE.finditer(source):
-        specifiers.append(m.group(1))
-    for m in _JS_IMPORT.finditer(source):
-        specifiers.append(m.group(1))
+    source = _strip_js_comments(source)
+    specifiers = [
+        *_iter_js_require_specifiers(source),
+        *_iter_js_import_specifiers(source),
+    ]
 
     for spec in specifiers:
         if not spec.startswith("."):
@@ -174,6 +178,120 @@ def _parse_js_imports(path: Path, repo_root: Path) -> set[str]:
             edges.add(resolved)
 
     return edges
+
+
+def _strip_js_comments(source: str) -> str:
+    """Remove JS comments without treating comment markers inside strings as comments."""
+    output: list[str] = []
+    i = 0
+    quote: str | None = None
+    escape = False
+    while i < len(source):
+        char = source[i]
+        next_char = source[i + 1] if i + 1 < len(source) else ""
+        if quote is not None:
+            output.append(char)
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == quote:
+                quote = None
+            i += 1
+            continue
+
+        if char in {"'", '"', "`"}:
+            quote = char
+            output.append(char)
+            i += 1
+            continue
+        if char == "/" and next_char == "/":
+            while i < len(source) and source[i] != "\n":
+                output.append(" ")
+                i += 1
+            continue
+        if char == "/" and next_char == "*":
+            output.extend((" ", " "))
+            i += 2
+            while i < len(source) - 1 and not (
+                source[i] == "*" and source[i + 1] == "/"
+            ):
+                output.append("\n" if source[i] == "\n" else " ")
+                i += 1
+            if i < len(source) - 1:
+                output.extend((" ", " "))
+                i += 2
+            continue
+        output.append(char)
+        i += 1
+    return "".join(output)
+
+
+def _iter_js_require_specifiers(source: str) -> list[str]:
+    """Return require() specifiers that appear outside JS string literals."""
+    specifiers: list[str] = []
+    i = 0
+    quote: str | None = None
+    escape = False
+    while i < len(source):
+        char = source[i]
+        if quote is not None:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == quote:
+                quote = None
+            i += 1
+            continue
+        if char in {"'", '"', "`"}:
+            quote = char
+            i += 1
+            continue
+        if not source.startswith("require", i):
+            i += 1
+            continue
+        before = source[i - 1] if i > 0 else ""
+        after = source[i + len("require")] if i + len("require") < len(source) else ""
+        if before.isidentifier() or after.isidentifier():
+            i += 1
+            continue
+        cursor = i + len("require")
+        while cursor < len(source) and source[cursor].isspace():
+            cursor += 1
+        if cursor >= len(source) or source[cursor] != "(":
+            i += 1
+            continue
+        cursor += 1
+        while cursor < len(source) and source[cursor].isspace():
+            cursor += 1
+        if cursor >= len(source) or source[cursor] not in {"'", '"'}:
+            i += 1
+            continue
+        spec_quote = source[cursor]
+        cursor += 1
+        start = cursor
+        while cursor < len(source):
+            if source[cursor] == "\\":
+                cursor += 2
+                continue
+            if source[cursor] == spec_quote:
+                specifiers.append(source[start:cursor])
+                break
+            cursor += 1
+        i = max(cursor + 1, i + 1)
+    return specifiers
+
+
+def _iter_js_import_specifiers(source: str) -> list[str]:
+    """Return static import specifiers from source lines that begin with import."""
+    specifiers: list[str] = []
+    for line in source.splitlines():
+        stripped = line.lstrip()
+        if not stripped.startswith(("import ", "import'", 'import"')):
+            continue
+        specifiers.extend(match.group(1) for match in _JS_IMPORT.finditer(stripped))
+    return specifiers
 
 
 def _resolve_js_specifier(

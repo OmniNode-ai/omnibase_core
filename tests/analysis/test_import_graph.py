@@ -97,6 +97,20 @@ def test_python_relative_import_detected(tmp_path: Path) -> None:
     assert "pkg/b.py" in g.edges_out["pkg/a.py"]
 
 
+def test_python_from_import_submodules_detected(tmp_path: Path) -> None:
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("")
+    (pkg / "submodule.py").write_text("VALUE = 1\n")
+    (pkg / "other.py").write_text("VALUE = 2\n")
+    a = tmp_path / "a.py"
+    a.write_text("from pkg import submodule, other\n")
+    g = build_import_graph(tmp_path)
+    assert {"pkg/__init__.py", "pkg/submodule.py", "pkg/other.py"}.issubset(
+        g.edges_out["a.py"]
+    )
+
+
 def test_python_absolute_import_does_not_resolve_sibling(tmp_path: Path) -> None:
     pkg = tmp_path / "pkg"
     pkg.mkdir()
@@ -132,3 +146,25 @@ def test_js_index_tsx_import_detected(tmp_path: Path) -> None:
     b.write_text("export default function Widget() {}\n")
     g = build_import_graph(tmp_path)
     assert "widget/index.tsx" in g.edges_out["page.tsx"]
+
+
+def test_js_comment_and_string_imports_are_ignored(tmp_path: Path) -> None:
+    a = tmp_path / "a.js"
+    commented = tmp_path / "commented.js"
+    quoted = tmp_path / "quoted.js"
+    real = tmp_path / "real.js"
+    a.write_text(
+        "\n".join(
+            [
+                "// import './commented';",
+                "/* require('./quoted') */",
+                "const doc = \"require('./quoted')\";",
+                "import real from './real';",
+            ]
+        )
+    )
+    commented.write_text("export const value = 1;\n")
+    quoted.write_text("module.exports = 1;\n")
+    real.write_text("export const value = 2;\n")
+    g = build_import_graph(tmp_path)
+    assert g.edges_out["a.js"] == {"real.js"}
