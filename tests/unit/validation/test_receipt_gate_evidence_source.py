@@ -136,7 +136,7 @@ def _make_pass_receipt(
         "check_value": "uv run pytest tests/ -v",
         "status": "PASS",
         "run_timestamp": "2026-04-30T00:00:00+00:00",
-        "commit_sha": "abc1234567890",
+        "commit_sha": "abc1234567890",  # pragma: allowlist secret
         "runner": "worker-A",
         "verifier": "ci-bot",
         "probe_command": "uv run pytest tests/ -v",
