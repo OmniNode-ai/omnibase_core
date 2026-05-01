@@ -273,6 +273,37 @@ class TestSkipTokenEdgeCases:
         assert not result.passed
         assert "scope_pr_numbers" in result.message
 
+    @pytest.mark.parametrize("scope_repos", [None, [], "omnibase_core"])
+    def test_missing_or_invalid_scope_repos_in_entry_fails(
+        self,
+        tmp_path: Path,
+        scope_repos: object,
+    ) -> None:
+        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
+        entry: dict[object, object] = {
+            "id": "appr-no-repo-scope",
+            "granted_by": "platform-lead",
+            "granted_at": "2026-04-30T00:00:00+00:00",
+            "expires_at": _future(),
+            "scope_pr_numbers": [999],
+        }
+        if scope_repos is not None:
+            entry["scope_repos"] = scope_repos
+        _write_allowlist(allowlist, [entry])
+
+        result = validate_pr_receipts(
+            pr_body="[skip-receipt-gate: appr-no-repo-scope]",
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+            allowlist_path=allowlist,
+            pr_author="worker-A",
+            current_repo="omnibase_core",
+            current_pr_number=999,
+        )
+
+        assert not result.passed
+        assert "scope_repos" in result.message
+
     def test_no_allowlist_path_provided_fails(self, tmp_path: Path) -> None:
         """Skip token present but no allowlist_path → hard FAIL."""
         result = validate_pr_receipts(
@@ -316,6 +347,39 @@ class TestSkipTokenEdgeCases:
             pr_author=pr_author,
             current_repo=current_repo,
             current_pr_number=current_pr_number,
+        )
+
+        assert not result.passed
+        assert missing_name in result.message
+        assert "required PR context is missing" in result.message
+
+    @pytest.mark.parametrize(
+        ("pr_author", "current_repo", "missing_name"),
+        [
+            ("", "omnibase_core", "pr_author"),
+            ("   ", "omnibase_core", "pr_author"),
+            ("worker-A", "", "current_repo"),
+            ("worker-A", "   ", "current_repo"),
+        ],
+    )
+    def test_allowlist_skip_rejects_blank_pr_context(
+        self,
+        tmp_path: Path,
+        pr_author: str,
+        current_repo: str,
+        missing_name: str,
+    ) -> None:
+        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
+        _write_allowlist(allowlist, [_valid_entry(entry_id="appr-valid")])
+
+        result = validate_pr_receipts(
+            pr_body="[skip-receipt-gate: appr-valid]",
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+            allowlist_path=allowlist,
+            pr_author=pr_author,
+            current_repo=current_repo,
+            current_pr_number=999,
         )
 
         assert not result.passed

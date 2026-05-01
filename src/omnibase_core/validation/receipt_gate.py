@@ -419,14 +419,19 @@ def _validate_skip_token(
             )
 
     # Repo scope check.
-    scope_repos = entry.get("scope_repos", [])
-    if current_repo is not None and isinstance(scope_repos, list) and scope_repos:
-        if current_repo not in scope_repos:
-            return (
-                False,
-                f"[skip-receipt-gate] REJECTED: approval {approval_id!r} is scoped to repos "
-                f"{scope_repos!r} but current repo is {current_repo!r}.",
-            )
+    scope_repos = entry.get("scope_repos")
+    if not isinstance(scope_repos, list) or len(scope_repos) == 0:
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: allowlist entry {approval_id!r} missing or empty "
+            "'scope_repos' — every approval must be scoped to specific repos.",
+        )
+    if current_repo is not None and current_repo not in scope_repos:
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: approval {approval_id!r} is scoped to repos "
+            f"{scope_repos!r} but current repo is {current_repo!r}.",
+        )
 
     # PR number scope check.
     if current_pr_number is not None and isinstance(scope_prs, list):
@@ -484,16 +489,14 @@ def validate_pr_receipts(
                     "onex_change_control/allowlists/skip_token_approvals.yaml."
                 ),
             )
-        if pr_author is None or current_repo is None or current_pr_number is None:
-            missing_context = [
-                name
-                for name, value in (
-                    ("pr_author", pr_author),
-                    ("current_repo", current_repo),
-                    ("current_pr_number", current_pr_number),
-                )
-                if value is None
-            ]
+        missing_context: list[str] = []
+        if not isinstance(pr_author, str) or not pr_author.strip():
+            missing_context.append("pr_author")
+        if not isinstance(current_repo, str) or not current_repo.strip():
+            missing_context.append("current_repo")
+        if current_pr_number is None:
+            missing_context.append("current_pr_number")
+        if missing_context:
             return ModelReceiptGateResult(
                 passed=False,
                 message=(
