@@ -21,6 +21,10 @@ class ImportGraph:
     edges_out: dict[str, set[str]] = field(default_factory=dict)
 
 
+def _to_repo_rel(path: Path, repo_root: Path) -> str:
+    return path.relative_to(repo_root).as_posix()
+
+
 def build_import_graph(repo_root: Path) -> ImportGraph:
     """Build a repo-relative import graph for Python and JS/TS source files.
 
@@ -45,13 +49,13 @@ def build_import_graph(repo_root: Path) -> ImportGraph:
             js_files.append(path)
 
     for path in py_files:
-        rel = str(path.relative_to(repo_root))
+        rel = _to_repo_rel(path, repo_root)
         edges = _parse_python_imports(path, repo_root)
         if edges:
             graph.edges_out[rel] = edges
 
     for path in js_files:
-        rel = str(path.relative_to(repo_root))
+        rel = _to_repo_rel(path, repo_root)
         edges = _parse_js_imports(path, repo_root)
         if edges:
             graph.edges_out[rel] = edges
@@ -78,7 +82,7 @@ def _parse_python_imports(path: Path, repo_root: Path) -> set[str]:
             imports.update(_resolve_python_import_from(node, path, repo_root))
 
     edges: set[str] = set()
-    src_rel = str(path.relative_to(repo_root))
+    src_rel = _to_repo_rel(path, repo_root)
 
     for imported_rel in imports:
         if imported_rel != src_rel:
@@ -140,11 +144,11 @@ def _resolve_absolute_import_from(
 def _resolve_python_path_candidate(candidate: Path, repo_root: Path) -> str | None:
     pkg_path = candidate / "__init__.py"
     if pkg_path.is_file():
-        return str(pkg_path.relative_to(repo_root))
+        return _to_repo_rel(pkg_path, repo_root)
 
     mod_path = candidate.with_suffix(".py")
     if mod_path.is_file():
-        return str(mod_path.relative_to(repo_root))
+        return _to_repo_rel(mod_path, repo_root)
 
     return None
 
@@ -168,21 +172,21 @@ def _resolve_python_module(
         # Try as package (directory with __init__.py)
         pkg_path = search_root / candidate_rel / "__init__.py"
         if pkg_path.is_file():
-            return str(pkg_path.relative_to(repo_root))
+            return _to_repo_rel(pkg_path, repo_root)
         # Try as module file
         mod_path = search_root / candidate_rel.with_suffix(".py")
         if mod_path.is_file():
-            return str(mod_path.relative_to(repo_root))
+            return _to_repo_rel(mod_path, repo_root)
 
     # Try relative to the importing file's directory
     import_dir = importing_file.parent
     for search_root in [import_dir]:
         pkg_path = search_root / candidate_rel / "__init__.py"
         if pkg_path.is_file():
-            return str(pkg_path.relative_to(repo_root))
+            return _to_repo_rel(pkg_path, repo_root)
         mod_path = search_root / candidate_rel.with_suffix(".py")
         if mod_path.is_file():
-            return str(mod_path.relative_to(repo_root))
+            return _to_repo_rel(mod_path, repo_root)
 
     return None
 
@@ -194,7 +198,7 @@ def _parse_js_imports(path: Path, repo_root: Path) -> set[str]:
     except OSError:
         return set()
 
-    src_rel = str(path.relative_to(repo_root))
+    src_rel = _to_repo_rel(path, repo_root)
     edges: set[str] = set()
 
     specifiers: list[str] = []
@@ -232,7 +236,7 @@ def _resolve_js_specifier(
     ]:
         if attempt.is_file():
             try:
-                return str(attempt.relative_to(repo_root))
+                return _to_repo_rel(attempt, repo_root)
             except ValueError:
                 return None
 
