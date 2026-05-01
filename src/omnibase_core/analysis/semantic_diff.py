@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 import re
-from difflib import SequenceMatcher
 from typing import cast
 
 from omnibase_core.analysis.symbol_extractor import extract_symbols
@@ -16,6 +15,7 @@ from omnibase_core.types.typed_dict_extracted_symbol import TypedDictExtractedSy
 _GUARD_PATTERN = re.compile(
     r"(?i)(guard|check|validate|verify|ensure|assert|require)",
 )
+_NAME_TOKEN_PATTERN = re.compile(r"[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)|\d+")
 
 _KIND_SEVERITY: dict[EnumChangeKind, EnumDiffSeverity] = {
     EnumChangeKind.GUARD_REMOVED: EnumDiffSeverity.CRITICAL,
@@ -42,19 +42,35 @@ def _strip_name(signature: str, name: str) -> str:
     return signature.replace(name, "__sym__", 1)
 
 
+def _name_tokens(name: str) -> set[str]:
+    return {
+        token.lower()
+        for part in name.replace(".", "_").split("_")
+        for token in _NAME_TOKEN_PATTERN.findall(part)
+        if len(token) >= 3
+    }
+
+
+def _has_shared_name_context(old_name: str, new_name: str) -> bool:
+    return bool(_name_tokens(old_name) & _name_tokens(new_name))
+
+
 def _rename_tolerance(
     old_sym: TypedDictExtractedSymbol, new_sym: TypedDictExtractedSymbol
 ) -> bool:
-    """True when a delete/add pair is similar enough to classify as a refactor."""
+    """True if symbols look like the same implementation renamed in place."""
     old_name = old_sym.get("name", "")
     new_name = new_sym.get("name", "")
+    if old_sym["kind"] != new_sym["kind"]:
+        return False
+    if not _has_shared_name_context(old_name, new_name):
+        return False
+
     old_sig = _strip_name(old_sym["signature"], old_name)
     new_sig = _strip_name(new_sym["signature"], new_name)
     if old_sig != new_sig:
         return False
-    if old_sym["kind"] != new_sym["kind"]:
-        return False
-    if SequenceMatcher(None, old_name, new_name).ratio() < 0.6:
+    if old_sym["body_hash"] != new_sym["body_hash"]:
         return False
     old_lines = _line_count(old_sym)
     new_lines = _line_count(new_sym)
