@@ -6,8 +6,6 @@ from __future__ import annotations
 
 import pytest
 
-pytestmark = pytest.mark.unit
-
 from omnibase_core.enums.enum_diff_severity import EnumChangeKind, EnumDiffSeverity
 from omnibase_core.models.analysis.model_semantic_diff_report import (
     ModelSemanticDiffReport,
