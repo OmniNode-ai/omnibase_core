@@ -37,6 +37,23 @@ def test_append_writes_jsonl_line(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    "session_id",
+    [
+        "../escape",
+        "nested/session",
+        "nested\\session",
+        "sess..escape",
+        ".hidden",
+        "",
+    ],
+)
+def test_session_id_rejects_path_unsafe_values(tmp_path: Path, session_id: str) -> None:
+    with pytest.raises(ValueError):
+        TrajectoryStore(session_id=session_id, state_dir=tmp_path)
+
+
+@pytest.mark.unit
 def test_append_multiple_entries_each_on_own_line(tmp_path: Path) -> None:
     store = TrajectoryStore(session_id="sess-2", state_dir=tmp_path)
     for i in range(5):
@@ -75,6 +92,22 @@ def test_read_recent_returns_newest_n(tmp_path: Path) -> None:
     assert len(recent) == 3
     # newest 3 are steps 7, 8, 9
     assert [e.step for e in recent] == [7, 8, 9]
+
+
+@pytest.mark.unit
+def test_read_recent_zero_returns_empty_list(tmp_path: Path) -> None:
+    store = TrajectoryStore(session_id="sess-zero", state_dir=tmp_path)
+    store.append(_make_entry(1))
+
+    assert store.read_recent(0) == []
+
+
+@pytest.mark.unit
+def test_read_recent_negative_raises(tmp_path: Path) -> None:
+    store = TrajectoryStore(session_id="sess-negative", state_dir=tmp_path)
+
+    with pytest.raises(ValueError, match="greater than or equal to 0"):
+        store.read_recent(-1)
 
 
 @pytest.mark.unit

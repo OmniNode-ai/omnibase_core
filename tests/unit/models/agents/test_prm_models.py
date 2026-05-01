@@ -47,7 +47,7 @@ def test_trajectory_entry_is_frozen() -> None:
         result="ok",
     )
     with pytest.raises(Exception):
-        entry.step = 99  # type: ignore[misc]
+        entry.step = 99  # NOTE(OMN-10367): intentional mutation verifies frozen model enforcement.  # type: ignore[misc]
 
 
 def test_prm_match_fields() -> None:
@@ -77,7 +77,7 @@ def test_prm_match_is_frozen() -> None:
         dedup_key="ping_pong:agent-a,agent-b:src/bar.py:2-8",
     )
     with pytest.raises(Exception):
-        match.severity_level = 3  # type: ignore[misc]
+        match.severity_level = 3  # NOTE(OMN-10367): intentional mutation verifies frozen model enforcement.  # type: ignore[misc]
 
 
 def test_prm_match_severity_must_be_1_2_or_3() -> None:
@@ -87,6 +87,6 @@ def test_prm_match_severity_must_be_1_2_or_3() -> None:
             affected_agents=("agent-a",),
             affected_targets=("src/baz.py",),
             step_range=(0, 10),
-            severity_level=4,  # type: ignore[arg-type]
+            severity_level=4,  # NOTE(OMN-10367): invalid literal verifies runtime severity validation.  # type: ignore[arg-type]
             dedup_key="expansion_drift:agent-a:src/baz.py:0-10",
         )
