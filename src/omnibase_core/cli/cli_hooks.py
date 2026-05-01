@@ -67,6 +67,7 @@ def _write_mask(path: Path, mask: int) -> None:
         try:
             Path(tmp).unlink()
         except OSError:
+            # Preserve the original write/replace exception if temp cleanup fails.
             pass
         raise
 
