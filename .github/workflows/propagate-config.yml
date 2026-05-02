@@ -53,7 +53,13 @@ concurrency:
 jobs:
   propagate:
     name: Propagate ${{ inputs.propagation_name || 'release-triggered' }}
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
     steps:
       - uses: actions/checkout@v6
 
@@ -99,7 +105,13 @@ jobs:
     # PROPAGATION_DRY_RUN=1 so no cross-repo side effects occur.
     name: Dry-run sanity check
     if: github.event_name != 'release'
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
     steps:
       - uses: actions/checkout@v6
 

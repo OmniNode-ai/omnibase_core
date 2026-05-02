@@ -38,7 +38,13 @@ concurrency:
 jobs:
   enumerate-repos:
     name: Enumerate downstream repos
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
     outputs:
       repos: ${{ steps.emit.outputs.repos }}
       new_sha: ${{ steps.sha.outputs.sha }}
@@ -77,7 +83,13 @@ jobs:
     name: "Bump: ${{ matrix.repo }}"
     needs: enumerate-repos
     if: needs.enumerate-repos.outputs.repos != '[]'
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
     continue-on-error: true
     permissions:
       contents: read
@@ -196,7 +208,13 @@ jobs:
     name: Publish summary
     needs: [enumerate-repos, bump]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
     steps:
       - name: Echo outcome
         run: |
