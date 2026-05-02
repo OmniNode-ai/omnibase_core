@@ -139,12 +139,11 @@ def test_non_guard_delete_is_deleted_function_not_guard():
 
 
 def test_rename_detected_same_signature_similar_line_count():
-    # Same signature and body (just name changes) — should pair as rename
-    old = "def foo(x):\n    return x\n"
-    new = "def bar(x):\n    return x\n"
+    # Same signature, body, and symbol context should pair as rename.
+    old = "def fetch_user(x):\n    return x\n"
+    new = "def load_user(x):\n    return x\n"
     report = compute_diff(old, new, file_path="x.py", consumers_count=0)
-    # foo is removed, bar is added — should be merged as a rename (refactor)
-    change = _by_name(report, "bar")
+    change = _by_name(report, "load_user")
     assert change is not None
     assert change.kind == EnumChangeKind.REFACTOR
 
