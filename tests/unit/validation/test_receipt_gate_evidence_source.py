@@ -433,8 +433,12 @@ class TestReceiptGateWorkflowShapeOMN10419:
                     "(backwards compatibility — OMN-10419)"
                 )
                 assert 'OCC_CUTOFF_SHA" = "PENDING_MERGE"' in script, (
-                    "Resolve Evidence-Source must short-circuit while the OMN-10419 cutoff "
-                    "SHA is PENDING_MERGE"
+                    "Resolve Evidence-Source must retain cutoff handling while the "
+                    "OMN-10419 cutoff SHA is PENDING_MERGE"
+                )
+                assert '[ -z "$evidence_source" ]' in script, (
+                    "Resolve Evidence-Source must only short-circuit pending-cutoff "
+                    "PRs when no Evidence-Source was provided"
                 )
                 return
         pytest.fail("Resolve Evidence-Source step not found")
