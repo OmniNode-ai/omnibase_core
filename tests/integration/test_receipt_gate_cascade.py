@@ -7,8 +7,7 @@ Simulates the 2026-04-30 incident pattern (24 PRs merging without evidence)
 and validates all new attack surfaces identified by hostile review.
 
 Wave 4 functions (parse_evidence_source, _verify_ticket_identity,
-compute_contract_sha256, contract_sha256 field) are tested via xfail when
-not yet present on main — they land via OMN-10419/10420/10421 PRs.
+compute_contract_sha256, contract_sha256 field) are now enforced directly.
 
 Categories:
     1. Cascade fixtures — original incident pattern (I1)
@@ -122,7 +121,11 @@ def _valid_allowlist_entry(
 
 
 def _compute_contract_sha256(contract_path: Path) -> str:
-    return hashlib.sha256(contract_path.read_bytes()).hexdigest()
+    return f"sha256:{hashlib.sha256(contract_path.read_bytes()).hexdigest()}"
+
+
+def _post_cutoff_opened_at() -> datetime:
+    return datetime(2026, 5, 1, tzinfo=UTC)
 
 
 # ---------------------------------------------------------------------------
@@ -321,67 +324,39 @@ class TestHashBinding:
     """Contract YAML mutated after receipt produced → contract_sha256 mismatch → fail.
 
     The contract_sha256 field on ModelDodReceipt and gate-side hash verification
-    land via OMN-10421. Tests that require the new gate behavior are marked xfail.
-    Tests that verify the structural invariant (contract mutable without gate detection)
-    are always-pass and document the pre-OMN-10421 gap.
+    landed via OMN-10421. These tests assert the final invariant directly.
     """
 
-    def test_gate_does_not_yet_detect_mutated_contract_pre_omn10421(
-        self, tmp_path: Path
-    ) -> None:
-        """Before OMN-10421: gate cannot detect contract mutation — documents the gap.
-
-        A receipt without contract_sha256 passes the gate even if the contract
-        was mutated. This test proves the gap exists and will be overridden
-        by test_mutated_contract_invalidates_receipt once OMN-10421 lands.
-        """
+    def test_missing_contract_sha256_post_cutoff_fails(self, tmp_path: Path) -> None:
+        """Post-cutoff receipts without contract_sha256 fail hard."""
         contracts = tmp_path / "contracts"
         receipts = tmp_path / "receipts"
         _write_contract(contracts, "OMN-10700")
-        contract_path = contracts / "OMN-10700.yaml"
-
-        # Write a valid receipt (no contract_sha256 — field not yet on model)
         _write_receipt(receipts, "OMN-10700", _receipt_dict(ticket_id="OMN-10700"))
-
-        # Mutate the contract AFTER receipt produced — gate cannot detect this yet
-        original_content = yaml.safe_load(contract_path.read_text())
-        original_content["summary"] = (
-            "MUTATED after receipt — gate cannot detect pre-10421"
-        )
-        contract_path.write_text(yaml.safe_dump(original_content))
 
         result = validate_pr_receipts(
             pr_body="Closes OMN-10700",
             contracts_dir=contracts,
             receipts_dir=receipts,
+            pr_opened_at=_post_cutoff_opened_at(),
         )
-        # Pre-OMN-10421: gate passes because it has no hash check — this is the GAP
-        assert result.passed, (
-            "Pre-OMN-10421 gap documented: mutated contract is not detected without hash binding. "
-            "Once OMN-10421 lands, this test should be replaced by "
-            "test_mutated_contract_invalidates_receipt."
+        assert not result.passed
+        assert "contract_sha256" in result.message.lower() or "rerun probes" in (
+            result.message.lower()
         )
 
-    @pytest.mark.xfail(
-        reason="awaiting OMN-10421 merge: contract_sha256 field + gate-side hash verification",
-        strict=True,
-    )
     def test_mutated_contract_invalidates_receipt(self, tmp_path: Path) -> None:
-        """After OMN-10421: mutating contract YAML must cause hash-mismatch fail.
-
-        Pre-OMN-10421: gate cannot detect mutation → passes (xfail: strict=True
-        so the test fails the suite if it unexpectedly passes without the real check).
-        Post-OMN-10421: gate detects mutation via contract_sha256 comparison → passes.
-        """
+        """Mutating contract YAML after receipt creation causes hash-mismatch fail."""
         contracts = tmp_path / "contracts"
         receipts = tmp_path / "receipts"
         _write_contract(contracts, "OMN-10702")
         contract_path = contracts / "OMN-10702.yaml"
 
-        # Write a valid receipt without contract_sha256 (field not on model until OMN-10421)
-        _write_receipt(receipts, "OMN-10702", _receipt_dict(ticket_id="OMN-10702"))
+        receipt_data = _receipt_dict(ticket_id="OMN-10702")
+        receipt_data["contract_sha256"] = _compute_contract_sha256(contract_path)
+        _write_receipt(receipts, "OMN-10702", receipt_data)
 
-        # Mutate contract after receipt — gate cannot detect this until OMN-10421
+        # Mutate contract after receipt — the stored hash must no longer match.
         original_content = yaml.safe_load(contract_path.read_text())
         original_content["summary"] = "MUTATED after receipt — should invalidate"
         contract_path.write_text(yaml.safe_dump(original_content))
@@ -390,9 +365,8 @@ class TestHashBinding:
             pr_body="Closes OMN-10702",
             contracts_dir=contracts,
             receipts_dir=receipts,
+            pr_opened_at=_post_cutoff_opened_at(),
         )
-        # Pre-OMN-10421: result.passed is True (no hash check) → this assert fails → xfail
-        # Post-OMN-10421: result.passed is False (hash mismatch detected) → xfail passes
         assert not result.passed, (
             "Gate must fail when contract was mutated after receipt was produced"
         )
@@ -402,12 +376,8 @@ class TestHashBinding:
             or "mutated" in result.message.lower()
         ), f"Must mention hash mismatch; got: {result.message!r}"
 
-    @pytest.mark.xfail(
-        reason="awaiting OMN-10421 merge: contract_sha256 field + gate-side hash verification",
-        strict=False,
-    )
     def test_matching_contract_sha256_passes(self, tmp_path: Path) -> None:
-        """After OMN-10421: receipt with correct contract_sha256 must satisfy the gate."""
+        """Receipt with correct contract_sha256 satisfies the gate."""
         contracts = tmp_path / "contracts"
         receipts = tmp_path / "receipts"
         _write_contract(contracts, "OMN-10703")
@@ -422,6 +392,7 @@ class TestHashBinding:
             pr_body="Closes OMN-10703",
             contracts_dir=contracts,
             receipts_dir=receipts,
+            pr_opened_at=_post_cutoff_opened_at(),
         )
         assert result.passed, f"Matching sha256 must pass; got: {result.message!r}"
 
@@ -767,26 +738,16 @@ class TestGateInvariants:
             f"I3: Gate must pass when evidence matches the cited ticket; got: {result_correct_ticket.message!r}"
         )
 
-    @pytest.mark.xfail(
-        reason=(
-            "awaiting OMN-10421 merge: contract_sha256 field + gate-side hash verification. "
-            "Pre-OMN-10421 gate passes despite contract mutation — this is the gap being closed."
-        ),
-        strict=False,
-    )
     def test_invariant_i4_evidence_content_hash_bound(self, tmp_path: Path) -> None:
-        """I4: Evidence content is hash-bound; mutating contract invalidates receipt.
-
-        Pre-OMN-10421: gate has no hash check, so mutation goes undetected (gap).
-        Post-OMN-10421: gate reads contract_sha256 from receipt and compares.
-        """
+        """I4: Evidence content is hash-bound; mutating contract invalidates receipt."""
         contracts = tmp_path / "contracts"
         receipts = tmp_path / "receipts"
         _write_contract(contracts, "OMN-10904")
         contract_path = contracts / "OMN-10904.yaml"
 
-        # Write receipt without contract_sha256 (field not on model until OMN-10421)
-        _write_receipt(receipts, "OMN-10904", _receipt_dict(ticket_id="OMN-10904"))
+        receipt_data = _receipt_dict(ticket_id="OMN-10904")
+        receipt_data["contract_sha256"] = _compute_contract_sha256(contract_path)
+        _write_receipt(receipts, "OMN-10904", receipt_data)
 
         # Mutate contract after receipt produced
         original_content = yaml.safe_load(contract_path.read_text())
@@ -797,9 +758,8 @@ class TestGateInvariants:
             pr_body="Closes OMN-10904",
             contracts_dir=contracts,
             receipts_dir=receipts,
+            pr_opened_at=_post_cutoff_opened_at(),
         )
-        # This assert fails pre-OMN-10421 (gate passes — the known gap)
-        # and passes post-OMN-10421 (gate detects mutation via hash check)
         assert not result.passed, "I4: Mutated contract must invalidate receipt"
         assert "sha256" in result.message.lower() or "hash" in result.message.lower(), (
             f"I4: Must mention hash mismatch; got: {result.message!r}"
