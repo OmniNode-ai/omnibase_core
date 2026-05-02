@@ -24,12 +24,7 @@ on:
 jobs:
   stale-todo-gate:
     name: Stale TODO Gate
-    runs-on: >-
-      ${{
-        vars.USE_SELF_HOSTED_RUNNERS == 'true'
-        && 'self-hosted, omnibase-ci'
-        || 'ubuntu-latest'
-      }}
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
