@@ -126,6 +126,11 @@ def compute_contract_sha256(contract_path: Path) -> str:
     return hashlib.sha256(contract_path.read_bytes()).hexdigest()
 
 
+def _prefixed_contract_sha256(contract_path: Path) -> str:
+    """Return the canonical contract hash value used by DoD receipts."""
+    return f"sha256:{compute_contract_sha256(contract_path)}"
+
+
 def _extract_ticket_ids(pr_body: str, pr_title: str | None = None) -> list[str]:
     """Return sorted unique ticket IDs cited by this PR.
 
@@ -328,7 +333,7 @@ def _check_one_receipt(
         and contract_path.exists()
         and pr_opened_at is not None
     ):
-        actual_sha = compute_contract_sha256(contract_path)
+        actual_sha = _prefixed_contract_sha256(contract_path)
         if receipt.contract_sha256 is None:
             is_post_cutoff = pr_opened_at >= _CONTRACT_SHA256_REQUIRED_AFTER
             if is_post_cutoff:
