@@ -58,8 +58,7 @@ from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 
 _TICKET_ID_RE = re.compile(r"^OMN-\d+$")
 _SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
-# SHA-256 hex digest — exactly 64 lowercase hex chars.
-_CONTRACT_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+_SHA256_RE = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
 # SemVer 2.0.0 — official regex from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 # Rejects leading zeros in numeric core (e.g. "01.0.0"), allows pre-release
 # identifiers with dot-separated alphanumerics and hyphens (e.g. "1.0.0-rc.1"),
@@ -215,6 +214,16 @@ class ModelDodReceipt(BaseModel):
             "to merge gate invocations. None for receipts not tied to a PR."
         ),
     )
+    contract_sha256: str | None = Field(
+        default=None,
+        description=(
+            "SHA-256 digest of contracts/<ticket_id>.yaml used when producing "
+            "this receipt. The OCC-first eligibility gate requires this field "
+            "and rejects receipts whose digest does not match the pinned OCC "
+            "contract. Optional here only for staged migration of historical "
+            "Receipt Gate fixtures."
+        ),
+    )
     branch: str | None = Field(
         default=None,
         description=(
@@ -229,18 +238,6 @@ class ModelDodReceipt(BaseModel):
             "from EvidenceReceipt (OMN-9792). None when not applicable."
         ),
     )
-    contract_sha256: str | None = Field(
-        default=None,
-        description=(
-            "SHA-256 hex digest of the contract YAML file at the time this receipt "
-            "was produced (OMN-10421, invariant I4). None for legacy receipts "
-            "produced before this field was introduced. When present, the receipt-gate "
-            "recomputes sha256(contracts/<ticket-id>.yaml) at the checked-out OCC SHA "
-            "and fails if the digest does not match — proving the contract has not "
-            "mutated since the probes ran. Must be exactly 64 lowercase hex chars."
-        ),
-    )
-
     @field_validator("branch")
     @classmethod
     def _validate_branch(cls, v: str | None) -> str | None:
@@ -255,15 +252,6 @@ class ModelDodReceipt(BaseModel):
     def _validate_working_dir(cls, v: str | None) -> str | None:
         if v is not None and not v.startswith("/"):
             raise ValueError("working_dir must be an absolute path (start with '/')")
-        return v
-
-    @field_validator("contract_sha256")
-    @classmethod
-    def _validate_contract_sha256(cls, v: str | None) -> str | None:
-        if v is not None and not _CONTRACT_SHA256_RE.match(v):
-            raise ValueError(
-                f"contract_sha256 must be exactly 64 lowercase hex chars (SHA-256), got: {v!r}"
-            )
         return v
 
     @field_validator("runner", "verifier")
@@ -301,6 +289,21 @@ class ModelDodReceipt(BaseModel):
         if not _SHA_RE.match(v):
             raise ValueError(f"commit_sha must be 7-40 hex chars (git SHA), got: {v!r}")
         return v
+
+    @field_validator("contract_sha256")
+    @classmethod
+    def _validate_contract_sha256(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        normalized = v.strip().lower()
+        if not _SHA256_RE.match(normalized):
+            raise ValueError(
+                "contract_sha256 must be a sha256:<64 lowercase hex> digest "
+                "or a bare 64-character lowercase hex digest"
+            )
+        if not normalized.startswith("sha256:"):
+            normalized = f"sha256:{normalized}"
+        return normalized
 
     @field_validator("run_timestamp")
     @classmethod
@@ -378,5 +381,4 @@ __all__ = [
     "EXECUTABLE_CHECK_TYPES",
     "ModelDodReceipt",
     "WEAK_PROOF_CHECK_TYPES",
-    "_CONTRACT_SHA256_RE",
 ]

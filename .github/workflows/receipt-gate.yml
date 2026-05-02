@@ -53,22 +53,37 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 1
 
+      - name: Resolve OCC main SHA
+        id: occ_ref
+        if: github.repository != 'OmniNode-ai/onex_change_control'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sha="$(gh api repos/OmniNode-ai/onex_change_control/git/ref/heads/main --jq '.object.sha')"
+          if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::could not resolve immutable onex_change_control/main SHA"
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
       # We need the onex_change_control repo to find contracts + receipts.
-      # In single-repo usage (omnibase_core hosting the gate), the tree is
-      # already present as a submodule or sibling checkout. In fan-out
-      # deployment, each caller repo checks out onex_change_control here.
+      # Downstream callers must read it through the pinned SHA resolved above;
+      # onex_change_control PRs are the only exception and validate evidence
+      # inside the PR checkout to avoid circular "already on main" dependency.
       - name: Check out onex_change_control (for contracts + receipts)
+        if: github.repository != 'OmniNode-ai/onex_change_control'
         uses: actions/checkout@v6
         with:
           repository: OmniNode-ai/onex_change_control
           path: .onex_change_control
-          ref: main
+          ref: ${{ steps.occ_ref.outputs.sha }}
           fetch-depth: 1
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.13
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -216,35 +231,38 @@ jobs:
             exit 1
           }
 
-      - name: Resolve PR body
+      - name: Resolve PR snapshot
         id: resolve_body
-        # Always fetch the PR body fresh from the GitHub API to avoid stale
-        # cached event payloads on re-runs (OMN-9717). github.event.pull_request.body
-        # is frozen at workflow trigger time — if the PR body is edited after CI
-        # fires, a re-run still reads the old body. Fetching via gh pr view
-        # guarantees the live body regardless of when the re-run happens.
-        #
-        # merge_group events do not carry pull_request.body. Derive the PR number
-        # from merge_group.head_ref (format: pr-<num>-<sha>) and fetch via API.
-        #
-        # OMN-10417: also capture PR author login and resolved PR number for
-        # skip-token self-approval and scope checks.
+        # Resolve mutable GitHub state exactly once. All eligibility checks below
+        # consume these files plus the pinned OCC SHA; they do not re-fetch PR
+        # metadata or move the evidence ref during validation.
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_EVENT_BODY: ${{ github.event.pull_request.body }}
           PR_EVENT_TITLE: ${{ github.event.pull_request.title }}
           PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_EVENT_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_EVENT_SHA: ${{ github.event.pull_request.head.sha }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
         run: |
-          set -e
+          set -euo pipefail
+          : > /tmp/pr_commit_shas.txt
+          : > /tmp/pr_commit_texts.txt
+
+          write_pr_snapshot() {
+            local pr_json="$1"
+            printf '%s' "$pr_json" | jq -r '.body // ""' > /tmp/pr_body.txt
+            printf '%s' "$pr_json" | jq -r '.title // ""' > /tmp/pr_title.txt
+            printf '%s' "$pr_json" | jq -r '.author.login // ""' > /tmp/pr_author.txt
+            printf '%s' "$pr_json" | jq -r '.headRefName // ""' > /tmp/pr_branch.txt
+            printf '%s' "$pr_json" | jq -r '.commits[]?.oid // empty' > /tmp/pr_commit_shas.txt
+            printf '%s' "$pr_json" | jq -r '.commits[]? | ((.messageHeadline // "") + " " + (.messageBody // "" | gsub("\r?\n"; " ")))' > /tmp/pr_commit_texts.txt
+          }
+
           if [ -n "$PR_NUMBER" ]; then
-            # pull_request event: always fetch live body so re-runs see edits.
-            # Single API call fetches both fields to minimise rate-limit consumption.
-            if pr_json="$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body,title,author 2>/dev/null)"; then
-              printf '%s' "$pr_json" | jq -r '.body' > /tmp/pr_body.txt
-              printf '%s' "$pr_json" | jq -r '.title' > /tmp/pr_title.txt
-              printf '%s' "$pr_json" | jq -r '.author.login' > /tmp/pr_author.txt
+            if pr_json="$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body,title,author,headRefName,commits 2>/dev/null)"; then
+              write_pr_snapshot "$pr_json"
               printf '%s' "$PR_NUMBER" > /tmp/pr_number.txt
             else
               # API unavailable — fall back to event payload with a warning.
@@ -252,28 +270,83 @@ jobs:
               printf '%s' "$PR_EVENT_BODY" > /tmp/pr_body.txt
               printf '%s' "$PR_EVENT_TITLE" > /tmp/pr_title.txt
               printf '%s' "$PR_EVENT_AUTHOR" > /tmp/pr_author.txt
+              printf '%s' "$PR_EVENT_BRANCH" > /tmp/pr_branch.txt
+              printf '%s\n' "$PR_EVENT_SHA" > /tmp/pr_commit_shas.txt
               printf '%s' "$PR_NUMBER" > /tmp/pr_number.txt
             fi
           elif [ -n "$MERGE_GROUP_HEAD_REF" ]; then
             pr_num="$(printf '%s' "$MERGE_GROUP_HEAD_REF" | sed -E 's@^.*/pr-([0-9]+)-.*$@\1@')"
             if [ -n "$pr_num" ] && [ "$pr_num" != "$MERGE_GROUP_HEAD_REF" ]; then
-              pr_json="$(gh pr view "$pr_num" --repo "${{ github.repository }}" --json body,title,author)"
-              printf '%s' "$pr_json" | jq -r '.body' > /tmp/pr_body.txt
-              printf '%s' "$pr_json" | jq -r '.title' > /tmp/pr_title.txt
-              printf '%s' "$pr_json" | jq -r '.author.login' > /tmp/pr_author.txt
+              pr_json="$(gh pr view "$pr_num" --repo "${{ github.repository }}" --json body,title,author,headRefName,commits)"
+              write_pr_snapshot "$pr_json"
               printf '%s' "$pr_num" > /tmp/pr_number.txt
             else
               : > /tmp/pr_body.txt
               : > /tmp/pr_title.txt
               : > /tmp/pr_author.txt
+              : > /tmp/pr_branch.txt
               : > /tmp/pr_number.txt
             fi
           else
             : > /tmp/pr_body.txt
             : > /tmp/pr_title.txt
             : > /tmp/pr_author.txt
+            : > /tmp/pr_branch.txt
             : > /tmp/pr_number.txt
           fi
+
+      - name: Resolve evidence snapshot
+        id: evidence
+        run: |
+          set -euo pipefail
+          repo_short="${GITHUB_REPOSITORY##*/}"
+          if [ "$repo_short" = "onex_change_control" ]; then
+            sha="$(git rev-parse HEAD)"
+            root="."
+          else
+            sha="${{ steps.occ_ref.outputs.sha }}"
+            root=".onex_change_control"
+          fi
+          if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::invalid evidence snapshot SHA: $sha"
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "root=$root" >> "$GITHUB_OUTPUT"
+
+      - name: Run OCC Eligibility
+        run: |
+          set -euo pipefail
+          PR_TITLE="$(cat /tmp/pr_title.txt)"
+          PR_BRANCH="$(cat /tmp/pr_branch.txt)"
+          PR_NUMBER_RESOLVED="$(cat /tmp/pr_number.txt 2>/dev/null || true)"
+          REPO_NAME="${{ github.repository }}"
+          REPO_SHORT="${REPO_NAME##*/}"
+
+          if [ -z "$PR_NUMBER_RESOLVED" ]; then
+            echo "::error::could not resolve PR number for OCC eligibility"
+            exit 1
+          fi
+
+          commit_args=()
+          while IFS= read -r sha; do
+            [ -n "$sha" ] && commit_args+=(--pr-commit-sha "$sha")
+          done < /tmp/pr_commit_shas.txt
+          while IFS= read -r text; do
+            [ -n "$text" ] && commit_args+=(--pr-commit-text "$text")
+          done < /tmp/pr_commit_texts.txt
+
+          python -m omnibase_core.validation.occ_merge_eligibility \
+            --repo "$REPO_SHORT" \
+            --pr-number "$PR_NUMBER_RESOLVED" \
+            --pr-title "$PR_TITLE" \
+            --pr-body-file /tmp/pr_body.txt \
+            --pr-branch "$PR_BRANCH" \
+            --occ-commit-sha "${{ steps.evidence.outputs.sha }}" \
+            --contracts-dir "${{ steps.evidence.outputs.root }}/${{ inputs.contracts-dir }}" \
+            --receipts-dir "${{ steps.evidence.outputs.root }}/${{ inputs.receipts-dir }}" \
+            "${commit_args[@]}" \
+            | tee /tmp/occ_eligibility.json
 
       - name: Run Receipt-Gate
         run: |
@@ -285,8 +358,9 @@ jobs:
           REPO_SHORT="${REPO_NAME##*/}"
 
           ALLOWLIST_ARG=""
-          if [ -f ".onex_change_control/allowlists/skip_token_approvals.yaml" ]; then
-            ALLOWLIST_ARG="--allowlist-path .onex_change_control/allowlists/skip_token_approvals.yaml"
+          EVIDENCE_ROOT="${{ steps.evidence.outputs.root }}"
+          if [ -f "$EVIDENCE_ROOT/allowlists/skip_token_approvals.yaml" ]; then
+            ALLOWLIST_ARG="--allowlist-path $EVIDENCE_ROOT/allowlists/skip_token_approvals.yaml"
           fi
 
           PR_AUTHOR_ARG=""
@@ -303,8 +377,8 @@ jobs:
           python -m omnibase_core.validation.receipt_gate_cli \
             --pr-body "$PR_BODY" \
             --pr-title "$PR_TITLE" \
-            --contracts-dir ".onex_change_control/${{ inputs.contracts-dir }}" \
-            --receipts-dir ".onex_change_control/${{ inputs.receipts-dir }}" \
+            --contracts-dir "${{ steps.evidence.outputs.root }}/${{ inputs.contracts-dir }}" \
+            --receipts-dir "${{ steps.evidence.outputs.root }}/${{ inputs.receipts-dir }}" \
             --current-repo "$REPO_SHORT" \
             $ALLOWLIST_ARG \
             $PR_AUTHOR_ARG \

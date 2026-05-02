@@ -38,6 +38,15 @@ def _install_step_script() -> str:
     raise AssertionError("Install omnibase_core step not found in receipt-gate.yml")
 
 
+def _workflow_step(name: str) -> dict[str, object]:
+    data = yaml.safe_load(WORKFLOW_PATH.read_text())
+    steps = data["jobs"]["verify"]["steps"]
+    for step in steps:
+        if step.get("name") == name:
+            return step
+    raise AssertionError(f"{name!r} step not found in receipt-gate.yml")
+
+
 def test_install_step_builds_wheel_from_source() -> None:
     """Core install must build a wheel, not install from PyPI."""
     script = _install_step_script()
@@ -117,3 +126,54 @@ def test_workflow_checks_out_omnibase_core_when_missing() -> None:
         "receipt-gate must check out omnibase_core source for downstream callers "
         "that don't already have it in-tree"
     )
+
+
+def test_workflow_uses_python_313() -> None:
+    """Receipt gate runtime must stay on the requested Python 3.13 line."""
+    step = _workflow_step("Set up Python 3.13")
+    assert step["with"]["python-version"] == "3.13"
+
+
+def test_workflow_pins_occ_main_before_checkout() -> None:
+    """Downstream validation must read OCC evidence from an immutable commit."""
+    resolve_step = _workflow_step("Resolve OCC main SHA")
+    checkout_step = _workflow_step(
+        "Check out onex_change_control (for contracts + receipts)"
+    )
+
+    assert "git/ref/heads/main" in resolve_step["run"]
+    assert checkout_step["with"]["ref"] == "${{ steps.occ_ref.outputs.sha }}"
+
+
+def test_workflow_validates_occ_pr_diff_without_main_dependency() -> None:
+    """onex_change_control PRs validate same-PR evidence to avoid a circular gate."""
+    evidence_step = _workflow_step("Resolve evidence snapshot")
+    script = evidence_step["run"]
+
+    assert 'repo_short" = "onex_change_control"' in script
+    assert 'root="."' in script
+    assert "git rev-parse HEAD" in script
+
+
+def test_workflow_captures_pr_snapshot_once_for_eligibility() -> None:
+    """The eligibility gate must consume a PR metadata snapshot, not live state."""
+    step = _workflow_step("Resolve PR snapshot")
+    script = step["run"]
+
+    assert "--json body,title,author,headRefName,commits" in script
+    assert "/tmp/pr_commit_shas.txt" in script
+    assert "/tmp/pr_commit_texts.txt" in script
+    assert "MERGE_GROUP_HEAD_REF" in script
+
+
+def test_workflow_runs_occ_eligibility_before_legacy_receipt_gate() -> None:
+    """Receipt Gate now has a deterministic PR/ticket/receipt binding preflight."""
+    data = yaml.safe_load(WORKFLOW_PATH.read_text())
+    steps = data["jobs"]["verify"]["steps"]
+    names = [step.get("name") for step in steps]
+
+    assert names.index("Run OCC Eligibility") < names.index("Run Receipt-Gate")
+    script = _workflow_step("Run OCC Eligibility")["run"]
+    assert "omnibase_core.validation.occ_merge_eligibility" in script
+    assert "--occ-commit-sha" in script
+    assert "--pr-body-file /tmp/pr_body.txt" in script
