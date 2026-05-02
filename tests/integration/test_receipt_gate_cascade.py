@@ -30,7 +30,10 @@ import yaml
 from omnibase_core.models.contracts.ticket.model_receipt_gate_result import (
     ModelReceiptGateResult,
 )
-from omnibase_core.validation.receipt_gate import validate_pr_receipts
+from omnibase_core.validation.receipt_gate import (
+    _CONTRACT_SHA256_REQUIRED_AFTER,
+    validate_pr_receipts,
+)
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -125,7 +128,7 @@ def _compute_contract_sha256(contract_path: Path) -> str:
 
 
 def _post_cutoff_opened_at() -> datetime:
-    return datetime(2026, 5, 1, tzinfo=UTC)
+    return _CONTRACT_SHA256_REQUIRED_AFTER + timedelta(days=1)
 
 
 # ---------------------------------------------------------------------------
@@ -699,17 +702,26 @@ class TestGateInvariants:
         """I2: Evidence must be pinned to a specific OCC commit-ish.
 
         Validated by confirming gate does not silently accept a PR body
-        that lacks Evidence-Source when the Wave 4 pinning workflow is active.
-        Until OMN-10419 lands, we verify the gate at least requires ticket evidence.
+        that opts into Evidence-Source without the matching Evidence-Ticket identity.
         """
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-10902")
+        _write_receipt(receipts, "OMN-10902", _receipt_dict(ticket_id="OMN-10902"))
+
         result = validate_pr_receipts(
-            pr_body="feat(OMN-10902): some change\n\nCloses OMN-10902",
-            contracts_dir=tmp_path / "contracts",
-            receipts_dir=tmp_path / "receipts",
+            pr_body=(
+                "feat(OMN-10902): some change\n\n"
+                "Closes OMN-10902\n"
+                "Evidence-Source: OCC#616"
+            ),
+            contracts_dir=contracts,
+            receipts_dir=receipts,
         )
         assert not result.passed, (
-            "I2: Gate must block when evidence is missing — even without OCC pinning check"
+            "I2: Gate must block Evidence-Source without matching Evidence-Ticket"
         )
+        assert "Evidence-Ticket" in result.message
 
     def test_invariant_i3_evidence_corresponds_to_same_ticket(
         self, tmp_path: Path
