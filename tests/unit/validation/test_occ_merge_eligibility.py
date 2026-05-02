@@ -11,14 +11,14 @@ import pytest
 import yaml
 
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
-from omnibase_core.validation.occ_merge_eligibility import (
+from omnibase_core.validation.validator_occ_merge_eligibility import (
     EnumOccEligibilityReason,
     ModelOccEligibilityInput,
     validate_occ_merge_eligibility,
 )
 
 TICKET = "OMN-10484"
-PR_SHA = "a1b2c3d4e5f678901234567890abcdef12345678"
+PR_SHA = "1" * 40
 
 
 def _contract_text(ticket_id: str = TICKET) -> str:
@@ -141,7 +141,41 @@ def test_ticket_not_bound_to_pr_is_ineligible(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_ticket_binding_uses_full_ticket_tokens(tmp_path: Path) -> None:
+    contract_hash = _write_contract(tmp_path, ticket_id="OMN-1")
+    _write_receipt(tmp_path, ticket_id="OMN-1", contract_sha256=contract_hash)
+    snapshot = ModelOccEligibilityInput(
+        repo="omnibase_core",
+        pr_number=123,
+        pr_title="feat(OMN-10484): harden OCC eligibility",
+        pr_body="Closes: OMN-1",
+        pr_branch="jonah/omn-10484-occ-eligibility",
+        pr_commit_shas=(PR_SHA,),
+        pr_commit_texts=("feat(OMN-10484): add eligibility",),
+        occ_commit_sha="b" * 40,
+        contracts_dir=tmp_path / "contracts",
+        receipts_dir=tmp_path / "receipts",
+    )
+
+    result = validate_occ_merge_eligibility(snapshot)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.PR_TICKET_MISMATCH
+
+
+@pytest.mark.unit
 def test_missing_contract_is_ineligible(tmp_path: Path) -> None:
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.MISSING_CONTRACT
+    assert result.missing_contracts == (TICKET,)
+
+
+@pytest.mark.unit
+def test_contract_directory_is_reported_as_missing_contract(tmp_path: Path) -> None:
+    (tmp_path / "contracts" / f"{TICKET}.yaml").mkdir(parents=True)
+
     result = validate_occ_merge_eligibility(_snapshot(tmp_path))
 
     assert result.eligible is False

@@ -54,6 +54,6 @@ def test_auto_merge_preflight_uses_single_pr_snapshot() -> None:
 
     assert "gh pr view" in script
     assert "--json body,title,headRefName,commits" in script
-    assert "omnibase_core.validation.occ_merge_eligibility" in script
+    assert "omnibase_core.validation.validator_occ_merge_eligibility" in script
     assert "--occ-commit-sha" in script
     assert "--pr-body-file /tmp/pr_body.txt" in script

@@ -130,7 +130,7 @@ jobs:
             [ -n "$text" ] && commit_args+=(--pr-commit-text "$text")
           done < <(printf '%s' "$pr_json" | jq -r '.commits[]? | ((.messageHeadline // "") + " " + (.messageBody // "" | gsub("\r?\n"; " ")))')
 
-          PYTHONPATH=src uv run python -m omnibase_core.validation.occ_merge_eligibility \
+          PYTHONPATH=src uv run python -m omnibase_core.validation.validator_occ_merge_eligibility \
             --repo "${GH_REPO##*/}" \
             --pr-number "$PR" \
             --pr-title "$PR_TITLE" \

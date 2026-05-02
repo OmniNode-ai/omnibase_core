@@ -174,6 +174,6 @@ def test_workflow_runs_occ_eligibility_before_legacy_receipt_gate() -> None:
 
     assert names.index("Run OCC Eligibility") < names.index("Run Receipt-Gate")
     script = _workflow_step("Run OCC Eligibility")["run"]
-    assert "omnibase_core.validation.occ_merge_eligibility" in script
+    assert "omnibase_core.validation.validator_occ_merge_eligibility" in script
     assert "--occ-commit-sha" in script
     assert "--pr-body-file /tmp/pr_body.txt" in script

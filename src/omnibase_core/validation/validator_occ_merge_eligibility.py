@@ -36,6 +36,7 @@ EVIDENCE_TICKET_PATTERN = re.compile(
     r"^\s*Evidence-Ticket\s*:\s*(OMN-\d+)\s*$",
     re.IGNORECASE | re.MULTILINE,
 )
+TICKET_TOKEN_PATTERN = re.compile(r"(?<![A-Z0-9])OMN-(\d+)(?![A-Z0-9])", re.IGNORECASE)
 
 
 def _sha256_file(path: Path) -> str:
@@ -56,18 +57,21 @@ def _normalize_sha_set(values: tuple[str, ...]) -> set[str]:
 
 
 def _ticket_bound_to_pr(ticket_id: str, snapshot: ModelOccEligibilityInput) -> bool:
-    needle = ticket_id.casefold()
-    if needle in snapshot.pr_title.casefold():
-        return True
-    if needle in snapshot.pr_branch.casefold():
-        return True
-    if any(needle in text.casefold() for text in snapshot.pr_commit_texts):
-        return True
+    searchable_texts = (
+        snapshot.pr_title,
+        snapshot.pr_branch,
+        *snapshot.pr_commit_texts,
+    )
+    bound_tickets = {
+        f"OMN-{match.group(1)}".upper()
+        for text in searchable_texts
+        for match in TICKET_TOKEN_PATTERN.finditer(text)
+    }
     evidence_tickets = {
         match.group(1).upper()
         for match in EVIDENCE_TICKET_PATTERN.finditer(snapshot.pr_body)
     }
-    return ticket_id in evidence_tickets
+    return ticket_id in bound_tickets or ticket_id in evidence_tickets
 
 
 def _receipt_bound_to_pr(
@@ -116,13 +120,12 @@ def validate_occ_merge_eligibility(
 
     for ticket_id in ticket_ids:
         contract_path = snapshot.contracts_dir / f"{ticket_id}.yaml"
-        if not contract_path.exists():
+        if not contract_path.is_file():
             missing_contracts.append(ticket_id)
             continue
-        contract_hash = _sha256_file(contract_path)
-        contract_hashes[ticket_id] = contract_hash
         try:
             contract_data = _load_yaml(contract_path)
+            contract_hash = _sha256_file(contract_path)
         except (OSError, yaml.YAMLError) as exc:
             missing_contracts.append(ticket_id)
             return ModelOccEligibilityResult(
@@ -134,6 +137,7 @@ def validate_occ_merge_eligibility(
                 missing_contracts=tuple(sorted(missing_contracts)),
                 detail=f"contract {contract_path} is unreadable: {exc}",
             )
+        contract_hashes[ticket_id] = contract_hash
         triples = _iter_dod_evidence(contract_data)
         if not triples:
             missing_receipts.append(f"{ticket_id}:*:*")

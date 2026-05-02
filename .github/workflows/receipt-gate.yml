@@ -336,7 +336,7 @@ jobs:
             [ -n "$text" ] && commit_args+=(--pr-commit-text "$text")
           done < /tmp/pr_commit_texts.txt
 
-          python -m omnibase_core.validation.occ_merge_eligibility \
+          python -m omnibase_core.validation.validator_occ_merge_eligibility \
             --repo "$REPO_SHORT" \
             --pr-number "$PR_NUMBER_RESOLVED" \
             --pr-title "$PR_TITLE" \
