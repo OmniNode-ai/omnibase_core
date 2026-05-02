@@ -32,13 +32,13 @@ class ModelOccEligibilityResult(BaseModel):
         return {
             "eligible": self.eligible,
             "reason": self.reason.value,
-            "ticket_ids": list(self.ticket_ids),
+            "ticket_ids": sorted(self.ticket_ids),
             "occ_commit_sha": self.occ_commit_sha,
             "contract_hashes": dict(sorted(self.contract_hashes.items())),
-            "receipt_ids": list(self.receipt_ids),
-            "missing_contracts": list(self.missing_contracts),
-            "missing_or_nonpass_receipts": list(self.missing_or_nonpass_receipts),
-            "dependency_prs": list(self.dependency_prs),
+            "receipt_ids": sorted(self.receipt_ids),
+            "missing_contracts": sorted(self.missing_contracts),
+            "missing_or_nonpass_receipts": sorted(self.missing_or_nonpass_receipts),
+            "dependency_prs": sorted(self.dependency_prs, key=str),
             "detail": self.detail,
         }
 

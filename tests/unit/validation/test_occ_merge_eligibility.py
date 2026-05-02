@@ -293,6 +293,18 @@ def test_missing_contract_hash_is_migration_compatible(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_bare_contract_hash_is_migration_compatible(tmp_path: Path) -> None:
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(tmp_path, contract_sha256=contract_hash.removeprefix("sha256:"))
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is True
+    assert result.reason is EnumOccEligibilityReason.ELIGIBLE
+    assert result.contract_hashes == {TICKET: contract_hash}
+
+
+@pytest.mark.unit
 def test_eligible_output_is_replay_stable(tmp_path: Path) -> None:
     contract_hash = _write_contract(tmp_path)
     _write_receipt(tmp_path, contract_sha256=contract_hash)
