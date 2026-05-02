@@ -113,16 +113,9 @@ class TestEnumLlmProvider:
         assert EnumLlmProvider.ANTHROPIC.is_local() is False
 
     def test_requires_api_key_method(self):
-        """Test the requires_api_key method"""
-        # Providers that require API keys
-        assert EnumLlmProvider.CLAUDE.requires_api_key() is True
-        assert EnumLlmProvider.OPENAI.requires_api_key() is True
-        assert EnumLlmProvider.GEMINI.requires_api_key() is True
-        assert EnumLlmProvider.ANTHROPIC.requires_api_key() is True
-
-        # Providers that don't require API keys
-        assert EnumLlmProvider.LOCAL.requires_api_key() is False
-        assert EnumLlmProvider.LITELLM.requires_api_key() is False
+        """Test the requires_api_key method — all use SSO/OAuth (OMN-7835)."""
+        for provider in EnumLlmProvider.__members__.values():
+            assert provider.requires_api_key() is False
 
     def test_enum_provider_types(self):
         """Test provider type categorization"""
@@ -140,13 +133,9 @@ class TestEnumLlmProvider:
             EnumLlmProvider.LITELLM,
         }
 
-        all_providers = set(EnumLlmProvider)
+        all_providers = set(EnumLlmProvider.__members__.values())
         assert commercial_providers.union(local_providers) == all_providers
 
-        # Verify all commercial providers require API keys
-        for provider in commercial_providers:
-            assert provider.requires_api_key() is True
-
-        # Verify all local providers don't require API keys
-        for provider in local_providers:
+        # Verify no providers require API keys (SSO/OAuth, OMN-7835)
+        for provider in all_providers:
             assert provider.requires_api_key() is False
