@@ -497,7 +497,7 @@ jobs:
             sha="$(git rev-parse HEAD)"
             root="."
           else
-            sha="${{ steps.occ_ref.outputs.sha }}"
+            sha="$(git -C .onex_change_control rev-parse HEAD)"
             root=".onex_change_control"
           fi
           if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then
