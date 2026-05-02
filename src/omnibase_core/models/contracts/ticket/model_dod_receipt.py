@@ -238,6 +238,7 @@ class ModelDodReceipt(BaseModel):
             "from EvidenceReceipt (OMN-9792). None when not applicable."
         ),
     )
+
     @field_validator("branch")
     @classmethod
     def _validate_branch(cls, v: str | None) -> str | None:

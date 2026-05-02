@@ -62,31 +62,30 @@ def _write_receipt(
     status: EnumReceiptStatus = EnumReceiptStatus.PASS,
     pr_number: int | None = 123,
     commit_sha: str = PR_SHA,
-    contract_sha256: str,
+    contract_sha256: str | None,
 ) -> None:
+    receipt = {
+        "schema_version": "1.0.0",
+        "ticket_id": ticket_id,
+        "evidence_item_id": evidence_item_id,
+        "check_type": "command",
+        "check_value": "uv run pytest tests/unit/validation/test_occ_merge_eligibility.py -q",
+        "status": status.value,
+        "run_timestamp": datetime(2026, 5, 1, 12, 0, tzinfo=UTC),
+        "commit_sha": commit_sha,
+        "runner": "worker",
+        "verifier": "foreground",
+        "probe_command": "uv run pytest tests/unit/validation/test_occ_merge_eligibility.py -q",
+        "probe_stdout": "1 passed\n",
+        "exit_code": 0,
+        "pr_number": pr_number,
+    }
+    if contract_sha256 is not None:
+        receipt["contract_sha256"] = contract_sha256
     path = root / "receipts" / ticket_id / evidence_item_id / "command.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        yaml.safe_dump(
-            {
-                "schema_version": "1.0.0",
-                "ticket_id": ticket_id,
-                "evidence_item_id": evidence_item_id,
-                "check_type": "command",
-                "check_value": "uv run pytest tests/unit/validation/test_occ_merge_eligibility.py -q",
-                "status": status.value,
-                "run_timestamp": datetime(2026, 5, 1, 12, 0, tzinfo=UTC),
-                "commit_sha": commit_sha,
-                "runner": "worker",
-                "verifier": "foreground",
-                "probe_command": "uv run pytest tests/unit/validation/test_occ_merge_eligibility.py -q",
-                "probe_stdout": "1 passed\n",
-                "exit_code": 0,
-                "pr_number": pr_number,
-                "contract_sha256": contract_sha256,
-            },
-            sort_keys=True,
-        ),
+        yaml.safe_dump(receipt, sort_keys=True),
         encoding="utf-8",
     )
 
@@ -245,6 +244,18 @@ def test_contract_hash_mismatch_is_ineligible(tmp_path: Path) -> None:
 
     assert result.eligible is False
     assert result.reason is EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH
+
+
+@pytest.mark.unit
+def test_missing_contract_hash_is_migration_compatible(tmp_path: Path) -> None:
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(tmp_path, contract_sha256=None)
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is True
+    assert result.reason is EnumOccEligibilityReason.ELIGIBLE
+    assert result.contract_hashes == {TICKET: contract_hash}
 
 
 @pytest.mark.unit

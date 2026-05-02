@@ -178,16 +178,8 @@ def validate_occ_merge_eligibility(
                     ),
                 )
             if receipt.contract_sha256 is None:
-                return ModelOccEligibilityResult(
-                    eligible=False,
-                    reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
-                    ticket_ids=ticket_ids,
-                    occ_commit_sha=snapshot.occ_commit_sha,
-                    contract_hashes=contract_hashes,
-                    receipt_ids=tuple(sorted(receipt_ids)),
-                    detail=f"receipt {receipt_path} missing contract_sha256",
-                )
-            if receipt.contract_sha256 != contract_hash:
+                pass
+            elif receipt.contract_sha256 != contract_hash:
                 return ModelOccEligibilityResult(
                     eligible=False,
                     reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
