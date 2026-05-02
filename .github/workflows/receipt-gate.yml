@@ -121,12 +121,13 @@ jobs:
 
           # Determine the cutoff commit date from OCC using the pinned SHA.
           # The cutoff SHA is the merge commit for OMN-10419 (this PR).
-          # Until this PR is merged, EVIDENCE_SOURCE_CUTOFF_SHA is "PENDING_MERGE"
-          # and the cutoff check is skipped (all PRs are pre-cutoff).
+          # Until this PR is merged, EVIDENCE_SOURCE_CUTOFF_SHA is "PENDING_MERGE".
+          # PRs without Evidence-Source remain grandfathered, but an explicit
+          # Evidence-Source must still pin OCC instead of falling back to main.
           OCC_CUTOFF_SHA="PENDING_MERGE"
 
-          if [ "$OCC_CUTOFF_SHA" = "PENDING_MERGE" ]; then
-            echo "::notice::Evidence-Source not required: OMN-10419 cutoff SHA is PENDING_MERGE, so this run is treated as pre-cutoff."
+          if [ "$OCC_CUTOFF_SHA" = "PENDING_MERGE" ] && [ -z "$evidence_source" ]; then
+            echo "::notice::Evidence-Source not required: OMN-10419 cutoff SHA is PENDING_MERGE and no Evidence-Source was provided, so this run is treated as pre-cutoff."
             echo "PENDING_MERGE" > /tmp/occ_sha.txt
             echo "occ_sha=PENDING_MERGE" >> "$GITHUB_OUTPUT"
             exit 0
