@@ -98,7 +98,7 @@ def _write_receipt(receipts_dir: Path, ticket_id: str, data: dict[str, object]) 
     return p
 
 
-def _write_allowlist(path: Path, entries: list[dict[object, object]]) -> None:
+def _write_allowlist(path: Path, entries: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump({"approvals": entries}))
 
@@ -110,7 +110,7 @@ def _valid_allowlist_entry(
     scope_repos: list[str] | None = None,
     scope_pr_numbers: list[int] | None = None,
     expires_at: str | None = None,
-) -> dict[object, object]:
+) -> dict[str, object]:
     return {
         "id": entry_id,
         "granted_by": granted_by,
@@ -442,7 +442,7 @@ class TestSkipTokenAdversarial:
     def test_skip_token_missing_scope_pr_numbers_fails(self, tmp_path: Path) -> None:
         """Allowlist entry missing scope_pr_numbers → hard fail."""
         allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
-        entry: dict[object, object] = {
+        entry: dict[str, object] = {
             "id": "appr-no-scope-prs",
             "granted_by": "platform-lead",
             "granted_at": "2026-04-30T00:00:00+00:00",
@@ -641,7 +641,7 @@ class TestReplayDeterminism:
     def test_missing_scope_pr_numbers_is_deterministic(self, tmp_path: Path) -> None:
         """Missing scope_pr_numbers fixture replayed twice → identical FAIL."""
         allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
-        entry: dict[object, object] = {
+        entry: dict[str, object] = {
             "id": "appr-det-no-scope",
             "granted_by": "platform-lead",
             "granted_at": "2026-04-30T00:00:00+00:00",
