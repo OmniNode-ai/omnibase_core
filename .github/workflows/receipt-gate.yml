@@ -56,11 +56,10 @@ jobs:
     name: verify
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name != 'pull_request' ||
-          github.event.pull_request.head.repo.full_name == github.repository))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON)
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON)
       }}
     timeout-minutes: 5
     # OMN-10419 invariant I9: disable GHA cache + artifact reuse so merge_group
