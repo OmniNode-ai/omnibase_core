@@ -195,6 +195,7 @@ class TestReceiptGateEvidenceSourceIntegration:
 
         pr_body = (
             "Closes OMN-10419\n\n"
+            "Evidence-Ticket: OMN-10419\n"
             "Evidence-Source: OCC#588\n\n"
             "Implements the Evidence-Source pinning requirement."
         )
@@ -252,7 +253,9 @@ class TestReceiptGateEvidenceSourceIntegration:
         # Receipts directory exists but is empty — no receipt files.
         receipts_dir.mkdir(parents=True, exist_ok=True)
 
-        pr_body = "Closes OMN-10419\n\nEvidence-Source: OCC#588"
+        pr_body = (
+            "Closes OMN-10419\n\nEvidence-Ticket: OMN-10419\nEvidence-Source: OCC#588"
+        )
         result = validate_pr_receipts(
             pr_body=pr_body,
             contracts_dir=contracts_dir,
@@ -279,7 +282,11 @@ class TestReceiptGateEvidenceSourceIntegration:
         contracts_dir.mkdir(parents=True, exist_ok=True)
         receipts_dir.mkdir(parents=True, exist_ok=True)
 
-        pr_body = "Closes OMN-10419\n\nEvidence-Source: abc1234def5678901234567890abcdef12345678"
+        pr_body = (
+            "Closes OMN-10419\n\n"
+            "Evidence-Ticket: OMN-10419\n"
+            "Evidence-Source: abc1234def5678901234567890abcdef12345678"
+        )
         result = validate_pr_receipts(
             pr_body=pr_body,
             contracts_dir=contracts_dir,
