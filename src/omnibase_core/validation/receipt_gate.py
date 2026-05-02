@@ -13,6 +13,11 @@ Canonical receipt path:
 
 Decision matrix:
     - No tickets in PR body              → FAIL ("no ticket ref")
+    - Evidence-Ticket missing            → FAIL ("missing Evidence-Ticket")
+    - PR title ↔ Evidence-Ticket mismatch → FAIL ("PR title mismatch")
+    - Branch ↔ Evidence-Ticket mismatch  → FAIL ("branch mismatch")
+    - Contract ticket_id ↔ Evidence-Ticket mismatch → FAIL ("contract ticket_id mismatch")
+    - Receipt ticket_id ↔ Evidence-Ticket mismatch  → FAIL ("receipt ticket_id mismatch")
     - Ticket has no contract file        → FAIL ("no contract")
     - Contract has no dod_evidence       → FAIL ("no dod_evidence")
     - Receipt missing for any check      → FAIL ("no receipt")
@@ -119,6 +124,16 @@ OVERRIDE_PATTERN = re.compile(
 # Inline marker pattern used only to reject the superseded approval syntax.
 # Receipt-gate bypass requires the central allowlist checked by _validate_skip_token.
 ALLOWLIST_PATTERN = re.compile(r"#\s*skip-token-allowed:\s*(\S+)", re.IGNORECASE)
+# Matches "Evidence-Ticket: OMN-XXXX" line in PR body (OMN-10420 identity binding).
+EVIDENCE_TICKET_PATTERN = re.compile(
+    r"^Evidence-Ticket:\s*(OMN-\d+)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+# Matches "Evidence-Source: ..." line — presence triggers identity binding (OMN-10420).
+EVIDENCE_SOURCE_PATTERN = re.compile(
+    r"^Evidence-Source:\s*\S",
+    re.IGNORECASE | re.MULTILINE,
+)
 
 # Matches "Evidence-Source: OCC#1234" or "Evidence-Source: <40-char-sha>" lines.
 # OCC#NNN form references an open PR by number; SHA form references a merged commit.
@@ -580,6 +595,106 @@ def _validate_skip_token(
     return (True, audit_msg)
 
 
+def _verify_ticket_identity(
+    evidence_ticket: str,
+    pr_title: str | None,
+    branch_name: str | None,
+    contracts_dir: Path,
+    receipts_dir: Path,
+) -> str | None:
+    """Verify that the Evidence-Ticket is consistent across all four identity axes.
+
+    This enforces invariant I3 (OMN-10420): evidence must correspond to the same
+    ticket as the PR.  Checks (in order):
+
+    1. PR title contains Evidence-Ticket (case-insensitive).
+    2. Branch name contains Evidence-Ticket (case-insensitive).
+    3. ``contracts/<ticket-id>.yaml`` exists and its ``ticket_id`` field matches.
+    4. Every receipt under ``drift/dod_receipts/<ticket-id>/`` has a ``ticket_id``
+       field that matches.
+
+    Args:
+        evidence_ticket: Normalised ticket id (e.g. "OMN-10420") from the ``Evidence-Ticket:`` line.
+        pr_title: PR title; checked for case-insensitive ticket reference.
+        branch_name: Git branch name; checked for case-insensitive ticket reference.
+        contracts_dir: Directory containing contract YAML files.
+        receipts_dir: Root of the receipt tree.
+
+    Returns:
+        ``None`` when all axes are consistent.  Otherwise an operator-facing failure
+        reason identifying exactly which axis mismatched.
+    """
+    ticket_upper = evidence_ticket.upper()
+    exact_ticket_pattern = re.compile(
+        rf"(?<![A-Z0-9]){re.escape(ticket_upper)}(?![A-Z0-9])"
+    )
+
+    # Axis 1: PR title.
+    if pr_title is not None:
+        if exact_ticket_pattern.search(pr_title.upper()) is None:
+            return (
+                f"IDENTITY BINDING FAILED: PR title does not reference {evidence_ticket}. "
+                f"PR title={pr_title!r}, Evidence-Ticket={evidence_ticket!r}. "
+                "The PR title must contain the same ticket cited in Evidence-Ticket."
+            )
+
+    # Axis 2: Branch name.
+    if branch_name is not None:
+        if exact_ticket_pattern.search(branch_name.upper()) is None:
+            return (
+                f"IDENTITY BINDING FAILED: branch name does not reference {evidence_ticket}. "
+                f"branch={branch_name!r}, Evidence-Ticket={evidence_ticket!r}. "
+                "The branch must be named for the same ticket cited in Evidence-Ticket."
+            )
+
+    # Axis 3: Contract ticket_id field.
+    contract_path = contracts_dir / f"{evidence_ticket}.yaml"
+    if contract_path.exists():
+        try:
+            with contract_path.open(encoding="utf-8") as fh:
+                contract_data = yaml.safe_load(fh)
+        except (yaml.YAMLError, OSError) as e:
+            return f"IDENTITY BINDING FAILED: cannot read contract {contract_path}: {e}"
+        if isinstance(contract_data, dict):
+            contract_ticket_id = contract_data.get("ticket_id")
+            if (
+                not isinstance(contract_ticket_id, str)
+                or not contract_ticket_id.strip()
+            ):
+                return (
+                    f"IDENTITY BINDING FAILED: contract {contract_path} is missing "
+                    "a non-empty ticket_id. The contract ticket_id must match "
+                    f"{evidence_ticket!r}."
+                )
+            if contract_ticket_id.strip().upper() != ticket_upper:
+                return (
+                    f"IDENTITY BINDING FAILED: contract {contract_path} declares "
+                    f"ticket_id={contract_ticket_id!r} but Evidence-Ticket is "
+                    f"{evidence_ticket!r}. The contract ticket_id must match."
+                )
+
+    # Axis 4: Receipt ticket_id fields.
+    receipt_ticket_dir = receipts_dir / evidence_ticket
+    if receipt_ticket_dir.exists():
+        for receipt_path in receipt_ticket_dir.rglob("*.yaml"):
+            try:
+                with receipt_path.open(encoding="utf-8") as fh:
+                    raw = yaml.safe_load(fh)
+            except (yaml.YAMLError, OSError):
+                continue  # corrupt receipts caught by _check_one_receipt
+            if not isinstance(raw, dict):
+                continue
+            receipt_tid = raw.get("ticket_id")
+            if receipt_tid is not None and str(receipt_tid).upper() != ticket_upper:
+                return (
+                    f"IDENTITY BINDING FAILED: receipt {receipt_path} declares "
+                    f"ticket_id={receipt_tid!r} but Evidence-Ticket is "
+                    f"{evidence_ticket!r}. All receipts must belong to the same ticket."
+                )
+
+    return None
+
+
 def validate_pr_receipts(
     pr_body: str,
     contracts_dir: Path,
@@ -590,6 +705,8 @@ def validate_pr_receipts(
     current_repo: str | None = None,
     current_pr_number: int | None = None,
     pr_opened_at: datetime | None = None,
+    evidence_ticket: str | None = None,
+    branch_name: str | None = None,
 ) -> ModelReceiptGateResult:
     """Run the receipt-gate against a PR's body + the repo's contracts + receipts.
 
@@ -608,6 +725,14 @@ def validate_pr_receipts(
             missing ``contract_sha256`` is a hard FAIL (post-cutoff) or ADVISORY
             (within the 7-day legacy migration window). When None, the hash-binding
             check is skipped because no PR-open timestamp is available.
+        evidence_ticket: Ticket id (e.g. "OMN-10420") from the ``Evidence-Ticket:``
+            PR body line.  When provided (or auto-detected from the PR body), identity
+            binding is enforced across all four axes: PR title, branch name, contract
+            ticket_id, receipt ticket_id.  When ``None``, auto-detected from the
+            ``Evidence-Ticket:`` line in ``pr_body``; if that line is present and this
+            arg is also ``None`` the detected value is used.  If neither source yields
+            a value and ``Evidence-Source`` is present, the gate fails.
+        branch_name: Git branch name for axis-2 identity binding.
     """
     override = OVERRIDE_PATTERN.search(pr_body)
     skip_match = SKIP_TOKEN_PATTERN.search(pr_body)
@@ -665,6 +790,44 @@ def validate_pr_receipts(
             friction_logged=True,
             message=message,
         )
+
+    # Identity binding (OMN-10420 / I3): enforced when Evidence-Source is present in the
+    # PR body (T6a pairing) OR when evidence_ticket is explicitly passed to the gate.
+    # Without Evidence-Source the caller has not opted into OCC pinning yet, so identity
+    # binding is skipped (backward-compatible with pre-T6a PRs).
+    has_evidence_source = bool(EVIDENCE_SOURCE_PATTERN.search(pr_body))
+    if has_evidence_source or evidence_ticket is not None:
+        resolved_evidence_ticket = (
+            evidence_ticket.strip().upper()
+            if isinstance(evidence_ticket, str) and evidence_ticket.strip()
+            else None
+        )
+        if resolved_evidence_ticket is None:
+            et_match = EVIDENCE_TICKET_PATTERN.search(pr_body)
+            if et_match:
+                resolved_evidence_ticket = et_match.group(1).upper()
+
+        if resolved_evidence_ticket is None:
+            return ModelReceiptGateResult(
+                passed=False,
+                message=(
+                    "RECEIPT GATE FAILED: PR body contains 'Evidence-Source' but is "
+                    "missing an 'Evidence-Ticket: OMN-XXXX' line. Every PR with "
+                    "Evidence-Source must also declare Evidence-Ticket so the gate can "
+                    "verify the evidence is for the same ticket as the PR. "
+                    "Add 'Evidence-Ticket: OMN-XXXX' to the PR body."
+                ),
+            )
+
+        identity_failure = _verify_ticket_identity(
+            evidence_ticket=resolved_evidence_ticket,
+            pr_title=pr_title,
+            branch_name=branch_name,
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+        )
+        if identity_failure is not None:
+            return ModelReceiptGateResult(passed=False, message=identity_failure)
 
     ticket_ids = _extract_ticket_ids(pr_body, pr_title)
     if not ticket_ids:
@@ -773,7 +936,9 @@ __all__ = [
     "EVIDENCE_SOURCE_ANY_PATTERN",
     "EVIDENCE_SOURCE_CUTOFF_SHA",
     "EVIDENCE_SOURCE_OCC_PR_PATTERN",
+    "EVIDENCE_SOURCE_PATTERN",
     "EVIDENCE_SOURCE_SHA_PATTERN",
+    "EVIDENCE_TICKET_PATTERN",
     "OVERRIDE_PATTERN",
     "SKIP_TOKEN_PATTERN",
     "TICKET_PATTERN",
