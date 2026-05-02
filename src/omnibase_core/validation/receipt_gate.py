@@ -120,6 +120,56 @@ OVERRIDE_PATTERN = re.compile(
 # Receipt-gate bypass requires the central allowlist checked by _validate_skip_token.
 ALLOWLIST_PATTERN = re.compile(r"#\s*skip-token-allowed:\s*(\S+)", re.IGNORECASE)
 
+# Matches "Evidence-Source: OCC#1234" or "Evidence-Source: <40-char-sha>" lines.
+# OCC#NNN form references an open PR by number; SHA form references a merged commit.
+# Requires at least one space after the colon, consistent with the workflow grep.
+EVIDENCE_SOURCE_OCC_PR_PATTERN = re.compile(
+    r"^Evidence-Source:\s+OCC#(\d+)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+EVIDENCE_SOURCE_SHA_PATTERN = re.compile(
+    r"^Evidence-Source:\s+([0-9a-f]{7,40})\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+# Detects any Evidence-Source line (used to distinguish "present but invalid" from "absent").
+EVIDENCE_SOURCE_ANY_PATTERN = re.compile(
+    r"^Evidence-Source:\s+\S",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+# The SHA of the commit that merged OMN-10419 (Task 9 / T6a). PRs opened after
+# this SHA are required to include Evidence-Source. PRs opened before it are
+# grandfathered — the cutoff check in _is_evidence_source_required returns False
+# when pr_created_at predates this merge.
+#
+# Placeholder value — replaced by the actual merge SHA when this PR lands. The
+# workflow resolves the cutoff via the OCC_PINNING_CUTOFF_SHA env var injected
+# by the Check out onex_change_control step.
+EVIDENCE_SOURCE_CUTOFF_SHA = "PENDING_MERGE"
+
+
+def parse_evidence_source(pr_body: str) -> tuple[str | None, str | None]:
+    """Parse the Evidence-Source line from a PR body.
+
+    Returns:
+        ``(occ_pr_number_str, sha)`` where exactly one is set, or ``(None, None)``
+        if no Evidence-Source line is present.
+
+        - OCC PR form ``OCC#1234``: returns ``("1234", None)``.
+        - SHA form ``<sha>``: returns ``(None, "<sha>")``.
+        - Present but invalid form: returns ``(None, None)`` with the caller
+          responsible for detecting the presence via EVIDENCE_SOURCE_ANY_PATTERN.
+    """
+    for line in pr_body.splitlines():
+        if not line.lower().startswith("evidence-source:"):
+            continue
+        if m_pr := EVIDENCE_SOURCE_OCC_PR_PATTERN.fullmatch(line):
+            return (m_pr.group(1), None)
+        if m_sha := EVIDENCE_SOURCE_SHA_PATTERN.fullmatch(line):
+            return (None, m_sha.group(1))
+        break
+    return (None, None)
+
 
 def compute_contract_sha256(contract_path: Path) -> str:
     """Return the SHA-256 hex digest of a contract YAML file's raw bytes."""
@@ -720,10 +770,15 @@ __all__ = [
     "ALLOWLIST_PATTERN",
     "CLOSING_KEYWORD_PATTERN",
     "EVIDENCE_HANDLERS",
+    "EVIDENCE_SOURCE_ANY_PATTERN",
+    "EVIDENCE_SOURCE_CUTOFF_SHA",
+    "EVIDENCE_SOURCE_OCC_PR_PATTERN",
+    "EVIDENCE_SOURCE_SHA_PATTERN",
     "OVERRIDE_PATTERN",
     "SKIP_TOKEN_PATTERN",
     "TICKET_PATTERN",
     "_CONTRACT_SHA256_REQUIRED_AFTER",
     "compute_contract_sha256",
+    "parse_evidence_source",
     "validate_pr_receipts",
 ]

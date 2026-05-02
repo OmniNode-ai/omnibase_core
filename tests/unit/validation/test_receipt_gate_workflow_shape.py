@@ -134,15 +134,20 @@ def test_workflow_uses_python_313() -> None:
     assert step["with"]["python-version"] == "3.13"
 
 
-def test_workflow_pins_occ_main_before_checkout() -> None:
+def test_workflow_resolves_evidence_source_before_checkout() -> None:
     """Downstream validation must read OCC evidence from an immutable commit."""
-    resolve_step = _workflow_step("Resolve OCC main SHA")
+    resolve_step = _workflow_step("Resolve Evidence-Source")
     checkout_step = _workflow_step(
         "Check out onex_change_control (for contracts + receipts)"
     )
+    evidence_step = _workflow_step("Resolve evidence snapshot")
 
-    assert "git/ref/heads/main" in resolve_step["run"]
-    assert checkout_step["with"]["ref"] == "${{ steps.occ_ref.outputs.sha }}"
+    assert "Evidence-Source:" in resolve_step["run"]
+    assert (
+        checkout_step["with"]["ref"]
+        == "${{ steps.resolve_evidence_source.outputs.occ_sha == 'PENDING_MERGE' && 'main' || steps.resolve_evidence_source.outputs.occ_sha || 'main' }}"
+    )
+    assert "git -C .onex_change_control rev-parse HEAD" in evidence_step["run"]
 
 
 def test_workflow_validates_occ_pr_diff_without_main_dependency() -> None:
