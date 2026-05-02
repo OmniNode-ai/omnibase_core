@@ -300,19 +300,29 @@ jobs:
         run: |
           set -euo pipefail
           repo_short="${GITHUB_REPOSITORY##*/}"
+          contracts_input="${{ inputs.contracts-dir }}"
+          receipts_input="${{ inputs.receipts-dir }}"
           if [ "$repo_short" = "onex_change_control" ]; then
             sha="$(git rev-parse HEAD)"
             root="."
+            contracts_dir="${contracts_input#../}"
+            receipts_dir="${receipts_input#../}"
           else
             sha="${{ steps.occ_ref.outputs.sha }}"
             root=".onex_change_control"
+            contracts_dir="$root/$contracts_input"
+            receipts_dir="$root/$receipts_input"
           fi
           if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then
             echo "::error::invalid evidence snapshot SHA: $sha"
             exit 1
           fi
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          echo "root=$root" >> "$GITHUB_OUTPUT"
+          {
+            echo "sha=$sha"
+            echo "root=$root"
+            echo "contracts_dir=$contracts_dir"
+            echo "receipts_dir=$receipts_dir"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Run OCC Eligibility
         run: |
@@ -343,8 +353,8 @@ jobs:
             --pr-body-file /tmp/pr_body.txt \
             --pr-branch "$PR_BRANCH" \
             --occ-commit-sha "${{ steps.evidence.outputs.sha }}" \
-            --contracts-dir "${{ steps.evidence.outputs.root }}/${{ inputs.contracts-dir }}" \
-            --receipts-dir "${{ steps.evidence.outputs.root }}/${{ inputs.receipts-dir }}" \
+            --contracts-dir "${{ steps.evidence.outputs.contracts_dir }}" \
+            --receipts-dir "${{ steps.evidence.outputs.receipts_dir }}" \
             "${commit_args[@]}" \
             | tee /tmp/occ_eligibility.json
 
@@ -377,8 +387,8 @@ jobs:
           python -m omnibase_core.validation.receipt_gate_cli \
             --pr-body "$PR_BODY" \
             --pr-title "$PR_TITLE" \
-            --contracts-dir "${{ steps.evidence.outputs.root }}/${{ inputs.contracts-dir }}" \
-            --receipts-dir "${{ steps.evidence.outputs.root }}/${{ inputs.receipts-dir }}" \
+            --contracts-dir "${{ steps.evidence.outputs.contracts_dir }}" \
+            --receipts-dir "${{ steps.evidence.outputs.receipts_dir }}" \
             --current-repo "$REPO_SHORT" \
             $ALLOWLIST_ARG \
             $PR_AUTHOR_ARG \
