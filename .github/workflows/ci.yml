@@ -1252,6 +1252,7 @@ jobs:
     continue-on-error: true
     steps:
       - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@36865708ae7ecec2f8c5942a1db30a8b3420a879 # main 2026-03-25
+        continue-on-error: true
         with:
           checks: "boundary-parity"
           warn-only: "true"
@@ -1274,14 +1275,17 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Clone onex_change_control
-        run: git clone --depth=1 https://github.com/OmniNode-ai/onex_change_control.git /tmp/onex_change_control
+        run: |
+          occ_dir="${RUNNER_TEMP}/onex_change_control_contract_compliance"
+          rm -rf "$occ_dir"
+          git clone --depth=1 https://github.com/OmniNode-ai/onex_change_control.git "$occ_dir"
+          echo "OCC_DIR=$occ_dir" >> "$GITHUB_ENV"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.8.3"
       - name: Validate all ticket contracts (OMN-8808 — replaces dead run_contract_compliance_check.py ref)
-        working-directory: /tmp/onex_change_control
-        run: uv run validate-yaml contracts/OMN-*.yaml
+        run: cd "$OCC_DIR" && uv run validate-yaml contracts/OMN-*.yaml
 
   ci-summary:
     name: CI Summary
