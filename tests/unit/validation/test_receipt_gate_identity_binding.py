@@ -29,12 +29,10 @@ def _write_contract(
     ticket_id: str,
     *,
     contract_ticket_id: str | None = None,
+    include_ticket_id: bool = True,
 ) -> None:
     contracts_dir.mkdir(parents=True, exist_ok=True)
     body = {
-        "ticket_id": contract_ticket_id
-        if contract_ticket_id is not None
-        else ticket_id,
         "schema_version": "1.0.0",
         "summary": "test contract for identity binding",
         "dod_evidence": [
@@ -45,6 +43,10 @@ def _write_contract(
             }
         ],
     }
+    if include_ticket_id:
+        body["ticket_id"] = (
+            contract_ticket_id if contract_ticket_id is not None else ticket_id
+        )
     (contracts_dir / f"{ticket_id}.yaml").write_text(yaml.safe_dump(body))
 
 
@@ -132,6 +134,28 @@ class TestTicketIdentityBinding:
         )
         assert "omn-10420" in msg_lower or "omn-1234" in msg_lower
 
+    def test_pr_title_partial_ticket_match_fails(self, tmp_path: Path) -> None:
+        """PR title must contain the exact Evidence-Ticket token, not a prefix."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-10420")
+        _write_receipt(receipts, "OMN-10420")
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-10420\n\n"
+                "Evidence-Source: abc123\n"
+                "Evidence-Ticket: OMN-10420"
+            ),
+            pr_title="feat(OMN-104201): wrong ticket prefix",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-10420-ticket-identity-binding",
+        )
+
+        assert not result.passed
+        assert "pr title" in result.message.lower()
+
     def test_branch_mismatch_fails(self, tmp_path: Path) -> None:
         """Case 3: branch references OMN-9999 but Evidence-Ticket is OMN-10420 → FAIL."""
         contracts = tmp_path / "contracts"
@@ -157,6 +181,28 @@ class TestTicketIdentityBinding:
             f"message must mention 'branch'; got: {result.message!r}"
         )
         assert "omn-9999" in msg_lower or "omn-10420" in msg_lower
+
+    def test_branch_partial_ticket_match_fails(self, tmp_path: Path) -> None:
+        """Branch name must contain the exact Evidence-Ticket token, not a prefix."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-10420")
+        _write_receipt(receipts, "OMN-10420")
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-10420\n\n"
+                "Evidence-Source: abc123\n"
+                "Evidence-Ticket: OMN-10420"
+            ),
+            pr_title="feat(OMN-10420): ticket identity binding",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-104201-wrong-ticket-prefix",
+        )
+
+        assert not result.passed
+        assert "branch" in result.message.lower()
 
     def test_contract_ticket_id_mismatch_fails(self, tmp_path: Path) -> None:
         """Case 4: contract ticket_id=OMN-5678 but Evidence-Ticket=OMN-10420 → FAIL."""
@@ -184,6 +230,30 @@ class TestTicketIdentityBinding:
             f"message must mention 'contract'; got: {result.message!r}"
         )
         assert "ticket_id" in msg_lower or "omn-5678" in msg_lower
+
+    def test_contract_missing_ticket_id_fails(self, tmp_path: Path) -> None:
+        """Case 4b: contract without ticket_id fails closed."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-10420", include_ticket_id=False)
+        _write_receipt(receipts, "OMN-10420")
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-10420\n\n"
+                "Evidence-Source: abc123\n"
+                "Evidence-Ticket: OMN-10420"
+            ),
+            pr_title="feat(OMN-10420): ticket identity binding",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-10420-ticket-identity-binding",
+        )
+
+        assert not result.passed
+        msg_lower = result.message.lower()
+        assert "contract" in msg_lower
+        assert "ticket_id" in msg_lower
 
     def test_receipt_ticket_id_mismatch_fails(self, tmp_path: Path) -> None:
         """Case 5: receipt ticket_id=OMN-9999 but Evidence-Ticket=OMN-10420 → FAIL."""
@@ -272,6 +342,24 @@ class TestTicketIdentityBinding:
             receipts_dir=receipts,
             branch_name="jonah/omn-10420-ticket-identity-binding",
             evidence_ticket="OMN-10420",  # explicit arg wins; body says OMN-9999
+        )
+
+        assert result.passed, result.message
+
+    def test_explicit_evidence_ticket_is_normalized(self, tmp_path: Path) -> None:
+        """Explicit evidence_ticket arguments use canonical case for path lookups."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-10420")
+        _write_receipt(receipts, "OMN-10420")
+
+        result = validate_pr_receipts(
+            pr_body="Closes OMN-10420\n\nEvidence-Source: abc123",
+            pr_title="feat(OMN-10420): ticket identity binding",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-10420-ticket-identity-binding",
+            evidence_ticket=" omn-10420 ",
         )
 
         assert result.passed, result.message

@@ -625,10 +625,13 @@ def _verify_ticket_identity(
         reason identifying exactly which axis mismatched.
     """
     ticket_upper = evidence_ticket.upper()
+    exact_ticket_pattern = re.compile(
+        rf"(?<![A-Z0-9]){re.escape(ticket_upper)}(?![A-Z0-9])"
+    )
 
     # Axis 1: PR title.
     if pr_title is not None:
-        if ticket_upper not in pr_title.upper():
+        if exact_ticket_pattern.search(pr_title.upper()) is None:
             return (
                 f"IDENTITY BINDING FAILED: PR title does not reference {evidence_ticket}. "
                 f"PR title={pr_title!r}, Evidence-Ticket={evidence_ticket!r}. "
@@ -637,7 +640,7 @@ def _verify_ticket_identity(
 
     # Axis 2: Branch name.
     if branch_name is not None:
-        if ticket_upper not in branch_name.upper():
+        if exact_ticket_pattern.search(branch_name.upper()) is None:
             return (
                 f"IDENTITY BINDING FAILED: branch name does not reference {evidence_ticket}. "
                 f"branch={branch_name!r}, Evidence-Ticket={evidence_ticket!r}. "
@@ -654,13 +657,21 @@ def _verify_ticket_identity(
             return f"IDENTITY BINDING FAILED: cannot read contract {contract_path}: {e}"
         if isinstance(contract_data, dict):
             contract_ticket_id = contract_data.get("ticket_id")
-            if contract_ticket_id is not None:
-                if str(contract_ticket_id).upper() != ticket_upper:
-                    return (
-                        f"IDENTITY BINDING FAILED: contract {contract_path} declares "
-                        f"ticket_id={contract_ticket_id!r} but Evidence-Ticket is "
-                        f"{evidence_ticket!r}. The contract ticket_id must match."
-                    )
+            if (
+                not isinstance(contract_ticket_id, str)
+                or not contract_ticket_id.strip()
+            ):
+                return (
+                    f"IDENTITY BINDING FAILED: contract {contract_path} is missing "
+                    "a non-empty ticket_id. The contract ticket_id must match "
+                    f"{evidence_ticket!r}."
+                )
+            if contract_ticket_id.strip().upper() != ticket_upper:
+                return (
+                    f"IDENTITY BINDING FAILED: contract {contract_path} declares "
+                    f"ticket_id={contract_ticket_id!r} but Evidence-Ticket is "
+                    f"{evidence_ticket!r}. The contract ticket_id must match."
+                )
 
     # Axis 4: Receipt ticket_id fields.
     receipt_ticket_dir = receipts_dir / evidence_ticket
@@ -786,7 +797,11 @@ def validate_pr_receipts(
     # binding is skipped (backward-compatible with pre-T6a PRs).
     has_evidence_source = bool(EVIDENCE_SOURCE_PATTERN.search(pr_body))
     if has_evidence_source or evidence_ticket is not None:
-        resolved_evidence_ticket = evidence_ticket
+        resolved_evidence_ticket = (
+            evidence_ticket.strip().upper()
+            if isinstance(evidence_ticket, str) and evidence_ticket.strip()
+            else None
+        )
         if resolved_evidence_ticket is None:
             et_match = EVIDENCE_TICKET_PATTERN.search(pr_body)
             if et_match:

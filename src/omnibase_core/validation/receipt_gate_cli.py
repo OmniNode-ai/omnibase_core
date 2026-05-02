@@ -99,8 +99,9 @@ def main(argv: list[str] | None = None) -> int:
         help=(
             "OMN-10420: OMN-XXXX ticket id from 'Evidence-Ticket:' PR body line. "
             "When provided, identity binding is enforced across PR title, branch name, "
-            "contract ticket_id, and receipt ticket_id. When omitted, auto-detected "
-            "from the PR body; if absent there too, the gate fails."
+            "contract ticket_id, and receipt ticket_id. When omitted, it is "
+            "auto-detected from the PR body while identity binding is active; "
+            "if no ticket is available when Evidence-Source is present, the gate fails."
         ),
     )
     parser.add_argument(
