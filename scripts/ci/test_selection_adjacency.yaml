@@ -39,6 +39,8 @@ test_infrastructure_paths:
 # Note: shared_modules entries here are not consulted at runtime
 # (they trigger full suite first), but kept for completeness/documentation.
 adjacency:
+  analysis:
+    reverse_deps: []
   models:
     reverse_deps: [analysis, nodes, contracts, runtime, validation, services, factories, container]
   contracts:

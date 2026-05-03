@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import re
+from typing import cast
 
 from omnibase_core.analysis.symbol_extractor import extract_symbols
 from omnibase_core.enums.enum_diff_severity import EnumChangeKind, EnumDiffSeverity
@@ -9,11 +10,12 @@ from omnibase_core.models.analysis.model_semantic_diff_report import (
     ModelSemanticDiffReport,
 )
 from omnibase_core.models.analysis.model_symbol_change import ModelSymbolChange
-from omnibase_core.types.typed_dict_symbol_metadata import TypedDictSymbolMetadata
+from omnibase_core.types.typed_dict_extracted_symbol import TypedDictExtractedSymbol
 
 _GUARD_PATTERN = re.compile(
     r"(?i)(guard|check|validate|verify|ensure|assert|require)",
 )
+_NAME_TOKEN_PATTERN = re.compile(r"[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)|\d+")
 
 _KIND_SEVERITY: dict[EnumChangeKind, EnumDiffSeverity] = {
     EnumChangeKind.GUARD_REMOVED: EnumDiffSeverity.CRITICAL,
@@ -27,7 +29,7 @@ _KIND_SEVERITY: dict[EnumChangeKind, EnumDiffSeverity] = {
 }
 
 
-def _line_count(sym: TypedDictSymbolMetadata) -> int:
+def _line_count(sym: TypedDictExtractedSymbol) -> int:
     return sym["end_line"] - sym["start_line"] + 1
 
 
@@ -40,16 +42,35 @@ def _strip_name(signature: str, name: str) -> str:
     return signature.replace(name, "__sym__", 1)
 
 
+def _name_tokens(name: str) -> set[str]:
+    return {
+        token.lower()
+        for part in name.replace(".", "_").split("_")
+        for token in _NAME_TOKEN_PATTERN.findall(part)
+        if len(token) >= 3
+    }
+
+
+def _has_shared_name_context(old_name: str, new_name: str) -> bool:
+    return bool(_name_tokens(old_name) & _name_tokens(new_name))
+
+
 def _rename_tolerance(
-    old_sym: TypedDictSymbolMetadata,
-    old_name: str,
-    new_sym: TypedDictSymbolMetadata,
-    new_name: str,
+    old_sym: TypedDictExtractedSymbol, new_sym: TypedDictExtractedSymbol
 ) -> bool:
-    """True if name-normalized signatures match AND line counts are within 20%."""
+    """True if symbols look like the same implementation renamed in place."""
+    old_name = old_sym.get("name", "")
+    new_name = new_sym.get("name", "")
+    if old_sym["kind"] != new_sym["kind"]:
+        return False
+    if not _has_shared_name_context(old_name, new_name):
+        return False
+
     old_sig = _strip_name(old_sym["signature"], old_name)
     new_sig = _strip_name(new_sym["signature"], new_name)
     if old_sig != new_sig:
+        return False
+    if old_sym["body_hash"] != new_sym["body_hash"]:
         return False
     old_lines = _line_count(old_sym)
     new_lines = _line_count(new_sym)
@@ -57,6 +78,19 @@ def _rename_tolerance(
     if max_lines == 0:
         return True
     return abs(old_lines - new_lines) / max_lines <= 0.20
+
+
+def _symbol_with_name(
+    sym: TypedDictExtractedSymbol, name: str
+) -> TypedDictExtractedSymbol:
+    return {
+        "kind": sym["kind"],
+        "signature": sym["signature"],
+        "body_hash": sym["body_hash"],
+        "start_line": sym["start_line"],
+        "end_line": sym["end_line"],
+        "name": name,
+    }
 
 
 def _make_change(
@@ -90,8 +124,14 @@ def compute_diff(
             "consumers_count must be greater than or equal to 0",
         )
 
-    old_symbols = extract_symbols(old_source)
-    new_symbols = extract_symbols(new_source)
+    old_symbols = {
+        name: cast(TypedDictExtractedSymbol, symbol)
+        for name, symbol in extract_symbols(old_source).items()
+    }
+    new_symbols = {
+        name: cast(TypedDictExtractedSymbol, symbol)
+        for name, symbol in extract_symbols(new_source).items()
+    }
 
     old_names = set(old_symbols)
     new_names = set(new_symbols)
@@ -99,7 +139,7 @@ def compute_diff(
     changes: list[ModelSymbolChange] = []
 
     # Same-name symbols: classify by what changed
-    for name in old_names & new_names:
+    for name in sorted(old_names & new_names):
         old_sym = old_symbols[name]
         new_sym = new_symbols[name]
         if old_sym["signature"] != new_sym["signature"]:
@@ -124,11 +164,13 @@ def compute_diff(
     # Rename detection: pair removed R with added A if signatures match + line tolerance
     renamed_removed: set[str] = set()
     renamed_added: set[str] = set()
-    for r_name, r_sym in removed.items():
-        for a_name, a_sym in added.items():
+    for r_name, r_sym in sorted(removed.items()):
+        r_sym = _symbol_with_name(r_sym, r_name)
+        for a_name, a_sym in sorted(added.items()):
             if a_name in renamed_added:
                 continue
-            if _rename_tolerance(r_sym, r_name, a_sym, a_name):
+            a_sym = _symbol_with_name(a_sym, a_name)
+            if _rename_tolerance(r_sym, a_sym):
                 changes.append(
                     _make_change(
                         EnumChangeKind.REFACTOR, a_name, file_path, consumers_count
@@ -139,7 +181,7 @@ def compute_diff(
                 break
 
     # Remaining removed symbols
-    for name in removed:
+    for name in sorted(removed):
         if name in renamed_removed:
             continue
         kind = (
@@ -150,7 +192,7 @@ def compute_diff(
         changes.append(_make_change(kind, name, file_path, consumers_count))
 
     # Remaining added symbols
-    for name in added:
+    for name in sorted(added):
         if name in renamed_added:
             continue
         changes.append(
@@ -159,5 +201,5 @@ def compute_diff(
 
     return ModelSemanticDiffReport(
         changes=tuple(changes),
-        total_consumers_affected=consumers_count,
+        total_consumers_affected=consumers_count if changes else 0,
     )

@@ -43,7 +43,7 @@ def _extract_signature_and_body(node: Node, source_lines: list[str]) -> tuple[st
             signature_source = sig_line[: block.start_point[1]]
             body_source = sig_line[block.start_point[1] :]
     else:
-        signature_source = sig_line.rstrip("\n")
+        signature_source = "".join(source_lines[node.start_point[0] : body_start])
         body_source = "".join(source_lines[body_start : body_end + 1])
 
     signature = _collapse_whitespace(signature_source.rstrip("\n"))
@@ -54,12 +54,14 @@ def _node_text(node: Node) -> str:
     return node.text.decode() if node.text else ""
 
 
-def _definition_node(node: Node) -> Node:
+def _unwrap_decorated_definition(node: Node) -> Node:
     if node.type != "decorated_definition":
         return node
-
-    for child in node.children:
-        if child.type in {"class_definition", "function_definition"}:
+    definition = node.child_by_field_name("definition")
+    if definition is not None:
+        return definition
+    for child in reversed(node.children):
+        if child.type in {"function_definition", "class_definition"}:
             return child
     return node
 
@@ -113,9 +115,9 @@ def _process_class(
         return
     block = block_nodes[0]
     for child in block.children:
-        definition = _definition_node(child)
-        if definition.type == "function_definition":
-            _process_function(definition, source_lines, result, class_name=class_name)
+        child = _unwrap_decorated_definition(child)
+        if child.type == "function_definition":
+            _process_function(child, source_lines, result, class_name=class_name)
 
 
 def extract_symbols(content: str) -> SymbolTable:
@@ -130,10 +132,10 @@ def extract_symbols(content: str) -> SymbolTable:
 
     result: SymbolTable = {}
     for node in root.children:
-        definition = _definition_node(node)
-        if definition.type == "function_definition":
-            _process_function(definition, source_lines, result)
-        elif definition.type == "class_definition":
-            _process_class(definition, source_lines, result)
+        node = _unwrap_decorated_definition(node)
+        if node.type == "function_definition":
+            _process_function(node, source_lines, result)
+        elif node.type == "class_definition":
+            _process_class(node, source_lines, result)
 
     return result
