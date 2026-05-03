@@ -1262,7 +1262,7 @@ jobs:
   # Not strictly required for omnibase_core (no path filtering on Tier A gates),
   # but added for uniformity across all OmniNode repos.
 
-  contract-compliance:
+  compliance:
     name: Contract Compliance Check
     runs-on: >-
       ${{
