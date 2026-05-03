@@ -1069,8 +1069,15 @@ jobs:
           # shared self-hosted runners (15-25% lower throughput vs dedicated runners)
           CI_RUNNER_TYPE: >-
             ${{
-              (github.event_name != 'pull_request' ||
-               github.event.pull_request.head.repo.full_name == github.repository)
+              contains(
+                toJSON(
+                  (github.event_name == 'pull_request' &&
+                   github.event.pull_request.head.repo.full_name != github.repository)
+                  && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+                  || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+                ),
+                'self-hosted'
+              )
               && 'self-hosted'
               || 'github-hosted'
             }}
@@ -1093,8 +1100,15 @@ jobs:
           # shared self-hosted runners (15-25% lower throughput vs dedicated runners)
           CI_RUNNER_TYPE: >-
             ${{
-              (github.event_name != 'pull_request' ||
-               github.event.pull_request.head.repo.full_name == github.repository)
+              contains(
+                toJSON(
+                  (github.event_name == 'pull_request' &&
+                   github.event.pull_request.head.repo.full_name != github.repository)
+                  && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+                  || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+                ),
+                'self-hosted'
+              )
               && 'self-hosted'
               || 'github-hosted'
             }}
@@ -1262,7 +1276,7 @@ jobs:
   # Not strictly required for omnibase_core (no path filtering on Tier A gates),
   # but added for uniformity across all OmniNode repos.
 
-  compliance:
+  contract-compliance:
     name: Contract Compliance Check
     runs-on: >-
       ${{
@@ -1285,7 +1299,7 @@ jobs:
         with:
           version: "0.8.3"
       - name: Validate all ticket contracts (OMN-8808 — replaces dead run_contract_compliance_check.py ref)
-        run: cd "$OCC_DIR" && uv run validate-yaml contracts/OMN-*.yaml
+        run: cd "$OCC_DIR" && uv run validate-yaml "$GITHUB_WORKSPACE"/contracts/OMN-*.yaml
 
   ci-summary:
     name: CI Summary
@@ -1297,7 +1311,7 @@ jobs:
         && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
       }}
-    needs: [quality-gate, tests-gate, compliance]
+    needs: [quality-gate, tests-gate, contract-compliance]
     if: always()
 
     steps:
@@ -1308,7 +1322,7 @@ jobs:
 
           quality="${{ needs.quality-gate.result }}"
           tests="${{ needs.tests-gate.result }}"
-          compliance="${{ needs.compliance.result }}"
+          compliance="${{ needs['contract-compliance'].result }}"
 
           echo "| Gate | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
