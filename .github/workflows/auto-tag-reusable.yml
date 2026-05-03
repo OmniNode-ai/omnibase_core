@@ -11,15 +11,12 @@ on:
 
 jobs:
   auto-tag:
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     permissions:
       contents: write

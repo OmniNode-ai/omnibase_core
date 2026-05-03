@@ -22,6 +22,17 @@ concurrency:
 env:
   UV_VERSION: "0.8.3"
   PYTHON_VERSION: "3.12"
+  # GitHub-hosted PR runners and merge-queue self-hosted runners have reproduced
+  # xdist worker crashes under the default four-worker split load. PRs stay at
+  # one worker; merge_group uses two workers to finish inside the queue window.
+  PYTEST_XDIST_WORKERS: >-
+    ${{
+      github.event_name == 'pull_request'
+      && (vars.OMNI_PUBLIC_PR_PYTEST_XDIST_WORKERS || '1')
+      || github.event_name == 'merge_group'
+      && (vars.OMNI_MERGE_GROUP_PYTEST_XDIST_WORKERS || '2')
+      || (vars.OMNI_PYTEST_XDIST_WORKERS || '4')
+    }}
 
 jobs:
   # =============================================================================
@@ -69,15 +80,12 @@ jobs:
   # Must complete before test-parallel starts (fail-fast optimization)
   lint:
     name: Code Quality
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
 
@@ -114,15 +122,12 @@ jobs:
   # Pyright complements mypy (in lint job) - catches different type error categories
   pyright:
     name: Pyright Type Checking
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
 
@@ -153,15 +158,12 @@ jobs:
   # Quick check (~5 min) ensures __all__ exports are valid before expensive test splits
   exports-validation:
     name: Exports Validation
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
 
@@ -192,15 +194,12 @@ jobs:
   # Rationale: These scripts are CI tooling, not core library code
   mypy-validation-scripts:
     name: Mypy Validation Scripts
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
 
@@ -350,15 +349,12 @@ jobs:
   # Complements the Python-based check in mypy-validation-scripts with a simple grep scan
   core-infra-boundary:
     name: Core-Infra Boundary
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
 
@@ -392,15 +388,12 @@ jobs:
   # node` (or a Kafka publish) and surfaces `SkillRoutingError`. Blocking gate.
   check-deterministic-skills:
     name: Deterministic Skill Routing
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
 
@@ -446,17 +439,14 @@ jobs:
   # Rationale: Doc link validation is independent of code correctness
   docs-validation:
     name: Documentation Validation
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -498,15 +488,12 @@ jobs:
   # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
   node-purity-check:
     name: Node Purity Check
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
 
@@ -557,15 +544,12 @@ jobs:
   # - Use StrValueHelper for string serialization
   enum-governance:
     name: Enum Governance Check
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
 
@@ -606,15 +590,12 @@ jobs:
   # Uses detect-secrets-hook for proper baseline comparison (handles type+hash equality)
   detect-secrets:
     name: Detect Secrets
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
 
@@ -674,7 +655,12 @@ jobs:
   # version matrix defined in onex_change_control/standards/version-matrix.yaml.
   version-pin-check:
     name: Version Pin Compliance
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
     timeout-minutes: 5
     # Skip for Dependabot PRs — CROSS_REPO_PAT is not available [OMN-5332]
     if: github.actor != 'dependabot[bot]'
@@ -710,7 +696,12 @@ jobs:
   # [project.dependencies] (they belong in [project.optional-dependencies]).
   sdk-boundary-check:
     name: SDK Boundary Guard
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
     timeout-minutes: 5
 
     steps:
@@ -742,15 +733,12 @@ jobs:
   # Conditional: only runs if the `onex compliance` command is available.
   compliance:
     name: Contract Compliance
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
 
@@ -784,15 +772,12 @@ jobs:
   # Individual Phase 1 job names can change without updating branch protection rules.
   quality-gate:
     name: Quality Gate
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check, sdk-boundary-check, contract-compliance]
     if: always()
@@ -863,7 +848,12 @@ jobs:
     name: Zone Filter (docs-only check)
     needs: quality-gate
     if: always() && needs.quality-gate.result == 'success'
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
     outputs:
       docs_only: ${{ steps.zone.outputs.docs_only }}
 
@@ -933,7 +923,12 @@ jobs:
   detect-changes:
     name: Detect Changes
     needs: [quality-gate, zone-filter]
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
     if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
     outputs:
       is_full_suite: ${{ steps.detect.outputs.is_full_suite }}
@@ -1018,18 +1013,18 @@ jobs:
   test-parallel:
     name: Tests (Split ${{ matrix.split }}/${{ needs.detect-changes.outputs.split_count }})
     needs: [quality-gate, zone-filter, detect-changes]
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
-    timeout-minutes: 20
+    # Self-hosted runners can slow sharply under memory pressure when the
+    # duration cache is cold; keep the full-suite split timeout above the
+    # observed 20-minute saturation boundary.
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
@@ -1071,10 +1066,7 @@ jobs:
           # shared self-hosted runners (15-25% lower throughput vs dedicated runners)
           CI_RUNNER_TYPE: >-
             ${{
-              (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-               (github.event_name == 'push' ||
-                github.event_name == 'workflow_dispatch' ||
-                github.event_name == 'schedule'))
+              github.event_name != 'pull_request'
               && 'self-hosted'
               || 'github-hosted'
             }}
@@ -1084,7 +1076,7 @@ jobs:
             --ignore=tests/integration \
             --splits ${{ needs.detect-changes.outputs.split_count }} \
             --group ${{ matrix.split }} \
-            -n auto \
+            -n "$PYTEST_XDIST_WORKERS" \
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
@@ -1097,10 +1089,7 @@ jobs:
           # shared self-hosted runners (15-25% lower throughput vs dedicated runners)
           CI_RUNNER_TYPE: >-
             ${{
-              (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-               (github.event_name == 'push' ||
-                github.event_name == 'workflow_dispatch' ||
-                github.event_name == 'schedule'))
+              github.event_name != 'pull_request'
               && 'self-hosted'
               || 'github-hosted'
             }}
@@ -1111,7 +1100,7 @@ jobs:
             --group ${{ matrix.split }} \
             --store-durations \
             --durations-path .test_durations \
-            -n auto \
+            -n "$PYTEST_XDIST_WORKERS" \
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
@@ -1141,15 +1130,12 @@ jobs:
   tests-integration:
     name: Integration Tests (Split ${{ matrix.split }}/4)
     needs: [quality-gate, zone-filter, detect-changes]
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 30
     if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
@@ -1183,7 +1169,7 @@ jobs:
         run: |
           uv run pytest tests/integration/ \
             --splits 4 --group ${{ matrix.split }} \
-            -n auto --timeout=120 --tb=short \
+            -n "$PYTEST_XDIST_WORKERS" --timeout=120 --tb=short \
             --junitxml=junit-int-${{ matrix.split }}.xml
 
       - name: Upload junit
@@ -1204,15 +1190,12 @@ jobs:
   # so this gate works for any matrix size (1, 4, 5, or 40 shards). No hardcoded count needed.
   tests-gate:
     name: Tests Gate
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     needs: [test-parallel, tests-integration]
     if: always()
@@ -1252,10 +1235,16 @@ jobs:
   # Warn-only mode — does not block PRs, just surfaces boundary parity issues.
   boundary-validation:
     name: Cross-repo boundary validation
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
     continue-on-error: true
     steps:
       - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@36865708ae7ecec2f8c5942a1db30a8b3420a879 # main 2026-03-25
+        continue-on-error: true
         with:
           checks: "boundary-parity"
           warn-only: "true"
@@ -1267,33 +1256,42 @@ jobs:
 
   contract-compliance:
     name: Contract Compliance Check
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push'
     steps:
       - uses: actions/checkout@v6
       - name: Clone onex_change_control
-        run: git clone --depth=1 https://github.com/OmniNode-ai/onex_change_control.git /tmp/onex_change_control
+        run: |
+          occ_dir="${RUNNER_TEMP}/onex_change_control_contract_compliance"
+          occ_ref="3c98ab30af75650952246c3467e02e240552427f"
+          rm -rf "$occ_dir"
+          git init "$occ_dir"
+          git -C "$occ_dir" remote add origin https://github.com/OmniNode-ai/onex_change_control.git
+          git -C "$occ_dir" fetch --depth=1 origin "$occ_ref"
+          git -C "$occ_dir" checkout --detach FETCH_HEAD
+          echo "OCC_DIR=$occ_dir" >> "$GITHUB_ENV"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.8.3"
       - name: Validate all ticket contracts (OMN-8808 — replaces dead run_contract_compliance_check.py ref)
-        working-directory: /tmp/onex_change_control
-        run: uv run validate-yaml contracts/OMN-*.yaml
+        run: cd "$OCC_DIR" && uv run validate-yaml "$GITHUB_WORKSPACE"/contracts/OMN-*.yaml
 
   ci-summary:
     name: CI Summary
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    needs: [quality-gate, tests-gate, compliance]
+    needs: [quality-gate, tests-gate, contract-compliance]
     if: always()
 
     steps:
@@ -1304,7 +1302,7 @@ jobs:
 
           quality="${{ needs.quality-gate.result }}"
           tests="${{ needs.tests-gate.result }}"
-          compliance="${{ needs.compliance.result }}"
+          compliance="${{ needs['contract-compliance'].result }}"
 
           echo "| Gate | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY

@@ -17,15 +17,12 @@ env:
 jobs:
   naming-conventions:
     name: Naming Convention Validation
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # Pre-existing violations on main (9 as of activation). Non-blocking until resolved.
     # See: mixin_event_bus.py, mixin_health_check.py, util_compute_path_resolver.py,
@@ -53,15 +50,12 @@ jobs:
 
   type-safety:
     name: Type Safety Validation
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
       - name: Checkout code
@@ -96,15 +90,12 @@ jobs:
 
   type-union-check:
     name: PEP 604 Type Union Check (UP007)
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
       - name: Checkout code
@@ -128,15 +119,12 @@ jobs:
 
   onex-compliance:
     name: ONEX Architecture Compliance
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
       - name: Checkout code
@@ -167,15 +155,12 @@ jobs:
 
   legacy-compatibility-check:
     name: Legacy Compatibility Check
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
       - name: Checkout code
@@ -203,15 +188,12 @@ jobs:
 
   ecosystem-validation:
     name: Ecosystem Integration Validation
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     if: github.repository_owner == 'OmniNode-ai' || github.repository_owner == 'jonahgabriel'
     steps:
@@ -240,15 +222,12 @@ jobs:
 
   node-purity-check:
     name: Node Purity Check
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
       - name: Checkout code
@@ -272,15 +251,12 @@ jobs:
 
   transport-boundary:
     name: Transport/I/O Import Boundary
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
       - name: Checkout code
@@ -291,15 +267,12 @@ jobs:
 
   forbidden-pattern-scan:
     name: Decommissioned Pattern Scanner (OMN-4801)
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
       - name: Checkout code
@@ -314,15 +287,12 @@ jobs:
 
   ai-slop-check:
     name: AI-Slop Pattern Check (strict, PR diff)
-    # OMNINODE_SELF_HOSTED_RUNS_ON_V1 — do not edit inline; update plan + all occurrences together
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
-        (vars.USE_SELF_HOSTED_RUNNERS == 'true' &&
-         (github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'schedule'))
-        && fromJSON('["self-hosted","omnibase-ci"]')
-        || fromJSON('["ubuntu-latest"]')
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
       - uses: actions/checkout@v6
@@ -353,7 +323,12 @@ jobs:
 
   ci-naming-convention:
     name: CI Naming Convention
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6

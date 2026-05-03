@@ -54,7 +54,12 @@ permissions:
 jobs:
   verify:
     name: verify
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
     timeout-minutes: 5
     # OMN-10419 invariant I9: disable GHA cache + artifact reuse so merge_group
     # entry always re-evaluates fully. No stale PASS from a previous run can
