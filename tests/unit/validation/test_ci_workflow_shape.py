@@ -24,6 +24,12 @@ def test_parallel_unit_split_timeout_tolerates_self_hosted_runner_pressure() -> 
     assert job["timeout-minutes"] >= 35
 
 
+def test_docs_validation_timeout_tolerates_merge_queue_pressure() -> None:
+    job = _ci_job("docs-validation")
+
+    assert job["timeout-minutes"] >= 10
+
+
 def test_pr_and_merge_queue_use_conservative_xdist_workers() -> None:
     data = yaml.safe_load(WORKFLOW_PATH.read_text())
     workers = data["env"]["PYTEST_XDIST_WORKERS"]
