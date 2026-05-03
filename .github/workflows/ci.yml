@@ -22,7 +22,15 @@ concurrency:
 env:
   UV_VERSION: "0.8.3"
   PYTHON_VERSION: "3.12"
-  PYTEST_XDIST_WORKERS: ${{ vars.OMNI_PYTEST_XDIST_WORKERS || '4' }}
+  # GitHub-hosted PR runners have reproduced xdist worker crashes under the
+  # default four-worker split load. Trusted non-PR events keep the configured
+  # parallelism; PRs default to one worker unless explicitly overridden.
+  PYTEST_XDIST_WORKERS: >-
+    ${{
+      github.event_name == 'pull_request'
+      && (vars.OMNI_PUBLIC_PR_PYTEST_XDIST_WORKERS || '1')
+      || (vars.OMNI_PYTEST_XDIST_WORKERS || '4')
+    }}
 
 jobs:
   # =============================================================================
