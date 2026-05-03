@@ -1027,7 +1027,10 @@ jobs:
         || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
       }}
     if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
-    timeout-minutes: 20
+    # Self-hosted runners can slow sharply under memory pressure when the
+    # duration cache is cold; keep the full-suite split timeout above the
+    # observed 20-minute saturation boundary.
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
