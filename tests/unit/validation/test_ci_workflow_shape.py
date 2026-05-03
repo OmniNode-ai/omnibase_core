@@ -30,10 +30,11 @@ def test_docs_validation_timeout_tolerates_merge_queue_pressure() -> None:
     assert job["timeout-minutes"] >= 10
 
 
-def test_pr_and_merge_queue_use_conservative_xdist_workers() -> None:
+def test_pr_and_merge_queue_use_bounded_xdist_workers() -> None:
     data = yaml.safe_load(WORKFLOW_PATH.read_text())
     workers = data["env"]["PYTEST_XDIST_WORKERS"]
 
     assert "github.event_name == 'pull_request'" in workers
     assert "github.event_name == 'merge_group'" in workers
     assert "OMNI_PUBLIC_PR_PYTEST_XDIST_WORKERS || '1'" in workers
+    assert "OMNI_MERGE_GROUP_PYTEST_XDIST_WORKERS || '2'" in workers

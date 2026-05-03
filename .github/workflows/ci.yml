@@ -23,12 +23,14 @@ env:
   UV_VERSION: "0.8.3"
   PYTHON_VERSION: "3.12"
   # GitHub-hosted PR runners and merge-queue self-hosted runners have reproduced
-  # xdist worker crashes under the default four-worker split load. PR and
-  # merge_group events default to one worker unless explicitly overridden.
+  # xdist worker crashes under the default four-worker split load. PRs stay at
+  # one worker; merge_group uses two workers to finish inside the queue window.
   PYTEST_XDIST_WORKERS: >-
     ${{
-      (github.event_name == 'pull_request' || github.event_name == 'merge_group')
+      github.event_name == 'pull_request'
       && (vars.OMNI_PUBLIC_PR_PYTEST_XDIST_WORKERS || '1')
+      || github.event_name == 'merge_group'
+      && (vars.OMNI_MERGE_GROUP_PYTEST_XDIST_WORKERS || '2')
       || (vars.OMNI_PYTEST_XDIST_WORKERS || '4')
     }}
 
