@@ -22,6 +22,7 @@ concurrency:
 env:
   UV_VERSION: "0.8.3"
   PYTHON_VERSION: "3.12"
+  PYTEST_XDIST_WORKERS: ${{ vars.OMNI_PYTEST_XDIST_WORKERS || '4' }}
 
 jobs:
   # =============================================================================
@@ -1090,7 +1091,7 @@ jobs:
             --ignore=tests/integration \
             --splits ${{ needs.detect-changes.outputs.split_count }} \
             --group ${{ matrix.split }} \
-            -n auto \
+            -n "$PYTEST_XDIST_WORKERS" \
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
@@ -1122,7 +1123,7 @@ jobs:
             --group ${{ matrix.split }} \
             --store-durations \
             --durations-path .test_durations \
-            -n auto \
+            -n "$PYTEST_XDIST_WORKERS" \
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
@@ -1192,7 +1193,7 @@ jobs:
         run: |
           uv run pytest tests/integration/ \
             --splits 4 --group ${{ matrix.split }} \
-            -n auto --timeout=120 --tb=short \
+            -n "$PYTEST_XDIST_WORKERS" --timeout=120 --tb=short \
             --junitxml=junit-int-${{ matrix.split }}.xml
 
       - name: Upload junit
