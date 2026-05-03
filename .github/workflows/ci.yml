@@ -1291,8 +1291,12 @@ jobs:
       - name: Clone onex_change_control
         run: |
           occ_dir="${RUNNER_TEMP}/onex_change_control_contract_compliance"
+          occ_ref="3c98ab30af75650952246c3467e02e240552427f"
           rm -rf "$occ_dir"
-          git clone --depth=1 https://github.com/OmniNode-ai/onex_change_control.git "$occ_dir"
+          git init "$occ_dir"
+          git -C "$occ_dir" remote add origin https://github.com/OmniNode-ai/onex_change_control.git
+          git -C "$occ_dir" fetch --depth=1 origin "$occ_ref"
+          git -C "$occ_dir" checkout --detach FETCH_HEAD
           echo "OCC_DIR=$occ_dir" >> "$GITHUB_ENV"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
