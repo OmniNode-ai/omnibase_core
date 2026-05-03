@@ -22,3 +22,12 @@ def test_parallel_unit_split_timeout_tolerates_self_hosted_runner_pressure() -> 
     job = _ci_job("test-parallel")
 
     assert job["timeout-minutes"] >= 35
+
+
+def test_pr_and_merge_queue_use_conservative_xdist_workers() -> None:
+    data = yaml.safe_load(WORKFLOW_PATH.read_text())
+    workers = data["env"]["PYTEST_XDIST_WORKERS"]
+
+    assert "github.event_name == 'pull_request'" in workers
+    assert "github.event_name == 'merge_group'" in workers
+    assert "OMNI_PUBLIC_PR_PYTEST_XDIST_WORKERS || '1'" in workers
