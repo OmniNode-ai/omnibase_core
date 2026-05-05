@@ -37,8 +37,7 @@ from __future__ import annotations
 import copy
 import re
 from collections.abc import Mapping
-
-from omnibase_core.types.type_json import JsonType
+from functools import lru_cache
 
 _LEGACY_METADATA_KEYS: frozenset[str] = frozenset(
     {"metadata", "contract_name", "node_name"}
@@ -53,6 +52,20 @@ _MULTI_OP_FLAG: str = "multi_operation_requires_human_review"
 
 _PASCAL_TO_SNAKE_BOUNDARY_1 = re.compile(r"(.)([A-Z][a-z]+)")
 _PASCAL_TO_SNAKE_BOUNDARY_2 = re.compile(r"([a-z0-9])([A-Z])")
+_ANNOTATIONS_FORBIDDEN_KEYS: frozenset[str] = frozenset(
+    {
+        "topic",
+        "topics",
+        "handler",
+        "routes",
+        "routing",
+        "validate",
+        "validator",
+        "consumer_group",
+        "subscriber",
+        "producer",
+    }
+)
 
 
 def strip_legacy_metadata(raw: Mapping[str, object]) -> dict[str, object]:
@@ -90,7 +103,7 @@ def _normalize_single_io_ref(value: dict[str, object] | str | None) -> str | Non
     return None
 
 
-def normalize_event_bus(raw: dict[str, JsonType]) -> dict[str, JsonType]:
+def normalize_event_bus(raw: Mapping[str, object]) -> dict[str, object]:
     """Strip the legacy event_bus block and top-level topic list keys.
 
     Drops `event_bus`, `subscribe_topics`, `publish_topics`, and `topics` keys
@@ -226,11 +239,88 @@ def normalize_omnimarket_v0_contract(raw: dict[str, object]) -> dict[str, object
     return result
 
 
+@lru_cache(maxsize=1)
+def _derive_known_contract_keys() -> frozenset[str]:
+    """Derive canonical contract keys from the typed contract models."""
+    from omnibase_core.models.contracts.model_contract_base import ModelContractBase
+    from omnibase_core.models.contracts.model_contract_compute import (
+        ModelContractCompute,
+    )
+    from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
+    from omnibase_core.models.contracts.model_contract_orchestrator import (
+        ModelContractOrchestrator,
+    )
+    from omnibase_core.models.contracts.model_contract_reducer import (
+        ModelContractReducer,
+    )
+
+    keys: set[str] = set()
+    for model in (
+        ModelContractBase,
+        ModelContractEffect,
+        ModelContractCompute,
+        ModelContractReducer,
+        ModelContractOrchestrator,
+    ):
+        keys.update(model.model_fields.keys())
+    return frozenset(keys)
+
+
+def normalize_misc_extra_fields(
+    raw: Mapping[str, object],
+    *,
+    known_keys: frozenset[str] | set[str] | None = None,
+) -> dict[str, object]:
+    """Move non-canonical legacy fields into the explicit annotations bag.
+
+    ``extra="forbid"`` remains canonical model policy. This audit-mode
+    normalizer preserves legacy operational annotation fields under the typed
+    ``annotations`` field instead of letting arbitrary top-level keys through.
+    """
+    contract_keys = (
+        known_keys if known_keys is not None else _derive_known_contract_keys()
+    )
+    extra = {k: v for k, v in raw.items() if k not in contract_keys}
+    if not extra:
+        return dict(raw)
+
+    result = {k: v for k, v in raw.items() if k in contract_keys}
+    existing_annotations = raw.get("annotations")
+    annotations: dict[str, object] = (
+        dict(existing_annotations) if isinstance(existing_annotations, Mapping) else {}
+    )
+    annotations.update(extra)
+    result["annotations"] = annotations
+    return result
+
+
+def validate_annotations_governance(annotations: Mapping[str, object]) -> list[str]:
+    """Return strict-mode governance violations for annotation keys."""
+    return [
+        f"Forbidden annotation key: {key!r} -- must be a typed field, not in annotations"
+        for key in annotations
+        if key in _ANNOTATIONS_FORBIDDEN_KEYS
+    ]
+
+
+def compose_normalization_pipeline(raw: Mapping[str, object]) -> dict[str, object]:
+    """Apply the migration-audit normalization pipeline in canonical order."""
+    normalized: dict[str, object] = strip_legacy_metadata(raw)
+    normalized = normalize_event_bus(normalized)
+    normalized = normalize_io_model_ref(normalized)
+    normalized = normalize_handler_routing(normalized)
+    normalized = normalize_omnimarket_v0_contract(normalized)
+    return normalize_misc_extra_fields(normalized)
+
+
 __all__ = [
+    "compose_normalization_pipeline",
     "is_omnimarket_v0",
     "normalize_event_bus",
     "normalize_handler_routing",
     "normalize_io_model_ref",
+    "normalize_misc_extra_fields",
     "normalize_omnimarket_v0_contract",
     "strip_legacy_metadata",
+    "validate_annotations_governance",
 ]

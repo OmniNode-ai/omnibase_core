@@ -16,7 +16,7 @@ This implementation does not use Any types.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -233,6 +233,13 @@ class ModelContractBase(BaseModel, ABC):
     tags: list[str] = Field(
         default_factory=list,
         description="Contract classification tags",
+    )
+
+    annotations: dict[str, Any] | None = (
+        Field(  # ONEX_EXCLUDE: dict_str_any - explicit non-load-bearing migration annotations bag
+            default=None,
+            description="Non-load-bearing operational annotations preserved from legacy contract corpus.",
+        )
     )
 
     feature_flags: list[ModelContractFeatureFlag] = Field(
