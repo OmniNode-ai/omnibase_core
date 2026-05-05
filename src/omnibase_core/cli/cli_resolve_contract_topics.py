@@ -50,7 +50,13 @@ def resolve_node_contract(node_id: str) -> Path:
         )
 
     module_path = matches[0].value.split(":", 1)[0].strip()
-    spec = importlib.util.find_spec(module_path)
+    try:
+        spec = importlib.util.find_spec(module_path)
+    except (ImportError, ValueError) as exc:
+        raise ModelOnexError(
+            message=f"Failed to resolve node module '{module_path}' from installed metadata.",
+            error_code=EnumCoreErrorCode.MODULE_NOT_FOUND,
+        ) from exc
     if spec is None:
         raise ModelOnexError(
             message=f"Failed to resolve node module '{module_path}' from installed metadata.",
