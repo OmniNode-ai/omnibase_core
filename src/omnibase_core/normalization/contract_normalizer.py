@@ -272,6 +272,8 @@ def normalize_dod_evidence(raw: dict[str, object]) -> dict[str, object]:
             kind_value = normalized.pop("kind")
             if isinstance(kind_value, str):
                 normalized["type"] = _DOD_KIND_TO_TYPE.get(kind_value, kind_value)
+            else:
+                normalized["type"] = kind_value
             new_items.append(normalized)
         else:
             new_items.append(item)

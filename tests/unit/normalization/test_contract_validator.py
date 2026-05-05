@@ -235,6 +235,9 @@ class TestStrictModeRequiresAlgorithmAndIo:
         # fail today; what matters is normalized=True and the error came from
         # model_validate, not the pre-check.
         assert result.normalized is True
+        assert all("strict-mode pre-check" not in e for e in result.errors), (
+            result.errors
+        )
 
 
 @pytest.mark.unit

@@ -143,9 +143,20 @@ def validate_contract_file(
     aggregate sweeps; this function is the single entry point so both paths
     apply identical classification / normalization / validation logic.
     """
-    raw_text = path.read_text()
-    loaded = yaml.safe_load(raw_text)
-    raw: dict[str, object] = loaded if isinstance(loaded, dict) else {}
+    try:
+        raw_text = path.read_text(encoding="utf-8")
+        loaded = yaml.safe_load(raw_text)
+        raw: dict[str, object] = loaded if isinstance(loaded, dict) else {}
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
+        classification = classify_contract_path(path, raw={})
+        return ModelCorpusValidationReport(
+            path=path,
+            bucket=classification.bucket,
+            mode=mode,
+            passed=False,
+            errors=[f"Failed to read/parse contract YAML: {exc}"],
+            normalized=False,
+        )
 
     classification = classify_contract_path(path, raw=raw)
 
