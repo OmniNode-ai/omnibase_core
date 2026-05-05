@@ -1,0 +1,29 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-10512"
+title: "Extract shared contract-to-topics resolver"
+summary: "Add a reusable CLI-layer resolver for node contract paths and command/terminal topics."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Focused resolver unit tests pass in omnibase_core PR #1032"
+    command: "uv run pytest tests/unit/cli/test_cli_resolve_contract_topics.py -q"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "Focused unit tests cover resolver success and error paths"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/cli/test_cli_resolve_contract_topics.py -q"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: pure CLI utility, no runtime process or service deploy required"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-10512 adds a pure CLI utility; no Docker image, daemon, broker topic, runtime process, docker exec, or service deploy is required'"
