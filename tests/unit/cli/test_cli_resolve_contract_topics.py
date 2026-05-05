@@ -23,6 +23,8 @@ from unittest.mock import patch
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.cli.cli_resolve_contract_topics import (
     resolve_contract_topics,
     resolve_node_contract,
@@ -45,6 +47,7 @@ def _fake_ep(name: str, value: str) -> object:
         pass
 
     ep = _EP()
+    # NOTE(OMN-10512): dynamic attr assignment on a bare class for entry-point test stub.
     ep.name = name  # type: ignore[attr-defined]
     ep.value = value  # type: ignore[attr-defined]
     ep.dist = "local-fake"  # type: ignore[attr-defined]
