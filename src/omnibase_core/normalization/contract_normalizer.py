@@ -30,6 +30,10 @@ Functions in this module:
     - normalize_omnimarket_v0_contract (OMN-9765): strips legacy omnimarket
       v0 handler, descriptor, and terminal_event blocks while hoisting
       handler.input_model when needed.
+    - normalize_dod_evidence (OMN-9766): maps legacy ``kind`` → ``type``
+      on dod_evidence entries.
+    - compose_normalization_pipeline (OMN-9766): composes the six
+      normalizers in the documented order.
 """
 
 from __future__ import annotations
@@ -37,6 +41,7 @@ from __future__ import annotations
 import copy
 import re
 from collections.abc import Mapping
+from typing import cast
 
 from omnibase_core.types.type_json import JsonType
 
@@ -226,8 +231,96 @@ def normalize_omnimarket_v0_contract(raw: dict[str, object]) -> dict[str, object
     return result
 
 
+_DOD_KIND_TO_TYPE: dict[str, str] = {
+    "test": "unit_test",
+    "unit_test": "unit_test",
+    "integration_test": "integration_test",
+    "pr_merged": "pr_merged",
+    "file_exists": "file_exists",
+}
+
+
+def normalize_dod_evidence(raw: dict[str, object]) -> dict[str, object]:
+    """Map legacy ``kind`` → ``type`` on dod_evidence entries.
+
+    Legacy contracts spelled the discriminator on each dod_evidence entry
+    as ``kind``; the canonical schema names it ``type``. Per-entry rules:
+
+    - String entries (``"test_passes"``) pass through unchanged.
+    - Dict entries with ``kind`` and no ``type`` are rewritten:
+      ``kind`` is removed, ``type`` is set via :data:`_DOD_KIND_TO_TYPE`
+      (or copied verbatim if no mapping is registered).
+    - Dict entries that already carry ``type`` are left alone (no double
+      mapping; pre-canonical entries win).
+
+    The input dict is not mutated; a new dict is returned. Idempotent:
+    running twice yields the same result. No-op when ``dod_evidence`` is
+    absent.
+
+    Corpus context: 8 files in the audited corpus carry legacy ``kind``.
+    """
+    if "dod_evidence" not in raw:
+        return raw
+    result = dict(raw)
+    items_raw = result.get("dod_evidence")
+    if not isinstance(items_raw, list):
+        return result
+    new_items: list[object] = []
+    for item in items_raw:
+        if isinstance(item, dict) and "kind" in item and "type" not in item:
+            normalized: dict[str, object] = dict(item)
+            kind_value = normalized.pop("kind")
+            if isinstance(kind_value, str):
+                normalized["type"] = _DOD_KIND_TO_TYPE.get(kind_value, kind_value)
+            new_items.append(normalized)
+        else:
+            new_items.append(item)
+    result["dod_evidence"] = new_items
+    return result
+
+
+def compose_normalization_pipeline(raw: dict[str, object]) -> dict[str, object]:
+    """Apply all per-family normalizers in canonical order.
+
+    Step order is fixed and documented:
+
+    1. :func:`strip_legacy_metadata` — drop ``metadata`` /
+       ``contract_name`` / ``node_name``.
+    2. :func:`normalize_event_bus` — strip the legacy event_bus block
+       and top-level topic keys.
+    3. :func:`normalize_io_model_ref` — convert ``{name, module}`` dict
+       refs to dotted strings.
+    4. :func:`normalize_handler_routing` — derive routing_key /
+       handler_key / version on the routing block.
+    5. :func:`normalize_omnimarket_v0_contract` — conditional on
+       :func:`is_omnimarket_v0`; rewrites the omnimarket v0 shape.
+    6. :func:`normalize_dod_evidence` — map legacy ``kind`` → ``type``.
+
+    Pure: no I/O, no logging, no mutation of the caller's dict. Note
+    that :func:`normalize_event_bus` is typed against ``dict[str,
+    JsonType]``; we cast at the boundary because the pipeline carries
+    unconstrained ``dict[str, object]``.
+
+    Task 14 will append ``normalize_misc_extra_fields`` as the final
+    step; that step is intentionally deferred per OMN-9757 plan.
+    """
+    out: dict[str, object] = strip_legacy_metadata(raw)
+    out = cast(
+        "dict[str, object]",
+        normalize_event_bus(cast("dict[str, JsonType]", out)),
+    )
+    out = normalize_io_model_ref(out)
+    out = normalize_handler_routing(out)
+    if is_omnimarket_v0(out):
+        out = normalize_omnimarket_v0_contract(out)
+    out = normalize_dod_evidence(out)
+    return out
+
+
 __all__ = [
+    "compose_normalization_pipeline",
     "is_omnimarket_v0",
+    "normalize_dod_evidence",
     "normalize_event_bus",
     "normalize_handler_routing",
     "normalize_io_model_ref",

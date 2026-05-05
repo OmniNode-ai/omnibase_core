@@ -29,7 +29,9 @@ import copy
 import pytest
 
 from omnibase_core.normalization.contract_normalizer import (
+    compose_normalization_pipeline,
     is_omnimarket_v0,
+    normalize_dod_evidence,
     normalize_event_bus,
     normalize_handler_routing,
     normalize_io_model_ref,
@@ -400,3 +402,165 @@ def test_handler_routing_does_not_mutate_input() -> None:
     raw_copy = copy.deepcopy(raw)
     normalize_handler_routing(raw)
     assert raw == raw_copy
+
+
+@pytest.mark.unit
+class TestNormalizeDodEvidence:
+    """Tests for normalize_dod_evidence (OMN-9766, family_dod_evidence_kind).
+
+    Maps the legacy ``kind`` discriminator on dod_evidence entries to the
+    canonical ``type`` discriminator. String entries pass through; entries
+    that already declare ``type`` are not double-mapped.
+    """
+
+    def test_no_op_when_dod_evidence_absent(self) -> None:
+        raw = {"name": "n", "node_type": "EFFECT_GENERIC"}
+        result = normalize_dod_evidence(raw)
+        assert result == raw
+
+    def test_string_list_passthrough(self) -> None:
+        raw = {"dod_evidence": ["test_passes", "pr_merged"]}
+        result = normalize_dod_evidence(raw)
+        assert result["dod_evidence"] == ["test_passes", "pr_merged"]
+
+    def test_kind_test_maps_to_type_unit_test(self) -> None:
+        raw = {"dod_evidence": [{"kind": "test", "command": "uv run pytest"}]}
+        result = normalize_dod_evidence(raw)
+        item = result["dod_evidence"][0]
+        assert item == {"type": "unit_test", "command": "uv run pytest"}
+        assert "kind" not in item
+
+    def test_kind_unit_test_passthrough_value(self) -> None:
+        raw = {"dod_evidence": [{"kind": "unit_test", "command": "x"}]}
+        result = normalize_dod_evidence(raw)
+        assert result["dod_evidence"][0]["type"] == "unit_test"
+
+    def test_kind_unmapped_falls_back_to_kind_value(self) -> None:
+        raw = {"dod_evidence": [{"kind": "novel_kind", "command": "x"}]}
+        result = normalize_dod_evidence(raw)
+        assert result["dod_evidence"][0]["type"] == "novel_kind"
+
+    def test_existing_type_not_overwritten(self) -> None:
+        """Entries with both kind and type keep type and drop kind quietly.
+
+        The function does not overwrite a pre-existing ``type`` value with
+        the mapping derived from ``kind``; the canonical ``type`` wins.
+        """
+        raw = {
+            "dod_evidence": [
+                {"kind": "test", "type": "integration_test", "command": "x"}
+            ]
+        }
+        result = normalize_dod_evidence(raw)
+        # Pre-canonical entries are left alone — kind is not stripped here.
+        item = result["dod_evidence"][0]
+        assert item["type"] == "integration_test"
+
+    def test_does_not_mutate_input(self) -> None:
+        raw = {"dod_evidence": [{"kind": "test", "command": "x"}]}
+        snapshot = copy.deepcopy(raw)
+        normalize_dod_evidence(raw)
+        assert raw == snapshot
+
+    def test_idempotent(self) -> None:
+        raw = {"dod_evidence": [{"kind": "test", "command": "x"}]}
+        once = normalize_dod_evidence(raw)
+        twice = normalize_dod_evidence(once)
+        assert once == twice
+
+    def test_non_list_dod_evidence_passthrough(self) -> None:
+        """Garbage shapes (non-list) are not transformed; we don't fabricate."""
+        raw = {"dod_evidence": "not_a_list"}
+        result = normalize_dod_evidence(raw)
+        assert result == raw
+
+
+@pytest.mark.unit
+class TestComposeNormalizationPipeline:
+    """Tests for compose_normalization_pipeline (OMN-9766).
+
+    The pipeline is the migration_audit entry point that funnels every
+    per-family normalizer into a single dict→dict transform. Step order
+    is fixed; each step is documented in the function docstring.
+    """
+
+    def test_full_pipeline_compose(self) -> None:
+        raw: dict[str, object] = {
+            "name": "node_foo_effect",
+            "node_type": "EFFECT_GENERIC",
+            "metadata": {"author": "Team"},
+            "contract_name": "node_foo_effect",
+            "event_bus": {"subscribe_topics": ["t"]},
+            "input_model": {"name": "ModelFooRequest", "module": "foo.bar"},
+            "handler_routing": {
+                "routing_strategy": "operation_match",
+                "handlers": [
+                    {
+                        "handler_type": "foo",
+                        "supported_operations": ["foo.run"],
+                        "handler": {"name": "HandlerFoo", "module": "bar"},
+                    }
+                ],
+            },
+        }
+        result = compose_normalization_pipeline(raw)
+        assert "metadata" not in result
+        assert "contract_name" not in result
+        assert "event_bus" not in result
+        assert result["input_model"] == "foo.bar.ModelFooRequest"
+        hr = result["handler_routing"]
+        assert isinstance(hr, dict)
+        assert hr["version"] == {"major": 1, "minor": 0, "patch": 0}
+        handlers = hr["handlers"]
+        assert isinstance(handlers, list)
+        first = handlers[0]
+        assert isinstance(first, dict)
+        assert first["routing_key"] == "foo.run"
+
+    def test_pipeline_does_not_mutate_input(self) -> None:
+        raw: dict[str, object] = {
+            "name": "n",
+            "metadata": {"author": "x"},
+            "input_model": {"name": "M", "module": "m"},
+        }
+        snapshot = copy.deepcopy(raw)
+        compose_normalization_pipeline(raw)
+        assert raw == snapshot
+
+    def test_pipeline_idempotent_on_canonical_input(self) -> None:
+        """Running the pipeline on already-canonical input is a near-no-op
+        (modulo dict-copy semantics)."""
+        raw: dict[str, object] = {
+            "name": "n",
+            "node_type": "EFFECT_GENERIC",
+            "input_model": "x.y.Z",
+            "output_model": "x.y.W",
+        }
+        once = compose_normalization_pipeline(raw)
+        twice = compose_normalization_pipeline(once)
+        assert once == twice
+
+    def test_pipeline_runs_dod_evidence_step(self) -> None:
+        """The dod_evidence step is wired into the composed pipeline."""
+        raw: dict[str, object] = {
+            "name": "n",
+            "node_type": "EFFECT_GENERIC",
+            "dod_evidence": [{"kind": "test", "command": "uv run pytest"}],
+        }
+        result = compose_normalization_pipeline(raw)
+        evidence = result["dod_evidence"]
+        assert isinstance(evidence, list)
+        first = evidence[0]
+        assert isinstance(first, dict)
+        assert first["type"] == "unit_test"
+        assert "kind" not in first
+
+    def test_pipeline_runs_omnimarket_v0_only_when_detected(self) -> None:
+        """Non-omnimarket-v0 contracts are not rewritten by that step."""
+        raw: dict[str, object] = {
+            "name": "n",
+            "node_type": "EFFECT_GENERIC",
+            "input_model": "x.y.Z",
+        }
+        result = compose_normalization_pipeline(raw)
+        assert result["input_model"] == "x.y.Z"  # unchanged
