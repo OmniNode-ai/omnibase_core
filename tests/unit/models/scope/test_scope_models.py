@@ -41,6 +41,19 @@ from omnibase_core.models.scope import (
     ModelUnavailableBehavior,
 )
 
+ENFORCEMENT_VALUES: tuple[EnumEnforcement, ...] = tuple(
+    EnumEnforcement.__members__.values()
+)
+SCOPE_TOKEN_VALUES: tuple[EnumScopeToken, ...] = tuple(
+    EnumScopeToken.__members__.values()
+)
+UNAVAILABLE_MODE_VALUES: tuple[EnumUnavailableMode, ...] = tuple(
+    EnumUnavailableMode.__members__.values()
+)
+DIAGNOSTICS_MODE_VALUES: tuple[EnumDiagnosticsMode, ...] = tuple(
+    EnumDiagnosticsMode.__members__.values()
+)
+
 # ---------------------------------------------------------------------------
 # EnumEnforcement
 # ---------------------------------------------------------------------------
@@ -50,7 +63,7 @@ from omnibase_core.models.scope import (
 class TestEnumEnforcement:
     def test_all_values_round_trip_yaml(self) -> None:
         """Each enforcement value survives yaml.safe_load -> Pydantic round-trip."""
-        for member in EnumEnforcement:
+        for member in ENFORCEMENT_VALUES:
             raw = yaml.safe_dump({"enforcement": member.value})
             loaded = yaml.safe_load(raw)
             assert EnumEnforcement(loaded["enforcement"]) == member
@@ -120,7 +133,7 @@ class TestEnumScopeToken:
         assert not EnumScopeToken.UNKNOWN.is_omninode_context()
 
     def test_yaml_round_trip(self) -> None:
-        for token in EnumScopeToken:
+        for token in SCOPE_TOKEN_VALUES:
             raw = yaml.safe_dump({"token": token.value})
             loaded = yaml.safe_load(raw)
             assert EnumScopeToken(loaded["token"]) == token
@@ -294,7 +307,7 @@ class TestModelArtifactEnforcement:
 
     def test_yaml_round_trip_all_enforcement_values(self) -> None:
         """Each enforcement enum value round-trips through YAML for each field."""
-        for value in EnumEnforcement:
+        for value in ENFORCEMENT_VALUES:
             data = {
                 "default": value.value,
                 "non_matching_scope": value.value,
@@ -321,7 +334,7 @@ class TestModelUnavailableBehavior:
         assert ub.diagnostics == EnumDiagnosticsMode.SILENT
 
     def test_yaml_round_trip_all_unavailable_modes(self) -> None:
-        for mode in EnumUnavailableMode:
+        for mode in UNAVAILABLE_MODE_VALUES:
             data = {"default": mode.value, "diagnostics": "silent"}
             raw = yaml.safe_dump(data)
             loaded = yaml.safe_load(raw)
@@ -336,9 +349,9 @@ class TestModelUnavailableBehavior:
         assert ub.diagnostics == EnumDiagnosticsMode.EXPLAIN
 
     def test_all_enum_values_valid(self) -> None:
-        for mode in EnumUnavailableMode:
+        for mode in UNAVAILABLE_MODE_VALUES:
             assert mode.value in ("hidden", "noop", "warn", "block")
-        for diag in EnumDiagnosticsMode:
+        for diag in DIAGNOSTICS_MODE_VALUES:
             assert diag.value in ("explain", "silent")
 
     def test_extra_fields_forbidden(self) -> None:
