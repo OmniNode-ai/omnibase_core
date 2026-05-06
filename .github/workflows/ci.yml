@@ -1243,7 +1243,7 @@ jobs:
       }}
     continue-on-error: true
     steps:
-      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@36865708ae7ecec2f8c5942a1db30a8b3420a879 # main 2026-03-25
+      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@83271dd115b3bbf4bc83ce38bc6cd34c18fad7c0 # main 2026-03-25
         continue-on-error: true
         with:
           checks: "boundary-parity"
