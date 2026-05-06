@@ -17,6 +17,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from __future__ import annotations
 
+import logging
 import threading
 from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID, uuid4
@@ -77,6 +78,7 @@ if TYPE_CHECKING:
 # Lazy model rebuild flag - forward references are resolved on first use, not at import
 _models_rebuilt = False
 _rebuild_lock = threading.Lock()
+logger = logging.getLogger(__name__)
 
 
 def _ensure_models_rebuilt(contract_effect_cls: type[BaseModel] | None = None) -> None:
@@ -308,11 +310,26 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
     # These fields define the core side-effect behavior
 
     # Side-effect configuration
-    io_operations: list[ModelIOOperationConfig] = Field(
-        default=...,
+    io_operations: list[ModelIOOperationConfig] | None = Field(
+        default=None,
         description="I/O operation specifications",
         min_length=1,
+        validate_default=True,
     )
+
+    @field_validator("io_operations", mode="before")
+    @classmethod
+    def warn_missing_io_operations(
+        cls,
+        v: object,
+    ) -> object:
+        """Allow legacy effect contracts without io_operations during migration audit."""
+        if v is None:
+            logger.warning(
+                "Effect contract missing io_operations; accepted as migration debt "
+                "for legacy corpus validation (OMN-9770)."
+            )
+        return v
 
     transaction_management: ModelTransactionConfig = Field(
         default_factory=ModelTransactionConfig,
@@ -415,6 +432,8 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
 
     def _validate_effect_io_operations(self) -> None:
         """Validate I/O operations configuration for effect nodes."""
+        if self.io_operations is None:
+            return
         if not self.io_operations:
             msg = "Effect node must define at least one I/O operation"
             raise ModelOnexError(
@@ -433,8 +452,10 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
     def _validate_effect_transaction_config(self) -> None:
         """Validate transaction management and retry configuration."""
         # Validate transaction configuration consistency
-        if self.transaction_management.enabled and not any(
-            op.atomic for op in self.io_operations
+        if (
+            self.io_operations is not None
+            and self.transaction_management.enabled
+            and not any(op.atomic for op in self.io_operations)
         ):
             msg = "Transaction management requires at least one atomic operation"
             raise ModelOnexError(
@@ -515,9 +536,11 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
     @classmethod
     def validate_io_operations_consistency(
         cls,
-        v: list[ModelIOOperationConfig],
-    ) -> list[ModelIOOperationConfig]:
+        v: list[ModelIOOperationConfig] | None,
+    ) -> list[ModelIOOperationConfig] | None:
         """Validate I/O operations configuration consistency."""
+        if v is None:
+            return None
         [op.operation_type for op in v]
 
         # Check for conflicting atomic requirements

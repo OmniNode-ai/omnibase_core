@@ -495,8 +495,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
 
         Note:
             computation_type is extracted directly from algorithm.algorithm_type.
-            Both algorithm and algorithm_type are required fields in
-            ModelContractCompute and ModelAlgorithmConfig respectively.
+            Runtime compute execution requires algorithm even though legacy
+            migration-audit contract loading may accept it as absent.
         """
         # Extract input data from contract - input_state is required
         input_data: Any = None
@@ -514,8 +514,18 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
                 },
             )
 
-        # Extract computation_type directly from algorithm.algorithm_type
-        # Both fields are required in their respective models (no fallback needed)
+        if contract.algorithm is None:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Contract must have 'algorithm' field with valid configuration",
+                context={
+                    "node_id": str(self.node_id),
+                    "hint": "Set algorithm in compute contracts before runtime execution",
+                    "algorithm_value": str(contract.algorithm),
+                },
+            )
+
+        # Extract computation_type directly from algorithm.algorithm_type.
         computation_type: str = contract.algorithm.algorithm_type
 
         # Extract metadata (normalize None to empty dict)
