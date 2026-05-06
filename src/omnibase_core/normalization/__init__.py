@@ -15,21 +15,31 @@ preservation of dropped/rewritten content is the caller's responsibility.
 from __future__ import annotations
 
 from omnibase_core.normalization.contract_normalizer import (
+    compose_normalization_pipeline,
     is_omnimarket_v0,
+    normalize_dod_evidence,
     normalize_event_bus,
     normalize_handler_routing,
     normalize_io_model_ref,
+    normalize_misc_extra_fields,
     normalize_omnimarket_v0_contract,
     strip_legacy_metadata,
+    validate_annotations_governance,
 )
+from omnibase_core.normalization.contract_validator import validate_contract_file
 from omnibase_core.normalization.corpus_classifier import classify_contract_path
 
 __all__ = [
     "classify_contract_path",
+    "compose_normalization_pipeline",
     "is_omnimarket_v0",
+    "normalize_dod_evidence",
     "normalize_event_bus",
     "normalize_handler_routing",
     "normalize_io_model_ref",
+    "normalize_misc_extra_fields",
     "normalize_omnimarket_v0_contract",
     "strip_legacy_metadata",
+    "validate_annotations_governance",
+    "validate_contract_file",
 ]
