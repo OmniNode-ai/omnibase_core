@@ -81,10 +81,15 @@ version: [invalid yaml structure
         assert "YAML parsing error" in result.violations[0]
 
     def test_validate_missing_required_fields(self) -> None:
-        """Test validation fails when required fields are missing."""
+        """Test validation behavior when io_operations is absent from an effect contract.
+
+        OMN-9770: io_operations is now optional during migration-audit to allow legacy
+        corpus validation. Missing io_operations is accepted as migration debt, not a
+        hard violation.
+        """
         validator = ServiceContractValidator()
 
-        # Missing io_operations (required for effect contracts)
+        # Missing io_operations — accepted as migration debt since OMN-9770
         incomplete_yaml = """
 name: IncompleteEffect
 contract_version:
@@ -99,9 +104,8 @@ output_model: ModelOutput
 
         result = validator.validate_contract_yaml(incomplete_yaml, "effect")
 
-        assert not result.is_valid
-        assert result.score < 1.0
-        assert len(result.violations) > 0
+        # OMN-9770: io_operations is now optional; this contract is valid (migration debt)
+        assert result.is_valid
 
     def test_validate_contract_with_warnings(self) -> None:
         """Test validation produces warnings for non-critical issues."""

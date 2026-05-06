@@ -15,6 +15,7 @@ Specialized contract model for NodeCompute implementations providing:
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
+import logging
 from typing import ClassVar
 
 from pydantic import ConfigDict, Field, field_validator
@@ -45,6 +46,8 @@ from .model_algorithm_config import ModelAlgorithmConfig
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
+
+logger = logging.getLogger(__name__)
 
 
 class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
@@ -167,10 +170,25 @@ class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
     # These fields define the core computation behavior
 
     # Computation configuration
-    algorithm: ModelAlgorithmConfig = Field(
-        default=...,
+    algorithm: ModelAlgorithmConfig | None = Field(
+        default=None,
         description="Algorithm configuration and parameters",
+        validate_default=True,
     )
+
+    @field_validator("algorithm", mode="before")
+    @classmethod
+    def warn_missing_algorithm(
+        cls,
+        v: object,
+    ) -> object:
+        """Allow legacy compute contracts without algorithm during migration audit."""
+        if v is None:
+            logger.warning(
+                "Compute contract missing algorithm; accepted as migration debt "
+                "for legacy corpus validation (OMN-9770)."
+            )
+        return v
 
     parallel_processing: ModelParallelConfig = Field(
         default_factory=ModelParallelConfig,
@@ -253,6 +271,8 @@ class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
 
     def _validate_compute_algorithm_config(self) -> None:
         """Validate algorithm configuration for compute nodes."""
+        if self.algorithm is None:
+            return
         if not self.algorithm.factors:
             msg = "Compute node must define at least one algorithm factor"
             raise ModelOnexError(
@@ -351,12 +371,14 @@ class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
     def validate_algorithm_from_dict(
         cls,
         v: object,
-    ) -> ModelAlgorithmConfig:
+    ) -> ModelAlgorithmConfig | None:
         """
         Validate and convert algorithm configuration from dict if needed.
 
         Supports YAML loading by converting dict to ModelAlgorithmConfig.
         """
+        if v is None:
+            return None
         if isinstance(v, ModelAlgorithmConfig):
             return v
         if isinstance(v, dict):
@@ -399,9 +421,11 @@ class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
     @classmethod
     def validate_algorithm_consistency(
         cls,
-        v: ModelAlgorithmConfig,
-    ) -> ModelAlgorithmConfig:
+        v: ModelAlgorithmConfig | None,
+    ) -> ModelAlgorithmConfig | None:
         """Validate algorithm configuration consistency after conversion."""
+        if v is None:
+            return None
         if v.algorithm_type == "weighted_factor_algorithm" and not v.factors:
             msg = "Weighted factor algorithm requires at least one factor"
             raise ModelOnexError(

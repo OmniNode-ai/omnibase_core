@@ -63,7 +63,7 @@ def valid_performance_requirements() -> ModelPerformanceRequirements:
 
 
 def create_valid_contract(
-    algorithm_config: ModelAlgorithmConfig,
+    algorithm_config: ModelAlgorithmConfig | None,
     performance_requirements: ModelPerformanceRequirements,
     input_state: dict[str, ModelSchemaValue] | None = None,
 ) -> ModelContractCompute:
@@ -180,6 +180,29 @@ class TestContractToInputMissingInputState:
 
         assert result is not None
         assert result.data is not None
+
+    def test_contract_to_input_raises_error_when_algorithm_missing(
+        self,
+        compute_node: NodeCompute[Any, Any],
+        valid_performance_requirements: ModelPerformanceRequirements,
+    ) -> None:
+        """Runtime compute conversion still requires algorithm configuration."""
+        contract = create_valid_contract(
+            algorithm_config=None,
+            performance_requirements=valid_performance_requirements,
+            input_state={"key": ModelSchemaValue.from_value("value")},
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            compute_node._contract_to_input(contract)
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "algorithm" in error.message.lower()
+
+        nested_context = get_nested_context(error)
+        assert "node_id" in nested_context
+        assert "hint" in nested_context
 
     def test_contract_to_input_with_empty_dict_input_state(
         self,

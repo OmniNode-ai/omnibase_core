@@ -21,8 +21,10 @@ from omnibase_core.normalization.contract_normalizer import (
     normalize_event_bus,
     normalize_handler_routing,
     normalize_io_model_ref,
+    normalize_misc_extra_fields,
     normalize_omnimarket_v0_contract,
     strip_legacy_metadata,
+    validate_annotations_governance,
 )
 from omnibase_core.normalization.contract_validator import validate_contract_file
 from omnibase_core.normalization.corpus_classifier import classify_contract_path
@@ -35,7 +37,9 @@ __all__ = [
     "normalize_event_bus",
     "normalize_handler_routing",
     "normalize_io_model_ref",
+    "normalize_misc_extra_fields",
     "normalize_omnimarket_v0_contract",
     "strip_legacy_metadata",
+    "validate_annotations_governance",
     "validate_contract_file",
 ]
