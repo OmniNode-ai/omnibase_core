@@ -16,7 +16,7 @@ on:
 # Prevent auto-cancellation for normal PR/push workflows, but cancel superseded
 # merge_group runs so stale merge-queue attempts do not accumulate.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'merge_group' && github.event.merge_group.base_ref || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'merge_group' }}
 
 env:

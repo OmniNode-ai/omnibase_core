@@ -76,9 +76,18 @@ jobs:
               ACTOR="$(gh pr view "$PR" --repo "$GH_REPO" --json author --jq '.author.login')"
               ;;
             check_suite)
-              PR="$(echo "$CHECK_SUITE_PRS" | jq -r 'if type == "array" and length > 0 then .[0].number else empty end')"
+              DEFAULT_BRANCH="$(gh repo view "$GH_REPO" --json defaultBranchRef --jq '.defaultBranchRef.name')"
+              PR=""
+              while IFS= read -r candidate_pr; do
+                [ -z "$candidate_pr" ] && continue
+                candidate_base="$(gh pr view "$candidate_pr" --repo "$GH_REPO" --json baseRefName --jq '.baseRefName')"
+                if [ "$candidate_base" = "$DEFAULT_BRANCH" ]; then
+                  PR="$candidate_pr"
+                  break
+                fi
+              done < <(echo "$CHECK_SUITE_PRS" | jq -r 'if type == "array" then .[]?.number else empty end')
               if [ -z "$PR" ]; then
-                echo "check_suite had no associated PRs; nothing to do"
+                echo "check_suite had no associated PR targeting '$DEFAULT_BRANCH'; nothing to do"
                 echo "skip=true" >> "$GITHUB_OUTPUT"
                 exit 0
               fi
@@ -91,7 +100,7 @@ jobs:
               ;;
           esac
           BASE_REF="$(gh pr view "$PR" --repo "$GH_REPO" --json baseRefName --jq '.baseRefName')"
-          DEFAULT_BRANCH="$(gh repo view "$GH_REPO" --json defaultBranchRef --jq '.defaultBranchRef.name')"
+          DEFAULT_BRANCH="${DEFAULT_BRANCH:-$(gh repo view "$GH_REPO" --json defaultBranchRef --jq '.defaultBranchRef.name')}"
           if [ "$BASE_REF" != "$DEFAULT_BRANCH" ]; then
             echo "PR #$PR targets '$BASE_REF', not default '$DEFAULT_BRANCH'; skipping auto-merge enrollment for stacked PR"
             echo "pr=$PR" >> "$GITHUB_OUTPUT"
