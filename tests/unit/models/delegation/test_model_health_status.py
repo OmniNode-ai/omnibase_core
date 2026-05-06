@@ -92,7 +92,7 @@ class TestModelModelHealthStatus:
             last_checked_at=_NOW,
         )
         with pytest.raises(Exception):
-            status.state = EnumModelHealthState.UNAVAILABLE  # type: ignore[misc]
+            status.state = EnumModelHealthState.UNAVAILABLE  # NOTE(OMN-10611): intentional mutation attempt to verify frozen model behavior.  # type: ignore[misc]
 
     def test_extra_fields_forbidden(self) -> None:
         with pytest.raises(ValidationError):
@@ -111,9 +111,32 @@ class TestModelModelHealthStatus:
             ModelModelHealthStatus(
                 model_key="qwen3-coder",
                 endpoint_url=_ENDPOINT,
-                state="flying",  # type: ignore[arg-type]
+                state="flying",  # NOTE(OMN-10611): intentional invalid enum value for validation-path testing.  # type: ignore[arg-type]
                 last_checked_at=_NOW,
             )
+
+    @pytest.mark.parametrize(
+        ("field_name", "value"),
+        [
+            ("latency_ms", -1.0),
+            ("latency_threshold_ms", -1.0),
+            ("consecutive_failures", -1),
+        ],
+    )
+    def test_negative_health_metrics_raise(
+        self,
+        field_name: str,
+        value: float | int,
+    ) -> None:
+        payload = {
+            "model_key": "qwen3-coder",
+            "endpoint_url": _ENDPOINT,
+            "state": EnumModelHealthState.AVAILABLE,
+            "last_checked_at": _NOW,
+            field_name: value,
+        }
+        with pytest.raises(ValidationError):
+            ModelModelHealthStatus(**payload)
 
     def test_serialization_round_trip(self) -> None:
         status = ModelModelHealthStatus(
