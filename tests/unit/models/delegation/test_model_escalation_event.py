@@ -61,7 +61,7 @@ class TestModelEscalationEvent:
     def test_frozen(self) -> None:
         event = ModelEscalationEvent(**_VALID_KWARGS)
         with pytest.raises(Exception):
-            event.prior_model = "changed"  # type: ignore[misc]
+            event.prior_model = "changed"  # type: ignore[misc]  # NOTE(OMN-10617): Intentional mutation to assert frozen-model enforcement.
 
     def test_attempt_number_ge_1(self) -> None:
         with pytest.raises(ValidationError):
