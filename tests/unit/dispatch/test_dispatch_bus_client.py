@@ -49,6 +49,19 @@ def test_load_dispatch_bus_route_uses_contract_topics(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_dispatch_bus_command_accepts_target_runtime_address() -> None:
+    command = ModelDispatchBusCommand(
+        command_name="session_bootstrap",
+        requester="codex",
+        payload={"dry_run": True},
+        response_topic="onex.evt.omnimarket.pattern-b-dispatch-completed.v1",
+        target_runtime_address="runtime://omninode-pc/main",
+    )
+
+    assert command.target_runtime_address == "runtime://omninode-pc/main"
+
+
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_dispatch_bus_client_request_round_trips_on_inmemory_bus(
     tmp_path: Path,

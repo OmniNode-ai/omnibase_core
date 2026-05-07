@@ -47,6 +47,10 @@ class ModelDispatchBusCommand(BaseModel):
         le=600,
         description="Requested timeout for the broker round-trip.",
     )
+    target_runtime_address: str | None = Field(
+        default=None,
+        description="Optional runtime:// address selector for routed dispatch.",
+    )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         description="UTC timestamp when the broker request was created.",
