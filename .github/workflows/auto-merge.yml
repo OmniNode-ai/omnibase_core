@@ -56,26 +56,34 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       pr: ${{ steps.resolve.outputs.pr }}
+      actor: ${{ steps.resolve.outputs.actor }}
       skip: ${{ steps.resolve.outputs.skip }}
     steps:
-      - name: Resolve PR number without checkout
+      - name: Resolve PR number and author without checkout
         id: resolve
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
           PR_FROM_PAYLOAD: ${{ github.event.pull_request.number }}
+          PR_AUTHOR_FROM_PAYLOAD: ${{ github.event.pull_request.user.login }}
           PR_FROM_DISPATCH: ${{ github.event.inputs.pr_number }}
           CHECK_SUITE_PRS: ${{ toJson(github.event.check_suite.pull_requests) }}
         run: |
           set -euo pipefail
           case "$EVENT_NAME" in
             pull_request|pull_request_review)
-              echo "pr=$PR_FROM_PAYLOAD" >> "$GITHUB_OUTPUT"
+              PR="$PR_FROM_PAYLOAD"
+              ACTOR="${PR_AUTHOR_FROM_PAYLOAD:-$(gh pr view "$PR" --repo "$GH_REPO" --json author --jq '.author.login')}"
+              echo "pr=$PR" >> "$GITHUB_OUTPUT"
+              echo "actor=$ACTOR" >> "$GITHUB_OUTPUT"
               echo "skip=false" >> "$GITHUB_OUTPUT"
               ;;
             workflow_dispatch)
-              echo "pr=$PR_FROM_DISPATCH" >> "$GITHUB_OUTPUT"
+              PR="$PR_FROM_DISPATCH"
+              ACTOR="$(gh pr view "$PR" --repo "$GH_REPO" --json author --jq '.author.login')"
+              echo "pr=$PR" >> "$GITHUB_OUTPUT"
+              echo "actor=$ACTOR" >> "$GITHUB_OUTPUT"
               echo "skip=false" >> "$GITHUB_OUTPUT"
               ;;
             check_suite)
@@ -93,8 +101,11 @@ jobs:
                 echo "check_suite has no PR targeting '$DEFAULT_BRANCH'; skipping"
                 echo "skip=true" >> "$GITHUB_OUTPUT"
                 echo "pr=" >> "$GITHUB_OUTPUT"
+                echo "actor=" >> "$GITHUB_OUTPUT"
               else
+                ACTOR="$(gh pr view "$PR" --repo "$GH_REPO" --json author --jq '.author.login')"
                 echo "pr=$PR" >> "$GITHUB_OUTPUT"
+                echo "actor=$ACTOR" >> "$GITHUB_OUTPUT"
                 echo "skip=false" >> "$GITHUB_OUTPUT"
               fi
               ;;
@@ -102,13 +113,14 @@ jobs:
               echo "unsupported event: $EVENT_NAME; skipping"
               echo "skip=true" >> "$GITHUB_OUTPUT"
               echo "pr=" >> "$GITHUB_OUTPUT"
+              echo "actor=" >> "$GITHUB_OUTPUT"
               ;;
           esac
 
   auto-merge:
     name: Enable Auto-Merge
     needs: pre-check
-    if: needs.pre-check.outputs.skip != 'true'
+    if: needs.pre-check.outputs.skip != 'true' && needs.pre-check.outputs.actor == 'jonahgabriel'
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
@@ -126,28 +138,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
-      - name: Resolve PR author
-        id: resolve
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          PR: ${{ needs.pre-check.outputs.pr }}
-          PR_AUTHOR_FROM_PAYLOAD: ${{ github.event.pull_request.user.login }}
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          set -euo pipefail
-          # PR number already validated by pre-check; just resolve the author.
-          if [ "$EVENT_NAME" = "pull_request" ] && [ -n "$PR_AUTHOR_FROM_PAYLOAD" ]; then
-            ACTOR="$PR_AUTHOR_FROM_PAYLOAD"
-          else
-            ACTOR="$(gh pr view "$PR" --repo "$GH_REPO" --json author --jq '.author.login')"
-          fi
-          echo "pr=$PR" >> "$GITHUB_OUTPUT"
-          echo "actor=$ACTOR" >> "$GITHUB_OUTPUT"
-
       - name: Resolve OCC main SHA
         id: occ_ref
-        if: steps.resolve.outputs.actor == 'jonahgabriel'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -160,7 +152,6 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Check out OCC evidence snapshot
-        if: steps.resolve.outputs.actor == 'jonahgabriel'
         uses: actions/checkout@v6
         with:
           repository: OmniNode-ai/onex_change_control
@@ -169,11 +160,10 @@ jobs:
           fetch-depth: 1
 
       - name: OCC auto-merge preflight
-        if: steps.resolve.outputs.actor == 'jonahgabriel'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          PR: ${{ steps.resolve.outputs.pr }}
+          PR: ${{ needs.pre-check.outputs.pr }}
         run: |
           set -euo pipefail
           pr_json="$(gh pr view "$PR" --repo "$GH_REPO" --json body,title,headRefName,commits)"
@@ -202,11 +192,10 @@ jobs:
             | tee /tmp/occ_auto_merge_preflight.json
 
       - name: Enable auto-merge
-        if: steps.resolve.outputs.actor == 'jonahgabriel'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          PR: ${{ steps.resolve.outputs.pr }}
+          PR: ${{ needs.pre-check.outputs.pr }}
         run: |
           set -euo pipefail
           # "already enqueued" race is benign — treat as success.
@@ -223,11 +212,10 @@ jobs:
           exit 1
 
       - name: Force enqueue to merge queue
-        if: steps.resolve.outputs.actor == 'jonahgabriel'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          PR: ${{ steps.resolve.outputs.pr }}
+          PR: ${{ needs.pre-check.outputs.pr }}
         run: |
           set -euo pipefail
           OWNER="${GH_REPO%/*}"
