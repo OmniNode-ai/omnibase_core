@@ -47,7 +47,7 @@ concurrency:
   # One active run per PR (or per dispatch invocation). Cancels the queued
   # run when a newer check_suite completion arrives for the same PR, keeping
   # only the latest attempt in flight.
-  group: auto-merge-${{ github.event.pull_request.number || github.event.inputs.pr_number || github.event.check_suite.id }}
+  group: auto-merge-${{ github.event.pull_request.number || github.event.inputs.pr_number || github.event.check_suite.pull_requests[0].number || github.event.check_suite.id }}
   cancel-in-progress: true
 
 jobs:
