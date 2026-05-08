@@ -586,6 +586,52 @@ jobs:
           echo "- ENUM_003: Detect duplicate enum values across files (warn-only)" >> $GITHUB_STEP_SUMMARY
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Contract-config compliance validator (OMN-10688)
+  contract-config-compliance:
+    name: Contract-Config Compliance (OMN-10688)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run contract-config compliance validator
+        run: uv run python -m omnibase_core.validators.contract_config_compliance src/omnibase_core/
+        # CI runners don't have ambient PYTHONPATH; runs cleanly without env -u PYTHONPATH
+
+      - name: Contract-config compliance summary
+        if: always()
+        run: |
+          echo "## Contract-Config Compliance (OMN-10688)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Validates three anti-patterns in handler and script files:" >> $GITHUB_STEP_SUMMARY
+          echo "- bare_env_read: handler reads env vars not in INFRA_ALLOWLIST without contract declaration" >> $GITHUB_STEP_SUMMARY
+          echo "- bus_bypass_import: scripts import directly from nodes/*/handlers/ (bypasses event bus)" >> $GITHUB_STEP_SUMMARY
+          echo "- missing_contract_config: handler env reads with no matching contract.yaml entry" >> $GITHUB_STEP_SUMMARY
+
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Baseline security scan using detect-secrets (OMN-2226)
   # Uses detect-secrets-hook for proper baseline comparison (handles type+hash equality)
   detect-secrets:
@@ -779,7 +825,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check, sdk-boundary-check, contract-compliance]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check, sdk-boundary-check, contract-compliance, contract-config-compliance]
     if: always()
 
     steps:
