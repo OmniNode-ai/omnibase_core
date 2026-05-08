@@ -8,7 +8,6 @@ from __future__ import annotations
 import uuid
 
 import pytest
-from pydantic import ValidationError
 
 from omnibase_core.enums.enum_hook_bit import EnumHookBit
 from omnibase_core.models.configuration.model_agent_config import ModelAgentConfig
@@ -47,6 +46,7 @@ def _minimal_config(**overrides: object) -> dict:
     return base
 
 
+@pytest.mark.unit
 class TestModelAgentConfigHooksField:
     """hooks field must be list[ModelHookActivation] with default []."""
 
@@ -61,15 +61,7 @@ class TestModelAgentConfigHooksField:
             enabled_by_default=True,
             description="CI reminder hook",
         )
-        data = _minimal_config(
-            hooks=[
-                {
-                    "hook_bit": "CI_REMINDER",
-                    "enabled_by_default": True,
-                    "description": "CI reminder hook",
-                }
-            ]
-        )
+        data = _minimal_config(hooks=[activation])
         config = ModelAgentConfig.model_validate(data)
         assert len(config.hooks) == 1
         assert config.hooks[0].hook_bit == activation.hook_bit
@@ -81,7 +73,7 @@ class TestModelAgentConfigHooksField:
 
     def test_hooks_rejects_dict_style(self) -> None:
         data = _minimal_config(hooks={"session_start": "/path/to/hook.sh"})
-        with pytest.raises((ValidationError, TypeError)):
+        with pytest.raises(ValueError):
             ModelAgentConfig.model_validate(data)
 
     def test_hooks_multiple_activations(self) -> None:
