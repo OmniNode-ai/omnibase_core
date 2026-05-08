@@ -118,6 +118,7 @@ from .model_node_progress import ModelNodeProgress
 from .model_observability_subcontract import ModelObservabilitySubcontract
 from .model_operation_bindings import ModelOperationBindings
 from .model_operation_mapping import ModelOperationMapping
+from .model_package_hook_activations import ModelPackageHookActivations
 from .model_progress_status import ModelProgressStatus
 from .model_protocol_dependency import ModelProtocolDependency
 from .model_reply_topics import ModelReplyTopics
@@ -253,6 +254,7 @@ __all__ = [
     "ModelHealthCheckResult",
     "ModelHealthCheckSubcontract",
     "ModelHookActivation",
+    "ModelPackageHookActivations",
     "ModelNodeHealthStatus",
     # Introspection subcontracts
     "ModelIntrospectionSubcontract",
