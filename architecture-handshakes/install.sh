@@ -67,7 +67,7 @@ usage() {
     echo ""
     echo "Examples:"
     echo "  $0 omnibase_core"
-    echo "  $0 omniclaude /Volumes/PRO-G40/Code/omniclaude"
+    echo "  $0 omniclaude /path/to/omniclaude"
 }
 
 log_success() { echo -e "${GREEN}✓${NC} $1"; }
