@@ -21,7 +21,13 @@ class ModelHookActivation(BaseModel):
         if isinstance(v, EnumHookBit):
             return v
         if isinstance(v, str):
-            return EnumHookBit[v]
+            try:
+                return EnumHookBit[v]
+            except KeyError as exc:
+                raise ValueError(f"Cannot coerce {v!r} to EnumHookBit") from exc
         if isinstance(v, int):
-            return EnumHookBit(v)
+            try:
+                return EnumHookBit(v)
+            except ValueError as exc:
+                raise ValueError(f"Cannot coerce {v!r} to EnumHookBit") from exc
         raise ValueError(f"Cannot coerce {v!r} to EnumHookBit")

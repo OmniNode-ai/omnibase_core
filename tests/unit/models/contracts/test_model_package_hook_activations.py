@@ -30,7 +30,7 @@ def test_package_hook_activations_defaults_to_empty() -> None:
 
 @pytest.mark.unit
 def test_package_hook_activations_rejects_unknown_bit() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="hook_bit"):
         ModelPackageHookActivations.model_validate(
             {
                 "hook_activations": [
