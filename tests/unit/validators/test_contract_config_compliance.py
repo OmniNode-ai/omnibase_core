@@ -254,6 +254,8 @@ class TestModelContractConfigComplianceFinding:
             message="msg",
         )
         with pytest.raises(Exception):
+            # NOTE(OMN-10688): frozen dataclass assignment raises FrozenInstanceError at runtime;
+            # mypy[misc] suppressed because the static type-checker correctly rejects this line.
             f.rule = "other"  # type: ignore[misc]
 
 
@@ -305,7 +307,7 @@ class TestValidatePaths:
 class TestGenerateAllowlist:
     def test_empty_findings_produces_empty_allowlist(self) -> None:
         output = generate_allowlist([])
-        assert "allowlist" in output
+        assert output.strip() == "allowlist: {}"
 
     def test_findings_grouped_by_rule(self, tmp_path: Path) -> None:
         findings = [

@@ -90,7 +90,7 @@ _EXCLUDED_PATH_PARTS: frozenset[str] = frozenset(
     }
 )
 
-_DEFAULT_SCAN_ROOT = Path("src")
+_DEFAULT_SCAN_ROOTS = (Path("src"), Path("scripts"))
 
 # ---------------------------------------------------------------------------
 # AST helpers
@@ -488,7 +488,7 @@ def main(argv: list[str] | None = None) -> int:
         "paths",
         nargs="*",
         type=Path,
-        default=[_DEFAULT_SCAN_ROOT],
+        default=list(_DEFAULT_SCAN_ROOTS),
         help="Python files or directories to scan.",
     )
     parser.add_argument(
