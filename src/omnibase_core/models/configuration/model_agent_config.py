@@ -20,6 +20,9 @@ from omnibase_core.models.configuration.model_agent_permissions import (
     ModelAgentPermissions,
 )
 from omnibase_core.models.configuration.model_agent_safety import ModelAgentSafety
+from omnibase_core.models.contracts.subcontracts.model_hook_activation import (
+    ModelHookActivation,
+)
 
 
 class ModelAgentConfig(BaseModel):
@@ -43,9 +46,9 @@ class ModelAgentConfig(BaseModel):
     )
     safety: ModelAgentSafety = Field(description="Safety configuration for the agent")
     onex: ModelAgentOnexSettings = Field(description="ONEX-specific settings")
-    hooks: dict[str, str] | None = Field(
-        default=None,
-        description="Hook scripts for agent lifecycle events",
+    hooks: list[ModelHookActivation] = Field(
+        default_factory=list,
+        description="Hook activations required by this agent configuration",
     )
     created_at: datetime = Field(
         default_factory=datetime.now,
