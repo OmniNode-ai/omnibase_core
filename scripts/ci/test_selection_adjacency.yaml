@@ -94,4 +94,5 @@ adjacency:
   tools: {reverse_deps: []}
   types: {reverse_deps: [models]}
   utils: {reverse_deps: []}
+  validators: {reverse_deps: []}
   workflows: {reverse_deps: [nodes]}
