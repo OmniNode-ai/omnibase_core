@@ -65,6 +65,7 @@ def agent_yaml_files() -> list[Path]:
     return get_agent_yaml_files()
 
 
+@pytest.mark.integration
 class TestAgentYAMLValidation:
     """Test that real agent YAML files validate against our models."""
 
