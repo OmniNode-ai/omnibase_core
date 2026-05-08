@@ -17,6 +17,7 @@ See OMN-1914 for the follow-up ticket to standardize all agent YAML files.
 The parametrized tests are marked as xfail until standardization is complete.
 """
 
+import os
 from pathlib import Path
 
 import pytest
@@ -24,10 +25,26 @@ import yaml
 
 from omnibase_core.models.agents import ModelAgentDefinition
 
-# Path to omniclaude agent configs (cross-repo reference)
-OMNICLAUDE_AGENTS_PATH = Path(
-    "/Volumes/PRO-G40/Code/omniclaude/plugins/onex/agents/configs"
-)
+
+def _resolve_omniclaude_agents_path() -> Path | None:
+    """Resolve the optional cross-repo omniclaude agents path from env."""
+    explicit_path = os.environ.get("OMNICLAUDE_AGENTS_PATH")
+    if explicit_path:
+        return Path(explicit_path)
+
+    omni_home = os.environ.get("OMNI_HOME")
+    if omni_home:
+        return Path(omni_home) / "omniclaude/plugins/onex/agents/configs"
+
+    return None
+
+
+# Optional cross-repo reference; tests skip when the path is not configured.
+OMNICLAUDE_AGENTS_PATH = _resolve_omniclaude_agents_path()
+
+
+def _omniclaude_agents_path_available() -> bool:
+    return OMNICLAUDE_AGENTS_PATH is not None and OMNICLAUDE_AGENTS_PATH.exists()
 
 
 def get_agent_yaml_files() -> list[Path]:
@@ -36,8 +53,9 @@ def get_agent_yaml_files() -> list[Path]:
     Returns:
         Sorted list of YAML file paths, empty if path doesn't exist.
     """
-    if not OMNICLAUDE_AGENTS_PATH.exists():
+    if not _omniclaude_agents_path_available():
         return []
+    assert OMNICLAUDE_AGENTS_PATH is not None
     return sorted(OMNICLAUDE_AGENTS_PATH.glob("*.yaml"))
 
 
@@ -47,21 +65,23 @@ def agent_yaml_files() -> list[Path]:
     return get_agent_yaml_files()
 
 
+@pytest.mark.integration
 class TestAgentYAMLValidation:
     """Test that real agent YAML files validate against our models."""
 
     @pytest.mark.skipif(
-        not OMNICLAUDE_AGENTS_PATH.exists(),
-        reason="omniclaude agents path not available",
+        not _omniclaude_agents_path_available(),
+        reason="omniclaude agents path not configured or not available",
     )
     def test_omniclaude_agents_path_exists(self) -> None:
         """Verify omniclaude agents directory exists."""
+        assert OMNICLAUDE_AGENTS_PATH is not None
         assert OMNICLAUDE_AGENTS_PATH.exists()
         assert OMNICLAUDE_AGENTS_PATH.is_dir()
 
     @pytest.mark.skipif(
-        not OMNICLAUDE_AGENTS_PATH.exists(),
-        reason="omniclaude agents path not available",
+        not _omniclaude_agents_path_available(),
+        reason="omniclaude agents path not configured or not available",
     )
     def test_agent_yaml_files_found(self, agent_yaml_files: list[Path]) -> None:
         """Verify we found agent YAML files."""
@@ -72,8 +92,8 @@ class TestAgentYAMLValidation:
         )
 
     @pytest.mark.skipif(
-        not OMNICLAUDE_AGENTS_PATH.exists(),
-        reason="omniclaude agents path not available",
+        not _omniclaude_agents_path_available(),
+        reason="omniclaude agents path not configured or not available",
     )
     @pytest.mark.xfail(
         reason="OMN-1914: Agent YAMLs need standardization to match schema",
@@ -107,8 +127,8 @@ class TestAgentYAMLValidation:
         assert agent.agent_identity.description is not None
 
     @pytest.mark.skipif(
-        not OMNICLAUDE_AGENTS_PATH.exists(),
-        reason="omniclaude agents path not available",
+        not _omniclaude_agents_path_available(),
+        reason="omniclaude agents path not configured or not available",
     )
     def test_validate_compliant_agents(self) -> None:
         """Test validation against agents known to be schema-compliant.
@@ -121,6 +141,7 @@ class TestAgentYAMLValidation:
             # Add more agents here as they become compliant (OMN-1914)
         ]
 
+        assert OMNICLAUDE_AGENTS_PATH is not None
         for agent_name in compliant_agents:
             yaml_path = OMNICLAUDE_AGENTS_PATH / agent_name
             if not yaml_path.exists():
@@ -133,11 +154,12 @@ class TestAgentYAMLValidation:
             assert agent.agent_identity.name is not None
 
     @pytest.mark.skipif(
-        not OMNICLAUDE_AGENTS_PATH.exists(),
-        reason="omniclaude agents path not available",
+        not _omniclaude_agents_path_available(),
+        reason="omniclaude agents path not configured or not available",
     )
     def test_pr_review_agent_has_expected_structure(self) -> None:
         """Test that pr-review.yaml has expected structure."""
+        assert OMNICLAUDE_AGENTS_PATH is not None
         yaml_path = OMNICLAUDE_AGENTS_PATH / "pr-review.yaml"
         if not yaml_path.exists():
             pytest.skip("pr-review.yaml not found")
@@ -156,8 +178,8 @@ class TestAgentYAMLValidation:
         assert len(agent.capabilities.primary) > 0
 
     @pytest.mark.skipif(
-        not OMNICLAUDE_AGENTS_PATH.exists(),
-        reason="omniclaude agents path not available",
+        not _omniclaude_agents_path_available(),
+        reason="omniclaude agents path not configured or not available",
     )
     def test_all_agents_summary(self, agent_yaml_files: list[Path]) -> None:
         """Generate summary of all agent validations."""
