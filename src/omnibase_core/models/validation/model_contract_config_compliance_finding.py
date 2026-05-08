@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""ContractConfigFinding — single finding from the contract-config compliance validator."""
+"""ModelContractConfigComplianceFinding — finding from the contract-config compliance validator."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 @dataclass(frozen=True, slots=True)
-class ContractConfigFinding:
+class ModelContractConfigComplianceFinding:
     """A single finding from the contract-config compliance validator."""
 
     path: Path

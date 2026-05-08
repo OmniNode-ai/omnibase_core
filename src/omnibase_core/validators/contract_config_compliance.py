@@ -44,8 +44,8 @@ from pathlib import Path
 
 import yaml  # ONEX_EXCLUDE: manual_yaml - validator reads adjacent contract.yaml files
 
-from omnibase_core.models.validation.model_contract_config_finding import (
-    ContractConfigFinding,
+from omnibase_core.models.validation.model_contract_config_compliance_finding import (
+    ModelContractConfigComplianceFinding,
 )
 
 # ---------------------------------------------------------------------------
@@ -144,9 +144,9 @@ def _check_bare_env_reads(
     path: Path,
     tree: ast.Module,
     lines: list[str],
-) -> list[ContractConfigFinding]:
+) -> list[ModelContractConfigComplianceFinding]:
     """Rule bare_env_read: env reads outside INFRA_ALLOWLIST in handler files."""
-    findings: list[ContractConfigFinding] = []
+    findings: list[ModelContractConfigComplianceFinding] = []
 
     class _Visitor(ast.NodeVisitor):
         def visit_Call(self, node: ast.Call) -> None:
@@ -159,7 +159,7 @@ def _check_bare_env_reads(
                     )
                     if SUPPRESSION_MARKER not in line_text:
                         findings.append(
-                            ContractConfigFinding(
+                            ModelContractConfigComplianceFinding(
                                 path=path,
                                 line=node.lineno,
                                 column=node.col_offset,
@@ -186,7 +186,7 @@ def _check_bare_env_reads(
                         )
                         if SUPPRESSION_MARKER not in line_text:
                             findings.append(
-                                ContractConfigFinding(
+                                ModelContractConfigComplianceFinding(
                                     path=path,
                                     line=node.lineno,
                                     column=node.col_offset,
@@ -207,9 +207,9 @@ def _check_bus_bypass_imports(
     path: Path,
     tree: ast.Module,
     lines: list[str],
-) -> list[ContractConfigFinding]:
+) -> list[ModelContractConfigComplianceFinding]:
     """Rule bus_bypass_import: scripts importing directly from nodes/*/handlers/."""
-    findings: list[ContractConfigFinding] = []
+    findings: list[ModelContractConfigComplianceFinding] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
             mod = _module_of_import(node)
@@ -217,7 +217,7 @@ def _check_bus_bypass_imports(
                 line_text = lines[node.lineno - 1] if node.lineno <= len(lines) else ""
                 if SUPPRESSION_MARKER not in line_text:
                     findings.append(
-                        ContractConfigFinding(
+                        ModelContractConfigComplianceFinding(
                             path=path,
                             line=node.lineno,
                             column=node.col_offset,
@@ -313,7 +313,7 @@ def _check_missing_contract_config(
     path: Path,
     tree: ast.Module,
     lines: list[str],
-) -> list[ContractConfigFinding]:
+) -> list[ModelContractConfigComplianceFinding]:
     """Rule missing_contract_config: env reads in handlers not in contract.yaml."""
     env_keys = _extract_env_keys_from_tree(tree)
     uncovered = {k for k in env_keys if k not in INFRA_ALLOWLIST}
@@ -327,7 +327,7 @@ def _check_missing_contract_config(
     if not missing:
         return []
 
-    findings: list[ContractConfigFinding] = []
+    findings: list[ModelContractConfigComplianceFinding] = []
 
     class _LineVisitor(ast.NodeVisitor):
         def visit_Call(self, node: ast.Call) -> None:
@@ -340,7 +340,7 @@ def _check_missing_contract_config(
                     )
                     if SUPPRESSION_MARKER not in line_text:
                         findings.append(
-                            ContractConfigFinding(
+                            ModelContractConfigComplianceFinding(
                                 path=path,
                                 line=node.lineno,
                                 column=node.col_offset,
@@ -368,7 +368,7 @@ def _check_missing_contract_config(
                         )
                         if SUPPRESSION_MARKER not in line_text:
                             findings.append(
-                                ContractConfigFinding(
+                                ModelContractConfigComplianceFinding(
                                     path=path,
                                     line=node.lineno,
                                     column=node.col_offset,
@@ -410,7 +410,7 @@ def _is_excluded(path: Path) -> bool:
 
 def validate_file(
     path: Path, rules: frozenset[str] | None = None
-) -> list[ContractConfigFinding]:
+) -> list[ModelContractConfigComplianceFinding]:
     """Validate one Python file; return findings list."""
     if _is_excluded(path):
         return []
@@ -427,7 +427,7 @@ def validate_file(
     active = rules or frozenset(
         {"bare_env_read", "bus_bypass_import", "missing_contract_config"}
     )
-    findings: list[ContractConfigFinding] = []
+    findings: list[ModelContractConfigComplianceFinding] = []
 
     if "bare_env_read" in active and _is_handler_file(path):
         findings.extend(_check_bare_env_reads(path, tree, lines))
@@ -443,9 +443,9 @@ def validate_file(
 
 def validate_paths(
     paths: list[Path], rules: frozenset[str] | None = None
-) -> list[ContractConfigFinding]:
+) -> list[ModelContractConfigComplianceFinding]:
     """Validate all Python files under the given paths."""
-    findings: list[ContractConfigFinding] = []
+    findings: list[ModelContractConfigComplianceFinding] = []
     for path in paths:
         if path.is_file() and path.suffix == ".py":
             findings.extend(validate_file(path, rules))
@@ -461,7 +461,7 @@ def validate_paths(
 # ---------------------------------------------------------------------------
 
 
-def generate_allowlist(findings: list[ContractConfigFinding]) -> str:
+def generate_allowlist(findings: list[ModelContractConfigComplianceFinding]) -> str:
     """Render findings as a YAML allowlist for bootstrapping suppressions."""
     by_rule: dict[str, list[dict[str, object]]] = {}
     for f in findings:

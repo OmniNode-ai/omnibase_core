@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.models.validation.model_contract_config_finding import (
-    ContractConfigFinding,
+from omnibase_core.models.validation.model_contract_config_compliance_finding import (
+    ModelContractConfigComplianceFinding,
 )
 from omnibase_core.validators.contract_config_compliance import (
     INFRA_ALLOWLIST,
@@ -231,9 +231,9 @@ class TestMissingContractConfig:
 
 
 @pytest.mark.unit
-class TestContractConfigFinding:
+class TestModelContractConfigComplianceFinding:
     def test_format_output(self, tmp_path: Path) -> None:
-        f = ContractConfigFinding(
+        f = ModelContractConfigComplianceFinding(
             path=Path("src/nodes/n/handlers/h.py"),
             line=42,
             column=4,
@@ -246,7 +246,7 @@ class TestContractConfigFinding:
         assert "bare env read of 'X'" in formatted
 
     def test_finding_is_frozen(self) -> None:
-        f = ContractConfigFinding(
+        f = ModelContractConfigComplianceFinding(
             path=Path("a.py"),
             line=1,
             column=0,
@@ -309,14 +309,14 @@ class TestGenerateAllowlist:
 
     def test_findings_grouped_by_rule(self, tmp_path: Path) -> None:
         findings = [
-            ContractConfigFinding(
+            ModelContractConfigComplianceFinding(
                 path=Path("a/handlers/h.py"),
                 line=1,
                 column=0,
                 rule="bare_env_read",
                 message="bare env read of 'X'",
             ),
-            ContractConfigFinding(
+            ModelContractConfigComplianceFinding(
                 path=Path("scripts/s.py"),
                 line=5,
                 column=0,
