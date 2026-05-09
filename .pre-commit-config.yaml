@@ -440,6 +440,17 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # Localhost/env fallback prevention (OMN-10658 / OMN-7227)
+      # Rejects os.getenv/os.environ.get with localhost fallback defaults.
+      # All service endpoints must be required env vars with no silent defaults.
+      - id: no-env-fallbacks
+        name: Reject localhost/env fallbacks (OMN-7227)
+        entry: uv run python scripts/validate_no_env_fallbacks.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       # SPDX Header Requirement
       # Ensures all source files have the canonical SPDX MIT license header.
       # To skip SPDX check in rare cases, add: # spdx-skip: <reason>

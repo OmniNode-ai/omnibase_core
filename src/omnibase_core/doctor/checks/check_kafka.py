@@ -12,7 +12,7 @@ from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorChe
 
 
 def _parse_kafka_bootstrap() -> tuple[str, int]:
-    raw = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
+    raw = os.environ["KAFKA_BOOTSTRAP_SERVERS"]
     first = raw.split(",")[0].strip()
     host, sep, port_str = first.rpartition(":")
     if not sep:

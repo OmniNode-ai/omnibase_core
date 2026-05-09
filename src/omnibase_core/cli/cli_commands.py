@@ -595,7 +595,7 @@ def _check_kafka_reachable() -> tuple[bool, str]:
     Returns:
         Tuple of (is_healthy, message).
     """
-    raw = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
+    raw = os.environ["KAFKA_BOOTSTRAP_SERVERS"]
     first = raw.split(",")[0].strip()
     host, sep, port_str = first.rpartition(":")
     if not sep:

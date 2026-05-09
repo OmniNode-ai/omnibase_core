@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 """
-Validate that no localhost/default-endpoint fallbacks exist in src/ code.
+Validate that no localhost/default-endpoint fallbacks exist in src/ and scripts/ code.
 
 Scans Python source files (excluding tests/) for patterns that silently fall back
 to localhost, 127.0.0.1, or hardcoded service URLs as default values in:
 - Pydantic Field defaults
 - Function/method parameter defaults
 - os.getenv() fallback arguments
+- os.environ.get() fallback arguments
 
 Exits 0 if clean, 1 if violations found.
 
@@ -23,6 +24,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = REPO_ROOT / "src"
+SCRIPTS_DIR = REPO_ROOT / "scripts"
 
 # Patterns that indicate a localhost/hardcoded fallback as a default value.
 # We look for these in non-comment, non-docstring code lines.
@@ -33,6 +35,8 @@ FALLBACK_PATTERNS = [
     re.compile(r'def\s+\w+\(.*:\s*str\s*=\s*["\']localhost["\']'),
     # os.getenv with localhost fallback
     re.compile(r'os\.getenv\([^)]*,\s*["\'].*localhost.*["\']'),
+    # os.environ.get with localhost fallback
+    re.compile(r'os\.environ\.get\([^)]*,\s*["\'].*localhost.*["\']'),
     # Hardcoded redis:// default
     re.compile(r'url:\s*str\s*=\s*["\']redis://'),
     # Hardcoded postgresql:// default
@@ -98,15 +102,17 @@ def scan_file(filepath: Path) -> list[tuple[int, str]]:
 def main() -> int:
     violations: list[tuple[str, int, str]] = []
 
-    for py_file in sorted(SRC_DIR.rglob("*.py")):
-        # Skip test files
-        rel = py_file.relative_to(REPO_ROOT)
-        if "test" in rel.parts:
-            continue
+    scan_dirs = [SRC_DIR, SCRIPTS_DIR]
+    for scan_dir in scan_dirs:
+        for py_file in sorted(scan_dir.rglob("*.py")):
+            # Skip test files
+            rel = py_file.relative_to(REPO_ROOT)
+            if "test" in rel.parts:
+                continue
 
-        file_violations = scan_file(py_file)
-        for lineno, line in file_violations:
-            violations.append((str(rel), lineno, line))
+            file_violations = scan_file(py_file)
+            for lineno, line in file_violations:
+                violations.append((str(rel), lineno, line))
 
     if violations:
         print(f"FAIL: {len(violations)} localhost/fallback violation(s) found:\n")

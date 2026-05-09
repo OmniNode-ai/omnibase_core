@@ -97,7 +97,7 @@ async def _run() -> int:
         return 1
 
     root = Path(os.environ.get("ROOT", str(_REPO_ROOT))).resolve()
-    kafka_servers = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092").strip()
+    kafka_servers = os.environ["KAFKA_BOOTSTRAP_SERVERS"].strip()
     repo_id = "omnibase_core"
 
     logger.info("Loading policy from %s", _POLICY_PATH)
