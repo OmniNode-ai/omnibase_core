@@ -440,15 +440,15 @@ repos:
         always_run: true
         stages: [pre-commit]
 
-      # Localhost/env fallback prevention (OMN-10658 / OMN-7227)
-      # Rejects os.getenv/os.environ.get with localhost fallback defaults.
-      # All service endpoints must be required env vars with no silent defaults.
+      # OMN-10741: Unified localhost/hardcoded-endpoint fallback validator
+      # Covers all 6 pattern types from OMN-10658 enforcement sweep.
+      # Annotation: add  # fallback-ok: <reason>  to exempt a justified line.
       - id: no-env-fallbacks
-        name: Reject localhost/env fallbacks (OMN-7227)
+        name: No localhost/hardcoded-endpoint fallbacks (OMN-10741)
         entry: uv run python scripts/validate_no_env_fallbacks.py
         language: system
-        pass_filenames: false
-        always_run: true
+        pass_filenames: true
+        types_or: [python, shell]
         stages: [pre-commit]
 
       # SPDX Header Requirement
