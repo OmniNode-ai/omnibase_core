@@ -18,8 +18,8 @@ class CheckPostgres(DoctorCheckBase):
 
     def run(self) -> ModelDoctorCheckResult:
         start = time.monotonic()
-        host = os.environ.get("POSTGRES_HOST", "localhost")
-        port = int(os.environ.get("POSTGRES_PORT", "5432"))
+        host = os.environ["POSTGRES_HOST"]
+        port = int(os.environ["POSTGRES_PORT"])
         try:
             conn = socket.create_connection((host, port), timeout=3)
             conn.close()

@@ -30,25 +30,41 @@ def test_check_docker_fail():
 
 
 def test_check_kafka_pass():
-    with patch("socket.create_connection", return_value=MagicMock()):
+    with (
+        patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+        patch("socket.create_connection", return_value=MagicMock()),
+    ):
         result = CheckKafka().run()
     assert result.status == EnumHealthStatusValue.HEALTHY
 
 
 def test_check_kafka_fail():
-    with patch("socket.create_connection", side_effect=OSError("Connection refused")):
+    with (
+        patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+        patch("socket.create_connection", side_effect=OSError("Connection refused")),
+    ):
         result = CheckKafka().run()
     assert result.status == EnumHealthStatusValue.UNHEALTHY
 
 
 def test_check_postgres_pass():
-    with patch("socket.create_connection", return_value=MagicMock()):
+    with (
+        patch.dict(
+            "os.environ", {"POSTGRES_HOST": "testhost", "POSTGRES_PORT": "5432"}
+        ),
+        patch("socket.create_connection", return_value=MagicMock()),
+    ):
         result = CheckPostgres().run()
     assert result.status == EnumHealthStatusValue.HEALTHY
 
 
 def test_check_postgres_fail():
-    with patch("socket.create_connection", side_effect=OSError("Connection refused")):
+    with (
+        patch.dict(
+            "os.environ", {"POSTGRES_HOST": "testhost", "POSTGRES_PORT": "5432"}
+        ),
+        patch("socket.create_connection", side_effect=OSError("Connection refused")),
+    ):
         result = CheckPostgres().run()
     assert result.status == EnumHealthStatusValue.UNHEALTHY
 
@@ -65,3 +81,27 @@ def test_check_linear_pass():
         mock_run.return_value.stdout = '{"data":{}}'
         result = CheckLinear().run()
     assert result.status == EnumHealthStatusValue.HEALTHY
+
+
+def test_no_localhost_fallbacks_in_doctor_checks():
+    import re
+    from pathlib import Path
+
+    fallback_pattern = re.compile(
+        r'os\.environ(?:\.get)?\([^)]*,\s*["\'].*localhost.*["\']'
+    )
+    checks_dir = (
+        Path(__file__).parent.parent.parent
+        / "src"
+        / "omnibase_core"
+        / "doctor"
+        / "checks"
+    )
+    violations = []
+    for py_file in sorted(checks_dir.glob("*.py")):
+        for lineno, line in enumerate(py_file.read_text().splitlines(), start=1):
+            if fallback_pattern.search(line) and not line.strip().startswith("#"):
+                violations.append(f"{py_file.name}:{lineno}: {line.strip()}")
+    assert violations == [], (
+        "localhost fallbacks found in doctor checks:\n" + "\n".join(violations)
+    )

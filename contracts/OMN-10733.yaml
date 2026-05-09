@@ -1,0 +1,38 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-10733"
+title: "Fix silent localhost env fallbacks in omnibase_core"
+summary: "Replace os.environ.get(KEY, 'localhost...') with os.environ[KEY] in doctor checks and CLI modules;
+  wire validate_no_env_fallbacks.py as pre-commit hook and CI gate."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Unit tests for doctor checks and static fallback validator pass"
+    command: "uv run pytest tests/unit/doctor/ tests/test_doctor/ -q"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "All 5 silent localhost fallback violations replaced with fail-fast os.environ[KEY]"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run python scripts/validate_no_env_fallbacks.py"
+  - id: "dod-002"
+    description: "Unit tests for doctor checks pass with env var injection"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/doctor/ tests/test_doctor/ -q"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: pure CLI/doctor utility hardening, no runtime process or service
+      deploy required"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-10733 hardens env var reads in doctor checks and CLI; no
+          Docker image, daemon, broker topic, runtime process, docker exec, or service deploy is required'"

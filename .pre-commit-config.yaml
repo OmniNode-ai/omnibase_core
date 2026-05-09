@@ -440,6 +440,17 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # OMN-10741: Unified localhost/hardcoded-endpoint fallback validator
+      # Covers all 6 pattern types from OMN-10658 enforcement sweep.
+      # Annotation: add  # fallback-ok: <reason>  to exempt a justified line.
+      - id: no-env-fallbacks
+        name: No localhost/hardcoded-endpoint fallbacks (OMN-10741)
+        entry: uv run python scripts/validate_no_env_fallbacks.py
+        language: system
+        pass_filenames: true
+        types_or: [python, shell]
+        stages: [pre-commit]
+
       # SPDX Header Requirement
       # Ensures all source files have the canonical SPDX MIT license header.
       # To skip SPDX check in rare cases, add: # spdx-skip: <reason>

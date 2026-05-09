@@ -171,7 +171,7 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
     except json.JSONDecodeError as exc:
         _emit_error(node_id, f"Invalid JSON input: {exc}")
 
-    bootstrap_servers = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:19092")
+    bootstrap_servers = os.environ["KAFKA_BOOTSTRAP_SERVERS"]
 
     try:
         response = publish_and_poll(

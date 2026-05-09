@@ -97,9 +97,12 @@ class TestRunNodeCommand:
     def test_run_node_kafka_publish_success(self) -> None:
         runner = CliRunner()
         mock_response = {"status": "completed", "result": {"key": "value"}}
-        with patch(
-            "omnibase_core.cli.cli_run_node.publish_and_poll",
-            return_value=mock_response,
+        with (
+            patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(
+                "omnibase_core.cli.cli_run_node.publish_and_poll",
+                return_value=mock_response,
+            ),
         ):
             result = runner.invoke(
                 cli,
@@ -111,9 +114,12 @@ class TestRunNodeCommand:
 
     def test_run_node_timeout_returns_skill_routing_error(self) -> None:
         runner = CliRunner()
-        with patch(
-            "omnibase_core.cli.cli_run_node.publish_and_poll",
-            return_value=None,
+        with (
+            patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(
+                "omnibase_core.cli.cli_run_node.publish_and_poll",
+                return_value=None,
+            ),
         ):
             result = runner.invoke(
                 cli,
@@ -133,9 +139,12 @@ class TestRunNodeCommand:
 
     def test_run_node_kafka_connection_failure(self) -> None:
         runner = CliRunner()
-        with patch(
-            "omnibase_core.cli.cli_run_node.publish_and_poll",
-            side_effect=ConnectionError("Kafka unreachable"),
+        with (
+            patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(
+                "omnibase_core.cli.cli_run_node.publish_and_poll",
+                side_effect=ConnectionError("Kafka unreachable"),
+            ),
         ):
             result = runner.invoke(
                 cli,
