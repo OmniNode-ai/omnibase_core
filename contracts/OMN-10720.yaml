@@ -17,7 +17,8 @@ emergency_bypass:
   follow_up_ticket_id: ""
 dod_evidence:
   - id: "dod-001"
-    description: "22 unit tests in test_base.py pass covering max-violations boundary semantics"
+    description: "23 unit tests in test_base.py pass covering max-violations boundary semantics and negative
+      threshold rejection"
     source: "manual"
     checks:
       - check_type: "command"
