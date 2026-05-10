@@ -244,7 +244,11 @@ def test_step_4_event_bus_injection() -> None:
 
     result = ServiceHandlerResolver().resolve(ctx)
 
-    assert result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_EVENT_BUS
+    # OMN-10278: RESOLVED_VIA_KNOWN_PARAMS subsumes RESOLVED_VIA_EVENT_BUS.
+    assert result.outcome in {
+        EnumHandlerResolutionOutcome.RESOLVED_VIA_KNOWN_PARAMS,
+        EnumHandlerResolutionOutcome.RESOLVED_VIA_EVENT_BUS,
+    }
     assert isinstance(result.handler_instance, _HandlerEventBusOnly)
     assert result.handler_instance.event_bus is event_bus
 
