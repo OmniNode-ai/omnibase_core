@@ -102,8 +102,14 @@ def main_for_gate(gate: BaseGateCheck, argv: list[str] | None = None) -> int:
     """
     import argparse
 
+    def _non_negative_int(value: str) -> int:
+        n = int(value)
+        if n < 0:
+            raise argparse.ArgumentTypeError(f"--max-violations must be >= 0, got {n}")
+        return n
+
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--max-violations", type=int, default=None)
+    parser.add_argument("--max-violations", type=_non_negative_int, default=None)
     known, remaining = parser.parse_known_args(
         argv if argv is not None else sys.argv[1:]
     )

@@ -249,7 +249,8 @@ repos:
       # Detects NotImplementedError stubs, pass-only methods, TODO/FIXME in prod code.
       - id: validate-stubbed-functionality
         name: ONEX Stubbed Functionality Detection
-        entry: uv run python scripts/validation/validate-stubbed-functionality.py --max-violations 124
+        entry: env -u PYTHONPATH uv run python scripts/validation/validate-stubbed-functionality.py --max-violations
+          124
         language: system
         pass_filenames: true
         files: ^src/.*\.py$

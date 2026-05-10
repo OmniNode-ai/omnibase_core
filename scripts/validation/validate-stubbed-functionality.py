@@ -288,8 +288,14 @@ def main() -> int:
     """Main entry point for the validation script."""
     import argparse
 
+    def _non_negative_int(value: str) -> int:
+        n = int(value)
+        if n < 0:
+            raise argparse.ArgumentTypeError(f"--max-violations must be >= 0, got {n}")
+        return n
+
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--max-violations", type=int, default=None)
+    parser.add_argument("--max-violations", type=_non_negative_int, default=None)
     known, remaining = parser.parse_known_args()
 
     if not remaining:
