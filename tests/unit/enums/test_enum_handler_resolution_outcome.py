@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Unit tests for EnumHandlerResolutionOutcome (OMN-9195/OMN-9196).
+"""Unit tests for EnumHandlerResolutionOutcome (OMN-9195/OMN-9196/OMN-10278).
 
 Verifies the enum contract for the HandlerResolver precedence chain:
-exactly six terminal outcomes with lowercase-snake wire-stable values.
+seven terminal outcomes with lowercase-snake wire-stable values.
 """
 
 from __future__ import annotations
@@ -29,17 +29,18 @@ class TestEnumHandlerResolutionOutcomeMembership:
         assert issubclass(EnumHandlerResolutionOutcome, str)
         assert issubclass(EnumHandlerResolutionOutcome, Enum)
 
-    def test_enum_has_six_members(self) -> None:
-        """Plan §Task 1 Step 1: exactly six members with fixed names."""
+    def test_enum_has_seven_members(self) -> None:
+        """Plan §Task 1 (OMN-10278): seven members — added RESOLVED_VIA_KNOWN_PARAMS."""
         assert {m.name for m in EnumHandlerResolutionOutcome} == {
             "RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP",
             "RESOLVED_VIA_NODE_REGISTRY",
             "RESOLVED_VIA_CONTAINER",
             "RESOLVED_VIA_EVENT_BUS",
+            "RESOLVED_VIA_KNOWN_PARAMS",
             "RESOLVED_VIA_ZERO_ARG",
             "UNRESOLVABLE",
         }
-        assert len(list(EnumHandlerResolutionOutcome)) == 6
+        assert len(list(EnumHandlerResolutionOutcome)) == 7
 
 
 @pytest.mark.unit
@@ -63,6 +64,10 @@ class TestEnumHandlerResolutionOutcomeValues:
         assert (
             EnumHandlerResolutionOutcome.RESOLVED_VIA_EVENT_BUS.value
             == "resolved_via_event_bus"
+        )
+        assert (
+            EnumHandlerResolutionOutcome.RESOLVED_VIA_KNOWN_PARAMS.value
+            == "resolved_via_known_params"
         )
         assert (
             EnumHandlerResolutionOutcome.RESOLVED_VIA_ZERO_ARG.value

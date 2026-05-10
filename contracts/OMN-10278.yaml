@@ -1,0 +1,38 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-10278"
+title: "Mandatory DI params resolver multi-param injection"
+summary: "Extend ServiceHandlerResolver Step 4 to inject known dependency params beyond event_bus while
+  preserving deterministic handler construction."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Resolver and enum tests pass on omnibase_core PR #1057"
+    command: "uv run pytest tests/unit/enums/test_enum_handler_resolution_outcome.py tests/unit/services/test_service_handler_resolver.py
+      tests/unit/services/test_service_handler_resolver_multi_param.py -v"
+  - kind: "ci"
+    description: "omnibase_core PR #1057 CI checks pass"
+    command: "gh pr checks 1057 --repo OmniNode-ai/omnibase_core"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-core-tests"
+    description: "Focused resolver and enum coverage proves multi-param known injection behavior"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/enums/test_enum_handler_resolution_outcome.py tests/unit/services/test_service_handler_resolver.py
+          tests/unit/services/test_service_handler_resolver_multi_param.py -v"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: resolver-only service construction change; no pre-merge runtime
+      deploy is required"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-10278 changes ServiceHandlerResolver dependency injection
+          semantics only; no Docker image, daemon, broker topic, runtime process, docker exec, or service
+          deploy is required before merge'"

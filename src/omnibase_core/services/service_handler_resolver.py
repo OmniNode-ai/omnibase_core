@@ -6,7 +6,7 @@ Precedence (first match wins):
     1. Local ownership skip — node not hosted here -> skip cleanly
     2. Node registry        — materialized explicit dep map from create_registry
     3. Container DI         — container.get_service(handler_cls)
-    4. Event-bus injection  — __init__(self, event_bus) single param
+    4. Known-param injection — any combination of event_bus/container/ownership_query
     5. Zero-arg             — handler_cls()
     6. TypeError            — unresolvable (never returns UNRESOLVABLE)
 
@@ -157,13 +157,26 @@ class ServiceHandlerResolver:
             and v.default is inspect.Parameter.empty
         }
 
-        # Step 4 - event_bus injection.
-        if context.event_bus is not None and set(non_self_required_params) == {
-            "event_bus"
-        }:
-            instance = context.handler_cls(event_bus=context.event_bus)
+        # Step 4 - known-param injection (event_bus, container, ownership_query).
+        # Builds a provider map from the context, filters to params the handler
+        # actually requires, and instantiates only when every required param is
+        # satisfiable and no provider value is None. RESOLVED_VIA_KNOWN_PARAMS
+        # subsumes the old single-param RESOLVED_VIA_EVENT_BUS path (OMN-10278).
+        _known_providers: dict[str, object] = {
+            k: v
+            for k, v in (
+                ("event_bus", context.event_bus),
+                ("container", context.container),
+                ("ownership_query", context.ownership_query),
+            )
+            if k in non_self_required_params and v is not None
+        }
+        if non_self_required_params and set(non_self_required_params) <= set(
+            _known_providers
+        ):
+            instance = context.handler_cls(**_known_providers)
             return ModelHandlerResolution(
-                outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_EVENT_BUS,
+                outcome=EnumHandlerResolutionOutcome.RESOLVED_VIA_KNOWN_PARAMS,
                 handler_instance=instance,
             )
 
@@ -187,7 +200,7 @@ class ServiceHandlerResolver:
             f"Handler {context.handler_module}.{context.handler_name} "
             f"requires constructor parameters {dep_names!r} but no "
             f"ownership_query, node registry explicit deps, container, or "
-            f"event_bus could satisfy them."
+            f"known injectable params could satisfy them."
         )
 
 
