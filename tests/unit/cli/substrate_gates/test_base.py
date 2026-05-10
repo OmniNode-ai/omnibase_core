@@ -52,11 +52,13 @@ class _AlwaysViolatingGate(BaseGateCheck):
 
 
 class TestGateViolation:
+    @pytest.mark.unit
     def test_str_format(self, tmp_path: Path) -> None:
         p = tmp_path / "foo.py"
         v = GateViolation(path=p, line=42, message="something wrong")
         assert str(v) == f"{p}:42: something wrong"
 
+    @pytest.mark.unit
     def test_frozen(self) -> None:
         p = Path("x.py")
         v = GateViolation(path=p, line=1, message="msg")
@@ -70,29 +72,36 @@ class TestGateViolation:
 
 
 class TestHasAllowAnnotation:
+    @pytest.mark.unit
     def test_substrate_allow(self) -> None:
         lines = ["x: int | None = None  # substrate-allow: pending-fix"]
         assert has_allow_annotation(lines, 1) is True
 
+    @pytest.mark.unit
     def test_onex_exclude(self) -> None:
         lines = ["y: Any  # ONEX_EXCLUDE: any_type"]
         assert has_allow_annotation(lines, 1) is True
 
+    @pytest.mark.unit
     def test_ai_slop_ok(self) -> None:
         lines = ["z: dict[str, Any]  # ai-slop-ok"]
         assert has_allow_annotation(lines, 1) is True
 
+    @pytest.mark.unit
     def test_no_annotation(self) -> None:
         lines = ["x: int | None = None"]
         assert has_allow_annotation(lines, 1) is False
 
+    @pytest.mark.unit
     def test_out_of_range_low(self) -> None:
         assert has_allow_annotation([], 0) is False
 
+    @pytest.mark.unit
     def test_out_of_range_high(self) -> None:
         lines = ["x = 1"]
         assert has_allow_annotation(lines, 99) is False
 
+    @pytest.mark.unit
     def test_case_insensitive_onex_exclude(self) -> None:
         lines = ["y: Any  # onex_exclude: something"]
         assert has_allow_annotation(lines, 1) is True
@@ -104,16 +113,19 @@ class TestHasAllowAnnotation:
 
 
 class TestBaseGateCheckRun:
+    @pytest.mark.unit
     def test_empty_input_returns_empty_list(self) -> None:
         gate = _AlwaysViolatingGate()
         assert gate.run([]) == []
 
+    @pytest.mark.unit
     def test_clean_file_returns_no_violations(self, tmp_path: Path) -> None:
         f = tmp_path / "clean.py"
         f.write_text("x = 1\n")
         gate = _AlwaysCleanGate()
         assert gate.run([f]) == []
 
+    @pytest.mark.unit
     def test_violating_file_returns_violation(self, tmp_path: Path) -> None:
         f = tmp_path / "bad.py"
         f.write_text("x = 1\n")
@@ -123,6 +135,7 @@ class TestBaseGateCheckRun:
         assert violations[0].path == f
         assert violations[0].line == 1
 
+    @pytest.mark.unit
     def test_syntax_error_reported_as_violation(self, tmp_path: Path) -> None:
         f = tmp_path / "broken.py"
         f.write_text("def foo(\n")  # unclosed paren → SyntaxError
@@ -131,6 +144,7 @@ class TestBaseGateCheckRun:
         assert len(violations) == 1
         assert "syntax error" in violations[0].message.lower()
 
+    @pytest.mark.unit
     def test_unreadable_file_reported_as_violation(self, tmp_path: Path) -> None:
         f = tmp_path / "ghost.py"
         # File never created — OSError on read
@@ -139,6 +153,7 @@ class TestBaseGateCheckRun:
         assert len(violations) == 1
         assert "cannot read file" in violations[0].message.lower()
 
+    @pytest.mark.unit
     def test_multiple_files_aggregated(self, tmp_path: Path) -> None:
         files = []
         for i in range(3):
@@ -156,18 +171,80 @@ class TestBaseGateCheckRun:
 
 
 class TestMainForGate:
+    @pytest.mark.unit
     def test_clean_exits_zero(self, tmp_path: Path) -> None:
         f = tmp_path / "ok.py"
         f.write_text("x = 1\n")
         gate = _AlwaysCleanGate()
         assert main_for_gate(gate, [str(f)]) == 0
 
+    @pytest.mark.unit
     def test_violation_exits_one(self, tmp_path: Path) -> None:
         f = tmp_path / "bad.py"
         f.write_text("x = 1\n")
         gate = _AlwaysViolatingGate()
         assert main_for_gate(gate, [str(f)]) == 1
 
+    @pytest.mark.unit
     def test_no_args_exits_zero(self) -> None:
         gate = _AlwaysViolatingGate()
         assert main_for_gate(gate, []) == 0
+
+    @pytest.mark.unit
+    def test_max_violations_below_threshold_exits_zero(self, tmp_path: Path) -> None:
+        files = []
+        for i in range(3):
+            f = tmp_path / f"f{i}.py"
+            f.write_text("x = 1\n")
+            files.append(f)
+        gate = _AlwaysViolatingGate()
+        # 3 violations ≤ threshold 5 → exit 0
+        assert (
+            main_for_gate(gate, ["--max-violations", "5"] + [str(f) for f in files])
+            == 0
+        )
+
+    @pytest.mark.unit
+    def test_max_violations_at_threshold_exits_zero(self, tmp_path: Path) -> None:
+        files = []
+        for i in range(3):
+            f = tmp_path / f"f{i}.py"
+            f.write_text("x = 1\n")
+            files.append(f)
+        gate = _AlwaysViolatingGate()
+        # 3 violations == threshold 3 → exit 0
+        assert (
+            main_for_gate(gate, ["--max-violations", "3"] + [str(f) for f in files])
+            == 0
+        )
+
+    @pytest.mark.unit
+    def test_max_violations_exceeds_threshold_exits_one(self, tmp_path: Path) -> None:
+        files = []
+        for i in range(3):
+            f = tmp_path / f"f{i}.py"
+            f.write_text("x = 1\n")
+            files.append(f)
+        gate = _AlwaysViolatingGate()
+        # 3 violations > threshold 2 → exit 1
+        assert (
+            main_for_gate(gate, ["--max-violations", "2"] + [str(f) for f in files])
+            == 1
+        )
+
+    @pytest.mark.unit
+    def test_max_violations_zero_with_no_violations_exits_zero(
+        self, tmp_path: Path
+    ) -> None:
+        f = tmp_path / "ok.py"
+        f.write_text("x = 1\n")
+        gate = _AlwaysCleanGate()
+        assert main_for_gate(gate, ["--max-violations", "0", str(f)]) == 0
+
+    @pytest.mark.unit
+    def test_negative_max_violations_rejected(self, tmp_path: Path) -> None:
+        f = tmp_path / "ok.py"
+        f.write_text("x = 1\n")
+        gate = _AlwaysCleanGate()
+        with pytest.raises(SystemExit):
+            main_for_gate(gate, ["--max-violations", "-1", str(f)])

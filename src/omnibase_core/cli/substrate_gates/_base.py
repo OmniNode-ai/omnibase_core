@@ -96,12 +96,36 @@ class BaseGateCheck(ABC):
 def main_for_gate(gate: BaseGateCheck, argv: list[str] | None = None) -> int:
     """CLI entry point for a single gate.
 
-    Accepts a list of file paths as positional arguments.
-    Exits 0 when no violations are found, 1 otherwise.
+    Accepts a list of file paths as positional arguments.  When ``--max-violations N``
+    is supplied (ratchet mode), exits 0 if violation count <= N and 1 otherwise.
+    Without the flag, exits 0 only when there are zero violations.
     """
-    args = argv if argv is not None else sys.argv[1:]
-    paths = [Path(a) for a in args]
+    import argparse
+
+    def _non_negative_int(value: str) -> int:
+        n = int(value)
+        if n < 0:
+            raise argparse.ArgumentTypeError(f"--max-violations must be >= 0, got {n}")
+        return n
+
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--max-violations", type=_non_negative_int, default=None)
+    known, remaining = parser.parse_known_args(
+        argv if argv is not None else sys.argv[1:]
+    )
+
+    paths = [Path(a) for a in remaining]
     violations = gate.run(paths)
     for v in violations:
         print(v, file=sys.stderr)  # print-ok: CLI violation reporting to stderr
+
+    if known.max_violations is not None:
+        if len(violations) > known.max_violations:
+            print(  # print-ok: CLI violation reporting to stderr
+                f"[gate] {len(violations)} violations exceed threshold {known.max_violations}",
+                file=sys.stderr,
+            )
+            return 1
+        return 0
+
     return 1 if violations else 0

@@ -1,0 +1,34 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-10720"
+title: "Wire 5 substrate gates + stubbed-functionality as blocking pre-commit hooks"
+summary: "Wire previously unwired substrate validators as blocking pre-commit hooks with --max-violations
+  ratchet flags. Fixes audit_optional.py advisory exit code. All 6 validators now block on violations."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Unit tests for --max-violations ratchet semantics pass"
+    command: "uv run pytest tests/unit/cli/substrate_gates/test_base.py -v"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "23 unit tests in test_base.py pass covering max-violations boundary semantics and negative
+      threshold rejection"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/cli/substrate_gates/test_base.py -v"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: pure pre-commit hook wiring changes and CLI flag additions; no
+      runtime process or service deploy required"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-10720 wires substrate_gates validators as pre-commit hooks
+          and adds --max-violations CLI flag; no Docker image, daemon, broker topic, runtime process,
+          docker exec, or service deploy is required'"

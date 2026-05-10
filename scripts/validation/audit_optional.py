@@ -465,8 +465,8 @@ Examples:
         sys.exit(0)
     else:
         errors = len([v for v in auditor.violations if v.justification_needed])
-        print(f"\n[WARNING] {errors} Optional usages need business justification!")
-        sys.exit(0)  # Don't fail the build for this, just warn
+        print(f"\n[FAIL] {errors} Optional usages need business justification!")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

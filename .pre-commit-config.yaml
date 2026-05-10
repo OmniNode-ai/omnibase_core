@@ -173,6 +173,90 @@ repos:
         files: ^(src/omnibase_core/enums/enum_hook_bit\.py|scripts/gen_hook_bits\.py|scripts/check_hook_bits_drift\.py)$
         stages: [pre-commit]
 
+      # Substrate Gate: silent except-pass (OMN-wire-validators)
+      # Baseline: 102 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Annotate justified cases with: # substrate-allow: <reason>
+      - id: substrate-silent-except-pass
+        name: No silent except-pass (substrate gate)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.cli.substrate_gates.silent_except_pass
+          --max-violations 102
+        language: system
+        types: [python]
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/)
+        stages: [pre-commit]
+
+      # Substrate Gate: env silent fallback (OMN-wire-validators)
+      # Baseline: 38 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Annotate justified bootstrap cases with: # substrate-allow: bootstrap-fallback
+      - id: substrate-env-silent-fallback
+        name: No env silent fallback (substrate gate)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.cli.substrate_gates.env_silent_fallback
+          --max-violations 38
+        language: system
+        types: [python]
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/)
+        stages: [pre-commit]
+
+      # Substrate Gate: identity field optionality (OMN-wire-validators)
+      # Baseline: 122 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Annotate justified cases with: # substrate-allow: <reason>
+      - id: substrate-identity-field-optionality
+        name: No optional identity fields (substrate gate)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.cli.substrate_gates.identity_field_optionality
+          --max-violations 122
+        language: system
+        types: [python]
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/)
+        stages: [pre-commit]
+
+      # Substrate Gate: loose typing in internal (OMN-wire-validators)
+      # Baseline: 345 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Annotate justified cases with: # substrate-allow: <reason>
+      - id: substrate-loose-typing-internal
+        name: No loose typing in internal (substrate gate)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.cli.substrate_gates.loose_typing_in_internal
+          --max-violations 345
+        language: system
+        types: [python]
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/)
+        stages: [pre-commit]
+
+      # Substrate Gate: protocol kwargs object (OMN-wire-validators)
+      # Baseline: 6 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Protocol methods must use explicit typed parameters, not *args/**kwargs: object/Any.
+      # Annotate justified cases with: # substrate-allow: <reason>
+      - id: substrate-protocol-kwargs-object
+        name: No protocol *args/**kwargs loose typing (substrate gate)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.cli.substrate_gates.protocol_kwargs_object
+          --max-violations 6
+        language: system
+        types: [python]
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/)
+        stages: [pre-commit]
+
+      # validate-stubbed-functionality (OMN-wire-validators)
+      # Baseline: 124 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Detects NotImplementedError stubs, pass-only methods, TODO/FIXME in prod code.
+      - id: validate-stubbed-functionality
+        name: ONEX Stubbed Functionality Detection
+        entry: env -u PYTHONPATH uv run python scripts/validation/validate-stubbed-functionality.py --max-violations
+          124
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/|examples/prototypes/).*\.py$
+        stages: [pre-commit]
+
   # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:
