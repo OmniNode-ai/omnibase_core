@@ -15,6 +15,12 @@ Detected Patterns:
 3. except ValueError: ... = Enum.UNKNOWN patterns - silent enum fallbacks
 4. Bare except: or except Exception: without re-raise - error swallowing
 5. .get(key, default) on enum mappings without error handling - silent defaults
+6. Injectable param = None defaults in handler __init__ - silent DI bypass
+7. None guard before publish/emit/send - silent event skip when bus absent
+8. except ImportError: ... = None assignments - silent optional-dep fallback
+9. except Exception: log without reraise - swallowed errors with logging cover
+10. Or-chain degradation - x or y or z across 3+ dispatch paths
+11. Nested try/except fallback chain - try A; except: try B
 
 Usage:
     python scripts/validation/check_no_fallbacks.py [files...]
@@ -27,6 +33,16 @@ import ast
 import sys
 from pathlib import Path
 from typing import Any
+
+_INJECTABLE_PARAM_NAMES = frozenset({"event_bus", "container", "ownership_query"})
+
+_PUBLISH_METHOD_NAMES = frozenset(
+    {"publish", "emit", "send", "dispatch", "put", "produce"}
+)
+
+_LOG_METHOD_NAMES = frozenset(
+    {"warning", "warn", "info", "debug", "error", "critical", "log", "exception"}
+)
 
 
 class FallbackDetector(ast.NodeVisitor):
@@ -46,6 +62,10 @@ class FallbackDetector(ast.NodeVisitor):
         # Check for id(self) usage in get_id() methods
         if node.name == "get_id":
             self._check_get_id_fallback(node)
+
+        # Check for injectable param = None defaults in __init__
+        if node.name == "__init__":
+            self._check_injectable_none_defaults(node)
 
         # Check for validator fallbacks
         has_field_validator = False
@@ -68,9 +88,29 @@ class FallbackDetector(ast.NodeVisitor):
         self.generic_visit(node)
         self.current_function = prev_function
 
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """Visit async functions — same checks as sync __init__."""
+        if node.name == "__init__":
+            self._check_injectable_none_defaults(node)
+        self.generic_visit(node)
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        """Visit class bodies to find __init__ handlers."""
+        self.generic_visit(node)
+
     def visit_Try(self, node: ast.Try) -> None:
         """Check for silent exception handling fallbacks."""
         self._check_exception_fallback(node)
+        self.generic_visit(node)
+
+    def visit_If(self, node: ast.If) -> None:
+        """Check for None-guard before publish calls."""
+        self._check_none_guard_publish_skip(node)
+        self.generic_visit(node)
+
+    def visit_BoolOp(self, node: ast.BoolOp) -> None:
+        """Check for or-chain degradation across 3+ dispatch paths."""
+        self._check_or_chain_degradation(node)
         self.generic_visit(node)
 
     def _check_get_id_fallback(self, node: ast.FunctionDef) -> None:
@@ -194,6 +234,240 @@ class FallbackDetector(ast.NodeVisitor):
                             }
                         )
 
+            # New patterns 8, 9, 11
+            self._check_import_error_none_assignment(handler)
+            self._check_except_log_no_reraise(handler)
+            self._check_nested_try_fallback(handler)
+
+    def _check_injectable_none_defaults(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ) -> None:
+        """Detect injectable params with = None defaults in __init__."""
+        args = node.args
+        defaults = args.defaults
+
+        # positional defaults align to the end of args.args
+        positional_with_defaults = list(
+            zip(args.args[len(args.args) - len(defaults) :], defaults, strict=False)
+        )
+        # Preserve kw_defaults alignment with kwonlyargs (None means no default for that param)
+        kwonly_with_defaults = [
+            (param, default)
+            for param, default in zip(args.kwonlyargs, args.kw_defaults, strict=False)
+            if default is not None
+        ]
+
+        for param, default in positional_with_defaults + kwonly_with_defaults:
+            if param.arg in _INJECTABLE_PARAM_NAMES:
+                if isinstance(default, ast.Constant) and default.value is None:
+                    line_num = param.lineno if hasattr(param, "lineno") else node.lineno
+                    line = self.source_lines[line_num - 1].strip()
+
+                    if self._has_fallback_ok_comment(line_num):
+                        continue
+
+                    self.violations.append(
+                        {
+                            "type": "injectable_none_default",
+                            "line": line_num,
+                            "code": line,
+                            "message": (
+                                f"Injectable param '{param.arg}' has '= None' default in __init__ - "
+                                "silently bypasses DI. Require the dependency or use a protocol stub."
+                            ),
+                            "severity": "error",
+                        }
+                    )
+
+    def _check_none_guard_publish_skip(self, node: ast.If) -> None:
+        """Detect 'if self._event_bus is not None: publish(...)' patterns."""
+        test = node.test
+        if not self._is_not_none_compare(test):
+            return
+
+        # Check if body contains a publish/emit/send/dispatch call
+        for stmt in ast.walk(ast.Module(body=node.body, type_ignores=[])):
+            if isinstance(stmt, ast.Call):
+                method = None
+                if isinstance(stmt.func, ast.Attribute):
+                    method = stmt.func.attr
+                elif isinstance(stmt.func, ast.Name):
+                    method = stmt.func.id
+                if method in _PUBLISH_METHOD_NAMES:
+                    line_num = node.lineno
+                    line = self.source_lines[line_num - 1].strip()
+
+                    if self._has_fallback_ok_comment(line_num):
+                        return
+
+                    self.violations.append(
+                        {
+                            "type": "none_guard_publish_skip",
+                            "line": line_num,
+                            "code": line,
+                            "message": (
+                                "None-guard around publish/emit/send silently skips event when bus is absent. "
+                                "Inject a no-op bus stub instead of guarding at call site."
+                            ),
+                            "severity": "error",
+                        }
+                    )
+                    return  # one violation per If node is enough
+
+    def _is_not_none_compare(self, node: ast.AST) -> bool:
+        """Return True if node is 'x is not None' where x looks like an event_bus attribute."""
+        if not isinstance(node, ast.Compare):
+            return False
+        if len(node.ops) != 1 or not isinstance(node.ops[0], ast.IsNot):
+            return False
+        if len(node.comparators) != 1:
+            return False
+        if not (
+            isinstance(node.comparators[0], ast.Constant)
+            and node.comparators[0].value is None
+        ):
+            return False
+        # Check left side looks like event_bus (attribute or name containing "event_bus")
+        left = node.left
+        if isinstance(left, ast.Attribute) and "event_bus" in left.attr:
+            return True
+        if isinstance(left, ast.Name) and "event_bus" in left.id:
+            return True
+        return False
+
+    def _check_import_error_none_assignment(self, handler: ast.ExceptHandler) -> None:
+        """Detect 'except ImportError: x = None' in a single handler."""
+        if not (
+            isinstance(handler.type, ast.Name) and handler.type.id == "ImportError"
+        ):
+            return
+
+        for stmt in handler.body:
+            if isinstance(stmt, ast.Assign):
+                if isinstance(stmt.value, ast.Constant) and stmt.value.value is None:
+                    line_num = stmt.lineno
+                    line = self.source_lines[line_num - 1].strip()
+
+                    if self._has_fallback_ok_comment(line_num):
+                        continue
+
+                    self.violations.append(
+                        {
+                            "type": "import_error_none_assignment",
+                            "line": line_num,
+                            "code": line,
+                            "message": (
+                                "except ImportError assigns None to variable - optional dependency fallback. "
+                                "Add the dependency as a hard requirement or raise ImportError with guidance."
+                            ),
+                            "severity": "error",
+                        }
+                    )
+
+    def _check_except_log_no_reraise(self, handler: ast.ExceptHandler) -> None:
+        """Detect 'except Exception: log(...)' without re-raise."""
+        is_broad = handler.type is None or (
+            isinstance(handler.type, ast.Name)
+            and handler.type.id in ("Exception", "BaseException")
+        )
+        if not is_broad:
+            return
+
+        has_reraise = any(
+            isinstance(stmt, ast.Raise) and stmt.exc is None for stmt in handler.body
+        )
+        has_raise_new = any(
+            isinstance(stmt, ast.Raise) and stmt.exc is not None
+            for stmt in handler.body
+        )
+        if has_reraise or has_raise_new:
+            return
+
+        has_log = False
+        for stmt in handler.body:
+            for sub in ast.walk(stmt):
+                if isinstance(sub, ast.Call) and isinstance(sub.func, ast.Attribute):
+                    if sub.func.attr in _LOG_METHOD_NAMES:
+                        has_log = True
+                        break
+
+        if not has_log:
+            return
+
+        line_num = handler.lineno
+        line = self.source_lines[line_num - 1].strip()
+
+        if self._has_fallback_ok_comment(line_num):
+            return
+
+        self.violations.append(
+            {
+                "type": "except_log_no_reraise",
+                "line": line_num,
+                "code": line,
+                "message": (
+                    "except Exception logs but does not re-raise - error is swallowed after logging. "
+                    "Add 'raise' after logging or raise a new exception with context."
+                ),
+                "severity": "error",
+            }
+        )
+
+    def _check_nested_try_fallback(self, handler: ast.ExceptHandler) -> None:
+        """Detect nested try/except inside an except handler body."""
+        for stmt in handler.body:
+            if isinstance(stmt, ast.Try):
+                line_num = stmt.lineno
+                line = self.source_lines[line_num - 1].strip()
+
+                if self._has_fallback_ok_comment(line_num):
+                    continue
+
+                self.violations.append(
+                    {
+                        "type": "nested_try_fallback_chain",
+                        "line": line_num,
+                        "code": line,
+                        "message": (
+                            "Nested try/except inside except handler - fallback chain hides root cause. "
+                            "Flatten the error handling or let the outer exception propagate."
+                        ),
+                        "severity": "error",
+                    }
+                )
+
+    def _check_or_chain_degradation(self, node: ast.BoolOp) -> None:
+        """Detect x or y or z where 2+ operands are Call nodes (dispatch path degradation)."""
+        if not isinstance(node.op, ast.Or):
+            return
+        if len(node.values) < 3:
+            return
+
+        call_count = sum(1 for v in node.values if isinstance(v, ast.Call))
+        if call_count < 2:
+            return
+
+        line_num = (node.col_offset and node.lineno) or node.lineno
+        if hasattr(node, "lineno"):
+            line_num = node.lineno
+        line = self.source_lines[line_num - 1].strip()
+
+        if self._has_fallback_ok_comment(line_num):
+            return
+
+        self.violations.append(
+            {
+                "type": "or_chain_degradation",
+                "line": line_num,
+                "code": line,
+                "message": (
+                    "Or-chain across 3+ values with multiple call/attribute operands - silent dispatch degradation. "
+                    "Use explicit fallback logic with error handling instead of 'x or y or z'."
+                ),
+                "severity": "error",
+            }
+        )
+
     def _contains_id_self(self, node: ast.AST) -> bool:
         """Check if AST node contains id(self) call."""
         if isinstance(node, ast.Call):
@@ -251,13 +525,7 @@ class FallbackDetector(ast.NodeVisitor):
         for stmt in handler.body:
             if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
                 if isinstance(stmt.value.func, ast.Attribute):
-                    if stmt.value.func.attr in (
-                        "error",
-                        "warning",
-                        "debug",
-                        "info",
-                        "log",
-                    ):
+                    if stmt.value.func.attr in _LOG_METHOD_NAMES:
                         return True
         return False
 

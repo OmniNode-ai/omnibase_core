@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts" / "valida
 from check_no_fallbacks import FallbackDetector, check_file_for_fallbacks
 
 
+@pytest.mark.unit
 class TestFallbackDetector:
     """Tests for FallbackDetector AST visitor."""
 
@@ -144,10 +145,10 @@ def safe_operation():
         # Should not detect violation because exception is re-raised
         assert len(detector.violations) == 0
 
-    def test_allows_exception_with_logging(self):
-        """Test that except with logging and return is allowed."""
+    def test_detects_except_log_no_reraise(self):
+        """Test that except with logging but no re-raise is a violation (pattern 9)."""
         code = """
-def safe_operation():
+def unsafe_operation():
     try:
         return dangerous_call()
     except Exception as e:
@@ -158,10 +159,233 @@ def safe_operation():
         detector = FallbackDetector("test.py", code.splitlines())
         detector.visit(tree)
 
-        # Should not detect violation because logging is present
+        assert len(detector.violations) == 1
+        assert detector.violations[0]["type"] == "except_log_no_reraise"
+
+    def test_allows_exception_with_logging_and_reraise(self):
+        """Test that except with logging AND re-raise is allowed."""
+        code = """
+def safe_operation():
+    try:
+        return dangerous_call()
+    except Exception as e:
+        logger.error(f"Operation failed: {e}")
+        raise
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
         assert len(detector.violations) == 0
 
+    # --- Pattern 6: injectable_none_default ---
 
+    def test_detects_injectable_none_default(self):
+        """Test detection of injectable param = None in __init__."""
+        code = """
+class MyHandler:
+    def __init__(self, event_bus=None, other_arg="value"):
+        self._event_bus = event_bus
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        assert len(detector.violations) == 1
+        assert detector.violations[0]["type"] == "injectable_none_default"
+        assert "event_bus" in detector.violations[0]["message"]
+
+    def test_allows_injectable_none_default_with_suppression(self):
+        """Test that fallback-ok suppresses injectable_none_default."""
+        code = """
+class MyHandler:
+    def __init__(self, event_bus=None):  # fallback-ok: test harness only
+        self._event_bus = event_bus
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        assert len(detector.violations) == 0
+
+    def test_allows_non_injectable_none_default(self):
+        """Test that non-injectable params with None default are not flagged."""
+        code = """
+class MyHandler:
+    def __init__(self, timeout=None, retries=None):
+        self.timeout = timeout
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        assert len(detector.violations) == 0
+
+    # --- Pattern 7: none_guard_publish_skip ---
+
+    def test_detects_none_guard_publish_skip(self):
+        """Test detection of 'if self._event_bus is not None: publish(...)' pattern."""
+        code = """
+class MyHandler:
+    def handle(self, event):
+        if self._event_bus is not None:
+            self._event_bus.publish(event)
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        assert len(detector.violations) == 1
+        assert detector.violations[0]["type"] == "none_guard_publish_skip"
+
+    def test_allows_none_guard_publish_with_suppression(self):
+        """Test that fallback-ok suppresses none_guard_publish_skip."""
+        code = """
+class MyHandler:
+    def handle(self, event):
+        if self._event_bus is not None:  # fallback-ok: optional bus in tests
+            self._event_bus.publish(event)
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        assert len(detector.violations) == 0
+
+    # --- Pattern 8: import_error_none_assignment ---
+
+    def test_detects_import_error_none_assignment(self):
+        """Test detection of 'except ImportError: x = None' pattern."""
+        code = """
+try:
+    import optional_lib
+except ImportError:
+    optional_lib = None
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        assert len(detector.violations) == 1
+        assert detector.violations[0]["type"] == "import_error_none_assignment"
+
+    def test_allows_import_error_none_with_suppression(self):
+        """Test that fallback-ok suppresses import_error_none_assignment."""
+        code = """
+try:
+    import optional_lib
+except ImportError:
+    optional_lib = None  # fallback-ok: optional dependency for extra features
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        assert len(detector.violations) == 0
+
+    # --- Pattern 9: except_log_no_reraise (already tested above, add clean case) ---
+
+    def test_allows_narrow_except_with_log_no_reraise(self):
+        """Test that narrow except (not Exception/BaseException) with log is allowed."""
+        code = """
+def safe_operation():
+    try:
+        return parse_value()
+    except ValueError as e:
+        logger.warning(f"Bad value: {e}")
+        return None
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        assert len(detector.violations) == 0
+
+    # --- Pattern 10: or_chain_degradation ---
+
+    def test_detects_or_chain_degradation(self):
+        """Test detection of x or y or z with multiple call nodes."""
+        code = """
+def get_handler():
+    return primary_dispatch() or fallback_dispatch() or default_handler()
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        assert len(detector.violations) == 1
+        assert detector.violations[0]["type"] == "or_chain_degradation"
+
+    def test_allows_or_chain_with_suppression(self):
+        """Test that fallback-ok suppresses or_chain_degradation."""
+        code = """
+def get_handler():
+    return primary_dispatch() or fallback_dispatch() or default_handler()  # fallback-ok: intentional priority chain
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        assert len(detector.violations) == 0
+
+    def test_allows_short_or_chain(self):
+        """Test that 2-value or-chain with calls is not flagged."""
+        code = """
+def get_value():
+    return primary() or fallback()
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        assert len(detector.violations) == 0
+
+    # --- Pattern 11: nested_try_fallback_chain ---
+
+    def test_detects_nested_try_fallback_chain(self):
+        """Test detection of try/except inside an except handler body."""
+        code = """
+def risky():
+    try:
+        return primary()
+    except Exception:
+        try:
+            return fallback()
+        except Exception:
+            return None
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        violations_of_type = [
+            v for v in detector.violations if v["type"] == "nested_try_fallback_chain"
+        ]
+        assert len(violations_of_type) >= 1
+
+    def test_allows_nested_try_with_suppression(self):
+        """Test that fallback-ok suppresses nested_try_fallback_chain."""
+        code = """
+def risky():
+    try:
+        return primary()
+    except Exception:
+        try:  # fallback-ok: cleanup must not propagate
+            return fallback()
+        except Exception:
+            return None
+"""
+        tree = ast.parse(code)
+        detector = FallbackDetector("test.py", code.splitlines())
+        detector.visit(tree)
+
+        violations_of_type = [
+            v for v in detector.violations if v["type"] == "nested_try_fallback_chain"
+        ]
+        assert len(violations_of_type) == 0
+
+
+@pytest.mark.unit
 class TestCheckFileForFallbacks:
     """Tests for check_file_for_fallbacks function."""
 
