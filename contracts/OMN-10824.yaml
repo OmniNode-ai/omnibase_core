@@ -1,0 +1,33 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-10824"
+title: "Extend check_no_fallbacks validator with 6 new DI bypass and silent-failure patterns"
+summary: "Extend check_no_fallbacks.py with 6 new AST-based fallback pattern detectors covering DI bypass,
+  silent event skips, swallowed exceptions, and chained fallback degradation. All suppressible via # fallback-ok:
+  annotation."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Extended validator unit tests pass"
+    command: "uv run pytest tests/validation/test_check_no_fallbacks.py -v"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "24 unit tests for extended check_no_fallbacks validator pass covering all 6 new patterns"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/validation/test_check_no_fallbacks.py -v"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: pure AST validator extension to existing pre-commit hook, no runtime
+      process or service deploy required"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-10824 extends check_no_fallbacks.py with 6 new AST patterns;
+          no Docker image, daemon, broker topic, runtime process, docker exec, or service deploy is required'"
