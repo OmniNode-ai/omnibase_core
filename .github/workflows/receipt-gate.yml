@@ -125,11 +125,10 @@ jobs:
           evidence_source="$(printf '%s' "$pr_body" | grep -iE '^Evidence-Source:[[:space:]]+\S' | head -1 | sed -E 's/^Evidence-Source:[[:space:]]*//; s/^[[:space:]]+//; s/[[:space:]]+$//' || true)"
 
           # Determine the cutoff commit date from OCC using the pinned SHA.
-          # The cutoff SHA is the merge commit for OMN-10419 (this PR).
-          # Until this PR is merged, EVIDENCE_SOURCE_CUTOFF_SHA is "PENDING_MERGE".
-          # PRs without Evidence-Source remain grandfathered, but an explicit
-          # Evidence-Source must still pin OCC instead of falling back to main.
-          OCC_CUTOFF_SHA="PENDING_MERGE"
+          # The cutoff SHA is the merge commit for OMN-10419 (merged 2026-05-09).
+          # PRs opened before this commit are grandfathered; PRs after must have
+          # Evidence-Source pinning OCC instead of falling back to main.
+          OCC_CUTOFF_SHA="78710b840f3b08999a95b3e54f92d13ab1806494"
 
           if [ "$OCC_CUTOFF_SHA" = "PENDING_MERGE" ] && [ -z "$evidence_source" ]; then
             echo "::notice::Evidence-Source not required: OMN-10419 cutoff SHA is PENDING_MERGE and no Evidence-Source was provided, so this run is treated as pre-cutoff."

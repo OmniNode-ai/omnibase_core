@@ -28,6 +28,8 @@ thresholds:
 
 # Test infrastructure — any change forces the full suite.
 test_infrastructure_paths:
+  - .github/workflows/
+  - scripts/ci/
   - tests/conftest.py
   - tests/fixtures/
   - tests/pytest.ini

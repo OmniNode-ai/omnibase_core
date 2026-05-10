@@ -11,6 +11,13 @@ from omnibase_core.cli.cli_doctor import doctor
 pytestmark = pytest.mark.integration
 
 
+@pytest.fixture(autouse=True)
+def doctor_required_service_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KAFKA_BOOTSTRAP_SERVERS", "testhost:19092")
+    monkeypatch.setenv("POSTGRES_HOST", "testhost")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
+
+
 def test_doctor_e2e_human_output():
     """Run doctor for real and verify grouped output structure."""
     runner = CliRunner()
