@@ -242,7 +242,6 @@ class FallbackDetector(ast.NodeVisitor):
     def _check_injectable_none_defaults(self, node: ast.FunctionDef) -> None:
         """Detect injectable params with = None defaults in __init__."""
         args = node.args
-        all_args = args.args + args.kwonlyargs
         defaults = args.defaults
         kw_defaults = [d for d in args.kw_defaults if d is not None]
 
@@ -255,8 +254,6 @@ class FallbackDetector(ast.NodeVisitor):
         for param, default in positional_with_defaults + kwonly_with_defaults:
             if param.arg in _INJECTABLE_PARAM_NAMES:
                 if isinstance(default, ast.Constant) and default.value is None:
-                    line_num = (param.col_offset and node.lineno) or node.lineno
-                    # Use param's line if available
                     line_num = param.lineno if hasattr(param, "lineno") else node.lineno
                     line = self.source_lines[line_num - 1].strip()
 
