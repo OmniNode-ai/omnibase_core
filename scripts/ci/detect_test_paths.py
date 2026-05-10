@@ -115,8 +115,9 @@ def compute_selection(
     if not selected:
         # Conservative one-shard fallback over the full tests/unit/ tree. This
         # is NOT a no-op — it runs ~3-5 min of unit tests. It fires for changes
-        # that have no unit-test mapping (doc-only, workflow-only, integration-
-        # only). Per Selector Truth Boundary: safer to run something than nothing.
+        # that have no unit-test mapping (doc-only, integration-only, or other
+        # low-signal metadata). CI workflow and selector changes are test
+        # infrastructure and escalate before this fallback.
         selected = ["tests/unit/"]
     split_count = _split_count_for(selected)
 

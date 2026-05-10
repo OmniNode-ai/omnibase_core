@@ -111,6 +111,30 @@ def test_test_infrastructure_change_escalates_to_full_suite() -> None:
     assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
 
 
+def test_workflow_change_escalates_to_distributed_full_suite() -> None:
+    selection = compute_selection(
+        changed_files=[".github/workflows/receipt-gate.yml"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
+    assert selection.split_count == 40
+    assert selection.matrix == list(range(1, 41))
+
+
+def test_selector_change_escalates_to_distributed_full_suite() -> None:
+    selection = compute_selection(
+        changed_files=["scripts/ci/detect_test_paths.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
+    assert selection.split_count == 40
+    assert selection.matrix == list(range(1, 41))
+
+
 def test_threshold_module_count_escalates() -> None:
     # 8 distinct, non-shared modules changed → THRESHOLD_MODULES.
     changed_files = [
