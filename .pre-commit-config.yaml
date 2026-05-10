@@ -451,6 +451,42 @@ repos:
         types_or: [python, shell]
         stages: [pre-commit]
 
+      # OMN-10817: Except-log-no-reraise (silent swallow) detector
+      # Rejects broad except+log blocks that don't re-raise.
+      # Annotation: add  # reraise-ok: <reason>  on the except line.
+      # REPORT MODE: exits 0, reports violations. Switch to enforce by removing --report.
+      - id: no-except-swallow
+        name: No except-log-no-reraise (OMN-10817)
+        entry: uv run python scripts/validation/validate_no_except_swallow.py --report
+        language: system
+        pass_filenames: true
+        types: [python]
+        stages: [pre-commit]
+
+      # OMN-10818: Event-bus none-guard-before-publish detector
+      # Rejects if-bus-is-not-None guards wrapping publish/emit/send calls.
+      # Annotation: add  # none-guard-ok: <reason>  on the if line.
+      # REPORT MODE: exits 0, reports violations. Switch to enforce by removing --report.
+      - id: no-none-guard-publish
+        name: No event-bus none-guard-before-publish (OMN-10818)
+        entry: uv run python scripts/validation/validate_no_none_guard_publish.py --report
+        language: system
+        pass_filenames: true
+        types: [python]
+        stages: [pre-commit]
+
+      # OMN-10819: ImportError-assigned-to-None fallback detector
+      # Rejects `except ImportError: Symbol = None` patterns.
+      # Annotation: add  # import-fallback-ok: <reason>  on the assignment line.
+      # REPORT MODE: exits 0, reports violations. Switch to enforce by removing --report.
+      - id: no-import-none-fallback
+        name: No ImportError-assigned-to-None fallback (OMN-10819)
+        entry: uv run python scripts/validation/validate_no_import_none_fallback.py --report
+        language: system
+        pass_filenames: true
+        types: [python]
+        stages: [pre-commit]
+
       # SPDX Header Requirement
       # Ensures all source files have the canonical SPDX MIT license header.
       # To skip SPDX check in rare cases, add: # spdx-skip: <reason>

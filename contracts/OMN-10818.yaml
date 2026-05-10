@@ -1,0 +1,32 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-10818"
+title: "Add no-none-guard-publish P0 validator"
+summary: "AST-based pre-commit + CI gate that detects if self._event_bus is not None: publish(...) patterns
+  requiring DI."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Validator unit tests pass"
+    command: "uv run pytest tests/validation/test_validate_no_none_guard_publish.py -v"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "14 unit tests for no-none-guard-publish validator pass"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/validation/test_validate_no_none_guard_publish.py -v"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: pure AST pre-commit validator addition, no runtime process or
+      service deploy required"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-10818 adds an AST-based validator script and pre-commit hook;
+          no Docker image, daemon, broker topic, runtime process, docker exec, or service deploy is required'"
