@@ -286,7 +286,13 @@ class ONEXStubbedFunctionalityValidator:
 
 def main() -> int:
     """Main entry point for the validation script."""
-    if len(sys.argv) < 2:
+    import argparse
+
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--max-violations", type=int, default=None)
+    known, remaining = parser.parse_known_args()
+
+    if not remaining:
         print("Usage: validate-stubbed-functionality.py <file1.py> [file2.py] ...")
         print(
             "Validates that code doesn't contain stubbed or incomplete functionality."
@@ -295,12 +301,20 @@ def main() -> int:
 
     validator = ONEXStubbedFunctionalityValidator()
 
-    # Process all provided files
-    file_paths = [Path(arg) for arg in sys.argv[1:]]
-    success = validator.check_files(file_paths)
+    file_paths = [Path(arg) for arg in remaining]
+    validator.check_files(file_paths)
 
     validator.print_results()
-    return 0 if success else 1
+
+    if known.max_violations is not None:
+        if len(validator.errors) > known.max_violations:
+            print(
+                f"[gate] {len(validator.errors)} violations exceed threshold {known.max_violations}"
+            )
+            return 1
+        return 0
+
+    return 0 if not validator.errors else 1
 
 
 if __name__ == "__main__":

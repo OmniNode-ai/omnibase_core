@@ -171,3 +171,50 @@ class TestMainForGate:
     def test_no_args_exits_zero(self) -> None:
         gate = _AlwaysViolatingGate()
         assert main_for_gate(gate, []) == 0
+
+    def test_max_violations_below_threshold_exits_zero(self, tmp_path: Path) -> None:
+        files = []
+        for i in range(3):
+            f = tmp_path / f"f{i}.py"
+            f.write_text("x = 1\n")
+            files.append(f)
+        gate = _AlwaysViolatingGate()
+        # 3 violations ≤ threshold 5 → exit 0
+        assert (
+            main_for_gate(gate, ["--max-violations", "5"] + [str(f) for f in files])
+            == 0
+        )
+
+    def test_max_violations_at_threshold_exits_zero(self, tmp_path: Path) -> None:
+        files = []
+        for i in range(3):
+            f = tmp_path / f"f{i}.py"
+            f.write_text("x = 1\n")
+            files.append(f)
+        gate = _AlwaysViolatingGate()
+        # 3 violations == threshold 3 → exit 0
+        assert (
+            main_for_gate(gate, ["--max-violations", "3"] + [str(f) for f in files])
+            == 0
+        )
+
+    def test_max_violations_exceeds_threshold_exits_one(self, tmp_path: Path) -> None:
+        files = []
+        for i in range(3):
+            f = tmp_path / f"f{i}.py"
+            f.write_text("x = 1\n")
+            files.append(f)
+        gate = _AlwaysViolatingGate()
+        # 3 violations > threshold 2 → exit 1
+        assert (
+            main_for_gate(gate, ["--max-violations", "2"] + [str(f) for f in files])
+            == 1
+        )
+
+    def test_max_violations_zero_with_no_violations_exits_zero(
+        self, tmp_path: Path
+    ) -> None:
+        f = tmp_path / "ok.py"
+        f.write_text("x = 1\n")
+        gate = _AlwaysCleanGate()
+        assert main_for_gate(gate, ["--max-violations", "0", str(f)]) == 0
