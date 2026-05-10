@@ -41,7 +41,7 @@ _PUBLISH_METHOD_NAMES = frozenset(
 )
 
 _LOG_METHOD_NAMES = frozenset(
-    {"warning", "warn", "info", "debug", "error", "critical", "log"}
+    {"warning", "warn", "info", "debug", "error", "critical", "log", "exception"}
 )
 
 
@@ -91,7 +91,7 @@ class FallbackDetector(ast.NodeVisitor):
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         """Visit async functions — same checks as sync __init__."""
         if node.name == "__init__":
-            self._check_injectable_none_defaults(node)  # type: ignore[arg-type]
+            self._check_injectable_none_defaults(node)
         self.generic_visit(node)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
@@ -239,17 +239,23 @@ class FallbackDetector(ast.NodeVisitor):
             self._check_except_log_no_reraise(handler)
             self._check_nested_try_fallback(handler)
 
-    def _check_injectable_none_defaults(self, node: ast.FunctionDef) -> None:
+    def _check_injectable_none_defaults(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ) -> None:
         """Detect injectable params with = None defaults in __init__."""
         args = node.args
         defaults = args.defaults
-        kw_defaults = [d for d in args.kw_defaults if d is not None]
 
         # positional defaults align to the end of args.args
         positional_with_defaults = list(
             zip(args.args[len(args.args) - len(defaults) :], defaults, strict=False)
         )
-        kwonly_with_defaults = list(zip(args.kwonlyargs, kw_defaults, strict=False))
+        # Preserve kw_defaults alignment with kwonlyargs (None means no default for that param)
+        kwonly_with_defaults = [
+            (param, default)
+            for param, default in zip(args.kwonlyargs, args.kw_defaults, strict=False)
+            if default is not None
+        ]
 
         for param, default in positional_with_defaults + kwonly_with_defaults:
             if param.arg in _INJECTABLE_PARAM_NAMES:
@@ -437,9 +443,7 @@ class FallbackDetector(ast.NodeVisitor):
         if len(node.values) < 3:
             return
 
-        call_count = sum(
-            1 for v in node.values if isinstance(v, (ast.Call, ast.Attribute))
-        )
+        call_count = sum(1 for v in node.values if isinstance(v, ast.Call))
         if call_count < 2:
             return
 
@@ -521,13 +525,7 @@ class FallbackDetector(ast.NodeVisitor):
         for stmt in handler.body:
             if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
                 if isinstance(stmt.value.func, ast.Attribute):
-                    if stmt.value.func.attr in (
-                        "error",
-                        "warning",
-                        "debug",
-                        "info",
-                        "log",
-                    ):
+                    if stmt.value.func.attr in _LOG_METHOD_NAMES:
                         return True
         return False
 

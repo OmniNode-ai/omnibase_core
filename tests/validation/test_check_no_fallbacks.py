@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts" / "valida
 from check_no_fallbacks import FallbackDetector, check_file_for_fallbacks
 
 
+@pytest.mark.unit
 class TestFallbackDetector:
     """Tests for FallbackDetector AST visitor."""
 
@@ -384,6 +385,7 @@ def risky():
         assert len(violations_of_type) == 0
 
 
+@pytest.mark.unit
 class TestCheckFileForFallbacks:
     """Tests for check_file_for_fallbacks function."""
 
