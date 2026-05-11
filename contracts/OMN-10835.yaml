@@ -1,0 +1,33 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-10835"
+title: "Fix env_silent_fallback validator to exempt os.environ.get(KEY, None)"
+summary: "Adds _default_arg_is_none() helper to EnvSilentFallbackGate so that os.environ.get(KEY, None)
+  and os.getenv(KEY, None) are no longer flagged as silent fallbacks. Explicit None is semantically identical
+  to no default."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "env_silent_fallback gate unit tests pass"
+    command: "uv run pytest tests/unit/cli/substrate_gates/test_env_silent_fallback.py -v"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "20 unit tests for env_silent_fallback gate pass, including 5 new None-default tests"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/cli/substrate_gates/test_env_silent_fallback.py -v"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: pure AST validator fix to existing pre-commit hook, no runtime
+      process or service deploy required"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-10835 fixes env_silent_fallback AST gate; no Docker image,
+          daemon, broker topic, runtime process, docker exec, or service deploy is required'"
