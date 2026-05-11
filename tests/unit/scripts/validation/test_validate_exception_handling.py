@@ -26,6 +26,7 @@ if spec is None or spec.loader is None:
     raise ImportError(f"Cannot find validate-exception-handling.py at {SCRIPTS_DIR}")
 _mod = importlib.util.module_from_spec(spec)
 sys.modules["validate_exception_handling"] = _mod
+# NOTE(OMN-10836): spec.loader is validated as non-None two lines above.
 spec.loader.exec_module(_mod)  # type: ignore[union-attr]
 
 ExceptionHandlingValidator = _mod.ExceptionHandlingValidator
