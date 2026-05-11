@@ -4,14 +4,16 @@
 """Gate 3 — banned os.environ.get / os.getenv silent fallback with a default value.
 
 Banned forms:
-  os.environ.get("KEY", "default")   — explicit second arg
-  os.getenv("KEY", "default")        — explicit second arg
+  os.environ.get("KEY", "default")   — explicit non-None second arg
+  os.getenv("KEY", "default")        — explicit non-None second arg
   os.environ.get("KEY") or "default" — BoolOp Or with a constant right side
 
 Allowed:
   os.environ["KEY"]                  — fail-fast KeyError
   os.environ.get("KEY")              — no default, returns None
   os.getenv("KEY")                   — no default, returns None
+  os.environ.get("KEY", None)        — explicit None is equivalent to no default
+  os.getenv("KEY", None)             — explicit None is equivalent to no default
   ... # substrate-allow: bootstrap-fallback  (line-level suppression)
 """
 
@@ -69,6 +71,20 @@ def _is_getenv_call(node: ast.AST) -> bool:
     )
 
 
+def _default_arg_is_none(call: ast.Call) -> bool:
+    """Return True if the default argument is the literal None constant.
+
+    os.environ.get("KEY", None) is semantically identical to os.environ.get("KEY")
+    and must not be flagged as a silent fallback.
+    """
+    if len(call.args) >= 2:
+        return isinstance(call.args[1], ast.Constant) and call.args[1].value is None
+    for kw in call.keywords:
+        if kw.arg == "default":
+            return isinstance(kw.value, ast.Constant) and kw.value.value is None
+    return False
+
+
 class EnvSilentFallbackGate(BaseGateCheck):
     """Detect os.environ.get / os.getenv calls that silently supply a default value."""
 
@@ -99,9 +115,10 @@ class EnvSilentFallbackGate(BaseGateCheck):
 
             # --- Variant 1: os.environ.get(KEY, default) ---
             if isinstance(node, ast.Call) and _is_environ_get_call(node):
-                if len(node.args) >= 2 or any(
+                has_default = len(node.args) >= 2 or any(
                     kw.arg == "default" for kw in node.keywords
-                ):
+                )
+                if has_default and not _default_arg_is_none(node):
                     lineno = node.lineno
                     if not has_allow_annotation(source_lines, lineno):
                         violations.append(
@@ -112,9 +129,10 @@ class EnvSilentFallbackGate(BaseGateCheck):
 
             # --- Variant 2: os.getenv(KEY, default) ---
             if isinstance(node, ast.Call) and _is_getenv_call(node):
-                if len(node.args) >= 2 or any(
+                has_default = len(node.args) >= 2 or any(
                     kw.arg == "default" for kw in node.keywords
-                ):
+                )
+                if has_default and not _default_arg_is_none(node):
                     lineno = node.lineno
                     if not has_allow_annotation(source_lines, lineno):
                         violations.append(

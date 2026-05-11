@@ -154,6 +154,52 @@ class TestAllowAnnotation:
 # ---------------------------------------------------------------------------
 
 
+class TestNoneDefaultAllowed:
+    """os.environ.get(KEY, None) and os.getenv(KEY, None) must NOT be flagged.
+
+    Explicit None is semantically identical to no default — the caller still
+    receives None and must handle the missing-key case explicitly.  Flagging it
+    would produce false positives and push callers toward the uglier
+    os.environ.get(KEY) form with no benefit.
+    """
+
+    def test_environ_get_none_positional_allowed(
+        self, gate: EnvSilentFallbackGate, tmp_path: Path
+    ) -> None:
+        f = tmp_path / "none_pos.py"
+        f.write_text('import os\nHOST = os.environ.get("HOST", None)\n')
+        assert gate.run([f]) == [], "explicit None default must not be flagged"
+
+    def test_environ_get_none_keyword_allowed(
+        self, gate: EnvSilentFallbackGate, tmp_path: Path
+    ) -> None:
+        f = tmp_path / "none_kw.py"
+        f.write_text('import os\nHOST = os.environ.get("HOST", default=None)\n')
+        assert gate.run([f]) == [], "explicit None keyword default must not be flagged"
+
+    def test_getenv_none_positional_allowed(
+        self, gate: EnvSilentFallbackGate, tmp_path: Path
+    ) -> None:
+        f = tmp_path / "none_getenv.py"
+        f.write_text('import os\nPORT = os.getenv("PORT", None)\n')
+        assert gate.run([f]) == [], "os.getenv with None default must not be flagged"
+
+    def test_non_none_default_still_flagged(
+        self, gate: EnvSilentFallbackGate, tmp_path: Path
+    ) -> None:
+        f = tmp_path / "non_none.py"
+        f.write_text('import os\nHOST = os.environ.get("HOST", "/default/path")\n')
+        violations = gate.run([f])
+        assert len(violations) == 1, "non-None string default must still be flagged"
+
+    def test_environ_get_no_default_allowed(
+        self, gate: EnvSilentFallbackGate, tmp_path: Path
+    ) -> None:
+        f = tmp_path / "no_default.py"
+        f.write_text('import os\nHOST = os.environ.get("HOST")\n')
+        assert gate.run([f]) == []
+
+
 class TestAllowedPatterns:
     def test_environ_key_access_allowed(
         self, gate: EnvSilentFallbackGate, tmp_path: Path
