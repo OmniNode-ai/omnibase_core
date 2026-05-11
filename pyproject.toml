@@ -301,6 +301,7 @@ ignore = [
 "scripts/validation/validate_no_none_guard_publish.py" = ["T201"]
 "scripts/validation/validate_no_import_none_fallback.py" = ["T201"]
 "scripts/validation/validate-stubbed-functionality.py" = ["T201", "BLE001"]
+"scripts/validation/validate-exception-handling.py" = ["T201", "BLE001"]
 "src/omnibase_core/validation/validator_contracts.py" = ["T201"]
 "src/omnibase_core/validation/validator_local_paths.py" = ["T201"]
 "src/omnibase_core/validation/validator_patterns.py" = ["T201"]

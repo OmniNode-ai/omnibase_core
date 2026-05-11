@@ -12,7 +12,7 @@ Validates that exception handling follows ONEX standards:
 
 Exit codes:
   0 - All validations passed
-  1 - Validation failures found
+  1 - Validation failures found (always enforced; use # fallback-ok to suppress)
 """
 
 import argparse
@@ -152,12 +152,6 @@ def main() -> int:
         nargs="+",
         help="Python files to validate",
     )
-    parser.add_argument(
-        "--strict",
-        action="store_true",
-        help="Fail on any issues (default: warn only)",
-    )
-
     args = parser.parse_args()
 
     validator = ExceptionHandlingValidator()
@@ -171,7 +165,7 @@ def main() -> int:
 
     if not all_valid:
         validator.print_report()
-        return 1 if args.strict else 0
+        return 1
 
     return 0
 
