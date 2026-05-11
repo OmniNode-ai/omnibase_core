@@ -55,6 +55,19 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: handler-di-gate
+  name: Handler DI Gate (OMN-10726)
+  description: >
+    AST-based gate that enforces handlers and nodes acquire all resources via DI container. Rejects __init__
+    signatures with extra parameters beyond (self, container) and rejects direct infrastructure construction
+    (EventBusInmemory(), sqlite3.connect(), etc.) inside __init__. Suppression: # handler-di-ok: <reason>
+  language: python
+  entry: python -m omnibase_core.validators.handler_di_gate
+  types: [python]
+  files: (handlers/handler_.*\.py|nodes/node\.py)$
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: check-hardcoded-topics-v2
   name: Hardcoded ONEX Topic Strings (contract-driven)
   description: >
