@@ -11,6 +11,8 @@ import pytest
 
 from omnibase_core.cli.substrate_gates.env_silent_fallback import EnvSilentFallbackGate
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture
 def gate() -> EnvSilentFallbackGate:
