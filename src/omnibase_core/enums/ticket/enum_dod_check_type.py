@@ -35,6 +35,10 @@ class EnumDodCheckType(StrEnum):
         Assert that a deployed binary SHA matches the expected contract SHA.
     COMMAND_EXIT_0
         Assert that a shell command exits with code 0 (explicit exit-code variant).
+    SEMANTIC_GRADING
+        Assert that a semantic grading receipt exists at the canonical path, produced
+        by node_pr_semantic_grader_llm_effect. Phase 1: ADVISORY status passes.
+        Phase 2 (after calibration): hard fail when anti_pattern_present >= 0.7.
     """
 
     TEST_EXISTS = "test_exists"
@@ -47,6 +51,7 @@ class EnumDodCheckType(StrEnum):
     RENDERED_OUTPUT = "rendered_output"
     RUNTIME_SHA_MATCH = "runtime_sha_match"
     COMMAND_EXIT_0 = "command_exit_0"
+    SEMANTIC_GRADING = "semantic_grading"
 
 
 __all__ = ["EnumDodCheckType"]

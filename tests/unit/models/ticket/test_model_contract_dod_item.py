@@ -160,3 +160,18 @@ class TestModelContractDodItemExtendedChecks:
             checks=[check],
         )
         assert item.checks[0].cwd is None
+
+    def test_semantic_grading_check_type_accepted(self) -> None:
+        """OMN-10859: SEMANTIC_GRADING check type accepted by ModelDodEvidenceCheck."""
+        check = ModelDodEvidenceCheck(
+            check_type=EnumDodCheckType.SEMANTIC_GRADING,
+            check_value="drift/dod_receipts/OMN-10859/dod-001/semantic_grading.yaml",
+        )
+        item = ModelContractDodItem(
+            id="dod-013",
+            description="Acceptance criteria semantically satisfied (advisory Phase 1)",
+            source="generated",
+            checks=[check],
+        )
+        assert item.checks[0].check_type == EnumDodCheckType.SEMANTIC_GRADING
+        assert item.checks[0].check_type == "semantic_grading"
