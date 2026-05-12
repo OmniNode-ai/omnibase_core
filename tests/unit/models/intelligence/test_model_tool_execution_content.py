@@ -229,7 +229,7 @@ class TestModelToolExecutionContentOptionalFields:
         content = ModelToolExecutionContent(
             tool_name_raw="Write",
             tool_name=EnumClaudeCodeToolName.WRITE,
-            file_path="/home/user/test.py",
+            file_path="/home/user/test.py",  # local-path-ok
             language="python",
             content_preview="def main(): pass",
             content_length=16,
@@ -247,7 +247,7 @@ class TestModelToolExecutionContentOptionalFields:
 
         assert content.tool_name_raw == "Write"
         assert content.tool_name == EnumClaudeCodeToolName.WRITE
-        assert content.file_path == "/home/user/test.py"
+        assert content.file_path == "/home/user/test.py"  # local-path-ok
         assert content.language == "python"
         assert content.content_preview == "def main(): pass"
         assert content.content_length == 16
@@ -514,7 +514,7 @@ class TestModelToolExecutionContentSerialization:
         original = ModelToolExecutionContent(
             tool_name_raw="Write",
             tool_name=EnumClaudeCodeToolName.WRITE,
-            file_path="/home/user/test.py",
+            file_path="/home/user/test.py",  # local-path-ok
             language="python",
             content_preview="def main(): pass",
             content_length=16,
@@ -669,7 +669,7 @@ class TestModelToolExecutionContentFromToolName:
         timestamp = datetime(2025, 1, 15, 10, 30, 0, tzinfo=UTC)
         content = ModelToolExecutionContent.from_tool_name(
             "Write",
-            file_path="/home/user/test.py",
+            file_path="/home/user/test.py",  # local-path-ok
             language="python",
             content_preview="def main(): pass",
             content_length=16,
@@ -687,7 +687,7 @@ class TestModelToolExecutionContentFromToolName:
         assert content.tool_name == EnumClaudeCodeToolName.WRITE
 
         # Optional fields passed through
-        assert content.file_path == "/home/user/test.py"
+        assert content.file_path == "/home/user/test.py"  # local-path-ok
         assert content.language == "python"
         assert content.content_preview == "def main(): pass"
         assert content.content_length == 16

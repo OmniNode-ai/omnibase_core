@@ -729,6 +729,31 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
+      # Portability: No machine-specific absolute paths (OMN-9043)
+      # Catches /Volumes/..., /Users/..., /home/..., C:\... hardcoded paths. # local-path-ok
+      # Fails loud if validator_local_paths is not importable (not a silent skip).
+      # Suppress legitimate lines with: # local-path-ok
+      - id: check-local-paths
+        name: No hardcoded local/machine-specific paths (OMN-9043)
+        entry: uv run python -m omnibase_core.validation.validator_local_paths
+        language: system
+        types: [text]
+        exclude: >-
+          (?x)^(
+            \.secrets\.baseline$|
+            archived/|
+            archive/|
+            tests/fixtures/|
+            tests/unit/validation/test_validator_local_paths\.py$|
+            tests/unit/validation/test_checker_enum_member_casing\.py$|
+            tests/unit/validation/test_checker_literal_duplication\.py$|
+            tests/unit/validation/test_checker_naming_convention\.py$|
+            tests/unit/validation/test_validation_utils\.py$|
+            tests/unit/validation/test_validation_utils_edge_cases\.py$
+          )
+        pass_filenames: true
+        stages: [pre-commit]
+
       - id: validate-exception-handling
         name: ONEX Exception Handling Validation
         entry: uv run python scripts/validation/validate-exception-handling.py

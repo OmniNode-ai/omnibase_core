@@ -336,7 +336,7 @@ A: Create a new file `fixture_<name>.py`, inherit from `TestFixtureBase`, and ad
 
 ## Related Documentation
 
-- **ONEX Patterns:** `/Volumes/PRO-G40/Code/Archon/docs/ONEX_ARCHITECTURE_PATTERNS_COMPLETE.md`
+- **ONEX Patterns:** `docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md`
 - **PR #59 Follow-up Plan:** `docs/PR59_FOLLOWUP_PLAN.md` (Section 5)
 - **Pre-commit Hooks:** `.pre-commit-config.yaml`
 - **Validation Script:** `scripts/validation/validate_no_pydantic_bypass.py`

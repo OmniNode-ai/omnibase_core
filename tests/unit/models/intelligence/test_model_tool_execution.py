@@ -374,9 +374,9 @@ class TestModelToolExecutionDirectoryProperty:
             tool_name="Read",
             index=0,
             success=True,
-            file_path="/home/user/project/src/main.py",
+            file_path="/home/user/project/src/main.py",  # local-path-ok
         )
-        assert execution.directory == "/home/user/project/src"
+        assert execution.directory == "/home/user/project/src"  # local-path-ok
 
     def test_directory_from_relative_path(self) -> None:
         """Test directory extracts parent from relative path."""
