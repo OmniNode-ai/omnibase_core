@@ -3,8 +3,8 @@ schema_version: "1.0.0"
 ticket_id: OMN-9771
 title: "Policy: family_misc_extra_fields disposition"
 summary: >
-  Add an explicit non-load-bearing annotations bag and migration-audit
-  normalization for miscellaneous legacy contract fields.
+  Add an explicit non-load-bearing annotations bag and migration-audit normalization for miscellaneous
+  legacy contract fields.
 is_seam_ticket: true
 interface_change: true
 interfaces_touched:
@@ -13,7 +13,8 @@ interfaces_touched:
 evidence_requirements:
   - kind: "ci"
     description: "Focused misc extra fields normalization tests pass"
-    command: "PYTHONPATH=src uv run pytest tests/unit/normalization/test_misc_extra_fields_normalization.py -v"
+    command: "PYTHONPATH=src uv run pytest tests/unit/normalization/test_misc_extra_fields_normalization.py
+      -v"
   - kind: "ci"
     description: "Normalization suite passes"
     command: "PYTHONPATH=src uv run pytest tests/unit/normalization -v"
@@ -21,8 +22,10 @@ evidence_requirements:
     description: "Full mypy remains clean"
     command: "uv run mypy src/ --config-file=mypy.ini"
   - kind: "manual"
-    description: "Deploy-gate evidence: schema/normalization change only; no live runtime deploy required before merge"
-    command: "echo 'deploy-gate: OMN-9771 changes contract schema and migration-audit normalization only; no Docker image, runtime service, broker topic, or live deploy is required before merge'"
+    description: "Deploy-gate evidence: schema/normalization change only; no live runtime deploy required
+      before merge"
+    command: "echo 'deploy-gate: OMN-9771 changes contract schema and migration-audit normalization only;
+      no Docker image, runtime service, broker topic, or live deploy is required before merge'"
 emergency_bypass:
   enabled: false
   justification: ""
@@ -33,7 +36,8 @@ dod_evidence:
     source: "manual"
     checks:
       - check_type: "command"
-        check_value: "PYTHONPATH=src uv run pytest tests/unit/normalization/test_misc_extra_fields_normalization.py -v"
+        check_value: "PYTHONPATH=src uv run pytest tests/unit/normalization/test_misc_extra_fields_normalization.py
+          -v"
   - id: "dod-002"
     description: "Normalization suite passes with compose pipeline additions"
     source: "manual"
@@ -51,4 +55,5 @@ dod_evidence:
     source: "manual"
     checks:
       - check_type: "command"
-        check_value: "echo 'deploy-gate: OMN-9771 changes contract schema and migration-audit normalization only; no Docker image, runtime service, broker topic, or live deploy is required before merge'"
+        check_value: "echo 'deploy-gate: OMN-9771 changes contract schema and migration-audit normalization
+          only; no Docker image, runtime service, broker topic, or live deploy is required before merge'"

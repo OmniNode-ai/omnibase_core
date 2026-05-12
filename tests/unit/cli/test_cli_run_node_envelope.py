@@ -75,6 +75,8 @@ class TestCliEnvelopeShape:
                 payload={"key": "value"},
                 timeout=5,
                 bootstrap_servers="localhost:19092",
+                cmd_topic="onex.cmd.test.node-start.v1",
+                response_topic="onex.evt.test.node-completed.v1",
             )
 
         assert len(captured) == 1
@@ -121,6 +123,8 @@ class TestCliEnvelopeShape:
                 payload={},
                 timeout=5,
                 bootstrap_servers="localhost:19092",
+                cmd_topic="onex.cmd.test.node-start.v1",
+                response_topic="onex.evt.test.node-completed.v1",
             )
 
         assert len(captured) == 1
@@ -352,6 +356,8 @@ class TestCliEnvelopeRoundTrip:
                 payload={"input": 42},
                 timeout=30,
                 bootstrap_servers="localhost:19092",
+                cmd_topic="onex.cmd.test.node-start.v1",
+                response_topic="onex.evt.test.node-completed.v1",
             )
 
         assert result is not None

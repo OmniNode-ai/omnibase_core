@@ -116,6 +116,14 @@ allowed_files:
     added: "2024-10-15"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/normalization/contract_validator.py"
+    reason: >-
+      Corpus validation entry point that must parse raw YAML to inspect bucket classification before selecting
+      and validating against the appropriate Pydantic model — same architectural pattern as validation/contract_validator.py
+      (excluded in hook config). Pre-existing allowlist gap.
+    added: "2026-05-12"
+    review: "2026-12-13"
+
   - file: "scripts/regenerate_fingerprints.py"
     reason: >-
       Must parse YAML to detect node_type before selecting appropriate Pydantic model class - contract
