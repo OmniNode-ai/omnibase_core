@@ -17,7 +17,7 @@ import pytest
 import yaml
 
 from omnibase_core.validation.validator_skill_backing_node import (
-    SkillBackingNodeViolation,
+    SkillLivenessViolation,
     check_node_liveness,
     extract_backing_node,
     load_allowlist,
@@ -174,7 +174,7 @@ class TestCheckNodeLiveness:
     def test_missing_node_directory(self, tmp_path: Path) -> None:
         omniclaude_root = self._make_omnimarket_root(tmp_path)
         result = check_node_liveness("skill_x", "node_missing", omniclaude_root)
-        assert isinstance(result, SkillBackingNodeViolation)
+        assert isinstance(result, SkillLivenessViolation)
         assert "not found" in result.detail
 
     def test_missing_contract_yaml(self, tmp_path: Path) -> None:
@@ -183,7 +183,7 @@ class TestCheckNodeLiveness:
         node_dir = nodes_root / "node_nocontract"
         (node_dir / "handlers").mkdir(parents=True)
         result = check_node_liveness("skill_x", "node_nocontract", omniclaude_root)
-        assert isinstance(result, SkillBackingNodeViolation)
+        assert isinstance(result, SkillLivenessViolation)
         assert "contract.yaml missing" in result.detail
 
     def test_missing_handlers_dir(self, tmp_path: Path) -> None:
@@ -193,7 +193,7 @@ class TestCheckNodeLiveness:
         node_dir.mkdir(parents=True)
         _write(node_dir / "contract.yaml", "node_id: node_nohandlers\n")
         result = check_node_liveness("skill_x", "node_nohandlers", omniclaude_root)
-        assert isinstance(result, SkillBackingNodeViolation)
+        assert isinstance(result, SkillLivenessViolation)
         assert "handlers/ directory missing" in result.detail
 
     def test_stub_handler_fails(self, tmp_path: Path) -> None:
@@ -204,7 +204,7 @@ class TestCheckNodeLiveness:
         _write(node_dir / "contract.yaml", "node_id: node_stub\n")
         _write(node_dir / "handlers" / "handler_stub.py", "pass\n")
         result = check_node_liveness("skill_x", "node_stub", omniclaude_root)
-        assert isinstance(result, SkillBackingNodeViolation)
+        assert isinstance(result, SkillLivenessViolation)
         assert "stubs" in result.detail
 
 

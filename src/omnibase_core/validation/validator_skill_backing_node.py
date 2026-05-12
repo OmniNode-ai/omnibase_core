@@ -189,7 +189,7 @@ def _count_substantive_lines(path: Path) -> int:
     return count
 
 
-class SkillBackingNodeViolation:
+class SkillLivenessViolation:
     """A single liveness violation for a skill's backing node."""
 
     def __init__(self, skill: str, node_name: str, detail: str) -> None:
@@ -236,10 +236,10 @@ def check_node_liveness(
     skill_name: str,
     node_name: str,
     omniclaude_root: Path,
-) -> SkillBackingNodeViolation | None:
+) -> SkillLivenessViolation | None:
     """Assert that *node_name* exists and is live.
 
-    Returns a ``SkillBackingNodeViolation`` describing the first problem found, or
+    Returns a ``SkillLivenessViolation`` describing the first problem found, or
     ``None`` when the node passes all checks.
     """
     candidates = [
@@ -255,7 +255,7 @@ def check_node_liveness(
     if node_dir is None:
         unique = list(dict.fromkeys(str(c) for c in candidates))
         searched = "\n    ".join(unique)
-        return SkillBackingNodeViolation(
+        return SkillLivenessViolation(
             skill_name,
             node_name,
             f"node directory not found.  Searched:\n    {searched}\n"
@@ -265,7 +265,7 @@ def check_node_liveness(
 
     contract = node_dir / "contract.yaml"
     if not contract.is_file():
-        return SkillBackingNodeViolation(
+        return SkillLivenessViolation(
             skill_name,
             node_name,
             f"contract.yaml missing at {contract}",
@@ -273,7 +273,7 @@ def check_node_liveness(
 
     handlers_dir = node_dir / "handlers"
     if not handlers_dir.is_dir():
-        return SkillBackingNodeViolation(
+        return SkillLivenessViolation(
             skill_name,
             node_name,
             f"handlers/ directory missing at {handlers_dir}",
@@ -281,7 +281,7 @@ def check_node_liveness(
 
     handler_files = sorted(handlers_dir.glob("handler_*.py"))
     if not handler_files:
-        return SkillBackingNodeViolation(
+        return SkillLivenessViolation(
             skill_name,
             node_name,
             f"handlers/ directory at {handlers_dir} contains no handler_*.py files",
@@ -297,7 +297,7 @@ def check_node_liveness(
     )
     if live_handler is None:
         stub_list = ", ".join(hf.name for hf in handler_files)
-        return SkillBackingNodeViolation(
+        return SkillLivenessViolation(
             skill_name,
             node_name,
             f"all handler files appear to be stubs (fewer than "
