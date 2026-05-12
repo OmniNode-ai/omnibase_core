@@ -304,6 +304,7 @@ ignore = [
 "scripts/validation/validate-exception-handling.py" = ["T201", "BLE001"]
 "src/omnibase_core/validation/validator_contracts.py" = ["T201"]
 "src/omnibase_core/validation/validator_local_paths.py" = ["T201"]
+"src/omnibase_core/validation/validator_skill_backing_node.py" = ["T201"]
 "src/omnibase_core/validation/validator_patterns.py" = ["T201"]
 "src/omnibase_core/validation/validator_types.py" = ["T201"]
 "src/omnibase_core/validation/cross_repo/cli.py" = ["T201"]
