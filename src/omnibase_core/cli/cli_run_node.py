@@ -36,11 +36,11 @@ def _resolve_node_topics(node_id: str) -> tuple[str, str]:
     missing, or the required fields are absent.
     """
 
-    class _EventBus(BaseModel):
+    class _EventBus(BaseModel):  # type: ignore[explicit-any]
         model_config = ConfigDict(extra="ignore")
         subscribe_topics: list[str] = Field(default_factory=list)
 
-    class _ContractTopics(BaseModel):
+    class _ContractTopics(BaseModel):  # type: ignore[explicit-any]
         model_config = ConfigDict(extra="ignore")
         event_bus: _EventBus = Field(default_factory=_EventBus)
         terminal_event: str = ""
