@@ -235,11 +235,10 @@ class ModelContractBase(BaseModel, ABC):
         description="Contract classification tags",
     )
 
-    annotations: dict[str, Any] | None = (
-        Field(  # ONEX_EXCLUDE: dict_str_any - explicit non-load-bearing migration annotations bag
-            default=None,
-            description="Non-load-bearing operational annotations preserved from legacy contract corpus.",
-        )
+    # ONEX_EXCLUDE: dict_str_any - non-load-bearing migration annotations bag
+    annotations: dict[str, Any] | None = Field(
+        default=None,
+        description="Non-load-bearing operational annotations preserved from legacy contract corpus.",
     )
 
     feature_flags: list[ModelContractFeatureFlag] = Field(

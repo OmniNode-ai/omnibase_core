@@ -267,7 +267,7 @@ class TestModelHandlerPackagingURLStructureValidation:
             "oci://docker.io/library/python:3.12",
             "registry://internal.corp/handlers/validator",
             "file:///opt/handlers/handler.whl",
-            "file:///home/user/handlers/handler.whl",
+            "file:///home/user/handlers/handler.whl",  # local-path-ok
         ]
         for url in valid_urls:
             packaging = ModelHandlerPackaging(

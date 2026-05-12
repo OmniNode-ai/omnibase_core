@@ -438,9 +438,9 @@ class TestModelDodReceiptConsolidationFields:
 
     def test_working_dir_field_accepts_string(self) -> None:
         fields = _base_fields()
-        fields["working_dir"] = "/home/runner/work/omnibase_core"
+        fields["working_dir"] = "/home/runner/work/omnibase_core"  # local-path-ok
         receipt = ModelDodReceipt(**fields)
-        assert receipt.working_dir == "/home/runner/work/omnibase_core"
+        assert receipt.working_dir == "/home/runner/work/omnibase_core"  # local-path-ok
 
     def test_both_branch_and_working_dir_together(self) -> None:
         fields = _base_fields()
