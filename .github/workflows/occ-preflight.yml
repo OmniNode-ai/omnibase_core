@@ -1,0 +1,310 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OCC Preflight — reusable workflow enforcing OCC eligibility before auto-merge
+# and merge_group promotion. (OMN-10485 / OMN-10482 epic)
+#
+# Design invariants:
+#   I1. PR metadata and OCC main SHA are resolved exactly once (in `preflight`).
+#       All eligibility steps consume the snapshot; they do not re-fetch mutable state.
+#   I2. `merge_group` events re-run eligibility fully against the current OCC main SHA.
+#       A cached PASS from the PR-open event cannot satisfy a merge_group run.
+#   I3. OCC's own PRs validate evidence from the PR diff (in-tree checkout) to avoid
+#       the circular dependency of checking OCC main while merging into OCC main.
+#   I4. OCC fetch failure is a hard FAIL — no fallback to stale/cached evidence.
+#   I5. Auto-merge cannot arm until this workflow completes with exit 0.
+#
+# Required status check name: "occ-preflight / eligibility"
+#
+# Called by per-repo `call-occ-preflight.yml` workflows via `workflow_call`.
+# The auto-merge workflow (`auto-merge.yml`) in each repo should list this
+# check as a required predecessor via `needs:` to prevent arming on ineligible PRs.
+#
+# Inputs:
+#   contracts-dir:  path to ticket contract YAMLs relative to OCC checkout (default: contracts)
+#   receipts-dir:   path to ModelDodReceipt YAMLs relative to OCC checkout (default: drift/dod_receipts)
+
+name: occ-preflight
+
+on:
+  workflow_call:
+    inputs:
+      contracts-dir:
+        description: Path to contracts directory relative to OCC checkout.
+        type: string
+        required: false
+        default: contracts
+      receipts-dir:
+        description: Path to dod_receipts directory relative to OCC checkout.
+        type: string
+        required: false
+        default: drift/dod_receipts
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  eligibility:
+    name: eligibility
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+    # I2: Disable GHA cache so merge_group re-fires fully.
+    # A stale PASS from a prior PR-open run cannot satisfy the gate on a new merge_group event.
+    env:
+      ACTIONS_CACHE_URL: ""
+      ACTIONS_RUNTIME_URL: ""
+    steps:
+      - name: Check out PR head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+
+      # I1: Resolve all mutable GitHub state exactly once.
+      # Writes /tmp/pr_{body,title,author,branch,number}.txt and
+      # /tmp/pr_commit_{shas,texts}.txt for downstream steps.
+      - name: Resolve PR snapshot
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_EVENT_BODY: ${{ github.event.pull_request.body }}
+          PR_EVENT_TITLE: ${{ github.event.pull_request.title }}
+          PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_EVENT_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_EVENT_SHA: ${{ github.event.pull_request.head.sha }}
+          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+        run: |
+          set -euo pipefail
+          : > /tmp/pr_commit_shas.txt
+          : > /tmp/pr_commit_texts.txt
+
+          write_pr_snapshot() {
+            local pr_json="$1"
+            printf '%s' "$pr_json" | jq -r '.body // ""' > /tmp/pr_body.txt
+            printf '%s' "$pr_json" | jq -r '.title // ""' > /tmp/pr_title.txt
+            printf '%s' "$pr_json" | jq -r '.author.login // ""' > /tmp/pr_author.txt
+            printf '%s' "$pr_json" | jq -r '.headRefName // ""' > /tmp/pr_branch.txt
+            printf '%s' "$pr_json" | jq -r '.commits[]?.oid // empty' > /tmp/pr_commit_shas.txt
+            printf '%s' "$pr_json" | jq -r \
+              '.commits[]? | ((.messageHeadline // "") + " " + (.messageBody // "" | gsub("\r?\n"; " ")))' \
+              > /tmp/pr_commit_texts.txt
+          }
+
+          if [ -n "${PR_NUMBER:-}" ]; then
+            if pr_json="$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" \
+                --json body,title,author,headRefName,commits 2>/dev/null)"; then
+              write_pr_snapshot "$pr_json"
+              printf '%s' "$PR_NUMBER" > /tmp/pr_number.txt
+            else
+              echo "::warning::gh pr view failed for PR #${PR_NUMBER}; using event payload"
+              printf '%s' "${PR_EVENT_BODY:-}" > /tmp/pr_body.txt
+              printf '%s' "${PR_EVENT_TITLE:-}" > /tmp/pr_title.txt
+              printf '%s' "${PR_EVENT_AUTHOR:-}" > /tmp/pr_author.txt
+              printf '%s' "${PR_EVENT_BRANCH:-}" > /tmp/pr_branch.txt
+              printf '%s\n' "${PR_EVENT_SHA:-}" > /tmp/pr_commit_shas.txt
+              printf '%s' "$PR_NUMBER" > /tmp/pr_number.txt
+            fi
+          elif [ -n "${MERGE_GROUP_HEAD_REF:-}" ]; then
+            pr_num="$(printf '%s' "$MERGE_GROUP_HEAD_REF" \
+              | sed -E 's@^.*/pr-([0-9]+)-.*$@\1@')"
+            if [ -n "$pr_num" ] && [ "$pr_num" != "$MERGE_GROUP_HEAD_REF" ]; then
+              pr_json="$(gh pr view "$pr_num" --repo "${{ github.repository }}" \
+                --json body,title,author,headRefName,commits)"
+              write_pr_snapshot "$pr_json"
+              printf '%s' "$pr_num" > /tmp/pr_number.txt
+            else
+              : > /tmp/pr_body.txt
+              : > /tmp/pr_title.txt
+              : > /tmp/pr_author.txt
+              : > /tmp/pr_branch.txt
+              : > /tmp/pr_number.txt
+            fi
+          else
+            : > /tmp/pr_body.txt
+            : > /tmp/pr_title.txt
+            : > /tmp/pr_author.txt
+            : > /tmp/pr_branch.txt
+            : > /tmp/pr_number.txt
+          fi
+
+      # I3: OCC's own PRs use in-tree checkout; other repos check out OCC main.
+      # I4: OCC fetch failure is a hard FAIL — no fallback to stale/cached evidence.
+      - name: Check out onex_change_control (for contracts + receipts)
+        if: github.repository != 'OmniNode-ai/onex_change_control'
+        uses: actions/checkout@v6
+        with:
+          repository: OmniNode-ai/onex_change_control
+          path: .onex_change_control
+          ref: main
+          fetch-depth: 1
+
+      # Pin the OCC SHA used for eligibility evaluation. Once resolved here, all
+      # subsequent steps use this exact SHA — never re-fetching. (I1, I2)
+      - name: Resolve OCC evidence SHA
+        id: occ_sha
+        run: |
+          set -euo pipefail
+          repo_short="${GITHUB_REPOSITORY##*/}"
+          if [ "$repo_short" = "onex_change_control" ]; then
+            sha="$(git rev-parse HEAD)"
+            root="."
+            contracts_dir="${{ inputs.contracts-dir }}"
+            receipts_dir="${{ inputs.receipts-dir }}"
+          else
+            sha="$(git -C .onex_change_control rev-parse HEAD)"
+            root=".onex_change_control"
+            contracts_dir="$root/${{ inputs.contracts-dir }}"
+            receipts_dir="$root/${{ inputs.receipts-dir }}"
+          fi
+          if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::OCC SHA resolution failed: '$sha'"
+            exit 1
+          fi
+          {
+            echo "sha=$sha"
+            echo "root=$root"
+            echo "contracts_dir=$contracts_dir"
+            echo "receipts_dir=$receipts_dir"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      # Install omnibase_compat and omnibase_core from source so the validator
+      # module is available. Pattern mirrors receipt-gate.yml install block.
+      - name: Check out omnibase_compat (transitive dep)
+        if: "! hashFiles('./src/omnibase_compat/__init__.py') && ! hashFiles('./omnibase_compat/pyproject.toml')"
+        uses: actions/checkout@v6
+        with:
+          repository: OmniNode-ai/omnibase_compat
+          path: .occ-preflight-deps/omnibase_compat
+          ref: main
+          fetch-depth: 1
+
+      - name: Check out omnibase_core (for eligibility validator)
+        if: "! hashFiles('./src/omnibase_core/__init__.py') && ! hashFiles('./omnibase_core/pyproject.toml')"
+        uses: actions/checkout@v6
+        with:
+          repository: OmniNode-ai/omnibase_core
+          path: .occ-preflight-deps/omnibase_core
+          ref: main
+          fetch-depth: 1
+
+      - name: Install omnibase_core
+        run: |
+          uv pip uninstall --system omnibase-core omnibase-compat 2>/dev/null || true
+
+          if [ -f "./omnibase_compat/pyproject.toml" ]; then
+            compat_path="./omnibase_compat"
+          elif [ -f "./.occ-preflight-deps/omnibase_compat/pyproject.toml" ]; then
+            compat_path="./.occ-preflight-deps/omnibase_compat"
+          else
+            compat_path=""
+          fi
+
+          if [ -n "$compat_path" ]; then
+            uv pip install --system --refresh -e "$compat_path"
+          fi
+
+          if [ -f "./pyproject.toml" ] && grep -qE '^\s*name\s*=\s*["\x27]omnibase[-_.]core["\x27]' ./pyproject.toml 2>/dev/null; then
+            core_path="."
+          elif [ -f "./omnibase_core/pyproject.toml" ]; then
+            core_path="./omnibase_core"
+          elif [ -f "./.occ-preflight-deps/omnibase_core/pyproject.toml" ]; then
+            core_path="./.occ-preflight-deps/omnibase_core"
+          else
+            echo "::error::omnibase_core not installable — no source checkout available"
+            exit 1
+          fi
+
+          uv pip install --system \
+            'hatchling' \
+            'editables' \
+            'pydantic>=2.12.5,<3.0.0' \
+            'pyyaml>=6.0.2,<7.0.0' \
+            'dependency-injector>=4.48.3,<5.0.0' \
+            'deepdiff>=8.0.0,<10.0.0' \
+            'click>=8.3.1,<9.0.0' \
+            'cryptography>=46.0.3,<47.0.0' \
+            'jsonschema>=4.25.1,<5.0.0' \
+            'httpx>=0.27.0,<1.0.0' \
+            'blake3>=1.0.8,<2.0.0' \
+            'ruamel-yaml>=0.18.0'
+
+          mkdir -p /tmp/occ-preflight-wheels
+          (cd "$core_path" && uv build --wheel --out-dir /tmp/occ-preflight-wheels)
+
+          uv pip install --system --no-deps --no-index \
+            --find-links /tmp/occ-preflight-wheels \
+            --reinstall-package omnibase-core \
+            omnibase-core
+
+      - name: Verify eligibility validator importable
+        run: |
+          python -c "from omnibase_core.validation.validator_occ_merge_eligibility import validate_occ_merge_eligibility" || {
+            echo "::error::validator_occ_merge_eligibility not importable after install"
+            python -c "import omnibase_core, os; print('omnibase_core at:', os.path.dirname(omnibase_core.__file__))" || true
+            exit 1
+          }
+
+      # Run the eligibility validator. Exit code propagates: 0 = eligible, 1 = ineligible.
+      # Auto-merge MUST NOT arm when this step exits non-zero.
+      - name: Run OCC eligibility check
+        id: occ_eligibility
+        run: |
+          set -euo pipefail
+
+          PR_TITLE="$(cat /tmp/pr_title.txt)"
+          PR_BRANCH="$(cat /tmp/pr_branch.txt)"
+          PR_NUMBER_RESOLVED="$(cat /tmp/pr_number.txt 2>/dev/null || true)"
+          REPO_NAME="${{ github.repository }}"
+          REPO_SHORT="${REPO_NAME##*/}"
+
+          if [ -z "$PR_NUMBER_RESOLVED" ]; then
+            echo "::error::Could not resolve PR number for OCC eligibility check"
+            exit 1
+          fi
+
+          commit_args=()
+          while IFS= read -r sha; do
+            [ -n "$sha" ] && commit_args+=(--pr-commit-sha "$sha")
+          done < /tmp/pr_commit_shas.txt
+          while IFS= read -r text; do
+            [ -n "$text" ] && commit_args+=(--pr-commit-text "$text")
+          done < /tmp/pr_commit_texts.txt
+
+          python -m omnibase_core.validation.validator_occ_merge_eligibility \
+            --repo "$REPO_SHORT" \
+            --pr-number "$PR_NUMBER_RESOLVED" \
+            --pr-title "$PR_TITLE" \
+            --pr-body-file /tmp/pr_body.txt \
+            --pr-branch "$PR_BRANCH" \
+            --occ-commit-sha "${{ steps.occ_sha.outputs.sha }}" \
+            --contracts-dir "${{ steps.occ_sha.outputs.contracts_dir }}" \
+            --receipts-dir "${{ steps.occ_sha.outputs.receipts_dir }}" \
+            "${commit_args[@]}" \
+            | tee /tmp/occ_preflight_result.json
+
+          result_eligible="$(python -c "import json,sys; d=json.load(open('/tmp/occ_preflight_result.json')); sys.exit(0 if d.get('eligible') else 1)" 2>/dev/null; echo $?)"
+          if [ "$result_eligible" != "0" ]; then
+            detail="$(python -c "import json; d=json.load(open('/tmp/occ_preflight_result.json')); print(d.get('detail','(no detail)'))" 2>/dev/null || true)"
+            reason="$(python -c "import json; d=json.load(open('/tmp/occ_preflight_result.json')); print(d.get('reason','(no reason)'))" 2>/dev/null || true)"
+            echo "::error::OCC PREFLIGHT FAILED: reason=${reason} — ${detail}"
+            echo "::error::Auto-merge cannot arm until OCC eligibility is satisfied."
+            echo "::error::Add a passing receipt to drift/dod_receipts/ in onex_change_control for all dod_evidence items cited in this PR's ticket contract."
+            exit 1
+          fi
+
+          echo "OCC eligibility: PASS (occ_sha=${{ steps.occ_sha.outputs.sha }})"
