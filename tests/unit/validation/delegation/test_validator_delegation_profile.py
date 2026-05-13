@@ -36,7 +36,7 @@ def test_valid_profile_passes() -> None:
 def test_rejects_endpoint_url_in_bifrost_ref() -> None:
     data = yaml.safe_load(VALID_YAML)
     data["llm_backends"]["default"]["bifrost_endpoint_ref"] = (
-        "http://192.168.86.201:8000"
+        "https://192.168.86.201:8000"
     )
     result = validate_delegation_profile(data)
     assert not result.is_valid
@@ -83,7 +83,7 @@ def test_rejects_raw_value_in_secret_ref() -> None:
 
 def test_rejects_url_in_bootstrap_server() -> None:
     data = yaml.safe_load(VALID_YAML)
-    data["event_bus"]["bootstrap_servers"] = ["http://redpanda:9092"]
+    data["event_bus"]["bootstrap_servers"] = ["https://redpanda:9092"]
     result = validate_delegation_profile(data)
     assert not result.is_valid
     assert any("bootstrap_servers" in e for e in result.errors)
