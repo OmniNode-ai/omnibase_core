@@ -335,7 +335,7 @@ allowed_files:
       the omniclaude repo, making a shared Pydantic model impractical. Raw yaml.safe_load() is immediately
       followed by isinstance checks and field validation.
     added: "2026-05-12"
-    review: "2026-12-13"
+    review: "2026-06-13"
 
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)

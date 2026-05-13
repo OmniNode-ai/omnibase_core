@@ -124,9 +124,14 @@ def load_allowlist(omniclaude_root: Path) -> dict[str, str]:
     path = omniclaude_root / _ALLOWLIST_PATH_REL
     if not path.is_file():
         return {}
-    raw = (
-        yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    )  # yaml-ok: allowlist is a flat config file, not a typed domain model
+    try:
+        raw = (
+            yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        )  # yaml-ok: allowlist is a flat config file, not a typed domain model
+    except yaml.YAMLError as exc:
+        raise ValueError(  # error-ok: malformed config at load boundary
+            f"Invalid YAML in skill backing-node allowlist at {path}: {exc}"
+        ) from exc
     entries = raw.get("allowlist") if isinstance(raw, dict) else None
     if not isinstance(entries, list):
         return {}
