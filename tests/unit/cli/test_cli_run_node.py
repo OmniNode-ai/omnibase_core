@@ -87,6 +87,136 @@ class TestCliRunNodeNoKafkaPythonImport:
         )
 
 
+_MOCK_CMD_TOPIC = "onex.cmd.test.node-start.v1"
+_MOCK_RESPONSE_TOPIC = "onex.evt.test.node-completed.v1"
+_PATCH_RESOLVE_TOPICS = "omnibase_core.cli.cli_run_node._resolve_node_topics"
+
+
+class TestResolveNodeTopics:
+    """Test _resolve_node_topics contract lookup (OMN-10511)."""
+
+    def test_unknown_node_raises_click_exception(self) -> None:
+        import click
+
+        from omnibase_core.cli.cli_run_node import _resolve_node_topics
+
+        with patch(
+            "omnibase_core.cli.cli_run_node.importlib.metadata.entry_points",
+            return_value=[],
+        ):
+            with pytest.raises(click.ClickException, match="Unknown node"):
+                _resolve_node_topics("nonexistent-node")
+
+    def test_duplicate_entry_point_raises_click_exception(self) -> None:
+        import click
+
+        from omnibase_core.cli.cli_run_node import _resolve_node_topics
+
+        ep1 = MagicMock()
+        ep1.name = "my-node"
+        ep1.value = "pkg.nodes.my_node:MyNode"
+        ep2 = MagicMock()
+        ep2.name = "my-node"
+        ep2.value = "other.nodes.my_node:MyNode"
+
+        with patch(
+            "omnibase_core.cli.cli_run_node.importlib.metadata.entry_points",
+            return_value=[ep1, ep2],
+        ):
+            with pytest.raises(click.ClickException, match="Duplicate"):
+                _resolve_node_topics("my-node")
+
+    def test_resolves_topics_from_contract_yaml(self, tmp_path: Path) -> None:
+        from omnibase_core.cli.cli_run_node import _resolve_node_topics
+
+        contract = {
+            "event_bus": {"subscribe_topics": [_MOCK_CMD_TOPIC]},
+            "terminal_event": _MOCK_RESPONSE_TOPIC,
+        }
+        contract_file = tmp_path / "contract.yaml"
+        import yaml as _yaml
+
+        contract_file.write_text(_yaml.dump(contract))
+
+        ep = MagicMock()
+        ep.name = "my-node"
+        ep.value = "pkg.nodes.my_node"
+
+        mock_spec = MagicMock()
+        mock_spec.submodule_search_locations = [str(tmp_path)]
+
+        with (
+            patch(
+                "omnibase_core.cli.cli_run_node.importlib.metadata.entry_points",
+                return_value=[ep],
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.importlib.util.find_spec",
+                return_value=mock_spec,
+            ),
+        ):
+            cmd_topic, response_topic = _resolve_node_topics("my-node")
+
+        assert cmd_topic == _MOCK_CMD_TOPIC
+        assert response_topic == _MOCK_RESPONSE_TOPIC
+
+    def test_missing_subscribe_topics_raises(self, tmp_path: Path) -> None:
+        import click
+        import yaml as _yaml
+
+        from omnibase_core.cli.cli_run_node import _resolve_node_topics
+
+        contract = {"terminal_event": _MOCK_RESPONSE_TOPIC}
+        (tmp_path / "contract.yaml").write_text(_yaml.dump(contract))
+
+        ep = MagicMock()
+        ep.name = "my-node"
+        ep.value = "pkg.nodes.my_node"
+        mock_spec = MagicMock()
+        mock_spec.submodule_search_locations = [str(tmp_path)]
+
+        with (
+            patch(
+                "omnibase_core.cli.cli_run_node.importlib.metadata.entry_points",
+                return_value=[ep],
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.importlib.util.find_spec",
+                return_value=mock_spec,
+            ),
+        ):
+            with pytest.raises(click.ClickException, match="subscribe_topics"):
+                _resolve_node_topics("my-node")
+
+    def test_missing_terminal_event_raises(self, tmp_path: Path) -> None:
+        import click
+        import yaml as _yaml
+
+        from omnibase_core.cli.cli_run_node import _resolve_node_topics
+
+        contract = {"event_bus": {"subscribe_topics": [_MOCK_CMD_TOPIC]}}
+        (tmp_path / "contract.yaml").write_text(_yaml.dump(contract))
+
+        ep = MagicMock()
+        ep.name = "my-node"
+        ep.value = "pkg.nodes.my_node"
+        mock_spec = MagicMock()
+        mock_spec.submodule_search_locations = [str(tmp_path)]
+
+        with (
+            patch(
+                "omnibase_core.cli.cli_run_node.importlib.metadata.entry_points",
+                return_value=[ep],
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.importlib.util.find_spec",
+                return_value=mock_spec,
+            ),
+        ):
+            with pytest.raises(click.ClickException, match="terminal_event"):
+                _resolve_node_topics("my-node")
+
+
 class TestPublishAndPoll:
     """Test publish_and_poll with stubbed confluent_kafka Producer and Consumer."""
 
@@ -118,11 +248,14 @@ class TestPublishAndPoll:
                 payload={"foo": "bar"},
                 timeout=5,
                 bootstrap_servers="localhost:19092",
+                cmd_topic=_MOCK_CMD_TOPIC,
+                response_topic=_MOCK_RESPONSE_TOPIC,
             )
 
         mock_producer.produce.assert_called_once()
         produce_kwargs = mock_producer.produce.call_args
-        assert produce_kwargs.kwargs.get("topic") or produce_kwargs.args[0]
+        assert produce_kwargs.kwargs.get("topic") == _MOCK_CMD_TOPIC
+        mock_consumer.subscribe.assert_called_once_with([_MOCK_RESPONSE_TOPIC])
         mock_producer.flush.assert_called_once_with(timeout=10.0)
 
     def test_returns_correlated_message(self) -> None:
@@ -167,6 +300,8 @@ class TestPublishAndPoll:
                 payload={},
                 timeout=30,
                 bootstrap_servers="localhost:19092",
+                cmd_topic=_MOCK_CMD_TOPIC,
+                response_topic=_MOCK_RESPONSE_TOPIC,
             )
 
         assert result is not None
@@ -198,6 +333,8 @@ class TestPublishAndPoll:
                 payload={},
                 timeout=30,
                 bootstrap_servers="localhost:19092",
+                cmd_topic=_MOCK_CMD_TOPIC,
+                response_topic=_MOCK_RESPONSE_TOPIC,
             )
 
         assert result is None
@@ -239,6 +376,8 @@ class TestPublishAndPoll:
                 payload={},
                 timeout=30,
                 bootstrap_servers="localhost:19092",
+                cmd_topic=_MOCK_CMD_TOPIC,
+                response_topic=_MOCK_RESPONSE_TOPIC,
             )
 
         assert result is not None
@@ -263,6 +402,8 @@ class TestPublishAndPoll:
                     payload={},
                     timeout=5,
                     bootstrap_servers="localhost:19092",
+                    cmd_topic=_MOCK_CMD_TOPIC,
+                    response_topic=_MOCK_RESPONSE_TOPIC,
                 )
         mock_consumer.close.assert_called_once()
 
@@ -277,6 +418,8 @@ class TestPublishAndPoll:
                     payload={},
                     timeout=5,
                     bootstrap_servers="localhost:19092",
+                    cmd_topic=_MOCK_CMD_TOPIC,
+                    response_topic=_MOCK_RESPONSE_TOPIC,
                 )
 
     def test_delivery_failure_raises_onerror(self) -> None:
@@ -306,6 +449,8 @@ class TestPublishAndPoll:
                     payload={},
                     timeout=5,
                     bootstrap_servers="localhost:19092",
+                    cmd_topic=_MOCK_CMD_TOPIC,
+                    response_topic=_MOCK_RESPONSE_TOPIC,
                 )
 
 
@@ -316,7 +461,10 @@ class TestRunNodeCommand:
         from omnibase_core.cli.cli_run_node import run_node
 
         runner = CliRunner()
-        result = runner.invoke(run_node, ["test-node", "--input", "not-json"])
+        with patch(
+            _PATCH_RESOLVE_TOPICS, return_value=(_MOCK_CMD_TOPIC, _MOCK_RESPONSE_TOPIC)
+        ):
+            result = runner.invoke(run_node, ["test-node", "--input", "not-json"])
         assert result.exit_code != 0
 
     def test_timeout_response_exits_nonzero(self) -> None:
@@ -332,6 +480,10 @@ class TestRunNodeCommand:
 
         with (
             patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(
+                _PATCH_RESOLVE_TOPICS,
+                return_value=(_MOCK_CMD_TOPIC, _MOCK_RESPONSE_TOPIC),
+            ),
             patch(
                 "omnibase_core.cli.cli_run_node.time.monotonic",
                 side_effect=_monotonic_values,
@@ -350,6 +502,52 @@ class TestRunNodeCommand:
         output = json.loads(result.output)
         assert output["error_type"] == "SkillRoutingError"
         assert "Timeout" in output["message"]
+
+    def test_publishes_to_contract_declared_topics(self) -> None:
+        """run-node must use contract-declared topics, not hardcoded ones (OMN-10511)."""
+        from omnibase_core.cli.cli_run_node import run_node
+
+        runner = CliRunner()
+        mock_producer = MagicMock()
+        mock_producer.flush.return_value = 0
+        captured_consumer: list[MagicMock] = []
+
+        def _make_consumer(config: dict[str, object]) -> MagicMock:
+            consumer = MagicMock()
+            group_id = str(config.get("group.id", ""))
+            corr = group_id.removeprefix("onex-run-node-")
+            msg = _make_mock_message(corr, extra={"result": "done"})
+            consumer.poll.return_value = msg
+            consumer.assignment.return_value = [object()]
+            captured_consumer.append(consumer)
+            return consumer
+
+        _monotonic_values = iter([1000.0, 999.0])
+
+        with (
+            patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(
+                _PATCH_RESOLVE_TOPICS,
+                return_value=(_MOCK_CMD_TOPIC, _MOCK_RESPONSE_TOPIC),
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.time.monotonic",
+                side_effect=_monotonic_values,
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.time.time", return_value=1234567890.0
+            ),
+            patch(_PATCH_CONSUMER, side_effect=_make_consumer),
+            patch(_PATCH_PRODUCER, return_value=mock_producer),
+        ):
+            result = runner.invoke(
+                run_node, ["my-node", "--input", "{}", "--timeout", "30"]
+            )
+
+        assert result.exit_code == 0, result.output
+        produce_call = mock_producer.produce.call_args
+        assert produce_call.kwargs["topic"] == _MOCK_CMD_TOPIC
+        assert captured_consumer[0].subscribe.call_args[0][0] == [_MOCK_RESPONSE_TOPIC]
 
 
 class TestCliRunNodeNoKafkaPythonImportIsolated:

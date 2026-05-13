@@ -26,4 +26,5 @@ dod_evidence:
     source: "manual"
     checks:
       - check_type: "command"
-        check_value: "echo 'deploy-gate: OMN-10512 adds a pure CLI utility; no Docker image, daemon, broker topic, runtime process, docker exec, or service deploy is required'"
+        check_value: "echo 'deploy-gate: OMN-10512 adds a pure CLI utility; no Docker image, daemon, broker
+          topic, runtime process, docker exec, or service deploy is required'"

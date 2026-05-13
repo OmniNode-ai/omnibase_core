@@ -100,6 +100,13 @@ class TestRunNodeCommand:
         with (
             patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
             patch(
+                "omnibase_core.cli.cli_run_node._resolve_node_topics",
+                return_value=(
+                    "onex.cmd.test.node-start.v1",
+                    "onex.evt.test.node-completed.v1",
+                ),
+            ),
+            patch(
                 "omnibase_core.cli.cli_run_node.publish_and_poll",
                 return_value=mock_response,
             ),
@@ -116,6 +123,13 @@ class TestRunNodeCommand:
         runner = CliRunner()
         with (
             patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(
+                "omnibase_core.cli.cli_run_node._resolve_node_topics",
+                return_value=(
+                    "onex.cmd.test.node-start.v1",
+                    "onex.evt.test.node-completed.v1",
+                ),
+            ),
             patch(
                 "omnibase_core.cli.cli_run_node.publish_and_poll",
                 return_value=None,
@@ -141,6 +155,13 @@ class TestRunNodeCommand:
         runner = CliRunner()
         with (
             patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(
+                "omnibase_core.cli.cli_run_node._resolve_node_topics",
+                return_value=(
+                    "onex.cmd.test.node-start.v1",
+                    "onex.evt.test.node-completed.v1",
+                ),
+            ),
             patch(
                 "omnibase_core.cli.cli_run_node.publish_and_poll",
                 side_effect=ConnectionError("Kafka unreachable"),
