@@ -14,11 +14,10 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from pydantic import ValidationError
-
-from omnibase_core.models.contracts.model_delegation_runtime_profile import (
+from omnibase_compat.contracts.delegation.model_delegation_runtime_profile import (
     ModelDelegationRuntimeProfile,
 )
+from pydantic import ValidationError
 
 __all__ = ["ValidationResult", "validate_delegation_profile"]
 
