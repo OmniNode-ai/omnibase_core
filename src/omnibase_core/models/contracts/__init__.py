@@ -103,7 +103,7 @@ _DELEGATION_COMPAT_EXPORTS = {
     "ModelDelegationPricingManifestRef": "omnibase_compat.contracts.delegation.model_delegation_pricing_manifest_ref",
     "ModelDelegationProjectionApi": "omnibase_compat.contracts.delegation.model_delegation_projection_api",
     "ModelDelegationRuntimeProfile": "omnibase_compat.contracts.delegation.model_delegation_runtime_profile",
-    "ModelDelegationSecretRef": "omnibase_compat.contracts.delegation.model_delegation_secret_ref",
+    "ModelDelegationSecretRef": "omnibase_compat.contracts.delegation.model_delegation_secret_ref",  # pragma: allowlist secret
     "ModelDelegationSecurity": "omnibase_compat.contracts.delegation.model_delegation_security",
 }
 
