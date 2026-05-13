@@ -14,6 +14,12 @@ TDD-first for OMN-10919. Tests cover:
 from __future__ import annotations
 
 import pytest
+
+pytest.importorskip(
+    "omnibase_compat.contracts.delegation",
+    reason="delegation contracts live in optional omnibase_compat package",
+)
+
 from omnibase_compat.contracts.delegation.model_delegation_dashboard_connection import (
     ModelDelegationDashboardConnection,
 )
