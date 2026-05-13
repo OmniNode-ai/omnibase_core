@@ -1,0 +1,17 @@
+name: reviewdog
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  merge_group:
+
+jobs:
+  reviewdog:
+    uses: OmniNode-ai/omniclaude/.github/workflows/reviewdog-review.yml@main
+    with:
+      src-dir: "src/"
+      ruff-enabled: true
+      mypy-enabled: true
+      security-enabled: true
+      fail-level: "error"
+    secrets:
+      REVIEWDOG_PAT: ${{ secrets.REVIEWDOG_PAT }}
