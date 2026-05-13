@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.12"
 
 [[package]]
@@ -650,7 +650,7 @@ wheels = [
 [[package]]
 name = "omnibase-compat"
 version = "0.3.1"
-source = { git = "https://github.com/OmniNode-ai/omnibase_compat.git?branch=main#64897d1b15d6d8502a46518ddf3e126382645150" }
+source = { git = "https://github.com/OmniNode-ai/omnibase_compat.git?branch=main#d86ee00a8b585f9bf32b1ec7c8e785843e4957b0" }
 dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
