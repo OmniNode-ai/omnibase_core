@@ -63,6 +63,34 @@ See Also:
     - docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md: Architecture overview
 """
 
+from omnibase_compat.contracts.delegation.model_delegation_dashboard_connection import (
+    ModelDelegationDashboardConnection,
+)
+from omnibase_compat.contracts.delegation.model_delegation_datastore import (
+    ModelDelegationDatastore,
+)
+from omnibase_compat.contracts.delegation.model_delegation_event_bus_endpoint import (
+    ModelDelegationEventBusEndpoint,
+)
+from omnibase_compat.contracts.delegation.model_delegation_llm_backend import (
+    ModelDelegationLlmBackend,
+)
+from omnibase_compat.contracts.delegation.model_delegation_pricing_manifest_ref import (
+    ModelDelegationPricingManifestRef,
+)
+from omnibase_compat.contracts.delegation.model_delegation_projection_api import (
+    ModelDelegationProjectionApi,
+)
+from omnibase_compat.contracts.delegation.model_delegation_runtime_profile import (
+    ModelDelegationRuntimeProfile,
+)
+from omnibase_compat.contracts.delegation.model_delegation_secret_ref import (
+    ModelDelegationSecretRef,
+)
+from omnibase_compat.contracts.delegation.model_delegation_security import (
+    ModelDelegationSecurity,
+)
+
 from omnibase_core.mixins.mixin_node_type_validator import MixinNodeTypeValidator
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
 from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (
@@ -131,15 +159,6 @@ from .model_db_param import ModelDbParam
 from .model_db_repository_contract import ModelDbRepositoryContract
 from .model_db_return import ModelDbReturn
 from .model_db_safety_policy import ModelDbSafetyPolicy
-from .model_delegation_dashboard_connection import ModelDelegationDashboardConnection
-from .model_delegation_datastore import ModelDelegationDatastore
-from .model_delegation_event_bus_endpoint import ModelDelegationEventBusEndpoint
-from .model_delegation_llm_backend import ModelDelegationLlmBackend
-from .model_delegation_pricing_manifest_ref import ModelDelegationPricingManifestRef
-from .model_delegation_projection_api import ModelDelegationProjectionApi
-from .model_delegation_runtime_profile import ModelDelegationRuntimeProfile
-from .model_delegation_secret_ref import ModelDelegationSecretRef
-from .model_delegation_security import ModelDelegationSecurity
 from .model_dependency import ModelDependency
 from .model_dependency_spec import (
     DependencyType,

@@ -14,35 +14,34 @@ TDD-first for OMN-10919. Tests cover:
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
-from omnibase_core.models.contracts.model_delegation_dashboard_connection import (
+from omnibase_compat.contracts.delegation.model_delegation_dashboard_connection import (
     ModelDelegationDashboardConnection,
 )
-from omnibase_core.models.contracts.model_delegation_datastore import (
+from omnibase_compat.contracts.delegation.model_delegation_datastore import (
     ModelDelegationDatastore,
 )
-from omnibase_core.models.contracts.model_delegation_event_bus_endpoint import (
+from omnibase_compat.contracts.delegation.model_delegation_event_bus_endpoint import (
     ModelDelegationEventBusEndpoint,
 )
-from omnibase_core.models.contracts.model_delegation_llm_backend import (
+from omnibase_compat.contracts.delegation.model_delegation_llm_backend import (
     ModelDelegationLlmBackend,
 )
-from omnibase_core.models.contracts.model_delegation_pricing_manifest_ref import (
+from omnibase_compat.contracts.delegation.model_delegation_pricing_manifest_ref import (
     ModelDelegationPricingManifestRef,
 )
-from omnibase_core.models.contracts.model_delegation_projection_api import (
+from omnibase_compat.contracts.delegation.model_delegation_projection_api import (
     ModelDelegationProjectionApi,
 )
-from omnibase_core.models.contracts.model_delegation_runtime_profile import (
+from omnibase_compat.contracts.delegation.model_delegation_runtime_profile import (
     ModelDelegationRuntimeProfile,
 )
-from omnibase_core.models.contracts.model_delegation_secret_ref import (
+from omnibase_compat.contracts.delegation.model_delegation_secret_ref import (
     ModelDelegationSecretRef,
 )
-from omnibase_core.models.contracts.model_delegation_security import (
+from omnibase_compat.contracts.delegation.model_delegation_security import (
     ModelDelegationSecurity,
 )
+from pydantic import ValidationError
 
 # =============================================================================
 # Fixtures
