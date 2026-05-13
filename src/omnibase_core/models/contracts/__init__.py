@@ -131,6 +131,15 @@ from .model_db_param import ModelDbParam
 from .model_db_repository_contract import ModelDbRepositoryContract
 from .model_db_return import ModelDbReturn
 from .model_db_safety_policy import ModelDbSafetyPolicy
+from .model_delegation_dashboard_connection import ModelDelegationDashboardConnection
+from .model_delegation_datastore import ModelDelegationDatastore
+from .model_delegation_event_bus_endpoint import ModelDelegationEventBusEndpoint
+from .model_delegation_llm_backend import ModelDelegationLlmBackend
+from .model_delegation_pricing_manifest_ref import ModelDelegationPricingManifestRef
+from .model_delegation_projection_api import ModelDelegationProjectionApi
+from .model_delegation_runtime_profile import ModelDelegationRuntimeProfile
+from .model_delegation_secret_ref import ModelDelegationSecretRef
+from .model_delegation_security import ModelDelegationSecurity
 from .model_dependency import ModelDependency
 from .model_dependency_spec import (
     DependencyType,
@@ -315,4 +324,14 @@ __all__ = [
     # HTTP wire contracts (OMN-4222)
     "ModelHttpRequestContract",
     "ModelHttpResponseContract",
+    # Delegation runtime profile contract models (OMN-10919)
+    "ModelDelegationRuntimeProfile",
+    "ModelDelegationEventBusEndpoint",
+    "ModelDelegationLlmBackend",
+    "ModelDelegationSecretRef",
+    "ModelDelegationSecurity",
+    "ModelDelegationPricingManifestRef",
+    "ModelDelegationProjectionApi",
+    "ModelDelegationDashboardConnection",
+    "ModelDelegationDatastore",
 ]
