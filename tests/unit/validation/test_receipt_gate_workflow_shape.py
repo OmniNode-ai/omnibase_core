@@ -6,11 +6,14 @@
 Guards against regressions in the OMN-9198 / OMN-9283 remediation:
 - The workflow must never fall back to PyPI for `omnibase-core` (the published
   wheel has a broken transitive `git+https` dep on `omnibase-compat`).
-- The workflow must use the build-a-wheel + `--find-links` pattern so the same
+- The workflow must use the build-a-wheel + exact wheel path pattern so the same
   install command works for both self-project (core_path=".") and downstream
   callers (core_path="./.receipt-gate-deps/omnibase_core"). Editable/`-e` +
   `--no-index` fails on subpath callers because uv auto-discovers the cwd's
   pyproject constraint separately from the -e candidate registration.
+- The final install must not resolve the bare `omnibase-core` package name,
+  or read the caller repo's uv/pyproject config, because downstream callers can
+  pin an older exact version while the gate intentionally builds core from main.
 """
 
 from __future__ import annotations
@@ -57,13 +60,18 @@ def test_install_step_builds_wheel_from_source() -> None:
     )
 
 
-def test_install_step_uses_find_links() -> None:
-    """Install must resolve omnibase-core from the local wheel dir."""
+def test_install_step_uses_exact_built_wheel_path() -> None:
+    """Install must use the built wheel file path, not resolve the package name."""
     script = _install_step_script()
-    assert "--find-links" in script, (
-        "receipt-gate install must use --find-links pointing at the locally-built "
-        "wheel directory so uv's resolver has a source that satisfies the caller's "
-        "`omnibase-core>=X` constraint without hitting PyPI"
+    assert "wheel_path=" in script
+    assert '"$wheel_path"' in script, (
+        "receipt-gate install must pass the exact built wheel path to uv so caller "
+        "pyproject pins such as `omnibase-core==0.40.1` cannot reject core main's "
+        "freshly built wheel"
+    )
+    assert "--no-config" in script, (
+        "receipt-gate install must disable uv config discovery for the final wheel "
+        "install so the caller repo's pyproject dependency pins are not included"
     )
 
 
@@ -73,11 +81,32 @@ def test_install_step_uses_no_index_for_core() -> None:
     # Join shell line-continuations before matching (the install command is
     # wrapped across multiple lines with trailing backslashes).
     joined = re.sub(r"\\\n\s*", " ", script)
-    pattern = re.compile(r"uv pip install\b[^\n]*--no-index[^\n]*omnibase-core")
+    pattern = re.compile(r"uv pip install\b[^\n]*--no-index[^\n]*\"\$wheel_path\"")
     assert pattern.search(joined), (
-        "the final `uv pip install ... omnibase-core` must include --no-index "
+        'the final `uv pip install ... "$wheel_path"` must include --no-index '
         "so uv cannot fall back to the broken PyPI wheel"
     )
+
+
+def test_install_step_does_not_install_core_by_package_name() -> None:
+    """Final core install must not ask uv to resolve `omnibase-core` by name."""
+    script = _install_step_script()
+    joined = re.sub(r"\\\n\s*", " ", script)
+    install_lines = [
+        line.strip()
+        for line in joined.splitlines()
+        if line.strip().startswith("uv pip install")
+        and "--reinstall-package omnibase-core" in line
+    ]
+    assert install_lines, "final omnibase-core install command not found"
+    for line in install_lines:
+        assert '"$wheel_path"' in line, (
+            "final omnibase-core install must use the exact built wheel path"
+        )
+        assert not re.search(r"\somnibase-core\s*$", line), (
+            "final omnibase-core install must not end with a bare package name; "
+            "that re-enters uv resolution against the caller repo's pyproject pin"
+        )
 
 
 def test_install_step_has_no_bare_pypi_core_install() -> None:
