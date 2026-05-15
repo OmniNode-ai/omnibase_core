@@ -235,6 +235,106 @@ class TestCheckPathsDirectory:
 
 
 @pytest.mark.unit
+class TestGeneratedAndEvidenceExclusions:
+    """OMN-11007: generated frontend, graph caches, OCC receipts, and evidence
+    artifacts must not inflate source-owner triage counts.
+    """
+
+    def test_dot_next_directory_is_skipped(self, tmp_path: Path) -> None:
+        """Compiled Next.js output under '.next/' must be excluded."""
+        next_dir = tmp_path / ".next" / "server" / "app"
+        next_dir.mkdir(parents=True)
+        (next_dir / "page.js").write_text(
+            'var p = "/Users/jonah/projects"\n', encoding="utf-8"
+        )
+
+        validator = ValidatorLocalPaths()
+        violations = validator.check_paths([tmp_path])
+        assert violations == []
+
+    def test_graphify_out_directory_is_skipped(self, tmp_path: Path) -> None:
+        """Generated graphify caches under 'graphify-out/' must be excluded."""
+        cache_dir = tmp_path / "src" / "pkg" / "graphify-out" / "cache"
+        cache_dir.mkdir(parents=True)
+        (cache_dir / "node.json").write_text(
+            '{"path": "/Volumes/PRO-G40/Code/x"}\n', encoding="utf-8"
+        )
+
+        validator = ValidatorLocalPaths()
+        violations = validator.check_paths([tmp_path])
+        assert violations == []
+
+    def test_dod_receipts_directory_is_skipped(self, tmp_path: Path) -> None:
+        """OCC immutable receipts under 'dod_receipts/' must be excluded."""
+        receipt_dir = tmp_path / "drift" / "dod_receipts" / "OMN-1" / "x"
+        receipt_dir.mkdir(parents=True)
+        (receipt_dir / "command.yaml").write_text(
+            "cwd: /Users/jonah/work\n", encoding="utf-8"
+        )
+
+        validator = ValidatorLocalPaths()
+        violations = validator.check_paths([tmp_path])
+        assert violations == []
+
+    def test_evidence_directory_is_skipped(self, tmp_path: Path) -> None:
+        """OCC evidence artifacts under 'evidence/' must be excluded."""
+        evidence_dir = tmp_path / "evidence" / "OMN-1"
+        evidence_dir.mkdir(parents=True)
+        (evidence_dir / "dod_report.json").write_text(
+            '{"cwd": "/Users/jonah/x"}\n', encoding="utf-8"
+        )
+
+        validator = ValidatorLocalPaths()
+        violations = validator.check_paths([tmp_path])
+        assert violations == []
+
+    def test_dot_evidence_directory_is_skipped(self, tmp_path: Path) -> None:
+        """Historical command evidence under '.evidence/' must be excluded."""
+        evidence_dir = tmp_path / ".evidence" / "run-1"
+        evidence_dir.mkdir(parents=True)
+        (evidence_dir / "transcript.txt").write_text(
+            "ran cd /Users/jonah/x\n", encoding="utf-8"
+        )
+
+        validator = ValidatorLocalPaths()
+        violations = validator.check_paths([tmp_path])
+        assert violations == []
+
+    def test_dot_onex_state_directory_is_skipped(self, tmp_path: Path) -> None:
+        """Local state under '.onex_state/' must be excluded."""
+        state_dir = tmp_path / ".onex_state" / "overnight-x"
+        state_dir.mkdir(parents=True)
+        (state_dir / "log.txt").write_text(
+            "cwd: /Volumes/PRO-G40/Code\n", encoding="utf-8"
+        )
+
+        validator = ValidatorLocalPaths()
+        violations = validator.check_paths([tmp_path])
+        assert violations == []
+
+    def test_source_violations_still_detected_alongside_excluded_dirs(
+        self, tmp_path: Path
+    ) -> None:
+        """Excluding generated/evidence dirs must not hide real source violations."""
+        src = tmp_path / "src" / "pkg"
+        src.mkdir(parents=True)
+        (src / "real.py").write_text(
+            'ROOT = "/Volumes/PRO-G40/Code"\n', encoding="utf-8"
+        )
+
+        generated = tmp_path / ".next"
+        generated.mkdir()
+        (generated / "noise.js").write_text(
+            'var p = "/Users/jonah/noise"\n', encoding="utf-8"
+        )
+
+        validator = ValidatorLocalPaths()
+        violations = validator.check_paths([tmp_path])
+        assert len(violations) == 1
+        assert "real.py" in str(violations[0].file)
+
+
+@pytest.mark.unit
 class TestModelLocalPathViolation:
     """ModelLocalPathViolation Pydantic model properties."""
 
