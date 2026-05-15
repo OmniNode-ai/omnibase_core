@@ -75,9 +75,38 @@ _TEXT_EXTENSIONS: Final[frozenset[str]] = frozenset(
     }
 )
 
-# Directories to skip during recursive scan
+# Directories to skip during recursive scan.
+#
+# Three groups:
+#   1. Standard generated/cache trees (.git, __pycache__, node_modules, venvs).
+#   2. Frontend and graph generation output (.next, dist, build, graphify-out).
+#      These mirror source strings into compiled output and would inflate
+#      source-owner triage counts if scanned. See OMN-11007.
+#   3. Immutable evidence and local runtime state. OCC receipts under
+#      dod_receipts/ and evidence/, plus historical .evidence/ command
+#      records and .onex_state/ runtime captures, preserve real cwds and so
+#      look like source violations even though they are not source-owner
+#      actionable.
 _SKIP_DIRS: Final[frozenset[str]] = frozenset(
-    {".git", "__pycache__", "node_modules", ".tox", ".venv", "venv"}
+    {
+        # Standard
+        ".git",
+        "__pycache__",
+        "node_modules",
+        ".tox",
+        ".venv",
+        "venv",
+        # Generated frontend / graph output (OMN-11007)
+        ".next",
+        "dist",
+        "build",
+        "graphify-out",
+        # Evidence and local runtime state (OMN-11007)
+        "dod_receipts",
+        "evidence",
+        ".evidence",
+        ".onex_state",
+    }
 )
 
 # ---------------------------------------------------------------------------
