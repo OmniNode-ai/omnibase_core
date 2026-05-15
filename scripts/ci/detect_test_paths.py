@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 
@@ -22,6 +23,17 @@ TEST_UNIT_PREFIX = "tests/unit/"
 TEST_INTEGRATION_PREFIX = "tests/integration/"
 
 FULL_SUITE_BRANCHES = {"main"}
+
+# Volume-aware split sizing (OMN-11026).
+# Main-branch full-suite uses 40 splits over the whole tree (~1,500 test files,
+# ~40K test items) and finishes within the 35-min job timeout. We match that
+# density — roughly 40 test files per split — when smart-selection expands to
+# large test directories. The path-count floor still keeps small PRs cheap.
+VOLUME_TARGET_FILES_PER_SPLIT = 40
+VOLUME_THRESHOLD_FILES = 80
+VOLUME_MAX_SPLITS = 40
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def resolve_test_paths(
@@ -119,7 +131,7 @@ def compute_selection(
         # low-signal metadata). CI workflow and selector changes are test
         # infrastructure and escalate before this fallback.
         selected = ["tests/unit/"]
-    split_count = _split_count_for(selected)
+    split_count = _split_count_for(selected, repo_root=REPO_ROOT)
 
     return ModelTestSelection(
         selected_paths=selected,
@@ -140,16 +152,27 @@ def _full_suite(reason: EnumFullSuiteReason) -> ModelTestSelection:
     )
 
 
-def _split_count_for(selected_paths: list[str]) -> int:
-    """Initial conservative heuristic mapping path count to split count.
+def _split_count_for(selected_paths: list[str], repo_root: Path | None = None) -> int:
+    """Volume-aware split count for a set of selected unit-test paths.
 
-    These thresholds are a *starting* point chosen to keep small PRs on a single
-    shard (cheap) while preventing pathologically slow runs when many paths
-    survive selection. They are NOT empirically derived. Path count and test
-    count are different things; refine from shadow-mode duration data once
-    available.
+    Two signals combine:
+      1. Path-count floor — the original heuristic; keeps small PRs cheap.
+      2. Test-volume scaling — when expanded paths cover a large number of test
+         files (e.g. mixins → models adjacency pulls in ~700 test files under
+         tests/unit/models/), one-or-two splits cannot finish inside the
+         ``test-parallel`` job timeout. Scale up to match main's ~1K-tests-per-
+         split density (OMN-11026).
+
+    The final split count is ``max(path_floor, volume_scaled)``, capped at
+    ``VOLUME_MAX_SPLITS`` to match the main-branch full-suite shape.
     """
-    n = len(selected_paths)
+    path_floor = _path_count_floor(len(selected_paths))
+    volume_scaled = _volume_split_count(selected_paths, repo_root)
+    return min(max(path_floor, volume_scaled), VOLUME_MAX_SPLITS)
+
+
+def _path_count_floor(n: int) -> int:
+    """Original path-count heuristic, retained as a lower bound."""
     if n <= 2:
         return 1
     if n <= 5:
@@ -159,6 +182,32 @@ def _split_count_for(selected_paths: list[str]) -> int:
     if n <= 16:
         return 4
     return 5
+
+
+def _volume_split_count(selected_paths: list[str], repo_root: Path | None) -> int:
+    """Count actual test files under selected paths and scale splits.
+
+    Returns 0 when the test file count is below ``VOLUME_THRESHOLD_FILES`` —
+    the caller then falls back to the path-count floor. When ``repo_root`` is
+    None or the resolved directories don't exist (e.g. unit tests with a
+    synthetic path list), this also returns 0.
+    """
+    if repo_root is None:
+        return 0
+    total = _count_test_files(selected_paths, repo_root)
+    if total < VOLUME_THRESHOLD_FILES:
+        return 0
+    return math.ceil(total / VOLUME_TARGET_FILES_PER_SPLIT)
+
+
+def _count_test_files(selected_paths: list[str], repo_root: Path) -> int:
+    total = 0
+    for rel in selected_paths:
+        directory = repo_root / rel
+        if not directory.is_dir():
+            continue
+        total += sum(1 for _ in directory.rglob("test_*.py"))
+    return total
 
 
 def main(argv: list[str] | None = None) -> int:
