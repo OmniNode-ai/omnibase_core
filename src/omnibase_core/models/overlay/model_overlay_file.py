@@ -21,6 +21,8 @@ _SECRET_KEY_PATTERN = re.compile(
 
 
 class ModelOverlayFile(BaseModel):
+    """Frozen schema for overlay YAML files. Validated at model level so invalid overlays are rejected regardless of construction path."""
+
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     overlay_version: ModelSemVer = Field(...)
@@ -54,10 +56,12 @@ class ModelOverlayFile(BaseModel):
         return v
 
     def content_hash(self) -> str:
+        """SHA-256 of JSON-serialized model with keys sorted for deterministic output across insertion orders."""
         canonical = json.dumps(self.model_dump(mode="json"), sort_keys=True)
         return f"sha256:{hashlib.sha256(canonical.encode()).hexdigest()}"
 
     def all_env_pairs(self) -> dict[str, str]:
+        """Flatten all sections into a single env-pair dict. Raises ValueError on duplicate keys with conflicting values; identical duplicate values are accepted."""
         pairs: dict[str, str] = {}
         sources: list[tuple[str, dict[str, str]]] = []
         for section_name, transport_vals in self.transports.items():
@@ -78,6 +82,7 @@ class ModelOverlayFile(BaseModel):
         return pairs
 
     def redacted_dump(self) -> dict[str, object]:
+        """Return model_dump with PASSWORD/SECRET/TOKEN/KEY/CREDENTIAL-named values replaced by '***REDACTED***'."""
         data = self.model_dump(mode="json")
         for section_key in ("transports", "secrets", "services", "llm"):
             section = data.get(section_key, {})

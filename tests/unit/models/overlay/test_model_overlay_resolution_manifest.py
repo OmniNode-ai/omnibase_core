@@ -37,6 +37,7 @@ class TestModelOverlayResolutionManifest:
     def test_frozen(self) -> None:
         m = self._make_manifest()
         with pytest.raises(ValidationError):
+            # NOTE(OMN-11070): mypy flags assignment to frozen model field; ignore is intentional to test runtime enforcement
             m.runtime_version = "0.36.0"  # type: ignore[misc]
 
     def test_extra_forbidden(self) -> None:
