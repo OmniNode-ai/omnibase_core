@@ -3,29 +3,23 @@
 
 """Envelope compatibility proof: CLI outbound shape vs runtime deserialization (OMN-10517).
 
-PRE-FIX DIVERGENCE (documented per ticket spec):
-  The CLI's publish_and_poll formerly produced a flat dict:
-      {"correlation_id": str, "node_id": str, "payload": dict, "timestamp": float}
-  ModelDispatchBusCommand (runtime pattern-B broker) expects:
-      {"command_name": str, "requester": str, "payload": ..., "correlation_id": UUID,
-       "response_topic": str, ...}
-  These shapes are incompatible:
-    - CLI lacks required fields (command_name, requester, response_topic)
-    - CLI has extra fields (node_id, timestamp) rejected by extra="forbid"
-    - CLI correlation_id is str, runtime expects UUID
+As of OMN-9877 the CLI uses ModelEventEnvelope as the outbound wire format:
+    {"payload": dict, "correlation_id": UUID-str, "source_tool": str,
+     "target_tool": str, ...metadata...}
 
-This test file asserts that the CLI-produced envelope CAN be round-tripped through
-the runtime's deserialization path. Since the CLI topic (onex.cmd.platform.run-node.v1)
-has no registered runtime consumer that reads ModelDispatchBusCommand, this test
-documents the current CLI envelope shape and asserts it is internally self-consistent.
-The HandlerBusAdapter deserialization path is also tested with the CLI envelope shape
-directly to prove forward compatibility.
+ModelDispatchBusCommand (runtime pattern-B broker) expects:
+    {"command_name": str, "requester": str, "payload": ..., "correlation_id": UUID,
+     "response_topic": str, ...}
+These shapes remain incompatible — the CLI topic (onex.cmd.platform.run-node.v1)
+has no registered runtime consumer that reads ModelDispatchBusCommand.
+
+This test file asserts the CLI-produced ModelEventEnvelope CAN be round-tripped
+through the runtime's deserialization path and is internally self-consistent.
 """
 
 from __future__ import annotations
 
 import json
-import time
 import uuid
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -35,11 +29,35 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
+_PATCH_TOPIC_PARTITION = "confluent_kafka.TopicPartition"
+
+
+class _FakeTopicPartition:
+    def __init__(self, topic: str, partition: int, offset: int | None = None) -> None:
+        self.topic = topic
+        self.partition = partition
+        self.offset = offset
+
+
+def _make_assigned_consumer(
+    response_topic: str = "onex.evt.test.completed.v1",
+) -> MagicMock:
+    consumer = MagicMock()
+    topic_metadata = MagicMock()
+    topic_metadata.partitions = {0: object()}
+    topic_metadata.error = None
+    metadata = MagicMock()
+    metadata.topics = {response_topic: topic_metadata}
+    consumer.list_topics.return_value = metadata
+    consumer.poll.return_value = None
+    return consumer
+
+
 class TestCliEnvelopeShape:
-    """Assert the CLI outbound envelope has the documented structure."""
+    """Assert the CLI outbound envelope uses ModelEventEnvelope (OMN-9877)."""
 
     def test_cli_envelope_fields_present(self) -> None:
-        """CLI envelope must contain correlation_id, node_id, payload, timestamp."""
+        """CLI envelope must be a ModelEventEnvelope with correlation_id, payload, target_tool."""
         from unittest.mock import patch
 
         from omnibase_core.cli.cli_run_node import publish_and_poll
@@ -55,18 +73,14 @@ class TestCliEnvelopeShape:
 
         mock_producer.produce.side_effect = _capture_produce
 
-        mock_consumer = MagicMock()
-        mock_consumer.assignment.return_value = [object()]
-        mock_consumer.poll.return_value = None
+        mock_consumer = _make_assigned_consumer()
 
         with (
             patch(
                 "omnibase_core.cli.cli_run_node.time.monotonic",
                 side_effect=iter([1000.0, 1000.0, 1050.0]),
             ),
-            patch(
-                "omnibase_core.cli.cli_run_node.time.time", return_value=1234567890.0
-            ),
+            patch(_PATCH_TOPIC_PARTITION, side_effect=_FakeTopicPartition),
             patch("confluent_kafka.Consumer", return_value=mock_consumer),
             patch("confluent_kafka.Producer", return_value=mock_producer),
         ):
@@ -75,19 +89,18 @@ class TestCliEnvelopeShape:
                 payload={"key": "value"},
                 timeout=5,
                 bootstrap_servers="localhost:19092",
-                cmd_topic="onex.cmd.test.node-start.v1",
-                response_topic="onex.evt.test.node-completed.v1",
+                command_topic="onex.cmd.test.node-start.v1",
+                response_topic="onex.evt.test.completed.v1",
             )
 
         assert len(captured) == 1
         envelope = captured[0]
         assert "correlation_id" in envelope
-        assert "node_id" in envelope
         assert "payload" in envelope
-        assert "timestamp" in envelope
-        assert envelope["node_id"] == "test-node-abc"
+        assert "target_tool" in envelope
+        assert envelope["target_tool"] == "test-node-abc"
         assert envelope["payload"] == {"key": "value"}
-        assert envelope["timestamp"] == 1234567890.0
+        assert envelope["source_tool"] == "onex.run-node"
 
     def test_cli_correlation_id_is_string_uuid(self) -> None:
         """CLI correlation_id must be a string-formatted UUID."""
@@ -99,22 +112,22 @@ class TestCliEnvelopeShape:
 
         mock_producer = MagicMock()
         mock_producer.flush.return_value = 0
-        mock_producer.produce.side_effect = lambda **kwargs: captured.append(
-            json.loads(kwargs["value"].decode())
-        )
 
-        mock_consumer = MagicMock()
-        mock_consumer.assignment.return_value = [object()]
-        mock_consumer.poll.return_value = None
+        def _capture(
+            topic: str | None = None, value: bytes | None = None, **kwargs: Any
+        ) -> None:
+            if value:
+                captured.append(json.loads(value.decode()))
+
+        mock_producer.produce.side_effect = _capture
+        mock_consumer = _make_assigned_consumer()
 
         with (
             patch(
                 "omnibase_core.cli.cli_run_node.time.monotonic",
                 side_effect=iter([1000.0, 1000.0, 1050.0]),
             ),
-            patch(
-                "omnibase_core.cli.cli_run_node.time.time", return_value=1234567890.0
-            ),
+            patch(_PATCH_TOPIC_PARTITION, side_effect=_FakeTopicPartition),
             patch("confluent_kafka.Consumer", return_value=mock_consumer),
             patch("confluent_kafka.Producer", return_value=mock_producer),
         ):
@@ -123,8 +136,8 @@ class TestCliEnvelopeShape:
                 payload={},
                 timeout=5,
                 bootstrap_servers="localhost:19092",
-                cmd_topic="onex.cmd.test.node-start.v1",
-                response_topic="onex.evt.test.node-completed.v1",
+                command_topic="onex.cmd.test.node-start.v1",
+                response_topic="onex.evt.test.completed.v1",
             )
 
         assert len(captured) == 1
@@ -138,7 +151,7 @@ class TestCliEnvelopeVsModelDispatchBusCommand:
     """Assert the CLI envelope shape is documented as divergent from ModelDispatchBusCommand."""
 
     def test_cli_envelope_not_compatible_with_dispatch_bus_command(self) -> None:
-        """CLI flat envelope CANNOT be deserialized into ModelDispatchBusCommand.
+        """ModelEventEnvelope CANNOT be deserialized into ModelDispatchBusCommand.
 
         Documents the known divergence: the CLI topic is informal and not
         consumed by the pattern-B broker runtime path.
@@ -151,9 +164,9 @@ class TestCliEnvelopeVsModelDispatchBusCommand:
 
         cli_envelope = {
             "correlation_id": str(uuid.uuid4()),
-            "node_id": "test-node",
             "payload": {"x": 1},
-            "timestamp": time.time(),
+            "source_tool": "onex.run-node",
+            "target_tool": "test-node",
         }
 
         # CLI envelope lacks required fields and has forbidden extras
@@ -161,7 +174,7 @@ class TestCliEnvelopeVsModelDispatchBusCommand:
             ModelDispatchBusCommand(**cli_envelope)
 
     def test_dispatch_bus_command_fields_not_in_cli_envelope(self) -> None:
-        """ModelDispatchBusCommand requires fields absent from CLI envelope."""
+        """ModelDispatchBusCommand requires fields absent from CLI ModelEventEnvelope."""
         from omnibase_core.models.dispatch.model_dispatch_bus_command import (
             ModelDispatchBusCommand,
         )
@@ -171,7 +184,12 @@ class TestCliEnvelopeVsModelDispatchBusCommand:
             for name, field in ModelDispatchBusCommand.model_fields.items()
             if field.is_required()
         }
-        cli_envelope_fields = {"correlation_id", "node_id", "payload", "timestamp"}
+        cli_envelope_fields = {
+            "correlation_id",
+            "payload",
+            "source_tool",
+            "target_tool",
+        }
 
         missing_from_cli = required_fields - cli_envelope_fields
         assert missing_from_cli, (
@@ -189,7 +207,7 @@ class TestHandlerBusAdapterWithCliEnvelope:
     """
 
     def test_handler_bus_adapter_deserializes_cli_shape(self) -> None:
-        """HandlerBusAdapter can deserialize a CLI-shape envelope into a matching model."""
+        """HandlerBusAdapter can deserialize a ModelEventEnvelope-shaped message into a matching model."""
         from pydantic import BaseModel, ConfigDict
 
         from omnibase_core.runtime.runtime_local_adapter import HandlerBusAdapter
@@ -197,9 +215,9 @@ class TestHandlerBusAdapterWithCliEnvelope:
         class ModelCliRunNodeCommand(BaseModel):
             model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
             correlation_id: str
-            node_id: str
             payload: dict[str, Any]
-            timestamp: float
+            target_tool: str
+            source_tool: str
 
         received: list[ModelCliRunNodeCommand] = []
 
@@ -221,9 +239,9 @@ class TestHandlerBusAdapterWithCliEnvelope:
         corr_id = str(uuid.uuid4())
         cli_envelope = {
             "correlation_id": corr_id,
-            "node_id": "synthetic-node",
             "payload": {"param": "value"},
-            "timestamp": 1234567890.0,
+            "target_tool": "synthetic-node",
+            "source_tool": "onex.run-node",
         }
         msg = MagicMock()
         msg.value = json.dumps(cli_envelope).encode("utf-8")
@@ -234,7 +252,7 @@ class TestHandlerBusAdapterWithCliEnvelope:
 
         assert len(received) == 1
         assert received[0].correlation_id == corr_id
-        assert received[0].node_id == "synthetic-node"
+        assert received[0].target_tool == "synthetic-node"
         assert received[0].payload == {"param": "value"}
 
     def test_handler_bus_adapter_fails_on_mismatched_model(self) -> None:
@@ -264,9 +282,9 @@ class TestHandlerBusAdapterWithCliEnvelope:
 
         cli_envelope = {
             "correlation_id": str(uuid.uuid4()),
-            "node_id": "test-node",
             "payload": {"x": 1},
-            "timestamp": time.time(),
+            "target_tool": "test-node",
+            "source_tool": "onex.run-node",
         }
         msg = MagicMock()
         msg.value = json.dumps(cli_envelope).encode("utf-8")
@@ -285,13 +303,13 @@ class TestCliEnvelopeRoundTrip:
     """Assert CLI envelope serializes and deserializes without data loss."""
 
     def test_cli_envelope_json_roundtrip(self) -> None:
-        """CLI envelope survives JSON encode/decode without data loss."""
+        """ModelEventEnvelope-shaped CLI envelope survives JSON encode/decode without data loss."""
         corr_id = str(uuid.uuid4())
         original = {
             "correlation_id": corr_id,
-            "node_id": "node-xyz",
             "payload": {"nested": {"a": 1}, "list": [1, 2, 3]},
-            "timestamp": 1234567890.123,
+            "source_tool": "onex.run-node",
+            "target_tool": "node-xyz",
         }
 
         raw = json.dumps(original).encode("utf-8")
@@ -299,7 +317,7 @@ class TestCliEnvelopeRoundTrip:
 
         assert decoded == original
         assert decoded["correlation_id"] == corr_id
-        assert decoded["node_id"] == "node-xyz"
+        assert decoded["target_tool"] == "node-xyz"
         assert decoded["payload"] == {"nested": {"a": 1}, "list": [1, 2, 3]}
 
     def test_correlated_response_matches_sent_correlation_id(self) -> None:
@@ -324,6 +342,13 @@ class TestCliEnvelopeRoundTrip:
             group_id = str(config.get("group.id", ""))
             corr = group_id.removeprefix("onex-run-node-")
 
+            topic_metadata = MagicMock()
+            topic_metadata.partitions = {0: object()}
+            topic_metadata.error = None
+            metadata = MagicMock()
+            metadata.topics = {"onex.evt.test.completed.v1": topic_metadata}
+            consumer.list_topics.return_value = metadata
+
             wrong_msg = MagicMock()
             wrong_msg.error.return_value = None
             wrong_msg.value.return_value = json.dumps(
@@ -337,7 +362,6 @@ class TestCliEnvelopeRoundTrip:
             ).encode()
 
             consumer.poll.side_effect = [wrong_msg, right_msg]
-            consumer.assignment.return_value = [object()]
             return consumer
 
         with (
@@ -345,10 +369,10 @@ class TestCliEnvelopeRoundTrip:
                 "omnibase_core.cli.cli_run_node.uuid.uuid4", side_effect=_capture_uuid4
             ),
             patch("omnibase_core.cli.cli_run_node.time") as mock_time,
+            patch(_PATCH_TOPIC_PARTITION, side_effect=_FakeTopicPartition),
             patch("confluent_kafka.Consumer", side_effect=_make_consumer),
             patch("confluent_kafka.Producer", return_value=mock_producer),
         ):
-            mock_time.time.return_value = 1234567890.0
             mock_time.monotonic.return_value = 1000.0
 
             result = publish_and_poll(
@@ -356,8 +380,8 @@ class TestCliEnvelopeRoundTrip:
                 payload={"input": 42},
                 timeout=30,
                 bootstrap_servers="localhost:19092",
-                cmd_topic="onex.cmd.test.node-start.v1",
-                response_topic="onex.evt.test.node-completed.v1",
+                command_topic="onex.cmd.test.command.v1",
+                response_topic="onex.evt.test.completed.v1",
             )
 
         assert result is not None

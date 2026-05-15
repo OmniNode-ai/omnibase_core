@@ -102,8 +102,10 @@ class TestRunNodeCommand:
             patch(
                 "omnibase_core.cli.cli_run_node._resolve_node_topics",
                 return_value=(
+                    "/tmp/contract.yaml",
                     "onex.cmd.test.node-start.v1",
                     "onex.evt.test.node-completed.v1",
+                    False,
                 ),
             ),
             patch(
@@ -126,8 +128,10 @@ class TestRunNodeCommand:
             patch(
                 "omnibase_core.cli.cli_run_node._resolve_node_topics",
                 return_value=(
+                    "/tmp/contract.yaml",
                     "onex.cmd.test.node-start.v1",
                     "onex.evt.test.node-completed.v1",
+                    False,
                 ),
             ),
             patch(
@@ -158,8 +162,10 @@ class TestRunNodeCommand:
             patch(
                 "omnibase_core.cli.cli_run_node._resolve_node_topics",
                 return_value=(
+                    "/tmp/contract.yaml",
                     "onex.cmd.test.node-start.v1",
                     "onex.evt.test.node-completed.v1",
+                    False,
                 ),
             ),
             patch(
