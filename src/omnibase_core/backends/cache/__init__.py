@@ -30,8 +30,8 @@ Usage:
 
         # Check if Redis is available
         if REDIS_AVAILABLE:
-            # Create Redis backend
-            backend = BackendCacheRedis(url="redis://localhost:16379/0")
+            # Create Redis backend from contract/config-owned connection material
+            backend = BackendCacheRedis(url=redis_url)
             await backend.connect()
 
             # Use with MixinCaching
@@ -40,7 +40,7 @@ Usage:
                     super().__init__(container, backend=backend)
 
         # Sanitize URLs for safe logging
-        safe_url = sanitize_redis_url("redis://user:pass@host:6379")
+        safe_url = sanitize_redis_url(redis_url)
         # Returns: "redis://***:***@host:6379"
 
 Requirements:
