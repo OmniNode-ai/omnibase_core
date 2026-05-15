@@ -1318,8 +1318,8 @@ jobs:
           fi
 
   # CI Summary - final aggregator for all gates (OMN-2226)
-  # Cross-repo boundary validation (OMN-6576)
-  # Warn-only mode — does not block PRs, just surfaces boundary parity issues.
+  # Cross-repo boundary validation (OMN-6576, OMN-10978)
+  # Blocking mode: boundary parity is an architectural CI gate.
   boundary-validation:
     name: Cross-repo boundary validation
     runs-on: >-
@@ -1328,13 +1328,12 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    continue-on-error: true
     steps:
       - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@32a57e7b0797f4171891ed96047ea618e796f8db # main 2026-03-25
-        continue-on-error: true
         with:
           checks: "boundary-parity"
-          warn-only: "true"
+          warn-only: "false"
+          repos: "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,onex_change_control"
 
   # API-STABLE check_name: "CI Summary"
   # Aggregates Quality Gate + Tests Gate into a single top-level status.
@@ -1378,7 +1377,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    needs: [quality-gate, tests-gate, contract-compliance]
+    needs: [quality-gate, tests-gate, contract-compliance, boundary-validation]
     if: always()
 
     steps:
@@ -1390,23 +1389,26 @@ jobs:
           quality="${{ needs.quality-gate.result }}"
           tests="${{ needs.tests-gate.result }}"
           compliance="${{ needs['contract-compliance'].result }}"
+          boundary="${{ needs['boundary-validation'].result }}"
 
           echo "| Gate | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Quality Gate | $quality |" >> $GITHUB_STEP_SUMMARY
           echo "| Tests Gate | $tests |" >> $GITHUB_STEP_SUMMARY
           echo "| Compliance | $compliance |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cross-repo Boundary Validation | $boundary |" >> $GITHUB_STEP_SUMMARY
 
-          # Accept "success" or "skipped" for both gates. Skipped is valid when
+          # Accept "success" or "skipped" for gates. Skipped is valid when
           # upstream jobs are correctly skipped (e.g. dependabot PRs).
           quality_ok=$([[ "$quality" == "success" || "$quality" == "skipped" ]] && echo true || echo false)
           tests_ok=$([[ "$tests" == "success" || "$tests" == "skipped" ]] && echo true || echo false)
           compliance_ok=$([[ "$compliance" == "success" || "$compliance" == "skipped" ]] && echo true || echo false)
+          boundary_ok=$([[ "$boundary" == "success" || "$boundary" == "skipped" ]] && echo true || echo false)
 
-          if [[ "$quality_ok" == "true" ]] && [[ "$tests_ok" == "true" ]] && [[ "$compliance_ok" == "true" ]]; then
+          if [[ "$quality_ok" == "true" ]] && [[ "$tests_ok" == "true" ]] && [[ "$compliance_ok" == "true" ]] && [[ "$boundary_ok" == "true" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**CI Summary: ALL GATES PASSED**" >> $GITHUB_STEP_SUMMARY
-            echo "All CI gates passed (quality=$quality, tests=$tests, compliance=$compliance)."
+            echo "All CI gates passed (quality=$quality, tests=$tests, compliance=$compliance, boundary=$boundary)."
             exit 0
           else
             echo "" >> $GITHUB_STEP_SUMMARY
@@ -1416,5 +1418,6 @@ jobs:
             echo "  Quality Gate: $quality"
             echo "  Tests Gate: $tests"
             echo "  Compliance: $compliance"
+            echo "  Cross-repo Boundary Validation: $boundary"
             exit 1
           fi
