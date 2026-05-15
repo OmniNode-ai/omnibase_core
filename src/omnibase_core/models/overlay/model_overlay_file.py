@@ -20,6 +20,18 @@ _SECRET_KEY_PATTERN = re.compile(
 )
 
 
+def _redact_section(section: object) -> None:
+    if not isinstance(section, dict):
+        return
+    for sub_key, sub_val in section.items():
+        if isinstance(sub_val, dict):
+            for k in sub_val:
+                if _SECRET_KEY_PATTERN.search(k):
+                    sub_val[k] = "***REDACTED***"
+        elif isinstance(sub_val, str) and _SECRET_KEY_PATTERN.search(sub_key):
+            section[sub_key] = "***REDACTED***"
+
+
 class ModelOverlayFile(BaseModel):
     """Frozen schema for overlay YAML files. Validated at model level so invalid overlays are rejected regardless of construction path."""
 
@@ -85,16 +97,7 @@ class ModelOverlayFile(BaseModel):
         """Return model_dump with PASSWORD/SECRET/TOKEN/KEY/CREDENTIAL-named values replaced by '***REDACTED***'."""
         data = self.model_dump(mode="json")
         for section_key in ("transports", "secrets", "services", "llm"):
-            section = data.get(section_key, {})
-            if not isinstance(section, dict):
-                continue
-            for sub_key, sub_val in section.items():
-                if isinstance(sub_val, dict):
-                    for k in sub_val:
-                        if _SECRET_KEY_PATTERN.search(k):
-                            sub_val[k] = "***REDACTED***"
-                elif isinstance(sub_val, str) and _SECRET_KEY_PATTERN.search(sub_key):
-                    section[sub_key] = "***REDACTED***"
+            _redact_section(data.get(section_key, {}))
         return data
 
 

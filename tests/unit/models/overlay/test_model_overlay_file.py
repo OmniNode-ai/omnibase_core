@@ -6,6 +6,10 @@ from pydantic import ValidationError
 
 from omnibase_core.models.overlay.model_overlay_file import ModelOverlayFile
 
+_TEST_HOST = (
+    "192.168.86.201"  # onex-allow-internal-ip: test fixture for local infra topology
+)
+
 
 @pytest.mark.unit
 class TestModelOverlayFile:
@@ -16,7 +20,7 @@ class TestModelOverlayFile:
             "scope": "env",
             "transports": {
                 "database": {
-                    "POSTGRES_HOST": "192.168.86.201",
+                    "POSTGRES_HOST": _TEST_HOST,
                     "POSTGRES_PORT": "5436",
                 },
             },
@@ -24,7 +28,7 @@ class TestModelOverlayFile:
         overlay = ModelOverlayFile.model_validate(data)
         assert str(overlay.overlay_version) == "1.0.0"
         assert overlay.scope.value == "env"
-        assert overlay.transports["database"]["POSTGRES_HOST"] == "192.168.86.201"
+        assert overlay.transports["database"]["POSTGRES_HOST"] == _TEST_HOST
 
     def test_missing_overlay_version_fails(self) -> None:
         with pytest.raises(ValidationError):
@@ -161,11 +165,11 @@ class TestModelOverlayFile:
                 "environment": "dev",
                 "scope": "env",
                 "secrets": {
-                    "INFISICAL_CLIENT_SECRET": "actual_secret"  # pragma: allowlist secret
+                    "INFISICAL_CLIENT_SECRET": "test-secret-value"  # pragma: allowlist secret  # NOSONAR
                 },
                 "transports": {
                     "database": {
-                        "POSTGRES_PASSWORD": "db_pass"  # pragma: allowlist secret
+                        "POSTGRES_PASSWORD": "test-pg-value"  # pragma: allowlist secret  # NOSONAR
                     }
                 },
             }
