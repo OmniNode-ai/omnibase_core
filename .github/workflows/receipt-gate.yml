@@ -403,19 +403,29 @@ jobs:
           # project — uv collapses them into one node.
           #
           # Fix (Option B from diagnosis-receipt-gate-v4-subpath-editable.md):
-          # build a wheel from source, install from a local --find-links. The
-          # resolver operates on a named package from a wheel location, which
-          # unambiguously satisfies the cwd-project's version constraint.
+          # build a wheel from source, then install that exact wheel file. The
+          # final install must not ask uv to resolve the omnibase-core package
+          # name or read the caller repo's uv/pyproject config because downstream
+          # caller pyprojects can pin an older exact version (for example
+          # omnibase-core==0.40.1) while core main builds a newer wheel for the
+          # shared gate.
           # Not editable, but receipt-gate imports the module once and exits —
           # editability was never a functional requirement, only a means to use
           # source instead of PyPI.
+          rm -rf /tmp/receipt-gate-wheels
           mkdir -p /tmp/receipt-gate-wheels
           (cd "$core_path" && uv build --wheel --out-dir /tmp/receipt-gate-wheels)
 
-          uv pip install --system --no-deps --no-index \
-            --find-links /tmp/receipt-gate-wheels \
+          wheel_path="$(find /tmp/receipt-gate-wheels -maxdepth 1 -type f -name 'omnibase_core-*.whl' -print -quit)"
+          if [ -z "$wheel_path" ]; then
+            echo "::error::omnibase_core wheel build produced no wheel in /tmp/receipt-gate-wheels"
+            find /tmp/receipt-gate-wheels -maxdepth 1 -type f -print || true
+            exit 1
+          fi
+
+          uv pip install --no-config --system --no-deps --no-index \
             --reinstall-package omnibase-core \
-            omnibase-core
+            "$wheel_path"
 
       - name: Verify receipt_gate_cli importable
         # Fail-fast check: the preceding install step claims success, but if uv
