@@ -27,6 +27,7 @@ class TestModelOverlayResolutionManifest:
             "config_source": "overlay",
         }
         defaults.update(overrides)
+        # NOTE(OMN-11070): mypy cannot statically verify the dynamically-built defaults dict matches the constructor signature
         return ModelOverlayResolutionManifest(**defaults)  # type: ignore[arg-type]
 
     def test_creates_with_all_fields(self) -> None:
