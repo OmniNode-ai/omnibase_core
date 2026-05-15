@@ -165,8 +165,8 @@ class TestModelOverlayFile:
                 },
                 "transports": {
                     "database": {
-                        "POSTGRES_PASSWORD": "db_pass"
-                    }  # pragma: allowlist secret
+                        "POSTGRES_PASSWORD": "db_pass"  # pragma: allowlist secret
+                    }
                 },
             }
         )
