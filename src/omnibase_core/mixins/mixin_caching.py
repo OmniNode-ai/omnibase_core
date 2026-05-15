@@ -42,8 +42,8 @@ Usage:
         from omnibase_core.mixins import MixinCaching
         from omnibase_core.nodes import NodeCompute
 
-        # With L2 Redis backend
-        backend = BackendCacheRedis(url="redis://localhost:16379/0")
+        # With L2 Redis backend from contract/config-owned connection material
+        backend = BackendCacheRedis(url=redis_url)
         await backend.connect()
 
         class MyComputeNode(NodeCompute, MixinCaching):
@@ -142,8 +142,8 @@ class MixinCaching:
             from omnibase_core.mixins import MixinCaching
             from omnibase_core.nodes import NodeCompute
 
-            # Create Redis backend for L2
-            backend = BackendCacheRedis(url="redis://localhost:16379/0")
+            # Create Redis backend for L2 from contract/config-owned connection material
+            backend = BackendCacheRedis(url=redis_url)
             await backend.connect()
 
             class MyNode(NodeCompute, MixinCaching):
@@ -357,6 +357,7 @@ class MixinCaching:
             except (
                 Exception  # noqa: BLE001
             ) as e:  # cleanup-resilience-ok: cleanup must complete even on error
+                # fallback-ok: L2 cleanup failures must not break L1 cache operation.
                 error = self._wrap_cache_error(e, "cleanup")
                 logger.warning(
                     "L2 cache backend cleanup failed: %s (exception type: %s)",

@@ -21,8 +21,8 @@ Usage:
 
         from omnibase_core.backends.cache import BackendCacheRedis
 
-        # Create and connect
-        backend = BackendCacheRedis(url="redis://localhost:16379/0")
+        # Create and connect from contract/config-owned connection material
+        backend = BackendCacheRedis(url=redis_url)
         await backend.connect()
 
         # Use for caching
@@ -40,7 +40,7 @@ Usage:
         from omnibase_core.mixins import MixinCaching
         from omnibase_core.nodes import NodeCompute
 
-        backend = BackendCacheRedis(url="redis://localhost:16379/0")
+        backend = BackendCacheRedis(url=redis_url)
         await backend.connect()
 
         class MyNode(NodeCompute, MixinCaching):
@@ -281,7 +281,7 @@ class BackendCacheRedis:
         Connection pooling handles concurrent access safely.
 
     Attributes:
-        url: Redis connection URL (e.g., "redis://localhost:16379/0")
+        url: Redis connection URL provided by the caller.
         prefix: Optional key prefix for namespacing
         default_ttl: Default TTL in seconds (None = no expiration)
 
@@ -293,7 +293,7 @@ class BackendCacheRedis:
             async def main():
                 # Create backend with connection pool
                 backend = BackendCacheRedis(
-                    url="redis://localhost:16379/0",
+                    url=redis_url,
                     prefix="myapp:",
                     default_ttl=3600,
                 )
@@ -390,7 +390,7 @@ class BackendCacheRedis:
         Example:
             .. code-block:: python
 
-                async with BackendCacheRedis(url="redis://localhost:16379") as cache:
+                async with BackendCacheRedis(url=redis_url) as cache:
                     await cache.set("key", "value")
                 # Connection automatically closed on exit
 
@@ -495,7 +495,9 @@ class BackendCacheRedis:
             logger.warning(
                 "Error during connection cleanup: %s", sanitize_error_message(str(e))
             )
-        except Exception as e:  # noqa: BLE001
+        except (
+            Exception  # noqa: BLE001
+        ) as e:  # fallback-ok: cleanup must not mask connect failure
             # cleanup-resilience-ok: catch-all ensures cleanup never fails unexpectedly
             logger.warning(
                 "Unexpected error during connection cleanup: %s",
@@ -524,7 +526,9 @@ class BackendCacheRedis:
             logger.warning(
                 "Error closing Redis client: %s", sanitize_error_message(str(e))
             )
-        except Exception as e:  # noqa: BLE001
+        except (
+            Exception  # noqa: BLE001
+        ) as e:  # fallback-ok: close should continue to pool cleanup
             # cleanup-resilience-ok: catch-all ensures pool cleanup always runs
             logger.warning(
                 "Unexpected error closing Redis client: %s",
@@ -541,7 +545,9 @@ class BackendCacheRedis:
             logger.warning(
                 "Error disconnecting Redis pool: %s", sanitize_error_message(str(e))
             )
-        except Exception as e:  # noqa: BLE001
+        except (
+            Exception  # noqa: BLE001
+        ) as e:  # fallback-ok: close must reset pool state
             # cleanup-resilience-ok: catch-all ensures state is always reset
             logger.warning(
                 "Unexpected error disconnecting Redis pool: %s",
