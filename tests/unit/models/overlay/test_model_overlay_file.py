@@ -161,11 +161,13 @@ class TestModelOverlayFile:
                 "environment": "dev",
                 "scope": "env",
                 "secrets": {
-                    "INFISICAL_CLIENT_SECRET": "actual_secret"
-                },  # pragma: allowlist secret
+                    "INFISICAL_CLIENT_SECRET": "actual_secret"  # pragma: allowlist secret
+                },
                 "transports": {
-                    "database": {"POSTGRES_PASSWORD": "db_pass"}
-                },  # pragma: allowlist secret
+                    "database": {
+                        "POSTGRES_PASSWORD": "db_pass"
+                    }  # pragma: allowlist secret
+                },
             }
         )
         redacted = overlay.redacted_dump()
