@@ -1,115 +1,30 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""``onex run-node`` — publish a command to Kafka and poll for the result."""
+"""``onex run-node`` — dispatch a packaged node over Kafka using its contract."""
 
 from __future__ import annotations
 
 import importlib
-import importlib.metadata
-import importlib.util
 import json
 import os
 import sys
 import time
 import uuid
 from pathlib import Path
+from typing import NoReturn
+from uuid import UUID
 
 import click
-from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.cli.cli_node import _resolve_packaged_contract
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.runtime.runtime_local import load_workflow_contract
 
 
-def _resolve_node_topics(node_id: str) -> tuple[str, str]:
-    """Resolve the cmd and response topics for a node from its contract.yaml.
-
-    Returns (cmd_topic, response_topic).  Looks up the node via the
-    ``onex.nodes`` entry-point group, loads the colocated contract.yaml,
-    and reads:
-      - cmd_topic:      event_bus.subscribe_topics[0]
-      - response_topic: terminal_event
-
-    Raises click.ClickException if the node is unknown, the contract is
-    missing, or the required fields are absent.
-    """
-
-    class _EventBus(BaseModel):  # type: ignore[explicit-any]
-        model_config = ConfigDict(extra="ignore")
-        subscribe_topics: list[str] = Field(default_factory=list)
-
-    class _ContractTopics(BaseModel):  # type: ignore[explicit-any]
-        model_config = ConfigDict(extra="ignore")
-        event_bus: _EventBus = Field(default_factory=_EventBus)
-        terminal_event: str = ""
-
-    matches = [
-        ep
-        for ep in importlib.metadata.entry_points(group="onex.nodes")
-        if ep.name == node_id
-    ]
-    if not matches:
-        known = sorted(
-            {ep.name for ep in importlib.metadata.entry_points(group="onex.nodes")}
-        )
-        raise click.ClickException(
-            f"Unknown node '{node_id}'. Known nodes: {', '.join(known) or '(none)'}"
-        )
-    if len(matches) > 1:
-        sources = ", ".join(str(ep.dist) for ep in matches)
-        raise click.ClickException(
-            f"Duplicate entry-point '{node_id}' registered by: {sources}"
-        )
-
-    module_path = matches[0].value.split(":", 1)[0].strip()
-    spec = importlib.util.find_spec(module_path)
-    if spec is None:
-        raise click.ClickException(
-            f"Failed to resolve module '{module_path}' for node '{node_id}'"
-        )
-
-    if spec.submodule_search_locations:
-        module_dir = Path(next(iter(spec.submodule_search_locations))).resolve()
-    elif spec.origin is not None:
-        module_dir = Path(spec.origin).resolve().parent
-    else:
-        raise click.ClickException(
-            f"Node '{node_id}' module '{module_path}' has no origin; "
-            "cannot locate contract.yaml"
-        )
-
-    contract_path = module_dir / "contract.yaml"
-    if not contract_path.exists():
-        raise click.ClickException(
-            f"Node '{node_id}' has no contract.yaml at {contract_path}"
-        )
-
-    try:
-        contract = load_and_validate_yaml_model(contract_path, _ContractTopics)
-    except ModelOnexError as exc:
-        raise click.ClickException(
-            f"Node '{node_id}' contract.yaml failed to load: {exc.message}"
-        )
-
-    if not contract.event_bus.subscribe_topics:
-        raise click.ClickException(
-            f"Node '{node_id}' contract.yaml has no event_bus.subscribe_topics; "
-            "cannot determine which Kafka topic to publish the command to"
-        )
-    cmd_topic = contract.event_bus.subscribe_topics[0]
-
-    if not contract.terminal_event:
-        raise click.ClickException(
-            f"Node '{node_id}' contract.yaml has no terminal_event; "
-            "cannot determine which Kafka topic to poll for the response"
-        )
-
-    return cmd_topic, contract.terminal_event
-
-
-def _emit_error(node_id: str, message: str, **extra: str | int) -> None:
+def _emit_error(node_id: str, message: str, **extra: str | int) -> NoReturn:
     """Emit a SkillRoutingError JSON envelope and exit non-zero."""
     envelope: dict[str, str | int] = {
         "error_type": "SkillRoutingError",
@@ -121,15 +36,94 @@ def _emit_error(node_id: str, message: str, **extra: str | int) -> None:
     sys.exit(1)
 
 
+def _contract_requires_payload_correlation_id(contract: dict[str, object]) -> bool:
+    """Return True when the contract explicitly requires payload.correlation_id."""
+    inputs = contract.get("inputs")
+    if not isinstance(inputs, dict):
+        return False
+
+    correlation_spec = inputs.get("correlation_id")
+    if not isinstance(correlation_spec, dict):
+        return False
+
+    return correlation_spec.get("required") is True
+
+
+def _resolve_node_topics(node_id: str) -> tuple[Path, str, str, bool]:
+    """Resolve a packaged node to its contract path and Kafka routing metadata."""
+    contract_path = _resolve_packaged_contract(node_id)
+    contract = load_workflow_contract(contract_path)
+
+    event_bus = contract.get("event_bus")
+    if not isinstance(event_bus, dict):
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=(
+                f"Node '{node_id}' contract at {contract_path} is missing an "
+                "event_bus mapping"
+            ),
+        )
+
+    subscribe_topics = event_bus.get("subscribe_topics")
+    if not isinstance(subscribe_topics, list) or not subscribe_topics:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=(
+                f"Node '{node_id}' contract at {contract_path} does not declare "
+                "event_bus.subscribe_topics"
+            ),
+        )
+
+    command_topic = subscribe_topics[0]
+    if not isinstance(command_topic, str) or not command_topic.strip():
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=(
+                f"Node '{node_id}' contract at {contract_path} has an invalid "
+                "primary subscribe topic"
+            ),
+        )
+
+    terminal_event = contract.get("terminal_event")
+    if not isinstance(terminal_event, str) or not terminal_event.strip():
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=(
+                f"Node '{node_id}' contract at {contract_path} does not declare "
+                "a terminal_event"
+            ),
+        )
+
+    return (
+        contract_path,
+        command_topic,
+        terminal_event,
+        _contract_requires_payload_correlation_id(contract),
+    )
+
+
+def _normalize_payload(
+    payload: dict[str, object],
+    correlation_id: UUID,
+    inject_payload_correlation_id: bool,
+) -> dict[str, object]:
+    """Ensure the payload carries a correlation_id for input models that require one."""
+    normalized = dict(payload)
+    if inject_payload_correlation_id and normalized.get("correlation_id") in (None, ""):
+        normalized["correlation_id"] = str(correlation_id)
+    return normalized
+
+
 def publish_and_poll(
     node_id: str,
     payload: dict[str, object],
     timeout: int,
     bootstrap_servers: str,
-    cmd_topic: str,
+    command_topic: str,
     response_topic: str,
+    inject_payload_correlation_id: bool = False,
 ) -> dict[str, object] | None:
-    """Publish a command envelope to cmd_topic and poll response_topic for a result.
+    """Publish a contract-routed command envelope and poll for its terminal event.
 
     Returns the response dict, or None on timeout.
     """
@@ -138,6 +132,8 @@ def publish_and_poll(
         # NOTE(OMN-9715): lazy importlib import preserves ADR-005 transport boundary; attr-defined suppressed because confluent_kafka stubs are incomplete
         Producer = _ck.Producer  # type: ignore[attr-defined]
         Consumer = _ck.Consumer  # type: ignore[attr-defined]
+        OFFSET_END = _ck.OFFSET_END  # type: ignore[attr-defined]
+        TopicPartition = _ck.TopicPartition  # type: ignore[attr-defined]
     except ImportError as exc:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.IMPORT_ERROR,
@@ -147,14 +143,19 @@ def publish_and_poll(
             ),
         ) from exc
 
-    correlation_id = str(uuid.uuid4())
-
-    envelope = {
-        "correlation_id": correlation_id,
-        "node_id": node_id,
-        "payload": payload,
-        "timestamp": time.time(),
-    }
+    correlation_uuid = uuid.uuid4()
+    correlation_id = str(correlation_uuid)
+    normalized_payload = _normalize_payload(
+        payload,
+        correlation_uuid,
+        inject_payload_correlation_id,
+    )
+    envelope = ModelEventEnvelope[object](
+        payload=normalized_payload,
+        correlation_id=correlation_uuid,
+        source_tool="onex.run-node",
+        target_tool=node_id,
+    )
 
     delivery_error: list[Exception] = []
 
@@ -177,25 +178,34 @@ def publish_and_poll(
         }
     )
     try:
-        # Subscribe and wait for partition assignment before producing.
-        # subscribe() is asynchronous — assignment only happens during poll().
-        # Waiting here (within the caller's deadline) ensures a fast responder
-        # cannot produce the reply before this consumer holds partitions
-        # (auto.offset.reset="latest" would skip any pre-assignment messages).
-        consumer.subscribe([response_topic])
-        while not consumer.assignment():
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.RUNTIME_ERROR,
-                    message="Timed out waiting for Kafka consumer partition assignment",
-                )
-            consumer.poll(timeout=min(remaining, 0.1))
+        # Explicit assignment is more reliable than ephemeral group rebalances
+        # for one-shot request/response flows.
+        metadata = consumer.list_topics(response_topic, timeout=10.0)
+        topic_metadata = metadata.topics.get(response_topic)
+        if topic_metadata is None or getattr(topic_metadata, "error", None) is not None:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.RUNTIME_ERROR,
+                message=f"Kafka topic metadata unavailable for {response_topic}",
+            )
+
+        response_partitions: list[object] = []
+        for partition_id in sorted(topic_metadata.partitions):
+            response_partitions.append(
+                TopicPartition(response_topic, partition_id, OFFSET_END)
+            )
+
+        if not response_partitions:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.RUNTIME_ERROR,
+                message=f"Kafka topic {response_topic} has no partitions",
+            )
+
+        consumer.assign(response_partitions)
 
         producer = Producer({"bootstrap.servers": bootstrap_servers})
         producer.produce(
-            topic=cmd_topic,
-            value=json.dumps(envelope).encode(),
+            topic=command_topic,
+            value=envelope.model_dump_json().encode(),
             on_delivery=_on_delivery,
         )
         pending = producer.flush(timeout=10.0)
@@ -251,30 +261,33 @@ def publish_and_poll(
 def run_node(node_id: str, input_json: str, timeout: int) -> None:
     """Execute a remote ONEX node via Kafka.
 
-    Resolves the node's contract-declared input and terminal topics, publishes
-    a command envelope, then polls for a correlated response. Exits non-zero
-    on failure or timeout, emitting a SkillRoutingError JSON envelope.
+    Resolves NODE_ID via the packaged contract.yaml, publishes a command envelope
+    to the node's primary subscribe topic, and polls its declared terminal_event.
+    Exits non-zero on failure or timeout, emitting a SkillRoutingError JSON
+    envelope.
     """
     try:
         payload = json.loads(input_json)
     except json.JSONDecodeError as exc:
         _emit_error(node_id, f"Invalid JSON input: {exc}")
 
-    try:
-        cmd_topic, response_topic = _resolve_node_topics(node_id)
-    except click.ClickException as exc:
-        _emit_error(node_id, exc.format_message())
-
     bootstrap_servers = os.environ["KAFKA_BOOTSTRAP_SERVERS"]
 
     try:
+        (
+            _contract_path,
+            command_topic,
+            response_topic,
+            inject_payload_correlation_id,
+        ) = _resolve_node_topics(node_id)
         response = publish_and_poll(
             node_id=node_id,
             payload=payload,
             timeout=timeout,
             bootstrap_servers=bootstrap_servers,
-            cmd_topic=cmd_topic,
+            command_topic=command_topic,
             response_topic=response_topic,
+            inject_payload_correlation_id=inject_payload_correlation_id,
         )
     except (ConnectionError, OSError, ImportError, ModelOnexError) as exc:
         _emit_error(node_id, str(exc))
@@ -286,4 +299,4 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
             timeout_seconds=timeout,
         )
 
-    click.echo(json.dumps(response, indent=2))
+    click.echo(json.dumps(response.get("payload", response), indent=2))

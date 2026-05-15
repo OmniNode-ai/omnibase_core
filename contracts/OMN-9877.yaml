@@ -1,0 +1,39 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-9877"
+title: "feat(OMN-9877): route run-node through contract dispatch"
+summary: >
+  Routes onex run-node through packaged contract topic resolution and response polling. Refactors _resolve_node_topics
+  to use _resolve_packaged_contract + load_workflow_contract, switches publish_and_poll to ModelEventEnvelope
+  wire format, adds inject_payload_correlation_id support, and fixes KAFKA_BOOTSTRAP_SERVERS to fail-fast
+  (no localhost fallback).
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "CLI unit tests pass on omnibase_core PR #1081"
+    command: "uv run pytest tests/unit/cli/ -v"
+  - kind: "ci"
+    description: "omnibase_core PR #1081 CI checks pass"
+    command: "gh pr checks 1081 --repo OmniNode-ai/omnibase_core"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-cli-tests"
+    description: "All 567 CLI unit tests pass"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/cli/ -v"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: cli_run_node.py change is a Kafka routing refactor; no new topics,
+      no schema migrations, no Docker image rebuild required before merge"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-9877 refactors cli_run_node.py Kafka routing only; no Docker
+          image, daemon, broker topic, runtime process, docker exec, or service deploy is required before
+          merge'"
