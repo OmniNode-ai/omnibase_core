@@ -444,6 +444,7 @@ class TestRunNodeCommand:
 
         runner = CliRunner()
         with (
+            patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
             patch(
                 "omnibase_core.cli.cli_run_node._resolve_node_topics",
                 return_value=(
@@ -478,6 +479,7 @@ class TestRunNodeCommand:
         _monotonic_values = iter([1000.0, 1050.0])
 
         with (
+            patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
             patch(
                 "omnibase_core.cli.cli_run_node.time.monotonic",
                 side_effect=_monotonic_values,
