@@ -6,9 +6,7 @@ from pydantic import ValidationError
 
 from omnibase_core.models.overlay.model_overlay_file import ModelOverlayFile
 
-_TEST_HOST = (
-    "192.168.86.201"  # onex-allow-internal-ip: test fixture for local infra topology
-)
+_TEST_HOST = "192.168.86.201"  # onex-allow-internal-ip: test fixture for local infra topology  # NOSONAR
 
 
 @pytest.mark.unit
