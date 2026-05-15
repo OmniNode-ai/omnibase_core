@@ -264,6 +264,30 @@ class TestGeneratedAndEvidenceExclusions:
         violations = validator.check_paths([tmp_path])
         assert violations == []
 
+    def test_dist_directory_is_skipped(self, tmp_path: Path) -> None:
+        """Generated frontend output under 'dist/' must be excluded."""
+        dist_dir = tmp_path / "frontend" / "dist" / "assets"
+        dist_dir.mkdir(parents=True)
+        (dist_dir / "bundle.js").write_text(
+            'var p = "/Users/jonah/projects"\n', encoding="utf-8"
+        )
+
+        validator = ValidatorLocalPaths()
+        violations = validator.check_paths([tmp_path])
+        assert violations == []
+
+    def test_build_directory_is_skipped(self, tmp_path: Path) -> None:
+        """Generated frontend output under 'build/' must be excluded."""
+        build_dir = tmp_path / "frontend" / "build" / "static"
+        build_dir.mkdir(parents=True)
+        (build_dir / "main.js").write_text(
+            'var p = "/Users/jonah/projects"\n', encoding="utf-8"
+        )
+
+        validator = ValidatorLocalPaths()
+        violations = validator.check_paths([tmp_path])
+        assert violations == []
+
     def test_dod_receipts_directory_is_skipped(self, tmp_path: Path) -> None:
         """OCC immutable receipts under 'dod_receipts/' must be excluded."""
         receipt_dir = tmp_path / "drift" / "dod_receipts" / "OMN-1" / "x"
