@@ -6,7 +6,7 @@ from pydantic import ValidationError
 
 from omnibase_core.models.overlay.model_overlay_file import ModelOverlayFile
 
-_TEST_HOST = "192.168.86.201"  # onex-allow-internal-ip: test fixture for local infra topology  # NOSONAR
+_TEST_HOST = "https://config.example.com"
 
 # Key names used in redaction tests — stored as constants so SonarCloud does not
 # mistake them for hardcoded credential assignments in dict literals.
@@ -168,9 +168,13 @@ class TestModelOverlayFile:
                 "environment": "dev",
                 "scope": "env",
                 "secrets": {
-                    _SECRET_KEY_NAME: "redaction-test-input"
-                },  # pragma: allowlist secret
-                "transports": {"database": {_PW_KEY_NAME: "redaction-test-input"}},
+                    _SECRET_KEY_NAME: "https://vault.example.com/v1/secret/infisical-client"
+                },
+                "transports": {
+                    "database": {
+                        _PW_KEY_NAME: "https://vault.example.com/v1/secret/postgres"
+                    }
+                },
             }
         )
         redacted = overlay.redacted_dump()
