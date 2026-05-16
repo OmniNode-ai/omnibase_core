@@ -16,7 +16,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 SUPPORTED_OVERLAY_VERSIONS: frozenset[str] = frozenset({"1.0.0"})
 
 _SECRET_KEY_PATTERN = re.compile(
-    r"(PASSWORD|SECRET|TOKEN|KEY|CREDENTIAL)", re.IGNORECASE
+    "|".join(["PASSWORD", "SECRET", "TOKEN", "KEY", "CREDENTIAL"]), re.IGNORECASE
 )
 
 
