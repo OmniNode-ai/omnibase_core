@@ -10,8 +10,8 @@ _TEST_HOST = "192.168.86.201"  # onex-allow-internal-ip: test fixture for local 
 
 # Key names used in redaction tests — stored as constants so SonarCloud does not
 # mistake them for hardcoded credential assignments in dict literals.
-_SECRET_KEY_NAME = "INFISICAL_CLIENT_" + "SECRET"
-_PW_KEY_NAME = "POSTGRES_" + "PASSWORD"
+_SECRET_KEY_NAME = "INFISICAL_CLIENT_" + "SECRET"  # pragma: allowlist secret
+_PW_KEY_NAME = "POSTGRES_" + "PASSWORD"  # pragma: allowlist secret
 
 
 @pytest.mark.unit
@@ -167,7 +167,9 @@ class TestModelOverlayFile:
                 "overlay_version": "1.0.0",
                 "environment": "dev",
                 "scope": "env",
-                "secrets": {_SECRET_KEY_NAME: "redaction-test-input"},
+                "secrets": {
+                    _SECRET_KEY_NAME: "redaction-test-input"
+                },  # pragma: allowlist secret
                 "transports": {"database": {_PW_KEY_NAME: "redaction-test-input"}},
             }
         )
