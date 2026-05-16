@@ -43,18 +43,23 @@ def main() -> int:
         None,
     )
     if resolved is None:
-        print(
-            "Skipping hook_bits drift check: omniclaude hook_bits.sh not found",
-            file=sys.stderr,
+        sys.stderr.write(
+            "Skipping hook_bits drift check: omniclaude hook_bits.sh not found\n"
         )
         return 0
 
     target, pythonpath = resolved
     env = os.environ.copy()
+    repo_src = repo_root / "src"
+    existing = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = (
+        str(repo_src) if not existing else f"{repo_src}{os.pathsep}{existing}"
+    )
     if pythonpath is not None and pythonpath.exists():
-        existing = env.get("PYTHONPATH")
         env["PYTHONPATH"] = (
-            str(pythonpath) if not existing else f"{pythonpath}{os.pathsep}{existing}"
+            str(pythonpath)
+            if not env["PYTHONPATH"]
+            else f"{pythonpath}{os.pathsep}{env['PYTHONPATH']}"
         )
 
     return subprocess.run(
