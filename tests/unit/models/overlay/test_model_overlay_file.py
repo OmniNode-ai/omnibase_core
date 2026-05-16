@@ -168,9 +168,13 @@ class TestModelOverlayFile:
                 "environment": "dev",
                 "scope": "env",
                 "secrets": {
-                    _SECRET_KEY_NAME: "redaction-test-input"
-                },  # pragma: allowlist secret
-                "transports": {"database": {_PW_KEY_NAME: "redaction-test-input"}},
+                    _SECRET_KEY_NAME: "redaction-test-input",  # pragma: allowlist secret
+                },
+                "transports": {
+                    "database": {
+                        _PW_KEY_NAME: "redaction-test-input",  # pragma: allowlist secret
+                    }
+                },
             }
         )
         redacted = overlay.redacted_dump()
