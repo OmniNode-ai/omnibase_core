@@ -574,6 +574,19 @@ class TopicBase(StrEnum):
     BUILD_LOOP_FAILED = "onex.evt.omnibase-infra.build-loop-failed.v1"
     """Emitted by the build-loop orchestrator when a build cycle fails."""
 
+    # ==========================================================================
+    # Node generation topics (OMN-11088)
+    # Emitted by omnimarket node generation pipeline.
+    # ==========================================================================
+    NODE_GENERATION_REQUESTED = "onex.cmd.omnimarket.node-generation-requested.v1"
+    """Command to request generation of a new ONEX node scaffold."""
+
+    NODE_GENERATION_COMPLETED = "onex.evt.omnimarket.node-generation-completed.v1"
+    """Emitted when node generation completes successfully."""
+
+    NODE_GENERATION_FAILED = "onex.evt.omnimarket.node-generation-failed.v1"
+    """Emitted when node generation fails at any stage."""
+
 
 def _validate_topic_segment(segment: str, name: str) -> str:
     """Validate a single topic segment (prefix or base segment).
