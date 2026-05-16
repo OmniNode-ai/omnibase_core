@@ -13,4 +13,5 @@ class ModelPackageHookActivations(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    package: str = ""
     hook_activations: list[ModelHookActivation] = Field(default_factory=list)

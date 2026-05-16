@@ -9,7 +9,11 @@ import operator
 import subprocess
 from pathlib import Path
 
-from omnibase_core.enums.enum_hook_bit import EnumHookBit
+from omnibase_core.enums.enum_hook_bit import (
+    _DEFAULT_MASK,
+    _DISABLED_BY_DEFAULT,
+    EnumHookBit,
+)
 
 REPO = Path(__file__).resolve().parents[3]
 SCRIPT = REPO / "scripts" / "gen_hook_bits.py"
@@ -25,11 +29,34 @@ def _run(*args: str, cwd: Path = REPO) -> subprocess.CompletedProcess[str]:
     )
 
 
+def _contract_path(tmp_path: Path) -> Path:
+    contract = tmp_path / "hook_activations.yaml"
+    lines = ['package: "omniclaude"', "hook_activations:"]
+    for member in EnumHookBit:
+        enabled = str(member.name not in _DISABLED_BY_DEFAULT).lower()
+        lines.extend(
+            [
+                f"  - hook_bit: {member.name}",
+                f"    enabled_by_default: {enabled}",
+                f'    description: "Test contract entry for {member.name}."',
+            ]
+        )
+    contract.write_text("\n".join(lines) + "\n")
+    return contract
+
+
 def _generated_content(tmp_path: Path) -> str:
     out = tmp_path / "hook_bits.sh"
-    r = _run("--write", str(out))
+    r = _run("--contract", str(_contract_path(tmp_path)), "--write", str(out))
     assert r.returncode == 0, r.stderr
     return out.read_text()
+
+
+def _write_generated(tmp_path: Path) -> Path:
+    out = tmp_path / "hook_bits.sh"
+    r = _run("--contract", str(_contract_path(tmp_path)), "--write", str(out))
+    assert r.returncode == 0, r.stderr
+    return out
 
 
 class TestGenHookBitsHeader:
@@ -46,10 +73,20 @@ class TestGenHookBitsEnumCoverage:
             assert f"{m.name}) echo 0x{int(m):x} ;;" in content
         assert "declare -g -A" not in content
 
-    def test_default_mask_equals_or_of_all_bits(self, tmp_path: Path) -> None:
-        expected = functools.reduce(operator.or_, (int(m) for m in EnumHookBit))
+    def test_default_mask_omits_contract_disabled_bits(self, tmp_path: Path) -> None:
+        expected = functools.reduce(
+            operator.or_,
+            (int(m) for m in EnumHookBit if m.name not in _DISABLED_BY_DEFAULT),
+            0,
+        )
         content = _generated_content(tmp_path)
         assert f"HOOK_BITS_DEFAULT_MASK=0x{expected:x}" in content
+        assert f"HOOK_BITS_DEFAULT_MASK=0x{_DEFAULT_MASK:x}" in content
+
+    def test_emits_disabled_by_default_names(self, tmp_path: Path) -> None:
+        content = _generated_content(tmp_path)
+        expected = " ".join(sorted(_DISABLED_BY_DEFAULT))
+        assert f'HOOK_BITS_DISABLED_BY_DEFAULT="{expected}"' in content
 
 
 class TestGenHookBitsBashFunctions:
@@ -66,37 +103,44 @@ class TestGenHookBitsBashFunctions:
 class TestGenHookBitsCheckMode:
     def test_check_succeeds_on_round_trip(self, tmp_path: Path) -> None:
         out = tmp_path / "hook_bits.sh"
-        r_write = _run("--write", str(out))
+        contract = _contract_path(tmp_path)
+        r_write = _run("--contract", str(contract), "--write", str(out))
         assert r_write.returncode == 0, r_write.stderr
-        r_check = _run("--check", str(out))
+        r_check = _run("--contract", str(contract), "--check", str(out))
         assert r_check.returncode == 0, r_check.stderr
 
     def test_check_fails_on_drift(self, tmp_path: Path) -> None:
         stale = tmp_path / "hook_bits.sh"
         stale.write_text("# stale garbage\n")
-        r = _run("--check", str(stale))
+        r = _run("--contract", str(_contract_path(tmp_path)), "--check", str(stale))
         assert r.returncode == 1
         assert "drift" in r.stderr.lower()
 
     def test_check_fails_on_missing_file(self, tmp_path: Path) -> None:
         missing = tmp_path / "nonexistent_hook_bits.sh"
-        r = _run("--check", str(missing))
+        r = _run("--contract", str(_contract_path(tmp_path)), "--check", str(missing))
         assert r.returncode == 1
         assert "does not exist" in r.stderr.lower()
+
+    def test_requires_contract_when_target_does_not_allow_inference(
+        self, tmp_path: Path
+    ) -> None:
+        out = tmp_path / "hook_bits.sh"
+        r = _run("--write", str(out))
+        assert r.returncode == 1
+        assert "hook activation contract is required" in r.stderr
 
 
 class TestGenHookBitsBashExecution:
     def test_bash_syntax_valid(self, tmp_path: Path) -> None:
-        out = tmp_path / "hook_bits.sh"
-        _run("--write", str(out))
+        out = _write_generated(tmp_path)
         r = subprocess.run(
             ["bash", "-n", str(out)], capture_output=True, text=True, check=False
         )
         assert r.returncode == 0, r.stderr
 
     def test_hook_bits_is_enabled_returns_true(self, tmp_path: Path) -> None:
-        out = tmp_path / "hook_bits.sh"
-        _run("--write", str(out))
+        out = _write_generated(tmp_path)
         r = subprocess.run(
             [
                 "bash",
@@ -111,8 +155,7 @@ class TestGenHookBitsBashExecution:
         assert "OK" in r.stdout
 
     def test_hook_bits_is_enabled_returns_false(self, tmp_path: Path) -> None:
-        out = tmp_path / "hook_bits.sh"
-        _run("--write", str(out))
+        out = _write_generated(tmp_path)
         r = subprocess.run(
             [
                 "bash",
@@ -126,8 +169,7 @@ class TestGenHookBitsBashExecution:
         assert "NOPE" in r.stdout
 
     def test_parse_mask_hex(self, tmp_path: Path) -> None:
-        out = tmp_path / "hook_bits.sh"
-        _run("--write", str(out))
+        out = _write_generated(tmp_path)
         r = subprocess.run(
             [
                 "bash",
@@ -142,8 +184,7 @@ class TestGenHookBitsBashExecution:
         assert "255" in r.stdout
 
     def test_parse_mask_binary(self, tmp_path: Path) -> None:
-        out = tmp_path / "hook_bits.sh"
-        _run("--write", str(out))
+        out = _write_generated(tmp_path)
         r = subprocess.run(
             [
                 "bash",
@@ -158,8 +199,7 @@ class TestGenHookBitsBashExecution:
         assert "255" in r.stdout
 
     def test_parse_mask_decimal(self, tmp_path: Path) -> None:
-        out = tmp_path / "hook_bits.sh"
-        _run("--write", str(out))
+        out = _write_generated(tmp_path)
         r = subprocess.run(
             [
                 "bash",
@@ -174,9 +214,12 @@ class TestGenHookBitsBashExecution:
         assert "42" in r.stdout
 
     def test_parse_mask_empty_returns_default(self, tmp_path: Path) -> None:
-        out = tmp_path / "hook_bits.sh"
-        _run("--write", str(out))
-        default_mask = functools.reduce(operator.or_, (int(m) for m in EnumHookBit))
+        out = _write_generated(tmp_path)
+        default_mask = functools.reduce(
+            operator.or_,
+            (int(m) for m in EnumHookBit if m.name not in _DISABLED_BY_DEFAULT),
+            0,
+        )
         r = subprocess.run(
             [
                 "bash",
