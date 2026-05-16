@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.12"
 
 [[package]]
@@ -658,7 +658,7 @@ dependencies = [
 
 [[package]]
 name = "omnibase-core"
-version = "0.40.2"
+version = "0.41.0"
 source = { editable = "." }
 dependencies = [
     { name = "blake3" },
