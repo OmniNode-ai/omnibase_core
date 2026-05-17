@@ -21,8 +21,9 @@
 - id: check-local-paths
   name: Check for local path references
   description: >
-    Detect machine-specific absolute paths (/Volumes/..., /Users/..., /home/..., C:\Users\...) that break
-    portability when code or skills are distributed. Add `# local-path-ok` to suppress a specific line.
+    Detect machine-specific absolute paths that break portability when code or skills are distributed.
+    Covers /Volumes/, /Users/, /home/, and Windows user paths. Add `# local-path-ok` to suppress a specific
+    line.
   language: python
   entry: python -m omnibase_core.validation.validator_local_paths
   types: [text]
@@ -65,6 +66,19 @@
   entry: python -m omnibase_core.validators.handler_di_gate
   types: [python]
   files: (handlers/handler_.*\.py|nodes/node\.py)$
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: no-new-env-vars
+  name: No New os.environ/os.getenv Additions (OMN-11186)
+  description: >
+    Block new os.environ[...], os.environ.get(...), and os.getenv(...) calls outside the established allowlist.
+    All config must flow through contract YAML or Infisical. Exempts test files, scripts/, and lines annotated
+    with `# env-var-ok`. Extend _BOOTSTRAP_ALLOWLIST in scripts/validation/validate_no_new_env_vars.py
+    via PR review for structural bootstrap vars.
+  language: python
+  entry: python scripts/validation/validate_no_new_env_vars.py
+  types: [python]
   pass_filenames: true
   stages: [pre-commit]
 
