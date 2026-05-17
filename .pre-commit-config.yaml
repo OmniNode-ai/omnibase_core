@@ -964,6 +964,15 @@ repos:
           session files. See OMN-4569."
         stages: [pre-commit]
 
+      # OMN-11186: Block new os.environ / os.getenv additions outside allowlist
+      - id: no-new-env-vars
+        name: No New os.environ/os.getenv Additions (OMN-11186)
+        language: python
+        entry: python scripts/validation/validate_no_new_env_vars.py
+        types: [python]
+        pass_filenames: true
+        stages: [pre-commit]
+
       # OMN-5063: Block untyped metadata dict fields
       # Centralized in onex_change_control (OMN-5135)
       - id: no-untyped-metadata
