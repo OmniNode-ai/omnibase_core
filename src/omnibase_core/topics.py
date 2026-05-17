@@ -587,6 +587,21 @@ class TopicBase(StrEnum):
     NODE_GENERATION_FAILED = "onex.evt.omnimarket.node-generation-failed.v1"
     """Emitted when node generation fails at any stage."""
 
+    # ==========================================================================
+    # Platform runtime and projection health topics (OMN-11194)
+    # Consumed by omnidash platform health dashboard and runtime monitor.
+    # ==========================================================================
+    PLATFORM_RUNTIME_MANIFEST_PUBLISHED = (
+        "onex.evt.platform.runtime-manifest-published.v1"
+    )
+    """Emitted when the runtime node manifest is published or refreshed."""
+
+    PLATFORM_PROJECTION_DEGRADED = "onex.evt.platform.projection-degraded.v1"
+    """Emitted when a projection enters a degraded state (lag, errors, or staleness)."""
+
+    PLATFORM_PROJECTION_RECOVERED = "onex.evt.platform.projection-recovered.v1"
+    """Emitted when a degraded projection recovers to healthy state."""
+
 
 def _validate_topic_segment(segment: str, name: str) -> str:
     """Validate a single topic segment (prefix or base segment).
