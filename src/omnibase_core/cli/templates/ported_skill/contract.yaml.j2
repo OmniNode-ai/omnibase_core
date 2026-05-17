@@ -8,6 +8,20 @@ description: "{{ description }}"
 node_kind: COMPUTE
 security_tier: {{ security_tier }}
 
+descriptor:
+  node_archetype: compute
+  purity: pure
+  runtime_profiles:
+    - compute
+  idempotent: true
+  timeout_ms: 30000
+
+event_bus:
+  subscribe_topics:
+    - "onex.cmd.omniclaw.{{ node_name }}-requested.v1"
+  publish_topics:
+    - "onex.evt.omniclaw.{{ node_name }}-completed.v1"
+
 capabilities:
 {% for cap in capabilities %}
   - category: {{ cap.category }}

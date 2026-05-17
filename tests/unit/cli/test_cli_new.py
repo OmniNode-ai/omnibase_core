@@ -152,6 +152,107 @@ def test_onex_new_node_contract_content(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_onex_new_node_contract_has_runtime_profiles(tmp_path: Path) -> None:
+    """Verify generated contract.yaml includes runtime_profiles in descriptor block."""
+    project = _create_project(tmp_path, "runtime_check")
+    runner = CliRunner()
+
+    for node_type, expected_profile in [
+        ("compute", "compute"),
+        ("effect", "effects"),
+        ("reducer", "reducers"),
+        ("orchestrator", "effects"),
+    ]:
+        result = runner.invoke(
+            cli,
+            [
+                "new",
+                "node",
+                f"node-{node_type}",
+                "--type",
+                node_type,
+                "--project-root",
+                str(project),
+            ],
+        )
+        assert result.exit_code == 0, f"Failed for {node_type}: {result.output}"
+        contract = (
+            project
+            / "src"
+            / "runtime_check"
+            / "nodes"
+            / f"node_{node_type}"
+            / "contract.yaml"
+        ).read_text()
+        assert "runtime_profiles:" in contract, f"{node_type} missing runtime_profiles"
+        assert f"- {expected_profile}" in contract, (
+            f"{node_type} missing profile {expected_profile!r}"
+        )
+        assert "descriptor:" in contract, f"{node_type} missing descriptor block"
+
+
+@pytest.mark.unit
+def test_onex_new_node_contract_has_event_bus(tmp_path: Path) -> None:
+    """Verify generated contract.yaml includes event_bus with subscribe/publish topics."""
+    project = _create_project(tmp_path, "event_bus_check")
+    runner = CliRunner()
+
+    result = runner.invoke(
+        cli,
+        [
+            "new",
+            "node",
+            "my-processor",
+            "--type",
+            "effect",
+            "--project-root",
+            str(project),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    contract = (
+        project / "src" / "event_bus_check" / "nodes" / "my_processor" / "contract.yaml"
+    ).read_text()
+    assert "event_bus:" in contract
+    assert "subscribe_topics:" in contract
+    assert "publish_topics:" in contract
+    assert "onex.cmd." in contract
+    assert "onex.evt." in contract
+
+
+@pytest.mark.unit
+def test_onex_new_node_handler_has_data_provenance_stub(tmp_path: Path) -> None:
+    """Verify scaffolded handler includes data_provenance guidance comment."""
+    project = _create_project(tmp_path, "provenance_check")
+    runner = CliRunner()
+
+    result = runner.invoke(
+        cli,
+        [
+            "new",
+            "node",
+            "my-reducer",
+            "--type",
+            "reducer",
+            "--project-root",
+            str(project),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    handler = (
+        project
+        / "src"
+        / "provenance_check"
+        / "nodes"
+        / "my_reducer"
+        / "handlers"
+        / "handler_my_reducer.py"
+    ).read_text()
+    assert "data_provenance" in handler
+    assert "EnumDataProvenance" in handler
+
+
+@pytest.mark.unit
 def test_onex_new_node_default_type_is_compute(tmp_path: Path) -> None:
     """Verify that default node type is compute when --type is omitted."""
     project = _create_project(tmp_path, "defaults")
