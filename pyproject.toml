@@ -74,6 +74,7 @@ state_disk = "omnibase_core.services.state.service_state_disk:ServiceStateDisk"
 [project.entry-points."onex.cli"]
 # Core CLI commands are registered directly via [project.scripts]
 # This group is for extensions from other packages
+gate = "omnibase_core.cli.cli_gate:gate"
 
 [project.entry-points."onex.doctor"]
 docker = "omnibase_core.doctor.checks.check_docker:CheckDocker"
