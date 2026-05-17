@@ -157,6 +157,69 @@ def _is_comment_line(line: str) -> bool:
     return line.lstrip().startswith("#")
 
 
+def _should_skip_path(path: Path) -> bool:
+    return (
+        not path.exists()
+        or path.suffix != ".py"
+        or _is_test_file(path)
+        or _is_tooling_or_demo(path)
+    )
+
+
+def _read_python_file(path: Path) -> str | None:
+    try:
+        return path.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, OSError):
+        return None
+
+
+def _opening_multiline_delimiter(stripped_line: str) -> str | None:
+    for delimiter in ('"""', "'''"):
+        if delimiter in stripped_line and stripped_line.count(delimiter) % 2 == 1:
+            return delimiter
+    return None
+
+
+def _iter_scannable_lines(content: str) -> list[tuple[int, str]]:
+    lines: list[tuple[int, str]] = []
+    in_multiline_string = False
+    multiline_delim = ""
+
+    for lineno, line in enumerate(content.splitlines(), 1):
+        if in_multiline_string:
+            if multiline_delim in line:
+                in_multiline_string = False
+            continue
+
+        delimiter = _opening_multiline_delimiter(line.lstrip())
+        if delimiter is not None:
+            in_multiline_string = True
+            multiline_delim = delimiter
+            continue
+
+        lines.append((lineno, line))
+
+    return lines
+
+
+def _extract_disallowed_env_name(line: str) -> str | None:
+    if _line_has_bypass(line) or _is_comment_line(line):
+        return None
+
+    if not any(pattern.search(line) for pattern in _ENV_VAR_PATTERNS):
+        return None
+
+    name_match = _NAME_EXTRACTOR.search(line)
+    if name_match is None:
+        return None
+
+    var_name = name_match.group(1)
+    if var_name in _BOOTSTRAP_ALLOWLIST:
+        return None
+
+    return var_name
+
+
 # ---------------------------------------------------------------------------
 # Core check
 # ---------------------------------------------------------------------------
@@ -164,61 +227,18 @@ def _is_comment_line(line: str) -> bool:
 
 def check_file(path: Path) -> list[tuple[int, str, str]]:
     """Return list of (line_number, raw_line, extracted_var_name) violations."""
-    if not path.exists() or path.suffix != ".py":
-        return []
-    if _is_test_file(path):
-        return []
-    if _is_tooling_or_demo(path):
+    if _should_skip_path(path):
         return []
 
-    try:
-        content = path.read_text(encoding="utf-8")
-    except (UnicodeDecodeError, OSError):
+    content = _read_python_file(path)
+    if content is None:
         return []
 
     violations: list[tuple[int, str, str]] = []
-    in_multiline_string = False
-    multiline_delim = ""
-
-    for lineno, line in enumerate(content.splitlines(), 1):
-        # Track multi-line string (docstring) boundaries
-        stripped = line.lstrip()
-        if not in_multiline_string:
-            for delim in ('"""', "'''"):
-                if delim in stripped:
-                    count = stripped.count(delim)
-                    if count % 2 == 1:
-                        in_multiline_string = True
-                        multiline_delim = delim
-                        break
-            if in_multiline_string:
-                continue
-        else:
-            if multiline_delim in line:
-                in_multiline_string = False
-            continue
-
-        if _line_has_bypass(line):
-            continue
-        if _is_comment_line(line):
-            continue
-
-        matched = any(pat.search(line) for pat in _ENV_VAR_PATTERNS)
-        if not matched:
-            continue
-
-        # Extract the var name if we can determine it (static string key only)
-        name_match = _NAME_EXTRACTOR.search(line)
-        var_name = name_match.group(1) if name_match else ""
-
-        if not var_name:
-            # Dynamic key (variable or f-string) — pre-existing pattern, skip
-            continue
-
-        if var_name in _BOOTSTRAP_ALLOWLIST:
-            continue
-
-        violations.append((lineno, line.rstrip(), var_name))
+    for lineno, line in _iter_scannable_lines(content):
+        var_name = _extract_disallowed_env_name(line)
+        if var_name is not None:
+            violations.append((lineno, line.rstrip(), var_name))
 
     return violations
 

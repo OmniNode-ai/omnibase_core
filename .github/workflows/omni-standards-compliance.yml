@@ -370,14 +370,6 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
       - name: Check for new env var additions
         run: |
-          find src/ -name "*.py" | xargs uv run python scripts/validation/validate_no_new_env_vars.py
+          find src/ -name "*.py" -print0 | xargs -0 python scripts/validation/validate_no_new_env_vars.py
