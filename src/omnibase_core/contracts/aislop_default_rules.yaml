@@ -1,0 +1,178 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# ONEX aislop default rule set (OMN-11132)
+# Source of truth for all aislop detection rules.
+# Per-repo overrides live at .onex/aislop-rules.yaml (see ModelAislopConfig).
+#
+# pattern_type values:
+#   regex_ast_docstring  — applied per-line inside AST-extracted docstrings
+#   regex_line           — applied per line outside docstrings
+#   grep_code            — applied per line across all matched files
+#   ast_check            — identifier for a named AST visitor check
+#
+# Override example (.onex/aislop-rules.yaml):
+#   overrides:
+#     - name: boilerplate_docstring
+#       severity: ERROR        # escalate to error for this repo
+#     - name: obvious_comment
+#       enabled: false         # disable noisy rule for this repo
+#     - name: my_custom_rule
+#       allow_new: true        # marks this as a new rule; must also appear in custom_rules
+#   custom_rules:
+#     - name: my_custom_rule
+#       severity: WARNING
+#       pattern_type: regex_line
+#       pattern: "TODO\\(omn-"
+#       file_globs: ["*.py"]
+#       description: "Unresolved inline TODO with ticket reference"
+
+rules:
+  # ── Docstring rules (AST-based) ─────────────────────────────────────────────
+
+  - name: sycophancy
+    severity: ERROR
+    enabled: true
+    pattern_type: regex_ast_docstring
+    pattern: >-
+      ^\s*(Excellent|Great|Sure|Certainly|Absolutely|Of course|Happy to| I would be|Gladly|Wonderful|Perfect|Fantastic|Awesome)[!,.
+      ]
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Sycophantic opener in a docstring (e.g. "Great, here is..."). LLMs frequently start generated docstrings
+      with affirmations. #magic___^_^___line
+  - name: rest_docstring
+    severity: ERROR
+    enabled: true
+    pattern_type: regex_ast_docstring
+    pattern: "^\\s*:(param|type|returns?|rtype|raises?|var|ivar|cvar)\\b"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      reST-style docstring markers (:param:, :type:, :returns:, :rtype:, etc.). Google-style docstrings
+      are the project standard. #magic___^_^___line
+  - name: boilerplate_docstring
+    severity: WARNING
+    enabled: true
+    pattern_type: regex_ast_docstring
+    pattern: >-
+      ^\s*This\s+(module|class|function|method|file|script|node|handler|service) \s+(provides?|implements?|contains?|is
+      responsible for|handles?|manages?|offers?)
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Boilerplate opener "This <thing> provides/implements/contains ...". Catches LLM-generated filler
+      that describes the obvious. #magic___^_^___line
+  - name: md_separator
+    severity: WARNING
+    enabled: true
+    pattern_type: regex_ast_docstring
+    pattern: "={4,}"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Markdown-style separator (4+ = chars) inside a Python docstring. LLMs sometimes insert visual dividers
+      that have no meaning in docstrings. #magic___^_^___line
+  # ── Line-based rules ────────────────────────────────────────────────────────
+
+  - name: step_narration
+    severity: WARNING
+    enabled: true
+    pattern_type: regex_line
+    pattern: "#\\s*Step\\s+\\d+\\s*[:\\-]"
+    file_globs: ["*.md"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      "# Step N:" or "## Step N:" headings in Markdown files. Python inline "# Step N:" comments are legitimate
+      and are NOT flagged (v1.0 tuning, OMN-3191). #magic___^_^___line
+  - name: obvious_comment
+    severity: INFO
+    enabled: true
+    pattern_type: regex_line
+    pattern: "#\\s*(TODO|FIXME|HACK|XXX|NOTE):\\s*$"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Self-evident inline comment with no content (e.g. "# TODO: "). Reported in INFO/report mode only;
+      not blocking by default. #magic___^_^___line
+  # ── Code hygiene rules (from NodeAislopSweep) ───────────────────────────────
+
+  - name: hardcoded_ip
+    severity: ERROR
+    enabled: true
+    pattern_type: grep_code
+    pattern: "\\b(?:192\\.168|10\\.0|172\\.(?:1[6-9]|2[0-9]|3[01]))\\.[0-9]+\\.[0-9]+\\b"
+    file_globs: ["*.py", "*.yaml", "*.yml", "*.json"]
+    suppression_annotation: onex-allow-internal-ip
+    description: >-
+      Hardcoded private IP address. Use env vars or Infisical references. Annotate intentional exceptions
+      with # onex-allow-internal-ip. #magic___^_^___line
+  - name: hardcoded_localhost
+    severity: ERROR
+    enabled: true
+    pattern_type: grep_code
+    pattern: "\\b(localhost|127\\.0\\.0\\.1)\\b"
+    file_globs: ["*.py", "*.yaml", "*.yml"]
+    suppression_annotation: onex-allow-internal-ip
+    description: >-
+      Hardcoded localhost/127.0.0.1 reference. Use env vars or service discovery. #magic___^_^___line
+  - name: hardcoded_port
+    severity: WARNING
+    enabled: true
+    pattern_type: grep_code
+    pattern: ":\\b(5432|6379|9092|19092|8080|8085|8086|3000|5000)\\b"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Hardcoded well-known port number. Pull from env vars or contract config. #magic___^_^___line
+  - name: hardcoded_topic
+    severity: ERROR
+    enabled: true
+    pattern_type: grep_code
+    pattern: "\"onex\\.(cmd|evt)\\.[a-z_]+\\.[a-z_]+\\.v[0-9]+\""
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Hardcoded Kafka topic string. Topics must be read from contract.yaml via TopicBase or the contract
+      loader -- never inlined as literals. #magic___^_^___line
+  - name: prohibited_env_pattern
+    severity: WARNING
+    enabled: true
+    pattern_type: grep_code
+    pattern: "os\\.environ\\.get\\([\"'][A-Z_]+[\"'],\\s*[\"'][^\"']+[\"']\\)"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      os.environ.get() with a non-empty default silently masks misconfiguration. Use os.environ[key] to
+      fail fast, or an explicit None default. #magic___^_^___line
+  - name: compat_shim
+    severity: WARNING
+    enabled: true
+    pattern_type: grep_code
+    pattern: "(?:^|\\s)_[a-zA-Z][a-zA-Z0-9_]*\\s*=\\s*[a-zA-Z]"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Possible backwards-compatibility alias (underscore-prefixed re-export). Remove compat shims; callers
+      should import from the canonical path. #magic___^_^___line
+  - name: empty_impl
+    severity: WARNING
+    enabled: true
+    pattern_type: grep_code
+    pattern: "^\\s*(pass|\\.\\.\\.)\\s*$"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Empty function or method body (pass / ...). Placeholder implementations must be completed before
+      merging; stubs accumulate as silent debt. #magic___^_^___line
+  - name: todo_fixme
+    severity: INFO
+    enabled: true
+    pattern_type: grep_code
+    pattern: "#\\s*(TODO|FIXME)\\b"
+    file_globs: ["*.py", "*.yaml", "*.yml"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Unresolved TODO or FIXME comment. Track work in Linear, not inline. Reported at INFO; escalate per-repo
+      via override if required.

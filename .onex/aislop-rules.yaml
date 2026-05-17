@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Per-repo aislop rule overrides for omnibase_core (OMN-11132).
+# Schema: ModelAislopConfig (omnibase_core.models.validation.model_aislop_config)
+#
+# This file uses the default rules unchanged.
+#
+# To customise:
+#   overrides:
+#     - name: obvious_comment      # disable a noisy rule for this repo
+#       enabled: false
+#     - name: boilerplate_docstring
+#       severity: ERROR            # escalate from WARNING to ERROR
+#     - name: my_new_rule
+#       allow_new: true            # declare a new rule (add it in custom_rules too)
+#   custom_rules:
+#     - name: my_new_rule
+#       severity: WARNING
+#       pattern_type: grep_code
+#       pattern: "\\bDEPRECATED\\b"
+#       file_globs: ["*.py"]
+#       description: "Deprecated marker without replacement"
+
+overrides: []
+custom_rules: []
