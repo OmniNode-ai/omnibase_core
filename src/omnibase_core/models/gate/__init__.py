@@ -9,6 +9,9 @@ from omnibase_core.enums.enum_omnigate import (
     EnumOmniGateCheckType,
 )
 from omnibase_core.models.gate.model_omnigate_check import ModelOmniGateCheck
+from omnibase_core.models.gate.model_omnigate_check_result import (
+    ModelOmniGateCheckResult,
+)
 from omnibase_core.models.gate.model_omnigate_config import ModelOmniGateConfig
 from omnibase_core.models.gate.model_omnigate_gate_decision import (
     ModelOmniGateGateDecision,
@@ -19,6 +22,7 @@ from omnibase_core.models.gate.model_omnigate_gate_policy import (
 from omnibase_core.models.gate.model_omnigate_identity_policy import (
     ModelOmniGateIdentityPolicy,
 )
+from omnibase_core.models.gate.model_omnigate_receipt import ModelOmniGateReceipt
 from omnibase_core.models.gate.model_omnigate_receipt_policy import (
     ModelOmniGateReceiptPolicy,
 )
@@ -31,10 +35,12 @@ __all__ = [
     "EnumGateResponse",
     "EnumOmniGateCheckType",
     "ModelOmniGateCheck",
+    "ModelOmniGateCheckResult",
     "ModelOmniGateConfig",
     "ModelOmniGateGateDecision",
     "ModelOmniGateGatePolicy",
     "ModelOmniGateIdentityPolicy",
+    "ModelOmniGateReceipt",
     "ModelOmniGateReceiptPolicy",
     "ModelOmniGateValidatorRef",
 ]
