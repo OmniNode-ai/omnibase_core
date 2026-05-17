@@ -23,8 +23,17 @@ def test_package_hook_activations_round_trips() -> None:
 
 
 @pytest.mark.unit
+def test_package_hook_activations_accepts_package_name() -> None:
+    m = ModelPackageHookActivations.model_validate(
+        {"package": "omniclaude", "hook_activations": []}
+    )
+    assert m.package == "omniclaude"
+
+
+@pytest.mark.unit
 def test_package_hook_activations_defaults_to_empty() -> None:
     m = ModelPackageHookActivations.model_validate({})
+    assert m.package == ""
     assert m.hook_activations == []
 
 

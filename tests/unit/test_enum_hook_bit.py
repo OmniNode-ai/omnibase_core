@@ -8,12 +8,17 @@ import enum
 
 import pytest
 
-from omnibase_core.enums.enum_hook_bit import EnumHookBit, hook_enabled
+from omnibase_core.enums.enum_hook_bit import (
+    _DEFAULT_MASK,
+    _DISABLED_BY_DEFAULT,
+    EnumHookBit,
+    hook_enabled,
+)
 
 pytestmark = pytest.mark.unit
 
-# Frozen GATE count from Task 1 inventory. Update only when the inventory doc changes.
-_N_GATE = 60
+# Frozen GATE count from Task 1 inventory plus OMN-11083 opt-in gates.
+_N_GATE = 63
 
 
 class TestEnumHookBit:
@@ -42,23 +47,31 @@ class TestEnumHookBit:
     def test_member_count_matches_inventory(self) -> None:
         assert len(list(EnumHookBit)) == _N_GATE
 
-    def test_default_mask_covers_all_members(self) -> None:
-        from omnibase_core.enums.enum_hook_bit import _DEFAULT_MASK
-
+    def test_default_mask_covers_enabled_by_default_members(self) -> None:
         for m in EnumHookBit:
-            assert _DEFAULT_MASK & m, f"{m.name} not covered by _DEFAULT_MASK"
+            if m.name in _DISABLED_BY_DEFAULT:
+                assert not _DEFAULT_MASK & m, (
+                    f"{m.name} should be omitted from _DEFAULT_MASK"
+                )
+            else:
+                assert _DEFAULT_MASK & m, f"{m.name} not covered by _DEFAULT_MASK"
+
+    def test_opt_in_gate_bit_positions_are_frozen(self) -> None:
+        assert EnumHookBit.AISLOP_GATE == 1 << 60
+        assert EnumHookBit.STOP_QUALITY_GATE == 1 << 61
+        assert EnumHookBit.INLINE_REVIEW_GATE == 1 << 62
 
     def test_default_mask_is_not_hardcoded_0xffffffff(self) -> None:
-        from omnibase_core.enums.enum_hook_bit import _DEFAULT_MASK
-
         assert _DEFAULT_MASK != 0xFFFFFFFF
 
 
 class TestHookEnabled:
-    def test_default_mask_all_on(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_default_mask_respects_contract_defaults(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.delenv("ONEX_HOOKS_MASK", raising=False)
         for m in EnumHookBit:
-            assert hook_enabled(m) is True
+            assert hook_enabled(m) is (m.name not in _DISABLED_BY_DEFAULT)
 
     def test_explicit_mask_disables_one_bit(self) -> None:
         ci = int(EnumHookBit.CI_REMINDER)

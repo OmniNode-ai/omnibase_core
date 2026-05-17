@@ -5,7 +5,8 @@
 Source of truth for which hook wrappers are active. Each member is a single-bit
 power of two. Bit positions are APPEND-ONLY forever — never reorder or reuse.
 
-Runtime mask: env var `ONEX_HOOKS_MASK` (defaults to all-on when unset or malformed).
+Runtime mask: env var `ONEX_HOOKS_MASK` (defaults to the contract mask when
+unset or malformed).
 
 Fail-open on malformed mask is deliberate: favors hook continuity over honoring
 broken user config. A CLI warning on write is a follow-up (OMN-9614).
@@ -92,13 +93,26 @@ class EnumHookBit(IntEnum):
     HANDOFF_NUDGE = 1 << 57
     TASK_BOUNDARY_TESTS = 1 << 58
     WORKTREE_GUARD = 1 << 59
+    AISLOP_GATE = 1 << 60
+    STOP_QUALITY_GATE = 1 << 61
+    INLINE_REVIEW_GATE = 1 << 62
 
 
-# Default mask ORs all actual member values — correct even after tombstones are
-# added (which lower len() but leave high bit positions in active members).
-# (1 << len()) - 1 would silently disable the highest bits once any member is
-# tombstoned. The generator (Task 3) emits the equivalent literal into hook_bits.sh.
-_DEFAULT_MASK: int = functools.reduce(operator.or_, (int(m) for m in EnumHookBit))
+# Keep opt-in hook names synchronized with hook_activations.yaml. These bits are
+# valid and addressable, but omitted from the default mask until the contract opts
+# them in.
+_DISABLED_BY_DEFAULT: frozenset[str] = frozenset(
+    {"AISLOP_GATE", "STOP_QUALITY_GATE", "INLINE_REVIEW_GATE"}
+)
+
+# Default mask ORs contract-enabled member values only. This remains correct even
+# after tombstones are added because it uses the concrete enum values rather than
+# deriving a mask from len(EnumHookBit).
+_DEFAULT_MASK: int = functools.reduce(
+    operator.or_,
+    (int(m) for m in EnumHookBit if m.name not in _DISABLED_BY_DEFAULT),
+    0,
+)
 
 
 def hook_enabled(bit: EnumHookBit, mask: int | None = None) -> bool:
