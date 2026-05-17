@@ -144,7 +144,7 @@ class TestEnumAssignmentStatus:
         assert EnumAssignmentStatus.FAILED in EnumAssignmentStatus
 
     def test_string_conversion(self) -> None:
-        """Test string conversion of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string conversion of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumAssignmentStatus.ASSIGNED) == "ASSIGNED"
         assert str(EnumAssignmentStatus.EXECUTING) == "EXECUTING"
         assert str(EnumAssignmentStatus.COMPLETED) == "COMPLETED"
@@ -203,7 +203,7 @@ class TestEnumExecutionPattern:
         assert EnumExecutionPattern.SCATTER_GATHER in EnumExecutionPattern
 
     def test_string_conversion(self) -> None:
-        """Test string conversion of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string conversion of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumExecutionPattern.SEQUENTIAL) == "sequential"
         assert str(EnumExecutionPattern.PARALLEL_COMPUTE) == "parallel_compute"
         assert str(EnumExecutionPattern.PIPELINE) == "pipeline"
@@ -273,7 +273,7 @@ class TestEnumFailureRecoveryStrategy:
         assert EnumFailureRecoveryStrategy.ABORT in EnumFailureRecoveryStrategy
 
     def test_string_conversion(self) -> None:
-        """Test string conversion of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string conversion of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumFailureRecoveryStrategy.RETRY) == "RETRY"
         assert str(EnumFailureRecoveryStrategy.ROLLBACK) == "ROLLBACK"
         assert str(EnumFailureRecoveryStrategy.COMPENSATE) == "COMPENSATE"

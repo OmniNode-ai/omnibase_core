@@ -9,11 +9,11 @@ Action types for daemon management operations.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDaemonActionType(StrValueHelper, str, Enum):
+class EnumDaemonActionType(UtilStrValueHelper, str, Enum):
     """
     Action types for daemon management operations.
 

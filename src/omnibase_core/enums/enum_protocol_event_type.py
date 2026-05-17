@@ -7,11 +7,11 @@ Event type enumeration for ONEX protocol-based event publishing.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumProtocolEventType(StrValueHelper, str, Enum):
+class EnumProtocolEventType(UtilStrValueHelper, str, Enum):
     """Standard event types for protocol-based event publishing."""
 
     # EnumLifecycle events

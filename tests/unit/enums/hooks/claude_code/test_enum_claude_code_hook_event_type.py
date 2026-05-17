@@ -11,7 +11,7 @@ import pytest
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_hook_event_type import (
     EnumClaudeCodeHookEventType,
 )
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @pytest.mark.unit
@@ -57,13 +57,13 @@ class TestEnumClaudeCodeHookEventType:
         assert len(values) == 12
 
     def test_enum_inheritance(self):
-        """Test that enum inherits from StrValueHelper, str, and Enum."""
-        assert issubclass(EnumClaudeCodeHookEventType, StrValueHelper)
+        """Test that enum inherits from UtilStrValueHelper, str, and Enum."""
+        assert issubclass(EnumClaudeCodeHookEventType, UtilStrValueHelper)
         assert issubclass(EnumClaudeCodeHookEventType, str)
         assert issubclass(EnumClaudeCodeHookEventType, Enum)
 
     def test_str_value_helper_behavior(self):
-        """Test that StrValueHelper provides correct __str__ behavior."""
+        """Test that UtilStrValueHelper provides correct __str__ behavior."""
         # str() should return the value (PascalCase)
         assert str(EnumClaudeCodeHookEventType.SESSION_START) == "SessionStart"
         assert str(EnumClaudeCodeHookEventType.PRE_TOOL_USE) == "PreToolUse"

@@ -3,11 +3,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumServiceStatus(StrValueHelper, str, Enum):
+class EnumServiceStatus(UtilStrValueHelper, str, Enum):
     """Service status values for Container Adapter coordination."""
 
     ACTIVE = "active"

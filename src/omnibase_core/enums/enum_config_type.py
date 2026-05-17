@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumConfigType(StrValueHelper, str, Enum):
+class EnumConfigType(UtilStrValueHelper, str, Enum):
     """
     Strongly typed configuration type values.
 

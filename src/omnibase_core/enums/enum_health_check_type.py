@@ -9,11 +9,11 @@ Defines types of health checks that can be performed on services.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumHealthCheckType(StrValueHelper, str, Enum):
+class EnumHealthCheckType(UtilStrValueHelper, str, Enum):
     """Types of health checks available."""
 
     HTTP_GET = "http_get"

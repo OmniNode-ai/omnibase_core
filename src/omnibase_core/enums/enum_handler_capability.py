@@ -8,11 +8,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumHandlerCapability(StrValueHelper, str, Enum):
+class EnumHandlerCapability(UtilStrValueHelper, str, Enum):
     """
     Unified handler capabilities for COMPUTE, EFFECT, REDUCER, and ORCHESTRATOR nodes.
 

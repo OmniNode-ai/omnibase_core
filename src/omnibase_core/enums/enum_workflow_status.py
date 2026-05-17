@@ -52,11 +52,11 @@ No deprecation period was provided due to internal-only usage.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumWorkflowStatus(StrValueHelper, str, Enum):
+class EnumWorkflowStatus(UtilStrValueHelper, str, Enum):
     """Canonical workflow status enum for ONEX workflow lifecycle.
 
     This is the single source of truth for workflow status values across

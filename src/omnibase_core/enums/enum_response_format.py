@@ -10,11 +10,11 @@ with proper ONEX enum naming conventions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumResponseFormat(StrValueHelper, str, Enum):
+class EnumResponseFormat(UtilStrValueHelper, str, Enum):
     """LLM response formats."""
 
     TEXT = "text"

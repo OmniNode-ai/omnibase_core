@@ -10,11 +10,11 @@ by the CLI tool discovery system, replacing hardcoded string literals.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCliDiscoveryAction(StrValueHelper, str, Enum):
+class EnumCliDiscoveryAction(UtilStrValueHelper, str, Enum):
     """
     Enumeration of valid CLI tool discovery actions.
 

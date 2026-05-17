@@ -15,11 +15,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumIntentClass(StrValueHelper, str, Enum):
+class EnumIntentClass(UtilStrValueHelper, str, Enum):
     """Canonical intent classes for the Intent Intelligence Framework.
 
     These classes classify user intent at a higher abstraction level than

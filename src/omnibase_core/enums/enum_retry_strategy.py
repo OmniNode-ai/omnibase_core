@@ -9,11 +9,11 @@ Defines different retry approaches based on error type and context.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRetryStrategy(StrValueHelper, str, Enum):
+class EnumRetryStrategy(UtilStrValueHelper, str, Enum):
     """Retry strategies for error recovery."""
 
     NONE = "none"

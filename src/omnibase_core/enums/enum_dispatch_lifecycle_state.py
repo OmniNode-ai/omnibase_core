@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDispatchLifecycleState(StrValueHelper, str, Enum):
+class EnumDispatchLifecycleState(UtilStrValueHelper, str, Enum):
     """Canonical lifecycle states for a dispatched command.
 
     Eliminates self-attested dispatch success: every dispatch must reach

@@ -21,13 +21,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumPatternLifecycleState"]
 
 
 @unique
-class EnumPatternLifecycleState(StrValueHelper, str, Enum):
+class EnumPatternLifecycleState(UtilStrValueHelper, str, Enum):
     """Lifecycle states for learned patterns.
 
     These states gate injection eligibility - injectors MUST check

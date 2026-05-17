@@ -8,11 +8,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumHandlerTypeCategory(StrValueHelper, str, Enum):
+class EnumHandlerTypeCategory(UtilStrValueHelper, str, Enum):
     """Behavioral classification of handlers (pure/impure, deterministic/non-deterministic).
 
     Categories: COMPUTE (pure, deterministic), EFFECT (impure), NONDETERMINISTIC_COMPUTE.

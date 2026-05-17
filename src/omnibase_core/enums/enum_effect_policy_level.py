@@ -9,13 +9,13 @@ Part of the effect boundary system for OMN-1147.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumEffectPolicyLevel"]
 
 
 @unique
-class EnumEffectPolicyLevel(StrValueHelper, str, Enum):
+class EnumEffectPolicyLevel(UtilStrValueHelper, str, Enum):
     """Policy enforcement levels for non-deterministic effects during replay.
 
     Determines how the runtime handles detected non-deterministic effects

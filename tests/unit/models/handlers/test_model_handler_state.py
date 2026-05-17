@@ -32,7 +32,7 @@ class TestEnumHandlerStatus:
         assert EnumHandlerStatus.STOPPED.value == "stopped"
 
     def test_str_serialization(self) -> None:
-        """Verify StrValueHelper provides correct __str__ output."""
+        """Verify UtilStrValueHelper provides correct __str__ output."""
         assert str(EnumHandlerStatus.READY) == "ready"
         assert str(EnumHandlerStatus.STOPPED) == "stopped"
 

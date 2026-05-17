@@ -7,12 +7,12 @@ from __future__ import annotations
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumDemoRecommendation"]
 
 
-class EnumDemoRecommendation(StrValueHelper, str, Enum):
+class EnumDemoRecommendation(UtilStrValueHelper, str, Enum):
     """Recommendation for demo validation promotion.
 
     Determines the promotion recommendation based on pass rate thresholds.

@@ -17,7 +17,7 @@ class TestEnumServiceResolutionStatus:
     """Test suite for EnumServiceResolutionStatus enumeration."""
 
     def test_string_returns_value(self) -> None:
-        """Test that str() returns the .value (StrValueHelper behavior)."""
+        """Test that str() returns the .value (UtilStrValueHelper behavior)."""
         assert str(EnumServiceResolutionStatus.RESOLVED) == "resolved"
         assert str(EnumServiceResolutionStatus.FAILED) == "failed"
         assert (

@@ -3,11 +3,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumMessageType(StrValueHelper, str, Enum):
+class EnumMessageType(UtilStrValueHelper, str, Enum):
     """Message categories for proper routing and handling."""
 
     COMMAND = "command"

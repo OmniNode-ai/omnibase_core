@@ -10,11 +10,11 @@ for document freshness monitoring actions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDocumentFreshnessActions(StrValueHelper, str, Enum):
+class EnumDocumentFreshnessActions(UtilStrValueHelper, str, Enum):
     """
     Canonical enumeration of all document freshness monitoring actions.
 
@@ -32,7 +32,7 @@ class EnumDocumentFreshnessActions(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumDocumentFreshnessRiskLevel(StrValueHelper, str, Enum):
+class EnumDocumentFreshnessRiskLevel(UtilStrValueHelper, str, Enum):
     """Risk levels for document freshness assessment."""
 
     LOW = "low"
@@ -42,7 +42,7 @@ class EnumDocumentFreshnessRiskLevel(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumDocumentFreshnessStatus(StrValueHelper, str, Enum):
+class EnumDocumentFreshnessStatus(UtilStrValueHelper, str, Enum):
     """Overall freshness status values."""
 
     FRESH = "fresh"
@@ -52,7 +52,7 @@ class EnumDocumentFreshnessStatus(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumDocumentType(StrValueHelper, str, Enum):
+class EnumDocumentType(UtilStrValueHelper, str, Enum):
     """Document type classifications."""
 
     DOCUMENT = "document"
@@ -62,7 +62,7 @@ class EnumDocumentType(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumRecommendationType(StrValueHelper, str, Enum):
+class EnumRecommendationType(UtilStrValueHelper, str, Enum):
     """Recommendation types for document improvements."""
 
     UPDATE_REQUIRED = "update_required"
@@ -72,7 +72,7 @@ class EnumRecommendationType(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumRecommendationPriority(StrValueHelper, str, Enum):
+class EnumRecommendationPriority(UtilStrValueHelper, str, Enum):
     """Priority levels for recommendations."""
 
     LOW = "low"
@@ -82,7 +82,7 @@ class EnumRecommendationPriority(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumEstimatedEffort(StrValueHelper, str, Enum):
+class EnumEstimatedEffort(UtilStrValueHelper, str, Enum):
     """Estimated effort levels for implementing recommendations."""
 
     MINUTES = "minutes"
@@ -92,7 +92,7 @@ class EnumEstimatedEffort(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumDependencyRelationship(StrValueHelper, str, Enum):
+class EnumDependencyRelationship(UtilStrValueHelper, str, Enum):
     """Types of dependency relationships between documents."""
 
     IMPORTS = "imports"
@@ -102,7 +102,7 @@ class EnumDependencyRelationship(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumOutputFormat(StrValueHelper, str, Enum):
+class EnumOutputFormat(UtilStrValueHelper, str, Enum):
     """Output format options for analysis results."""
 
     JSON = "json"

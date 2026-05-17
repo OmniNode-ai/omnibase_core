@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCategory(StrValueHelper, str, Enum):
+class EnumCategory(UtilStrValueHelper, str, Enum):
     """
     General category enumeration for data classification.
 

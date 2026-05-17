@@ -10,11 +10,11 @@ context sharing and processing prioritization.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumIntelligencePriorityLevel(StrValueHelper, str, Enum):
+class EnumIntelligencePriorityLevel(UtilStrValueHelper, str, Enum):
     """
     Enum for intelligence priority levels with validation.
 

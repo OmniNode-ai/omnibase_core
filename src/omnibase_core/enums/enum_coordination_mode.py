@@ -10,11 +10,11 @@ Strongly-typed enum for hub coordination modes.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCoordinationMode(StrValueHelper, str, Enum):
+class EnumCoordinationMode(UtilStrValueHelper, str, Enum):
     """Hub coordination modes."""
 
     EVENT_ROUTER = "event_router"

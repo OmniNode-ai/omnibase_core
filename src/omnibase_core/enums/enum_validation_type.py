@@ -3,11 +3,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumValidationType(StrValueHelper, str, Enum):
+class EnumValidationType(UtilStrValueHelper, str, Enum):
     CLI_NODE_PARITY = "cli_node_parity"
     SCHEMA_CONFORMANCE = "schema_conformance"
     ERROR_CODE_USAGE = "error_code_usage"

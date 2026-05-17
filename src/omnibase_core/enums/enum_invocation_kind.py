@@ -3,11 +3,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumInvocationKind(StrValueHelper, str, Enum):
+class EnumInvocationKind(UtilStrValueHelper, str, Enum):
     """Routing axis distinguishing remote-agent invocations from raw-model invocations."""
 
     AGENT = "agent"

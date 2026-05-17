@@ -9,11 +9,11 @@ Defines trigger types for RSD (Rapid Service Development) algorithm.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRsdTriggerType(StrValueHelper, str, Enum):
+class EnumRsdTriggerType(UtilStrValueHelper, str, Enum):
     """Enumeration of RSD trigger types."""
 
     EVENT_DRIVEN = "event_driven"

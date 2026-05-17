@@ -10,11 +10,11 @@ node contracts and structural conventions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumUriType(StrValueHelper, str, Enum):
+class EnumUriType(UtilStrValueHelper, str, Enum):
     """Valid types for ONEX URIs."""
 
     TOOL = "tool"

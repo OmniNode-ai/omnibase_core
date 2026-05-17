@@ -10,11 +10,11 @@ Provides type-safe error handling throughout the system.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDocumentFreshnessErrors(StrValueHelper, str, Enum):
+class EnumDocumentFreshnessErrors(UtilStrValueHelper, str, Enum):
     """
     Standardized error codes for document freshness monitoring.
 

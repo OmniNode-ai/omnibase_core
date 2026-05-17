@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumEvidenceTier"]
 
@@ -33,7 +33,7 @@ _TIER_WEIGHTS: dict[str, int] = {
 
 
 @unique
-class EnumEvidenceTier(StrValueHelper, str, Enum):
+class EnumEvidenceTier(UtilStrValueHelper, str, Enum):
     """Evidence quality tiers for learned pattern promotion.
 
     Gates evidence-based promotion in the pattern lifecycle. Each tier

@@ -9,11 +9,11 @@ Defines the available strategies for namespace handling in ONEX components.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumNamespaceStrategy(StrValueHelper, str, Enum):
+class EnumNamespaceStrategy(UtilStrValueHelper, str, Enum):
     """Enumeration of namespace strategies."""
 
     ONEX_DEFAULT = "onex_default"

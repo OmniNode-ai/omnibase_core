@@ -9,11 +9,11 @@ Types of computation operations for output data models.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumComputationType(StrValueHelper, str, Enum):
+class EnumComputationType(UtilStrValueHelper, str, Enum):
     """Types of computation operations."""
 
     NUMERIC = "numeric"

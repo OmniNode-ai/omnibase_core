@@ -9,11 +9,11 @@ Priority levels for operations and requests across tools.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumPriorityLevel(StrValueHelper, str, Enum):
+class EnumPriorityLevel(UtilStrValueHelper, str, Enum):
     """
     Priority levels for operations and requests across tools.
 

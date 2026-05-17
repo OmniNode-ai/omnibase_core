@@ -14,11 +14,11 @@ Token resolution order: cwd → git remote → OMNI_HOME env → registry lookup
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumScopeToken(StrValueHelper, str, Enum):
+class EnumScopeToken(UtilStrValueHelper, str, Enum):
     """
     Named topology classes used in ``cwd_in`` scope predicates.
 

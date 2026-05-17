@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumFieldType(StrValueHelper, str, Enum):
+class EnumFieldType(UtilStrValueHelper, str, Enum):
     """
     Strongly typed field type for metadata field definitions.
 

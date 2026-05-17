@@ -24,11 +24,11 @@ Canonical ownership rules (OMN-4032):
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumMessageCategory(StrValueHelper, str, Enum):
+class EnumMessageCategory(UtilStrValueHelper, str, Enum):
     """
     Categories of messages in ONEX for routing and topic mapping.
 
@@ -341,7 +341,7 @@ class EnumMessageCategory(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumExecutionShape(StrValueHelper, str, Enum):
+class EnumExecutionShape(UtilStrValueHelper, str, Enum):
     """
     Canonical execution shapes in ONEX.
 

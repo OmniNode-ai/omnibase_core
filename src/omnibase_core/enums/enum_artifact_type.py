@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumArtifactType(StrValueHelper, str, Enum):
+class EnumArtifactType(UtilStrValueHelper, str, Enum):
     """Artifact types for ONEX ecosystem."""
 
     TOOL = "tool"

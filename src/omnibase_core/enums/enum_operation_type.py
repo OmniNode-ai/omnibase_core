@@ -10,11 +10,11 @@ to replace string literals with type-safe enums.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumOperationType(StrValueHelper, str, Enum):
+class EnumOperationType(UtilStrValueHelper, str, Enum):
     """
     Standard operation types for CLI operations.
 

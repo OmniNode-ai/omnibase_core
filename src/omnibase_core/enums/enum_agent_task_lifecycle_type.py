@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumAgentTaskLifecycleType(StrValueHelper, str, Enum):
+class EnumAgentTaskLifecycleType(UtilStrValueHelper, str, Enum):
     """Lifecycle event types emitted by a remote agent task.
 
     Classifies the observable state transitions of a remote agent task

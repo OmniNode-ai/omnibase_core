@@ -9,11 +9,11 @@ Execution environment types for ONEX deployments.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumEnvironment(StrValueHelper, str, Enum):
+class EnumEnvironment(UtilStrValueHelper, str, Enum):
     """Execution environment types for ONEX deployments."""
 
     DEVELOPMENT = "development"

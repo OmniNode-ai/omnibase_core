@@ -38,11 +38,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumHealthStatus(StrValueHelper, str, Enum):
+class EnumHealthStatus(UtilStrValueHelper, str, Enum):
     """Canonical health status enum for all ONEX system components.
 
     This is the single source of truth for health status values across

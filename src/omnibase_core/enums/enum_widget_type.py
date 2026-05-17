@@ -19,13 +19,13 @@ Example:
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ("EnumWidgetType",)
 
 
 @unique
-class EnumWidgetType(StrValueHelper, str, Enum):
+class EnumWidgetType(UtilStrValueHelper, str, Enum):
     """Dashboard widget type enumeration.
 
     Defines the types of widgets available for dashboard configuration.

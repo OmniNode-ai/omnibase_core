@@ -14,11 +14,11 @@ initialization and cleanup phases.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumNodeLifecycleStatus(StrValueHelper, str, Enum):
+class EnumNodeLifecycleStatus(UtilStrValueHelper, str, Enum):
     """
     Node lifecycle status values.
 

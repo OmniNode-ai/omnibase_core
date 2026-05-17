@@ -21,11 +21,11 @@ Related:
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumContractValidationErrorCode(StrValueHelper, str, Enum):
+class EnumContractValidationErrorCode(UtilStrValueHelper, str, Enum):
     """Error codes for contract merge and expanded validation.
 
     These codes categorize the types of issues that can be detected

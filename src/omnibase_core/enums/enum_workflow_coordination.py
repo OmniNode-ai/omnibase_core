@@ -14,11 +14,11 @@ in enum_workflow_status.py per OMN-1310.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumAssignmentStatus(StrValueHelper, str, Enum):
+class EnumAssignmentStatus(UtilStrValueHelper, str, Enum):
     """Node assignment status."""
 
     ASSIGNED = "ASSIGNED"
@@ -28,7 +28,7 @@ class EnumAssignmentStatus(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumExecutionPattern(StrValueHelper, str, Enum):
+class EnumExecutionPattern(UtilStrValueHelper, str, Enum):
     """Workflow execution patterns."""
 
     SEQUENTIAL = "sequential"
@@ -38,7 +38,7 @@ class EnumExecutionPattern(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumFailureRecoveryStrategy(StrValueHelper, str, Enum):
+class EnumFailureRecoveryStrategy(UtilStrValueHelper, str, Enum):
     """Failure recovery strategies."""
 
     RETRY = "RETRY"

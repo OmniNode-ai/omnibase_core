@@ -10,13 +10,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumPatternType"]
 
 
 @unique
-class EnumPatternType(StrValueHelper, str, Enum):
+class EnumPatternType(UtilStrValueHelper, str, Enum):
     """Type classification for learned patterns.
 
     Categorizes patterns by their domain and usage context.

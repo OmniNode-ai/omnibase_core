@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumChannelType(StrValueHelper, str, Enum):
+class EnumChannelType(UtilStrValueHelper, str, Enum):
     """Messaging platform type for OmniClaw channel adapters.
 
     Identifies the external messaging platform from which a message

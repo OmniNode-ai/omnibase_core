@@ -10,10 +10,10 @@ Used by MixinHandlerRouting and ModelHandlerRoutingSubcontract.
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
-class EnumHandlerRoutingStrategy(StrValueHelper, str, Enum):
+class EnumHandlerRoutingStrategy(UtilStrValueHelper, str, Enum):
     """Handler routing strategy for contract-driven message routing."""
 
     PAYLOAD_TYPE_MATCH = "payload_type_match"

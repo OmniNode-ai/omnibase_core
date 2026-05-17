@@ -11,9 +11,9 @@ that can be composed into concrete node implementations.
 
 # NOTE(OMN-1302): I001 (import order) disabled - intentional ordering to avoid circular dependencies.
 
-# StrValueHelper is re-exported from utils for convenience. The actual class lives
+# UtilStrValueHelper is re-exported from utils for convenience. The actual class lives
 # in utils.util_str_enum_base to avoid circular imports with enums.
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 # Core mixins
@@ -83,8 +83,8 @@ from omnibase_core.mixins.mixin_trace_capture import MixinTraceCapture
 from omnibase_core.mixins.mixin_truncation_validation import MixinTruncationValidation
 
 __all__ = [
-    # StrValueHelper - provides __str__ for enums, must be available early
-    "StrValueHelper",
+    # UtilStrValueHelper - provides __str__ for enums, must be available early
+    "UtilStrValueHelper",
     "MixinCanonicalYAMLSerializer",
     "MixinComputeExecution",
     "MixinEffectExecution",

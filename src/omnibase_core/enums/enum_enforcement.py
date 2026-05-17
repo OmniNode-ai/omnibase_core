@@ -19,11 +19,11 @@ Failure posture rules (from OMN-9895 epic):
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumEnforcement(StrValueHelper, str, Enum):
+class EnumEnforcement(UtilStrValueHelper, str, Enum):
     """
     Operational outcome tiers for enforcement-scope contracts.
 

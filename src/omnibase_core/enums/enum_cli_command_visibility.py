@@ -10,11 +10,11 @@ discovery surfaces for the registry-driven CLI system.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCliCommandVisibility(StrValueHelper, str, Enum):
+class EnumCliCommandVisibility(UtilStrValueHelper, str, Enum):
     """
     Visibility classifications for CLI commands in cli.contribution.v1 contracts.
 

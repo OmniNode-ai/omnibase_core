@@ -8,11 +8,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumHandlerRole(StrValueHelper, str, Enum):
+class EnumHandlerRole(UtilStrValueHelper, str, Enum):
     """Architectural role classification of handlers.
 
     Roles: INFRA_HANDLER (protocol/transport), NODE_HANDLER (event/business logic),

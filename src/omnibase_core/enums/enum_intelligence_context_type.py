@@ -10,11 +10,11 @@ cross-instance intelligence sharing in ONEX architecture.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumIntelligenceContextType(StrValueHelper, str, Enum):
+class EnumIntelligenceContextType(UtilStrValueHelper, str, Enum):
     """
     Enum for intelligence context types with security validation.
 

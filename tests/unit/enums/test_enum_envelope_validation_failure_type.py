@@ -55,7 +55,7 @@ class TestEnumEnvelopeValidationFailureTypeValues:
 
 
 class TestEnumEnvelopeValidationFailureTypeStrBehavior:
-    """Tests for str-based enum behavior (StrValueHelper mixin)."""
+    """Tests for str-based enum behavior (UtilStrValueHelper mixin)."""
 
     def test_enum_is_string(self) -> None:
         """Enum members are instances of str."""

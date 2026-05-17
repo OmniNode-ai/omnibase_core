@@ -17,11 +17,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumClaudeCodeSessionStatus(StrValueHelper, str, Enum):
+class EnumClaudeCodeSessionStatus(UtilStrValueHelper, str, Enum):
     """Status of a Claude Code session snapshot.
 
     Tracks the lifecycle state of a Claude Code session from initial

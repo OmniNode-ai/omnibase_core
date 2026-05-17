@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumExecutionOrder(StrValueHelper, str, Enum):
+class EnumExecutionOrder(UtilStrValueHelper, str, Enum):
     """
     Strongly typed execution order discriminators.
 

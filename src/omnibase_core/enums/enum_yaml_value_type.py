@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumYamlValueType(StrValueHelper, str, Enum):
+class EnumYamlValueType(UtilStrValueHelper, str, Enum):
     """
     Strongly typed YAML value type discriminators.
 

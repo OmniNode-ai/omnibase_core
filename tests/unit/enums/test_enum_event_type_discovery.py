@@ -32,7 +32,7 @@ class TestEnumEventTypeDiscovery:
         assert issubclass(EnumEventTypeDiscovery, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string behavior of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumEventTypeDiscovery.SERVICE_DISCOVERY) == "service_discovery"
         assert (
             str(EnumEventTypeDiscovery.SERVICE_REGISTRATION) == "service_registration"

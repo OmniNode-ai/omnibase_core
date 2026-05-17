@@ -9,11 +9,11 @@ Defines the available types for CLI command arguments.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumArgumentType(StrValueHelper, str, Enum):
+class EnumArgumentType(UtilStrValueHelper, str, Enum):
     """
     Enumeration of CLI argument types.
 

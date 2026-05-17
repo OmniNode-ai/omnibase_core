@@ -26,7 +26,7 @@ class TestEnumResolutionTier:
         assert len(EnumResolutionTier) == 5
 
     def test_str_returns_value(self) -> None:
-        """str() returns the raw string value (StrValueHelper)."""
+        """str() returns the raw string value (UtilStrValueHelper)."""
         assert str(EnumResolutionTier.LOCAL_EXACT) == "local_exact"
         assert str(EnumResolutionTier.QUARANTINE) == "quarantine"
 
@@ -74,7 +74,7 @@ class TestEnumResolutionFailureCode:
         assert len(EnumResolutionFailureCode) == 7
 
     def test_str_returns_value(self) -> None:
-        """str() returns the raw string value (StrValueHelper)."""
+        """str() returns the raw string value (UtilStrValueHelper)."""
         assert str(EnumResolutionFailureCode.NO_MATCH) == "no_match"
         assert str(EnumResolutionFailureCode.TIER_EXHAUSTED) == "tier_exhausted"
 

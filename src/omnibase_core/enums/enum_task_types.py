@@ -9,11 +9,11 @@ ONEX-compatible enums for task types to replace string literals.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumTaskTypes(StrValueHelper, str, Enum):
+class EnumTaskTypes(UtilStrValueHelper, str, Enum):
     """[Any]type enumeration."""
 
     DOCUMENT_ANALYSIS = "document_analysis"

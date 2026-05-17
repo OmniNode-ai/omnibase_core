@@ -8,11 +8,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumHandlerCommandType(StrValueHelper, str, Enum):
+class EnumHandlerCommandType(UtilStrValueHelper, str, Enum):
     """Handler command types for ONEX operations.
 
     SINGLE SOURCE OF TRUTH for typed command identifiers.

@@ -15,7 +15,7 @@ class TestEnumPipelineValidationMode:
     """Test suite for EnumPipelineValidationMode enumeration."""
 
     def test_string_returns_value(self) -> None:
-        """Test that str() returns the .value (StrValueHelper behavior)."""
+        """Test that str() returns the .value (UtilStrValueHelper behavior)."""
         assert str(EnumPipelineValidationMode.STRICT) == "strict"
         assert str(EnumPipelineValidationMode.LENIENT) == "lenient"
         assert str(EnumPipelineValidationMode.SMOKE) == "smoke"

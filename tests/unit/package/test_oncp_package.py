@@ -685,7 +685,7 @@ class TestEnumOverlayScope:
         assert values == {"base", "org", "project", "env", "user", "session"}
 
     def test_str_returns_value(self) -> None:
-        """str() returns the lowercase value (StrValueHelper mixin)."""
+        """str() returns the lowercase value (UtilStrValueHelper mixin)."""
         assert str(EnumOverlayScope.PROJECT) == "project"
 
     def test_repr_includes_name(self) -> None:

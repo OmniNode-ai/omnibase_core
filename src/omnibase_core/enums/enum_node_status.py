@@ -9,11 +9,11 @@ Defines the possible status values for ONEX nodes.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumNodeStatus(StrValueHelper, str, Enum):
+class EnumNodeStatus(UtilStrValueHelper, str, Enum):
     """
     Enumeration of node status values.
 

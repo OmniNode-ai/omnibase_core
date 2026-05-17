@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDifficultyLevel(StrValueHelper, str, Enum):
+class EnumDifficultyLevel(UtilStrValueHelper, str, Enum):
     """
     Enumeration of difficulty levels for examples and tutorials.
 

@@ -10,11 +10,11 @@ Defines eviction strategies for cache management.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCacheEvictionPolicy(StrValueHelper, str, Enum):
+class EnumCacheEvictionPolicy(UtilStrValueHelper, str, Enum):
     """
     Cache eviction policy enumeration for ONEX caching systems.
 

@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDispatchLifecycleEmitter(StrValueHelper, str, Enum):
+class EnumDispatchLifecycleEmitter(UtilStrValueHelper, str, Enum):
     """Identifies which actor emitted a lifecycle event.
 
     Per the Task 10 emitter responsibility table:

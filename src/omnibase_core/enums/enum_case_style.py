@@ -9,11 +9,11 @@ Defines all supported case styles for string conversion operations.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCaseStyle(StrValueHelper, str, Enum):
+class EnumCaseStyle(UtilStrValueHelper, str, Enum):
     """Enum for case style types."""
 
     PASCAL_CASE = "pascal_case"

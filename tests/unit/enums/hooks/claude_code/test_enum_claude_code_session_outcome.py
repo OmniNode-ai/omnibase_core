@@ -11,7 +11,7 @@ import pytest
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_session_outcome import (
     EnumClaudeCodeSessionOutcome,
 )
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @pytest.mark.unit
@@ -31,13 +31,13 @@ class TestEnumClaudeCodeSessionOutcome:
         assert len(values) == 4
 
     def test_enum_inheritance(self):
-        """Test that enum inherits from StrValueHelper, str, and Enum."""
-        assert issubclass(EnumClaudeCodeSessionOutcome, StrValueHelper)
+        """Test that enum inherits from UtilStrValueHelper, str, and Enum."""
+        assert issubclass(EnumClaudeCodeSessionOutcome, UtilStrValueHelper)
         assert issubclass(EnumClaudeCodeSessionOutcome, str)
         assert issubclass(EnumClaudeCodeSessionOutcome, Enum)
 
     def test_str_value_helper_behavior(self):
-        """Test that StrValueHelper provides correct __str__ behavior."""
+        """Test that UtilStrValueHelper provides correct __str__ behavior."""
         # str() should return the value (lowercase)
         assert str(EnumClaudeCodeSessionOutcome.SUCCESS) == "success"
         assert str(EnumClaudeCodeSessionOutcome.FAILED) == "failed"

@@ -10,11 +10,11 @@ Enumeration for state transition types in contract-driven state management.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumTransitionType(StrValueHelper, str, Enum):
+class EnumTransitionType(UtilStrValueHelper, str, Enum):
     """Types of state transitions."""
 
     SIMPLE = "simple"  # Direct field updates

@@ -84,7 +84,7 @@ class TestEnumIntentClass:
             assert member.value == member.value.lower()
 
     def test_str_returns_value(self) -> None:
-        """str() must return the enum value (via StrValueHelper mixin)."""
+        """str() must return the enum value (via UtilStrValueHelper mixin)."""
         assert str(EnumIntentClass.REFACTOR) == "refactor"
         assert str(EnumIntentClass.SECURITY) == "security"
 

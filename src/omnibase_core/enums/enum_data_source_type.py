@@ -10,11 +10,11 @@ the metadata pipeline integration.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDataSourceType(StrValueHelper, str, Enum):
+class EnumDataSourceType(UtilStrValueHelper, str, Enum):
     """Types of data sources in the pipeline."""
 
     FILE_SYSTEM = "FILE_SYSTEM"

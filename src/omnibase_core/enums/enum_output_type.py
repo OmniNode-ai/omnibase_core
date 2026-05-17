@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumOutputType(StrValueHelper, str, Enum):
+class EnumOutputType(UtilStrValueHelper, str, Enum):
     """
     Strongly typed output type values.
 

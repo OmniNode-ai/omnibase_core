@@ -9,11 +9,11 @@ This module defines the case modes available for CASE_CONVERSION transformations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCaseMode(StrValueHelper, str, Enum):
+class EnumCaseMode(UtilStrValueHelper, str, Enum):
     """
     Case transformation modes.
 

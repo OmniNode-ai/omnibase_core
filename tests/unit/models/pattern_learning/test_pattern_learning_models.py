@@ -8,7 +8,7 @@ Tests all aspects of pattern learning models including:
 - Frozen (immutable) enforcement
 - Extra field rejection (extra="forbid")
 - Constraint validation (normalized scores, counts)
-- Enum behavior and StrValueHelper integration
+- Enum behavior and UtilStrValueHelper integration
 - Serialization and deserialization round-trips
 """
 
@@ -73,8 +73,8 @@ class TestEnumPatternLifecycleStateValues:
 
 
 @pytest.mark.unit
-class TestEnumPatternLifecycleStateStrValueHelper:
-    """Tests for StrValueHelper integration with EnumPatternLifecycleState."""
+class TestEnumPatternLifecycleStateUtilStrValueHelper:
+    """Tests for UtilStrValueHelper integration with EnumPatternLifecycleState."""
 
     def test_str_returns_value_candidate(self) -> None:
         """str() on CANDIDATE should return 'candidate'."""
@@ -134,8 +134,8 @@ class TestEnumPatternLearningStatusValues:
 
 
 @pytest.mark.unit
-class TestEnumPatternLearningStatusStrValueHelper:
-    """Tests for StrValueHelper integration with EnumPatternLearningStatus."""
+class TestEnumPatternLearningStatusUtilStrValueHelper:
+    """Tests for UtilStrValueHelper integration with EnumPatternLearningStatus."""
 
     def test_str_returns_value_completed(self) -> None:
         """str() on COMPLETED should return 'completed'."""
@@ -200,8 +200,8 @@ class TestEnumPatternTypeValues:
 
 
 @pytest.mark.unit
-class TestEnumPatternTypeStrValueHelper:
-    """Tests for StrValueHelper integration with EnumPatternType."""
+class TestEnumPatternTypeUtilStrValueHelper:
+    """Tests for UtilStrValueHelper integration with EnumPatternType."""
 
     def test_str_returns_value_code_pattern(self) -> None:
         """str() on CODE_PATTERN should return 'code_pattern'."""

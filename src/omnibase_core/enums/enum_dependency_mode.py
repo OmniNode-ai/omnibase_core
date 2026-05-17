@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDependencyMode(StrValueHelper, str, Enum):
+class EnumDependencyMode(UtilStrValueHelper, str, Enum):
     """
     Canonical enum for scenario dependency injection modes.
     Controls whether scenarios use real external services or mocked test doubles.

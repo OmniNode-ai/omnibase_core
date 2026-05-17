@@ -71,7 +71,7 @@ class TestEnumCacheEvictionPolicy:
 
     def test_enum_string_representation(self) -> None:
         """Test string representation."""
-        # str() returns the value due to StrValueHelper mixin
+        # str() returns the value due to UtilStrValueHelper mixin
         assert str(EnumCacheEvictionPolicy.LRU) == "lru"
         assert (
             repr(EnumCacheEvictionPolicy.LFU) == "<EnumCacheEvictionPolicy.LFU: 'lfu'>"

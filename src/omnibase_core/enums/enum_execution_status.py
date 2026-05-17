@@ -45,14 +45,14 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import TYPE_CHECKING
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumExecutionStatus(StrValueHelper, str, Enum):
+class EnumExecutionStatus(UtilStrValueHelper, str, Enum):
     """Canonical execution status enum for ONEX lifecycle tracking.
 
     This is the single source of truth for execution status values across

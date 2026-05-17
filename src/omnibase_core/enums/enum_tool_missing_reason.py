@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumToolMissingReason(StrValueHelper, str, Enum):
+class EnumToolMissingReason(UtilStrValueHelper, str, Enum):
     """
     Categorized reasons for missing tools.
 

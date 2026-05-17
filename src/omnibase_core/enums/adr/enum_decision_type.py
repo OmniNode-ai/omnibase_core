@@ -4,11 +4,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDecisionType(StrValueHelper, str, Enum):
+class EnumDecisionType(UtilStrValueHelper, str, Enum):
     """Classifies the type of architectural decision extracted."""
 
     ARCHITECTURE_DECISION = "architecture_decision"

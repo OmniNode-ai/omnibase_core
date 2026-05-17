@@ -4,7 +4,7 @@
 """Unit tests for pattern extraction models (OMN-1587).
 
 Tests comprehensive pattern extraction model functionality including:
-- EnumPatternKind enum with StrValueHelper behavior
+- EnumPatternKind enum with UtilStrValueHelper behavior
 - ModelPatternWarning for non-fatal extraction warnings
 - ModelPatternError for structured error handling
 - ModelPatternRecord for individual pattern data
@@ -58,7 +58,7 @@ class TestEnumPatternKind:
         assert EnumPatternKind.TOOL_FAILURE.value == "tool_failure"
 
     def test_str_helper_returns_value(self) -> None:
-        """Test that StrValueHelper makes str() return the value."""
+        """Test that UtilStrValueHelper makes str() return the value."""
         assert str(EnumPatternKind.FILE_ACCESS) == "file_access"
         assert str(EnumPatternKind.ERROR) == "error"
         assert str(EnumPatternKind.ARCHITECTURE) == "architecture"

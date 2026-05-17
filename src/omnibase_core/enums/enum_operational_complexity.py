@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumOperationalComplexity(StrValueHelper, str, Enum):
+class EnumOperationalComplexity(UtilStrValueHelper, str, Enum):
     """
     Operational complexity levels for runtime and execution characteristics.
 

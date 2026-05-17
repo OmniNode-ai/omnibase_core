@@ -62,7 +62,7 @@ class TestEnumIntelligenceContextType:
         assert issubclass(EnumIntelligenceContextType, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string behavior of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumIntelligenceContextType.DISCOVERY_PATTERN) == "discovery_pattern"
         assert str(EnumIntelligenceContextType.PROBLEM_DIAGNOSIS) == "problem_diagnosis"
         assert (

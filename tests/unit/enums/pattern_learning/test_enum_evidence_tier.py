@@ -34,7 +34,7 @@ class TestEnumEvidenceTier:
         assert tier == "measured"
 
     def test_enum_str_method(self):
-        """Test __str__ method returns value (via StrValueHelper)."""
+        """Test __str__ method returns value (via UtilStrValueHelper)."""
         assert str(EnumEvidenceTier.UNMEASURED) == "unmeasured"
         assert str(EnumEvidenceTier.OBSERVED) == "observed"
         assert str(EnumEvidenceTier.MEASURED) == "measured"

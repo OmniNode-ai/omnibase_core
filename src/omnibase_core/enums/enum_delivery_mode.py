@@ -9,11 +9,11 @@ Defines the available modes for event delivery in the ONEX system.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDeliveryMode(StrValueHelper, str, Enum):
+class EnumDeliveryMode(UtilStrValueHelper, str, Enum):
     """
     Enumeration of event delivery modes.
 

@@ -3,11 +3,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumTrustLevel(StrValueHelper, str, Enum):
+class EnumTrustLevel(UtilStrValueHelper, str, Enum):
     """Trust level of the signature chain."""
 
     HIGH_TRUST = "high_trust"  # All signatures from high-trust nodes

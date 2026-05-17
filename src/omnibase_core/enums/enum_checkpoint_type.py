@@ -9,11 +9,11 @@ Single responsibility: Centralized checkpoint type definitions.
 from enum import Enum, unique
 from functools import cache
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCheckpointType(StrValueHelper, str, Enum):
+class EnumCheckpointType(UtilStrValueHelper, str, Enum):
     """Types of workflow checkpoints for state persistence and recovery."""
 
     # Trigger-based checkpoints

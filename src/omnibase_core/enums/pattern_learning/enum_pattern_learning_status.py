@@ -10,13 +10,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumPatternLearningStatus"]
 
 
 @unique
-class EnumPatternLearningStatus(StrValueHelper, str, Enum):
+class EnumPatternLearningStatus(UtilStrValueHelper, str, Enum):
     """Execution status for pattern learning operations.
 
     Tracks the completion state of pattern learning pipeline runs.

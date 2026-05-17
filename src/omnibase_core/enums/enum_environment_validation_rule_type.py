@@ -10,11 +10,11 @@ environment-specific configuration values.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumEnvironmentValidationRuleType(StrValueHelper, str, Enum):
+class EnumEnvironmentValidationRuleType(UtilStrValueHelper, str, Enum):
     """Environment validation rule type enumeration."""
 
     VALUE_CHECK = "value_check"

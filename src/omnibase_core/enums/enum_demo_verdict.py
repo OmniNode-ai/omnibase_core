@@ -7,12 +7,12 @@ from __future__ import annotations
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumDemoVerdict"]
 
 
-class EnumDemoVerdict(StrValueHelper, str, Enum):
+class EnumDemoVerdict(UtilStrValueHelper, str, Enum):
     """Verdict for demo validation results.
 
     Determines the outcome of a demo validation run based on pass rate thresholds.

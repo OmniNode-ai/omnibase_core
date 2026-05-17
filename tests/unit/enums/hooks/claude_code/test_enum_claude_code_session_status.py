@@ -11,7 +11,7 @@ import pytest
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_session_status import (
     EnumClaudeCodeSessionStatus,
 )
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @pytest.mark.unit
@@ -31,13 +31,13 @@ class TestEnumClaudeCodeSessionStatus:
         assert len(values) == 4
 
     def test_enum_inheritance(self):
-        """Test that enum inherits from StrValueHelper, str, and Enum."""
-        assert issubclass(EnumClaudeCodeSessionStatus, StrValueHelper)
+        """Test that enum inherits from UtilStrValueHelper, str, and Enum."""
+        assert issubclass(EnumClaudeCodeSessionStatus, UtilStrValueHelper)
         assert issubclass(EnumClaudeCodeSessionStatus, str)
         assert issubclass(EnumClaudeCodeSessionStatus, Enum)
 
     def test_str_value_helper_behavior(self):
-        """Test that StrValueHelper provides correct __str__ behavior."""
+        """Test that UtilStrValueHelper provides correct __str__ behavior."""
         # str() should return the value (snake_case)
         assert str(EnumClaudeCodeSessionStatus.ORPHAN) == "orphan"
         assert str(EnumClaudeCodeSessionStatus.ACTIVE) == "active"

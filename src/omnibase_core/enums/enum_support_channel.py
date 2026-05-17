@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumSupportChannel(StrValueHelper, str, Enum):
+class EnumSupportChannel(UtilStrValueHelper, str, Enum):
     """Support channel through which a customer contacted support.
 
     Used to track the communication channel for support tickets

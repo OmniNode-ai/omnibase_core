@@ -32,7 +32,7 @@ class TestEnumIntelligencePriorityLevel:
         assert issubclass(EnumIntelligencePriorityLevel, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string behavior of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumIntelligencePriorityLevel.LOW) == "low"
         assert str(EnumIntelligencePriorityLevel.NORMAL) == "normal"
         assert str(EnumIntelligencePriorityLevel.HIGH) == "high"

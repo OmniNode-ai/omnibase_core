@@ -3,7 +3,7 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -30,7 +30,7 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumLifecycle(StrValueHelper, str, Enum):
+class EnumLifecycle(UtilStrValueHelper, str, Enum):
     DRAFT = "draft"
     ACTIVE = "active"
     DEPRECATED = "deprecated"
@@ -38,7 +38,7 @@ class EnumLifecycle(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumEntrypointType(StrValueHelper, str, Enum):
+class EnumEntrypointType(UtilStrValueHelper, str, Enum):
     PYTHON = "python"
     CLI = "cli"
     DOCKER = "docker"
@@ -51,7 +51,7 @@ class EnumEntrypointType(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumMetaType(StrValueHelper, str, Enum):
+class EnumMetaType(UtilStrValueHelper, str, Enum):
     TOOL = "tool"
     VALIDATOR = "validator"
     AGENT = "agent"
@@ -65,14 +65,14 @@ class EnumMetaType(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumProtocolVersion(StrValueHelper, str, Enum):
+class EnumProtocolVersion(UtilStrValueHelper, str, Enum):
     V0_1_0 = "0.1.0"
     V1_0_0 = "1.0.0"
     # Add more as needed
 
 
 @unique
-class EnumRuntimeLanguage(StrValueHelper, str, Enum):
+class EnumRuntimeLanguage(UtilStrValueHelper, str, Enum):
     PYTHON = "python"
     JAVASCRIPT = "javascript"
     TYPESCRIPT = "typescript"
@@ -195,7 +195,7 @@ class EnumNodeMetadataField(Enum):
 
 
 @unique
-class EnumUriType(StrValueHelper, str, Enum):
+class EnumUriType(UtilStrValueHelper, str, Enum):
     TOOL = "tool"
     VALIDATOR = "validator"
     AGENT = "agent"
@@ -213,13 +213,13 @@ SCHEMA_REF = "schema_ref"
 
 
 @unique
-class EnumToolType(StrValueHelper, str, Enum):
+class EnumToolType(UtilStrValueHelper, str, Enum):
     FUNCTION = "function"
     # Add more tool types as needed (e.g., SCRIPT, PIPELINE, etc.)
 
 
 @unique
-class EnumToolRegistryMode(StrValueHelper, str, Enum):
+class EnumToolRegistryMode(UtilStrValueHelper, str, Enum):
     REAL = "real"
     MOCK = "mock"
 

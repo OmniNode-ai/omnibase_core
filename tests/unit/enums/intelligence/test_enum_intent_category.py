@@ -9,7 +9,7 @@ from enum import Enum
 import pytest
 
 from omnibase_core.enums.intelligence.enum_intent_category import EnumIntentCategory
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @pytest.mark.unit
@@ -45,13 +45,13 @@ class TestEnumIntentCategory:
         assert len(values) == 13
 
     def test_enum_inheritance(self):
-        """Test that enum inherits from StrValueHelper, str, and Enum."""
-        assert issubclass(EnumIntentCategory, StrValueHelper)
+        """Test that enum inherits from UtilStrValueHelper, str, and Enum."""
+        assert issubclass(EnumIntentCategory, UtilStrValueHelper)
         assert issubclass(EnumIntentCategory, str)
         assert issubclass(EnumIntentCategory, Enum)
 
     def test_str_value_helper_behavior(self):
-        """Test that StrValueHelper provides correct __str__ behavior."""
+        """Test that UtilStrValueHelper provides correct __str__ behavior."""
         # str() should return the value (snake_case)
         assert str(EnumIntentCategory.CODE_GENERATION) == "code_generation"
         assert str(EnumIntentCategory.DEBUGGING) == "debugging"

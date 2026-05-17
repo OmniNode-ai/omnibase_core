@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRegistryStatus(StrValueHelper, str, Enum):
+class EnumRegistryStatus(UtilStrValueHelper, str, Enum):
     """Strongly typed registry status values."""
 
     HEALTHY = "healthy"

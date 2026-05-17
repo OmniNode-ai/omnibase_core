@@ -3,11 +3,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumHandlerType(StrValueHelper, str, Enum):
+class EnumHandlerType(UtilStrValueHelper, str, Enum):
     """Handler type classification for the ONEX handler registry.
 
     This enum classifies handlers by the type of I/O or external system

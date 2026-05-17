@@ -14,11 +14,11 @@ Thread Safety:
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumTopicType(StrValueHelper, str, Enum):
+class EnumTopicType(UtilStrValueHelper, str, Enum):
     """
     Valid topic types per ONEX topic taxonomy.
 
@@ -38,7 +38,7 @@ class EnumTopicType(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumCleanupPolicy(StrValueHelper, str, Enum):
+class EnumCleanupPolicy(UtilStrValueHelper, str, Enum):
     """
     Kafka cleanup policies for topic log management.
 

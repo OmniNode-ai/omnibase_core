@@ -10,11 +10,11 @@ Defines the valid states in the workspace lifecycle.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumWorkspaceStatus(StrValueHelper, str, Enum):
+class EnumWorkspaceStatus(UtilStrValueHelper, str, Enum):
     """Workspace lifecycle states."""
 
     CREATING = "creating"

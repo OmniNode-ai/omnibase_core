@@ -9,11 +9,11 @@ Strongly typed enumeration for registry type classifications.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRegistryType(StrValueHelper, str, Enum):
+class EnumRegistryType(UtilStrValueHelper, str, Enum):
     """
     Registry type classifications for ONEX registries.
 

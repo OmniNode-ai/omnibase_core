@@ -9,11 +9,11 @@ Retry backoff strategies for infrastructure resilience in ONEX systems.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumBackoffStrategy(StrValueHelper, str, Enum):
+class EnumBackoffStrategy(UtilStrValueHelper, str, Enum):
     """Enumeration for retry backoff strategies used in infrastructure components."""
 
     # Backoff strategies for retry logic

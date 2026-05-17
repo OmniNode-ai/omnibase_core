@@ -15,7 +15,7 @@ class TestEnumServiceLifecycle:
     """Test suite for EnumServiceLifecycle enumeration."""
 
     def test_string_returns_value(self) -> None:
-        """Test that str() returns the .value (StrValueHelper behavior)."""
+        """Test that str() returns the .value (UtilStrValueHelper behavior)."""
         assert str(EnumServiceLifecycle.SINGLETON) == "singleton"
         assert str(EnumServiceLifecycle.TRANSIENT) == "transient"
         assert str(EnumServiceLifecycle.SCOPED) == "scoped"

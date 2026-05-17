@@ -8,11 +8,11 @@ Defines the types of tools that can be exposed via the Model Context Protocol.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumMCPToolType(StrValueHelper, str, Enum):
+class EnumMCPToolType(UtilStrValueHelper, str, Enum):
     """Types of MCP tools.
 
     These map to the MCP protocol's tool type categories:

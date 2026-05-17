@@ -12,13 +12,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 from .enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumScenarioStatusV2(StrValueHelper, str, Enum):
+class EnumScenarioStatusV2(UtilStrValueHelper, str, Enum):
     """
     Scenario status enumeration extending base status hierarchy.
 

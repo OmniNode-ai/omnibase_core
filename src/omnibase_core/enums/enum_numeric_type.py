@@ -10,11 +10,11 @@ to replace int | float unions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumNumericType(StrValueHelper, str, Enum):
+class EnumNumericType(UtilStrValueHelper, str, Enum):
     """Numeric type enumeration for validation rules."""
 
     INTEGER = "integer"

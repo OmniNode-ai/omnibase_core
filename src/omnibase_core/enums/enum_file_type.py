@@ -5,7 +5,7 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -32,7 +32,7 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumFileType(StrValueHelper, str, Enum):
+class EnumFileType(UtilStrValueHelper, str, Enum):
     PYTHON = "python"
     YAML = "yaml"
     MARKDOWN = "markdown"

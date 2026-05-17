@@ -33,11 +33,11 @@ in workflow definitions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumGithubRunnerOs(StrValueHelper, str, Enum):
+class EnumGithubRunnerOs(UtilStrValueHelper, str, Enum):
     """GitHub Actions runner operating systems."""
 
     UBUNTU_LATEST = "ubuntu-latest"

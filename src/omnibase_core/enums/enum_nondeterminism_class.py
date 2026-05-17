@@ -8,11 +8,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumNondeterminismClass(StrValueHelper, str, Enum):
+class EnumNondeterminismClass(UtilStrValueHelper, str, Enum):
     """Classification of nondeterminism sources in mixins.
 
     Used during mixin-to-handler migration to determine whether a mixin

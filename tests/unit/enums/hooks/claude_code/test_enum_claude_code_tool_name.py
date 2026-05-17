@@ -9,7 +9,7 @@ Tests comprehensive enum functionality including:
 - from_string() returns UNKNOWN for unrecognized tools
 - MCP tool pattern handling (mcp__* prefix)
 - Helper methods (is_file_operation, is_search_operation, etc.)
-- StrValueHelper provides correct __str__ behavior
+- UtilStrValueHelper provides correct __str__ behavior
 - Import verification
 """
 
@@ -21,7 +21,7 @@ from enum import Enum
 import pytest
 
 from omnibase_core.enums.hooks.claude_code import EnumClaudeCodeToolName
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 pytestmark = pytest.mark.unit
 
@@ -154,13 +154,13 @@ class TestEnumClaudeCodeToolNameInheritance:
     """Tests for enum inheritance and string behavior."""
 
     def test_enum_inheritance(self) -> None:
-        """Test that enum inherits from StrValueHelper, str, and Enum."""
-        assert issubclass(EnumClaudeCodeToolName, StrValueHelper)
+        """Test that enum inherits from UtilStrValueHelper, str, and Enum."""
+        assert issubclass(EnumClaudeCodeToolName, UtilStrValueHelper)
         assert issubclass(EnumClaudeCodeToolName, str)
         assert issubclass(EnumClaudeCodeToolName, Enum)
 
     def test_str_value_helper_behavior(self) -> None:
-        """Test that StrValueHelper provides correct __str__ behavior."""
+        """Test that UtilStrValueHelper provides correct __str__ behavior."""
         assert str(EnumClaudeCodeToolName.READ) == "Read"
         assert str(EnumClaudeCodeToolName.BASH) == "Bash"
         assert str(EnumClaudeCodeToolName.WEB_FETCH) == "WebFetch"

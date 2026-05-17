@@ -31,7 +31,7 @@ class TestEnumEffectPolicyLevel:
         assert issubclass(EnumEffectPolicyLevel, Enum)
 
     def test_string_serialization_via_str_value_helper(self) -> None:
-        """Test StrValueHelper provides correct string representation."""
+        """Test UtilStrValueHelper provides correct string representation."""
         assert str(EnumEffectPolicyLevel.STRICT) == "strict"
         assert str(EnumEffectPolicyLevel.WARN) == "warn"
         assert str(EnumEffectPolicyLevel.PERMISSIVE) == "permissive"

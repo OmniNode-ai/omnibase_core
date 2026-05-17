@@ -11,11 +11,11 @@ scoping, lifecycle, locking, isolation, and encryption options.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumStorageBackend(StrValueHelper, str, Enum):
+class EnumStorageBackend(UtilStrValueHelper, str, Enum):
     """Storage backend options for state persistence."""
 
     POSTGRESQL = "postgresql"
@@ -25,7 +25,7 @@ class EnumStorageBackend(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumConsistencyLevel(StrValueHelper, str, Enum):
+class EnumConsistencyLevel(UtilStrValueHelper, str, Enum):
     """Consistency levels for distributed state management."""
 
     EVENTUAL = "eventual"
@@ -35,7 +35,7 @@ class EnumConsistencyLevel(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumConflictResolution(StrValueHelper, str, Enum):
+class EnumConflictResolution(UtilStrValueHelper, str, Enum):
     """Conflict resolution strategies."""
 
     TIMESTAMP_BASED = "timestamp_based"
@@ -45,7 +45,7 @@ class EnumConflictResolution(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumVersionScheme(StrValueHelper, str, Enum):
+class EnumVersionScheme(UtilStrValueHelper, str, Enum):
     """State versioning schemes."""
 
     SEMANTIC = "semantic"
@@ -55,7 +55,7 @@ class EnumVersionScheme(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumStateScope(StrValueHelper, str, Enum):
+class EnumStateScope(UtilStrValueHelper, str, Enum):
     """State management scope options."""
 
     NODE_LOCAL = "node_local"
@@ -64,7 +64,7 @@ class EnumStateScope(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumStateLifecycle(StrValueHelper, str, Enum):
+class EnumStateLifecycle(UtilStrValueHelper, str, Enum):
     """State lifecycle management strategies."""
 
     PERSISTENT = "persistent"
@@ -74,7 +74,7 @@ class EnumStateLifecycle(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumLockingStrategy(StrValueHelper, str, Enum):
+class EnumLockingStrategy(UtilStrValueHelper, str, Enum):
     """Locking strategies for state access."""
 
     OPTIMISTIC = "optimistic"
@@ -84,7 +84,7 @@ class EnumLockingStrategy(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumIsolationLevel(StrValueHelper, str, Enum):
+class EnumIsolationLevel(UtilStrValueHelper, str, Enum):
     """Transaction isolation levels."""
 
     READ_UNCOMMITTED = "read_uncommitted"
@@ -94,7 +94,7 @@ class EnumIsolationLevel(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumEncryptionAlgorithm(StrValueHelper, str, Enum):
+class EnumEncryptionAlgorithm(UtilStrValueHelper, str, Enum):
     """Encryption algorithms for state data."""
 
     AES256 = "aes256"

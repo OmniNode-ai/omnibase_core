@@ -33,7 +33,7 @@ class TestEnumEffectCategory:
         assert issubclass(EnumEffectCategory, Enum)
 
     def test_string_serialization_via_str_value_helper(self) -> None:
-        """Test StrValueHelper provides correct string representation."""
+        """Test UtilStrValueHelper provides correct string representation."""
         assert str(EnumEffectCategory.NETWORK) == "network"
         assert str(EnumEffectCategory.TIME) == "time"
         assert str(EnumEffectCategory.RANDOM) == "random"

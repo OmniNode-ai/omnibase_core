@@ -9,11 +9,11 @@ This module defines the regex flags available for REGEX transformations.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRegexFlag(StrValueHelper, str, Enum):
+class EnumRegexFlag(UtilStrValueHelper, str, Enum):
     """
     Supported regex flags.
 

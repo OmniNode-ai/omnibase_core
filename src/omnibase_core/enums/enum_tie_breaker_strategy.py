@@ -13,11 +13,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumTieBreakerStrategy(StrValueHelper, str, Enum):
+class EnumTieBreakerStrategy(UtilStrValueHelper, str, Enum):
     """Canonical tie-breaker strategies for provenance decision records.
 
     When multiple candidates share the same score, a tie-breaker strategy

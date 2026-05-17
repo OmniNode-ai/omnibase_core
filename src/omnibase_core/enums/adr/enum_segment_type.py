@@ -4,11 +4,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumSegmentType(StrValueHelper, str, Enum):
+class EnumSegmentType(UtilStrValueHelper, str, Enum):
     """Classifies the semantic role of a document segment."""
 
     DECISION = "decision"

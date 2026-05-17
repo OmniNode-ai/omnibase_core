@@ -10,11 +10,11 @@ Defines the types of transformations that can be applied to HTTP response header
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumResponseHeaderTransformationType(StrValueHelper, str, Enum):
+class EnumResponseHeaderTransformationType(UtilStrValueHelper, str, Enum):
     """
     Strongly typed response header transformation operation values.
 

@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumEntityType(StrValueHelper, str, Enum):
+class EnumEntityType(UtilStrValueHelper, str, Enum):
     """
     Strongly typed entity type values for data classification.
 

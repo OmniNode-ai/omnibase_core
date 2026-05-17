@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDefinitionLocation(StrValueHelper, str, Enum):
+class EnumDefinitionLocation(UtilStrValueHelper, str, Enum):
     """Location where an interface definition is stored."""
 
     INLINE = "inline"

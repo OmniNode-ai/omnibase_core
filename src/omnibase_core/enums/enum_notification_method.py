@@ -9,11 +9,11 @@ HTTP methods for webhook notifications in ONEX infrastructure.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumNotificationMethod(StrValueHelper, str, Enum):
+class EnumNotificationMethod(UtilStrValueHelper, str, Enum):
     """Enumeration for HTTP notification methods used in webhook communications."""
 
     # Standard HTTP methods for webhook notifications

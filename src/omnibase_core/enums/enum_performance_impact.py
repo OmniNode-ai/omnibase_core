@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumPerformanceImpact(StrValueHelper, str, Enum):
+class EnumPerformanceImpact(UtilStrValueHelper, str, Enum):
     """Performance impact levels for capabilities and operations."""
 
     LOW = "low"

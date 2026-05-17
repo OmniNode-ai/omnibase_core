@@ -5,10 +5,10 @@
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
-class EnumInvariantReportStatus(StrValueHelper, str, Enum):
+class EnumInvariantReportStatus(UtilStrValueHelper, str, Enum):
     """Overall status of an invariant evaluation report."""
 
     PASSED = "passed"  # All invariants passed

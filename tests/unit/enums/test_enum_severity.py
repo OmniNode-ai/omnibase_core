@@ -3,7 +3,7 @@
 
 """Unit tests for EnumSeverity.
 
-Tests the canonical severity enum including string serialization via StrValueHelper,
+Tests the canonical severity enum including string serialization via UtilStrValueHelper,
 enum member validation, uniqueness, and integration with Pydantic and JSON.
 """
 
@@ -40,7 +40,7 @@ class TestEnumSeverity:
         assert len(members) == 6
 
     def test_string_serialization_via_str_value_helper(self) -> None:
-        """Test StrValueHelper provides __str__ returning the value."""
+        """Test UtilStrValueHelper provides __str__ returning the value."""
         assert str(EnumSeverity.DEBUG) == "debug"
         assert str(EnumSeverity.INFO) == "info"
         assert str(EnumSeverity.WARNING) == "warning"

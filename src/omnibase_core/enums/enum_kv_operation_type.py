@@ -10,11 +10,11 @@ distributed storage systems.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumKvOperationType(StrValueHelper, str, Enum):
+class EnumKvOperationType(UtilStrValueHelper, str, Enum):
     """Canonical KV operation types for ONEX distributed storage."""
 
     CREATE = "create"

@@ -15,11 +15,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumNodeKind(StrValueHelper, str, Enum):
+class EnumNodeKind(UtilStrValueHelper, str, Enum):
     """
     High-level architectural classification for ONEX four-node architecture.
 

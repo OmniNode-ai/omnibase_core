@@ -9,11 +9,11 @@ Defines validation behavior modes for controlling strictness in validation opera
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumValidationMode(StrValueHelper, str, Enum):
+class EnumValidationMode(UtilStrValueHelper, str, Enum):
     """
     Validation mode controlling how strictly validation rules are enforced.
 

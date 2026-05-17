@@ -46,7 +46,7 @@ class TestEnumHandlerType:
     def test_enum_string_behavior(self):
         """Test string behavior of enum values.
 
-        With StrValueHelper mixin, str(enum_member) returns the value string,
+        With UtilStrValueHelper mixin, str(enum_member) returns the value string,
         not the full enum name. This enables cleaner serialization.
         """
         assert str(EnumHandlerType.EXTENSION) == "extension"

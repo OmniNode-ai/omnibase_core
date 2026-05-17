@@ -11,13 +11,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumProbeFailureState"]
 
 
 @unique
-class EnumProbeFailureState(StrValueHelper, str, Enum):
+class EnumProbeFailureState(UtilStrValueHelper, str, Enum):
     """Failure modes recorded on a ModelRuntimeAlivenessProbeReceipt.
 
     Sampling order is sequential: publish probe -> observe terminal event ->

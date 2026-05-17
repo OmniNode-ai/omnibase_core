@@ -23,11 +23,11 @@ See Also:
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumOverlayScope(StrValueHelper, str, Enum):
+class EnumOverlayScope(UtilStrValueHelper, str, Enum):
     """
     Precedence tiers for contract overlay application.
 

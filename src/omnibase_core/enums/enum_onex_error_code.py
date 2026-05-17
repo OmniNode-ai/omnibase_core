@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumOnexErrorCode(StrValueHelper, str, Enum):
+class EnumOnexErrorCode(UtilStrValueHelper, str, Enum):
     """
     Base class for ONEX error codes.
 

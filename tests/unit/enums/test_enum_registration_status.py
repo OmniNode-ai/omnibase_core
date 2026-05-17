@@ -15,7 +15,7 @@ class TestEnumRegistrationStatus:
     """Test suite for EnumRegistrationStatus enumeration."""
 
     def test_string_returns_value(self) -> None:
-        """Test that str() returns the .value (StrValueHelper behavior)."""
+        """Test that str() returns the .value (UtilStrValueHelper behavior)."""
         assert str(EnumRegistrationStatus.REGISTERED) == "registered"
         assert str(EnumRegistrationStatus.UNREGISTERED) == "unregistered"
         assert str(EnumRegistrationStatus.FAILED) == "failed"

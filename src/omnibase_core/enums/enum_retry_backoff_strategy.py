@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRetryBackoffStrategy(StrValueHelper, str, Enum):
+class EnumRetryBackoffStrategy(UtilStrValueHelper, str, Enum):
     """Retry backoff strategy enumeration."""
 
     FIXED = "fixed"  # Fixed delay between retries

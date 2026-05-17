@@ -94,7 +94,7 @@ class TestEnumDashboardStatus:
 
     def test_string_conversion(self) -> None:
         """Test string conversion and str enum behavior."""
-        # str(enum) returns the value due to StrValueHelper mixin
+        # str(enum) returns the value due to UtilStrValueHelper mixin
         assert str(EnumDashboardStatus.INITIALIZING) == "initializing"
         # But as str subclass, equality with string works
         assert EnumDashboardStatus.INITIALIZING == "initializing"
