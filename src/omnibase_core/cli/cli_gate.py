@@ -313,9 +313,15 @@ def diff_hash(
                 allow_empty=allow_empty,
             )
             mode = "staged"
-    except click.ClickException:
+    except click.ClickException as exc:
+        if json_output:
+            _json_echo({"error": exc.message})
+            raise click.exceptions.Exit(1)
         raise
     except _CLI_ERROR_TYPES as exc:
+        if json_output:
+            _json_echo({"error": str(exc)})
+            raise click.exceptions.Exit(1)
         raise _click_error_from_exception(exc)
 
     if json_output:

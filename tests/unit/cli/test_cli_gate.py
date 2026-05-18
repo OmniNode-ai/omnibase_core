@@ -163,6 +163,27 @@ def test_diff_hash_delegates_to_pr_helper_json(tmp_path: Path) -> None:
     )
 
 
+def test_diff_hash_json_reports_click_errors(tmp_path: Path) -> None:
+    runner = CliRunner()
+
+    result = runner.invoke(
+        gate,
+        [
+            "diff-hash",
+            "--repo",
+            str(tmp_path),
+            "--base-ref",
+            "base",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert json.loads(result.output) == {
+        "error": "--base-ref and --head-ref must be provided together."
+    }
+
+
 def test_status_reports_config_and_hook(tmp_path: Path) -> None:
     _init_git_dir(tmp_path)
     runner = CliRunner()
