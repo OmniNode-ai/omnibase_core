@@ -86,4 +86,4 @@ def test_model_doctrine_clause_frozen() -> None:
         ci_gate="immutability-check",
     )
     with pytest.raises(Exception):
-        clause.title = "Changed"  # type: ignore[misc]
+        clause.title = "Changed"  # type: ignore[misc]  # NOTE(OMN-11193): intentional forbidden assignment to verify frozen model rejects mutation.

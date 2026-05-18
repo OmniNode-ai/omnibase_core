@@ -31,7 +31,7 @@ def test_model_gateway_route_binding_all_methods() -> None:
 
     for method in ("GET", "POST", "PUT", "DELETE", "PATCH"):
         binding = ModelGatewayRouteBinding(
-            method=method,  # type: ignore[arg-type]
+            method=method,  # type: ignore[arg-type]  # NOTE(OMN-11193): parametric loop over valid Literal values; Pydantic accepts the runtime strings but mypy cannot narrow.
             path_pattern="/api/v1/resource",
             contract_id="some.contract.v1",
         )
@@ -46,7 +46,7 @@ def test_model_gateway_route_binding_invalid_method() -> None:
 
     with pytest.raises(ValidationError):
         ModelGatewayRouteBinding(
-            method="OPTIONS",  # type: ignore[arg-type]
+            method="OPTIONS",  # type: ignore[arg-type]  # NOTE(OMN-11193): intentional invalid Literal value to verify ValidationError is raised.
             path_pattern="/api/v1/resource",
             contract_id="some.contract.v1",
         )
@@ -64,4 +64,4 @@ def test_model_gateway_route_binding_frozen() -> None:
         contract_id="node_status.v1",
     )
     with pytest.raises(Exception):
-        binding.method = "POST"  # type: ignore[misc]
+        binding.method = "POST"  # type: ignore[misc]  # NOTE(OMN-11193): intentional forbidden assignment to verify frozen model rejects mutation.

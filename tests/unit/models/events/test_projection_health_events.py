@@ -21,14 +21,14 @@ def test_model_projection_degraded_event_create() -> None:
         actual_staleness_seconds=90.5,
         degraded_behavior="serve_stale_with_warning",
         observed_at=now,
-        source_contract_hash="abc123def456",
+        source_contract_hash="abc123def456",  # pragma: allowlist secret
     )
     assert event.projection_name == "dashboard_metrics"
     assert event.sla_seconds == 60
-    assert event.actual_staleness_seconds == 90.5
+    assert event.actual_staleness_seconds == pytest.approx(90.5)
     assert event.degraded_behavior == "serve_stale_with_warning"
     assert event.observed_at == now
-    assert event.source_contract_hash == "abc123def456"
+    assert event.source_contract_hash == "abc123def456"  # pragma: allowlist secret
 
 
 @pytest.mark.unit
@@ -60,12 +60,12 @@ def test_model_projection_recovered_event_create() -> None:
         projection_name="dashboard_metrics",
         recovered_at=now,
         recovery_staleness_seconds=5.2,
-        source_contract_hash="abc123def456",
+        source_contract_hash="abc123def456",  # pragma: allowlist secret
     )
     assert event.projection_name == "dashboard_metrics"
     assert event.recovered_at == now
-    assert event.recovery_staleness_seconds == 5.2
-    assert event.source_contract_hash == "abc123def456"
+    assert event.recovery_staleness_seconds == pytest.approx(5.2)
+    assert event.source_contract_hash == "abc123def456"  # pragma: allowlist secret
 
 
 @pytest.mark.unit
