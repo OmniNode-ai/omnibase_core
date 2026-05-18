@@ -50,9 +50,9 @@ class TestEnumComplexityLevel:
 
     def test_enum_membership(self):
         """Test enum membership."""
-        assert "simple" in EnumComplexityLevel
-        assert "complex" in EnumComplexityLevel
-        assert "invalid_level" not in EnumComplexityLevel
+        assert "simple" in EnumComplexityLevel._value2member_map_
+        assert "complex" in EnumComplexityLevel._value2member_map_
+        assert "invalid_level" not in EnumComplexityLevel._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -95,7 +95,7 @@ class TestEnumComplexityLevel:
             "critical",
             "unknown",
         ]
-        actual_values = [e.value for e in EnumComplexityLevel]
+        actual_values = [e.value for e in EnumComplexityLevel.__members__.values()]
         assert set(actual_values) == set(expected_values)
 
     def test_enum_docstring(self):

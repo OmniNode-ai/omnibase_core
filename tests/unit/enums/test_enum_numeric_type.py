@@ -65,7 +65,7 @@ class TestEnumNumericType:
         ]
 
         for numeric_type in all_numeric_types:
-            assert numeric_type in EnumNumericType
+            assert numeric_type in EnumNumericType.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -147,17 +147,17 @@ class TestEnumNumericType:
 
     def test_all_values_unique(self):
         """Test that all enum values are unique."""
-        values = [t.value for t in EnumNumericType]
+        values = [t.value for t in EnumNumericType.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_names_uppercase(self):
         """Test that all enum names follow UPPERCASE convention."""
-        for numeric_type in EnumNumericType:
+        for numeric_type in EnumNumericType.__members__.values():
             assert numeric_type.name.isupper()
 
     def test_enum_values_lowercase(self):
         """Test that all enum values are lowercase."""
-        for numeric_type in EnumNumericType:
+        for numeric_type in EnumNumericType.__members__.values():
             assert numeric_type.value.islower()
 
 

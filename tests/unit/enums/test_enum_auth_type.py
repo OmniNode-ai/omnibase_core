@@ -168,7 +168,7 @@ class TestEnumAuthType:
         ]
 
         for auth_type in all_auth_types:
-            assert auth_type in EnumAuthType
+            assert auth_type in EnumAuthType.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""

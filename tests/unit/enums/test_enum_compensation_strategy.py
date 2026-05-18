@@ -213,7 +213,7 @@ class TestEnumCompensationStrategy:
         ]
 
         for strategy in all_strategies:
-            assert strategy in EnumCompensationStrategy
+            assert strategy in EnumCompensationStrategy.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""

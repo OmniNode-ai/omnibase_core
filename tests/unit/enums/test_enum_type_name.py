@@ -173,9 +173,9 @@ class TestEnumTypeName:
 
     def test_enum_membership(self):
         """Test enum membership checks."""
-        assert EnumTypeName.CONTRACT_TO_MODEL in EnumTypeName
-        assert EnumTypeName.TEMPLATE_ENGINE in EnumTypeName
-        assert EnumTypeName.VALIDATION_ENGINE in EnumTypeName
+        assert EnumTypeName.CONTRACT_TO_MODEL in EnumTypeName.__members__.values()
+        assert EnumTypeName.TEMPLATE_ENGINE in EnumTypeName.__members__.values()
+        assert EnumTypeName.VALIDATION_ENGINE in EnumTypeName.__members__.values()
 
     def test_enum_iteration(self):
         """Test iteration over enum values."""
@@ -211,12 +211,12 @@ class TestEnumTypeName:
 
     def test_enum_uniqueness(self):
         """Test that all enum values are unique."""
-        values = [type_name.value for type_name in EnumTypeName]
+        values = [type_name.value for type_name in EnumTypeName.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_node_categorization_mutually_exclusive(self):
         """Test that node categorization methods are mutually exclusive."""
-        for type_name in EnumTypeName:
+        for type_name in EnumTypeName.__members__.values():
             categories = [
                 EnumTypeName.is_generation_node(type_name),
                 EnumTypeName.is_template_node(type_name),
@@ -266,7 +266,7 @@ class TestEnumTypeNameEdgeCases:
     def test_all_nodes_have_category(self):
         """Test that all nodes can be classified into at least one category."""
         uncategorized = []
-        for type_name in EnumTypeName:
+        for type_name in EnumTypeName.__members__.values():
             is_categorized = (
                 EnumTypeName.is_generation_node(type_name)
                 or EnumTypeName.is_template_node(type_name)

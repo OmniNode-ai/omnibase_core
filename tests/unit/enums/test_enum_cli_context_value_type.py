@@ -47,9 +47,9 @@ class TestEnumCliContextValueType:
 
     def test_enum_membership(self):
         """Test enum membership."""
-        assert "string" in EnumCliContextValueType
-        assert "integer" in EnumCliContextValueType
-        assert "invalid" not in EnumCliContextValueType
+        assert "string" in EnumCliContextValueType._value2member_map_
+        assert "integer" in EnumCliContextValueType._value2member_map_
+        assert "invalid" not in EnumCliContextValueType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -89,7 +89,7 @@ class TestEnumCliContextValueType:
             "uuid",
             "string_list",
         ]
-        actual_values = [e.value for e in EnumCliContextValueType]
+        actual_values = [e.value for e in EnumCliContextValueType.__members__.values()]
         assert set(actual_values) == set(expected_values)
 
     def test_enum_docstring(self):

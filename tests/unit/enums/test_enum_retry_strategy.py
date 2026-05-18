@@ -45,8 +45,13 @@ class TestEnumRetryStrategy:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumRetryStrategy.EXPONENTIAL_BACKOFF in EnumRetryStrategy
-        assert "exponential_backoff" in [e.value for e in EnumRetryStrategy]
+        assert (
+            EnumRetryStrategy.EXPONENTIAL_BACKOFF
+            in EnumRetryStrategy.__members__.values()
+        )
+        assert "exponential_backoff" in [
+            e.value for e in EnumRetryStrategy.__members__.values()
+        ]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

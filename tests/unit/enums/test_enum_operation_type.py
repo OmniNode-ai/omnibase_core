@@ -47,9 +47,9 @@ class TestEnumOperationType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumOperationType.INFO in EnumOperationType
-        assert "info" in EnumOperationType
-        assert "invalid_value" not in EnumOperationType
+        assert EnumOperationType.INFO in EnumOperationType.__members__.values()
+        assert "info" in EnumOperationType._value2member_map_
+        assert "invalid_value" not in EnumOperationType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""

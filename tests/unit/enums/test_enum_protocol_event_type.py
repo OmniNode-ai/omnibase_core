@@ -82,8 +82,12 @@ class TestEnumProtocolEventType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumProtocolEventType.STARTED in EnumProtocolEventType
-        assert "STARTED" in [e.value for e in EnumProtocolEventType]
+        assert (
+            EnumProtocolEventType.STARTED in EnumProtocolEventType.__members__.values()
+        )
+        assert "STARTED" in [
+            e.value for e in EnumProtocolEventType.__members__.values()
+        ]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

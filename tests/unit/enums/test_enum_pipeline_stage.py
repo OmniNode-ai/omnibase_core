@@ -47,8 +47,13 @@ class TestEnumPipelineStage:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumPipelineStage.CONTENT_EXTRACTION in EnumPipelineStage
-        assert "CONTENT_EXTRACTION" in [e.value for e in EnumPipelineStage]
+        assert (
+            EnumPipelineStage.CONTENT_EXTRACTION
+            in EnumPipelineStage.__members__.values()
+        )
+        assert "CONTENT_EXTRACTION" in [
+            e.value for e in EnumPipelineStage.__members__.values()
+        ]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

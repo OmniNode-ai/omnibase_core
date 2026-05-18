@@ -54,8 +54,8 @@ class TestEnumReturnType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumReturnType.FILES in EnumReturnType
-        assert "FILES" in [e.value for e in EnumReturnType]
+        assert EnumReturnType.FILES in EnumReturnType.__members__.values()
+        assert "FILES" in [e.value for e in EnumReturnType.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

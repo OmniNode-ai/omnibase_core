@@ -46,9 +46,9 @@ class TestEnumIssueType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumIssueType.TEMPLATE_ARTIFACT in EnumIssueType
-        assert "template_artifact" in EnumIssueType
-        assert "invalid_value" not in EnumIssueType
+        assert EnumIssueType.TEMPLATE_ARTIFACT in EnumIssueType.__members__.values()
+        assert "template_artifact" in EnumIssueType._value2member_map_
+        assert "invalid_value" not in EnumIssueType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""

@@ -85,7 +85,7 @@ class TestEnumScenarioStatus:
 
     def test_enum_member_uniqueness(self):
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumScenarioStatus]
+        values = [member.value for member in EnumScenarioStatus.__members__.values()]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
@@ -109,8 +109,10 @@ class TestEnumScenarioStatus:
 
     def test_enum_in_operator(self):
         """Test that 'in' operator works with enum."""
-        assert EnumScenarioStatus.NOT_EXECUTED in EnumScenarioStatus
-        assert EnumScenarioStatus.COMPLETED in EnumScenarioStatus
+        assert (
+            EnumScenarioStatus.NOT_EXECUTED in EnumScenarioStatus.__members__.values()
+        )
+        assert EnumScenarioStatus.COMPLETED in EnumScenarioStatus.__members__.values()
 
     def test_enum_hash_consistency(self):
         """Test that enum members are hashable and consistent."""
@@ -236,7 +238,7 @@ class TestEnumScenarioStatus:
         """Test that enum values are JSON serializable."""
         import json
 
-        for member in EnumScenarioStatus:
+        for member in EnumScenarioStatus.__members__.values():
             # Should be able to serialize the value
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
@@ -278,7 +280,7 @@ class TestEnumScenarioStatusEdgeCases:
         )
         EnumClass = enum_module.EnumScenarioStatus
 
-        for member in EnumClass:
+        for member in EnumClass.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -297,12 +299,12 @@ class TestEnumScenarioStatusEdgeCases:
 
         # Ensure all states in typical flow exist
         for status in typical_flow:
-            assert status in EnumScenarioStatus
+            assert status in EnumScenarioStatus.__members__.values()
 
         # Alternative ending states
         alternative_endings = [EnumScenarioStatus.FAILED, EnumScenarioStatus.SKIPPED]
         for status in alternative_endings:
-            assert status in EnumScenarioStatus
+            assert status in EnumScenarioStatus.__members__.values()
 
 
 if __name__ == "__main__":

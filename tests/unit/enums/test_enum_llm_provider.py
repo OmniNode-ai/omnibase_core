@@ -43,9 +43,9 @@ class TestEnumLlmProvider:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumLlmProvider.CLAUDE in EnumLlmProvider
-        assert "claude" in EnumLlmProvider
-        assert "invalid_value" not in EnumLlmProvider
+        assert EnumLlmProvider.CLAUDE in EnumLlmProvider.__members__.values()
+        assert "claude" in EnumLlmProvider._value2member_map_
+        assert "invalid_value" not in EnumLlmProvider._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""

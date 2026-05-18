@@ -42,8 +42,12 @@ class TestEnumProviderType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumProviderType.EXTERNAL_TRUSTED in EnumProviderType
-        assert "external_trusted" in [e.value for e in EnumProviderType]
+        assert (
+            EnumProviderType.EXTERNAL_TRUSTED in EnumProviderType.__members__.values()
+        )
+        assert "external_trusted" in [
+            e.value for e in EnumProviderType.__members__.values()
+        ]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

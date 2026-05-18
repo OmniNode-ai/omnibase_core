@@ -58,7 +58,7 @@ class TestEnumNodeRoleValues:
             assert str(member) == expected_value
 
     def test_values_are_unique(self) -> None:
-        values = [m.value for m in EnumNodeRole]
+        values = [m.value for m in EnumNodeRole.__members__.values()]
         assert len(values) == len(set(values))
 
 

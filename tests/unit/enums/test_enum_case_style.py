@@ -47,8 +47,8 @@ class TestEnumCaseStyle:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "snake_case" in EnumCaseStyle
-        assert "invalid_case" not in EnumCaseStyle
+        assert "snake_case" in EnumCaseStyle._value2member_map_
+        assert "invalid_case" not in EnumCaseStyle._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -102,11 +102,11 @@ class TestEnumCaseStyle:
     def test_enum_case_styles(self):
         """Test that enum covers typical case styles."""
         # Test common case styles
-        assert EnumCaseStyle.PASCAL_CASE in EnumCaseStyle
-        assert EnumCaseStyle.SNAKE_CASE in EnumCaseStyle
-        assert EnumCaseStyle.CAMEL_CASE in EnumCaseStyle
-        assert EnumCaseStyle.KEBAB_CASE in EnumCaseStyle
+        assert EnumCaseStyle.PASCAL_CASE in EnumCaseStyle.__members__.values()
+        assert EnumCaseStyle.SNAKE_CASE in EnumCaseStyle.__members__.values()
+        assert EnumCaseStyle.CAMEL_CASE in EnumCaseStyle.__members__.values()
+        assert EnumCaseStyle.KEBAB_CASE in EnumCaseStyle.__members__.values()
 
         # Test special case styles
-        assert EnumCaseStyle.SCREAMING_SNAKE_CASE in EnumCaseStyle
-        assert EnumCaseStyle.ENUM_MEMBER_NAME in EnumCaseStyle
+        assert EnumCaseStyle.SCREAMING_SNAKE_CASE in EnumCaseStyle.__members__.values()
+        assert EnumCaseStyle.ENUM_MEMBER_NAME in EnumCaseStyle.__members__.values()

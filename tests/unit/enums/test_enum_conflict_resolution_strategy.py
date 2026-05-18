@@ -49,8 +49,10 @@ class TestEnumConflictResolutionStrategy:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "manual" in EnumConflictResolutionStrategy
-        assert "invalid_strategy" not in EnumConflictResolutionStrategy
+        assert "manual" in EnumConflictResolutionStrategy._value2member_map_
+        assert (
+            "invalid_strategy" not in EnumConflictResolutionStrategy._value2member_map_
+        )
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -117,15 +119,23 @@ class TestEnumConflictResolutionStrategy:
         )
 
         # Test manual resolution
-        assert EnumConflictResolutionStrategy.MANUAL in EnumConflictResolutionStrategy
+        assert (
+            EnumConflictResolutionStrategy.MANUAL
+            in EnumConflictResolutionStrategy.__members__.values()
+        )
 
         # Test location-based strategies
         assert (
-            EnumConflictResolutionStrategy.LOCAL_WINS in EnumConflictResolutionStrategy
+            EnumConflictResolutionStrategy.LOCAL_WINS
+            in EnumConflictResolutionStrategy.__members__.values()
         )
         assert (
-            EnumConflictResolutionStrategy.REMOTE_WINS in EnumConflictResolutionStrategy
+            EnumConflictResolutionStrategy.REMOTE_WINS
+            in EnumConflictResolutionStrategy.__members__.values()
         )
 
         # Test merge strategy
-        assert EnumConflictResolutionStrategy.MERGE in EnumConflictResolutionStrategy
+        assert (
+            EnumConflictResolutionStrategy.MERGE
+            in EnumConflictResolutionStrategy.__members__.values()
+        )

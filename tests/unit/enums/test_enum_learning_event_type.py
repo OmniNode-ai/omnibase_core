@@ -47,9 +47,12 @@ class TestEnumLearningEventType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumLearningEventType.DEVELOPER_CORRECTION in EnumLearningEventType
-        assert "developer_correction" in EnumLearningEventType
-        assert "invalid_value" not in EnumLearningEventType
+        assert (
+            EnumLearningEventType.DEVELOPER_CORRECTION
+            in EnumLearningEventType.__members__.values()
+        )
+        assert "developer_correction" in EnumLearningEventType._value2member_map_
+        assert "invalid_value" not in EnumLearningEventType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""

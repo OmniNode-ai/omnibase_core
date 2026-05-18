@@ -52,13 +52,13 @@ class TestEnumFinishReason:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "stop" in EnumFinishReason
-        assert "length" in EnumFinishReason
-        assert "content_filter" in EnumFinishReason
-        assert "tool_calls" in EnumFinishReason
-        assert "end_turn" in EnumFinishReason
-        assert "max_tokens" in EnumFinishReason
-        assert "invalid" not in EnumFinishReason
+        assert "stop" in EnumFinishReason._value2member_map_
+        assert "length" in EnumFinishReason._value2member_map_
+        assert "content_filter" in EnumFinishReason._value2member_map_
+        assert "tool_calls" in EnumFinishReason._value2member_map_
+        assert "end_turn" in EnumFinishReason._value2member_map_
+        assert "max_tokens" in EnumFinishReason._value2member_map_
+        assert "invalid" not in EnumFinishReason._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -94,7 +94,7 @@ class TestEnumFinishReason:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [reason.value for reason in EnumFinishReason]
+        all_values = [reason.value for reason in EnumFinishReason.__members__.values()]
         expected_values = [
             "stop",
             "length",

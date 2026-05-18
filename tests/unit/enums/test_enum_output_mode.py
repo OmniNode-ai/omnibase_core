@@ -50,8 +50,8 @@ class TestEnumOutputMode:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumOutputMode.CONTENT in EnumOutputMode
-        assert "content" in [e.value for e in EnumOutputMode]
+        assert EnumOutputMode.CONTENT in EnumOutputMode.__members__.values()
+        assert "content" in [e.value for e in EnumOutputMode.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

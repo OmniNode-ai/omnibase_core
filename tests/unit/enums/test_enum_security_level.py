@@ -44,8 +44,8 @@ class TestEnumSecurityLevel:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumSecurityLevel.ENTERPRISE in EnumSecurityLevel
-        assert "enterprise" in [e.value for e in EnumSecurityLevel]
+        assert EnumSecurityLevel.ENTERPRISE in EnumSecurityLevel.__members__.values()
+        assert "enterprise" in [e.value for e in EnumSecurityLevel.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

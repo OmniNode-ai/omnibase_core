@@ -101,7 +101,7 @@ class TestEnumDispatchStatus:
         assert EnumDispatchStatus.SUCCESS.is_successful() is True
 
         # All other statuses should return False
-        for status in EnumDispatchStatus:
+        for status in EnumDispatchStatus.__members__.values():
             if status != EnumDispatchStatus.SUCCESS:
                 assert status.is_successful() is False
 
@@ -176,7 +176,7 @@ class TestEnumDispatchStatus:
         )
 
         # All statuses should have non-empty descriptions
-        for status in EnumDispatchStatus:
+        for status in EnumDispatchStatus.__members__.values():
             description = EnumDispatchStatus.get_description(status)
             assert description is not None
             assert len(description) > 0
@@ -189,8 +189,8 @@ class TestEnumDispatchStatus:
 
     def test_enum_membership(self):
         """Test enum membership checking."""
-        for status in EnumDispatchStatus:
-            assert status in EnumDispatchStatus
+        for status in EnumDispatchStatus.__members__.values():
+            assert status in EnumDispatchStatus.__members__.values()
 
     def test_json_serialization(self):
         """Test JSON serialization compatibility."""
@@ -218,7 +218,7 @@ class TestEnumDispatchStatus:
 
     def test_status_consistency(self):
         """Test logical consistency of status categorization."""
-        for status in EnumDispatchStatus:
+        for status in EnumDispatchStatus.__members__.values():
             is_terminal = status.is_terminal()
             is_successful = status.is_successful()
             is_error = status.is_error()
@@ -240,7 +240,7 @@ class TestEnumDispatchStatus:
     def test_terminal_and_error_relationship(self):
         """Test relationship between terminal and error states."""
         # All error states should be terminal
-        for status in EnumDispatchStatus:
+        for status in EnumDispatchStatus.__members__.values():
             if status.is_error():
                 assert status.is_terminal(), f"{status} is error but not terminal"
 
@@ -264,7 +264,7 @@ class TestEnumDispatchStatus:
 
     def test_all_statuses_have_description(self):
         """Test that all statuses have meaningful descriptions."""
-        for status in EnumDispatchStatus:
+        for status in EnumDispatchStatus.__members__.values():
             description = EnumDispatchStatus.get_description(status)
             assert description != "Unknown dispatch status"
             assert len(description) > 10  # Meaningful description
@@ -285,7 +285,7 @@ class TestEnumDispatchStatus:
 
         Ensures str(enum) -> Enum(str) works for every value.
         """
-        for status in EnumDispatchStatus:
+        for status in EnumDispatchStatus.__members__.values():
             # String roundtrip
             serialized = str(status)
             deserialized = EnumDispatchStatus(serialized)
@@ -317,7 +317,7 @@ class TestEnumDispatchStatus:
             EnumDispatchStatus.SKIPPED,
         }
 
-        for status in EnumDispatchStatus:
+        for status in EnumDispatchStatus.__members__.values():
             expected = status in terminal_statuses
             assert status.is_terminal() == expected, (
                 f"is_terminal() mismatch for {status}: "
@@ -345,7 +345,7 @@ class TestEnumDispatchStatus:
 
         Exhaustive test to ensure all 8 statuses are covered.
         """
-        for status in EnumDispatchStatus:
+        for status in EnumDispatchStatus.__members__.values():
             expected = status == EnumDispatchStatus.SUCCESS
             assert status.is_successful() == expected, (
                 f"is_successful() mismatch for {status}: "
@@ -365,7 +365,7 @@ class TestEnumDispatchStatus:
             EnumDispatchStatus.PUBLISH_FAILED,
         }
 
-        for status in EnumDispatchStatus:
+        for status in EnumDispatchStatus.__members__.values():
             expected = status in error_statuses
             assert status.is_error() == expected, (
                 f"is_error() mismatch for {status}: "
@@ -382,7 +382,7 @@ class TestEnumDispatchStatus:
             EnumDispatchStatus.PUBLISH_FAILED,
         }
 
-        for status in EnumDispatchStatus:
+        for status in EnumDispatchStatus.__members__.values():
             expected = status in retry_statuses
             assert status.requires_retry() == expected, (
                 f"requires_retry() mismatch for {status}: "

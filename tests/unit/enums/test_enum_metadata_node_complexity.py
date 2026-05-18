@@ -41,9 +41,12 @@ class TestEnumMetadataNodeComplexity:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumMetadataNodeComplexity.SIMPLE in EnumMetadataNodeComplexity
-        assert "simple" in EnumMetadataNodeComplexity
-        assert "invalid_value" not in EnumMetadataNodeComplexity
+        assert (
+            EnumMetadataNodeComplexity.SIMPLE
+            in EnumMetadataNodeComplexity.__members__.values()
+        )
+        assert "simple" in EnumMetadataNodeComplexity._value2member_map_
+        assert "invalid_value" not in EnumMetadataNodeComplexity._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""

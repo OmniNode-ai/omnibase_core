@@ -286,9 +286,9 @@ class TestEnumConfigTypeIntegration:
 
     def test_enum_membership(self):
         """Test enum membership checking."""
-        assert EnumConfigType.NODE_CONFIG in EnumConfigType
-        assert EnumConfigType.LOGGING_CONFIG in EnumConfigType
-        assert EnumConfigType.DEVELOPMENT_CONFIG in EnumConfigType
+        assert EnumConfigType.NODE_CONFIG in EnumConfigType.__members__.values()
+        assert EnumConfigType.LOGGING_CONFIG in EnumConfigType.__members__.values()
+        assert EnumConfigType.DEVELOPMENT_CONFIG in EnumConfigType.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -367,7 +367,7 @@ class TestEnumConfigTypeEdgeCases:
     def test_unique_decorator_enforcement(self):
         """Test that @unique decorator prevents duplicate values."""
         # Get all enum values
-        values = [ct.value for ct in EnumConfigType]
+        values = [ct.value for ct in EnumConfigType.__members__.values()]
 
         # All values should be unique (no duplicates)
         assert len(values) == len(set(values))

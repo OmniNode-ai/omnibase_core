@@ -42,8 +42,8 @@ class TestEnumPublisherType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumPublisherType.AUTO in EnumPublisherType
-        assert "AUTO" in [e.value for e in EnumPublisherType]
+        assert EnumPublisherType.AUTO in EnumPublisherType.__members__.values()
+        assert "AUTO" in [e.value for e in EnumPublisherType.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

@@ -46,7 +46,7 @@ class TestEnumNodeType:
             EnumNodeType.REDUCER_GENERIC,
         }
 
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             expected = node_type in processing_nodes
             actual = EnumNodeType.is_processing_node(node_type)
             assert actual == expected, f"{node_type} processing classification failed"
@@ -59,7 +59,7 @@ class TestEnumNodeType:
             EnumNodeType.VALIDATOR,
         }
 
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             expected = node_type in control_nodes
             actual = EnumNodeType.is_control_node(node_type)
             assert actual == expected, f"{node_type} control classification failed"
@@ -71,7 +71,7 @@ class TestEnumNodeType:
             EnumNodeType.AGGREGATOR,
         }
 
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             expected = node_type in output_nodes
             actual = EnumNodeType.is_output_node(node_type)
             assert actual == expected, f"{node_type} output classification failed"
@@ -95,5 +95,5 @@ class TestEnumNodeType:
 
     def test_str_representation(self):
         """Test string representation."""
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             assert str(node_type) == node_type.value

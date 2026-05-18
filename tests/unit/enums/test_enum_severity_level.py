@@ -241,7 +241,7 @@ class TestEnumSeverityLevel:
 
     def test_level_categorization_consistency(self):
         """Test that level categorization methods are consistent."""
-        for level in EnumSeverityLevel:
+        for level in EnumSeverityLevel.__members__.values():
             numeric = level.numeric_level
 
             # Test consistency with numeric thresholds
@@ -261,7 +261,7 @@ class TestEnumSeverityLevel:
         """Test enum membership checking."""
         all_levels = list(EnumSeverityLevel)
         for level in all_levels:
-            assert level in EnumSeverityLevel
+            assert level in EnumSeverityLevel.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""

@@ -40,9 +40,9 @@ class TestEnumMessageRole:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumMessageRole.USER in EnumMessageRole
-        assert "user" in EnumMessageRole
-        assert "invalid_value" not in EnumMessageRole
+        assert EnumMessageRole.USER in EnumMessageRole.__members__.values()
+        assert "user" in EnumMessageRole._value2member_map_
+        assert "invalid_value" not in EnumMessageRole._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""

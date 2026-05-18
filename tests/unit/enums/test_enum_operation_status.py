@@ -204,7 +204,7 @@ class TestEnumOperationStatus:
         ]
 
         for status in all_statuses:
-            assert status in EnumOperationStatus
+            assert status in EnumOperationStatus.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -272,7 +272,7 @@ class TestEnumOperationStatus:
     def test_operation_lifecycle_logic(self):
         """Test operation lifecycle state transitions and logic."""
         # Test that active and terminal states are mutually exclusive
-        for status in EnumOperationStatus:
+        for status in EnumOperationStatus.__members__.values():
             is_active = status.is_active()
             is_terminal = status.is_terminal()
 
@@ -282,7 +282,7 @@ class TestEnumOperationStatus:
             )
 
         # Test that all statuses are either active or terminal
-        for status in EnumOperationStatus:
+        for status in EnumOperationStatus.__members__.values():
             is_active = status.is_active()
             is_terminal = status.is_terminal()
 
@@ -329,7 +329,7 @@ class TestEnumOperationStatus:
         Every operation status must be either terminal or active, never both.
         This is a fundamental invariant of operation lifecycle semantics.
         """
-        for status in EnumOperationStatus:
+        for status in EnumOperationStatus.__members__.values():
             is_terminal = status.is_terminal()
             is_active = status.is_active()
 
@@ -360,7 +360,7 @@ class TestEnumOperationStatus:
 
         Ensures str(enum) -> Enum(str) works for every value.
         """
-        for status in EnumOperationStatus:
+        for status in EnumOperationStatus.__members__.values():
             # String roundtrip
             serialized = str(status)
             deserialized = EnumOperationStatus(serialized)

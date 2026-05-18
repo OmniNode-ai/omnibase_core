@@ -52,8 +52,8 @@ class TestEnumTriggerEvent:
 
     def test_enum_membership(self) -> None:
         """Test enum membership operations."""
-        assert "manual" in EnumTriggerEvent
-        assert "invalid_trigger" not in EnumTriggerEvent
+        assert "manual" in EnumTriggerEvent._value2member_map_
+        assert "invalid_trigger" not in EnumTriggerEvent._value2member_map_
 
     def test_enum_comparison(self) -> None:
         """Test enum comparison operations."""
@@ -140,7 +140,7 @@ class TestEnumTriggerEventIsAutomatic:
 
     def test_all_triggers_are_classified(self) -> None:
         """Test that all trigger events are classified as either automatic or manual."""
-        for trigger in EnumTriggerEvent:
+        for trigger in EnumTriggerEvent.__members__.values():
             result = EnumTriggerEvent.is_automatic(trigger)
             assert isinstance(result, bool)
 
@@ -190,7 +190,7 @@ class TestEnumTriggerEventIsErrorRelated:
 
     def test_all_triggers_are_classified(self) -> None:
         """Test that all trigger events are classified for error relation."""
-        for trigger in EnumTriggerEvent:
+        for trigger in EnumTriggerEvent.__members__.values():
             result = EnumTriggerEvent.is_error_related(trigger)
             assert isinstance(result, bool)
 

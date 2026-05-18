@@ -53,7 +53,7 @@ class TestEnumModelRoutingBackend:
 
     def test_enum_unique(self) -> None:
         """Test that all enum values are unique (enforced by @unique)."""
-        values = [m.value for m in EnumModelRoutingBackend]
+        values = [m.value for m in EnumModelRoutingBackend.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_serialization(self) -> None:

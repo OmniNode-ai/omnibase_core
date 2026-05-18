@@ -69,7 +69,7 @@ class TestEnumAgentTaskLifecycleType:
 
     def test_enum_unique(self) -> None:
         """Test that all enum values are unique (enforced by @unique)."""
-        values = [m.value for m in EnumAgentTaskLifecycleType]
+        values = [m.value for m in EnumAgentTaskLifecycleType.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_serialization(self) -> None:

@@ -64,7 +64,7 @@ class TestEnumDashboardStatus:
         Any status requiring manual intervention should also require reconnection,
         but not vice versa (DISCONNECTED requires reconnection but not intervention).
         """
-        for status in EnumDashboardStatus:
+        for status in EnumDashboardStatus.__members__.values():
             if status.requires_manual_intervention:
                 assert status.requires_reconnection is True
 
@@ -82,13 +82,13 @@ class TestEnumDashboardStatus:
 
     def test_operational_does_not_require_reconnection(self) -> None:
         """Test that operational status does not require reconnection."""
-        for status in EnumDashboardStatus:
+        for status in EnumDashboardStatus.__members__.values():
             if status.is_operational:
                 assert status.requires_reconnection is False
 
     def test_terminal_requires_reconnection(self) -> None:
         """Test that terminal status requires reconnection."""
-        for status in EnumDashboardStatus:
+        for status in EnumDashboardStatus.__members__.values():
             if status.is_terminal:
                 assert status.requires_reconnection is True
 
@@ -135,9 +135,9 @@ class TestEnumDashboardStatus:
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
-        assert EnumDashboardStatus.CONNECTED in EnumDashboardStatus
-        assert "connected" in EnumDashboardStatus
-        assert "invalid_status" not in EnumDashboardStatus
+        assert EnumDashboardStatus.CONNECTED in EnumDashboardStatus.__members__.values()
+        assert "connected" in EnumDashboardStatus._value2member_map_
+        assert "invalid_status" not in EnumDashboardStatus._value2member_map_
 
     def test_enum_comparison(self) -> None:
         """Test enum comparison."""
@@ -160,7 +160,7 @@ class TestEnumDashboardStatus:
         """Test JSON serialization roundtrip."""
         import json
 
-        for status in EnumDashboardStatus:
+        for status in EnumDashboardStatus.__members__.values():
             # Serialize to JSON
             json_str = json.dumps(status.value)
             # Deserialize from JSON

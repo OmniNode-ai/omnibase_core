@@ -42,8 +42,13 @@ class TestEnumRegistryEntryStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumRegistryEntryStatus.ONLINE in EnumRegistryEntryStatus
-        assert "online" in [e.value for e in EnumRegistryEntryStatus]
+        assert (
+            EnumRegistryEntryStatus.ONLINE
+            in EnumRegistryEntryStatus.__members__.values()
+        )
+        assert "online" in [
+            e.value for e in EnumRegistryEntryStatus.__members__.values()
+        ]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

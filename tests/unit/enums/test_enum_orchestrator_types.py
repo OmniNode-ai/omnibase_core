@@ -63,22 +63,22 @@ class TestEnumWorkflowStatus:
     def test_enum_membership(self) -> None:
         """Test enum membership testing."""
         # Test with enum values
-        assert EnumWorkflowStatus.PENDING in EnumWorkflowStatus
-        assert EnumWorkflowStatus.RUNNING in EnumWorkflowStatus
-        assert EnumWorkflowStatus.PAUSED in EnumWorkflowStatus
-        assert EnumWorkflowStatus.COMPLETED in EnumWorkflowStatus
-        assert EnumWorkflowStatus.FAILED in EnumWorkflowStatus
-        assert EnumWorkflowStatus.CANCELLED in EnumWorkflowStatus
+        assert EnumWorkflowStatus.PENDING in EnumWorkflowStatus.__members__.values()
+        assert EnumWorkflowStatus.RUNNING in EnumWorkflowStatus.__members__.values()
+        assert EnumWorkflowStatus.PAUSED in EnumWorkflowStatus.__members__.values()
+        assert EnumWorkflowStatus.COMPLETED in EnumWorkflowStatus.__members__.values()
+        assert EnumWorkflowStatus.FAILED in EnumWorkflowStatus.__members__.values()
+        assert EnumWorkflowStatus.CANCELLED in EnumWorkflowStatus.__members__.values()
 
     def test_string_membership(self) -> None:
         """Test string membership testing."""
-        assert "pending" in EnumWorkflowStatus
-        assert "running" in EnumWorkflowStatus
-        assert "paused" in EnumWorkflowStatus
-        assert "completed" in EnumWorkflowStatus
-        assert "failed" in EnumWorkflowStatus
-        assert "cancelled" in EnumWorkflowStatus
-        assert "invalid_state" not in EnumWorkflowStatus
+        assert "pending" in EnumWorkflowStatus._value2member_map_
+        assert "running" in EnumWorkflowStatus._value2member_map_
+        assert "paused" in EnumWorkflowStatus._value2member_map_
+        assert "completed" in EnumWorkflowStatus._value2member_map_
+        assert "failed" in EnumWorkflowStatus._value2member_map_
+        assert "cancelled" in EnumWorkflowStatus._value2member_map_
+        assert "invalid_state" not in EnumWorkflowStatus._value2member_map_
 
     def test_string_conversion(self) -> None:
         """Test string conversion of enum values."""
@@ -168,20 +168,20 @@ class TestEnumExecutionMode:
 
     def test_enum_membership(self) -> None:
         """Test enum membership testing."""
-        assert EnumExecutionMode.SEQUENTIAL in EnumExecutionMode
-        assert EnumExecutionMode.PARALLEL in EnumExecutionMode
-        assert EnumExecutionMode.CONDITIONAL in EnumExecutionMode
-        assert EnumExecutionMode.BATCH in EnumExecutionMode
-        assert EnumExecutionMode.STREAMING in EnumExecutionMode
+        assert EnumExecutionMode.SEQUENTIAL in EnumExecutionMode.__members__.values()
+        assert EnumExecutionMode.PARALLEL in EnumExecutionMode.__members__.values()
+        assert EnumExecutionMode.CONDITIONAL in EnumExecutionMode.__members__.values()
+        assert EnumExecutionMode.BATCH in EnumExecutionMode.__members__.values()
+        assert EnumExecutionMode.STREAMING in EnumExecutionMode.__members__.values()
 
     def test_string_membership(self) -> None:
         """Test string membership testing."""
-        assert "sequential" in EnumExecutionMode
-        assert "parallel" in EnumExecutionMode
-        assert "conditional" in EnumExecutionMode
-        assert "batch" in EnumExecutionMode
-        assert "streaming" in EnumExecutionMode
-        assert "invalid_mode" not in EnumExecutionMode
+        assert "sequential" in EnumExecutionMode._value2member_map_
+        assert "parallel" in EnumExecutionMode._value2member_map_
+        assert "conditional" in EnumExecutionMode._value2member_map_
+        assert "batch" in EnumExecutionMode._value2member_map_
+        assert "streaming" in EnumExecutionMode._value2member_map_
+        assert "invalid_mode" not in EnumExecutionMode._value2member_map_
 
     def test_string_conversion(self) -> None:
         """Test string conversion of enum values."""
@@ -266,20 +266,20 @@ class TestEnumActionType:
 
     def test_enum_membership(self) -> None:
         """Test enum membership testing."""
-        assert EnumActionType.COMPUTE in EnumActionType
-        assert EnumActionType.EFFECT in EnumActionType
-        assert EnumActionType.REDUCE in EnumActionType
-        assert EnumActionType.ORCHESTRATE in EnumActionType
-        assert EnumActionType.CUSTOM in EnumActionType
+        assert EnumActionType.COMPUTE in EnumActionType.__members__.values()
+        assert EnumActionType.EFFECT in EnumActionType.__members__.values()
+        assert EnumActionType.REDUCE in EnumActionType.__members__.values()
+        assert EnumActionType.ORCHESTRATE in EnumActionType.__members__.values()
+        assert EnumActionType.CUSTOM in EnumActionType.__members__.values()
 
     def test_string_membership(self) -> None:
         """Test string membership testing."""
-        assert "compute" in EnumActionType
-        assert "effect" in EnumActionType
-        assert "reduce" in EnumActionType
-        assert "orchestrate" in EnumActionType
-        assert "custom" in EnumActionType
-        assert "invalid_action" not in EnumActionType
+        assert "compute" in EnumActionType._value2member_map_
+        assert "effect" in EnumActionType._value2member_map_
+        assert "reduce" in EnumActionType._value2member_map_
+        assert "orchestrate" in EnumActionType._value2member_map_
+        assert "custom" in EnumActionType._value2member_map_
+        assert "invalid_action" not in EnumActionType._value2member_map_
 
     def test_string_conversion(self) -> None:
         """Test string conversion of enum values."""
@@ -380,22 +380,26 @@ class TestEnumBranchCondition:
 
     def test_enum_membership(self) -> None:
         """Test enum membership testing."""
-        assert EnumBranchCondition.IF_TRUE in EnumBranchCondition
-        assert EnumBranchCondition.IF_FALSE in EnumBranchCondition
-        assert EnumBranchCondition.IF_ERROR in EnumBranchCondition
-        assert EnumBranchCondition.IF_SUCCESS in EnumBranchCondition
-        assert EnumBranchCondition.IF_TIMEOUT in EnumBranchCondition
-        assert EnumBranchCondition.CUSTOM in EnumBranchCondition
+        assert EnumBranchCondition.IF_TRUE in EnumBranchCondition.__members__.values()
+        assert EnumBranchCondition.IF_FALSE in EnumBranchCondition.__members__.values()
+        assert EnumBranchCondition.IF_ERROR in EnumBranchCondition.__members__.values()
+        assert (
+            EnumBranchCondition.IF_SUCCESS in EnumBranchCondition.__members__.values()
+        )
+        assert (
+            EnumBranchCondition.IF_TIMEOUT in EnumBranchCondition.__members__.values()
+        )
+        assert EnumBranchCondition.CUSTOM in EnumBranchCondition.__members__.values()
 
     def test_string_membership(self) -> None:
         """Test string membership testing."""
-        assert "if_true" in EnumBranchCondition
-        assert "if_false" in EnumBranchCondition
-        assert "if_error" in EnumBranchCondition
-        assert "if_success" in EnumBranchCondition
-        assert "if_timeout" in EnumBranchCondition
-        assert "custom" in EnumBranchCondition
-        assert "invalid_condition" not in EnumBranchCondition
+        assert "if_true" in EnumBranchCondition._value2member_map_
+        assert "if_false" in EnumBranchCondition._value2member_map_
+        assert "if_error" in EnumBranchCondition._value2member_map_
+        assert "if_success" in EnumBranchCondition._value2member_map_
+        assert "if_timeout" in EnumBranchCondition._value2member_map_
+        assert "custom" in EnumBranchCondition._value2member_map_
+        assert "invalid_condition" not in EnumBranchCondition._value2member_map_
 
     def test_string_conversion(self) -> None:
         """Test string conversion of enum values."""
@@ -488,7 +492,7 @@ class TestEnumOrchestratorTypesIntegration:
         assert len(error_states) == 3
 
         # Cancellation path: PENDING/RUNNING -> CANCELLED
-        assert EnumWorkflowStatus.CANCELLED in EnumWorkflowStatus
+        assert EnumWorkflowStatus.CANCELLED in EnumWorkflowStatus.__members__.values()
 
     def test_execution_mode_compatibility(self) -> None:
         """Test execution modes are comprehensive."""

@@ -120,7 +120,7 @@ class TestEnumDecisionType:
         assert str(EnumDecisionType.ESCALATION) == "escalation"
         assert str(EnumDecisionType.CUSTOM) == "custom"
         # Verify str() equals .value for all members
-        for member in EnumDecisionType:
+        for member in EnumDecisionType.__members__.values():
             assert str(member) == member.value
 
     @pytest.mark.parametrize(

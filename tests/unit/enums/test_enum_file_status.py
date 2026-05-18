@@ -41,8 +41,8 @@ class TestEnumFileStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumFileStatus.VALIDATED in EnumFileStatus
-        assert "validated" in [e.value for e in EnumFileStatus]
+        assert EnumFileStatus.VALIDATED in EnumFileStatus.__members__.values()
+        assert "validated" in [e.value for e in EnumFileStatus.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -118,7 +118,7 @@ class TestEnumFileStatus:
 
         # Verify all members follow UPPER_SNAKE_CASE pattern
         upper_snake_case_pattern = re.compile(r"^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$")
-        for member in EnumFileStatus:
+        for member in EnumFileStatus.__members__.values():
             assert upper_snake_case_pattern.match(member.name), (
                 f"Member '{member.name}' does not follow UPPER_SNAKE_CASE convention"
             )
@@ -178,4 +178,4 @@ class TestEnumFileStatus:
 
         # All workflow states should be valid
         for state in workflow_states:
-            assert state in EnumFileStatus
+            assert state in EnumFileStatus.__members__.values()

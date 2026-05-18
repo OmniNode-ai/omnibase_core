@@ -51,12 +51,12 @@ class TestEnumIntelligencePriorityLevel:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "low" in EnumIntelligencePriorityLevel
-        assert "normal" in EnumIntelligencePriorityLevel
-        assert "high" in EnumIntelligencePriorityLevel
-        assert "critical" in EnumIntelligencePriorityLevel
-        assert "emergency" in EnumIntelligencePriorityLevel
-        assert "invalid" not in EnumIntelligencePriorityLevel
+        assert "low" in EnumIntelligencePriorityLevel._value2member_map_
+        assert "normal" in EnumIntelligencePriorityLevel._value2member_map_
+        assert "high" in EnumIntelligencePriorityLevel._value2member_map_
+        assert "critical" in EnumIntelligencePriorityLevel._value2member_map_
+        assert "emergency" in EnumIntelligencePriorityLevel._value2member_map_
+        assert "invalid" not in EnumIntelligencePriorityLevel._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -100,7 +100,9 @@ class TestEnumIntelligencePriorityLevel:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [level.value for level in EnumIntelligencePriorityLevel]
+        all_values = [
+            level.value for level in EnumIntelligencePriorityLevel.__members__.values()
+        ]
         expected_values = ["low", "normal", "high", "critical", "emergency"]
         assert set(all_values) == set(expected_values)
 
@@ -114,12 +116,27 @@ class TestEnumIntelligencePriorityLevel:
     def test_priority_hierarchy(self):
         """Test that priority levels follow expected hierarchy."""
         # Emergency should be highest priority
-        assert EnumIntelligencePriorityLevel.EMERGENCY in EnumIntelligencePriorityLevel
+        assert (
+            EnumIntelligencePriorityLevel.EMERGENCY
+            in EnumIntelligencePriorityLevel.__members__.values()
+        )
         # Critical should be high priority
-        assert EnumIntelligencePriorityLevel.CRITICAL in EnumIntelligencePriorityLevel
+        assert (
+            EnumIntelligencePriorityLevel.CRITICAL
+            in EnumIntelligencePriorityLevel.__members__.values()
+        )
         # High should be above normal
-        assert EnumIntelligencePriorityLevel.HIGH in EnumIntelligencePriorityLevel
+        assert (
+            EnumIntelligencePriorityLevel.HIGH
+            in EnumIntelligencePriorityLevel.__members__.values()
+        )
         # Normal should be standard priority
-        assert EnumIntelligencePriorityLevel.NORMAL in EnumIntelligencePriorityLevel
+        assert (
+            EnumIntelligencePriorityLevel.NORMAL
+            in EnumIntelligencePriorityLevel.__members__.values()
+        )
         # Low should be lowest priority
-        assert EnumIntelligencePriorityLevel.LOW in EnumIntelligencePriorityLevel
+        assert (
+            EnumIntelligencePriorityLevel.LOW
+            in EnumIntelligencePriorityLevel.__members__.values()
+        )

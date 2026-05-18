@@ -43,8 +43,8 @@ class TestEnumPromptStyle:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumPromptStyle.XML in EnumPromptStyle
-        assert "xml" in [e.value for e in EnumPromptStyle]
+        assert EnumPromptStyle.XML in EnumPromptStyle.__members__.values()
+        assert "xml" in [e.value for e in EnumPromptStyle.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -121,7 +121,7 @@ class TestEnumPromptStyle:
 
     def test_style_naming_convention(self):
         """Test that style values follow naming conventions."""
-        for style in EnumPromptStyle:
+        for style in EnumPromptStyle.__members__.values():
             # Should be lowercase with underscores
             assert style.value == style.value.lower()
             assert "-" not in style.value  # No hyphens

@@ -45,9 +45,9 @@ class TestEnumMCPStatus:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumMCPStatus.SUCCESS in EnumMCPStatus
-        assert "success" in EnumMCPStatus
-        assert "invalid_value" not in EnumMCPStatus
+        assert EnumMCPStatus.SUCCESS in EnumMCPStatus.__members__.values()
+        assert "success" in EnumMCPStatus._value2member_map_
+        assert "invalid_value" not in EnumMCPStatus._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""

@@ -167,9 +167,9 @@ class TestEnumConfigCategory:
 
     def test_enum_membership(self):
         """Test enum membership checks."""
-        assert EnumConfigCategory.GENERATION in EnumConfigCategory
-        assert EnumConfigCategory.CLI in EnumConfigCategory
-        assert EnumConfigCategory.GENERAL in EnumConfigCategory
+        assert EnumConfigCategory.GENERATION in EnumConfigCategory.__members__.values()
+        assert EnumConfigCategory.CLI in EnumConfigCategory.__members__.values()
+        assert EnumConfigCategory.GENERAL in EnumConfigCategory.__members__.values()
 
     def test_enum_iteration(self):
         """Test iteration over enum values."""
@@ -204,12 +204,14 @@ class TestEnumConfigCategory:
 
     def test_enum_uniqueness(self):
         """Test that all enum values are unique."""
-        values = [category.value for category in EnumConfigCategory]
+        values = [
+            category.value for category in EnumConfigCategory.__members__.values()
+        ]
         assert len(values) == len(set(values))
 
     def test_category_classification_mutually_exclusive(self):
         """Test that categories are either system or infrastructure (or neither)."""
-        for category in EnumConfigCategory:
+        for category in EnumConfigCategory.__members__.values():
             is_system = EnumConfigCategory.is_system_category(category)
             is_infrastructure = EnumConfigCategory.is_infrastructure_category(category)
             # Should not be both system and infrastructure
@@ -218,7 +220,7 @@ class TestEnumConfigCategory:
     def test_all_categories_classified(self):
         """Test that all non-generic categories are classified."""
         unclassified = []
-        for category in EnumConfigCategory:
+        for category in EnumConfigCategory.__members__.values():
             is_system = EnumConfigCategory.is_system_category(category)
             is_infrastructure = EnumConfigCategory.is_infrastructure_category(category)
             is_generic = category in {

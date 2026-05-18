@@ -48,8 +48,8 @@ class TestEnumRoleLevel:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumRoleLevel.PRINCIPAL in EnumRoleLevel
-        assert "principal" in [e.value for e in EnumRoleLevel]
+        assert EnumRoleLevel.PRINCIPAL in EnumRoleLevel.__members__.values()
+        assert "principal" in [e.value for e in EnumRoleLevel.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

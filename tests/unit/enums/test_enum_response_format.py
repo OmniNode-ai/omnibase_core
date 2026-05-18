@@ -41,8 +41,8 @@ class TestEnumResponseFormat:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumResponseFormat.JSON in EnumResponseFormat
-        assert "json" in [e.value for e in EnumResponseFormat]
+        assert EnumResponseFormat.JSON in EnumResponseFormat.__members__.values()
+        assert "json" in [e.value for e in EnumResponseFormat.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

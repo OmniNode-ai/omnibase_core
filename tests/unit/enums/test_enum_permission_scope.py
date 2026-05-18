@@ -46,8 +46,8 @@ class TestEnumPermissionScope:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumPermissionScope.TEAM in EnumPermissionScope
-        assert "team" in [e.value for e in EnumPermissionScope]
+        assert EnumPermissionScope.TEAM in EnumPermissionScope.__members__.values()
+        assert "team" in [e.value for e in EnumPermissionScope.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

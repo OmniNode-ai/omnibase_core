@@ -44,7 +44,7 @@ class TestEnumServiceResolutionStatus:
 
     def test_all_members_exist(self) -> None:
         """Test that all expected enum members exist."""
-        values = [m.value for m in EnumServiceResolutionStatus]
+        values = [m.value for m in EnumServiceResolutionStatus.__members__.values()]
         assert "resolved" in values
         assert "failed" in values
         assert "circular_dependency" in values
@@ -53,7 +53,7 @@ class TestEnumServiceResolutionStatus:
 
     def test_unique_values(self) -> None:
         """Test that all enum values are unique."""
-        values = [m.value for m in EnumServiceResolutionStatus]
+        values = [m.value for m in EnumServiceResolutionStatus.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_count(self) -> None:
@@ -86,9 +86,12 @@ class TestEnumServiceResolutionStatus:
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
-        assert EnumServiceResolutionStatus.RESOLVED in EnumServiceResolutionStatus
-        assert "resolved" in EnumServiceResolutionStatus
-        assert "invalid_status" not in EnumServiceResolutionStatus
+        assert (
+            EnumServiceResolutionStatus.RESOLVED
+            in EnumServiceResolutionStatus.__members__.values()
+        )
+        assert "resolved" in EnumServiceResolutionStatus._value2member_map_
+        assert "invalid_status" not in EnumServiceResolutionStatus._value2member_map_
 
     def test_enum_deserialization(self) -> None:
         """Test enum deserialization from string."""

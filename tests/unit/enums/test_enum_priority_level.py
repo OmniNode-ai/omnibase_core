@@ -50,8 +50,8 @@ class TestEnumPriorityLevel:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumPriorityLevel.HIGH in EnumPriorityLevel
-        assert "high" in [e.value for e in EnumPriorityLevel]
+        assert EnumPriorityLevel.HIGH in EnumPriorityLevel.__members__.values()
+        assert "high" in [e.value for e in EnumPriorityLevel.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

@@ -52,7 +52,7 @@ class TestEnumHandlerRoutingStrategy:
 
     def test_enum_inherits_from_str(self) -> None:
         """Test that enum inherits from str for JSON compatibility."""
-        for strategy in EnumHandlerRoutingStrategy:
+        for strategy in EnumHandlerRoutingStrategy.__members__.values():
             assert isinstance(strategy, str)
             # String operations should work
             assert strategy.upper() == strategy.value.upper()
@@ -67,7 +67,7 @@ class TestEnumHandlerRoutingStrategy:
 
     def test_enum_no_duplicate_values(self) -> None:
         """Test that no enum has duplicate values."""
-        values = [e.value for e in EnumHandlerRoutingStrategy]
+        values = [e.value for e in EnumHandlerRoutingStrategy.__members__.values()]
         assert len(values) == len(set(values)), "Enum has duplicate values"
 
 
@@ -162,7 +162,7 @@ class TestEnumHandlerRoutingStrategySerialization:
 
     def test_deserialization_from_string(self) -> None:
         """Test that strings can be converted back to enum values."""
-        for strategy in EnumHandlerRoutingStrategy:
+        for strategy in EnumHandlerRoutingStrategy.__members__.values():
             reconstructed = EnumHandlerRoutingStrategy(strategy.value)
             assert reconstructed == strategy
             assert reconstructed is strategy  # Same enum member

@@ -34,7 +34,7 @@ class TestEnumStepType:
 
     def test_all_members_exist(self) -> None:
         """Test that all expected enum members exist."""
-        values = [m.value for m in EnumStepType]
+        values = [m.value for m in EnumStepType.__members__.values()]
         assert "compute" in values
         assert "effect" in values
         assert "reducer" in values
@@ -44,7 +44,7 @@ class TestEnumStepType:
 
     def test_unique_values(self) -> None:
         """Test that all enum values are unique."""
-        values = [m.value for m in EnumStepType]
+        values = [m.value for m in EnumStepType.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_count(self) -> None:
@@ -78,9 +78,9 @@ class TestEnumStepType:
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
-        assert EnumStepType.COMPUTE in EnumStepType
-        assert "compute" in EnumStepType
-        assert "invalid_type" not in EnumStepType
+        assert EnumStepType.COMPUTE in EnumStepType.__members__.values()
+        assert "compute" in EnumStepType._value2member_map_
+        assert "invalid_type" not in EnumStepType._value2member_map_
 
     def test_enum_deserialization(self) -> None:
         """Test enum deserialization from string."""

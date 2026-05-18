@@ -41,8 +41,8 @@ class TestEnumFileType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumFileType.YAML in EnumFileType
-        assert "yaml" in [e.value for e in EnumFileType]
+        assert EnumFileType.YAML in EnumFileType.__members__.values()
+        assert "yaml" in [e.value for e in EnumFileType.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -144,4 +144,4 @@ class TestEnumFileType:
 
         # All should be valid enum values
         for file_type in dev_files | config_files | doc_files:
-            assert file_type in EnumFileType
+            assert file_type in EnumFileType.__members__.values()

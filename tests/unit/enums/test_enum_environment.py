@@ -190,7 +190,7 @@ class TestEnumEnvironment:
         ]
 
         for env in all_environments:
-            assert env in EnumEnvironment
+            assert env in EnumEnvironment.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -271,17 +271,17 @@ class TestEnumEnvironment:
     def test_environment_classification_consistency(self):
         """Test that environment classifications are logically consistent."""
         # Production-like environments should require security hardening
-        for env in EnumEnvironment:
+        for env in EnumEnvironment.__members__.values():
             if EnumEnvironment.is_production_like(env):
                 assert EnumEnvironment.requires_security_hardening(env) is True
 
         # Development-like environments should allow debugging
-        for env in EnumEnvironment:
+        for env in EnumEnvironment.__members__.values():
             if EnumEnvironment.is_development_like(env):
                 assert EnumEnvironment.allows_debugging(env) is True
 
         # Production environments shouldn't allow debugging
-        for env in EnumEnvironment:
+        for env in EnumEnvironment.__members__.values():
             if EnumEnvironment.requires_security_hardening(env):
                 assert EnumEnvironment.allows_debugging(env) is False
 

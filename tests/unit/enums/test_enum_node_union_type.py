@@ -38,9 +38,9 @@ class TestEnumNodeUnionType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumNodeUnionType.FUNCTION_NODE in EnumNodeUnionType
-        assert "function_node" in EnumNodeUnionType
-        assert "invalid_value" not in EnumNodeUnionType
+        assert EnumNodeUnionType.FUNCTION_NODE in EnumNodeUnionType.__members__.values()
+        assert "function_node" in EnumNodeUnionType._value2member_map_
+        assert "invalid_value" not in EnumNodeUnionType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""

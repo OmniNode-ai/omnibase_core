@@ -75,8 +75,8 @@ class TestEnumGeneralStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumGeneralStatus.RUNNING in EnumGeneralStatus
-        assert "running" in [e.value for e in EnumGeneralStatus]
+        assert EnumGeneralStatus.RUNNING in EnumGeneralStatus.__members__.values()
+        assert "running" in [e.value for e in EnumGeneralStatus.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -374,7 +374,7 @@ class TestEnumGeneralStatus:
 
         # All workflow states should be valid
         for state in workflow_states:
-            assert state in EnumGeneralStatus
+            assert state in EnumGeneralStatus.__members__.values()
 
     def test_status_state_transitions(self):
         """Test logical state transitions."""

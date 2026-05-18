@@ -49,8 +49,8 @@ class TestEnumRequestField:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumRequestField.MESSAGES in EnumRequestField
-        assert "messages" in [e.value for e in EnumRequestField]
+        assert EnumRequestField.MESSAGES in EnumRequestField.__members__.values()
+        assert "messages" in [e.value for e in EnumRequestField.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

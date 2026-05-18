@@ -46,8 +46,8 @@ class TestEnumAssemblyStrategy:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "concatenate" in EnumAssemblyStrategy
-        assert "invalid_strategy" not in EnumAssemblyStrategy
+        assert "concatenate" in EnumAssemblyStrategy._value2member_map_
+        assert "invalid_strategy" not in EnumAssemblyStrategy._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -100,10 +100,24 @@ class TestEnumAssemblyStrategy:
     def test_enum_assembly_strategies(self):
         """Test that enum covers typical assembly strategies."""
         # Test basic strategies
-        assert EnumAssemblyStrategy.CONCATENATE in EnumAssemblyStrategy
-        assert EnumAssemblyStrategy.STRUCTURED_MERGE in EnumAssemblyStrategy
+        assert (
+            EnumAssemblyStrategy.CONCATENATE
+            in EnumAssemblyStrategy.__members__.values()
+        )
+        assert (
+            EnumAssemblyStrategy.STRUCTURED_MERGE
+            in EnumAssemblyStrategy.__members__.values()
+        )
 
         # Test advanced strategies
-        assert EnumAssemblyStrategy.WEIGHTED_CONSENSUS in EnumAssemblyStrategy
-        assert EnumAssemblyStrategy.BEST_OF_N in EnumAssemblyStrategy
-        assert EnumAssemblyStrategy.COMPARATIVE_ANALYSIS in EnumAssemblyStrategy
+        assert (
+            EnumAssemblyStrategy.WEIGHTED_CONSENSUS
+            in EnumAssemblyStrategy.__members__.values()
+        )
+        assert (
+            EnumAssemblyStrategy.BEST_OF_N in EnumAssemblyStrategy.__members__.values()
+        )
+        assert (
+            EnumAssemblyStrategy.COMPARATIVE_ANALYSIS
+            in EnumAssemblyStrategy.__members__.values()
+        )

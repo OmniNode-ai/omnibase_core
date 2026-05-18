@@ -81,23 +81,23 @@ class TestEnumHandlerType:
     def test_enum_membership(self):
         """Test membership testing."""
         # Abstract types
-        assert "extension" in EnumHandlerType
-        assert "special" in EnumHandlerType
-        assert "named" in EnumHandlerType
+        assert "extension" in EnumHandlerType._value2member_map_
+        assert "special" in EnumHandlerType._value2member_map_
+        assert "named" in EnumHandlerType._value2member_map_
         # Concrete types
-        assert "http" in EnumHandlerType
-        assert "database" in EnumHandlerType
-        assert "kafka" in EnumHandlerType
-        assert "filesystem" in EnumHandlerType
-        assert "vault" in EnumHandlerType
-        assert "vector_store" in EnumHandlerType
-        assert "graph_database" in EnumHandlerType
-        assert "redis" in EnumHandlerType
-        assert "event_bus" in EnumHandlerType
+        assert "http" in EnumHandlerType._value2member_map_
+        assert "database" in EnumHandlerType._value2member_map_
+        assert "kafka" in EnumHandlerType._value2member_map_
+        assert "filesystem" in EnumHandlerType._value2member_map_
+        assert "vault" in EnumHandlerType._value2member_map_
+        assert "vector_store" in EnumHandlerType._value2member_map_
+        assert "graph_database" in EnumHandlerType._value2member_map_
+        assert "redis" in EnumHandlerType._value2member_map_
+        assert "event_bus" in EnumHandlerType._value2member_map_
         # Development/Testing types
-        assert "local" in EnumHandlerType
+        assert "local" in EnumHandlerType._value2member_map_
         # Invalid
-        assert "invalid" not in EnumHandlerType
+        assert "invalid" not in EnumHandlerType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -153,7 +153,9 @@ class TestEnumHandlerType:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [handler_type.value for handler_type in EnumHandlerType]
+        all_values = [
+            handler_type.value for handler_type in EnumHandlerType.__members__.values()
+        ]
         expected_values = [
             # Abstract types
             "extension",
@@ -191,21 +193,21 @@ class TestEnumHandlerType:
         and accessible as enum members.
         """
         # Abstract types (foundational handler categories)
-        assert EnumHandlerType.EXTENSION in EnumHandlerType
-        assert EnumHandlerType.SPECIAL in EnumHandlerType
-        assert EnumHandlerType.NAMED in EnumHandlerType
+        assert EnumHandlerType.EXTENSION in EnumHandlerType.__members__.values()
+        assert EnumHandlerType.SPECIAL in EnumHandlerType.__members__.values()
+        assert EnumHandlerType.NAMED in EnumHandlerType.__members__.values()
         # Concrete handler types (v0.3.6+)
-        assert EnumHandlerType.HTTP in EnumHandlerType
-        assert EnumHandlerType.DATABASE in EnumHandlerType
-        assert EnumHandlerType.KAFKA in EnumHandlerType
-        assert EnumHandlerType.FILESYSTEM in EnumHandlerType
-        assert EnumHandlerType.VAULT in EnumHandlerType
-        assert EnumHandlerType.VECTOR_STORE in EnumHandlerType
-        assert EnumHandlerType.GRAPH_DATABASE in EnumHandlerType
-        assert EnumHandlerType.REDIS in EnumHandlerType
-        assert EnumHandlerType.EVENT_BUS in EnumHandlerType
+        assert EnumHandlerType.HTTP in EnumHandlerType.__members__.values()
+        assert EnumHandlerType.DATABASE in EnumHandlerType.__members__.values()
+        assert EnumHandlerType.KAFKA in EnumHandlerType.__members__.values()
+        assert EnumHandlerType.FILESYSTEM in EnumHandlerType.__members__.values()
+        assert EnumHandlerType.VAULT in EnumHandlerType.__members__.values()
+        assert EnumHandlerType.VECTOR_STORE in EnumHandlerType.__members__.values()
+        assert EnumHandlerType.GRAPH_DATABASE in EnumHandlerType.__members__.values()
+        assert EnumHandlerType.REDIS in EnumHandlerType.__members__.values()
+        assert EnumHandlerType.EVENT_BUS in EnumHandlerType.__members__.values()
         # Development/Testing types (v0.4.0+)
-        assert EnumHandlerType.LOCAL in EnumHandlerType
+        assert EnumHandlerType.LOCAL in EnumHandlerType.__members__.values()
 
 
 @pytest.mark.unit
@@ -220,7 +222,7 @@ class TestEnumHandlerTypeConcreteCategories:
             EnumHandlerType.EVENT_BUS,
         }
         for handler in network_handlers:
-            assert handler in EnumHandlerType
+            assert handler in EnumHandlerType.__members__.values()
 
     def test_database_handlers(self):
         """Test handlers for database operations."""
@@ -231,7 +233,7 @@ class TestEnumHandlerTypeConcreteCategories:
             EnumHandlerType.REDIS,
         }
         for handler in db_handlers:
-            assert handler in EnumHandlerType
+            assert handler in EnumHandlerType.__members__.values()
 
     def test_system_access_handlers(self):
         """Test handlers for system access operations."""
@@ -240,7 +242,7 @@ class TestEnumHandlerTypeConcreteCategories:
             EnumHandlerType.VAULT,
         }
         for handler in system_handlers:
-            assert handler in EnumHandlerType
+            assert handler in EnumHandlerType.__members__.values()
 
     def test_dev_test_handlers(self):
         """Test handlers for Development/Testing operations (v0.4.0+)."""
@@ -248,7 +250,7 @@ class TestEnumHandlerTypeConcreteCategories:
             EnumHandlerType.LOCAL,
         }
         for handler in dev_handlers:
-            assert handler in EnumHandlerType
+            assert handler in EnumHandlerType.__members__.values()
 
     def test_local_handler_is_dev_test_only(self):
         """Test that LOCAL handler is marked as dev/test only in docstring."""

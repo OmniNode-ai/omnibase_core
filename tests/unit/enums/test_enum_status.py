@@ -75,8 +75,8 @@ class TestEnumStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumStatus.PROCESSING in EnumStatus
-        assert "processing" in [e.value for e in EnumStatus]
+        assert EnumStatus.PROCESSING in EnumStatus.__members__.values()
+        assert "processing" in [e.value for e in EnumStatus.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -289,7 +289,7 @@ class TestEnumStatus:
 
         # All workflow states should be valid
         for state in workflow_states:
-            assert state in EnumStatus
+            assert state in EnumStatus.__members__.values()
 
     def test_status_state_transitions(self):
         """Test logical state transitions."""

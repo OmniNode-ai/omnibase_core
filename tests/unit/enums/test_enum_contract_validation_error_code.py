@@ -73,7 +73,7 @@ class TestEnumContractValidationErrorCode:
 
     def test_enum_string_values_match_names(self) -> None:
         """Test that enum values match their names (self-documenting pattern)."""
-        for member in EnumContractValidationErrorCode:
+        for member in EnumContractValidationErrorCode.__members__.values():
             # The value should equal the name for self-documenting error codes
             assert member.value == member.name, (
                 f"Error code {member.name} has mismatched value {member.value}"
@@ -184,7 +184,7 @@ class TestEnumContractValidationErrorCodeSerialization:
 
     def test_enum_serialization_json_compatible(self) -> None:
         """Test that enum values are JSON serializable."""
-        for member in EnumContractValidationErrorCode:
+        for member in EnumContractValidationErrorCode.__members__.values():
             # Should be able to serialize the value
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
@@ -243,7 +243,10 @@ class TestEnumContractValidationErrorCodeBehavior:
 
     def test_enum_member_uniqueness(self) -> None:
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumContractValidationErrorCode]
+        values = [
+            member.value
+            for member in EnumContractValidationErrorCode.__members__.values()
+        ]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
@@ -290,7 +293,7 @@ class TestEnumContractValidationErrorCodeEdgeCases:
 
     def test_enum_pickling(self) -> None:
         """Test that enum members can be pickled and unpickled."""
-        for member in EnumContractValidationErrorCode:
+        for member in EnumContractValidationErrorCode.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -331,7 +334,7 @@ class TestEnumContractValidationErrorCodeEdgeCases:
         merge_codes: list[EnumContractValidationErrorCode] = []
         expanded_codes: list[EnumContractValidationErrorCode] = []
 
-        for code in EnumContractValidationErrorCode:
+        for code in EnumContractValidationErrorCode.__members__.values():
             if "_MERGE_" in code.value:
                 merge_codes.append(code)
             elif "_EXPANDED_" in code.value:

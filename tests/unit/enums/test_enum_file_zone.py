@@ -35,8 +35,8 @@ class TestEnumFileZone:
         assert len(values) == 6
 
     def test_enum_membership(self) -> None:
-        assert EnumFileZone.CONFIG in EnumFileZone
-        assert "config" in [e.value for e in EnumFileZone]
+        assert EnumFileZone.CONFIG in EnumFileZone.__members__.values()
+        assert "config" in [e.value for e in EnumFileZone.__members__.values()]
 
     def test_enum_deserialization(self) -> None:
         assert EnumFileZone("production") == EnumFileZone.PRODUCTION

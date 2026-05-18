@@ -126,11 +126,13 @@ class TestEnumGenerationErrorCodes:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "tool_path_not_found" in EnumGenerationErrorCodes
-        assert "contract_file_not_found" in EnumGenerationErrorCodes
-        assert "generation_failed" in EnumGenerationErrorCodes
-        assert "content_generation_failed" in EnumGenerationErrorCodes
-        assert "invalid" not in EnumGenerationErrorCodes
+        assert "tool_path_not_found" in EnumGenerationErrorCodes._value2member_map_
+        assert "contract_file_not_found" in EnumGenerationErrorCodes._value2member_map_
+        assert "generation_failed" in EnumGenerationErrorCodes._value2member_map_
+        assert (
+            "content_generation_failed" in EnumGenerationErrorCodes._value2member_map_
+        )
+        assert "invalid" not in EnumGenerationErrorCodes._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -186,7 +188,9 @@ class TestEnumGenerationErrorCodes:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [code.value for code in EnumGenerationErrorCodes]
+        all_values = [
+            code.value for code in EnumGenerationErrorCodes.__members__.values()
+        ]
         expected_values = [
             "tool_path_not_found",
             "contract_file_not_found",
@@ -232,7 +236,7 @@ class TestEnumGenerationErrorCodes:
             EnumGenerationErrorCodes.FILE_SYSTEM_ERROR,
         ]
         for error in file_system_errors:
-            assert error in EnumGenerationErrorCodes
+            assert error in EnumGenerationErrorCodes.__members__.values()
 
     def test_contract_validation_errors(self):
         """Test contract validation error codes."""
@@ -244,7 +248,7 @@ class TestEnumGenerationErrorCodes:
             EnumGenerationErrorCodes.CONTRACT_INVALID_STRUCTURE,
         ]
         for error in contract_errors:
-            assert error in EnumGenerationErrorCodes
+            assert error in EnumGenerationErrorCodes.__members__.values()
 
     def test_action_analysis_errors(self):
         """Test action analysis error codes."""
@@ -259,7 +263,7 @@ class TestEnumGenerationErrorCodes:
             EnumGenerationErrorCodes.NO_ACTIONS_FOUND,
         ]
         for error in action_errors:
-            assert error in EnumGenerationErrorCodes
+            assert error in EnumGenerationErrorCodes.__members__.values()
 
     def test_generation_errors(self):
         """Test generation error codes."""
@@ -269,7 +273,7 @@ class TestEnumGenerationErrorCodes:
             EnumGenerationErrorCodes.VALIDATION_FAILED,
         ]
         for error in generation_errors:
-            assert error in EnumGenerationErrorCodes
+            assert error in EnumGenerationErrorCodes.__members__.values()
 
     def test_content_generation_errors(self):
         """Test content generation error codes."""
@@ -279,4 +283,4 @@ class TestEnumGenerationErrorCodes:
             EnumGenerationErrorCodes.MODEL_NAME_RESOLUTION_FAILED,
         ]
         for error in content_errors:
-            assert error in EnumGenerationErrorCodes
+            assert error in EnumGenerationErrorCodes.__members__.values()

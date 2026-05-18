@@ -47,8 +47,8 @@ class TestEnumDaemonActionType:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "lifecycle" in EnumDaemonActionType
-        assert "invalid_action" not in EnumDaemonActionType
+        assert "lifecycle" in EnumDaemonActionType._value2member_map_
+        assert "invalid_action" not in EnumDaemonActionType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -135,17 +135,27 @@ class TestEnumDaemonActionType:
     def test_enum_daemon_action_types(self):
         """Test that enum covers typical daemon action types."""
         # Test lifecycle actions
-        assert EnumDaemonActionType.LIFECYCLE in EnumDaemonActionType
+        assert (
+            EnumDaemonActionType.LIFECYCLE in EnumDaemonActionType.__members__.values()
+        )
 
         # Test health and status actions
-        assert EnumDaemonActionType.HEALTH in EnumDaemonActionType
-        assert EnumDaemonActionType.STATUS in EnumDaemonActionType
+        assert EnumDaemonActionType.HEALTH in EnumDaemonActionType.__members__.values()
+        assert EnumDaemonActionType.STATUS in EnumDaemonActionType.__members__.values()
 
         # Test configuration actions
-        assert EnumDaemonActionType.CONFIGURATION in EnumDaemonActionType
+        assert (
+            EnumDaemonActionType.CONFIGURATION
+            in EnumDaemonActionType.__members__.values()
+        )
 
         # Test service management actions
-        assert EnumDaemonActionType.SERVICE_MANAGEMENT in EnumDaemonActionType
+        assert (
+            EnumDaemonActionType.SERVICE_MANAGEMENT
+            in EnumDaemonActionType.__members__.values()
+        )
 
         # Test monitoring actions
-        assert EnumDaemonActionType.MONITORING in EnumDaemonActionType
+        assert (
+            EnumDaemonActionType.MONITORING in EnumDaemonActionType.__members__.values()
+        )

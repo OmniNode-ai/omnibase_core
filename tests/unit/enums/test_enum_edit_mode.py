@@ -43,10 +43,10 @@ class TestEnumEditMode:
 
     def test_enum_membership(self):
         """Test enum membership."""
-        assert "replace" in EnumEditMode
-        assert "insert" in EnumEditMode
-        assert "delete" in EnumEditMode
-        assert "invalid_mode" not in EnumEditMode
+        assert "replace" in EnumEditMode._value2member_map_
+        assert "insert" in EnumEditMode._value2member_map_
+        assert "delete" in EnumEditMode._value2member_map_
+        assert "invalid_mode" not in EnumEditMode._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -77,7 +77,7 @@ class TestEnumEditMode:
     def test_enum_all_values(self):
         """Test all enum values."""
         expected_values = ["replace", "insert", "delete"]
-        actual_values = [e.value for e in EnumEditMode]
+        actual_values = [e.value for e in EnumEditMode.__members__.values()]
         assert set(actual_values) == set(expected_values)
 
     def test_enum_docstring(self):

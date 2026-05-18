@@ -164,7 +164,7 @@ class TestEnumDebugLevel:
         ]
 
         for level in all_debug_levels:
-            assert level in EnumDebugLevel
+            assert level in EnumDebugLevel.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""

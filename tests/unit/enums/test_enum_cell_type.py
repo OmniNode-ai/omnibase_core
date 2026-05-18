@@ -109,8 +109,8 @@ class TestEnumCellType:
 
     def test_enum_membership(self):
         """Test enum membership checking."""
-        assert EnumCellType.CODE in EnumCellType
-        assert EnumCellType.MARKDOWN in EnumCellType
+        assert EnumCellType.CODE in EnumCellType.__members__.values()
+        assert EnumCellType.MARKDOWN in EnumCellType.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""

@@ -59,7 +59,7 @@ class TestEnumEnvelopeValidationFailureTypeStrBehavior:
 
     def test_enum_is_string(self) -> None:
         """Enum members are instances of str."""
-        for member in EnumEnvelopeValidationFailureType:
+        for member in EnumEnvelopeValidationFailureType.__members__.values():
             assert isinstance(member, str)
 
     def test_str_comparison(self) -> None:

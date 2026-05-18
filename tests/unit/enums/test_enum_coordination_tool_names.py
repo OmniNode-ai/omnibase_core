@@ -63,8 +63,8 @@ class TestEnumCoordinationToolNames:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "tool_generic_hub_node" in EnumCoordinationToolNames
-        assert "invalid_tool" not in EnumCoordinationToolNames
+        assert "tool_generic_hub_node" in EnumCoordinationToolNames._value2member_map_
+        assert "invalid_tool" not in EnumCoordinationToolNames._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -122,7 +122,8 @@ class TestEnumCoordinationToolNames:
         """Test that enum covers typical coordination tools."""
         # Test hub and node tools
         assert (
-            EnumCoordinationToolNames.TOOL_GENERIC_HUB_NODE in EnumCoordinationToolNames
+            EnumCoordinationToolNames.TOOL_GENERIC_HUB_NODE
+            in EnumCoordinationToolNames.__members__.values()
         )
 
         # Test event routing tools

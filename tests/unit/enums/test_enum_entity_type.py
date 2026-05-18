@@ -56,8 +56,8 @@ class TestEnumEntityType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumEntityType.FUNCTION in EnumEntityType
-        assert "function" in [e.value for e in EnumEntityType]
+        assert EnumEntityType.FUNCTION in EnumEntityType.__members__.values()
+        assert "function" in [e.value for e in EnumEntityType.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

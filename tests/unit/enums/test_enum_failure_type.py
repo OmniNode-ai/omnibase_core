@@ -105,7 +105,7 @@ class TestEnumFailureType:
         assert str(EnumFailureType.RATE_LIMIT) == "rate_limit"
         assert str(EnumFailureType.UNKNOWN) == "unknown"
         # Verify str() equals .value for all members
-        for member in EnumFailureType:
+        for member in EnumFailureType.__members__.values():
             assert str(member) == member.value
 
     @pytest.mark.parametrize(

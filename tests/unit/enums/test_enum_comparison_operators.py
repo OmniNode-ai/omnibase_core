@@ -49,8 +49,8 @@ class TestEnumComparisonOperators:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "equals" in EnumComparisonOperators
-        assert "invalid_operator" not in EnumComparisonOperators
+        assert "equals" in EnumComparisonOperators._value2member_map_
+        assert "invalid_operator" not in EnumComparisonOperators._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -109,15 +109,39 @@ class TestEnumComparisonOperators:
     def test_enum_comparison_operators(self):
         """Test that enum covers typical comparison operators."""
         # Test equality operators
-        assert EnumComparisonOperators.EQUALS in EnumComparisonOperators
-        assert EnumComparisonOperators.NOT_EQUALS in EnumComparisonOperators
+        assert (
+            EnumComparisonOperators.EQUALS
+            in EnumComparisonOperators.__members__.values()
+        )
+        assert (
+            EnumComparisonOperators.NOT_EQUALS
+            in EnumComparisonOperators.__members__.values()
+        )
 
         # Test relational operators
-        assert EnumComparisonOperators.GREATER_THAN in EnumComparisonOperators
-        assert EnumComparisonOperators.LESS_THAN in EnumComparisonOperators
-        assert EnumComparisonOperators.GREATER_THAN_OR_EQUAL in EnumComparisonOperators
-        assert EnumComparisonOperators.LESS_THAN_OR_EQUAL in EnumComparisonOperators
+        assert (
+            EnumComparisonOperators.GREATER_THAN
+            in EnumComparisonOperators.__members__.values()
+        )
+        assert (
+            EnumComparisonOperators.LESS_THAN
+            in EnumComparisonOperators.__members__.values()
+        )
+        assert (
+            EnumComparisonOperators.GREATER_THAN_OR_EQUAL
+            in EnumComparisonOperators.__members__.values()
+        )
+        assert (
+            EnumComparisonOperators.LESS_THAN_OR_EQUAL
+            in EnumComparisonOperators.__members__.values()
+        )
 
         # Test containment operators
-        assert EnumComparisonOperators.CONTAINS in EnumComparisonOperators
-        assert EnumComparisonOperators.NOT_CONTAINS in EnumComparisonOperators
+        assert (
+            EnumComparisonOperators.CONTAINS
+            in EnumComparisonOperators.__members__.values()
+        )
+        assert (
+            EnumComparisonOperators.NOT_CONTAINS
+            in EnumComparisonOperators.__members__.values()
+        )

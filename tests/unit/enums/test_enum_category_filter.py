@@ -42,7 +42,7 @@ class TestEnumCategoryFilter:
             EnumCategoryFilter.TERTIARY,
         }
 
-        for filter_type in EnumCategoryFilter:
+        for filter_type in EnumCategoryFilter.__members__.values():
             expected = filter_type in hierarchical_filters
             actual = EnumCategoryFilter.is_hierarchical(filter_type)
             assert actual == expected, (
@@ -56,14 +56,14 @@ class TestEnumCategoryFilter:
             EnumCategoryFilter.CUSTOM,
         }
 
-        for filter_type in EnumCategoryFilter:
+        for filter_type in EnumCategoryFilter.__members__.values():
             expected = filter_type in inclusive_filters
             actual = EnumCategoryFilter.is_inclusive(filter_type)
             assert actual == expected, f"{filter_type} inclusive classification failed"
 
     def test_is_exclusive(self):
         """Test exclusive classification."""
-        for filter_type in EnumCategoryFilter:
+        for filter_type in EnumCategoryFilter.__members__.values():
             expected = filter_type == EnumCategoryFilter.ARCHIVED
             actual = EnumCategoryFilter.is_exclusive(filter_type)
             assert actual == expected, f"{filter_type} exclusive classification failed"
@@ -95,7 +95,7 @@ class TestEnumCategoryFilter:
 
     def test_is_active_filter(self):
         """Test active filter classification."""
-        for filter_type in EnumCategoryFilter:
+        for filter_type in EnumCategoryFilter.__members__.values():
             expected = filter_type != EnumCategoryFilter.ARCHIVED
             actual = EnumCategoryFilter.is_active_filter(filter_type)
             assert actual == expected, (
@@ -104,5 +104,5 @@ class TestEnumCategoryFilter:
 
     def test_str_representation(self):
         """Test string representation."""
-        for filter_type in EnumCategoryFilter:
+        for filter_type in EnumCategoryFilter.__members__.values():
             assert str(filter_type) == filter_type.value

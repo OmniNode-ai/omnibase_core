@@ -49,12 +49,12 @@ class TestEnumHandlerSource:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "core" in EnumHandlerSource
-        assert "runtime" in EnumHandlerSource
-        assert "node-local" in EnumHandlerSource
-        assert "plugin" in EnumHandlerSource
-        assert "test" in EnumHandlerSource
-        assert "invalid" not in EnumHandlerSource
+        assert "core" in EnumHandlerSource._value2member_map_
+        assert "runtime" in EnumHandlerSource._value2member_map_
+        assert "node-local" in EnumHandlerSource._value2member_map_
+        assert "plugin" in EnumHandlerSource._value2member_map_
+        assert "test" in EnumHandlerSource._value2member_map_
+        assert "invalid" not in EnumHandlerSource._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -87,7 +87,7 @@ class TestEnumHandlerSource:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [source.value for source in EnumHandlerSource]
+        all_values = [source.value for source in EnumHandlerSource.__members__.values()]
         expected_values = ["core", "runtime", "node-local", "plugin", "test"]
         assert set(all_values) == set(expected_values)
 
@@ -100,12 +100,12 @@ class TestEnumHandlerSource:
     def test_source_hierarchy(self):
         """Test that source types follow expected hierarchy."""
         # Core should be the highest priority source
-        assert EnumHandlerSource.CORE in EnumHandlerSource
+        assert EnumHandlerSource.CORE in EnumHandlerSource.__members__.values()
         # Runtime should be system-level
-        assert EnumHandlerSource.RUNTIME in EnumHandlerSource
+        assert EnumHandlerSource.RUNTIME in EnumHandlerSource.__members__.values()
         # Node-local should be node-specific
-        assert EnumHandlerSource.NODE_LOCAL in EnumHandlerSource
+        assert EnumHandlerSource.NODE_LOCAL in EnumHandlerSource.__members__.values()
         # Plugin should be external
-        assert EnumHandlerSource.PLUGIN in EnumHandlerSource
+        assert EnumHandlerSource.PLUGIN in EnumHandlerSource.__members__.values()
         # Test should be for testing
-        assert EnumHandlerSource.TEST in EnumHandlerSource
+        assert EnumHandlerSource.TEST in EnumHandlerSource.__members__.values()

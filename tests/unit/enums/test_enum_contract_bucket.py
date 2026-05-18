@@ -40,7 +40,7 @@ class TestEnumContractBucketStructure:
         assert len(list(EnumContractBucket)) == 7
 
     def test_enum_is_unique(self) -> None:
-        values = [m.value for m in EnumContractBucket]
+        values = [m.value for m in EnumContractBucket.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_from_value(self) -> None:

@@ -188,7 +188,7 @@ class TestEnumNodeKindSerialization:
 
     def test_enum_serialization_json_compatible(self) -> None:
         """Test that enum values are JSON serializable."""
-        for member in EnumNodeKind:
+        for member in EnumNodeKind.__members__.values():
             # Should be able to serialize the value
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
@@ -235,7 +235,7 @@ class TestEnumNodeKindBehavior:
 
     def test_enum_member_uniqueness(self) -> None:
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumNodeKind]
+        values = [member.value for member in EnumNodeKind.__members__.values()]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
@@ -258,8 +258,8 @@ class TestEnumNodeKindBehavior:
 
     def test_enum_in_operator(self) -> None:
         """Test that 'in' operator works with enum."""
-        assert EnumNodeKind.EFFECT in EnumNodeKind
-        assert EnumNodeKind.RUNTIME_HOST in EnumNodeKind
+        assert EnumNodeKind.EFFECT in EnumNodeKind.__members__.values()
+        assert EnumNodeKind.RUNTIME_HOST in EnumNodeKind.__members__.values()
 
         # Test that strings work with member values
         effect_member = EnumNodeKind.EFFECT
@@ -282,7 +282,7 @@ class TestEnumNodeKindBehavior:
 
     def test_enum_bool_evaluation(self) -> None:
         """Test that all enum members evaluate to True in boolean context."""
-        for member in EnumNodeKind:
+        for member in EnumNodeKind.__members__.values():
             assert bool(member) is True
 
     def test_enum_case_sensitivity(self) -> None:
@@ -348,7 +348,7 @@ class TestEnumNodeKindEdgeCases:
 
     def test_enum_pickling(self) -> None:
         """Test that enum members can be pickled and unpickled."""
-        for member in EnumNodeKind:
+        for member in EnumNodeKind.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -478,7 +478,7 @@ class TestEnumNodeKindPropertyBased:
         def check_type_to_kind_mapping(node_type: EnumNodeType) -> None:
             kind = EnumNodeType.get_node_kind(node_type)
             assert isinstance(kind, EnumNodeKind)
-            assert kind in EnumNodeKind
+            assert kind in EnumNodeKind.__members__.values()
 
         check_type_to_kind_mapping()
 

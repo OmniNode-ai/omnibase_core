@@ -202,8 +202,10 @@ class TestEnumDocumentFreshnessErrors:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "FRESHNESS_PATH_NOT_FOUND" in EnumDocumentFreshnessErrors
-        assert "invalid_error" not in EnumDocumentFreshnessErrors
+        assert (
+            "FRESHNESS_PATH_NOT_FOUND" in EnumDocumentFreshnessErrors._value2member_map_
+        )
+        assert "invalid_error" not in EnumDocumentFreshnessErrors._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""

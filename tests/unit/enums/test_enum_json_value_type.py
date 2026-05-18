@@ -42,9 +42,9 @@ class TestEnumJsonValueType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumJsonValueType.STRING in EnumJsonValueType
-        assert "string" in EnumJsonValueType
-        assert "invalid_value" not in EnumJsonValueType
+        assert EnumJsonValueType.STRING in EnumJsonValueType.__members__.values()
+        assert "string" in EnumJsonValueType._value2member_map_
+        assert "invalid_value" not in EnumJsonValueType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""

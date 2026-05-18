@@ -85,9 +85,9 @@ class TestEnumEnforcementModeStringBehavior:
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
-        assert EnumEnforcementMode.STRICT in EnumEnforcementMode
-        assert "strict" in EnumEnforcementMode
-        assert "invalid_mode" not in EnumEnforcementMode
+        assert EnumEnforcementMode.STRICT in EnumEnforcementMode.__members__.values()
+        assert "strict" in EnumEnforcementMode._value2member_map_
+        assert "invalid_mode" not in EnumEnforcementMode._value2member_map_
 
 
 @pytest.mark.unit

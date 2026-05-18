@@ -74,19 +74,19 @@ class TestEnumHealthStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "healthy" in EnumHealthStatus
-        assert "degraded" in EnumHealthStatus
-        assert "unhealthy" in EnumHealthStatus
-        assert "critical" in EnumHealthStatus
-        assert "unknown" in EnumHealthStatus
-        assert "warning" in EnumHealthStatus
-        assert "unreachable" in EnumHealthStatus
-        assert "available" in EnumHealthStatus
-        assert "unavailable" in EnumHealthStatus
-        assert "error" in EnumHealthStatus
-        assert "initializing" in EnumHealthStatus
-        assert "disposing" in EnumHealthStatus
-        assert "invalid" not in EnumHealthStatus
+        assert "healthy" in EnumHealthStatus._value2member_map_
+        assert "degraded" in EnumHealthStatus._value2member_map_
+        assert "unhealthy" in EnumHealthStatus._value2member_map_
+        assert "critical" in EnumHealthStatus._value2member_map_
+        assert "unknown" in EnumHealthStatus._value2member_map_
+        assert "warning" in EnumHealthStatus._value2member_map_
+        assert "unreachable" in EnumHealthStatus._value2member_map_
+        assert "available" in EnumHealthStatus._value2member_map_
+        assert "unavailable" in EnumHealthStatus._value2member_map_
+        assert "error" in EnumHealthStatus._value2member_map_
+        assert "initializing" in EnumHealthStatus._value2member_map_
+        assert "disposing" in EnumHealthStatus._value2member_map_
+        assert "invalid" not in EnumHealthStatus._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -140,7 +140,7 @@ class TestEnumHealthStatus:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [status.value for status in EnumHealthStatus]
+        all_values = [status.value for status in EnumHealthStatus.__members__.values()]
         expected_values = [
             "healthy",
             "degraded",
@@ -227,7 +227,7 @@ class TestEnumHealthStatus:
 
         Ensures str(enum) -> Enum(str) works for every value.
         """
-        for status in EnumHealthStatus:
+        for status in EnumHealthStatus.__members__.values():
             # String roundtrip
             serialized = str(status)
             deserialized = EnumHealthStatus(serialized)
@@ -250,7 +250,7 @@ class TestEnumHealthStatus:
         Every status should be categorized by at least one helper method,
         ensuring no status is left in an undefined state.
         """
-        for status in EnumHealthStatus:
+        for status in EnumHealthStatus.__members__.values():
             is_operational = status.is_operational()
             requires_attention = status.requires_attention()
             is_transitional = status.is_transitional()
@@ -342,7 +342,7 @@ class TestEnumHealthStatus:
             EnumHealthStatus.WARNING,
         }
 
-        for status in EnumHealthStatus:
+        for status in EnumHealthStatus.__members__.values():
             expected = status in operational_statuses
             assert status.is_operational() == expected, (
                 f"is_operational() mismatch for {status}: "
@@ -361,7 +361,7 @@ class TestEnumHealthStatus:
             EnumHealthStatus.UNREACHABLE,
         }
 
-        for status in EnumHealthStatus:
+        for status in EnumHealthStatus.__members__.values():
             expected = status in attention_statuses
             assert status.requires_attention() == expected, (
                 f"requires_attention() mismatch for {status}: "
@@ -378,7 +378,7 @@ class TestEnumHealthStatus:
             EnumHealthStatus.DISPOSING,
         }
 
-        for status in EnumHealthStatus:
+        for status in EnumHealthStatus.__members__.values():
             expected = status in transitional_statuses
             assert status.is_transitional() == expected, (
                 f"is_transitional() mismatch for {status}: "

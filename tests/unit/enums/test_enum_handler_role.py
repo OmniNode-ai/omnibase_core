@@ -97,7 +97,7 @@ class TestEnumHandlerRoleStr:
 
     def test_str_matches_value(self) -> None:
         """Test that __str__ matches .value for all members."""
-        for member in EnumHandlerRole:
+        for member in EnumHandlerRole.__members__.values():
             assert str(member) == member.value
 
 
@@ -182,7 +182,7 @@ class TestEnumHandlerRoleSerialization:
 
     def test_enum_serialization_json_compatible(self) -> None:
         """Test that enum values are JSON serializable."""
-        for member in EnumHandlerRole:
+        for member in EnumHandlerRole.__members__.values():
             # Should be able to serialize the value
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
@@ -229,7 +229,7 @@ class TestEnumHandlerRoleBehavior:
 
     def test_enum_member_uniqueness(self) -> None:
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumHandlerRole]
+        values = [member.value for member in EnumHandlerRole.__members__.values()]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
@@ -251,17 +251,19 @@ class TestEnumHandlerRoleBehavior:
 
     def test_enum_in_operator(self) -> None:
         """Test that 'in' operator works with enum."""
-        assert EnumHandlerRole.INFRA_HANDLER in EnumHandlerRole
-        assert EnumHandlerRole.NODE_HANDLER in EnumHandlerRole
-        assert EnumHandlerRole.PROJECTION_HANDLER in EnumHandlerRole
-        assert EnumHandlerRole.COMPUTE_HANDLER in EnumHandlerRole
+        assert EnumHandlerRole.INFRA_HANDLER in EnumHandlerRole.__members__.values()
+        assert EnumHandlerRole.NODE_HANDLER in EnumHandlerRole.__members__.values()
+        assert (
+            EnumHandlerRole.PROJECTION_HANDLER in EnumHandlerRole.__members__.values()
+        )
+        assert EnumHandlerRole.COMPUTE_HANDLER in EnumHandlerRole.__members__.values()
 
         # Test that strings work for membership
-        assert "infra_handler" in EnumHandlerRole
-        assert "node_handler" in EnumHandlerRole
-        assert "projection_handler" in EnumHandlerRole
-        assert "compute_handler" in EnumHandlerRole
-        assert "invalid" not in EnumHandlerRole
+        assert "infra_handler" in EnumHandlerRole._value2member_map_
+        assert "node_handler" in EnumHandlerRole._value2member_map_
+        assert "projection_handler" in EnumHandlerRole._value2member_map_
+        assert "compute_handler" in EnumHandlerRole._value2member_map_
+        assert "invalid" not in EnumHandlerRole._value2member_map_
 
     def test_enum_hash_consistency(self) -> None:
         """Test that enum members are hashable and consistent."""
@@ -295,7 +297,7 @@ class TestEnumHandlerRoleBehavior:
 
     def test_enum_bool_evaluation(self) -> None:
         """Test that all enum members evaluate to True in boolean context."""
-        for member in EnumHandlerRole:
+        for member in EnumHandlerRole.__members__.values():
             assert bool(member) is True
 
     def test_enum_case_sensitivity(self) -> None:
@@ -397,7 +399,7 @@ class TestEnumHandlerRoleEdgeCases:
 
     def test_enum_pickling(self) -> None:
         """Test that enum members can be pickled and unpickled."""
-        for member in EnumHandlerRole:
+        for member in EnumHandlerRole.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -528,7 +530,9 @@ class TestEnumHandlerRoleExhaustivenessCheck:
 
     def test_all_values_list_matches_iteration(self) -> None:
         """Test that values() classmethod returns same values as iteration."""
-        iterated_values = [member.value for member in EnumHandlerRole]
+        iterated_values = [
+            member.value for member in EnumHandlerRole.__members__.values()
+        ]
         classmethod_values = EnumHandlerRole.values()
 
         assert set(iterated_values) == set(classmethod_values)

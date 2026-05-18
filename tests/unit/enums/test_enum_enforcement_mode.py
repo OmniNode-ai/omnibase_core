@@ -46,11 +46,11 @@ class TestEnumEnforcementMode:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "hard" in EnumEnforcementMode
-        assert "soft" in EnumEnforcementMode
-        assert "advisory" in EnumEnforcementMode
-        assert "disabled" in EnumEnforcementMode
-        assert "invalid" not in EnumEnforcementMode
+        assert "hard" in EnumEnforcementMode._value2member_map_
+        assert "soft" in EnumEnforcementMode._value2member_map_
+        assert "advisory" in EnumEnforcementMode._value2member_map_
+        assert "disabled" in EnumEnforcementMode._value2member_map_
+        assert "invalid" not in EnumEnforcementMode._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -80,7 +80,7 @@ class TestEnumEnforcementMode:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [mode.value for mode in EnumEnforcementMode]
+        all_values = [mode.value for mode in EnumEnforcementMode.__members__.values()]
         expected_values = ["hard", "soft", "advisory", "disabled"]
         assert set(all_values) == set(expected_values)
 

@@ -47,7 +47,7 @@ class TestEnumParameterType:
             EnumParameterType.BOOLEAN,
         }
 
-        for param_type in EnumParameterType:
+        for param_type in EnumParameterType.__members__.values():
             expected = param_type in primitive_types
             actual = EnumParameterType.is_primitive(param_type)
             assert actual == expected, f"{param_type} primitive classification failed"
@@ -59,7 +59,7 @@ class TestEnumParameterType:
             EnumParameterType.ARRAY,
         }
 
-        for param_type in EnumParameterType:
+        for param_type in EnumParameterType.__members__.values():
             expected = param_type in complex_types
             actual = EnumParameterType.is_complex(param_type)
             assert actual == expected, f"{param_type} complex classification failed"
@@ -72,7 +72,7 @@ class TestEnumParameterType:
             EnumParameterType.FLOAT,
         }
 
-        for param_type in EnumParameterType:
+        for param_type in EnumParameterType.__members__.values():
             expected = param_type in numeric_types
             actual = EnumParameterType.is_numeric(param_type)
             assert actual == expected, f"{param_type} numeric classification failed"
@@ -84,7 +84,7 @@ class TestEnumParameterType:
             EnumParameterType.ENUM,
         }
 
-        for param_type in EnumParameterType:
+        for param_type in EnumParameterType.__members__.values():
             expected = param_type in structured_types
             actual = EnumParameterType.is_structured(param_type)
             assert actual == expected, f"{param_type} structured classification failed"
@@ -98,7 +98,7 @@ class TestEnumParameterType:
             EnumParameterType.ARRAY,
         }
 
-        for param_type in EnumParameterType:
+        for param_type in EnumParameterType.__members__.values():
             expected = param_type in validation_types
             actual = EnumParameterType.requires_validation(param_type)
             assert actual == expected, f"{param_type} validation requirement failed"
@@ -130,7 +130,7 @@ class TestEnumParameterType:
             EnumParameterType.STRING,
         }
 
-        for param_type in EnumParameterType:
+        for param_type in EnumParameterType.__members__.values():
             expected = param_type in null_support_types
             actual = EnumParameterType.supports_null(param_type)
             assert actual == expected, (
@@ -139,5 +139,5 @@ class TestEnumParameterType:
 
     def test_str_representation(self):
         """Test string representation."""
-        for param_type in EnumParameterType:
+        for param_type in EnumParameterType.__members__.values():
             assert str(param_type) == param_type.value

@@ -47,7 +47,7 @@ class TestEnumPrecommitToolNames:
             in EnumPrecommitToolNames
         )
         assert "tool_idempotency_assertion_checker" in [
-            e.value for e in EnumPrecommitToolNames
+            e.value for e in EnumPrecommitToolNames.__members__.values()
         ]
 
     def test_enum_comparison(self):
@@ -89,7 +89,7 @@ class TestEnumPrecommitToolNames:
 
     def test_tool_naming_convention(self):
         """Test that tool names follow naming convention."""
-        for tool in EnumPrecommitToolNames:
+        for tool in EnumPrecommitToolNames.__members__.values():
             # Should start with "tool_"
             assert tool.value.startswith("tool_")
             # Should be lowercase with underscores

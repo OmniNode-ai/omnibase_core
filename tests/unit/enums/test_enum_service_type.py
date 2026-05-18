@@ -51,8 +51,8 @@ class TestEnumServiceType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumServiceType.POSTGRESQL in EnumServiceType
-        assert "postgresql" in [e.value for e in EnumServiceType]
+        assert EnumServiceType.POSTGRESQL in EnumServiceType.__members__.values()
+        assert "postgresql" in [e.value for e in EnumServiceType.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

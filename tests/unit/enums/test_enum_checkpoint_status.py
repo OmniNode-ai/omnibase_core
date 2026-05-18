@@ -46,8 +46,8 @@ class TestEnumCheckpointStatus:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "active" in EnumCheckpointStatus
-        assert "invalid_status" not in EnumCheckpointStatus
+        assert "active" in EnumCheckpointStatus._value2member_map_
+        assert "invalid_status" not in EnumCheckpointStatus._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -94,12 +94,18 @@ class TestEnumCheckpointStatus:
     def test_enum_checkpoint_lifecycle(self):
         """Test that enum covers typical checkpoint lifecycle states."""
         # Test active state
-        assert EnumCheckpointStatus.ACTIVE in EnumCheckpointStatus
+        assert EnumCheckpointStatus.ACTIVE in EnumCheckpointStatus.__members__.values()
 
         # Test completion states
-        assert EnumCheckpointStatus.COMPLETED in EnumCheckpointStatus
-        assert EnumCheckpointStatus.RESTORED in EnumCheckpointStatus
+        assert (
+            EnumCheckpointStatus.COMPLETED in EnumCheckpointStatus.__members__.values()
+        )
+        assert (
+            EnumCheckpointStatus.RESTORED in EnumCheckpointStatus.__members__.values()
+        )
 
         # Test error states
-        assert EnumCheckpointStatus.EXPIRED in EnumCheckpointStatus
-        assert EnumCheckpointStatus.CORRUPTED in EnumCheckpointStatus
+        assert EnumCheckpointStatus.EXPIRED in EnumCheckpointStatus.__members__.values()
+        assert (
+            EnumCheckpointStatus.CORRUPTED in EnumCheckpointStatus.__members__.values()
+        )

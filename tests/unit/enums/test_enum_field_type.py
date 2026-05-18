@@ -63,9 +63,9 @@ class TestEnumFieldType:
 
     def test_enum_membership(self):
         """Test enum membership."""
-        assert "str" in EnumFieldType
-        assert "int" in EnumFieldType
-        assert "invalid_value" not in EnumFieldType
+        assert "str" in EnumFieldType._value2member_map_
+        assert "int" in EnumFieldType._value2member_map_
+        assert "invalid_value" not in EnumFieldType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -122,7 +122,7 @@ class TestEnumFieldType:
             "bytes",
             "any",
         ]
-        actual_values = [e.value for e in EnumFieldType]
+        actual_values = [e.value for e in EnumFieldType.__members__.values()]
         assert set(actual_values) == set(expected_values)
 
     def test_enum_docstring(self):
@@ -133,7 +133,7 @@ class TestEnumFieldType:
     def test_enum_unique_decorator(self):
         """Test enum has unique decorator."""
         # The @unique decorator ensures no duplicate values
-        values = [e.value for e in EnumFieldType]
+        values = [e.value for e in EnumFieldType.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_str_method(self):

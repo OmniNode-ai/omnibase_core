@@ -42,9 +42,9 @@ class TestEnumMetricType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumMetricType.PERFORMANCE in EnumMetricType
-        assert "performance" in EnumMetricType
-        assert "invalid_value" not in EnumMetricType
+        assert EnumMetricType.PERFORMANCE in EnumMetricType.__members__.values()
+        assert "performance" in EnumMetricType._value2member_map_
+        assert "invalid_value" not in EnumMetricType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""

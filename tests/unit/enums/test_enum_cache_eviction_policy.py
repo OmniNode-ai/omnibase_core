@@ -66,8 +66,10 @@ class TestEnumCacheEvictionPolicy:
 
     def test_enum_membership_check(self) -> None:
         """Test membership checks."""
-        assert "lru" in [e.value for e in EnumCacheEvictionPolicy]
-        assert "random" not in [e.value for e in EnumCacheEvictionPolicy]
+        assert "lru" in [e.value for e in EnumCacheEvictionPolicy.__members__.values()]
+        assert "random" not in [
+            e.value for e in EnumCacheEvictionPolicy.__members__.values()
+        ]
 
     def test_enum_string_representation(self) -> None:
         """Test string representation."""
@@ -81,7 +83,7 @@ class TestEnumCacheEvictionPolicy:
 
     def test_enum_value_uniqueness(self) -> None:
         """Test that all enum values are unique."""
-        values = [e.value for e in EnumCacheEvictionPolicy]
+        values = [e.value for e in EnumCacheEvictionPolicy.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_as_dict_key(self) -> None:

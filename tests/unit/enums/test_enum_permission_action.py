@@ -52,8 +52,8 @@ class TestEnumPermissionAction:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumPermissionAction.READ in EnumPermissionAction
-        assert "read" in [e.value for e in EnumPermissionAction]
+        assert EnumPermissionAction.READ in EnumPermissionAction.__members__.values()
+        assert "read" in [e.value for e in EnumPermissionAction.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

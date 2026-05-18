@@ -46,8 +46,8 @@ class TestEnumAnalysisStatus:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "pending" in EnumAnalysisStatus
-        assert "invalid_status" not in EnumAnalysisStatus
+        assert "pending" in EnumAnalysisStatus._value2member_map_
+        assert "invalid_status" not in EnumAnalysisStatus._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -94,13 +94,13 @@ class TestEnumAnalysisStatus:
     def test_enum_workflow_progression(self):
         """Test that enum covers typical analysis workflow states."""
         # Test typical workflow progression
-        assert EnumAnalysisStatus.PENDING in EnumAnalysisStatus
-        assert EnumAnalysisStatus.IN_PROGRESS in EnumAnalysisStatus
-        assert EnumAnalysisStatus.COMPLETED in EnumAnalysisStatus
+        assert EnumAnalysisStatus.PENDING in EnumAnalysisStatus.__members__.values()
+        assert EnumAnalysisStatus.IN_PROGRESS in EnumAnalysisStatus.__members__.values()
+        assert EnumAnalysisStatus.COMPLETED in EnumAnalysisStatus.__members__.values()
 
         # Test error states
-        assert EnumAnalysisStatus.FAILED in EnumAnalysisStatus
-        assert EnumAnalysisStatus.CANCELLED in EnumAnalysisStatus
+        assert EnumAnalysisStatus.FAILED in EnumAnalysisStatus.__members__.values()
+        assert EnumAnalysisStatus.CANCELLED in EnumAnalysisStatus.__members__.values()
 
     def test_enum_status_transitions(self):
         """Test that enum supports typical status transitions."""

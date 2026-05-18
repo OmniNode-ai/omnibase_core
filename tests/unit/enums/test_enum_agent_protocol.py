@@ -23,7 +23,7 @@ class TestEnumAgentProtocol:
         assert str(EnumAgentProtocol.A2A) == "A2A"
 
     def test_enum_is_unique(self) -> None:
-        values = [m.value for m in EnumAgentProtocol]
+        values = [m.value for m in EnumAgentProtocol.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_is_string_subclass(self) -> None:

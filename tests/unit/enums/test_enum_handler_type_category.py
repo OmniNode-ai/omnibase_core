@@ -95,7 +95,7 @@ class TestEnumHandlerTypeCategoryStr:
 
     def test_str_matches_value(self) -> None:
         """Test that __str__ matches .value for all members."""
-        for member in EnumHandlerTypeCategory:
+        for member in EnumHandlerTypeCategory.__members__.values():
             assert str(member) == member.value
 
 
@@ -177,7 +177,7 @@ class TestEnumHandlerTypeCategorySerialization:
 
     def test_enum_serialization_json_compatible(self) -> None:
         """Test that enum values are JSON serializable."""
-        for member in EnumHandlerTypeCategory:
+        for member in EnumHandlerTypeCategory.__members__.values():
             # Should be able to serialize the value
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
@@ -224,7 +224,9 @@ class TestEnumHandlerTypeCategoryBehavior:
 
     def test_enum_member_uniqueness(self) -> None:
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumHandlerTypeCategory]
+        values = [
+            member.value for member in EnumHandlerTypeCategory.__members__.values()
+        ]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
@@ -245,17 +247,24 @@ class TestEnumHandlerTypeCategoryBehavior:
 
     def test_enum_in_operator(self) -> None:
         """Test that 'in' operator works with enum."""
-        assert EnumHandlerTypeCategory.COMPUTE in EnumHandlerTypeCategory
-        assert EnumHandlerTypeCategory.EFFECT in EnumHandlerTypeCategory
         assert (
-            EnumHandlerTypeCategory.NONDETERMINISTIC_COMPUTE in EnumHandlerTypeCategory
+            EnumHandlerTypeCategory.COMPUTE
+            in EnumHandlerTypeCategory.__members__.values()
+        )
+        assert (
+            EnumHandlerTypeCategory.EFFECT
+            in EnumHandlerTypeCategory.__members__.values()
+        )
+        assert (
+            EnumHandlerTypeCategory.NONDETERMINISTIC_COMPUTE
+            in EnumHandlerTypeCategory.__members__.values()
         )
 
         # Test that strings work for membership
-        assert "compute" in EnumHandlerTypeCategory
-        assert "effect" in EnumHandlerTypeCategory
-        assert "nondeterministic_compute" in EnumHandlerTypeCategory
-        assert "invalid" not in EnumHandlerTypeCategory
+        assert "compute" in EnumHandlerTypeCategory._value2member_map_
+        assert "effect" in EnumHandlerTypeCategory._value2member_map_
+        assert "nondeterministic_compute" in EnumHandlerTypeCategory._value2member_map_
+        assert "invalid" not in EnumHandlerTypeCategory._value2member_map_
 
     def test_enum_hash_consistency(self) -> None:
         """Test that enum members are hashable and consistent."""
@@ -285,7 +294,7 @@ class TestEnumHandlerTypeCategoryBehavior:
 
     def test_enum_bool_evaluation(self) -> None:
         """Test that all enum members evaluate to True in boolean context."""
-        for member in EnumHandlerTypeCategory:
+        for member in EnumHandlerTypeCategory.__members__.values():
             assert bool(member) is True
 
     def test_enum_case_sensitivity(self) -> None:
@@ -380,7 +389,7 @@ class TestEnumHandlerTypeCategoryEdgeCases:
 
     def test_enum_pickling(self) -> None:
         """Test that enum members can be pickled and unpickled."""
-        for member in EnumHandlerTypeCategory:
+        for member in EnumHandlerTypeCategory.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -511,7 +520,9 @@ class TestEnumHandlerTypeCategoryExhaustivenessCheck:
 
     def test_all_values_list_matches_iteration(self) -> None:
         """Test that values() classmethod returns same values as iteration."""
-        iterated_values = [member.value for member in EnumHandlerTypeCategory]
+        iterated_values = [
+            member.value for member in EnumHandlerTypeCategory.__members__.values()
+        ]
         classmethod_values = EnumHandlerTypeCategory.values()
 
         assert set(iterated_values) == set(classmethod_values)

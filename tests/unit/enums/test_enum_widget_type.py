@@ -49,7 +49,7 @@ class TestEnumWidgetType:
 
     def test_data_bound_and_aggregation_mutually_exclusive(self) -> None:
         """Test that data_bound and aggregation are mutually exclusive."""
-        for widget_type in EnumWidgetType:
+        for widget_type in EnumWidgetType.__members__.values():
             # A widget should not be both data_bound and aggregation
             assert not (widget_type.is_data_bound and widget_type.is_aggregation)
 
@@ -105,7 +105,7 @@ class TestEnumWidgetType:
     def test_enum_membership(self) -> None:
         """Test membership testing."""
         # Enum member membership
-        assert EnumWidgetType.CHART in EnumWidgetType
+        assert EnumWidgetType.CHART in EnumWidgetType.__members__.values()
         # Value membership - check if string is a valid enum value
         valid_values = {m.value for m in EnumWidgetType}
         assert "chart" in valid_values
@@ -132,7 +132,7 @@ class TestEnumWidgetType:
         """Test JSON serialization roundtrip."""
         import json
 
-        for widget_type in EnumWidgetType:
+        for widget_type in EnumWidgetType.__members__.values():
             # Serialize to JSON
             json_str = json.dumps(widget_type.value)
             # Deserialize from JSON

@@ -42,8 +42,13 @@ class TestEnumRegistryOutputStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumRegistryOutputStatus.FAILURE in EnumRegistryOutputStatus
-        assert "failure" in [e.value for e in EnumRegistryOutputStatus]
+        assert (
+            EnumRegistryOutputStatus.FAILURE
+            in EnumRegistryOutputStatus.__members__.values()
+        )
+        assert "failure" in [
+            e.value for e in EnumRegistryOutputStatus.__members__.values()
+        ]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

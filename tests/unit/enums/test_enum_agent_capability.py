@@ -385,7 +385,7 @@ class TestEnumAgentCapabilityComprehensiveScenarios:
 
         # Verify all capabilities are valid
         for cap in senior_dev_agent_caps:
-            assert cap in EnumAgentCapability
+            assert cap in EnumAgentCapability.__members__.values()
 
         # Check characteristics of this profile
         code_related_count = sum(

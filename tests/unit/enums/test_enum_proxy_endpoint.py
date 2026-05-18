@@ -41,8 +41,10 @@ class TestEnumProxyEndpoint:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumProxyEndpoint.V1_COMPLETE in EnumProxyEndpoint
-        assert "v1/complete" in [e.value for e in EnumProxyEndpoint]
+        assert EnumProxyEndpoint.V1_COMPLETE in EnumProxyEndpoint.__members__.values()
+        assert "v1/complete" in [
+            e.value for e in EnumProxyEndpoint.__members__.values()
+        ]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -85,7 +87,7 @@ class TestEnumProxyEndpoint:
 
     def test_endpoint_versioning(self):
         """Test that all endpoints follow versioning pattern."""
-        for endpoint in EnumProxyEndpoint:
+        for endpoint in EnumProxyEndpoint.__members__.values():
             # All should start with v1/
             assert endpoint.value.startswith("v1/")
 

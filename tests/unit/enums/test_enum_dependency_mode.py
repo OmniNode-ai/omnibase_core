@@ -43,8 +43,8 @@ class TestEnumDependencyMode:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "real" in EnumDependencyMode
-        assert "invalid_mode" not in EnumDependencyMode
+        assert "real" in EnumDependencyMode._value2member_map_
+        assert "invalid_mode" not in EnumDependencyMode._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -104,7 +104,7 @@ class TestEnumDependencyMode:
     def test_enum_dependency_modes(self):
         """Test that enum covers typical dependency modes."""
         # Test real mode
-        assert EnumDependencyMode.REAL in EnumDependencyMode
+        assert EnumDependencyMode.REAL in EnumDependencyMode.__members__.values()
 
         # Test mock mode
-        assert EnumDependencyMode.MOCK in EnumDependencyMode
+        assert EnumDependencyMode.MOCK in EnumDependencyMode.__members__.values()

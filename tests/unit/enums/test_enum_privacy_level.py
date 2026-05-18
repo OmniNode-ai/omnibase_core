@@ -42,8 +42,8 @@ class TestEnumPrivacyLevel:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumPrivacyLevel.EXTERNAL_OK in EnumPrivacyLevel
-        assert "external_ok" in [e.value for e in EnumPrivacyLevel]
+        assert EnumPrivacyLevel.EXTERNAL_OK in EnumPrivacyLevel.__members__.values()
+        assert "external_ok" in [e.value for e in EnumPrivacyLevel.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""

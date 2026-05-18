@@ -107,7 +107,7 @@ class TestEnumWorkflowStatus:
         Every workflow status must be either terminal or active, never both.
         This is a fundamental invariant of workflow lifecycle semantics.
         """
-        for status in EnumWorkflowStatus:
+        for status in EnumWorkflowStatus.__members__.values():
             is_terminal = EnumWorkflowStatus.is_terminal(status)
             is_active = EnumWorkflowStatus.is_active(status)
 
@@ -220,7 +220,7 @@ class TestEnumWorkflowStatus:
         ]
 
         for status in all_statuses:
-            assert status in EnumWorkflowStatus
+            assert status in EnumWorkflowStatus.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -288,7 +288,7 @@ class TestEnumWorkflowStatus:
     def test_workflow_lifecycle_logic(self):
         """Test workflow lifecycle state transitions and logic."""
         # Test that all statuses are either active XOR terminal (mutually exclusive)
-        for status in EnumWorkflowStatus:
+        for status in EnumWorkflowStatus.__members__.values():
             is_active = EnumWorkflowStatus.is_active(status)
             is_terminal = EnumWorkflowStatus.is_terminal(status)
 
@@ -425,7 +425,7 @@ class TestEnumWorkflowStatus:
             assert status not in valid_transitions
 
         # Test that valid transitions are defined for active states
-        for status in EnumWorkflowStatus:
+        for status in EnumWorkflowStatus.__members__.values():
             if EnumWorkflowStatus.is_active(status):
                 # Active states should have defined transitions
                 assert status in valid_transitions
@@ -436,7 +436,7 @@ class TestEnumWorkflowStatus:
         For str,Enum types like EnumWorkflowStatus, str(status) returns
         status.value, so we only need to test one roundtrip path.
         """
-        for status in EnumWorkflowStatus:
+        for status in EnumWorkflowStatus.__members__.values():
             # Value roundtrip (str(status) == status.value for str,Enum)
             value = status.value
             reconstructed = EnumWorkflowStatus(value)

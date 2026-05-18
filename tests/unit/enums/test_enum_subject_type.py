@@ -109,7 +109,7 @@ class TestEnumSubjectType:
         assert str(EnumSubjectType.WORKFLOW) == "workflow"
         assert str(EnumSubjectType.CUSTOM) == "custom"
         # Verify str() equals .value for all members
-        for member in EnumSubjectType:
+        for member in EnumSubjectType.__members__.values():
             assert str(member) == member.value
 
     @pytest.mark.parametrize(

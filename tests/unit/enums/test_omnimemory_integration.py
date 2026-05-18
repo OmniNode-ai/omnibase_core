@@ -278,7 +278,7 @@ class TestOmnimemoryIntegration:
 
     def test_all_subject_types_serialization(self) -> None:
         """Test that all subject types serialize correctly."""
-        for subject_type in EnumSubjectType:
+        for subject_type in EnumSubjectType.__members__.values():
             snapshot = MemorySnapshot(
                 subject_type=subject_type,
                 subject_id=f"test-{subject_type.value}",
@@ -289,7 +289,7 @@ class TestOmnimemoryIntegration:
 
     def test_all_decision_types_serialization(self) -> None:
         """Test that all decision types serialize correctly."""
-        for decision_type in EnumDecisionType:
+        for decision_type in EnumDecisionType.__members__.values():
             snapshot = MemorySnapshot(
                 subject_type=EnumSubjectType.AGENT,
                 subject_id="test-agent",
@@ -301,7 +301,7 @@ class TestOmnimemoryIntegration:
 
     def test_all_failure_types_serialization(self) -> None:
         """Test that all failure types serialize correctly."""
-        for failure_type in EnumFailureType:
+        for failure_type in EnumFailureType.__members__.values():
             snapshot = MemorySnapshot(
                 subject_type=EnumSubjectType.TASK,
                 subject_id="test-task",

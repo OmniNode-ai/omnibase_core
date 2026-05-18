@@ -50,8 +50,8 @@ class TestEnumLikelihood:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "very_low" in EnumLikelihood
-        assert "invalid_likelihood" not in EnumLikelihood
+        assert "very_low" in EnumLikelihood._value2member_map_
+        assert "invalid_likelihood" not in EnumLikelihood._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
