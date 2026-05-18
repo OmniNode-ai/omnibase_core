@@ -123,7 +123,7 @@ class TestSessionHaltConditionExpanded:
             threshold_minutes=30.0,
         )
         assert halt.pr == 42
-        assert halt.threshold_minutes == 30.0
+        assert halt.threshold_minutes == pytest.approx(30.0)
 
     def test_session_halt_condition_accepts_required_outcome_missing_type(
         self,
@@ -214,7 +214,7 @@ class TestSessionContractBackwardsCompat:
         )
         assert len(contract.halt_conditions) == 2
         assert contract.halt_conditions[0].condition_id == "cost_ceiling"
-        assert contract.halt_conditions[0].threshold == 7.5
+        assert contract.halt_conditions[0].threshold == pytest.approx(7.5)
 
     def test_session_contract_required_outcomes_default(self) -> None:
         from omnibase_core.models.overseer.model_session_contract import (
