@@ -281,7 +281,7 @@ class TestModelEffectInputDataValidation:
 
     def test_all_enum_values_accepted(self) -> None:
         """All EnumEffectType values are accepted."""
-        for effect_type in EnumEffectType:
+        for effect_type in EnumEffectType.__members__.values():
             model = ModelEffectInputData(effect_type=effect_type)
             assert model.effect_type == effect_type
 

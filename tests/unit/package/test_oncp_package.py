@@ -163,7 +163,7 @@ class TestModelOncpManifest:
 
     def test_overlay_entry_scope_values(self) -> None:
         """ModelOncpOverlayEntry accepts all EnumOverlayScope values."""
-        for scope in EnumOverlayScope:
+        for scope in EnumOverlayScope.__members__.values():
             entry = ModelOncpOverlayEntry(
                 overlay_id="test",
                 scope=scope,

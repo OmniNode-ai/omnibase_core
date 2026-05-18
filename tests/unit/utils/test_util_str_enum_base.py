@@ -86,7 +86,7 @@ class TestUtilStrValueHelperBasic:
 
     def test_str_with_multiple_members(self) -> None:
         """Test str() works correctly with all enum members."""
-        for member in EnumTestStatus:
+        for member in EnumTestStatus.__members__.values():
             assert str(member) == member.value
 
     def test_str_does_not_return_member_name(self) -> None:
@@ -369,7 +369,7 @@ class TestUtilStrValueHelperWithUniqueDecorator:
 
     def test_all_unique_members_stringify(self) -> None:
         """Test all members of @unique enum stringify correctly."""
-        for member in EnumTestWithUnique:
+        for member in EnumTestWithUnique.__members__.values():
             assert str(member) == member.value
 
 

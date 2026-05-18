@@ -171,14 +171,14 @@ class TestEnumWorkflowStatus:
 
     def test_json_serialization(self) -> None:
         """Test enum values are JSON serializable."""
-        for member in EnumWorkflowStatus:
+        for member in EnumWorkflowStatus.__members__.values():
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
             assert EnumWorkflowStatus(deserialized) == member
 
     def test_pickle_serialization(self) -> None:
         """Test enum members can be pickled and unpickled."""
-        for member in EnumWorkflowStatus:
+        for member in EnumWorkflowStatus.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -318,14 +318,14 @@ class TestEnumExecutionModeOrchestrator:
 
     def test_json_serialization(self) -> None:
         """Test enum values are JSON serializable."""
-        for member in EnumExecutionModeOrchestrator:
+        for member in EnumExecutionModeOrchestrator.__members__.values():
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
             assert EnumExecutionModeOrchestrator(deserialized) == member
 
     def test_pickle_serialization(self) -> None:
         """Test enum members can be pickled and unpickled."""
-        for member in EnumExecutionModeOrchestrator:
+        for member in EnumExecutionModeOrchestrator.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -413,14 +413,14 @@ class TestEnumActionType:
 
     def test_json_serialization(self) -> None:
         """Test enum values are JSON serializable."""
-        for member in EnumActionType:
+        for member in EnumActionType.__members__.values():
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
             assert EnumActionType(deserialized) == member
 
     def test_pickle_serialization(self) -> None:
         """Test enum members can be pickled and unpickled."""
-        for member in EnumActionType:
+        for member in EnumActionType.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -533,14 +533,14 @@ class TestEnumFailureRecoveryStrategy:
 
     def test_json_serialization(self) -> None:
         """Test enum values are JSON serializable."""
-        for member in EnumFailureRecoveryStrategy:
+        for member in EnumFailureRecoveryStrategy.__members__.values():
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
             assert EnumFailureRecoveryStrategy(deserialized) == member
 
     def test_pickle_serialization(self) -> None:
         """Test enum members can be pickled and unpickled."""
-        for member in EnumFailureRecoveryStrategy:
+        for member in EnumFailureRecoveryStrategy.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -638,14 +638,14 @@ class TestEnumBranchCondition:
 
     def test_json_serialization(self) -> None:
         """Test enum values are JSON serializable."""
-        for member in EnumBranchCondition:
+        for member in EnumBranchCondition.__members__.values():
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
             assert EnumBranchCondition(deserialized) == member
 
     def test_pickle_serialization(self) -> None:
         """Test enum members can be pickled and unpickled."""
-        for member in EnumBranchCondition:
+        for member in EnumBranchCondition.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -720,7 +720,7 @@ class TestEnumExecutionPattern:
 
     def test_json_serialization(self) -> None:
         """Test enum values are JSON serializable."""
-        for member in EnumExecutionPattern:
+        for member in EnumExecutionPattern.__members__.values():
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
             assert EnumExecutionPattern(deserialized) == member
@@ -777,7 +777,7 @@ class TestEnumAssignmentStatus:
 
     def test_json_serialization(self) -> None:
         """Test enum values are JSON serializable."""
-        for member in EnumAssignmentStatus:
+        for member in EnumAssignmentStatus.__members__.values():
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
             assert EnumAssignmentStatus(deserialized) == member
@@ -849,7 +849,7 @@ class TestEnumWorkflowStatusCoordination:
 
     def test_json_serialization(self) -> None:
         """Test enum values are JSON serializable."""
-        for member in EnumWorkflowStatus:
+        for member in EnumWorkflowStatus.__members__.values():
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
             assert EnumWorkflowStatus(deserialized) == member
@@ -871,7 +871,7 @@ class TestOrchestratorEnumsIntegration:
         Verifies both enum types have valid, non-None values.
         """
         running_state = EnumWorkflowStatus.RUNNING
-        for action_type in EnumActionType:
+        for action_type in EnumActionType.__members__.values():
             # Verify enum values are defined
             assert action_type.value is not None
             assert running_state.value == "running"
@@ -882,13 +882,13 @@ class TestOrchestratorEnumsIntegration:
         assert failed_state.value == "failed"
 
         # All recovery strategies should be applicable after failure
-        for strategy in EnumFailureRecoveryStrategy:
+        for strategy in EnumFailureRecoveryStrategy.__members__.values():
             assert strategy.value is not None
 
     def test_execution_mode_with_action_type(self) -> None:
         """Test execution modes can apply to any action type."""
-        for mode in EnumExecutionModeOrchestrator:
-            for action_type in EnumActionType:
+        for mode in EnumExecutionModeOrchestrator.__members__.values():
+            for action_type in EnumActionType.__members__.values():
                 # All combinations should be valid enum values
                 assert mode.value is not None
                 assert action_type.value is not None

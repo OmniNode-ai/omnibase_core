@@ -453,7 +453,7 @@ class TestModelTopicManifestInstantiation:
 
         assert manifest.domain == "myservice"
         assert len(manifest.topics) == 5
-        for topic_type in EnumTopicType:
+        for topic_type in EnumTopicType.__members__.values():
             assert topic_type in manifest.topics
 
     def test_frozen_manifest(self):

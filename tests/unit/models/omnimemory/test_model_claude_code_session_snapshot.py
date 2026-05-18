@@ -464,7 +464,7 @@ class TestModelClaudeCodeSessionSnapshotStatusEnum:
         self, minimal_snapshot_data: dict[str, Any]
     ) -> None:
         """Test that all EnumClaudeCodeSessionStatus values are accepted."""
-        for status in EnumClaudeCodeSessionStatus:
+        for status in EnumClaudeCodeSessionStatus.__members__.values():
             minimal_snapshot_data["status"] = status
             snapshot = ModelClaudeCodeSessionSnapshot(**minimal_snapshot_data)
             assert snapshot.status == status

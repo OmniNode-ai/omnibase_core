@@ -117,12 +117,12 @@ class TestEnumInterfaceKind:
 
     def test_str_returns_value(self):
         """str() on each member returns its string value."""
-        for member in EnumInterfaceKind:
+        for member in EnumInterfaceKind.__members__.values():
             assert str(member) == member.value
 
     def test_is_str_subclass(self):
         """EnumInterfaceKind members are str instances for JSON serialization."""
-        for member in EnumInterfaceKind:
+        for member in EnumInterfaceKind.__members__.values():
             assert isinstance(member, str)
 
     def test_values_are_unique(self):
@@ -153,12 +153,12 @@ class TestEnumMockStrategy:
 
     def test_str_returns_value(self):
         """str() on each member returns its string value."""
-        for member in EnumMockStrategy:
+        for member in EnumMockStrategy.__members__.values():
             assert str(member) == member.value
 
     def test_is_str_subclass(self):
         """EnumMockStrategy members are str instances for JSON serialization."""
-        for member in EnumMockStrategy:
+        for member in EnumMockStrategy.__members__.values():
             assert isinstance(member, str)
 
     def test_values_are_unique(self):
@@ -190,12 +190,12 @@ class TestEnumDefinitionFormat:
 
     def test_str_returns_value(self):
         """str() on each member returns its string value."""
-        for member in EnumDefinitionFormat:
+        for member in EnumDefinitionFormat.__members__.values():
             assert str(member) == member.value
 
     def test_is_str_subclass(self):
         """EnumDefinitionFormat members are str instances for JSON serialization."""
-        for member in EnumDefinitionFormat:
+        for member in EnumDefinitionFormat.__members__.values():
             assert isinstance(member, str)
 
     def test_values_are_unique(self):
@@ -228,12 +228,12 @@ class TestEnumInterfaceSurface:
 
     def test_str_returns_value(self):
         """str() on each member returns its string value."""
-        for member in EnumInterfaceSurface:
+        for member in EnumInterfaceSurface.__members__.values():
             assert str(member) == member.value
 
     def test_is_str_subclass(self):
         """EnumInterfaceSurface members are str instances for JSON serialization."""
-        for member in EnumInterfaceSurface:
+        for member in EnumInterfaceSurface.__members__.values():
             assert isinstance(member, str)
 
     def test_values_are_unique(self):
@@ -414,7 +414,7 @@ class TestModelInterfaceProvided:
 
     def test_all_interface_kinds_accepted(self):
         """Every EnumInterfaceKind value is accepted in construction."""
-        for kind in EnumInterfaceKind:
+        for kind in EnumInterfaceKind.__members__.values():
             iface = ModelInterfaceProvided(
                 id=f"iface-{kind.value}",
                 name=f"Interface_{kind.value}",
@@ -427,7 +427,7 @@ class TestModelInterfaceProvided:
 
     def test_all_surfaces_accepted(self):
         """Every EnumInterfaceSurface value is accepted in construction."""
-        for surface in EnumInterfaceSurface:
+        for surface in EnumInterfaceSurface.__members__.values():
             iface = ModelInterfaceProvided(
                 id=f"iface-{surface.value}",
                 name=f"Interface_{surface.value}",
@@ -440,7 +440,7 @@ class TestModelInterfaceProvided:
 
     def test_all_definition_formats_accepted(self):
         """Every EnumDefinitionFormat value is accepted in construction."""
-        for fmt in EnumDefinitionFormat:
+        for fmt in EnumDefinitionFormat.__members__.values():
             iface = ModelInterfaceProvided(
                 id=f"iface-{fmt.value}",
                 name=f"Interface_{fmt.value}",
@@ -495,7 +495,7 @@ class TestModelInterfaceProvided:
 
     def test_all_definition_locations_accepted(self):
         """Every EnumDefinitionLocation value is accepted when constraints are met."""
-        for loc in EnumDefinitionLocation:
+        for loc in EnumDefinitionLocation.__members__.values():
             kwargs: dict[str, object] = {
                 "id": f"iface-{loc.value}",
                 "name": f"Interface_{loc.value}",
@@ -531,12 +531,12 @@ class TestEnumDefinitionLocation:
 
     def test_str_returns_value(self):
         """str() on each member returns its string value."""
-        for member in EnumDefinitionLocation:
+        for member in EnumDefinitionLocation.__members__.values():
             assert str(member) == member.value
 
     def test_is_str_subclass(self):
         """EnumDefinitionLocation members are str instances for JSON serialization."""
-        for member in EnumDefinitionLocation:
+        for member in EnumDefinitionLocation.__members__.values():
             assert isinstance(member, str)
 
     def test_values_are_unique(self):
@@ -653,7 +653,7 @@ class TestModelInterfaceConsumed:
 
     def test_all_mock_strategies_accepted(self):
         """Every EnumMockStrategy value is accepted in construction."""
-        for strategy in EnumMockStrategy:
+        for strategy in EnumMockStrategy.__members__.values():
             iface = ModelInterfaceConsumed(
                 id=f"consume-{strategy.value}",
                 name=f"Interface_{strategy.value}",
@@ -664,7 +664,7 @@ class TestModelInterfaceConsumed:
 
     def test_all_interface_kinds_accepted(self):
         """Every EnumInterfaceKind value is accepted in construction."""
-        for kind in EnumInterfaceKind:
+        for kind in EnumInterfaceKind.__members__.values():
             iface = ModelInterfaceConsumed(
                 id=f"consume-{kind.value}",
                 name=f"Interface_{kind.value}",

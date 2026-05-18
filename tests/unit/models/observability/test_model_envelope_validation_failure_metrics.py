@@ -46,7 +46,7 @@ class TestModelEnvelopeValidationFailureMetricsDefaults:
     def test_default_failures_by_type_all_zero(self) -> None:
         """Default failures_by_type has all failure types at zero."""
         m = ModelEnvelopeValidationFailureMetrics()
-        for ft in EnumEnvelopeValidationFailureType:
+        for ft in EnumEnvelopeValidationFailureType.__members__.values():
             assert m.failures_by_type[ft.value] == 0
 
     def test_create_empty_factory(self) -> None:

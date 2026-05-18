@@ -1247,7 +1247,7 @@ class TestModelLearnedPatternValidConstruction:
 
     def test_all_lifecycle_states(self) -> None:
         """Should accept all lifecycle states."""
-        for state in EnumPatternLifecycleState:
+        for state in EnumPatternLifecycleState.__members__.values():
             model = ModelLearnedPattern(
                 pattern_id=uuid4(),
                 pattern_name="Test Pattern",
@@ -1267,7 +1267,7 @@ class TestModelLearnedPatternValidConstruction:
 
     def test_all_pattern_types(self) -> None:
         """Should accept all pattern types."""
-        for pattern_type in EnumPatternType:
+        for pattern_type in EnumPatternType.__members__.values():
             model = ModelLearnedPattern(
                 pattern_id=uuid4(),
                 pattern_name="Test Pattern",

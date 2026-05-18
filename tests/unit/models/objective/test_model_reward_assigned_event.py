@@ -117,7 +117,7 @@ class TestModelRewardAssignedEventConstruction:
         assert event.evidence_refs == ()
 
     def test_all_policy_types_accepted(self) -> None:
-        for pt in EnumPolicyType:
+        for pt in EnumPolicyType.__members__.values():
             event = _make_event(policy_type=pt)
             assert event.policy_type == pt
 

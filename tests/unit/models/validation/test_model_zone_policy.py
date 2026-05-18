@@ -49,7 +49,7 @@ class TestModelZonePolicy:
             assert p.qa_depth == depth
 
     def test_zone_policy_all_zones_accepted(self) -> None:
-        for zone in EnumFileZone:
+        for zone in EnumFileZone.__members__.values():
             p = ModelZonePolicy(
                 zone=zone,
                 qa_depth="standard",

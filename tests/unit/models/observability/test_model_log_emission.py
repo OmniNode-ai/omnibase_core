@@ -39,7 +39,7 @@ class TestModelLogEmission:
 
     def test_all_severity_levels(self) -> None:
         """Test all severity levels are accepted."""
-        for level in EnumSeverity:
+        for level in EnumSeverity.__members__.values():
             log = ModelLogEmission(level=level, message="test")
             assert log.level == level
 

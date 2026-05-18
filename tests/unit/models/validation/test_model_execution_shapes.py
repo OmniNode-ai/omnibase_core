@@ -180,7 +180,7 @@ class TestModelExecutionShapeGetAllShapes:
         shapes = ModelExecutionShape.get_all_shapes()
         shape_enums = {s.shape for s in shapes}
 
-        for enum_shape in EnumExecutionShape:
+        for enum_shape in EnumExecutionShape.__members__.values():
             assert enum_shape in shape_enums
 
     def test_get_all_shapes_returns_model_instances(self):
@@ -394,7 +394,7 @@ class TestModelExecutionShapeValidationValidateShapeDisallowed:
 
     def test_validate_shape_to_runtime_host_disallowed(self):
         """Test any category -> RUNTIME_HOST is disallowed."""
-        for category in EnumMessageCategory:
+        for category in EnumMessageCategory.__members__.values():
             validation = ModelExecutionShapeValidation.validate_shape(
                 source_category=category,
                 target_node_kind=EnumNodeKind.RUNTIME_HOST,
@@ -727,8 +727,8 @@ class TestExecutionShapeModelsIntegration:
         """Test creating a comprehensive validation result with mixed shapes."""
         # Validate all possible combinations and collect results
         validations = []
-        for category in EnumMessageCategory:
-            for node_kind in EnumNodeKind:
+        for category in EnumMessageCategory.__members__.values():
+            for node_kind in EnumNodeKind.__members__.values():
                 validation = ModelExecutionShapeValidation.validate_shape(
                     source_category=category,
                     target_node_kind=node_kind,
@@ -751,7 +751,7 @@ class TestExecutionShapeModelsIntegration:
 
     def test_from_shape_round_trip(self):
         """Test that from_shape and validate_shape are consistent."""
-        for enum_shape in EnumExecutionShape:
+        for enum_shape in EnumExecutionShape.__members__.values():
             shape_model = ModelExecutionShape.from_shape(enum_shape)
 
             validation = ModelExecutionShapeValidation.validate_shape(

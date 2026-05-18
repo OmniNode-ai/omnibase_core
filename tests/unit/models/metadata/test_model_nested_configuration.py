@@ -135,7 +135,7 @@ class TestModelNestedConfiguration:
         """Test different configuration types."""
         config_id = uuid4()
 
-        for config_type in EnumConfigType:
+        for config_type in EnumConfigType.__members__.values():
             config = ModelNestedConfiguration(
                 config_id=config_id, config_type=config_type
             )

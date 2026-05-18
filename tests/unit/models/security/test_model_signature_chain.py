@@ -154,7 +154,7 @@ class TestModelSignatureChainEnums:
 
     def test_validation_statuses(self):
         """Test different validation statuses."""
-        for status in EnumChainValidationStatus:
+        for status in EnumChainValidationStatus.__members__.values():
             chain = ModelSignatureChain(
                 chain_id=uuid4(),
                 envelope_id=uuid4(),
@@ -165,7 +165,7 @@ class TestModelSignatureChainEnums:
 
     def test_trust_levels(self):
         """Test different trust levels."""
-        for trust_level in EnumTrustLevel:
+        for trust_level in EnumTrustLevel.__members__.values():
             chain = ModelSignatureChain(
                 chain_id=uuid4(),
                 envelope_id=uuid4(),
@@ -176,7 +176,7 @@ class TestModelSignatureChainEnums:
 
     def test_compliance_frameworks(self):
         """Test different compliance frameworks."""
-        for framework in EnumComplianceFramework:
+        for framework in EnumComplianceFramework.__members__.values():
             chain = ModelSignatureChain(
                 chain_id=uuid4(),
                 envelope_id=uuid4(),

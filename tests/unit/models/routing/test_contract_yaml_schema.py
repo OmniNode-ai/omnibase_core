@@ -135,12 +135,12 @@ class TestModelTieredResolutionConfigEnumValues:
     """Enum field validation tests."""
 
     def test_all_resolution_tiers_accepted_as_min(self) -> None:
-        for tier in EnumResolutionTier:
+        for tier in EnumResolutionTier.__members__.values():
             config = ModelTieredResolutionConfig(min_tier=tier)
             assert config.min_tier is tier
 
     def test_all_resolution_tiers_accepted_as_max(self) -> None:
-        for tier in EnumResolutionTier:
+        for tier in EnumResolutionTier.__members__.values():
             config = ModelTieredResolutionConfig(max_tier=tier)
             assert config.max_tier is tier
 
@@ -279,7 +279,7 @@ class TestModelTrustDomainConfigValidation:
             assert config.domain_id == domain_id
 
     def test_all_tiers_accepted(self) -> None:
-        for tier in EnumResolutionTier:
+        for tier in EnumResolutionTier.__members__.values():
             config = ModelTrustDomainConfig(
                 domain_id="test.domain",
                 tier=tier,

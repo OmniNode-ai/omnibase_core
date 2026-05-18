@@ -307,7 +307,7 @@ class TestModelResolutionEventFailure:
         assert event.failure_code == EnumResolutionFailureCode.POLICY_DENIED
 
     def test_all_failure_codes_accepted(self) -> None:
-        for code in EnumResolutionFailureCode:
+        for code in EnumResolutionFailureCode.__members__.values():
             event = _make_failure_event(
                 failure_code=code,
                 failure_reason=f"Failed with {code.value}",
