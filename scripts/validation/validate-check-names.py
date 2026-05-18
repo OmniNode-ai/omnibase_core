@@ -207,7 +207,7 @@ def _parse_workflow_file(workflow_path: Path) -> WorkflowInfo:
             # a trusted YAML workflow file. No user-controlled input; ReDoS risk is
             # nil. SonarCloud python:S5852 false-positive — suppress as hotspot
             # reviewed.
-            uses_match = re.match(r"^[ \t]+uses:[ \t]+(.+)$", line)  # NOSONAR(python:S5852)
+            uses_match = re.match(r"^[ \t]+uses:[ \t]+(.+)$", line)  # NOSONAR
             if uses_match:
                 job_uses[current_job_key] = uses_match.group(1).strip().strip("\"'")
 
