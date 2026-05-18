@@ -6,9 +6,8 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
-from types import ModuleType
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -97,6 +96,27 @@ def test_validate_config_missing_file_fails_json(tmp_path: Path) -> None:
     assert "OmniGate config not found" in payload["error"]
 
 
+def test_validate_config_hash_error_fails_json(tmp_path: Path) -> None:
+    _init_git_dir(tmp_path)
+    runner = CliRunner()
+    install_result = runner.invoke(gate, ["install", "--repo", str(tmp_path)])
+    assert install_result.exit_code == 0, install_result.output
+
+    with patch(
+        "omnibase_core.cli.cli_gate.compute_config_hash",
+        side_effect=OSError("hash read failed"),
+    ):
+        result = runner.invoke(
+            gate,
+            ["validate-config", "--repo", str(tmp_path), "--json"],
+        )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.output)
+    assert payload["valid"] is False
+    assert payload["error"] == "hash read failed"
+
+
 def test_diff_hash_delegates_to_staged_helper(tmp_path: Path) -> None:
     runner = CliRunner()
 
@@ -159,28 +179,43 @@ def test_status_reports_config_and_hook(tmp_path: Path) -> None:
     assert payload["checks"] == 1
 
 
-def test_effectful_command_fails_cleanly_without_infra() -> None:
+def test_install_rejects_empty_git_metadata_file(tmp_path: Path) -> None:
+    runner = CliRunner()
+    (tmp_path / ".git").write_text("", encoding="utf-8")
+
+    result = runner.invoke(gate, ["install", "--repo", str(tmp_path)])
+
+    assert result.exit_code != 0
+    assert "Git metadata file is empty" in result.output
+
+
+def test_effectful_command_fails_cleanly_without_provider() -> None:
     runner = CliRunner()
 
-    with patch.dict(sys.modules, {"omnibase_infra": None}):
+    with patch("omnibase_core.cli.cli_gate.entry_points", return_value=()):
         result = runner.invoke(gate, ["run"])
 
     assert result.exit_code != 0
-    assert "requires omnibase_infra" in result.output
+    assert "requires an installed gate services provider" in result.output
 
 
-def test_effectful_command_delegates_to_infra_service() -> None:
+def test_effectful_command_delegates_to_gate_service() -> None:
     runner = CliRunner()
-    services = ModuleType("omnibase_infra.gate.cli_services")
+    services = SimpleNamespace()
     captured: dict[str, list[str]] = {}
 
     def verify(*, args: list[str]) -> str:
         captured["args"] = args
         return "verified"
 
-    services.verify = verify  # type: ignore[attr-defined]
+    services.verify = verify  # type: ignore[attr-defined]  # NOTE(OMN-11139): SimpleNamespace test double intentionally exposes dynamic service attributes.
+    entry_point = SimpleNamespace(
+        name="omnigate",
+        value="tests.omnigate_services",
+        load=lambda: services,
+    )
 
-    with patch.dict(sys.modules, {"omnibase_infra.gate.cli_services": services}):
+    with patch("omnibase_core.cli.cli_gate.entry_points", return_value=(entry_point,)):
         result = runner.invoke(gate, ["verify", "--receipt", "receipt.json"])
 
     assert result.exit_code == 0, result.output

@@ -82,7 +82,13 @@ def from_yaml_omnigate_config(
     config_path: Path | None = None,
 ) -> ModelOmniGateConfig:
     """Parse YAML content into a validated OmniGate config model."""
-    raw = yaml.safe_load(content)
+    try:
+        raw = yaml.safe_load(content)
+    except yaml.YAMLError as exc:
+        _raise_config_parse_error(
+            f"OmniGate config YAML is invalid: {exc}",
+            config_path,
+        )
     if raw is None:
         _raise_config_parse_error(
             "OmniGate config YAML must not be empty",

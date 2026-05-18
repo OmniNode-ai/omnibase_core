@@ -5,10 +5,10 @@
 
 from __future__ import annotations
 
-import importlib
 import inspect
 import json
 import subprocess
+from importlib.metadata import entry_points
 from pathlib import Path
 
 import click
@@ -26,7 +26,8 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 _CONFIG_NAME = ".omnigate.yaml"
 _HOOK_NAME = "pre-push"
-_INFRA_SERVICES_MODULE = "omnibase_infra.gate.cli_services"
+_GATE_SERVICES_ENTRY_POINT_GROUP = "onex.gate_services"
+_GATE_SERVICES_ENTRY_POINT_NAME = "omnigate"
 
 
 def _json_echo(payload: dict[str, object]) -> None:
@@ -110,7 +111,10 @@ def _resolve_hooks_dir(repo: Path) -> Path:
         return git_path / "hooks"
 
     if git_path.is_file():
-        first_line = git_path.read_text(encoding="utf-8").splitlines()[0]
+        lines = git_path.read_text(encoding="utf-8").splitlines()
+        if not lines:
+            raise click.ClickException(f"Git metadata file is empty at {git_path}.")
+        first_line = lines[0]
         prefix = "gitdir: "
         if first_line.startswith(prefix):
             git_dir = Path(first_line.removeprefix(prefix))
@@ -123,29 +127,40 @@ def _resolve_hooks_dir(repo: Path) -> Path:
     )
 
 
-def _load_infra_services() -> object:
+def _load_gate_services() -> object:
     try:
-        return importlib.import_module(_INFRA_SERVICES_MODULE)
-    except ModuleNotFoundError as exc:
-        if exc.name is not None and exc.name.startswith("omnibase_infra"):
-            raise click.ClickException(
-                "OmniGate command requires omnibase_infra. "
-                "Install omnibase_infra or the omnigate distribution package."
-            ) from exc
-        raise
-    except ImportError as exc:
+        matches = [
+            ep
+            for ep in entry_points(group=_GATE_SERVICES_ENTRY_POINT_GROUP)
+            if ep.name == _GATE_SERVICES_ENTRY_POINT_NAME
+        ]
+    except Exception as exc:
         raise click.ClickException(
-            f"Failed to import {_INFRA_SERVICES_MODULE}: {exc}"
+            f"Failed to discover OmniGate service entry points: {exc}"
+        ) from exc
+
+    if not matches:
+        raise click.ClickException(
+            "OmniGate command requires an installed gate services provider "
+            f"registered as `{_GATE_SERVICES_ENTRY_POINT_NAME}` in "
+            f"`{_GATE_SERVICES_ENTRY_POINT_GROUP}`."
+        )
+
+    try:
+        return matches[0].load()
+    except (ImportError, ModuleNotFoundError, AttributeError, TypeError) as exc:
+        raise click.ClickException(
+            f"Failed to load OmniGate service provider `{matches[0].value}`: {exc}"
         ) from exc
 
 
-def _delegate_to_infra(command_name: str, args: tuple[str, ...]) -> None:
-    services = _load_infra_services()
+def _delegate_to_gate_services(command_name: str, args: tuple[str, ...]) -> None:
+    services = _load_gate_services()
     try:
         handler = getattr(services, command_name)
     except AttributeError as exc:
         raise click.ClickException(
-            f"{_INFRA_SERVICES_MODULE} does not expose `{command_name}`."
+            f"OmniGate service provider does not expose `{command_name}`."
         ) from exc
 
     signature = inspect.signature(handler)
@@ -226,6 +241,7 @@ def validate_config(repo: Path, config: Path | None, *, json_output: bool) -> No
     try:
         config_path = _resolve_config_path(repo.resolve(), config)
         loaded = load_omnigate_config(config_path)
+        config_hash = compute_config_hash(config_path)
     except click.ClickException as exc:
         if json_output:
             _json_echo({"valid": False, "error": exc.message})
@@ -243,7 +259,7 @@ def validate_config(repo: Path, config: Path | None, *, json_output: bool) -> No
         "project_name": loaded.project_name,
         "checks": len(loaded.checks),
         "validators": len(loaded.validators),
-        "config_hash": compute_config_hash(config_path),
+        "config_hash": config_hash,
     }
     if json_output:
         _json_echo(payload)
@@ -371,8 +387,8 @@ def status(repo: Path, *, json_output: bool) -> None:
 )
 @click.pass_context
 def run(ctx: click.Context) -> None:
-    """Run OmniGate checks via omnibase_infra."""
-    _delegate_to_infra("run", tuple(ctx.args))
+    """Run OmniGate checks via the installed gate services provider."""
+    _delegate_to_gate_services("run", tuple(ctx.args))
 
 
 @gate.command(
@@ -380,8 +396,8 @@ def run(ctx: click.Context) -> None:
 )
 @click.pass_context
 def sign(ctx: click.Context) -> None:
-    """Sign an OmniGate receipt via omnibase_infra."""
-    _delegate_to_infra("sign", tuple(ctx.args))
+    """Sign an OmniGate receipt via the installed gate services provider."""
+    _delegate_to_gate_services("sign", tuple(ctx.args))
 
 
 @gate.command(
@@ -389,8 +405,8 @@ def sign(ctx: click.Context) -> None:
 )
 @click.pass_context
 def verify(ctx: click.Context) -> None:
-    """Verify an OmniGate receipt via omnibase_infra."""
-    _delegate_to_infra("verify", tuple(ctx.args))
+    """Verify an OmniGate receipt via the installed gate services provider."""
+    _delegate_to_gate_services("verify", tuple(ctx.args))
 
 
 __all__ = ["gate"]

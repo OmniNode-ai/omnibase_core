@@ -100,6 +100,13 @@ class TestLoadOmniGateConfig:
         with pytest.raises(ModelOnexError, match="mapping at the document root"):
             load_omnigate_config(config_path)
 
+    def test_invalid_yaml_fails_with_structured_error(self, tmp_path: Path) -> None:
+        config_path = tmp_path / ".omnigate.yaml"
+        config_path.write_text("version: [unterminated\n", encoding="utf-8")
+
+        with pytest.raises(ModelOnexError, match="YAML is invalid"):
+            load_omnigate_config(config_path)
+
     def test_pydantic_validation_error_propagates(self, tmp_path: Path) -> None:
         config_path = tmp_path / ".omnigate.yaml"
         config_path.write_text(
