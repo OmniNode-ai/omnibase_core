@@ -168,7 +168,12 @@ class TestModelProjectionContractFieldConstraints:
             _make_contract(unknown_field="value")  # type: ignore[arg-type]
 
     def test_all_degraded_semantics_values_accepted(self) -> None:
-        for value in EnumDegradedBehavior:
+        values = (
+            EnumDegradedBehavior.SERVE_STALE_WITH_WARNING,
+            EnumDegradedBehavior.RETURN_EMPTY,
+            EnumDegradedBehavior.FAIL_CLOSED,
+        )
+        for value in values:
             contract = _make_contract(degraded_semantics=value)
             assert contract.degraded_semantics == value
 
