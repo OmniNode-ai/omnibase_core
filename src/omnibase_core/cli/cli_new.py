@@ -28,7 +28,7 @@ descriptor:
   purity: ${purity}
   runtime_profiles:
     - ${runtime_profile}
-  idempotent: false
+  idempotent: ${idempotent}
   timeout_ms: 30000
 
 event_bus:
@@ -78,11 +78,7 @@ async def handle(input_data: object) -> object:
 
     TODO(OMN-XXXX): Implement handler logic for ${node_name_display}.
 
-    When writing projection rows, record data_provenance so consumers can
-    distinguish measured data from seeded or estimated values. Example:
-        from omnibase_core.enums.enum_data_provenance import EnumDataProvenance
-        row["data_provenance"] = EnumDataProvenance.MEASURED.value
-    \"\"\"
+    ${data_provenance_guidance}\"\"\"
     raise NotImplementedError("handle() for ${node_name_display} not yet implemented")
 """
 )
@@ -232,6 +228,14 @@ def new_node(node_name: str, node_type: str, project_root: Path | None) -> None:
         "effect": "effects",
         "orchestrator": "effects",
     }
+    # Pure archetypes (compute, reducer) are idempotent by definition:
+    # same input → same output, no side effects to repeat.
+    _idempotent_map = {
+        "compute": "true",
+        "reducer": "true",
+        "effect": "false",
+        "orchestrator": "false",
+    }
     ctx = {
         "node_name": snake,
         "node_type": node_type,
@@ -244,6 +248,17 @@ def new_node(node_name: str, node_type: str, project_root: Path | None) -> None:
         "output_class": output_class,
         "purity": _purity_map[node_type],
         "runtime_profile": _profile_map[node_type],
+        "idempotent": _idempotent_map[node_type],
+        "data_provenance_guidance": (
+            (
+                "When writing projection rows, record data_provenance so consumers can\n"
+                "    distinguish measured data from seeded or estimated values. Example:\n"
+                "        from omnibase_core.enums.enum_data_provenance import EnumDataProvenance\n"
+                '        row["data_provenance"] = EnumDataProvenance.MEASURED.value\n'
+            )
+            if node_type == "reducer"
+            else ""
+        ),
     }
 
     # contract.yaml

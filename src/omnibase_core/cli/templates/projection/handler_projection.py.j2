@@ -42,8 +42,13 @@ def handle_projection_event(event: dict[str, Any]) -> dict[str, Any]:
     """
     # TODO(OMN-XXXX): Extract fields from event and build projection row.
     provenance_raw = event.get("data_provenance", "")
-    provenance = EnumDataProvenance(provenance_raw) if provenance_raw else None
-    if provenance is None or provenance not in EnumDataProvenance:
+    try:
+        provenance = (
+            EnumDataProvenance(provenance_raw)
+            if provenance_raw
+            else EnumDataProvenance.UNKNOWN
+        )
+    except ValueError:
         provenance = EnumDataProvenance.UNKNOWN
 
     raise NotImplementedError(
