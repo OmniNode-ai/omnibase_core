@@ -68,6 +68,7 @@ from .model_invariant_result import ModelInvariantResult
 from .model_invariant_set import ModelInvariantSet
 from .model_invariant_violation_detail import ModelInvariantViolationDetail
 from .model_invariant_violation_report import ModelInvariantViolationReport
+from .model_invariant_waiver import ModelInvariantWaiver
 from .model_latency_config import ModelLatencyConfig
 from .model_schema_invariant_config import ModelSchemaInvariantConfig
 from .model_threshold_config import ModelThresholdConfig
@@ -81,6 +82,7 @@ __all__ = [
     "ModelInvariantViolationDetail",
     "ModelInvariantViolationReport",
     "ModelEvaluationSummary",
+    "ModelInvariantWaiver",
     # Config models
     "ModelSchemaInvariantConfig",
     "ModelFieldPresenceConfig",
