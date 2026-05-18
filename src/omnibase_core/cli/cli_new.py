@@ -22,6 +22,21 @@ input_model: ${package}.nodes.${node_name}.models.models_${node_name}.${input_cl
 output_model: ${package}.nodes.${node_name}.models.models_${node_name}.${output_class}
 handler_routing:
   default: ${package}.nodes.${node_name}.handlers.handler_${node_name}
+
+descriptor:
+  node_archetype: ${node_type}
+  purity: ${purity}
+  runtime_profiles:
+    - ${runtime_profile}
+  idempotent: ${idempotent}
+  timeout_ms: 30000
+
+event_bus:
+  subscribe_topics:
+    - onex.cmd.${package}.${node_name}-requested.v1
+  publish_topics:
+    - onex.evt.${package}.${node_name}-completed.v1
+
 golden_path: []
 dod_evidence: []
 """
@@ -62,7 +77,8 @@ async def handle(input_data: object) -> object:
     \"\"\"Handle ${node_name_display} logic.
 
     TODO(OMN-XXXX): Implement handler logic for ${node_name_display}.
-    \"\"\"
+
+    ${data_provenance_guidance}\"\"\"
     raise NotImplementedError("handle() for ${node_name_display} not yet implemented")
 """
 )
@@ -200,6 +216,26 @@ def new_node(node_name: str, node_type: str, project_root: Path | None) -> None:
     node_dir.mkdir(parents=True)
     (node_dir / "__init__.py").write_text("")
 
+    _purity_map = {
+        "compute": "pure",
+        "reducer": "pure",
+        "effect": "impure",
+        "orchestrator": "impure",
+    }
+    _profile_map = {
+        "compute": "compute",
+        "reducer": "reducers",
+        "effect": "effects",
+        "orchestrator": "effects",
+    }
+    # Pure archetypes (compute, reducer) are idempotent by definition:
+    # same input → same output, no side effects to repeat.
+    _idempotent_map = {
+        "compute": "true",
+        "reducer": "true",
+        "effect": "false",
+        "orchestrator": "false",
+    }
     ctx = {
         "node_name": snake,
         "node_type": node_type,
@@ -210,6 +246,19 @@ def new_node(node_name: str, node_type: str, project_root: Path | None) -> None:
         "package": package,
         "input_class": input_class,
         "output_class": output_class,
+        "purity": _purity_map[node_type],
+        "runtime_profile": _profile_map[node_type],
+        "idempotent": _idempotent_map[node_type],
+        "data_provenance_guidance": (
+            (
+                "When writing projection rows, record data_provenance so consumers can\n"
+                "    distinguish measured data from seeded or estimated values. Example:\n"
+                "        from omnibase_core.enums.enum_data_provenance import EnumDataProvenance\n"
+                '        row["data_provenance"] = EnumDataProvenance.MEASURED.value\n'
+            )
+            if node_type == "reducer"
+            else ""
+        ),
     }
 
     # contract.yaml

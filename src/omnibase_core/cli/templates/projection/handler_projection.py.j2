@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""Projection handler for {{ projection_name }}."""
+
+from __future__ import annotations
+
+from typing import Any
+
+# TODO(OMN-XXXX): Import ModelProjectionContract once Task 4 (OMN-11209) lands.
+# from omnibase_core.models.projection.model_projection_contract import (
+#     ModelProjectionContract,
+# )
+from omnibase_core.enums.enum_data_provenance import EnumDataProvenance
+from omnibase_core.enums.enum_degraded_behavior import EnumDegradedBehavior
+
+
+# TODO(OMN-XXXX): Uncomment and populate once ModelProjectionContract is available.
+# PROJECTION_CONTRACT = ModelProjectionContract(
+#     projection_name="{{ projection_name }}",
+#     source_topics=["onex.evt.{{ service }}.{{ projection_name }}-event.v1"],
+#     schema_model="{{ package }}.models.{{ projection_name }}.Model{{ projection_name | title | replace('_', '') }}",
+#     freshness_sla_seconds=60,
+#     freshness_field="updated_at",
+#     freshness_source_table="{{ projection_name }}",
+#     degraded_semantics=EnumDegradedBehavior.SERVE_STALE_WITH_WARNING,
+#     cursor="offset",
+# )
+
+
+def handle_projection_event(event: dict[str, Any]) -> dict[str, Any]:
+    """Project an incoming event into the {{ projection_name }} read model.
+
+    Records data_provenance on every written row so consumers can distinguish
+    measured data from seeded or estimated values.
+
+    Args:
+        event: The raw event payload from the event bus.
+
+    Returns:
+        A projection row dict ready for persistence.
+    """
+    # TODO(OMN-XXXX): Extract fields from event and build projection row.
+    provenance_raw = event.get("data_provenance", "")
+    try:
+        provenance = (
+            EnumDataProvenance(provenance_raw)
+            if provenance_raw
+            else EnumDataProvenance.UNKNOWN
+        )
+    except ValueError:
+        provenance = EnumDataProvenance.UNKNOWN
+
+    raise NotImplementedError(
+        "{{ projection_name }} projection handler not yet implemented — "
+        "map event fields to the projection row and set data_provenance"
+    )

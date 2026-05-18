@@ -1,0 +1,36 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-11209"
+title: "Update scaffold templates with doctrine compliance fields"
+summary: "Extend cli_new.py scaffolding templates and Jinja2 templates with doctrine-compliance fields
+  (runtime_profiles, event_bus topics, data_provenance, projection_contract). Adds new projection template
+  set. Pure scaffolding/template change."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Existing scaffold tests continue to pass with new template fields"
+    command: "uv run pytest tests/ -k scaffold -v"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "Scaffold template additions are pure template/Jinja2 content; cli_new.py changes only
+      register new template paths and emit additional doctrine fields in generated contract.yaml stubs."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/ -k scaffold -v"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: cli_new.py scaffolding helper runs at developer-machine code-gen
+      time only; no runtime process, no Docker image, no daemon, no broker topic, and no service deploy
+      is required for this change."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-11209 updates developer scaffolding templates and the cli_new.py
+          code-generator entry points; no Docker image rebuild, daemon restart, docker exec, rpk topic
+          produce, or service deploy is required'"

@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+name: {{ projection_name }}
+version: {{ version }}
+description: "{{ description }}"
+
+node_kind: REDUCER
+
+descriptor:
+  node_archetype: reducer
+  purity: pure
+  runtime_profiles:
+    - reducers
+  idempotent: true
+  timeout_ms: 30000
+
+event_bus:
+  subscribe_topics:
+    - "onex.evt.{{ service }}.{{ projection_name }}-event.v1"
+  publish_topics:
+    - "onex.evt.{{ service }}.{{ projection_name }}-projected.v1"
+
+projection_contract:
+  projection_name: {{ projection_name }}
+  source_topics:
+    - "onex.evt.{{ service }}.{{ projection_name }}-event.v1"
+  schema_model: "{{ package }}.models.{{ projection_name }}.Model{{ projection_name | title | replace('_', '') }}"
+  freshness_sla_seconds: 60
+  freshness_field: updated_at
+  freshness_source_table: {{ projection_name }}
+  degraded_semantics: serve_stale_with_warning
+  cursor: offset
+
+golden_path: []
+dod_evidence: []

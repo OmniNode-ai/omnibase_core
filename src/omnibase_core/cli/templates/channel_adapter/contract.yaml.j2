@@ -7,11 +7,20 @@ description: "OmniClaw {{ Platform }} channel adapter — bridges {{ Platform }}
 
 node_kind: EFFECT
 
-subscribe_topics:
-  - "onex.cmd.omniclaw.{{ platform }}-outbound.v1"
-publish_topics:
-  - "onex.cmd.omniclaw.channel-message-received.v1"
-  - "onex.evt.omniclaw.{{ platform }}-message-processed.v1"
+descriptor:
+  node_archetype: effect
+  purity: impure
+  runtime_profiles:
+    - effects
+  idempotent: false
+  timeout_ms: 30000
+
+event_bus:
+  subscribe_topics:
+    - "onex.cmd.omniclaw.{{ platform }}-outbound.v1"
+  publish_topics:
+    - "onex.cmd.omniclaw.channel-message-received.v1"
+    - "onex.evt.omniclaw.{{ platform }}-message-processed.v1"
 
 dependencies:
   python:
