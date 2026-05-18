@@ -109,7 +109,12 @@ class TestEnumDecisionType:
 
     def test_equality(self) -> None:
         """Test enum equality comparisons."""
-        assert EnumDecisionType.MODEL_SELECTION == EnumDecisionType.MODEL_SELECTION
+        assert (
+            type(EnumDecisionType.MODEL_SELECTION)(
+                EnumDecisionType.MODEL_SELECTION.value
+            )
+            is EnumDecisionType.MODEL_SELECTION
+        )
         assert EnumDecisionType.MODEL_SELECTION == "model_selection"
         assert EnumDecisionType.MODEL_SELECTION != EnumDecisionType.TOOL_SELECTION
 

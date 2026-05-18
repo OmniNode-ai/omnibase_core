@@ -48,7 +48,10 @@ class TestEnumRetryBackoffStrategy:
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
-        assert EnumRetryBackoffStrategy.FIXED == EnumRetryBackoffStrategy.FIXED
+        assert (
+            type(EnumRetryBackoffStrategy.FIXED)(EnumRetryBackoffStrategy.FIXED.value)
+            is EnumRetryBackoffStrategy.FIXED
+        )
         assert EnumRetryBackoffStrategy.FIXED != EnumRetryBackoffStrategy.LINEAR
         assert EnumRetryBackoffStrategy.EXPONENTIAL == "exponential"
         assert EnumRetryBackoffStrategy.RANDOM != "fixed"

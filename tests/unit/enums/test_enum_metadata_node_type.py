@@ -62,9 +62,15 @@ class TestEnumMetadataNodeType:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumMetadataNodeType.FUNCTION == EnumMetadataNodeType.FUNCTION
+        assert (
+            type(EnumMetadataNodeType.FUNCTION)(EnumMetadataNodeType.FUNCTION.value)
+            is EnumMetadataNodeType.FUNCTION
+        )
         assert EnumMetadataNodeType.CLASS != EnumMetadataNodeType.METHOD
-        assert EnumMetadataNodeType.VARIABLE == EnumMetadataNodeType.VARIABLE
+        assert (
+            type(EnumMetadataNodeType.VARIABLE)(EnumMetadataNodeType.VARIABLE.value)
+            is EnumMetadataNodeType.VARIABLE
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""

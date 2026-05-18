@@ -128,9 +128,9 @@ class TestEnumDataType:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumDataType.JSON == EnumDataType.JSON
+        assert type(EnumDataType.JSON)(EnumDataType.JSON.value) is EnumDataType.JSON
         assert EnumDataType.XML != EnumDataType.JSON
-        assert EnumDataType.YAML == EnumDataType.YAML
+        assert type(EnumDataType.YAML)(EnumDataType.YAML.value) is EnumDataType.YAML
 
     def test_enum_membership(self):
         """Test enum membership checking."""

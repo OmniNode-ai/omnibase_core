@@ -44,7 +44,10 @@ class TestEnumOnexTreeNodeType:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumOnexTreeNodeType.FILE == EnumOnexTreeNodeType.FILE
+        assert (
+            type(EnumOnexTreeNodeType.FILE)(EnumOnexTreeNodeType.FILE.value)
+            is EnumOnexTreeNodeType.FILE
+        )
         assert EnumOnexTreeNodeType.DIRECTORY != EnumOnexTreeNodeType.FILE
         assert EnumOnexTreeNodeType.FILE == "file"
 

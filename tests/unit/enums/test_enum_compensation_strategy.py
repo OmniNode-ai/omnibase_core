@@ -201,7 +201,12 @@ class TestEnumCompensationStrategy:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumCompensationStrategy.ROLLBACK == EnumCompensationStrategy.ROLLBACK
+        assert (
+            type(EnumCompensationStrategy.ROLLBACK)(
+                EnumCompensationStrategy.ROLLBACK.value
+            )
+            is EnumCompensationStrategy.ROLLBACK
+        )
         assert EnumCompensationStrategy.MIXED != EnumCompensationStrategy.ROLLBACK
 
     def test_enum_membership(self):

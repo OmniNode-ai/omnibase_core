@@ -369,7 +369,12 @@ class TestEnumFunctionLifecycleStatus:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumFunctionLifecycleStatus.ACTIVE == EnumFunctionLifecycleStatus.ACTIVE
+        assert (
+            type(EnumFunctionLifecycleStatus.ACTIVE)(
+                EnumFunctionLifecycleStatus.ACTIVE.value
+            )
+            is EnumFunctionLifecycleStatus.ACTIVE
+        )
         assert EnumFunctionLifecycleStatus.STABLE != EnumFunctionLifecycleStatus.BETA
 
     def test_enum_membership(self):

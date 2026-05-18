@@ -50,7 +50,7 @@ class TestEnumNodeArg:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumNodeArg.ARGS == EnumNodeArg.ARGS
+        assert type(EnumNodeArg.ARGS)(EnumNodeArg.ARGS.value) is EnumNodeArg.ARGS
         assert EnumNodeArg.KWARGS != EnumNodeArg.ARGS
         assert EnumNodeArg.ARGS == "args"
 

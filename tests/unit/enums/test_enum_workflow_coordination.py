@@ -397,7 +397,10 @@ class TestEnumWorkflowCoordinationIntegration:
     def test_enum_comparison(self) -> None:
         """Test enum value comparisons."""
         # Same enum comparisons
-        assert EnumWorkflowStatus.PENDING == EnumWorkflowStatus.PENDING
+        assert (
+            type(EnumWorkflowStatus.PENDING)(EnumWorkflowStatus.PENDING.value)
+            is EnumWorkflowStatus.PENDING
+        )
         assert EnumWorkflowStatus.PENDING != EnumWorkflowStatus.RUNNING
 
         # String comparisons (str enum feature)

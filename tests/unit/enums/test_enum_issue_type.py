@@ -52,7 +52,10 @@ class TestEnumIssueType:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumIssueType.TEMPLATE_ARTIFACT == EnumIssueType.TEMPLATE_ARTIFACT
+        assert (
+            type(EnumIssueType.TEMPLATE_ARTIFACT)(EnumIssueType.TEMPLATE_ARTIFACT.value)
+            is EnumIssueType.TEMPLATE_ARTIFACT
+        )
         assert EnumIssueType.PARSE_ERROR != EnumIssueType.TODO_FOUND
         assert EnumIssueType.TEMPLATE_ARTIFACT == "template_artifact"
 

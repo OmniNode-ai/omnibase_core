@@ -280,9 +280,15 @@ class TestEnumConfigTypeIntegration:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumConfigType.NODE_CONFIG == EnumConfigType.NODE_CONFIG
+        assert (
+            type(EnumConfigType.NODE_CONFIG)(EnumConfigType.NODE_CONFIG.value)
+            is EnumConfigType.NODE_CONFIG
+        )
         assert EnumConfigType.LOGGING_CONFIG != EnumConfigType.METRICS_CONFIG
-        assert EnumConfigType.TEMPLATE_CONFIG == EnumConfigType.TEMPLATE_CONFIG
+        assert (
+            type(EnumConfigType.TEMPLATE_CONFIG)(EnumConfigType.TEMPLATE_CONFIG.value)
+            is EnumConfigType.TEMPLATE_CONFIG
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""

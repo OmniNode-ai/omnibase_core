@@ -200,10 +200,16 @@ class TestEnumAgentCapabilityIntegration:
     def test_enum_equality(self):
         """Test enum equality comparison."""
         assert (
-            EnumAgentCapability.CODE_GENERATION == EnumAgentCapability.CODE_GENERATION
+            type(EnumAgentCapability.CODE_GENERATION)(
+                EnumAgentCapability.CODE_GENERATION.value
+            )
+            is EnumAgentCapability.CODE_GENERATION
         )
         assert EnumAgentCapability.REASONING != EnumAgentCapability.DOCUMENTATION
-        assert EnumAgentCapability.MULTIMODAL == EnumAgentCapability.MULTIMODAL
+        assert (
+            type(EnumAgentCapability.MULTIMODAL)(EnumAgentCapability.MULTIMODAL.value)
+            is EnumAgentCapability.MULTIMODAL
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""

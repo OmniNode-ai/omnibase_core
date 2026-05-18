@@ -53,7 +53,10 @@ class TestEnumOperationType:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumOperationType.INFO == EnumOperationType.INFO
+        assert (
+            type(EnumOperationType.INFO)(EnumOperationType.INFO.value)
+            is EnumOperationType.INFO
+        )
         assert EnumOperationType.CONTRACT != EnumOperationType.INFO
         assert EnumOperationType.INFO == "info"
 

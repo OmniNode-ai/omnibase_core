@@ -202,7 +202,10 @@ class TestEnumMessageCategory:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumMessageCategory.EVENT == EnumMessageCategory.EVENT
+        assert (
+            type(EnumMessageCategory.EVENT)(EnumMessageCategory.EVENT.value)
+            is EnumMessageCategory.EVENT
+        )
         assert EnumMessageCategory.COMMAND != EnumMessageCategory.EVENT
         assert EnumMessageCategory.INTENT != EnumMessageCategory.COMMAND
 
@@ -480,8 +483,10 @@ class TestEnumExecutionShape:
     def test_enum_equality(self):
         """Test enum equality comparison."""
         assert (
-            EnumExecutionShape.EVENT_TO_ORCHESTRATOR
-            == EnumExecutionShape.EVENT_TO_ORCHESTRATOR
+            type(EnumExecutionShape.EVENT_TO_ORCHESTRATOR)(
+                EnumExecutionShape.EVENT_TO_ORCHESTRATOR.value
+            )
+            is EnumExecutionShape.EVENT_TO_ORCHESTRATOR
         )
         assert (
             EnumExecutionShape.EVENT_TO_REDUCER

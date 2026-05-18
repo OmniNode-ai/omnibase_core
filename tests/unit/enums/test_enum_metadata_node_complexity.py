@@ -50,7 +50,12 @@ class TestEnumMetadataNodeComplexity:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumMetadataNodeComplexity.SIMPLE == EnumMetadataNodeComplexity.SIMPLE
+        assert (
+            type(EnumMetadataNodeComplexity.SIMPLE)(
+                EnumMetadataNodeComplexity.SIMPLE.value
+            )
+            is EnumMetadataNodeComplexity.SIMPLE
+        )
         assert EnumMetadataNodeComplexity.MODERATE != EnumMetadataNodeComplexity.SIMPLE
         assert EnumMetadataNodeComplexity.SIMPLE == "simple"
 

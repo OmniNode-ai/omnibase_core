@@ -57,8 +57,10 @@ class TestEnumLearningEventType:
     def test_enum_comparison(self):
         """Test enum comparison"""
         assert (
-            EnumLearningEventType.DEVELOPER_CORRECTION
-            == EnumLearningEventType.DEVELOPER_CORRECTION
+            type(EnumLearningEventType.DEVELOPER_CORRECTION)(
+                EnumLearningEventType.DEVELOPER_CORRECTION.value
+            )
+            is EnumLearningEventType.DEVELOPER_CORRECTION
         )
         assert (
             EnumLearningEventType.CONTEXT_SUCCESS

@@ -94,7 +94,10 @@ class TestEnumFailureType:
 
     def test_equality(self) -> None:
         """Test enum equality comparisons."""
-        assert EnumFailureType.TIMEOUT == EnumFailureType.TIMEOUT
+        assert (
+            type(EnumFailureType.TIMEOUT)(EnumFailureType.TIMEOUT.value)
+            is EnumFailureType.TIMEOUT
+        )
         assert EnumFailureType.TIMEOUT == "timeout"
         assert EnumFailureType.TIMEOUT != EnumFailureType.RATE_LIMIT
 

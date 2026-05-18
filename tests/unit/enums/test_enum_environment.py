@@ -172,9 +172,15 @@ class TestEnumEnvironment:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumEnvironment.PRODUCTION == EnumEnvironment.PRODUCTION
+        assert (
+            type(EnumEnvironment.PRODUCTION)(EnumEnvironment.PRODUCTION.value)
+            is EnumEnvironment.PRODUCTION
+        )
         assert EnumEnvironment.DEVELOPMENT != EnumEnvironment.PRODUCTION
-        assert EnumEnvironment.STAGING == EnumEnvironment.STAGING
+        assert (
+            type(EnumEnvironment.STAGING)(EnumEnvironment.STAGING.value)
+            is EnumEnvironment.STAGING
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""

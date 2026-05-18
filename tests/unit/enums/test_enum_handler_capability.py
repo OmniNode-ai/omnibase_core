@@ -295,7 +295,10 @@ class TestEnumHandlerCapabilityComparison:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumHandlerCapability.CACHE == EnumHandlerCapability.CACHE
+        assert (
+            type(EnumHandlerCapability.CACHE)(EnumHandlerCapability.CACHE.value)
+            is EnumHandlerCapability.CACHE
+        )
         assert EnumHandlerCapability.RETRY != EnumHandlerCapability.BATCH
         assert EnumHandlerCapability.TRANSFORM != EnumHandlerCapability.VALIDATE
 

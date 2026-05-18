@@ -204,9 +204,15 @@ class TestEnumWorkflowStatus:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumWorkflowStatus.COMPLETED == EnumWorkflowStatus.COMPLETED
+        assert (
+            type(EnumWorkflowStatus.COMPLETED)(EnumWorkflowStatus.COMPLETED.value)
+            is EnumWorkflowStatus.COMPLETED
+        )
         assert EnumWorkflowStatus.FAILED != EnumWorkflowStatus.COMPLETED
-        assert EnumWorkflowStatus.RUNNING == EnumWorkflowStatus.RUNNING
+        assert (
+            type(EnumWorkflowStatus.RUNNING)(EnumWorkflowStatus.RUNNING.value)
+            is EnumWorkflowStatus.RUNNING
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""

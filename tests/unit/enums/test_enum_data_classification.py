@@ -208,7 +208,10 @@ class TestEnumDataClassification:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumDataClassification.PUBLIC == EnumDataClassification.PUBLIC
+        assert (
+            type(EnumDataClassification.PUBLIC)(EnumDataClassification.PUBLIC.value)
+            is EnumDataClassification.PUBLIC
+        )
         assert EnumDataClassification.SECRET != EnumDataClassification.PUBLIC
 
     def test_enum_membership(self):

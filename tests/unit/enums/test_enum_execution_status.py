@@ -196,9 +196,15 @@ class TestEnumExecutionStatus:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumExecutionStatus.SUCCESS == EnumExecutionStatus.SUCCESS
+        assert (
+            type(EnumExecutionStatus.SUCCESS)(EnumExecutionStatus.SUCCESS.value)
+            is EnumExecutionStatus.SUCCESS
+        )
         assert EnumExecutionStatus.FAILED != EnumExecutionStatus.SUCCESS
-        assert EnumExecutionStatus.RUNNING == EnumExecutionStatus.RUNNING
+        assert (
+            type(EnumExecutionStatus.RUNNING)(EnumExecutionStatus.RUNNING.value)
+            is EnumExecutionStatus.RUNNING
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""

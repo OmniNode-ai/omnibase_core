@@ -61,7 +61,10 @@ class TestEnumReplayModeStringBehavior:
 
     def test_enum_equality(self) -> None:
         """Test enum equality."""
-        assert EnumReplayMode.PRODUCTION == EnumReplayMode.PRODUCTION
+        assert (
+            type(EnumReplayMode.PRODUCTION)(EnumReplayMode.PRODUCTION.value)
+            is EnumReplayMode.PRODUCTION
+        )
         assert EnumReplayMode.PRODUCTION != EnumReplayMode.RECORDING
 
     def test_enum_membership(self) -> None:

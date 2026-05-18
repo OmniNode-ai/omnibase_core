@@ -52,9 +52,15 @@ class TestEnumNumericType:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumNumericType.INTEGER == EnumNumericType.INTEGER
+        assert (
+            type(EnumNumericType.INTEGER)(EnumNumericType.INTEGER.value)
+            is EnumNumericType.INTEGER
+        )
         assert EnumNumericType.FLOAT != EnumNumericType.INTEGER
-        assert EnumNumericType.NUMERIC == EnumNumericType.NUMERIC
+        assert (
+            type(EnumNumericType.NUMERIC)(EnumNumericType.NUMERIC.value)
+            is EnumNumericType.NUMERIC
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""

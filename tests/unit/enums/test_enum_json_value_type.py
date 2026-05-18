@@ -48,7 +48,10 @@ class TestEnumJsonValueType:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumJsonValueType.STRING == EnumJsonValueType.STRING
+        assert (
+            type(EnumJsonValueType.STRING)(EnumJsonValueType.STRING.value)
+            is EnumJsonValueType.STRING
+        )
         assert EnumJsonValueType.NUMBER != EnumJsonValueType.STRING
         assert EnumJsonValueType.STRING == "string"
 

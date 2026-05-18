@@ -49,7 +49,10 @@ class TestEnumLlmProvider:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumLlmProvider.CLAUDE == EnumLlmProvider.CLAUDE
+        assert (
+            type(EnumLlmProvider.CLAUDE)(EnumLlmProvider.CLAUDE.value)
+            is EnumLlmProvider.CLAUDE
+        )
         assert EnumLlmProvider.OPENAI != EnumLlmProvider.CLAUDE
         assert EnumLlmProvider.CLAUDE == "claude"
 

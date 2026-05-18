@@ -141,7 +141,10 @@ class TestEnumDashboardStatus:
 
     def test_enum_comparison(self) -> None:
         """Test enum comparison."""
-        assert EnumDashboardStatus.CONNECTED == EnumDashboardStatus.CONNECTED
+        assert (
+            type(EnumDashboardStatus.CONNECTED)(EnumDashboardStatus.CONNECTED.value)
+            is EnumDashboardStatus.CONNECTED
+        )
         assert EnumDashboardStatus.CONNECTED != EnumDashboardStatus.ERROR
         assert EnumDashboardStatus.CONNECTED == "connected"
 

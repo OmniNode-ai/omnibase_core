@@ -166,7 +166,10 @@ class TestEnumTypeName:
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
-        assert EnumTypeName.CONTRACT_TO_MODEL == EnumTypeName.CONTRACT_TO_MODEL
+        assert (
+            type(EnumTypeName.CONTRACT_TO_MODEL)(EnumTypeName.CONTRACT_TO_MODEL.value)
+            is EnumTypeName.CONTRACT_TO_MODEL
+        )
         assert EnumTypeName.CONTRACT_TO_MODEL != EnumTypeName.TEMPLATE_ENGINE
         assert EnumTypeName.CONTRACT_TO_MODEL == "CONTRACT_TO_MODEL"
         assert EnumTypeName.TEMPLATE_ENGINE != "CONTRACT_TO_MODEL"

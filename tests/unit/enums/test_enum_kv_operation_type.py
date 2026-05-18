@@ -52,7 +52,10 @@ class TestEnumKvOperationType:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumKvOperationType.CREATE == EnumKvOperationType.CREATE
+        assert (
+            type(EnumKvOperationType.CREATE)(EnumKvOperationType.CREATE.value)
+            is EnumKvOperationType.CREATE
+        )
         assert EnumKvOperationType.READ != EnumKvOperationType.CREATE
         assert EnumKvOperationType.CREATE == "create"
 

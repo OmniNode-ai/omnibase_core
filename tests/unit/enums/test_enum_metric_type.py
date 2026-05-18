@@ -48,7 +48,10 @@ class TestEnumMetricType:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumMetricType.PERFORMANCE == EnumMetricType.PERFORMANCE
+        assert (
+            type(EnumMetricType.PERFORMANCE)(EnumMetricType.PERFORMANCE.value)
+            is EnumMetricType.PERFORMANCE
+        )
         assert EnumMetricType.SYSTEM != EnumMetricType.PERFORMANCE
         assert EnumMetricType.PERFORMANCE == "performance"
 

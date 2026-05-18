@@ -183,9 +183,15 @@ class TestEnumDispatchStatus:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumDispatchStatus.SUCCESS == EnumDispatchStatus.SUCCESS
+        assert (
+            type(EnumDispatchStatus.SUCCESS)(EnumDispatchStatus.SUCCESS.value)
+            is EnumDispatchStatus.SUCCESS
+        )
         assert EnumDispatchStatus.SUCCESS != EnumDispatchStatus.HANDLER_ERROR
-        assert EnumDispatchStatus.TIMEOUT == EnumDispatchStatus.TIMEOUT
+        assert (
+            type(EnumDispatchStatus.TIMEOUT)(EnumDispatchStatus.TIMEOUT.value)
+            is EnumDispatchStatus.TIMEOUT
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""

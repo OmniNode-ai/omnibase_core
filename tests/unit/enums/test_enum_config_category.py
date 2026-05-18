@@ -160,7 +160,10 @@ class TestEnumConfigCategory:
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
-        assert EnumConfigCategory.GENERATION == EnumConfigCategory.GENERATION
+        assert (
+            type(EnumConfigCategory.GENERATION)(EnumConfigCategory.GENERATION.value)
+            is EnumConfigCategory.GENERATION
+        )
         assert EnumConfigCategory.GENERATION != EnumConfigCategory.VALIDATION
         assert EnumConfigCategory.GENERATION == "generation"
         assert EnumConfigCategory.CLI != "generation"

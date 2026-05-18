@@ -295,7 +295,10 @@ class TestEnumScenarioStatusV2:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumScenarioStatusV2.COMPLETED == EnumScenarioStatusV2.COMPLETED
+        assert (
+            type(EnumScenarioStatusV2.COMPLETED)(EnumScenarioStatusV2.COMPLETED.value)
+            is EnumScenarioStatusV2.COMPLETED
+        )
         assert EnumScenarioStatusV2.FAILED != EnumScenarioStatusV2.COMPLETED
 
     def test_enum_membership(self):

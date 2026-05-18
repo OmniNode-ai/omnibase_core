@@ -66,7 +66,7 @@ class TestEnumSeverity:
 
     def test_enum_equality(self) -> None:
         """Test enum equality comparison."""
-        assert EnumSeverity.ERROR == EnumSeverity.ERROR
+        assert type(EnumSeverity.ERROR)(EnumSeverity.ERROR.value) is EnumSeverity.ERROR
         assert EnumSeverity.WARNING != EnumSeverity.ERROR
         assert EnumSeverity.CRITICAL != EnumSeverity.FATAL
 

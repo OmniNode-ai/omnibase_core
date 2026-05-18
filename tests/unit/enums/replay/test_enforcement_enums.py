@@ -80,7 +80,10 @@ class TestEnumEnforcementModeStringBehavior:
 
     def test_enum_equality(self) -> None:
         """Test enum equality."""
-        assert EnumEnforcementMode.STRICT == EnumEnforcementMode.STRICT
+        assert (
+            type(EnumEnforcementMode.STRICT)(EnumEnforcementMode.STRICT.value)
+            is EnumEnforcementMode.STRICT
+        )
         assert EnumEnforcementMode.STRICT != EnumEnforcementMode.WARN
 
     def test_enum_membership(self) -> None:
@@ -178,7 +181,10 @@ class TestEnumEffectDeterminismStringBehavior:
     def test_enum_equality(self) -> None:
         """Test enum equality."""
         assert (
-            EnumEffectDeterminism.DETERMINISTIC == EnumEffectDeterminism.DETERMINISTIC
+            type(EnumEffectDeterminism.DETERMINISTIC)(
+                EnumEffectDeterminism.DETERMINISTIC.value
+            )
+            is EnumEffectDeterminism.DETERMINISTIC
         )
         assert (
             EnumEffectDeterminism.DETERMINISTIC
@@ -294,7 +300,10 @@ class TestEnumNonDeterministicSourceStringBehavior:
 
     def test_enum_equality(self) -> None:
         """Test enum equality."""
-        assert EnumNonDeterministicSource.TIME == EnumNonDeterministicSource.TIME
+        assert (
+            type(EnumNonDeterministicSource.TIME)(EnumNonDeterministicSource.TIME.value)
+            is EnumNonDeterministicSource.TIME
+        )
         assert EnumNonDeterministicSource.TIME != EnumNonDeterministicSource.RANDOM
 
 

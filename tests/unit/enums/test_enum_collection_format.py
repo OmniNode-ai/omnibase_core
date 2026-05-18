@@ -243,7 +243,10 @@ class TestEnumCollectionFormat:
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
-        assert EnumCollectionFormat.JSON == EnumCollectionFormat.JSON
+        assert (
+            type(EnumCollectionFormat.JSON)(EnumCollectionFormat.JSON.value)
+            is EnumCollectionFormat.JSON
+        )
         assert EnumCollectionFormat.JSON != EnumCollectionFormat.YAML
         assert EnumCollectionFormat.JSON == "json"
         assert EnumCollectionFormat.CSV != "json"

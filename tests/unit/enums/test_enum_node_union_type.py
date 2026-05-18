@@ -44,7 +44,10 @@ class TestEnumNodeUnionType:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumNodeUnionType.FUNCTION_NODE == EnumNodeUnionType.FUNCTION_NODE
+        assert (
+            type(EnumNodeUnionType.FUNCTION_NODE)(EnumNodeUnionType.FUNCTION_NODE.value)
+            is EnumNodeUnionType.FUNCTION_NODE
+        )
         assert EnumNodeUnionType.FUNCTION_NODE_DATA != EnumNodeUnionType.FUNCTION_NODE
         assert EnumNodeUnionType.FUNCTION_NODE == "function_node"
 

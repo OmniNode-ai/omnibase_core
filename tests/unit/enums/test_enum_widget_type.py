@@ -113,7 +113,10 @@ class TestEnumWidgetType:
 
     def test_enum_comparison(self) -> None:
         """Test enum comparison."""
-        assert EnumWidgetType.CHART == EnumWidgetType.CHART
+        assert (
+            type(EnumWidgetType.CHART)(EnumWidgetType.CHART.value)
+            is EnumWidgetType.CHART
+        )
         assert EnumWidgetType.CHART != EnumWidgetType.TABLE
         assert EnumWidgetType.CHART == "chart"
 

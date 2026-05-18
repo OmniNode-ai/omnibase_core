@@ -188,9 +188,15 @@ class TestEnumOperationStatus:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumOperationStatus.SUCCESS == EnumOperationStatus.SUCCESS
+        assert (
+            type(EnumOperationStatus.SUCCESS)(EnumOperationStatus.SUCCESS.value)
+            is EnumOperationStatus.SUCCESS
+        )
         assert EnumOperationStatus.FAILED != EnumOperationStatus.SUCCESS
-        assert EnumOperationStatus.IN_PROGRESS == EnumOperationStatus.IN_PROGRESS
+        assert (
+            type(EnumOperationStatus.IN_PROGRESS)(EnumOperationStatus.IN_PROGRESS.value)
+            is EnumOperationStatus.IN_PROGRESS
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""

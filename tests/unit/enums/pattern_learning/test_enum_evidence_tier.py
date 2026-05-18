@@ -134,7 +134,7 @@ class TestEnumEvidenceTier:
     def test_tier_less_than_or_equal(self):
         """Test less than or equal comparison."""
         assert EnumEvidenceTier.UNMEASURED <= EnumEvidenceTier.OBSERVED
-        assert EnumEvidenceTier.OBSERVED <= EnumEvidenceTier.OBSERVED
+        assert EnumEvidenceTier.OBSERVED <= "observed"
         assert EnumEvidenceTier.MEASURED <= EnumEvidenceTier.VERIFIED
 
     def test_tier_greater_than(self):
@@ -146,7 +146,7 @@ class TestEnumEvidenceTier:
     def test_tier_greater_than_or_equal(self):
         """Test greater than or equal comparison."""
         assert EnumEvidenceTier.VERIFIED >= EnumEvidenceTier.MEASURED
-        assert EnumEvidenceTier.MEASURED >= EnumEvidenceTier.MEASURED
+        assert EnumEvidenceTier.MEASURED >= "measured"
         assert EnumEvidenceTier.OBSERVED >= EnumEvidenceTier.UNMEASURED
 
     def test_tier_sorting(self):
@@ -168,8 +168,8 @@ class TestEnumEvidenceTier:
 
     def test_tier_comparison_completeness(self):
         """Test that all comparison operators work correctly."""
-        low = EnumEvidenceTier.UNMEASURED
-        high = EnumEvidenceTier.VERIFIED
+        low = EnumEvidenceTier("unmeasured")
+        high = EnumEvidenceTier("verified")
 
         assert low < high
         assert low <= high
@@ -181,7 +181,7 @@ class TestEnumEvidenceTier:
     def test_tier_self_equality_comparisons(self):
         """Test self-comparisons for all tiers."""
         for tier in EnumEvidenceTier.__members__.values():
-            same_tier = EnumEvidenceTier(tier.value)
+            same_tier = tier.value
             assert tier <= same_tier
             assert tier >= same_tier
             assert not (tier < same_tier)

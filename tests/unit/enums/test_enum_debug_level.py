@@ -150,9 +150,15 @@ class TestEnumDebugLevel:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumDebugLevel.DEBUG == EnumDebugLevel.DEBUG
+        assert (
+            type(EnumDebugLevel.DEBUG)(EnumDebugLevel.DEBUG.value)
+            is EnumDebugLevel.DEBUG
+        )
         assert EnumDebugLevel.INFO != EnumDebugLevel.WARN
-        assert EnumDebugLevel.ERROR == EnumDebugLevel.ERROR
+        assert (
+            type(EnumDebugLevel.ERROR)(EnumDebugLevel.ERROR.value)
+            is EnumDebugLevel.ERROR
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""

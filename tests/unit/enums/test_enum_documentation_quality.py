@@ -563,7 +563,10 @@ class TestEnumIntegration:
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
-        assert EnumDocumentationQuality.GOOD == EnumDocumentationQuality.GOOD
+        assert (
+            type(EnumDocumentationQuality.GOOD)(EnumDocumentationQuality.GOOD.value)
+            is EnumDocumentationQuality.GOOD
+        )
         assert EnumDocumentationQuality.GOOD != EnumDocumentationQuality.EXCELLENT
         assert EnumDocumentationQuality.NONE != EnumDocumentationQuality.POOR
 

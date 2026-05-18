@@ -160,7 +160,10 @@ class TestEnumInstanceType:
 
     def test_enum_equality(self):
         """Test enum equality comparisons."""
-        assert EnumInstanceType.T2_MICRO == EnumInstanceType.T2_MICRO
+        assert (
+            type(EnumInstanceType.T2_MICRO)(EnumInstanceType.T2_MICRO.value)
+            is EnumInstanceType.T2_MICRO
+        )
         assert EnumInstanceType.T2_MICRO != EnumInstanceType.T2_SMALL
         assert EnumInstanceType.T2_MICRO == "t2.micro"
 

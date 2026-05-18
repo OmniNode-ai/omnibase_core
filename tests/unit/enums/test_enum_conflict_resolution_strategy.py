@@ -111,11 +111,11 @@ class TestEnumConflictResolutionStrategy:
         # Test timestamp-based strategies
         assert (
             EnumConflictResolutionStrategy.TIMESTAMP_WINS
-            in EnumConflictResolutionStrategy
+            in EnumConflictResolutionStrategy.__members__.values()
         )
         assert (
             EnumConflictResolutionStrategy.LAST_WRITER_WINS
-            in EnumConflictResolutionStrategy
+            in EnumConflictResolutionStrategy.__members__.values()
         )
 
         # Test manual resolution

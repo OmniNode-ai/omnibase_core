@@ -251,7 +251,10 @@ class TestEnumSeverityLevel:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumSeverityLevel.ERROR == EnumSeverityLevel.ERROR
+        assert (
+            type(EnumSeverityLevel.ERROR)(EnumSeverityLevel.ERROR.value)
+            is EnumSeverityLevel.ERROR
+        )
         assert EnumSeverityLevel.WARNING != EnumSeverityLevel.ERROR
         assert (
             EnumSeverityLevel.WARN != EnumSeverityLevel.WARNING

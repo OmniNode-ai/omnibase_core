@@ -51,7 +51,10 @@ class TestEnumMCPStatus:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumMCPStatus.SUCCESS == EnumMCPStatus.SUCCESS
+        assert (
+            type(EnumMCPStatus.SUCCESS)(EnumMCPStatus.SUCCESS.value)
+            is EnumMCPStatus.SUCCESS
+        )
         assert EnumMCPStatus.ERROR != EnumMCPStatus.SUCCESS
         assert EnumMCPStatus.SUCCESS == "success"
 

@@ -98,7 +98,10 @@ class TestEnumSubjectType:
 
     def test_equality(self) -> None:
         """Test enum equality comparisons."""
-        assert EnumSubjectType.AGENT == EnumSubjectType.AGENT
+        assert (
+            type(EnumSubjectType.AGENT)(EnumSubjectType.AGENT.value)
+            is EnumSubjectType.AGENT
+        )
         assert EnumSubjectType.AGENT == "agent"
         assert EnumSubjectType.AGENT != EnumSubjectType.USER
 

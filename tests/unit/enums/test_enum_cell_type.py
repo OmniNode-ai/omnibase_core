@@ -104,7 +104,7 @@ class TestEnumCellType:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumCellType.CODE == EnumCellType.CODE
+        assert type(EnumCellType.CODE)(EnumCellType.CODE.value) is EnumCellType.CODE
         assert EnumCellType.MARKDOWN != EnumCellType.CODE
 
     def test_enum_membership(self):

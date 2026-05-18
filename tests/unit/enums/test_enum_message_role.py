@@ -46,7 +46,10 @@ class TestEnumMessageRole:
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumMessageRole.USER == EnumMessageRole.USER
+        assert (
+            type(EnumMessageRole.USER)(EnumMessageRole.USER.value)
+            is EnumMessageRole.USER
+        )
         assert EnumMessageRole.SYSTEM != EnumMessageRole.USER
         assert EnumMessageRole.USER == "user"
 
