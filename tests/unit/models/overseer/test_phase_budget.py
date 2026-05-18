@@ -86,7 +86,7 @@ def test_contract_has_max_daily_cost() -> None:
         max_daily_cost_usd=50.0,
         phases=(ModelSessionPhaseSpec(phase_name="merge"),),
     )
-    assert contract.max_daily_cost_usd == 50.0
+    assert contract.max_daily_cost_usd == pytest.approx(50.0)
 
 
 @pytest.mark.unit
