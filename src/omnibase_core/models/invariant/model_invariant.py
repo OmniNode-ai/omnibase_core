@@ -13,12 +13,14 @@ Thread Safety:
     making it thread-safe for concurrent read access.
 """
 
+from datetime import datetime
 from typing import Self
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums import EnumSeverity
+from omnibase_core.enums.enum_enforcement_surface import EnumEnforcementSurface
 from omnibase_core.enums.enum_invariant_type import EnumInvariantType
 
 # Required config keys for each invariant type
@@ -116,6 +118,34 @@ class ModelInvariant(BaseModel):
     description: str | None = Field(
         default=None,
         description="Optional detailed description of the invariant",
+    )
+    enforcement_surfaces: list[EnumEnforcementSurface] = Field(
+        default_factory=list,
+        description="Surfaces where this invariant is enforced",
+    )
+    violation_examples: list[str] = Field(
+        default_factory=list,
+        description="Representative code or config snippets that violate this invariant",
+    )
+    runtime_scope: str | None = Field(
+        default=None,
+        description="Runtime scope identifier (e.g. 'node', 'handler', 'contract')",
+    )
+    generated_from_principle: str | None = Field(
+        default=None,
+        description="Principle ID this invariant was generated from (e.g. 'ARCH-001')",
+    )
+    generated_at: datetime | None = Field(
+        default=None,
+        description="Timestamp when this invariant was generated",
+    )
+    source_incidents: list[str] = Field(
+        default_factory=list,
+        description="Linear ticket IDs or incident references that motivated this invariant",
+    )
+    generator_tag: str | None = Field(
+        default=None,
+        description="Tag or label of the generator that produced this invariant contract",
     )
 
     @model_validator(mode="after")
