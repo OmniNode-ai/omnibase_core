@@ -97,7 +97,7 @@ except ImportError:
     from collections.abc import Coroutine
     from typing import Any
 
-    def run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:  # type: ignore[misc]
+    def run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
         try:
             asyncio.get_running_loop()
         except RuntimeError:
@@ -125,16 +125,12 @@ from omnibase_core.models.configuration.model_compute_cache_config import (
 try:
     from omnibase_core.cache.memory_mapped_tool_cache import MemoryMappedToolCache
 except ImportError:
-    # FALLBACK_REASON: cache module is optional performance enhancement,
-    # system can operate without it using standard container behavior
-    MemoryMappedToolCache = None
+    MemoryMappedToolCache = None  # fallback-ok: optional performance enhancement; container operates without caching
 
 try:
     from omnibase_core.monitoring.performance_monitor import PerformanceMonitor
 except ImportError:
-    # FALLBACK_REASON: performance monitoring is optional feature,
-    # container can function without monitoring capabilities
-    PerformanceMonitor = None
+    PerformanceMonitor = None  # fallback-ok: optional monitoring feature; container operates without performance metrics
 
 # Infrastructure protocol imports for database and service discovery
 from omnibase_core.protocols.infrastructure import (
@@ -607,7 +603,9 @@ class ModelONEXContainer:
             # run_coro_sync (OMN-9237) is safe from both sync and async
             # callers — handler __init__ may run inside an active loop during
             # auto-wiring; plain asyncio.run() would raise RuntimeError there.
-            return run_coro_sync(self.get_service_async(protocol_type, service_name))
+            return cast(
+                T, run_coro_sync(self.get_service_async(protocol_type, service_name))
+            )
 
         # Enhanced resolution with performance monitoring
         correlation_id = f"svc_{int(time.time() * 1000)}_{service_name or 'default'}"
@@ -630,8 +628,8 @@ class ModelONEXContainer:
 
             # Perform actual service resolution.
             # See run_coro_sync note on the standard-path call above.
-            service_instance = run_coro_sync(
-                self.get_service_async(protocol_type, service_name)
+            service_instance = cast(
+                T, run_coro_sync(self.get_service_async(protocol_type, service_name))
             )
 
             end_time = time.perf_counter()
@@ -1136,7 +1134,7 @@ def get_model_onex_container_sync() -> ModelONEXContainer:
     # No container exists — create one.
     # run_coro_sync works whether or not an event loop is already running,
     # so this path is safe from both sync and async callers.
-    container = run_coro_sync(create_model_onex_container())
+    container = cast("ModelONEXContainer", run_coro_sync(create_model_onex_container()))
 
     # Set in context for future access
     set_current_container(container)

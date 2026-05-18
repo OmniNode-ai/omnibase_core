@@ -46,8 +46,6 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 20
-    # Validation findings are informational — do not block merges
-    continue-on-error: true
 
     steps:
       - name: Checkout code

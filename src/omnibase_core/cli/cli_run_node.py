@@ -129,11 +129,11 @@ def publish_and_poll(
     """
     try:
         _ck = importlib.import_module("confluent_kafka")
-        # NOTE(OMN-9715): lazy importlib import preserves ADR-005 transport boundary; attr-defined suppressed because confluent_kafka stubs are incomplete
-        Producer = _ck.Producer  # type: ignore[attr-defined]
-        Consumer = _ck.Consumer  # type: ignore[attr-defined]
-        OFFSET_END = _ck.OFFSET_END  # type: ignore[attr-defined]
-        TopicPartition = _ck.TopicPartition  # type: ignore[attr-defined]
+        # NOTE(OMN-9715): lazy importlib import preserves ADR-005 transport boundary
+        Producer = _ck.Producer
+        Consumer = _ck.Consumer
+        OFFSET_END = _ck.OFFSET_END
+        TopicPartition = _ck.TopicPartition
     except ImportError as exc:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.IMPORT_ERROR,

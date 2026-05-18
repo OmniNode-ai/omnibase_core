@@ -285,18 +285,14 @@ repos:
         stages: [pre-push]  # Moved to pre-push: ~14s full codebase scan
         # Architectural exemptions documented in validate_naming.py ARCHITECTURAL_EXEMPTIONS
 
-      # PHASE 1 (OMN-1224): File naming hook runs in WARNING mode (non-blocking)
-      # The codebase has 71 existing violations that need incremental migration.
-      # Once all files are renamed, change || true to make this blocking.
-      # See: src/omnibase_core/validation/checker_naming_convention.py (Migration Plan)
       # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: validate-file-naming-conventions
-        name: ONEX File Naming Convention Validation (Warning Mode)
-        entry: bash -c 'uv run python -m omnibase_core.validation.checker_naming_convention || true'
+        name: ONEX File Naming Convention Validation
+        entry: uv run python -m omnibase_core.validation.checker_naming_convention
         language: system
         pass_filenames: false
         always_run: true
-        stages: [pre-push]  # Full directory scan, warning mode until Phase 4
+        stages: [pre-push]
 
       - id: validate-file-locations
         name: ONEX File Location Enforcement
@@ -884,13 +880,10 @@ repos:
       # Enforces enum governance rules to prevent enum/status duplication:
       # - E001: Enum members must use UPPER_SNAKE_CASE
       # - E002: Literal types should not duplicate existing enum values
-      # PHASE 1: Warning mode (non-blocking) until existing violations are fixed
-      # The codebase has 13 existing Literal duplication violations.
-      # Once cleaned up, remove "|| true" to make this blocking.
       # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-enum-governance
-        name: ONEX Enum Governance Validation (Warning Mode)
-        entry: bash -c 'uv run python -m omnibase_core.validation.checker_enum_governance || true'
+        name: ONEX Enum Governance Validation
+        entry: uv run python -m omnibase_core.validation.checker_enum_governance src/
         language: system
         pass_filenames: false
         always_run: true
