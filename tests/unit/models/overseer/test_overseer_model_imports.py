@@ -105,20 +105,17 @@ class TestOverseerModelImports:
 
         assert issubclass(ModelEscalationRequest, BaseModel)
 
-    def test_model_overnight_contract_importable(self) -> None:
-        from omnibase_core.models.overseer.model_overnight_contract import (
-            ModelOvernightContract,
-        )
-        from omnibase_core.models.overseer.model_overnight_halt_condition import (
-            ModelOvernightHaltCondition,
-        )
-        from omnibase_core.models.overseer.model_overnight_phase_spec import (
-            ModelOvernightPhaseSpec,
+    def test_model_session_halt_condition_expanded_fields(self) -> None:
+        from omnibase_core.models.overseer.model_session_halt_condition import (
+            ModelSessionHaltCondition,
         )
 
-        assert issubclass(ModelOvernightContract, BaseModel)
-        assert issubclass(ModelOvernightHaltCondition, BaseModel)
-        assert issubclass(ModelOvernightPhaseSpec, BaseModel)
+        fields = ModelSessionHaltCondition.model_fields
+        assert "on_halt" in fields
+        assert "skill" in fields
+        assert "pr" in fields
+        assert "threshold_minutes" in fields
+        assert "outcome" in fields
 
     def test_model_process_runner_state_transition_importable(self) -> None:
         from omnibase_core.models.overseer.model_process_runner_state_transition import (
@@ -192,8 +189,6 @@ class TestOverseerModelImports:
         assert hasattr(overseer, "ModelWorkerEvidenceRequirement")
         assert hasattr(overseer, "ModelWorkerContract")
         assert hasattr(overseer, "ModelVerifierOutput")
-        assert hasattr(overseer, "ModelOvernightHaltCondition")
-        assert hasattr(overseer, "ModelOvernightPhaseSpec")
         assert hasattr(overseer, "ModelSessionHaltCondition")
         assert hasattr(overseer, "ModelSessionPhaseSpec")
         assert hasattr(overseer, "EnumCompletionOutcome")
@@ -272,29 +267,29 @@ class TestOverseerModelImports:
         assert bundle.entrypoints == ("src/a.py",)
         assert bundle.file_scope == ("src/a.py", "tests/a.py")
 
-    def test_overnight_contract_requires_at_least_one_phase(self) -> None:
+    def test_session_contract_requires_at_least_one_phase(self) -> None:
         from datetime import UTC, datetime
 
-        from omnibase_core.models.overseer.model_overnight_contract import (
-            ModelOvernightContract,
+        from omnibase_core.models.overseer.model_session_contract import (
+            ModelSessionContract,
         )
 
         with pytest.raises(ValidationError):
-            ModelOvernightContract(
+            ModelSessionContract(
                 session_id="session-1",
                 created_at=datetime.now(UTC),
                 phases=(),
             )
 
-    def test_overnight_phase_required_outcomes_are_enums(self) -> None:
+    def test_session_phase_required_outcomes_are_enums(self) -> None:
         from omnibase_core.enums.overseer.enum_completion_outcome import (
             EnumCompletionOutcome,
         )
-        from omnibase_core.models.overseer.model_overnight_phase_spec import (
-            ModelOvernightPhaseSpec,
+        from omnibase_core.models.overseer.model_session_phase_spec import (
+            ModelSessionPhaseSpec,
         )
 
-        phase = ModelOvernightPhaseSpec.model_validate(
+        phase = ModelSessionPhaseSpec.model_validate(
             {
                 "phase_name": "merge",
                 "required_outcomes": ["success"],

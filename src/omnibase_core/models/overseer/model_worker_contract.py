@@ -4,7 +4,7 @@
 """ModelWorkerContract — per-worker machine-readable contract (OMN-10251).
 
 Wire type loaded at worker spawn time from contract.yaml. Parallel to
-ModelOvernightContract (session-level) and ModelSessionContract (pipeline-level).
+ModelSessionContract (pipeline-level).
 """
 
 from __future__ import annotations
