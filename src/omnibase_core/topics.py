@@ -588,6 +588,25 @@ class TopicBase(StrEnum):
     """Emitted when node generation fails at any stage."""
 
     # ==========================================================================
+    # Session phase enforcement topics (OMN-11228)
+    # Produced and consumed by the four session phase enforcement nodes in omnimarket.
+    # ==========================================================================
+    SESSION_PHASE_EVALUATED = "onex.evt.omnimarket.session-phase-evaluated.v1"
+    """Emitted after a session phase evaluation completes with the resulting phase verdict."""
+
+    SESSION_PHASE_TRANSITION = "onex.cmd.omnimarket.session-phase-transition.v1"
+    """Command to trigger a session phase transition (e.g. ACTIVE → HALTED)."""
+
+    SESSION_PHASE_STATE = "onex.evt.omnimarket.session-phase-state.v1"
+    """Emitted to broadcast the current session phase state for downstream consumers."""
+
+    SESSION_PHASE_BUDGET_WARNING = "onex.evt.omnimarket.session-phase-budget-warning.v1"
+    """Emitted when a session approaches its budget threshold during phase evaluation."""
+
+    SESSION_HALT_REQUIRED = "onex.cmd.omnimarket.session-halt-required.v1"
+    """Command to halt a session immediately when enforcement rules require it."""
+
+    # ==========================================================================
     # Platform runtime and projection health topics (OMN-11194)
     # Consumed by omnidash platform health dashboard and runtime monitor.
     # ==========================================================================
