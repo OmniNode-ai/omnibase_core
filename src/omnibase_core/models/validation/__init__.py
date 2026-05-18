@@ -14,6 +14,11 @@ Import validation models directly when needed:
 # Only import non-circular models (Pydantic models that don't import from validation)
 # Contract validation event model (OMN-1146)
 # Violation baseline models (OMN-1774)
+# Aislop rule models (OMN-11132)
+from .model_aislop_config import ModelAislopConfig
+from .model_aislop_rule import ModelAislopRule
+from .model_aislop_rule_override import ModelAislopRuleOverride
+from .model_aislop_rule_set import ModelAislopRuleSet
 from .model_baseline_generator import ModelBaselineGenerator
 from .model_baseline_violation import ModelBaselineViolation
 from .model_contract_validation_event import (
@@ -77,6 +82,11 @@ from .model_workflow_validation_result import ModelWorkflowValidationResult
 # cause circular imports and should be imported directly from their modules when needed
 
 __all__ = [
+    # Aislop rule models (OMN-11132)
+    "ModelAislopConfig",
+    "ModelAislopRule",
+    "ModelAislopRuleOverride",
+    "ModelAislopRuleSet",
     # Contract validation event model (OMN-1146)
     "ContractValidationEventType",
     "ModelContractValidationEvent",
