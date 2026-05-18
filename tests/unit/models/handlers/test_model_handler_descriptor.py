@@ -207,7 +207,7 @@ class TestModelHandlerDescriptorEnumFields:
 
     def test_all_handler_roles_accepted(self) -> None:
         """Test all EnumHandlerRole values are accepted."""
-        for role in EnumHandlerRole:
+        for role in EnumHandlerRole.__members__.values():
             descriptor = ModelHandlerDescriptor(
                 handler_name=ModelIdentifier(
                     namespace="onex", name=f"handler-{role.value}"
@@ -221,7 +221,7 @@ class TestModelHandlerDescriptorEnumFields:
 
     def test_all_handler_types_accepted(self) -> None:
         """Test all EnumHandlerType values are accepted."""
-        for handler_type in EnumHandlerType:
+        for handler_type in EnumHandlerType.__members__.values():
             descriptor = ModelHandlerDescriptor(
                 handler_name=ModelIdentifier(
                     namespace="onex", name=f"handler-{handler_type.value}"
@@ -235,7 +235,7 @@ class TestModelHandlerDescriptorEnumFields:
 
     def test_all_handler_type_categories_accepted(self) -> None:
         """Test all EnumHandlerTypeCategory values are accepted."""
-        for category in EnumHandlerTypeCategory:
+        for category in EnumHandlerTypeCategory.__members__.values():
             descriptor = ModelHandlerDescriptor(
                 handler_name=ModelIdentifier(
                     namespace="onex", name=f"handler-{category.value}"

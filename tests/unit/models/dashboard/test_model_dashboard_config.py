@@ -172,7 +172,7 @@ class TestModelDashboardConfig:
 
     def test_theme_values(self) -> None:
         """Test theme enum values."""
-        for theme in EnumDashboardTheme:
+        for theme in EnumDashboardTheme.__members__.values():
             dashboard = ModelDashboardConfig(
                 dashboard_id=uuid4(),
                 name="Test",
@@ -182,7 +182,7 @@ class TestModelDashboardConfig:
 
     def test_status_enum_values(self) -> None:
         """Test initial_status enum values."""
-        for status in EnumDashboardStatus:
+        for status in EnumDashboardStatus.__members__.values():
             dashboard = ModelDashboardConfig(
                 dashboard_id=uuid4(),
                 name="Test",

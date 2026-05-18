@@ -219,7 +219,7 @@ class TestGetHandlerTypeMetadata:
 
     def test_all_categories_have_metadata(self) -> None:
         """Test that all enum categories have corresponding metadata."""
-        for category in EnumHandlerTypeCategory:
+        for category in EnumHandlerTypeCategory.__members__.values():
             metadata = get_handler_type_metadata(category)
             assert metadata is not None
             assert metadata.category == category
@@ -436,7 +436,7 @@ class TestDecisionMatrixConsistency:
 
     def test_replay_safety_correlates_with_determinism(self) -> None:
         """Test replay safety correlates with determinism for pure handlers."""
-        for category in EnumHandlerTypeCategory:
+        for category in EnumHandlerTypeCategory.__members__.values():
             metadata = get_handler_type_metadata(category)
             # For pure handlers (requires_secrets=False), replay safety should match determinism
             if not metadata.requires_secrets:
@@ -461,7 +461,7 @@ class TestDecisionMatrixConsistency:
 
     def test_idempotency_key_required_for_non_deterministic(self) -> None:
         """Test idempotency key required for non-deterministic handlers."""
-        for category in EnumHandlerTypeCategory:
+        for category in EnumHandlerTypeCategory.__members__.values():
             metadata = get_handler_type_metadata(category)
             if not metadata.is_deterministic:
                 # Non-deterministic handlers need idempotency key

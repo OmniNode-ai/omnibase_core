@@ -104,7 +104,7 @@ class TestModelHandlerStateInstantiation:
 
     def test_all_status_values_accepted(self) -> None:
         """Test that all EnumHandlerStatus values are accepted."""
-        for status in EnumHandlerStatus:
+        for status in EnumHandlerStatus.__members__.values():
             state = ModelHandlerState(
                 handler_id="onex:test-handler",
                 handler_type="test",

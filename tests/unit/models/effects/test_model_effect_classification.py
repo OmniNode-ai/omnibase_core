@@ -104,7 +104,7 @@ class TestModelEffectClassification:
 
     def test_all_effect_categories_accepted(self) -> None:
         """Test that all EnumEffectCategory values are valid."""
-        for category in EnumEffectCategory:
+        for category in EnumEffectCategory.__members__.values():
             classification = ModelEffectClassification(
                 category=category,
                 description=f"Test effect for {category}",

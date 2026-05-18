@@ -20,11 +20,11 @@ class ProtocolEventBusDuckTyped(Protocol):
 
     def publish(self, event: object) -> None:
         """Synchronous publish method."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol method body
 
     async def publish_async(self, envelope: object) -> None:
         """Asynchronous publish method."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol method body
 
 
 __all__ = ["ProtocolEventBusDuckTyped"]

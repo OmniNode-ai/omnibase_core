@@ -147,7 +147,7 @@ class TestModelMissingToolEnums:
 
     def test_reason_categories(self):
         """Test different reason categories."""
-        for reason in EnumToolMissingReason:
+        for reason in EnumToolMissingReason.__members__.values():
             tool = ModelMissingTool(
                 version=DEFAULT_VERSION,
                 tool_name="test_tool",
@@ -159,7 +159,7 @@ class TestModelMissingToolEnums:
 
     def test_criticality_levels(self):
         """Test different criticality levels."""
-        for criticality in EnumToolCriticality:
+        for criticality in EnumToolCriticality.__members__.values():
             tool = ModelMissingTool(
                 version=DEFAULT_VERSION,
                 tool_name="test_tool",
@@ -171,7 +171,7 @@ class TestModelMissingToolEnums:
 
     def test_tool_categories(self):
         """Test different tool categories."""
-        for category in EnumToolCategory:
+        for category in EnumToolCategory.__members__.values():
             tool = ModelMissingTool(
                 version=DEFAULT_VERSION,
                 tool_name="test_tool",

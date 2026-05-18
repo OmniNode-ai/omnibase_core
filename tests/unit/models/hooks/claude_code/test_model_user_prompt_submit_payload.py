@@ -172,7 +172,7 @@ class TestParseHookPayload:
 
     def test_parse_all_event_types_without_error(self) -> None:
         """Test that all event types can be parsed (at least with base class)."""
-        for event_type in EnumClaudeCodeHookEventType:
+        for event_type in EnumClaudeCodeHookEventType.__members__.values():
             if event_type == EnumClaudeCodeHookEventType.USER_PROMPT_SUBMIT:
                 data = {"prompt": "test"}
             else:
@@ -211,6 +211,6 @@ class TestGetPayloadType:
 
     def test_all_event_types_return_valid_class(self) -> None:
         """Test that all event types return a payload class."""
-        for event_type in EnumClaudeCodeHookEventType:
+        for event_type in EnumClaudeCodeHookEventType.__members__.values():
             cls = get_payload_type(event_type)
             assert issubclass(cls, ModelClaudeCodeHookEventPayload)

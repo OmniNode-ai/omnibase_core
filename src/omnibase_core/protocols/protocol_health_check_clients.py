@@ -26,7 +26,7 @@ class ProtocolConnectionPool(Protocol):
             List of row dictionaries, where keys are column names and values
             are the column values. For non-SELECT queries, returns an empty list.
         """
-        ...
+        raise NotImplementedError  # stub-ok: protocol method body
 
 
 @runtime_checkable
@@ -35,7 +35,7 @@ class ProtocolConnectionPoolWithConnection(Protocol):
 
     def connection(self) -> object:
         """Get a connection from the pool."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol method body
 
 
 @runtime_checkable
@@ -44,7 +44,7 @@ class ProtocolKafkaProducerAio(Protocol):
 
     async def bootstrap_connected(self) -> bool:
         """Check if connected to bootstrap servers."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol method body
 
 
 @runtime_checkable
@@ -67,7 +67,7 @@ class ProtocolKafkaProducerConfluent(Protocol):
             structure depends on the implementation, but typically includes
             partition information and broker details.
         """
-        ...
+        raise NotImplementedError  # stub-ok: protocol method body
 
 
 @runtime_checkable
@@ -76,7 +76,7 @@ class ProtocolRedisClient(Protocol):
 
     async def ping(self) -> bool:
         """Ping the Redis server."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol method body
 
 
 __all__ = [

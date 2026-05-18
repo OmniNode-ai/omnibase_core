@@ -148,7 +148,7 @@ class TestModelComponentHealthDetailValidation:
 
     def test_detail_type_enum_values(self):
         """Test detail_type accepts all enum values."""
-        for detail_type in EnumHealthDetailType:
+        for detail_type in EnumHealthDetailType.__members__.values():
             detail = ModelComponentHealthDetail(
                 version=DEFAULT_VERSION,
                 detail_key="test",

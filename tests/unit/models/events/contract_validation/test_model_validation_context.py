@@ -402,7 +402,7 @@ class TestModelContractValidationContextEdgeCases:
 
     def test_validation_context_mode_enum_exhaustive(self) -> None:
         """Test that all EnumValidationMode values work."""
-        for mode in EnumValidationMode:
+        for mode in EnumValidationMode.__members__.values():
             context = ModelContractValidationContext(mode=mode)
             assert context.mode == mode
 

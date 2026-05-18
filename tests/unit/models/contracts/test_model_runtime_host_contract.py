@@ -120,7 +120,7 @@ class TestModelRuntimeHandlerConfigAllHandlerTypes:
 
     def test_all_handler_types_valid(self) -> None:
         """Test all EnumHandlerType values are valid for ModelRuntimeHandlerConfig."""
-        for handler_type in EnumHandlerType:
+        for handler_type in EnumHandlerType.__members__.values():
             config = ModelRuntimeHandlerConfig(handler_type=handler_type)
             assert config.handler_type == handler_type
 

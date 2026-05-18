@@ -146,7 +146,7 @@ class TestModelEffectBoundary:
             boundary_id="test.boundary",
         )
 
-        for category in EnumEffectCategory:
+        for category in EnumEffectCategory.__members__.values():
             assert boundary.has_classification_for_category(category) is False
 
     def test_database_readonly_snapshot_isolation_mechanism(self) -> None:
@@ -206,7 +206,7 @@ class TestModelEffectBoundary:
 
     def test_all_policy_levels_accepted(self) -> None:
         """Test that all EnumEffectPolicyLevel values are valid."""
-        for policy in EnumEffectPolicyLevel:
+        for policy in EnumEffectPolicyLevel.__members__.values():
             boundary = ModelEffectBoundary(
                 boundary_id="test.boundary",
                 default_policy=policy,
@@ -296,7 +296,7 @@ class TestModelEffectBoundary:
         )
 
         assert len(boundary.classifications) == 6
-        for cat in EnumEffectCategory:
+        for cat in EnumEffectCategory.__members__.values():
             assert boundary.has_classification_for_category(cat) is True
 
     def test_determinism_marker_semantics(self) -> None:

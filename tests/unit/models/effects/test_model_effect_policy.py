@@ -130,7 +130,7 @@ class TestModelEffectPolicySpec:
         )
 
         # PERMISSIVE allows all unless explicitly blocked
-        for category in EnumEffectCategory:
+        for category in EnumEffectCategory.__members__.values():
             assert policy.is_category_allowed(category) is True
 
     def test_is_category_allowed_mocked_policy_allows_by_default(self) -> None:
@@ -177,7 +177,7 @@ class TestModelEffectPolicySpec:
         )
 
         # MOCKED policy requires mocks for everything
-        for category in EnumEffectCategory:
+        for category in EnumEffectCategory.__members__.values():
             assert policy.requires_mock(category) is True
 
     def test_requires_mock_strict_policy_does_not_require_by_default(self) -> None:
@@ -291,7 +291,7 @@ class TestModelEffectPolicySpec:
 
     def test_all_policy_levels_accepted(self) -> None:
         """Test that all EnumEffectPolicyLevel values are valid."""
-        for level in EnumEffectPolicyLevel:
+        for level in EnumEffectPolicyLevel.__members__.values():
             policy = ModelEffectPolicySpec(policy_level=level)
             assert policy.policy_level == level
 

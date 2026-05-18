@@ -61,7 +61,7 @@ class TestModelPhaseStepCreation:
 
     def test_create_with_each_phase(self) -> None:
         """Test creating a ModelPhaseStep with each execution phase."""
-        for phase in EnumHandlerExecutionPhase:
+        for phase in EnumHandlerExecutionPhase.__members__.values():
             step = ModelPhaseStep(phase=phase)
             assert step.phase == phase
 

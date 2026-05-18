@@ -196,7 +196,7 @@ class TestModelEnvironmentValidationRulesCreation:
 
     def test_enum_values_for_environment(self) -> None:
         """Test that environment accepts all valid enum values."""
-        for env in EnumEnvironment:
+        for env in EnumEnvironment.__members__.values():
             rules = ModelEnvironmentValidationRules(
                 version=DEFAULT_VERSION,
                 environment=env,

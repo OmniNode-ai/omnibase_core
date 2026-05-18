@@ -264,6 +264,6 @@ class TestModelCliExecutionConfigEdgeCases:
 
     def test_output_format_enum(self):
         """Test with different output formats."""
-        for format_type in EnumOutputFormat:
+        for format_type in EnumOutputFormat.__members__.values():
             config = ModelCliExecutionConfig(output_format=format_type)
             assert config.output_format == format_type
