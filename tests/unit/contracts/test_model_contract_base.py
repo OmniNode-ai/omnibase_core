@@ -164,7 +164,7 @@ class TestModelContractBase:
 
     def test_node_type_enum_validation_valid_enum(self):
         """Test node_type validation with valid EnumNodeType values."""
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             data = {**self.minimal_valid_data, "node_type": node_type}
             contract = SampleContractModel(**data)
             assert contract.node_type == node_type

@@ -30,7 +30,7 @@ class TestEnumDeregistrationReason:
 
     def test_str_representation(self) -> None:
         """Test string representation returns the value."""
-        for reason in EnumDeregistrationReason:
+        for reason in EnumDeregistrationReason.__members__.values():
             assert str(reason) == reason.value
 
 
@@ -52,5 +52,5 @@ class TestEnumDeregistrationReasonIsPlanned:
 
     def test_all_enum_values_are_planned(self) -> None:
         """Test all standard enum values are considered planned."""
-        for reason in EnumDeregistrationReason:
+        for reason in EnumDeregistrationReason.__members__.values():
             assert reason.is_planned() is True

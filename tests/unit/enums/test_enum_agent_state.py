@@ -56,9 +56,9 @@ class TestEnumAgentState:
 
     def test_enum_membership(self) -> None:
         """Test enum membership via string values."""
-        assert "idle" in EnumAgentState
-        assert "working" in EnumAgentState
-        assert "invalid_state" not in EnumAgentState
+        assert "idle" in EnumAgentState._value2member_map_
+        assert "working" in EnumAgentState._value2member_map_
+        assert "invalid_state" not in EnumAgentState._value2member_map_
 
     def test_enum_comparison(self) -> None:
         """Test enum equality comparisons."""
@@ -87,5 +87,5 @@ class TestEnumAgentState:
 
     def test_enum_unique(self) -> None:
         """Test that all enum values are unique (enforced by @unique)."""
-        values = [m.value for m in EnumAgentState]
+        values = [m.value for m in EnumAgentState.__members__.values()]
         assert len(values) == len(set(values))

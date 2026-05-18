@@ -36,7 +36,7 @@ from omnibase_core.models.validation.model_execution_shape_validation import (
 # ---------------------------------------------------------------------------
 
 # Valid source and target values for CLI argument parsing
-VALID_SOURCES: list[str] = [c.value for c in EnumMessageCategory]
+VALID_SOURCES: list[str] = [c.value for c in EnumMessageCategory.__members__.values()]
 VALID_TARGETS: list[str] = [
     k.value for k in EnumNodeKind if EnumNodeKind.is_core_node_type(k)
 ]
@@ -57,7 +57,7 @@ def _resolve_source(raw: str) -> EnumMessageCategory:
         click.BadParameter: If the value does not match any known category.
     """
     normalised = raw.strip().lower()
-    for category in EnumMessageCategory:
+    for category in EnumMessageCategory.__members__.values():
         if category.value == normalised:
             return category
     raise click.BadParameter(
@@ -82,7 +82,7 @@ def _resolve_target(raw: str) -> EnumNodeKind:
         click.BadParameter: If the value does not match a core node kind.
     """
     normalised = raw.strip().lower()
-    for kind in EnumNodeKind:
+    for kind in EnumNodeKind.__members__.values():
         if kind.value == normalised and EnumNodeKind.is_core_node_type(kind):
             return kind
     raise click.BadParameter(

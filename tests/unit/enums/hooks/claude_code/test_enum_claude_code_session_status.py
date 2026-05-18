@@ -62,11 +62,11 @@ class TestEnumClaudeCodeSessionStatus:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "orphan" in EnumClaudeCodeSessionStatus
-        assert "active" in EnumClaudeCodeSessionStatus
-        assert "ended" in EnumClaudeCodeSessionStatus
-        assert "timed_out" in EnumClaudeCodeSessionStatus
-        assert "invalid_status" not in EnumClaudeCodeSessionStatus
+        assert "orphan" in EnumClaudeCodeSessionStatus._value2member_map_
+        assert "active" in EnumClaudeCodeSessionStatus._value2member_map_
+        assert "ended" in EnumClaudeCodeSessionStatus._value2member_map_
+        assert "timed_out" in EnumClaudeCodeSessionStatus._value2member_map_
+        assert "invalid_status" not in EnumClaudeCodeSessionStatus._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -122,7 +122,9 @@ class TestEnumClaudeCodeSessionStatus:
 
     def test_enum_uniqueness(self):
         """Test that enum values are unique (enforced by @unique decorator)."""
-        values = [member.value for member in EnumClaudeCodeSessionStatus]
+        values = [
+            member.value for member in EnumClaudeCodeSessionStatus.__members__.values()
+        ]
         assert len(values) == len(set(values))
 
 
@@ -221,7 +223,7 @@ class TestStatusTransitions:
 
     def test_no_overlap_between_active_and_terminal(self):
         """Test that active and terminal categories are mutually exclusive."""
-        for status in EnumClaudeCodeSessionStatus:
+        for status in EnumClaudeCodeSessionStatus.__members__.values():
             is_active = status.is_active()
             is_terminal = status.is_terminal()
 
@@ -232,7 +234,7 @@ class TestStatusTransitions:
 
     def test_all_statuses_categorized(self):
         """Test that all statuses have defined behavior for both helper methods."""
-        for status in EnumClaudeCodeSessionStatus:
+        for status in EnumClaudeCodeSessionStatus.__members__.values():
             # Each status should return a boolean for both methods
             assert isinstance(status.is_active(), bool)
             assert isinstance(status.is_terminal(), bool)

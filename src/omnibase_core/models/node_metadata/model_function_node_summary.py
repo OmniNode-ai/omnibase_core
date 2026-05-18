@@ -181,7 +181,7 @@ class ModelFunctionNodeSummary(BaseModel):
 
         complexity_enum = (
             EnumConceptualComplexity(complexity)
-            if complexity in EnumConceptualComplexity
+            if complexity in EnumConceptualComplexity._value2member_map_
             else EnumConceptualComplexity.BASIC
         )
 
@@ -202,7 +202,9 @@ class ModelFunctionNodeSummary(BaseModel):
             updated_at=updated_at,
             primary_category=(
                 EnumActionCategory(categories[0])
-                if categories and categories[0] in [e.value for e in EnumActionCategory]
+                if categories
+                and categories[0]
+                in [e.value for e in EnumActionCategory.__members__.values()]
                 else None
             ),
             tag_count=len(tags),

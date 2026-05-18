@@ -47,8 +47,8 @@ class TestEnumAgentStatusType:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "idle" in EnumAgentStatusType
-        assert "invalid_status" not in EnumAgentStatusType
+        assert "idle" in EnumAgentStatusType._value2member_map_
+        assert "invalid_status" not in EnumAgentStatusType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -102,13 +102,15 @@ class TestEnumAgentStatusType:
     def test_enum_workflow_states(self):
         """Test that enum covers typical agent workflow states."""
         # Test typical workflow progression
-        assert EnumAgentStatusType.STARTING in EnumAgentStatusType
-        assert EnumAgentStatusType.WORKING in EnumAgentStatusType
-        assert EnumAgentStatusType.IDLE in EnumAgentStatusType
-        assert EnumAgentStatusType.TERMINATING in EnumAgentStatusType
+        assert EnumAgentStatusType.STARTING in EnumAgentStatusType.__members__.values()
+        assert EnumAgentStatusType.WORKING in EnumAgentStatusType.__members__.values()
+        assert EnumAgentStatusType.IDLE in EnumAgentStatusType.__members__.values()
+        assert (
+            EnumAgentStatusType.TERMINATING in EnumAgentStatusType.__members__.values()
+        )
 
         # Test error state
-        assert EnumAgentStatusType.ERROR in EnumAgentStatusType
+        assert EnumAgentStatusType.ERROR in EnumAgentStatusType.__members__.values()
 
         # Test suspended state
-        assert EnumAgentStatusType.SUSPENDED in EnumAgentStatusType
+        assert EnumAgentStatusType.SUSPENDED in EnumAgentStatusType.__members__.values()

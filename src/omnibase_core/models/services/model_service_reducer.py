@@ -124,6 +124,7 @@ class ModelServiceReducer(
             container: ONEX container providing service dependencies
         """
         super().__init__(container)
+        MixinHealthCheck.__init__(self)
 
 
 ServiceReducerNode = ModelServiceReducer

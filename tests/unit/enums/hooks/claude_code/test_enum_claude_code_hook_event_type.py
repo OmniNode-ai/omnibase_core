@@ -90,9 +90,9 @@ class TestEnumClaudeCodeHookEventType:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "SessionStart" in EnumClaudeCodeHookEventType
-        assert "PreToolUse" in EnumClaudeCodeHookEventType
-        assert "InvalidEvent" not in EnumClaudeCodeHookEventType
+        assert "SessionStart" in EnumClaudeCodeHookEventType._value2member_map_
+        assert "PreToolUse" in EnumClaudeCodeHookEventType._value2member_map_
+        assert "InvalidEvent" not in EnumClaudeCodeHookEventType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -195,7 +195,7 @@ class TestIsAgenticLoopEvent:
         """Test that exactly 6 events are agentic loop events."""
         agentic_count = sum(
             1
-            for event in EnumClaudeCodeHookEventType
+            for event in EnumClaudeCodeHookEventType.__members__.values()
             if EnumClaudeCodeHookEventType.is_agentic_loop_event(event)
         )
         assert agentic_count == 6
@@ -241,7 +241,7 @@ class TestIsSessionLifecycleEvent:
         """Test that exactly 4 events are session lifecycle events."""
         session_count = sum(
             1
-            for event in EnumClaudeCodeHookEventType
+            for event in EnumClaudeCodeHookEventType.__members__.values()
             if EnumClaudeCodeHookEventType.is_session_lifecycle_event(event)
         )
         assert session_count == 4
@@ -259,7 +259,7 @@ class TestEventCategorization:
             EnumClaudeCodeHookEventType.NOTIFICATION,
         }
 
-        for event in EnumClaudeCodeHookEventType:
+        for event in EnumClaudeCodeHookEventType.__members__.values():
             is_agentic = EnumClaudeCodeHookEventType.is_agentic_loop_event(event)
             is_session = EnumClaudeCodeHookEventType.is_session_lifecycle_event(event)
             is_standalone = event in standalone_events
@@ -274,7 +274,7 @@ class TestEventCategorization:
 
     def test_no_overlap_between_categories(self):
         """Test that agentic and session lifecycle categories don't overlap."""
-        for event in EnumClaudeCodeHookEventType:
+        for event in EnumClaudeCodeHookEventType.__members__.values():
             is_agentic = EnumClaudeCodeHookEventType.is_agentic_loop_event(event)
             is_session = EnumClaudeCodeHookEventType.is_session_lifecycle_event(event)
 

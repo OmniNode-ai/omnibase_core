@@ -88,7 +88,7 @@ class TestEnumActivationReasonBasic:
 
     def test_enum_member_uniqueness(self) -> None:
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumActivationReason]
+        values = [member.value for member in EnumActivationReason.__members__.values()]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
@@ -163,7 +163,7 @@ class TestEnumActivationReasonClassification:
 
     def test_all_reasons_are_either_activation_or_skip(self) -> None:
         """Test that every reason is classified as either activation or skip."""
-        for reason in EnumActivationReason:
+        for reason in EnumActivationReason.__members__.values():
             is_activation = reason.is_activation_reason()
             is_skip = reason.is_skip_reason()
 
@@ -214,7 +214,7 @@ class TestEnumActivationReasonSerialization:
 
     def test_enum_serialization_json_compatible(self) -> None:
         """Test that enum values are JSON serializable."""
-        for member in EnumActivationReason:
+        for member in EnumActivationReason.__members__.values():
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
             reconstructed = EnumActivationReason(deserialized)
@@ -245,7 +245,7 @@ class TestEnumActivationReasonSerialization:
 
     def test_enum_pickling(self) -> None:
         """Test that enum members can be pickled and unpickled."""
-        for member in EnumActivationReason:
+        for member in EnumActivationReason.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -281,8 +281,14 @@ class TestEnumActivationReasonBehavior:
 
     def test_enum_in_operator(self) -> None:
         """Test that 'in' operator works with enum."""
-        assert EnumActivationReason.PREDICATE_TRUE in EnumActivationReason
-        assert EnumActivationReason.CONFLICT_DETECTED in EnumActivationReason
+        assert (
+            EnumActivationReason.PREDICATE_TRUE
+            in EnumActivationReason.__members__.values()
+        )
+        assert (
+            EnumActivationReason.CONFLICT_DETECTED
+            in EnumActivationReason.__members__.values()
+        )
 
     def test_enum_hash_consistency(self) -> None:
         """Test that enum members are hashable and consistent."""
@@ -314,7 +320,7 @@ class TestEnumActivationReasonBehavior:
 
     def test_enum_bool_evaluation(self) -> None:
         """Test that all enum members evaluate to True in boolean context."""
-        for member in EnumActivationReason:
+        for member in EnumActivationReason.__members__.values():
             assert bool(member) is True
 
     def test_enum_case_sensitivity(self) -> None:
@@ -395,11 +401,11 @@ class TestEnumActivationReasonEdgeCases:
 
     def test_membership_testing(self) -> None:
         """Test membership testing with string values."""
-        assert "predicate_true" in EnumActivationReason
-        assert "always_active" in EnumActivationReason
-        assert "predicate_false" in EnumActivationReason
-        assert "conflict_detected" in EnumActivationReason
-        assert "invalid" not in EnumActivationReason
+        assert "predicate_true" in EnumActivationReason._value2member_map_
+        assert "always_active" in EnumActivationReason._value2member_map_
+        assert "predicate_false" in EnumActivationReason._value2member_map_
+        assert "conflict_detected" in EnumActivationReason._value2member_map_
+        assert "invalid" not in EnumActivationReason._value2member_map_
 
 
 @pytest.mark.unit

@@ -133,7 +133,7 @@ class ModelExecutionShapeValidation(BaseModel):
             True
         """
         # Find matching canonical shape
-        for shape in EnumExecutionShape:
+        for shape in EnumExecutionShape.__members__.values():
             shape_source = EnumExecutionShape.get_source_category(shape)
             shape_target_str = EnumExecutionShape.get_target_node_kind(shape)
 

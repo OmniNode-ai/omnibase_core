@@ -62,11 +62,11 @@ class TestEnumClaudeCodeSessionOutcome:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "success" in EnumClaudeCodeSessionOutcome
-        assert "failed" in EnumClaudeCodeSessionOutcome
-        assert "abandoned" in EnumClaudeCodeSessionOutcome
-        assert "unknown" in EnumClaudeCodeSessionOutcome
-        assert "invalid_outcome" not in EnumClaudeCodeSessionOutcome
+        assert "success" in EnumClaudeCodeSessionOutcome._value2member_map_
+        assert "failed" in EnumClaudeCodeSessionOutcome._value2member_map_
+        assert "abandoned" in EnumClaudeCodeSessionOutcome._value2member_map_
+        assert "unknown" in EnumClaudeCodeSessionOutcome._value2member_map_
+        assert "invalid_outcome" not in EnumClaudeCodeSessionOutcome._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -122,7 +122,9 @@ class TestEnumClaudeCodeSessionOutcome:
 
     def test_enum_uniqueness(self):
         """Test that enum values are unique (enforced by @unique decorator)."""
-        values = [member.value for member in EnumClaudeCodeSessionOutcome]
+        values = [
+            member.value for member in EnumClaudeCodeSessionOutcome.__members__.values()
+        ]
         assert len(values) == len(set(values))
 
 
@@ -261,7 +263,7 @@ class TestOutcomeClassification:
 
     def test_no_overlap_between_success_and_failure(self):
         """Test that successful and failure categories are mutually exclusive."""
-        for outcome in EnumClaudeCodeSessionOutcome:
+        for outcome in EnumClaudeCodeSessionOutcome.__members__.values():
             is_successful = outcome.is_successful()
             is_failure = outcome.is_failure()
 
@@ -272,7 +274,7 @@ class TestOutcomeClassification:
 
     def test_all_outcomes_categorized(self):
         """Test that all outcomes have defined behavior for all helper methods."""
-        for outcome in EnumClaudeCodeSessionOutcome:
+        for outcome in EnumClaudeCodeSessionOutcome.__members__.values():
             # Each outcome should return a boolean for all methods
             assert isinstance(outcome.is_terminal(), bool)
             assert isinstance(outcome.is_successful(), bool)

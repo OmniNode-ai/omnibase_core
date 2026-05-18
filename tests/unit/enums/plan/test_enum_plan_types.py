@@ -59,7 +59,7 @@ class TestEnumPlanAction:
 @pytest.mark.unit
 class TestPlanPhaseAllowedActions:
     def test_covers_all_phases(self) -> None:
-        for phase in EnumPlanPhase:
+        for phase in EnumPlanPhase.__members__.values():
             assert phase in PLAN_PHASE_ALLOWED_ACTIONS
 
     def test_closed_has_empty_frozenset(self) -> None:
@@ -67,7 +67,7 @@ class TestPlanPhaseAllowedActions:
 
     def test_every_action_appears_in_at_least_one_phase(self) -> None:
         all_allowed = frozenset().union(*PLAN_PHASE_ALLOWED_ACTIONS.values())
-        for action in EnumPlanAction:
+        for action in EnumPlanAction.__members__.values():
             assert action in all_allowed, f"{action} not allowed in any phase"
 
     def test_draft_allows_expected_actions(self) -> None:
@@ -97,7 +97,7 @@ class TestPlanPhaseAllowedActions:
 @pytest.mark.unit
 class TestPlanValidTransitions:
     def test_covers_all_phases(self) -> None:
-        for phase in EnumPlanPhase:
+        for phase in EnumPlanPhase.__members__.values():
             assert phase in PLAN_VALID_TRANSITIONS
 
     def test_closed_is_terminal(self) -> None:
@@ -114,7 +114,7 @@ class TestPlanValidTransitions:
         )
 
     def test_every_non_closed_phase_has_at_least_one_target(self) -> None:
-        for phase in EnumPlanPhase:
+        for phase in EnumPlanPhase.__members__.values():
             if phase is EnumPlanPhase.CLOSED:
                 continue
             assert len(PLAN_VALID_TRANSITIONS[phase]) >= 1, (

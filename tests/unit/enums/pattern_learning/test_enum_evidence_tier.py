@@ -55,8 +55,8 @@ class TestEnumEvidenceTier:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumEvidenceTier.VERIFIED in EnumEvidenceTier
-        assert "verified" in [e.value for e in EnumEvidenceTier]
+        assert EnumEvidenceTier.VERIFIED in EnumEvidenceTier.__members__.values()
+        assert "verified" in [e.value for e in EnumEvidenceTier.__members__.values()]
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
@@ -180,7 +180,7 @@ class TestEnumEvidenceTier:
 
     def test_tier_self_equality_comparisons(self):
         """Test self-comparisons for all tiers."""
-        for tier in EnumEvidenceTier:
+        for tier in EnumEvidenceTier.__members__.values():
             same_tier = EnumEvidenceTier(tier.value)
             assert tier <= same_tier
             assert tier >= same_tier
@@ -209,7 +209,7 @@ class TestEnumEvidenceTier:
 
     def test_uniqueness(self):
         """Test that all values are unique (enforced by @unique decorator)."""
-        values = [e.value for e in EnumEvidenceTier]
+        values = [e.value for e in EnumEvidenceTier.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_comparison_against_raw_string(self):

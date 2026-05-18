@@ -207,9 +207,14 @@ class TestEnumAgentCapabilityIntegration:
 
     def test_enum_membership(self):
         """Test enum membership checking."""
-        assert EnumAgentCapability.CODE_GENERATION in EnumAgentCapability
-        assert EnumAgentCapability.REASONING in EnumAgentCapability
-        assert EnumAgentCapability.MULTIMODAL in EnumAgentCapability
+        assert (
+            EnumAgentCapability.CODE_GENERATION
+            in EnumAgentCapability.__members__.values()
+        )
+        assert EnumAgentCapability.REASONING in EnumAgentCapability.__members__.values()
+        assert (
+            EnumAgentCapability.MULTIMODAL in EnumAgentCapability.__members__.values()
+        )
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""

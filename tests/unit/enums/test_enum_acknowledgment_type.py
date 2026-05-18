@@ -48,8 +48,8 @@ class TestEnumAcknowledgmentType:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "bootstrap_ack" in EnumAcknowledgmentType
-        assert "invalid_ack" not in EnumAcknowledgmentType
+        assert "bootstrap_ack" in EnumAcknowledgmentType._value2member_map_
+        assert "invalid_ack" not in EnumAcknowledgmentType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""

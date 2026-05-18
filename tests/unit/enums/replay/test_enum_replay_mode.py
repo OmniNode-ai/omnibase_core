@@ -66,9 +66,9 @@ class TestEnumReplayModeStringBehavior:
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
-        assert EnumReplayMode.PRODUCTION in EnumReplayMode
-        assert "production" in EnumReplayMode
-        assert "invalid_mode" not in EnumReplayMode
+        assert EnumReplayMode.PRODUCTION in EnumReplayMode.__members__.values()
+        assert "production" in EnumReplayMode._value2member_map_
+        assert "invalid_mode" not in EnumReplayMode._value2member_map_
 
 
 @pytest.mark.unit
