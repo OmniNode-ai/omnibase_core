@@ -57,8 +57,7 @@ rules:
     enabled: true
     pattern_type: regex_ast_docstring
     pattern: >-
-      ^\s*This\s+(module|class|function|method|file|script|node|handler|service) \s+(provides?|implements?|contains?|is
-      responsible for|handles?|manages?|offers?)
+      ^\s*This\s+(module|class|function|method|file|script|node|handler|service)\s+(provides?|implements?|contains?|is\s+responsible\s+for|handles?|manages?|offers?)
     file_globs: ["*.py"]
     suppression_annotation: ai-slop-ok
     description: >-
