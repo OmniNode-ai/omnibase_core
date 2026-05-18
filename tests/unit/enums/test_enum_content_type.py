@@ -83,7 +83,9 @@ class TestEnumContentType:
         """Test that all expected values are present."""
         expected_values = {"text", "image", "tool_use", "tool_result"}
 
-        actual_values = {member.value for member in EnumContentType}
+        actual_values = {
+            member.value for member in EnumContentType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

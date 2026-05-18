@@ -107,7 +107,7 @@ class TestEnumWidgetType:
         # Enum member membership
         assert EnumWidgetType.CHART in EnumWidgetType.__members__.values()
         # Value membership - check if string is a valid enum value
-        valid_values = {m.value for m in EnumWidgetType}
+        valid_values = {m.value for m in EnumWidgetType.__members__.values()}
         assert "chart" in valid_values
         assert "invalid_widget" not in valid_values
 
@@ -123,7 +123,7 @@ class TestEnumWidgetType:
     def test_all_expected_values(self) -> None:
         """Test that all expected values are present."""
         expected_values = {"chart", "table", "metric_card", "status_grid", "event_feed"}
-        actual_values = {member.value for member in EnumWidgetType}
+        actual_values = {member.value for member in EnumWidgetType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self) -> None:

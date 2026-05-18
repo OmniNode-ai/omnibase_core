@@ -363,7 +363,9 @@ class TestEnumSeverityLevel:
         for rfc_level in rfc_levels:
             # Should be able to get the level by value
             levels_with_value = [
-                level for level in EnumSeverityLevel if level.value == rfc_level
+                level
+                for level in EnumSeverityLevel.__members__.values()
+                if level.value == rfc_level
             ]
             assert len(levels_with_value) >= 1, f"RFC level {rfc_level} not found"
 

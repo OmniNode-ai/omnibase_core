@@ -138,7 +138,7 @@ class TestEnumGeneralStatus:
             "suspended",
             "processing",
         }
-        actual_values = {e.value for e in EnumGeneralStatus}
+        actual_values = {e.value for e in EnumGeneralStatus.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -339,14 +339,28 @@ class TestEnumGeneralStatus:
         all_statuses = set(EnumGeneralStatus)
 
         # Get statuses categorized by each method
-        active_statuses = {e for e in EnumGeneralStatus if e.is_active_state()}
-        terminal_statuses = {e for e in EnumGeneralStatus if e.is_terminal_state()}
-        error_statuses = {e for e in EnumGeneralStatus if e.is_error_state()}
-        pending_statuses = {e for e in EnumGeneralStatus if e.is_pending_state()}
-        quality_statuses = {e for e in EnumGeneralStatus if e.is_quality_state()}
-        lifecycle_statuses = {e for e in EnumGeneralStatus if e.is_lifecycle_state()}
+        active_statuses = {
+            e for e in EnumGeneralStatus.__members__.values() if e.is_active_state()
+        }
+        terminal_statuses = {
+            e for e in EnumGeneralStatus.__members__.values() if e.is_terminal_state()
+        }
+        error_statuses = {
+            e for e in EnumGeneralStatus.__members__.values() if e.is_error_state()
+        }
+        pending_statuses = {
+            e for e in EnumGeneralStatus.__members__.values() if e.is_pending_state()
+        }
+        quality_statuses = {
+            e for e in EnumGeneralStatus.__members__.values() if e.is_quality_state()
+        }
+        lifecycle_statuses = {
+            e for e in EnumGeneralStatus.__members__.values() if e.is_lifecycle_state()
+        }
         operational_statuses = {
-            e for e in EnumGeneralStatus if e.is_operational_state()
+            e
+            for e in EnumGeneralStatus.__members__.values()
+            if e.is_operational_state()
         }
 
         # All statuses should be categorized by at least one method

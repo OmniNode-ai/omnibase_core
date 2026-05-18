@@ -89,7 +89,7 @@ class TestEnumEvidenceTier:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"unmeasured", "observed", "measured", "verified"}
-        actual_values = {e.value for e in EnumEvidenceTier}
+        actual_values = {e.value for e in EnumEvidenceTier.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

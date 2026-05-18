@@ -58,7 +58,9 @@ class TestEnumEnforcementModeValues:
     def test_all_expected_values(self) -> None:
         """Test that all expected values are present."""
         expected_values = {"strict", "warn", "permissive", "mocked"}
-        actual_values = {member.value for member in EnumEnforcementMode}
+        actual_values = {
+            member.value for member in EnumEnforcementMode.__members__.values()
+        }
         assert actual_values == expected_values
 
 
@@ -159,7 +161,9 @@ class TestEnumEffectDeterminismValues:
     def test_all_expected_values(self) -> None:
         """Test that all expected values are present."""
         expected_values = {"deterministic", "non_deterministic", "unknown"}
-        actual_values = {member.value for member in EnumEffectDeterminism}
+        actual_values = {
+            member.value for member in EnumEffectDeterminism.__members__.values()
+        }
         assert actual_values == expected_values
 
 
@@ -275,7 +279,9 @@ class TestEnumNonDeterministicSourceValues:
             "filesystem",
             "environment",
         }
-        actual_values = {member.value for member in EnumNonDeterministicSource}
+        actual_values = {
+            member.value for member in EnumNonDeterministicSource.__members__.values()
+        }
         assert actual_values == expected_values
 
 

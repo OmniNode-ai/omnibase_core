@@ -28,7 +28,9 @@ class TestEnumNodeType:
             "TRANSFORMER",
             "AGGREGATOR",
         }
-        actual_values = {node_type.value for node_type in EnumNodeType}
+        actual_values = {
+            node_type.value for node_type in EnumNodeType.__members__.values()
+        }
         # Test that all expected core values are present
         assert expected_core_values.issubset(actual_values)
 

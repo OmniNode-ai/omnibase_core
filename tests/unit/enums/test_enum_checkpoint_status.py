@@ -84,7 +84,9 @@ class TestEnumCheckpointStatus:
         """Test that all expected values are present."""
         expected_values = {"active", "completed", "restored", "expired", "corrupted"}
 
-        actual_values = {member.value for member in EnumCheckpointStatus}
+        actual_values = {
+            member.value for member in EnumCheckpointStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

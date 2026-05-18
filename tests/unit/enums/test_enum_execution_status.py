@@ -314,7 +314,9 @@ class TestEnumExecutionStatus:
         """Test success status categorization logic."""
         # Successful statuses should be terminal
         successful_statuses = [
-            s for s in EnumExecutionStatus if EnumExecutionStatus.is_successful(s)
+            s
+            for s in EnumExecutionStatus.__members__.values()
+            if EnumExecutionStatus.is_successful(s)
         ]
         for status in successful_statuses:
             assert EnumExecutionStatus.is_terminal(status) is True
@@ -425,7 +427,9 @@ class TestEnumExecutionStatus:
 
         # Test that terminal states have no valid transitions
         terminal_statuses = [
-            s for s in EnumExecutionStatus if EnumExecutionStatus.is_terminal(s)
+            s
+            for s in EnumExecutionStatus.__members__.values()
+            if EnumExecutionStatus.is_terminal(s)
         ]
         for status in terminal_statuses:
             # Terminal statuses should not transition to other states
@@ -561,10 +565,14 @@ class TestEnumExecutionStatus:
         This ensures no status values are left uncategorized.
         """
         terminal_count = sum(
-            1 for s in EnumExecutionStatus if EnumExecutionStatus.is_terminal(s)
+            1
+            for s in EnumExecutionStatus.__members__.values()
+            if EnumExecutionStatus.is_terminal(s)
         )
         active_count = sum(
-            1 for s in EnumExecutionStatus if EnumExecutionStatus.is_active(s)
+            1
+            for s in EnumExecutionStatus.__members__.values()
+            if EnumExecutionStatus.is_active(s)
         )
 
         # All statuses should be accounted for

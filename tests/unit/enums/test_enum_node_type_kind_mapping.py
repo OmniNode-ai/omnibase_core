@@ -102,8 +102,8 @@ class TestEnumNodeTypeKindMapping:
         # Skip this test until the refactor is complete and _KIND_MAP exists
         # At that point, all collisions should be resolved
 
-        kind_names = {k.name.upper() for k in EnumNodeKind}
-        type_names = {t.name.upper() for t in EnumNodeType}
+        kind_names = {k.name.upper() for k in EnumNodeKind.__members__.values()}
+        type_names = {t.name.upper() for t in EnumNodeType.__members__.values()}
 
         # Detect exact name collisions (case-insensitive)
         collisions = kind_names & type_names
@@ -111,8 +111,16 @@ class TestEnumNodeTypeKindMapping:
         if collisions:
             collision_details = []
             for name in collisions:
-                kind_member = next(k for k in EnumNodeKind if k.name.upper() == name)
-                type_member = next(t for t in EnumNodeType if t.name.upper() == name)
+                kind_member = next(
+                    k
+                    for k in EnumNodeKind.__members__.values()
+                    if k.name.upper() == name
+                )
+                type_member = next(
+                    t
+                    for t in EnumNodeType.__members__.values()
+                    if t.name.upper() == name
+                )
                 collision_details.append(
                     f"  - {name}: EnumNodeKind.{kind_member.name} "
                     f"vs EnumNodeType.{type_member.name}"

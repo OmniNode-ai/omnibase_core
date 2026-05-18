@@ -248,7 +248,7 @@ class TestEnumNodeKindBehavior:
             "orchestrator",
             "runtime_host",
         }
-        actual_values = {member.value for member in EnumNodeKind}
+        actual_values = {member.value for member in EnumNodeKind.__members__.values()}
         assert actual_values == expected_values
 
     def test_invalid_enum_value_raises_error(self) -> None:
@@ -472,7 +472,9 @@ class TestEnumNodeKindPropertyBased:
         from omnibase_core.enums.enum_node_type import EnumNodeType
 
         # Exclude UNKNOWN - it intentionally has no kind mapping
-        mapped_types = [t for t in EnumNodeType if t != EnumNodeType.UNKNOWN]
+        mapped_types = [
+            t for t in EnumNodeType.__members__.values() if t != EnumNodeType.UNKNOWN
+        ]
 
         @given(st.sampled_from(mapped_types))
         def check_type_to_kind_mapping(node_type: EnumNodeType) -> None:

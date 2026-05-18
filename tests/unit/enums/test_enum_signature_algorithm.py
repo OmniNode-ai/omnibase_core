@@ -175,7 +175,9 @@ class TestEnumSignatureAlgorithm:
             "ES512",
             "ed25519",  # Note: ED25519 uses lowercase value
         }
-        actual_values = {member.value for member in EnumSignatureAlgorithm}
+        actual_values = {
+            member.value for member in EnumSignatureAlgorithm.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_can_be_created_from_string(self):

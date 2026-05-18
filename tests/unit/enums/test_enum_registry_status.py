@@ -94,7 +94,9 @@ class TestEnumRegistryStatus:
             "initializing",
             "maintenance",
         }
-        actual_values = {member.value for member in EnumRegistryStatus}
+        actual_values = {
+            member.value for member in EnumRegistryStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_invalid_enum_value_raises_error(self):

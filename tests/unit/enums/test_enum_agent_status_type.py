@@ -92,7 +92,9 @@ class TestEnumAgentStatusType:
             "suspended",
         }
 
-        actual_values = {member.value for member in EnumAgentStatusType}
+        actual_values = {
+            member.value for member in EnumAgentStatusType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

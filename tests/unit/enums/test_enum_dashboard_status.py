@@ -151,7 +151,9 @@ class TestEnumDashboardStatus:
     def test_all_expected_values(self) -> None:
         """Test that all expected values are present."""
         expected_values = {"initializing", "connected", "disconnected", "error"}
-        actual_values = {member.value for member in EnumDashboardStatus}
+        actual_values = {
+            member.value for member in EnumDashboardStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self) -> None:

@@ -237,7 +237,9 @@ class TestEnumHandlerTypeCategoryBehavior:
             "effect",
             "nondeterministic_compute",
         }
-        actual_values = {member.value for member in EnumHandlerTypeCategory}
+        actual_values = {
+            member.value for member in EnumHandlerTypeCategory.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_invalid_enum_value_raises_error(self) -> None:

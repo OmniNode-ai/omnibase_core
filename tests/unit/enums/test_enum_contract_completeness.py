@@ -55,7 +55,9 @@ class TestEnumContractCompleteness:
     def test_all_values_set(self) -> None:
         """Test that exactly three values are defined."""
         expected = {"STUB", "ENRICHED", "FULL"}
-        actual = {member.value for member in EnumContractCompleteness}
+        actual = {
+            member.value for member in EnumContractCompleteness.__members__.values()
+        }
         assert actual == expected
 
     def test_exported_from_package_init(self) -> None:

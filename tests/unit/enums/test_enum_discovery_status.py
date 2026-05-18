@@ -98,7 +98,9 @@ class TestEnumDiscoveryStatus:
             "completed",
         }
 
-        actual_values = {member.value for member in EnumDiscoveryStatus}
+        actual_values = {
+            member.value for member in EnumDiscoveryStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

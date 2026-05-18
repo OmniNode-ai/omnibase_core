@@ -77,7 +77,7 @@ class TestEnumProxyEndpoint:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"v1/messages", "v1/complete"}
-        actual_values = {e.value for e in EnumProxyEndpoint}
+        actual_values = {e.value for e in EnumProxyEndpoint.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -98,5 +98,5 @@ class TestEnumProxyEndpoint:
         # Completion API
         completion_api = {EnumProxyEndpoint.V1_COMPLETE}
 
-        assert all(e in EnumProxyEndpoint for e in messages_api)
-        assert all(e in EnumProxyEndpoint for e in completion_api)
+        assert all(e in EnumProxyEndpoint.__members__.values() for e in messages_api)
+        assert all(e in EnumProxyEndpoint.__members__.values() for e in completion_api)

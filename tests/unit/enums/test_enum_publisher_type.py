@@ -76,7 +76,7 @@ class TestEnumPublisherType:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"IN_MEMORY", "AUTO", "HYBRID"}
-        actual_values = {e.value for e in EnumPublisherType}
+        actual_values = {e.value for e in EnumPublisherType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -91,8 +91,8 @@ class TestEnumPublisherType:
         # Automatic type
         automatic = {EnumPublisherType.AUTO}
 
-        assert all(p in EnumPublisherType for p in explicit)
-        assert all(p in EnumPublisherType for p in automatic)
+        assert all(p in EnumPublisherType.__members__.values() for p in explicit)
+        assert all(p in EnumPublisherType.__members__.values() for p in automatic)
 
     def test_all_publishers_categorized(self):
         """Test that all publishers can be categorized."""

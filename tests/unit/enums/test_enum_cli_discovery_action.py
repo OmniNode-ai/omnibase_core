@@ -98,7 +98,9 @@ class TestEnumCliDiscoveryAction:
             "get_discovery_stats",
         }
 
-        actual_values = {member.value for member in EnumCliDiscoveryAction}
+        actual_values = {
+            member.value for member in EnumCliDiscoveryAction.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

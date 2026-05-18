@@ -18,7 +18,9 @@ class TestEnumDeregistrationReason:
     def test_enum_values(self) -> None:
         """Test all enum values are present."""
         expected_values = {"shutdown", "upgrade", "manual"}
-        actual_values = {reason.value for reason in EnumDeregistrationReason}
+        actual_values = {
+            reason.value for reason in EnumDeregistrationReason.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_string_inheritance(self) -> None:

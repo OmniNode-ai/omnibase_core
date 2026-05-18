@@ -104,7 +104,9 @@ class TestEnumArtifactType:
             "schema",
             "config",
         }
-        actual_values = {member.value for member in EnumArtifactType}
+        actual_values = {
+            member.value for member in EnumArtifactType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_invalid_enum_value_raises_error(self):

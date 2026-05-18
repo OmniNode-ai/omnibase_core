@@ -84,7 +84,9 @@ class TestEnumAnalysisStatus:
         """Test that all expected values are present."""
         expected_values = {"pending", "in_progress", "completed", "failed", "cancelled"}
 
-        actual_values = {member.value for member in EnumAnalysisStatus}
+        actual_values = {
+            member.value for member in EnumAnalysisStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

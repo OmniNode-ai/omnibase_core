@@ -77,7 +77,7 @@ class TestEnumPromptStyle:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"plain", "markdown", "xml", "json_instructions"}
-        actual_values = {e.value for e in EnumPromptStyle}
+        actual_values = {e.value for e in EnumPromptStyle.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -91,7 +91,9 @@ class TestEnumPromptStyle:
             EnumPromptStyle.PLAIN,
             EnumPromptStyle.MARKDOWN,
         }
-        assert all(style in EnumPromptStyle for style in text_styles)
+        assert all(
+            style in EnumPromptStyle.__members__.values() for style in text_styles
+        )
 
     def test_structured_format_styles(self):
         """Test structured formatting styles."""
@@ -99,7 +101,9 @@ class TestEnumPromptStyle:
             EnumPromptStyle.XML,
             EnumPromptStyle.JSON_INSTRUCTIONS,
         }
-        assert all(style in EnumPromptStyle for style in structured_styles)
+        assert all(
+            style in EnumPromptStyle.__members__.values() for style in structured_styles
+        )
 
     def test_all_styles_categorized(self):
         """Test that all styles can be categorized."""

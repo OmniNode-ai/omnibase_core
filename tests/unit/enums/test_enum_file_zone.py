@@ -11,7 +11,7 @@ from omnibase_core.enums.enum_file_zone import EnumFileZone
 @pytest.mark.unit
 class TestEnumFileZone:
     def test_enum_members(self) -> None:
-        assert {z.value for z in EnumFileZone} == {
+        assert {z.value for z in EnumFileZone.__members__.values()} == {
             "production",
             "test",
             "config",

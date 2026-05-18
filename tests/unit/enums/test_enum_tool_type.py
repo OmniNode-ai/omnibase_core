@@ -134,7 +134,7 @@ class TestEnumToolType:
             "scenario_runner",
             "FUNCTION",
         }
-        actual_values = {e.value for e in EnumToolType}
+        actual_values = {e.value for e in EnumToolType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

@@ -403,14 +403,18 @@ class TestEnumConfigTypeComprehensiveScenarios:
         """Test routing configs based on their category."""
         # Simulate routing different config types
         core_configs = [
-            ct for ct in EnumConfigType if EnumConfigType.is_core_config(ct)
+            ct
+            for ct in EnumConfigType.__members__.values()
+            if EnumConfigType.is_core_config(ct)
         ]
         assert len(core_configs) == 5
         assert EnumConfigType.NODE_CONFIG in core_configs
         assert EnumConfigType.DATABASE_CONFIG in core_configs
 
         infra_configs = [
-            ct for ct in EnumConfigType if EnumConfigType.is_infrastructure_config(ct)
+            ct
+            for ct in EnumConfigType.__members__.values()
+            if EnumConfigType.is_infrastructure_config(ct)
         ]
         assert len(infra_configs) == 5
         assert EnumConfigType.LOGGING_CONFIG in infra_configs

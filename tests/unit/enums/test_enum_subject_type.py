@@ -34,7 +34,9 @@ class TestEnumSubjectType:
             "session",
             "custom",
         }
-        actual_values = {member.value for member in EnumSubjectType}
+        actual_values = {
+            member.value for member in EnumSubjectType.__members__.values()
+        }
         assert actual_values == expected_values
         assert len(EnumSubjectType) == 10
 

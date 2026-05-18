@@ -75,7 +75,7 @@ class TestEnumRegistryAction:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"get_active_nodes", "get_node"}
-        actual_values = {e.value for e in EnumRegistryAction}
+        actual_values = {e.value for e in EnumRegistryAction.__members__.values()}
         assert actual_values == expected_values
 
     def test_registry_action_naming(self):

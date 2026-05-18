@@ -31,7 +31,7 @@ class TestEnumHandlerResolutionOutcomeMembership:
 
     def test_enum_has_seven_members(self) -> None:
         """Plan §Task 1 (OMN-10278): seven members — added RESOLVED_VIA_KNOWN_PARAMS."""
-        assert {m.name for m in EnumHandlerResolutionOutcome} == {
+        assert {m.name for m in EnumHandlerResolutionOutcome.__members__.values()} == {
             "RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP",
             "RESOLVED_VIA_NODE_REGISTRY",
             "RESOLVED_VIA_CONTAINER",

@@ -35,7 +35,7 @@ class TestEnumNodeRoleValues:
             "EFFECT",
             "INTERNAL",
         }
-        actual_names = {member.name for member in EnumNodeRole}
+        actual_names = {member.name for member in EnumNodeRole.__members__.values()}
         assert actual_names == expected_names
 
     def test_enum_member_count(self) -> None:

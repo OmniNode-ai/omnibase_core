@@ -92,7 +92,9 @@ class TestEnumDaemonActionType:
             "monitoring",
         }
 
-        actual_values = {member.value for member in EnumDaemonActionType}
+        actual_values = {
+            member.value for member in EnumDaemonActionType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

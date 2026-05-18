@@ -56,12 +56,14 @@ class TestEnumAgentTaskLifecycleType:
             "TIMED_OUT",
             "CANCELED",
         }
-        actual = {member.value for member in EnumAgentTaskLifecycleType}
+        actual = {
+            member.value for member in EnumAgentTaskLifecycleType.__members__.values()
+        }
         assert actual == expected
 
     def test_enum_membership(self) -> None:
         """Test enum membership via string values."""
-        values = {m.value for m in EnumAgentTaskLifecycleType}
+        values = {m.value for m in EnumAgentTaskLifecycleType.__members__.values()}
         assert "SUBMITTED" in values
         assert "COMPLETED" in values
         assert "TIMED_OUT" in values

@@ -97,7 +97,7 @@ class TestEnumLikelihood:
             "impossible",
         }
 
-        actual_values = {member.value for member in EnumLikelihood}
+        actual_values = {member.value for member in EnumLikelihood.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

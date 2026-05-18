@@ -112,7 +112,9 @@ class TestEnumClaudeCodeSessionOutcome:
             "unknown",
         }
 
-        actual_values = {member.value for member in EnumClaudeCodeSessionOutcome}
+        actual_values = {
+            member.value for member in EnumClaudeCodeSessionOutcome.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -159,7 +161,9 @@ class TestIsTerminal:
     def test_terminal_outcome_count(self):
         """Test that exactly 3 outcomes are terminal."""
         terminal_count = sum(
-            1 for outcome in EnumClaudeCodeSessionOutcome if outcome.is_terminal()
+            1
+            for outcome in EnumClaudeCodeSessionOutcome.__members__.values()
+            if outcome.is_terminal()
         )
         assert terminal_count == 3
 
@@ -188,7 +192,9 @@ class TestIsSuccessful:
     def test_successful_outcome_count(self):
         """Test that exactly 1 outcome is successful."""
         successful_count = sum(
-            1 for outcome in EnumClaudeCodeSessionOutcome if outcome.is_successful()
+            1
+            for outcome in EnumClaudeCodeSessionOutcome.__members__.values()
+            if outcome.is_successful()
         )
         assert successful_count == 1
 
@@ -224,7 +230,9 @@ class TestIsFailure:
     def test_failure_outcome_count(self):
         """Test that exactly 2 outcomes are failures."""
         failure_count = sum(
-            1 for outcome in EnumClaudeCodeSessionOutcome if outcome.is_failure()
+            1
+            for outcome in EnumClaudeCodeSessionOutcome.__members__.values()
+            if outcome.is_failure()
         )
         assert failure_count == 2
 

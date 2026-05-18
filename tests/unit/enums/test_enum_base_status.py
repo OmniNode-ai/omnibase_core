@@ -95,7 +95,7 @@ class TestEnumBaseStatus:
             "invalid",
             "unknown",
         }
-        actual_values = {e.value for e in EnumBaseStatus}
+        actual_values = {e.value for e in EnumBaseStatus.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -167,11 +167,21 @@ class TestEnumBaseStatus:
         all_statuses = set(EnumBaseStatus)
 
         # Get statuses categorized by each method
-        active_statuses = {e for e in EnumBaseStatus if e.is_active_state()}
-        terminal_statuses = {e for e in EnumBaseStatus if e.is_terminal_state()}
-        error_statuses = {e for e in EnumBaseStatus if e.is_error_state()}
-        pending_statuses = {e for e in EnumBaseStatus if e.is_pending_state()}
-        quality_statuses = {e for e in EnumBaseStatus if e.is_quality_state()}
+        active_statuses = {
+            e for e in EnumBaseStatus.__members__.values() if e.is_active_state()
+        }
+        terminal_statuses = {
+            e for e in EnumBaseStatus.__members__.values() if e.is_terminal_state()
+        }
+        error_statuses = {
+            e for e in EnumBaseStatus.__members__.values() if e.is_error_state()
+        }
+        pending_statuses = {
+            e for e in EnumBaseStatus.__members__.values() if e.is_pending_state()
+        }
+        quality_statuses = {
+            e for e in EnumBaseStatus.__members__.values() if e.is_quality_state()
+        }
 
         # All statuses should be categorized by at least one method
         categorized_statuses = (
@@ -256,7 +266,7 @@ class TestEnumBaseStatus:
             "invalid",
             "unknown",
         }
-        actual_values = {e.value for e in EnumBaseStatus}
+        actual_values = {e.value for e in EnumBaseStatus.__members__.values()}
         assert actual_values == universal_values
 
         # Values should be simple and not contain domain-specific terms

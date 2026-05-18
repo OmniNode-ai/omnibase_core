@@ -32,7 +32,9 @@ class TestEnumFailureType:
             "rate_limit",
             "unknown",
         }
-        actual_values = {member.value for member in EnumFailureType}
+        actual_values = {
+            member.value for member in EnumFailureType.__members__.values()
+        }
         assert actual_values == expected_values
         assert len(EnumFailureType) == 8
 

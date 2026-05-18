@@ -351,8 +351,12 @@ class TestEnumOperationStatus:
         Every status must be either terminal or non-terminal (active).
         This ensures no status values are left uncategorized.
         """
-        terminal_count = sum(1 for s in EnumOperationStatus if s.is_terminal())
-        active_count = sum(1 for s in EnumOperationStatus if s.is_active())
+        terminal_count = sum(
+            1 for s in EnumOperationStatus.__members__.values() if s.is_terminal()
+        )
+        active_count = sum(
+            1 for s in EnumOperationStatus.__members__.values() if s.is_active()
+        )
 
         # All statuses should be accounted for
         assert terminal_count + active_count == len(EnumOperationStatus)

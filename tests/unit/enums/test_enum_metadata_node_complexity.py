@@ -83,7 +83,9 @@ class TestEnumMetadataNodeComplexity:
     def test_enum_all_values(self):
         """Test that all expected values are present"""
         expected_values = {"simple", "moderate", "complex", "advanced"}
-        actual_values = {member.value for member in EnumMetadataNodeComplexity}
+        actual_values = {
+            member.value for member in EnumMetadataNodeComplexity.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -124,7 +126,10 @@ class TestEnumMetadataNodeComplexity:
 
         # Verify all levels are present
         assert len(complexity_levels) == 4
-        assert all(level in EnumMetadataNodeComplexity for level in complexity_levels)
+        assert all(
+            level in EnumMetadataNodeComplexity.__members__.values()
+            for level in complexity_levels
+        )
 
     def test_enum_complexity_categories(self):
         """Test complexity categories"""

@@ -42,12 +42,12 @@ class TestEnumChannelType:
     def test_enum_all_values(self) -> None:
         """Test that all expected values are present."""
         expected = {"discord", "slack", "telegram", "email", "sms", "matrix"}
-        actual = {member.value for member in EnumChannelType}
+        actual = {member.value for member in EnumChannelType.__members__.values()}
         assert actual == expected
 
     def test_enum_membership(self) -> None:
         """Test enum membership operations."""
-        values = {m.value for m in EnumChannelType}
+        values = {m.value for m in EnumChannelType.__members__.values()}
         assert "discord" in values
         assert "whatsapp" not in values
 

@@ -84,7 +84,9 @@ class TestEnumHandlerCommandType:
         assert "reset" in EnumHandlerCommandType._value2member_map_
         # Invalid values
         assert "invalid" not in EnumHandlerCommandType._value2member_map_
-        assert "EXECUTE" not in EnumHandlerCommandType  # Case sensitive
+        assert (
+            "EXECUTE" not in EnumHandlerCommandType.__members__.values()
+        )  # Case sensitive
 
     def test_enum_comparison(self):
         """Test enum comparison."""

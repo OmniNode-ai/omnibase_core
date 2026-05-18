@@ -83,7 +83,7 @@ class TestEnumComplexity:
         """Test that all expected values are present."""
         expected_values = {"simple", "moderate", "complex", "very_complex"}
 
-        actual_values = {member.value for member in EnumComplexity}
+        actual_values = {member.value for member in EnumComplexity.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

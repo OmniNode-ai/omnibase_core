@@ -188,7 +188,9 @@ class TestEnumHandlerRoutingStrategyDocstrings:
     def test_enum_member_count(self) -> None:
         """Test that all expected members exist (no more, no less)."""
         expected_members = {"PAYLOAD_TYPE_MATCH", "OPERATION_MATCH", "TOPIC_PATTERN"}
-        actual_members = {member.name for member in EnumHandlerRoutingStrategy}
+        actual_members = {
+            member.name for member in EnumHandlerRoutingStrategy.__members__.values()
+        }
         assert actual_members == expected_members, (
             f"Expected {expected_members}, got {actual_members}"
         )

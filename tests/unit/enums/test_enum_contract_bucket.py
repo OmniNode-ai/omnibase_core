@@ -30,7 +30,7 @@ class TestEnumContractBucketStructure:
             "fixture_or_test",
             "unknown",
         }
-        actual = {b.value for b in EnumContractBucket}
+        actual = {b.value for b in EnumContractBucket.__members__.values()}
         assert actual == expected
 
     def test_bucket_is_str_enum(self) -> None:

@@ -88,7 +88,9 @@ class TestEnumDataSourceType:
             "SCHEDULED_JOB",
         }
 
-        actual_values = {member.value for member in EnumDataSourceType}
+        actual_values = {
+            member.value for member in EnumDataSourceType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

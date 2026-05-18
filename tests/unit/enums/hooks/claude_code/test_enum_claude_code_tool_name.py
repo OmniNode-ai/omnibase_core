@@ -141,7 +141,9 @@ class TestEnumClaudeCodeToolNameValues:
             "Mcp",
             "Unknown",
         }
-        actual_values = {member.value for member in EnumClaudeCodeToolName}
+        actual_values = {
+            member.value for member in EnumClaudeCodeToolName.__members__.values()
+        }
         assert actual_values == expected_values
 
 
@@ -1080,7 +1082,9 @@ class TestTaskOutputRemoved:
 
     def test_task_output_not_in_enum_values(self) -> None:
         """TaskOutput must not appear in any enum member value."""
-        values = {member.value for member in EnumClaudeCodeToolName}
+        values = {
+            member.value for member in EnumClaudeCodeToolName.__members__.values()
+        }
         assert "TaskOutput" not in values
 
     def test_task_output_attr_absent(self) -> None:

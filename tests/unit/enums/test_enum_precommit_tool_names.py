@@ -44,7 +44,7 @@ class TestEnumPrecommitToolNames:
         """Test membership testing."""
         assert (
             EnumPrecommitToolNames.TOOL_IDEMPOTENCY_ASSERTION_CHECKER
-            in EnumPrecommitToolNames
+            in EnumPrecommitToolNames.__members__.values()
         )
         assert "tool_idempotency_assertion_checker" in [
             e.value for e in EnumPrecommitToolNames.__members__.values()
@@ -79,7 +79,7 @@ class TestEnumPrecommitToolNames:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"tool_idempotency_assertion_checker"}
-        actual_values = {e.value for e in EnumPrecommitToolNames}
+        actual_values = {e.value for e in EnumPrecommitToolNames.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

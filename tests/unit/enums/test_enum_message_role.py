@@ -74,7 +74,9 @@ class TestEnumMessageRole:
     def test_enum_all_values(self):
         """Test that all expected values are present"""
         expected_values = {"user", "system", "assistant"}
-        actual_values = {member.value for member in EnumMessageRole}
+        actual_values = {
+            member.value for member in EnumMessageRole.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

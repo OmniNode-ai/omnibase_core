@@ -147,7 +147,7 @@ class TestEnumProtocolEventType:
             "WARNING_RAISED",
             "CUSTOM",
         }
-        actual_values = {e.value for e in EnumProtocolEventType}
+        actual_values = {e.value for e in EnumProtocolEventType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -162,7 +162,10 @@ class TestEnumProtocolEventType:
             EnumProtocolEventType.UPDATED,
             EnumProtocolEventType.DELETED,
         }
-        assert all(event in EnumProtocolEventType for event in lifecycle_events)
+        assert all(
+            event in EnumProtocolEventType.__members__.values()
+            for event in lifecycle_events
+        )
 
     def test_state_events(self):
         """Test state event grouping."""
@@ -172,7 +175,10 @@ class TestEnumProtocolEventType:
             EnumProtocolEventType.FAILED,
             EnumProtocolEventType.CANCELLED,
         }
-        assert all(event in EnumProtocolEventType for event in state_events)
+        assert all(
+            event in EnumProtocolEventType.__members__.values()
+            for event in state_events
+        )
 
     def test_workflow_events(self):
         """Test workflow event grouping."""
@@ -182,7 +188,10 @@ class TestEnumProtocolEventType:
             EnumProtocolEventType.WORKFLOW_COMPLETED,
             EnumProtocolEventType.WORKFLOW_FAILED,
         }
-        assert all(event in EnumProtocolEventType for event in workflow_events)
+        assert all(
+            event in EnumProtocolEventType.__members__.values()
+            for event in workflow_events
+        )
 
     def test_intelligence_events(self):
         """Test intelligence event grouping."""
@@ -191,7 +200,10 @@ class TestEnumProtocolEventType:
             EnumProtocolEventType.INTELLIGENCE_ANALYZED,
             EnumProtocolEventType.INTELLIGENCE_STORED,
         }
-        assert all(event in EnumProtocolEventType for event in intelligence_events)
+        assert all(
+            event in EnumProtocolEventType.__members__.values()
+            for event in intelligence_events
+        )
 
     def test_validation_events(self):
         """Test validation event grouping."""
@@ -200,7 +212,10 @@ class TestEnumProtocolEventType:
             EnumProtocolEventType.VALIDATION_PASSED,
             EnumProtocolEventType.VALIDATION_FAILED,
         }
-        assert all(event in EnumProtocolEventType for event in validation_events)
+        assert all(
+            event in EnumProtocolEventType.__members__.values()
+            for event in validation_events
+        )
 
     def test_generation_events(self):
         """Test generation event grouping."""
@@ -210,7 +225,10 @@ class TestEnumProtocolEventType:
             EnumProtocolEventType.GENERATION_COMPLETED,
             EnumProtocolEventType.GENERATION_FAILED,
         }
-        assert all(event in EnumProtocolEventType for event in generation_events)
+        assert all(
+            event in EnumProtocolEventType.__members__.values()
+            for event in generation_events
+        )
 
     def test_system_events(self):
         """Test system event grouping."""
@@ -220,7 +238,10 @@ class TestEnumProtocolEventType:
             EnumProtocolEventType.ERROR_OCCURRED,
             EnumProtocolEventType.WARNING_RAISED,
         }
-        assert all(event in EnumProtocolEventType for event in system_events)
+        assert all(
+            event in EnumProtocolEventType.__members__.values()
+            for event in system_events
+        )
 
     def test_all_events_categorized(self):
         """Test that all events are properly categorized."""

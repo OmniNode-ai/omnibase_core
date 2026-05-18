@@ -27,7 +27,7 @@ class TestEnumAuditEnforcementLevel:
         assert EnumAuditEnforcementLevel.PARANOID.value == "paranoid"
 
     def test_all_values_present(self) -> None:
-        values = {e.value for e in EnumAuditEnforcementLevel}
+        values = {e.value for e in EnumAuditEnforcementLevel.__members__.values()}
         assert values == {"permissive", "warn", "strict", "paranoid"}
 
     def test_is_blocking_permissive(self) -> None:

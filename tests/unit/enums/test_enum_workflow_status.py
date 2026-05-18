@@ -124,10 +124,14 @@ class TestEnumWorkflowStatus:
         This ensures no status values are left uncategorized.
         """
         terminal_count = sum(
-            1 for s in EnumWorkflowStatus if EnumWorkflowStatus.is_terminal(s)
+            1
+            for s in EnumWorkflowStatus.__members__.values()
+            if EnumWorkflowStatus.is_terminal(s)
         )
         active_count = sum(
-            1 for s in EnumWorkflowStatus if EnumWorkflowStatus.is_active(s)
+            1
+            for s in EnumWorkflowStatus.__members__.values()
+            if EnumWorkflowStatus.is_active(s)
         )
 
         # All statuses should be accounted for
@@ -312,7 +316,9 @@ class TestEnumWorkflowStatus:
         """Test success status categorization logic."""
         # Successful statuses should be terminal
         successful_statuses = [
-            s for s in EnumWorkflowStatus if EnumWorkflowStatus.is_successful(s)
+            s
+            for s in EnumWorkflowStatus.__members__.values()
+            if EnumWorkflowStatus.is_successful(s)
         ]
         for status in successful_statuses:
             assert EnumWorkflowStatus.is_terminal(status) is True
@@ -329,7 +335,9 @@ class TestEnumWorkflowStatus:
         """Test failure and error state categorization."""
         # Error states should be terminal
         error_statuses = [
-            s for s in EnumWorkflowStatus if EnumWorkflowStatus.is_error_state(s)
+            s
+            for s in EnumWorkflowStatus.__members__.values()
+            if EnumWorkflowStatus.is_error_state(s)
         ]
         for status in error_statuses:
             assert EnumWorkflowStatus.is_terminal(status) is True
@@ -425,7 +433,9 @@ class TestEnumWorkflowStatus:
         # Test that terminal states have no valid transitions defined
         # (terminal statuses should not appear in valid_transitions keys)
         terminal_statuses = [
-            s for s in EnumWorkflowStatus if EnumWorkflowStatus.is_terminal(s)
+            s
+            for s in EnumWorkflowStatus.__members__.values()
+            if EnumWorkflowStatus.is_terminal(s)
         ]
         for status in terminal_statuses:
             assert status not in valid_transitions

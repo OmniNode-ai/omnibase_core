@@ -114,7 +114,9 @@ class TestEnumWorkflowStatus:
             "failed",
             "cancelled",
         }
-        actual_values = {member.value for member in EnumWorkflowStatus}
+        actual_values = {
+            member.value for member in EnumWorkflowStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self) -> None:
@@ -213,7 +215,9 @@ class TestEnumExecutionMode:
             "batch",
             "streaming",
         }
-        actual_values = {member.value for member in EnumExecutionMode}
+        actual_values = {
+            member.value for member in EnumExecutionMode.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self) -> None:
@@ -311,7 +315,7 @@ class TestEnumActionType:
             "orchestrate",
             "custom",
         }
-        actual_values = {member.value for member in EnumActionType}
+        actual_values = {member.value for member in EnumActionType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self) -> None:
@@ -434,7 +438,9 @@ class TestEnumBranchCondition:
             "if_timeout",
             "custom",
         }
-        actual_values = {member.value for member in EnumBranchCondition}
+        actual_values = {
+            member.value for member in EnumBranchCondition.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self) -> None:

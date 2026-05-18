@@ -470,7 +470,9 @@ class TestEnumHandlerCapabilityExhaustiveness:
             "idempotent",
         }
 
-        actual_values = {cap.value for cap in EnumHandlerCapability}
+        actual_values = {
+            cap.value for cap in EnumHandlerCapability.__members__.values()
+        }
 
         assert actual_values == expected_capabilities, (
             f"Enum values mismatch. "

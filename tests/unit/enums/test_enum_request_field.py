@@ -94,7 +94,7 @@ class TestEnumRequestField:
             "type",
             "text",
         }
-        actual_values = {e.value for e in EnumRequestField}
+        actual_values = {e.value for e in EnumRequestField.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -112,7 +112,9 @@ class TestEnumRequestField:
             EnumRequestField.MAX_TOKENS,
             EnumRequestField.TEMPERATURE,
         }
-        assert all(field in EnumRequestField for field in top_level)
+        assert all(
+            field in EnumRequestField.__members__.values() for field in top_level
+        )
 
     def test_nested_fields(self):
         """Test nested request fields."""
@@ -122,7 +124,7 @@ class TestEnumRequestField:
             EnumRequestField.TYPE,
             EnumRequestField.TEXT,
         }
-        assert all(field in EnumRequestField for field in nested)
+        assert all(field in EnumRequestField.__members__.values() for field in nested)
 
     def test_all_fields_categorized(self):
         """Test that all fields are properly categorized."""

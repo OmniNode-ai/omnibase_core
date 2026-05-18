@@ -256,7 +256,9 @@ class TestEnumHashAlgorithm:
     def test_enum_iteration(self) -> None:
         """Test that enum can be iterated over."""
         expected_values = {"sha256"}
-        actual_values = {member.value for member in EnumHashAlgorithm}
+        actual_values = {
+            member.value for member in EnumHashAlgorithm.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_can_be_created_from_string(self) -> None:

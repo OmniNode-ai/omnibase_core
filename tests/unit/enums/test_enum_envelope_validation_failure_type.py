@@ -24,7 +24,10 @@ class TestEnumEnvelopeValidationFailureTypeValues:
             "missing_entity_id",
             "unknown",
         }
-        actual_values = {member.value for member in EnumEnvelopeValidationFailureType}
+        actual_values = {
+            member.value
+            for member in EnumEnvelopeValidationFailureType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_missing_correlation_id_value(self) -> None:

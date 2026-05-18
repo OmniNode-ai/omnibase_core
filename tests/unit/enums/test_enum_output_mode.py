@@ -84,7 +84,7 @@ class TestEnumOutputMode:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"content", "files_with_matches", "count"}
-        actual_values = {e.value for e in EnumOutputMode}
+        actual_values = {e.value for e in EnumOutputMode.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -162,10 +162,14 @@ class TestEnumOutputMode:
     def test_output_mode_categorization(self):
         """Test that all output modes are categorized correctly."""
         minimal_modes = {
-            mode for mode in EnumOutputMode if EnumOutputMode.is_minimal_output(mode)
+            mode
+            for mode in EnumOutputMode.__members__.values()
+            if EnumOutputMode.is_minimal_output(mode)
         }
         verbose_modes = {
-            mode for mode in EnumOutputMode if EnumOutputMode.is_verbose_output(mode)
+            mode
+            for mode in EnumOutputMode.__members__.values()
+            if EnumOutputMode.is_verbose_output(mode)
         }
 
         # Each mode should be either minimal or verbose
@@ -176,13 +180,19 @@ class TestEnumOutputMode:
     def test_output_mode_functionality(self):
         """Test that each output mode has a specific function."""
         content_modes = {
-            mode for mode in EnumOutputMode if EnumOutputMode.returns_full_content(mode)
+            mode
+            for mode in EnumOutputMode.__members__.values()
+            if EnumOutputMode.returns_full_content(mode)
         }
         file_modes = {
-            mode for mode in EnumOutputMode if EnumOutputMode.returns_file_paths(mode)
+            mode
+            for mode in EnumOutputMode.__members__.values()
+            if EnumOutputMode.returns_file_paths(mode)
         }
         stat_modes = {
-            mode for mode in EnumOutputMode if EnumOutputMode.returns_statistics(mode)
+            mode
+            for mode in EnumOutputMode.__members__.values()
+            if EnumOutputMode.returns_statistics(mode)
         }
 
         # Each mode should have exactly one function

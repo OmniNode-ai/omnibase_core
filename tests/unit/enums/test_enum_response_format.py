@@ -75,7 +75,7 @@ class TestEnumResponseFormat:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"text", "json"}
-        actual_values = {e.value for e in EnumResponseFormat}
+        actual_values = {e.value for e in EnumResponseFormat.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -90,6 +90,6 @@ class TestEnumResponseFormat:
         # Structured format
         structured = {EnumResponseFormat.JSON}
 
-        assert all(f in EnumResponseFormat for f in unstructured)
-        assert all(f in EnumResponseFormat for f in structured)
+        assert all(f in EnumResponseFormat.__members__.values() for f in unstructured)
+        assert all(f in EnumResponseFormat.__members__.values() for f in structured)
         assert unstructured | structured == set(EnumResponseFormat)

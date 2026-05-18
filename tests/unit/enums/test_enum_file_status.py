@@ -84,7 +84,7 @@ class TestEnumFileStatus:
             "incomplete",
             "synthetic",
         }
-        actual_values = {e.value for e in EnumFileStatus}
+        actual_values = {e.value for e in EnumFileStatus.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_member_names_are_upper_snake_case(self):
@@ -124,7 +124,9 @@ class TestEnumFileStatus:
             )
 
         # Verify no unexpected members were added
-        actual_member_names = {member.name for member in EnumFileStatus}
+        actual_member_names = {
+            member.name for member in EnumFileStatus.__members__.values()
+        }
         expected_member_names = set(expected_members.keys())
         assert actual_member_names == expected_member_names, (
             f"Unexpected members found: {actual_member_names - expected_member_names}"

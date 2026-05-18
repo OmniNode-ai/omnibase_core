@@ -94,7 +94,9 @@ class TestEnumCheckpointType:
             "composition_boundary",
         }
 
-        actual_values = {member.value for member in EnumCheckpointType}
+        actual_values = {
+            member.value for member in EnumCheckpointType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

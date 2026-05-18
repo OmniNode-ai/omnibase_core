@@ -316,7 +316,9 @@ class TestEnumAgentCapabilityEdgeCases:
 
     def test_all_code_capabilities_have_code_prefix(self):
         """Test that all code-related capabilities have 'code_' prefix."""
-        code_related = [c for c in EnumAgentCapability if c.is_code_related()]
+        code_related = [
+            c for c in EnumAgentCapability.__members__.values() if c.is_code_related()
+        ]
 
         for capability in code_related:
             assert capability.value.startswith("code_"), (
@@ -344,7 +346,9 @@ class TestEnumAgentCapabilityComprehensiveScenarios:
         """Test filtering capabilities based on model size requirements."""
         # Get capabilities suitable for small models
         small_model_capabilities = [
-            c for c in EnumAgentCapability if not c.requires_large_model()
+            c
+            for c in EnumAgentCapability.__members__.values()
+            if not c.requires_large_model()
         ]
 
         # Should have more small-model capabilities than large-model
@@ -361,7 +365,9 @@ class TestEnumAgentCapabilityComprehensiveScenarios:
     def test_capability_filtering_by_code_relation(self):
         """Test filtering capabilities based on code-relation."""
         # Get all code-related capabilities
-        code_capabilities = [c for c in EnumAgentCapability if c.is_code_related()]
+        code_capabilities = [
+            c for c in EnumAgentCapability.__members__.values() if c.is_code_related()
+        ]
 
         # Should have exactly 5 code-related capabilities
         assert len(code_capabilities) == 5

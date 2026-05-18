@@ -99,5 +99,5 @@ class TestEnumStepType:
         """Test that core ONEX node types are present."""
         # The four core ONEX node architecture types
         core_types = {"compute", "effect", "reducer", "orchestrator"}
-        values = {m.value for m in EnumStepType}
+        values = {m.value for m in EnumStepType.__members__.values()}
         assert core_types.issubset(values)

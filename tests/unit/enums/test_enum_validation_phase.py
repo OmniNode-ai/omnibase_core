@@ -134,7 +134,9 @@ class TestEnumValidationPhaseBehavior:
             "merge",
             "expanded",
         }
-        actual_values = {member.value for member in EnumValidationPhase}
+        actual_values = {
+            member.value for member in EnumValidationPhase.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_invalid_enum_value_raises_error(self) -> None:

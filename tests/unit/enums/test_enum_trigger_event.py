@@ -103,7 +103,9 @@ class TestEnumTriggerEvent:
             "shutdown",
         }
 
-        actual_values = {member.value for member in EnumTriggerEvent}
+        actual_values = {
+            member.value for member in EnumTriggerEvent.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self) -> None:
@@ -147,7 +149,9 @@ class TestEnumTriggerEventIsAutomatic:
     def test_only_manual_is_not_automatic(self) -> None:
         """Test that only MANUAL trigger is not automatic."""
         non_automatic_triggers = [
-            t for t in EnumTriggerEvent if not EnumTriggerEvent.is_automatic(t)
+            t
+            for t in EnumTriggerEvent.__members__.values()
+            if not EnumTriggerEvent.is_automatic(t)
         ]
         assert len(non_automatic_triggers) == 1
         assert non_automatic_triggers[0] == EnumTriggerEvent.MANUAL

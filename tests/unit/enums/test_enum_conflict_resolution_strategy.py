@@ -96,7 +96,10 @@ class TestEnumConflictResolutionStrategy:
             "last_writer_wins",
         }
 
-        actual_values = {member.value for member in EnumConflictResolutionStrategy}
+        actual_values = {
+            member.value
+            for member in EnumConflictResolutionStrategy.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

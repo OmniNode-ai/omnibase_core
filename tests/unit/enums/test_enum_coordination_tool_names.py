@@ -108,7 +108,9 @@ class TestEnumCoordinationToolNames:
             "tool_workflow_registry",
         }
 
-        actual_values = {member.value for member in EnumCoordinationToolNames}
+        actual_values = {
+            member.value for member in EnumCoordinationToolNames.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -129,25 +131,25 @@ class TestEnumCoordinationToolNames:
         # Test event routing tools
         assert (
             EnumCoordinationToolNames.TOOL_CONTRACT_EVENT_ROUTER
-            in EnumCoordinationToolNames
+            in EnumCoordinationToolNames.__members__.values()
         )
 
         # Test composition tools
         assert (
             EnumCoordinationToolNames.TOOL_COMPOSITION_COORDINATOR
-            in EnumCoordinationToolNames
+            in EnumCoordinationToolNames.__members__.values()
         )
         assert (
             EnumCoordinationToolNames.TOOL_COMPOSITION_ORCHESTRATOR
-            in EnumCoordinationToolNames
+            in EnumCoordinationToolNames.__members__.values()
         )
 
         # Test workflow tools
         assert (
             EnumCoordinationToolNames.TOOL_SUBWORKFLOW_EXECUTOR
-            in EnumCoordinationToolNames
+            in EnumCoordinationToolNames.__members__.values()
         )
         assert (
             EnumCoordinationToolNames.TOOL_WORKFLOW_REGISTRY
-            in EnumCoordinationToolNames
+            in EnumCoordinationToolNames.__members__.values()
         )

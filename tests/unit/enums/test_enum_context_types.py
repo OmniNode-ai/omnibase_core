@@ -90,7 +90,9 @@ class TestEnumContextTypes:
             "runtime",
         }
 
-        actual_values = {member.value for member in EnumContextTypes}
+        actual_values = {
+            member.value for member in EnumContextTypes.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

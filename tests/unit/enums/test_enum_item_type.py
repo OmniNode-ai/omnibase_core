@@ -126,7 +126,7 @@ class TestEnumItemType:
             "unknown",
             "other",
         }
-        actual_values = {e.value for e in EnumItemType}
+        actual_values = {e.value for e in EnumItemType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -199,10 +199,16 @@ class TestEnumItemType:
         all_types = set(EnumItemType)
 
         # Get types categorized by each method
-        content_types = {e for e in EnumItemType if e.is_content_type()}
-        code_types = {e for e in EnumItemType if e.is_code_type()}
-        config_types = {e for e in EnumItemType if e.is_config_type()}
-        system_types = {e for e in EnumItemType if e.is_system_type()}
+        content_types = {
+            e for e in EnumItemType.__members__.values() if e.is_content_type()
+        }
+        code_types = {e for e in EnumItemType.__members__.values() if e.is_code_type()}
+        config_types = {
+            e for e in EnumItemType.__members__.values() if e.is_config_type()
+        }
+        system_types = {
+            e for e in EnumItemType.__members__.values() if e.is_system_type()
+        }
 
         # All types should be categorized (except UNKNOWN and OTHER)
         categorized_types = content_types | code_types | config_types | system_types
@@ -215,10 +221,16 @@ class TestEnumItemType:
 
     def test_item_type_categorization_exclusivity(self):
         """Test that item type categories don't overlap inappropriately."""
-        content_types = {e for e in EnumItemType if e.is_content_type()}
-        code_types = {e for e in EnumItemType if e.is_code_type()}
-        config_types = {e for e in EnumItemType if e.is_config_type()}
-        system_types = {e for e in EnumItemType if e.is_system_type()}
+        content_types = {
+            e for e in EnumItemType.__members__.values() if e.is_content_type()
+        }
+        code_types = {e for e in EnumItemType.__members__.values() if e.is_code_type()}
+        config_types = {
+            e for e in EnumItemType.__members__.values() if e.is_config_type()
+        }
+        system_types = {
+            e for e in EnumItemType.__members__.values() if e.is_system_type()
+        }
 
         # Content and code types should not overlap
         assert content_types.isdisjoint(code_types)

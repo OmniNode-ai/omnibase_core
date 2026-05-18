@@ -94,7 +94,9 @@ class TestEnumAcknowledgmentType:
             "error_ack",
         }
 
-        actual_values = {member.value for member in EnumAcknowledgmentType}
+        actual_values = {
+            member.value for member in EnumAcknowledgmentType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

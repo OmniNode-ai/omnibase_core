@@ -96,7 +96,9 @@ class TestEnumComparisonOperators:
             "not_contains",
         }
 
-        actual_values = {member.value for member in EnumComparisonOperators}
+        actual_values = {
+            member.value for member in EnumComparisonOperators.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

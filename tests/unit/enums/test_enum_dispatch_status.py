@@ -259,7 +259,9 @@ class TestEnumDispatchStatus:
 
     def test_routed_is_intermediate_state(self):
         """Test that ROUTED is the only intermediate (non-terminal) state."""
-        intermediate_states = [s for s in EnumDispatchStatus if not s.is_terminal()]
+        intermediate_states = [
+            s for s in EnumDispatchStatus.__members__.values() if not s.is_terminal()
+        ]
         assert len(intermediate_states) == 1
         assert EnumDispatchStatus.ROUTED in intermediate_states
 
@@ -336,7 +338,9 @@ class TestEnumDispatchStatus:
         Every status must be either terminal or non-terminal.
         This ensures no status values are left uncategorized.
         """
-        terminal_count = sum(1 for s in EnumDispatchStatus if s.is_terminal())
+        terminal_count = sum(
+            1 for s in EnumDispatchStatus.__members__.values() if s.is_terminal()
+        )
         non_terminal_count = len(EnumDispatchStatus) - terminal_count
 
         # All statuses should be accounted for

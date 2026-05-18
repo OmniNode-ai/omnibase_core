@@ -40,7 +40,7 @@ class TestEnumReplayModeValues:
     def test_all_expected_values(self) -> None:
         """Test that all expected values are present."""
         expected_values = {"production", "recording", "replaying"}
-        actual_values = {member.value for member in EnumReplayMode}
+        actual_values = {member.value for member in EnumReplayMode.__members__.values()}
         assert actual_values == expected_values
 
 

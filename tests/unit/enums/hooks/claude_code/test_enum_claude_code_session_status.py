@@ -112,7 +112,9 @@ class TestEnumClaudeCodeSessionStatus:
             "timed_out",
         }
 
-        actual_values = {member.value for member in EnumClaudeCodeSessionStatus}
+        actual_values = {
+            member.value for member in EnumClaudeCodeSessionStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -159,7 +161,9 @@ class TestIsTerminal:
     def test_terminal_status_count(self):
         """Test that exactly 2 statuses are terminal."""
         terminal_count = sum(
-            1 for status in EnumClaudeCodeSessionStatus if status.is_terminal()
+            1
+            for status in EnumClaudeCodeSessionStatus.__members__.values()
+            if status.is_terminal()
         )
         assert terminal_count == 2
 
@@ -188,7 +192,9 @@ class TestIsActive:
     def test_active_status_count(self):
         """Test that exactly 1 status is active."""
         active_count = sum(
-            1 for status in EnumClaudeCodeSessionStatus if status.is_active()
+            1
+            for status in EnumClaudeCodeSessionStatus.__members__.values()
+            if status.is_active()
         )
         assert active_count == 1
 

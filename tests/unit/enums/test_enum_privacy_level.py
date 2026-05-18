@@ -76,7 +76,7 @@ class TestEnumPrivacyLevel:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"local_only", "external_ok", "any"}
-        actual_values = {e.value for e in EnumPrivacyLevel}
+        actual_values = {e.value for e in EnumPrivacyLevel.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -92,7 +92,7 @@ class TestEnumPrivacyLevel:
             EnumPrivacyLevel.EXTERNAL_OK,
             EnumPrivacyLevel.ANY,
         ]
-        assert all(level in EnumPrivacyLevel for level in levels)
+        assert all(level in EnumPrivacyLevel.__members__.values() for level in levels)
 
     def test_local_only_level(self):
         """Test local only privacy level."""

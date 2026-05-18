@@ -147,7 +147,9 @@ class TestEnumIntentCategory:
             "unknown",
         }
 
-        actual_values = {member.value for member in EnumIntentCategory}
+        actual_values = {
+            member.value for member in EnumIntentCategory.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -179,7 +181,9 @@ class TestEnumIntentCategory:
             "UNKNOWN",
         }
 
-        actual_names = {member.name for member in EnumIntentCategory}
+        actual_names = {
+            member.name for member in EnumIntentCategory.__members__.values()
+        }
         assert actual_names == expected_names
 
 

@@ -83,7 +83,7 @@ class TestEnumNodeArg:
             "--health-check",
             "--introspect",
         }
-        actual_values = {member.value for member in EnumNodeArg}
+        actual_values = {member.value for member in EnumNodeArg.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

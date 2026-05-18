@@ -271,7 +271,9 @@ class TestEnumActivationReasonBehavior:
             "phase_mismatch",
             "timeout_exceeded",
         }
-        actual_values = {member.value for member in EnumActivationReason}
+        actual_values = {
+            member.value for member in EnumActivationReason.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_invalid_enum_value_raises_error(self) -> None:

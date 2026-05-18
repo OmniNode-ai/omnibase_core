@@ -26,7 +26,9 @@ class TestEnumCategoryFilter:
             "custom",
             "archived",
         }
-        actual_values = {filter_type.value for filter_type in EnumCategoryFilter}
+        actual_values = {
+            filter_type.value for filter_type in EnumCategoryFilter.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_string_inheritance(self):

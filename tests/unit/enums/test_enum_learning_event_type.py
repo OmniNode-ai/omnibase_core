@@ -108,7 +108,9 @@ class TestEnumLearningEventType:
             "workflow_started",
             "intelligence_extracted",
         }
-        actual_values = {member.value for member in EnumLearningEventType}
+        actual_values = {
+            member.value for member in EnumLearningEventType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

@@ -80,7 +80,7 @@ class TestEnumProviderType:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"local", "external_trusted", "external_untrusted"}
-        actual_values = {e.value for e in EnumProviderType}
+        actual_values = {e.value for e in EnumProviderType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -97,8 +97,10 @@ class TestEnumProviderType:
             EnumProviderType.EXTERNAL_TRUSTED,
             EnumProviderType.EXTERNAL_UNTRUSTED,
         }
-        assert all(p in EnumProviderType for p in local_provider)
-        assert all(p in EnumProviderType for p in external_providers)
+        assert all(p in EnumProviderType.__members__.values() for p in local_provider)
+        assert all(
+            p in EnumProviderType.__members__.values() for p in external_providers
+        )
 
     def test_all_providers_categorized(self):
         """Test that all providers can be categorized."""

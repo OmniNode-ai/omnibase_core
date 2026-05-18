@@ -90,7 +90,9 @@ class TestEnumAssemblyStrategy:
             "comparative_analysis",
         }
 
-        actual_values = {member.value for member in EnumAssemblyStrategy}
+        actual_values = {
+            member.value for member in EnumAssemblyStrategy.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

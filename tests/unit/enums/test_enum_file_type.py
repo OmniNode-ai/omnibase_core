@@ -77,7 +77,7 @@ class TestEnumFileType:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"python", "yaml", "markdown", "json", "ignore", "unknown"}
-        actual_values = {e.value for e in EnumFileType}
+        actual_values = {e.value for e in EnumFileType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_str_method(self):

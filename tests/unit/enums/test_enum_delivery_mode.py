@@ -81,7 +81,9 @@ class TestEnumDeliveryMode:
         """Test that all expected values are present."""
         expected_values = {"direct", "inmemory"}
 
-        actual_values = {member.value for member in EnumDeliveryMode}
+        actual_values = {
+            member.value for member in EnumDeliveryMode.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

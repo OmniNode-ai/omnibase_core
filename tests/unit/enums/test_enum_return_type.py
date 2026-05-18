@@ -110,7 +110,7 @@ class TestEnumReturnType:
             "RESULTS",
             "UNKNOWN",
         }
-        actual_values = {e.value for e in EnumReturnType}
+        actual_values = {e.value for e in EnumReturnType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -210,12 +210,24 @@ class TestEnumReturnType:
 
         # Get types categorized by each method
         structured_types = {
-            e for e in EnumReturnType if EnumReturnType.is_structured_data(e)
+            e
+            for e in EnumReturnType.__members__.values()
+            if EnumReturnType.is_structured_data(e)
         }
-        file_types = {e for e in EnumReturnType if EnumReturnType.is_file_based(e)}
-        text_types = {e for e in EnumReturnType if EnumReturnType.is_text_based(e)}
+        file_types = {
+            e
+            for e in EnumReturnType.__members__.values()
+            if EnumReturnType.is_file_based(e)
+        }
+        text_types = {
+            e
+            for e in EnumReturnType.__members__.values()
+            if EnumReturnType.is_text_based(e)
+        }
         serialization_types = {
-            e for e in EnumReturnType if EnumReturnType.requires_serialization(e)
+            e
+            for e in EnumReturnType.__members__.values()
+            if EnumReturnType.requires_serialization(e)
         }
 
         # All types should be categorized (except UNKNOWN)
@@ -231,10 +243,20 @@ class TestEnumReturnType:
     def test_return_type_categorization_exclusivity(self):
         """Test that return type categories don't overlap inappropriately."""
         structured_types = {
-            e for e in EnumReturnType if EnumReturnType.is_structured_data(e)
+            e
+            for e in EnumReturnType.__members__.values()
+            if EnumReturnType.is_structured_data(e)
         }
-        file_types = {e for e in EnumReturnType if EnumReturnType.is_file_based(e)}
-        text_types = {e for e in EnumReturnType if EnumReturnType.is_text_based(e)}
+        file_types = {
+            e
+            for e in EnumReturnType.__members__.values()
+            if EnumReturnType.is_file_based(e)
+        }
+        text_types = {
+            e
+            for e in EnumReturnType.__members__.values()
+            if EnumReturnType.is_text_based(e)
+        }
 
         # File-based and structured types should not overlap
         assert file_types.isdisjoint(structured_types)

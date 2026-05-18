@@ -30,7 +30,9 @@ class TestEnumParameterType:
             "uuid",
             "enum",
         }
-        actual_values = {param_type.value for param_type in EnumParameterType}
+        actual_values = {
+            param_type.value for param_type in EnumParameterType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_string_inheritance(self):

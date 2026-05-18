@@ -82,7 +82,9 @@ class TestEnumContextPosition:
         """Test that all expected values are present."""
         expected_values = {"before", "after", "replace"}
 
-        actual_values = {member.value for member in EnumContextPosition}
+        actual_values = {
+            member.value for member in EnumContextPosition.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

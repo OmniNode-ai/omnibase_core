@@ -51,7 +51,7 @@ class TestEnumAgentState:
             "finished",
             "error",
         }
-        actual_values = {member.value for member in EnumAgentState}
+        actual_values = {member.value for member in EnumAgentState.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_membership(self) -> None:
