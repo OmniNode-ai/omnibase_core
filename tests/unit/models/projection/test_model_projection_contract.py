@@ -130,7 +130,9 @@ class TestModelProjectionContractFieldConstraints:
         assert contract.freshness_sla_seconds == 30
         assert contract.freshness_field == "updated_at"
         assert contract.freshness_source_table == "node_status_projection"
-        assert contract.degraded_semantics == EnumDegradedBehavior.SERVE_STALE_WITH_WARNING
+        assert (
+            contract.degraded_semantics == EnumDegradedBehavior.SERVE_STALE_WITH_WARNING
+        )
         assert contract.ordering_contract_ref is None
 
     def test_empty_projection_name_rejected(self) -> None:
