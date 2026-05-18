@@ -67,7 +67,7 @@ class ModelSessionHaltCondition(BaseModel):
                 raise ValueError(
                     msg
                 )  # error-ok: Pydantic model_validator requires ValueError
-        if self.check_type == "required_outcome_missing" and not self.outcome:
+        if self.check_type == "required_outcome_missing" and self.outcome is None:
             msg = "outcome is required when check_type='required_outcome_missing'"
             raise ValueError(
                 msg

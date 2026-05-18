@@ -71,7 +71,7 @@ class TestSessionPhaseSpecUnification:
 
         phase = ModelSessionPhaseSpec(phase_name="merge")
         with pytest.raises((ValidationError, TypeError)):
-            phase.phase_name = "other"  # type: ignore[misc]
+            phase.phase_name = "other"  # type: ignore[misc]  # NOTE(OMN-11225): intentional frozen-model mutation assertion
         assert phase.phase_name == "merge"
 
 
