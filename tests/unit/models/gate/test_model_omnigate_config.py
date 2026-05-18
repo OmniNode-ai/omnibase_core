@@ -51,7 +51,7 @@ class TestModelOmniGateConfig:
         )
 
         with pytest.raises(ValidationError):
-            config.project_name = "changed"  # type: ignore[misc]
+            config.project_name = "changed"  # type: ignore[misc]  # NOTE(OMN-11137): intentional forbidden assignment to verify frozen model rejects mutation
 
     def test_full_config_with_validators_and_gate_policy(self) -> None:
         config = ModelOmniGateConfig(
