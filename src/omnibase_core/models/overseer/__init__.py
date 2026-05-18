@@ -29,6 +29,9 @@ from omnibase_core.models.overseer.model_dispatch_item import ModelDispatchItem
 from omnibase_core.models.overseer.model_escalation_request import (
     ModelEscalationRequest,
 )
+from omnibase_core.models.overseer.model_phase_exit_condition import (
+    ModelPhaseExitCondition,
+)
 from omnibase_core.models.overseer.model_process_runner_state_transition import (
     ModelProcessRunnerStateTransition,
 )
@@ -69,6 +72,7 @@ __all__ = [
     "ModelContractAllowedActions",
     "ModelDispatchItem",
     "ModelEscalationRequest",
+    "ModelPhaseExitCondition",
     "ModelProcessRunnerStateTransition",
     "ModelSessionContract",
     "ModelSessionHaltCondition",
