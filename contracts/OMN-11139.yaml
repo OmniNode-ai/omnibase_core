@@ -1,0 +1,36 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-11139"
+title: "Add OmniGate config loader"
+summary: "Pure helper module + CLI wiring (cli_gate.py) for loading and discovering OmniGate config files
+  from YAML. Reads files from disk and returns typed ModelOmniGateConfig; no runtime side effects, no
+  process or service lifecycle, no broker subscriptions."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Config loader unit tests pass"
+    command: "uv run pytest tests/unit/gate/test_config_loader.py -v"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "Config loader unit tests pass (discovery, parsing, error handling)"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/gate/test_config_loader.py -v"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: cli_gate.py wires the pure config_loader helper into the onex
+      CLI as a developer-facing subcommand; the loader reads YAML from disk and returns a typed model.
+      No Docker image rebuild, daemon restart, broker topic, runtime process, docker exec, rpk topic produce,
+      or service deploy is required."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-11139 adds a pure helper (gate/config_loader.py) and CLI
+          wiring (cli/cli_gate.py); no Docker image, daemon, broker topic, runtime process, docker exec,
+          or service deploy is required'"
