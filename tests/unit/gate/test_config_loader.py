@@ -58,10 +58,15 @@ class TestDiscoverOmniGateConfig:
         assert result is None
 
     def test_rejects_absolute_candidate_names(self, tmp_path: Path) -> None:
+        # NOTE(OMN-11139): literal "/tmp/.omnigate.yaml" is test INPUT
+        # validating that the loader rejects absolute paths — no file is
+        # created at this path.
         with pytest.raises(ModelOnexError, match="relative file names"):
             discover_omnigate_config(
                 tmp_path,
-                candidate_names=("/tmp/.omnigate.yaml",),
+                candidate_names=(
+                    "/tmp/.omnigate.yaml",
+                ),  # NOSONAR(python:S5443) - test input, no file created
             )
 
     def test_missing_root_raises_structured_error(self, tmp_path: Path) -> None:
