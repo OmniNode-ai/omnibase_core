@@ -7,13 +7,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumDataProvenance"]
 
 
 @unique
-class EnumDataProvenance(StrValueHelper, str, Enum):
+class EnumDataProvenance(UtilStrValueHelper, str, Enum):
     """Origin quality classification for data values displayed in dashboards or reports."""
 
     DEMO_SEEDED = "demo_seeded"

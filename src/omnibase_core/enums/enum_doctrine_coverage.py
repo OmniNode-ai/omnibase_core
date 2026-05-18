@@ -7,13 +7,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumDoctrineCoverage"]
 
 
 @unique
-class EnumDoctrineCoverage(StrValueHelper, str, Enum):
+class EnumDoctrineCoverage(UtilStrValueHelper, str, Enum):
     """Enforcement classification for doctrine coverage of a node or widget."""
 
     UNCOVERED = "uncovered"
