@@ -203,7 +203,11 @@ def _parse_workflow_file(workflow_path: Path) -> WorkflowInfo:
                 raw_name = re.sub(r"\s*\$\{.*?\}", "", raw_name).strip()
                 job_names[current_job_key] = raw_name
 
-            uses_match = re.match(r"^\s+uses:\s+(.+)$", line)
+            # NOTE(OMN-11119): pattern is anchored at ^ and $ on a single line of
+            # a trusted YAML workflow file. No user-controlled input; ReDoS risk is
+            # nil. SonarCloud python:S5852 false-positive — suppress as hotspot
+            # reviewed.
+            uses_match = re.match(r"^[ \t]+uses:[ \t]+(.+)$", line)  # NOSONAR(python:S5852)
             if uses_match:
                 job_uses[current_job_key] = uses_match.group(1).strip().strip("\"'")
 
