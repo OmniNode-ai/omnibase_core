@@ -35,6 +35,8 @@ class ModelSessionContract(BaseModel):
     max_cost_usd: float = 5.0
     max_duration_seconds: int = 28800
     dry_run: bool = False
+    max_parallel_workers: int = Field(default=7, gt=0)
+    max_daily_cost_usd: float | None = Field(default=None, gt=0)
     phases: tuple[ModelSessionPhaseSpec, ...] = Field(..., min_length=1)
     halt_conditions: tuple[ModelSessionHaltCondition, ...] = Field(
         default_factory=tuple
