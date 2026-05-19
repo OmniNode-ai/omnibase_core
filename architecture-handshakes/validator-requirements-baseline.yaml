@@ -29,14 +29,8 @@
   validator: detect-secrets
   kind: MISSING_PRE_COMMIT
 - repo: omnibase_core
-  validator: enum-governance
-  kind: SILENT_SKIP_WRAPPER
-- repo: omnibase_core
   validator: hardcoded-local-paths
   kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: naming-conventions
-  kind: SILENT_SKIP_WRAPPER
 - repo: omnibase_core
   validator: no-hardcoded-topics
   kind: MISSING_CI_WORKFLOW

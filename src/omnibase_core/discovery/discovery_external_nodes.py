@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from importlib.metadata import EntryPoint, entry_points
+from typing import cast
 
 from omnibase_core.errors.error_node_discovery import NodeDiscoveryError
 
@@ -85,7 +86,7 @@ def _load_entry_point_class(ep: EntryPoint, dist_name: str) -> type | None:
     """Load and validate an entry-point class only when a caller needs code."""
     try:
         loaded = ep.load()
-    except Exception:  # noqa: BLE001  # catch-all-ok: entry point loading can fail in many ways
+    except Exception:  # noqa: BLE001  # fallback-ok: entry point loading can fail in many ways; None signals caller to skip
         logger.warning(
             "Failed to load entry point '%s' from '%s'",
             ep.name,
@@ -102,7 +103,8 @@ def _load_entry_point_class(ep: EntryPoint, dist_name: str) -> type | None:
             type(loaded).__name__,
         )
         return None
-    return loaded
+    # ep.load() returns object; _is_valid_node_class guarantees it is a type
+    return cast(type, loaded)
 
 
 def _is_valid_node_class(obj: object) -> bool:

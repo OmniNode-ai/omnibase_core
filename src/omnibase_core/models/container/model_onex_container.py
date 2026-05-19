@@ -95,9 +95,11 @@ try:
 except ImportError:
     import concurrent.futures
     from collections.abc import Coroutine
-    from typing import Any
+    from typing import Any, TypeVar
 
-    def run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:  # type: ignore[misc]
+    _RunT = TypeVar("_RunT")
+
+    def run_coro_sync(coro: "Coroutine[Any, Any, _RunT]") -> "_RunT":
         try:
             asyncio.get_running_loop()
         except RuntimeError:
@@ -125,16 +127,12 @@ from omnibase_core.models.configuration.model_compute_cache_config import (
 try:
     from omnibase_core.cache.memory_mapped_tool_cache import MemoryMappedToolCache
 except ImportError:
-    # FALLBACK_REASON: cache module is optional performance enhancement,
-    # system can operate without it using standard container behavior
-    MemoryMappedToolCache = None
+    MemoryMappedToolCache = None  # fallback-ok: optional performance enhancement; container operates without caching
 
 try:
     from omnibase_core.monitoring.performance_monitor import PerformanceMonitor
 except ImportError:
-    # FALLBACK_REASON: performance monitoring is optional feature,
-    # container can function without monitoring capabilities
-    PerformanceMonitor = None
+    PerformanceMonitor = None  # fallback-ok: optional monitoring feature; container operates without performance metrics
 
 # Infrastructure protocol imports for database and service discovery
 from omnibase_core.protocols.infrastructure import (

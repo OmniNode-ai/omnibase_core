@@ -483,8 +483,7 @@ jobs:
           fi
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
-  # Node Purity Validation (OMN-203) - not blocking test-parallel
-  # Rationale: Currently non-blocking (continue-on-error: true) due to tech debt
+  # Node Purity Validation (OMN-203)
   # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
   node-purity-check:
     name: Node Purity Check
@@ -520,10 +519,7 @@ jobs:
         run: |
           # Node Purity Check (OMN-203)
           # Validates declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
-          # TECH DEBT NOTE: Existing 'Any' type violations in node_compute.py and node_reducer.py
-          # are tracked tech debt. Once fixed, remove --continue-on-error and make blocking.
           uv run python scripts/check_node_purity.py --verbose
-        continue-on-error: true  # Non-blocking until tech debt resolved
 
       - name: Node purity check summary
         if: always()
@@ -583,7 +579,7 @@ jobs:
           echo "Validates enum governance with three rules:" >> $GITHUB_STEP_SUMMARY
           echo "- ENUM_001: Enforce UPPER_SNAKE_CASE naming for enum members" >> $GITHUB_STEP_SUMMARY
           echo "- ENUM_002: Detect Literal type aliases that should be enums" >> $GITHUB_STEP_SUMMARY
-          echo "- ENUM_003: Detect duplicate enum values across files (warn-only)" >> $GITHUB_STEP_SUMMARY
+          echo "- ENUM_003: Detect duplicate enum values across files" >> $GITHUB_STEP_SUMMARY
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Contract-config compliance validator (OMN-10688)
@@ -901,7 +897,6 @@ jobs:
           echo "| No Env Fallbacks (OMN-7227) | $no_env_fallbacks |" >> $GITHUB_STEP_SUMMARY
 
           # Gate logic: all must pass
-          # node-purity-check is NOT evaluated by this gate (continue-on-error until tech debt resolved)
           if [[ "$lint" == "success" ]] && \
              [[ "$pyright" == "success" ]] && \
              [[ "$exports" == "success" ]] && \
@@ -909,6 +904,7 @@ jobs:
              [[ "$core_infra" == "success" ]] && \
              [[ "$det_skills" == "success" ]] && \
              [[ "$docs" == "success" ]] && \
+             [[ "$purity" == "success" ]] && \
              [[ "$enum_gov" == "success" ]] && \
              [[ "$secrets" == "success" ]] && \
              [[ "$sdk_boundary" == "success" ]] && \

@@ -387,10 +387,7 @@ def compose_normalization_pipeline(raw: Mapping[str, object]) -> dict[str, objec
     unconstrained ``dict[str, object]``.
     """
     out: dict[str, object] = strip_legacy_metadata(raw)
-    out = cast(
-        "dict[str, object]",
-        normalize_event_bus(cast("dict[str, JsonType]", out)),
-    )
+    out = normalize_event_bus(cast("dict[str, JsonType]", out))
     out = normalize_io_model_ref(out)
     out = normalize_handler_routing(out)
     if is_omnimarket_v0(out):
