@@ -31,6 +31,9 @@ class ModelSessionPhaseSpec(BaseModel):
     required_outcomes: tuple[EnumCompletionOutcome, ...] = ()
     halt_conditions: tuple[ModelSessionHaltCondition, ...] = ()
     exit_conditions: tuple[ModelPhaseExitCondition, ...] = ()
+    max_duration_minutes: int | None = Field(default=None, gt=0)
+    budget_warning_pct: int = Field(default=80, gt=0, le=100)
+    parallel_with: tuple[str, ...] = ()
 
 
 __all__ = ["ModelSessionPhaseSpec"]

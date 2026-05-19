@@ -47,6 +47,7 @@ def test_phase_exit_condition_custom_probe() -> None:
         expected_exit_code=0,
     )
     assert cond.condition_type == "custom_probe"
+    assert cond.command == "curl -fsS http://127.0.0.1:18085/health"
     assert cond.expected_exit_code == 0
 
 
